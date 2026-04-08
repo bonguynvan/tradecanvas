@@ -1,0 +1,25 @@
+{
+  "name": "@chart-lib/library",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@chart-lib/commons": "workspace:*",
+    "@chart-lib/core": "workspace:*"
+  }
+}
