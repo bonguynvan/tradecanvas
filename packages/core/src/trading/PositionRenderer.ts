@@ -43,11 +43,14 @@ export class PositionRenderer {
         ctx.fillRect(chartRect.x, top, chartRect.width, height);
         ctx.globalAlpha = 1;
 
-        // P&L label at entry
+        // P&L label at entry — pinned to the left of the chart area so it
+        // doesn't collide with the right-side price axis badges. SL/TP
+        // labels live on the left too but sit at their own Y positions,
+        // so they can't overlap this row.
         const pnlText = `${pos.side.toUpperCase()} ${pos.quantity} | P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(precision)}`;
         ctx.font = `bold 11px ${theme.font.family}`;
         const lblWidth = ctx.measureText(pnlText).width + 12;
-        const lblX = chartRect.x + chartRect.width - lblWidth - 8;
+        const lblX = chartRect.x + 8;
         ctx.fillStyle = isProfit ? profitColor : lossColor;
         ctx.globalAlpha = 0.9;
         ctx.fillRect(lblX, entryY - 10, lblWidth, 20);
