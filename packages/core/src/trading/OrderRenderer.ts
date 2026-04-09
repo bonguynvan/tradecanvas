@@ -20,7 +20,6 @@ export class OrderRenderer {
   ): void {
     const buyColor = config.orderColors?.buy ?? '#26A69A';
     const sellColor = config.orderColors?.sell ?? '#EF5350';
-    const precision = config.pricePrecision ?? 2;
     const { chartRect } = viewport;
 
     for (const order of orders) {
@@ -53,16 +52,8 @@ export class OrderRenderer {
       ctx.textAlign = 'left';
       ctx.fillText(label, chartRect.x + 8, y);
 
-      // Price + qty badge (right axis)
-      const priceText = `${price.toFixed(precision)} x ${order.quantity}`;
-      ctx.font = `11px ${theme.font.family}`;
-      const badgeWidth = ctx.measureText(priceText).width + 10;
-      const axisX = chartRect.x + chartRect.width + 1;
-      ctx.fillStyle = color;
-      ctx.fillRect(axisX, y - 9, Math.min(badgeWidth, PRICE_AXIS_WIDTH - 2), 18);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'left';
-      ctx.fillText(priceText, axisX + 5, y);
+      // Price + qty badge on axis — rendered separately via renderAxisBadges()
+      // on the UI layer so it paints on top of the price axis labels.
 
       // Side indicator (small triangle)
       const triX = chartRect.x + 4 + labelWidth + 6;
@@ -92,6 +83,43 @@ export class OrderRenderer {
         ctx.globalAlpha = 1;
         ctx.setLineDash([]);
       }
+    }
+  }
+
+  /**
+   * Draw order price badges on the price axis. Called from the UI layer
+   * so they paint ON TOP of the regular axis tick labels.
+   */
+  renderAxisBadges(
+    ctx: CanvasRenderingContext2D,
+    orders: TradingOrder[],
+    viewport: ViewportState,
+    theme: Theme,
+    config: TradingConfig,
+    dragState: DragState | null,
+  ): void {
+    const buyColor = config.orderColors?.buy ?? '#26A69A';
+    const sellColor = config.orderColors?.sell ?? '#EF5350';
+    const precision = config.pricePrecision ?? 2;
+    const { chartRect } = viewport;
+    const axisX = chartRect.x + chartRect.width + 1;
+
+    for (const order of orders) {
+      const isDragging = dragState?.orderId === order.id && dragState.sourceType === 'order';
+      const price = isDragging ? dragState!.currentPrice : order.price;
+      const y = priceToY(price, viewport);
+      if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
+
+      const color = order.side === 'buy' ? buyColor : sellColor;
+      const priceText = `${price.toFixed(precision)} x ${order.quantity}`;
+      ctx.font = `11px ${theme.font.family}`;
+      const badgeWidth = ctx.measureText(priceText).width + 10;
+      ctx.fillStyle = color;
+      ctx.fillRect(axisX, y - 9, Math.min(badgeWidth, PRICE_AXIS_WIDTH - 2), 18);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(priceText, axisX + 5, y);
     }
   }
 

@@ -259,6 +259,9 @@ export class RenderEngine {
       this.uiLayer.clear();
       const c = this.uiLayer.ctx;
       ctx.priceAxis?.render(c, viewport, theme);
+      // Trading axis badges paint ON TOP of the regular price axis labels
+      // so position entry prices and order trigger prices are always visible.
+      ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
       ctx.currentPriceLine?.render(c, viewport, theme);
       ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
       ctx.chartLegend?.render(c, viewport, theme, data);

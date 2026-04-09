@@ -61,15 +61,8 @@ export class PositionRenderer {
         ctx.fillText(pnlText, lblX + 6, entryY);
       }
 
-      // Entry badge on axis
-      const axisX = chartRect.x + chartRect.width + 1;
-      ctx.fillStyle = entryColor;
-      ctx.fillRect(axisX, entryY - 9, PRICE_AXIS_WIDTH - 2, 18);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `11px ${theme.font.family}`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(pos.entryPrice.toFixed(precision), axisX + 5, entryY);
+      // Entry badge on axis — rendered separately via renderAxisBadges()
+      // on the UI layer so it paints on top of the price axis labels.
 
       // SL line
       if (pos.stopLoss !== undefined) {
@@ -112,6 +105,34 @@ export class PositionRenderer {
       }
 
       ctx.setLineDash([]);
+    }
+  }
+
+  /**
+   * Draw position entry badges on the price axis. Called from the UI layer
+   * so they paint ON TOP of the regular axis tick labels.
+   */
+  renderAxisBadges(
+    ctx: CanvasRenderingContext2D,
+    positions: TradingPosition[],
+    viewport: ViewportState,
+    theme: Theme,
+    config: TradingConfig,
+  ): void {
+    const { chartRect } = viewport;
+    const entryColor = config.positionColors?.entry ?? '#2196F3';
+    const precision = config.pricePrecision ?? 2;
+    const axisX = chartRect.x + chartRect.width + 1;
+
+    for (const pos of positions) {
+      const entryY = priceToY(pos.entryPrice, viewport);
+      ctx.fillStyle = entryColor;
+      ctx.fillRect(axisX, entryY - 9, PRICE_AXIS_WIDTH - 2, 18);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `11px ${theme.font.family}`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pos.entryPrice.toFixed(precision), axisX + 5, entryY);
     }
   }
 }
