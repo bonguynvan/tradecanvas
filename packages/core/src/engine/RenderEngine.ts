@@ -64,6 +64,15 @@ export class RenderEngine {
   private overlayLayer: CanvasLayer | undefined;
   private uiLayer: CanvasLayer | undefined;
 
+  /**
+   * Optional hook fired AFTER the canvas layers have been resized in
+   * response to a container resize. The Chart class uses this to push the
+   * new dimensions into its viewport + layout manager — without it, the
+   * viewport keeps a stale chartRect forever and `scrollToEnd` / panning
+   * compute against the wrong width.
+   */
+  onContainerResize: ((size: Size) => void) | null = null;
+
   constructor(container: HTMLElement) {
     this.layerManager = new LayerManager(container);
     this.renderLoop = new RenderLoop();
@@ -77,6 +86,10 @@ export class RenderEngine {
     this.dprManager.onResize((size, dpr) => {
       this.layerManager.resize(size, dpr);
       this.renderLoop.markAllDirty();
+      // Notify the Chart so it can update viewport.chartRect + layout.
+      // Without this, container resizes leave the viewport's idea of width
+      // stuck at whatever it was at construction time.
+      this.onContainerResize?.(size);
     });
 
     const size = this.dprManager.getContainerSize();

@@ -228,6 +228,23 @@ export class Chart {
     );
     this.layoutManager.resize(size.width, size.height);
 
+    // Sync viewport + layout when the container resizes. Without this hook
+    // the chart's viewport keeps its construction-time chartRect forever
+    // (which is wrong if the container started at 0 or got resized since),
+    // and `scrollToEnd` / clampOffset compute against stale dimensions —
+    // chart sticks at the wrong offset and the user can't scroll to the
+    // latest bar.
+    this.engine.onContainerResize = (newSize) => {
+      if (newSize.width <= 0 || newSize.height <= 0) return;
+      const wasAtEnd = this.viewport.isAtEnd();
+      this.viewport.resize(newSize.width, newSize.height);
+      this.layoutManager.resize(newSize.width, newSize.height);
+      // wasAtEnd carries the user's intent: if they were tracking the live
+      // edge before the resize, keep them there afterwards. Otherwise leave
+      // their scroll position alone.
+      this.updateViewportAndRender(wasAtEnd);
+    };
+
     // Chart renderer
     this.chartRenderer = this.createChartRenderer(options.chartType);
     this.gridRenderer = new GridRenderer();
