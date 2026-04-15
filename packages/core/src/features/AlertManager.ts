@@ -41,7 +41,7 @@ export class AlertManager extends Emitter<AlertEvents> {
   }
 
   addAlert(price: number, condition: AlertCondition = 'crossing', message?: string, repeating = false): string {
-    const id = `alert_${alertId++}`;
+    const id = `tc_alert_${alertId++}`;
     const alert: PriceAlert = { id, price, condition, message, triggered: false, repeating };
     this.alerts.push(alert);
     this.emit('added', alert);

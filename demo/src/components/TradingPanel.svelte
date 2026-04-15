@@ -2,9 +2,9 @@
   import type { TradingPosition, TradingOrder, OrderSide } from '@tradecanvas/chart';
   import { X, RefreshCw, ChevronUp, ChevronDown } from 'lucide-svelte';
 
-  const STORAGE_BALANCE = 'tradecanvas-demo-balance';
-  const STORAGE_POSITIONS = 'tradecanvas-demo-positions';
-  const STORAGE_ORDERS = 'tradecanvas-demo-orders';
+  const STORAGE_BALANCE = 'tc-demo-balance';
+  const STORAGE_POSITIONS = 'tc-demo-positions';
+  const STORAGE_ORDERS = 'tc-demo-orders';
   const INITIAL_BALANCE = 10000;
 
   interface Props {
@@ -34,8 +34,8 @@
       const savedOrders = localStorage.getItem(STORAGE_ORDERS);
       if (savedOrders) orders = JSON.parse(savedOrders);
 
-      const maxPosId = positions.reduce((m, p) => Math.max(m, parseInt(p.id.replace('pos-', ''), 10) || 0), 0);
-      const maxOrdId = orders.reduce((m, o) => Math.max(m, parseInt(o.id.replace('ord-', ''), 10) || 0), 0);
+      const maxPosId = positions.reduce((m, p) => Math.max(m, parseInt(p.id.replace('tc-pos-', ''), 10) || 0), 0);
+      const maxOrdId = orders.reduce((m, o) => Math.max(m, parseInt(o.id.replace('tc-ord-', ''), 10) || 0), 0);
       nextId = Math.max(maxPosId, maxOrdId) + 1;
     } catch {
       // ignore parse errors
@@ -74,7 +74,7 @@
     const tpMultiplier = side === 'buy' ? 1.04 : 0.96;
 
     const newPos: TradingPosition = {
-      id: generateId('pos'),
+      id: generateId('tc-pos'),
       side,
       entryPrice: currentPrice,
       quantity: qty,
@@ -93,7 +93,7 @@
     const priceMultiplier = side === 'buy' ? 0.99 : 1.01;
 
     const newOrder: TradingOrder = {
-      id: generateId('ord'),
+      id: generateId('tc-ord'),
       side,
       type: 'limit',
       price: parseFloat((currentPrice * priceMultiplier).toFixed(2)),

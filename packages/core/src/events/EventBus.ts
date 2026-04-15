@@ -44,7 +44,7 @@ export class EventBus {
     }
 
     if (this.tauriBridge?.enabled && window.__TAURI__) {
-      const prefix = this.tauriBridge.eventPrefix ?? 'chart';
+      const prefix = this.tauriBridge.eventPrefix ?? 'tc-chart';
       window.__TAURI__.event.emit(`${prefix}:${type}`, event).catch(() => {});
     }
   }

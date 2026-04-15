@@ -360,7 +360,7 @@ export class DrawingManager {
     if (!drawing) return null;
 
     const newDrawing: DrawingState = structuredClone(drawing);
-    newDrawing.id = `drawing_${nextDrawingId++}`;
+    newDrawing.id = `tc_drawing_${nextDrawingId++}`;
     // Offset X by 3 bars so copy is visually distinct
     newDrawing.anchors = newDrawing.anchors.map(a => ({
       ...a,
@@ -441,7 +441,7 @@ export class DrawingManager {
     if (!this.creatingDrawing) {
       // First click: start creation
       this.creatingDrawing = {
-        id: `drawing_${nextDrawingId++}`,
+        id: `tc_drawing_${nextDrawingId++}`,
         type: this.activeTool,
         anchors: [anchor],
         style: { ...this.activeStyle },

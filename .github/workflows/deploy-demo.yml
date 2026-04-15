@@ -6,6 +6,7 @@ on:
       - 'demo/**'
       - 'packages/**'
       - 'docs/**'
+      - '.github/workflows/deploy-demo.yml'
 
 permissions:
   contents: read

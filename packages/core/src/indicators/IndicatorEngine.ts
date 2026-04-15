@@ -37,7 +37,7 @@ export class IndicatorEngine {
     const plugin = this.registry.get(id);
     if (!plugin) throw new Error(`Unknown indicator: ${id}`);
 
-    const instanceId = `${id}_${nextId++}`;
+    const instanceId = `tc_${id}_${nextId++}`;
     const config: IndicatorConfig = {
       id,
       instanceId,

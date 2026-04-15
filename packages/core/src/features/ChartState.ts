@@ -100,7 +100,7 @@ export class ChartStateManager {
   }
 
   /** Download as JSON file */
-  static downloadFile(snapshot: ChartSnapshot, filename = 'chart-state.json'): void {
+  static downloadFile(snapshot: ChartSnapshot, filename = 'tc-chart-state.json'): void {
     const blob = new Blob([this.serialize(snapshot)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
