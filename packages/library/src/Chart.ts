@@ -475,9 +475,12 @@ export class Chart {
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     if (descriptor?.placement === 'panel') {
       this.layoutManager.addPanel(instanceId, position);
+      // Panel layout changed — must re-resolve layout, update viewport, and sync render context
+      this.updateViewportAndRender();
+    } else {
+      this.engine.requestRender();
     }
     this.eventBus.emit('indicatorAdd', { instanceId, id });
-    this.engine.requestRender();
     return instanceId;
   }
 
@@ -487,10 +490,15 @@ export class Chart {
   }
 
   removeIndicator(instanceId: string): void {
+    const hadPanel = this.layoutManager.getPanels().some(p => p.id === instanceId);
     this.indicatorEngine.removeIndicator(instanceId);
     this.layoutManager.removePanel(instanceId);
     this.eventBus.emit('indicatorRemove', { instanceId });
-    this.engine.requestRender();
+    if (hadPanel) {
+      this.updateViewportAndRender();
+    } else {
+      this.engine.requestRender();
+    }
   }
 
   getIndicatorOutput(instanceId: string): IndicatorOutput | null {
