@@ -1,0 +1,382 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import {
+    Chart,
+    BinanceAdapter,
+    DARK_THEME,
+    LIGHT_THEME,
+  } from '@tradecanvas/chart';
+  import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/chart';
+  import { SYMBOLS } from '../lib/chartConfig';
+  import ChartToolbar from './ChartToolbar.svelte';
+  import DrawToolsSidebar from './DrawToolsSidebar.svelte';
+  import ChartSettings from './ChartSettings.svelte';
+  import { DEFAULT_SETTINGS } from '../lib/chartSettings';
+  import type { ChartSettingsState } from '../lib/chartSettings';
+
+  let container: HTMLDivElement | undefined = $state();
+  let chart: Chart | null = $state(null);
+
+  // State
+  let currentSymbol = $state('BTCUSDT');
+  let currentTf: TimeFrame = $state('5m');
+  let currentChartType: ChartType = $state('candlestick');
+  let isDark = $state(true);
+  let magnetEnabled = $state(true);
+  let activeDrawingTool: DrawingToolType | null = $state(null);
+  let activeIndicators: { instanceId: string; id: string; label: string }[] = $state([]);
+  let symbolIndex = $state(0);
+
+  // Connection status
+  let statusState: 'connecting' | 'connected' | 'error' = $state('connecting');
+  let statusMessage = $state('Connecting...');
+
+  // Settings modal
+  let settingsOpen = $state(false);
+  let settings: ChartSettingsState = $state({ ...DEFAULT_SETTINGS });
+
+  // Indicator instance map (indicatorId -> instanceId)
+  const indicatorMap = new Map<string, string>();
+
+  onMount(() => {
+    if (!container) return;
+
+    chart = new Chart(container, {
+      chartType: 'candlestick',
+      theme: DARK_THEME,
+      autoScale: true,
+      rightMargin: 5,
+      crosshair: { mode: 'magnet' },
+      watermark: {
+        text: 'TradeCanvas',
+        fontSize: 48,
+        color: 'rgba(255,255,255,0.03)',
+      },
+      features: {
+        drawings: true,
+        drawingMagnet: true,
+        drawingUndoRedo: true,
+        indicators: true,
+        trading: true,
+        volume: true,
+        legend: true,
+        crosshair: true,
+        keyboard: true,
+        screenshot: true,
+        alerts: true,
+        barCountdown: true,
+        logScale: true,
+        watermark: true,
+      },
+    });
+
+    connectStream();
+  });
+
+  onDestroy(() => {
+    chart?.destroy();
+    chart = null;
+  });
+
+  async function connectStream() {
+    if (!chart) return;
+
+    statusState = 'connecting';
+    statusMessage = 'Connecting...';
+
+    try {
+      chart.disconnectStream();
+      const adapter = new BinanceAdapter();
+      await chart.connect({
+        adapter,
+        symbol: currentSymbol,
+        timeframe: currentTf,
+        historyLimit: 500,
+      });
+
+      chart.setWatermark(currentSymbol.replace('USDT', ' / USDT'), {
+        fontSize: 48,
+        color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+      });
+
+      statusState = 'connected';
+      statusMessage = 'Live';
+    } catch (err: unknown) {
+      statusState = 'error';
+      statusMessage = err instanceof Error ? err.message : 'Connection failed';
+    }
+  }
+
+  function handleSymbolClick() {
+    symbolIndex = (symbolIndex + 1) % SYMBOLS.length;
+    currentSymbol = SYMBOLS[symbolIndex].value;
+    connectStream();
+  }
+
+  function handleTimeframe(tf: TimeFrame) {
+    currentTf = tf;
+    connectStream();
+  }
+
+  function handleChartType(type: ChartType) {
+    currentChartType = type;
+    chart?.setChartType(type);
+  }
+
+  function handleAddIndicator(indId: string) {
+    if (!chart) return;
+
+    if (indicatorMap.has(indId)) {
+      // Toggle off
+      const instanceId = indicatorMap.get(indId)!;
+      chart.removeIndicator(instanceId);
+      indicatorMap.delete(indId);
+    } else {
+      const instanceId = chart.addIndicator(indId);
+      if (instanceId) {
+        indicatorMap.set(indId, instanceId);
+      }
+    }
+
+    activeIndicators = Array.from(indicatorMap.entries()).map(([id, instanceId]) => ({
+      instanceId,
+      id,
+      label: id.toUpperCase(),
+    }));
+  }
+
+  function handleRemoveIndicator(instanceId: string) {
+    if (!chart) return;
+    chart.removeIndicator(instanceId);
+
+    for (const [id, iid] of indicatorMap.entries()) {
+      if (iid === instanceId) {
+        indicatorMap.delete(id);
+        break;
+      }
+    }
+
+    activeIndicators = Array.from(indicatorMap.entries()).map(([id, iid]) => ({
+      instanceId: iid,
+      id,
+      label: id.toUpperCase(),
+    }));
+  }
+
+  function handleDrawingTool(tool: DrawingToolType) {
+    activeDrawingTool = tool;
+    chart?.setDrawingTool(tool);
+  }
+
+  function handleCancelDrawing() {
+    activeDrawingTool = null;
+    chart?.setDrawingTool(null);
+  }
+
+  function handleToggleMagnet() {
+    magnetEnabled = !magnetEnabled;
+    chart?.setDrawingMagnet(magnetEnabled);
+  }
+
+  function handleUndo() {
+    chart?.undo();
+  }
+
+  function handleRedo() {
+    chart?.redo();
+  }
+
+  function handleClearDrawings() {
+    chart?.clearDrawings();
+    activeDrawingTool = null;
+  }
+
+  function handleScreenshot() {
+    chart?.screenshot();
+  }
+
+  function handleToggleTheme() {
+    isDark = !isDark;
+    if (isDark) {
+      document.body.classList.remove('light');
+      chart?.setTheme(DARK_THEME);
+    } else {
+      document.body.classList.add('light');
+      chart?.setTheme(LIGHT_THEME);
+    }
+    chart?.setWatermark(currentSymbol.replace('USDT', ' / USDT'), {
+      fontSize: 48,
+      color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+    });
+  }
+
+  function handleSettingsChange(patch: Partial<ChartSettingsState>) {
+    settings = { ...settings, ...patch };
+    applySettings(patch);
+  }
+
+  function handleSettingsReset() {
+    settings = { ...DEFAULT_SETTINGS };
+    applySettings(settings);
+  }
+
+  function applySettings(patch: Partial<ChartSettingsState>) {
+    if (!chart) return;
+
+    if (patch.gridVisible !== undefined) chart.setGridVisible(patch.gridVisible);
+    if (patch.volumeVisible !== undefined) chart.setVolumeVisible(patch.volumeVisible);
+    if (patch.crosshairMode !== undefined) chart.setCrosshairMode(patch.crosshairMode);
+    if (patch.autoScale !== undefined) chart.setAutoScale(patch.autoScale);
+    if (patch.logScale !== undefined) chart.setLogScale(patch.logScale);
+
+    // Apply theme colors
+    const currentTheme = chart.getTheme();
+    const themeUpdate: Record<string, unknown> = { ...currentTheme };
+    if (patch.candleUpColor !== undefined) themeUpdate.candleUp = patch.candleUpColor;
+    if (patch.candleDownColor !== undefined) themeUpdate.candleDown = patch.candleDownColor;
+    if (patch.candleUpWick !== undefined) themeUpdate.candleUpWick = patch.candleUpWick;
+    if (patch.candleDownWick !== undefined) themeUpdate.candleDownWick = patch.candleDownWick;
+    if (patch.backgroundColor !== undefined) themeUpdate.background = patch.backgroundColor;
+    if (patch.gridColor !== undefined) themeUpdate.grid = patch.gridColor;
+
+    if (
+      patch.candleUpColor !== undefined ||
+      patch.candleDownColor !== undefined ||
+      patch.candleUpWick !== undefined ||
+      patch.candleDownWick !== undefined ||
+      patch.backgroundColor !== undefined ||
+      patch.gridColor !== undefined
+    ) {
+      chart.setTheme(themeUpdate as any);
+    }
+  }
+</script>
+
+<section class="chart-section">
+  <div class="chart-wrapper">
+    <ChartToolbar
+      symbol={currentSymbol}
+      activeTimeframe={currentTf}
+      activeChartType={currentChartType}
+      {activeIndicators}
+      {isDark}
+      onSymbolClick={handleSymbolClick}
+      onTimeframe={handleTimeframe}
+      onChartType={handleChartType}
+      onAddIndicator={handleAddIndicator}
+      onRemoveIndicator={handleRemoveIndicator}
+      onScreenshot={handleScreenshot}
+      onSettings={() => { settingsOpen = true; }}
+      onToggleTheme={handleToggleTheme}
+    />
+
+    <div class="chart-body">
+      <DrawToolsSidebar
+        activeTool={activeDrawingTool}
+        {magnetEnabled}
+        onDrawingTool={handleDrawingTool}
+        onCancelDrawing={handleCancelDrawing}
+        onToggleMagnet={handleToggleMagnet}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onClearDrawings={handleClearDrawings}
+      />
+      <div class="chart-container" bind:this={container}></div>
+    </div>
+
+    <div class="chart-status">
+      <div class="status-indicator">
+        <span
+          class="status-dot"
+          class:connected={statusState === 'connected'}
+          class:error={statusState === 'error'}
+        ></span>
+        <span>{statusMessage}</span>
+      </div>
+      <span>{currentSymbol} {currentTf}</span>
+    </div>
+  </div>
+</section>
+
+<ChartSettings
+  open={settingsOpen}
+  {settings}
+  onClose={() => { settingsOpen = false; }}
+  onChange={handleSettingsChange}
+  onReset={handleSettingsReset}
+/>
+
+<style>
+  .chart-section {
+    padding: 0 24px 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .chart-wrapper {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chart-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .chart-container {
+    flex: 1;
+    min-width: 0;
+    height: 65vh;
+    min-height: 450px;
+    width: 100%;
+  }
+
+  .chart-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-elevated);
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background 0.3s;
+  }
+
+  .status-dot.connected {
+    background: var(--green);
+  }
+
+  .status-dot.error {
+    background: var(--red);
+  }
+
+  @media (max-width: 768px) {
+    .chart-section {
+      padding: 0 12px 32px;
+    }
+    .chart-container {
+      height: 50vh;
+      min-height: 350px;
+    }
+  }
+</style>

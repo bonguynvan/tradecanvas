@@ -4,7 +4,8 @@
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "types": ["svelte"]
   },
   "include": ["src"]
 }
