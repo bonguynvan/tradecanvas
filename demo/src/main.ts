@@ -425,7 +425,7 @@ function buildDrawingSidebar(): void {
   let html = '';
 
   // Cursor button
-  html += `<button class="sidebar-btn active" id="cursor-btn" title="Select">/</button>`;
+  html += `<button class="sidebar-btn active" id="cursor-btn" title="Select"><span class="tooltip">Select</span>/</button>`;
   html += `<div class="sidebar-divider"></div>`;
 
   // Tool groups
@@ -445,6 +445,9 @@ function buildDrawingSidebar(): void {
         html += `<button class="flyout-item" data-tool="${tool.type}">${escapeHtml(tool.label)}</button>`;
       }
       html += `</div>`;
+      html += `<span class="tooltip">${escapeHtml(group.name)}</span>`;
+    } else {
+      html += `<span class="tooltip">${escapeHtml(defaultTool.label)}</span>`;
     }
     html += `</button>`;
   }
@@ -454,10 +457,10 @@ function buildDrawingSidebar(): void {
   html += `<div class="sidebar-divider"></div>`;
 
   // Bottom actions
-  html += `<button class="sidebar-btn" id="btn-magnet" title="Magnet Snap"><span style="font-size:13px">\u2299</span></button>`;
-  html += `<button class="sidebar-btn" id="btn-undo" title="Undo"><span style="font-size:13px">\u21B6</span></button>`;
-  html += `<button class="sidebar-btn" id="btn-redo" title="Redo"><span style="font-size:13px">\u21B7</span></button>`;
-  html += `<button class="sidebar-btn" id="btn-clear-drawings" title="Clear Drawings"><span style="font-size:13px">\u2715</span></button>`;
+  html += `<button class="sidebar-btn" id="btn-magnet" title="Magnet Snap"><span style="font-size:13px">\u2299</span><span class="tooltip">Magnet Snap</span></button>`;
+  html += `<button class="sidebar-btn" id="btn-undo" title="Undo"><span style="font-size:13px">\u21B6</span><span class="tooltip">Undo</span></button>`;
+  html += `<button class="sidebar-btn" id="btn-redo" title="Redo"><span style="font-size:13px">\u21B7</span><span class="tooltip">Redo</span></button>`;
+  html += `<button class="sidebar-btn" id="btn-clear-drawings" title="Clear Drawings"><span style="font-size:13px">\u2715</span><span class="tooltip">Clear Drawings</span></button>`;
 
   sidebar.innerHTML = html;
 
@@ -700,40 +703,18 @@ copyCodeBtn.addEventListener('click', async () => {
   }
 });
 
-// ─── Doc Nav: show/hide sticky nav on scroll ─────────────────────────────
+// ─── Docs Sidebar: active section highlight ───────────────────────────────
 
-const docNav = document.getElementById('doc-nav');
 const docSections = document.querySelectorAll('.doc-section');
-const docNavLinks = document.querySelectorAll<HTMLAnchorElement>('.doc-nav-link');
+const docsSidebarLinks = document.querySelectorAll<HTMLAnchorElement>('.docs-sidebar-link');
 
-// Show the doc-nav once the user scrolls past the quickstart section.
-const quickstartSection = document.querySelector('.quickstart-section');
-
-if (docNav && quickstartSection) {
-  const navObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) {
-          docNav.classList.add('visible');
-        } else {
-          docNav.classList.remove('visible');
-        }
-      }
-    },
-    { rootMargin: '0px', threshold: 0 },
-  );
-  navObserver.observe(quickstartSection);
-}
-
-// ─── Doc Nav: active section highlight ────────────────────────────────────
-
-if (docSections.length > 0 && docNavLinks.length > 0) {
+if (docSections.length > 0 && docsSidebarLinks.length > 0) {
   const sectionObserver = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           const id = (entry.target as HTMLElement).id;
-          docNavLinks.forEach(link => {
+          docsSidebarLinks.forEach(link => {
             link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
           });
         }
@@ -744,17 +725,16 @@ if (docSections.length > 0 && docNavLinks.length > 0) {
   docSections.forEach(section => sectionObserver.observe(section));
 }
 
-// ─── Doc Nav: smooth anchor scrolling ─────────────────────────────────────
+// ─── Docs Sidebar: smooth anchor scrolling ────────────────────────────────
 
-docNavLinks.forEach(link => {
+docsSidebarLinks.forEach(link => {
   link.addEventListener('click', (e: Event) => {
     e.preventDefault();
     const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
     if (!href) return;
     const target = document.querySelector(href);
     if (target) {
-      const navHeight = docNav?.offsetHeight ?? 0;
-      const y = target.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+      const y = target.getBoundingClientRect().top + window.scrollY - 24;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   });
