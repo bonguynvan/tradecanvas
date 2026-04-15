@@ -20,6 +20,10 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 
 ```bash
 npm install @tradecanvas/chart
+# or
+pnpm add @tradecanvas/chart
+# or
+yarn add @tradecanvas/chart
 ```
 
 ## Quick Start

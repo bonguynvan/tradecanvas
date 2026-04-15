@@ -111,6 +111,50 @@
       margin-bottom: 32px;
     }
 
+    .cta-install-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color var(--transition);
+    }
+
+    .cta-install-wrap:hover {
+      border-color: var(--accent);
+    }
+
+    .pm-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pm-tab {
+      flex: 1;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-family: var(--font);
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .pm-tab:not(:last-child) {
+      border-right: 1px solid var(--border);
+    }
+
+    .pm-tab:hover {
+      color: var(--text);
+    }
+
+    .pm-tab.active {
+      color: var(--accent);
+      background: rgba(59, 130, 246, 0.06);
+    }
+
     .cta-install {
       display: inline-flex;
       align-items: center;
@@ -119,15 +163,13 @@
       font-family: var(--font-mono);
       font-size: 14px;
       background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border: none;
       color: var(--text);
       cursor: pointer;
-      transition: border-color var(--transition), background var(--transition);
+      transition: background var(--transition);
     }
 
     .cta-install:hover {
-      border-color: var(--accent);
       background: rgba(59, 130, 246, 0.06);
     }
 

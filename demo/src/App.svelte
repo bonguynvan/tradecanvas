@@ -2,12 +2,19 @@
   import ChartDemo from './components/ChartDemo.svelte';
   import DocSections from './components/DocSections.svelte';
 
-  let copyState = $state('Copy');
+  const PM_COMMANDS = [
+    { label: 'npm', cmd: 'npm install @tradecanvas/chart' },
+    { label: 'pnpm', cmd: 'pnpm add @tradecanvas/chart' },
+    { label: 'yarn', cmd: 'yarn add @tradecanvas/chart' },
+  ] as const;
+
+  let activePm = $state(0);
+  let copyState = $state('COPY');
 
   function handleCopyInstall() {
-    navigator.clipboard.writeText('npm install @tradecanvas/chart').then(() => {
+    navigator.clipboard.writeText(PM_COMMANDS[activePm].cmd).then(() => {
       copyState = 'Copied!';
-      setTimeout(() => { copyState = 'Copy'; }, 1500);
+      setTimeout(() => { copyState = 'COPY'; }, 1500);
     });
   }
 
@@ -54,15 +61,26 @@ chart.connect({
   <p class="hero-subtitle">High-performance canvas trading chart. Zero dependencies.</p>
 
   <div class="cta-row">
-    <button
-      class="cta-install"
-      class:copied={copyState === 'Copied!'}
-      title="Copy to clipboard"
-      onclick={handleCopyInstall}
-    >
-      <span>npm install @tradecanvas/chart</span>
-      <span class="copy-icon">{copyState === 'Copied!' ? 'Copied!' : 'COPY'}</span>
-    </button>
+    <div class="cta-install-wrap">
+      <div class="pm-tabs">
+        {#each PM_COMMANDS as pm, i}
+          <button
+            class="pm-tab"
+            class:active={activePm === i}
+            onclick={() => { activePm = i; }}
+          >{pm.label}</button>
+        {/each}
+      </div>
+      <button
+        class="cta-install"
+        class:copied={copyState === 'Copied!'}
+        title="Copy to clipboard"
+        onclick={handleCopyInstall}
+      >
+        <span>{PM_COMMANDS[activePm].cmd}</span>
+        <span class="copy-icon">{copyState}</span>
+      </button>
+    </div>
     <a href="https://github.com/bonguynvan/tradecanvas" class="cta-btn cta-btn--primary" target="_blank" rel="noopener">GitHub</a>
     <a href="https://www.npmjs.com/package/@tradecanvas/chart" class="cta-btn cta-btn--ghost" target="_blank" rel="noopener">npm</a>
   </div>
