@@ -219,18 +219,22 @@
     onPositionsChange(positions);
   }
 
-  // Place a limit order at a specific price (used by context menu)
+  // Place an order at a specific price (used by context menu / trade-on-chart)
   export function placeLimitOrderAtPrice(side: OrderSide, atPrice: number): void {
+    placeOrderAtPrice(side, 'limit', atPrice);
+  }
+
+  export function placeOrderAtPrice(side: OrderSide, type: 'limit' | 'stop' | 'stopLimit' | 'market', atPrice: number): void {
     if (atPrice <= 0) return;
     const qty = getDefaultQuantity(symbol);
 
     const newOrder: TradingOrder = {
       id: generateId('tc-ord'),
       side,
-      type: 'limit',
+      type,
       price: atPrice,
       quantity: qty,
-      label: 'LIMIT',
+      label: (type === 'stopLimit' ? 'STOP LIMIT' : type.toUpperCase()) as TradingOrder['label'],
       draggable: true,
     };
 

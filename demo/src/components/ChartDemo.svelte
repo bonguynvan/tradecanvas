@@ -125,10 +125,10 @@
       const intent = e.payload;
       if (!intent || !tradingPanel) return;
       const { side, type, price } = intent;
-      if (type === 'limit' || type === 'stop') {
-        tradingPanel.placeLimitOrderAtPrice(side, price);
-      } else {
+      if (type === 'market') {
         tradingPanel.openPositionAtPrice(side, price);
+      } else {
+        tradingPanel.placeOrderAtPrice(side, type, price);
       }
       syncTradingState();
     });
