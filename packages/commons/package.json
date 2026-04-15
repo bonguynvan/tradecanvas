@@ -24,7 +24,7 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
