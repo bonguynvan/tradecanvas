@@ -6,11 +6,12 @@
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
-  import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/chart';
+  import type { ChartType, DrawingToolType, TimeFrame, TradingPosition, TradingOrder } from '@tradecanvas/chart';
   import { SYMBOLS } from '../lib/chartConfig';
   import ChartToolbar from './ChartToolbar.svelte';
   import DrawToolsSidebar from './DrawToolsSidebar.svelte';
   import ChartSettings from './ChartSettings.svelte';
+  import TradingPanel from './TradingPanel.svelte';
   import { DEFAULT_SETTINGS } from '../lib/chartSettings';
   import type { ChartSettingsState } from '../lib/chartSettings';
 
@@ -26,6 +27,11 @@
   let activeDrawingTool: DrawingToolType | null = $state(null);
   let activeIndicators: { instanceId: string; id: string; label: string }[] = $state([]);
   let symbolIndex = $state(0);
+
+  // Trading state
+  let currentPrice = $state(0);
+  let replayState: 'playing' | 'paused' | 'stopped' = $state('stopped');
+  let tradingPanel: TradingPanel | undefined = $state();
 
   // Connection status
   let statusState: 'connecting' | 'connected' | 'error' = $state('connecting');
@@ -70,6 +76,35 @@
       },
     });
 
+    // Track current price from crosshair or periodic update
+    chart.on('crosshairMove', (e: any) => {
+      const bar = e.payload?.bar;
+      if (bar && bar.close > 0) {
+        currentPrice = bar.close;
+      }
+    });
+
+    // Listen for data updates to keep current price fresh
+    chart.on('dataUpdate', () => {
+      updateCurrentPriceFromLastBar();
+    });
+
+    // Handle order drag events from chart
+    chart.on('orderModify', (e: any) => {
+      const { orderId, newPrice } = e.payload ?? {};
+      if (orderId && newPrice && tradingPanel) {
+        tradingPanel.updateOrderPrice(orderId, newPrice);
+      }
+    });
+
+    // Handle position SL/TP drag events from chart
+    chart.on('positionModify', (e: any) => {
+      const { positionId, stopLoss, takeProfit } = e.payload ?? {};
+      if (positionId && tradingPanel) {
+        tradingPanel.updatePositionSlTp(positionId, stopLoss, takeProfit);
+      }
+    });
+
     connectStream();
   });
 
@@ -101,6 +136,13 @@
 
       statusState = 'connected';
       statusMessage = 'Live';
+
+      // Sync trading state after connection
+      updateCurrentPriceFromLastBar();
+      if (tradingPanel) {
+        chart.setPositions(tradingPanel.getPositions());
+        chart.setOrders(tradingPanel.getOrders());
+      }
     } catch (err: unknown) {
       statusState = 'error';
       statusMessage = err instanceof Error ? err.message : 'Connection failed';
@@ -220,6 +262,50 @@
     applySettings(settings);
   }
 
+  function updateCurrentPriceFromLastBar(): void {
+    if (!chart) return;
+    try {
+      const data = (chart as any).dataManager?.getData();
+      if (data && data.length > 0) {
+        const last = data[data.length - 1];
+        if (last.close > 0) currentPrice = last.close;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function handlePositionsChange(positions: TradingPosition[]): void {
+    chart?.setPositions(positions);
+  }
+
+  function handleOrdersChange(orders: TradingOrder[]): void {
+    chart?.setOrders(orders);
+  }
+
+  function handleReplay(): void {
+    if (!chart) return;
+    const state = chart.getReplayState();
+    if (state === 'paused') {
+      chart.replayResume();
+    } else {
+      chart.replay({ speed: 1, startIndex: 0 });
+    }
+    replayState = chart.getReplayState();
+  }
+
+  function handleReplayPause(): void {
+    if (!chart) return;
+    chart.replayPause();
+    replayState = chart.getReplayState();
+  }
+
+  function handleReplayStop(): void {
+    if (!chart) return;
+    chart.replayStop();
+    replayState = chart.getReplayState();
+  }
+
   function applySettings(patch: Partial<ChartSettingsState>) {
     if (!chart) return;
 
@@ -268,6 +354,10 @@
       onScreenshot={handleScreenshot}
       onSettings={() => { settingsOpen = true; }}
       onToggleTheme={handleToggleTheme}
+      {replayState}
+      onReplay={handleReplay}
+      onReplayPause={handleReplayPause}
+      onReplayStop={handleReplayStop}
     />
 
     <div class="chart-body">
@@ -283,6 +373,14 @@
       />
       <div class="chart-container" bind:this={container}></div>
     </div>
+
+    <TradingPanel
+      bind:this={tradingPanel}
+      {currentPrice}
+      symbol={currentSymbol}
+      onPositionsChange={handlePositionsChange}
+      onOrdersChange={handleOrdersChange}
+    />
 
     <div class="chart-status">
       <div class="status-indicator">

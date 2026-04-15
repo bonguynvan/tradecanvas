@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartType, TimeFrame } from '@tradecanvas/chart';
-  import { BarChart3, ChevronDown, TrendingUp, Camera, Settings, Moon, Sun, X } from 'lucide-svelte';
+  import { BarChart3, ChevronDown, TrendingUp, Camera, Settings, Moon, Sun, X, Play, Pause, Square } from 'lucide-svelte';
   import { TIMEFRAMES, CHART_TYPES, INDICATORS, POPULAR_INDICATORS } from '../lib/chartConfig';
   import Dropdown from './Dropdown.svelte';
 
@@ -24,6 +24,10 @@
     onScreenshot: () => void;
     onSettings: () => void;
     onToggleTheme: () => void;
+    replayState: 'playing' | 'paused' | 'stopped';
+    onReplay: () => void;
+    onReplayPause: () => void;
+    onReplayStop: () => void;
   }
 
   let {
@@ -32,6 +36,7 @@
     onSymbolClick, onTimeframe, onChartType,
     onAddIndicator, onRemoveIndicator,
     onScreenshot, onSettings, onToggleTheme,
+    replayState, onReplay, onReplayPause, onReplayStop,
   }: Props = $props();
 
   const popularIndicators = $derived(
@@ -126,6 +131,26 @@
   <span class="toolbar-spacer"></span>
 
   <!-- Right side buttons -->
+  {#if replayState === 'stopped'}
+    <button class="tb-icon" title="Start Replay" onclick={onReplay}>
+      <Play size={14} />
+    </button>
+  {:else if replayState === 'playing'}
+    <button class="tb-icon replay-active" title="Pause Replay" onclick={onReplayPause}>
+      <Pause size={14} />
+    </button>
+    <button class="tb-icon" title="Stop Replay" onclick={onReplayStop}>
+      <Square size={12} />
+    </button>
+  {:else}
+    <button class="tb-icon replay-active" title="Resume Replay" onclick={onReplay}>
+      <Play size={14} />
+    </button>
+    <button class="tb-icon" title="Stop Replay" onclick={onReplayStop}>
+      <Square size={12} />
+    </button>
+  {/if}
+  <span class="toolbar-sep"></span>
   <button class="tb-icon" title="Screenshot" onclick={onScreenshot}>
     <Camera size={14} />
   </button>
@@ -237,6 +262,10 @@
 
   :global(body.light) .tb-icon:hover {
     background: rgba(0, 0, 0, 0.04);
+  }
+
+  .tb-icon.replay-active {
+    color: var(--accent);
   }
 
   .badge-count {
