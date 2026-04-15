@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartType, TimeFrame } from '@tradecanvas/chart';
-  import { BarChart3, ChevronDown, TrendingUp, Camera, Settings, Moon, Sun, X, Play, Pause, Square } from 'lucide-svelte';
+  import { BarChart3, ChevronDown, TrendingUp, Camera, Settings, Moon, Sun, X, Play, Pause, Square, Receipt } from 'lucide-svelte';
   import { TIMEFRAMES, CHART_TYPES, INDICATORS, POPULAR_INDICATORS } from '../lib/chartConfig';
   import Dropdown from './Dropdown.svelte';
 
@@ -28,6 +28,10 @@
     onReplay: () => void;
     onReplayPause: () => void;
     onReplayStop: () => void;
+    tradingOpen?: boolean;
+    onToggleTrading?: () => void;
+    positionCount?: number;
+    totalPnl?: number;
   }
 
   let {
@@ -37,6 +41,7 @@
     onAddIndicator, onRemoveIndicator,
     onScreenshot, onSettings, onToggleTheme,
     replayState, onReplay, onReplayPause, onReplayStop,
+    tradingOpen = false, onToggleTrading, positionCount = 0, totalPnl = 0,
   }: Props = $props();
 
   const popularIndicators = $derived(
@@ -148,6 +153,20 @@
     </button>
     <button class="tb-icon" title="Stop Replay" onclick={onReplayStop}>
       <Square size={12} />
+    </button>
+  {/if}
+  <span class="toolbar-sep"></span>
+  {#if onToggleTrading}
+    <button
+      class="tb-icon"
+      class:trading-active={tradingOpen}
+      title="Trading"
+      onclick={onToggleTrading}
+    >
+      <Receipt size={14} />
+      {#if positionCount > 0}
+        <span class="badge-count trading-badge">{positionCount}</span>
+      {/if}
     </button>
   {/if}
   <span class="toolbar-sep"></span>
@@ -266,6 +285,29 @@
 
   .tb-icon.replay-active {
     color: var(--accent);
+  }
+
+  .tb-icon.trading-active {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .tb-icon {
+    position: relative;
+  }
+
+  .trading-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 9px;
+    min-width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
   }
 
   .badge-count {

@@ -12,6 +12,7 @@
   import DrawToolsSidebar from './DrawToolsSidebar.svelte';
   import ChartSettings from './ChartSettings.svelte';
   import TradingPanel from './TradingPanel.svelte';
+  import TradeContextMenu from './TradeContextMenu.svelte';
   import { DEFAULT_SETTINGS } from '../lib/chartSettings';
   import type { ChartSettingsState } from '../lib/chartSettings';
 
@@ -32,6 +33,15 @@
   let currentPrice = $state(0);
   let replayState: 'playing' | 'paused' | 'stopped' = $state('stopped');
   let tradingPanel: TradingPanel | undefined = $state();
+  let tradingOpen = $state(false);
+  let positionCount = $state(0);
+  let tradingTotalPnl = $state(0);
+
+  // Context menu state
+  let contextMenuVisible = $state(false);
+  let contextMenuX = $state(0);
+  let contextMenuY = $state(0);
+  let contextMenuPrice = $state(0);
 
   // Connection status
   let statusState: 'connecting' | 'connected' | 'error' = $state('connecting');
@@ -43,6 +53,15 @@
 
   // Indicator instance map (indicatorId -> instanceId)
   const indicatorMap = new Map<string, string>();
+
+  // Keep position count and PnL synced with trading panel
+  $effect(() => {
+    // Re-run whenever currentPrice changes to update PnL
+    if (currentPrice && tradingPanel) {
+      positionCount = tradingPanel.getPositionCount();
+      tradingTotalPnl = tradingPanel.getTotalPnl();
+    }
+  });
 
   onMount(() => {
     if (!container) return;
@@ -306,6 +325,76 @@
     replayState = chart.getReplayState();
   }
 
+  function handleToggleTrading(): void {
+    tradingOpen = !tradingOpen;
+  }
+
+  function handleTradingClose(): void {
+    tradingOpen = false;
+  }
+
+  function syncTradingState(): void {
+    if (tradingPanel) {
+      positionCount = tradingPanel.getPositionCount();
+      tradingTotalPnl = tradingPanel.getTotalPnl();
+    }
+  }
+
+  function handlePositionsChangeWrapped(pos: TradingPosition[]): void {
+    handlePositionsChange(pos);
+    syncTradingState();
+  }
+
+  function handleOrdersChangeWrapped(ord: TradingOrder[]): void {
+    handleOrdersChange(ord);
+    syncTradingState();
+  }
+
+  function yToPrice(clientY: number): number {
+    if (!container) return 0;
+    try {
+      const state = (chart as any)?.viewport?.getState?.();
+      if (state) {
+        const { chartRect, priceRange } = state;
+        const containerRect = container.getBoundingClientRect();
+        const relativeY = clientY - containerRect.top;
+        const ratio = (relativeY - chartRect.y) / chartRect.height;
+        return priceRange.max - ratio * (priceRange.max - priceRange.min);
+      }
+    } catch {
+      // fallback
+    }
+    return currentPrice;
+  }
+
+  function handleChartContextMenu(e: MouseEvent): void {
+    e.preventDefault();
+    contextMenuX = e.clientX;
+    contextMenuY = e.clientY;
+    contextMenuPrice = yToPrice(e.clientY);
+    contextMenuVisible = true;
+  }
+
+  function handleContextMenuClose(): void {
+    contextMenuVisible = false;
+  }
+
+  function handleContextBuyMarket(price: number): void {
+    tradingPanel?.openPositionAtPrice('buy', price);
+  }
+
+  function handleContextSellMarket(price: number): void {
+    tradingPanel?.openPositionAtPrice('sell', price);
+  }
+
+  function handleContextBuyLimit(price: number): void {
+    tradingPanel?.placeLimitOrderAtPrice('buy', price);
+  }
+
+  function handleContextSellLimit(price: number): void {
+    tradingPanel?.placeLimitOrderAtPrice('sell', price);
+  }
+
   function applySettings(patch: Partial<ChartSettingsState>) {
     if (!chart) return;
 
@@ -358,6 +447,10 @@
       onReplay={handleReplay}
       onReplayPause={handleReplayPause}
       onReplayStop={handleReplayStop}
+      {tradingOpen}
+      onToggleTrading={handleToggleTrading}
+      {positionCount}
+      totalPnl={tradingTotalPnl}
     />
 
     <div class="chart-body">
@@ -371,15 +464,30 @@
         onRedo={handleRedo}
         onClearDrawings={handleClearDrawings}
       />
-      <div class="chart-container" bind:this={container}></div>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="chart-container" bind:this={container} oncontextmenu={handleChartContextMenu}></div>
     </div>
 
     <TradingPanel
       bind:this={tradingPanel}
       {currentPrice}
       symbol={currentSymbol}
-      onPositionsChange={handlePositionsChange}
-      onOrdersChange={handleOrdersChange}
+      open={tradingOpen}
+      onClose={handleTradingClose}
+      onPositionsChange={handlePositionsChangeWrapped}
+      onOrdersChange={handleOrdersChangeWrapped}
+    />
+
+    <TradeContextMenu
+      x={contextMenuX}
+      y={contextMenuY}
+      price={contextMenuPrice}
+      visible={contextMenuVisible}
+      onBuyMarket={handleContextBuyMarket}
+      onSellMarket={handleContextSellMarket}
+      onBuyLimit={handleContextBuyLimit}
+      onSellLimit={handleContextSellLimit}
+      onClose={handleContextMenuClose}
     />
 
     <div class="chart-status">
@@ -417,6 +525,7 @@
     background: var(--bg);
     display: flex;
     flex-direction: column;
+    position: relative;
   }
 
   .chart-body {

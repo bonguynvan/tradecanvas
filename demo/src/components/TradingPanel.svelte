@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { TradingPosition, TradingOrder, OrderSide } from '@tradecanvas/chart';
-  import { X, RefreshCw, ChevronUp, ChevronDown } from 'lucide-svelte';
+  import { X, RefreshCw } from 'lucide-svelte';
 
   const STORAGE_BALANCE = 'tc-demo-balance';
   const STORAGE_POSITIONS = 'tc-demo-positions';
@@ -10,13 +10,13 @@
   interface Props {
     currentPrice: number;
     symbol: string;
+    open: boolean;
+    onClose: () => void;
     onPositionsChange: (positions: TradingPosition[]) => void;
     onOrdersChange: (orders: TradingOrder[]) => void;
   }
 
-  let { currentPrice, symbol, onPositionsChange, onOrdersChange }: Props = $props();
-
-  let expanded = $state(false);
+  let { currentPrice, symbol, open, onClose, onPositionsChange, onOrdersChange }: Props = $props();
   let balance = $state(INITIAL_BALANCE);
   let positions: TradingPosition[] = $state([]);
   let orders: TradingOrder[] = $state([]);
@@ -195,25 +195,68 @@
   // Expose current state for parent to call setPositions/setOrders on mount
   export function getPositions(): TradingPosition[] { return positions; }
   export function getOrders(): TradingOrder[] { return orders; }
+  export function getPositionCount(): number { return positions.length; }
+  export function getTotalPnl(): number { return totalPnl; }
+
+  // Open a position at a specific price (used by context menu)
+  export function openPositionAtPrice(side: OrderSide, atPrice: number): void {
+    if (atPrice <= 0) return;
+    const qty = getDefaultQuantity(symbol);
+    const slMultiplier = side === 'buy' ? 0.98 : 1.02;
+    const tpMultiplier = side === 'buy' ? 1.04 : 0.96;
+
+    const newPos: TradingPosition = {
+      id: generateId('tc-pos'),
+      side,
+      entryPrice: atPrice,
+      quantity: qty,
+      stopLoss: parseFloat((atPrice * slMultiplier).toFixed(2)),
+      takeProfit: parseFloat((atPrice * tpMultiplier).toFixed(2)),
+    };
+
+    positions = [...positions, newPos];
+    saveState();
+    onPositionsChange(positions);
+  }
+
+  // Place a limit order at a specific price (used by context menu)
+  export function placeLimitOrderAtPrice(side: OrderSide, atPrice: number): void {
+    if (atPrice <= 0) return;
+    const qty = getDefaultQuantity(symbol);
+
+    const newOrder: TradingOrder = {
+      id: generateId('tc-ord'),
+      side,
+      type: 'limit',
+      price: atPrice,
+      quantity: qty,
+      label: 'LIMIT',
+      draggable: true,
+    };
+
+    orders = [...orders, newOrder];
+    saveState();
+    onOrdersChange(orders);
+  }
 </script>
 
-<div class="trading-panel" class:expanded>
-  <button class="trading-toggle" onclick={() => { expanded = !expanded; }}>
-    <span class="toggle-label">Trading</span>
-    <span class="toggle-balance">Balance: ${formatPrice(balance)}</span>
+{#if open}
+  <div class="trading-popup">
+    <div class="popup-header">
+      <div class="header-left">
+        <span class="header-title">Paper Trading</span>
+        <span class="header-balance">${formatPrice(balance)}</span>
+      </div>
+      <button class="btn-close-popup" title="Close" onclick={onClose}>
+        <X size={14} />
+      </button>
+    </div>
     {#if totalPnl !== 0}
-      <span class="toggle-pnl" class:profit={totalPnl >= 0} class:loss={totalPnl < 0}>
+      <div class="popup-pnl" class:profit={totalPnl >= 0} class:loss={totalPnl < 0}>
         PnL: {formatUsd(totalPnl)} ({formatPercent(totalPnlPercent)})
-      </span>
+      </div>
     {/if}
-    {#if expanded}
-      <ChevronDown size={12} />
-    {:else}
-      <ChevronUp size={12} />
-    {/if}
-  </button>
 
-  {#if expanded}
     <div class="trading-content">
       <div class="trading-actions">
         <div class="action-group">
@@ -225,7 +268,7 @@
           <button class="btn-limit-sell" onclick={() => placeLimitOrder('sell')}>Limit</button>
         </div>
         <div class="action-group action-right">
-          <span class="current-price">Price: {formatPrice(currentPrice)}</span>
+          <span class="current-price">{formatPrice(currentPrice)}</span>
           <button class="btn-reset" title="Reset all" onclick={resetAll}>
             <RefreshCw size={12} />
           </button>
@@ -233,7 +276,7 @@
       </div>
 
       {#if positions.length > 0}
-        <div class="section-label">Open Positions</div>
+        <div class="section-label">Positions</div>
         <div class="list">
           {#each positions as pos (pos.id)}
             {@const pnl = computePnl(pos)}
@@ -258,7 +301,7 @@
       {/if}
 
       {#if orders.length > 0}
-        <div class="section-label">Pending Orders</div>
+        <div class="section-label">Orders</div>
         <div class="list">
           {#each orders as ord (ord.id)}
             <div class="row">
@@ -276,61 +319,94 @@
         </div>
       {/if}
     </div>
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
-  .trading-panel {
-    border-top: 1px solid var(--border);
+  .trading-popup {
+    position: absolute;
+    top: 44px;
+    right: 8px;
+    width: 360px;
+    max-height: 400px;
     background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
 
-  .trading-toggle {
+  .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 6px 16px;
-    border: none;
-    background: none;
-    color: var(--text-dim);
-    font-size: 11px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background var(--transition);
+    gap: 10px;
   }
 
-  .trading-toggle:hover {
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  :global(body.light) .trading-toggle:hover {
-    background: rgba(0, 0, 0, 0.02);
-  }
-
-  .toggle-label {
-    font-weight: 600;
+  .header-title {
+    font-size: 12px;
+    font-weight: 700;
     color: var(--text);
-    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
-  .toggle-balance {
+  .header-balance {
     font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
     color: var(--text-muted);
   }
 
-  .toggle-pnl {
-    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  .btn-close-popup {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition);
   }
 
-  .toggle-pnl.profit { color: var(--green); }
-  .toggle-pnl.loss { color: var(--red); }
+  .btn-close-popup:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+  }
+
+  :global(body.light) .btn-close-popup:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .popup-pnl {
+    padding: 4px 12px;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .popup-pnl.profit { color: var(--green); }
+  .popup-pnl.loss { color: var(--red); }
 
   .trading-content {
-    padding: 0 16px 8px;
+    padding: 8px 12px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
   }
 
   .trading-actions {
