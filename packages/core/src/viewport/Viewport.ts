@@ -97,6 +97,10 @@ export class Viewport {
     }
   }
 
+  setPriceRange(min: number, max: number): void {
+    this.state.priceRange = { min, max };
+  }
+
   scrollBy(deltaPixels: number): void {
     this.state.offset += deltaPixels;
     this.clampOffset();

@@ -134,6 +134,34 @@ export class IndicatorEngine {
     Object.assign(instance.style, style);
   }
 
+  /** Compute the min/max of all visible overlay indicator values within a bar index range. */
+  getOverlayPriceRange(from: number, to: number): { min: number; max: number } | null {
+    let gMin = Infinity;
+    let gMax = -Infinity;
+
+    for (const instance of this.instances.values()) {
+      if (!instance.output || !instance.config.visible) continue;
+      if (instance.plugin.descriptor.placement !== 'overlay') continue;
+
+      let idx = 0;
+      for (const [, val] of instance.output.values) {
+        if (idx >= from && idx <= to) {
+          for (const key in val) {
+            const v = val[key];
+            if (v !== undefined && isFinite(v)) {
+              if (v < gMin) gMin = v;
+              if (v > gMax) gMax = v;
+            }
+          }
+        }
+        idx++;
+      }
+    }
+
+    if (gMin === Infinity) return null;
+    return { min: gMin, max: gMax };
+  }
+
   getPanelIndicators(): { instanceId: string; descriptor: IndicatorDescriptor }[] {
     const result: { instanceId: string; descriptor: IndicatorDescriptor }[] = [];
     for (const [id, instance] of this.instances) {

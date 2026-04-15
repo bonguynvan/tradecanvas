@@ -32,6 +32,6 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@tradecanvas/commons": "^0.1.0"
+    "@tradecanvas/commons": "workspace:*"
   }
 }

@@ -1358,6 +1358,27 @@ export class Chart {
     const displayData = this.getDisplayData();
     this.viewport.updateData(displayData, this.options.autoScale !== false);
 
+    // Expand price range to include overlay indicator values (BB, Ichimoku, etc.)
+    if (this.options.autoScale !== false) {
+      const vs = this.viewport.getState();
+      const overlayRange = this.indicatorEngine.getOverlayPriceRange(
+        vs.visibleRange.from,
+        Math.min(vs.visibleRange.to, displayData.length - 1),
+      );
+      if (overlayRange) {
+        const current = vs.priceRange;
+        const expandedMin = Math.min(current.min, overlayRange.min);
+        const expandedMax = Math.max(current.max, overlayRange.max);
+        if (expandedMin < current.min || expandedMax > current.max) {
+          const range = expandedMax - expandedMin || 1;
+          this.viewport.setPriceRange(
+            expandedMin - range * 0.02,
+            expandedMax + range * 0.02,
+          );
+        }
+      }
+    }
+
     // Scroll to end AFTER updateData so dataLength is current
     if (scrollToEnd) this.viewport.scrollToEnd();
 

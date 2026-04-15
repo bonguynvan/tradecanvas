@@ -73,17 +73,17 @@ importers:
   packages/core:
     dependencies:
       '@tradecanvas/commons':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: workspace:*
+        version: link:../commons
 
   packages/library:
     dependencies:
       '@tradecanvas/commons':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: workspace:*
+        version: link:../commons
       '@tradecanvas/core':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 
@@ -370,12 +370,6 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
       vite: ^6.0.0
-
-  '@tradecanvas/commons@0.1.0':
-    resolution: {integrity: sha512-97zxXj6H726v07PGzECphucDwn4lnTEfUOcCnplfHELH325hfO3GvhUi90mcrvrGHTaD1K5Ski9NpQni5hDidQ==}
-
-  '@tradecanvas/core@0.1.0':
-    resolution: {integrity: sha512-2cgdTcch5/tospERskBnw73Cohu0ysmOFl2S9Cs1ZWFUQuNZEKD90SaIv44+XS0l6M7AUseTTWRxV0Ha4LecVw==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -1296,12 +1290,6 @@ snapshots:
       vitefu: 1.1.3(vite@8.0.8)
     transitivePeerDependencies:
       - supports-color
-
-  '@tradecanvas/commons@0.1.0': {}
-
-  '@tradecanvas/core@0.1.0':
-    dependencies:
-      '@tradecanvas/commons': link:packages/commons
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
