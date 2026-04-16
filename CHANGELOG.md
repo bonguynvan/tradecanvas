@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.0 (2026-04-16)
+
+### Features
+
+- **WaterfallChart** — Running cumulative visualization with positive/negative/total bar types. Perfect for P&L attribution, revenue bridges, cash flow analysis
+  - Auto-detects bar type from value sign (explicit `type` always wins)
+  - Dashed/solid/none connector lines between bars
+  - Value labels, category labels, crosshair tooltip with cumulative total
+- **GaugeChart** — Speedometer-style gauge for KPIs, risk scores, sentiment
+  - Colored zones for value ranges
+  - Smooth `setValue()` animation with easeOutCubic
+  - Configurable arc angles and thickness
+  - Center value label + optional subtitle
+
+### Performance
+
+- Batched path operations grouped by color (single fill per color group)
+- Integer pixel rounding for crisp 1px lines
+- Cached trig calculations in gauge rendering
+- rAF-coalesced animation (safe on rapid `setValue` calls)
+- No per-element `beginPath+stroke` loops
+
 ## 0.2.0 (2026-04-16)
 
 ### Features

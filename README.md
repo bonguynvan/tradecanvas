@@ -81,9 +81,14 @@ That's it. A full-featured trading chart with live data in 15 lines.
 | DepthChart | Bid/ask order book visualization with cumulative volume areas |
 | EquityCurveChart | Portfolio equity line with drawdown shading and benchmark comparison |
 | HeatmapChart | Colored cell grid with treemap layout — for sector/market performance |
+| WaterfallChart | Running cumulative bars — P&L attribution, revenue bridge, cash flow |
+| GaugeChart | Speedometer-style gauge — KPIs, risk scores, Fear & Greed index |
 
 ```typescript
-import { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart } from '@tradecanvas/chart'
+import {
+  SparklineChart, DepthChart, EquityCurveChart, HeatmapChart,
+  WaterfallChart, GaugeChart,
+} from '@tradecanvas/chart'
 
 // Sparkline in a 120x48 container
 new SparklineChart(el, { data: [100, 102, 98, 105, 103], mode: 'area', color: '#26A69A' })
@@ -96,6 +101,26 @@ new DepthChart(el, { data: { bids, asks }, crosshair: true })
 
 // Market heatmap (treemap weighted by market cap)
 new HeatmapChart(el, { data: cells, weighted: true })
+
+// P&L waterfall
+new WaterfallChart(el, {
+  data: [
+    { label: 'Start', value: 10000, type: 'total' },
+    { label: 'Gain', value: 1850 },
+    { label: 'Loss', value: -620 },
+    { label: 'End', value: 11230, type: 'total' },
+  ],
+})
+
+// Fear & Greed gauge
+const gauge = new GaugeChart(el, {
+  value: 72,
+  zones: [
+    { from: 0, to: 25, color: '#ef4444' },
+    { from: 75, to: 100, color: '#10b981' },
+  ],
+})
+gauge.setValue(85) // animates smoothly
 ```
 
 ### Indicators (built-in)
