@@ -377,6 +377,7 @@
     if (patch.crosshairMode !== undefined) chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) chart.setAutoScale(patch.autoScale);
     if (patch.logScale !== undefined) chart.setLogScale(patch.logScale);
+    if (patch.numberLocale !== undefined) chart.setNumberLocale(patch.numberLocale);
 
     // Apply theme colors
     const currentTheme = chart.getTheme();

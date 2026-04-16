@@ -144,6 +144,21 @@
               <option value="hidden">Hidden</option>
             </select>
           </div>
+          <div class="settings-row">
+            <span class="settings-label">Number Locale</span>
+            <select
+              class="settings-select"
+              value={settings.numberLocale}
+              onchange={(e) => onChange({ numberLocale: e.currentTarget.value })}
+            >
+              <option value="en-US">en-US (65,234.00)</option>
+              <option value="de-DE">de-DE (65.234,00)</option>
+              <option value="fr-FR">fr-FR (65 234,00)</option>
+              <option value="vi-VN">vi-VN (65.234,00)</option>
+              <option value="en-IN">en-IN (65,234.00)</option>
+              <option value="ja-JP">ja-JP (65,234.00)</option>
+            </select>
+          </div>
         </div>
       {/if}
 

@@ -264,9 +264,13 @@ const chart = new Chart(element, {
   theme: DARK_THEME,
   autoScale: true,
   rightMargin: 5,
+  numberLocale: 'en-US',  // or 'de-DE', 'vi-VN', etc. — BCP 47 locale
   crosshair: { mode: 'magnet' },
   features: { drawings: true, indicators: true, trading: true, volume: true },
 })
+
+// Change locale at runtime
+chart.setNumberLocale('de-DE')  // 65.234,00
 ```
 
 ### Key Methods

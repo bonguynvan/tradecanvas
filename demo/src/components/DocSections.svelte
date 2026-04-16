@@ -90,6 +90,7 @@
     <a class="docs-sidebar-link" href="#getting-started">Getting Started</a>
     <a class="docs-sidebar-link" href="#data">Data Format</a>
     <a class="docs-sidebar-link" href="#custom-adapter">Custom Adapter</a>
+    <a class="docs-sidebar-link" href="#locale">Number Locale</a>
     <a class="docs-sidebar-link" href="#themes">Themes</a>
     <a class="docs-sidebar-link" href="#indicators">Indicators</a>
     <a class="docs-sidebar-link" href="#drawings">Drawing Tools</a>
@@ -426,6 +427,47 @@ chart.<span class="fn">setCurrentPrice</span>(<span class="bool">114.5</span>)</
   <span class="fn">dispose</span>(): <span class="fn">void</span>
 {'}'}</pre>
       </div>
+    </div>
+  </section>
+
+  <!-- Locale Formatting -->
+  <section class="doc-section" id="locale">
+    <h2 class="section-title">Number Locale</h2>
+    <p class="section-subtitle">Control thousand separators and decimal symbols to match your users' locale.</p>
+
+    <p class="doc-text">Set a BCP 47 locale in the chart options. Affects price axis labels, crosshair tooltip, indicator legend, and trading overlay values.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Locale options</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">const</span> chart = <span class="kw">new</span> <span class="fn">Chart</span>(el, {'{'}
+  chartType: <span class="str">'candlestick'</span>,
+  numberLocale: <span class="str">'en-US'</span>,     <span class="cmt">// 65,234.00 (default)</span>
+{'}'})
+
+<span class="cmt">// European — dot as thousand separator, comma as decimal</span>
+chart.<span class="fn">setNumberLocale</span>(<span class="str">'de-DE'</span>)  <span class="cmt">// 65.234,00</span>
+
+<span class="cmt">// Vietnamese</span>
+chart.<span class="fn">setNumberLocale</span>(<span class="str">'vi-VN'</span>)  <span class="cmt">// 65.234,00</span>
+
+<span class="cmt">// Indian (grouping: 65,234 → 65,234 / 12,34,567 for larger numbers)</span>
+chart.<span class="fn">setNumberLocale</span>(<span class="str">'en-IN'</span>)  <span class="cmt">// 65,234.00</span></pre>
+      </div>
+    </div>
+
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead><tr><th>Locale</th><th>Example</th><th>Thousand separator</th><th>Decimal</th></tr></thead>
+        <tbody>
+          <tr><td><code>en-US</code></td><td><code>65,234.00</code></td><td>comma</td><td>period</td></tr>
+          <tr><td><code>de-DE</code></td><td><code>65.234,00</code></td><td>period</td><td>comma</td></tr>
+          <tr><td><code>fr-FR</code></td><td><code>65 234,00</code></td><td>space</td><td>comma</td></tr>
+          <tr><td><code>vi-VN</code></td><td><code>65.234,00</code></td><td>period</td><td>comma</td></tr>
+          <tr><td><code>en-IN</code></td><td><code>65,234.00</code></td><td>comma (Indian grouping)</td><td>period</td></tr>
+          <tr><td><code>ja-JP</code></td><td><code>65,234.00</code></td><td>comma</td><td>period</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 

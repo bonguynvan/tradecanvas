@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- **Locale-aware number formatting** — new `numberLocale` option on Chart (BCP 47 format like `'en-US'`, `'de-DE'`, `'vi-VN'`)
+  - `'en-US'` → `65,234.00`
+  - `'de-DE'` → `65.234,00`
+  - `'vi-VN'` → `65.234,00`
+  - Runtime change: `chart.setNumberLocale('de-DE')`
+  - Affects price axis, crosshair tooltip, indicator legend, trading overlay
+
+### Bug Fixes
+
+- **Keyboard shortcuts were broken** — `KeyboardHandler` was constructed then discarded with `void new`. Arrow keys, +/-, Home/End, and Space did nothing. Now properly wired to window with focus-aware handling (ignores keystrokes in inputs/textareas)
+- **Streaming indicators froze until bar close** — `updateLastBar()` and `updateLastBarFromTick()` now recalculate indicators on every tick. Moving averages, Bollinger Bands, RSI, etc. now update in real-time
+- **StreamManager listener leak** — adapter listeners accumulated on reconnect because unsubscribers weren't tracked. Now properly cleaned up across connect/disconnect cycles
+- **Price formatting without thousand separators** — `formatPrice()` now uses `toLocaleString` for readability (`65,234.00` vs `65234.00`)
+
+### Performance
+
+- **`getBoundingClientRect` cached** in InteractionManager — was called on every mousemove. Now invalidated only on pointerdown, resize, and scroll. Major reduction in layout flushes during pan/crosshair
+- **`structuredClone` replaced** in drag/resize hot paths with hand-rolled shallow clone (5-10x faster for `DrawingState` shape)
+
 ## 0.3.0 (2026-04-16)
 
 ### Features

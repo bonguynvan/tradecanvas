@@ -12,6 +12,7 @@ export interface ChartSettingsState {
   logScale: boolean;
   autoScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
+  numberLocale: string;
 }
 
 export const DEFAULT_SETTINGS: ChartSettingsState = {
@@ -28,4 +29,5 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   logScale: false,
   autoScale: true,
   crosshairMode: 'magnet',
+  numberLocale: 'en-US',
 };
