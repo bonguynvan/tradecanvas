@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import {
     SparklineChart,
     DepthChart,
@@ -118,7 +118,7 @@
   ];
 
   // --- Container refs ---
-  let sparkContainers: (HTMLDivElement | undefined)[] = $state(Array(6).fill(undefined));
+  const sparkContainers: (HTMLDivElement | undefined)[] = new Array(6).fill(undefined);
   let equityContainer: HTMLDivElement | undefined = $state();
   let depthContainer: HTMLDivElement | undefined = $state();
   let heatmapContainer: HTMLDivElement | undefined = $state();
@@ -156,7 +156,9 @@
     heatmapChart?.setTheme(theme);
   }
 
-  onMount(() => {
+  onMount(async () => {
+    // Wait for DOM to be fully laid out
+    await tick();
     const theme = currentThemeName();
 
     // Create sparkline charts

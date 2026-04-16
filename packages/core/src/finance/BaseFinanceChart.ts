@@ -51,6 +51,11 @@ export abstract class BaseFinanceChart {
     if (this.frameId !== null) return;
     this.frameId = requestAnimationFrame(() => {
       this.frameId = null;
+      // Ensure we have current size (may have been 0 on first mount)
+      if (this.width === 0 || this.height === 0) {
+        this.updateSize();
+      }
+      if (this.width === 0 || this.height === 0) return;
       this.ctx.save();
       this.ctx.scale(this.dpr, this.dpr);
       this.ctx.clearRect(0, 0, this.width, this.height);
