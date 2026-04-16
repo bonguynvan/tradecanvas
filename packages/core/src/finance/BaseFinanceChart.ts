@@ -41,10 +41,11 @@ export abstract class BaseFinanceChart {
 
   private updateSize(): void {
     this.dpr = window.devicePixelRatio || 1;
-    this.width = this.container.clientWidth;
-    this.height = this.container.clientHeight;
-    this.canvas.width = this.width * this.dpr;
-    this.canvas.height = this.height * this.dpr;
+    const rect = this.container.getBoundingClientRect();
+    this.width = rect.width || this.container.clientWidth;
+    this.height = rect.height || this.container.clientHeight;
+    this.canvas.width = Math.max(1, Math.floor(this.width * this.dpr));
+    this.canvas.height = Math.max(1, Math.floor(this.height * this.dpr));
   }
 
   requestRender(): void {

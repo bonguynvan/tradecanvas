@@ -1125,6 +1125,29 @@ depth.<span class="fn">update</span>(newDepthData)</pre>
 
     <div class="changelog">
       <div class="changelog-version">
+        <h3>0.2.0 <span class="changelog-date">2026-04-16</span></h3>
+        <div class="changelog-group">
+          <h4>Features</h4>
+          <ul>
+            <li>4 finance chart components: <code>SparklineChart</code>, <code>DepthChart</code>, <code>EquityCurveChart</code>, <code>HeatmapChart</code></li>
+            <li>Client-side order matching engine with spread and commission</li>
+            <li>Trade history with win rate and PnL stats</li>
+            <li>Toast notifications for order fills and SL/TP triggers</li>
+            <li>StackBlitz sandboxes for Vanilla JS, React, Svelte, Vue</li>
+            <li>Finance charts demo section on the demo page</li>
+          </ul>
+        </div>
+        <div class="changelog-group">
+          <h4>Bug Fixes</h4>
+          <ul>
+            <li>Sparkline container bindings in Svelte 5 — use plain array for <code>bind:this</code> in <code>each</code></li>
+            <li>BaseFinanceChart re-measures dimensions if 0 on first render</li>
+            <li>Rename <code>version</code> and <code>release</code> scripts (npm reserved names)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="changelog-version">
         <h3>0.1.3 <span class="changelog-date">2026-04-15</span></h3>
         <div class="changelog-group">
           <h4>Bug Fixes</h4>

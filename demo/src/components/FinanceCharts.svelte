@@ -118,7 +118,7 @@
   ];
 
   // --- Container refs ---
-  const sparkContainers: (HTMLDivElement | undefined)[] = new Array(6).fill(undefined);
+  let sparkGridEl: HTMLDivElement | undefined = $state();
   let equityContainer: HTMLDivElement | undefined = $state();
   let depthContainer: HTMLDivElement | undefined = $state();
   let heatmapContainer: HTMLDivElement | undefined = $state();
@@ -161,23 +161,25 @@
     await tick();
     const theme = currentThemeName();
 
-    // Create sparkline charts
-    for (let i = 0; i < cryptos.length; i++) {
-      const el = sparkContainers[i];
-      if (!el) continue;
-      const crypto = cryptos[i];
-      const isUp = crypto.change > 0;
-      const chart = new SparklineChart(el, {
-        data: crypto.data,
-        mode: 'area',
-        color: isUp ? '#10b981' : '#ef4444',
-        fillColor: isUp ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-        showLastPoint: true,
-        lastPointColor: isUp ? '#10b981' : '#ef4444',
-        lineWidth: 1.5,
-        theme,
+    // Create sparkline charts — query DOM for containers
+    if (sparkGridEl) {
+      const sparkEls = sparkGridEl.querySelectorAll<HTMLDivElement>('.spark-chart');
+      sparkEls.forEach((el, i) => {
+        if (i >= cryptos.length) return;
+        const crypto = cryptos[i];
+        const isUp = crypto.change > 0;
+        const chart = new SparklineChart(el, {
+          data: crypto.data,
+          mode: 'area',
+          color: isUp ? '#10b981' : '#ef4444',
+          fillColor: isUp ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          showLastPoint: true,
+          lastPointColor: isUp ? '#10b981' : '#ef4444',
+          lineWidth: 1.5,
+          theme,
+        });
+        sparkCharts.push(chart);
       });
-      sparkCharts.push(chart);
     }
 
     // Equity curve
@@ -250,14 +252,14 @@
   <p class="section-subtitle">Beyond candlesticks — visualize portfolios, order books, market sectors, and KPI metrics.</p>
 
   <!-- Sparklines Row -->
-  <div class="spark-grid">
-    {#each cryptos as crypto, i}
+  <div class="spark-grid" bind:this={sparkGridEl}>
+    {#each cryptos as crypto}
       <div class="spark-card">
         <div class="spark-header">
           <span class="spark-symbol">{crypto.symbol}</span>
           <span class="spark-price">{formatPrice(crypto.price)}</span>
         </div>
-        <div class="spark-chart" bind:this={sparkContainers[i]}></div>
+        <div class="spark-chart"></div>
         <div class="spark-footer">
           <span
             class="spark-change"

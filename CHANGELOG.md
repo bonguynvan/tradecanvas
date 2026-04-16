@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.0 (2026-04-16)
+
+### Features
+
+- **Finance Chart Components** — 4 new standalone chart types:
+  - `SparklineChart` — tiny inline line/area chart for dashboards and KPI cards
+  - `DepthChart` — bid/ask order book visualization with cumulative volume areas
+  - `EquityCurveChart` — portfolio equity with drawdown shading and benchmark comparison
+  - `HeatmapChart` — colored cell grid with treemap layout (weighted by market cap)
+- **Client-side order matching engine** — auto-fills limit/stop orders with configurable spread and commission
+- **Trade history** — tracks fills, SL/TP triggers, manual closes with win rate and PnL stats
+- **Toast notifications** — animated alerts for order fills and SL/TP triggers
+- **StackBlitz sandboxes** — "Open in StackBlitz" for Vanilla JS, React, Svelte, Vue
+- **Finance charts demo section** — live sparklines, equity curve, depth chart, heatmap on demo page
+
+### Bug Fixes
+
+- Sparkline container bindings in Svelte 5 — use plain array for `bind:this` in `{#each}`
+- BaseFinanceChart re-measures dimensions if 0 on first render (initial mount race)
+- Rename `version` and `release` scripts (npm reserved lifecycle names)
+
 ## 0.1.3 (2026-04-15)
 
 ### Bug Fixes
