@@ -15,3 +15,21 @@ export function withAlpha(color: string, alpha: number): string {
   }
   return color;
 }
+
+export function lerpColor(colorA: string, colorB: string, t: number): string {
+  const parseHex = (hex: string) => {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    return {
+      r: parseInt(hex.slice(0, 2), 16),
+      g: parseInt(hex.slice(2, 4), 16),
+      b: parseInt(hex.slice(4, 6), 16),
+    };
+  };
+  const a = parseHex(colorA);
+  const b = parseHex(colorB);
+  const r = Math.round(a.r + (b.r - a.r) * t);
+  const g = Math.round(a.g + (b.g - a.g) * t);
+  const bl = Math.round(a.b + (b.b - a.b) * t);
+  return `rgb(${r},${g},${bl})`;
+}

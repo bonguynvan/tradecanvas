@@ -9,3 +9,4 @@ export * from './drawing.js';
 export * from './layout.js';
 export * from './trading.js';
 export * from './realtime.js';
+export * from './finance.js';

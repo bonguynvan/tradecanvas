@@ -12,3 +12,4 @@ export * from './realtime/index.js';
 export * from './ui/index.js';
 export * from './features/index.js';
 export * from './animation/index.js';
+export * from './finance/index.js';
