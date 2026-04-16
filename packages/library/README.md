@@ -73,6 +73,31 @@ That's it. A full-featured trading chart with live data in 15 lines.
 | Point & Figure | X/O columns for supply/demand analysis |
 | Line Break | Three-line break charts |
 
+### Finance Charts
+
+| Chart | Description |
+|---|---|
+| SparklineChart | Tiny inline line/area chart from a number array — for dashboards and KPI cards |
+| DepthChart | Bid/ask order book visualization with cumulative volume areas |
+| EquityCurveChart | Portfolio equity line with drawdown shading and benchmark comparison |
+| HeatmapChart | Colored cell grid with treemap layout — for sector/market performance |
+
+```typescript
+import { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart } from '@tradecanvas/chart'
+
+// Sparkline in a 120x48 container
+new SparklineChart(el, { data: [100, 102, 98, 105, 103], mode: 'area', color: '#26A69A' })
+
+// Equity curve with drawdown
+new EquityCurveChart(el, { data: equityPoints, drawdown: true, benchmark: spyData })
+
+// Order book depth
+new DepthChart(el, { data: { bids, asks }, crosshair: true })
+
+// Market heatmap (treemap weighted by market cap)
+new HeatmapChart(el, { data: cells, weighted: true })
+```
+
 ### Indicators (built-in)
 
 **Overlay** (drawn on the price chart):
@@ -191,7 +216,8 @@ const { current, total, percent } = chart.getReplayProgress()
 
 | Feature | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Chart types | 11 | 4 | 8 (non-financial) | 10+ |
+| Chart types | 11 + 4 finance | 4 | 8 (non-financial) | 10+ |
+| Finance charts | Sparkline, Depth, Equity, Heatmap | None | None | Some |
 | Built-in indicators | 20+ | 0 | 0 | ~30 |
 | Drawing tools | 23 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |

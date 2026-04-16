@@ -96,6 +96,7 @@
     <a class="docs-sidebar-link" href="#features">Features Config</a>
     <a class="docs-sidebar-link" href="#events">Events</a>
     <a class="docs-sidebar-link" href="#state">Save / Load</a>
+    <a class="docs-sidebar-link" href="#finance">Finance Charts</a>
     <a class="docs-sidebar-link" href="#api">API Reference</a>
     <a class="docs-sidebar-link" href="#changelog">Changelog</a>
   </nav>
@@ -864,6 +865,149 @@ chart.<span class="fn">setAutoSave</span>(<span class="str">'chart-state'</span>
 chart.<span class="fn">exportVisibleData</span>(<span class="str">'csv'</span>)
 chart.<span class="fn">exportAllData</span>(<span class="str">'json'</span>)</pre>
       </div>
+    </div>
+  </section>
+
+  <!-- Finance Charts -->
+  <section class="doc-section" id="finance">
+    <h2 class="section-title">Finance Charts</h2>
+    <p class="section-subtitle">Standalone chart components for dashboards, portfolios, and market overviews.</p>
+
+    <h3>SparklineChart</h3>
+    <p class="doc-text">Tiny inline chart for dashboards and table cells. No axes, no interaction.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Sparkline</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">SparklineChart</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">const</span> spark = <span class="kw">new</span> <span class="fn">SparklineChart</span>(container, {'{'}
+  data: [<span class="bool">100</span>, <span class="bool">102</span>, <span class="bool">98</span>, <span class="bool">105</span>, <span class="bool">110</span>, <span class="bool">108</span>, <span class="bool">112</span>],
+  mode: <span class="str">'area'</span>,
+  color: <span class="str">'#26A69A'</span>,
+  showLastPoint: <span class="bool">true</span>,
+  showMinMax: <span class="bool">true</span>,
+{'}'})
+
+<span class="cmt">// Update with new data</span>
+spark.<span class="fn">update</span>([<span class="bool">100</span>, <span class="bool">103</span>, <span class="bool">99</span>, <span class="bool">107</span>, <span class="bool">115</span>])
+
+<span class="cmt">// Change options</span>
+spark.<span class="fn">setOptions</span>({'{'} mode: <span class="str">'line'</span>, color: <span class="str">'#EF5350'</span> {'}'})</pre>
+      </div>
+    </div>
+
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>data</code></td><td><code>number[]</code></td><td>required</td><td>Array of numeric values</td></tr>
+          <tr><td><code>mode</code></td><td><code>'line' | 'area'</code></td><td><code>'area'</code></td><td>Render mode</td></tr>
+          <tr><td><code>color</code></td><td><code>string</code></td><td>theme.lineColor</td><td>Line stroke color</td></tr>
+          <tr><td><code>fillColor</code></td><td><code>string</code></td><td>same as color</td><td>Area gradient top color</td></tr>
+          <tr><td><code>lineWidth</code></td><td><code>number</code></td><td><code>1.5</code></td><td>Line stroke width</td></tr>
+          <tr><td><code>showLastPoint</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Dot on last value</td></tr>
+          <tr><td><code>showMinMax</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Dots on min/max values</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>DepthChart</h3>
+    <p class="doc-text">Bid/ask order book visualization with cumulative volume step-areas.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Depth Chart</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">DepthChart</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+<span class="kw">import type</span> {'{'} <span class="obj">DepthData</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">const</span> data: <span class="obj">DepthData</span> = {'{'}
+  bids: [
+    {'{'} price: <span class="bool">64990</span>, volume: <span class="bool">2.5</span> {'}'},
+    {'{'} price: <span class="bool">64980</span>, volume: <span class="bool">1.8</span> {'}'},
+    <span class="cmt">// ...more bid levels</span>
+  ],
+  asks: [
+    {'{'} price: <span class="bool">65010</span>, volume: <span class="bool">3.1</span> {'}'},
+    {'{'} price: <span class="bool">65020</span>, volume: <span class="bool">2.2</span> {'}'},
+    <span class="cmt">// ...more ask levels</span>
+  ],
+{'}'}
+
+<span class="kw">const</span> depth = <span class="kw">new</span> <span class="fn">DepthChart</span>(container, {'{'}
+  data,
+  midPriceLine: <span class="bool">true</span>,
+  spreadLabel: <span class="bool">true</span>,
+  crosshair: <span class="bool">true</span>,
+{'}'})
+
+<span class="cmt">// Update with new order book snapshot</span>
+depth.<span class="fn">update</span>(newDepthData)</pre>
+      </div>
+    </div>
+
+    <h3>EquityCurveChart</h3>
+    <p class="doc-text">Portfolio equity over time with drawdown shading and optional benchmark comparison.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Equity Curve</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">EquityCurveChart</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+<span class="kw">import type</span> {'{'} <span class="obj">EquityPoint</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">const</span> equity: <span class="obj">EquityPoint</span>[] = [
+  {'{'} time: <span class="bool">1700000000000</span>, value: <span class="bool">10000</span> {'}'},
+  {'{'} time: <span class="bool">1700086400000</span>, value: <span class="bool">10250</span> {'}'},
+  <span class="cmt">// ...daily portfolio values</span>
+]
+
+<span class="kw">const</span> benchmark: <span class="obj">EquityPoint</span>[] = [
+  <span class="cmt">// ...S&P 500 or BTC benchmark for comparison</span>
+]
+
+<span class="kw">const</span> chart = <span class="kw">new</span> <span class="fn">EquityCurveChart</span>(container, {'{'}
+  data: equity,
+  drawdown: <span class="bool">true</span>,            <span class="cmt">// red shading below equity peak</span>
+  benchmark,
+  benchmarkLabel: <span class="str">'S&P 500'</span>,
+  crosshair: <span class="bool">true</span>,
+{'}'})</pre>
+      </div>
+    </div>
+
+    <h3>HeatmapChart</h3>
+    <p class="doc-text">Colored cell grid for sector or market performance. Supports uniform grid or treemap layout weighted by market cap.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Heatmap</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">HeatmapChart</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+<span class="kw">import type</span> {'{'} <span class="obj">HeatmapCell</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">const</span> cells: <span class="obj">HeatmapCell</span>[] = [
+  {'{'} id: <span class="str">'btc'</span>, label: <span class="str">'BTC'</span>, value: <span class="bool">2.4</span>, weight: <span class="bool">1200</span> {'}'},
+  {'{'} id: <span class="str">'eth'</span>, label: <span class="str">'ETH'</span>, value: <span class="bool">-1.2</span>, weight: <span class="bool">400</span> {'}'},
+  {'{'} id: <span class="str">'sol'</span>, label: <span class="str">'SOL'</span>, value: <span class="bool">5.1</span>, weight: <span class="bool">65</span> {'}'},
+  <span class="cmt">// ...more cells</span>
+]
+
+<span class="kw">const</span> heatmap = <span class="kw">new</span> <span class="fn">HeatmapChart</span>(container, {'{'}
+  data: cells,
+  weighted: <span class="bool">true</span>,            <span class="cmt">// treemap layout by weight</span>
+  valueFormat: (v) =&gt; <span class="str">`${'{'}</span>v &gt; <span class="bool">0</span> ? <span class="str">'+'</span> : <span class="str">''</span><span class="str">{'}'}</span><span class="str">${'{'}v.toFixed(1){'}'}</span><span class="str">%`</span>,
+  onCellClick: (cell) =&gt; <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">'Clicked:'</span>, cell.label),
+{'}'})</pre>
+      </div>
+    </div>
+
+    <h3>Shared API</h3>
+    <p class="doc-text">All finance charts share these methods:</p>
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>update(data)</code></td><td>Replace data and re-render</td></tr>
+          <tr><td><code>setOptions(opts)</code></td><td>Update style/config options</td></tr>
+          <tr><td><code>setTheme(theme)</code></td><td>Switch between dark/light or custom theme</td></tr>
+          <tr><td><code>destroy()</code></td><td>Clean up canvas, observers, and event listeners</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 

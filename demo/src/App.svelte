@@ -1,5 +1,6 @@
 <script lang="ts">
   import ChartDemo from './components/ChartDemo.svelte';
+  import FinanceCharts from './components/FinanceCharts.svelte';
   import DocSections from './components/DocSections.svelte';
 
   const PM_COMMANDS = [
@@ -95,6 +96,9 @@ chart.connect({
 
 <!-- Chart Demo -->
 <ChartDemo />
+
+<!-- Finance Charts -->
+<FinanceCharts />
 
 <!-- Features -->
 <section class="features-section">
