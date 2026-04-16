@@ -13,6 +13,7 @@ export class CrosshairHandler {
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
   private pricePrecision = 2;
+  private locale = 'en-US';
 
   // Deferred callback state — avoid calling during render
   private pendingBarIndex: number | null = null;
@@ -44,6 +45,10 @@ export class CrosshairHandler {
 
   setPricePrecision(precision: number): void {
     this.pricePrecision = precision;
+  }
+
+  setLocale(locale: string): void {
+    this.locale = locale;
   }
 
   getPosition(): Point | null {
@@ -104,7 +109,7 @@ export class CrosshairHandler {
 
     // Price label on Y axis
     const price = yToPrice(y, viewport);
-    const priceText = formatPrice(price, this.pricePrecision);
+    const priceText = formatPrice(price, this.pricePrecision, this.locale);
     const labelX = chartRect.x + chartRect.width + 1;
     ctx.fillStyle = theme.axisLabelBackground;
     ctx.fillRect(labelX, y - 10, PRICE_AXIS_WIDTH - 2, 20);

@@ -134,10 +134,14 @@ export class Chart {
   private marketConfig: MarketConfig | null = null;
   private container: HTMLElement;
   private currentPriceLine: import('@tradecanvas/core').CurrentPriceLine;
+  private numberLocale: string;
+  private keyboardHandler: KeyboardHandler | null = null;
+  private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(container: HTMLElement, options: ChartOptions) {
     this.container = container;
     this.options = options;
+    this.numberLocale = options.numberLocale ?? 'en-US';
 
     // Resolve feature flags (all default to true)
     const f = options.features ?? {};
@@ -254,10 +258,12 @@ export class Chart {
     this.gridRenderer = new GridRenderer();
     if (options.grid?.visible === false) this.gridRenderer.setVisible(false);
     this.priceAxis = new PriceAxis();
+    this.priceAxis.setLocale(this.numberLocale);
     this.timeAxis = new TimeAxis();
 
     // Crosshair
     this.crosshairHandler = new CrosshairHandler();
+    this.crosshairHandler.setLocale(this.numberLocale);
     if (options.crosshair?.mode) {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
@@ -323,7 +329,7 @@ export class Chart {
     this.crosshairTooltip.create(container);
 
     // Keyboard navigation
-    void new KeyboardHandler({
+    this.keyboardHandler = new KeyboardHandler({
       scrollBars: (count) => {
         const barUnit = this.viewport.getState().barWidth + this.viewport.getState().barSpacing;
         this.viewport.scrollBy(count * barUnit);
@@ -344,6 +350,27 @@ export class Chart {
       },
       fitContent: () => this.fitContent(),
     });
+    this.keyboardHandler.setEnabled(this.features.keyboard);
+
+    // Attach keyboard listener to window. Only consume the event when the
+    // chart actually handles the key AND the container is the focused element
+    // (or an ancestor) — this prevents the chart from swallowing keystrokes
+    // intended for inputs elsewhere on the page.
+    this.onWindowKeyDown = (e: KeyboardEvent) => {
+      if (!this.keyboardHandler) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== this.container && !this.container.contains(active)) {
+        return;
+      }
+      // Ignore when typing in a form field that happens to live inside the chart.
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        return;
+      }
+      if (this.keyboardHandler.handleKey(e)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', this.onWindowKeyDown);
 
     // Current price line (standalone, works without StreamManager)
     this.currentPriceLine = new CurrentPriceLine();
@@ -441,6 +468,9 @@ export class Chart {
         && this.options.chartType !== 'hollowCandle') {
       this.displayDataCache = null;
     }
+    // Keep indicator lines in sync with the forming bar. Without this, panel
+    // + overlay indicators freeze until bar close.
+    this.indicatorEngine.recalculateAll(this.dataManager.getData());
     this.scheduleRender();
   }
 
@@ -453,6 +483,7 @@ export class Chart {
         && this.options.chartType !== 'hollowCandle') {
       this.displayDataCache = null;
     }
+    this.indicatorEngine.recalculateAll(this.dataManager.getData());
     this.scheduleRender();
   }
 
@@ -767,6 +798,9 @@ export class Chart {
     this.streamManager.on('barUpdate', (bar) => {
       this.dataManager.updateLastBar(bar);
       this.currentPriceLine.setPrice(bar.close);
+      // Recalculate indicators so panel/overlay series track the forming bar
+      // instead of freezing until bar close.
+      this.indicatorEngine.recalculateAll(this.dataManager.getData());
       this.scheduleRender();
     });
 
@@ -1176,6 +1210,23 @@ export class Chart {
     this.engine.requestRender();
   }
 
+  /**
+   * Update the BCP 47 locale used for number formatting
+   * (e.g. price axis labels, crosshair value badges).
+   * Defaults to 'en-US'. Example values: 'de-DE', 'vi-VN', 'fr-FR'.
+   */
+  setNumberLocale(locale: string): void {
+    this.numberLocale = locale;
+    this.priceAxis.setLocale(locale);
+    this.crosshairHandler.setLocale(locale);
+    this.syncRenderContext();
+    this.engine.requestRender();
+  }
+
+  getNumberLocale(): string {
+    return this.numberLocale;
+  }
+
   // --- Market ---
 
   setMarket(config: MarketConfig): void {
@@ -1253,6 +1304,9 @@ export class Chart {
       this.tradingManager.setOrders([]);
       this.tradingManager.setPositions([]);
     }
+    if (patch.keyboard !== undefined) {
+      this.keyboardHandler?.setEnabled(patch.keyboard);
+    }
 
     this.engine.requestRender();
   }
@@ -1279,6 +1333,11 @@ export class Chart {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     this.disableAutoSave();
     this.disconnectStream();
+    if (this.onWindowKeyDown) {
+      window.removeEventListener('keydown', this.onWindowKeyDown);
+      this.onWindowKeyDown = null;
+    }
+    this.keyboardHandler = null;
     this.interactionManager.detach();
     this.tradingManager.destroy();
     this.animator.dispose();
@@ -1492,6 +1551,7 @@ export class Chart {
       viewport: this.viewport.getState(),
       theme: this.themeManager.getTheme(),
       data: this.getDisplayData(),
+      numberLocale: this.numberLocale,
     });
   }
 

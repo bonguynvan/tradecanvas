@@ -2,6 +2,12 @@ import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { computeTickStep, formatPrice, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 
 export class PriceAxis {
+  private locale = 'en-US';
+
+  setLocale(locale: string): void {
+    this.locale = locale;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const { chartRect, priceRange } = viewport;
     const axisX = chartRect.x + chartRect.width;
@@ -27,7 +33,7 @@ export class PriceAxis {
     const labels: { y: number; text: string }[] = [];
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = chartRect.y + chartRect.height * (1 - (price - priceRange.min) * invRange);
-      labels.push({ y, text: formatPrice(price, precision) });
+      labels.push({ y, text: formatPrice(price, precision, this.locale) });
     }
 
     ctx.font = font;

@@ -214,9 +214,10 @@ export class StreamManager extends Emitter<StreamEvents> {
 
   private wireAdapter(): void {
     if (!this.adapter) return;
+    const adapter = this.adapter;
 
     // Connection state changes
-    this.adapter.on('connectionChange', ((e: any) => {
+    const onConnectionChange = (e: any) => {
       const newState = e.data as ConnectionState;
       this.lastMessageTime = Date.now();
 
@@ -226,10 +227,12 @@ export class StreamManager extends Emitter<StreamEvents> {
       } else if (newState === 'disconnected' || newState === 'error') {
         this.reconnector.schedule(() => this.doConnect());
       }
-    }) as any);
+    };
+    adapter.on('connectionChange', onConnectionChange as any);
+    this.unsubscribers.push(() => adapter.off('connectionChange', onConnectionChange as any));
 
     // Tick data
-    this.adapter.on('tick', ((e: any) => {
+    const onTick = (e: any) => {
       this.lastMessageTime = Date.now();
       const tick = e.data as RawTick;
       this.emit('tick', tick);
@@ -239,22 +242,28 @@ export class StreamManager extends Emitter<StreamEvents> {
       } else {
         this.updatePrice(tick.price);
       }
-    }) as any);
+    };
+    adapter.on('tick', onTick as any);
+    this.unsubscribers.push(() => adapter.off('tick', onTick as any));
 
     // Pre-formed bar data (most adapters provide this)
-    this.adapter.on('bar', ((e: any) => {
+    const onBar = (e: any) => {
       this.lastMessageTime = Date.now();
       const { bar, closed } = e.data as { bar: OHLCBar; closed: boolean };
 
       if (this.aggregator) {
         this.aggregator.processBar(bar, closed);
       }
-    }) as any);
+    };
+    adapter.on('bar', onBar as any);
+    this.unsubscribers.push(() => adapter.off('bar', onBar as any));
 
     // Error
-    this.adapter.on('error', ((e: any) => {
+    const onError = (e: any) => {
       this.emit('error', { message: e.data?.message ?? 'Adapter error' });
-    }) as any);
+    };
+    adapter.on('error', onError as any);
+    this.unsubscribers.push(() => adapter.off('error', onError as any));
   }
 
   private updatePrice(price: number): void {

@@ -50,6 +50,8 @@ export interface RenderContext {
   viewport: ViewportState;
   theme: Theme;
   data: DataSeries;
+  /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
+  numberLocale?: string;
 }
 
 export class RenderEngine {
@@ -128,6 +130,7 @@ export class RenderEngine {
     const ctx = this.renderCtx;
     if (!ctx) return;
     const { viewport, theme, data } = ctx;
+    const locale = ctx.numberLocale ?? 'en-US';
 
     // Skip rendering if viewport has zero dimensions
     if (viewport.chartRect.width <= 0 || viewport.chartRect.height <= 0) return;
@@ -333,7 +336,7 @@ export class RenderEngine {
             c.stroke();
             // Label
             c.fillStyle = theme.axisLabel;
-            c.fillText(formatPrice(val, precision), axisX + 6, y);
+            c.fillText(formatPrice(val, precision, locale), axisX + 6, y);
           }
 
           // --- Crosshair value badge on panel Y-axis ---
@@ -341,7 +344,7 @@ export class RenderEngine {
               cursorPos2.x >= pr.x && cursorPos2.x <= pr.x + pr.width &&
               cursorPos2.y >= pr.y && cursorPos2.y <= pr.y + pr.height) {
             const hoverVal = yToPrice(cursorPos2.y, pv);
-            const valText = formatPrice(hoverVal, precision);
+            const valText = formatPrice(hoverVal, precision, locale);
             c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
             const tw = c.measureText(valText).width;
             const badgeW = Math.min(tw + 10, PRICE_AXIS_WIDTH - 2);

@@ -1,5 +1,5 @@
-export function formatPrice(value: number, precision = 2): string {
-  return value.toLocaleString('en-US', {
+export function formatPrice(value: number, precision = 2, locale = 'en-US'): string {
+  return value.toLocaleString(locale, {
     minimumFractionDigits: precision,
     maximumFractionDigits: precision,
   });

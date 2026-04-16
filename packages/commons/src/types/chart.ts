@@ -108,6 +108,8 @@ export interface ChartOptions {
   sessionBreaks?: SessionBreakOptions;
   /** Feature toggles — control what users can access */
   features?: FeaturesConfig;
+  /** BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'. */
+  numberLocale?: string;
 }
 
 export interface SessionBreakOptions {

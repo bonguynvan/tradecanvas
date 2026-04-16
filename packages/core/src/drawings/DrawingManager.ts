@@ -17,6 +17,20 @@ export type MagnetMode = 'none' | 'magnet';
 
 let nextDrawingId = 1;
 
+/**
+ * Shallow clone tailored for DrawingState. Avoids `structuredClone` in hot
+ * paths (drag, resize, duplicate) where the well-known shape lets us spread
+ * much faster than the structured-clone algorithm.
+ */
+function cloneDrawing(d: DrawingState): DrawingState {
+  return {
+    ...d,
+    anchors: d.anchors.map((a) => ({ ...a })),
+    style: { ...d.style },
+    meta: d.meta ? { ...d.meta } : undefined,
+  };
+}
+
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
   private drawings: DrawingState[] = [];
@@ -273,7 +287,7 @@ export class DrawingManager {
           this.undoRedo?.push({
             type: 'drawingModify',
             before: this.dragBeforeState,
-            after: structuredClone(drawing),
+            after: cloneDrawing(drawing),
           });
         }
       }
@@ -503,14 +517,14 @@ export class DrawingManager {
             this.state = 'resizing';
             this.dragAnchorIndex = anchorIdx;
             this.dragStartPoint = pos;
-            this.dragBeforeState = structuredClone(drawing);
+            this.dragBeforeState = cloneDrawing(drawing);
             return true;
           }
           if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
             this.state = 'moving';
             this.dragStartPoint = pos;
             this.dragStartAnchors = drawing.anchors.map((a) => ({ ...a }));
-            this.dragBeforeState = structuredClone(drawing);
+            this.dragBeforeState = cloneDrawing(drawing);
             return true;
           }
         }

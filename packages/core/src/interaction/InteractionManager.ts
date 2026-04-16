@@ -20,6 +20,10 @@ export class InteractionManager {
   private lastTouchMid: Point = { x: 0, y: 0 };
   private touchActive = false;
 
+  // Cached bounding rect — avoid a layout read per mousemove.
+  // Invalidated on pointerdown, window resize, and explicit calls.
+  private cachedRect: DOMRect | null = null;
+
   constructor(private element: HTMLElement) {}
 
   setOverlayDirtyCallback(cb: () => void): void { this.onOverlayDirty = cb; }
@@ -43,6 +47,9 @@ export class InteractionManager {
 
     // --- Mouse events ---
     const onMouseDown = (e: MouseEvent) => {
+      // Cheap refresh point — ensures the rect is current for the
+      // interaction that follows (drag, pan, draw, etc.).
+      this.invalidateRect();
       const pos = this.getMousePos(e);
       const vp = getVP();
       if (this.tradingManager && vp && this.tradingManager.onPointerDown(pos, vp)) return;
@@ -103,6 +110,7 @@ export class InteractionManager {
     // --- Touch events ---
     const onTouchStart = (e: TouchEvent) => {
       e.preventDefault();
+      this.invalidateRect();
       if (e.touches.length === 1) {
         // Single finger: pan
         const pos = this.getTouchPos(e.touches[0]);
@@ -161,6 +169,9 @@ export class InteractionManager {
       }
     };
 
+    const onWindowResize = () => this.invalidateRect();
+    const onElementScroll = () => this.invalidateRect();
+
     // Attach all — mouseup on document so we catch it even if cursor leaves the chart
     this.element.addEventListener('mousedown', onMouseDown);
     this.element.addEventListener('mousemove', onMouseMove);
@@ -172,6 +183,8 @@ export class InteractionManager {
     this.element.addEventListener('touchmove', onTouchMove, { passive: false });
     this.element.addEventListener('touchend', onTouchEnd);
     document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onWindowResize);
+    this.element.addEventListener('scroll', onElementScroll, { passive: true });
 
     this.boundHandlers.push(
       () => this.element.removeEventListener('mousedown', onMouseDown),
@@ -184,21 +197,36 @@ export class InteractionManager {
       () => this.element.removeEventListener('touchmove', onTouchMove),
       () => this.element.removeEventListener('touchend', onTouchEnd),
       () => document.removeEventListener('keydown', onKeyDown),
+      () => window.removeEventListener('resize', onWindowResize),
+      () => this.element.removeEventListener('scroll', onElementScroll),
     );
   }
 
   detach(): void {
     for (const remove of this.boundHandlers) remove();
     this.boundHandlers = [];
+    this.cachedRect = null;
+  }
+
+  /** Force the cached bounding rect to be re-read on next access. */
+  invalidateRect(): void {
+    this.cachedRect = null;
+  }
+
+  private getRect(): DOMRect {
+    if (!this.cachedRect) {
+      this.cachedRect = this.element.getBoundingClientRect();
+    }
+    return this.cachedRect;
   }
 
   private getMousePos(e: MouseEvent): Point {
-    const rect = this.element.getBoundingClientRect();
+    const rect = this.getRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
   private getTouchPos(touch: Touch): Point {
-    const rect = this.element.getBoundingClientRect();
+    const rect = this.getRect();
     return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
   }
 
@@ -207,7 +235,7 @@ export class InteractionManager {
   }
 
   private getTouchMidpoint(a: Touch, b: Touch): Point {
-    const rect = this.element.getBoundingClientRect();
+    const rect = this.getRect();
     return {
       x: (a.clientX + b.clientX) / 2 - rect.left,
       y: (a.clientY + b.clientY) / 2 - rect.top,
