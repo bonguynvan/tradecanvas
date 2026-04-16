@@ -1,5 +1,45 @@
 # @tradecanvas/chart
 
+## 0.4.0
+
+### Minor Changes
+
+- Locale-aware number formatting + 4 critical bug fixes + 2 performance optimizations.
+
+  ## Features
+
+  **Locale-aware number formatting** — new `numberLocale` option on Chart (BCP 47 format):
+
+  ```typescript
+  const chart = new Chart(el, {
+    chartType: "candlestick",
+    numberLocale: "de-DE", // 65.234,00 instead of 65,234.00
+  });
+
+  // Change at runtime
+  chart.setNumberLocale("vi-VN");
+  ```
+
+  Affects price axis, crosshair tooltip, indicator legend, and trading overlay values. Supports any valid BCP 47 locale (`en-US`, `de-DE`, `fr-FR`, `vi-VN`, `en-IN`, `ja-JP`, etc.).
+
+  ## Bug Fixes
+
+  - **Keyboard shortcuts were broken** — `KeyboardHandler` was constructed then discarded, so arrow keys, +/-, Home/End, and Space did nothing. Now properly wired to `window` with focus-aware handling (ignores input/textarea/contentEditable elements).
+  - **Streaming indicators froze until bar close** — Moving averages, Bollinger Bands, RSI, etc. now update in real-time on every tick instead of only at bar close.
+  - **StreamManager listener leak** — Adapter listeners accumulated across connect/disconnect cycles because unsubscribers weren't tracked. Now properly cleaned up.
+  - **Price formatting lacked thousand separators** — `formatPrice()` now uses `toLocaleString` for readability (`65,234.00` vs `65234.00`).
+
+  ## Performance
+
+  - **Cached `getBoundingClientRect`** in `InteractionManager` — was called on every mousemove event. Now invalidated only on pointerdown, resize, and scroll. Significant reduction in layout flushes during pan and crosshair movement.
+  - **Replaced `structuredClone`** in drag/resize hot paths with hand-rolled shallow clone (5-10x faster for the `DrawingState` shape).
+
+### Patch Changes
+
+- Updated dependencies
+  - @tradecanvas/commons@0.4.0
+  - @tradecanvas/core@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

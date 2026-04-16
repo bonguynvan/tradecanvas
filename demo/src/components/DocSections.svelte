@@ -1264,6 +1264,33 @@ gauge.<span class="fn">setValue</span>(<span class="bool">85</span>)</pre>
 
     <div class="changelog">
       <div class="changelog-version">
+        <h3>0.4.0 <span class="changelog-date">2026-04-16</span></h3>
+        <div class="changelog-group">
+          <h4>Features</h4>
+          <ul>
+            <li><strong>Locale-aware number formatting</strong> — new <code>numberLocale</code> option (e.g. <code>'de-DE'</code> → 65.234,00)</li>
+            <li>Runtime locale change via <code>chart.setNumberLocale()</code></li>
+          </ul>
+        </div>
+        <div class="changelog-group">
+          <h4>Bug Fixes</h4>
+          <ul>
+            <li>Keyboard shortcuts (arrow keys, +/-, Home/End, Space) were never wired up — now working</li>
+            <li>Streaming indicators froze until bar close — now update in real-time on every tick</li>
+            <li>StreamManager listener leak on reconnect cycles</li>
+            <li>Price formatting now uses thousand separators (65,234.00 vs 65234.00)</li>
+          </ul>
+        </div>
+        <div class="changelog-group">
+          <h4>Performance</h4>
+          <ul>
+            <li>Cached <code>getBoundingClientRect</code> in InteractionManager — major reduction in layout flushes during pan/crosshair</li>
+            <li>Replaced <code>structuredClone</code> in drag/resize hot paths (5-10x faster)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="changelog-version">
         <h3>0.3.0 <span class="changelog-date">2026-04-16</span></h3>
         <div class="changelog-group">
           <h4>Features</h4>
