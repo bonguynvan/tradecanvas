@@ -1,5 +1,8 @@
 export function formatPrice(value: number, precision = 2): string {
-  return value.toFixed(precision);
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  });
 }
 
 export function formatVolume(value: number): string {
