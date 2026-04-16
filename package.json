@@ -11,8 +11,8 @@
     "clean": "pnpm -r clean",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "changeset": "changeset",
-    "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
