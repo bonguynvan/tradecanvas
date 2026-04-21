@@ -31,6 +31,7 @@ export class ChartLegend {
   private timeframe = '';
   private hoverBar: OHLCBar | null = null;
   private indicators: { name: string; color: string; value: string }[] = [];
+  private statusText: string | null = null;
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
@@ -56,6 +57,10 @@ export class ChartLegend {
     this.indicators = values;
   }
 
+  setStatusText(text: string | null): void {
+    this.statusText = text;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
     if (!this.config.visible || data.length === 0) return;
 
@@ -71,13 +76,19 @@ export class ChartLegend {
     ctx.textAlign = isLeft ? 'left' : 'right';
     ctx.textBaseline = 'top';
 
-    // Symbol + timeframe + chart type
+    // Symbol + timeframe + chart type + status text
     if (this.config.showSymbol) {
       ctx.font = `bold ${fs + 2}px ${theme.font.family}`;
       ctx.fillStyle = theme.text;
       const symbolText = [this.symbol, this.timeframe].filter(Boolean).join(' · ');
-      ctx.fillText(symbolText, x, y);
+      const displayText = this.statusText ? `${symbolText}  ${this.statusText}` : symbolText;
+      ctx.fillText(displayText, x, y);
       y += fs + 6;
+    } else if (this.statusText) {
+      ctx.font = `${fs}px ${theme.font.family}`;
+      ctx.fillStyle = theme.textSecondary;
+      ctx.fillText(this.statusText, x, y);
+      y += fs + 4;
     }
 
     // OHLC values

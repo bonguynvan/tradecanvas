@@ -50,3 +50,30 @@ export const LIGHT_THEME: Theme = {
   axisLabelBackground: '#F0F3FA',
   font: DEFAULT_FONT,
 };
+
+export const DARK_TERMINAL: Theme = {
+  name: 'terminal',
+  background: '#0E0E0E',
+  text: '#C0C0C0',
+  textSecondary: '#8A8A8A',
+  grid: '#1A1A1A',
+  crosshair: '#666666',
+  candleUp: '#00FF87',
+  candleDown: '#FF3B4D',
+  candleUpWick: '#00FF87',
+  candleDownWick: '#FF3B4D',
+  lineColor: '#3D8BFD',
+  areaTopColor: 'rgba(61, 139, 253, 0.3)',
+  areaBottomColor: 'rgba(61, 139, 253, 0.0)',
+  volumeUp: 'rgba(0, 255, 135, 0.2)',
+  volumeDown: 'rgba(255, 59, 77, 0.2)',
+  axisLine: '#1A1A1A',
+  axisLabel: '#8A8A8A',
+  axisLabelBackground: '#1A1A1A',
+  font: {
+    family: "'Roboto Mono', 'JetBrains Mono', 'SF Mono', Consolas, monospace",
+    sizeSmall: 10,
+    sizeMedium: 12,
+    sizeLarge: 14,
+  },
+};

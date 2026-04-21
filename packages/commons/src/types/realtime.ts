@@ -56,8 +56,13 @@ export interface DataAdapterEvent<T = unknown> {
 export type DataAdapterListener<T = unknown> = (event: DataAdapterEvent<T>) => void;
 
 /**
- * DataAdapter interface — Strategy pattern for pluggable data sources.
+ * Data adapter interface. Implements the observer pattern:
+ * - connect() to start receiving data
+ * - on('bar'|'tick'|'connectionChange', handler) to receive events
+ * - disconnect() to stop, then connect() again to switch symbols/timeframes
+ * - No separate subscribe/unsubscribe — reconnect is the intended pattern
  *
+ * Strategy pattern for pluggable data sources.
  * Implementations handle the specifics of each data source (WebSocket, REST,
  * SSE, etc.) while the StreamManager orchestrates lifecycle and aggregation.
  *

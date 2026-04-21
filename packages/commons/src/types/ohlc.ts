@@ -1,4 +1,5 @@
 export interface OHLCBar {
+  /** Unix timestamp in milliseconds */
   time: number;
   open: number;
   high: number;

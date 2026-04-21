@@ -7,6 +7,7 @@ import type {
   ThemeName,
   ChartEventType,
   ChartEvent,
+  ChartEventMap,
   TauriBridgeOptions,
   IndicatorPlugin,
   IndicatorDescriptor,
@@ -137,6 +138,8 @@ export class Chart {
   private numberLocale: string;
   private keyboardHandler: KeyboardHandler | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
+  private currentSymbol: string = '';
+
 
   constructor(container: HTMLElement, options: ChartOptions) {
     this.container = container;
@@ -457,6 +460,22 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /**
+   * Append multiple bars at once (e.g., catch-up after reconnect).
+   * More efficient than calling appendBar() in a loop — recalculates
+   * indicators only once at the end.
+   */
+  appendBars(bars: OHLCBar[]): void {
+    if (bars.length === 0) return;
+    for (const bar of bars) {
+      this.dataManager.appendBar(bar);
+    }
+    this.displayDataCache = null;
+    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    this.crosshairHandler.setData(this.dataManager.getData());
+    this.updateViewportAndRender(this.viewport.isAtEnd());
+  }
+
   updateLastBar(bar: OHLCBar): void {
     this.dataManager.updateLastBar(bar);
     this.currentPriceLine.setPrice(bar.close);
@@ -751,7 +770,7 @@ export class Chart {
     this.tradingManager.setDepthData(depth);
   }
 
-  setCurrentPrice(price: number): void {
+  setCurrentPrice(price: number, _pulseColor?: string): void {
     this.tradingManager.setCurrentPrice(price);
     // Also update standalone price line (visible even without trading feature)
     this.currentPriceLine.setPrice(price);
@@ -820,6 +839,7 @@ export class Chart {
     });
 
     this.autoScrollOnNewBar = config.autoScroll !== false;
+    this.currentSymbol = config.symbol;
 
     await this.streamManager.connect(config);
 
@@ -841,7 +861,17 @@ export class Chart {
    */
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) return;
+    this.currentSymbol = symbol;
     await this.streamManager.switchTo(symbol, timeframe);
+  }
+
+  /**
+   * Switch to a new timeframe. Requires an active stream connection.
+   * Internally calls switchStream with the current symbol.
+   */
+  async setTimeframe(timeframe: TimeFrame): Promise<void> {
+    if (!this.streamManager) throw new Error('No active stream. Call connect() first.');
+    await this.switchStream(this.currentSymbol, timeframe);
   }
 
   /**
@@ -981,12 +1011,12 @@ export class Chart {
 
   // --- Events ---
 
-  on(type: ChartEventType, handler: (event: ChartEvent) => void): void {
-    this.eventBus.on(type, handler);
+  on<K extends ChartEventType>(type: K, handler: (event: ChartEvent<K extends keyof ChartEventMap ? ChartEventMap[K] : unknown>) => void): void {
+    this.eventBus.on(type, handler as (event: ChartEvent) => void);
   }
 
-  off(type: ChartEventType, handler: (event: ChartEvent) => void): void {
-    this.eventBus.off(type, handler);
+  off<K extends ChartEventType>(type: K, handler: (event: ChartEvent<K extends keyof ChartEventMap ? ChartEventMap[K] : unknown>) => void): void {
+    this.eventBus.off(type, handler as (event: ChartEvent) => void);
   }
 
   enableTauriBridge(options?: Partial<TauriBridgeOptions>): void {
@@ -1073,6 +1103,15 @@ export class Chart {
 
   setSymbolName(symbol: string): void {
     this.chartLegend.setSymbol(symbol);
+    this.engine.requestRender(LayerType.UI);
+  }
+
+  /**
+   * Set a status text displayed in the chart legend area (e.g., "LIVE . 8ms").
+   * Pass null to clear.
+   */
+  setStatusText(text: string | null): void {
+    this.chartLegend.setStatusText(text);
     this.engine.requestRender(LayerType.UI);
   }
 

@@ -15,6 +15,7 @@ export type {
   ThemeName,
   ChartEventType,
   ChartEvent,
+  ChartEventMap,
   IndicatorPlugin,
   IndicatorDescriptor,
   IndicatorConfig,
@@ -24,6 +25,19 @@ export type {
   ViewportState,
   CrosshairMovePayload,
   BarClickPayload,
+  VisibleRangeChangePayload,
+  OrderModifyPayload,
+  OrderCancelPayload,
+  PositionModifyPayload,
+  PositionClosePayload,
+  OrderPlacePayload,
+  IndicatorChangePayload,
+  ThemeChangePayload,
+  ResizePayload,
+  ZoomChangePayload,
+  PriceRangeChangePayload,
+  DrawingCreatePayload,
+  DrawingRemovePayload,
   DrawingToolType,
   DrawingState,
   DrawingStyle,
@@ -61,6 +75,7 @@ export type {
   PriceLimitInfo,
   DataAdapter,
   DataAdapterConfig,
+  DataAdapterEventType,
   StreamConfig,
   ConnectionState,
   ConnectionInfo,
@@ -75,9 +90,12 @@ export type {
 
 // Re-export themes and defaults
 export {
-  DARK_THEME, LIGHT_THEME, DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
+  DARK_THEME, LIGHT_THEME, DARK_TERMINAL, DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
   TIMEFRAMES_CRYPTO, TIMEFRAMES_STOCK, TIMEFRAMES_FOREX, DEFAULT_TIMEFRAME_FAVORITES,
 } from '@tradecanvas/commons';
+
+// Re-export data utilities
+export { normalizeBarTime, normalizeBar } from '@tradecanvas/commons';
 
 // Re-export i18n
 export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, formatVolumeLoc } from '@tradecanvas/commons';

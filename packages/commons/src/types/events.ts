@@ -1,4 +1,4 @@
-import type { OHLCBar } from './ohlc.js';
+import type { OHLCBar, DataSeries } from './ohlc.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 
@@ -44,6 +44,86 @@ export interface BarClickPayload {
   bar: OHLCBar;
   barIndex: number;
   point: Point;
+}
+
+export interface OrderModifyPayload {
+  orderId: string;
+  newPrice: number;
+}
+
+export interface OrderCancelPayload {
+  orderId: string;
+}
+
+export interface PositionModifyPayload {
+  positionId: string;
+  stopLoss?: number;
+  takeProfit?: number;
+}
+
+export interface PositionClosePayload {
+  positionId: string;
+}
+
+export interface OrderPlacePayload {
+  side: 'buy' | 'sell';
+  type: 'market' | 'limit' | 'stop' | 'stopLimit';
+  price: number;
+  stopPrice?: number;
+  quantity?: number;
+}
+
+export interface IndicatorChangePayload {
+  instanceId: string;
+  id: string;
+}
+
+export interface ThemeChangePayload {
+  theme: string;
+}
+
+export interface ResizePayload {
+  width: number;
+  height: number;
+}
+
+export interface ZoomChangePayload {
+  barWidth: number;
+}
+
+export interface PriceRangeChangePayload {
+  min: number;
+  max: number;
+}
+
+export interface DrawingCreatePayload {
+  id: string;
+  type: string;
+}
+
+export interface DrawingRemovePayload {
+  id: string;
+}
+
+export interface ChartEventMap {
+  crosshairMove: CrosshairMovePayload;
+  click: { x: number; y: number };
+  barClick: BarClickPayload;
+  visibleRangeChange: VisibleRangeChangePayload;
+  priceRangeChange: PriceRangeChangePayload;
+  zoomChange: ZoomChangePayload;
+  dataUpdate: DataSeries;
+  indicatorAdd: IndicatorChangePayload;
+  indicatorRemove: IndicatorChangePayload;
+  themeChange: ThemeChangePayload;
+  resize: ResizePayload;
+  orderPlace: OrderPlacePayload;
+  orderModify: OrderModifyPayload;
+  orderCancel: OrderCancelPayload;
+  positionClose: PositionClosePayload;
+  positionModify: PositionModifyPayload;
+  drawingCreate: DrawingCreatePayload;
+  drawingRemove: DrawingRemovePayload;
 }
 
 export interface TauriBridgeOptions {

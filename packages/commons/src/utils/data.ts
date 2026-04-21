@@ -1,5 +1,29 @@
 import type { OHLCBar, DataSeries } from '../types/ohlc.js';
 
+/**
+ * Normalize bar timestamp to milliseconds.
+ * Auto-detects: time > 1e12 is already ms, otherwise treats as seconds.
+ */
+export function normalizeBarTime(time: number): number {
+  return time > 1e12 ? time : time * 1000;
+}
+
+/**
+ * Normalize a bar's timestamp field to milliseconds.
+ * Accepts either { time } (ms or s) or { t, o, h, l, c, v } wire format.
+ */
+export function normalizeBar(raw: Record<string, number>): OHLCBar {
+  const time = normalizeBarTime(raw.time ?? raw.t ?? 0);
+  return {
+    time,
+    open: raw.open ?? raw.o ?? 0,
+    high: raw.high ?? raw.h ?? 0,
+    low: raw.low ?? raw.l ?? 0,
+    close: raw.close ?? raw.c ?? 0,
+    volume: raw.volume ?? raw.v ?? 0,
+  };
+}
+
 export function sliceVisibleData(
   data: DataSeries,
   from: number,
