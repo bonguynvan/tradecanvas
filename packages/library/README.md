@@ -206,8 +206,12 @@ await chart.loadStateFromFile()
 ### Themes
 
 ```typescript
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/chart'
+import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL } from '@tradecanvas/chart'
 
+// Built-in presets: DARK_THEME, LIGHT_THEME, DARK_TERMINAL
+chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace
+
+// Or customize any preset
 chart.setTheme({
   ...DARK_THEME,
   candleUp: '#26A69A',
@@ -279,11 +283,15 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 |---|---|
 | `setData(bars)` | Load historical OHLCV data |
 | `appendBar(bar)` | Append a new candle |
+| `appendBars(bars)` | Bulk append (reconnect catch-up) |
 | `updateLastBar(bar)` | Update the in-progress candle |
-| `setCurrentPrice(price)` | Show a live price line |
+| `setCurrentPrice(price, pulseColor?)` | Show a live price line |
 | `connect(config)` | Connect to a real-time data source |
+| `setTimeframe(tf)` | Switch timeframe on active stream |
 | `setChartType(type)` | Switch chart type |
-| `setTheme(theme)` | Apply a theme |
+| `setTheme(theme)` | Apply a theme (DARK_THEME, LIGHT_THEME, DARK_TERMINAL) |
+| `setNumberLocale(locale)` | Set number format locale (en-US, de-DE, vi-VN) |
+| `setStatusText(text)` | Show status in legend area ("LIVE · 8ms") |
 | `addIndicator(id, params?)` | Add a technical indicator |
 | `removeIndicator(instanceId)` | Remove an indicator |
 | `setDrawingTool(tool)` | Activate a drawing tool |

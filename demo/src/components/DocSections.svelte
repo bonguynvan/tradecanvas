@@ -88,6 +88,7 @@
   <nav class="docs-sidebar">
     <div class="docs-sidebar-title">Documentation</div>
     <a class="docs-sidebar-link" href="#getting-started">Getting Started</a>
+    <a class="docs-sidebar-link" href="#integration">Integration Guide</a>
     <a class="docs-sidebar-link" href="#data">Data Format</a>
     <a class="docs-sidebar-link" href="#custom-adapter">Custom Adapter</a>
     <a class="docs-sidebar-link" href="#locale">Number Locale</a>
@@ -322,6 +323,116 @@ chart.<span class="fn">setData</span>(bars)</pre>
             Open in StackBlitz
           </button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integration Guide -->
+  <section class="doc-section" id="integration">
+    <h2 class="section-title">Integration Guide</h2>
+    <p class="section-subtitle">Type-safe integration with custom data feeds, Tauri, and trading backends.</p>
+
+    <h3>Custom Data Adapter</h3>
+    <p class="doc-text">Implement the <code>DataAdapter</code> interface to connect any data source. The library uses an observer pattern: <code>connect()</code> to start, <code>on()</code> for events, <code>disconnect()</code> to stop.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Custom adapter</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import type</span> {'{'} <span class="obj">DataAdapter</span>, <span class="obj">DataAdapterConfig</span>, <span class="obj">DataAdapterEventType</span>,
+  <span class="obj">OHLCBar</span>, <span class="obj">TimeFrame</span>, <span class="obj">ConnectionState</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+<span class="kw">import</span> {'{'} <span class="fn">normalizeBar</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">class</span> <span class="obj">TauriAdapter</span> <span class="kw">implements</span> <span class="obj">DataAdapter</span> {'{'}
+  readonly name = <span class="str">'tauri'</span>
+
+  <span class="fn">connect</span>(config: <span class="obj">DataAdapterConfig</span>): <span class="kw">void</span> {'{'}
+    <span class="cmt">// Subscribe to Tauri events</span>
+    listen(<span class="str">'feed:message'</span>, (msg) =&gt; {'{'}
+      <span class="cmt">// Wire format { t, o, h, l, c, v } → OHLCBar</span>
+      <span class="kw">const</span> bar = <span class="fn">normalizeBar</span>(msg.payload)
+      this.<span class="fn">emit</span>(<span class="str">'bar'</span>, {'{'} bar, closed: msg.payload.closed {'}'})
+    {'}'})
+  {'}'}
+  <span class="cmt">// ... disconnect(), fetchHistory(), on(), off(), dispose()</span>
+{'}'}</pre>
+      </div>
+    </div>
+
+    <h3>Timestamp Normalization</h3>
+    <p class="doc-text">Your backend may send timestamps in seconds or milliseconds, and field names may differ (<code>t</code> vs <code>time</code>). Use the built-in normalizers:</p>
+    <div class="code-block">
+      <div class="code-header"><span>Normalize wire data</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="fn">normalizeBar</span>, <span class="fn">normalizeBarTime</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="cmt">// Wire format → OHLCBar (auto-detects seconds vs ms)</span>
+<span class="fn">normalizeBar</span>({'{'} t: <span class="bool">1700000000</span>, o: <span class="bool">100</span>, h: <span class="bool">105</span>, l: <span class="bool">98</span>, c: <span class="bool">103</span>, v: <span class="bool">1500</span> {'}'})
+<span class="cmt">// =&gt; {'{'} time: 1700000000000, open: 100, high: 105, ... {'}'}</span>
+
+<span class="cmt">// Just normalize timestamp</span>
+<span class="fn">normalizeBarTime</span>(<span class="bool">1700000000</span>)    <span class="cmt">// =&gt; 1700000000000 (seconds to ms)</span>
+<span class="fn">normalizeBarTime</span>(<span class="bool">1700000000000</span>) <span class="cmt">// =&gt; 1700000000000 (already ms)</span></pre>
+      </div>
+    </div>
+
+    <h3>Typed Event Payloads</h3>
+    <p class="doc-text">All chart events have typed payloads via <code>ChartEventMap</code>. TypeScript infers the payload type from the event name — no runtime guards needed.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Typed events</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="cmt">// Payload is typed as {'{'} orderId: string; newPrice: number {'}'}</span>
+chart.<span class="fn">on</span>(<span class="str">'orderModify'</span>, (e) =&gt; {'{'}
+  <span class="fn">updateOrder</span>(e.payload.orderId, e.payload.newPrice)
+{'}'})
+
+<span class="cmt">// Payload is typed as {'{'} positionId: string; stopLoss?: number; takeProfit?: number {'}'}</span>
+chart.<span class="fn">on</span>(<span class="str">'positionModify'</span>, (e) =&gt; {'{'}
+  <span class="fn">updatePosition</span>(e.payload.positionId, e.payload)
+{'}'})
+
+<span class="cmt">// Payload is typed as {'{'} side, type, price {'}'}</span>
+chart.<span class="fn">on</span>(<span class="str">'orderPlace'</span>, (e) =&gt; {'{'}
+  <span class="fn">placeOrder</span>(e.payload)
+{'}'})</pre>
+      </div>
+    </div>
+
+    <h3>Timeframe Switching</h3>
+    <div class="code-block">
+      <div class="code-header"><span>Switch timeframe</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="cmt">// Switch timeframe on active stream (no destroy/rebuild)</span>
+<span class="kw">await</span> chart.<span class="fn">setTimeframe</span>(<span class="str">'1H'</span>)
+
+<span class="cmt">// Or switch both symbol and timeframe</span>
+<span class="kw">await</span> chart.<span class="fn">switchStream</span>(<span class="str">'ETHUSDT'</span>, <span class="str">'15m'</span>)</pre>
+      </div>
+    </div>
+
+    <h3>Reconnect Catch-Up</h3>
+    <div class="code-block">
+      <div class="code-header"><span>Bulk append</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="cmt">// After reconnect, append missed bars in one call</span>
+<span class="cmt">// (recalculates indicators once, not per-bar)</span>
+<span class="kw">const</span> missedBars = <span class="kw">await</span> <span class="fn">fetchMissedBars</span>(lastTimestamp)
+chart.<span class="fn">appendBars</span>(missedBars)
+
+<span class="cmt">// Show connection status in the legend</span>
+chart.<span class="fn">setStatusText</span>(<span class="str">'LIVE · 8ms'</span>)</pre>
+      </div>
+    </div>
+
+    <h3>Terminal Theme</h3>
+    <div class="code-block">
+      <div class="code-header"><span>DARK_TERMINAL preset</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">DARK_TERMINAL</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="cmt">// Fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace font</span>
+<span class="kw">const</span> chart = <span class="kw">new</span> <span class="fn">Chart</span>(el, {'{'}
+  chartType: <span class="str">'candlestick'</span>,
+  theme: <span class="obj">DARK_TERMINAL</span>,
+{'}'})</pre>
       </div>
     </div>
   </section>
@@ -1263,6 +1374,22 @@ gauge.<span class="fn">setValue</span>(<span class="bool">85</span>)</pre>
     <p class="section-subtitle">Release history for @tradecanvas/chart.</p>
 
     <div class="changelog">
+      <div class="changelog-version">
+        <h3>0.5.0 <span class="changelog-date">2026-04-16</span></h3>
+        <div class="changelog-group">
+          <h4>Features</h4>
+          <ul>
+            <li>Typed event payloads via <code>ChartEventMap</code> — no more runtime guards</li>
+            <li><code>normalizeBar()</code> converts wire format <code>{'{'} t, o, h, l, c, v {'}'}</code> to OHLCBar</li>
+            <li><code>chart.setTimeframe(tf)</code> — switch without destroy/rebuild</li>
+            <li><code>chart.appendBars(bars)</code> — bulk reconnect catch-up</li>
+            <li><code>chart.setStatusText(text)</code> — show status in legend</li>
+            <li><code>DARK_TERMINAL</code> theme preset — fintech terminal palette</li>
+            <li><code>DataAdapterEventType</code> exported for type-safe adapters</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="changelog-version">
         <h3>0.4.0 <span class="changelog-date">2026-04-16</span></h3>
         <div class="changelog-group">

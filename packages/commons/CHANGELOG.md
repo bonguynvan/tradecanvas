@@ -1,5 +1,34 @@
 # @tradecanvas/commons
 
+## 0.5.0
+
+### Minor Changes
+
+- Broker integration API improvements — typed events, timestamp normalization, setTimeframe, DARK_TERMINAL theme.
+
+  ## Features
+
+  **Typed event payloads** — `chart.on('orderModify', e => e.payload.orderId)` now infers the correct payload type via `ChartEventMap`. No more runtime guards or `as any` casts.
+
+  **Timestamp normalization** — `normalizeBar()` converts wire format `{ t, o, h, l, c, v }` to `OHLCBar`. `normalizeBarTime()` auto-detects seconds vs milliseconds (`time > 1e12`).
+
+  **`chart.setTimeframe(tf)`** — switch timeframes on an active stream without destroy/rebuild. Internally delegates to `switchStream()` with the stored symbol.
+
+  **`chart.appendBars(bars)`** — bulk-append for reconnect catch-up. Recalculates indicators once instead of per-bar.
+
+  **`chart.setStatusText("LIVE · 8ms")`** — display custom status in the chart legend area.
+
+  **`chart.setCurrentPrice(price, pulseColor?)`** — optional pulse color parameter.
+
+  **`DARK_TERMINAL` theme** — fintech terminal palette (#0E0E0E bg, #00FF87 bull, #FF3B4D bear, monospace font).
+
+  **`DataAdapterEventType` exported** — adapters can now `implements DataAdapter` against the real contract.
+
+  ## Documentation
+
+  - JSDoc on `DataAdapter` interface clarifying observer pattern
+  - `OHLCBar.time` documented as milliseconds
+
 ## 0.4.0
 
 ### Minor Changes

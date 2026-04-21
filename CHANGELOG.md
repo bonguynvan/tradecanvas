@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 (2026-04-16)
+
+### Features
+
+- **Typed event payloads** — `chart.on('orderModify', e => e.payload.orderId)` infers payload type via `ChartEventMap`. Includes `OrderModifyPayload`, `PositionModifyPayload`, `OrderPlacePayload`, and 10 more typed payloads
+- **Timestamp normalization** — `normalizeBar({ t, o, h, l, c, v })` converts wire format to OHLCBar. `normalizeBarTime()` auto-detects seconds vs milliseconds
+- **`chart.setTimeframe(tf)`** — switch timeframes on active stream without destroy/rebuild
+- **`chart.appendBars(bars)`** — bulk append for reconnect catch-up (single indicator recalculate)
+- **`chart.setStatusText(text)`** — display status in chart legend area (e.g. "LIVE · 8ms")
+- **`chart.setCurrentPrice(price, pulseColor?)`** — optional pulse color
+- **`DARK_TERMINAL` theme** — fintech terminal palette (#0E0E0E bg, #00FF87/#FF3B4D candles, monospace font)
+- **`DataAdapterEventType` exported** — adapters can `implements DataAdapter` with full type safety
+
+### Documentation
+
+- JSDoc on `DataAdapter` interface clarifying observer pattern (reconnect to switch)
+- `OHLCBar.time` documented as milliseconds
+- All event payload types exported from main index
+
 ## 0.4.0 (2026-04-16)
 
 ### Features
