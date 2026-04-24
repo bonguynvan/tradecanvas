@@ -439,6 +439,66 @@ export function openVueSandbox(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Widget (ChartWidget)
+// ---------------------------------------------------------------------------
+
+export function openWidgetSandbox(): void {
+  sdk.openProject(
+    {
+      title: 'TradeCanvas — ChartWidget',
+      template: 'node',
+      files: {
+        'package.json': JSON.stringify(
+          {
+            name: 'tc-sandbox-widget',
+            private: true,
+            type: 'module',
+            scripts: { dev: 'vite' },
+            dependencies: { '@tradecanvas/chart': CHART_VERSION },
+            devDependencies: { vite: '^6.0.0', typescript: '~5.7.0' },
+          },
+          null,
+          2,
+        ),
+        'tsconfig.json': BASIC_TSCONFIG,
+        'index.html': [
+          '<!DOCTYPE html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="UTF-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+          '  <title>TradeCanvas — ChartWidget</title>',
+          `  <style>${BODY_CSS} #chart { width: 100%; height: 100vh; }</style>`,
+          '</head>',
+          '<body>',
+          '  <div id="chart"></div>',
+          '  <script type="module" src="/src/main.ts"></script>',
+          '</body>',
+          '</html>',
+        ].join('\n'),
+        'src/main.ts': [
+          "import { ChartWidget } from '@tradecanvas/chart/widget';",
+          "import { BinanceAdapter } from '@tradecanvas/chart';",
+          '',
+          "const container = document.getElementById('chart')!;",
+          '',
+          'const widget = new ChartWidget(container, {',
+          "  symbol: 'BTCUSDT',",
+          "  timeframe: '5m',",
+          '  adapter: new BinanceAdapter(),',
+          "  theme: 'dark',",
+          '  onReady: (chart) => {',
+          "    chart.addIndicator('sma', { period: 20 });",
+          '  },',
+          '});',
+        ].join('\n'),
+      },
+    },
+    { openFile: 'src/main.ts', newWindow: true },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Finance Charts — Waterfall + Gauge (combined)
 // ---------------------------------------------------------------------------
 

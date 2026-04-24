@@ -6,6 +6,7 @@
     openSvelteSandbox,
     openVueSandbox,
     openFinanceChartsSandbox,
+    openWidgetSandbox,
   } from '../lib/sandboxes';
 
   onMount(() => {
@@ -88,6 +89,7 @@
   <nav class="docs-sidebar">
     <div class="docs-sidebar-title">Documentation</div>
     <a class="docs-sidebar-link" href="#getting-started">Getting Started</a>
+    <a class="docs-sidebar-link" href="#widget">Widget</a>
     <a class="docs-sidebar-link" href="#integration">Integration Guide</a>
     <a class="docs-sidebar-link" href="#data">Data Format</a>
     <a class="docs-sidebar-link" href="#custom-adapter">Custom Adapter</a>
@@ -316,6 +318,14 @@ chart.<span class="fn">setData</span>(bars)</pre>
           </button>
         </div>
         <div class="sandbox-card">
+          <div class="sandbox-card-name">Widget</div>
+          <p class="sandbox-card-desc">Complete UI with toolbar and drawing sidebar</p>
+          <button class="stackblitz-btn" onclick={openWidgetSandbox}>
+            <svg width="14" height="14" viewBox="0 0 28 28" fill="currentColor"><polygon points="12.5 2 3 22 13 22 15.5 26 25 6 15 6"/></svg>
+            Open in StackBlitz
+          </button>
+        </div>
+        <div class="sandbox-card">
           <div class="sandbox-card-name">Waterfall + Gauge</div>
           <p class="sandbox-card-desc">P&L attribution and Fear & Greed gauge</p>
           <button class="stackblitz-btn" onclick={openFinanceChartsSandbox}>
@@ -324,6 +334,142 @@ chart.<span class="fn">setData</span>(bars)</pre>
           </button>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Widget -->
+  <section class="doc-section" id="widget">
+    <h2 class="section-title">ChartWidget</h2>
+    <p class="section-subtitle">Complete TradingView-like experience in one line. Zero framework dependencies.</p>
+
+    <h3>Basic Usage</h3>
+    <p class="doc-text">Import <code>ChartWidget</code> from the <code>@tradecanvas/chart/widget</code> subpath. Pass a container element and options — the widget handles all UI.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Widget — basic</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">import</span> {'{'} <span class="obj">ChartWidget</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart/widget'</span>
+<span class="kw">import</span> {'{'} <span class="obj">BinanceAdapter</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+
+<span class="kw">const</span> widget = <span class="kw">new</span> <span class="fn">ChartWidget</span>(document.<span class="fn">getElementById</span>(<span class="str">'chart'</span>)!, {'{'}
+  symbol: <span class="str">'BTCUSDT'</span>,
+  timeframe: <span class="str">'5m'</span>,
+  adapter: <span class="kw">new</span> <span class="fn">BinanceAdapter</span>(),
+  theme: <span class="str">'dark'</span>,
+{'}'})</pre>
+      </div>
+    </div>
+
+    <h3>Advanced Usage with Callbacks</h3>
+    <p class="doc-text">Use callbacks to react to user interactions. The <code>onReady</code> callback fires when the underlying chart is fully initialized.</p>
+    <div class="code-block">
+      <div class="code-header"><span>Widget — advanced</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">const</span> widget = <span class="kw">new</span> <span class="fn">ChartWidget</span>(container, {'{'}
+  symbol: <span class="str">'ETHUSDT'</span>,
+  timeframe: <span class="str">'15m'</span>,
+  adapter: <span class="kw">new</span> <span class="fn">BinanceAdapter</span>(),
+  theme: <span class="str">'dark'</span>,
+  toolbar: <span class="bool">true</span>,
+  drawingTools: <span class="bool">true</span>,
+  settings: <span class="bool">true</span>,
+  statusBar: <span class="bool">true</span>,
+  symbols: [<span class="str">'BTCUSDT'</span>, <span class="str">'ETHUSDT'</span>, <span class="str">'SOLUSDT'</span>],
+  onSymbolChange: (symbol) =&gt; console.<span class="fn">log</span>(<span class="str">'Symbol:'</span>, symbol),
+  onTimeframeChange: (tf) =&gt; console.<span class="fn">log</span>(<span class="str">'Timeframe:'</span>, tf),
+  onReady: (chart) =&gt; {'{'}
+    chart.<span class="fn">addIndicator</span>(<span class="str">'sma'</span>, {'{'} period: <span class="bool">20</span> {'}'})
+    chart.<span class="fn">addIndicator</span>(<span class="str">'rsi'</span>)
+  {'}'},
+{'}'})</pre>
+      </div>
+    </div>
+
+    <h3>Direct Chart API Access</h3>
+    <p class="doc-text">Use <code>widget.getChart()</code> to access the underlying <code>Chart</code> instance for full programmatic control.</p>
+    <div class="code-block">
+      <div class="code-header"><span>widget.getChart()</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre><span class="kw">const</span> chart = widget.<span class="fn">getChart</span>()
+
+<span class="cmt">// Add indicators programmatically</span>
+chart.<span class="fn">addIndicator</span>(<span class="str">'bollinger'</span>)
+
+<span class="cmt">// Listen to chart events</span>
+chart.<span class="fn">on</span>(<span class="str">'barClick'</span>, (e) =&gt; console.<span class="fn">log</span>(e.payload))
+
+<span class="cmt">// Trading overlay</span>
+chart.<span class="fn">setPositions</span>([{'{'}
+  id: <span class="str">'pos-1'</span>,
+  side: <span class="str">'buy'</span>,
+  entryPrice: <span class="bool">3500</span>,
+  quantity: <span class="bool">1.5</span>,
+  stopLoss: <span class="bool">3400</span>,
+  takeProfit: <span class="bool">3700</span>,
+{'}'}])
+
+<span class="cmt">// Change symbol/timeframe</span>
+widget.<span class="fn">setSymbol</span>(<span class="str">'SOLUSDT'</span>)
+widget.<span class="fn">setTimeframe</span>(<span class="str">'1h'</span>)
+
+<span class="cmt">// Clean up</span>
+widget.<span class="fn">destroy</span>()</pre>
+      </div>
+    </div>
+
+    <h3>Widget Options</h3>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Option</th>
+          <th>Type</th>
+          <th>Default</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>symbol</code></td><td><code>string</code></td><td><code>'BTCUSDT'</code></td><td>Initial trading symbol</td></tr>
+        <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td><code>'5m'</code></td><td>Initial timeframe</td></tr>
+        <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td><code>'dark'</code></td><td>Chart theme</td></tr>
+        <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>--</td><td>Data source adapter</td></tr>
+        <tr><td><code>toolbar</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show top toolbar</td></tr>
+        <tr><td><code>drawingTools</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show left drawing sidebar</td></tr>
+        <tr><td><code>settings</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show settings button</td></tr>
+        <tr><td><code>trading</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Enable trading overlay</td></tr>
+        <tr><td><code>statusBar</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show bottom status bar</td></tr>
+        <tr><td><code>symbols</code></td><td><code>string[]</code></td><td>BTC/ETH/SOL/BNB</td><td>Available symbols</td></tr>
+        <tr><td><code>timeframes</code></td><td><code>TimeFrame[]</code></td><td>1m to 1d</td><td>Available timeframes</td></tr>
+        <tr><td><code>chartTypes</code></td><td><code>ChartType[]</code></td><td>7 types</td><td>Available chart types</td></tr>
+        <tr><td><code>onSymbolChange</code></td><td><code>(symbol) =&gt; void</code></td><td>--</td><td>Symbol change callback</td></tr>
+        <tr><td><code>onTimeframeChange</code></td><td><code>(tf) =&gt; void</code></td><td>--</td><td>Timeframe change callback</td></tr>
+        <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>--</td><td>Fired when chart is ready</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Widget vs Headless</h3>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th><code>Chart</code> (headless)</th>
+          <th><code>ChartWidget</code></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Import</td><td><code>@tradecanvas/chart</code></td><td><code>@tradecanvas/chart/widget</code></td></tr>
+        <tr><td>UI included</td><td>None -- build your own</td><td>Complete toolbar, sidebar, settings</td></tr>
+        <tr><td>Bundle impact</td><td>~50 KB gzip</td><td>~65 KB gzip (includes UI)</td></tr>
+        <tr><td>Framework</td><td>Any (React, Vue, Svelte, vanilla)</td><td>Vanilla JS DOM (works everywhere)</td></tr>
+        <tr><td>Customization</td><td>Full control</td><td>Toggle sections on/off</td></tr>
+        <tr><td>Advanced access</td><td>Direct API</td><td><code>widget.getChart()</code> for direct API</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Widget StackBlitz -->
+    <div class="stackblitz-row">
+      <button class="stackblitz-btn" onclick={openWidgetSandbox}>
+        <svg width="14" height="14" viewBox="0 0 28 28" fill="currentColor"><polygon points="12.5 2 3 22 13 22 15.5 26 25 6 15 6"/></svg>
+        Open Widget in StackBlitz
+      </button>
     </div>
   </section>
 
@@ -1379,6 +1525,7 @@ gauge.<span class="fn">setValue</span>(<span class="bool">85</span>)</pre>
         <div class="changelog-group">
           <h4>Features</h4>
           <ul>
+            <li><strong>ChartWidget</strong> — built-in TradingView-like UI via <code>@tradecanvas/chart/widget</code>. One-line embed with toolbar, drawing sidebar, settings modal, and status bar</li>
             <li>Typed event payloads via <code>ChartEventMap</code> — no more runtime guards</li>
             <li><code>normalizeBar()</code> converts wire format <code>{'{'} t, o, h, l, c, v {'}'}</code> to OHLCBar</li>
             <li><code>chart.setTimeframe(tf)</code> — switch without destroy/rebuild</li>

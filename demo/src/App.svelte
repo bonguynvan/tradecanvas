@@ -94,6 +94,16 @@ chart.connect({
   </div>
 </section>
 
+<!-- Widget Announcement -->
+<section class="widget-section">
+  <div class="widget-callout">
+    <h3>New: ChartWidget</h3>
+    <p>Complete TradingView-like UI in one line — no framework needed.</p>
+    <code>import {'{'} ChartWidget {'}'} from '@tradecanvas/chart/widget'</code>
+    <a href="#widget">See documentation</a>
+  </div>
+</section>
+
 <!-- Chart Demo -->
 <ChartDemo />
 

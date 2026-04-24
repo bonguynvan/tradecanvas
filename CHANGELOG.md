@@ -4,6 +4,7 @@
 
 ### Features
 
+- **ChartWidget — built-in TradingView-like UI** — new `@tradecanvas/chart/widget` subpath export. One-line embed with complete toolbar, drawing sidebar, settings modal, and status bar. Zero framework dependencies, CSS scoped with `tcw-` prefix
 - **Typed event payloads** — `chart.on('orderModify', e => e.payload.orderId)` infers payload type via `ChartEventMap`. Includes `OrderModifyPayload`, `PositionModifyPayload`, `OrderPlacePayload`, and 10 more typed payloads
 - **Timestamp normalization** — `normalizeBar({ t, o, h, l, c, v })` converts wire format to OHLCBar. `normalizeBarTime()` auto-detects seconds vs milliseconds
 - **`chart.setTimeframe(tf)`** — switch timeframes on active stream without destroy/rebuild

@@ -55,6 +55,55 @@ chart.connect({
 
 That's it. A full-featured trading chart with live data in 15 lines.
 
+## Widget (Complete UI)
+
+For a complete TradingView-like experience with built-in toolbar, drawing tools, and settings — no UI code needed:
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  adapter: new BinanceAdapter(),
+  theme: 'dark',
+})
+```
+
+That's it. Full toolbar, drawing sidebar, settings modal, and status bar — all included.
+
+### Widget Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `symbol` | `string` | `'BTCUSDT'` | Initial trading symbol |
+| `timeframe` | `TimeFrame` | `'5m'` | Initial timeframe |
+| `theme` | `'dark' \| 'light' \| Theme` | `'dark'` | Chart theme |
+| `adapter` | `DataAdapter` | — | Data source adapter |
+| `toolbar` | `boolean` | `true` | Show top toolbar |
+| `drawingTools` | `boolean` | `true` | Show left drawing sidebar |
+| `settings` | `boolean` | `true` | Show settings button |
+| `trading` | `boolean` | `true` | Enable trading overlay |
+| `statusBar` | `boolean` | `true` | Show bottom status bar |
+| `symbols` | `string[]` | BTC/ETH/SOL/BNB | Available symbols |
+| `timeframes` | `TimeFrame[]` | 1m to 1d | Available timeframes |
+| `chartTypes` | `ChartType[]` | 7 types | Available chart types |
+| `onSymbolChange` | `(symbol) => void` | — | Symbol change callback |
+| `onTimeframeChange` | `(tf) => void` | — | Timeframe change callback |
+| `onReady` | `(chart) => void` | — | Fired when chart is ready |
+
+### Widget vs Headless
+
+| | `Chart` (headless) | `ChartWidget` |
+|---|---|---|
+| Import | `@tradecanvas/chart` | `@tradecanvas/chart/widget` |
+| UI included | None — build your own | Complete toolbar, sidebar, settings |
+| Bundle impact | ~50 KB gzip | ~65 KB gzip (includes UI) |
+| Framework | Any (React, Vue, Svelte, vanilla) | Vanilla JS DOM (works everywhere) |
+| Customization | Full control | Toggle sections on/off |
+| Advanced access | Direct API | `widget.getChart()` for direct API |
+
 ## Features
 
 ### Chart Types
@@ -256,6 +305,7 @@ const { current, total, percent } = chart.getReplayProgress()
 | Multi-panel | Yes | No | No | Yes |
 | Bundle (gzip) | ~50 KB | ~45 KB | ~70 KB | ~200 KB |
 | Dependencies | 0 | 1 | 0 | 0 |
+| Widget (complete UI) | Yes (`ChartWidget`) | No | No | No |
 | License | MIT | Apache 2.0 | MIT | Commercial |
 
 ## API Overview

@@ -358,6 +358,59 @@
 
     .footer-sep { color: var(--border); }
 
+    /* Widget announcement */
+    .widget-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .widget-callout {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px 20px;
+      background: var(--bg-elevated);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-bottom: 8px;
+    }
+
+    .widget-callout h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .widget-callout p {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin: 0;
+    }
+
+    .widget-callout code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(59, 130, 246, 0.08);
+      padding: 4px 8px;
+      border-radius: 4px;
+      align-self: flex-start;
+    }
+
+    .widget-callout a {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      align-self: flex-start;
+    }
+
+    .widget-callout a:hover {
+      text-decoration: underline;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .hero { padding: 40px 16px 24px; }
