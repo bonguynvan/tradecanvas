@@ -8,10 +8,11 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'ChartLib',
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'widget/index': resolve(__dirname, 'src/widget/index.ts'),
+      },
       formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`,
     },
     rollupOptions: {
       // Keep sibling packages external — they're published as separate npm
