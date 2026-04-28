@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -12,8 +13,8 @@ export class BollingerBandsIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const period = config.params.period as number;
-    const stdDevMult = config.params.stdDev as number;
+    const period = getIntParam(config, 'period', 20, 1);
+    const stdDevMult = getNumberParam(config, 'stdDev', 2);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 

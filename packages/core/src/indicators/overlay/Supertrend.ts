@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam, getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class SupertrendIndicator extends IndicatorBase {
@@ -11,8 +12,8 @@ export class SupertrendIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const period = config.params.period as number;
-    const multiplier = config.params.multiplier as number;
+    const period = getIntParam(config, 'period', 10, 1);
+    const multiplier = getNumberParam(config, 'multiplier', 3);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < period) return { values, series };

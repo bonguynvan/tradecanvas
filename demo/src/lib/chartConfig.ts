@@ -17,6 +17,11 @@ export const CHART_TYPES: { label: string; value: ChartType }[] = [
   { label: 'Heikin-Ashi', value: 'heikinAshi' },
   { label: 'Hollow Candle', value: 'hollowCandle' },
   { label: 'Baseline', value: 'baseline' },
+  { label: 'Renko', value: 'renko' },
+  { label: 'Kagi', value: 'kagi' },
+  { label: 'Line Break', value: 'lineBreak' },
+  { label: 'Point & Figure', value: 'pointAndFigure' },
+  { label: 'Range Bars', value: 'rangeBars' },
 ];
 
 export interface DrawingToolGroupDef {
@@ -97,13 +102,18 @@ export interface IndicatorDef {
 export const INDICATORS: IndicatorDef[] = [
   { id: 'sma', name: 'SMA', type: 'overlay' },
   { id: 'ema', name: 'EMA', type: 'overlay' },
+  { id: 'hma', name: 'Hull MA', type: 'overlay' },
   { id: 'bb', name: 'Bollinger Bands', type: 'overlay' },
   { id: 'vwap', name: 'VWAP', type: 'overlay' },
+  { id: 'avwap', name: 'Anchored VWAP', type: 'overlay' },
   { id: 'ichimoku', name: 'Ichimoku Cloud', type: 'overlay' },
   { id: 'psar', name: 'Parabolic SAR', type: 'overlay' },
   { id: 'supertrend', name: 'Supertrend', type: 'overlay' },
   { id: 'keltner', name: 'Keltner Channel', type: 'overlay' },
   { id: 'donchian', name: 'Donchian Channel', type: 'overlay' },
+  { id: 'pivots', name: 'Pivot Points', type: 'overlay' },
+  { id: 'zigzag', name: 'ZigZag', type: 'overlay' },
+  { id: 'lrc', name: 'Linear Regression Channel', type: 'overlay' },
   { id: 'rsi', name: 'RSI', type: 'panel' },
   { id: 'macd', name: 'MACD', type: 'panel' },
   { id: 'stochastic', name: 'Stochastic', type: 'panel' },
@@ -120,6 +130,8 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'stddev', name: 'Std Deviation', type: 'panel' },
   { id: 'vroc', name: 'Volume ROC', type: 'panel' },
   { id: 'ad', name: 'Acc/Dist', type: 'panel' },
+  { id: 'ao', name: 'Awesome Oscillator', type: 'panel' },
+  { id: 'chaikinOsc', name: 'Chaikin Oscillator', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

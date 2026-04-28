@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -12,9 +13,9 @@ export class IchimokuIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const tenkanPeriod = config.params.tenkan as number;
-    const kijunPeriod = config.params.kijun as number;
-    const senkouBPeriod = config.params.senkou as number;
+    const tenkanPeriod = getIntParam(config, 'tenkan', 9, 1);
+    const kijunPeriod = getIntParam(config, 'kijun', 26, 1);
+    const senkouBPeriod = getIntParam(config, 'senkou', 52, 1);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 

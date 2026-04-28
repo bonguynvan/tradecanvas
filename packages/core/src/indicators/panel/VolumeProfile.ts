@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam } from '../params.js';
 
 export class VolumeProfileIndicator extends IndicatorBase {
   descriptor = {
@@ -10,7 +11,7 @@ export class VolumeProfileIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const rows = config.params.rows as number;
+    const rows = getIntParam(config, 'rows', 24, 1);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };

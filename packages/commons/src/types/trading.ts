@@ -20,9 +20,31 @@ export interface TradingPosition {
   side: OrderSide;
   entryPrice: number;
   quantity: number;
+  /** Quantity already closed (for partial-close visualization). 0 ≤ closedQuantity ≤ quantity. */
+  closedQuantity?: number;
   stopLoss?: number;
   takeProfit?: number;
   meta?: Record<string, unknown>;
+}
+
+/** Threshold-based P&L color stop. Sorted ascending by `pnl` is recommended. */
+export interface PnLThreshold {
+  /** Inclusive lower bound. Use -Infinity for the bottom-most stop. */
+  pnl: number;
+  color: string;
+}
+
+/** Tokens passed to position label templates. */
+export interface PositionLabelContext {
+  side: OrderSide;
+  quantity: number;
+  closedQuantity: number;
+  openQuantity: number;
+  entryPrice: number;
+  currentPrice: number;
+  pnl: number;
+  pnlPct: number;
+  precision: number;
 }
 
 export interface DepthLevel {
@@ -39,6 +61,18 @@ export interface TradingConfig {
   enabled: boolean;
   orderColors?: { buy?: string; sell?: string };
   positionColors?: { profit?: string; loss?: string; entry?: string };
+  /**
+   * Optional gradient of colors keyed to P&L value. When provided, the rendered
+   * position zone uses the color of the highest threshold whose `pnl` ≤ live P&L.
+   * Falls back to `positionColors.profit`/`.loss` when unset.
+   */
+  pnlThresholds?: PnLThreshold[];
+  /**
+   * Position P&L label template. Supports tokens: {side} {qty} {closedQty}
+   * {openQty} {entry} {price} {pnl} {pnlPct} {pnlSign}. Pass a function for
+   * full control. Default: `{side} {qty} | P&L: {pnlSign}{pnl}`.
+   */
+  positionLabel?: string | ((ctx: PositionLabelContext) => string);
   depthOverlay?: {
     enabled?: boolean;
     bidColor?: string;

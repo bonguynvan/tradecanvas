@@ -9,6 +9,13 @@ import { ParabolicSARIndicator } from './overlay/ParabolicSAR.js';
 import { SupertrendIndicator } from './overlay/Supertrend.js';
 import { KeltnerChannelIndicator } from './overlay/KeltnerChannel.js';
 import { DonchianChannelIndicator } from './overlay/DonchianChannel.js';
+import { PivotPointsIndicator } from './overlay/PivotPoints.js';
+import { AnchoredVWAPIndicator } from './overlay/AnchoredVWAP.js';
+import { ZigZagIndicator } from './overlay/ZigZag.js';
+import { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChannel.js';
+import { HullMAIndicator } from './overlay/HullMA.js';
+import { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
+import { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 // Panels
 import { RSIIndicator } from './panel/RSI.js';
 import { MACDIndicator } from './panel/MACD.js';
@@ -39,6 +46,11 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new SupertrendIndicator());
   engine.register(new KeltnerChannelIndicator());
   engine.register(new DonchianChannelIndicator());
+  engine.register(new PivotPointsIndicator());
+  engine.register(new AnchoredVWAPIndicator());
+  engine.register(new ZigZagIndicator());
+  engine.register(new LinearRegressionChannelIndicator());
+  engine.register(new HullMAIndicator());
   // Panels
   engine.register(new RSIIndicator());
   engine.register(new MACDIndicator());
@@ -57,4 +69,6 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new VolumeProfileIndicator());
   engine.register(new AccumulationDistributionIndicator());
   engine.register(new VROCIndicator());
+  engine.register(new AwesomeOscillatorIndicator());
+  engine.register(new ChaikinOscillatorIndicator());
 }

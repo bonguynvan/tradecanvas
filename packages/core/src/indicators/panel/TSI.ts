@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class TSIIndicator extends IndicatorBase {
@@ -20,9 +21,9 @@ export class TSIIndicator extends IndicatorBase {
   }
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const longP = config.params.longPeriod as number;
-    const shortP = config.params.shortPeriod as number;
-    const sigP = config.params.signalPeriod as number;
+    const longP = getIntParam(config, 'longPeriod', 25, 1);
+    const shortP = getIntParam(config, 'shortPeriod', 13, 1);
+    const sigP = getIntParam(config, 'signalPeriod', 7, 1);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < 2) return { values, series };

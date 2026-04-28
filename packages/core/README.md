@@ -30,19 +30,35 @@ Multi-layer canvas rendering for optimal performance -- only dirty layers repain
 - `RenderLoop` -- requestAnimationFrame loop with dirty tracking
 - `DPRManager` -- device pixel ratio handling for crisp rendering
 
-### Chart Renderers (11 types)
+### Chart Renderers (12 types)
 
-`CandlestickRenderer`, `HollowCandleRenderer`, `BarRenderer`, `LineRenderer`, `AreaRenderer`, `BaselineRenderer`, `RenkoRenderer`, `KagiRenderer`, `PointAndFigureRenderer`, `VolumeRenderer`, `CompareRenderer`
+`CandlestickRenderer`, `HollowCandleRenderer`, `BarRenderer`, `LineRenderer`, `AreaRenderer`, `BaselineRenderer`, `RenkoRenderer`, `KagiRenderer`, `PointAndFigureRenderer`, `VolumeRenderer`, `CompareRenderer`. Range bars reuse `CandlestickRenderer` against transformed data.
 
-Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`
+Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars`
 
-### Indicators (26 built-in)
+### Indicators (33 built-in)
 
-**Overlay** (on price chart): SMA, EMA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP
+**Overlay** (on price chart): SMA, EMA, Hull MA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP, Anchored VWAP, Pivot Points (Classic), ZigZag, Linear Regression Channel
 
-**Panel** (separate sub-chart): RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+**Panel** (separate sub-chart): RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Awesome Oscillator, Chaikin Oscillator, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+
+Indicator parameters are read through `getNumberParam` / `getIntParam` helpers, so invalid values (NaN, Infinity, missing keys, non-numeric strings) safely fall back to defaults instead of producing NaN-laced calculations.
 
 Extensible via `IndicatorBase` for custom indicators.
+
+### Web Worker offload
+
+`IndicatorWorkerHost` wraps a `Worker` and exposes a Promise-based `calculate()` so heavy charts can run indicator math off the main thread:
+
+```ts
+import { IndicatorWorkerHost } from '@tradecanvas/core'
+
+const worker = new Worker(new URL('./dist/indicator.worker.js', import.meta.url), { type: 'module' })
+const host = new IndicatorWorkerHost(worker)
+const output = await host.calculate('rsi', config, bars)
+```
+
+Pass `null` instead of a worker for synchronous fallback (SSR, tests). The shipped `indicator.worker.js` registers all 33 built-in indicators and supports `calculate` and `ping` requests.
 
 ### Drawing Tools (23)
 

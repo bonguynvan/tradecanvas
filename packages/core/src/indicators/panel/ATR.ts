@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class ATRIndicator extends IndicatorBase {
@@ -11,7 +12,7 @@ export class ATRIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const period = config.params.period as number;
+    const period = getIntParam(config, 'period', 14, 1);
     const values = new Map<number, IndicatorValue>();
 
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);

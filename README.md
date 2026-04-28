@@ -8,7 +8,7 @@ High-performance canvas trading chart with built-in indicators, drawing tools, a
 
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
-- **20+ built-in indicators** — MA, EMA, RSI, MACD, Bollinger, Ichimoku, and more. No separate calculation library needed.
+- **33+ built-in indicators** — MA, EMA, Hull MA, RSI, MACD, Bollinger, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
 - **10+ drawing tools** — Trendlines, Fibonacci retracement, horizontal/vertical lines, rectangles, channels, Elliott waves, Gann fans. With undo/redo.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Users can drag SL/TP to modify.
 - **Real-time streaming** — Built-in Binance adapter. Plug in your own data source with the adapter interface.
@@ -121,6 +121,7 @@ That's it. Full toolbar, drawing sidebar, settings modal, and status bar — all
 | Kagi | Reversal-based line chart |
 | Point & Figure | X/O columns for supply/demand analysis |
 | Line Break | Three-line break charts |
+| Range Bars | Fixed price-range bars — each bar's high − low equals a configured range |
 
 ### Finance Charts
 
@@ -175,10 +176,12 @@ gauge.setValue(85) // animates smoothly
 ### Indicators (built-in)
 
 **Overlay** (drawn on the price chart):
-SMA, EMA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP
+SMA, EMA, Hull MA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP, Anchored VWAP, Pivot Points (Classic), ZigZag, Linear Regression Channel
 
 **Panel** (separate sub-chart):
-RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Awesome Oscillator, Chaikin Oscillator, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+
+All indicator parameters are validated at runtime — invalid values (NaN, Infinity, non-numeric strings, missing keys) fall back to documented defaults instead of silently propagating to calculations.
 
 ### Drawing Tools
 
@@ -202,6 +205,7 @@ chart.setPositions([{
   side: 'buy',
   entryPrice: 3500,
   quantity: 1.5,
+  closedQuantity: 0.5,   // partial close — visualized as a left-edge dim band
   stopLoss: 3400,
   takeProfit: 3700,
 }])
@@ -215,6 +219,18 @@ chart.setOrders([{
   label: 'TP',
   draggable: true,
 }])
+
+// Customize the position zone color via P&L thresholds
+chart.setTradingConfig({
+  pnlThresholds: [
+    { pnl: -Infinity, color: '#b91c1c' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 50,        color: '#16a34a' },
+    { pnl: 200,       color: '#15803d' },
+  ],
+  // Custom label template — tokens: {side} {qty} {openQty} {closedQty} {entry} {price} {pnl} {pnlPct} {pnlSign}
+  positionLabel: '{side} {openQty}/{qty} @ {entry} | {pnlSign}{pnl} ({pnlPct})',
+})
 
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
@@ -238,6 +254,43 @@ chart.appendBar(newBar)
 chart.updateLastBar(updatedBar)
 chart.setCurrentPrice(3500.42)
 ```
+
+### Web Worker indicator pipeline
+
+Heavy charts (1,000+ bars × 10+ indicators) can stutter when `calculate()` runs on the main thread. `IndicatorWorkerHost` offloads calculation to a worker so the render loop stays smooth.
+
+```typescript
+import { IndicatorWorkerHost } from '@tradecanvas/core'
+
+// Bundler-supported worker URL (Vite, webpack 5, esbuild, etc.)
+const worker = new Worker(
+  new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url),
+  { type: 'module' },
+)
+const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
+
+const output = await host.calculate(
+  'rsi',
+  { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } },
+  bars,
+)
+
+// Health check / cleanup
+await host.ping()
+host.terminate()
+```
+
+No worker available (SSR, tests, or as a safety net)? Pass `null` and register fallback plugins for synchronous calculation:
+
+```typescript
+import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
+
+const host = new IndicatorWorkerHost(null)
+host.registerFallbackPlugin(new RSIIndicator())
+const output = await host.calculate('rsi', config, bars)  // runs synchronously
+```
+
+Render still happens on the main thread (it needs `CanvasRenderingContext2D`). Only the heavy compute moves off-thread.
 
 ### Save / Load
 
@@ -294,9 +347,9 @@ const { current, total, percent } = chart.getReplayProgress()
 
 | Feature | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Chart types | 11 + 4 finance | 4 | 8 (non-financial) | 10+ |
-| Finance charts | Sparkline, Depth, Equity, Heatmap | None | None | Some |
-| Built-in indicators | 20+ | 0 | 0 | ~30 |
+| Chart types | 12 + 6 finance | 4 | 8 (non-financial) | 10+ |
+| Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
+| Built-in indicators | 33+ | 0 | 0 | ~30 |
 | Drawing tools | 23 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |
 | Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |

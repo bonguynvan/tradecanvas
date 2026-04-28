@@ -33,10 +33,6 @@ import { LayerType, setLocale as setGlobalLocale, computePriceLimits } from '@tr
 import {
   RenderEngine,
   Viewport,
-  CandlestickRenderer,
-  LineRenderer,
-  AreaRenderer,
-  BarRenderer,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -65,22 +61,16 @@ import {
   Animator,
   KeyboardHandler,
   CrosshairTooltip,
-  HollowCandleRenderer,
-  BaselineRenderer,
-  RenkoRenderer,
-  KagiRenderer,
-  PointAndFigureRenderer,
-  toHeikinAshi,
-  toRenko,
-  toLineBreak,
-  toKagi,
-  toPointAndFigure,
   DataExporter,
   SessionBreaks,
   CompareRenderer,
   CurrentPriceLine,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
+import { timeframeToMs } from '@tradecanvas/commons';
+import { createRendererFor, transformDisplayData } from './charts/ChartTypeStrategy.js';
+import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
+import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
@@ -119,9 +109,7 @@ export class Chart {
   private alertManager: AlertManager;
   private replayManager: ReplayManager;
   private undoRedoManager: UndoRedoManager;
-  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
-  private autoSaveDelay = 0; // 0 = disabled
-  private autoSaveKey: string | null = null;
+  private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
   private crosshairTooltip: CrosshairTooltip;
   private interactionManager: InteractionManager;
@@ -698,28 +686,15 @@ export class Chart {
   // --- Auto-save ---
 
   setAutoSave(key: string, delayMs = 5000): void {
-    this.autoSaveKey = key;
-    this.autoSaveDelay = delayMs;
+    this.autoSaveScheduler.enable(key, delayMs);
   }
 
   disableAutoSave(): void {
-    this.autoSaveDelay = 0;
-    this.autoSaveKey = null;
-    if (this.autoSaveTimer) {
-      clearTimeout(this.autoSaveTimer);
-      this.autoSaveTimer = null;
-    }
+    this.autoSaveScheduler.disable();
   }
 
   private scheduleAutoSave(): void {
-    if (this.autoSaveDelay <= 0 || !this.autoSaveKey) return;
-    if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
-    this.autoSaveTimer = setTimeout(() => {
-      this.autoSaveTimer = null;
-      if (this.autoSaveKey) {
-        this.saveState(this.autoSaveKey);
-      }
-    }, this.autoSaveDelay);
+    this.autoSaveScheduler.schedule();
   }
 
   // --- Indicator introspection ---
@@ -844,7 +819,7 @@ export class Chart {
     await this.streamManager.connect(config);
 
     // Set up bar countdown timer based on timeframe
-    const tfMs = this.timeframeToMs(config.timeframe);
+    const tfMs = timeframeToMs(config.timeframe);
     this.barCountdown.setTimeframeMs(tfMs);
 
     // Start countdown refresh interval
@@ -1391,42 +1366,15 @@ export class Chart {
   // --- Internal ---
 
   private createChartRenderer(type: ChartType): ChartRendererInterface {
-    switch (type) {
-      case 'candlestick': return new CandlestickRenderer();
-      case 'heikinAshi': return new CandlestickRenderer(); // Same renderer, different data
-      case 'line': return new LineRenderer();
-      case 'area': return new AreaRenderer();
-      case 'bar': return new BarRenderer();
-      case 'hollowCandle': return new HollowCandleRenderer();
-      case 'baseline': return new BaselineRenderer();
-      case 'renko': return new RenkoRenderer();
-      case 'lineBreak': return new CandlestickRenderer(); // Candle renderer on transformed data
-      case 'kagi': return new KagiRenderer();
-      case 'pointAndFigure': return new PointAndFigureRenderer();
-      default: return new CandlestickRenderer();
-    }
+    return createRendererFor(type);
   }
 
   /** Cached display data. Invalidated when raw data or chart type changes. */
   private getDisplayData(): DataSeries {
     if (this.displayDataCache) return this.displayDataCache;
-
     const raw = this.dataManager.getData();
     if (raw.length === 0) return raw;
-
-    let result: DataSeries;
-    switch (this.options.chartType) {
-      case 'heikinAshi': result = toHeikinAshi(raw); break;
-      case 'renko': result = toRenko(raw, { brickSize: 0, useATR: true, atrPeriod: 14 }); break;
-      case 'lineBreak': result = toLineBreak(raw, 3); break;
-      case 'kagi': result = toKagi(raw, 4); break;
-      case 'pointAndFigure': {
-        const avgPrice = raw.reduce((s, b) => s + b.close, 0) / raw.length;
-        result = toPointAndFigure(raw, avgPrice * 0.01, 3);
-        break;
-      }
-      default: result = raw;
-    }
+    const result = transformDisplayData(this.options.chartType, raw);
     this.displayDataCache = result;
     return result;
   }
@@ -1507,32 +1455,10 @@ export class Chart {
     const resolved = this.getResolvedLayout();
     const mainVP = this.viewport.getState();
 
+    const { from, to } = mainVP.visibleRange;
     const panels = resolved.panels.map((panel) => {
       const output = this.indicatorEngine.getOutput(panel.config.id);
-      let min = 0, max = 100;
-
-      if (output) {
-        let vMin = Infinity, vMax = -Infinity;
-        const { from, to } = mainVP.visibleRange;
-        let idx = 0;
-        for (const [, val] of output.values) {
-          if (idx >= from && idx <= to) {
-            for (const key in val) {
-              const v = val[key];
-              if (v !== undefined) {
-                if (v < vMin) vMin = v;
-                if (v > vMax) vMax = v;
-              }
-            }
-          }
-          idx++;
-        }
-        if (vMin !== Infinity) {
-          const range = vMax - vMin || 1;
-          min = vMin - range * 0.1;
-          max = vMax + range * 0.1;
-        }
-      }
+      const priceRange = computeIndicatorPriceRange(output, from, to);
 
       // Inset the indicator drawing area below the panel header (title + divider)
       const PANEL_HEADER_HEIGHT = 20;
@@ -1549,7 +1475,7 @@ export class Chart {
         viewport: {
           ...mainVP,
           chartRect: insetRect,
-          priceRange: { min, max },
+          priceRange,
         },
       };
     });
@@ -1592,21 +1518,6 @@ export class Chart {
       data: this.getDisplayData(),
       numberLocale: this.numberLocale,
     });
-  }
-
-  private timeframeToMs(tf: string): number {
-    const match = tf.match(/^(\d+)([smhdwMy])$/);
-    if (!match) return 0;
-    const n = parseInt(match[1], 10);
-    switch (match[2]) {
-      case 's': return n * 1000;
-      case 'm': return n * 60_000;
-      case 'h': return n * 3_600_000;
-      case 'd': return n * 86_400_000;
-      case 'w': return n * 604_800_000;
-      case 'M': return n * 2_592_000_000;
-      default: return 0;
-    }
   }
 
   private buildPriceLimits() {

@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class ParabolicSARIndicator extends IndicatorBase {
@@ -11,8 +12,8 @@ export class ParabolicSARIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const stepVal = config.params.step as number;
-    const maxVal = config.params.max as number;
+    const stepVal = getNumberParam(config, 'step', 0.02);
+    const maxVal = getNumberParam(config, 'max', 0.2);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < 2) return { values, series };

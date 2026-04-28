@@ -11,6 +11,18 @@ export { ParabolicSARIndicator } from './overlay/ParabolicSAR.js';
 export { SupertrendIndicator } from './overlay/Supertrend.js';
 export { KeltnerChannelIndicator } from './overlay/KeltnerChannel.js';
 export { DonchianChannelIndicator } from './overlay/DonchianChannel.js';
+export { PivotPointsIndicator } from './overlay/PivotPoints.js';
+export { AnchoredVWAPIndicator } from './overlay/AnchoredVWAP.js';
+export { ZigZagIndicator } from './overlay/ZigZag.js';
+export { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChannel.js';
+export { HullMAIndicator } from './overlay/HullMA.js';
+export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
+export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
+export { getNumberParam, getIntParam } from './params.js';
+export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
+export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';
+export type { IndicatorWorkerRequest, IndicatorWorkerResponse } from './worker/messages.js';
+export { isWorkerResponse } from './worker/messages.js';
 // Panels
 export { RSIIndicator } from './panel/RSI.js';
 export { MACDIndicator } from './panel/MACD.js';

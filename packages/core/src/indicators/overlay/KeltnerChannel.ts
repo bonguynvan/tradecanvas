@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -12,9 +13,9 @@ export class KeltnerChannelIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const emaPeriod = config.params.emaPeriod as number;
-    const atrPeriod = config.params.atrPeriod as number;
-    const mult = config.params.multiplier as number;
+    const emaPeriod = getIntParam(config, 'emaPeriod', 20, 1);
+    const atrPeriod = getIntParam(config, 'atrPeriod', 10, 1);
+    const mult = getNumberParam(config, 'multiplier', 1.5);
     const values = new Map<number, IndicatorValue>();
     if (data.length < Math.max(emaPeriod, atrPeriod)) return { values };
 

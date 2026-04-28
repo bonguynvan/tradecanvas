@@ -9,6 +9,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "clean": "pnpm -r clean",
+    "test": "pnpm --filter \"./packages/*\" run --if-present test",
     "typecheck": "pnpm --filter \"./packages/*\" exec tsc --noEmit",
     "changeset": "changeset",
     "changeset:version": "changeset version",

@@ -5,7 +5,8 @@ import type { TimeFrame } from './ohlc.js';
 export type ChartType =
   | 'candlestick' | 'line' | 'area' | 'bar'
   | 'heikinAshi' | 'hollowCandle' | 'baseline'
-  | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure';
+  | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure'
+  | 'rangeBars';
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 

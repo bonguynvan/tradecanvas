@@ -7,6 +7,7 @@ import type {
   OHLCBar,
   TimeFrame,
 } from '@tradecanvas/commons';
+import { parseRestKline, parseWsKline } from './binanceTypes.js';
 
 const TF_MAP: Record<string, string> = {
   '1s': '1s', '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
@@ -69,15 +70,14 @@ export class BinanceAdapter implements DataAdapter {
 
     if (!res.ok) throw new Error(`Binance REST error: ${res.status}`);
 
-    const data = await res.json();
-    return data.map((k: any[]) => ({
-      time: k[0] as number,
-      open: parseFloat(k[1]),
-      high: parseFloat(k[2]),
-      low: parseFloat(k[3]),
-      close: parseFloat(k[4]),
-      volume: parseFloat(k[5]),
-    }));
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) return [];
+    const bars: OHLCBar[] = [];
+    for (const raw of data) {
+      const parsed = parseRestKline(raw);
+      if (parsed) bars.push(parsed);
+    }
+    return bars;
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {
@@ -125,13 +125,18 @@ export class BinanceAdapter implements DataAdapter {
     };
 
     this.ws.onmessage = (event) => {
+      let msg: unknown;
       try {
-        const msg = JSON.parse(event.data);
-        if (msg.e === 'kline') {
-          this.handleKline(msg.k);
-        }
+        msg = JSON.parse(typeof event.data === 'string' ? event.data : '');
       } catch {
-        // Ignore malformed messages
+        return;
+      }
+      if (
+        typeof msg === 'object' &&
+        msg !== null &&
+        (msg as { e?: unknown }).e === 'kline'
+      ) {
+        this.handleKline((msg as { k?: unknown }).k);
       }
     };
 
@@ -146,22 +151,12 @@ export class BinanceAdapter implements DataAdapter {
     };
   }
 
-  private handleKline(k: any): void {
-    const bar: OHLCBar = {
-      time: k.t,
-      open: parseFloat(k.o),
-      high: parseFloat(k.h),
-      low: parseFloat(k.l),
-      close: parseFloat(k.c),
-      volume: parseFloat(k.v),
-    };
+  private handleKline(k: unknown): void {
+    const parsed = parseWsKline(k);
+    if (!parsed) return;
+    const { bar, closed } = parsed;
 
-    const closed = k.x as boolean;
-
-    // Emit as bar event (StreamManager routes to aggregator)
     this.emitEvent('bar', { bar, closed });
-
-    // Also emit as tick for tick-level consumers
     this.emitEvent('tick', {
       time: Date.now(),
       price: bar.close,

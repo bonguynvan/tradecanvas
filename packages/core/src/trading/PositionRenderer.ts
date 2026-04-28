@@ -1,6 +1,11 @@
 import type { TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import {
+  buildPositionLabelContext,
+  pickPnLColor,
+  resolvePositionLabel,
+} from './positionFormat.js';
 
 export class PositionRenderer {
   render(
@@ -32,9 +37,11 @@ export class PositionRenderer {
       // P&L zone
       if (currentPrice !== null) {
         const currentY = priceToY(currentPrice, viewport);
-        const pnl = (currentPrice - pos.entryPrice) * pos.quantity * (pos.side === 'buy' ? 1 : -1);
+        const labelCtx = buildPositionLabelContext(pos, currentPrice, precision);
+        const pnl = labelCtx.pnl;
         const isProfit = pnl >= 0;
-        const zoneColor = isProfit ? profitColor : lossColor;
+        const fallbackZone = isProfit ? profitColor : lossColor;
+        const zoneColor = pickPnLColor(pnl, config.pnlThresholds, fallbackZone);
 
         ctx.fillStyle = zoneColor;
         ctx.globalAlpha = 0.08;
@@ -43,15 +50,21 @@ export class PositionRenderer {
         ctx.fillRect(chartRect.x, top, chartRect.width, height);
         ctx.globalAlpha = 1;
 
-        // P&L label at entry — pinned to the left of the chart area so it
-        // doesn't collide with the right-side price axis badges. SL/TP
-        // labels live on the left too but sit at their own Y positions,
-        // so they can't overlap this row.
-        const pnlText = `${pos.side.toUpperCase()} ${pos.quantity} | P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(precision)}`;
+        // Partial-close strip on the left edge — proportional dim band signalling
+        // the closed fraction of the position.
+        if (labelCtx.closedQuantity > 0 && pos.quantity > 0) {
+          const closedFrac = labelCtx.closedQuantity / pos.quantity;
+          ctx.fillStyle = entryColor;
+          ctx.globalAlpha = 0.25;
+          ctx.fillRect(chartRect.x, top, Math.max(2, chartRect.width * closedFrac * 0.04) + 2, height);
+          ctx.globalAlpha = 1;
+        }
+
+        const pnlText = resolvePositionLabel(config.positionLabel, labelCtx);
         ctx.font = `bold 11px ${theme.font.family}`;
         const lblWidth = ctx.measureText(pnlText).width + 12;
         const lblX = chartRect.x + 8;
-        ctx.fillStyle = isProfit ? profitColor : lossColor;
+        ctx.fillStyle = zoneColor;
         ctx.globalAlpha = 0.9;
         ctx.fillRect(lblX, entryY - 10, lblWidth, 20);
         ctx.globalAlpha = 1;

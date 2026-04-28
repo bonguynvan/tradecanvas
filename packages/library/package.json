@@ -50,10 +50,15 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@tradecanvas/commons": "workspace:*",
     "@tradecanvas/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
   }
 }
