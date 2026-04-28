@@ -1,5 +1,12 @@
 # @tradecanvas/example-svelte
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [1333b7d]
+  - @tradecanvas/chart@0.6.0
+
 ## 0.0.4
 
 ### Patch Changes
