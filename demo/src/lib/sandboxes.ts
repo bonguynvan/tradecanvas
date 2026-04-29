@@ -1,6 +1,6 @@
 import sdk from '@stackblitz/sdk';
 
-const CHART_VERSION = '^0.3.0';
+const CHART_VERSION = '^0.6.0';
 
 const BODY_CSS = 'body { margin: 0; background: #131722; }';
 
