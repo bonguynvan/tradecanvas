@@ -11,6 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@tradecanvas/chart/widget': resolve(__dirname, '../packages/library/src/widget/index.ts'),
       '@tradecanvas/chart': resolve(__dirname, '../packages/library/src/index.ts'),
       '@tradecanvas/core': resolve(__dirname, '../packages/core/src/index.ts'),
       '@tradecanvas/commons': resolve(__dirname, '../packages/commons/src/index.ts'),

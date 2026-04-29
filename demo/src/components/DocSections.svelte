@@ -99,6 +99,7 @@
     <a class="docs-sidebar-link" href="#drawings">Drawing Tools</a>
     <a class="docs-sidebar-link" href="#trading">Trading Overlay</a>
     <a class="docs-sidebar-link" href="#features">Features Config</a>
+    <a class="docs-sidebar-link" href="#mobile">Mobile &amp; Touch</a>
     <a class="docs-sidebar-link" href="#events">Events</a>
     <a class="docs-sidebar-link" href="#state">Save / Load</a>
     <a class="docs-sidebar-link" href="#finance">Finance Charts</a>
@@ -110,7 +111,7 @@
   <!-- Getting Started -->
   <section class="doc-section" id="getting-started">
     <h2 class="section-title">Getting Started</h2>
-    <p class="section-subtitle">Complete setup examples for popular frameworks.</p>
+    <p class="section-subtitle">Complete setup examples for popular frameworks. The <strong>Vanilla JS</strong> tab uses <code>ChartWidget</code> — the recommended drop-in path. The framework tabs show low-level <code>Chart</code> usage if you'd rather build your own UI.</p>
 
     <div class="code-tabs" data-tabs>
       <div class="code-tabs-header">
@@ -123,27 +124,29 @@
 
       <div class="code-tab-panel active" id="tab-vanilla">
         <div class="code-body">
-          <pre><span class="kw">import</span> {'{'} <span class="obj">Chart</span>, <span class="obj">DARK_THEME</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
-<span class="kw">import</span> <span class="kw">type</span> {'{'} <span class="obj">OHLCBar</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
+          <pre><span class="kw">import</span> {'{'} <span class="obj">ChartWidget</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart/widget'</span>
+<span class="kw">import</span> {'{'} <span class="obj">BinanceAdapter</span> {'}'} <span class="kw">from</span> <span class="str">'@tradecanvas/chart'</span>
 
 <span class="kw">const</span> container = document.<span class="fn">getElementById</span>(<span class="str">'chart'</span>)!
 container.style.width = <span class="str">'100%'</span>
 container.style.height = <span class="str">'600px'</span>
 
-<span class="kw">const</span> chart = <span class="kw">new</span> <span class="fn">Chart</span>(container, {'{'}
-  chartType: <span class="str">'candlestick'</span>,
-  theme: <span class="obj">DARK_THEME</span>,
-  autoScale: <span class="bool">true</span>,
-  features: {'{'} drawings: <span class="bool">true</span>, indicators: <span class="bool">true</span>, volume: <span class="bool">true</span> {'}'},
+<span class="cmt">// Drop-in TradingView-like UI: toolbar, drawing sidebar, settings, status bar</span>
+<span class="kw">const</span> widget = <span class="kw">new</span> <span class="fn">ChartWidget</span>(container, {'{'}
+  symbol: <span class="str">'BTCUSDT'</span>,
+  timeframe: <span class="str">'5m'</span>,
+  theme: <span class="str">'dark'</span>,
+  adapter: <span class="kw">new</span> <span class="fn">BinanceAdapter</span>(),
+  historyLimit: <span class="bool">500</span>,
+  trading: <span class="bool">true</span>,
+  symbols: [<span class="str">'BTCUSDT'</span>, <span class="str">'ETHUSDT'</span>, <span class="str">'SOLUSDT'</span>],
+  <span class="fn">onReady</span>: (chart) =&gt; {'{'}
+    chart.<span class="fn">addIndicator</span>(<span class="str">'sma'</span>, {'{'} period: <span class="bool">20</span> {'}'})
+    chart.<span class="fn">on</span>(<span class="str">'orderPlace'</span>, (e) =&gt; console.<span class="fn">log</span>(<span class="str">'order'</span>, e.payload))
+  {'}'},
 {'}'})
 
-<span class="cmt">// Load static data</span>
-<span class="kw">const</span> bars: <span class="obj">OHLCBar</span>[] = [
-  {'{'} time: <span class="bool">1700000000000</span>, open: <span class="bool">100</span>, high: <span class="bool">105</span>, low: <span class="bool">98</span>, close: <span class="bool">103</span>, volume: <span class="bool">1500</span> {'}'},
-  {'{'} time: <span class="bool">1700000300000</span>, open: <span class="bool">103</span>, high: <span class="bool">107</span>, low: <span class="bool">101</span>, close: <span class="bool">106</span>, volume: <span class="bool">2200</span> {'}'},
-  <span class="cmt">// ...more bars</span>
-]
-chart.<span class="fn">setData</span>(bars)</pre>
+<span class="cmt">// Need full control instead? Use `new Chart(container, ...)` directly — see framework tabs.</span></pre>
         </div>
         <div class="stackblitz-bar">
           <button class="stackblitz-btn" onclick={openVanillaSandbox}>
@@ -1100,6 +1103,51 @@ chart.<span class="fn">on</span>(<span class="str">'crosshairMove'</span>, (e) =
 chart.<span class="fn">setFeatures</span>({'{'} drawings: <span class="bool">false</span>, trading: <span class="bool">false</span> {'}'})</pre>
       </div>
     </div>
+  </section>
+
+  <!-- Mobile & Touch -->
+  <section class="doc-section" id="mobile">
+    <h2 class="section-title">Mobile &amp; Touch</h2>
+    <p class="section-subtitle">TradeCanvas works on phones and tablets out of the box. Try resizing this page below 768px or open it on a mobile device.</p>
+
+    <h3>Touch Gestures</h3>
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead><tr><th>Gesture</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Single-finger drag</td><td>Pan the chart and move the crosshair</td></tr>
+          <tr><td>Two-finger pinch</td><td>Zoom in / out, anchored at midpoint</td></tr>
+          <tr><td>Two-finger drag</td><td>Pan while pinching</td></tr>
+          <tr><td>Tap on order / position</td><td>Select; drag to modify SL / TP / entry</td></tr>
+          <tr><td>Tap on drawing handle</td><td>Move handle to reshape</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Responsive Widget Layout</h3>
+    <p>Below 768px viewport width, <code>ChartWidget</code> automatically:</p>
+    <ul class="doc-list">
+      <li>Shrinks the toolbar to 36px and tightens its padding</li>
+      <li>Hides the inline indicator chips (still accessible via the <strong>Indicators</strong> menu)</li>
+      <li>Hides toolbar separators to save horizontal space</li>
+      <li>Shrinks the drawing sidebar to 32px buttons</li>
+    </ul>
+
+    <h3>Recommended HTML</h3>
+    <p>Make sure your page has the standard mobile viewport meta tag:</p>
+    <div class="code-block">
+      <div class="code-header"><span>index.html</span><button class="code-copy-btn" data-copy-block>Copy</button></div>
+      <div class="code-body">
+        <pre>&lt;<span class="kw">meta</span> name=<span class="str">"viewport"</span> content=<span class="str">"width=device-width, initial-scale=1.0"</span> /&gt;</pre>
+      </div>
+    </div>
+
+    <h3>Tips</h3>
+    <ul class="doc-list">
+      <li>Wrap the chart container in a <code>flex: 1</code> or <code>height: 100dvh</code> parent so it fills the screen on mobile.</li>
+      <li>Use <code>features.tradingContextMenu: false</code> on touch-only devices — there's no right-click on phones.</li>
+      <li>Touch events call <code>preventDefault()</code>, so the chart will not scroll the page while a gesture is in flight.</li>
+    </ul>
   </section>
 
   <!-- Events -->
