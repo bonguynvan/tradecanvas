@@ -1,5 +1,42 @@
 # @tradecanvas/chart
 
+## 0.7.1
+
+### Patch Changes
+
+- Fix: drawings drift after timeframe / symbol switch
+
+  Drawings now store anchors as real timestamps instead of fragile bar indices,
+  so they keep pointing at the same wall-clock time when the bar series changes
+  (timeframe switch, symbol switch, etc.) — matching TradingView behavior.
+
+  **Implementation**
+
+  - `ViewportState` gained an optional `data?: ReadonlyArray<{ time: number }>`
+    field. When set, `anchor.time` is interpreted as a real timestamp; otherwise
+    it falls back to bar-index semantics for backward compatibility with custom
+    callers / plugins that don't inject data.
+  - New helpers in `@tradecanvas/core`: `timeToX`, `xToTime`, `resolveBarIndex`.
+    Drawing base + tools use these instead of the raw `barIndexToX` / `xToBarIndex`.
+  - `Chart` injects `data` into the viewport for both render and interaction
+    paths (drawing creation, drag, resize, hit-test), so all flows agree on the
+    same anchor format.
+  - `DrawingManager.setDrawings()` auto-migrates legacy bar-index anchors to
+    timestamps on load (heuristic: `time < 1e9` → bar index, upgraded via
+    `data[idx].time`). Existing persisted drawings keep working.
+  - `duplicateDrawing()` offsets by 3 × median bar interval (in time units)
+    instead of `+3` literal — copies remain visually distinct on any timeframe.
+  - `Measure` and `DateRange` tools compute the "X bars" label via resolved
+    bar indices so the count reflects the active timeframe.
+
+  **No public API breaks** — the change is additive (new optional field, new
+  helpers). Custom drawing plugins that read `state.anchors[i].time` directly
+  should call `resolveBarIndex(time, viewport)` to convert to a bar index.
+
+- Updated dependencies
+  - @tradecanvas/core@0.7.1
+  - @tradecanvas/commons@0.7.1
+
 ## 0.6.0
 
 ### Minor Changes
