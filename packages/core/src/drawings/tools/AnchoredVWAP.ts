@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
 
 /**
  * Anchored VWAP drawing tool.
@@ -26,7 +26,7 @@ export class AnchoredVWAPTool extends DrawingBase {
     if (state.anchors.length < 1 || !this.dataGetter) return;
 
     const data = this.dataGetter();
-    const startIdx = Math.max(0, Math.round(state.anchors[0].time));
+    const startIdx = Math.max(0, Math.round(resolveBarIndex(state.anchors[0].time, viewport)));
     if (startIdx >= data.length) return;
 
     // Compute anchored VWAP from startIdx to end
@@ -149,7 +149,7 @@ export class AnchoredVWAPTool extends DrawingBase {
     if (state.anchors.length < 1 || !this.dataGetter) return false;
 
     const data = this.dataGetter();
-    const startIdx = Math.max(0, Math.round(state.anchors[0].time));
+    const startIdx = Math.max(0, Math.round(resolveBarIndex(state.anchors[0].time, viewport)));
     if (startIdx >= data.length) return false;
 
     const { vwap } = this.computeVWAP(data, startIdx);

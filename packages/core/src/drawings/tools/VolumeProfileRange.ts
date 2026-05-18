@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
 
 /**
  * Volume Profile (Visible/Fixed Range) drawing tool.
@@ -21,8 +21,10 @@ export class VolumeProfileRangeTool extends DrawingBase {
     if (state.anchors.length < 2 || !this.dataGetter) return;
 
     const data = this.dataGetter();
-    const startIdx = Math.max(0, Math.min(Math.round(state.anchors[0].time), Math.round(state.anchors[1].time)));
-    const endIdx = Math.min(data.length - 1, Math.max(Math.round(state.anchors[0].time), Math.round(state.anchors[1].time)));
+    const idx0 = Math.round(resolveBarIndex(state.anchors[0].time, viewport));
+    const idx1 = Math.round(resolveBarIndex(state.anchors[1].time, viewport));
+    const startIdx = Math.max(0, Math.min(idx0, idx1));
+    const endIdx = Math.min(data.length - 1, Math.max(idx0, idx1));
 
     if (startIdx >= data.length || endIdx < 0 || startIdx > endIdx) return;
 

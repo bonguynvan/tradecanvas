@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 
 export class DateRangeTool extends DrawingBase {
   descriptor = { type: 'dateRange' as const, name: 'Date Range', requiredAnchors: 2 };
@@ -25,8 +26,11 @@ export class DateRangeTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
 
-    // Bars count
-    const bars = Math.abs(state.anchors[1].time - state.anchors[0].time);
+    // Bars count — compute via resolved bar indices so the label reflects the
+    // actual span on the current timeframe (anchor.time may be a timestamp).
+    const idx0 = resolveBarIndex(state.anchors[0].time, viewport);
+    const idx1 = resolveBarIndex(state.anchors[1].time, viewport);
+    const bars = Math.max(0, Math.round(Math.abs(idx1 - idx0)));
     ctx.font = '12px sans-serif';
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';

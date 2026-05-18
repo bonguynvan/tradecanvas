@@ -107,3 +107,42 @@ describe('DrawingManager magnet mode', () => {
     expect(manager.getMagnetMode()).toBe('none');
   });
 });
+
+describe('DrawingManager legacy anchor migration', () => {
+  // Synthetic 1m bars at 1700000000s, +60s each — these are real timestamps,
+  // so `data[idx].time > 1e9` and the upgrade heuristic triggers.
+  const bars1m = Array.from({ length: 100 }, (_, i) => ({
+    time: 1_700_000_000 + i * 60,
+    open: 100, high: 101, low: 99, close: 100, volume: 1,
+  }));
+
+  it('upgrades legacy bar-index anchors to real timestamps via dataGetter', () => {
+    manager.setDataGetter(() => bars1m);
+    // Pretend a drawing was persisted from an older build that stored bar
+    // indices in `anchor.time` (small integer values).
+    const legacy = drawing('trendLine', [
+      { time: 10, price: 100 },
+      { time: 20, price: 101 },
+    ], { id: 'legacy' });
+    manager.setDrawings([legacy]);
+
+    const upgraded = manager.getDrawings()[0];
+    expect(upgraded.anchors[0].time).toBe(bars1m[10].time);
+    expect(upgraded.anchors[1].time).toBe(bars1m[20].time);
+  });
+
+  it('leaves real-timestamp anchors untouched (idempotent)', () => {
+    manager.setDataGetter(() => bars1m);
+    const t0 = bars1m[10].time;
+    const t1 = bars1m[20].time;
+    const modern = drawing('trendLine', [
+      { time: t0, price: 100 },
+      { time: t1, price: 101 },
+    ], { id: 'modern' });
+    manager.setDrawings([modern]);
+
+    const after = manager.getDrawings()[0];
+    expect(after.anchors[0].time).toBe(t0);
+    expect(after.anchors[1].time).toBe(t1);
+  });
+});

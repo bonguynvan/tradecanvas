@@ -62,3 +62,40 @@ export function timestampToBarIndex(timestamp: number, data: ReadonlyArray<{ tim
   const frac = tHi !== tLo ? (timestamp - tLo) / (tHi - tLo) : 0;
   return hi + frac;
 }
+
+/**
+ * Resolve an anchor `time` value to a (possibly fractional) bar index in the
+ * current series. When `viewport.data` is set, `time` is interpreted as a real
+ * timestamp and converted via `timestampToBarIndex`. Otherwise `time` is
+ * already a bar index and is returned unchanged.
+ */
+export function resolveBarIndex(time: number, viewport: ViewportState): number {
+  const data = viewport.data;
+  if (data && data.length > 0) {
+    return timestampToBarIndex(time, data);
+  }
+  return time;
+}
+
+/**
+ * Map an anchor `time` value to its pixel x. Works whether `time` is a
+ * timestamp (when `viewport.data` is set) or a bar index (legacy callers).
+ */
+export function timeToX(time: number, viewport: ViewportState): number {
+  return barIndexToX(resolveBarIndex(time, viewport), viewport);
+}
+
+/**
+ * Map a pixel x back to an anchor `time` value. Returns a real timestamp when
+ * `viewport.data` is set (so the value survives timeframe switches), otherwise
+ * returns a bar index for legacy callers.
+ */
+export function xToTime(x: number, viewport: ViewportState): number {
+  const idx = xToBarIndex(x, viewport);
+  const data = viewport.data;
+  if (data && data.length > 0) {
+    const clamped = Math.max(0, Math.min(data.length - 1, idx));
+    return data[clamped].time;
+  }
+  return idx;
+}

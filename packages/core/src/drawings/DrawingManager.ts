@@ -7,7 +7,7 @@ import type {
   ViewportState,
   OHLCBar,
 } from '@tradecanvas/commons';
-import { xToBarIndex, yToPrice } from '../viewport/ScaleMapping.js';
+import { timestampToBarIndex, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 import type { UndoRedoManager } from '../features/UndoRedoManager.js';
 
 type DrawingEventCallback = (event: string, data: unknown) => void;
@@ -94,14 +94,28 @@ export class DrawingManager {
 
   // --- Magnet snap ---
 
-  private snapToOHLC(barIndex: number, price: number, viewport?: ViewportState): { time: number; price: number } {
+  /**
+   * Snap an in-progress anchor to the closest OHLC value of the underlying
+   * bar. `time` is interpreted as a timestamp when `viewport.data` is set
+   * (the modern, recommended mode) or as a bar index otherwise. The returned
+   * `time` matches the input convention so the caller doesn't need to know.
+   */
+  private snapToOHLC(time: number, price: number, viewport?: ViewportState): { time: number; price: number } {
     if (this.magnetMode === 'none' || !this.dataGetter) {
-      return { time: barIndex, price };
+      return { time, price };
     }
     // Use display data for magnet snap (matches what's visually rendered, e.g. Heikin Ashi)
     const data = this.displayDataGetter?.() ?? this.dataGetter();
-    const idx = Math.round(barIndex);
-    if (idx < 0 || idx >= data.length) return { time: barIndex, price };
+    if (data.length === 0) return { time, price };
+
+    const useTimestamps = !!(viewport?.data && viewport.data.length > 0);
+    const idx = Math.max(
+      0,
+      Math.min(
+        data.length - 1,
+        Math.round(useTimestamps ? timestampToBarIndex(time, data) : time),
+      ),
+    );
     const bar = data[idx];
 
     // Find closest OHLC value
@@ -114,17 +128,16 @@ export class DrawingManager {
     }
 
     // Only snap if within a reasonable pixel distance (magnet radius)
-    // Convert price distance to pixels to decide
     if (viewport) {
       const pxPerPrice = viewport.chartRect.height / (viewport.priceRange.max - viewport.priceRange.min || 1);
       const distPx = minDist * pxPerPrice;
       if (distPx > 30) {
-        // Too far — don't snap, use raw position
-        return { time: idx, price };
+        // Too far — don't snap, use the raw input position (bar-aligned).
+        return { time: useTimestamps ? bar.time : idx, price };
       }
     }
 
-    return { time: idx, price: closest };
+    return { time: useTimestamps ? bar.time : idx, price: closest };
   }
 
   // --- Undo / Redo ---
@@ -259,9 +272,9 @@ export class DrawingManager {
     if (this.state === 'creating' && this.creatingDrawing) {
       const plugin = this.registry.get(this.creatingDrawing.type);
       if (plugin && this.committedAnchors < plugin.descriptor.requiredAnchors) {
-        const rawIdx = xToBarIndex(pos.x, viewport);
+        const rawTime = xToTime(pos.x, viewport);
         const rawPrice = yToPrice(pos.y, viewport);
-        this.previewAnchor = this.snapToOHLC(rawIdx, rawPrice, viewport);
+        this.previewAnchor = this.snapToOHLC(rawTime, rawPrice, viewport);
         this.requestRender?.();
         return true;
       }
@@ -351,8 +364,29 @@ export class DrawingManager {
   }
 
   setDrawings(states: DrawingState[]): void {
-    this.drawings = states;
+    this.drawings = this.upgradeLegacyAnchors(states);
     this.requestRender?.();
+  }
+
+  /**
+   * Auto-migrate legacy bar-index anchors to real timestamps when data is
+   * available. Heuristic: anchors with `time < 1e9` are treated as bar indices
+   * (timestamps in seconds are > 1e9 for any date after 2001-09-09), and
+   * upgraded by looking up the corresponding bar's timestamp. Anchors that
+   * already look like timestamps are passed through untouched. Idempotent.
+   */
+  private upgradeLegacyAnchors(states: DrawingState[]): DrawingState[] {
+    const data = this.dataGetter?.();
+    if (!data || data.length === 0) return states;
+    const TIMESTAMP_THRESHOLD = 1e9;
+    return states.map(d => ({
+      ...d,
+      anchors: d.anchors.map(a => {
+        if (a.time >= TIMESTAMP_THRESHOLD) return a;
+        const idx = Math.max(0, Math.min(data.length - 1, Math.round(a.time)));
+        return { ...a, time: data[idx].time };
+      }),
+    }));
   }
 
   removeDrawing(id: string): void {
@@ -375,10 +409,13 @@ export class DrawingManager {
 
     const newDrawing: DrawingState = structuredClone(drawing);
     newDrawing.id = `tc_drawing_${nextDrawingId++}`;
-    // Offset X by 3 bars so copy is visually distinct
+    // Offset by 3 bars so the copy is visually distinct. When anchors are
+    // timestamps, "3 bars" means 3 × median bar interval in the current
+    // series; when anchors are bar indices (legacy / no data), it's literal.
+    const timeOffset = this.computeBarOffsetTime(3);
     newDrawing.anchors = newDrawing.anchors.map(a => ({
       ...a,
-      time: a.time + 3,
+      time: a.time + timeOffset,
     }));
     newDrawing.locked = false;
 
@@ -443,14 +480,35 @@ export class DrawingManager {
 
   // --- Internal ---
 
+  /**
+   * Compute the offset (in anchor-time units) equivalent to `n` bars.
+   * When the viewport carries data and anchors are timestamps, this is
+   * `n × median bar interval`; otherwise it's just `n` (bar-index mode).
+   */
+  private computeBarOffsetTime(n: number): number {
+    const data = this.dataGetter?.();
+    if (!data || data.length < 2) return n;
+    // Only meaningful in timestamp mode — detect via data presence.
+    // Use median of the last few intervals to be robust against gaps.
+    const sampleStart = Math.max(0, data.length - 20);
+    const intervals: number[] = [];
+    for (let i = sampleStart + 1; i < data.length; i++) {
+      intervals.push(data[i].time - data[i - 1].time);
+    }
+    if (intervals.length === 0) return n;
+    intervals.sort((a, b) => a - b);
+    const median = intervals[Math.floor(intervals.length / 2)];
+    return n * median;
+  }
+
   private handleCreationClick(pos: Point, viewport: ViewportState): boolean {
     if (!this.activeTool) return false;
     const plugin = this.registry.get(this.activeTool);
     if (!plugin) return false;
 
-    const rawBarIdx = xToBarIndex(pos.x, viewport);
+    const rawTime = xToTime(pos.x, viewport);
     const rawPrice = yToPrice(pos.y, viewport);
-    const anchor = this.snapToOHLC(rawBarIdx, rawPrice, viewport);
+    const anchor = this.snapToOHLC(rawTime, rawPrice, viewport);
 
     if (!this.creatingDrawing) {
       // First click: start creation
@@ -558,11 +616,14 @@ export class DrawingManager {
     const drawing = this.drawings.find((d) => d.id === this.selectedDrawingId);
     if (!drawing || !this.dragStartPoint) return false;
 
-    const dxBar = xToBarIndex(pos.x, viewport) - xToBarIndex(this.dragStartPoint.x, viewport);
+    // Translate by anchor-time delta. In timestamp mode this is a wall-clock
+    // seconds difference; in bar-index mode it's a bar-count difference —
+    // `xToTime` returns whichever unit the viewport is set up for.
+    const dTime = xToTime(pos.x, viewport) - xToTime(this.dragStartPoint.x, viewport);
     const dPrice = yToPrice(pos.y, viewport) - yToPrice(this.dragStartPoint.y, viewport);
 
     drawing.anchors = this.dragStartAnchors.map((a) => ({
-      time: a.time + dxBar,
+      time: a.time + dTime,
       price: a.price + dPrice,
     }));
 
@@ -575,7 +636,7 @@ export class DrawingManager {
     if (!drawing || this.dragAnchorIndex < 0) return false;
 
     drawing.anchors[this.dragAnchorIndex] = {
-      time: xToBarIndex(pos.x, viewport),
+      time: xToTime(pos.x, viewport),
       price: yToPrice(pos.y, viewport),
     };
 

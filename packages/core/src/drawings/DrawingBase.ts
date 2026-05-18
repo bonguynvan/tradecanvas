@@ -7,7 +7,7 @@ import type {
   ViewportState,
   AnchorPoint,
 } from '@tradecanvas/commons';
-import { barIndexToX, priceToY, xToBarIndex, yToPrice } from '../viewport/ScaleMapping.js';
+import { priceToY, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 
 export abstract class DrawingBase implements DrawingPlugin {
   abstract descriptor: DrawingDescriptor;
@@ -41,15 +41,15 @@ export abstract class DrawingBase implements DrawingPlugin {
   }
 
   protected anchorToPixel(anchor: AnchorPoint, viewport: ViewportState): Point {
-    const x = barIndexToX(anchor.time, viewport);
+    const x = timeToX(anchor.time, viewport);
     const y = priceToY(anchor.price, viewport);
     return { x, y };
   }
 
   protected pixelToAnchor(point: Point, viewport: ViewportState): AnchorPoint {
-    const barIndex = xToBarIndex(point.x, viewport);
+    const time = xToTime(point.x, viewport);
     const price = yToPrice(point.y, viewport);
-    return { time: barIndex, price };
+    return { time, price };
   }
 
   protected applyLineStyle(ctx: CanvasRenderingContext2D, style: DrawingStyle): void {

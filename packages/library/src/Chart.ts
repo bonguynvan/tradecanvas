@@ -426,13 +426,15 @@ export class Chart {
     if (this.features.drawings) {
       this.interactionManager.setDrawingManager(
         this.drawingManager,
-        () => this.viewport.getState(),
+        // Inject current data so drawing anchors are stored/resolved as real
+        // timestamps (survives timeframe/symbol switches).
+        () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
     }
     if (this.features.trading) {
       this.interactionManager.setTradingManager(
         this.tradingManager,
-        () => this.viewport.getState(),
+        () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
     }
     this.interactionManager.setOverlayDirtyCallback(() => {
@@ -1587,6 +1589,7 @@ export class Chart {
       .reduce((sum, p) => sum + p.rect.height, 0);
     const timeAxisY = resolved.mainChartRect.y + resolved.mainChartRect.height + bottomPanelHeight;
 
+    const displayData = this.getDisplayData();
     this.engine.setRenderContext({
       chartRenderer: this.chartRenderer,
       gridRenderer: this.features.grid ? this.gridRenderer : null,
@@ -1609,9 +1612,11 @@ export class Chart {
       panels,
       priceLimits: this.buildPriceLimits(),
       timeAxisY,
-      viewport: this.viewport.getState(),
+      // Attach data to the viewport so drawings/indicators can treat
+      // `anchor.time` as a real timestamp and convert via timestampToBarIndex.
+      viewport: { ...this.viewport.getState(), data: displayData },
       theme: this.themeManager.getTheme(),
-      data: this.getDisplayData(),
+      data: displayData,
       numberLocale: this.numberLocale,
     });
   }
