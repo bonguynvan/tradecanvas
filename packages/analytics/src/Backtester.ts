@@ -174,7 +174,14 @@ export class Backtester {
       throw new Error('order quantity must be > 0');
     }
     if (!this.allowShort && raw.side === 'short') {
-      throw new Error('shorting is disabled');
+      // `allowShort: false` means "don't go net short". A sell that only
+      // closes (or reduces) an existing long position is not shorting.
+      const pos = this.portfolio.getPosition();
+      const closesExistingLong =
+        pos !== null && pos.side === 'long' && raw.quantity <= pos.quantity;
+      if (!closesExistingLong) {
+        throw new Error('shorting is disabled');
+      }
     }
     const id = raw.id ?? `o-${++this.orderSeq}`;
     this.pendingOrders.push({

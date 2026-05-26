@@ -112,4 +112,48 @@ describe('Backtester', () => {
       }),
     ).toThrow();
   });
+
+  it('allows closing a long position when allowShort=false (close()/sell)', () => {
+    const bt = new Backtester({ initialCash: 10_000, allowShort: false });
+    const data = bars([100, 110, 120, 130]);
+    const result = bt.run(data, (ctx) => {
+      if (ctx.index === 0) {
+        ctx.placeOrder({ side: 'long', type: 'market', quantity: 5 });
+      } else if (ctx.index === 1 && ctx.position) {
+        ctx.close();
+      }
+    });
+    expect(result.trades).toHaveLength(1);
+    expect(result.trades[0].pnl).toBeCloseTo(50);
+  });
+
+  it('allows partial close of a long position when allowShort=false', () => {
+    const bt = new Backtester({ initialCash: 10_000, allowShort: false });
+    const data = bars([100, 110, 120, 130]);
+    const result = bt.run(data, (ctx) => {
+      if (ctx.index === 0) {
+        ctx.placeOrder({ side: 'long', type: 'market', quantity: 10 });
+      } else if (ctx.index === 1 && ctx.position) {
+        ctx.placeOrder({ side: 'short', type: 'market', quantity: 4 });
+      }
+    });
+    expect(result.fills).toHaveLength(2);
+    expect(result.trades).toHaveLength(1);
+    expect(result.trades[0].quantity).toBe(4);
+  });
+
+  it('still blocks short orders that would exceed the existing long when allowShort=false', () => {
+    const bt = new Backtester({ initialCash: 10_000, allowShort: false });
+    const data = bars([100, 110, 120, 130]);
+    expect(() =>
+      bt.run(data, (ctx) => {
+        if (ctx.index === 0) {
+          ctx.placeOrder({ side: 'long', type: 'market', quantity: 5 });
+        } else if (ctx.index === 1 && ctx.position) {
+          // Trying to flip net short is still rejected
+          ctx.placeOrder({ side: 'short', type: 'market', quantity: 10 });
+        }
+      }),
+    ).toThrow();
+  });
 });
