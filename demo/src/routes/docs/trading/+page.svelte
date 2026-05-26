@@ -9,6 +9,22 @@
   Designed to integrate with both manual and algorithmic trading flows.
 </p>
 
+<h2>Disabling trading</h2>
+<p>
+  Trading is opt-out, not opt-in. Projects that don't need trading affordances
+  have two off-switches:
+</p>
+<pre><code>{`// Drop the entire trading subsystem (no orders, no positions, no overlay, no menu)
+new Chart(host, { features: { trading: false } })
+
+// Keep positions and orders visible, but remove the right-click order menu
+new Chart(host, { features: { tradingContextMenu: false } })`}</code></pre>
+
+<p>
+  With either flag set, native browser right-click works on the chart as expected
+  (previously the custom menu suppressed it unconditionally — fixed in 0.8.1).
+</p>
+
 <h2>Positions</h2>
 <pre><code>{`chart.addPosition({
   id: 'pos-1',

@@ -211,7 +211,10 @@ export class Chart {
     }
 
     // Trading
-    this.tradingManager = new TradingManager();
+    this.tradingManager = new TradingManager({
+      enabled: this.features.trading,
+      contextMenu: { enabled: this.features.tradingContextMenu },
+    });
     this.tradingRenderer = new TradingRenderer(this.tradingManager);
     this.tradingManager.setContainer(container);
     this.tradingManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));

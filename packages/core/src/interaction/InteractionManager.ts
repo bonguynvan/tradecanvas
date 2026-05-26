@@ -101,10 +101,11 @@ export class InteractionManager {
 
     const onContextMenu = (e: MouseEvent) => {
       const vp = getVP();
-      if (this.tradingManager && vp) {
-        e.preventDefault();
-        this.tradingManager.onContextMenu(this.getMousePos(e), vp);
-      }
+      if (!this.tradingManager || !vp) return;
+      const shown = this.tradingManager.onContextMenu(this.getMousePos(e), vp);
+      // Only suppress the native menu when the trading context menu actually
+      // opened — otherwise users with trading disabled lose right-click entirely.
+      if (shown) e.preventDefault();
     };
 
     // --- Touch events ---

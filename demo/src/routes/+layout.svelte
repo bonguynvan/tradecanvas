@@ -6,11 +6,28 @@
   let { children } = $props();
 
   let theme = $state<'dark' | 'light'>('dark');
+  let mobileOpen = $state(false);
 
   function toggleTheme() {
     theme = theme === 'dark' ? 'light' : 'dark';
     if (typeof document !== 'undefined') {
       document.body.classList.toggle('light', theme === 'light');
+    }
+  }
+
+  function toggleMobile() {
+    mobileOpen = !mobileOpen;
+    if (typeof document !== 'undefined') {
+      document.body.classList.toggle('no-scroll', mobileOpen);
+    }
+  }
+
+  function closeMobile() {
+    if (mobileOpen) {
+      mobileOpen = false;
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('no-scroll');
+      }
     }
   }
 
@@ -30,7 +47,7 @@
 </script>
 
 <nav class="site-nav">
-  <a class="site-nav-brand" href="{base}/">
+  <a class="site-nav-brand" href="{base}/" onclick={closeMobile}>
     <span class="site-nav-brand-mark" aria-hidden="true"></span>
     <span>TradeCanvas</span>
   </a>
@@ -65,10 +82,48 @@
     >
       ★
     </a>
+    <button
+      class="site-nav-icon-btn site-nav-burger"
+      aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+      aria-expanded={mobileOpen}
+      onclick={toggleMobile}
+      type="button"
+    >
+      {mobileOpen ? '✕' : '☰'}
+    </button>
   </div>
 </nav>
 
-<main>
+{#if mobileOpen}
+  <button
+    class="mobile-overlay"
+    aria-label="Close menu"
+    onclick={closeMobile}
+    type="button"
+  ></button>
+{/if}
+
+<aside class="mobile-drawer" class:open={mobileOpen} aria-hidden={!mobileOpen}>
+  <div class="mobile-drawer-section">
+    {#each navLinks as link}
+      <a
+        class="mobile-drawer-link"
+        href="{base}{link.href}"
+        aria-current={isActive(link.match) ? 'page' : undefined}
+        onclick={closeMobile}
+      >
+        {link.label}
+      </a>
+    {/each}
+  </div>
+  <div class="mobile-drawer-divider"></div>
+  <div class="mobile-drawer-section">
+    <a class="mobile-drawer-link" href="https://github.com/bonguynvan/tradecanvas" target="_blank" rel="noopener">GitHub</a>
+    <a class="mobile-drawer-link" href="https://www.npmjs.com/package/@tradecanvas/chart" target="_blank" rel="noopener">npm</a>
+  </div>
+</aside>
+
+<main onclick={closeMobile}>
   {@render children()}
 </main>
 
@@ -82,5 +137,5 @@
     <span class="footer-sep">·</span>
     <a href="https://www.npmjs.com/package/@tradecanvas/chart">npm</a>
   </div>
-  <div style="margin-top: 8px">MIT · v0.7.1</div>
+  <div style="margin-top: 8px">MIT · v0.8.0</div>
 </footer>

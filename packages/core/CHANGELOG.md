@@ -1,5 +1,29 @@
 # @tradecanvas/core
 
+## 0.8.1
+
+### Patch Changes
+
+- Fix: `features.tradingContextMenu` flag is now wired through to the actual contextmenu handler.
+
+  Previously the flag existed in `FeaturesConfig` but the right-click handler in `InteractionManager` always called `preventDefault()` and routed to the trading manager, regardless of whether the custom menu would render. The result: setting `tradingContextMenu: false` (or any config that keeps the trading subsystem on but the menu off) suppressed the native browser context menu without showing a replacement, leaving users with no right-click affordance at all.
+
+  The fix:
+
+  - `Chart.ts` now passes `features.tradingContextMenu` into the `TradingManager` config (`contextMenu.enabled`).
+  - `InteractionManager.onContextMenu` only calls `preventDefault()` when the trading context menu actually opens.
+
+  Projects that don't use trading can now opt out cleanly:
+
+  ```ts
+  new Chart(host, { features: { trading: false } }); // no trading at all
+  new Chart(host, { features: { tradingContextMenu: false } }); // keep orders/positions, drop the menu
+  ```
+
+  In both cases, native browser right-click works on the chart as expected.
+
+  - @tradecanvas/commons@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes

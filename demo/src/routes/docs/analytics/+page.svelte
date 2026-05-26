@@ -1,5 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import BacktestPanel from '$lib/components/BacktestPanel.svelte';
 </script>
 
 <svelte:head>
@@ -12,6 +13,12 @@
   <code>@tradecanvas/analytics</code> ships a headless, bar-by-bar strategy
   backtester with portfolio tracking and a summary risk-metrics calculator.
   Pair it with <a href="{base}/docs/realtime">replay mode</a> to visualize trades on the chart.
+</p>
+
+<BacktestPanel />
+<p style="font-size: 12.5px; color: var(--text-muted); margin-top: -16px; margin-bottom: 24px;">
+  ↑ Live SMA(10/30) cross-over backtest on 365 days of deterministic synthetic data.
+  Scrub the slider or press Play to step through the equity curve bar-by-bar.
 </p>
 
 <h2>Backtester</h2>

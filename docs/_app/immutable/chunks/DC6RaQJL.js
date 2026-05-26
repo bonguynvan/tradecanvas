@@ -1,1 +1,0 @@
-import{i as u,j as y,a7 as _,a8 as o,h as t,C as g,a0 as i,u as l,k as d,v as p,l as v}from"./Bfa79lMJ.js";function C(n,r){let a=null,E=t;var s;if(t){a=p;for(var e=v(document.head);e!==null&&(e.nodeType!==g||e.data!==n);)e=i(e);if(e===null)l(!1);else{var f=i(e);e.remove(),d(f)}}t||(s=document.head.appendChild(u()));try{y(()=>r(s),_|o)}finally{E&&(l(!0),d(a))}}export{C as h};

@@ -24,6 +24,7 @@ export default {
       '@tradecanvas/chart': '../packages/library/src/index.ts',
       '@tradecanvas/core': '../packages/core/src/index.ts',
       '@tradecanvas/commons': '../packages/commons/src/index.ts',
+      '@tradecanvas/analytics': '../packages/analytics/src/index.ts',
     },
   },
 };
