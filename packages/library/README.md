@@ -8,12 +8,16 @@ High-performance canvas trading chart with built-in indicators, drawing tools, a
 
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
-- **33+ built-in indicators** — MA, EMA, Hull MA, RSI, MACD, Bollinger, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
-- **10+ drawing tools** — Trendlines, Fibonacci retracement, horizontal/vertical lines, rectangles, channels, Elliott waves, Gann fans. With undo/redo.
-- **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Users can drag SL/TP to modify.
+- **33 built-in indicators** — SMA, EMA, Hull MA, RSI, MACD, Bollinger, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
+- **24 drawing tools** — Trendlines, Fibonacci (retracement, extension, time zones), horizontal/vertical lines, channels, Elliott waves, Gann fans / boxes, Pitchfork, Volume Profile range. With undo/redo and full serialization.
+- **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
+- **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance adapter. Plug in your own data source with the adapter interface.
+- **Strategy backtester** *(new in 0.8)* — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown).
+- **Replay mode** *(new in 0.8)* — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed; decoupled from `Chart` so it can power both UI playback and headless backtests.
+- **Multi-chart grid** — `ChartGrid` for synchronized 2×2 / 2×3 layouts with linked crosshairs and shared time axis.
+- **Signal markers & trade zones** — render bot/algorithm output (directional arrows, entry→exit rectangles) as a first-class chart layer.
 - **Save/load chart state** — Persist drawings, indicators, theme, and chart type to JSON. Restore with one call.
-- **Replay mode** — Step through historical data bar-by-bar for backtesting visualization.
 - **Zero dependencies** — The entire library is self-contained. No `d3`, no `chart.js`, no `fancy-canvas`.
 
 ## Install
@@ -28,36 +32,7 @@ yarn add @tradecanvas/chart
 
 ## Quick Start
 
-```typescript
-import { Chart, BinanceAdapter } from '@tradecanvas/chart'
-
-// Create a chart
-const chart = new Chart(document.getElementById('chart')!, {
-  theme: 'dark',
-  autoScale: true,
-  features: {
-    drawings: true,
-    indicators: true,
-    trading: true,
-    volume: true,
-  },
-})
-
-// Connect to live Binance data
-const adapter = new BinanceAdapter()
-chart.connect({
-  adapter,
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  historyLimit: 300,
-})
-```
-
-That's it. A full-featured trading chart with live data in 15 lines.
-
-## Widget (Complete UI)
-
-For a complete TradingView-like experience with built-in toolbar, drawing tools, and settings — no UI code needed:
+The fastest path is `ChartWidget` — drop-in component with a full TradingView-like UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -66,12 +41,36 @@ import { BinanceAdapter } from '@tradecanvas/chart'
 const widget = new ChartWidget(document.getElementById('chart')!, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
-  adapter: new BinanceAdapter(),
   theme: 'dark',
+  adapter: new BinanceAdapter(),
+  trading: true,
 })
 ```
 
-That's it. Full toolbar, drawing sidebar, settings modal, and status bar — all included.
+That's it. Live data, all 33 indicators, all 24 drawing tools, command palette (`Ctrl+K`).
+
+## Headless Chart
+
+For projects that want to own the surrounding UI (custom toolbar, framework-specific controls), use the lower-level `Chart` class directly:
+
+```typescript
+import { Chart, BinanceAdapter } from '@tradecanvas/chart'
+
+const chart = new Chart(document.getElementById('chart')!, {
+  theme: 'dark',
+  autoScale: true,
+  features: {
+    drawings: true,
+    indicators: true,
+    trading: true,           // set false to disable orders/positions entirely
+    tradingContextMenu: true, // set false to keep overlay but drop right-click menu
+    volume: true,
+  },
+})
+
+const adapter = new BinanceAdapter()
+chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 })
+```
 
 ### Widget Options
 
@@ -123,11 +122,14 @@ That's it. Full toolbar, drawing sidebar, settings modal, and status bar — all
 | Line Break | Three-line break charts |
 | Range Bars | Fixed price-range bars — each bar's high − low equals a configured range |
 | Volume Candles | Candlesticks with width proportional to volume |
+| Equivolume | Full-range boxes with width proportional to volume share (Richard Arms style) |
 | HLC Area | High-low-close area band with close line |
 | Step Line | Staircase/step pattern from close prices |
 | Line with Markers | Close line with circular markers at each data point |
 
 ### Multi-Chart Grid
+
+Display multiple synchronized charts side-by-side with linked crosshairs and time axis:
 
 ```typescript
 import { ChartGrid, BinanceAdapter } from '@tradecanvas/chart'
@@ -142,11 +144,11 @@ const adapter = new BinanceAdapter()
 grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
 ```
 
-Layouts: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
+Supported layouts: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
 
 ### Command Palette
 
-Press `Ctrl+K` / `Cmd+K` inside ChartWidget to open the command palette. Search indicators, chart types, drawing tools, timeframes, and actions.
+Press `Ctrl+K` (or `Cmd+K`) inside ChartWidget to open a searchable command palette. Quickly find and toggle indicators, change chart types, activate drawing tools, switch timeframes, or trigger actions (screenshot, theme toggle, settings).
 
 ### Finance Charts
 
@@ -210,7 +212,7 @@ All indicator parameters are validated at runtime — invalid values (NaN, Infin
 
 ### Drawing Tools
 
-Trendline, Horizontal Line, Vertical Line, Ray, Extended Line, Parallel Channel, Fibonacci Retracement, Fibonacci Extension, Rectangle, Ellipse, Triangle, Arrow, Pitchfork, Gann Fan, Gann Box, Elliott Wave, Regression Channel, Date Range, Price Range, Measure, Anchored VWAP, Volume Profile Range, Text Annotation
+Trendline, Horizontal Line, Vertical Line, Ray, Extended Line, Parallel Channel, Fibonacci Retracement, Fibonacci Extension, **Fibonacci Time Zones**, Rectangle, Ellipse, Triangle, Arrow, Pitchfork, Gann Fan, Gann Box, Elliott Wave, Regression Channel, Date Range, Price Range, Measure, Anchored VWAP, Volume Profile Range, Text Annotation
 
 All drawing tools support:
 - Click-to-place with magnet snapping to OHLC values
@@ -260,6 +262,53 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+```
+
+### Signal Markers
+
+Visualize buy/sell signals from bots, indicators, or manual analysis.
+
+```typescript
+chart.addSignalMarker({
+  time: 1715692800000,
+  price: 62500,
+  direction: 'long',
+  confidence: 0.85,
+  source: 'ema-crossover',
+  label: 'EMA Cross',
+})
+
+// Color-code by source
+chart.setSignalMarkerStyle({
+  sourceColors: {
+    'ema-crossover': '#2196F3',
+    'rsi-divergence': '#FF9800',
+    'whale-flow': '#9C27B0',
+  },
+})
+```
+
+### Trade Zones
+
+Render entry→exit rectangles with P&L coloring for executed trades.
+
+```typescript
+const zoneId = chart.addTradeZone({
+  entryTime: 1715692800000,
+  entryPrice: 62500,
+  exitTime: 1715700000000,
+  exitPrice: 63200,
+  direction: 'long',
+  pnl: 140,
+  pnlPercent: 1.12,
+})
+
+// Update a live trade when it closes
+chart.updateTradeZone(zoneId, {
+  exitTime: Date.now(),
+  exitPrice: 63500,
+  pnl: 200,
+})
 ```
 
 ### Real-Time Streaming
@@ -360,28 +409,72 @@ chart.on('positionModify', (e) => { /* ... */ })
 
 ### Replay Mode
 
+`ReplayController` plays a historical `DataSeries` forward at controlled speed. Decoupled from `Chart` — wire it into any sink (chart for UI playback, or a strategy fn for headless backtests).
+
 ```typescript
-chart.replayStart({ data: historicalBars, speed: 2, startIndex: 100 })
-chart.replayPause()
-chart.replayResume()
-chart.replayStop()
-const { current, total, percent } = chart.getReplayProgress()
+import { ReplayController } from '@tradecanvas/chart'
+
+const replay = new ReplayController({
+  data: historicalBars,
+  speed: 10,        // bars per second
+  startIndex: 0,
+})
+
+// Seed the chart with the prefix before replay starts
+chart.setData(replay.getPrefix())
+
+// Each emitted bar drives the chart forward
+replay.on('bar', ({ bar }) => chart.appendBar(bar))
+replay.on('finished', () => console.log('done'))
+
+replay.start()
+// replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
+
+### Backtesting (`@tradecanvas/analytics`)
+
+Bar-by-bar strategy backtester with virtual fills, commission/slippage models, and a full risk-metrics report.
+
+```typescript
+import { Backtester, PercentCommission, PercentSlippage } from '@tradecanvas/analytics'
+
+const bt = new Backtester({
+  initialCash: 10_000,
+  commission: new PercentCommission(0.0005),
+  slippage: new PercentSlippage(0.0003),
+})
+
+const result = bt.run(historicalBars, (ctx) => {
+  // Strategy fn runs at close of each bar; orders fill on the NEXT bar.
+  if (!ctx.position && smaFast > smaSlow) {
+    ctx.placeOrder({ side: 'long', type: 'market', quantity: 1 })
+  } else if (ctx.position && smaFast < smaSlow) {
+    ctx.close()
+  }
+})
+
+console.log(result.metrics.sharpe)         // 1.42
+console.log(result.metrics.maxDrawdownPct) // 0.087
+console.log(result.equityCurve)            // → feed into the chart via EquityCurveRenderer
+```
+
+Returns: `fills`, closed `trades`, `equityCurve`, `metrics` (Sharpe, Sortino, Calmar, CAGR, max drawdown, win rate, profit factor, expectancy). See the [live backtest demo](https://bonguynvan.github.io/tradecanvas/docs/analytics/).
 
 ## Comparison
 
 | Feature | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Chart types | 12 + 6 finance | 4 | 8 (non-financial) | 10+ |
+| Chart types | 17 + 6 finance | 4 | 8 (non-financial) | 10+ |
 | Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
-| Built-in indicators | 33+ | 0 | 0 | ~30 |
-| Drawing tools | 23 | 0 | 0 | Some |
+| Built-in indicators | 33 | 0 | 0 | ~30 |
+| Drawing tools | 24 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |
 | Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |
 | Save/load state | Yes | No | No | Yes |
-| Replay mode | Yes | No | No | No |
-| Multi-panel | Yes | No | No | Yes |
-| Bundle (gzip) | ~50 KB | ~45 KB | ~70 KB | ~200 KB |
+| Replay mode | Yes (`ReplayController`) | No | No | No |
+| Backtester | Yes (`@tradecanvas/analytics`) | No | No | No |
+| Multi-chart grid | Yes (`ChartGrid`) | No | No | Yes |
+| Bundle (gzip) | ~56 KB core | ~45 KB | ~70 KB | ~200 KB |
 | Dependencies | 0 | 1 | 0 | 0 |
 | Widget (complete UI) | Yes (`ChartWidget`) | No | No | No |
 | License | MIT | Apache 2.0 | MIT | Commercial |

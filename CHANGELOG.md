@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.8.0 (2026-05-26)
+
+### Features
+
+- **Strategy backtester** — new `@tradecanvas/analytics` package with a bar-by-bar `Backtester`. Strategy fn runs at close of each bar; orders placed on bar N fill on bar N+1 (market → next-bar open, limit/stop → when the next bar trades through the trigger). Returns fills, closed trades, equity curve, and summary metrics
+- **Portfolio tracking** — `Portfolio` class tracks cash, one net position, realized P&L, and the equity curve. Supports partial closes and position flips with correct realized-PnL accounting
+- **Risk metrics** — `computeRiskMetrics()` returns Sharpe, Sortino, Calmar, CAGR, max drawdown, win rate, profit factor, expectancy, average win/loss. Periods per year auto-detected from equity-curve timestamps; configurable risk-free rate
+- **Commission & slippage models** — `FixedCommission`, `PercentCommission`, `PerShareCommission`, `NO_SLIPPAGE`, `PercentSlippage`, `RangeBasedSlippage`. Pluggable via `Backtester` constructor
+- **Replay mode** — new `ReplayController` in `@tradecanvas/core`. Decoupled from `Chart` so it can drive both UI playback and headless backtests. Supports `start` / `pause` / `resume` / `step(n)` / `seek(index)` / `setSpeed(barsPerSecond)` with typed `bar` / `finished` / `stateChange` events
+- **Equivolume chart type** — full-range boxes with width proportional to volume share; color tracks close vs prior close (Richard Arms style). Switch via `chart.setChartType('equivolume')`
+- **Fibonacci Time Zones drawing** — `fibTimeZones` tool draws vertical Fibonacci-interval lines (1, 2, 3, 5, 8, 13, 21, 34, 55) projected from a two-anchor time span. Useful for forecasting future swing points based on prior cycle duration
+- **Multi-page SvelteKit docs site** — replaced single-page demo with 18 prerendered routes (`/`, `/docs/*`, `/examples`, `/playground`, `/changelog`, `/embed`) using `@sveltejs/adapter-static`. SEO-friendly per-page metadata, sitemap, robots.txt
+- **Live backtest demo** — `/docs/analytics` includes a runnable backtest panel (SMA(10/30) cross on 365 days of deterministic synthetic data) with equity-curve canvas, drawdown shading, play/pause/scrub controls, and 8 live metric tiles
+
+### API additions
+
+- New package `@tradecanvas/analytics` exporting `Backtester`, `Portfolio`, `computeRiskMetrics`, `FixedCommission`, `PercentCommission`, `PerShareCommission`, `ZERO_COMMISSION`, `NO_SLIPPAGE`, `PercentSlippage`, `RangeBasedSlippage`, plus `StrategyContext`, `StrategyFn`, `BacktestResult`, `RiskMetrics`, `Fill`, `ClosedTrade`, `PortfolioPosition`, `EquityPoint`, `Side`, `OrderType`, `OrderStatus`, `TimeInForce`
+- `ReplayController` exported from `@tradecanvas/core` and `@tradecanvas/chart` along with `ReplayBarEvent`, `ReplayEventMap`, `ReplayOptions`, `ReplayStateChangeEvent`, `ReplayStatus`
+- `EquivolumeRenderer` exported from `@tradecanvas/core`
+- `FibTimeZonesTool` exported and auto-registered by `registerBuiltInDrawingTools`
+- `'equivolume'` added to `ChartType`; `'fibTimeZones'` added to `DrawingToolType`
+- Widget catalog (`CHART_TYPES`) lists Equivolume
+
+### Test coverage
+
+- New `@tradecanvas/analytics` package ships with 22 unit tests across `Backtester`, `Portfolio`, and `RiskMetrics`
+- New `ReplayController` test suite (8 tests) covering step, seek, start/pause/resume, fake-timer playback, and startIndex
+- Total project tests: 273 passing across 41 test files
+
+## 0.7.1 (2026-05-20)
+
+### Bug fixes
+
+- **Drawings persist correctly across timeframe / symbol switch** — drawing manager state was being cleared when the live stream reconnected. Drawings now survive timeframe and symbol changes when `persistDrawings` is enabled
+
 ## 0.7.0 (2026-05-14)
 
 ### Features

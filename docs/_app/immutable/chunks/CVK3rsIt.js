@@ -1,0 +1,1 @@
+import{t as N}from"./Crpv8oZJ.js";import{h as g}from"./Bdusip-H.js";function A(i,b,t,h,f,r){var o=i.__className;if(g||o!==t||o===void 0){var a=N(t,h,r);(!g||a!==i.getAttribute("class"))&&(a==null?i.removeAttribute("class"):i.className=a),i.__className=t}else if(r&&f!==r)for(var l in r){var u=!!r[l];(f==null||u!==!!f[l])&&i.classList.toggle(l,u)}return r}export{A as s};

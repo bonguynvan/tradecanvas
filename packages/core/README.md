@@ -2,7 +2,7 @@
 
 Canvas rendering engine, indicators, drawing tools, trading overlays, and real-time streaming for the [@tradecanvas/chart](https://www.npmjs.com/package/@tradecanvas/chart) library.
 
-**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://bonguynvan.github.io/tradecanvas/#getting-started)**
+**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://bonguynvan.github.io/tradecanvas/docs/getting-started/)**
 
 ## Install
 
@@ -30,9 +30,9 @@ Multi-layer canvas rendering for optimal performance -- only dirty layers repain
 - `RenderLoop` -- requestAnimationFrame loop with dirty tracking
 - `DPRManager` -- device pixel ratio handling for crisp rendering
 
-### Chart Renderers (12 types)
+### Chart Renderers (17 types)
 
-`CandlestickRenderer`, `HollowCandleRenderer`, `BarRenderer`, `LineRenderer`, `AreaRenderer`, `BaselineRenderer`, `RenkoRenderer`, `KagiRenderer`, `PointAndFigureRenderer`, `VolumeRenderer`, `CompareRenderer`. Range bars reuse `CandlestickRenderer` against transformed data.
+`CandlestickRenderer`, `HollowCandleRenderer`, `BarRenderer`, `LineRenderer`, `AreaRenderer`, `BaselineRenderer`, `RenkoRenderer`, `KagiRenderer`, `PointAndFigureRenderer`, `VolumeRenderer`, `VolumeCandleRenderer`, `EquivolumeRenderer`, `HLCAreaRenderer`, `StepLineRenderer`, `LineWithMarkersRenderer`, `CompareRenderer`. Heikin-Ashi, Line Break, and Range Bars reuse `CandlestickRenderer` against transformed data.
 
 Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars`
 
@@ -60,9 +60,9 @@ const output = await host.calculate('rsi', config, bars)
 
 Pass `null` instead of a worker for synchronous fallback (SSR, tests). The shipped `indicator.worker.js` registers all 33 built-in indicators and supports `calculate` and `ping` requests.
 
-### Drawing Tools (23)
+### Drawing Tools (24)
 
-Trendline, Horizontal/Vertical Lines, Ray, Extended Line, Parallel Channel, Fibonacci Retracement/Extension, Rectangle, Ellipse, Triangle, Arrow, Pitchfork, Gann Fan/Box, Elliott Wave, Regression Channel, Date/Price Range, Measure, Anchored VWAP, Volume Profile Range, Text Annotation
+Trendline, Horizontal/Vertical Lines, Ray, Extended Line, Parallel Channel, Fibonacci Retracement / Extension / **Time Zones** *(new in 0.8)*, Rectangle, Ellipse, Triangle, Arrow, Pitchfork, Gann Fan/Box, Elliott Wave, Regression Channel, Date/Price Range, Measure, Anchored VWAP, Volume Profile Range, Text Annotation
 
 All tools support magnet snapping, undo/redo, and serialization. Extensible via `DrawingBase`.
 
@@ -90,7 +90,8 @@ All tools support magnet snapping, undo/redo, and serialization. Extensible via 
 ### Features
 
 - `AlertManager` -- price and indicator alerts
-- `ReplayManager` -- bar-by-bar historical replay
+- `ReplayManager` -- bar-by-bar historical replay (Chart-tied)
+- `ReplayController` *(new in 0.8)* -- headless replay decoupled from Chart; powers backtest visualization
 - `ChartStateManager` -- save/load chart state as JSON
 - `UndoRedoManager` -- undo/redo for drawings
 - `DataExporter` -- export visible/all data as CSV or JSON

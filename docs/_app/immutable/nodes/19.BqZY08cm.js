@@ -1,0 +1,11 @@
+import{a as m,f as g}from"../chunks/DQd-QV4-.js";import"../chunks/BDwnSFXg.js";import{o as k}from"../chunks/BhVLj5RV.js";import{ag as x,an as C,ak as h,ae as w,ao as u,ap as B,g as b,aq as S,ar as W,p as T,C as A,a as j,D as z,s as f,c as l,$ as q,F as D,r as d}from"../chunks/Bdusip-H.js";import{d as F,a as M}from"../chunks/D3Y2VVil.js";import{h as P}from"../chunks/CsQmdBNd.js";import{a as $}from"../chunks/CZLms69u.js";function E(s=!1){const a=x,t=a.l.u;if(!t)return;let r=()=>S(a.s);if(s){let e=0,n={};const p=W(()=>{let i=!1;const o=a.s;for(const c in o)o[c]!==n[c]&&(n[c]=o[c],i=!0);return i&&e++,e});r=()=>b(p)}t.b.length&&C(()=>{v(a,r),u(t.b)}),h(()=>{const e=w(()=>t.m.map(B));return()=>{for(const n of e)typeof n=="function"&&n()}}),t.a.length&&h(()=>{v(a,r),u(t.a)})}function v(s,a){if(s.l.s)for(const t of s.l.s)b(t);a()}var I=g('<meta name="description" content="Fork an interactive TradeCanvas sandbox in StackBlitz and start hacking."/>'),L=g(`<section class="hero"><h1 class="hero-title" style="font-size: clamp(2rem, 4vw, 3rem)">Playground</h1> <p class="hero-subtitle">Spin up an editable sandbox in StackBlitz with the ChartWidget already wired
+    to live Binance data.</p> <div class="cta-row"><button class="cta-btn cta-btn--primary" type="button">Launch playground</button> <a class="cta-btn cta-btn--ghost" href="/tradecanvas/examples">More examples</a></div></section> <section class="quickstart-section"><h2 class="section-title">What's inside</h2> <p class="section-subtitle">A minimal Vite + TypeScript project with one file — <code>src/main.ts</code> — that mounts <code>ChartWidget</code> and connects a <code>BinanceAdapter</code>.</p> <pre class="svelte-j6hxly"><code></code></pre></section>`,1);function O(s,a){T(a,!1),k(()=>{});function t(){$()}E();var r=L();P("j6hxly",y=>{var _=I();z(()=>{q.title="Playground — TradeCanvas"}),m(y,_)});var e=A(r),n=f(l(e),4),p=l(n);D(2),d(n),d(e);var i=f(e,2),o=f(l(i),4),c=l(o);c.textContent=`import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(),
+  trading: true,
+})`,d(o),d(i),M("click",p,t),m(s,r),j()}F(["click"]);export{O as component};

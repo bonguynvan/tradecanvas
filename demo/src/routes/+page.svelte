@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { base } from '$app/paths';
+  import LiveChartShowcase from '$lib/components/LiveChartShowcase.svelte';
 
   const PM_COMMANDS = [
     { label: 'npm', cmd: 'npm install @tradecanvas/chart' },
@@ -84,17 +85,19 @@
   </div>
 </section>
 
+<LiveChartShowcase />
+
 <section class="widget-section">
   <div class="widget-callout">
-    <h3>v0.8 preview — Strategy backtester, replay mode, Equivolume</h3>
+    <h3>v0.8 — Strategy backtester, replay mode, Equivolume</h3>
     <p>
-      New private <code>@tradecanvas/analytics</code> package with a bar-by-bar
+      New <code>@tradecanvas/analytics</code> package with a bar-by-bar
       <code>Backtester</code>, full <code>Portfolio</code> tracking, and risk metrics
       (Sharpe, Sortino, Calmar, max drawdown). A headless
       <code>ReplayController</code> drives historical playback at controlled speed.
       Plus a new Equivolume chart type and Fibonacci Time Zones drawing.
     </p>
-    <a href="{base}/docs/analytics">Read the analytics docs</a>
+    <a href="{base}/docs/analytics">See the live backtest demo →</a>
   </div>
 </section>
 

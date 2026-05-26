@@ -2,7 +2,7 @@
 
 Shared types, utilities, constants, themes, i18n, and market presets for the [@tradecanvas/chart](https://www.npmjs.com/package/@tradecanvas/chart) library.
 
-**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://bonguynvan.github.io/tradecanvas/#getting-started)**
+**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://bonguynvan.github.io/tradecanvas/docs/getting-started/)**
 
 ## Install
 
