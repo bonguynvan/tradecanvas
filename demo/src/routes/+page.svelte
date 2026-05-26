@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { base } from '$app/paths';
   import LiveChartShowcase from '$lib/components/LiveChartShowcase.svelte';
+  import FinanceCharts from '$lib/components/FinanceCharts.svelte';
 
   const PM_COMMANDS = [
     { label: 'npm', cmd: 'npm install @tradecanvas/chart' },
@@ -186,6 +187,8 @@
     </div>
   </div>
 </section>
+
+<FinanceCharts />
 
 <section class="quickstart-section">
   <h2 class="section-title">Quick start</h2>
