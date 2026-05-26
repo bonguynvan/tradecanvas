@@ -6,6 +6,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 .tmp/
+.svelte-kit/
+
+# Local agent config
+.claude/
 
 # IDE
 .vscode/

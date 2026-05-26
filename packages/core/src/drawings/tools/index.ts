@@ -21,6 +21,7 @@ export { GannFanTool } from './GannFan.js';
 export { GannBoxTool } from './GannBox.js';
 export { AnchoredVWAPTool } from './AnchoredVWAP.js';
 export { VolumeProfileRangeTool } from './VolumeProfileRange.js';
+export { FibTimeZonesTool } from './FibTimeZones.js';
 
 import type { DrawingManager } from '../DrawingManager.js';
 import { TrendLineTool } from './TrendLine.js';
@@ -46,6 +47,7 @@ import { GannFanTool } from './GannFan.js';
 import { GannBoxTool } from './GannBox.js';
 import { AnchoredVWAPTool } from './AnchoredVWAP.js';
 import { VolumeProfileRangeTool } from './VolumeProfileRange.js';
+import { FibTimeZonesTool } from './FibTimeZones.js';
 
 export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new TrendLineTool());
@@ -71,4 +73,5 @@ export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new GannBoxTool());
   manager.register(new AnchoredVWAPTool());
   manager.register(new VolumeProfileRangeTool());
+  manager.register(new FibTimeZonesTool());
 }

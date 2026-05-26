@@ -4,6 +4,7 @@ import {
   BarRenderer,
   BaselineRenderer,
   CandlestickRenderer,
+  EquivolumeRenderer,
   HLCAreaRenderer,
   HollowCandleRenderer,
   KagiRenderer,
@@ -52,6 +53,8 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
       return new PointAndFigureRenderer();
     case 'volumeCandles':
       return new VolumeCandleRenderer();
+    case 'equivolume':
+      return new EquivolumeRenderer();
     case 'hlcArea':
       return new HLCAreaRenderer();
     case 'stepLine':

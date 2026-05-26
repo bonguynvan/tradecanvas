@@ -7,7 +7,8 @@ export type ChartType =
   | 'heikinAshi' | 'hollowCandle' | 'baseline'
   | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure'
   | 'rangeBars'
-  | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers';
+  | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers'
+  | 'equivolume';
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 

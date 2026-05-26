@@ -1,0 +1,48 @@
+{
+  "name": "@tradecanvas/analytics",
+  "version": "0.8.0-pre",
+  "private": true,
+  "type": "module",
+  "description": "Backtesting, portfolio tracking, and risk analytics for tradecanvas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bonguynvan/tradecanvas.git",
+    "directory": "packages/analytics"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "trading",
+    "backtest",
+    "analytics",
+    "risk",
+    "portfolio"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tradecanvas/commons": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}

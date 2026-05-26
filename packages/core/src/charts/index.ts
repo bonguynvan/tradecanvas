@@ -9,6 +9,7 @@ export { RenkoRenderer } from './RenkoRenderer.js';
 export { KagiRenderer } from './KagiRenderer.js';
 export { PointAndFigureRenderer } from './PointAndFigureRenderer.js';
 export { VolumeCandleRenderer } from './VolumeCandleRenderer.js';
+export { EquivolumeRenderer } from './EquivolumeRenderer.js';
 export { HLCAreaRenderer } from './HLCAreaRenderer.js';
 export { StepLineRenderer } from './StepLineRenderer.js';
 export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';

@@ -4,4 +4,12 @@ export { ReconnectManager } from './ReconnectManager.js';
 export { StreamManager } from './StreamManager.js';
 export type { StreamEvents } from './StreamManager.js';
 export { CurrentPriceLine } from './CurrentPriceLine.js';
+export { ReplayController } from './ReplayController.js';
+export type {
+  ReplayBarEvent,
+  ReplayEventMap,
+  ReplayOptions,
+  ReplayStateChangeEvent,
+  ReplayStatus,
+} from './ReplayController.js';
 export * from './adapters/index.js';

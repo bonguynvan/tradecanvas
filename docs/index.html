@@ -3,426 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TradeCanvas -- High-Performance Canvas Trading Chart</title>
-  <meta name="description" content="High-performance canvas trading chart with a built-in TradingView-like UI: 33 indicators, 23 drawing tools, 12 chart types, real-time streaming, web-worker indicator pipeline, mobile-ready, and zero dependencies." />
-  <style>
-    /* Reset */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a0f;
-      --bg-elevated: #111118;
-      --bg-card: rgba(17, 17, 24, 0.7);
-      --bg-panel: #16161f;
-      --border: #1e1e2e;
-      --border-subtle: #16161f;
-      --text: #e1e1e6;
-      --text-muted: #6b6b7b;
-      --text-dim: #a1a1aa;
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.15);
-      --accent-dim: rgba(59, 130, 246, 0.2);
-      --green: #10b981;
-      --red: #ef4444;
-      --radius: 6px;
-      --radius-lg: 12px;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-      --transition: 150ms ease;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Light Theme */
-    body.light {
-      --bg: #fafafa;
-      --bg-elevated: #ffffff;
-      --bg-card: rgba(255, 255, 255, 0.8);
-      --bg-panel: #f5f5f8;
-      --border: #e2e2ea;
-      --border-subtle: #ececf0;
-      --text: #1a1a2e;
-      --text-muted: #8888a0;
-      --text-dim: #555566;
-      --accent-glow: rgba(59, 130, 246, 0.08);
-      --accent-dim: rgba(59, 130, 246, 0.1);
-    }
-
-    body.light .hero-title {
-      background: linear-gradient(135deg, #1a1a2e 0%, #444460 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-
-    /* Hero */
-    .hero {
-      text-align: center;
-      padding: 64px 24px 40px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -120px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-title {
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #ffffff 0%, #a0a0b0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 12px;
-    }
-
-    .hero-subtitle {
-      font-size: clamp(1rem, 2vw, 1.25rem);
-      color: var(--text-dim);
-      max-width: 540px;
-      margin: 0 auto 32px;
-      font-weight: 400;
-    }
-
-    /* CTA Buttons */
-    .cta-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 32px;
-    }
-
-    .cta-install-wrap {
-      display: inline-flex;
-      flex-direction: column;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      transition: border-color var(--transition);
-    }
-
-    .cta-install-wrap:hover {
-      border-color: var(--accent);
-    }
-
-    .pm-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .pm-tab {
-      flex: 1;
-      padding: 4px 12px;
-      font-size: 11px;
-      font-family: var(--font);
-      font-weight: 500;
-      color: var(--text-muted);
-      background: var(--bg-elevated);
-      border: none;
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-
-    .pm-tab:not(:last-child) {
-      border-right: 1px solid var(--border);
-    }
-
-    .pm-tab:hover {
-      color: var(--text);
-    }
-
-    .pm-tab.active {
-      color: var(--accent);
-      background: rgba(59, 130, 246, 0.06);
-    }
-
-    .cta-install {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 20px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      background: var(--bg-elevated);
-      border: none;
-      color: var(--text);
-      cursor: pointer;
-      transition: background var(--transition);
-    }
-
-    .cta-install:hover {
-      background: rgba(59, 130, 246, 0.06);
-    }
-
-    .cta-install .copy-icon {
-      opacity: 0.4;
-      transition: opacity var(--transition);
-      font-size: 12px;
-    }
-
-    .cta-install:hover .copy-icon { opacity: 0.8; }
-
-    .cta-install.copied {
-      border-color: var(--green);
-    }
-
-    .cta-install.copied .copy-icon { opacity: 1; color: var(--green); }
-
-    .cta-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 20px;
-      font-size: 14px;
-      font-weight: 500;
-      border-radius: var(--radius);
-      text-decoration: none;
-      transition: all var(--transition);
-    }
-
-    .cta-btn--primary {
-      background: var(--accent);
-      color: white;
-      border: 1px solid var(--accent);
-    }
-
-    .cta-btn--primary:hover { background: #2563eb; }
-
-    .cta-btn--ghost {
-      background: transparent;
-      color: var(--text-dim);
-      border: 1px solid var(--border);
-    }
-
-    .cta-btn--ghost:hover {
-      color: var(--text);
-      border-color: var(--text-muted);
-    }
-
-    /* Badges */
-    .badge-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-dim);
-      font-weight: 500;
-    }
-
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .badge-dot--green { background: var(--green); }
-    .badge-dot--red { background: var(--red); }
-
-    /* Feature Cards */
-    .features-section {
-      padding: 64px 24px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .section-title {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      text-align: center;
-      margin-bottom: 12px;
-    }
-
-    .section-subtitle {
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 15px;
-      margin-bottom: 48px;
-      max-width: 480px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 16px;
-    }
-
-    .feature-card {
-      padding: 28px 24px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: border-color var(--transition), transform 200ms ease;
-    }
-
-    .feature-card:hover {
-      border-color: var(--text-muted);
-      transform: translateY(-2px);
-    }
-
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background: var(--accent-glow);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
-      font-size: 16px;
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .feature-icon--green {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: rgba(16, 185, 129, 0.2);
-      color: var(--green);
-    }
-
-    .feature-card h3 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .feature-card p {
-      font-size: 14px;
-      color: var(--text-dim);
-      line-height: 1.6;
-    }
-
-    /* Quick Start */
-    .quickstart-section {
-      padding: 64px 24px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 32px 24px;
-      border-top: 1px solid var(--border);
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .footer a {
-      color: var(--text-dim);
-      text-decoration: none;
-      transition: color var(--transition);
-    }
-
-    .footer a:hover { color: var(--accent); }
-
-    .footer-links {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .footer-sep { color: var(--border); }
-
-    /* Widget announcement */
-    .widget-section {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-
-    .widget-callout {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 16px 20px;
-      background: var(--bg-elevated);
-      border-left: 3px solid var(--accent);
-      border-radius: 0 var(--radius) var(--radius) 0;
-      margin-bottom: 8px;
-    }
-
-    .widget-callout h3 {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0;
-    }
-
-    .widget-callout p {
-      font-size: 13px;
-      color: var(--text-dim);
-      margin: 0;
-    }
-
-    .widget-callout code {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--accent);
-      background: rgba(59, 130, 246, 0.08);
-      padding: 4px 8px;
-      border-radius: 4px;
-      align-self: flex-start;
-    }
-
-    .widget-callout a {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--accent);
-      text-decoration: none;
-      align-self: flex-start;
-    }
-
-    .widget-callout a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero { padding: 40px 16px 24px; }
-      .feature-grid { grid-template-columns: 1fr; }
-      .badge-row { gap: 16px; }
-    }
-  </style>
-  <script type="module" crossorigin src="/tradecanvas/assets/main-DEhoGjDb.js"></script>
-  <link rel="modulepreload" crossorigin href="/tradecanvas/assets/ChartWidget-E6guMr5U.js">
-  <link rel="stylesheet" crossorigin href="/tradecanvas/assets/main-Czq3lOZE.css">
+  <link rel="icon" href="./favicon.ico" />
+  <link href="./_app/immutable/entry/start.DQjh4Gqx.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/VEKolWyB.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/Bfa79lMJ.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/CHKbKI9w.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/-UyI9lYi.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/j58xHptK.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DeGtxaRA.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.DlKRIJSo.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/E_OKnYUu.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/CdCBOcn-.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/C_HuOTXO.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/D1Xo73DX.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DlmGnZjb.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.ZA3ZKN-e.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/vAuLCfUd.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/BMdg7FzT.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DoGDV8-e.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/3.CYL__9Y7.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DC6RaQJL.js" rel="modulepreload">
+		<!--1uha8ag--><meta name="description" content="Production-ready canvas trading chart with built-in TradingView-like UI: 33 indicators, 23 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."/> <meta property="og:title" content="TradeCanvas — Trading chart library"/> <meta property="og:description" content="High-performance canvas trading chart with built-in UI, 33 indicators, real-time streaming, and backtesting."/><!----><title>TradeCanvas — High-Performance Canvas Trading Chart</title>
+		<link href="./_app/immutable/assets/0.DSMTEtt6.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/3.CVavgvHm.css" rel="stylesheet">
 </head>
-<body>
-  <div id="app"></div>
+<body data-sveltekit-preload-data="hover">
+  <div style="display: contents"><!--[--><!--[0--><!--[--><nav class="site-nav"><a class="site-nav-brand" href="./"><span class="site-nav-brand-mark" aria-hidden="true"></span> <span>TradeCanvas</span></a> <div class="site-nav-links"><!--[--><a class="site-nav-link" href="./docs/getting-started">Docs</a><a class="site-nav-link" href="./examples">Examples</a><a class="site-nav-link" href="./playground">Playground</a><a class="site-nav-link" href="./changelog">Changelog</a><!--]--></div> <div class="site-nav-actions"><button class="site-nav-icon-btn" aria-label="Toggle theme" type="button">☾</button> <a class="site-nav-icon-btn" href="https://github.com/bonguynvan/tradecanvas" target="_blank" rel="noopener" aria-label="GitHub">★</a></div></nav> <main><!--[-1--><!--[--><section class="hero"><h1 class="hero-title">TradeCanvas</h1> <p class="hero-subtitle">High-performance canvas trading chart with a built-in TradingView-like UI.
+    33 indicators, 23 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, live streaming. Zero dependencies.</p> <div class="cta-row"><div class="cta-install-wrap"><div class="pm-tabs"><!--[--><button class="pm-tab active" type="button">npm</button><button class="pm-tab" type="button">pnpm</button><button class="pm-tab" type="button">yarn</button><!--]--></div> <button class="cta-install" title="Copy to clipboard" type="button"><span>npm install @tradecanvas/chart</span> <span class="copy-icon">COPY</span></button></div> <a href="./docs/getting-started" class="cta-btn cta-btn--primary">Get started</a> <a href="https://github.com/bonguynvan/tradecanvas" class="cta-btn cta-btn--ghost" target="_blank" rel="noopener">GitHub</a></div> <div class="badge-row"><span class="badge"><span class="badge-dot"></span> 33 Indicators</span> <span class="badge"><span class="badge-dot badge-dot--green"></span> 23 Drawing Tools</span> <span class="badge"><span class="badge-dot"></span> 17 Chart Types</span> <span class="badge"><span class="badge-dot badge-dot--red"></span> Signal Markers &amp; Trade Zones</span> <span class="badge"><span class="badge-dot badge-dot--red"></span> Real-Time Streaming</span> <span class="badge"><span class="badge-dot badge-dot--green"></span> Multi-Chart Grid</span> <span class="badge"><span class="badge-dot"></span> Backtester (0.8)</span> <span class="badge"><span class="badge-dot badge-dot--green"></span> Replay Mode (0.8)</span> <span class="badge"><span class="badge-dot"></span> Zero Dependencies</span></div></section> <section class="widget-section"><div class="widget-callout"><h3>v0.8 preview — Strategy backtester, replay mode, Equivolume</h3> <p>New private <code>@tradecanvas/analytics</code> package with a bar-by-bar <code>Backtester</code>, full <code>Portfolio</code> tracking, and risk metrics
+      (Sharpe, Sortino, Calmar, max drawdown). A headless <code>ReplayController</code> drives historical playback at controlled speed.
+      Plus a new Equivolume chart type and Fibonacci Time Zones drawing.</p> <a href="./docs/analytics">Read the analytics docs</a></div></section> <section class="features-section"><h2 class="section-title">Built for trading</h2> <p class="section-subtitle">Everything you need for a professional trading chart, in a single package.</p> <div class="feature-grid"><div class="feature-card"><div class="feature-icon">/\</div> <h3>33 technical indicators</h3> <p>SMA, EMA, Hull MA, RSI, MACD, Bollinger Bands, Ichimoku, Stochastic, Pivot Points,
+        Anchored VWAP, ZigZag, Linear Regression Channel, Awesome &amp; Chaikin
+        Oscillators, and more — computed internally with zero external math libraries.</p></div> <div class="feature-card"><div class="feature-icon feature-icon--green">//</div> <h3>23 drawing tools</h3> <p>Trendlines, Fibonacci (incl. Time Zones), channels, Elliott waves, Gann tools.
+        Click-to-place with magnet snapping, undo/redo, and full serialization.</p></div> <div class="feature-card"><div class="feature-icon">[/]</div> <h3>17 chart types</h3> <p>Candlestick, OHLC bars, line, area, baseline, hollow candles, Heikin-Ashi,
+        Renko, Kagi, Line Break, Point &amp; Figure, Range Bars, Volume Candles,
+        Equivolume, HLC Area, Step Line, and Line+Markers.</p></div> <div class="feature-card"><div class="feature-icon feature-icon--green">▦</div> <h3>ChartWidget (built-in UI)</h3> <p>One-line embed — <code>new ChartWidget(host, {...})</code> ships a full
+        TradingView-like UI: toolbar, drawing sidebar, settings dialog, status bar.
+        Framework-agnostic.</p></div> <div class="feature-card"><div class="feature-icon">$</div> <h3>Trading overlay</h3> <p>Render positions, orders, SL/TP markers directly on the chart. Drag to modify.
+        Partial-close strips, multi-stop P&amp;L gradient, custom label templates.</p></div> <div class="feature-card"><div class="feature-icon feature-icon--green">~</div> <h3>Real-time streaming</h3> <p>Built-in Binance WebSocket adapter with typed REST + WS validators. Or plug in
+        your own data source with the simple <code>DataAdapter</code> interface.
+        Auto-reconnect included.</p></div> <div class="feature-card"><div class="feature-icon">⚙</div> <h3>Web Worker pipeline</h3> <p>Indicator math runs off the render loop via <code>IndicatorWorkerHost</code> —
+        Promise-based <code>calculate()</code>, sync fallback for SSR/tests,
+        per-request timeout. No frozen frames.</p></div> <div class="feature-card"><div class="feature-icon feature-icon--green">⊕</div> <h3>Backtester &amp; replay</h3> <p>New in 0.8: <code>Backtester</code> with virtual fills, slippage / commission
+        models, and a <code>ReplayController</code> that drives historical bars
+        forward at controlled speed for visual review.</p></div> <div class="feature-card"><div class="feature-icon">[ ]</div> <h3>Mobile &amp; touch ready</h3> <p>Single-finger pan, two-finger pinch-zoom, responsive widget layout under 768px.
+        Resize this page or open it on your phone to try it live.</p></div></div></section> <section class="quickstart-section"><h2 class="section-title">Quick start</h2> <p class="section-subtitle">A full-featured trading chart with live data in one call. Drop-in <code>ChartWidget</code> — no framework needed.</p> <pre class="svelte-1uha8ag"><code>import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(),
+  historyLimit: 500,
+  trading: true,
+  onReady: (chart) => {
+    chart.on('orderPlace', (e) => console.log('order intent', e.payload))
+  },
+})</code></pre> <div style="text-align: center; margin-top: 32px;"><a href="./docs/getting-started" class="cta-btn cta-btn--primary">Read the docs</a> <a href="./examples" class="cta-btn cta-btn--ghost" style="margin-left: 8px">See examples</a></div></section><!--]--><!--]--><!----></main> <footer class="footer"><div class="footer-links"><a href="https://github.com/bonguynvan/tradecanvas">GitHub</a> <span class="footer-sep">·</span> <a href="./docs/getting-started">Docs</a> <span class="footer-sep">·</span> <a href="./changelog">Changelog</a> <span class="footer-sep">·</span> <a href="https://www.npmjs.com/package/@tradecanvas/chart">npm</a></div> <div style="margin-top: 8px">MIT · v0.7.1</div></footer><!--]--><!--]--> <!--[-1--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_d61aj8 = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						assets: "/tradecanvas"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.DQjh4Gqx.js"),
+						import("./_app/immutable/entry/app.DlKRIJSo.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 3],
+							data: [null,null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
 </body>
 </html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../../favicon.ico" />
+  <link href="../../_app/immutable/entry/start.DQjh4Gqx.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/VEKolWyB.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/Bfa79lMJ.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/CHKbKI9w.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/-UyI9lYi.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/j58xHptK.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/DeGtxaRA.js" rel="modulepreload">
+		<link href="../../_app/immutable/entry/app.DlKRIJSo.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/E_OKnYUu.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/CdCBOcn-.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/C_HuOTXO.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/D1Xo73DX.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/DlmGnZjb.js" rel="modulepreload">
+		<link href="../../_app/immutable/nodes/0.ZA3ZKN-e.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/vAuLCfUd.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/BMdg7FzT.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/DoGDV8-e.js" rel="modulepreload">
+		<link href="../../_app/immutable/nodes/2.tBXob5ZO.js" rel="modulepreload">
+		<link href="../../_app/immutable/nodes/15.Cs2fY4NO.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/BMDqXj-z.js" rel="modulepreload">
+		<link href="../../_app/immutable/chunks/DC6RaQJL.js" rel="modulepreload">
+		<!--24msnm--><meta name="description" content="Streaming data adapters, tick aggregation, reconnect logic, and the new ReplayController for historical playback."/><!----><title>Realtime &amp; replay — TradeCanvas docs</title>
+		<link href="../../_app/immutable/assets/0.DSMTEtt6.css" rel="stylesheet">
+</head>
+<body data-sveltekit-preload-data="hover">
+  <div style="display: contents"><!--[--><!--[0--><!--[--><nav class="site-nav"><a class="site-nav-brand" href="../../"><span class="site-nav-brand-mark" aria-hidden="true"></span> <span>TradeCanvas</span></a> <div class="site-nav-links"><!--[--><a class="site-nav-link" href="../../docs/getting-started">Docs</a><a class="site-nav-link" href="../../examples">Examples</a><a class="site-nav-link" href="../../playground">Playground</a><a class="site-nav-link" href="../../changelog">Changelog</a><!--]--></div> <div class="site-nav-actions"><button class="site-nav-icon-btn" aria-label="Toggle theme" type="button">☾</button> <a class="site-nav-icon-btn" href="https://github.com/bonguynvan/tradecanvas" target="_blank" rel="noopener" aria-label="GitHub">★</a></div></nav> <main><!--[0--><!--[--><div class="docs-shell"><aside class="docs-sidebar" aria-label="Documentation navigation"><!--[--><div class="docs-sidebar-group"><div class="docs-sidebar-title">Get started</div> <!--[--><a class="docs-sidebar-link" href="../../docs/getting-started">Getting Started</a><a class="docs-sidebar-link" href="../../docs/frameworks">Frameworks</a><a class="docs-sidebar-link" href="../../docs/embed">Embeddable Widget</a><!--]--></div><div class="docs-sidebar-group"><div class="docs-sidebar-title">Chart</div> <!--[--><a class="docs-sidebar-link" href="../../docs/api">API Reference</a><a class="docs-sidebar-link" href="../../docs/chart-types">Chart Types</a><a class="docs-sidebar-link" href="../../docs/indicators">Indicators</a><a class="docs-sidebar-link" href="../../docs/drawing-tools">Drawing Tools</a><!--]--></div><div class="docs-sidebar-group"><div class="docs-sidebar-title">Trading</div> <!--[--><a class="docs-sidebar-link" href="../../docs/trading">Trading Overlay</a><a class="docs-sidebar-link" href="../../docs/finance">Finance Charts</a><a class="docs-sidebar-link" href="../../docs/realtime">Realtime &amp; Replay</a><a class="docs-sidebar-link" href="../../docs/analytics">Analytics (0.8)</a><!--]--></div><!--]--></aside> <article class="docs-content"><!--[--><h1>Realtime &amp; replay</h1> <p>Stream live data, aggregate ticks into bars, and replay historical data at controlled speed.</p> <h2>DataAdapter interface</h2> <pre><code>interface DataAdapter {
+  fetchHistory(symbol, timeframe, limit?): Promise&lt;OHLCBar[]>
+  subscribe(symbol, timeframe, handler): () => void
+}</code></pre> <p>Built-in: <code>BinanceAdapter</code> (REST + WS, typed validators, auto-reconnect).</p> <h2>Tick aggregation</h2> <p>Roll raw ticks into OHLC bars per timeframe:</p> <pre><code>import { TickAggregator } from '@tradecanvas/chart'
+
+const agg = new TickAggregator('1m')
+agg.processTick({ time, price, volume })
+
+const current = agg.getCurrentBar()         // forming bar
+const closed = agg.flushClosedBars()        // bars that have rolled over</code></pre> <h2>Reconnect</h2> <p><code>ReconnectManager</code> handles exponential backoff with a cap and a final give-up.</p> <pre><code>import { ReconnectManager } from '@tradecanvas/chart'
+
+const rm = new ReconnectManager({
+  maxAttempts: 6,
+  baseDelayMs: 500,
+  capMs: 30_000,
+})
+
+rm.attempt(async () => connectWebsocket())</code></pre> <h2>Replay mode (0.8)</h2> <p>Drive a historical <code>DataSeries</code> forward at controlled speed.
+  Decoupled from <code>Chart</code> so it can power both UI replay and headless
+  backtests.</p> <pre><code>import { ReplayController } from '@tradecanvas/chart'
+
+const replay = new ReplayController({
+  data: historicalBars,
+  speed: 10,      // bars per second
+  startIndex: 0,
+})
+
+// Seed the chart with everything before startIndex
+chart.setData(replay.getPrefix())
+
+// Wire each emitted bar into the chart
+replay.on('bar', ({ bar }) => chart.appendBar(bar))
+replay.on('finished', () => console.log('done'))
+
+replay.start()
+// replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
+</code></pre> <h3>API</h3> <table><thead><tr><th>Method</th><th>Purpose</th></tr></thead><tbody><tr><td><code>start()</code></td><td>Begin emitting from current index.</td></tr><tr><td><code>pause()</code> / <code>resume()</code></td><td>Pause/continue timer.</td></tr><tr><td><code>step(n)</code></td><td>Emit N bars synchronously without the timer.</td></tr><tr><td><code>seek(index)</code></td><td>Jump without emitting in-between bars.</td></tr><tr><td><code>setSpeed(bps)</code></td><td>Bars per second (clamped to >= 0.01).</td></tr><tr><td><code>destroy()</code></td><td>Clear timer + listeners.</td></tr></tbody></table> <p>See <a href="../../docs/analytics">Analytics</a> for using replay alongside the backtester.</p><!--]--><!----></article></div><!--]--><!--]--><!----></main> <footer class="footer"><div class="footer-links"><a href="https://github.com/bonguynvan/tradecanvas">GitHub</a> <span class="footer-sep">·</span> <a href="../../docs/getting-started">Docs</a> <span class="footer-sep">·</span> <a href="../../changelog">Changelog</a> <span class="footer-sep">·</span> <a href="https://www.npmjs.com/package/@tradecanvas/chart">npm</a></div> <div style="margin-top: 8px">MIT · v0.7.1</div></footer><!--]--><!--]--> <!--[-1--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_d61aj8 = {
+						base: new URL("../..", location).pathname.slice(0, -1),
+						assets: "/tradecanvas"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("../../_app/immutable/entry/start.DQjh4Gqx.js"),
+						import("../../_app/immutable/entry/app.DlKRIJSo.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2, 15],
+							data: [null,null,null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+</body>
+</html>

@@ -19,6 +19,7 @@ export const CHART_TYPES: { label: string; value: ChartType }[] = [
   { label: 'Hollow Candle', value: 'hollowCandle' },
   { label: 'Baseline', value: 'baseline' },
   { label: 'Volume Candles', value: 'volumeCandles' },
+  { label: 'Equivolume', value: 'equivolume' },
   { label: 'HLC Area', value: 'hlcArea' },
   { label: 'Step Line', value: 'stepLine' },
   { label: 'Line + Markers', value: 'lineWithMarkers' },

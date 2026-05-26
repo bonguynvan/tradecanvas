@@ -3,7 +3,7 @@ import type { Point, ViewportState } from './rendering.js';
 export type DrawingToolType =
   | 'trendLine' | 'horizontalLine' | 'verticalLine' | 'ray' | 'extendedLine'
   | 'parallelChannel' | 'regressionChannel'
-  | 'fibRetracement' | 'fibExtension'
+  | 'fibRetracement' | 'fibExtension' | 'fibTimeZones'
   | 'rectangle' | 'ellipse' | 'triangle'
   | 'pitchfork' | 'elliottWave'
   | 'priceRange' | 'dateRange' | 'measure'
