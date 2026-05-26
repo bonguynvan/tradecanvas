@@ -5,7 +5,8 @@ on:
     paths:
       - 'demo/**'
       - 'packages/**'
-      - 'docs/**'
+      - 'CHANGELOG.md'
+      - 'README.md'
       - '.github/workflows/deploy-demo.yml'
   workflow_dispatch:
 
@@ -36,13 +37,14 @@ jobs:
 
       - run: pnpm install --no-frozen-lockfile
 
-      - run: pnpm -r --filter @tradecanvas/commons --filter @tradecanvas/core --filter @tradecanvas/chart --filter @tradecanvas/demo build
+      - name: Build packages + demo
+        run: pnpm -r --filter @tradecanvas/commons --filter @tradecanvas/core --filter @tradecanvas/analytics --filter @tradecanvas/chart --filter @tradecanvas/demo build
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: demo/build
 
       - id: deployment
         uses: actions/deploy-pages@v4

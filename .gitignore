@@ -7,6 +7,8 @@ dist/
 *.tsbuildinfo
 .tmp/
 .svelte-kit/
+demo/build/
+docs/
 
 # Local agent config
 .claude/

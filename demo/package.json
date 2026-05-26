@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node -e \"require('fs').writeFileSync('../docs/.nojekyll','')\"",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf build .svelte-kit"
   },
   "dependencies": {
     "@stackblitz/sdk": "^1.11.0",

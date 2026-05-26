@@ -1,1 +1,0 @@
-import{x as y,f as o,ac as u,ad as _,h as t,Q as g,a6 as l,o as i,l as d,q as p,O as m}from"./Bdusip-H.js";function x(n,r){let a=null,f=t;var s;if(t){a=p;for(var e=m(document.head);e!==null&&(e.nodeType!==g||e.data!==n);)e=l(e);if(e===null)i(!1);else{var E=l(e);e.remove(),d(E)}}t||(s=document.head.appendChild(y()));try{o(()=>r(s),u|_)}finally{f&&(i(!0),d(a))}}export{x as h};
