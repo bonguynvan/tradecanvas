@@ -1,23 +1,30 @@
 {
   "name": "@tradecanvas/analytics",
-  "version": "0.8.0-pre",
-  "private": true,
+  "version": "0.8.0",
   "type": "module",
-  "description": "Backtesting, portfolio tracking, and risk analytics for tradecanvas",
+  "description": "Backtesting, portfolio tracking, and risk analytics for TradeCanvas — bar-by-bar Backtester with virtual fills, commission/slippage models, and risk metrics (Sharpe, Sortino, Calmar, max drawdown).",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/bonguynvan/tradecanvas.git",
     "directory": "packages/analytics"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "keywords": [
     "trading",
     "backtest",
+    "backtesting",
     "analytics",
-    "risk",
-    "portfolio"
+    "risk-metrics",
+    "portfolio",
+    "sharpe",
+    "sortino",
+    "tradecanvas"
   ],
+  "homepage": "https://github.com/bonguynvan/tradecanvas",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,7 +44,8 @@
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@tradecanvas/commons": "workspace:*"
