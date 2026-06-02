@@ -2,6 +2,7 @@ import type { Point, ViewportState } from '@tradecanvas/commons';
 import type { PanHandler } from './PanHandler.js';
 import type { ZoomHandler } from './ZoomHandler.js';
 import type { CrosshairHandler } from './CrosshairHandler.js';
+import type { AxisDragHandler } from './AxisDragHandler.js';
 import type { DrawingManager } from '../drawings/DrawingManager.js';
 import type { TradingManager } from '../trading/TradingManager.js';
 
@@ -9,6 +10,17 @@ export class InteractionManager {
   private panHandler: PanHandler | null = null;
   private zoomHandler: ZoomHandler | null = null;
   private crosshairHandler: CrosshairHandler | null = null;
+  private axisDragHandler: AxisDragHandler | null = null;
+  private axisViewportGetter: (() => ViewportState) | null = null;
+  private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
+  private measureHandlers: {
+    begin: (pos: Point) => void;
+    move: (pos: Point) => void;
+    end: () => void;
+  } | null = null;
+  private measuring = false;
+  private onAltClick: ((pos: Point) => void) | null = null;
+  private onEscape: (() => void) | null = null;
   private drawingManager: DrawingManager | null = null;
   private tradingManager: TradingManager | null = null;
   private viewportGetter: (() => ViewportState) | null = null;
@@ -32,6 +44,47 @@ export class InteractionManager {
   setZoomHandler(handler: ZoomHandler): void { this.zoomHandler = handler; }
   setCrosshairHandler(handler: CrosshairHandler): void { this.crosshairHandler = handler; }
 
+  /**
+   * Enable drag-to-scale on the price + time axis regions. The viewport getter
+   * lets us hit-test the chartRect on every pointer event (cheap), so this
+   * picks up panel/layout changes for free.
+   */
+  /**
+   * Shift-drag measure tool. The handlers are simple position callbacks; the
+   * Chart converts pos → bar index + price internally.
+   */
+  /**
+   * Alt/Option+click on the chart area. Used by the pinned-tooltip feature
+   * so the gesture doesn't collide with drawing tools (plain click) or with
+   * the trading context menu (right-click).
+   */
+  setAltClickHandler(handler: (pos: Point) => void): void {
+    this.onAltClick = handler;
+  }
+
+  /** Wire an `Escape` keydown to the host — used to unpin tooltips, etc. */
+  setEscapeHandler(handler: () => void): void {
+    this.onEscape = handler;
+  }
+
+  setMeasureHandlers(handlers: {
+    begin: (pos: Point) => void;
+    move: (pos: Point) => void;
+    end: () => void;
+  }): void {
+    this.measureHandlers = handlers;
+  }
+
+  setAxisDragHandler(
+    handler: AxisDragHandler,
+    viewportGetter: () => ViewportState,
+    onDoubleClick?: (axis: 'price' | 'time') => void,
+  ): void {
+    this.axisDragHandler = handler;
+    this.axisViewportGetter = viewportGetter;
+    this.onAxisDoubleClick = onDoubleClick ?? null;
+  }
+
   setDrawingManager(manager: DrawingManager, viewportGetter: () => ViewportState): void {
     this.drawingManager = manager;
     this.viewportGetter = viewportGetter;
@@ -45,6 +98,19 @@ export class InteractionManager {
   attach(): void {
     const getVP = () => this.viewportGetter?.() ?? null;
 
+    // Axis hit-test: returns 'price' if pointer is in the right-side price
+    // axis strip, 'time' if in the bottom time-axis strip, null otherwise.
+    const hitAxis = (pos: Point): 'price' | 'time' | null => {
+      const vp = this.axisViewportGetter?.();
+      if (!vp) return null;
+      const r = vp.chartRect;
+      // Bottom strip wins if we're in the corner — clicking the corner is
+      // ambiguous, but bottom is the rarer / less-disruptive default.
+      if (pos.y > r.y + r.height) return 'time';
+      if (pos.x > r.x + r.width) return 'price';
+      return null;
+    };
+
     // --- Mouse events ---
     const onMouseDown = (e: MouseEvent) => {
       // Cheap refresh point — ensures the rect is current for the
@@ -52,6 +118,32 @@ export class InteractionManager {
       this.invalidateRect();
       const pos = this.getMousePos(e);
       const vp = getVP();
+
+      // Axis drag has priority — clicking the price/time strip should never
+      // start drawing or open the trading menu.
+      const axis = hitAxis(pos);
+      if (axis && this.axisDragHandler) {
+        this.axisDragHandler.begin(axis, pos);
+        return;
+      }
+
+      // Shift-drag measure tool — bypasses pan/draw/trade. Tracked separately
+      // because the gesture spans mousedown→mouseup and crosshair should be
+      // suppressed while measuring.
+      if (e.shiftKey && this.measureHandlers) {
+        this.measuring = true;
+        this.measureHandlers.begin(pos);
+        this.onOverlayDirty?.();
+        return;
+      }
+
+      // Alt/Option-click pins the OHLC tooltip at the hovered bar. Pure
+      // discrete action, doesn't enter any drag state.
+      if (e.altKey && this.onAltClick) {
+        this.onAltClick(pos);
+        return;
+      }
+
       if (this.tradingManager && vp && this.tradingManager.onPointerDown(pos, vp)) return;
       if (this.drawingManager && vp && this.drawingManager.onPointerDown(pos, vp)) return;
       this.panHandler?.onPointerDown(pos);
@@ -60,6 +152,29 @@ export class InteractionManager {
     const onMouseMove = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
       const vp = getVP();
+
+      // Axis drag in progress — owns the gesture exclusively.
+      if (this.axisDragHandler?.isActive()) {
+        this.axisDragHandler.move(pos);
+        return;
+      }
+
+      if (this.measuring && this.measureHandlers) {
+        this.measureHandlers.move(pos);
+        this.onOverlayDirty?.();
+        return;
+      }
+
+      // Hover cursor over axis strips (only when nothing else is happening).
+      const axisHover = hitAxis(pos);
+      if (axisHover === 'price') {
+        this.element.style.cursor = 'ns-resize';
+      } else if (axisHover === 'time') {
+        this.element.style.cursor = 'ew-resize';
+      } else if (this.element.style.cursor === 'ns-resize' || this.element.style.cursor === 'ew-resize') {
+        this.element.style.cursor = '';
+      }
+
       if (this.tradingManager && vp && this.tradingManager.onPointerMove(pos, vp)) {
         this.crosshairHandler?.onPointerMove(pos);
         this.onOverlayDirty?.();
@@ -76,9 +191,27 @@ export class InteractionManager {
     };
 
     const onMouseUp = () => {
+      if (this.axisDragHandler?.isActive()) {
+        this.axisDragHandler.end();
+        return;
+      }
+      if (this.measuring && this.measureHandlers) {
+        this.measuring = false;
+        this.measureHandlers.end();
+        this.onOverlayDirty?.();
+        return;
+      }
       if (this.tradingManager?.onPointerUp()) return;
       if (this.drawingManager?.onPointerUp()) return;
       this.panHandler?.onPointerUp();
+    };
+
+    const onDblClick = (e: MouseEvent) => {
+      const pos = this.getMousePos(e);
+      const axis = hitAxis(pos);
+      if (axis && this.onAxisDoubleClick) {
+        this.onAxisDoubleClick(axis);
+      }
     };
 
     const onMouseLeave = () => {
@@ -96,6 +229,9 @@ export class InteractionManager {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && this.onEscape) {
+        this.onEscape();
+      }
       if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey)) e.preventDefault();
     };
 
@@ -178,6 +314,7 @@ export class InteractionManager {
     this.element.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
     this.element.addEventListener('mouseleave', onMouseLeave);
+    this.element.addEventListener('dblclick', onDblClick);
     this.element.addEventListener('wheel', onWheel, { passive: false });
     this.element.addEventListener('contextmenu', onContextMenu);
     this.element.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -192,6 +329,7 @@ export class InteractionManager {
       () => this.element.removeEventListener('mousemove', onMouseMove),
       () => document.removeEventListener('mouseup', onMouseUp),
       () => this.element.removeEventListener('mouseleave', onMouseLeave),
+      () => this.element.removeEventListener('dblclick', onDblClick),
       () => this.element.removeEventListener('wheel', onWheel),
       () => this.element.removeEventListener('contextmenu', onContextMenu),
       () => this.element.removeEventListener('touchstart', onTouchStart),

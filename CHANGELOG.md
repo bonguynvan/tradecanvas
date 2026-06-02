@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.9.0 (2026-06-02)
+
+Major UX upgrade — TradingView-grade interaction across the board, with new
+analytics depth and workflow features.
+
+### Chart interaction
+
+- **Axis-drag scaling**: drag the price axis vertically to compress / expand the price scale; drag the time axis to zoom. Double-click either axis to reset (auto-scale / fit-content).
+- **Shift+drag measure ruler**: transient overlay showing bars × time × price Δ × % between two points. Tracks data through pan/zoom.
+- **Alt+click pinned tooltip**: anchor an OHLC tooltip at a bar; the live crosshair tooltip then shows the price / % / bar-count delta to the pinned bar. `Esc` unpins.
+- **Hover axis pills**: TradingView-style price (right) + time (bottom) pill badges follow the crosshair with a triangular notch pointing at the line. Inverted theme colors so they always pop.
+- **Bar hover highlight**: subtle translucent column behind the crosshair marks which bar the cursor is on — disambiguates dense candle charts.
+- **Cursor hints**: `ns-resize` over the price axis strip, `ew-resize` over the time axis strip.
+
+### Widget
+
+- **Symbol search modal**: clicking the toolbar symbol (or pressing `Ctrl/⌘+P`) opens a fuzzy-search picker over the configured `symbols[]`. Replaces the previous click-to-cycle behaviour.
+- **Hotkey sheet** (`?`): categorized keyboard-shortcut reference.
+- **Replay scrubber UI**: toolbar play button toggles a floating bottom scrubber bar — play/pause, step-back/step-forward, draggable progress, speed select (0.5×–100× bars/sec). Drives the existing `chart.replay*()` API.
+- **Watchlist sidebar** (`watchlist: true`): right-side panel listing the widget's symbols with last price, % change, and a mini sparkline. Click a row to switch chart.
+- **Saved layouts** (`persistLayouts: true`): per-symbol indicator stack, drawings, alerts, and chart type persist to localStorage. Switch symbol → state is auto-saved; switch back → state is restored. `widget.clearSavedLayout(symbol?)` resets.
+- **Drag-and-drop CSV / JSON** (`dragDropImport: true`, default): drop an OHLCV file onto the chart and it loads instantly. Toast feedback for success / failure. New `parseOHLCV` exported for programmatic use.
+- **Toast helper**: `widget.toast(msg, kind?)` for transient feedback.
+- **Premium CSS refresh**: new design tokens (motion, elevation, shape), Inter + JetBrains Mono stacks, smoother cubic-bezier transitions, refined hover/active/focus states, gradient toolbar/sidebar surfaces, larger radii on modals/palette, animated `connected` status pulse, refined scrollbars, reduced-motion support.
+
+### Chart visuals
+
+- **Volume Profile**: optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting. `chart.setVolumeProfileVisible(true)`.
+- **Day-separator dividers**: faint vertical lines at day boundaries on intraday data, heavier at week/month/year with inline date labels (`Mar 4`, `Apr '26`, `2027`). Auto-suppressed on daily-or-coarser timeframes.
+- **In-canvas axis polish**: price + time axes now render with subtle dividers, thin tick notches, and refined typography weight (dropped the heavy per-label background rectangles for a TradingView-like feel).
+
+### Analytics
+
+- **Strategy library**: four reference strategies under `@tradecanvas/analytics` — `smaCrossStrategy`, `rsiReversionStrategy`, `donchianBreakoutStrategy`, `bollingerReversionStrategy`. All return a `StrategyFn` ready to feed `Backtester.run()`.
+- **Monte Carlo simulation**: `runMonteCarlo(initialCash, trades, opts)` shuffles realised trade order N times to expose path-dependence. Returns per-step P5/P25/P50/P75/P95 equity bands, final-equity percentiles, probability-of-profit, and worst-case max drawdown. Deterministic with a seed.
+
+### Internals & exports
+
+- New `Viewport.scalePriceRange(factor)` and `AxisDragHandler` for custom axis interactions.
+- New `MeasureOverlay` and `PinnedTooltip` exports from `@tradecanvas/core`.
+- New `VolumeProfileRenderer` export from `@tradecanvas/core`.
+- New `parseOHLCV`, `DragDropImporter` exports from `@tradecanvas/chart`.
+- `ReplayManager.seekTo` now emits a synchronous `bar` event so seeking while paused immediately repaints the chart slice.
+
+### Behavioural notes
+
+- Toolbar symbol-click now opens the search modal (was: cycle through symbols). Hold the same prop name in your code; behaviour upgrades.
+- `dragDropImport` is enabled by default in the widget — pass `false` if a parent surface already handles drops.
+- `SessionBreaks` auto-suppresses its lines on daily-or-coarser timeframes so weekly charts don't paint a wall of separators.
+
 ## 0.8.1 (2026-05-26)
 
 ### Bug fixes

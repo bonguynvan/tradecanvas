@@ -9,3 +9,4 @@ export type { UndoableAction } from './UndoRedoManager.js';
 export { DataExporter } from './DataExporter.js';
 export { SignalMarkerManager } from './SignalMarkerManager.js';
 export { TradeZoneManager } from './TradeZoneManager.js';
+export { MeasureOverlay } from './MeasureOverlay.js';

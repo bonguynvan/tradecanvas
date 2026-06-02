@@ -43,12 +43,14 @@ export interface RenderContext {
   currentPriceLine: CurrentPriceLine | null;
   chartLegend: ChartLegend | null;
   volumeRenderer: VolumeRenderer | null;
+  volumeProfile: import('../charts/VolumeProfileRenderer.js').VolumeProfileRenderer | null;
   watermark: Watermark | null;
   barCountdown: BarCountdown | null;
   sessionBreaks: SessionBreaks | null;
   compareRenderer: CompareRenderer | null;
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
+  measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
   tradeZoneManager: TradeZoneManager | null;
   panels: PanelRenderInfo[];
   priceLimits?: { ceiling: number; floor: number; reference: number; colors?: { ceiling?: string; floor?: string; reference?: string } } | null;
@@ -160,6 +162,7 @@ export class RenderEngine {
 
       // Volume bars (drawn first, behind candles)
       ctx.volumeRenderer?.render(c, data, viewport, theme);
+      ctx.volumeProfile?.render(c, data, viewport, theme);
       ctx.chartRenderer?.render(c, data, viewport, theme);
       ctx.compareRenderer?.render(c, data, viewport, theme);
       ctx.indicatorEngine?.renderOverlays(c, viewport);
@@ -235,6 +238,7 @@ export class RenderEngine {
       ctx.tradingRenderer?.render(c, viewport, theme);
       ctx.signalMarkerManager?.render(c, viewport, theme);
       ctx.alertManager?.render(c, viewport, theme);
+      ctx.measureOverlay?.render(c, viewport, theme);
       ctx.crosshairHandler?.render(c, viewport, theme);
 
       // Panel crosshair — draw crosshair lines in the hovered panel
@@ -289,6 +293,9 @@ export class RenderEngine {
       ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
       ctx.currentPriceLine?.render(c, viewport, theme);
       ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
+      // Crosshair axis hover pills — drawn AFTER the axes so they always
+      // sit on top of the static price/time labels.
+      ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
       ctx.chartLegend?.render(c, viewport, theme, data);
       ctx.barCountdown?.render(c, viewport, theme, data);
 

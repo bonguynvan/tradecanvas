@@ -15,19 +15,22 @@ export class PriceAxis {
     if (range <= 0) return;
     const invRange = 1 / range;
 
-    // Axis line
+    // Subtle vertical divider — single pixel, less assertive than a solid axis
+    // line. Looks closer to TradingView's premium feel.
     ctx.strokeStyle = theme.axisLine;
     ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.65;
     ctx.beginPath();
     ctx.moveTo(axisX + 0.5, chartRect.y);
     ctx.lineTo(axisX + 0.5, chartRect.y + chartRect.height);
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Compute labels
     const step = computeTickStep(priceRange.min, priceRange.max, 8);
     const firstPrice = Math.ceil(priceRange.min / step) * step;
     const precision = step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
-    const font = `${theme.font.sizeSmall}px ${theme.font.family}`;
+    const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
     const labels: { y: number; text: string }[] = [];
@@ -40,16 +43,23 @@ export class PriceAxis {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
 
-    // Batch: all backgrounds first
-    ctx.fillStyle = theme.axisLabelBackground;
+    // Tiny tick marks (3px notch) — gives the axis structure without the heavy
+    // background rectangles that the previous implementation drew per label.
+    ctx.strokeStyle = theme.axisLine;
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
     for (const { y } of labels) {
-      ctx.fillRect(axisX + 1, y - 8, PRICE_AXIS_WIDTH - 2, 16);
+      ctx.moveTo(axisX + 1, y + 0.5);
+      ctx.lineTo(axisX + 4, y + 0.5);
     }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    // Batch: all text labels
+    // Text labels — single fillStyle pass.
     ctx.fillStyle = theme.axisLabel;
     for (const { y, text } of labels) {
-      ctx.fillText(text, axisX + 5, y);
+      ctx.fillText(text, axisX + 8, y);
     }
+    void PRICE_AXIS_WIDTH;
   }
 }

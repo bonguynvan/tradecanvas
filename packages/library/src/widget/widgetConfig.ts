@@ -143,6 +143,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   gridColor: '#1E222D',
   gridVisible: true,
   volumeVisible: true,
+  volumeProfileVisible: false,
   legendVisible: true,
   barCountdown: true,
   logScale: false,

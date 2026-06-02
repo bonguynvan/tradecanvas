@@ -9,6 +9,12 @@ import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
+import { WidgetSymbolSearch } from './WidgetSymbolSearch.js';
+import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
+import { WidgetReplayBar } from './WidgetReplayBar.js';
+import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
+import { DragDropImporter } from '../io/index.js';
+import type { DataSeries } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
 
 export class ChartWidget {
@@ -19,11 +25,24 @@ export class ChartWidget {
   private settings: WidgetSettings | null = null;
   private statusBar: WidgetStatusBar | null = null;
   private commandPalette: WidgetCommandPalette | null = null;
+  private symbolSearch: WidgetSymbolSearch | null = null;
+  private hotkeySheet: WidgetHotkeySheet | null = null;
+  private replayBar: WidgetReplayBar | null = null;
+  private dragDrop: DragDropImporter | null = null;
+  private watchlist: WidgetWatchlist | null = null;
+  private watchlistSparkBuffer = new Map<string, number[]>();
+  private sessionRefPrice: number | null = null;
+  private watchlistInterval: ReturnType<typeof setInterval> | null = null;
+  private replayOriginalData: DataSeries | null = null;
+  private replayPollInterval: ReturnType<typeof setInterval> | null = null;
+  private replaySpeed = 5;
+  private layoutKeyPrefix: string | null = null;
+  private layoutDebounceMs = 1500;
+  private activeLayoutKey: string | null = null;
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
   private destroyed = false;
   private options: ChartWidgetOptions;
-  private symbolIndex = 0;
   private symbols: string[];
   private settingsState: ChartSettingsState;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
@@ -33,6 +52,14 @@ export class ChartWidget {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
     this.settingsState = { ...DEFAULT_SETTINGS };
+
+    // Resolve layout persistence config. Treated as opt-in — defaults to
+    // `false` so existing apps don't suddenly start writing to localStorage.
+    if (options.persistLayouts) {
+      const cfg = options.persistLayouts === true ? {} : options.persistLayouts;
+      this.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
+      this.layoutDebounceMs = cfg.debounceMs ?? 1500;
+    }
 
     // Resolve theme
     const isDark = this.resolveIsDark(options.theme);
@@ -51,9 +78,6 @@ export class ChartWidget {
       connectionMessage: 'Connecting...',
     };
 
-    // Set symbol index
-    const sIdx = this.symbols.indexOf(this.state.symbol);
-    if (sIdx >= 0) this.symbolIndex = sIdx;
 
     // 1. Inject styles
     injectWidgetStyles();
@@ -88,6 +112,7 @@ export class ChartWidget {
           onScreenshot: () => this.chart.screenshot(),
           onSettings: () => this.openSettings(),
           onToggleTheme: () => this.handleToggleTheme(),
+          onToggleReplay: () => this.toggleReplay(),
         },
       );
     }
@@ -118,6 +143,16 @@ export class ChartWidget {
     this.chartContainer = document.createElement('div');
     this.chartContainer.className = 'tcw-chart-container';
     body.appendChild(this.chartContainer);
+
+    // Watchlist sidebar (right side). Appended AFTER the chart container so
+    // it sits to the right of the canvas in the flexbox row.
+    if (options.watchlist) {
+      this.watchlist = new WidgetWatchlist(body, this.symbols, {
+        onSelect: (sym) => { void this.setSymbol(sym); },
+      });
+      this.watchlist.setActive(this.state.symbol);
+    }
+
     this.root.appendChild(body);
 
     // 5. Create chart
@@ -146,6 +181,23 @@ export class ChartWidget {
       ...options.chartOptions,
     });
 
+    // Drag-and-drop CSV / JSON onto the chart container — instant data load.
+    // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
+    // running but the next bar update will append to whatever we just
+    // loaded — that's the expected behavior when overlaying historical data.
+    if (options.dragDropImport !== false) {
+      this.dragDrop = new DragDropImporter(this.chartContainer, {
+        onData: (data, result, file) => {
+          this.chart.setData(data);
+          this.toast(`Loaded ${result.data.length} bars from ${file.name}` + (result.skipped > 0 ? ` (${result.skipped} skipped)` : ''));
+        },
+        onError: (err, file) => {
+          this.toast(`${file.name}: ${err.message}`, 'error');
+        },
+      });
+      this.dragDrop.attach();
+    }
+
     // 6. Create status bar
     if (options.statusBar !== false) {
       this.statusBar = new WidgetStatusBar(this.root);
@@ -160,7 +212,14 @@ export class ChartWidget {
       });
     }
 
-    // 8. Command palette
+    // 8a. Symbol search
+    this.symbolSearch = new WidgetSymbolSearch({
+      onPick: (sym) => { void this.setSymbol(sym); },
+      onClose: () => {},
+    });
+    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+
+    // 8b. Command palette
     this.commandPalette = new WidgetCommandPalette({
       onIndicator: (id) => this.handleAddIndicator(id),
       onChartType: (type) => this.handleChartType(type),
@@ -174,6 +233,16 @@ export class ChartWidget {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         this.toggleCommandPalette();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
+        e.preventDefault();
+        this.symbolSearch?.open(this.symbols, this.state.symbol);
+      } else if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Only fire when the user isn't typing into an input.
+        const active = document.activeElement as HTMLElement | null;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        e.preventDefault();
+        this.hotkeySheet?.open();
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
@@ -182,6 +251,13 @@ export class ChartWidget {
     if (options.adapter) {
       this.adapter = options.adapter;
       this.connectStream();
+    }
+
+    // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
+    // feeling responsive; for sub-second visual response, apps can call
+    // `setWatchlistEntry` directly from their own WebSocket.
+    if (this.watchlist) {
+      this.watchlistInterval = setInterval(() => this.tickWatchlist(), 1000);
     }
 
     // Initial UI update
@@ -193,15 +269,57 @@ export class ChartWidget {
 
   // --- Public API ---
 
+  /** Replace the searchable symbol catalog. Does not change the active symbol. */
+  setSymbols(symbols: string[]): void {
+    this.symbols = symbols;
+    this.watchlist?.setSymbols(symbols);
+  }
+
   async setSymbol(symbol: string): Promise<void> {
+    // Flush the outgoing symbol's layout BEFORE switching state, so the
+    // saved snapshot reflects what the user actually saw under that ticker.
+    this.flushActiveLayout();
     this.state = { ...this.state, symbol };
-    const idx = this.symbols.indexOf(symbol);
-    if (idx >= 0) this.symbolIndex = idx;
+    this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
+    this.watchlist?.setActive(symbol);
     if (this.adapter) {
       await this.connectStream();
     }
+  }
+
+  /**
+   * Push an entry into the watchlist (e.g., from your own WebSocket).
+   * Call with the symbols you care about; the active symbol is updated
+   * automatically from the chart's live data.
+   */
+  setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
+    this.watchlist?.setEntry(symbol, entry);
+  }
+
+  private tickWatchlist(): void {
+    if (!this.watchlist) return;
+    const data = this.chart.getData();
+    if (data.length === 0) return;
+    const last = data[data.length - 1];
+    // Reference price: first bar of the loaded slice — that's the closest
+    // approximation of "session open" without timezone bookkeeping. Apps
+    // that need true session-open can override via `setWatchlistEntry`.
+    if (this.sessionRefPrice === null) {
+      this.sessionRefPrice = data[0].open;
+    }
+
+    const buf = this.watchlistSparkBuffer.get(this.state.symbol) ?? [];
+    buf.push(last.close);
+    if (buf.length > 40) buf.shift();
+    this.watchlistSparkBuffer.set(this.state.symbol, buf);
+
+    this.watchlist.setEntry(this.state.symbol, {
+      lastPrice: last.close,
+      refPrice: this.sessionRefPrice,
+      sparkline: buf.slice(),
+    });
   }
 
   async setTimeframe(tf: TimeFrame): Promise<void> {
@@ -233,7 +351,15 @@ export class ChartWidget {
     if (this.boundGlobalKeydown) {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
     }
+    this.flushActiveLayout();
     this.commandPalette?.destroy();
+    this.symbolSearch?.destroy();
+    this.hotkeySheet?.destroy();
+    if (this.replayPollInterval) clearInterval(this.replayPollInterval);
+    this.replayBar?.destroy();
+    this.dragDrop?.detach();
+    if (this.watchlistInterval) clearInterval(this.watchlistInterval);
+    this.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
     this.settings?.destroy();
@@ -246,14 +372,10 @@ export class ChartWidget {
   // --- Internal handlers ---
 
   private handleSymbolClick(): void {
-    this.symbolIndex = (this.symbolIndex + 1) % this.symbols.length;
-    const symbol = this.symbols[this.symbolIndex];
-    this.state = { ...this.state, symbol };
-    this.options.onSymbolChange?.(symbol);
-    this.updateUI();
-    if (this.adapter) {
-      this.connectStream();
-    }
+    // Opens the fuzzy search modal. The cycle-through behaviour the toolbar
+    // used to do is gone — a real search scales past 3-4 symbols and matches
+    // user expectations from TradingView, Bloomberg, etc.
+    this.symbolSearch?.open(this.symbols, this.state.symbol);
   }
 
   private handleTimeframe(tf: TimeFrame): void {
@@ -416,11 +538,182 @@ export class ChartWidget {
     this.settings?.open(this.settingsState);
   }
 
+  // --- Toast ---
+
+  /**
+   * Show a transient toast inside the widget. Auto-dismisses after 3.5s.
+   * Used by the drag-drop importer for success / failure feedback, but
+   * exposed so apps can post their own (e.g. "alert triggered at 64,200").
+   */
+  toast(message: string, kind: 'info' | 'error' = 'info'): void {
+    const el = document.createElement('div');
+    el.className = `tcw-toast ${kind === 'error' ? 'tcw-toast-error' : ''}`;
+    el.textContent = message;
+    this.root.appendChild(el);
+    // Trigger CSS transition on next frame
+    requestAnimationFrame(() => el.classList.add('tcw-toast-in'));
+    setTimeout(() => {
+      el.classList.remove('tcw-toast-in');
+      el.addEventListener('transitionend', () => el.remove(), { once: true });
+      // Hard timeout in case transitionend doesn't fire (display:none, etc.)
+      setTimeout(() => el.remove(), 400);
+    }, 3500);
+  }
+
+  // --- Layout persistence ---
+
+  /**
+   * Wipe the layout saved for `symbol` (or the active symbol if omitted).
+   * Useful as an "Reset layout" command in user-facing menus.
+   */
+  clearSavedLayout(symbol?: string): void {
+    if (!this.layoutKeyPrefix) return;
+    const target = symbol ?? this.state.symbol;
+    try {
+      localStorage.removeItem(this.layoutKeyPrefix + target);
+    } catch { /* localStorage may be unavailable (private mode, SSR, etc.) */ }
+  }
+
+  private applySymbolLayout(symbol: string): void {
+    if (!this.layoutKeyPrefix) return;
+    const key = this.layoutKeyPrefix + symbol;
+    this.activeLayoutKey = key;
+
+    try {
+      // Best-effort load. If parsing or any restore step throws, we silently
+      // fall back to a fresh layout — a corrupted layout shouldn't break the
+      // chart.
+      const ok = this.chart.loadStateFromStorage(key);
+      if (ok) this.rebuildActiveIndicatorsMapFromChart();
+    } catch { /* swallow — layout will be rebuilt from user actions */ }
+
+    // Wire chart-level auto-save so any further drawing/indicator change
+    // flushes itself into this symbol's slot.
+    this.chart.setAutoSave(key, this.layoutDebounceMs);
+  }
+
+  private flushActiveLayout(): void {
+    if (!this.activeLayoutKey) return;
+    try { this.chart.saveState(this.activeLayoutKey); } catch { /* same */ }
+    this.chart.disableAutoSave();
+    this.activeLayoutKey = null;
+  }
+
+  /**
+   * After loading a layout, the chart restores indicator instances but our
+   * `state.activeIndicators` map (used to render the chip strip) is stale.
+   * Rebuild it from the live `getActiveIndicators` list.
+   */
+  private rebuildActiveIndicatorsMapFromChart(): void {
+    const next = new Map<string, string>();
+    for (const a of this.chart.getActiveIndicators()) {
+      next.set(a.id, a.instanceId);
+    }
+    this.state = { ...this.state, activeIndicators: next };
+    this.updateUI();
+  }
+
+  // --- Replay ---
+
+  private toggleReplay(): void {
+    if (this.replayBar?.isMounted()) {
+      this.exitReplay();
+    } else {
+      this.enterReplay();
+    }
+  }
+
+  private enterReplay(): void {
+    const data = this.chart.getData();
+    if (data.length < 2) return;
+
+    // Snapshot full series so we can restore it on exit. The chart's
+    // dataManager gets mutated to slices during replay.
+    this.replayOriginalData = data.slice();
+
+    // Mount the scrubber bar inside the chart container so it floats above the
+    // canvas. It owns its own absolute positioning via the .tcw-replay-bar CSS.
+    this.replayBar = new WidgetReplayBar({
+      onPlay: () => {
+        if (this.chart.getReplayState() === 'paused') {
+          this.chart.replayResume();
+        } else {
+          this.chart.replay({ speed: this.replaySpeed, interval: 200 });
+        }
+        this.replayBar?.setState('playing');
+      },
+      onPause: () => {
+        this.chart.replayPause();
+        this.replayBar?.setState('paused');
+      },
+      onStop: () => {
+        this.chart.replayStop();
+        this.replayBar?.setState('paused');
+      },
+      onStepBack: () => {
+        const p = this.chart.getReplayProgress();
+        if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+        this.chart.replaySeek(Math.max(0, p.current - 1));
+        this.replayBar?.setState('paused');
+      },
+      onStepForward: () => {
+        const p = this.chart.getReplayProgress();
+        if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+        this.chart.replaySeek(Math.min(p.total - 1, p.current + 1));
+        this.replayBar?.setState('paused');
+      },
+      onSeek: (idx) => {
+        if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+        this.chart.replaySeek(idx);
+        this.replayBar?.setState('paused');
+      },
+      onSpeedChange: (s) => {
+        this.replaySpeed = s;
+        this.chart.setReplaySpeed(s);
+      },
+      onClose: () => this.exitReplay(),
+    });
+    this.replayBar.mount(this.chartContainer, { total: data.length, speed: this.replaySpeed });
+
+    // Boot replay paused at bar 1 so the user sees a starting state. Then
+    // start polling progress for the scrubber — cheap, runs at 200ms.
+    this.chart.replay({ speed: this.replaySpeed, interval: 200, startIndex: 1 });
+    this.chart.replayPause();
+    this.replayBar.setState('paused');
+
+    this.replayPollInterval = setInterval(() => {
+      if (!this.replayBar?.isMounted()) return;
+      const p = this.chart.getReplayProgress();
+      this.replayBar.setProgress(p.current, p.total);
+      const state = this.chart.getReplayState();
+      if (state === 'stopped') {
+        this.replayBar.setState('paused');
+      } else {
+        this.replayBar.setState(state);
+      }
+    }, 150);
+  }
+
+  private exitReplay(): void {
+    if (this.replayPollInterval) {
+      clearInterval(this.replayPollInterval);
+      this.replayPollInterval = null;
+    }
+    this.chart.replayStop();
+    this.replayBar?.unmount();
+    this.replayBar = null;
+    if (this.replayOriginalData) {
+      this.chart.setData(this.replayOriginalData);
+      this.replayOriginalData = null;
+    }
+  }
+
   private applySettings(patch: Partial<ChartSettingsState>): void {
     this.settingsState = { ...this.settingsState, ...patch };
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
     if (patch.volumeVisible !== undefined) this.chart.setVolumeVisible(patch.volumeVisible);
+    if (patch.volumeProfileVisible !== undefined) this.chart.setVolumeProfileVisible(patch.volumeProfileVisible);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.logScale !== undefined) this.chart.setLogScale(patch.logScale);
@@ -471,6 +764,11 @@ export class ChartWidget {
         fontSize: 48,
         color: this.state.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
       });
+
+      // Re-apply per-symbol layout (indicators, drawings, chart type) after
+      // the new history is in. Doing this *after* connect ensures indicators
+      // recalculate against the loaded data, not the previous symbol's data.
+      this.applySymbolLayout(this.state.symbol);
 
       this.state = {
         ...this.state,

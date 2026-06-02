@@ -3,6 +3,8 @@ export { DataManager } from './DataManager.js';
 export { ThemeManager } from './ThemeManager.js';
 export { LayoutManager } from './layout/LayoutManager.js';
 export { PluginManager } from './plugins/PluginManager.js';
+export { parseOHLCV, DragDropImporter } from './io/index.js';
+export type { ParseResult, DragDropImporterCallbacks } from './io/index.js';
 
 // Re-export commonly used types from commons
 export type {

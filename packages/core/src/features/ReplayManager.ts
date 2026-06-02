@@ -77,8 +77,17 @@ export class ReplayManager extends Emitter<ReplayEvents> {
     this.emit('stateChange', 'stopped');
   }
 
+  /**
+   * Jump to a specific bar. Emits `bar` synchronously so chart consumers can
+   * re-render the slice — without this, seeking while paused leaves the chart
+   * stuck on whichever bar last fired through the timer.
+   */
   seekTo(index: number): void {
-    this.currentIndex = Math.max(0, Math.min(index, this.data.length - 1));
+    if (this.data.length === 0) return;
+    const clamped = Math.max(0, Math.min(index, this.data.length - 1));
+    this.currentIndex = clamped;
+    const bar = this.data[clamped];
+    this.emit('bar', { bar, index: clamped, total: this.data.length });
   }
 
   setSpeed(speed: number): void {

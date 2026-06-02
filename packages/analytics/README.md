@@ -99,6 +99,40 @@ m.profitFactor
 m.expectancy
 ```
 
+## Strategy library
+
+Reference strategies live under `@tradecanvas/analytics` — drop in, tune
+parameters, run. All four implement the same `StrategyFn` shape and respect
+the backtester's `allowShort` flag.
+
+```ts
+import {
+  Backtester,
+  smaCrossStrategy,
+  rsiReversionStrategy,
+  donchianBreakoutStrategy,
+  bollingerReversionStrategy,
+} from '@tradecanvas/analytics';
+
+const bt = new Backtester({ initialCash: 10_000 });
+
+const result = bt.run(bars, smaCrossStrategy({
+  fastPeriod: 10,
+  slowPeriod: 30,
+  size: 1,
+}));
+```
+
+| Strategy | Style | Tuning |
+|---|---|---|
+| `smaCrossStrategy` | Trend-following | `fastPeriod`, `slowPeriod`, `size` |
+| `rsiReversionStrategy` | Mean-reversion (long-only) | `period`, `oversold`, `overbought`, `size` |
+| `donchianBreakoutStrategy` | Trend breakout (Turtle-style) | `entryPeriod`, `exitPeriod`, `size` |
+| `bollingerReversionStrategy` | Mean-reversion to SMA | `period`, `stdDev`, `size` |
+
+Each is a one-line function call returning a `StrategyFn` — easy to wrap,
+combine, or compare side-by-side in a backtest harness.
+
 ## Edge cases (current behavior)
 
 - **Gaps past a limit price**: if the bar opens already through the limit, the order fills at the better of `open` and the limit price.

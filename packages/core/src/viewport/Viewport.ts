@@ -101,6 +101,20 @@ export class Viewport {
     this.state.priceRange = { min, max };
   }
 
+  /**
+   * Multiply the visible price range by `factor` around its midpoint.
+   * `factor > 1` expands (zooms out vertically), `< 1` compresses.
+   * Used by drag-on-price-axis scaling.
+   */
+  scalePriceRange(factor: number): void {
+    if (!Number.isFinite(factor) || factor <= 0) return;
+    const { min, max } = this.state.priceRange;
+    const mid = (min + max) / 2;
+    const half = (max - min) / 2;
+    const newHalf = Math.max(half * factor, 1e-9);
+    this.state.priceRange = { min: mid - newHalf, max: mid + newHalf };
+  }
+
   scrollBy(deltaPixels: number): void {
     this.state.offset += deltaPixels;
     this.clampOffset();

@@ -39,6 +39,7 @@ import {
   InteractionManager,
   PanHandler,
   ZoomHandler,
+  AxisDragHandler,
   CrosshairHandler,
   IndicatorEngine,
   registerBuiltInIndicators,
@@ -54,15 +55,18 @@ import {
   Watermark,
   BarCountdown,
   VolumeRenderer,
+  VolumeProfileRenderer,
   AlertManager,
   SignalMarkerManager,
   TradeZoneManager,
+  MeasureOverlay,
   ReplayManager,
   ChartStateManager,
   UndoRedoManager,
   Animator,
   KeyboardHandler,
   CrosshairTooltip,
+  PinnedTooltip,
   DataExporter,
   SessionBreaks,
   CompareRenderer,
@@ -108,14 +112,17 @@ export class Chart {
   private compareRenderer: CompareRenderer;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private volumeRenderer: VolumeRenderer;
+  private volumeProfile: VolumeProfileRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
+  private measureOverlay: MeasureOverlay;
   private replayManager: ReplayManager;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
   private crosshairTooltip: CrosshairTooltip;
+  private pinnedTooltip: PinnedTooltip;
   private interactionManager: InteractionManager;
   private crosshairHandler: CrosshairHandler;
   private chartRenderer: ChartRendererInterface;
@@ -280,6 +287,17 @@ export class Chart {
           this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize());
         }
 
+        // Refresh the pinned tooltip's delta strip against the hovered bar.
+        // Cheap when there's nothing pinned (early returns inside reposition).
+        if (this.pinnedTooltip.isPinned()) {
+          this.pinnedTooltip.reposition(
+            this.viewport.getState(),
+            bar ?? null,
+            barIndex,
+            this.themeManager.getTheme(),
+          );
+        }
+
         // Emit for external consumers
         this.eventBus.emit('crosshairMove', { point, bar, barIndex });
       } else {
@@ -296,6 +314,7 @@ export class Chart {
     this.watermark = new Watermark();
     if (options.watermark) this.watermark.setConfig(options.watermark);
     this.volumeRenderer = new VolumeRenderer();
+    this.volumeProfile = new VolumeProfileRenderer();
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
@@ -325,6 +344,8 @@ export class Chart {
     // Crosshair tooltip (DOM)
     this.crosshairTooltip = new CrosshairTooltip();
     this.crosshairTooltip.create(container);
+    this.pinnedTooltip = new PinnedTooltip();
+    this.pinnedTooltip.create(container);
 
     // Keyboard navigation
     this.keyboardHandler = new KeyboardHandler({
@@ -405,6 +426,9 @@ export class Chart {
     // Replay
     this.replayManager = new ReplayManager();
 
+    // Measure overlay (shift-drag ruler)
+    this.measureOverlay = new MeasureOverlay();
+
     // Interaction
     this.interactionManager = new InteractionManager(container);
     if (this.features.panning) {
@@ -421,6 +445,39 @@ export class Chart {
           this.viewport.zoom(delta, centerX);
           this.updateViewportAndRender();
         }),
+      );
+
+      // Axis drag-scaling (TradingView-style):
+      //   drag price axis  → scalePriceRange(factor), disables autoScale
+      //   drag time axis   → zoom around chart center
+      //   dblclick axis    → reset (price: re-enable autoScale; time: fitContent)
+      const axisDrag = new AxisDragHandler(
+        (factor) => {
+          this.options.autoScale = false;
+          this.viewport.scalePriceRange(factor);
+          this.syncRenderContext();
+          this.engine.requestRender();
+        },
+        (factor) => {
+          const cw = this.viewport.getState().chartRect.width;
+          // factor > 1 means zoom OUT (compress time). Map to negative delta
+          // because Viewport.zoom uses (1 + delta) on barWidth — positive
+          // delta zooms in.
+          this.viewport.zoom(1 / factor - 1, cw / 2);
+          this.updateViewportAndRender();
+        },
+      );
+      this.interactionManager.setAxisDragHandler(
+        axisDrag,
+        () => this.viewport.getState(),
+        (axis) => {
+          if (axis === 'price') {
+            this.options.autoScale = true;
+            this.updateViewportAndRender();
+          } else {
+            this.fitContent();
+          }
+        },
       );
     }
     if (this.features.crosshair) {
@@ -440,12 +497,56 @@ export class Chart {
         () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
     }
+    // Alt-click pins the OHLC tooltip at the bar under the cursor. Hitting
+    // it a second time on the same bar unpins.
+    this.interactionManager.setAltClickHandler((pos) => {
+      const data = this.getDisplayData();
+      if (data.length === 0) return;
+      const vp = this.viewport.getState();
+      const barUnit = vp.barWidth + vp.barSpacing;
+      const idx = Math.round((vp.offset + pos.x) / barUnit);
+      if (idx < 0 || idx >= data.length) return;
+      if (this.pinnedTooltip.isPinned() && this.pinnedTooltip.getPinnedIndex() === idx) {
+        this.pinnedTooltip.unpin();
+      } else {
+        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme());
+      }
+      this.pinnedTooltip.reposition(
+        this.viewport.getState(),
+        this.dataManager.getData()[idx] ?? null,
+        idx,
+        this.themeManager.getTheme(),
+      );
+      this.engine.requestRender(LayerType.Overlay);
+    });
+
+    this.interactionManager.setEscapeHandler(() => {
+      if (this.pinnedTooltip.isPinned()) {
+        this.pinnedTooltip.unpin();
+        this.engine.requestRender(LayerType.Overlay);
+      }
+    });
+
+    // Shift-drag measure tool — transient overlay. Coords resolved via
+    // viewport + displayData so the ruler sticks to the data during zoom.
+    this.interactionManager.setMeasureHandlers({
+      begin: (pos) => {
+        this.measureOverlay.begin(pos, this.viewport.getState(), this.getDisplayData());
+      },
+      move: (pos) => {
+        this.measureOverlay.update(pos, this.viewport.getState(), this.getDisplayData());
+      },
+      end: () => {
+        this.measureOverlay.end();
+      },
+    });
+
     this.interactionManager.setOverlayDirtyCallback(() => {
       this.engine.requestRender(LayerType.Overlay);
-      // Also refresh UI layer for panel crosshair value labels
-      if (this.layoutManager.getPanels().length > 0) {
-        this.engine.requestRender(LayerType.UI);
-      }
+      // UI also dirties on every pointer move because the crosshair hover
+      // pills (price + time axis labels) live on the UI layer so they
+      // can sit above the static axis labels.
+      this.engine.requestRender(LayerType.UI);
     });
     this.interactionManager.attach();
 
@@ -1105,6 +1206,25 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  // --- Volume Profile ---
+
+  setVolumeProfileVisible(visible: boolean): void {
+    this.volumeProfile.setVisible(visible);
+    this.engine.requestRender(LayerType.Main);
+  }
+
+  isVolumeProfileVisible(): boolean {
+    return this.volumeProfile.isVisible();
+  }
+
+  setVolumeProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; highlightPoC?: boolean }): void {
+    if (config.buckets !== undefined) this.volumeProfile.setBuckets(config.buckets);
+    if (config.widthRatio !== undefined) this.volumeProfile.setWidthRatio(config.widthRatio);
+    if (config.opacity !== undefined) this.volumeProfile.setOpacity(config.opacity);
+    if (config.highlightPoC !== undefined) this.volumeProfile.setHighlightPoC(config.highlightPoC);
+    this.engine.requestRender(LayerType.Main);
+  }
+
   // --- Tooltip ---
 
   setTooltipVisible(visible: boolean): void {
@@ -1454,6 +1574,7 @@ export class Chart {
     this.tradingManager.destroy();
     this.animator.dispose();
     this.crosshairTooltip.destroy();
+    this.pinnedTooltip.destroy();
     this.replayManager.dispose();
     this.undoRedoManager.clear();
     this.engine.destroy();
@@ -1583,6 +1704,16 @@ export class Chart {
   }
 
   private syncRenderContext(): void {
+    // Keep the pinned tooltip anchored to its bar through pans / zooms.
+    if (this.pinnedTooltip.isPinned()) {
+      this.pinnedTooltip.reposition(
+        this.viewport.getState(),
+        null,
+        null,
+        this.themeManager.getTheme(),
+      );
+    }
+
     const resolved = this.getResolvedLayout();
     const panels = this.features.indicators ? this.buildPanelRenderInfos() : [];
 
@@ -1605,11 +1736,13 @@ export class Chart {
       currentPriceLine: this.streamManager?.priceLine ?? this.currentPriceLine,
       chartLegend: this.features.legend ? this.chartLegend : null,
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,
+      volumeProfile: this.volumeProfile,
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,
       compareRenderer: this.compareRenderer,
       alertManager: this.features.alerts ? this.alertManager : null,
+      measureOverlay: this.measureOverlay,
       signalMarkerManager: this.signalMarkerManager,
       tradeZoneManager: this.tradeZoneManager,
       panels,

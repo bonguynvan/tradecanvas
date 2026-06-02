@@ -49,6 +49,48 @@
   </tbody>
 </table>
 
+<h3>Axis &amp; scale</h3>
+<p>
+  The price axis (right strip) and time axis (bottom strip) accept direct
+  pointer interaction — same gestures as TradingView:
+</p>
+<table>
+  <thead><tr><th>Gesture</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>Drag price axis up / down</td><td>Compress / expand the vertical price range (disables auto-scale).</td></tr>
+    <tr><td>Drag time axis left / right</td><td>Zoom in / out on the time axis.</td></tr>
+    <tr><td>Double-click price axis</td><td>Re-enable auto-scale.</td></tr>
+    <tr><td>Double-click time axis</td><td>Fit all data to the viewport.</td></tr>
+  </tbody>
+</table>
+<p>The same effects are also available programmatically:</p>
+<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+chart.setLogScale(true)    // switch to logarithmic price scale
+chart.fitContent()         // zoom out to all data
+chart.scrollToEnd()`}</code></pre>
+
+<h3>Volume Profile</h3>
+<p>
+  Horizontal histogram of traded volume bucketed by price over the visible
+  range. Off by default — toggle programmatically or via the widget
+  settings sheet:
+</p>
+<pre><code>{`chart.setVolumeProfileVisible(true)
+chart.setVolumeProfileConfig({
+  buckets: 48,        // resolution of the histogram
+  widthRatio: 0.18,   // % of chart width
+  opacity: 0.32,
+  highlightPoC: true, // mark the highest-volume bucket
+})`}</code></pre>
+
+<h3>Measure tool</h3>
+<p>
+  Hold <kbd>Shift</kbd> and drag on the chart to measure bars × price between
+  two points — the overlay shows price Δ (absolute + %), bar count, and time
+  span. The overlay clears as soon as the mouse is released; it does not
+  persist into saved state.
+</p>
+
 <h3>Events</h3>
 <p>All events are typed via <code>ChartEventMap</code>:</p>
 <pre><code>{`chart.on('orderPlace', e => /* OrderPlacePayload */)
@@ -75,6 +117,72 @@ const widget = new ChartWidget(host, {
 
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
+
+<h3>Widget keyboard shortcuts</h3>
+<table>
+  <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette (indicators, chart types, drawings…)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search — fuzzy picker over the configured symbol list</td></tr>
+    <tr><td><kbd>?</kbd></td><td>Show the keyboard shortcuts sheet</td></tr>
+    <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
+    <tr><td>Click symbol in toolbar</td><td>Opens the symbol search modal</td></tr>
+    <tr><td>Click play in toolbar</td><td>Opens the bar replay scrubber (play/step/seek/speed)</td></tr>
+  </tbody>
+</table>
+<p>Update the searchable catalog at runtime with <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
+
+<h3>Saved layouts</h3>
+<p>
+  Persist per-symbol indicator stacks, drawings, alerts, and chart type
+  to <code>localStorage</code> automatically:
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  persistLayouts: true,  // or { keyPrefix: 'myapp:', debounceMs: 2000 }
+})
+
+// Reset a single symbol's layout
+widget.clearSavedLayout('BTCUSDT')`}</code></pre>
+<p>
+  Layouts flush on symbol switch and on widget destroy so nothing is lost
+  when the user navigates away.
+</p>
+
+<h3>Drag-and-drop data import</h3>
+<p>
+  Drop a CSV or JSON file onto the chart to load it instantly. Enabled by
+  default — disable with <code>dragDropImport: false</code>. The parser
+  handles common column layouts (<code>time, open, high, low, close, volume</code>),
+  ISO 8601 timestamps, and unix seconds/ms.
+</p>
+<pre><code>{`// Programmatic use
+import { parseOHLCV } from '@tradecanvas/chart'
+
+const { data, rowCount, skipped } = parseOHLCV(csvText)
+chart.setData(data)`}</code></pre>
+
+<h3>Watchlist sidebar</h3>
+<p>
+  Opt-in right-side panel showing all configured symbols with last price, %
+  change, and a mini sparkline:
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  watchlist: true,
+})
+
+// Feed non-active rows from your own data source
+widget.setWatchlistEntry('ETHUSDT', {
+  lastPrice: 3245.12,
+  refPrice: 3180.50,
+  sparkline: [3180, 3195, 3210, ...],
+})`}</code></pre>
 
 <h2>ChartGrid</h2>
 <p>Synchronized multi-chart layouts.</p>

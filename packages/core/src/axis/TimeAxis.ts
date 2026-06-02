@@ -14,13 +14,15 @@ export class TimeAxis {
     const { chartRect } = viewport;
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
 
-    // Axis line
+    // Subtle horizontal divider
     ctx.strokeStyle = theme.axisLine;
     ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.65;
     ctx.beginPath();
     ctx.moveTo(chartRect.x, axisY + 0.5);
     ctx.lineTo(chartRect.x + chartRect.width, axisY + 0.5);
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Time labels
     const barUnit = viewport.barWidth + viewport.barSpacing;
@@ -29,7 +31,7 @@ export class TimeAxis {
     const { from, to } = viewport.visibleRange;
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
 
-    ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
+    ctx.font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
     ctx.fillStyle = theme.axisLabel;
@@ -60,16 +62,18 @@ export class TimeAxis {
         label = `${_pad2(hours)}:${_pad2(minutes)}`;
       }
 
-      ctx.fillText(label, x, axisY + 5);
+      ctx.fillText(label, x, axisY + 7);
     }
 
     // ─── Timezone indicator (bottom-right, like TradingView) ───
     const tzX = chartRect.x + chartRect.width - 4;
-    const tzY = axisY + 4;
-    ctx.font = `${theme.font.sizeSmall - 1}px ${theme.font.family}`;
+    const tzY = axisY + 7;
+    ctx.font = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
+    ctx.globalAlpha = 0.75;
     ctx.fillStyle = theme.textSecondary;
     ctx.fillText(TZ_LABEL, tzX, tzY);
+    ctx.globalAlpha = 1;
   }
 }

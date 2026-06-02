@@ -35,7 +35,19 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
+  // Optional 0.9 features
+  watchlist: true,         // right-side sparkline panel
+  persistLayouts: true,    // remember per-symbol indicators / drawings
+  // dragDropImport defaults to true — drop a CSV / JSON onto the chart
 })`}</code></pre>
+
+<p>
+  Out of the box, the widget supports a full set of TradingView-style gestures:
+  drag the price/time axes to scale, <kbd>Shift</kbd>+drag to measure,
+  <kbd>Alt</kbd>+click to pin a tooltip, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
+  for the command palette, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd> for symbol search,
+  and <kbd>?</kbd> to see the full shortcut sheet.
+</p>
 
 <h2>Headless Chart</h2>
 <p>

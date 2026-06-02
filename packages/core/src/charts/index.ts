@@ -14,6 +14,7 @@ export { HLCAreaRenderer } from './HLCAreaRenderer.js';
 export { StepLineRenderer } from './StepLineRenderer.js';
 export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';
 export { VolumeRenderer } from './VolumeRenderer.js';
+export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';
 export { CompareRenderer } from './CompareRenderer.js';
 export type { CompareSymbol } from './CompareRenderer.js';
 export * from './transforms/index.js';

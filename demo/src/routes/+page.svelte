@@ -90,15 +90,17 @@
 
 <section class="widget-section">
   <div class="widget-callout">
-    <h3>v0.8 — Strategy backtester, replay mode, Equivolume</h3>
+    <h3>v0.9 — TradingView-grade interaction + analytics depth</h3>
     <p>
-      New <code>@tradecanvas/analytics</code> package with a bar-by-bar
-      <code>Backtester</code>, full <code>Portfolio</code> tracking, and risk metrics
-      (Sharpe, Sortino, Calmar, max drawdown). A headless
-      <code>ReplayController</code> drives historical playback at controlled speed.
-      Plus a new Equivolume chart type and Fibonacci Time Zones drawing.
+      Drag the price/time axes to scale, <kbd>Shift</kbd>-drag to measure,
+      <kbd>Alt</kbd>-click to pin a comparison tooltip, hover for axis pill
+      labels that follow the cursor. New Volume Profile overlay, watchlist
+      sidebar, replay scrubber UI, CSV/JSON drag-and-drop import, saved
+      layouts. Analytics gains a strategy library (SMA cross, RSI mean
+      reversion, Donchian breakout, Bollinger reversion) plus Monte Carlo
+      path-dependence analysis.
     </p>
-    <a href="{base}/docs/analytics">See the live backtest demo →</a>
+    <a href="{base}/docs/api">See what's new →</a>
   </div>
 </section>
 
@@ -118,7 +120,7 @@
     </div>
     <div class="feature-card">
       <div class="feature-icon feature-icon--green">//</div>
-      <h3>23 drawing tools</h3>
+      <h3>24 drawing tools</h3>
       <p>
         Trendlines, Fibonacci (incl. Time Zones), channels, Elliott waves, Gann tools.
         Click-to-place with magnet snapping, undo/redo, and full serialization.
@@ -170,11 +172,48 @@
     </div>
     <div class="feature-card">
       <div class="feature-icon feature-icon--green">⊕</div>
-      <h3>Backtester &amp; replay</h3>
+      <h3>Backtester + Monte Carlo</h3>
       <p>
-        New in 0.8: <code>Backtester</code> with virtual fills, slippage / commission
-        models, and a <code>ReplayController</code> that drives historical bars
-        forward at controlled speed for visual review.
+        Bar-by-bar <code>Backtester</code> with virtual fills, slippage / commission models,
+        plus a 4-strategy reference library (SMA cross, RSI reversion, Donchian, Bollinger).
+        <strong>New in 0.9:</strong> <code>runMonteCarlo()</code> exposes path-dependence
+        with P5/P95 equity bands and probability-of-profit.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⤴</div>
+      <h3>TradingView gestures</h3>
+      <p>
+        Drag the price/time axes to scale, double-click to reset, <kbd>Shift</kbd>+drag for
+        a measure ruler, <kbd>Alt</kbd>+click to pin a tooltip, hover for axis pill labels
+        that follow the cursor. The set of moves a serious trader expects.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon feature-icon--green">⏵</div>
+      <h3>Replay scrubber UI</h3>
+      <p>
+        Toolbar play button toggles a floating bottom scrubber — play/pause, step,
+        draggable seek, and a 0.5×–100× speed select. Drives the headless
+        <code>ReplayController</code> on top.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">≡</div>
+      <h3>Watchlist + saved layouts</h3>
+      <p>
+        Optional right-side watchlist with last price + % + sparkline per symbol.
+        Per-symbol indicator stacks, drawings, and alerts persist to localStorage —
+        switch symbols, switch back, your setup is intact.
+      </p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon feature-icon--green">↓</div>
+      <h3>Drag-and-drop import</h3>
+      <p>
+        Drop a CSV or JSON onto the chart and it loads. Auto-detects delimiter, headers,
+        ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes. Or call
+        <code>parseOHLCV()</code> directly from code.
       </p>
     </div>
     <div class="feature-card">

@@ -87,6 +87,12 @@ export class WidgetToolbar {
     el.appendChild(this.spacer());
 
     // Right side buttons
+    if (callbacks.onToggleReplay) {
+      const replayBtn = this.iconBtn('play', 'Bar replay', callbacks.onToggleReplay);
+      replayBtn.dataset.role = 'replay';
+      el.appendChild(replayBtn);
+    }
+
     const screenshotBtn = this.iconBtn('camera', 'Screenshot', callbacks.onScreenshot);
     el.appendChild(screenshotBtn);
 

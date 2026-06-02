@@ -106,3 +106,35 @@ m.expectancy`}</code></pre>
   Pair the result's <code>equityCurve</code> with
   <a href="{base}/docs/finance">EquityCurveRenderer</a> to visualize backtests.
 </p>
+
+<h2>Strategy library</h2>
+<p>Drop-in reference strategies — each returns a <code>StrategyFn</code>:</p>
+<pre><code>{`import {
+  Backtester,
+  smaCrossStrategy,
+  rsiReversionStrategy,
+  donchianBreakoutStrategy,
+  bollingerReversionStrategy,
+} from '@tradecanvas/analytics'
+
+const bt = new Backtester({ initialCash: 10_000 })
+bt.run(bars, smaCrossStrategy({ fastPeriod: 10, slowPeriod: 30 }))`}</code></pre>
+
+<h2>Monte Carlo</h2>
+<p>
+  Shuffle the order of realised trades N times to expose path-dependence.
+  A robust edge keeps the P5/P95 band tight; a strategy that depends on
+  lucky sequencing fans wide.
+</p>
+<pre><code>{`import { runMonteCarlo } from '@tradecanvas/analytics'
+
+const result = bt.run(bars, smaCrossStrategy())
+const mc = runMonteCarlo(10_000, result.trades, {
+  simulations: 1000,
+  seed: 42,  // deterministic
+})
+
+mc.equityBands         // per-step P5/P25/P50/P75/P95
+mc.finalEquityPercentiles  // { p5, p25, p50, p75, p95 }
+mc.probabilityProfitable
+mc.worstMaxDrawdownPct`}</code></pre>

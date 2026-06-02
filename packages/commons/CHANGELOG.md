@@ -1,5 +1,92 @@
 # @tradecanvas/commons
 
+## 0.9.0
+
+### Minor Changes
+
+- feat: axis-drag scaling, measure tool, symbol search + premium CSS
+
+  - **Axis-drag scaling**: drag the price axis vertically to compress/expand the
+    price scale (disables auto-scale); drag the time axis horizontally to zoom.
+    Double-click the price axis to re-enable auto-scale; double-click the time
+    axis to fit all data. Cursor changes to `ns-resize` / `ew-resize` over the
+    respective strips.
+  - **In-canvas axis polish**: price + time axes now render with subtle dividers,
+    thin tick notches, and refined typography weight — drops the heavy per-label
+    background rectangles for a TradingView-like feel.
+  - **Widget CSS refresh**: new design tokens (typography, motion, elevation,
+    shape), Inter + JetBrains Mono stacks, smooth cubic-bezier transitions,
+    refined hover/active/focus states, subtle gradient toolbar/sidebar surfaces,
+    larger radii on modals/command palette, animated `connected` status pulse,
+    refined scrollbars, reduced-motion support.
+  - New `Viewport.scalePriceRange(factor)` and `AxisDragHandler` exports for
+    consumers building custom axis interactions.
+  - **Measure tool**: hold <kbd>Shift</kbd> and drag on the chart to draw a
+    transient ruler showing bar count, time span, price Δ, and %. Exported as
+    `MeasureOverlay` from `@tradecanvas/core` (lives next to the existing
+    click-anchored `MeasureTool` drawing — they coexist).
+  - **Symbol search modal**: clicking the toolbar symbol (or pressing
+    <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>) opens a fuzzy-search picker over
+    the configured `symbols[]`. Replaces the previous click-to-cycle behavior,
+    which broke down past 3-4 symbols. New `widget.setSymbols(string[])` API
+    updates the catalog at runtime.
+  - **Strategy library**: four reference strategies under
+    `@tradecanvas/analytics` — `smaCrossStrategy`, `rsiReversionStrategy`,
+    `donchianBreakoutStrategy`, `bollingerReversionStrategy`. All return a
+    `StrategyFn` ready to feed `Backtester.run()`.
+  - **Hotkey sheet**: press <kbd>?</kbd> in the widget to open a categorized
+    keyboard-shortcut reference (search, chart manipulation, drawing, keyboard
+    navigation).
+  - **Replay scrubber UI**: toolbar play button toggles a floating bottom
+    scrubber bar with play/pause, step-back/step-forward, draggable progress
+    scrubber, and a speed select (0.5×–100× bars/sec). Drives the existing
+    `chart.replay*()` API and restores the original data series on exit.
+    `ReplayManager.seekTo` now emits a synchronous `bar` event so seeking while
+    paused immediately repaints the chart slice.
+  - **Monte Carlo simulation** (`runMonteCarlo`): shuffles realised trade order
+    N times to expose path-dependence. Returns per-step P5/P25/P50/P75/P95
+    equity bands, final-equity percentiles, probability-of-profit, and
+    worst-case max drawdown across the runs. Deterministic with a seed.
+  - **Saved layouts**: opt-in widget option `persistLayouts: true` snapshots
+    per-symbol chart type + indicators + drawings + alerts into localStorage
+    and re-applies them when the user switches back. `widget.clearSavedLayout()`
+    resets a saved entry. Default key prefix `tcw:layout:{symbol}`.
+  - **Pinned tooltip**: Alt/Option-click the chart to anchor an OHLC tooltip
+    at the hovered bar. The live crosshair tooltip then shows the price / %
+    / bar-count delta to the pinned bar. Esc unpins. New `PinnedTooltip`
+    export from `@tradecanvas/core`.
+  - **Hover axis labels**: TradingView-style pill badges follow the crosshair
+    on the right axis (current price under cursor) and the bottom axis
+    (current time). Rendered with inverted theme colors + a triangular notch
+    pointing at the crosshair line. Painted on the UI layer so they always
+    sit on top of the static axis labels.
+  - **Bar hover highlight**: a subtle translucent column behind the crosshair
+    marks which bar the cursor is on — much easier to read in dense candle
+    charts.
+  - **Volume Profile**: optional horizontal histogram of traded volume
+    bucketed by price over the visible range, with point-of-control
+    highlighting. Toggleable via the new `chart.setVolumeProfileVisible()`
+    API and the widget settings sheet (off by default).
+  - **CSV / JSON drag-and-drop**: drop an OHLCV file onto the chart and it
+    loads instantly. Parser auto-detects delimiter (`,` `;` tab `|`), header
+    vs. headerless, ISO timestamps vs. unix s/ms, object-of-rows vs.
+    array-of-arrays JSON, sorts ascending, and de-dups same-timestamp rows.
+    Exported as `parseOHLCV` + `DragDropImporter` from `@tradecanvas/chart`.
+    Enabled by default in the widget — opt out with `dragDropImport: false`.
+  - **Watchlist sidebar**: opt-in right-side panel listing the widget's
+    symbols with last price, % change, and a mini sparkline. Click a row to
+    switch symbol. Active symbol updates from the live stream; other rows
+    can be fed from your own WebSocket via `widget.setWatchlistEntry()`.
+    Enable with `watchlist: true`.
+  - **Day-separator dividers**: time-axis-area faint vertical lines at day
+    boundaries, heavier at week/month/year boundaries with inline date
+    labels. Auto-suppressed on daily-or-coarser timeframes so weekly charts
+    don't paint a wall of lines.
+  - **Toasts**: widget now has a `toast(msg, kind?)` helper for transient
+    feedback (used by the drag-drop importer; available to apps).
+
+## 0.8.2
+
 ## 0.8.1
 
 ## 0.8.0

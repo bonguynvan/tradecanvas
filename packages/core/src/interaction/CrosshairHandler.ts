@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { formatPrice, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { formatPrice } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -90,6 +90,18 @@ export class CrosshairHandler {
       this.scheduleCallback();
     }
 
+    // Subtle "hovered bar" tint — a translucent column behind the crosshair
+    // so users have unambiguous visual feedback about which bar they're
+    // sitting on. Especially helpful in dense candle charts.
+    if (this.magnetMode && barIndex >= 0 && barIndex < this.data.length) {
+      const barUnit = viewport.barWidth + viewport.barSpacing;
+      const halfUnit = barUnit / 2;
+      ctx.fillStyle = theme.crosshair;
+      ctx.globalAlpha = 0.08;
+      ctx.fillRect(x - halfUnit, chartRect.y, barUnit, chartRect.height);
+      ctx.globalAlpha = 1;
+    }
+
     // Draw crosshair lines — minimal work, no DOM, no allocations
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = theme.crosshair;
@@ -106,18 +118,65 @@ export class CrosshairHandler {
     ctx.stroke();
 
     ctx.setLineDash([]);
+  }
 
-    // Price label on Y axis
+  /**
+   * Render the axis hover labels — price pill on the right, time pill on the
+   * bottom. Called on the UI pass (after the axes) so the badges always sit
+   * on top of the static axis labels. TradingView-style with a small notch.
+   *
+   * `timeAxisY` lets the host place the bottom label at the actual time axis
+   * baseline (which moves when bottom panels are open).
+   */
+  renderAxisLabels(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+    timeAxisY?: number,
+  ): void {
+    if (!this.position || this.mode === 'hidden') return;
+    const { chartRect } = viewport;
+    let { x, y } = this.position;
+    if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
+    if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
+
+    let barIndex = xToBarIndex(x, viewport);
+    barIndex = Math.max(0, Math.min(data.length - 1, barIndex));
+    if (this.magnetMode && barIndex >= 0 && barIndex < data.length) {
+      x = barIndexToX(barIndex, viewport);
+    }
+
+    const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
+
+    // ── Price pill (right axis) ──
     const price = yToPrice(y, viewport);
     const priceText = formatPrice(price, this.pricePrecision, this.locale);
-    const labelX = chartRect.x + chartRect.width + 1;
-    ctx.fillStyle = theme.axisLabelBackground;
-    ctx.fillRect(labelX, y - 10, PRICE_AXIS_WIDTH - 2, 20);
-    ctx.fillStyle = theme.axisLabel;
-    ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
-    ctx.fillText(priceText, labelX + 5, y);
+    const priceAxisX = chartRect.x + chartRect.width;
+    drawAxisPill(ctx, {
+      text: priceText,
+      anchorX: priceAxisX,
+      anchorY: y,
+      orientation: 'right',
+      bg: theme.text,
+      fg: theme.background,
+      font,
+    });
+
+    // ── Time pill (bottom axis) ──
+    if (barIndex >= 0 && barIndex < data.length) {
+      const timeText = formatBarTime(data[barIndex].time);
+      const axisY = timeAxisY ?? (chartRect.y + chartRect.height);
+      drawAxisPill(ctx, {
+        text: timeText,
+        anchorX: x,
+        anchorY: axisY,
+        orientation: 'bottom',
+        bg: theme.text,
+        fg: theme.background,
+        font,
+      });
+    }
   }
 
   /** Fire callback outside of render frame via microtask */
@@ -133,4 +192,81 @@ export class CrosshairHandler {
   private flushCallback(barIndex: number | null, point: Point | null): void {
     this.callback?.(barIndex, point);
   }
+}
+
+interface AxisPillOptions {
+  text: string;
+  anchorX: number;
+  anchorY: number;
+  orientation: 'right' | 'bottom';
+  bg: string;
+  fg: string;
+  font: string;
+}
+
+/**
+ * TradingView-style axis hover pill. A rectangle with a small triangular
+ * notch pointing toward the crosshair line, painted in inverted theme
+ * colors so it always pops against the axis strip.
+ */
+function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): void {
+  ctx.save();
+  ctx.font = opts.font;
+  const padX = 8;
+  const padY = 4;
+  const notch = 5;
+  const textW = Math.ceil(ctx.measureText(opts.text).width);
+  const w = textW + padX * 2;
+  const h = 20 + padY * 0;
+
+  if (opts.orientation === 'right') {
+    const x = opts.anchorX + notch;
+    const y = opts.anchorY - h / 2;
+    ctx.beginPath();
+    ctx.moveTo(opts.anchorX, opts.anchorY);
+    ctx.lineTo(x, opts.anchorY - notch);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, opts.anchorY + notch);
+    ctx.closePath();
+    ctx.fillStyle = opts.bg;
+    ctx.fill();
+
+    ctx.fillStyle = opts.fg;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(opts.text, x + padX, opts.anchorY);
+  } else {
+    const x = opts.anchorX - w / 2;
+    const y = opts.anchorY + notch;
+    ctx.beginPath();
+    ctx.moveTo(opts.anchorX, opts.anchorY);
+    ctx.lineTo(opts.anchorX + notch, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, y);
+    ctx.lineTo(opts.anchorX - notch, y);
+    ctx.closePath();
+    ctx.fillStyle = opts.bg;
+    ctx.fill();
+
+    ctx.fillStyle = opts.fg;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillText(opts.text, opts.anchorX, y + h / 2);
+  }
+  ctx.restore();
+}
+
+function formatBarTime(rawTime: number): string {
+  const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
+  const d = new Date(ms);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const h = d.getHours();
+  const mm = d.getMinutes();
+  return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }

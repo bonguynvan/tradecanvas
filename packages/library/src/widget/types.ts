@@ -33,6 +33,27 @@ export interface ChartWidgetOptions {
   // Chart pass-through
   chartOptions?: Partial<ChartOptions>;
 
+  /**
+   * Render a watchlist sidebar on the right showing all configured symbols
+   * with last price, % change, and a mini sparkline. Default `false`.
+   */
+  watchlist?: boolean;
+
+  /**
+   * Drag-and-drop CSV / JSON file import onto the chart. Default `true`.
+   * Set to `false` to disable (e.g. if the chart sits inside a larger
+   * surface that already handles drops).
+   */
+  dragDropImport?: boolean;
+
+  // Layout persistence (per-symbol indicators + drawings + chart type)
+  persistLayouts?: boolean | {
+    /** localStorage key prefix. The active symbol is appended. Default `tcw:layout:`. */
+    keyPrefix?: string;
+    /** Debounce window before flushing to storage. Default 1500 ms. */
+    debounceMs?: number;
+  };
+
   // Callbacks
   onSymbolChange?: (symbol: string) => void;
   onTimeframeChange?: (tf: TimeFrame) => void;
@@ -68,6 +89,7 @@ export interface ToolbarCallbacks {
   onScreenshot: () => void;
   onSettings: () => void;
   onToggleTheme: () => void;
+  onToggleReplay?: () => void;
 }
 
 export interface SidebarConfig {
@@ -98,6 +120,7 @@ export interface ChartSettingsState {
   gridColor: string;
   gridVisible: boolean;
   volumeVisible: boolean;
+  volumeProfileVisible: boolean;
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;
