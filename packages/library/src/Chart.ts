@@ -735,6 +735,14 @@ export class Chart {
     this.drawingManager.removeDrawing(id);
   }
 
+  setDrawingVisible(id: string, visible: boolean): void {
+    this.drawingManager.setDrawingVisible(id, visible);
+  }
+
+  setDrawingLocked(id: string, locked: boolean): void {
+    this.drawingManager.setDrawingLocked(id, locked);
+  }
+
   clearDrawings(): void {
     this.drawingManager.clearDrawings();
   }

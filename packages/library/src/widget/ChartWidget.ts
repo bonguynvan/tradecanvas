@@ -14,6 +14,7 @@ import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
+import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -32,6 +33,7 @@ export class ChartWidget {
   private replayBar: WidgetReplayBar | null = null;
   private dragDrop: DragDropImporter | null = null;
   private alertsPanel: WidgetAlertsPanel | null = null;
+  private objectTree: WidgetObjectTree | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -122,6 +124,7 @@ export class ChartWidget {
           onToggleTheme: () => this.handleToggleTheme(),
           onToggleReplay: () => this.toggleReplay(),
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
+          onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
         },
       );
     }
@@ -251,6 +254,30 @@ export class ChartWidget {
         this.toast(`🔔 Alert: price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`, 'info');
         this.refreshAlerts();
       });
+    }
+
+    // 8a-ter. Object tree (indicators + drawings manager)
+    if (options.objectTree !== false) {
+      this.objectTree = new WidgetObjectTree(this.root, {
+        onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
+        onRemoveDrawing: (id) => {
+          this.chart.removeDrawing(id);
+          this.refreshObjects();
+        },
+        onToggleDrawingVisible: (id, visible) => {
+          this.chart.setDrawingVisible(id, visible);
+          this.refreshObjects();
+        },
+        onToggleDrawingLocked: (id, locked) => {
+          this.chart.setDrawingLocked(id, locked);
+          this.refreshObjects();
+        },
+      });
+      const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
+      this.chart.on('drawingCreate', refresh);
+      this.chart.on('drawingRemove', refresh);
+      this.chart.on('indicatorAdd', refresh);
+      this.chart.on('indicatorRemove', refresh);
     }
 
     // 8b. Command palette
@@ -397,6 +424,7 @@ export class ChartWidget {
     this.replayBar?.destroy();
     this.dragDrop?.detach();
     this.alertsPanel?.destroy();
+    this.objectTree?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -467,6 +495,27 @@ export class ChartWidget {
     if (!this.alertsPanel) return;
     this.alertsPanel.toggle();
     if (this.alertsPanel.isOpen()) this.refreshAlerts();
+  }
+
+  private toggleObjects(): void {
+    if (!this.objectTree) return;
+    this.objectTree.toggle();
+    if (this.objectTree.isOpen()) this.refreshObjects();
+  }
+
+  private refreshObjects(): void {
+    if (!this.objectTree) return;
+    const indicators = this.chart.getActiveIndicators().map((i) => ({
+      instanceId: i.instanceId,
+      name: i.descriptor.name,
+    }));
+    const drawings = this.chart.getDrawings().map((d) => ({
+      id: d.id,
+      label: drawingTypeLabel(d.type),
+      visible: d.visible,
+      locked: d.locked,
+    }));
+    this.objectTree.setObjects(indicators, drawings);
   }
 
   private refreshAlerts(): void {

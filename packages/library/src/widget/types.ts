@@ -28,6 +28,13 @@ export interface ChartWidgetOptions {
    */
   alerts?: boolean;
 
+  /**
+   * Object-tree panel — a layers button in the toolbar that opens a manager
+   * listing active indicators and drawings, with per-item show/hide, lock, and
+   * delete. Default `true`.
+   */
+  objectTree?: boolean;
+
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
@@ -110,6 +117,7 @@ export interface ToolbarCallbacks {
   onToggleTheme: () => void;
   onToggleReplay?: () => void;
   onToggleAlerts?: () => void;
+  onToggleObjects?: () => void;
 }
 
 export interface SidebarConfig {

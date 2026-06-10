@@ -93,6 +93,12 @@ export class WidgetToolbar {
       el.appendChild(replayBtn);
     }
 
+    if (callbacks.onToggleObjects) {
+      const objectsBtn = this.iconBtn('layers', 'Objects', callbacks.onToggleObjects);
+      objectsBtn.dataset.role = 'objects';
+      el.appendChild(objectsBtn);
+    }
+
     if (callbacks.onToggleAlerts) {
       const alertsBtn = this.iconBtn('bell', 'Price alerts', callbacks.onToggleAlerts);
       alertsBtn.dataset.role = 'alerts';

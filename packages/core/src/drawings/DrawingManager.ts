@@ -236,6 +236,25 @@ export class DrawingManager {
     this.requestRender?.();
   }
 
+  /** Toggle a single drawing's visibility. Returns the new value, or null if not found. */
+  setDrawingVisible(id: string, visible: boolean): boolean | null {
+    const d = this.drawings.find((x) => x.id === id);
+    if (!d) return null;
+    d.visible = visible;
+    if (!visible && this.selectedDrawingId === id) this.selectedDrawingId = null;
+    this.requestRender?.();
+    return visible;
+  }
+
+  /** Toggle a single drawing's lock. Returns the new value, or null if not found. */
+  setDrawingLocked(id: string, locked: boolean): boolean | null {
+    const d = this.drawings.find((x) => x.id === id);
+    if (!d) return null;
+    d.locked = locked;
+    this.requestRender?.();
+    return locked;
+  }
+
   // --- Tool selection ---
 
   setActiveTool(type: DrawingToolType | null): void {

@@ -238,6 +238,20 @@ widget.setWatchlistEntry('ETHUSDT', {
   sparkline: [3180, 3195, 3210, ...],
 })`}</code></pre>
 
+<h3>Object tree</h3>
+<p>
+  The toolbar layers button opens an object-tree panel listing every active
+  indicator and drawing. Indicators can be removed; drawings get per-item
+  show / hide, lock / unlock, and delete. Enabled by default — disable with
+  <code>objectTree: false</code>. The drawing controls map to:
+</p>
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.setDrawingLocked(id, true)    // lock it from edits
+chart.removeDrawing(id)
+chart.getActiveIndicators()         // active indicator instances
+chart.removeIndicator(instanceId)`}</code></pre>
+
 <h3>Price alerts</h3>
 <p>
   The toolbar bell opens a floating panel to add, list, and delete price
