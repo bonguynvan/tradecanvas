@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { OHLCBar } from '@tradecanvas/commons';
-import { computeMarketProfile } from '../marketProfile.js';
+import { computeMarketProfile, computeSessionProfiles } from '../marketProfile.js';
 
 function bar(low: number, high: number): OHLCBar {
   return { time: 0, open: low, high, low, close: high, volume: 1 };
+}
+
+function barAt(time: number, low: number, high: number): OHLCBar {
+  return { time, open: low, high, low, close: high, volume: 1 };
 }
 
 describe('computeMarketProfile', () => {
@@ -63,5 +67,39 @@ describe('computeMarketProfile', () => {
   it('clamps bucket count into the valid range', () => {
     const mp = computeMarketProfile([bar(0, 100)], 0, 100, { buckets: 1 })!;
     expect(mp.buckets.length).toBeGreaterThanOrEqual(4); // min 4
+  });
+});
+
+describe('computeSessionProfiles', () => {
+  const D1 = Date.UTC(2023, 0, 2, 10, 0, 0); // Mon
+  const D2 = Date.UTC(2023, 0, 3, 10, 0, 0); // Tue
+
+  it('returns empty for empty input', () => {
+    expect(computeSessionProfiles([], 0, 100)).toEqual([]);
+  });
+
+  it('splits bars into one profile per calendar day', () => {
+    const bars = [
+      barAt(D1, 10, 20),
+      barAt(D1 + 3_600_000, 12, 22),
+      barAt(D2, 30, 40),
+      barAt(D2 + 3_600_000, 32, 42),
+    ];
+    const sessions = computeSessionProfiles(bars, 0, 100, { buckets: 20 });
+    expect(sessions).toHaveLength(2);
+    expect(sessions[0].startIndex).toBe(0);
+    expect(sessions[0].endIndex).toBe(1);
+    expect(sessions[0].startTime).toBe(Date.UTC(2023, 0, 2));
+    expect(sessions[1].startIndex).toBe(2);
+    expect(sessions[1].endIndex).toBe(3);
+    expect(sessions[1].startTime).toBe(Date.UTC(2023, 0, 3));
+  });
+
+  it('shares the price window across sessions', () => {
+    const bars = [barAt(D1, 10, 20), barAt(D2, 80, 90)];
+    const sessions = computeSessionProfiles(bars, 0, 100, { buckets: 10 });
+    // Both profiles span the same 0..100 window (10 buckets each).
+    expect(sessions[0].profile.buckets).toHaveLength(10);
+    expect(sessions[1].profile.buckets).toHaveLength(10);
   });
 });

@@ -145,6 +145,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   volumeVisible: true,
   volumeProfileVisible: false,
   marketProfileVisible: false,
+  marketProfileSplit: false,
   legendVisible: true,
   barCountdown: true,
   logScale: false,

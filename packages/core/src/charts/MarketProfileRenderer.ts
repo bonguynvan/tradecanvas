@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
-import { computeMarketProfile } from './marketProfile.js';
+import { computeMarketProfile, computeSessionProfiles } from './marketProfile.js';
+import { barIndexToX } from '../viewport/ScaleMapping.js';
 
 /**
  * Market Profile (TPO) — a horizontal histogram of *time at price* over the
@@ -30,6 +31,7 @@ export class MarketProfileRenderer {
   private valueAreaPct = 0.7;
   private highlightPoC = true;
   private showStats = true;
+  private splitBySession = false;
   private lastStats: MarketProfileStats | null = null;
 
   setVisible(v: boolean): void { this.visible = v; if (!v) this.lastStats = null; }
@@ -40,6 +42,9 @@ export class MarketProfileRenderer {
   setValueAreaPct(p: number): void { this.valueAreaPct = Math.max(0.3, Math.min(0.95, p)); }
   setHighlightPoC(enabled: boolean): void { this.highlightPoC = enabled; }
   setShowStats(enabled: boolean): void { this.showStats = enabled; }
+  /** Split the profile into one mini-histogram per calendar-day session. */
+  setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
+  isSplitBySession(): boolean { return this.splitBySession; }
 
   /** POC / VAH / VAL from the most recent render, or null if not drawn. */
   getStats(): MarketProfileStats | null {
@@ -56,6 +61,13 @@ export class MarketProfileRenderer {
     if (end < start) return;
 
     const slice = data.slice(start, end + 1);
+
+    if (this.splitBySession) {
+      this.lastStats = null;
+      this.renderSplit(ctx, slice, start, viewport, theme);
+      return;
+    }
+
     const profile = computeMarketProfile(slice, priceRange.min, priceRange.max, {
       buckets: this.buckets,
       valueAreaPct: this.valueAreaPct,
@@ -126,6 +138,63 @@ export class MarketProfileRenderer {
       this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, theme);
     }
 
+    ctx.restore();
+  }
+
+  /** One mini-profile per calendar-day session, anchored under its bars. */
+  private renderSplit(
+    ctx: CanvasRenderingContext2D,
+    slice: DataSeries,
+    sliceOffset: number,
+    viewport: ViewportState,
+    theme: Theme,
+  ): void {
+    const { chartRect, priceRange } = viewport;
+    const sessions = computeSessionProfiles(slice, priceRange.min, priceRange.max, {
+      buckets: this.buckets,
+      valueAreaPct: this.valueAreaPct,
+    });
+    if (sessions.length === 0) return;
+
+    const span = priceRange.max - priceRange.min;
+    const priceToYLinear = (price: number): number =>
+      chartRect.y + chartRect.height * (1 - (price - priceRange.min) / span);
+    const halfBar = viewport.barWidth / 2;
+
+    ctx.save();
+    for (const session of sessions) {
+      const profile = session.profile;
+      const n = profile.buckets.length;
+      const bucketHeight = chartRect.height / n;
+      const leftX = barIndexToX(sliceOffset + session.startIndex, viewport) - halfBar;
+      const rightX = barIndexToX(sliceOffset + session.endIndex, viewport) + halfBar;
+      const sessionWidth = Math.max(2, rightX - leftX);
+      const inv = 1 / profile.maxCount;
+
+      for (let b = 0; b < n; b++) {
+        const bucket = profile.buckets[b];
+        if (bucket.count === 0) continue;
+        const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
+        const w = bucket.count * inv * sessionWidth;
+        const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
+        ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
+        ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+        ctx.fillRect(leftX, y + 0.5, w, bucketHeight - 1);
+      }
+
+      if (this.highlightPoC) {
+        const y = priceToYLinear(profile.buckets[profile.pocIndex].mid);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = theme.crosshair;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        ctx.moveTo(leftX, Math.round(y) + 0.5);
+        ctx.lineTo(Math.min(rightX, chartRect.x + chartRect.width), Math.round(y) + 0.5);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
     ctx.restore();
   }
 

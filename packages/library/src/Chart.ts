@@ -1291,13 +1291,14 @@ export class Chart {
     return this.marketProfile.isVisible();
   }
 
-  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean }): void {
+  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean; splitBySession?: boolean }): void {
     if (config.buckets !== undefined) this.marketProfile.setBuckets(config.buckets);
     if (config.widthRatio !== undefined) this.marketProfile.setWidthRatio(config.widthRatio);
     if (config.opacity !== undefined) this.marketProfile.setOpacity(config.opacity);
     if (config.valueAreaPct !== undefined) this.marketProfile.setValueAreaPct(config.valueAreaPct);
     if (config.highlightPoC !== undefined) this.marketProfile.setHighlightPoC(config.highlightPoC);
     if (config.showStats !== undefined) this.marketProfile.setShowStats(config.showStats);
+    if (config.splitBySession !== undefined) this.marketProfile.setSplitBySession(config.splitBySession);
     this.engine.requestRender(LayerType.Main);
   }
 

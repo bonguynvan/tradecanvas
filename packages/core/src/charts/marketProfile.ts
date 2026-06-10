@@ -1,4 +1,5 @@
 import type { OHLCBar } from '@tradecanvas/commons';
+import { timeframeBucketStart } from '@tradecanvas/commons';
 
 export interface MarketProfileBucket {
   /** Lower price bound of the bucket. */
@@ -112,4 +113,50 @@ export function computeMarketProfile(
     valueAreaLow: priceMin + lowI * bucketH,
     valueAreaHigh: priceMin + (highI + 1) * bucketH,
   };
+}
+
+export interface SessionProfile {
+  /** Index of the session's first bar within the input array. */
+  startIndex: number;
+  /** Index of the session's last bar within the input array (inclusive). */
+  endIndex: number;
+  /** UTC start-of-session timestamp (calendar-day bucket). */
+  startTime: number;
+  /** TPO profile for this session, against the shared price window. */
+  profile: MarketProfile;
+}
+
+/**
+ * Split a contiguous bar array into calendar-day sessions and compute a TPO
+ * profile for each, all against the same shared price window so they line up
+ * on a common y-axis. Sessions with no profile (e.g. a single flat bar) are
+ * skipped. Input bars are assumed ascending by time.
+ */
+export function computeSessionProfiles(
+  bars: ReadonlyArray<OHLCBar>,
+  priceMin: number,
+  priceMax: number,
+  opts: MarketProfileOptions = {},
+): SessionProfile[] {
+  if (bars.length === 0 || priceMax - priceMin <= 0) return [];
+
+  const out: SessionProfile[] = [];
+  let groupStart = 0;
+  let groupKey = timeframeBucketStart(bars[0].time, '1d');
+
+  const flush = (start: number, end: number, key: number): void => {
+    const profile = computeMarketProfile(bars.slice(start, end + 1), priceMin, priceMax, opts);
+    if (profile) out.push({ startIndex: start, endIndex: end, startTime: key, profile });
+  };
+
+  for (let i = 1; i < bars.length; i++) {
+    const key = timeframeBucketStart(bars[i].time, '1d');
+    if (key !== groupKey) {
+      flush(groupStart, i - 1, groupKey);
+      groupStart = i;
+      groupKey = key;
+    }
+  }
+  flush(groupStart, bars.length - 1, groupKey);
+  return out;
 }

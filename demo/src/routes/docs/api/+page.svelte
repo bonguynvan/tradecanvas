@@ -112,9 +112,13 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
+// split into one mini-profile per calendar-day session
+chart.setMarketProfileConfig({ splitBySession: true })
+
 // pure computation is exported too
-import { computeMarketProfile } from '@tradecanvas/core'
-const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })`}</code></pre>
+import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
+const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
+const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
 
 <h3>Touch &amp; mobile</h3>
 <table>
