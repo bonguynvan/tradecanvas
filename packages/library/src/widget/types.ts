@@ -191,6 +191,7 @@ export interface ChartSettingsState {
   marketProfileOpacity: number;
   depthHeatmapVisible: boolean;
   depthHeatmapOpacity: number;
+  sessionShadingVisible: boolean;
   periodLevelsVisible: boolean;
   periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;

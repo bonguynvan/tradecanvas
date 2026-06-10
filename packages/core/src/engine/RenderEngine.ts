@@ -50,6 +50,7 @@ export interface RenderContext {
   watermark: Watermark | null;
   barCountdown: BarCountdown | null;
   sessionBreaks: SessionBreaks | null;
+  sessionShading: import('../ui/SessionShading.js').SessionShading | null;
   compareRenderer: CompareRenderer | null;
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
@@ -149,6 +150,7 @@ export class RenderEngine {
     if (dirtyLayers.has(LayerType.Background) && this.bgLayer) {
       this.bgLayer.clear();
       ctx.gridRenderer?.render(this.bgLayer.ctx, viewport, theme);
+      ctx.sessionShading?.render(this.bgLayer.ctx, data, viewport, theme);
       ctx.sessionBreaks?.render(this.bgLayer.ctx, viewport, theme, data);
       ctx.watermark?.render(this.bgLayer.ctx, viewport, theme);
     }

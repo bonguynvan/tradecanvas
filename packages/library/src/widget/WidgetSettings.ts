@@ -170,6 +170,7 @@ export class WidgetSettings {
     section.appendChild(this.rangeRow('MP opacity', s.marketProfileOpacity, 0.05, 1, 0.05, (v) => this.patch({ marketProfileOpacity: v }), (v) => `${Math.round(v * 100)}%`));
     section.appendChild(this.toggleRow('Liquidity heatmap', s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
     section.appendChild(this.rangeRow('Heatmap opacity', s.depthHeatmapOpacity, 0.1, 1, 0.05, (v) => this.patch({ depthHeatmapOpacity: v }), (v) => `${Math.round(v * 100)}%`));
+    section.appendChild(this.toggleRow('Session shading (RTH)', s.sessionShadingVisible, (v) => this.patch({ sessionShadingVisible: v })));
     section.appendChild(this.toggleRow('Prior-period levels', s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
     section.appendChild(this.selectRow('Period levels basis', s.periodLevelsPeriod, [
       { value: 'day', label: 'Prior Day (PDH/PDL)' },

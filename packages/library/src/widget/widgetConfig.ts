@@ -152,6 +152,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   marketProfileOpacity: 0.32,
   depthHeatmapVisible: false,
   depthHeatmapOpacity: 0.7,
+  sessionShadingVisible: false,
   periodLevelsVisible: false,
   periodLevelsPeriod: 'day',
   legendVisible: true,

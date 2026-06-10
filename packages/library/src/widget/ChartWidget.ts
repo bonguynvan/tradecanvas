@@ -1218,6 +1218,7 @@ export class ChartWidget {
     if (patch.marketProfileOpacity !== undefined) this.chart.setMarketProfileConfig({ opacity: patch.marketProfileOpacity });
     if (patch.depthHeatmapVisible !== undefined) this.chart.setDepthHeatmapVisible(patch.depthHeatmapVisible);
     if (patch.depthHeatmapOpacity !== undefined) this.chart.setDepthHeatmapConfig({ opacity: patch.depthHeatmapOpacity });
+    if (patch.sessionShadingVisible !== undefined) this.chart.setSessionShadingVisible(patch.sessionShadingVisible);
     if (patch.periodLevelsVisible !== undefined) this.chart.setPeriodLevelsVisible(patch.periodLevelsVisible);
     if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);

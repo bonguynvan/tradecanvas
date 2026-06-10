@@ -73,6 +73,7 @@ import {
   PinnedTooltip,
   DataExporter,
   SessionBreaks,
+  SessionShading,
   CompareRenderer,
   CurrentPriceLine,
   xToBarIndex,
@@ -114,6 +115,7 @@ export class Chart {
   private watermark: Watermark;
   private barCountdown: BarCountdown;
   private sessionBreaks: SessionBreaks;
+  private sessionShading: SessionShading;
   private compareRenderer: CompareRenderer;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private volumeRenderer: VolumeRenderer;
@@ -330,6 +332,7 @@ export class Chart {
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
     this.sessionBreaks = new SessionBreaks();
+    this.sessionShading = new SessionShading();
     this.compareRenderer = new CompareRenderer();
 
     // Apply session break config from options
@@ -1467,6 +1470,23 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  // --- Session (RTH) shading ---
+
+  setSessionShadingVisible(visible: boolean): void {
+    this.sessionShading.setVisible(visible);
+    this.engine.requestRender(LayerType.Background);
+  }
+
+  isSessionShadingVisible(): boolean {
+    return this.sessionShading.isVisible();
+  }
+
+  /** Configure the regular session window (minutes-of-day + tz offset). */
+  setSessionShadingConfig(config: Partial<import('@tradecanvas/core').SessionHoursConfig>): void {
+    this.sessionShading.setConfig(config);
+    this.engine.requestRender(LayerType.Background);
+  }
+
   // --- Tooltip ---
 
   setTooltipVisible(visible: boolean): void {
@@ -2013,6 +2033,7 @@ export class Chart {
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,
+      sessionShading: this.sessionShading,
       compareRenderer: this.compareRenderer,
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,

@@ -95,6 +95,19 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
+<h3>Session shading (regular trading hours)</h3>
+<p>
+  Dim bars outside the regular session (pre/post-market or the overnight break)
+  so the cash session stands out. Defaults to US equity RTH (09:30–16:00 ET);
+  configure the window in minutes-of-day plus a timezone offset:
+</p>
+<pre><code>{`chart.setSessionShadingVisible(true)
+chart.setSessionShadingConfig({
+  startMinute: 9 * 60 + 30,  // 09:30
+  endMinute: 16 * 60,        // 16:00 (end-exclusive)
+  tzOffsetMinutes: -300,     // EST; handles overnight sessions when end < start
+})`}</code></pre>
+
 <h3>Prior-period levels (PDH / PDL / PDC)</h3>
 <p>
   Draw the prior day's (or week's) high, low, and close plus the current
