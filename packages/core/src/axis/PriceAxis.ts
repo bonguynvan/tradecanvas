@@ -1,5 +1,5 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
-import { computeTickStep, formatPrice, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { computeTickStep, formatPriceScaleLabel, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 
 export class PriceAxis {
   private locale = 'en-US';
@@ -33,10 +33,12 @@ export class PriceAxis {
     const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
+    const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
+    const baseline = viewport.scaleBaseline;
     const labels: { y: number; text: string }[] = [];
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = chartRect.y + chartRect.height * (1 - (price - priceRange.min) * invRange);
-      labels.push({ y, text: formatPrice(price, precision, this.locale) });
+      labels.push({ y, text: formatPriceScaleLabel(price, mode, baseline, precision, this.locale) });
     }
 
     ctx.font = font;

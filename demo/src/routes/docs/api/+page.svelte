@@ -69,6 +69,18 @@ chart.setLogScale(true)    // switch to logarithmic price scale
 chart.fitContent()         // zoom out to all data
 chart.scrollToEnd()`}</code></pre>
 
+<p>
+  <strong>Price scale modes.</strong> Beyond regular and logarithmic, the axis
+  can rebase its labels against the first visible bar — <code>percentage</code>
+  shows % change, <code>indexedTo100</code> rebases the baseline to 100. Regular,
+  percentage, and indexed share the same linear geometry; only the labels
+  differ. Settable from the chart-settings panel or directly:
+</p>
+<pre><code>{`chart.setScaleMode('percentage')   // axis labels: +12.34% from first visible bar
+chart.setScaleMode('indexedTo100') // first visible bar reads as 100
+chart.setScaleMode('logarithmic')
+chart.getScaleMode()`}</code></pre>
+
 <h3>Volume Profile</h3>
 <p>
   Horizontal histogram of traded volume bucketed by price over the visible

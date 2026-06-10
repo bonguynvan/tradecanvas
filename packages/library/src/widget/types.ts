@@ -6,6 +6,7 @@ import type {
   DrawingToolType,
   DataAdapter,
   ChartOptions,
+  PriceScaleMode,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
 
@@ -143,6 +144,7 @@ export interface ChartSettingsState {
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;
+  scaleMode: PriceScaleMode;
   autoScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;

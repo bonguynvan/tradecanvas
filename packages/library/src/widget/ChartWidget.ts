@@ -820,7 +820,14 @@ export class ChartWidget {
     if (patch.volumeProfileVisible !== undefined) this.chart.setVolumeProfileVisible(patch.volumeProfileVisible);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
-    if (patch.logScale !== undefined) this.chart.setLogScale(patch.logScale);
+    if (patch.scaleMode !== undefined) {
+      this.chart.setScaleMode(patch.scaleMode);
+      // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
+      this.settingsState = { ...this.settingsState, logScale: patch.scaleMode === 'logarithmic' };
+    } else if (patch.logScale !== undefined) {
+      this.chart.setLogScale(patch.logScale);
+      this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
+    }
     if (patch.numberLocale !== undefined) this.chart.setNumberLocale(patch.numberLocale);
 
     // Apply theme colors

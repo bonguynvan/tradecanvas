@@ -147,6 +147,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   legendVisible: true,
   barCountdown: true,
   logScale: false,
+  scaleMode: 'regular',
   autoScale: true,
   crosshairMode: 'magnet',
   numberLocale: 'en-US',

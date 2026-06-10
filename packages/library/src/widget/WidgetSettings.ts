@@ -192,7 +192,12 @@ export class WidgetSettings {
 
     const section = this.section();
     section.appendChild(this.toggleRow('Auto Scale', s.autoScale, (v) => this.patch({ autoScale: v })));
-    section.appendChild(this.toggleRow('Log Scale', s.logScale, (v) => this.patch({ logScale: v })));
+    section.appendChild(this.selectRow('Price Scale', s.scaleMode, [
+      { value: 'regular', label: 'Regular' },
+      { value: 'logarithmic', label: 'Logarithmic' },
+      { value: 'percentage', label: 'Percentage' },
+      { value: 'indexedTo100', label: 'Indexed to 100' },
+    ], (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
     this.bodyEl.appendChild(section);
   }
 

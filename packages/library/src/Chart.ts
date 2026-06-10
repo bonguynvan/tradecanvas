@@ -1037,7 +1037,7 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
-  // --- Log scale ---
+  // --- Price scale ---
 
   setLogScale(enabled: boolean): void {
     this.viewport.setLogScale(enabled);
@@ -1046,6 +1046,20 @@ export class Chart {
 
   isLogScale(): boolean {
     return this.viewport.isLogScale();
+  }
+
+  /**
+   * Set the price-scale presentation: `regular`, `logarithmic`, `percentage`
+   * (axis labels show % change from the first visible bar), or `indexedTo100`
+   * (rebased so the first visible bar reads as 100).
+   */
+  setScaleMode(mode: import('@tradecanvas/commons').PriceScaleMode): void {
+    this.viewport.setScaleMode(mode);
+    this.updateViewportAndRender();
+  }
+
+  getScaleMode(): import('@tradecanvas/commons').PriceScaleMode {
+    return this.viewport.getScaleMode();
   }
 
   setSessionBreaksConfig(config: { color?: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; lineWidth?: number }): void {
@@ -1631,6 +1645,14 @@ export class Chart {
 
     const displayData = this.getDisplayData();
     this.viewport.updateData(displayData, this.options.autoScale !== false);
+
+    // Baseline for percentage / indexed-to-100 axis labels: the close of the
+    // first visible bar. Cheap to set every frame; ignored by other modes.
+    if (displayData.length > 0) {
+      const vs = this.viewport.getState();
+      const baseIdx = Math.max(0, Math.min(vs.visibleRange.from, displayData.length - 1));
+      this.viewport.setScaleBaseline(displayData[baseIdx]?.close);
+    }
 
     // Expand price range to include overlay indicator values (BB, Ichimoku, etc.)
     if (this.options.autoScale !== false) {

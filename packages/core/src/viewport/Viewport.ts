@@ -1,4 +1,4 @@
-import type { ViewportState, Rect, DataSeries } from '@tradecanvas/commons';
+import type { ViewportState, Rect, DataSeries, PriceScaleMode } from '@tradecanvas/commons';
 import { clamp, computePriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
@@ -40,15 +40,32 @@ export class Viewport {
       offset: this.state.offset,
       chartRect: { ...this.state.chartRect },
       logScale: this.state.logScale,
+      scaleMode: this.state.scaleMode,
+      scaleBaseline: this.state.scaleBaseline,
     };
   }
 
   setLogScale(enabled: boolean): void {
-    this.state.logScale = enabled;
+    this.setScaleMode(enabled ? 'logarithmic' : 'regular');
   }
 
   isLogScale(): boolean {
-    return this.state.logScale ?? false;
+    return (this.state.scaleMode ?? (this.state.logScale ? 'logarithmic' : 'regular')) === 'logarithmic';
+  }
+
+  /** Set the price-scale presentation. Keeps `logScale` mirrored for back-compat. */
+  setScaleMode(mode: PriceScaleMode): void {
+    this.state.scaleMode = mode;
+    this.state.logScale = mode === 'logarithmic';
+  }
+
+  getScaleMode(): PriceScaleMode {
+    return this.state.scaleMode ?? (this.state.logScale ? 'logarithmic' : 'regular');
+  }
+
+  /** Reference price for percentage / indexed-to-100 axis labels. */
+  setScaleBaseline(price: number | undefined): void {
+    this.state.scaleBaseline = price;
   }
 
   setRightMargin(bars: number): void {
