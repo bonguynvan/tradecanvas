@@ -663,6 +663,12 @@ export class ChartWidget {
     return true;
   }
 
+  /** Copy the chart image to the clipboard, with a toast on success/failure. */
+  async copyChartImage(): Promise<void> {
+    const ok = await this.chart.copyScreenshot();
+    this.toast(ok ? 'Chart image copied' : 'Copy failed — image clipboard unavailable', ok ? 'info' : 'error');
+  }
+
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
   async copyShareLink(): Promise<void> {
     const base = typeof location !== 'undefined' ? location.href : '';
@@ -955,6 +961,7 @@ export class ChartWidget {
 
     items.push(
       { id: 'screenshot', label: 'Screenshot', category: 'action', shortcut: '' },
+      { id: 'copyImage', label: 'Copy Chart Image', category: 'action' },
       { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
       { id: 'settings', label: 'Settings', category: 'action' },
       { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
@@ -975,6 +982,9 @@ export class ChartWidget {
         break;
       case 'settings':
         this.openSettings();
+        break;
+      case 'copyImage':
+        void this.copyChartImage();
         break;
       case 'shareView':
         void this.copyShareLink();

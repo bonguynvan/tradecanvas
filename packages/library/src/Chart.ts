@@ -1501,6 +1501,20 @@ export class Chart {
     Screenshot.download(this.container, filename, this.themeManager.getTheme().background);
   }
 
+  /** Copy the chart image to the clipboard. Returns false if unsupported/blocked. */
+  async copyScreenshot(): Promise<boolean> {
+    if (!this.features.screenshot) return false;
+    try {
+      const blob = await Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
+      const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+      if (!blob || !navigator.clipboard?.write || !ClipboardItemCtor) return false;
+      await navigator.clipboard.write([new ClipboardItemCtor({ 'image/png': blob })]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   screenshotDataURL(): string | null {
     if (!this.features.screenshot) return null;
     return Screenshot.toDataURL(this.container, this.themeManager.getTheme().background);
