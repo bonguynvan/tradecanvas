@@ -14,6 +14,7 @@ import { AnchoredVWAPIndicator } from './overlay/AnchoredVWAP.js';
 import { ZigZagIndicator } from './overlay/ZigZag.js';
 import { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChannel.js';
 import { HullMAIndicator } from './overlay/HullMA.js';
+import { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 import { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 import { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 // Panels
@@ -51,6 +52,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new ZigZagIndicator());
   engine.register(new LinearRegressionChannelIndicator());
   engine.register(new HullMAIndicator());
+  engine.register(new MTFMovingAverageIndicator());
   // Panels
   engine.register(new RSIIndicator());
   engine.register(new MACDIndicator());

@@ -16,6 +16,7 @@ export { AnchoredVWAPIndicator } from './overlay/AnchoredVWAP.js';
 export { ZigZagIndicator } from './overlay/ZigZag.js';
 export { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChannel.js';
 export { HullMAIndicator } from './overlay/HullMA.js';
+export { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 export { getNumberParam, getIntParam } from './params.js';

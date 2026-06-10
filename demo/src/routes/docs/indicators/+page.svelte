@@ -20,6 +20,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>ema</code></td><td>Exponential Moving Average</td></tr>
     <tr><td><code>wma</code></td><td>Weighted Moving Average</td></tr>
     <tr><td><code>hullMa</code></td><td>Hull Moving Average</td></tr>
+    <tr><td><code>mtfma</code></td><td>MTF Moving Average (higher-timeframe MA, non-repainting)</td></tr>
     <tr><td><code>bollingerBands</code></td><td>Bollinger Bands</td></tr>
     <tr><td><code>keltnerChannels</code></td><td>Keltner Channels</td></tr>
     <tr><td><code>donchianChannels</code></td><td>Donchian Channels</td></tr>
@@ -33,6 +34,15 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>linearRegressionChannel</code></td><td>Linear Regression Channel</td></tr>
   </tbody>
 </table>
+
+<p>
+  <code>mtfma</code> plots a moving average from a higher timeframe on the
+  current chart — e.g. the daily 50-MA while viewing 1h bars. It averages only
+  <em>completed</em> higher-timeframe closes, so it steps at each boundary and
+  never repaints. Configure <code>period</code> and <code>timeframe</code> from
+  the indicator's gear dialog (or <code>addIndicator('mtfma', &#123; period: 50,
+  timeframe: '1d' &#125;)</code>).
+</p>
 
 <h2>Panel indicators</h2>
 <p>Rendered in their own pane beneath the chart.</p>
