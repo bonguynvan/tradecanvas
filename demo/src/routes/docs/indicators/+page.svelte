@@ -66,6 +66,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>chop</code></td><td>Choppiness Index (trend vs range, 0–100; &gt;61.8 choppy, &lt;38.2 trending)</td></tr>
     <tr><td><code>uo</code></td><td>Ultimate Oscillator (3-timeframe momentum, 0–100; 30/70 bands)</td></tr>
     <tr><td><code>fi</code></td><td>Force Index (price change × volume, EMA-smoothed; zero-centered)</td></tr>
+    <tr><td><code>crsi</code></td><td>Connors RSI (composite RSI + streak-RSI + percent-rank, 0–100; 10/90 bands)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

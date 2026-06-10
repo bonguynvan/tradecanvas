@@ -37,6 +37,7 @@ import { VortexIndicator } from './panel/Vortex.js';
 import { ChoppinessIndexIndicator } from './panel/ChoppinessIndex.js';
 import { UltimateOscillatorIndicator } from './panel/UltimateOscillator.js';
 import { ForceIndexIndicator } from './panel/ForceIndex.js';
+import { ConnorsRSIIndicator } from './panel/ConnorsRSI.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -85,4 +86,5 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new ChoppinessIndexIndicator());
   engine.register(new UltimateOscillatorIndicator());
   engine.register(new ForceIndexIndicator());
+  engine.register(new ConnorsRSIIndicator());
 }
