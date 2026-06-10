@@ -13,7 +13,11 @@ feat: Market Profile (TPO)
 - **`MarketProfileRenderer`** draws it as a left-pinned histogram (so it can sit
   alongside the right-pinned Volume Profile), value-area rows highlighted, a
   dashed POC line. Rebins against the visible range on pan/zoom.
+- **Stats readout**: a compact POC / VAH / VAL label, dotted value-area
+  boundary lines, and `chart.getMarketProfileStats()` returning the live
+  `{ poc, vah, val, valueAreaPct }`. Toggle the label with
+  `setMarketProfileConfig({ showStats: false })`.
 - **Chart API**: `setMarketProfileVisible()` / `isMarketProfileVisible()` /
-  `setMarketProfileConfig()`, plus a "Market Profile (TPO)" toggle in the widget
-  settings sheet. (Footprint charts need per-trade bid/ask data and are out of
-  scope for an OHLCV library.)
+  `setMarketProfileConfig()` / `getMarketProfileStats()`, plus a
+  "Market Profile (TPO)" toggle in the widget settings sheet. (Footprint charts
+  need per-trade bid/ask data and are out of scope for an OHLCV library.)

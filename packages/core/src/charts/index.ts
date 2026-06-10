@@ -16,6 +16,7 @@ export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';
 export { VolumeRenderer } from './VolumeRenderer.js';
 export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';
 export { MarketProfileRenderer } from './MarketProfileRenderer.js';
+export type { MarketProfileStats } from './MarketProfileRenderer.js';
 export { computeMarketProfile } from './marketProfile.js';
 export type { MarketProfile, MarketProfileBucket, MarketProfileOptions } from './marketProfile.js';
 export { CompareRenderer } from './CompareRenderer.js';
