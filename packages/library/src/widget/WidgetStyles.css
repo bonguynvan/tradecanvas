@@ -1748,6 +1748,75 @@
   }
 }
 
+/* === Data Window === */
+
+.tcw-datawin {
+  position: absolute;
+  top: 50px;
+  right: 12px;
+  z-index: 38;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  background: var(--tcw-bg-elevated);
+  border: 1px solid var(--tcw-border-strong);
+  border-radius: var(--tcw-radius-lg);
+  box-shadow: var(--tcw-shadow-lg);
+  overflow: hidden;
+  animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
+}
+.tcw-datawin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tcw-text);
+  border-bottom: 1px solid var(--tcw-border);
+}
+.tcw-datawin-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--tcw-text-muted);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+.tcw-datawin-close:hover { background: var(--tcw-bg-surface); color: var(--tcw-text); }
+.tcw-datawin-body { padding: 6px 4px; max-height: 360px; overflow-y: auto; }
+.tcw-datawin-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--tcw-text-muted); }
+.tcw-datawin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.tcw-datawin-label { color: var(--tcw-text-muted); }
+.tcw-datawin-value { color: var(--tcw-text); font-variant-numeric: tabular-nums; font-weight: 600; }
+.tcw-datawin-value.tcw-up { color: var(--tcw-green); }
+.tcw-datawin-value.tcw-down { color: var(--tcw-red); }
+.tcw-datawin-sub {
+  margin: 6px 8px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tcw-text-muted);
+  border-top: 1px solid var(--tcw-border);
+  padding-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .tcw-datawin { top: auto; bottom: 0; left: 0; right: 0; width: 100vw; border-radius: var(--tcw-radius-xl) var(--tcw-radius-xl) 0 0; }
+}
+
 /* === Depth-of-market ladder === */
 
 .tcw-ladder {

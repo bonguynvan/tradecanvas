@@ -22,6 +22,7 @@ import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
+import { WidgetDataWindow, type DataWindowModel } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -51,6 +52,8 @@ export class ChartWidget {
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
   private depthLadder: WidgetDepthLadder | null = null;
+  private dataWindow: WidgetDataWindow | null = null;
+  private lastHoverIndex: number | null = null;
   private favoritesStore = new DrawingFavoritesStore();
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
@@ -254,6 +257,14 @@ export class ChartWidget {
       onClose: () => {},
     });
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+
+    // Data Window — precise OHLCV + indicator values at the hovered bar.
+    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) });
+    this.chart.on('crosshairMove', (e) => {
+      const p = e.payload as { barIndex?: number };
+      this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+    });
 
     // Drawing style + templates popover (paired with the sidebar palette button)
     if (options.drawingTools !== false) {
@@ -520,6 +531,7 @@ export class ChartWidget {
     this.bracketBar?.destroy();
     this.alertNotifier?.destroy();
     this.depthLadder?.destroy();
+    this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -664,6 +676,42 @@ export class ChartWidget {
     if (this.chart.startBracket(side)) {
       this.bracketBar?.show(side);
     }
+  }
+
+  private buildDataWindowModel(): DataWindowModel {
+    const data = this.chart.getData();
+    const idx = this.lastHoverIndex;
+    if (idx === null || idx < 0 || idx >= data.length) {
+      return { ohlc: null, change: 0, changePct: 0, indicators: [] };
+    }
+    const bar = data[idx];
+    const prevClose = idx > 0 ? data[idx - 1].close : bar.open;
+    const change = bar.close - prevClose;
+    const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+
+    const indicators = this.chart.getActiveIndicators().map((ind) => {
+      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
+      const point = series?.[idx] ?? null;
+      const values = point
+        ? Object.entries(point)
+            .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+            .map(([key, v]) => ({ key, value: v as number }))
+        : [];
+      return { name: ind.descriptor.name, values };
+    }).filter((i) => i.values.length > 0);
+
+    return {
+      ohlc: { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume },
+      change,
+      changePct,
+      indicators,
+    };
+  }
+
+  private toggleDataWindow(): void {
+    if (!this.dataWindow) return;
+    this.dataWindow.toggle();
+    if (this.dataWindow.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
   }
 
   private toggleObjects(): void {
@@ -866,6 +914,7 @@ export class ChartWidget {
       { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
       { id: 'settings', label: 'Settings', category: 'action' },
       { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
+      { id: 'dataWindow', label: 'Toggle Data Window', category: 'action' },
       { id: 'clearDrawings', label: 'Clear All Drawings', category: 'action' },
     );
 
@@ -885,6 +934,9 @@ export class ChartWidget {
         break;
       case 'shareView':
         void this.copyShareLink();
+        break;
+      case 'dataWindow':
+        this.toggleDataWindow();
         break;
       case 'clearDrawings':
         this.chart.clearDrawings();

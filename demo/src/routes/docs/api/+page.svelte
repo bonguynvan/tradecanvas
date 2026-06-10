@@ -189,6 +189,14 @@ widget.destroy()`}</code></pre>
 </table>
 <p>Update the searchable catalog at runtime with <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
 
+<h3>Data Window</h3>
+<p>
+  A floating readout of the exact O/H/L/C/V, bar change, and every active
+  indicator's value at the hovered bar — updates live as you move the
+  crosshair. Toggle it from the command palette (<kbd>Ctrl/⌘ K</kbd> →
+  "Toggle Data Window").
+</p>
+
 <h3>Shareable view (deep links)</h3>
 <p>
   Encode the whole view — symbol, timeframe, chart type, price scale,
