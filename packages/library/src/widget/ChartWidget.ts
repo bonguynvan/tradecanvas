@@ -13,6 +13,7 @@ import { WidgetSymbolSearch } from './WidgetSymbolSearch.js';
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
+import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -30,6 +31,7 @@ export class ChartWidget {
   private hotkeySheet: WidgetHotkeySheet | null = null;
   private replayBar: WidgetReplayBar | null = null;
   private dragDrop: DragDropImporter | null = null;
+  private alertsPanel: WidgetAlertsPanel | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -119,6 +121,7 @@ export class ChartWidget {
           onSettings: () => this.openSettings(),
           onToggleTheme: () => this.handleToggleTheme(),
           onToggleReplay: () => this.toggleReplay(),
+          onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
         },
       );
     }
@@ -224,6 +227,31 @@ export class ChartWidget {
       onClose: () => {},
     });
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+
+    // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
+    if (options.alerts !== false) {
+      this.alertsPanel = new WidgetAlertsPanel(this.root, {
+        onAdd: (price, condition, message) => {
+          this.chart.addAlert(price, condition, message);
+        },
+        onRemove: (id) => this.chart.removeAlert(id),
+        onClear: () => this.chart.clearAlerts(),
+        getCurrentPrice: () => {
+          const data = this.chart.getData();
+          return data.length > 0 ? data[data.length - 1].close : null;
+        },
+        formatPrice: (p) => this.formatAlertPrice(p),
+      });
+
+      // Keep the panel list and toasts in sync with the chart's AlertManager.
+      this.chart.on('alertAdd', () => this.refreshAlerts());
+      this.chart.on('alertRemove', () => this.refreshAlerts());
+      this.chart.on('alertTriggered', (e) => {
+        const p = e.payload;
+        this.toast(`🔔 Alert: price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`, 'info');
+        this.refreshAlerts();
+      });
+    }
 
     // 8b. Command palette
     this.commandPalette = new WidgetCommandPalette({
@@ -368,6 +396,7 @@ export class ChartWidget {
     if (this.replayPollInterval) clearInterval(this.replayPollInterval);
     this.replayBar?.destroy();
     this.dragDrop?.detach();
+    this.alertsPanel?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -432,6 +461,34 @@ export class ChartWidget {
     } else {
       this.chart.setData(this.baseSeries);
     }
+  }
+
+  private toggleAlerts(): void {
+    if (!this.alertsPanel) return;
+    this.alertsPanel.toggle();
+    if (this.alertsPanel.isOpen()) this.refreshAlerts();
+  }
+
+  private refreshAlerts(): void {
+    if (!this.alertsPanel) return;
+    this.alertsPanel.setAlerts(
+      this.chart.getAlerts().map((a) => ({
+        id: a.id,
+        price: a.price,
+        condition: a.condition,
+        message: a.message,
+        triggered: a.triggered,
+      })),
+    );
+  }
+
+  private formatAlertPrice(price: number): string {
+    // No fixed precision config on the widget — pick digits from magnitude so
+    // BTC (64,200.5) and a sub-dollar alt (0.04821) both read sensibly.
+    const abs = Math.abs(price);
+    const digits = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
+    const locale = this.settingsState.numberLocale || undefined;
+    return price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits });
   }
 
   private handleChartType(type: ChartType): void {

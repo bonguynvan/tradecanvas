@@ -24,7 +24,10 @@ export type ChartEventType =
   | 'signalMarkerAdd'
   | 'signalMarkerRemove'
   | 'tradeZoneAdd'
-  | 'tradeZoneRemove';
+  | 'tradeZoneRemove'
+  | 'alertAdd'
+  | 'alertRemove'
+  | 'alertTriggered';
 
 export interface ChartEvent<T = unknown> {
   type: ChartEventType;
@@ -128,6 +131,14 @@ export interface TradeZoneRemovePayload {
   id: string;
 }
 
+export interface AlertPayload {
+  id: string;
+  price: number;
+  condition: string;
+  message?: string;
+  triggered: boolean;
+}
+
 export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
   click: { x: number; y: number };
@@ -151,6 +162,13 @@ export interface ChartEventMap {
   signalMarkerRemove: SignalMarkerRemovePayload;
   tradeZoneAdd: TradeZoneAddPayload;
   tradeZoneRemove: TradeZoneRemovePayload;
+  alertAdd: AlertPayload;
+  alertRemove: AlertRemovePayload;
+  alertTriggered: AlertPayload;
+}
+
+export interface AlertRemovePayload {
+  id: string;
 }
 
 export interface TauriBridgeOptions {

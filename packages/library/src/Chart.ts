@@ -398,7 +398,16 @@ export class Chart {
     this.alertManager = new AlertManager();
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.alertManager.on('triggered', (alert) => {
+      const payload = { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered };
+      this.eventBus.emit('alertTriggered', payload);
+      // Back-compat: legacy listeners keyed off dataUpdate.
       this.eventBus.emit('dataUpdate', { alert: 'triggered', alertId: alert.id, price: alert.price, message: alert.message });
+    });
+    this.alertManager.on('added', (alert) => {
+      this.eventBus.emit('alertAdd', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
+    });
+    this.alertManager.on('removed', (id) => {
+      this.eventBus.emit('alertRemove', { id });
     });
 
     // Signal markers

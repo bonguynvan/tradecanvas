@@ -20,6 +20,12 @@ export interface ChartWidgetOptions {
   settings?: boolean;
   trading?: boolean;
   statusBar?: boolean;
+  /**
+   * Price-alerts UI — a bell button in the toolbar that opens a floating panel
+   * to add / list / delete price alerts, plus a toast when one triggers.
+   * Default `true`.
+   */
+  alerts?: boolean;
 
   // Config
   symbols?: string[];
@@ -102,6 +108,7 @@ export interface ToolbarCallbacks {
   onSettings: () => void;
   onToggleTheme: () => void;
   onToggleReplay?: () => void;
+  onToggleAlerts?: () => void;
 }
 
 export interface SidebarConfig {

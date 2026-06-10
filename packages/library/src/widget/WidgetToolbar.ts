@@ -93,6 +93,12 @@ export class WidgetToolbar {
       el.appendChild(replayBtn);
     }
 
+    if (callbacks.onToggleAlerts) {
+      const alertsBtn = this.iconBtn('bell', 'Price alerts', callbacks.onToggleAlerts);
+      alertsBtn.dataset.role = 'alerts';
+      el.appendChild(alertsBtn);
+    }
+
     const screenshotBtn = this.iconBtn('camera', 'Screenshot', callbacks.onScreenshot);
     el.appendChild(screenshotBtn);
 

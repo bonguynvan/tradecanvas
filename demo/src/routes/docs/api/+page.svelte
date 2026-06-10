@@ -226,6 +226,27 @@ widget.setWatchlistEntry('ETHUSDT', {
   sparkline: [3180, 3195, 3210, ...],
 })`}</code></pre>
 
+<h3>Price alerts</h3>
+<p>
+  The toolbar bell opens a floating panel to add, list, and delete price
+  alerts; a toast fires when one triggers. Enabled by default — disable with
+  <code>alerts: false</code>. Drive it programmatically via the
+  <code>Chart</code> API and the typed alert events:
+</p>
+<pre><code>{`// Add from code (condition: 'crossing' | 'crossingUp' | 'crossingDown'
+//                          | 'greaterThan' | 'lessThan')
+const id = chart.addAlert(64200, 'crossingUp', 'breakout')
+chart.removeAlert(id)
+chart.getAlerts()      // PriceAlert[]
+chart.saveAlerts('tcw:alerts:BTCUSDT')   // localStorage persistence
+chart.loadAlerts('tcw:alerts:BTCUSDT')
+
+// React to triggers
+chart.on('alertTriggered', (e) => {
+  console.log('hit', e.payload.price, e.payload.message)
+})
+// also: 'alertAdd' / 'alertRemove'`}</code></pre>
+
 <h2>ChartGrid</h2>
 <p>Synchronized multi-chart layouts.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
