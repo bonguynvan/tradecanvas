@@ -131,6 +131,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'uo', name: 'Ultimate Oscillator', type: 'panel' },
   { id: 'fi', name: 'Force Index', type: 'panel' },
   { id: 'crsi', name: 'Connors RSI', type: 'panel' },
+  { id: 'coppock', name: 'Coppock Curve', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

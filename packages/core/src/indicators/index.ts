@@ -27,6 +27,7 @@ export { ChoppinessIndexIndicator } from './panel/ChoppinessIndex.js';
 export { UltimateOscillatorIndicator } from './panel/UltimateOscillator.js';
 export { ForceIndexIndicator } from './panel/ForceIndex.js';
 export { ConnorsRSIIndicator } from './panel/ConnorsRSI.js';
+export { CoppockIndicator } from './panel/Coppock.js';
 export { getNumberParam, getIntParam } from './params.js';
 export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';
