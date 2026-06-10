@@ -18,6 +18,7 @@ export { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChan
 export { HullMAIndicator } from './overlay/HullMA.js';
 export { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 export { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
+export { ChandelierExitIndicator } from './overlay/ChandelierExit.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 export { VolumeDeltaIndicator } from './panel/VolumeDelta.js';

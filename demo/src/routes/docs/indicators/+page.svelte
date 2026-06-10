@@ -33,6 +33,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>pivotPoints</code></td><td>Pivot Points (Classic)</td></tr>
     <tr><td><code>zigzag</code></td><td>ZigZag</td></tr>
     <tr><td><code>linearRegressionChannel</code></td><td>Linear Regression Channel</td></tr>
+    <tr><td><code>chandelier</code></td><td>Chandelier Exit (ATR trailing-stop levels, long &amp; short)</td></tr>
   </tbody>
 </table>
 

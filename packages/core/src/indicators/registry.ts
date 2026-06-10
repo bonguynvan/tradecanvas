@@ -16,6 +16,7 @@ import { LinearRegressionChannelIndicator } from './overlay/LinearRegressionChan
 import { HullMAIndicator } from './overlay/HullMA.js';
 import { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 import { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
+import { ChandelierExitIndicator } from './overlay/ChandelierExit.js';
 import { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 import { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 // Panels
@@ -61,6 +62,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new HullMAIndicator());
   engine.register(new MTFMovingAverageIndicator());
   engine.register(new SessionVWAPIndicator());
+  engine.register(new ChandelierExitIndicator());
   // Panels
   engine.register(new RSIIndicator());
   engine.register(new MACDIndicator());
