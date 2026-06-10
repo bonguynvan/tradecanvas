@@ -188,6 +188,8 @@ export interface ChartSettingsState {
   marketProfileSplit: boolean;
   marketProfileLetters: boolean;
   depthHeatmapVisible: boolean;
+  periodLevelsVisible: boolean;
+  periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;

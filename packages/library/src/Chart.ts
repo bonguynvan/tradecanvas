@@ -59,6 +59,7 @@ import {
   VolumeProfileRenderer,
   MarketProfileRenderer,
   DepthHeatmapRenderer,
+  PeriodLevelsRenderer,
   AlertManager,
   SignalMarkerManager,
   TradeZoneManager,
@@ -118,6 +119,7 @@ export class Chart {
   private volumeProfile: VolumeProfileRenderer;
   private marketProfile: MarketProfileRenderer;
   private depthHeatmap: DepthHeatmapRenderer;
+  private periodLevels: PeriodLevelsRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
@@ -322,6 +324,7 @@ export class Chart {
     this.volumeProfile = new VolumeProfileRenderer();
     this.marketProfile = new MarketProfileRenderer();
     this.depthHeatmap = new DepthHeatmapRenderer();
+    this.periodLevels = new PeriodLevelsRenderer();
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
@@ -1423,6 +1426,22 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  // --- Prior-period levels (PDH / PDL / PDC) ---
+
+  setPeriodLevelsVisible(visible: boolean): void {
+    this.periodLevels.setVisible(visible);
+    this.engine.requestRender(LayerType.Main);
+  }
+
+  isPeriodLevelsVisible(): boolean {
+    return this.periodLevels.isVisible();
+  }
+
+  setPeriodLevelsPeriod(period: import('@tradecanvas/core').LevelPeriod): void {
+    this.periodLevels.setPeriod(period);
+    this.engine.requestRender(LayerType.Main);
+  }
+
   // --- Tooltip ---
 
   setTooltipVisible(visible: boolean): void {
@@ -1951,6 +1970,7 @@ export class Chart {
       volumeProfile: this.volumeProfile,
       marketProfile: this.marketProfile,
       depthHeatmap: this.depthHeatmap,
+      periodLevels: this.periodLevels,
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,

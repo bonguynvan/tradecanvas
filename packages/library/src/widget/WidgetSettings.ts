@@ -167,6 +167,11 @@ export class WidgetSettings {
     section.appendChild(this.toggleRow('MP split by session', s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
     section.appendChild(this.toggleRow('MP letters (TPO)', s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
     section.appendChild(this.toggleRow('Liquidity heatmap', s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
+    section.appendChild(this.toggleRow('Prior-period levels', s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
+    section.appendChild(this.selectRow('Period levels basis', s.periodLevelsPeriod, [
+      { value: 'day', label: 'Prior Day (PDH/PDL)' },
+      { value: 'week', label: 'Prior Week (PWH/PWL)' },
+    ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })));
     section.appendChild(this.toggleRow('OHLC Legend', s.legendVisible, (v) => this.patch({ legendVisible: v })));
     section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
 

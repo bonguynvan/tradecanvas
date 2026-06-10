@@ -148,6 +148,8 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   marketProfileSplit: false,
   marketProfileLetters: false,
   depthHeatmapVisible: false,
+  periodLevelsVisible: false,
+  periodLevelsPeriod: 'day',
   legendVisible: true,
   barCountdown: true,
   logScale: false,

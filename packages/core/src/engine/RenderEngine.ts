@@ -46,6 +46,7 @@ export interface RenderContext {
   volumeProfile: import('../charts/VolumeProfileRenderer.js').VolumeProfileRenderer | null;
   marketProfile: import('../charts/MarketProfileRenderer.js').MarketProfileRenderer | null;
   depthHeatmap: import('../charts/DepthHeatmapRenderer.js').DepthHeatmapRenderer | null;
+  periodLevels: import('../charts/PeriodLevelsRenderer.js').PeriodLevelsRenderer | null;
   watermark: Watermark | null;
   barCountdown: BarCountdown | null;
   sessionBreaks: SessionBreaks | null;
@@ -172,6 +173,7 @@ export class RenderEngine {
       ctx.chartRenderer?.render(c, data, viewport, theme);
       ctx.compareRenderer?.render(c, data, viewport, theme);
       ctx.indicatorEngine?.renderOverlays(c, viewport);
+      ctx.periodLevels?.render(c, data, viewport, theme);
 
       c.restore();
 

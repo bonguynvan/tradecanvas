@@ -95,6 +95,19 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
+<h3>Prior-period levels (PDH / PDL / PDC)</h3>
+<p>
+  Draw the prior day's (or week's) high, low, and close plus the current
+  period's open as labelled horizontal lines — the support/resistance levels
+  intraday traders watch. Toggle from the settings sheet, or directly:
+</p>
+<pre><code>{`chart.setPeriodLevelsVisible(true)
+chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
+
+// pure computation is exported
+import { computePeriodLevels } from '@tradecanvas/core'
+const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+
 <h3>Market Profile (TPO)</h3>
 <p>
   A time-at-price histogram: each bar contributes one TPO to every price bucket
