@@ -26,6 +26,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>donchianChannels</code></td><td>Donchian Channels</td></tr>
     <tr><td><code>vwap</code></td><td>VWAP</td></tr>
     <tr><td><code>anchoredVwap</code></td><td>Anchored VWAP</td></tr>
+    <tr><td><code>svwap</code></td><td>Session VWAP (resets each day; line breaks at the boundary)</td></tr>
     <tr><td><code>parabolicSar</code></td><td>Parabolic SAR</td></tr>
     <tr><td><code>supertrend</code></td><td>Supertrend</td></tr>
     <tr><td><code>ichimoku</code></td><td>Ichimoku Kinko Hyo</td></tr>

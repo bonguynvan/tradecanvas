@@ -97,6 +97,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'bb', name: 'Bollinger Bands', type: 'overlay' },
   { id: 'vwap', name: 'VWAP', type: 'overlay' },
   { id: 'avwap', name: 'Anchored VWAP', type: 'overlay' },
+  { id: 'svwap', name: 'Session VWAP', type: 'overlay' },
   { id: 'ichimoku', name: 'Ichimoku Cloud', type: 'overlay' },
   { id: 'psar', name: 'Parabolic SAR', type: 'overlay' },
   { id: 'supertrend', name: 'Supertrend', type: 'overlay' },
