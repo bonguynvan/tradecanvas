@@ -11,6 +11,11 @@ export interface PriceAlert {
   message?: string;
   triggered: boolean;
   repeating: boolean;
+  /** Data channel evaluated against `price`. `'price'` (default) or an
+   *  indicator line id like `<instanceId>:<key>`. */
+  channel: string;
+  /** Human label for the source (e.g. "RSI"). Defaults to the price. */
+  label?: string;
 }
 
 interface AlertEvents {
@@ -29,7 +34,7 @@ let alertId = 1;
  */
 export class AlertManager extends Emitter<AlertEvents> {
   private alerts: PriceAlert[] = [];
-  private lastPrice: number | null = null;
+  private lastValues = new Map<string, number>();
   private requestRender: (() => void) | null = null;
   private pricePrecision = 2;
 
@@ -41,9 +46,16 @@ export class AlertManager extends Emitter<AlertEvents> {
     this.pricePrecision = precision;
   }
 
-  addAlert(price: number, condition: AlertCondition = 'crossing', message?: string, repeating = false): string {
+  addAlert(
+    price: number,
+    condition: AlertCondition = 'crossing',
+    message?: string,
+    repeating = false,
+    channel = 'price',
+    label?: string,
+  ): string {
     const id = `tc_alert_${alertId++}`;
-    const alert: PriceAlert = { id, price, condition, message, triggered: false, repeating };
+    const alert: PriceAlert = { id, price, condition, message, triggered: false, repeating, channel, label };
     this.alerts.push(alert);
     this.emit('added', alert);
     this.requestRender?.();
@@ -67,6 +79,7 @@ export class AlertManager extends Emitter<AlertEvents> {
     let best: PriceAlert | null = null;
     let bestDist = tolerance;
     for (const alert of this.alerts) {
+      if (alert.channel !== 'price') continue; // only price alerts have a chart line
       const dist = Math.abs(priceToY(alert.price, viewport) - point.y);
       if (dist <= bestDist) {
         bestDist = dist;
@@ -91,33 +104,45 @@ export class AlertManager extends Emitter<AlertEvents> {
     this.requestRender?.();
   }
 
-  /** Call on each price update to check alerts */
+  /** Call on each price update to check price-channel alerts. */
   checkPrice(price: number): void {
-    if (this.lastPrice === null) {
-      this.lastPrice = price;
+    this.checkChannel('price', price);
+  }
+
+  /**
+   * Evaluate every alert bound to `channel` against `value` (e.g. the latest
+   * indicator-line value). The previous value per channel is tracked so
+   * crossing conditions work.
+   */
+  checkChannel(channel: string, value: number): void {
+    if (!Number.isFinite(value)) return;
+    const prev = this.lastValues.get(channel);
+    if (prev === undefined) {
+      this.lastValues.set(channel, value);
       return;
     }
 
     for (const alert of this.alerts) {
+      if (alert.channel !== channel) continue;
       if (alert.triggered && !alert.repeating) continue;
 
       let triggered = false;
       switch (alert.condition) {
         case 'crossingUp':
-          triggered = this.lastPrice < alert.price && price >= alert.price;
+          triggered = prev < alert.price && value >= alert.price;
           break;
         case 'crossingDown':
-          triggered = this.lastPrice > alert.price && price <= alert.price;
+          triggered = prev > alert.price && value <= alert.price;
           break;
         case 'crossing':
-          triggered = (this.lastPrice < alert.price && price >= alert.price) ||
-                      (this.lastPrice > alert.price && price <= alert.price);
+          triggered = (prev < alert.price && value >= alert.price) ||
+                      (prev > alert.price && value <= alert.price);
           break;
         case 'greaterThan':
-          triggered = price > alert.price;
+          triggered = value > alert.price;
           break;
         case 'lessThan':
-          triggered = price < alert.price;
+          triggered = value < alert.price;
           break;
       }
 
@@ -127,7 +152,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       }
     }
 
-    this.lastPrice = price;
+    this.lastValues.set(channel, value);
   }
 
   saveToStorage(key: string): void {
@@ -135,6 +160,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       const data = this.alerts.map(a => ({
         id: a.id, price: a.price, condition: a.condition,
         message: a.message, triggered: a.triggered,
+        channel: a.channel, label: a.label,
       }));
       localStorage.setItem(key, JSON.stringify(data));
     } catch { /* storage unavailable or full */ }
@@ -148,7 +174,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       if (!Array.isArray(data)) return;
       for (const a of data) {
         if (a.price && a.condition && !a.triggered) {
-          this.addAlert(a.price, a.condition, a.message);
+          this.addAlert(a.price, a.condition, a.message, false, a.channel ?? 'price', a.label);
         }
       }
     } catch { /* storage unavailable or corrupt data */ }
@@ -158,6 +184,7 @@ export class AlertManager extends Emitter<AlertEvents> {
     const { chartRect } = viewport;
 
     for (const alert of this.alerts) {
+      if (alert.channel !== 'price') continue; // indicator alerts have no price line
       const y = priceToY(alert.price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 

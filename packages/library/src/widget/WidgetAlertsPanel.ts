@@ -7,14 +7,22 @@ export interface AlertListItem {
   condition: string;
   message?: string;
   triggered: boolean;
+  channel?: string;
+  label?: string;
+}
+
+export interface AlertSource {
+  /** `'price'` or `<instanceId>:<key>`. */
+  channel: string;
+  label: string;
 }
 
 export interface AlertsPanelCallbacks {
-  onAdd: (price: number, condition: AlertCondition, message: string | undefined) => void;
+  onAdd: (price: number, condition: AlertCondition, message: string | undefined, channel: string, label: string) => void;
   onRemove: (id: string) => void;
   onClear: () => void;
-  /** Last traded / close price, used to prefill the add form. */
-  getCurrentPrice: () => number | null;
+  /** Latest value for a source channel, used to prefill the add form. */
+  getChannelValue: (channel: string) => number | null;
   formatPrice: (price: number) => string;
 }
 
@@ -28,6 +36,15 @@ const CONDITION_OPTIONS: { value: AlertCondition; label: string }[] = [
 
 const CONDITION_LABEL = new Map(CONDITION_OPTIONS.map((o) => [o.value, o.label]));
 
+function roundForInput(v: number): number {
+  return Math.round(v * 1e6) / 1e6;
+}
+
+function formatPlain(v: number): string {
+  const abs = Math.abs(v);
+  return abs >= 1000 ? v.toFixed(2) : abs >= 1 ? v.toFixed(2) : v.toPrecision(4);
+}
+
 /**
  * Floating price-alerts panel. Lists current alerts (with condition, price,
  * message, and a delete control) and an inline form to add a new one prefilled
@@ -39,11 +56,13 @@ export class WidgetAlertsPanel {
   private listEl: HTMLDivElement;
   private priceInput: HTMLInputElement;
   private conditionSelect: HTMLSelectElement;
+  private sourceSelect: HTMLSelectElement;
   private messageInput: HTMLInputElement;
   private emptyEl: HTMLDivElement;
   private callbacks: AlertsPanelCallbacks;
   private open = false;
   private alerts: AlertListItem[] = [];
+  private sources: AlertSource[] = [{ channel: 'price', label: 'Price' }];
 
   constructor(host: HTMLElement, callbacks: AlertsPanelCallbacks) {
     this.callbacks = callbacks;
@@ -71,10 +90,14 @@ export class WidgetAlertsPanel {
     const form = document.createElement('form');
     form.className = 'tcw-alerts-form';
 
+    this.sourceSelect = document.createElement('select');
+    this.sourceSelect.className = 'tcw-alerts-source';
+    this.sourceSelect.addEventListener('change', () => this.prefillPrice());
+
     this.priceInput = document.createElement('input');
     this.priceInput.type = 'number';
     this.priceInput.step = 'any';
-    this.priceInput.placeholder = 'Price';
+    this.priceInput.placeholder = 'Value';
     this.priceInput.className = 'tcw-alerts-price';
     this.priceInput.required = true;
 
@@ -97,6 +120,7 @@ export class WidgetAlertsPanel {
     addBtn.className = 'tcw-alerts-add';
     addBtn.innerHTML = `${createIcon('plus', 14)}<span>Add alert</span>`;
 
+    form.appendChild(this.sourceSelect);
     form.appendChild(this.priceInput);
     form.appendChild(this.conditionSelect);
     form.appendChild(this.messageInput);
@@ -117,7 +141,27 @@ export class WidgetAlertsPanel {
     this.emptyEl.textContent = 'No alerts yet. Add one above, or right-click the chart.';
     this.listEl.appendChild(this.emptyEl);
 
+    this.renderSources();
     host.appendChild(this.el);
+  }
+
+  /** Replace the alert-source options (price + indicator lines). */
+  setSources(sources: AlertSource[]): void {
+    this.sources = sources.length > 0 ? sources : [{ channel: 'price', label: 'Price' }];
+    this.renderSources();
+  }
+
+  private renderSources(): void {
+    const current = this.sourceSelect.value || 'price';
+    this.sourceSelect.replaceChildren();
+    for (const src of this.sources) {
+      const o = document.createElement('option');
+      o.value = src.channel;
+      o.textContent = src.label;
+      this.sourceSelect.appendChild(o);
+    }
+    // Keep the prior selection if it still exists, else default to price.
+    this.sourceSelect.value = this.sources.some((s) => s.channel === current) ? current : 'price';
   }
 
   isOpen(): boolean {
@@ -131,11 +175,13 @@ export class WidgetAlertsPanel {
   openPanel(): void {
     this.open = true;
     this.el.hidden = false;
-    // Prefill the price with the current market price each time it opens.
-    const price = this.callbacks.getCurrentPrice();
-    if (price !== null && this.priceInput.value === '') {
-      this.priceInput.value = String(price);
-    }
+    if (this.priceInput.value === '') this.prefillPrice();
+  }
+
+  /** Fill the value input with the selected source's current value. */
+  private prefillPrice(): void {
+    const v = this.callbacks.getChannelValue(this.sourceSelect.value || 'price');
+    this.priceInput.value = v !== null ? String(roundForInput(v)) : '';
   }
 
   close(): void {
@@ -158,11 +204,11 @@ export class WidgetAlertsPanel {
     if (!Number.isFinite(price)) return;
     const condition = this.conditionSelect.value as AlertCondition;
     const message = this.messageInput.value.trim() || undefined;
-    this.callbacks.onAdd(price, condition, message);
+    const channel = this.sourceSelect.value || 'price';
+    const label = this.sources.find((s) => s.channel === channel)?.label ?? 'Price';
+    this.callbacks.onAdd(price, condition, message, channel, label);
     this.messageInput.value = '';
-    // Leave the price prefilled with the next current price for fast entry.
-    const next = this.callbacks.getCurrentPrice();
-    this.priceInput.value = next !== null ? String(next) : '';
+    this.prefillPrice();
   }
 
   private renderList(): void {
@@ -184,7 +230,10 @@ export class WidgetAlertsPanel {
       const main = document.createElement('div');
       main.className = 'tcw-alerts-row-main';
       const label = CONDITION_LABEL.get(alert.condition as AlertCondition) ?? alert.condition;
-      main.textContent = `${label} ${this.callbacks.formatPrice(alert.price)}`;
+      const isIndicator = alert.channel && alert.channel !== 'price';
+      const valueStr = isIndicator ? formatPlain(alert.price) : this.callbacks.formatPrice(alert.price);
+      const prefix = isIndicator && alert.label ? `${alert.label} ` : '';
+      main.textContent = `${prefix}${label} ${valueStr}`;
       info.appendChild(main);
       if (alert.message) {
         const note = document.createElement('div');

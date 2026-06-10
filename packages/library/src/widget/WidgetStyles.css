@@ -1631,7 +1631,8 @@
   border-color: var(--tcw-accent);
   box-shadow: 0 0 0 2px var(--tcw-accent-soft);
 }
-.tcw-alerts-message {
+.tcw-alerts-message,
+.tcw-alerts-source {
   grid-column: 1 / -1;
 }
 

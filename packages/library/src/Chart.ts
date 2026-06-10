@@ -976,7 +976,36 @@ export class Chart {
     // Also update standalone price line (visible even without trading feature)
     this.currentPriceLine.setPrice(price);
     this.scheduleRender();
-    if (this.features.alerts) this.alertManager.checkPrice(price);
+    if (this.features.alerts) {
+      this.alertManager.checkPrice(price);
+      this.feedIndicatorAlerts();
+    }
+  }
+
+  /**
+   * Feed the latest indicator-line values to any indicator-channel alerts.
+   * Channel format: `<instanceId>:<key>`. Cheap — only walks alerts whose
+   * channel isn't `'price'`, which is usually none.
+   */
+  private feedIndicatorAlerts(): void {
+    const alerts = this.alertManager.getAlerts();
+    const data = this.dataManager.getData();
+    if (data.length === 0) return;
+    const lastIdx = data.length - 1;
+    const seen = new Set<string>();
+    for (const alert of alerts) {
+      if (alert.channel === 'price' || seen.has(alert.channel)) continue;
+      seen.add(alert.channel);
+      const sep = alert.channel.indexOf(':');
+      if (sep < 0) continue;
+      const instanceId = alert.channel.slice(0, sep);
+      const key = alert.channel.slice(sep + 1);
+      const point = this.indicatorEngine.getOutput(instanceId)?.series?.[lastIdx];
+      const value = point?.[key];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        this.alertManager.checkChannel(alert.channel, value);
+      }
+    }
   }
 
   setTradingConfig(config: Partial<TradingConfig>): void {
@@ -1440,9 +1469,15 @@ export class Chart {
 
   // --- Alerts ---
 
-  addAlert(price: number, condition: import('@tradecanvas/core').AlertCondition = 'crossing', message?: string): string | null {
+  addAlert(
+    price: number,
+    condition: import('@tradecanvas/core').AlertCondition = 'crossing',
+    message?: string,
+    channel = 'price',
+    label?: string,
+  ): string | null {
     if (!this.features.alerts) return null;
-    const id = this.alertManager.addAlert(price, condition, message);
+    const id = this.alertManager.addAlert(price, condition, message, false, channel, label);
     this.scheduleAutoSave();
     return id;
   }

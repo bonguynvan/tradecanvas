@@ -44,6 +44,46 @@ describe('AlertManager.getAlertAtPoint', () => {
   });
 });
 
+describe('AlertManager indicator channels', () => {
+  it('only fires an alert on its own channel', () => {
+    const am = new AlertManager();
+    const id = am.addAlert(70, 'crossingUp', 'RSI hot', false, 'rsi-1:rsi', 'RSI');
+    const fired: string[] = [];
+    am.on('triggered', (a) => fired.push(a.id));
+
+    // Price updates must not touch the indicator alert.
+    am.checkPrice(50);
+    am.checkPrice(80);
+    expect(fired).toEqual([]);
+
+    // Channel updates: cross 70 upward.
+    am.checkChannel('rsi-1:rsi', 60);
+    am.checkChannel('rsi-1:rsi', 72);
+    expect(fired).toEqual([id]);
+  });
+
+  it('keeps a separate previous value per channel', () => {
+    const am = new AlertManager();
+    am.addAlert(0, 'crossingDown', undefined, false, 'macd-1:hist', 'MACD');
+    const fired: string[] = [];
+    am.on('triggered', (a) => fired.push(a.id));
+    am.checkChannel('macd-1:hist', 0.5);
+    am.checkChannel('macd-1:hist', -0.2); // crosses zero downward
+    expect(fired).toHaveLength(1);
+  });
+
+  it('does not render or hit-test indicator-channel alerts as price lines', () => {
+    const am = new AlertManager();
+    am.addAlert(70, 'crossingUp', undefined, false, 'rsi-1:rsi', 'RSI');
+    const vp = {
+      visibleRange: { from: 0, to: 10 }, priceRange: { min: 0, max: 100 },
+      barWidth: 6, barSpacing: 2, offset: 0, chartRect: { x: 0, y: 0, width: 200, height: 100 },
+    };
+    // price 70 → y 30, but it's an indicator alert → no hit.
+    expect(am.getAlertAtPoint({ x: 10, y: 30 }, vp, 6)).toBeNull();
+  });
+});
+
 describe('AlertManager.updateAlertPrice', () => {
   it('moves the alert and re-arms a triggered one', () => {
     const am = new AlertManager();

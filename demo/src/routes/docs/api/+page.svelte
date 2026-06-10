@@ -365,7 +365,12 @@ chart.loadAlerts('tcw:alerts:BTCUSDT')
 chart.on('alertTriggered', (e) => {
   console.log('hit', e.payload.price, e.payload.message)
 })
-// also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)`}</code></pre>
+// also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)
+
+// Indicator alerts: bind to an indicator line via channel '<instanceId>:<key>'.
+// In the widget, the alerts panel's source dropdown lists every active line.
+const ema = chart.addIndicator('rsi')
+chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</code></pre>
 <p>
   Opt into a sound and/or desktop notification when an alert fires (both off by
   default). <code>sound: true</code> plays a built-in beep; pass a URL for a

@@ -316,15 +316,12 @@ export class ChartWidget {
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
     if (options.alerts !== false) {
       this.alertsPanel = new WidgetAlertsPanel(this.root, {
-        onAdd: (price, condition, message) => {
-          this.chart.addAlert(price, condition, message);
+        onAdd: (price, condition, message, channel, label) => {
+          this.chart.addAlert(price, condition, message, channel, label);
         },
         onRemove: (id) => this.chart.removeAlert(id),
         onClear: () => this.chart.clearAlerts(),
-        getCurrentPrice: () => {
-          const data = this.chart.getData();
-          return data.length > 0 ? data[data.length - 1].close : null;
-        },
+        getChannelValue: (channel) => this.getAlertChannelValue(channel),
         formatPrice: (p) => this.formatAlertPrice(p),
       });
 
@@ -802,6 +799,7 @@ export class ChartWidget {
 
   private refreshAlerts(): void {
     if (!this.alertsPanel) return;
+    this.alertsPanel.setSources(this.buildAlertSources());
     this.alertsPanel.setAlerts(
       this.chart.getAlerts().map((a) => ({
         id: a.id,
@@ -809,8 +807,36 @@ export class ChartWidget {
         condition: a.condition,
         message: a.message,
         triggered: a.triggered,
+        channel: a.channel,
+        label: a.label,
       })),
     );
+  }
+
+  /** Price + every active indicator line, as selectable alert sources. */
+  private buildAlertSources(): { channel: string; label: string }[] {
+    const sources = [{ channel: 'price', label: 'Price' }];
+    for (const ind of this.chart.getActiveIndicators()) {
+      const point = this.chart.getIndicatorOutput(ind.instanceId)?.series?.find((p) => p != null);
+      const keys = point ? Object.keys(point).filter((k) => typeof point[k] === 'number') : [];
+      for (const key of keys) {
+        const label = keys.length > 1 ? `${ind.descriptor.name} ${key}` : ind.descriptor.name;
+        sources.push({ channel: `${ind.instanceId}:${key}`, label });
+      }
+    }
+    return sources;
+  }
+
+  /** Latest value for an alert source channel (price or indicator line). */
+  private getAlertChannelValue(channel: string): number | null {
+    const data = this.chart.getData();
+    if (channel === 'price') return data.length > 0 ? data[data.length - 1].close : null;
+    const sep = channel.indexOf(':');
+    if (sep < 0 || data.length === 0) return null;
+    const instanceId = channel.slice(0, sep);
+    const key = channel.slice(sep + 1);
+    const v = this.chart.getIndicatorOutput(instanceId)?.series?.[data.length - 1]?.[key];
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
   }
 
   private formatAlertPrice(price: number): string {
