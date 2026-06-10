@@ -2133,6 +2133,26 @@
 }
 .tcw-style-tdel:hover { background: var(--tcw-red-soft); color: var(--tcw-red); }
 
+/* === Settings range slider === */
+
+.tcw-settings-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tcw-settings-range input[type='range'] {
+  width: 110px;
+  accent-color: var(--tcw-accent);
+  cursor: pointer;
+}
+.tcw-settings-range-val {
+  min-width: 38px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tcw-text-dim);
+}
+
 /* === Indicator settings dialog === */
 
 .tcw-modal-narrow {

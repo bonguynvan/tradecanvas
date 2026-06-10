@@ -166,7 +166,10 @@ export class WidgetSettings {
     section.appendChild(this.toggleRow('Market Profile (TPO)', s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })));
     section.appendChild(this.toggleRow('MP split by session', s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
     section.appendChild(this.toggleRow('MP letters (TPO)', s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
+    section.appendChild(this.rangeRow('MP buckets', s.marketProfileBuckets, 8, 200, 1, (v) => this.patch({ marketProfileBuckets: v })));
+    section.appendChild(this.rangeRow('MP opacity', s.marketProfileOpacity, 0.05, 1, 0.05, (v) => this.patch({ marketProfileOpacity: v }), (v) => `${Math.round(v * 100)}%`));
     section.appendChild(this.toggleRow('Liquidity heatmap', s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
+    section.appendChild(this.rangeRow('Heatmap opacity', s.depthHeatmapOpacity, 0.1, 1, 0.05, (v) => this.patch({ depthHeatmapOpacity: v }), (v) => `${Math.round(v * 100)}%`));
     section.appendChild(this.toggleRow('Prior-period levels', s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
     section.appendChild(this.selectRow('Period levels basis', s.periodLevelsPeriod, [
       { value: 'day', label: 'Prior Day (PDH/PDL)' },
@@ -305,6 +308,49 @@ export class WidgetSettings {
     }
     select.addEventListener('change', () => onChange(select.value));
     row.appendChild(select);
+    return row;
+  }
+
+  private rangeRow(
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    onChange: (v: number) => void,
+    format: (v: number) => string = (v) => String(v),
+  ): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'tcw-settings-row';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'tcw-settings-label';
+    lbl.textContent = label;
+    row.appendChild(lbl);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'tcw-settings-range';
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.value = String(value);
+
+    const out = document.createElement('span');
+    out.className = 'tcw-settings-range-val';
+    out.textContent = format(value);
+
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      out.textContent = format(v);
+      onChange(v);
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(out);
+    row.appendChild(wrap);
     return row;
   }
 

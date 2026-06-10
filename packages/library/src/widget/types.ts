@@ -187,7 +187,10 @@ export interface ChartSettingsState {
   marketProfileVisible: boolean;
   marketProfileSplit: boolean;
   marketProfileLetters: boolean;
+  marketProfileBuckets: number;
+  marketProfileOpacity: number;
   depthHeatmapVisible: boolean;
+  depthHeatmapOpacity: number;
   periodLevelsVisible: boolean;
   periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;
