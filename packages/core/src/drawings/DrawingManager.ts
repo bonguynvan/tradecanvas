@@ -273,6 +273,27 @@ export class DrawingManager {
     Object.assign(this.activeStyle, style);
   }
 
+  /** Current style applied to newly created drawings. */
+  getActiveStyle(): DrawingStyle {
+    return { ...this.activeStyle };
+  }
+
+  /**
+   * Restyle the selected drawing (or a specific one by id). Records an undo
+   * entry. Returns true if a drawing was restyled.
+   */
+  setSelectedDrawingStyle(style: Partial<DrawingStyle>, id?: string): boolean {
+    const targetId = id ?? this.selectedDrawingId;
+    if (!targetId) return false;
+    const drawing = this.drawings.find((d) => d.id === targetId);
+    if (!drawing || drawing.locked) return false;
+    const before = cloneDrawing(drawing);
+    drawing.style = { ...drawing.style, ...style };
+    this.undoRedo?.push({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
+    this.requestRender?.();
+    return true;
+  }
+
   // --- Pointer events (returns true if consumed) ---
 
   onPointerDown(pos: Point, viewport: ViewportState): boolean {

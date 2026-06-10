@@ -16,6 +16,8 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
+import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
+import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -39,6 +41,7 @@ export class ChartWidget {
   private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettings: WidgetIndicatorSettings | null = null;
+  private drawingStyle: WidgetDrawingStyle | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -154,6 +157,7 @@ export class ChartWidget {
             this.state = { ...this.state, activeTool: null };
             this.updateUI();
           },
+          onToggleStyle: () => this.drawingStyle?.toggle(),
         },
       );
     }
@@ -236,6 +240,21 @@ export class ChartWidget {
       onClose: () => {},
     });
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+
+    // Drawing style + templates popover (paired with the sidebar palette button)
+    if (options.drawingTools !== false) {
+      this.drawingStyle = new WidgetDrawingStyle(
+        this.root,
+        {
+          onStyleChange: (style) => {
+            this.chart.setDrawingStyle(style);
+            this.chart.setSelectedDrawingStyle(style);
+          },
+          getStyle: () => this.chart.getDrawingStyle(),
+        },
+        new DrawingTemplateStore(),
+      );
+    }
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
     if (options.alerts !== false) {
@@ -440,6 +459,7 @@ export class ChartWidget {
     this.alertsPanel?.destroy();
     this.objectTree?.destroy();
     this.indicatorSettings?.destroy();
+    this.drawingStyle?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();

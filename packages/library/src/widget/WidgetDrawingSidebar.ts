@@ -73,6 +73,16 @@ export class WidgetDrawingSidebar {
     el.appendChild(this.divider());
 
     // Bottom tools
+    if (callbacks.onToggleStyle) {
+      const styleBtn = document.createElement('button');
+      styleBtn.className = 'tcw-sidebar-btn';
+      styleBtn.title = 'Drawing style & templates';
+      styleBtn.dataset.role = 'style';
+      styleBtn.innerHTML = createIcon('palette', 14);
+      styleBtn.addEventListener('click', callbacks.onToggleStyle);
+      el.appendChild(styleBtn);
+    }
+
     this.magnetBtn = document.createElement('button');
     this.magnetBtn.className = 'tcw-sidebar-btn';
     this.magnetBtn.title = 'Magnet';

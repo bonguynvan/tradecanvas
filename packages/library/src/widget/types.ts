@@ -131,6 +131,7 @@ export interface SidebarCallbacks {
   onUndo: () => void;
   onRedo: () => void;
   onClearDrawings: () => void;
+  onToggleStyle?: () => void;
 }
 
 export interface SettingsCallbacks {

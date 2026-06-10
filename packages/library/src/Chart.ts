@@ -734,6 +734,19 @@ export class Chart {
     this.drawingManager.setStyle(style);
   }
 
+  getDrawingStyle(): DrawingStyle {
+    return this.drawingManager.getActiveStyle();
+  }
+
+  getSelectedDrawingId(): string | null {
+    return this.drawingManager.getSelectedDrawingId();
+  }
+
+  /** Restyle the selected drawing (or one by id). Returns true if applied. */
+  setSelectedDrawingStyle(style: Partial<DrawingStyle>, id?: string): boolean {
+    return this.drawingManager.setSelectedDrawingStyle(style, id);
+  }
+
   getDrawings(): DrawingState[] {
     return this.drawingManager.getDrawings();
   }

@@ -1718,6 +1718,157 @@
   }
 }
 
+/* === Drawing style + templates popover === */
+
+.tcw-style-panel {
+  position: absolute;
+  bottom: 12px;
+  left: 52px;
+  z-index: 40;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--tcw-bg-elevated);
+  border: 1px solid var(--tcw-border-strong);
+  border-radius: var(--tcw-radius-lg);
+  box-shadow: var(--tcw-shadow-lg);
+  animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
+}
+.tcw-style-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tcw-text);
+}
+.tcw-style-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--tcw-text-muted);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+.tcw-style-close:hover { background: var(--tcw-bg-surface); color: var(--tcw-text); }
+
+.tcw-style-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tcw-style-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--tcw-border-strong);
+  cursor: pointer;
+  padding: 0;
+}
+.tcw-style-swatch.tcw-on { outline: 2px solid var(--tcw-accent); outline-offset: 1px; }
+.tcw-style-picker {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+.tcw-style-width, .tcw-style-dash {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tcw-bg-surface);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+  font-size: 11px;
+}
+.tcw-style-width span { width: 16px; background: currentColor; border-radius: 2px; }
+.tcw-style-width.tcw-on, .tcw-style-dash.tcw-on {
+  border-color: var(--tcw-accent);
+  color: var(--tcw-accent);
+}
+
+.tcw-style-subhead {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tcw-text-muted);
+  margin-top: 2px;
+}
+.tcw-style-save { display: flex; gap: 6px; }
+.tcw-style-name {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--tcw-text);
+  background: var(--tcw-bg-surface);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  outline: none;
+}
+.tcw-style-name:focus { border-color: var(--tcw-accent); }
+.tcw-style-savebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--tcw-accent);
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+.tcw-style-savebtn:hover { background: var(--tcw-accent-hover); }
+
+.tcw-style-templates { display: flex; flex-direction: column; gap: 2px; max-height: 140px; overflow-y: auto; }
+.tcw-style-empty { font-size: 11px; color: var(--tcw-text-muted); padding: 4px 0; }
+.tcw-style-template { display: flex; align-items: center; gap: 4px; }
+.tcw-style-apply {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  font-size: 12px;
+  color: var(--tcw-text);
+  background: transparent;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+  text-align: left;
+}
+.tcw-style-apply:hover { background: var(--tcw-bg-surface); }
+.tcw-style-tdot { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; }
+.tcw-style-tdel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--tcw-text-muted);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+.tcw-style-tdel:hover { background: var(--tcw-red-soft); color: var(--tcw-red); }
+
 /* === Indicator settings dialog === */
 
 .tcw-modal-narrow {

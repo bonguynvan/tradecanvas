@@ -259,6 +259,17 @@ widget.setWatchlistEntry('ETHUSDT', {
   sparkline: [3180, 3195, 3210, ...],
 })`}</code></pre>
 
+<h3>Drawing style &amp; templates</h3>
+<p>
+  The palette button on the drawing sidebar opens a style popover — pick colour,
+  line width, and line style for the next drawing (and the selected one), and
+  save named <strong>templates</strong> persisted to localStorage for one-click
+  reuse. Programmatic equivalents:
+</p>
+<pre><code>{`chart.setDrawingStyle({ color: '#f23645', lineWidth: 2, lineStyle: 'dashed' })
+chart.getDrawingStyle()
+chart.setSelectedDrawingStyle({ color: '#089981' })  // restyle the selected drawing`}</code></pre>
+
 <h3>Object tree</h3>
 <p>
   The toolbar layers button opens an object-tree panel listing every active
