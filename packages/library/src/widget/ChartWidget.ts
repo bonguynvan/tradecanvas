@@ -258,6 +258,16 @@ export class ChartWidget {
     });
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
 
+    // Replay: click a revealed bar to jump the replay cursor there.
+    this.chart.on('barClick', (e) => {
+      if (!this.replayBar?.isMounted()) return;
+      const idx = (e.payload as { barIndex?: number }).barIndex;
+      if (typeof idx !== 'number') return;
+      if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+      this.chart.replaySeek(idx);
+      this.replayBar.setState('paused');
+    });
+
     // Data Window — precise OHLCV + indicator values at the hovered bar.
     this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) });
     this.chart.on('crosshairMove', (e) => {

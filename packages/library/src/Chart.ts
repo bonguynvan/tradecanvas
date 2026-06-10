@@ -546,6 +546,17 @@ export class Chart {
       this.engine.requestRender(LayerType.Overlay);
     });
 
+    this.interactionManager.setClickHandler((pos) => {
+      const data = this.getDisplayData();
+      this.eventBus.emit('click', { x: pos.x, y: pos.y });
+      if (data.length === 0) return;
+      const vp = this.viewport.getState();
+      const barUnit = vp.barWidth + vp.barSpacing;
+      const idx = Math.round((vp.offset + pos.x) / barUnit);
+      if (idx < 0 || idx >= data.length) return;
+      this.eventBus.emit('barClick', { bar: data[idx], barIndex: idx, point: pos });
+    });
+
     this.interactionManager.setEscapeHandler(() => {
       if (this.features.trading && this.tradingManager.isBracketActive()) {
         this.tradingManager.cancelBracket();

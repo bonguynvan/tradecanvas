@@ -24,6 +24,10 @@ export class InteractionManager {
   private onAltClick: ((pos: Point) => void) | null = null;
   private onEscape: (() => void) | null = null;
   private onConfirm: (() => boolean) | null = null;
+  private onClick: ((pos: Point) => void) | null = null;
+  private downPos: Point | null = null;
+  private downMoved = false;
+  private pressForClick = false;
   private drawingManager: DrawingManager | null = null;
   private tradingManager: TradingManager | null = null;
   private viewportGetter: (() => ViewportState) | null = null;
@@ -77,6 +81,11 @@ export class InteractionManager {
   /** Wire an `Enter` keydown — used to confirm bracket placement. Return true if handled. */
   setConfirmHandler(handler: () => boolean): void {
     this.onConfirm = handler;
+  }
+
+  /** Wire a plain left-click on the chart area (press + release without drag). */
+  setClickHandler(handler: (pos: Point) => void): void {
+    this.onClick = handler;
   }
 
   setMeasureHandlers(handlers: {
@@ -136,6 +145,12 @@ export class InteractionManager {
       const pos = this.getMousePos(e);
       const vp = getVP();
 
+      // Click tracking — only a press that falls through to pan (i.e. an empty
+      // chart-area press) and is released without drag counts as a click.
+      this.downPos = pos;
+      this.downMoved = false;
+      this.pressForClick = false;
+
       // Axis drag has priority — clicking the price/time strip should never
       // start drawing or open the trading menu.
       const axis = hitAxis(pos);
@@ -169,12 +184,20 @@ export class InteractionManager {
         this.onOverlayDirty?.();
         return;
       }
+      this.pressForClick = true;
       this.panHandler?.onPointerDown(pos);
     };
 
     const onMouseMove = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
       const vp = getVP();
+
+      // Cancel a pending click once the pointer drifts past ~4px.
+      if (this.downPos && !this.downMoved) {
+        const dx = pos.x - this.downPos.x;
+        const dy = pos.y - this.downPos.y;
+        if (dx * dx + dy * dy > 16) this.downMoved = true;
+      }
 
       // Axis drag in progress — owns the gesture exclusively.
       if (this.axisDragHandler?.isActive()) {
@@ -241,6 +264,14 @@ export class InteractionManager {
       if (this.tradingManager?.onPointerUp()) return;
       if (this.drawingManager?.onPointerUp()) return;
       this.panHandler?.onPointerUp();
+
+      // A press that fell through to pan and was released without drifting is a
+      // chart click.
+      if (this.pressForClick && !this.downMoved && this.downPos && this.onClick) {
+        this.onClick(this.downPos);
+      }
+      this.pressForClick = false;
+      this.downPos = null;
     };
 
     const onDblClick = (e: MouseEvent) => {

@@ -66,6 +66,16 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 `}</code></pre>
 
+<p>
+  In the widget's replay mode, <strong>click any revealed bar to jump the replay
+  cursor there</strong>. More generally, the chart now emits <code>click</code>
+  and <code>barClick</code> events for plain left-clicks (press and release
+  without dragging):
+</p>
+<pre><code>{`chart.on('barClick', (e) => {
+  const { bar, barIndex, point } = e.payload
+})`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
