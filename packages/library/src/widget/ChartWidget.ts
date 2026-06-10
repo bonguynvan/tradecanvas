@@ -360,6 +360,10 @@ export class ChartWidget {
       this.objectTree = new WidgetObjectTree(this.root, {
         onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
         onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
+        onToggleIndicatorVisible: (iid, visible) => {
+          this.chart.setIndicatorVisible(iid, visible);
+          this.refreshObjects();
+        },
         onRemoveDrawing: (id) => {
           this.chart.removeDrawing(id);
           this.refreshObjects();
@@ -744,6 +748,7 @@ export class ChartWidget {
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
       name: i.descriptor.name,
+      visible: i.visible,
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
       id: d.id,

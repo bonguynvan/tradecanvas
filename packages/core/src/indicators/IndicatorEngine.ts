@@ -108,20 +108,33 @@ export class IndicatorEngine {
     return this.instances.get(instanceId)?.config ?? null;
   }
 
+  /** Toggle an indicator's visibility. Returns the new value, or null if not found. */
+  setVisible(instanceId: string, visible: boolean): boolean | null {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return null;
+    instance.config.visible = visible;
+    return visible;
+  }
+
+  isVisible(instanceId: string): boolean {
+    return this.instances.get(instanceId)?.config.visible ?? false;
+  }
+
   /** Get descriptor for an active indicator instance */
   getIndicatorDescriptor(instanceId: string): IndicatorDescriptor | null {
     return this.instances.get(instanceId)?.plugin.descriptor ?? null;
   }
 
   /** List all active indicator instances with their current config */
-  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor }[] {
-    const result: { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor }[] = [];
+  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] {
+    const result: { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] = [];
     for (const [instanceId, instance] of this.instances) {
       result.push({
         instanceId,
         id: instance.config.id,
         params: { ...instance.config.params },
         descriptor: instance.plugin.descriptor,
+        visible: instance.config.visible ?? true,
       });
     }
     return result;

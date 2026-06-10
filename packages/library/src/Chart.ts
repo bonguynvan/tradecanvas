@@ -914,8 +914,15 @@ export class Chart {
   }
 
   /** Get all active indicator instances with their current params */
-  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor }[] {
+  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] {
     return this.indicatorEngine.getActiveIndicators();
+  }
+
+  /** Show or hide an indicator without removing it. */
+  setIndicatorVisible(instanceId: string, visible: boolean): void {
+    if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
+      this.updateViewportAndRender();
+    }
   }
 
   /** Get current config for a specific indicator instance */

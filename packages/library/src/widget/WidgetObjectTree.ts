@@ -3,6 +3,7 @@ import { createIcon } from './icons.js';
 export interface ObjectTreeIndicator {
   instanceId: string;
   name: string;
+  visible: boolean;
 }
 
 export interface ObjectTreeDrawing {
@@ -21,6 +22,7 @@ export interface ObjectTreeCompare {
 export interface ObjectTreeCallbacks {
   onRemoveIndicator: (instanceId: string) => void;
   onConfigureIndicator?: (instanceId: string) => void;
+  onToggleIndicatorVisible?: (instanceId: string, visible: boolean) => void;
   onRemoveDrawing: (id: string) => void;
   onToggleDrawingVisible: (id: string, visible: boolean) => void;
   onToggleDrawingLocked: (id: string, locked: boolean) => void;
@@ -140,8 +142,17 @@ export class WidgetObjectTree {
     }
     for (const ind of indicators) {
       const row = this.row(ind.name);
+      if (!ind.visible) row.classList.add('tcw-tree-hidden');
       const actions = document.createElement('div');
       actions.className = 'tcw-tree-actions';
+      if (this.callbacks.onToggleIndicatorVisible) {
+        actions.appendChild(this.iconButton(
+          ind.visible ? 'eye' : 'eyeOff',
+          ind.visible ? 'Hide' : 'Show',
+          '',
+          () => this.callbacks.onToggleIndicatorVisible?.(ind.instanceId, !ind.visible),
+        ));
+      }
       if (this.callbacks.onConfigureIndicator) {
         actions.appendChild(this.iconButton('settings', 'Indicator settings', '', () =>
           this.callbacks.onConfigureIndicator?.(ind.instanceId),
