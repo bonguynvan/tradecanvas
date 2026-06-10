@@ -1225,6 +1225,8 @@ export class ChartWidget {
     if (patch.depthHeatmapVisible !== undefined) this.chart.setDepthHeatmapVisible(patch.depthHeatmapVisible);
     if (patch.depthHeatmapOpacity !== undefined) this.chart.setDepthHeatmapConfig({ opacity: patch.depthHeatmapOpacity });
     if (patch.sessionShadingVisible !== undefined) this.chart.setSessionShadingVisible(patch.sessionShadingVisible);
+    if (patch.pivotMarkersVisible !== undefined) this.chart.setPivotMarkersVisible(patch.pivotMarkersVisible);
+    if (patch.pivotStrength !== undefined) this.chart.setPivotMarkersConfig({ left: patch.pivotStrength, right: patch.pivotStrength });
     if (patch.periodLevelsVisible !== undefined) this.chart.setPeriodLevelsVisible(patch.periodLevelsVisible);
     if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);

@@ -155,6 +155,8 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   depthHeatmapVisible: false,
   depthHeatmapOpacity: 0.7,
   sessionShadingVisible: false,
+  pivotMarkersVisible: false,
+  pivotStrength: 5,
   periodLevelsVisible: false,
   periodLevelsPeriod: 'day',
   legendVisible: true,

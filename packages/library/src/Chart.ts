@@ -60,6 +60,7 @@ import {
   MarketProfileRenderer,
   DepthHeatmapRenderer,
   PeriodLevelsRenderer,
+  PivotMarkersRenderer,
   AlertManager,
   SignalMarkerManager,
   TradeZoneManager,
@@ -124,6 +125,7 @@ export class Chart {
   private marketProfile: MarketProfileRenderer;
   private depthHeatmap: DepthHeatmapRenderer;
   private periodLevels: PeriodLevelsRenderer;
+  private pivotMarkers: PivotMarkersRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
@@ -329,6 +331,7 @@ export class Chart {
     this.marketProfile = new MarketProfileRenderer();
     this.depthHeatmap = new DepthHeatmapRenderer();
     this.periodLevels = new PeriodLevelsRenderer();
+    this.pivotMarkers = new PivotMarkersRenderer();
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
@@ -1511,6 +1514,25 @@ export class Chart {
     this.engine.requestRender(LayerType.Overlay);
   }
 
+  // --- Pivot / swing markers ---
+
+  setPivotMarkersVisible(visible: boolean): void {
+    this.pivotMarkers.setVisible(visible);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
+  isPivotMarkersVisible(): boolean {
+    return this.pivotMarkers.isVisible();
+  }
+
+  setPivotMarkersConfig(config: { left?: number; right?: number; showLabels?: boolean }): void {
+    if (config.left !== undefined || config.right !== undefined) {
+      this.pivotMarkers.setStrength(config.left ?? 5, config.right ?? config.left ?? 5);
+    }
+    if (config.showLabels !== undefined) this.pivotMarkers.setShowLabels(config.showLabels);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
   // --- Session (RTH) shading ---
 
   setSessionShadingVisible(visible: boolean): void {
@@ -2071,6 +2093,7 @@ export class Chart {
       marketProfile: this.marketProfile,
       depthHeatmap: this.depthHeatmap,
       periodLevels: this.periodLevels,
+      pivotMarkers: this.pivotMarkers,
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,

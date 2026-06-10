@@ -192,6 +192,8 @@ export interface ChartSettingsState {
   depthHeatmapVisible: boolean;
   depthHeatmapOpacity: number;
   sessionShadingVisible: boolean;
+  pivotMarkersVisible: boolean;
+  pivotStrength: number;
   periodLevelsVisible: boolean;
   periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;

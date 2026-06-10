@@ -104,6 +104,19 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
+<h3>Swing markers (pivots)</h3>
+<p>
+  Mark fractal swing highs/lows with small triangles (▼ above a confirmed pivot
+  high, ▲ below a pivot low). The strength controls how many bars must be lower
+  on each side. Toggle from the settings sheet, or:
+</p>
+<pre><code>{`chart.setPivotMarkersVisible(true)
+chart.setPivotMarkersConfig({ left: 5, right: 5, showLabels: true })
+
+// pure detection is exported
+import { findPivots } from '@tradecanvas/core'
+const pivots = findPivots(bars, 5, 5)  // [{ index, price, type: 'high'|'low' }]`}</code></pre>
+
 <h3>Session shading (regular trading hours)</h3>
 <p>
   Dim bars outside the regular session (pre/post-market or the overnight break)
