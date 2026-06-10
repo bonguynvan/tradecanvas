@@ -115,6 +115,40 @@ export function computeMarketProfile(
   };
 }
 
+/** TPO letter for a bracket index: A–Z then a–z, wrapping every 52. */
+export function tpoLetter(index: number): string {
+  const a = ((index % 52) + 52) % 52;
+  return a < 26 ? String.fromCharCode(65 + a) : String.fromCharCode(97 + a - 26);
+}
+
+/**
+ * For a single session's bars, the bracket (letter) indices that touched each
+ * price bucket. `result[b]` is the ascending list of bar indices whose
+ * [low, high] range overlapped bucket `b`. Bucket count matches
+ * `computeMarketProfile` so letters and histogram line up.
+ */
+export function assignSessionLetters(
+  bars: ReadonlyArray<OHLCBar>,
+  priceMin: number,
+  priceMax: number,
+  buckets = 48,
+): number[][] {
+  const n = Math.max(4, Math.min(500, Math.floor(buckets)));
+  const span = priceMax - priceMin;
+  const out: number[][] = Array.from({ length: n }, () => []);
+  if (span <= 0) return out;
+  const bucketH = span / n;
+  bars.forEach((bar, i) => {
+    const lo = Math.min(bar.low, bar.high);
+    const hi = Math.max(bar.low, bar.high);
+    if (hi < priceMin || lo > priceMax) return;
+    const loIdx = Math.max(0, Math.min(n - 1, Math.floor((lo - priceMin) / bucketH)));
+    const hiIdx = Math.max(0, Math.min(n - 1, Math.floor((hi - priceMin) / bucketH)));
+    for (let b = loIdx; b <= hiIdx; b++) out[b].push(i);
+  });
+  return out;
+}
+
 export interface SessionProfile {
   /** Index of the session's first bar within the input array. */
   startIndex: number;

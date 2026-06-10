@@ -115,6 +115,9 @@ chart.setMarketProfileConfig({
 // split into one mini-profile per calendar-day session
 chart.setMarketProfileConfig({ splitBySession: true })
 
+// classic TPO letters per session (when zoomed in enough to be legible)
+chart.setMarketProfileConfig({ splitBySession: true, letters: true })
+
 // pure computation is exported too
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })

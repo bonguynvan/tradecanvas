@@ -165,6 +165,7 @@ export class WidgetSettings {
     section.appendChild(this.toggleRow('Volume Profile', s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));
     section.appendChild(this.toggleRow('Market Profile (TPO)', s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })));
     section.appendChild(this.toggleRow('MP split by session', s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
+    section.appendChild(this.toggleRow('MP letters (TPO)', s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
     section.appendChild(this.toggleRow('OHLC Legend', s.legendVisible, (v) => this.patch({ legendVisible: v })));
     section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
 

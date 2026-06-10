@@ -17,7 +17,7 @@ export { VolumeRenderer } from './VolumeRenderer.js';
 export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';
 export { MarketProfileRenderer } from './MarketProfileRenderer.js';
 export type { MarketProfileStats } from './MarketProfileRenderer.js';
-export { computeMarketProfile, computeSessionProfiles } from './marketProfile.js';
+export { computeMarketProfile, computeSessionProfiles, tpoLetter, assignSessionLetters } from './marketProfile.js';
 export type { MarketProfile, MarketProfileBucket, MarketProfileOptions, SessionProfile } from './marketProfile.js';
 export { CompareRenderer } from './CompareRenderer.js';
 export type { CompareSymbol } from './CompareRenderer.js';

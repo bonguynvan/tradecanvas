@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { OHLCBar } from '@tradecanvas/commons';
-import { computeMarketProfile, computeSessionProfiles } from '../marketProfile.js';
+import { computeMarketProfile, computeSessionProfiles, tpoLetter, assignSessionLetters } from '../marketProfile.js';
 
 function bar(low: number, high: number): OHLCBar {
   return { time: 0, open: low, high, low, close: high, volume: 1 };
@@ -101,5 +101,32 @@ describe('computeSessionProfiles', () => {
     // Both profiles span the same 0..100 window (10 buckets each).
     expect(sessions[0].profile.buckets).toHaveLength(10);
     expect(sessions[1].profile.buckets).toHaveLength(10);
+  });
+});
+
+describe('tpoLetter', () => {
+  it('maps 0..25 to A..Z then 26..51 to a..z and wraps', () => {
+    expect(tpoLetter(0)).toBe('A');
+    expect(tpoLetter(25)).toBe('Z');
+    expect(tpoLetter(26)).toBe('a');
+    expect(tpoLetter(51)).toBe('z');
+    expect(tpoLetter(52)).toBe('A'); // wraps
+  });
+});
+
+describe('assignSessionLetters', () => {
+  it('records each bracket index in every bucket it touches', () => {
+    // 10 buckets over [0,100]; bar 0 spans 0..50 (buckets 0..5), bar 1 sits in bucket 5.
+    const cols = assignSessionLetters([bar(0, 50), bar(52, 58)], 0, 100, 10);
+    expect(cols).toHaveLength(10);
+    expect(cols[0]).toEqual([0]);        // only bar 0
+    expect(cols[5]).toEqual([0, 1]);     // both bars touch bucket 5 ([50,60))
+    expect(cols[9]).toEqual([]);         // untouched
+  });
+
+  it('ignores bars outside the window', () => {
+    const cols = assignSessionLetters([bar(1, 9), bar(200, 210)], 0, 100, 10);
+    expect(cols[0]).toEqual([0]);
+    expect(cols.flat()).toEqual([0]);
   });
 });

@@ -1,5 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
-import { computeMarketProfile, computeSessionProfiles } from './marketProfile.js';
+import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 
 /**
@@ -32,6 +32,7 @@ export class MarketProfileRenderer {
   private highlightPoC = true;
   private showStats = true;
   private splitBySession = false;
+  private letters = false;
   private lastStats: MarketProfileStats | null = null;
 
   setVisible(v: boolean): void { this.visible = v; if (!v) this.lastStats = null; }
@@ -45,6 +46,8 @@ export class MarketProfileRenderer {
   /** Split the profile into one mini-histogram per calendar-day session. */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
+  /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */
+  setLetters(enabled: boolean): void { this.letters = enabled; }
 
   /** POC / VAH / VAL from the most recent render, or null if not drawn. */
   getStats(): MarketProfileStats | null {
@@ -171,15 +174,41 @@ export class MarketProfileRenderer {
       const sessionWidth = Math.max(2, rightX - leftX);
       const inv = 1 / profile.maxCount;
 
-      for (let b = 0; b < n; b++) {
-        const bucket = profile.buckets[b];
-        if (bucket.count === 0) continue;
-        const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
-        const w = bucket.count * inv * sessionWidth;
-        const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
-        ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
-        ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
-        ctx.fillRect(leftX, y + 0.5, w, bucketHeight - 1);
+      // Letters need vertical room to be legible; otherwise fall back to bars.
+      const useLetters = this.letters && bucketHeight >= 7;
+      const letterCols = useLetters
+        ? assignSessionLetters(slice.slice(session.startIndex, session.endIndex + 1), priceRange.min, priceRange.max, this.buckets)
+        : null;
+
+      if (useLetters && letterCols) {
+        ctx.font = `${Math.min(11, Math.floor(bucketHeight))}px ui-monospace, monospace`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        const charW = 6;
+        const maxChars = Math.max(1, Math.floor(sessionWidth / charW));
+        for (let b = 0; b < n; b++) {
+          const col = letterCols[b];
+          if (col.length === 0) continue;
+          const y = chartRect.y + chartRect.height - (b + 0.5) * bucketHeight;
+          const inVA = profile.buckets[b].mid >= profile.valueAreaLow && profile.buckets[b].mid <= profile.valueAreaHigh;
+          ctx.globalAlpha = inVA ? 0.95 : 0.6;
+          ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+          const shown = Math.min(col.length, maxChars);
+          for (let k = 0; k < shown; k++) {
+            ctx.fillText(tpoLetter(col[k]), leftX + k * charW, y);
+          }
+        }
+      } else {
+        for (let b = 0; b < n; b++) {
+          const bucket = profile.buckets[b];
+          if (bucket.count === 0) continue;
+          const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
+          const w = bucket.count * inv * sessionWidth;
+          const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
+          ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
+          ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+          ctx.fillRect(leftX, y + 0.5, w, bucketHeight - 1);
+        }
       }
 
       if (this.highlightPoC) {

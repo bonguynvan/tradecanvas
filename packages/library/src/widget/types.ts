@@ -171,6 +171,7 @@ export interface ChartSettingsState {
   volumeProfileVisible: boolean;
   marketProfileVisible: boolean;
   marketProfileSplit: boolean;
+  marketProfileLetters: boolean;
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;
