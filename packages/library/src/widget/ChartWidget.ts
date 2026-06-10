@@ -591,10 +591,11 @@ export class ChartWidget {
     this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
   }
 
-  /** Feed order-book depth to the chart overlay and the depth ladder. */
+  /** Feed order-book depth to the chart overlay, depth ladder, and heatmap. */
   setDepth(depth: DepthData | null): void {
     this.chart.setDepthData(depth);
     this.depthLadder?.setData(depth);
+    if (depth) this.chart.pushDepthSnapshot(depth);
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
@@ -1042,6 +1043,7 @@ export class ChartWidget {
     if (patch.marketProfileVisible !== undefined) this.chart.setMarketProfileVisible(patch.marketProfileVisible);
     if (patch.marketProfileSplit !== undefined) this.chart.setMarketProfileConfig({ splitBySession: patch.marketProfileSplit });
     if (patch.marketProfileLetters !== undefined) this.chart.setMarketProfileConfig({ letters: patch.marketProfileLetters });
+    if (patch.depthHeatmapVisible !== undefined) this.chart.setDepthHeatmapVisible(patch.depthHeatmapVisible);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.scaleMode !== undefined) {

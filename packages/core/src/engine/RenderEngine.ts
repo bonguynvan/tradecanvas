@@ -45,6 +45,7 @@ export interface RenderContext {
   volumeRenderer: VolumeRenderer | null;
   volumeProfile: import('../charts/VolumeProfileRenderer.js').VolumeProfileRenderer | null;
   marketProfile: import('../charts/MarketProfileRenderer.js').MarketProfileRenderer | null;
+  depthHeatmap: import('../charts/DepthHeatmapRenderer.js').DepthHeatmapRenderer | null;
   watermark: Watermark | null;
   barCountdown: BarCountdown | null;
   sessionBreaks: SessionBreaks | null;
@@ -160,6 +161,9 @@ export class RenderEngine {
       c.beginPath();
       c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
       c.clip();
+
+      // Liquidity heatmap (backmost, behind volume + candles)
+      ctx.depthHeatmap?.render(c, viewport, theme);
 
       // Volume bars (drawn first, behind candles)
       ctx.volumeRenderer?.render(c, data, viewport, theme);

@@ -147,6 +147,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   marketProfileVisible: false,
   marketProfileSplit: false,
   marketProfileLetters: false,
+  depthHeatmapVisible: false,
   legendVisible: true,
   barCountdown: true,
   logScale: false,

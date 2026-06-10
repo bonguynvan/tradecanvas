@@ -58,6 +58,7 @@ import {
   VolumeRenderer,
   VolumeProfileRenderer,
   MarketProfileRenderer,
+  DepthHeatmapRenderer,
   AlertManager,
   SignalMarkerManager,
   TradeZoneManager,
@@ -116,6 +117,7 @@ export class Chart {
   private volumeRenderer: VolumeRenderer;
   private volumeProfile: VolumeProfileRenderer;
   private marketProfile: MarketProfileRenderer;
+  private depthHeatmap: DepthHeatmapRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
@@ -319,6 +321,7 @@ export class Chart {
     this.volumeRenderer = new VolumeRenderer();
     this.volumeProfile = new VolumeProfileRenderer();
     this.marketProfile = new MarketProfileRenderer();
+    this.depthHeatmap = new DepthHeatmapRenderer();
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
@@ -1358,6 +1361,39 @@ export class Chart {
     return this.marketProfile.getStats();
   }
 
+  // --- Liquidity heatmap ---
+
+  setDepthHeatmapVisible(visible: boolean): void {
+    this.depthHeatmap.setVisible(visible);
+    this.engine.requestRender(LayerType.Main);
+  }
+
+  isDepthHeatmapVisible(): boolean {
+    return this.depthHeatmap.isVisible();
+  }
+
+  setDepthHeatmapConfig(config: { opacity?: number; capacity?: number }): void {
+    if (config.opacity !== undefined) this.depthHeatmap.setOpacity(config.opacity);
+    if (config.capacity !== undefined) this.depthHeatmap.setCapacity(config.capacity);
+    this.engine.requestRender(LayerType.Main);
+  }
+
+  /**
+   * Record an order-book snapshot for the liquidity heatmap, stamped at the
+   * latest bar's time. Call alongside `setDepthData` on each book update.
+   */
+  pushDepthSnapshot(depth: import('@tradecanvas/commons').DepthData): void {
+    const data = this.dataManager.getData();
+    if (data.length === 0) return;
+    this.depthHeatmap.push(data[data.length - 1].time, depth);
+    if (this.depthHeatmap.isVisible()) this.engine.requestRender(LayerType.Main);
+  }
+
+  clearDepthHeatmap(): void {
+    this.depthHeatmap.clear();
+    this.engine.requestRender(LayerType.Main);
+  }
+
   // --- Tooltip ---
 
   setTooltipVisible(visible: boolean): void {
@@ -1879,6 +1915,7 @@ export class Chart {
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,
       volumeProfile: this.volumeProfile,
       marketProfile: this.marketProfile,
+      depthHeatmap: this.depthHeatmap,
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,

@@ -87,6 +87,21 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>Liquidity heatmap</h2>
+<p>
+  Accumulate order-book snapshots into a heatmap behind the candles — each
+  snapshot is a vertical strip where resting size lights up per price level
+  (bids green, asks red). Liquidity walls that persist over time stand out.
+  Toggle from the settings sheet (or <code>chart.setDepthHeatmapVisible</code>);
+  <code>widget.setDepth</code> records a snapshot on every book update.
+</p>
+<pre><code>{`chart.setDepthHeatmapVisible(true)
+chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
+
+// each book update both draws the overlay/ladder and records a heatmap column
+widget.setDepth(orderBook)
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+
 <h2>Signal markers</h2>
 <p>Bot or signal-trading integrations can place directional arrows on the overlay.</p>
 <pre><code>{`chart.addSignalMarker({

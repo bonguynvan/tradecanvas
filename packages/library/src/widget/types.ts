@@ -180,6 +180,7 @@ export interface ChartSettingsState {
   marketProfileVisible: boolean;
   marketProfileSplit: boolean;
   marketProfileLetters: boolean;
+  depthHeatmapVisible: boolean;
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;
