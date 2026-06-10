@@ -1,5 +1,57 @@
 # @tradecanvas/analytics
 
+## 0.10.0
+
+### Minor Changes
+
+- d7d777f: feat: draggable bracket order entry
+
+  - **Place an entry + stop-loss + take-profit bracket by dragging.**
+    `chart.startBracket('buy' | 'sell', entry?)` opens a live preview — an entry
+    line plus shaded red (risk) and green (reward) zones with price and R:R
+    labels. Drag any of the three lines to retune (entry translates the whole
+    bracket; SL/TP clamp to the correct side). Confirm with <kbd>Enter</kbd> /
+    `confirmBracket()`, cancel with <kbd>Esc</kbd> / `cancelBracket()`.
+  - Emits a single typed **`bracketPlace`** event
+    (`{ side, entry, stopLoss, takeProfit, riskReward }`) — the chart never places
+    orders itself, matching the host-owned trading model.
+  - Widget: green/red **Long/Short toolbar buttons** start a bracket at the
+    latest price; a floating **Place / Cancel** bar appears while placing.
+  - Core: new `BracketTool` with pure, tested helpers (`computeBracketDefaults`,
+    `bracketRiskReward`) housed in the `TradingManager` pointer/render pipeline;
+    `InteractionManager` gains an Enter-to-confirm hook.
+
+### Patch Changes
+
+- a160c43: feat: mobile / touch pass
+
+  - **Long-press tooltip pin** — press-and-hold (~500 ms with < 8px movement) on
+    the chart pins an OHLC tooltip at the bar under your finger, the mobile
+    equivalent of Alt+click on desktop. Cancelled by movement, by a second
+    finger landing, or by `Esc`.
+  - **Touch axis-drag scaling** — single-finger drag inside the price-axis
+    strip (right) or time-axis strip (bottom) scales that axis exactly like
+    the desktop mouse-drag gesture. No more "I can only zoom with pinch."
+  - **Bottom-sheet modals** — under 640 px viewports, settings / hotkey sheet /
+    command palette / symbol search slide up from the bottom with a grab handle
+    and `env(safe-area-inset-bottom)` padding for the iPhone home indicator.
+    Hotkey sheet collapses to a single column. Sheet width is full-viewport,
+    border-radius only on the top corners.
+  - **Bigger touch targets** under 768 px — toolbar height 40→44 px, buttons
+    pad up to 40 px square. Apple HIG-compliant.
+  - **Hotkey sheet** now documents the touch gestures alongside keyboard
+    shortcuts.
+
+- Updated dependencies [6646fa0]
+- Updated dependencies [053ef97]
+- Updated dependencies [d7d777f]
+- Updated dependencies [a160c43]
+- Updated dependencies [bf54565]
+- Updated dependencies [226e12c]
+- Updated dependencies [a160c43]
+- Updated dependencies [8f69419]
+  - @tradecanvas/commons@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

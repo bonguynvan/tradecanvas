@@ -1,5 +1,139 @@
 # @tradecanvas/commons
 
+## 0.10.0
+
+### Minor Changes
+
+- d7d777f: feat: draggable bracket order entry
+
+  - **Place an entry + stop-loss + take-profit bracket by dragging.**
+    `chart.startBracket('buy' | 'sell', entry?)` opens a live preview — an entry
+    line plus shaded red (risk) and green (reward) zones with price and R:R
+    labels. Drag any of the three lines to retune (entry translates the whole
+    bracket; SL/TP clamp to the correct side). Confirm with <kbd>Enter</kbd> /
+    `confirmBracket()`, cancel with <kbd>Esc</kbd> / `cancelBracket()`.
+  - Emits a single typed **`bracketPlace`** event
+    (`{ side, entry, stopLoss, takeProfit, riskReward }`) — the chart never places
+    orders itself, matching the host-owned trading model.
+  - Widget: green/red **Long/Short toolbar buttons** start a bracket at the
+    latest price; a floating **Place / Cancel** bar appears while placing.
+  - Core: new `BracketTool` with pure, tested helpers (`computeBracketDefaults`,
+    `bracketRiskReward`) housed in the `TradingManager` pointer/render pipeline;
+    `InteractionManager` gains an Enter-to-confirm hook.
+
+### Patch Changes
+
+- 6646fa0: feat: price alerts UI panel
+
+  - **Bell button + floating alerts panel** in `ChartWidget` — add, list, and
+    delete price alerts from the toolbar without touching the API. The add form
+    prefills the current price and offers all five conditions (crossing,
+    crossing up/down, greater/less than) plus an optional note. Triggered alerts
+    surface a toast and are flagged in the list. Default on; opt out with
+    `alerts: false`. Bottom-sheet on phones (< 640 px).
+  - **Proper alert events** — the chart now emits typed `alertAdd`,
+    `alertRemove`, and `alertTriggered` events (with an `AlertPayload`) instead
+    of only piggybacking on `dataUpdate`. Subscribe via
+    `chart.on('alertTriggered', e => …)`. The legacy `dataUpdate` alert signal is
+    still emitted for back-compat.
+
+- 053ef97: feat: draggable price-alert lines
+
+  - Grab an alert line on the chart and drag it to a new price — the cursor
+    switches to a resize affordance on hover, and moving an alert re-arms a
+    triggered one. Scale-aware (works in log / percentage / indexed modes).
+  - New `AlertDragHandler` (core) wired into `InteractionManager`; hit-tested
+    after trading/drawing so it only claims the gesture right on a line.
+  - `AlertManager.getAlertAtPoint()` / `updateAlertPrice()` added; the chart
+    emits a typed `alertUpdate` event on drag, and the alerts panel refreshes.
+
+- a160c43: feat: mobile / touch pass
+
+  - **Long-press tooltip pin** — press-and-hold (~500 ms with < 8px movement) on
+    the chart pins an OHLC tooltip at the bar under your finger, the mobile
+    equivalent of Alt+click on desktop. Cancelled by movement, by a second
+    finger landing, or by `Esc`.
+  - **Touch axis-drag scaling** — single-finger drag inside the price-axis
+    strip (right) or time-axis strip (bottom) scales that axis exactly like
+    the desktop mouse-drag gesture. No more "I can only zoom with pinch."
+  - **Bottom-sheet modals** — under 640 px viewports, settings / hotkey sheet /
+    command palette / symbol search slide up from the bottom with a grab handle
+    and `env(safe-area-inset-bottom)` padding for the iPhone home indicator.
+    Hotkey sheet collapses to a single column. Sheet width is full-viewport,
+    border-radius only on the top corners.
+  - **Bigger touch targets** under 768 px — toolbar height 40→44 px, buttons
+    pad up to 40 px square. Apple HIG-compliant.
+  - **Hotkey sheet** now documents the touch gestures alongside keyboard
+    shortcuts.
+
+- bf54565: feat: price scale modes (regular / log / percentage / indexed-to-100)
+
+  - **`chart.setScaleMode(mode)` / `getScaleMode()`** — switch the price axis
+    between `regular`, `logarithmic`, `percentage`, and `indexedTo100`. Regular,
+    percentage, and indexed share linear geometry; percentage labels show the %
+    change from the first visible bar, indexed rebases that bar to 100. Logarithmic
+    keeps the existing log geometry.
+  - **Settings panel** now offers a "Price Scale" selector (replacing the Log
+    Scale toggle); the legacy `logScale` flag stays mirrored for persisted
+    layouts, and `setLogScale()` / `isLogScale()` keep working.
+  - **`formatPriceScaleLabel()`** exported from `@tradecanvas/commons`, plus
+    `PriceScaleMode` and `ViewportState.scaleMode` / `scaleBaseline`. The chart
+    sets the baseline (first visible bar's close) each frame.
+
+- 226e12c: fix: review-pass hardening of click, alert, and bracket code
+
+  - **Spurious clicks**: resetting click-tracking state in `onMouseLeave` so a
+    press that drifts out of the canvas and releases outside no longer fires a
+    ghost `click` / `barClick` (and stray replay-seek).
+  - **Bar mapping**: the new click handler now uses the canonical `xToBarIndex`
+    (accounts for chart-rect offset and bar centering) so the clicked bar matches
+    the crosshair and drawings.
+  - **Bracket on touch**: touch events route to the trading manager, so the
+    bracket handles (and order/position lines) are draggable on mobile.
+  - **Alert level conditions**: `greaterThan` / `lessThan` are now edge-triggered
+    — they fire once on entering the condition (immediate fire preserved if
+    already past the level) instead of every tick; repeating alerts re-arm once
+    the value leaves the level.
+  - **Alert context switches**: `AlertManager.clearLastValues()` is called on
+    `setData` so indicator-channel alerts don't cross against a stale previous
+    value after a symbol/timeframe change.
+  - **Alert persistence**: `repeating` is now saved/restored, and price-0 alerts
+    (e.g. oscillator `> 0`) are no longer dropped on load.
+  - **Bracket defaults**: stop distance is floored so a zero entry price can't
+    collapse SL/TP onto entry.
+  - **Alert sources**: multi-output indicator lines (MACD, Stochastic) are
+    discovered from the latest series point so all lines are offered.
+
+- a160c43: feat: client-side timeframe resampling
+
+  - **`resampleOHLCV(bars, target)`** — aggregate a finer OHLCV series into any
+    coarser timeframe (1m → 5m / 15m / 1h / 4h / 1D / 1W / 1M …). Open = first,
+    high/low = extremes, close = last, volume = sum. Calendar-aware bucketing:
+    intraday and daily frames anchor to UTC epoch boundaries, weeks to Monday
+    (configurable via `weekStartsOn`), months/quarters/years to calendar
+    boundaries. Input bars are never mutated.
+  - **`inferTimeframeMs(bars)`** — detect the source bar spacing from the median
+    gap, robust to weekend/halt gaps.
+  - **`canResample(sourceMs, target)`** — guard against accidental upsampling.
+  - **`timeframeBucketStart(time, tf, weekStartsOn?)`** exported from
+    `@tradecanvas/commons` — the calendar-aware bucket anchor used by resampling.
+  - **Widget integration** — `ChartWidget` now resamples locally when the
+    timeframe buttons are clicked and no live adapter is attached: one loaded
+    dataset drives every resolution, no refetch. New `widget.setData(bars)`
+    registers the finest-resolution base series; opt out with
+    `resampleTimeframes: false`. New `weekStartsOn` widget option.
+
+- 8f69419: feat: timezone-aware time axis + crosshair
+
+  - Time-axis labels, the timezone badge, and the crosshair time pill can now
+    render in a fixed UTC offset instead of only the browser-local zone — handy
+    for trading a market in its exchange time. `chart.setTimezoneOffset(minutes |
+null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
+    selector in the settings sheet.
+  - Pure, tested `timeParts(timeMs, tzOffsetMinutes)` and `tzLabel()` helpers in
+    `@tradecanvas/commons` (handles negative offsets that wrap the day and
+    fractional offsets like +5:30).
+
 ## 0.9.0
 
 ### Minor Changes
