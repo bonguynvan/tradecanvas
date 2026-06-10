@@ -21,6 +21,8 @@ import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
+import { WidgetDepthLadder } from './WidgetDepthLadder.js';
+import type { DepthData } from '@tradecanvas/commons';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -47,6 +49,7 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
+  private depthLadder: WidgetDepthLadder | null = null;
   private favoritesStore = new DrawingFavoritesStore();
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
@@ -141,6 +144,7 @@ export class ChartWidget {
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
+          onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
         },
       );
     }
@@ -279,6 +283,17 @@ export class ChartWidget {
         this.bracketBar?.hide();
         this.toast(`${b.side === 'buy' ? 'Long' : 'Short'} bracket placed · ${b.riskReward.toFixed(2)}R`);
       });
+
+      // Depth-of-market ladder (opt-in; fed via widget.setDepth)
+      if (options.depthLadder) {
+        this.depthLadder = new WidgetDepthLadder(this.root, {
+          onTrade: (side, price) => {
+            this.chart.placeOrderIntent({ side, type: 'limit', price });
+            this.toast(`${side === 'buy' ? 'Buy' : 'Sell'} limit @ ${this.formatAlertPrice(price)}`);
+          },
+          formatPrice: (p) => this.formatAlertPrice(p),
+        });
+      }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
         const p = e.payload as { bracket?: string };
@@ -497,6 +512,7 @@ export class ChartWidget {
     this.drawingStyle?.destroy();
     this.bracketBar?.destroy();
     this.alertNotifier?.destroy();
+    this.depthLadder?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -573,6 +589,12 @@ export class ChartWidget {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
     this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
+  }
+
+  /** Feed order-book depth to the chart overlay and the depth ladder. */
+  setDepth(depth: DepthData | null): void {
+    this.chart.setDepthData(depth);
+    this.depthLadder?.setData(depth);
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */

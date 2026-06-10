@@ -105,6 +105,12 @@ export class WidgetToolbar {
       el.appendChild(shortBtn);
     }
 
+    if (callbacks.onToggleLadder) {
+      const ladderBtn = this.iconBtn('ladder', 'Depth ladder', callbacks.onToggleLadder);
+      ladderBtn.dataset.role = 'ladder';
+      el.appendChild(ladderBtn);
+    }
+
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', 'Objects', callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';

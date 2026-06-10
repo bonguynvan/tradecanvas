@@ -948,6 +948,16 @@ export class Chart {
     return this.features.trading && this.tradingManager.isBracketActive();
   }
 
+  /**
+   * Emit an `orderPlace` intent (e.g. from a depth-ladder click). The chart
+   * does not create the order itself — the host listens via
+   * `chart.on('orderPlace', …)` and submits to its OMS.
+   */
+  placeOrderIntent(intent: import('@tradecanvas/commons').OrderPlaceIntent): void {
+    if (!this.features.trading) return;
+    this.eventBus.emit('orderPlace', intent);
+  }
+
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setPositions(positions);

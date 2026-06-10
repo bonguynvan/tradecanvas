@@ -42,6 +42,13 @@ export interface ChartWidgetOptions {
    */
   objectTree?: boolean;
 
+  /**
+   * Depth-of-market ladder — a ladder button in the toolbar that opens a
+   * click-to-trade order-book panel. Off by default (needs trading + an
+   * order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.
+   */
+  depthLadder?: boolean;
+
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
@@ -134,6 +141,7 @@ export interface ToolbarCallbacks {
   onToggleAlerts?: () => void;
   onToggleObjects?: () => void;
   onBracket?: (side: 'buy' | 'sell') => void;
+  onToggleLadder?: () => void;
 }
 
 export interface SidebarConfig {

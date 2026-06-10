@@ -67,6 +67,26 @@ chart.on('bracketPlace', (e) => {
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>
 
+<h2>Depth ladder (click to trade)</h2>
+<p>
+  An opt-in depth-of-market ladder renders the order book as price rows with
+  bid/ask size columns — click an ask cell to buy, a bid cell to sell at that
+  price. Enable with <code>depthLadder: true</code> and feed the book via
+  <code>widget.setDepth</code>; clicks emit <code>orderPlace</code> intents for
+  your OMS (the chart never trades itself). The same data also drives the
+  on-chart depth overlay.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+
+widget.setDepth({
+  bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],
+  asks: [{ price: 64_205, volume: 2.0 }, { price: 64_210, volume: 8.7 }],
+})
+
+widget.getChart().on('orderPlace', (e) => {
+  // { side, type: 'limit', price } — submit to your backend
+})`}</code></pre>
+
 <h2>Signal markers</h2>
 <p>Bot or signal-trading integrations can place directional arrows on the overlay.</p>
 <pre><code>{`chart.addSignalMarker({
