@@ -34,6 +34,7 @@ import { TSIIndicator } from './panel/TSI.js';
 import { CMFIndicator } from './panel/CMF.js';
 import { VolumeDeltaIndicator } from './panel/VolumeDelta.js';
 import { VortexIndicator } from './panel/Vortex.js';
+import { ChoppinessIndexIndicator } from './panel/ChoppinessIndex.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -79,4 +80,5 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new ChaikinOscillatorIndicator());
   engine.register(new VolumeDeltaIndicator());
   engine.register(new VortexIndicator());
+  engine.register(new ChoppinessIndexIndicator());
 }
