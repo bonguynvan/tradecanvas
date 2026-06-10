@@ -133,6 +133,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'crsi', name: 'Connors RSI', type: 'panel' },
   { id: 'coppock', name: 'Coppock Curve', type: 'panel' },
   { id: 'kst', name: 'Know Sure Thing', type: 'panel' },
+  { id: 'elderray', name: 'Elder Ray', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
