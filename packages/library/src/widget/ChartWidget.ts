@@ -19,6 +19,7 @@ import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
+import { AlertNotifier } from './AlertNotifier.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -44,6 +45,7 @@ export class ChartWidget {
   private indicatorSettings: WidgetIndicatorSettings | null = null;
   private drawingStyle: WidgetDrawingStyle | null = null;
   private bracketBar: WidgetBracketBar | null = null;
+  private alertNotifier: AlertNotifier | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -299,9 +301,14 @@ export class ChartWidget {
       this.chart.on('alertAdd', () => this.refreshAlerts());
       this.chart.on('alertRemove', () => this.refreshAlerts());
       this.chart.on('alertUpdate', () => this.refreshAlerts());
+      if (options.alertNotifications) {
+        this.alertNotifier = new AlertNotifier(options.alertNotifications);
+      }
       this.chart.on('alertTriggered', (e) => {
         const p = e.payload;
-        this.toast(`🔔 Alert: price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`, 'info');
+        const text = `Price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
+        this.toast(`🔔 Alert: ${text}`, 'info');
+        this.alertNotifier?.notify(text);
         this.refreshAlerts();
       });
     }
@@ -485,6 +492,7 @@ export class ChartWidget {
     this.indicatorSettings?.destroy();
     this.drawingStyle?.destroy();
     this.bracketBar?.destroy();
+    this.alertNotifier?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();

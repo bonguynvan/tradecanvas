@@ -330,6 +330,15 @@ chart.on('alertTriggered', (e) => {
   console.log('hit', e.payload.price, e.payload.message)
 })
 // also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)`}</code></pre>
+<p>
+  Opt into a sound and/or desktop notification when an alert fires (both off by
+  default). <code>sound: true</code> plays a built-in beep; pass a URL for a
+  custom one. <code>desktop: true</code> uses the Notification API and asks
+  permission on first use.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  alertNotifications: { sound: true, desktop: true },
+})`}</code></pre>
 
 <h2>ChartGrid</h2>
 <p>Synchronized multi-chart layouts.</p>

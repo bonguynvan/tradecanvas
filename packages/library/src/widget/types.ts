@@ -29,6 +29,13 @@ export interface ChartWidgetOptions {
   alerts?: boolean;
 
   /**
+   * Sound and/or desktop notification when a price alert triggers. Both off by
+   * default. `sound: true` plays a built-in beep; pass a URL for a custom one.
+   * `desktop: true` uses the Notification API (asks permission on first use).
+   */
+  alertNotifications?: import('./AlertNotifier.js').AlertNotifyOptions;
+
+  /**
    * Object-tree panel — a layers button in the toolbar that opens a manager
    * listing active indicators and drawings, with per-item show/hide, lock, and
    * delete. Default `true`.
