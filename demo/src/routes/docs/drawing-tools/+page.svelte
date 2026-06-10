@@ -10,6 +10,18 @@
 <pre><code>{`chart.activateDrawingTool('trendLine')
 // User clicks two points; the drawing is added to the manager.`}</code></pre>
 
+<h2>Auto Fibonacci</h2>
+<p>
+  One click draws a Fibonacci retracement over the dominant swing (extreme high
+  and low) in the visible range — anchored low→high for an up-swing, high→low
+  for a down-swing. Run it from the command palette ("Auto Fibonacci"), or
+  programmatically:
+</p>
+<pre><code>{`chart.autoFib()  // returns the new drawing id, or null if no clear swing
+
+// general drawing append (active style applied, id auto-assigned)
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`}</code></pre>
+
 <h2>Catalog</h2>
 
 <h3>Lines</h3>

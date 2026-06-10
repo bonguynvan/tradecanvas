@@ -965,6 +965,7 @@ export class ChartWidget {
       { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
       { id: 'settings', label: 'Settings', category: 'action' },
       { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
+      { id: 'autoFib', label: 'Auto Fibonacci (visible swing)', category: 'action' },
       { id: 'dataWindow', label: 'Toggle Data Window', category: 'action' },
       { id: 'clearDrawings', label: 'Clear All Drawings', category: 'action' },
     );
@@ -989,6 +990,11 @@ export class ChartWidget {
       case 'shareView':
         void this.copyShareLink();
         break;
+      case 'autoFib': {
+        const id = this.chart.autoFib();
+        this.toast(id ? 'Auto Fibonacci added' : 'No clear swing in view');
+        break;
+      }
       case 'dataWindow':
         this.toggleDataWindow();
         break;

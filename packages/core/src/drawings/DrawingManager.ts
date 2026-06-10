@@ -409,6 +409,35 @@ export class DrawingManager {
   }
 
   /**
+   * Append a drawing (assigning a fresh id and applying the active style for any
+   * omitted style fields). Records an undo entry. Returns the new id.
+   */
+  addDrawing(
+    state: Omit<DrawingState, 'id' | 'style' | 'visible' | 'locked'> & {
+      id?: string;
+      style?: Partial<DrawingStyle>;
+      visible?: boolean;
+      locked?: boolean;
+    },
+  ): string {
+    const id = state.id ?? `tc_drawing_${nextDrawingId++}`;
+    const drawing: DrawingState = {
+      id,
+      type: state.type,
+      anchors: state.anchors.map((a) => ({ ...a })),
+      style: { ...this.activeStyle, ...state.style },
+      visible: state.visible ?? true,
+      locked: state.locked ?? false,
+      meta: state.meta,
+    };
+    this.drawings = [...this.drawings, drawing];
+    this.undoRedo?.push({ type: 'drawingCreate', before: null, after: cloneDrawing(drawing) });
+    this.eventCallback?.('drawingCreate', { id, type: drawing.type });
+    this.requestRender?.();
+    return id;
+  }
+
+  /**
    * Auto-migrate legacy bar-index anchors to real timestamps when data is
    * available. Heuristic: anchors with `time < 1e9` are treated as bar indices
    * (timestamps in seconds are > 1e9 for any date after 2001-09-09), and

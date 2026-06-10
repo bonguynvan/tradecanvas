@@ -77,6 +77,7 @@ import {
   CompareRenderer,
   CurrentPriceLine,
   xToBarIndex,
+  findDominantSwing,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -790,6 +791,34 @@ export class Chart {
 
   setDrawings(drawings: DrawingState[]): void {
     this.drawingManager.setDrawings(drawings);
+  }
+
+  /** Append a drawing (id auto-assigned, active style applied). Returns the id. */
+  addDrawing(state: {
+    type: import('@tradecanvas/commons').DrawingToolType;
+    anchors: import('@tradecanvas/commons').AnchorPoint[];
+    style?: Partial<DrawingStyle>;
+    visible?: boolean;
+    locked?: boolean;
+    meta?: Record<string, unknown>;
+  }): string | null {
+    if (!this.features.drawings) return null;
+    const id = this.drawingManager.addDrawing(state);
+    this.scheduleAutoSave();
+    return id;
+  }
+
+  /**
+   * Draw a Fibonacci retracement over the dominant swing (extreme high/low) in
+   * the visible range. Returns the new drawing's id, or null if no swing.
+   */
+  autoFib(): string | null {
+    if (!this.features.drawings) return null;
+    const data = this.getDisplayData();
+    const vs = this.viewport.getState();
+    const swing = findDominantSwing(data, vs.visibleRange.from, vs.visibleRange.to);
+    if (!swing) return null;
+    return this.addDrawing({ type: 'fibRetracement', anchors: [swing[0], swing[1]] });
   }
 
   removeDrawing(id: string): void {
