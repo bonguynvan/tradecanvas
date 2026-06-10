@@ -44,6 +44,7 @@ export interface RenderContext {
   chartLegend: ChartLegend | null;
   volumeRenderer: VolumeRenderer | null;
   volumeProfile: import('../charts/VolumeProfileRenderer.js').VolumeProfileRenderer | null;
+  marketProfile: import('../charts/MarketProfileRenderer.js').MarketProfileRenderer | null;
   watermark: Watermark | null;
   barCountdown: BarCountdown | null;
   sessionBreaks: SessionBreaks | null;
@@ -163,6 +164,7 @@ export class RenderEngine {
       // Volume bars (drawn first, behind candles)
       ctx.volumeRenderer?.render(c, data, viewport, theme);
       ctx.volumeProfile?.render(c, data, viewport, theme);
+      ctx.marketProfile?.render(c, data, viewport, theme);
       ctx.chartRenderer?.render(c, data, viewport, theme);
       ctx.compareRenderer?.render(c, data, viewport, theme);
       ctx.indicatorEngine?.renderOverlays(c, viewport);

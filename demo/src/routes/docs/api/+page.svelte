@@ -95,6 +95,27 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
+<h3>Market Profile (TPO)</h3>
+<p>
+  A time-at-price histogram: each bar contributes one TPO to every price bucket
+  its range touched, surfacing the Point of Control (busiest price) and the
+  value area (≈70% of TPOs). Distinct from Volume Profile — it weights by time,
+  not volume — and is left-pinned so both can show together. Off by default;
+  toggle from the settings sheet or directly:
+</p>
+<pre><code>{`chart.setMarketProfileVisible(true)
+chart.setMarketProfileConfig({
+  buckets: 48,
+  widthRatio: 0.18,
+  opacity: 0.32,
+  valueAreaPct: 0.7,  // fraction of TPOs in the value area
+  highlightPoC: true, // dashed line at the point of control
+})
+
+// pure computation is exported too
+import { computeMarketProfile } from '@tradecanvas/core'
+const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })`}</code></pre>
+
 <h3>Touch &amp; mobile</h3>
 <table>
   <thead><tr><th>Gesture</th><th>Action</th></tr></thead>

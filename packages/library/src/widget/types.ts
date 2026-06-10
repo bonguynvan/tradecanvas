@@ -149,6 +149,7 @@ export interface ChartSettingsState {
   gridVisible: boolean;
   volumeVisible: boolean;
   volumeProfileVisible: boolean;
+  marketProfileVisible: boolean;
   legendVisible: boolean;
   barCountdown: boolean;
   logScale: boolean;

@@ -947,6 +947,7 @@ export class ChartWidget {
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
     if (patch.volumeVisible !== undefined) this.chart.setVolumeVisible(patch.volumeVisible);
     if (patch.volumeProfileVisible !== undefined) this.chart.setVolumeProfileVisible(patch.volumeProfileVisible);
+    if (patch.marketProfileVisible !== undefined) this.chart.setMarketProfileVisible(patch.marketProfileVisible);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.scaleMode !== undefined) {

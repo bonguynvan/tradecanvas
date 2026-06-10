@@ -57,6 +57,7 @@ import {
   BarCountdown,
   VolumeRenderer,
   VolumeProfileRenderer,
+  MarketProfileRenderer,
   AlertManager,
   SignalMarkerManager,
   TradeZoneManager,
@@ -114,6 +115,7 @@ export class Chart {
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private volumeRenderer: VolumeRenderer;
   private volumeProfile: VolumeProfileRenderer;
+  private marketProfile: MarketProfileRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
@@ -316,6 +318,7 @@ export class Chart {
     if (options.watermark) this.watermark.setConfig(options.watermark);
     this.volumeRenderer = new VolumeRenderer();
     this.volumeProfile = new VolumeProfileRenderer();
+    this.marketProfile = new MarketProfileRenderer();
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
@@ -1264,6 +1267,26 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  // --- Market Profile (TPO) ---
+
+  setMarketProfileVisible(visible: boolean): void {
+    this.marketProfile.setVisible(visible);
+    this.engine.requestRender(LayerType.Main);
+  }
+
+  isMarketProfileVisible(): boolean {
+    return this.marketProfile.isVisible();
+  }
+
+  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean }): void {
+    if (config.buckets !== undefined) this.marketProfile.setBuckets(config.buckets);
+    if (config.widthRatio !== undefined) this.marketProfile.setWidthRatio(config.widthRatio);
+    if (config.opacity !== undefined) this.marketProfile.setOpacity(config.opacity);
+    if (config.valueAreaPct !== undefined) this.marketProfile.setValueAreaPct(config.valueAreaPct);
+    if (config.highlightPoC !== undefined) this.marketProfile.setHighlightPoC(config.highlightPoC);
+    this.engine.requestRender(LayerType.Main);
+  }
+
   // --- Tooltip ---
 
   setTooltipVisible(visible: boolean): void {
@@ -1784,6 +1807,7 @@ export class Chart {
       chartLegend: this.features.legend ? this.chartLegend : null,
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,
       volumeProfile: this.volumeProfile,
+      marketProfile: this.marketProfile,
       watermark: this.features.watermark ? this.watermark : null,
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,
