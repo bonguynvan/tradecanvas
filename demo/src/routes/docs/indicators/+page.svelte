@@ -60,6 +60,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>williamsR</code></td><td>Williams %R</td></tr>
     <tr><td><code>obv</code></td><td>On-Balance Volume</td></tr>
     <tr><td><code>chaikinOscillator</code></td><td>Chaikin Oscillator (exposes cumulative ADL)</td></tr>
+    <tr><td><code>voldelta</code></td><td>Volume Delta (directional volume; per-bar or cumulative)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>
@@ -69,6 +70,14 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>trix</code></td><td>TRIX</td></tr>
   </tbody>
 </table>
+
+<p>
+  <code>voldelta</code> (Volume Delta) approximates buy/sell pressure from
+  OHLCV — bars closing up add positive volume, down bars negative. Set
+  <code>mode: 0</code> for the per-bar delta histogram or <code>mode: 1</code>
+  for cumulative delta. (A true tick delta needs per-trade bid/ask data, which
+  an OHLCV series doesn't carry.)
+</p>
 
 <h2>Web Worker pipeline</h2>
 <p>For heavy indicator workloads, offload calculation off the render loop:</p>

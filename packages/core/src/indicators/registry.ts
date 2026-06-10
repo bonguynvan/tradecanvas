@@ -31,6 +31,7 @@ import { AroonIndicator } from './panel/Aroon.js';
 import { ROCIndicator } from './panel/ROC.js';
 import { TSIIndicator } from './panel/TSI.js';
 import { CMFIndicator } from './panel/CMF.js';
+import { VolumeDeltaIndicator } from './panel/VolumeDelta.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -73,4 +74,5 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new VROCIndicator());
   engine.register(new AwesomeOscillatorIndicator());
   engine.register(new ChaikinOscillatorIndicator());
+  engine.register(new VolumeDeltaIndicator());
 }

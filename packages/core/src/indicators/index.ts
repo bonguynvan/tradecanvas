@@ -19,6 +19,7 @@ export { HullMAIndicator } from './overlay/HullMA.js';
 export { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
+export { VolumeDeltaIndicator } from './panel/VolumeDelta.js';
 export { getNumberParam, getIntParam } from './params.js';
 export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';

@@ -123,6 +123,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'ad', name: 'Acc/Dist', type: 'panel' },
   { id: 'ao', name: 'Awesome Oscillator', type: 'panel' },
   { id: 'chaikinOsc', name: 'Chaikin Oscillator', type: 'panel' },
+  { id: 'voldelta', name: 'Volume Delta', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
