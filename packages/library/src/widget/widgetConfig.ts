@@ -128,6 +128,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'vortex', name: 'Vortex Indicator', type: 'panel' },
   { id: 'chop', name: 'Choppiness Index', type: 'panel' },
   { id: 'uo', name: 'Ultimate Oscillator', type: 'panel' },
+  { id: 'fi', name: 'Force Index', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
