@@ -194,6 +194,7 @@ export interface ChartSettingsState {
   sessionShadingVisible: boolean;
   pivotMarkersVisible: boolean;
   pivotStrength: number;
+  pivotStructureLabels: boolean;
   periodLevelsVisible: boolean;
   periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;

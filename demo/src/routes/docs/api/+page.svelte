@@ -113,9 +113,13 @@ chart.setVolumeProfileConfig({
 <pre><code>{`chart.setPivotMarkersVisible(true)
 chart.setPivotMarkersConfig({ left: 5, right: 5, showLabels: true })
 
-// pure detection is exported
-import { findPivots } from '@tradecanvas/core'
-const pivots = findPivots(bars, 5, 5)  // [{ index, price, type: 'high'|'low' }]`}</code></pre>
+// market-structure labels (HH / HL / LH / LL) instead of price
+chart.setPivotMarkersConfig({ structureLabels: true })
+
+// pure detection + classification are exported
+import { findPivots, classifyPivots } from '@tradecanvas/core'
+const pivots = findPivots(bars, 5, 5)        // [{ index, price, type }]
+const structure = classifyPivots(pivots)     // adds label: 'HH'|'LH'|'HL'|'LL'`}</code></pre>
 
 <h3>Session shading (regular trading hours)</h3>
 <p>

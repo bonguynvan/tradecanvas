@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DataSeries } from '@tradecanvas/commons';
-import { findPivots } from '../pivots.js';
+import { findPivots, classifyPivots, type Pivot } from '../pivots.js';
 
 function bar(high: number, low: number): DataSeries[number] {
   return { time: 0, open: low, high, low, close: high, volume: 1 };
@@ -42,5 +42,25 @@ describe('findPivots', () => {
     ];
     const pivots = findPivots(data, 1, 1);
     expect(pivots.map((p) => `${p.type}@${p.index}`)).toEqual(['high@1', 'low@3', 'high@5']);
+  });
+});
+
+describe('classifyPivots', () => {
+  const p = (index: number, price: number, type: 'high' | 'low'): Pivot => ({ index, price, type });
+
+  it('labels HH/LH/HL/LL against the prior same-type pivot', () => {
+    const pivots = [
+      p(1, 10, 'high'), // first high → HH
+      p(2, 4, 'low'),   // first low → LL
+      p(3, 12, 'high'), // 12 > 10 → HH
+      p(4, 6, 'low'),   // 6 > 4 → HL
+      p(5, 11, 'high'), // 11 < 12 → LH
+      p(6, 3, 'low'),   // 3 < 6 → LL
+    ];
+    expect(classifyPivots(pivots).map((x) => x.label)).toEqual(['HH', 'LL', 'HH', 'HL', 'LH', 'LL']);
+  });
+
+  it('returns empty for empty input', () => {
+    expect(classifyPivots([])).toEqual([]);
   });
 });

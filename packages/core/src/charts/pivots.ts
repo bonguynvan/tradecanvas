@@ -6,6 +6,35 @@ export interface Pivot {
   type: 'high' | 'low';
 }
 
+/** Market-structure label: higher/lower high, higher/lower low. */
+export type StructureLabel = 'HH' | 'LH' | 'HL' | 'LL';
+
+export interface ClassifiedPivot extends Pivot {
+  label: StructureLabel;
+}
+
+/**
+ * Label each pivot against the previous pivot of the same kind: a high is `HH`
+ * when it exceeds the prior high else `LH`; a low is `HL` when it's above the
+ * prior low else `LL`. The first high defaults to `HH` and the first low to
+ * `LL` (no prior to compare). Input is assumed ordered by index.
+ */
+export function classifyPivots(pivots: ReadonlyArray<Pivot>): ClassifiedPivot[] {
+  let lastHigh: number | undefined;
+  let lastLow: number | undefined;
+  return pivots.map((p) => {
+    let label: StructureLabel;
+    if (p.type === 'high') {
+      label = lastHigh === undefined || p.price > lastHigh ? 'HH' : 'LH';
+      lastHigh = p.price;
+    } else {
+      label = lastLow === undefined || p.price < lastLow ? 'LL' : 'HL';
+      lastLow = p.price;
+    }
+    return { ...p, label };
+  });
+}
+
 /**
  * Fractal pivot points: a bar is a pivot high when its high strictly exceeds
  * the highs of `left` bars before and `right` bars after (pivot low is the

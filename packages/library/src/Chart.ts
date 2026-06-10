@@ -1525,11 +1525,12 @@ export class Chart {
     return this.pivotMarkers.isVisible();
   }
 
-  setPivotMarkersConfig(config: { left?: number; right?: number; showLabels?: boolean }): void {
+  setPivotMarkersConfig(config: { left?: number; right?: number; showLabels?: boolean; structureLabels?: boolean }): void {
     if (config.left !== undefined || config.right !== undefined) {
       this.pivotMarkers.setStrength(config.left ?? 5, config.right ?? config.left ?? 5);
     }
     if (config.showLabels !== undefined) this.pivotMarkers.setShowLabels(config.showLabels);
+    if (config.structureLabels !== undefined) this.pivotMarkers.setStructureLabels(config.structureLabels);
     this.engine.requestRender(LayerType.Overlay);
   }
 

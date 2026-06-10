@@ -21,8 +21,8 @@ export { computeMarketProfile, computeSessionProfiles, tpoLetter, assignSessionL
 export type { MarketProfile, MarketProfileBucket, MarketProfileOptions, SessionProfile } from './marketProfile.js';
 export { PeriodLevelsRenderer } from './PeriodLevelsRenderer.js';
 export { PivotMarkersRenderer } from './PivotMarkersRenderer.js';
-export { findPivots } from './pivots.js';
-export type { Pivot } from './pivots.js';
+export { findPivots, classifyPivots } from './pivots.js';
+export type { Pivot, ClassifiedPivot, StructureLabel } from './pivots.js';
 export { computePeriodLevels } from './periodLevels.js';
 export type { LevelPeriod, PriceLevel } from './periodLevels.js';
 export { DepthHeatmapRenderer } from './DepthHeatmapRenderer.js';

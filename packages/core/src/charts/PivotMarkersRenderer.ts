@@ -1,6 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
-import { findPivots } from './pivots.js';
+import { findPivots, classifyPivots } from './pivots.js';
 
 /**
  * Marks fractal swing highs/lows with small triangles (▼ above a pivot high,
@@ -12,6 +12,7 @@ export class PivotMarkersRenderer {
   private left = 5;
   private right = 5;
   private showLabels = false;
+  private structureLabels = false;
 
   setVisible(v: boolean): void { this.visible = v; }
   isVisible(): boolean { return this.visible; }
@@ -20,11 +21,14 @@ export class PivotMarkersRenderer {
     this.right = Math.max(1, Math.floor(right));
   }
   setShowLabels(v: boolean): void { this.showLabels = v; }
+  /** Show market-structure labels (HH/HL/LH/LL) on each pivot. */
+  setStructureLabels(v: boolean): void { this.structureLabels = v; }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;
-    const pivots = findPivots(data, this.left, this.right);
-    if (pivots.length === 0) return;
+    const found = findPivots(data, this.left, this.right);
+    if (found.length === 0) return;
+    const pivots = this.structureLabels ? classifyPivots(found) : found;
 
     const { from, to } = viewport.visibleRange;
     const size = 5;
@@ -56,9 +60,11 @@ export class PivotMarkersRenderer {
       ctx.closePath();
       ctx.fill();
 
-      if (this.showLabels) {
+      const text: string | null =
+        this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? formatPrice(p.price) : null;
+      if (text) {
         ctx.textBaseline = isHigh ? 'bottom' : 'top';
-        ctx.fillText(formatPrice(p.price), x, isHigh ? tipY - size - 1 : tipY + size + 1);
+        ctx.fillText(text, x, isHigh ? tipY - size - 1 : tipY + size + 1);
       }
     }
     ctx.restore();

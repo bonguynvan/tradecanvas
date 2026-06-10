@@ -157,6 +157,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   sessionShadingVisible: false,
   pivotMarkersVisible: false,
   pivotStrength: 5,
+  pivotStructureLabels: false,
   periodLevelsVisible: false,
   periodLevelsPeriod: 'day',
   legendVisible: true,
