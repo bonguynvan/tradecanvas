@@ -1,5 +1,80 @@
 # @tradecanvas/chart
 
+## 0.11.0
+
+### Minor Changes
+
+- a2279b6: feat: indicator expansion — Vortex, Choppiness, Ultimate Oscillator, Force Index, Connors RSI, Coppock, Chandelier Exit, Session VWAP bands
+
+  Vortex Indicator (VI+ / VI−)
+
+  - New `vortex` panel indicator plots VI+ and VI− from consecutive highs/lows
+    normalised by true range (configurable `period`, default 14). VI+ crossing
+    above VI− signals an up-trend (and vice-versa); a 1.0 reference line marks the
+    pivot. Auto-scales to the visible range. Registered in the indicator menu;
+    tested.
+
+### Patch Changes
+
+- db5a55e: feat: Chandelier Exit indicator
+
+  - New `chandelier` overlay (Chuck LeBeau) draws ATR-based trailing-stop levels:
+    long exit = highest-high(n) − mult·ATR(n), short exit = lowest-low(n) +
+    mult·ATR(n). Drawn as two dashed lines (green long stop, red short stop).
+    Configurable `period` (22) and `multiplier` (3). Registered in the indicator
+    menu; tested.
+
+- 4a50854: feat: Choppiness Index indicator
+
+  - New `chop` panel indicator measures trend vs consolidation on a 0–100 scale
+    (> 61.8 choppy/range, < 38.2 trending) from the ratio of summed true range to
+    the n-bar high-low range. Reference lines at 38.2 / 61.8, configurable
+    `period` (default 14). Registered in the indicator menu; tested.
+
+- 13dad45: feat: Connors RSI indicator
+
+  - New `crsi` panel indicator (Larry Connors) — a composite mean-reversion
+    oscillator averaging three 0–100 components: a short price RSI (3), an RSI of
+    the up/down streak length (2), and the percent-rank of the 1-bar rate of
+    change over a lookback (100). Extremes (< 10 / > 90) flag oversold /
+    overbought. Configurable periods, reference lines at 10/90. Registered in the
+    indicator menu; tested.
+
+- af69e8b: feat: Coppock Curve indicator
+
+  - New `coppock` panel indicator (Edwin Coppock) — a long-term momentum
+    oscillator: a weighted moving average of the sum of two rates of change
+    (long 14 + short 11, WMA 10). Turning up from below zero is its classic
+    major-bottom signal. Zero-centered, auto-scaled, configurable periods.
+    Registered in the indicator menu; tested.
+
+- ecf0ba4: feat: Elder Force Index indicator
+
+  - New `fi` panel indicator combines price direction, extent, and volume into a
+    zero-centered oscillator — raw force = (close − prevClose) · volume,
+    EMA-smoothed (configurable `period`, default 13). Above zero = bulls in
+    control, below = bears; magnitude reflects conviction. Auto-scaled with a
+    zero-line reference. Registered in the indicator menu; tested.
+
+- a509df3: feat: Ultimate Oscillator indicator
+
+  - New `uo` panel indicator (Larry Williams) blends three timeframes of buying
+    pressure (weighted 4:2:1) into a 0–100 momentum oscillator that's less prone
+    to false divergences than single-period oscillators. Configurable
+    `fast`/`mid`/`slow` (7/14/28), reference lines at 30/70. Registered in the
+    indicator menu; tested.
+
+- Updated dependencies [db5a55e]
+- Updated dependencies [4a50854]
+- Updated dependencies [13dad45]
+- Updated dependencies [af69e8b]
+- Updated dependencies [ecf0ba4]
+- Updated dependencies [a509df3]
+- Updated dependencies [a2279b6]
+- Updated dependencies [9ce6081]
+  - @tradecanvas/core@0.11.0
+  - @tradecanvas/commons@0.11.0
+
 ## 0.10.0
 
 ### Minor Changes

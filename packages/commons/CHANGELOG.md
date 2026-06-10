@@ -1,5 +1,19 @@
 # @tradecanvas/commons
 
+## 0.11.0
+
+### Minor Changes
+
+- a2279b6: feat: indicator expansion — Vortex, Choppiness, Ultimate Oscillator, Force Index, Connors RSI, Coppock, Chandelier Exit, Session VWAP bands
+
+  Vortex Indicator (VI+ / VI−)
+
+  - New `vortex` panel indicator plots VI+ and VI− from consecutive highs/lows
+    normalised by true range (configurable `period`, default 14). VI+ crossing
+    above VI− signals an up-trend (and vice-versa); a 1.0 reference line marks the
+    pivot. Auto-scales to the visible range. Registered in the indicator menu;
+    tested.
+
 ## 0.10.0
 
 ### Minor Changes
