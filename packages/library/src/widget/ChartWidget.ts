@@ -21,6 +21,9 @@ import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
 
+/** Distinct line colors for comparison overlays, cycled by add order. */
+const COMPARE_COLORS = ['#f7931a', '#627eea', '#26a17b', '#e84142', '#8247e5', '#f3ba2f'];
+
 export class ChartWidget {
   private chart: Chart;
   private state: WidgetState;
@@ -59,6 +62,7 @@ export class ChartWidget {
   // instead of refetching. See `setData` / `applyTimeframeData`.
   private baseSeries: DataSeries | null = null;
   private baseTimeframeMs = 0;
+  private compares: { id: string; symbol: string; color: string }[] = [];
 
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
@@ -280,6 +284,8 @@ export class ChartWidget {
           this.chart.setDrawingLocked(id, locked);
           this.refreshObjects();
         },
+        onAddCompare: () => this.handleAddCompare(),
+        onRemoveCompare: (id) => this.handleRemoveCompare(id),
       });
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
       this.chart.on('drawingCreate', refresh);
@@ -536,7 +542,60 @@ export class ChartWidget {
       visible: d.visible,
       locked: d.locked,
     }));
-    this.objectTree.setObjects(indicators, drawings);
+    const compares = this.compares.map((c) => ({ id: c.id, label: c.symbol, color: c.color }));
+    this.objectTree.setObjects(indicators, drawings, compares);
+  }
+
+  private async handleAddCompare(): Promise<void> {
+    if (!this.adapter) {
+      this.toast('Comparison needs a live data adapter', 'error');
+      return;
+    }
+    const taken = new Set([this.state.symbol, ...this.compares.map((c) => c.symbol)]);
+    const options = this.symbols.filter((s) => !taken.has(s));
+    this.symbolSearch?.open(options.length ? options : this.symbols, this.state.symbol, (symbol) => {
+      void this.addCompareSymbol(symbol);
+    });
+  }
+
+  /** Overlay another symbol's normalized series. Fetches history via the adapter. */
+  async addCompareSymbol(symbol: string): Promise<void> {
+    if (!this.adapter || this.compares.some((c) => c.symbol === symbol)) return;
+    const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
+    const id = `cmp_${symbol}`;
+    try {
+      const bars = await this.adapter.fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+      // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
+      // a shared % axis — the right default for comparison.
+      if (this.compares.length === 0) this.chart.setCompareMode('percent');
+      this.chart.addCompareSymbol(id, symbol, bars, color);
+      this.compares = [...this.compares, { id, symbol, color }];
+      this.refreshObjects();
+      this.toast(`Comparing ${symbol}`);
+    } catch (err: unknown) {
+      this.toast(`${symbol}: ${err instanceof Error ? err.message : 'failed to load'}`, 'error');
+    }
+  }
+
+  private handleRemoveCompare(id: string): void {
+    this.chart.removeCompareSymbol(id);
+    this.compares = this.compares.filter((c) => c.id !== id);
+    this.refreshObjects();
+  }
+
+  /** Refetch every comparison overlay at the current symbol/timeframe. */
+  private async refetchCompares(): Promise<void> {
+    if (!this.adapter || this.compares.length === 0) return;
+    // A comparison against the now-active symbol is redundant — drop it.
+    const stale = this.compares.filter((c) => c.symbol === this.state.symbol);
+    for (const c of stale) this.handleRemoveCompare(c.id);
+
+    for (const c of this.compares) {
+      try {
+        const bars = await this.adapter.fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+        this.chart.updateCompareData(c.id, bars);
+      } catch { /* leave the stale overlay in place if the refetch fails */ }
+    }
   }
 
   private refreshAlerts(): void {
@@ -956,6 +1015,11 @@ export class ChartWidget {
         connectionState: 'connected',
         connectionMessage: 'Live',
       };
+
+      // Re-pull comparison overlays at the (possibly new) timeframe so they
+      // stay aligned with the main series. Drop the active symbol if it ended
+      // up in the compare set after a symbol switch.
+      void this.refetchCompares();
     } catch (err: unknown) {
       this.state = {
         ...this.state,

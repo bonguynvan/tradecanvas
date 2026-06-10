@@ -12,12 +12,21 @@ export interface ObjectTreeDrawing {
   locked: boolean;
 }
 
+export interface ObjectTreeCompare {
+  id: string;
+  label: string;
+  color: string;
+}
+
 export interface ObjectTreeCallbacks {
   onRemoveIndicator: (instanceId: string) => void;
   onConfigureIndicator?: (instanceId: string) => void;
   onRemoveDrawing: (id: string) => void;
   onToggleDrawingVisible: (id: string, visible: boolean) => void;
   onToggleDrawingLocked: (id: string, locked: boolean) => void;
+  /** When provided, a Compare section with an "add" button is shown. */
+  onAddCompare?: () => void;
+  onRemoveCompare?: (id: string) => void;
 }
 
 /**
@@ -30,6 +39,7 @@ export class WidgetObjectTree {
   private el: HTMLDivElement;
   private indicatorsEl: HTMLDivElement;
   private drawingsEl: HTMLDivElement;
+  private compareEl: HTMLDivElement | null = null;
   private callbacks: ObjectTreeCallbacks;
   private open = false;
 
@@ -56,6 +66,9 @@ export class WidgetObjectTree {
 
     this.indicatorsEl = this.makeSection('Indicators');
     this.drawingsEl = this.makeSection('Drawings');
+    if (this.callbacks.onAddCompare) {
+      this.compareEl = this.makeSection('Compare', () => this.callbacks.onAddCompare?.());
+    }
 
     host.appendChild(this.el);
   }
@@ -82,18 +95,35 @@ export class WidgetObjectTree {
     this.el.remove();
   }
 
-  /** Replace both lists. Cheap full re-render — counts are small. */
-  setObjects(indicators: ObjectTreeIndicator[], drawings: ObjectTreeDrawing[]): void {
+  /** Replace all lists. Cheap full re-render — counts are small. */
+  setObjects(
+    indicators: ObjectTreeIndicator[],
+    drawings: ObjectTreeDrawing[],
+    compares: ObjectTreeCompare[] = [],
+  ): void {
     this.renderIndicators(indicators);
     this.renderDrawings(drawings);
+    this.renderCompares(compares);
   }
 
-  private makeSection(title: string): HTMLDivElement {
+  private makeSection(title: string, onAdd?: () => void): HTMLDivElement {
     const wrap = document.createElement('div');
     wrap.className = 'tcw-tree-section';
     const head = document.createElement('div');
     head.className = 'tcw-tree-section-head';
-    head.textContent = title;
+    const label = document.createElement('span');
+    label.textContent = title;
+    head.appendChild(label);
+    if (onAdd) {
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'tcw-tree-add';
+      addBtn.setAttribute('aria-label', `Add ${title.toLowerCase()}`);
+      addBtn.title = `Add ${title.toLowerCase()}`;
+      addBtn.innerHTML = createIcon('plus', 13);
+      addBtn.addEventListener('click', onAdd);
+      head.appendChild(addBtn);
+    }
     const list = document.createElement('div');
     list.className = 'tcw-tree-list';
     wrap.appendChild(head);
@@ -154,6 +184,28 @@ export class WidgetObjectTree {
       ));
       row.appendChild(actions);
       this.drawingsEl.appendChild(row);
+    }
+  }
+
+  private renderCompares(compares: ObjectTreeCompare[]): void {
+    if (!this.compareEl) return;
+    this.compareEl.replaceChildren();
+    if (compares.length === 0) {
+      this.compareEl.appendChild(this.emptyRow('No comparisons'));
+      return;
+    }
+    for (const c of compares) {
+      const row = this.row(c.label);
+      const dot = document.createElement('span');
+      dot.className = 'tcw-tree-dot';
+      dot.style.background = c.color;
+      row.insertBefore(dot, row.firstChild);
+      if (this.callbacks.onRemoveCompare) {
+        row.appendChild(this.iconButton('trash', 'Remove comparison', 'tcw-tree-del', () =>
+          this.callbacks.onRemoveCompare?.(c.id),
+        ));
+      }
+      this.compareEl.appendChild(row);
     }
   }
 

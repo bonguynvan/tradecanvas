@@ -1803,12 +1803,37 @@
   border-bottom: none;
 }
 .tcw-tree-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 6px 8px 4px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--tcw-text-muted);
+}
+.tcw-tree-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--tcw-text-muted);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+.tcw-tree-add:hover {
+  background: var(--tcw-accent-soft);
+  color: var(--tcw-accent);
+}
+.tcw-tree-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 .tcw-tree-list {
   max-height: 200px;

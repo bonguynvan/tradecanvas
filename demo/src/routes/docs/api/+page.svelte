@@ -258,6 +258,19 @@ chart.removeIndicator(instanceId)`}</code></pre>
   applies edits live via <code>updateIndicator</code> — no need to remove and
   re-add to change a period or colour.
 </p>
+<p>
+  The object tree's <strong>Compare</strong> section overlays other symbols as
+  normalized lines. With a live adapter, the + button opens the symbol picker,
+  fetches that symbol's history via <code>adapter.fetchHistory</code>, and adds
+  it in percent mode (so mixed-price symbols share one axis). Comparisons
+  refetch automatically on timeframe change. Programmatic equivalents:
+</p>
+<pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+
+// or drive the chart directly with your own data
+chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
+chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Price alerts</h3>
 <p>

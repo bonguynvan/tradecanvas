@@ -24,14 +24,17 @@ export class WidgetSymbolSearch {
   private selectedIndex = 0;
   private callbacks: SymbolSearchCallbacks;
   private boundKeydown: (e: KeyboardEvent) => void;
+  /** One-shot pick override — when set, this open() routes picks here instead. */
+  private pickOverride: ((symbol: string) => void) | null = null;
 
   constructor(callbacks: SymbolSearchCallbacks) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
   }
 
-  open(symbols: string[], current: string): void {
+  open(symbols: string[], current: string, onPick?: (symbol: string) => void): void {
     if (this.backdrop) return;
+    this.pickOverride = onPick ?? null;
     this.symbols = symbols;
     this.current = current;
     this.filtered = symbols.map(s => ({ symbol: s, score: 0 }));
@@ -93,6 +96,7 @@ export class WidgetSymbolSearch {
     this.modal = null;
     this.input = null;
     this.list = null;
+    this.pickOverride = null;
     this.callbacks.onClose();
   }
 
@@ -170,7 +174,9 @@ export class WidgetSymbolSearch {
   private pick(index: number): void {
     const entry = this.filtered[index];
     if (!entry) return;
-    this.callbacks.onPick(entry.symbol);
+    const override = this.pickOverride;
+    if (override) override(entry.symbol);
+    else this.callbacks.onPick(entry.symbol);
     this.close();
   }
 
