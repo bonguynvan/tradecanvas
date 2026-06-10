@@ -79,6 +79,14 @@ export interface ChartWidgetOptions {
   /** Anchor day for weekly resample buckets. `0` = Sunday, `1` = Monday (default). */
   weekStartsOn?: 0 | 1;
 
+  /**
+   * Drawing tools to pre-pin to the favorites strip at the top of the drawing
+   * sidebar on first run. Users pin/unpin any tool by right-clicking it; the
+   * set persists to localStorage. The strip is always available (hidden while
+   * empty) — this option only seeds the initial pins.
+   */
+  drawingFavorites?: DrawingToolType[];
+
   // Layout persistence (per-symbol indicators + drawings + chart type)
   persistLayouts?: boolean | {
     /** localStorage key prefix. The active symbol is appended. Default `tcw:layout:`. */
@@ -130,12 +138,15 @@ export interface ToolbarCallbacks {
 
 export interface SidebarConfig {
   drawingToolGroups: DrawingToolGroupDef[];
+  /** Initially pinned tools shown in the favorites strip. */
+  favorites?: DrawingToolType[];
 }
 
 export interface SidebarCallbacks {
   onDrawingTool: (tool: DrawingToolType) => void;
   onCancelDrawing: () => void;
   onToggleMagnet: () => void;
+  onToggleFavorite?: (tool: DrawingToolType) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClearDrawings: () => void;

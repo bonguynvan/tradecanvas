@@ -5,6 +5,31 @@ const GROUP_ICONS = [
   'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'ruler', 'type',
 ];
 
+/** Icon for a drawing tool in the favorites strip — falls back to a pen. */
+const TOOL_ICONS: Record<string, string> = {
+  trendLine: 'trendingUp', ray: 'trendingUp', extendedLine: 'trendingUp',
+  horizontalLine: 'minus', verticalLine: 'penLine',
+  rectangle: 'square', ellipse: 'square', triangle: 'square', arrow: 'trendingUp',
+  parallelChannel: 'gitBranch', regressionChannel: 'gitBranch', pitchfork: 'gitBranch',
+  fibRetracement: 'hash', fibExtension: 'hash', fibTimeZones: 'hash',
+  gannBox: 'hash', gannFan: 'gitBranch', elliottWave: 'trendingUp',
+  priceRange: 'ruler', dateRange: 'ruler', measure: 'ruler',
+  textAnnotation: 'type', anchoredVWAP: 'trendingUp', volumeProfileRange: 'barChart',
+};
+
+function toolIcon(tool: string): string {
+  return TOOL_ICONS[tool] ?? 'penLine';
+}
+
+/** Human label for a tool id, sourced from the configured groups. */
+function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): string {
+  for (const g of groups) {
+    const t = g.tools.find((x) => x.value === tool);
+    if (t) return t.label;
+  }
+  return tool;
+}
+
 export class WidgetDrawingSidebar {
   private config: SidebarConfig;
   private callbacks: SidebarCallbacks;
@@ -14,6 +39,9 @@ export class WidgetDrawingSidebar {
   private cursorBtn: HTMLButtonElement | null = null;
   private magnetBtn: HTMLButtonElement | null = null;
   private flyoutEl: HTMLDivElement | null = null;
+  private favoritesEl: HTMLDivElement | null = null;
+  private favoritesDivider: HTMLDivElement | null = null;
+  private favorites: string[] = [];
 
   constructor(host: HTMLElement, config: SidebarConfig, callbacks: SidebarCallbacks) {
     this.config = config;
@@ -36,6 +64,17 @@ export class WidgetDrawingSidebar {
     el.appendChild(this.cursorBtn);
 
     el.appendChild(this.divider());
+
+    // Favorites strip (pinned tools) — only when favorites are enabled.
+    if (callbacks.onToggleFavorite) {
+      this.favorites = [...(config.favorites ?? [])];
+      this.favoritesEl = document.createElement('div');
+      this.favoritesEl.className = 'tcw-sidebar-favorites';
+      el.appendChild(this.favoritesEl);
+      this.favoritesDivider = this.divider();
+      el.appendChild(this.favoritesDivider);
+      this.renderFavorites();
+    }
 
     // Tool groups
     config.drawingToolGroups.forEach((group, idx) => {
@@ -112,6 +151,34 @@ export class WidgetDrawingSidebar {
     el.appendChild(clearBtn);
   }
 
+  /** Update the pinned-tools strip. */
+  setFavorites(favorites: string[]): void {
+    this.favorites = [...favorites];
+    this.renderFavorites();
+  }
+
+  private renderFavorites(): void {
+    if (!this.favoritesEl) return;
+    this.favoritesEl.replaceChildren();
+    const visible = this.favorites.length > 0;
+    this.favoritesEl.style.display = visible ? '' : 'none';
+    if (this.favoritesDivider) this.favoritesDivider.style.display = visible ? '' : 'none';
+
+    for (const tool of this.favorites) {
+      const btn = document.createElement('button');
+      btn.className = 'tcw-sidebar-btn';
+      btn.title = `${toolLabel(this.config.drawingToolGroups, tool)} (right-click to unpin)`;
+      btn.dataset.toolValue = tool;
+      btn.innerHTML = createIcon(toolIcon(tool), 14);
+      btn.addEventListener('click', () => this.callbacks.onDrawingTool(tool as never));
+      btn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.callbacks.onToggleFavorite?.(tool as never);
+      });
+      this.favoritesEl.appendChild(btn);
+    }
+  }
+
   private showFlyout(idx: number): void {
     const group = this.config.drawingToolGroups[idx];
     if (!group || group.tools.length <= 1) return;
@@ -135,6 +202,14 @@ export class WidgetDrawingSidebar {
         this.callbacks.onDrawingTool(tool.value);
         this.hideFlyout();
       });
+      if (this.callbacks.onToggleFavorite) {
+        if (this.favorites.includes(tool.value)) item.classList.add('tcw-flyout-faved');
+        item.title = 'Right-click to pin/unpin';
+        item.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          this.callbacks.onToggleFavorite?.(tool.value);
+        });
+      }
       flyout.appendChild(item);
     }
 

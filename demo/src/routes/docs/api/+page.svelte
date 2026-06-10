@@ -263,6 +263,17 @@ widget.setWatchlistEntry('ETHUSDT', {
   sparkline: [3180, 3195, 3210, ...],
 })`}</code></pre>
 
+<h3>Drawing favorites</h3>
+<p>
+  Pin frequently-used drawing tools to a strip at the top of the sidebar.
+  Right-click any tool (in a group flyout or the strip itself) to pin or unpin
+  it; the set persists to localStorage. Seed the initial pins with
+  <code>drawingFavorites</code>:
+</p>
+<pre><code>{`new ChartWidget(host, {
+  drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
+})`}</code></pre>
+
 <h3>Drawing style &amp; templates</h3>
 <p>
   The palette button on the drawing sidebar opens a style popover — pick colour,

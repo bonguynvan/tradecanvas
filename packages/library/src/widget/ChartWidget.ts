@@ -18,6 +18,7 @@ import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
+import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -46,6 +47,7 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
+  private favoritesStore = new DrawingFavoritesStore();
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -148,13 +150,15 @@ export class ChartWidget {
     body.className = 'tcw-body';
 
     if (options.drawingTools !== false) {
+      if (options.drawingFavorites) this.favoritesStore.seedDefaults(options.drawingFavorites);
       this.sidebar = new WidgetDrawingSidebar(
         body,
-        { drawingToolGroups: DRAWING_TOOL_GROUPS },
+        { drawingToolGroups: DRAWING_TOOL_GROUPS, favorites: this.favoritesStore.list() as DrawingToolType[] },
         {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
           onToggleMagnet: () => this.handleToggleMagnet(),
+          onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
           onUndo: () => this.chart.undo(),
           onRedo: () => this.chart.redo(),
           onClearDrawings: () => {
@@ -563,6 +567,12 @@ export class ChartWidget {
     if (!this.alertsPanel) return;
     this.alertsPanel.toggle();
     if (this.alertsPanel.isOpen()) this.refreshAlerts();
+  }
+
+  private handleToggleFavorite(tool: DrawingToolType): void {
+    const pinned = this.favoritesStore.toggle(tool);
+    this.sidebar?.setFavorites(this.favoritesStore.list());
+    this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
