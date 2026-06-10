@@ -125,6 +125,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'ao', name: 'Awesome Oscillator', type: 'panel' },
   { id: 'chaikinOsc', name: 'Chaikin Oscillator', type: 'panel' },
   { id: 'voldelta', name: 'Volume Delta', type: 'panel' },
+  { id: 'vortex', name: 'Vortex Indicator', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

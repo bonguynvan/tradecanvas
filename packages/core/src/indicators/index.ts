@@ -21,6 +21,7 @@ export { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 export { VolumeDeltaIndicator } from './panel/VolumeDelta.js';
+export { VortexIndicator } from './panel/Vortex.js';
 export { getNumberParam, getIntParam } from './params.js';
 export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';

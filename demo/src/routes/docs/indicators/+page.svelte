@@ -62,6 +62,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>obv</code></td><td>On-Balance Volume</td></tr>
     <tr><td><code>chaikinOscillator</code></td><td>Chaikin Oscillator (exposes cumulative ADL)</td></tr>
     <tr><td><code>voldelta</code></td><td>Volume Delta (directional volume; per-bar or cumulative)</td></tr>
+    <tr><td><code>vortex</code></td><td>Vortex Indicator (VI+ / VI−; trend direction &amp; strength)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>
