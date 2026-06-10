@@ -20,7 +20,6 @@ export interface SessionBreakConfig {
  */
 export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
-  private cachedBreaks: number[] = [];
   private cachedBreaksTyped: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
   private lastDataLength = 0;
 
@@ -68,25 +67,11 @@ export class SessionBreaks {
 
     this.lastDataLength = data.length;
     this.cachedBreaksTyped = out;
-    this.cachedBreaks = out.map(b => b.idx);
     return out;
   }
 
   private toMs(timestamp: number): number {
     return timestamp > 1e12 ? timestamp : timestamp * 1000;
-  }
-
-  /** Legacy (kept for compatibility) — returns just the indices. */
-  private computeBreaks(data: DataSeries): number[] {
-    return this.computeBreaksTyped(data).map(b => b.idx);
-  }
-
-  /** Get a day key from a timestamp (seconds or milliseconds) */
-  private getDayKey(timestamp: number): string {
-    // Auto-detect seconds vs milliseconds
-    const ms = timestamp > 1e12 ? timestamp : timestamp * 1000;
-    const d = new Date(ms);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   }
 
   render(
@@ -166,7 +151,6 @@ export class SessionBreaks {
   /** Invalidate cache when data changes */
   invalidateCache(): void {
     this.lastDataLength = 0;
-    this.cachedBreaks = [];
     this.cachedBreaksTyped = [];
   }
 }

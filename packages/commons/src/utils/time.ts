@@ -49,3 +49,51 @@ export function alignToTimeframe(timestamp: number, tf: TimeFrame): number {
   const ms = TIMEFRAME_MS[tf];
   return Math.floor(timestamp / ms) * ms;
 }
+
+/** Day-of-week for a Monday-anchored reference week (1970-01-05 was a Monday, UTC). */
+const WEEK_ANCHOR_MS = Date.UTC(1970, 0, 5);
+
+function parseTimeframe(tf: TimeFrame): { count: number; unit: 's' | 'm' | 'h' | 'd' | 'w' | 'M' } {
+  const match = /^(\d+)([smhdwM])$/.exec(tf);
+  if (!match) return { count: 1, unit: 'm' };
+  return { count: parseInt(match[1], 10), unit: match[2] as 's' | 'm' | 'h' | 'd' | 'w' | 'M' };
+}
+
+/**
+ * Start of the bucket a timestamp falls into for a given timeframe.
+ *
+ * Intraday and daily frames are anchored to the Unix epoch (UTC) via fixed-ms
+ * flooring. Weekly frames are anchored to Monday (or `weekStartsOn`), monthly
+ * and yearly frames use calendar boundaries (1st of month, Jan for years) so
+ * 3M aligns to quarters and 12M to calendar years.
+ */
+export function timeframeBucketStart(
+  timestamp: number,
+  tf: TimeFrame,
+  weekStartsOn: 0 | 1 = 1,
+): number {
+  const { count, unit } = parseTimeframe(tf);
+
+  if (unit === 's' || unit === 'm' || unit === 'h' || unit === 'd') {
+    const ms = TIMEFRAME_MS[tf];
+    return Math.floor(timestamp / ms) * ms;
+  }
+
+  const d = new Date(timestamp);
+
+  if (unit === 'w') {
+    const dayMs = TIMEFRAME_MS['1d'];
+    const dow = d.getUTCDay();
+    const shift = (dow - weekStartsOn + 7) % 7;
+    const weekStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - shift);
+    if (count <= 1) return weekStart;
+    const weekIndex = Math.floor((weekStart - WEEK_ANCHOR_MS) / (7 * dayMs));
+    const grouped = Math.floor(weekIndex / count) * count;
+    return WEEK_ANCHOR_MS + grouped * 7 * dayMs;
+  }
+
+  // months / quarters / years
+  const totalMonths = d.getUTCFullYear() * 12 + d.getUTCMonth();
+  const grouped = Math.floor(totalMonths / count) * count;
+  return Date.UTC(Math.floor(grouped / 12), grouped % 12, 1);
+}

@@ -31,5 +31,33 @@ const result = new Backtester({ initialCash: 10_000 }).run(bars, myStrategy)
 const renderer = new EquityCurveRenderer(canvas.getContext('2d')!)
 renderer.render(result.equityCurve)`}</code></pre>
 
+<h2>Performance dashboard</h2>
+<p>
+  <code>PerformanceDashboard</code> composes the finance renderers into a single,
+  themed strategy report — a headline stats strip, an equity curve, an
+  underwater drawdown panel, and a calendar monthly-returns heatmap — built
+  directly from a backtest result.
+</p>
+
+<pre><code>{`import { Backtester } from '@tradecanvas/analytics'
+import { PerformanceDashboard } from '@tradecanvas/chart'
+
+const result = new Backtester({ initialCash: 10_000 }).run(bars, myStrategy)
+
+const dash = new PerformanceDashboard(document.getElementById('report')!, {
+  result,            // any { equityCurve, metrics } — Backtester output fits
+  theme: 'dark',
+  title: 'SMA Crossover',
+  subtitle: 'BTC/USDT · 1h · 2023',
+})
+
+// later: dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
+
+<p>
+  The pure derivations are exported too, if you want a custom layout:
+  <code>computeMonthlyReturns</code>, <code>computeDrawdownCurve</code>,
+  <code>toEquityPoints</code>, and <code>selectKeyStats</code>.
+</p>
+
 <h2>Heatmap layout</h2>
 <p><code>HeatmapLayout</code> helps compute square grids and color scales for arbitrary metric matrices.</p>

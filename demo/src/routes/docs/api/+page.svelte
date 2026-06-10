@@ -83,6 +83,22 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
+<h3>Touch &amp; mobile</h3>
+<table>
+  <thead><tr><th>Gesture</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>1-finger drag (chart area)</td><td>Pan + move crosshair</td></tr>
+    <tr><td>2-finger pinch</td><td>Zoom around the midpoint</td></tr>
+    <tr><td>Long-press (~500 ms)</td><td>Pin OHLC tooltip at the bar (mobile equivalent of Alt-click)</td></tr>
+    <tr><td>1-finger drag inside price / time axis strip</td><td>Scale the corresponding axis</td></tr>
+  </tbody>
+</table>
+<p>
+  Modals (settings, hotkey sheet, command palette, symbol search) automatically
+  switch to a bottom-sheet pattern with a grab handle and safe-area-aware
+  padding under 640 px viewports.
+</p>
+
 <h3>Measure tool</h3>
 <p>
   Hold <kbd>Shift</kbd> and drag on the chart to measure bars × price between
@@ -164,6 +180,32 @@ import { parseOHLCV } from '@tradecanvas/chart'
 
 const { data, rowCount, skipped } = parseOHLCV(csvText)
 chart.setData(data)`}</code></pre>
+
+<h3>Timeframe resampling</h3>
+<p>
+  Feed the widget your finest-resolution series with <code>widget.setData()</code>
+  and the toolbar timeframe buttons aggregate it on the client — one dataset
+  drives every resolution, no refetch. Active whenever no live adapter is
+  attached; opt out with <code>resampleTimeframes: false</code>. Weekly buckets
+  anchor to Monday by default (<code>weekStartsOn: 0</code> for Sunday).
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  timeframe: '1h',
+  timeframes: ['5m', '15m', '1h', '4h', '1d', '1w'],
+})
+widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
+
+// Or use the pure function directly
+import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+
+const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+<p>
+  Calendar-aware bucketing: intraday and daily frames anchor to UTC epoch
+  boundaries, weeks to the configured week start, and months / quarters / years
+  to calendar boundaries. Input bars are never mutated.
+</p>
 
 <h3>Watchlist sidebar</h3>
 <p>

@@ -154,7 +154,20 @@ export { ChartGrid } from './grid/ChartGrid.js';
 export type { GridLayout, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts
-export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart } from './finance/index.js';
+export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard } from './finance/index.js';
+export {
+  toEquityPoints,
+  computeDrawdownCurve,
+  computeMonthlyReturns,
+  selectKeyStats,
+} from './finance/index.js';
+export type {
+  PerformanceDashboardOptions,
+  PerformanceResult,
+  EquitySample,
+  RiskMetricsLike,
+  DashboardStat,
+} from './finance/index.js';
 export type {
   BaseFinanceChartOptions,
   SparklineOptions,

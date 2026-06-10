@@ -31,6 +31,10 @@ export class InteractionManager {
   private lastTouchDist = 0;
   private lastTouchMid: Point = { x: 0, y: 0 };
   private touchActive = false;
+  private touchStartPos: Point = { x: 0, y: 0 };
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly longPressMs = 500;
+  private readonly longPressMaxMove = 8;
 
   // Cached bounding rect — avoid a layout read per mousemove.
   // Invalidated on pointerdown, window resize, and explicit calls.
@@ -249,13 +253,39 @@ export class InteractionManager {
       e.preventDefault();
       this.invalidateRect();
       if (e.touches.length === 1) {
-        // Single finger: pan
         const pos = this.getTouchPos(e.touches[0]);
+        this.touchStartPos = pos;
+
+        // Axis strip touch → start drag-scaling (single-finger drag inside the
+        // axis is the mobile equivalent of mousedown on the axis).
+        const axis = hitAxis(pos);
+        if (axis && this.axisDragHandler) {
+          this.axisDragHandler.begin(axis, pos);
+          this.touchActive = true;
+          return;
+        }
+
+        // Long-press to pin the OHLC tooltip — mobile equivalent of Alt+click.
+        // Cancelled by movement > threshold or by a second finger landing.
+        if (this.onAltClick) {
+          this.clearLongPress();
+          this.longPressTimer = setTimeout(() => {
+            this.longPressTimer = null;
+            this.onAltClick?.(pos);
+            // Stop the pan gesture that started under the press so it doesn't
+            // suddenly jolt the chart when the user lifts their finger.
+            this.panHandler?.onPointerUp();
+            this.onOverlayDirty?.();
+          }, this.longPressMs);
+        }
+
+        // Single finger: pan
         this.panHandler?.onPointerDown(pos);
         this.crosshairHandler?.onPointerMove(pos);
         this.touchActive = true;
       } else if (e.touches.length === 2) {
-        // Two fingers: start pinch-to-zoom
+        // Two fingers: start pinch-to-zoom — abort any pending long-press.
+        this.clearLongPress();
         this.panHandler?.onPointerUp(); // Stop panning
         this.lastTouchDist = this.getTouchDistance(e.touches[0], e.touches[1]);
         this.lastTouchMid = this.getTouchMidpoint(e.touches[0], e.touches[1]);
@@ -267,6 +297,20 @@ export class InteractionManager {
       e.preventDefault();
       if (e.touches.length === 1 && this.touchActive) {
         const pos = this.getTouchPos(e.touches[0]);
+
+        // Cancel long-press if the finger drifts past the slop threshold.
+        if (this.longPressTimer) {
+          const dx = pos.x - this.touchStartPos.x;
+          const dy = pos.y - this.touchStartPos.y;
+          if (Math.hypot(dx, dy) > this.longPressMaxMove) this.clearLongPress();
+        }
+
+        if (this.axisDragHandler?.isActive()) {
+          this.axisDragHandler.move(pos);
+          this.onOverlayDirty?.();
+          return;
+        }
+
         this.panHandler?.onPointerMove(pos);
         this.crosshairHandler?.onPointerMove(pos);
       } else if (e.touches.length === 2) {
@@ -294,7 +338,11 @@ export class InteractionManager {
     };
 
     const onTouchEnd = (e: TouchEvent) => {
+      this.clearLongPress();
       if (e.touches.length === 0) {
+        if (this.axisDragHandler?.isActive()) {
+          this.axisDragHandler.end();
+        }
         this.panHandler?.onPointerUp();
         this.crosshairHandler?.onPointerLeave();
         this.touchActive = false;
@@ -345,6 +393,14 @@ export class InteractionManager {
     for (const remove of this.boundHandlers) remove();
     this.boundHandlers = [];
     this.cachedRect = null;
+    this.clearLongPress();
+  }
+
+  private clearLongPress(): void {
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
   }
 
   /** Force the cached bounding rect to be re-read on next access. */

@@ -1407,8 +1407,8 @@
 
 @media (max-width: 768px) {
   .tcw-toolbar {
-    padding: 0 6px;
-    height: 40px;
+    padding: 0 4px;
+    height: 44px;            /* Apple HIG minimum touch target */
   }
   .tcw-toolbar-sep {
     display: none;
@@ -1416,20 +1416,112 @@
   .tcw-indicator-chips {
     display: none;
   }
+  .tcw-btn,
+  .tcw-dropdown-trigger {
+    padding: 10px 12px;      /* fatter tap target */
+    font-size: 13px;
+  }
+  .tcw-btn-icon {
+    width: 40px;
+    height: 40px;
+  }
   .tcw-sidebar {
-    width: 36px;
+    width: 44px;
   }
   .tcw-sidebar-btn {
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
   }
-  .tcw-modal {
-    width: 94vw;
-    border-radius: var(--tcw-radius-lg);
-  }
+  .tcw-modal,
   .tcw-cmd-palette {
     width: 94vw;
     border-radius: var(--tcw-radius-lg);
+  }
+
+  /* Hide the right-side watchlist on tablets too — already declared but
+   * grouped here for clarity. */
+  .tcw-watchlist {
+    display: none;
+  }
+
+  /* Replay scrubber compact mode */
+  .tcw-replay-scrubber {
+    width: 120px;
+  }
+  .tcw-replay-progress {
+    display: none;
+  }
+}
+
+/* === Mobile bottom-sheet pattern ===
+ * On phones, swap floating-centered modals for full-width sheets that slide
+ * up from the bottom. Bigger hit targets, no awkward off-screen clipping,
+ * matches how every modern iOS/Android app handles overflow UI.
+ */
+@media (max-width: 640px) {
+  .tcw-modal,
+  .tcw-cmd-palette {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92vh;
+    border-radius: var(--tcw-radius-xl) var(--tcw-radius-xl) 0 0;
+    border-bottom: none;
+    /* Grab handle */
+    padding-top: 8px;
+  }
+
+  /* Visual "grab handle" affordance — a short pill at the top of every sheet */
+  .tcw-modal::before,
+  .tcw-cmd-palette::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--tcw-border-strong);
+    margin: 0 auto 8px;
+    opacity: 0.7;
+  }
+
+  /* Reuse the existing modal-in animation but slide from below instead of
+   * popping from center, so the entrance reads as a sheet, not a dialog. */
+  @keyframes tcw-modal-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tcw-modal,
+  .tcw-cmd-palette {
+    animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
+  }
+
+  /* Safe-area-aware footer padding for iPhone notch / home indicator */
+  .tcw-modal-footer,
+  .tcw-cmd-footer {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  /* Larger tap targets inside sheets */
+  .tcw-modal-tab {
+    padding: 14px 16px;
+  }
+  .tcw-cmd-item {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .tcw-dropdown-item {
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+
+  /* Hotkey sheet — single column on phones */
+  .tcw-hotkey-grid {
+    grid-template-columns: 1fr;
   }
 }
 

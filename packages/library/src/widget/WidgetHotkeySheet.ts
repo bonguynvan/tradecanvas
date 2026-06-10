@@ -42,6 +42,15 @@ const GROUPS: HotkeyGroup[] = [
     ],
   },
   {
+    title: 'Touch (mobile / tablet)',
+    entries: [
+      { keys: ['1 finger', 'Drag'], label: 'Pan / move crosshair' },
+      { keys: ['2 fingers', 'Pinch'], label: 'Zoom around midpoint' },
+      { keys: ['Long-press'], label: 'Pin OHLC tooltip at bar' },
+      { keys: ['Drag', 'Axis strip'], label: 'Scale price / time axis' },
+    ],
+  },
+  {
     title: 'Keyboard',
     entries: [
       { keys: ['←', '→'], label: 'Pan one bar' },

@@ -46,6 +46,18 @@ export interface ChartWidgetOptions {
    */
   dragDropImport?: boolean;
 
+  /**
+   * Client-side timeframe resampling. When enabled (default `true`) and no
+   * live adapter is attached, switching to a coarser timeframe aggregates the
+   * loaded base series instead of refetching — one dataset drives every
+   * resolution. Disable to keep the timeframe buttons purely as a
+   * `onTimeframeChange` signal for the host app to refetch.
+   */
+  resampleTimeframes?: boolean;
+
+  /** Anchor day for weekly resample buckets. `0` = Sunday, `1` = Monday (default). */
+  weekStartsOn?: 0 | 1;
+
   // Layout persistence (per-symbol indicators + drawings + chart type)
   persistLayouts?: boolean | {
     /** localStorage key prefix. The active symbol is appended. Default `tcw:layout:`. */

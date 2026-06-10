@@ -13,8 +13,9 @@ import { WidgetSymbolSearch } from './WidgetSymbolSearch.js';
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
-import { DragDropImporter } from '../io/index.js';
+import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
+import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
 
 export class ChartWidget {
@@ -47,6 +48,11 @@ export class ChartWidget {
   private settingsState: ChartSettingsState;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
+  // Finest-resolution series the widget has seen. When no live adapter is
+  // attached, switching to a coarser timeframe resamples from this base
+  // instead of refetching. See `setData` / `applyTimeframeData`.
+  private baseSeries: DataSeries | null = null;
+  private baseTimeframeMs = 0;
 
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
@@ -188,7 +194,7 @@ export class ChartWidget {
     if (options.dragDropImport !== false) {
       this.dragDrop = new DragDropImporter(this.chartContainer, {
         onData: (data, result, file) => {
-          this.chart.setData(data);
+          this.setData(data);
           this.toast(`Loaded ${result.data.length} bars from ${file.name}` + (result.skipped > 0 ? ` (${result.skipped} skipped)` : ''));
         },
         onError: (err, file) => {
@@ -328,6 +334,10 @@ export class ChartWidget {
     this.updateUI();
     if (this.adapter) {
       await this.connectStream();
+      return;
+    }
+    if (this.options.resampleTimeframes !== false) {
+      this.applyTimeframeData();
     }
   }
 
@@ -383,7 +393,44 @@ export class ChartWidget {
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
     if (this.adapter) {
+      // Live adapter owns the data — refetch at the native resolution.
       this.connectStream();
+      return;
+    }
+    if (this.options.resampleTimeframes === false) return;
+    // Static data: aggregate the base series locally. Lazily adopt whatever is
+    // currently on the chart as the base if the host fed it via getChart().
+    if (!this.baseSeries) {
+      const current = this.chart.getData();
+      if (current.length > 0) {
+        this.baseSeries = current;
+        this.baseTimeframeMs = inferTimeframeMs(current);
+      }
+    }
+    this.applyTimeframeData();
+  }
+
+  /**
+   * Load the widget's base series. Prefer this over `getChart().setData()` so
+   * client-side timeframe resampling has a finest-resolution source to
+   * aggregate from. The data is rendered at the current timeframe (resampled
+   * when that timeframe is coarser than the data's native spacing).
+   */
+  setData(data: DataSeries): void {
+    this.baseSeries = data;
+    this.baseTimeframeMs = inferTimeframeMs(data);
+    this.applyTimeframeData();
+  }
+
+  /** Render the base series at the active timeframe, resampling when coarser. */
+  private applyTimeframeData(): void {
+    if (!this.baseSeries) return;
+    const targetMs = timeframeToMs(this.state.timeframe);
+    if (this.baseTimeframeMs > 0 && targetMs > this.baseTimeframeMs) {
+      const weekStartsOn = this.options.weekStartsOn ?? 1;
+      this.chart.setData(resampleOHLCV(this.baseSeries, this.state.timeframe, { weekStartsOn }));
+    } else {
+      this.chart.setData(this.baseSeries);
     }
   }
 
