@@ -43,4 +43,27 @@ describe('SessionVWAPIndicator', () => {
   it('handles empty data', () => {
     expect(ind.calculate([], cfg).series).toEqual([]);
   });
+
+  it('emits ±σ bands that widen as intra-session dispersion grows', () => {
+    const data: DataSeries = [
+      bar(day1, 10, 100),        // single bar → variance 0 → bands collapse to vwap
+      bar(day1 + HOUR, 20, 100), // now two prices 10 & 20 → σ > 0
+    ];
+    const cfg2 = { id: 'svwap', instanceId: 's-2', params: { bands: 2 }, visible: true } as IndicatorConfig;
+    const s = ind.calculate(data, cfg2).series!;
+    // First bar: no dispersion → u1 == l1 == value.
+    expect(s[0]?.u1).toBeCloseTo(s[0]!.value!, 6);
+    // Second bar: vwap 15, σ = 5 → u1 20, l1 10, u2 25, l2 5.
+    expect(s[1]?.value).toBeCloseTo(15, 6);
+    expect(s[1]?.u1).toBeCloseTo(20, 6);
+    expect(s[1]?.l1).toBeCloseTo(10, 6);
+    expect(s[1]?.u2).toBeCloseTo(25, 6);
+    expect(s[1]?.l2).toBeCloseTo(5, 6);
+  });
+
+  it('omits bands when bands = 0', () => {
+    const cfg0 = { id: 'svwap', instanceId: 's-0', params: { bands: 0 }, visible: true } as IndicatorConfig;
+    const s = ind.calculate([bar(day1, 10, 100), bar(day1 + HOUR, 20, 100)], cfg0).series!;
+    expect(s[1]?.u1).toBeUndefined();
+  });
 });
