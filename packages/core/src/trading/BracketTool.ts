@@ -27,7 +27,9 @@ export function computeBracketDefaults(
   entry: number,
   opts: BracketDefaultsOptions = {},
 ): BracketDraft {
-  const risk = Math.abs(entry) * (opts.riskFraction ?? 0.01);
+  // Floor the stop distance so a zero (or near-zero) entry price doesn't
+  // collapse SL/TP onto the entry, producing a degenerate zero-risk bracket.
+  const risk = Math.max(Math.abs(entry) * (opts.riskFraction ?? 0.01), 1e-8);
   const reward = risk * (opts.riskReward ?? 2);
   if (side === 'buy') {
     return { side, entry, stopLoss: entry - risk, takeProfit: entry + reward };

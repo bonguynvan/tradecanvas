@@ -832,7 +832,10 @@ export class ChartWidget {
   private buildAlertSources(): { channel: string; label: string }[] {
     const sources = [{ channel: 'price', label: 'Price' }];
     for (const ind of this.chart.getActiveIndicators()) {
-      const point = this.chart.getIndicatorOutput(ind.instanceId)?.series?.find((p) => p != null);
+      // Use the latest point — multi-output indicators (MACD, Stochastic) only
+      // have all their lines populated once warmed up; the first point may not.
+      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
+      const point = series && series.length > 0 ? series[series.length - 1] : null;
       const keys = point ? Object.keys(point).filter((k) => typeof point[k] === 'number') : [];
       for (const key of keys) {
         const label = keys.length > 1 ? `${ind.descriptor.name} ${key}` : ind.descriptor.name;

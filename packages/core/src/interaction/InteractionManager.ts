@@ -288,6 +288,10 @@ export class InteractionManager {
       this.tradingManager?.onPointerUp();
       this.alertDragHandler?.end();
       this.crosshairHandler?.onPointerLeave();
+      // Reset click tracking — if the pointer leaves mid-press, the later
+      // document-level mouseup must not fire a spurious click.
+      this.pressForClick = false;
+      this.downPos = null;
       this.onOverlayDirty?.();
     };
 
@@ -331,6 +335,15 @@ export class InteractionManager {
         if (axis && this.axisDragHandler) {
           this.axisDragHandler.begin(axis, pos);
           this.touchActive = true;
+          return;
+        }
+
+        // Trading drag (bracket handles, order/position lines) — same priority
+        // as on desktop so the bracket is adjustable by touch.
+        const tvp = getVP();
+        if (this.tradingManager && tvp && this.tradingManager.onPointerDown(pos, tvp)) {
+          this.touchActive = true;
+          this.onOverlayDirty?.();
           return;
         }
 
@@ -380,6 +393,12 @@ export class InteractionManager {
           return;
         }
 
+        const tvp = getVP();
+        if (this.tradingManager && tvp && this.tradingManager.onPointerMove(pos, tvp)) {
+          this.onOverlayDirty?.();
+          return;
+        }
+
         this.panHandler?.onPointerMove(pos);
         this.crosshairHandler?.onPointerMove(pos);
       } else if (e.touches.length === 2) {
@@ -412,6 +431,7 @@ export class InteractionManager {
         if (this.axisDragHandler?.isActive()) {
           this.axisDragHandler.end();
         }
+        this.tradingManager?.onPointerUp();
         this.panHandler?.onPointerUp();
         this.crosshairHandler?.onPointerLeave();
         this.touchActive = false;

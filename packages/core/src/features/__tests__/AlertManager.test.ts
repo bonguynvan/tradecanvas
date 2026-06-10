@@ -84,6 +84,60 @@ describe('AlertManager indicator channels', () => {
   });
 });
 
+describe('AlertManager level conditions (edge-triggered)', () => {
+  it('fires a non-repeating greaterThan once even while the value stays above', () => {
+    const am = new AlertManager();
+    am.addAlert(100, 'greaterThan');
+    const fired: number[] = [];
+    am.on('triggered', () => fired.push(1));
+    am.checkPrice(90);  // seed
+    am.checkPrice(110); // crosses above → fire
+    am.checkPrice(120); // still above → no re-fire
+    am.checkPrice(115);
+    expect(fired).toHaveLength(1);
+  });
+
+  it('re-arms a repeating greaterThan only after the value drops back below', () => {
+    const am = new AlertManager();
+    am.addAlert(100, 'greaterThan', undefined, true); // repeating
+    let count = 0;
+    am.on('triggered', () => count++);
+    am.checkPrice(90);   // seed
+    am.checkPrice(110);  // fire
+    am.checkPrice(120);  // still above → no spam
+    am.checkPrice(130);
+    expect(count).toBe(1);
+    am.checkPrice(95);   // drops below → re-arm
+    am.checkPrice(105);  // crosses above again → fire
+    expect(count).toBe(2);
+  });
+
+  it('fires immediately if created while already above (seed then above)', () => {
+    const am = new AlertManager();
+    am.addAlert(100, 'greaterThan');
+    let count = 0;
+    am.on('triggered', () => count++);
+    am.checkPrice(110); // seed (no fire on first value)
+    am.checkPrice(111); // condition still met, first real check → fire
+    expect(count).toBe(1);
+  });
+});
+
+describe('AlertManager.clearLastValues', () => {
+  it('prevents a stale-prev crossing trigger after a context switch', () => {
+    const am = new AlertManager();
+    am.addAlert(50, 'crossingDown', undefined, false, 'rsi:v', 'RSI');
+    let count = 0;
+    am.on('triggered', () => count++);
+    am.checkChannel('rsi:v', 80); // seed high
+    am.clearLastValues();          // symbol switch
+    am.checkChannel('rsi:v', 40);  // first value of new series — must only seed, not "cross down"
+    expect(count).toBe(0);
+    am.checkChannel('rsi:v', 30);
+    expect(count).toBe(0); // already below; no crossing edge
+  });
+});
+
 describe('AlertManager.updateAlertPrice', () => {
   it('moves the alert and re-arms a triggered one', () => {
     const am = new AlertManager();

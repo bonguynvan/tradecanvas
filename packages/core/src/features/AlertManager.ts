@@ -124,42 +124,57 @@ export class AlertManager extends Emitter<AlertEvents> {
 
     for (const alert of this.alerts) {
       if (alert.channel !== channel) continue;
-      if (alert.triggered && !alert.repeating) continue;
 
-      let triggered = false;
+      let conditionMet = false;
       switch (alert.condition) {
         case 'crossingUp':
-          triggered = prev < alert.price && value >= alert.price;
+          conditionMet = prev < alert.price && value >= alert.price;
           break;
         case 'crossingDown':
-          triggered = prev > alert.price && value <= alert.price;
+          conditionMet = prev > alert.price && value <= alert.price;
           break;
         case 'crossing':
-          triggered = (prev < alert.price && value >= alert.price) ||
-                      (prev > alert.price && value <= alert.price);
+          conditionMet = (prev < alert.price && value >= alert.price) ||
+                         (prev > alert.price && value <= alert.price);
           break;
         case 'greaterThan':
-          triggered = value > alert.price;
+          conditionMet = value > alert.price;
           break;
         case 'lessThan':
-          triggered = value < alert.price;
+          conditionMet = value < alert.price;
           break;
       }
 
-      if (triggered) {
-        alert.triggered = true;
-        this.emit('triggered', { ...alert });
+      // Edge-triggered: fire once on entering the condition. For level
+      // conditions (greaterThan/lessThan) this prevents firing every tick while
+      // the value stays past the level; repeating alerts re-arm once it leaves.
+      if (conditionMet) {
+        if (!alert.triggered) {
+          alert.triggered = true;
+          this.emit('triggered', { ...alert });
+        }
+      } else if (alert.repeating) {
+        alert.triggered = false;
       }
     }
 
     this.lastValues.set(channel, value);
   }
 
+  /**
+   * Forget per-channel previous values. Call on a data context change (symbol /
+   * timeframe switch) so the first value of the new context seeds cleanly
+   * instead of crossing against a stale previous value.
+   */
+  clearLastValues(): void {
+    this.lastValues.clear();
+  }
+
   saveToStorage(key: string): void {
     try {
       const data = this.alerts.map(a => ({
         id: a.id, price: a.price, condition: a.condition,
-        message: a.message, triggered: a.triggered,
+        message: a.message, triggered: a.triggered, repeating: a.repeating,
         channel: a.channel, label: a.label,
       }));
       localStorage.setItem(key, JSON.stringify(data));
@@ -173,8 +188,8 @@ export class AlertManager extends Emitter<AlertEvents> {
       const data = JSON.parse(json);
       if (!Array.isArray(data)) return;
       for (const a of data) {
-        if (a.price && a.condition && !a.triggered) {
-          this.addAlert(a.price, a.condition, a.message, false, a.channel ?? 'price', a.label);
+        if (a.price != null && Number.isFinite(a.price) && a.condition && !a.triggered) {
+          this.addAlert(a.price, a.condition, a.message, a.repeating ?? false, a.channel ?? 'price', a.label);
         }
       }
     } catch { /* storage unavailable or corrupt data */ }

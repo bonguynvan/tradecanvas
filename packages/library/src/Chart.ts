@@ -75,6 +75,7 @@ import {
   SessionBreaks,
   CompareRenderer,
   CurrentPriceLine,
+  xToBarIndex,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -550,9 +551,9 @@ export class Chart {
       const data = this.getDisplayData();
       this.eventBus.emit('click', { x: pos.x, y: pos.y });
       if (data.length === 0) return;
-      const vp = this.viewport.getState();
-      const barUnit = vp.barWidth + vp.barSpacing;
-      const idx = Math.round((vp.offset + pos.x) / barUnit);
+      // Canonical bar mapping (accounts for chartRect.x + bar centering) so the
+      // clicked bar matches the crosshair / drawings.
+      const idx = xToBarIndex(pos.x, this.viewport.getState());
       if (idx < 0 || idx >= data.length) return;
       this.eventBus.emit('barClick', { bar: data[idx], barIndex: idx, point: pos });
     });
@@ -612,6 +613,9 @@ export class Chart {
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
+    // New data context (symbol / timeframe) — drop stale alert prev-values so
+    // the next tick seeds cleanly instead of crossing against the old series.
+    this.alertManager.clearLastValues();
     this.indicatorEngine.recalculateAll(this.dataManager.getData());
     // Auto-set current price line from last bar's close
     if (data.length > 0) {
@@ -1005,8 +1009,11 @@ export class Chart {
 
   /**
    * Feed the latest indicator-line values to any indicator-channel alerts.
-   * Channel format: `<instanceId>:<key>`. Cheap — only walks alerts whose
-   * channel isn't `'price'`, which is usually none.
+   * Channel format: `<instanceId>:<key>`; instanceIds are `tc_<id>_<n>` and
+   * built-in keys are colon-free, so the first colon splits them. Values come
+   * from the recalculated series, so indicator alerts evaluate at bar cadence
+   * (the live intrabar tick doesn't repaint closed-bar indicator values).
+   * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
    */
   private feedIndicatorAlerts(): void {
     const alerts = this.alertManager.getAlerts();
