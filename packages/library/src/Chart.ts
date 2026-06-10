@@ -1499,6 +1499,18 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  /**
+   * Set the timezone for time-axis labels and the crosshair time pill.
+   * `null` = browser-local; a number = fixed UTC offset in minutes (e.g. -300
+   * for EST, 330 for IST).
+   */
+  setTimezoneOffset(minutes: number | null): void {
+    this.timeAxis.setTimezoneOffset(minutes);
+    this.crosshairHandler.setTimezoneOffset(minutes);
+    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
   // --- Session (RTH) shading ---
 
   setSessionShadingVisible(visible: boolean): void {

@@ -163,4 +163,5 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   autoScale: true,
   crosshairMode: 'magnet',
   numberLocale: 'en-US',
+  timezone: 'local',
 };

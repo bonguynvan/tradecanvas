@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { formatPrice } from '@tradecanvas/commons';
+import { formatPrice, timeParts } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -10,6 +10,12 @@ export class CrosshairHandler {
   private position: Point | null = null;
   private callback: CrosshairCallback | null = null;
   private data: DataSeries = [];
+  private tzOffsetMinutes: number | null = null;
+
+  /** null = browser-local timezone; a number = fixed UTC offset in minutes. */
+  setTimezoneOffset(minutes: number | null): void {
+    this.tzOffsetMinutes = minutes;
+  }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
   private pricePrecision = 2;
@@ -165,7 +171,7 @@ export class CrosshairHandler {
 
     // ── Time pill (bottom axis) ──
     if (barIndex >= 0 && barIndex < data.length) {
-      const timeText = formatBarTime(data[barIndex].time);
+      const timeText = formatBarTime(data[barIndex].time, this.tzOffsetMinutes);
       const axisY = timeAxisY ?? (chartRect.y + chartRect.height);
       drawAxisPill(ctx, {
         text: timeText,
@@ -261,12 +267,8 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.restore();
 }
 
-function formatBarTime(rawTime: number): string {
+function formatBarTime(rawTime: number, tzOffsetMinutes: number | null): string {
   const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
-  const d = new Date(ms);
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const h = d.getHours();
-  const mm = d.getMinutes();
+  const { month: m, day, hours: h, minutes: mm } = timeParts(ms, tzOffsetMinutes);
   return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }

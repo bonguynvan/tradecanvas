@@ -187,6 +187,16 @@ export class WidgetSettings {
     ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] })));
 
     // Number locale
+    section.appendChild(this.selectRow('Timezone', s.timezone, [
+      { value: 'local', label: 'Local' },
+      { value: '0', label: 'UTC / London' },
+      { value: '-300', label: 'New York (UTC-5)' },
+      { value: '-360', label: 'Chicago (UTC-6)' },
+      { value: '60', label: 'Frankfurt (UTC+1)' },
+      { value: '480', label: 'Singapore/HK (UTC+8)' },
+      { value: '540', label: 'Tokyo (UTC+9)' },
+      { value: '330', label: 'Mumbai (UTC+5:30)' },
+    ], (v) => this.patch({ timezone: v })));
     section.appendChild(this.selectRow('Number Locale', s.numberLocale, [
       { label: 'en-US (65,234.00)', value: 'en-US' },
       { label: 'de-DE (65.234,00)', value: 'de-DE' },

@@ -201,6 +201,8 @@ export interface ChartSettingsState {
   autoScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;
+  /** 'local' = browser timezone, otherwise a fixed UTC offset in minutes (as a string). */
+  timezone: string;
 }
 
 export interface IndicatorDef {

@@ -1,15 +1,16 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import { timeParts, tzLabel } from '@tradecanvas/commons';
 
-// Reusable Date object — avoid allocation per bar
-const _date = new Date();
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
-// Detect user's UTC offset once
-const UTC_OFFSET_MIN = new Date().getTimezoneOffset();
-const UTC_OFFSET_H = -UTC_OFFSET_MIN / 60;
-const TZ_LABEL = `UTC${UTC_OFFSET_H >= 0 ? '+' : ''}${UTC_OFFSET_H}`;
-
 export class TimeAxis {
+  /** null = browser-local timezone; a number = fixed UTC offset in minutes. */
+  private tzOffsetMinutes: number | null = null;
+
+  setTimezoneOffset(minutes: number | null): void {
+    this.tzOffsetMinutes = minutes;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
     const { chartRect } = viewport;
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
@@ -46,12 +47,7 @@ export class TimeAxis {
       // Handle both milliseconds and seconds timestamps
       const rawTime = data[i].time;
       const timeMs = rawTime > 1e12 ? rawTime : rawTime * 1000;
-      _date.setTime(timeMs);
-
-      const day = _date.getDate();
-      const month = _date.getMonth() + 1;
-      const hours = _date.getHours();
-      const minutes = _date.getMinutes();
+      const { day, month, hours, minutes } = timeParts(timeMs, this.tzOffsetMinutes);
 
       // Smart format: show date on day change, time otherwise
       let label: string;
@@ -73,7 +69,7 @@ export class TimeAxis {
     ctx.textBaseline = 'top';
     ctx.globalAlpha = 0.75;
     ctx.fillStyle = theme.textSecondary;
-    ctx.fillText(TZ_LABEL, tzX, tzY);
+    ctx.fillText(tzLabel(this.tzOffsetMinutes), tzX, tzY);
     ctx.globalAlpha = 1;
   }
 }

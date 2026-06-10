@@ -1238,6 +1238,9 @@ export class ChartWidget {
       this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
     }
     if (patch.numberLocale !== undefined) this.chart.setNumberLocale(patch.numberLocale);
+    if (patch.timezone !== undefined) {
+      this.chart.setTimezoneOffset(patch.timezone === 'local' ? null : Number(patch.timezone));
+    }
 
     // Apply theme colors
     const currentTheme = this.chart.getTheme();

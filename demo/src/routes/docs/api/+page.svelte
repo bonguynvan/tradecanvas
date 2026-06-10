@@ -63,6 +63,15 @@
     <tr><td>Double-click time axis</td><td>Fit all data to the viewport.</td></tr>
   </tbody>
 </table>
+<p>
+  <strong>Timezone.</strong> Time-axis labels and the crosshair time pill follow
+  the browser's local zone by default; switch to a fixed UTC offset (or back to
+  local) from the settings sheet or directly:
+</p>
+<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
+chart.setTimezoneOffset(330)   // IST (UTC+5:30)
+chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+
 <p>The same effects are also available programmatically:</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale

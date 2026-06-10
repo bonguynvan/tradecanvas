@@ -50,6 +50,36 @@ export function alignToTimeframe(timestamp: number, tf: TimeFrame): number {
   return Math.floor(timestamp / ms) * ms;
 }
 
+export interface TimeParts {
+  month: number; // 1-12
+  day: number;
+  hours: number;
+  minutes: number;
+}
+
+/**
+ * Calendar parts of a timestamp in either the browser-local timezone
+ * (`tzOffsetMinutes === null`) or a fixed UTC offset (e.g. -300 for EST).
+ */
+export function timeParts(timeMs: number, tzOffsetMinutes: number | null): TimeParts {
+  if (tzOffsetMinutes === null) {
+    const d = new Date(timeMs);
+    return { month: d.getMonth() + 1, day: d.getDate(), hours: d.getHours(), minutes: d.getMinutes() };
+  }
+  const d = new Date(timeMs + tzOffsetMinutes * 60_000);
+  return { month: d.getUTCMonth() + 1, day: d.getUTCDate(), hours: d.getUTCHours(), minutes: d.getUTCMinutes() };
+}
+
+/** A short timezone label like `UTC-5` or `UTC+5:30` (browser-local when null). */
+export function tzLabel(tzOffsetMinutes: number | null): string {
+  const min = tzOffsetMinutes === null ? -new Date().getTimezoneOffset() : tzOffsetMinutes;
+  const sign = min >= 0 ? '+' : '-';
+  const abs = Math.abs(min);
+  const h = Math.floor(abs / 60);
+  const m = abs % 60;
+  return m === 0 ? `UTC${sign}${h}` : `UTC${sign}${h}:${String(m).padStart(2, '0')}`;
+}
+
 /** Day-of-week for a Monday-anchored reference week (1970-01-05 was a Monday, UTC). */
 const WEEK_ANCHOR_MS = Date.UTC(1970, 0, 5);
 
