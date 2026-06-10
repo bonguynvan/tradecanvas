@@ -3,6 +3,7 @@ import type { PanHandler } from './PanHandler.js';
 import type { ZoomHandler } from './ZoomHandler.js';
 import type { CrosshairHandler } from './CrosshairHandler.js';
 import type { AxisDragHandler } from './AxisDragHandler.js';
+import type { AlertDragHandler } from './AlertDragHandler.js';
 import type { DrawingManager } from '../drawings/DrawingManager.js';
 import type { TradingManager } from '../trading/TradingManager.js';
 
@@ -11,6 +12,7 @@ export class InteractionManager {
   private zoomHandler: ZoomHandler | null = null;
   private crosshairHandler: CrosshairHandler | null = null;
   private axisDragHandler: AxisDragHandler | null = null;
+  private alertDragHandler: AlertDragHandler | null = null;
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
   private measureHandlers: {
@@ -94,6 +96,11 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /** Enable dragging price-alert lines. Hit-tested after trading/drawing. */
+  setAlertDragHandler(handler: AlertDragHandler): void {
+    this.alertDragHandler = handler;
+  }
+
   setTradingManager(manager: TradingManager, viewportGetter: () => ViewportState): void {
     this.tradingManager = manager;
     this.viewportGetter = viewportGetter;
@@ -150,6 +157,12 @@ export class InteractionManager {
 
       if (this.tradingManager && vp && this.tradingManager.onPointerDown(pos, vp)) return;
       if (this.drawingManager && vp && this.drawingManager.onPointerDown(pos, vp)) return;
+      // Alert lines are draggable — precise hit-test (a few px), so this only
+      // claims the gesture when the pointer is right on a line.
+      if (this.alertDragHandler?.tryBegin(pos)) {
+        this.onOverlayDirty?.();
+        return;
+      }
       this.panHandler?.onPointerDown(pos);
     };
 
@@ -160,6 +173,13 @@ export class InteractionManager {
       // Axis drag in progress — owns the gesture exclusively.
       if (this.axisDragHandler?.isActive()) {
         this.axisDragHandler.move(pos);
+        return;
+      }
+
+      // Alert drag in progress — owns the gesture exclusively.
+      if (this.alertDragHandler?.isActive()) {
+        this.alertDragHandler.move(pos);
+        this.onOverlayDirty?.();
         return;
       }
 
@@ -175,6 +195,8 @@ export class InteractionManager {
         this.element.style.cursor = 'ns-resize';
       } else if (axisHover === 'time') {
         this.element.style.cursor = 'ew-resize';
+      } else if (this.alertDragHandler?.isOverAlert(pos)) {
+        this.element.style.cursor = 'ns-resize';
       } else if (this.element.style.cursor === 'ns-resize' || this.element.style.cursor === 'ew-resize') {
         this.element.style.cursor = '';
       }
@@ -197,6 +219,11 @@ export class InteractionManager {
     const onMouseUp = () => {
       if (this.axisDragHandler?.isActive()) {
         this.axisDragHandler.end();
+        return;
+      }
+      if (this.alertDragHandler?.isActive()) {
+        this.alertDragHandler.end();
+        this.onOverlayDirty?.();
         return;
       }
       if (this.measuring && this.measureHandlers) {
@@ -222,6 +249,7 @@ export class InteractionManager {
       this.panHandler?.onPointerUp();
       this.drawingManager?.onPointerUp();
       this.tradingManager?.onPointerUp();
+      this.alertDragHandler?.end();
       this.crosshairHandler?.onPointerLeave();
       this.onOverlayDirty?.();
     };

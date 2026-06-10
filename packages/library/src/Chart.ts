@@ -40,6 +40,7 @@ import {
   PanHandler,
   ZoomHandler,
   AxisDragHandler,
+  AlertDragHandler,
   CrosshairHandler,
   IndicatorEngine,
   registerBuiltInIndicators,
@@ -409,6 +410,9 @@ export class Chart {
     this.alertManager.on('removed', (id) => {
       this.eventBus.emit('alertRemove', { id });
     });
+    this.alertManager.on('updated', (alert) => {
+      this.eventBus.emit('alertUpdate', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
+    });
 
     // Signal markers
     this.signalMarkerManager = new SignalMarkerManager();
@@ -505,6 +509,10 @@ export class Chart {
         this.tradingManager,
         () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
+    }
+    if (this.features.alerts) {
+      const alertDrag = new AlertDragHandler(this.alertManager, () => this.viewport.getState());
+      this.interactionManager.setAlertDragHandler(alertDrag);
     }
     // Alt-click pins the OHLC tooltip at the bar under the cursor. Hitting
     // it a second time on the same bar unpins.

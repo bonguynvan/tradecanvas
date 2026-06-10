@@ -27,7 +27,8 @@ export type ChartEventType =
   | 'tradeZoneRemove'
   | 'alertAdd'
   | 'alertRemove'
-  | 'alertTriggered';
+  | 'alertTriggered'
+  | 'alertUpdate';
 
 export interface ChartEvent<T = unknown> {
   type: ChartEventType;
@@ -165,6 +166,7 @@ export interface ChartEventMap {
   alertAdd: AlertPayload;
   alertRemove: AlertRemovePayload;
   alertTriggered: AlertPayload;
+  alertUpdate: AlertPayload;
 }
 
 export interface AlertRemovePayload {

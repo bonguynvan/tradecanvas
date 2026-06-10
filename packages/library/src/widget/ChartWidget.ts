@@ -249,6 +249,7 @@ export class ChartWidget {
       // Keep the panel list and toasts in sync with the chart's AlertManager.
       this.chart.on('alertAdd', () => this.refreshAlerts());
       this.chart.on('alertRemove', () => this.refreshAlerts());
+      this.chart.on('alertUpdate', () => this.refreshAlerts());
       this.chart.on('alertTriggered', (e) => {
         const p = e.payload;
         this.toast(`🔔 Alert: price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`, 'info');

@@ -255,7 +255,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
 <h3>Price alerts</h3>
 <p>
   The toolbar bell opens a floating panel to add, list, and delete price
-  alerts; a toast fires when one triggers. Enabled by default — disable with
+  alerts; a toast fires when one triggers. Alert lines are also
+  <strong>draggable</strong> — grab one on the chart and slide it to re-price
+  (moving an alert re-arms it). Enabled by default — disable with
   <code>alerts: false</code>. Drive it programmatically via the
   <code>Chart</code> API and the typed alert events:
 </p>
@@ -271,7 +273,7 @@ chart.loadAlerts('tcw:alerts:BTCUSDT')
 chart.on('alertTriggered', (e) => {
   console.log('hit', e.payload.price, e.payload.message)
 })
-// also: 'alertAdd' / 'alertRemove'`}</code></pre>
+// also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)`}</code></pre>
 
 <h2>ChartGrid</h2>
 <p>Synchronized multi-chart layouts.</p>

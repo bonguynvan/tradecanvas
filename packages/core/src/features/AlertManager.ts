@@ -1,4 +1,4 @@
-import type { ViewportState, Theme } from '@tradecanvas/commons';
+import type { ViewportState, Theme, Point } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 
@@ -17,6 +17,7 @@ interface AlertEvents {
   triggered: PriceAlert;
   added: PriceAlert;
   removed: string;
+  updated: PriceAlert;
   [key: string]: unknown;
 }
 
@@ -57,6 +58,32 @@ export class AlertManager extends Emitter<AlertEvents> {
 
   getAlerts(): PriceAlert[] {
     return [...this.alerts];
+  }
+
+  /** First alert whose line is within `tolerance` px of `point.y`, or null. */
+  getAlertAtPoint(point: Point, viewport: ViewportState, tolerance = 6): PriceAlert | null {
+    const { chartRect } = viewport;
+    if (point.y < chartRect.y || point.y > chartRect.y + chartRect.height) return null;
+    let best: PriceAlert | null = null;
+    let bestDist = tolerance;
+    for (const alert of this.alerts) {
+      const dist = Math.abs(priceToY(alert.price, viewport) - point.y);
+      if (dist <= bestDist) {
+        bestDist = dist;
+        best = alert;
+      }
+    }
+    return best;
+  }
+
+  /** Move an alert to a new price (used by drag). Re-arms a triggered alert. */
+  updateAlertPrice(id: string, price: number): void {
+    const alert = this.alerts.find((a) => a.id === id);
+    if (!alert || !Number.isFinite(price)) return;
+    alert.price = price;
+    alert.triggered = false;
+    this.emit('updated', { ...alert });
+    this.requestRender?.();
   }
 
   clearAlerts(): void {
