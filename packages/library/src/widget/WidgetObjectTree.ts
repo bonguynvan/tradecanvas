@@ -14,6 +14,7 @@ export interface ObjectTreeDrawing {
 
 export interface ObjectTreeCallbacks {
   onRemoveIndicator: (instanceId: string) => void;
+  onConfigureIndicator?: (instanceId: string) => void;
   onRemoveDrawing: (id: string) => void;
   onToggleDrawingVisible: (id: string, visible: boolean) => void;
   onToggleDrawingLocked: (id: string, locked: boolean) => void;
@@ -109,9 +110,17 @@ export class WidgetObjectTree {
     }
     for (const ind of indicators) {
       const row = this.row(ind.name);
-      row.appendChild(this.iconButton('trash', 'Remove indicator', 'tcw-tree-del', () =>
+      const actions = document.createElement('div');
+      actions.className = 'tcw-tree-actions';
+      if (this.callbacks.onConfigureIndicator) {
+        actions.appendChild(this.iconButton('settings', 'Indicator settings', '', () =>
+          this.callbacks.onConfigureIndicator?.(ind.instanceId),
+        ));
+      }
+      actions.appendChild(this.iconButton('trash', 'Remove indicator', 'tcw-tree-del', () =>
         this.callbacks.onRemoveIndicator(ind.instanceId),
       ));
+      row.appendChild(actions);
       this.indicatorsEl.appendChild(row);
     }
   }

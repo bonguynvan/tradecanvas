@@ -15,6 +15,7 @@ import { WidgetReplayBar } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
+import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -34,6 +35,7 @@ export class ChartWidget {
   private dragDrop: DragDropImporter | null = null;
   private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
+  private indicatorSettings: WidgetIndicatorSettings | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -259,8 +261,13 @@ export class ChartWidget {
 
     // 8a-ter. Object tree (indicators + drawings manager)
     if (options.objectTree !== false) {
+      this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
+        onApply: (instanceId, params) => this.chart.updateIndicator(instanceId, params),
+        onClose: () => {},
+      });
       this.objectTree = new WidgetObjectTree(this.root, {
         onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
+        onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
         onRemoveDrawing: (id) => {
           this.chart.removeDrawing(id);
           this.refreshObjects();
@@ -426,6 +433,7 @@ export class ChartWidget {
     this.dragDrop?.detach();
     this.alertsPanel?.destroy();
     this.objectTree?.destroy();
+    this.indicatorSettings?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -502,6 +510,18 @@ export class ChartWidget {
     if (!this.objectTree) return;
     this.objectTree.toggle();
     if (this.objectTree.isOpen()) this.refreshObjects();
+  }
+
+  private openIndicatorSettings(instanceId: string): void {
+    if (!this.indicatorSettings) return;
+    const ind = this.chart.getActiveIndicators().find((i) => i.instanceId === instanceId);
+    if (!ind) return;
+    this.indicatorSettings.open({
+      instanceId,
+      name: ind.descriptor.name,
+      defaults: ind.descriptor.defaultConfig,
+      params: ind.params,
+    });
   }
 
   private refreshObjects(): void {

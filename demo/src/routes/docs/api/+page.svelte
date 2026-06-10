@@ -250,7 +250,14 @@ chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.getActiveIndicators()         // active indicator instances
+chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<p>
+  The gear button on each indicator row opens a <strong>settings dialog</strong>
+  that introspects the indicator's parameters (numbers, toggles, colors) and
+  applies edits live via <code>updateIndicator</code> — no need to remove and
+  re-add to change a period or colour.
+</p>
 
 <h3>Price alerts</h3>
 <p>

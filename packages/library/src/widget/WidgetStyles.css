@@ -1718,6 +1718,37 @@
   }
 }
 
+/* === Indicator settings dialog === */
+
+.tcw-modal-narrow {
+  max-width: 360px;
+}
+.tcw-indi-input {
+  width: 110px;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--tcw-text);
+  background: var(--tcw-bg-surface);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.tcw-indi-input:focus {
+  border-color: var(--tcw-accent);
+  box-shadow: 0 0 0 2px var(--tcw-accent-soft);
+}
+.tcw-indi-color {
+  width: 36px;
+  height: 28px;
+  padding: 2px;
+  background: var(--tcw-bg-surface);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+}
+
 /* === Object tree panel === */
 
 .tcw-tree-panel {
