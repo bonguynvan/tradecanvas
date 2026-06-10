@@ -47,6 +47,26 @@ new Chart(host, { features: { tradingContextMenu: false } })`}</code></pre>
 
 <p>Drag the price line to modify; subscribe via <code>chart.on('orderModify', ...)</code>.</p>
 
+<h2>Bracket orders (drag to place)</h2>
+<p>
+  Start a draggable bracket — entry plus stop-loss and take-profit zones — then
+  drag the three lines to tune entry, risk, and reward. Confirm with
+  <kbd>Enter</kbd> (or the Place button), cancel with <kbd>Esc</kbd>. In the
+  widget, the green/red toolbar arrows start a long/short bracket. The chart
+  emits a single <code>bracketPlace</code> event for your backend to act on —
+  it never places orders itself.
+</p>
+<pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
+chart.startBracket('sell', 64_800) // or pin the entry price
+
+chart.on('bracketPlace', (e) => {
+  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
+  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+})
+
+chart.confirmBracket()  // same as Enter
+chart.cancelBracket()   // same as Esc`}</code></pre>
+
 <h2>Signal markers</h2>
 <p>Bot or signal-trading integrations can place directional arrows on the overlay.</p>
 <pre><code>{`chart.addSignalMarker({

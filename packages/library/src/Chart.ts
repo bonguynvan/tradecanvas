@@ -541,10 +541,23 @@ export class Chart {
     });
 
     this.interactionManager.setEscapeHandler(() => {
+      if (this.features.trading && this.tradingManager.isBracketActive()) {
+        this.tradingManager.cancelBracket();
+        this.eventBus.emit('dataUpdate', { bracket: 'cancelled' });
+        return;
+      }
       if (this.pinnedTooltip.isPinned()) {
         this.pinnedTooltip.unpin();
         this.engine.requestRender(LayerType.Overlay);
       }
+    });
+
+    this.interactionManager.setConfirmHandler(() => {
+      if (this.features.trading && this.tradingManager.isBracketActive()) {
+        this.tradingManager.confirmBracket();
+        return true;
+      }
+      return false;
     });
 
     // Shift-drag measure tool — transient overlay. Coords resolved via
@@ -906,6 +919,33 @@ export class Chart {
   setOrders(orders: TradingOrder[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setOrders(orders);
+  }
+
+  /**
+   * Begin placing a draggable bracket order (entry + stop-loss + take-profit).
+   * Defaults the entry to the latest close when `entry` is omitted. Drag the
+   * three lines to adjust; confirm with Enter (emits `bracketPlace`) or cancel
+   * with Esc. Returns false if trading is disabled or no price is available.
+   */
+  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number): boolean {
+    if (!this.features.trading) return false;
+    const data = this.dataManager.getData();
+    const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
+    if (price === null) return false;
+    this.tradingManager.startBracket(side, price);
+    return true;
+  }
+
+  cancelBracket(): void {
+    if (this.features.trading) this.tradingManager.cancelBracket();
+  }
+
+  confirmBracket(): boolean {
+    return this.features.trading ? this.tradingManager.confirmBracket() : false;
+  }
+
+  isBracketActive(): boolean {
+    return this.features.trading && this.tradingManager.isBracketActive();
   }
 
   setPositions(positions: TradingPosition[]): void {

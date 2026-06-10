@@ -118,6 +118,7 @@ export interface ToolbarCallbacks {
   onToggleReplay?: () => void;
   onToggleAlerts?: () => void;
   onToggleObjects?: () => void;
+  onBracket?: (side: 'buy' | 'sell') => void;
 }
 
 export interface SidebarConfig {

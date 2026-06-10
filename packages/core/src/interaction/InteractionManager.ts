@@ -23,6 +23,7 @@ export class InteractionManager {
   private measuring = false;
   private onAltClick: ((pos: Point) => void) | null = null;
   private onEscape: (() => void) | null = null;
+  private onConfirm: (() => boolean) | null = null;
   private drawingManager: DrawingManager | null = null;
   private tradingManager: TradingManager | null = null;
   private viewportGetter: (() => ViewportState) | null = null;
@@ -71,6 +72,11 @@ export class InteractionManager {
   /** Wire an `Escape` keydown to the host — used to unpin tooltips, etc. */
   setEscapeHandler(handler: () => void): void {
     this.onEscape = handler;
+  }
+
+  /** Wire an `Enter` keydown — used to confirm bracket placement. Return true if handled. */
+  setConfirmHandler(handler: () => boolean): void {
+    this.onConfirm = handler;
   }
 
   setMeasureHandlers(handlers: {
@@ -263,6 +269,10 @@ export class InteractionManager {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && this.onEscape) {
         this.onEscape();
+      }
+      if (e.key === 'Enter' && this.onConfirm && this.onConfirm()) {
+        e.preventDefault();
+        return;
       }
       if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey)) e.preventDefault();
     };

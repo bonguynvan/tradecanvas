@@ -19,6 +19,7 @@ export type ChartEventType =
   | 'orderCancel'
   | 'positionClose'
   | 'positionModify'
+  | 'bracketPlace'
   | 'drawingCreate'
   | 'drawingRemove'
   | 'signalMarkerAdd'
@@ -79,6 +80,16 @@ export interface OrderPlacePayload {
   price: number;
   stopPrice?: number;
   quantity?: number;
+}
+
+export interface BracketPlacePayload {
+  side: 'buy' | 'sell';
+  entry: number;
+  stopLoss: number;
+  takeProfit: number;
+  quantity?: number;
+  /** Reward-to-risk ratio = |TP − entry| / |entry − SL|. */
+  riskReward: number;
 }
 
 export interface IndicatorChangePayload {
@@ -153,6 +164,7 @@ export interface ChartEventMap {
   themeChange: ThemeChangePayload;
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
+  bracketPlace: BracketPlacePayload;
   orderModify: OrderModifyPayload;
   orderCancel: OrderCancelPayload;
   positionClose: PositionClosePayload;

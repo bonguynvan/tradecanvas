@@ -14,6 +14,8 @@ import { PositionRenderer } from './PositionRenderer.js';
 import { DepthOverlay } from './DepthOverlay.js';
 import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
+import { BracketTool, bracketRiskReward } from './BracketTool.js';
+import type { OrderSide } from '@tradecanvas/commons';
 
 export class TradingManager {
   private orders: TradingOrder[] = [];
@@ -27,6 +29,7 @@ export class TradingManager {
   private depthOverlay = new DepthOverlay();
   private dragHandler: TradingDragHandler;
   private contextMenu = new TradingContextMenu();
+  private bracket = new BracketTool();
 
   private requestRender: (() => void) | null = null;
   private eventCallback: ((event: string, data: unknown) => void) | null = null;
@@ -80,14 +83,58 @@ export class TradingManager {
     this.requestRender?.();
   }
 
+  // --- Bracket placement ---
+
+  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`. */
+  startBracket(side: OrderSide, entry: number): void {
+    this.bracket.start(side, entry);
+    this.requestRender?.();
+  }
+
+  cancelBracket(): void {
+    if (!this.bracket.isActive()) return;
+    this.bracket.cancel();
+    this.requestRender?.();
+  }
+
+  /** Emit `bracketPlace` with the current draft and clear it. No-op if inactive. */
+  confirmBracket(): boolean {
+    const draft = this.bracket.getDraft();
+    if (!draft) return false;
+    this.eventCallback?.('bracketPlace', {
+      side: draft.side,
+      entry: draft.entry,
+      stopLoss: draft.stopLoss,
+      takeProfit: draft.takeProfit,
+      riskReward: bracketRiskReward(draft),
+    });
+    this.bracket.cancel();
+    this.requestRender?.();
+    return true;
+  }
+
+  isBracketActive(): boolean {
+    return this.bracket.isActive();
+  }
+
   // --- Pointer events ---
 
   onPointerDown(pos: Point, viewport: ViewportState): boolean {
     if (!this.config.enabled) return false;
+    // Bracket handles take priority over order/position drags while placing.
+    if (this.bracket.isActive() && this.bracket.beginDrag(pos, viewport)) {
+      this.requestRender?.();
+      return true;
+    }
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, 8);
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
+    if (this.bracket.isDragging()) {
+      const consumed = this.bracket.drag(pos, viewport);
+      if (consumed) this.requestRender?.();
+      return consumed;
+    }
     if (!this.dragHandler.isActive()) return false;
     const consumed = this.dragHandler.onPointerMove(pos, viewport);
     if (consumed) this.requestRender?.();
@@ -95,6 +142,11 @@ export class TradingManager {
   }
 
   onPointerUp(): boolean {
+    if (this.bracket.isDragging()) {
+      this.bracket.endDrag();
+      this.requestRender?.();
+      return true;
+    }
     const result = this.dragHandler.onPointerUp();
     if (result) {
       if (result.sourceType === 'order') {
@@ -140,6 +192,11 @@ export class TradingManager {
     // Orders (front)
     if (this.orders.length > 0) {
       this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState());
+    }
+
+    // Bracket placement preview (frontmost)
+    if (this.bracket.isActive()) {
+      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision ?? 2);
     }
   }
 

@@ -93,6 +93,18 @@ export class WidgetToolbar {
       el.appendChild(replayBtn);
     }
 
+    if (callbacks.onBracket) {
+      const onBracket = callbacks.onBracket;
+      const longBtn = this.iconBtn('trendingUp', 'Long bracket', () => onBracket('buy'));
+      longBtn.dataset.role = 'long';
+      longBtn.classList.add('tcw-btn-long');
+      el.appendChild(longBtn);
+      const shortBtn = this.iconBtn('trendingDown', 'Short bracket', () => onBracket('sell'));
+      shortBtn.dataset.role = 'short';
+      shortBtn.classList.add('tcw-btn-short');
+      el.appendChild(shortBtn);
+    }
+
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', 'Objects', callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';

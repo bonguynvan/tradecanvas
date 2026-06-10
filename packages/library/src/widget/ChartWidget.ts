@@ -18,6 +18,7 @@ import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
+import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -42,6 +43,7 @@ export class ChartWidget {
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettings: WidgetIndicatorSettings | null = null;
   private drawingStyle: WidgetDrawingStyle | null = null;
+  private bracketBar: WidgetBracketBar | null = null;
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -134,6 +136,7 @@ export class ChartWidget {
           onToggleReplay: () => this.toggleReplay(),
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
+          onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         },
       );
     }
@@ -254,6 +257,27 @@ export class ChartWidget {
         },
         new DrawingTemplateStore(),
       );
+    }
+
+    // Bracket-order placement: floating confirm/cancel bar + event wiring.
+    if (options.trading !== false) {
+      this.bracketBar = new WidgetBracketBar(this.root, {
+        onConfirm: () => this.chart.confirmBracket(),
+        onCancel: () => {
+          this.chart.cancelBracket();
+          this.bracketBar?.hide();
+        },
+      });
+      this.chart.on('bracketPlace', (e) => {
+        const b = e.payload;
+        this.bracketBar?.hide();
+        this.toast(`${b.side === 'buy' ? 'Long' : 'Short'} bracket placed · ${b.riskReward.toFixed(2)}R`);
+      });
+      // Esc-cancel originates in the chart; reflect it in the bar.
+      this.chart.on('dataUpdate', (e) => {
+        const p = e.payload as { bracket?: string };
+        if (p && p.bracket === 'cancelled') this.bracketBar?.hide();
+      });
     }
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
@@ -460,6 +484,7 @@ export class ChartWidget {
     this.objectTree?.destroy();
     this.indicatorSettings?.destroy();
     this.drawingStyle?.destroy();
+    this.bracketBar?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     this.watchlist?.destroy();
     this.toolbar?.destroy();
@@ -530,6 +555,13 @@ export class ChartWidget {
     if (!this.alertsPanel) return;
     this.alertsPanel.toggle();
     if (this.alertsPanel.isOpen()) this.refreshAlerts();
+  }
+
+  /** Begin a draggable bracket order at the latest price and show the action bar. */
+  startBracket(side: 'buy' | 'sell'): void {
+    if (this.chart.startBracket(side)) {
+      this.bracketBar?.show(side);
+    }
   }
 
   private toggleObjects(): void {

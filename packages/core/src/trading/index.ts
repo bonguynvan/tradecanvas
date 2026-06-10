@@ -5,3 +5,5 @@ export { PositionRenderer } from './PositionRenderer.js';
 export { DepthOverlay } from './DepthOverlay.js';
 export { TradingDragHandler } from './TradingDragHandler.js';
 export { TradingContextMenu } from './TradingContextMenu.js';
+export { BracketTool, computeBracketDefaults, bracketRiskReward } from './BracketTool.js';
+export type { BracketDraft, BracketHandle, BracketDefaultsOptions } from './BracketTool.js';
