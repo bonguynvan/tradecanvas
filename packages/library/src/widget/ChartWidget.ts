@@ -23,6 +23,7 @@ import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { DepthData } from '@tradecanvas/commons';
+import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -409,6 +410,12 @@ export class ChartWidget {
 
     // 9. Fire onReady
     options.onReady?.(this.chart);
+
+    // Deep-link restore: apply a `#tcw=` view from the URL when enabled.
+    if (options.shareUrl && typeof location !== 'undefined') {
+      const encoded = readShareHash(location.hash);
+      if (encoded) void this.importState(encoded);
+    }
   }
 
   // --- Public API ---
@@ -589,6 +596,60 @@ export class ChartWidget {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
     this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
+  }
+
+  /** Encode the current view (symbol, timeframe, chart type, scale, indicators, drawings). */
+  exportState(): string {
+    const indicators = this.chart.getActiveIndicators().map((i) => ({
+      id: i.id,
+      params: i.params as Record<string, number | string | boolean>,
+    }));
+    return encodeWidgetState({
+      v: 1,
+      symbol: this.state.symbol,
+      timeframe: this.state.timeframe,
+      chartType: this.state.chartType,
+      scaleMode: this.chart.getScaleMode(),
+      indicators,
+      drawings: this.chart.getDrawings(),
+    });
+  }
+
+  /** Restore a view from an `exportState()` string. Returns false if malformed. */
+  async importState(encoded: string): Promise<boolean> {
+    const s = decodeWidgetState(encoded);
+    if (!s) return false;
+
+    // Symbol/timeframe first so any stream/layout restore happens before we
+    // overlay the shared view on top.
+    if (s.symbol && s.symbol !== this.state.symbol) await this.setSymbol(s.symbol);
+    if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
+
+    if (s.chartType) this.handleChartType(s.chartType);
+    this.chart.setScaleMode(s.scaleMode);
+
+    for (const [, instanceId] of this.state.activeIndicators) this.chart.removeIndicator(instanceId);
+    const map = new Map<string, string>();
+    for (const ind of s.indicators) {
+      const iid = this.chart.addIndicator(ind.id, ind.params);
+      if (iid) map.set(ind.id, iid);
+    }
+    this.state = { ...this.state, activeIndicators: map };
+    this.chart.setDrawings(s.drawings);
+    this.updateUI();
+    return true;
+  }
+
+  /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
+  async copyShareLink(): Promise<void> {
+    const base = typeof location !== 'undefined' ? location.href : '';
+    const url = buildShareUrl(base, this.exportState());
+    try {
+      await navigator.clipboard.writeText(url);
+      this.toast('Share link copied');
+    } catch {
+      this.toast('Copy failed — clipboard unavailable', 'error');
+    }
   }
 
   /** Feed order-book depth to the chart overlay, depth ladder, and heatmap. */
@@ -804,6 +865,7 @@ export class ChartWidget {
       { id: 'screenshot', label: 'Screenshot', category: 'action', shortcut: '' },
       { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
       { id: 'settings', label: 'Settings', category: 'action' },
+      { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
       { id: 'clearDrawings', label: 'Clear All Drawings', category: 'action' },
     );
 
@@ -820,6 +882,9 @@ export class ChartWidget {
         break;
       case 'settings':
         this.openSettings();
+        break;
+      case 'shareView':
+        void this.copyShareLink();
         break;
       case 'clearDrawings':
         this.chart.clearDrawings();

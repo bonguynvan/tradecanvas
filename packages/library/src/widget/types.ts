@@ -87,6 +87,13 @@ export interface ChartWidgetOptions {
   weekStartsOn?: 0 | 1;
 
   /**
+   * Deep-linking. When `true`, the widget restores a `#tcw=<encoded>` view from
+   * the URL hash on load, and the "Share View" command writes one back. Use
+   * `exportState()` / `importState()` for manual control.
+   */
+  shareUrl?: boolean;
+
+  /**
    * Drawing tools to pre-pin to the favorites strip at the top of the drawing
    * sidebar on first run. Users pin/unpin any tool by right-clicking it; the
    * set persists to localStorage. The strip is always available (hidden while

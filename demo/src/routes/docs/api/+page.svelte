@@ -189,6 +189,20 @@ widget.destroy()`}</code></pre>
 </table>
 <p>Update the searchable catalog at runtime with <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
 
+<h3>Shareable view (deep links)</h3>
+<p>
+  Encode the whole view — symbol, timeframe, chart type, price scale,
+  indicators (with params), and drawings — into a compact, URL-safe string for
+  deep-linking. With <code>shareUrl: true</code> the widget restores a
+  <code>#tcw=…</code> hash on load and the "Share View" command palette action
+  copies a link to the clipboard.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, { shareUrl: true })
+
+const token = widget.exportState()      // portable string
+await widget.importState(token)         // restore a view
+await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
+
 <h3>Saved layouts</h3>
 <p>
   Persist per-symbol indicator stacks, drawings, alerts, and chart type
