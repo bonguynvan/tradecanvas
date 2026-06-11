@@ -48,6 +48,9 @@ import { KlingerIndicator } from './panel/Klinger.js';
 import { FisherTransformIndicator } from './panel/FisherTransform.js';
 import { DetrendedPriceOscillatorIndicator } from './panel/DetrendedPriceOscillator.js';
 import { BalanceOfPowerIndicator } from './panel/BalanceOfPower.js';
+import { MassIndexIndicator } from './panel/MassIndex.js';
+import { ChandeMomentumIndicator } from './panel/ChandeMomentum.js';
+import { TRIXIndicator } from './panel/TRIX.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -107,4 +110,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new FisherTransformIndicator());
   engine.register(new DetrendedPriceOscillatorIndicator());
   engine.register(new BalanceOfPowerIndicator());
+  engine.register(new MassIndexIndicator());
+  engine.register(new ChandeMomentumIndicator());
+  engine.register(new TRIXIndicator());
 }

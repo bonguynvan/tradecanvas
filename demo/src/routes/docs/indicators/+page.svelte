@@ -77,6 +77,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>fisher</code></td><td>Fisher Transform (Gaussian-normalized price + trigger line)</td></tr>
     <tr><td><code>dpo</code></td><td>Detrended Price Oscillator (isolates cycles by removing the trend)</td></tr>
     <tr><td><code>bop</code></td><td>Balance of Power (buyers vs sellers per bar; SMA-smoothed)</td></tr>
+    <tr><td><code>massindex</code></td><td>Mass Index (range-bulge reversal detector; 26.5/27 bands)</td></tr>
+    <tr><td><code>cmo</code></td><td>Chande Momentum (−100…+100 net momentum; ±50 bands)</td></tr>
+    <tr><td><code>trix</code></td><td>TRIX (triple-smoothed EMA rate of change + signal line)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

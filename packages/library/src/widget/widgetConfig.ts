@@ -140,6 +140,9 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'fisher', name: 'Fisher Transform', type: 'panel' },
   { id: 'dpo', name: 'Detrended Price Osc', type: 'panel' },
   { id: 'bop', name: 'Balance of Power', type: 'panel' },
+  { id: 'massindex', name: 'Mass Index', type: 'panel' },
+  { id: 'cmo', name: 'Chande Momentum', type: 'panel' },
+  { id: 'trix', name: 'TRIX', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
