@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Indicators — TradeCanvas docs</title>
-  <meta name="description" content="33 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
+  <meta name="description" content="60 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
 </svelte:head>
 
 <h1>Indicators</h1>
-<p>33 built-in indicators. Add by id; each registry entry validates its own params.</p>
+<p>60 built-in indicators. Add by id; each registry entry validates its own params.</p>
 
 <h2>Adding an indicator</h2>
 <pre><code>{`const instanceId = chart.addIndicator('rsi', { period: 14 }, 'bottom')
@@ -55,7 +55,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>rsi</code></td><td>Relative Strength Index</td></tr>
     <tr><td><code>macd</code></td><td>MACD</td></tr>
     <tr><td><code>stochastic</code></td><td>Stochastic</td></tr>
-    <tr><td><code>stochasticRsi</code></td><td>Stochastic RSI</td></tr>
+    <tr><td><code>stochrsi</code></td><td>Stochastic RSI (stochastic of RSI; %K/%D, 20/80 bands)</td></tr>
     <tr><td><code>atr</code></td><td>Average True Range</td></tr>
     <tr><td><code>adx</code></td><td>Average Directional Index</td></tr>
     <tr><td><code>cci</code></td><td>Commodity Channel Index</td></tr>
@@ -83,6 +83,8 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>emv</code></td><td>Ease of Movement (midpoint move per unit volume; SMA-smoothed)</td></tr>
     <tr><td><code>pvt</code></td><td>Price Volume Trend (cumulative volume weighted by % price change)</td></tr>
     <tr><td><code>wad</code></td><td>Williams A/D (cumulative accumulation/distribution line)</td></tr>
+    <tr><td><code>chaikinvol</code></td><td>Chaikin Volatility (% rate of change of an EMA of the high-low range; zero-centered)</td></tr>
+    <tr><td><code>rvi</code></td><td>Relative Vigor Index (close-vs-open vigor, range-normalized + signal line)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

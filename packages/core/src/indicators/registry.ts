@@ -54,6 +54,9 @@ import { TRIXIndicator } from './panel/TRIX.js';
 import { EaseOfMovementIndicator } from './panel/EaseOfMovement.js';
 import { PriceVolumeTrendIndicator } from './panel/PriceVolumeTrend.js';
 import { WilliamsADIndicator } from './panel/WilliamsAD.js';
+import { ChaikinVolatilityIndicator } from './panel/ChaikinVolatility.js';
+import { RelativeVigorIndicator } from './panel/RelativeVigor.js';
+import { StochasticRSIIndicator } from './panel/StochasticRSI.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -119,4 +122,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new EaseOfMovementIndicator());
   engine.register(new PriceVolumeTrendIndicator());
   engine.register(new WilliamsADIndicator());
+  engine.register(new ChaikinVolatilityIndicator());
+  engine.register(new RelativeVigorIndicator());
+  engine.register(new StochasticRSIIndicator());
 }
