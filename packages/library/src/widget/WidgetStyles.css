@@ -1629,6 +1629,9 @@
 
 .tcw-alerts-form input,
 .tcw-alerts-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 32px;
   padding: 0 8px;
   font-size: 12px;
