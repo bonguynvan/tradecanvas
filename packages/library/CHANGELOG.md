@@ -1,5 +1,60 @@
 # @tradecanvas/chart
 
+## 0.12.0
+
+### Minor Changes
+
+- f3072ed: feat: more indicators — Know Sure Thing, Elder Ray, Schaff Trend Cycle, Klinger Oscillator, Williams Alligator
+
+  Know Sure Thing (KST)
+
+  - New `kst` panel indicator (Martin Pring) — a momentum oscillator from four
+    smoothed rates of change weighted 1:2:3:4 toward the longer cycles, plus an
+    SMA signal line. KST crossing its signal (and the zero line) flags momentum
+    shifts. Zero-centered, auto-scaled, fully configurable ROC/SMA/signal periods.
+    Registered in the indicator menu; tested.
+
+### Patch Changes
+
+- ff9b8a5: feat: Williams Alligator indicator
+
+  - New `alligator` overlay (Bill Williams) — three forward-displaced smoothed
+    moving averages of the median price: jaw SMMA(13)→8, teeth SMMA(8)→5, lips
+    SMMA(5)→3. Intertwined lines = range ("sleeping"); fanned out in order =
+    trend ("feeding"). Configurable periods and shifts. Registered in the
+    indicator menu; tested.
+
+- 18fdff3: feat: Elder Ray Index (Bull / Bear Power)
+
+  - New `elderray` panel indicator (Alexander Elder) — Bull Power
+    (`high − EMA(close, n)`) and Bear Power (`low − EMA(close, n)`) measure how far
+    buyers/sellers push price beyond consensus value. Drawn as two zero-centered
+    histograms. Configurable `period` (13). Registered in the indicator menu;
+    tested.
+
+- 314b98c: feat: Klinger Volume Oscillator
+
+  - New `kvo` panel indicator (Stephen Klinger) — compares volume flow to price
+    movement via a cumulative "volume force", then KVO = EMA(VF, fast) −
+    EMA(VF, slow) with an EMA signal line. Crossing the signal/zero line flags
+    money-flow shifts. Zero-centered, auto-scaled, configurable
+    `fast`/`slow`/`signal` (34/55/13). Registered in the indicator menu; tested.
+
+- 888dfac: feat: Schaff Trend Cycle indicator
+
+  - New `stc` panel indicator (Doug Schaff) — runs a MACD line through two passes
+    of stochastic smoothing to produce a fast, cyclic 0–100 trend oscillator that
+    turns earlier than MACD. Reference lines at 25 / 75; configurable
+    `fast`/`slow`/`cycle` (23/50/10). Registered in the indicator menu; tested.
+
+- Updated dependencies [ff9b8a5]
+- Updated dependencies [18fdff3]
+- Updated dependencies [314b98c]
+- Updated dependencies [f3072ed]
+- Updated dependencies [888dfac]
+  - @tradecanvas/core@0.12.0
+  - @tradecanvas/commons@0.12.0
+
 ## 0.11.0
 
 ### Minor Changes
