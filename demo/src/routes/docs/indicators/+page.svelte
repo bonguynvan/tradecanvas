@@ -34,6 +34,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>zigzag</code></td><td>ZigZag</td></tr>
     <tr><td><code>linearRegressionChannel</code></td><td>Linear Regression Channel</td></tr>
     <tr><td><code>chandelier</code></td><td>Chandelier Exit (ATR trailing-stop levels, long &amp; short)</td></tr>
+    <tr><td><code>alligator</code></td><td>Williams Alligator (3 displaced smoothed MAs: jaw/teeth/lips)</td></tr>
   </tbody>
 </table>
 

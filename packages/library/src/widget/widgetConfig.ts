@@ -107,6 +107,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'zigzag', name: 'ZigZag', type: 'overlay' },
   { id: 'lrc', name: 'Linear Regression Channel', type: 'overlay' },
   { id: 'chandelier', name: 'Chandelier Exit', type: 'overlay' },
+  { id: 'alligator', name: 'Alligator', type: 'overlay' },
   { id: 'rsi', name: 'RSI', type: 'panel' },
   { id: 'macd', name: 'MACD', type: 'panel' },
   { id: 'stochastic', name: 'Stochastic', type: 'panel' },
