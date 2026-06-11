@@ -329,8 +329,8 @@ body.light .hero-title {
 
 /* Sections */
 .features-section {
-  padding: 64px 24px;
-  max-width: 1440px;
+  padding: 64px clamp(24px, 4vw, 72px);
+  max-width: none;
   margin: 0 auto;
 }
 

@@ -378,8 +378,8 @@
 
 <style>
   .finance-section {
-    padding: 48px 24px;
-    max-width: 1440px;
+    padding: 48px clamp(24px, 4vw, 72px);
+    max-width: none;
     margin: 0 auto;
   }
 

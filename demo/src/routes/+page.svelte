@@ -214,9 +214,9 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
     gap: 48px;
     align-items: center;
-    max-width: 1440px;
+    max-width: none;
     margin: 0 auto;
-    padding: 56px 32px 40px;
+    padding: 56px clamp(24px, 4vw, 72px) 40px;
     position: relative;
   }
 
