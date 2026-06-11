@@ -134,6 +134,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'coppock', name: 'Coppock Curve', type: 'panel' },
   { id: 'kst', name: 'Know Sure Thing', type: 'panel' },
   { id: 'elderray', name: 'Elder Ray', type: 'panel' },
+  { id: 'stc', name: 'Schaff Trend Cycle', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

@@ -42,6 +42,7 @@ import { ConnorsRSIIndicator } from './panel/ConnorsRSI.js';
 import { CoppockIndicator } from './panel/Coppock.js';
 import { KSTIndicator } from './panel/KST.js';
 import { ElderRayIndicator } from './panel/ElderRay.js';
+import { SchaffTrendCycleIndicator } from './panel/SchaffTrendCycle.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -95,4 +96,5 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new CoppockIndicator());
   engine.register(new KSTIndicator());
   engine.register(new ElderRayIndicator());
+  engine.register(new SchaffTrendCycleIndicator());
 }
