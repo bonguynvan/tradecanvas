@@ -125,7 +125,7 @@
 
 <style>
   .gallery {
-    max-width: none;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 72px clamp(24px, 4vw, 72px);
   }
