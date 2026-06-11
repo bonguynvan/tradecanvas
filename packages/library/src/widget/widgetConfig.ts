@@ -137,6 +137,9 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'elderray', name: 'Elder Ray', type: 'panel' },
   { id: 'stc', name: 'Schaff Trend Cycle', type: 'panel' },
   { id: 'kvo', name: 'Klinger Oscillator', type: 'panel' },
+  { id: 'fisher', name: 'Fisher Transform', type: 'panel' },
+  { id: 'dpo', name: 'Detrended Price Osc', type: 'panel' },
+  { id: 'bop', name: 'Balance of Power', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

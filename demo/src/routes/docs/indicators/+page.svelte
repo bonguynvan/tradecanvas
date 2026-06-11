@@ -74,6 +74,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>elderray</code></td><td>Elder Ray (Bull Power / Bear Power vs an EMA of close)</td></tr>
     <tr><td><code>stc</code></td><td>Schaff Trend Cycle (MACD via double stochastic, 0–100; 25/75 bands)</td></tr>
     <tr><td><code>kvo</code></td><td>Klinger Oscillator (volume-force money-flow + signal line)</td></tr>
+    <tr><td><code>fisher</code></td><td>Fisher Transform (Gaussian-normalized price + trigger line)</td></tr>
+    <tr><td><code>dpo</code></td><td>Detrended Price Oscillator (isolates cycles by removing the trend)</td></tr>
+    <tr><td><code>bop</code></td><td>Balance of Power (buyers vs sellers per bar; SMA-smoothed)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

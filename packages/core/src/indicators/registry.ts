@@ -45,6 +45,9 @@ import { KSTIndicator } from './panel/KST.js';
 import { ElderRayIndicator } from './panel/ElderRay.js';
 import { SchaffTrendCycleIndicator } from './panel/SchaffTrendCycle.js';
 import { KlingerIndicator } from './panel/Klinger.js';
+import { FisherTransformIndicator } from './panel/FisherTransform.js';
+import { DetrendedPriceOscillatorIndicator } from './panel/DetrendedPriceOscillator.js';
+import { BalanceOfPowerIndicator } from './panel/BalanceOfPower.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -101,4 +104,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new ElderRayIndicator());
   engine.register(new SchaffTrendCycleIndicator());
   engine.register(new KlingerIndicator());
+  engine.register(new FisherTransformIndicator());
+  engine.register(new DetrendedPriceOscillatorIndicator());
+  engine.register(new BalanceOfPowerIndicator());
 }
