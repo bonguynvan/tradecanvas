@@ -1,5 +1,27 @@
 # @tradecanvas/analytics
 
+## 0.14.0
+
+### Minor Changes
+
+- 794b707: Indicator-depth release: 12 new panel indicators across four batches, bringing the built-in library to 66.
+
+  - Volume flow: Ease of Movement (`emv`), Price Volume Trend (`pvt`), Williams A/D (`wad`)
+  - Volatility & momentum: Chaikin Volatility (`chaikinvol`), Relative Vigor Index (`rvi`), Stochastic RSI (`stochrsi`)
+  - Oscillators: Percentage Price Oscillator (`ppo`), Accelerator Oscillator (`ac`), Relative Momentum Index (`rmi`)
+  - Deviation & sentiment: Disparity Index (`disparity`), Qstick (`qstick`), Pretty Good Oscillator (`pgo`)
+
+  Also fixes an unused import in the Accelerator Oscillator that broke the type-declaration build.
+
+### Patch Changes
+
+- 69b45d8: Add three more panel indicators: Chaikin Volatility (`chaikinvol`), Relative Vigor Index (`rvi`), and Stochastic RSI (`stochrsi`).
+- 54cf6fd: Add three more panel indicators: Percentage Price Oscillator (`ppo`), Accelerator Oscillator (`ac`), and Relative Momentum Index (`rmi`).
+- Updated dependencies [69b45d8]
+- Updated dependencies [794b707]
+- Updated dependencies [54cf6fd]
+  - @tradecanvas/commons@0.14.0
+
 ## 0.13.0
 
 ### Minor Changes

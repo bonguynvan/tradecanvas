@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/analytics",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "type": "module",
   "description": "Backtesting, portfolio tracking, and risk analytics for TradeCanvas — bar-by-bar Backtester with virtual fills, commission/slippage models, and risk metrics (Sharpe, Sortino, Calmar, max drawdown).",
   "license": "MIT",
