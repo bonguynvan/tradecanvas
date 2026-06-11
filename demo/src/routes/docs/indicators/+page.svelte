@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Indicators — TradeCanvas docs</title>
-  <meta name="description" content="63 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
+  <meta name="description" content="66 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
 </svelte:head>
 
 <h1>Indicators</h1>
-<p>63 built-in indicators. Add by id; each registry entry validates its own params.</p>
+<p>66 built-in indicators. Add by id; each registry entry validates its own params.</p>
 
 <h2>Adding an indicator</h2>
 <pre><code>{`const instanceId = chart.addIndicator('rsi', { period: 14 }, 'bottom')
@@ -88,6 +88,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>ppo</code></td><td>Percentage Price Oscillator (MACD in % terms; line + signal + histogram)</td></tr>
     <tr><td><code>ac</code></td><td>Accelerator Oscillator (Bill Williams; AO − SMA(AO,5) histogram)</td></tr>
     <tr><td><code>rmi</code></td><td>Relative Momentum Index (RSI with a momentum lookback; 30/70 bands)</td></tr>
+    <tr><td><code>disparity</code></td><td>Disparity Index (% distance of close from its SMA; zero-centered)</td></tr>
+    <tr><td><code>qstick</code></td><td>Qstick (SMA of the close−open body; candlestick sentiment, zero-centered)</td></tr>
+    <tr><td><code>pgo</code></td><td>Pretty Good Oscillator (close−SMA in ATR units; ±3 breakout bands)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

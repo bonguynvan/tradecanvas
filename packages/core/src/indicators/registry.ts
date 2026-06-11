@@ -60,6 +60,9 @@ import { StochasticRSIIndicator } from './panel/StochasticRSI.js';
 import { PercentagePriceOscillatorIndicator } from './panel/PercentagePriceOscillator.js';
 import { AcceleratorOscillatorIndicator } from './panel/AcceleratorOscillator.js';
 import { RelativeMomentumIndexIndicator } from './panel/RelativeMomentumIndex.js';
+import { DisparityIndexIndicator } from './panel/DisparityIndex.js';
+import { QstickIndicator } from './panel/Qstick.js';
+import { PrettyGoodOscillatorIndicator } from './panel/PrettyGoodOscillator.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -131,4 +134,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new PercentagePriceOscillatorIndicator());
   engine.register(new AcceleratorOscillatorIndicator());
   engine.register(new RelativeMomentumIndexIndicator());
+  engine.register(new DisparityIndexIndicator());
+  engine.register(new QstickIndicator());
+  engine.register(new PrettyGoodOscillatorIndicator());
 }

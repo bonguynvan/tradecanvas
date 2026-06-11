@@ -152,6 +152,9 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'ppo', name: 'Percentage Price Oscillator', type: 'panel' },
   { id: 'ac', name: 'Accelerator Oscillator', type: 'panel' },
   { id: 'rmi', name: 'Relative Momentum Index', type: 'panel' },
+  { id: 'disparity', name: 'Disparity Index', type: 'panel' },
+  { id: 'qstick', name: 'Qstick', type: 'panel' },
+  { id: 'pgo', name: 'Pretty Good Oscillator', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 

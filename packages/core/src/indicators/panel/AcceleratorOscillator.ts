@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { DataSeries, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
