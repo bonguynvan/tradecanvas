@@ -72,6 +72,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>kst</code></td><td>Know Sure Thing (4 smoothed ROCs weighted 1:2:3:4 + signal line)</td></tr>
     <tr><td><code>elderray</code></td><td>Elder Ray (Bull Power / Bear Power vs an EMA of close)</td></tr>
     <tr><td><code>stc</code></td><td>Schaff Trend Cycle (MACD via double stochastic, 0–100; 25/75 bands)</td></tr>
+    <tr><td><code>kvo</code></td><td>Klinger Oscillator (volume-force money-flow + signal line)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

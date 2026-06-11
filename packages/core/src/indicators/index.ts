@@ -31,6 +31,7 @@ export { CoppockIndicator } from './panel/Coppock.js';
 export { KSTIndicator } from './panel/KST.js';
 export { ElderRayIndicator } from './panel/ElderRay.js';
 export { SchaffTrendCycleIndicator } from './panel/SchaffTrendCycle.js';
+export { KlingerIndicator } from './panel/Klinger.js';
 export { getNumberParam, getIntParam } from './params.js';
 export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';
