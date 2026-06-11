@@ -149,6 +149,9 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'chaikinvol', name: 'Chaikin Volatility', type: 'panel' },
   { id: 'rvi', name: 'Relative Vigor Index', type: 'panel' },
   { id: 'stochrsi', name: 'Stochastic RSI', type: 'panel' },
+  { id: 'ppo', name: 'Percentage Price Oscillator', type: 'panel' },
+  { id: 'ac', name: 'Accelerator Oscillator', type: 'panel' },
+  { id: 'rmi', name: 'Relative Momentum Index', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
