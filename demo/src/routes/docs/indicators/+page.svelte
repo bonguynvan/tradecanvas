@@ -80,6 +80,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
     <tr><td><code>massindex</code></td><td>Mass Index (range-bulge reversal detector; 26.5/27 bands)</td></tr>
     <tr><td><code>cmo</code></td><td>Chande Momentum (−100…+100 net momentum; ±50 bands)</td></tr>
     <tr><td><code>trix</code></td><td>TRIX (triple-smoothed EMA rate of change + signal line)</td></tr>
+    <tr><td><code>emv</code></td><td>Ease of Movement (midpoint move per unit volume; SMA-smoothed)</td></tr>
+    <tr><td><code>pvt</code></td><td>Price Volume Trend (cumulative volume weighted by % price change)</td></tr>
+    <tr><td><code>wad</code></td><td>Williams A/D (cumulative accumulation/distribution line)</td></tr>
     <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
     <tr><td><code>momentum</code></td><td>Momentum</td></tr>
     <tr><td><code>roc</code></td><td>Rate of Change</td></tr>

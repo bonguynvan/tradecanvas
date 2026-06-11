@@ -51,6 +51,9 @@ import { BalanceOfPowerIndicator } from './panel/BalanceOfPower.js';
 import { MassIndexIndicator } from './panel/MassIndex.js';
 import { ChandeMomentumIndicator } from './panel/ChandeMomentum.js';
 import { TRIXIndicator } from './panel/TRIX.js';
+import { EaseOfMovementIndicator } from './panel/EaseOfMovement.js';
+import { PriceVolumeTrendIndicator } from './panel/PriceVolumeTrend.js';
+import { WilliamsADIndicator } from './panel/WilliamsAD.js';
 import { StdDevIndicator } from './panel/StdDev.js';
 import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
@@ -113,4 +116,7 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new MassIndexIndicator());
   engine.register(new ChandeMomentumIndicator());
   engine.register(new TRIXIndicator());
+  engine.register(new EaseOfMovementIndicator());
+  engine.register(new PriceVolumeTrendIndicator());
+  engine.register(new WilliamsADIndicator());
 }

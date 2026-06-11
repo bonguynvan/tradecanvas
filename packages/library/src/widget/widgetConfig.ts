@@ -143,6 +143,9 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'massindex', name: 'Mass Index', type: 'panel' },
   { id: 'cmo', name: 'Chande Momentum', type: 'panel' },
   { id: 'trix', name: 'TRIX', type: 'panel' },
+  { id: 'emv', name: 'Ease of Movement', type: 'panel' },
+  { id: 'pvt', name: 'Price Volume Trend', type: 'panel' },
+  { id: 'wad', name: 'Williams A/D', type: 'panel' },
   { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
 ];
 
