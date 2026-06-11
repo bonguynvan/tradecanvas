@@ -1,5 +1,17 @@
 /* === TradeCanvas Widget — Premium Styles === */
 
+/*
+ * The HTML `hidden` attribute only sets `display: none` via the UA stylesheet,
+ * which any author `display` rule (e.g. `.tcw-alerts-panel { display: flex }`)
+ * silently overrides — leaving panels stuck open when JS sets `el.hidden = true`.
+ * Force `hidden` to win for every namespaced widget element. Scoped to `tcw-`
+ * so it never touches the host page.
+ */
+[class^="tcw-"][hidden],
+[class*=" tcw-"][hidden] {
+  display: none !important;
+}
+
 .tcw-root {
   display: flex;
   flex-direction: column;
