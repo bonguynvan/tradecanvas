@@ -1,5 +1,38 @@
 # @tradecanvas/core
 
+## 0.13.0
+
+### Minor Changes
+
+- d904d59: feat: Fisher Transform, Detrended Price Oscillator, and Balance of Power indicators
+
+  - `fisher` — Fisher Transform (John Ehlers): Gaussian-normalizes price so
+    turning points appear as sharp peaks, plotted with a one-bar lagged trigger
+    line (the log singularity is clamped). Zero-centered.
+  - `dpo` — Detrended Price Oscillator: removes the longer trend
+    (`close[i − period/2 − 1] − SMA(close, period)`) to expose price cycles.
+  - `bop` — Balance of Power: per-bar buyer/seller strength
+    `(close − open)/(high − low)`, SMA-smoothed, bounded to [−1, 1].
+
+  All three registered in the indicator menu and unit-tested.
+
+### Patch Changes
+
+- 5fe7fbf: feat: Mass Index, Chande Momentum, and TRIX indicators
+
+  - `massindex` — Mass Index (Donald Dorsey): sums the ratio of a single to a
+    double EMA of the high-low range to flag "reversal bulges" (rise above 27,
+    fall below 26.5). Reference lines at 26.5 / 27.
+  - `cmo` — Chande Momentum Oscillator: net momentum over the period swinging
+    −100…+100 (no smoothing), with ±50 reference bands.
+  - `trix` — TRIX: percent rate of change of a triple-smoothed EMA of close, with
+    an EMA signal line. Zero-centered.
+
+  All three registered in the indicator menu and unit-tested.
+
+- Updated dependencies [d904d59]
+  - @tradecanvas/commons@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes
