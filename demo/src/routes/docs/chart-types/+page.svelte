@@ -41,7 +41,7 @@
   <tbody>
     <tr><td><code>volumeCandles</code></td><td>Candle width proportional to volume.</td></tr>
     <tr><td><code>equivolume</code></td><td>
-      <strong>New in 0.8.</strong> Full-range boxes with width proportional to volume share; color tracks close vs prior close (Richard Arms style).
+      Full-range boxes with width proportional to volume share; color tracks close vs prior close (Richard Arms style).
     </td></tr>
   </tbody>
 </table>

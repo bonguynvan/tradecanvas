@@ -11,20 +11,20 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **33 built-in indicators** — SMA, EMA, Hull MA, RSI, MACD, Bollinger, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
 - **24 drawing tools** — Trendlines, Fibonacci (retracement, extension, time zones), horizontal/vertical lines, channels, Elliott waves, Gann fans / boxes, Pitchfork, Volume Profile range. With undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
-- **TradingView-grade interaction** *(new in 0.9)* — drag the price/time axes to scale, double-click to auto-fit, `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, axis-following price/time pill labels under the cursor, bar-hover highlight.
+- **TradingView-grade interaction** — drag the price/time axes to scale, double-click to auto-fit, `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines.
 - **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
 - **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
-- **Replay mode** — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed. *(new in 0.9)* The widget now ships a floating bottom scrubber UI (play/pause/step/seek + 0.5×–100× speed) on top of it.
-- **Volume Profile** *(new in 0.9)* — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
-- **Watchlist sidebar** *(new in 0.9)* — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
-- **CSV / JSON drag-and-drop** *(new in 0.9)* — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.
-- **Saved layouts** *(new in 0.9)* — opt-in per-symbol persistence of chart type + indicator stack + drawings + alerts to localStorage. Switch symbol, switch back, your setup is intact.
+- **Replay mode** — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed. The widget now ships a floating bottom scrubber UI (play/pause/step/seek + 0.5×–100× speed) on top of it.
+- **Volume Profile** — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
+- **Watchlist sidebar** — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
+- **CSV / JSON drag-and-drop** — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.
+- **Saved layouts** — opt-in per-symbol persistence of chart type + indicator stack + drawings + alerts to localStorage. Switch symbol, switch back, your setup is intact.
 - **Multi-chart grid** — `ChartGrid` for synchronized 2×2 / 2×3 layouts with linked crosshairs and shared time axis.
 - **Signal markers & trade zones** — render bot/algorithm output (directional arrows, entry→exit rectangles) as a first-class chart layer.
-- **Hotkey sheet** *(new in 0.9)* — press `?` in the widget to open a categorized keyboard-shortcut reference.
+- **Hotkey sheet** — press `?` in the widget to open a categorized keyboard-shortcut reference.
 - **Save/load chart state** — Persist drawings, indicators, theme, and chart type to JSON. Restore with one call.
 - **Zero dependencies** — The entire library is self-contained. No `d3`, no `chart.js`, no `fancy-canvas`.
 
@@ -575,8 +575,7 @@ console.log(result.equityCurve)            // → feed into the chart via Equity
 
 Returns: `fills`, closed `trades`, `equityCurve`, `metrics` (Sharpe, Sortino, Calmar, CAGR, max drawdown, win rate, profit factor, expectancy). See the [live backtest demo](https://bonguynvan.github.io/tradecanvas/docs/analytics/).
 
-#### Strategy library (new in 0.9)
-
+#### Strategy library
 Four drop-in reference strategies — each returns a `StrategyFn` ready to feed
 `Backtester.run()`:
 
@@ -594,8 +593,7 @@ bt.run(bars, smaCrossStrategy({ fastPeriod: 10, slowPeriod: 30 }))
 bt.run(bars, donchianBreakoutStrategy({ entryPeriod: 20, exitPeriod: 10 }))
 ```
 
-#### Monte Carlo path-dependence (new in 0.9)
-
+#### Monte Carlo path-dependence
 Shuffle realised trade order N times to expose whether a strategy depends on
 lucky sequencing. Tight P5/P95 band = robust edge; wide band = path-dependent.
 
