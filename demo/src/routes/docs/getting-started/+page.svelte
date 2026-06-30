@@ -35,7 +35,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  // Optional 0.9 features
+  // Optional features
   watchlist: true,         // right-side sparkline panel
   persistLayouts: true,    // remember per-symbol indicators / drawings
   // dragDropImport defaults to true — drop a CSV / JSON onto the chart

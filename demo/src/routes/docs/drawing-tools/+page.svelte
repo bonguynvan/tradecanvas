@@ -50,7 +50,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`}</code></pre>
 <ul>
   <li><code>fibRetracement</code></li>
   <li><code>fibExtension</code></li>
-  <li><code>fibTimeZones</code> — <strong>new in 0.8</strong>, vertical Fibonacci interval projections from a two-anchor time span.</li>
+  <li><code>fibTimeZones</code> — vertical Fibonacci interval projections from a two-anchor time span.</li>
 </ul>
 
 <h3>Advanced</h3>

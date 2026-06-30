@@ -30,7 +30,7 @@
         { label: 'Trading Overlay', href: '/docs/trading' },
         { label: 'Finance Charts', href: '/docs/finance' },
         { label: 'Realtime & Replay', href: '/docs/realtime' },
-        { label: 'Analytics (0.8)', href: '/docs/analytics' },
+        { label: 'Analytics', href: '/docs/analytics' },
       ],
     },
   ];

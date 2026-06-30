@@ -8,7 +8,7 @@
   <meta name="description" content="@tradecanvas/analytics — bar-by-bar Backtester, Portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown)." />
 </svelte:head>
 
-<h1>Analytics (0.8)</h1>
+<h1>Analytics</h1>
 <p>
   <code>@tradecanvas/analytics</code> ships a headless, bar-by-bar strategy
   backtester with portfolio tracking and a summary risk-metrics calculator.

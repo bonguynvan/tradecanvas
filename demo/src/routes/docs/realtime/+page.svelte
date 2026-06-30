@@ -66,7 +66,7 @@ rm.start()
 rm.schedule(() => connectWebsocket())   // call on disconnect; backs off automatically
 rm.onConnected()                        // call on a successful connect to reset`}</code></pre>
 
-<h2>Replay mode (0.8)</h2>
+<h2>Replay mode</h2>
 <p>
   Drive a historical <code>DataSeries</code> forward at controlled speed.
   Decoupled from <code>Chart</code> so it can power both UI replay and headless

@@ -137,5 +137,5 @@
     <span class="footer-sep">·</span>
     <a href="https://www.npmjs.com/package/@tradecanvas/chart">npm</a>
   </div>
-  <div style="margin-top: 8px">MIT · v0.9.0</div>
+  <div style="margin-top: 8px">MIT · v1.0.0</div>
 </footer>
