@@ -73,15 +73,18 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
 
 ## Definition of Done (the freeze gate for the 1.0 tag)
 
-- [ ] Version blocker fixed; no hardcoded/drifted versions.
+- [x] Version blocker fixed; no hardcoded/drifted versions.
 - [ ] Public API audited: every export marked **public** or **internal**; barrel pruned.
-- [ ] Contracts locked & documented: `ExecutionAdapter`, `DataAdapter`, Plugin SDK, event names.
+- [x] Contracts locked & documented: `ExecutionAdapter`, `DataAdapter`, Plugin SDK, event names *(see `V1-CONTRACTS.md`)*.
 - [ ] API-freeze cleanups: standardize `replay()` → `startReplay()` (do it now, while breaking is allowed).
 - [ ] Test gaps filled: `commons` covered; `library` / `analytics` / widget depth raised.
 - [ ] Type-safety: remove `any` event-handler casts (`StreamManager` et al.); drop stray `console.warn`.
 - [ ] Build hygiene: `sourcemap` + `target` consistent across all package vite configs.
+- [ ] **CI typecheck covers SFC wrappers** — root `typecheck` runs plain `tsc` on `packages/vue` + `packages/svelte`, which can't parse `.vue`/`.svelte` imports (pre-existing). Use `vue-tsc` / `svelte-check`, or scope `tsc` to the `.ts` packages.
 - [ ] Docs: "Stability & Public API" page, migration notes from 0.14, published benchmark page.
 - [ ] All CI green; changeset prepared.
+
+> Branch checkpoint (`v1/phase-0-2-foundations`): all 7 packages build, pure-TS typecheck clean, **611 tests green** across analytics/core/library.
 
 ## Audit baseline (from v1-readiness pass)
 
