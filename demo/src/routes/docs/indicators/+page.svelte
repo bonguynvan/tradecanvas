@@ -109,6 +109,16 @@ chart.removeIndicator(instanceId)`}</code></pre>
   an OHLCV series doesn't carry.)
 </p>
 
+<h2>Resizable panes</h2>
+<p>
+  Each panel indicator gets its own pane below the chart. <strong>Drag the divider</strong>
+  between the main chart and a pane (or between panes) to resize it — the cursor switches to
+  <code>ns-resize</code> on hover, and each pane keeps its own independent price scale. Resize
+  programmatically with <code>chart.setPanelSize</code>:
+</p>
+<pre><code>{`const id = chart.addIndicator('rsi', { period: 14 }, 'bottom')
+chart.setPanelSize(id, 180)   // pane height in px (clamped to a minimum)`}</code></pre>
+
 <h2>Web Worker pipeline</h2>
 <p>For heavy indicator workloads, offload calculation off the render loop:</p>
 <pre><code>{`import { IndicatorWorkerHost } from '@tradecanvas/chart'

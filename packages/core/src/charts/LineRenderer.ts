@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { lttbVisibleIndices } from './downsample.js';
 
 export class LineRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -20,8 +21,11 @@ export class LineRenderer implements ChartRendererInterface {
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
 
+    // LTTB-downsample the visible range when it far exceeds the pixel width so
+    // 100k-bar line charts stay smooth; a no-op for normally-zoomed data.
+    const indices = lttbVisibleIndices(from, to, data.length, viewport.chartRect.width, (i) => data[i].close);
     let started = false;
-    for (let i = from; i <= to && i < data.length; i++) {
+    for (const i of indices) {
       const x = i * barUnit + offsetX;
       const y = chartY + (max - data[i].close) * priceScale;
       if (!started) { ctx.moveTo(x, y); started = true; }

@@ -6,6 +6,7 @@ import type { AxisDragHandler } from './AxisDragHandler.js';
 import type { AlertDragHandler } from './AlertDragHandler.js';
 import type { DrawingManager } from '../drawings/DrawingManager.js';
 import type { TradingManager } from '../trading/TradingManager.js';
+import type { PaneResizeHandler } from './PaneResizeHandler.js';
 
 export class InteractionManager {
   private panHandler: PanHandler | null = null;
@@ -30,6 +31,7 @@ export class InteractionManager {
   private pressForClick = false;
   private drawingManager: DrawingManager | null = null;
   private tradingManager: TradingManager | null = null;
+  private paneResizeHandler: PaneResizeHandler | null = null;
   private viewportGetter: (() => ViewportState) | null = null;
   private onOverlayDirty: (() => void) | null = null;
   private boundHandlers: (() => void)[] = [];
@@ -121,6 +123,11 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /** Enable dragging pane dividers to resize indicator panels. */
+  setPaneResizeHandler(handler: PaneResizeHandler): void {
+    this.paneResizeHandler = handler;
+  }
+
   attach(): void {
     const getVP = () => this.viewportGetter?.() ?? null;
 
@@ -158,6 +165,10 @@ export class InteractionManager {
         this.axisDragHandler.begin(axis, pos);
         return;
       }
+
+      // Pane divider drag — resize indicator panes. Checked early (after the
+      // axis strips) so a divider press never starts drawing or trading.
+      if (this.paneResizeHandler?.tryBegin(pos)) return;
 
       // Shift-drag measure tool — bypasses pan/draw/trade. Tracked separately
       // because the gesture spans mousedown→mouseup and crosshair should be
@@ -205,6 +216,12 @@ export class InteractionManager {
         return;
       }
 
+      // Pane resize in progress — owns the gesture exclusively.
+      if (this.paneResizeHandler?.isActive()) {
+        this.paneResizeHandler.move(pos);
+        return;
+      }
+
       // Alert drag in progress — owns the gesture exclusively.
       if (this.alertDragHandler?.isActive()) {
         this.alertDragHandler.move(pos);
@@ -218,14 +235,17 @@ export class InteractionManager {
         return;
       }
 
-      // Hover cursor over axis strips (only when nothing else is happening).
+      // Hover cursor over axis strips / pane dividers (only when idle).
       const axisHover = hitAxis(pos);
+      const paneCursor = this.paneResizeHandler?.cursorAt(pos) ?? null;
       if (axisHover === 'price') {
         this.element.style.cursor = 'ns-resize';
       } else if (axisHover === 'time') {
         this.element.style.cursor = 'ew-resize';
       } else if (this.alertDragHandler?.isOverAlert(pos)) {
         this.element.style.cursor = 'ns-resize';
+      } else if (paneCursor) {
+        this.element.style.cursor = paneCursor;
       } else if (this.element.style.cursor === 'ns-resize' || this.element.style.cursor === 'ew-resize') {
         this.element.style.cursor = '';
       }
@@ -248,6 +268,10 @@ export class InteractionManager {
     const onMouseUp = () => {
       if (this.axisDragHandler?.isActive()) {
         this.axisDragHandler.end();
+        return;
+      }
+      if (this.paneResizeHandler?.isActive()) {
+        this.paneResizeHandler.end();
         return;
       }
       if (this.alertDragHandler?.isActive()) {
@@ -287,6 +311,7 @@ export class InteractionManager {
       this.drawingManager?.onPointerUp();
       this.tradingManager?.onPointerUp();
       this.alertDragHandler?.end();
+      this.paneResizeHandler?.end();
       this.crosshairHandler?.onPointerLeave();
       // Reset click tracking — if the pointer leaves mid-press, the later
       // document-level mouseup must not fire a spurious click.
@@ -334,6 +359,12 @@ export class InteractionManager {
         const axis = hitAxis(pos);
         if (axis && this.axisDragHandler) {
           this.axisDragHandler.begin(axis, pos);
+          this.touchActive = true;
+          return;
+        }
+
+        // Pane divider drag (touch) — resize indicator panes.
+        if (this.paneResizeHandler?.tryBegin(pos)) {
           this.touchActive = true;
           return;
         }
@@ -393,6 +424,12 @@ export class InteractionManager {
           return;
         }
 
+        if (this.paneResizeHandler?.isActive()) {
+          this.paneResizeHandler.move(pos);
+          this.onOverlayDirty?.();
+          return;
+        }
+
         const tvp = getVP();
         if (this.tradingManager && tvp && this.tradingManager.onPointerMove(pos, tvp)) {
           this.onOverlayDirty?.();
@@ -431,6 +468,7 @@ export class InteractionManager {
         if (this.axisDragHandler?.isActive()) {
           this.axisDragHandler.end();
         }
+        this.paneResizeHandler?.end();
         this.tradingManager?.onPointerUp();
         this.panHandler?.onPointerUp();
         this.crosshairHandler?.onPointerLeave();

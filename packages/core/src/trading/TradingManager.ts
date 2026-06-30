@@ -15,6 +15,7 @@ import { DepthOverlay } from './DepthOverlay.js';
 import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward } from './BracketTool.js';
+import { OrderDraftTool } from './OrderDraftTool.js';
 import type { OrderSide } from '@tradecanvas/commons';
 
 export class TradingManager {
@@ -30,6 +31,7 @@ export class TradingManager {
   private dragHandler: TradingDragHandler;
   private contextMenu = new TradingContextMenu();
   private bracket = new BracketTool();
+  private orderDraft = new OrderDraftTool();
 
   private requestRender: (() => void) | null = null;
   private eventCallback: ((event: string, data: unknown) => void) | null = null;
@@ -117,12 +119,44 @@ export class TradingManager {
     return this.bracket.isActive();
   }
 
+  // --- Single-order placement (drag-to-create) ---
+
+  /** Begin a draggable single-order draft at `price` for `side`. */
+  startOrderDraft(side: OrderSide, price: number): void {
+    this.orderDraft.start(side, price);
+    this.requestRender?.();
+  }
+
+  cancelOrderDraft(): void {
+    if (!this.orderDraft.isActive()) return;
+    this.orderDraft.cancel();
+    this.requestRender?.();
+  }
+
+  /** Emit `orderPlace` with the drafted order (type inferred vs the market). */
+  confirmOrderDraft(): boolean {
+    const intent = this.orderDraft.toIntent(this.currentPrice);
+    if (!intent) return false;
+    this.eventCallback?.('orderPlace', intent);
+    this.orderDraft.cancel();
+    this.requestRender?.();
+    return true;
+  }
+
+  isOrderDraftActive(): boolean {
+    return this.orderDraft.isActive();
+  }
+
   // --- Pointer events ---
 
   onPointerDown(pos: Point, viewport: ViewportState): boolean {
     if (!this.config.enabled) return false;
     // Bracket handles take priority over order/position drags while placing.
     if (this.bracket.isActive() && this.bracket.beginDrag(pos, viewport)) {
+      this.requestRender?.();
+      return true;
+    }
+    if (this.orderDraft.isActive() && this.orderDraft.beginDrag(pos, viewport)) {
       this.requestRender?.();
       return true;
     }
@@ -135,6 +169,11 @@ export class TradingManager {
       if (consumed) this.requestRender?.();
       return consumed;
     }
+    if (this.orderDraft.isDragging()) {
+      const consumed = this.orderDraft.drag(pos, viewport);
+      if (consumed) this.requestRender?.();
+      return consumed;
+    }
     if (!this.dragHandler.isActive()) return false;
     const consumed = this.dragHandler.onPointerMove(pos, viewport);
     if (consumed) this.requestRender?.();
@@ -144,6 +183,11 @@ export class TradingManager {
   onPointerUp(): boolean {
     if (this.bracket.isDragging()) {
       this.bracket.endDrag();
+      this.requestRender?.();
+      return true;
+    }
+    if (this.orderDraft.isDragging()) {
+      this.orderDraft.endDrag();
       this.requestRender?.();
       return true;
     }
@@ -197,6 +241,11 @@ export class TradingManager {
     // Bracket placement preview (frontmost)
     if (this.bracket.isActive()) {
       this.bracket.render(ctx, viewport, theme, this.config.pricePrecision ?? 2);
+    }
+
+    // Single-order draft preview
+    if (this.orderDraft.isActive()) {
+      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision ?? 2);
     }
   }
 

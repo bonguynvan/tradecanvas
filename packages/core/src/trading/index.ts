@@ -7,3 +7,7 @@ export { TradingDragHandler } from './TradingDragHandler.js';
 export { TradingContextMenu } from './TradingContextMenu.js';
 export { BracketTool, computeBracketDefaults, bracketRiskReward } from './BracketTool.js';
 export type { BracketDraft, BracketHandle, BracketDefaultsOptions } from './BracketTool.js';
+export { PaperExecutionAdapter } from './PaperExecutionAdapter.js';
+export type { PaperExecutionOptions } from './PaperExecutionAdapter.js';
+export { OrderDraftTool, inferOrderType } from './OrderDraftTool.js';
+export type { OrderDraft } from './OrderDraftTool.js';

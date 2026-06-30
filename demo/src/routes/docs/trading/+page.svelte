@@ -47,6 +47,39 @@ new Chart(host, { features: { tradingContextMenu: false } })`}</code></pre>
 
 <p>Drag the price line to modify; subscribe via <code>chart.on('orderModify', ...)</code>.</p>
 
+<h2>Live execution (connect an adapter)</h2>
+<p>
+  By default the chart <em>emits</em> order/position intents (<code>orderPlace</code>,
+  <code>orderModify</code>, <code>orderCancel</code>, <code>positionModify</code>,
+  <code>positionClose</code>) for your backend — it never trades itself. Connect an
+  <code>ExecutionAdapter</code> and the chart instead routes those intents into the
+  adapter and renders the authoritative orders/positions it emits back (the adapter is
+  the single source of truth).
+</p>
+<pre><code>{`import { PaperExecutionAdapter } from '@tradecanvas/chart'
+
+chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+
+chart.on('executionError', (e) => toast(e.payload.message))
+// chart.disconnectExecution()`}</code></pre>
+<p>
+  Implement <code>ExecutionAdapter</code> (it mirrors <code>DataAdapter</code>) to wire a
+  real broker / OMS: <code>placeOrder</code>, <code>modifyOrder</code>, <code>cancelOrder</code>,
+  <code>modifyPosition</code>, <code>closePosition</code>, plus <code>orders</code> /
+  <code>positions</code> / <code>fill</code> / <code>error</code> events.
+  <code>PaperExecutionAdapter</code> is a virtual-fill sandbox for demos and tests.
+</p>
+
+<h2>Drag-to-create orders</h2>
+<p>
+  Start a single draggable order line, drag it to a price, and confirm — the order type
+  (limit vs stop) is inferred from where you drop it relative to the current price. Pairs
+  with <code>connectExecution</code> so a confirmed draft fills immediately.
+</p>
+<pre><code>{`chart.startOrderDraft('buy')   // draggable line at the latest close
+chart.confirmOrderDraft()      // emits orderPlace -> a connected adapter fills it
+chart.cancelOrderDraft()`}</code></pre>
+
 <h2>Bracket orders (drag to place)</h2>
 <p>
   Start a draggable bracket — entry plus stop-loss and take-profit zones — then

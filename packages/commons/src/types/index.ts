@@ -8,6 +8,7 @@ export * from './theme.js';
 export * from './drawing.js';
 export * from './layout.js';
 export * from './trading.js';
+export * from './execution.js';
 export * from './signal.js';
 export * from './realtime.js';
 export * from './finance.js';

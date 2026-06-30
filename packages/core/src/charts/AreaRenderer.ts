@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { lttbVisibleIndices } from './downsample.js';
 
 export class AreaRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -17,9 +18,14 @@ export class AreaRenderer implements ChartRendererInterface {
     const priceScale = chartH / priceRange;
     const bottomY = chartY + chartH;
 
-    // Build path in single pass
-    const firstX = from * barUnit + offsetX;
-    const firstY = chartY + (max - data[from].close) * priceScale;
+    // LTTB-downsample the visible range when it far exceeds the pixel width;
+    // a no-op for normally-zoomed data. Used for both the fill and the line.
+    const indices = lttbVisibleIndices(from, to, data.length, viewport.chartRect.width, (i) => data[i].close);
+    if (indices.length === 0) return;
+
+    const firstI = indices[0];
+    const firstX = firstI * barUnit + offsetX;
+    const firstY = chartY + (max - data[firstI].close) * priceScale;
 
     // Fill
     const gradient = ctx.createLinearGradient(0, chartY, 0, bottomY);
@@ -31,7 +37,8 @@ export class AreaRenderer implements ChartRendererInterface {
     ctx.lineTo(firstX, firstY);
 
     let lastX = firstX;
-    for (let i = from + 1; i <= to && i < data.length; i++) {
+    for (let k = 1; k < indices.length; k++) {
+      const i = indices[k];
       lastX = i * barUnit + offsetX;
       ctx.lineTo(lastX, chartY + (max - data[i].close) * priceScale);
     }
@@ -47,7 +54,8 @@ export class AreaRenderer implements ChartRendererInterface {
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.moveTo(firstX, firstY);
-    for (let i = from + 1; i <= to && i < data.length; i++) {
+    for (let k = 1; k < indices.length; k++) {
+      const i = indices[k];
       ctx.lineTo(i * barUnit + offsetX, chartY + (max - data[i].close) * priceScale);
     }
     ctx.stroke();

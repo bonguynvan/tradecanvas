@@ -28,6 +28,8 @@ import type {
   ConnectionInfo,
   TimeFrame,
   FeaturesConfig,
+  ExecutionAdapter,
+  ExecutionConfig,
 } from '@tradecanvas/commons';
 import { LayerType, setLocale as setGlobalLocale, computePriceLimits } from '@tradecanvas/commons';
 import {
@@ -37,6 +39,7 @@ import {
   PriceAxis,
   TimeAxis,
   InteractionManager,
+  PaneResizeHandler,
   PanHandler,
   ZoomHandler,
   AxisDragHandler,
@@ -82,16 +85,22 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { createRendererFor, transformDisplayData } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData } from './charts/ChartTypeStrategy.js';
 import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { PluginManager } from './plugins/PluginManager.js';
+import { wireExecution } from './trading/wireExecution.js';
+import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
+
+// Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
+// guard keeps this safe when the source runs un-bundled (tests, ts-node).
+declare const __TC_VERSION__: string;
 
 export class Chart {
-  static version = '0.7.0';
+  static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
 
   private engine: RenderEngine;
   private viewport: Viewport;
@@ -106,6 +115,8 @@ export class Chart {
   private tradingRenderer: TradingRenderer;
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
+  private executionAdapter: ExecutionAdapter | null = null;
+  private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
@@ -153,7 +164,7 @@ export class Chart {
   private currentSymbol: string = '';
 
 
-  constructor(container: HTMLElement, options: ChartOptions) {
+  constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
     this.container = container;
     this.options = options;
     this.numberLocale = options.numberLocale ?? 'en-US';
@@ -202,7 +213,7 @@ export class Chart {
     this.themeManager = new ThemeManager(options.theme);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
-    this.pluginManager = new PluginManager(this.indicatorEngine);
+    this.pluginManager = new PluginManager(this.indicatorEngine, { plugins: options.plugins });
     this.eventBus = new EventBus();
 
     registerBuiltInIndicators(this.indicatorEngine);
@@ -531,6 +542,14 @@ export class Chart {
       const alertDrag = new AlertDragHandler(this.alertManager, () => this.viewport.getState());
       this.interactionManager.setAlertDragHandler(alertDrag);
     }
+
+    // Drag pane dividers to resize indicator panels.
+    const paneResize = new PaneResizeHandler();
+    paneResize.configure(
+      () => this.getResolvedLayout(),
+      (panelId, size) => this.setPanelSize(panelId, size),
+    );
+    this.interactionManager.setPaneResizeHandler(paneResize);
     // Alt-click pins the OHLC tooltip at the bar under the cursor. Hitting
     // it a second time on the same bar unpins.
     this.interactionManager.setAltClickHandler((pos) => {
@@ -689,10 +708,10 @@ export class Chart {
 
   // --- Chart type ---
 
-  setChartType(type: ChartType): void {
-    this.options.chartType = type;
+  setChartType(type: ChartType | (string & {})): void {
+    this.options.chartType = type as ChartType;
     this.chartRenderer = this.createChartRenderer(type);
-    this.chartLegend.setChartType(type);
+    this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
   }
@@ -740,6 +759,11 @@ export class Chart {
     this.pluginManager.registerIndicator(plugin);
   }
 
+  /** The chart's plugin registry — register custom indicators / drawings / chart types / overlays. */
+  get plugins(): PluginManager {
+    return this.pluginManager;
+  }
+
   static indicators(): IndicatorDescriptor[] {
     const engine = new IndicatorEngine();
     registerBuiltInIndicators(engine);
@@ -755,7 +779,7 @@ export class Chart {
 
   setPanelSize(instanceId: string, size: number): void {
     this.layoutManager.setPanelSize(instanceId, size);
-    this.engine.requestRender();
+    this.updateViewportAndRender();
   }
 
   // --- Drawing tools ---
@@ -1012,6 +1036,34 @@ export class Chart {
   }
 
   /**
+   * Begin a drag-to-create single order at `price` (default: latest close) for
+   * `side`. Drag the line to a level — the order type (limit/stop) is inferred
+   * from the level vs the current price. Confirm with `confirmOrderDraft()`
+   * (emits `orderPlace`) or cancel with `cancelOrderDraft()`. Returns false if
+   * trading is disabled or no price is available.
+   */
+  startOrderDraft(side: import('@tradecanvas/commons').OrderSide, price?: number): boolean {
+    if (!this.features.trading) return false;
+    const data = this.dataManager.getData();
+    const p = price ?? (data.length > 0 ? data[data.length - 1].close : null);
+    if (p === null) return false;
+    this.tradingManager.startOrderDraft(side, p);
+    return true;
+  }
+
+  cancelOrderDraft(): void {
+    if (this.features.trading) this.tradingManager.cancelOrderDraft();
+  }
+
+  confirmOrderDraft(): boolean {
+    return this.features.trading ? this.tradingManager.confirmOrderDraft() : false;
+  }
+
+  isOrderDraftActive(): boolean {
+    return this.features.trading && this.tradingManager.isOrderDraftActive();
+  }
+
+  /**
    * Emit an `orderPlace` intent (e.g. from a depth-ladder click). The chart
    * does not create the order itself — the host listens via
    * `chart.on('orderPlace', …)` and submits to its OMS.
@@ -1175,6 +1227,52 @@ export class Chart {
       this.streamManager.dispose();
       this.streamManager = null;
     }
+  }
+
+  /**
+   * Connect an execution adapter, turning the trading overlay into a live
+   * trading surface. The adapter is the source of truth: the chart routes its
+   * emitted order/position intents into the adapter and renders the
+   * `orders` / `positions` the adapter emits back. With no adapter connected,
+   * those intents remain plain events (the default). Listen for failures via
+   * `chart.on('executionError', …)`.
+   */
+  connectExecution(adapter: ExecutionAdapter, config: ExecutionConfig = {}): void {
+    if (!this.features.trading) {
+      throw new Error('connectExecution requires features.trading to be enabled');
+    }
+    this.disconnectExecution();
+    this.executionAdapter = adapter;
+    this.execTeardown = wireExecution(adapter, {
+      onIntent: (type, handler) => {
+        const wrapped = (e: ChartEvent) => handler(e.payload);
+        this.eventBus.on(type, wrapped);
+        return () => this.eventBus.off(type, wrapped);
+      },
+      setOrders: (orders) => this.setOrders(orders),
+      setPositions: (positions) => this.setPositions(positions),
+      onError: (error) => this.eventBus.emit('executionError', error),
+    });
+    Promise.resolve(adapter.connect(config)).catch((cause) =>
+      this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
+    );
+  }
+
+  /** Tear down the active execution adapter (if any) and stop routing intents. */
+  disconnectExecution(): void {
+    if (this.execTeardown) {
+      this.execTeardown();
+      this.execTeardown = null;
+    }
+    if (this.executionAdapter) {
+      this.executionAdapter.disconnect();
+      this.executionAdapter = null;
+    }
+  }
+
+  /** The connected execution adapter, or null (e.g. for adapter-specific calls). */
+  getExecutionAdapter(): ExecutionAdapter | null {
+    return this.executionAdapter;
   }
 
   setBarCountdownVisible(visible: boolean): void {
@@ -1911,6 +2009,7 @@ export class Chart {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     this.disableAutoSave();
     this.disconnectStream();
+    this.disconnectExecution();
     if (this.onWindowKeyDown) {
       window.removeEventListener('keydown', this.onWindowKeyDown);
       this.onWindowKeyDown = null;
@@ -1930,8 +2029,8 @@ export class Chart {
 
   // --- Internal ---
 
-  private createChartRenderer(type: ChartType): ChartRendererInterface {
-    return createRendererFor(type);
+  private createChartRenderer(type: ChartType | string): ChartRendererInterface {
+    return resolveRenderer(type, (t) => this.pluginManager.getChartType(t));
   }
 
   /** Cached display data. Invalidated when raw data or chart type changes. */
@@ -1939,7 +2038,7 @@ export class Chart {
     if (this.displayDataCache) return this.displayDataCache;
     const raw = this.dataManager.getData();
     if (raw.length === 0) return raw;
-    const result = transformDisplayData(this.options.chartType, raw);
+    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t));
     this.displayDataCache = result;
     return result;
   }
@@ -2113,7 +2212,25 @@ export class Chart {
       theme: this.themeManager.getTheme(),
       data: displayData,
       numberLocale: this.numberLocale,
+      renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });
+  }
+
+  /** Draw registered overlay plugins for a layer (called by the engine). */
+  private drawOverlayPlugins(
+    ctx: CanvasRenderingContext2D,
+    layer: 'main' | 'overlay' | 'ui',
+  ): void {
+    const overlays = overlaysForLayer(this.pluginManager.getOverlays(), layer);
+    if (overlays.length === 0) return;
+    const context = {
+      viewport: this.viewport.getState(),
+      data: this.getDisplayData(),
+      theme: this.themeManager.getTheme(),
+    };
+    for (const overlay of overlays) {
+      overlay.render(ctx, context);
+    }
   }
 
   private buildPriceLimits() {

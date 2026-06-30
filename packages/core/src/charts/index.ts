@@ -30,4 +30,5 @@ export { DepthHeatmapBuffer } from './DepthHeatmapBuffer.js';
 export type { DepthSnapshot } from './DepthHeatmapBuffer.js';
 export { CompareRenderer } from './CompareRenderer.js';
 export type { CompareSymbol } from './CompareRenderer.js';
+export { lttbDownsample, lttbVisibleIndices } from './downsample.js';
 export * from './transforms/index.js';
