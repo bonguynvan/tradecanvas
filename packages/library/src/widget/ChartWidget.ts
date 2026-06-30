@@ -1141,7 +1141,7 @@ export class ChartWidget {
         if (this.chart.getReplayState() === 'paused') {
           this.chart.replayResume();
         } else {
-          this.chart.replay({ speed: this.replaySpeed, interval: 200 });
+          this.chart.replayStart({ speed: this.replaySpeed, interval: 200 });
         }
         this.replayBar?.setState('playing');
       },
@@ -1180,7 +1180,7 @@ export class ChartWidget {
 
     // Boot replay paused at bar 1 so the user sees a starting state. Then
     // start polling progress for the scrubber — cheap, runs at 200ms.
-    this.chart.replay({ speed: this.replaySpeed, interval: 200, startIndex: 1 });
+    this.chart.replayStart({ speed: this.replaySpeed, interval: 200, startIndex: 1 });
     this.chart.replayPause();
     this.replayBar.setState('paused');
 

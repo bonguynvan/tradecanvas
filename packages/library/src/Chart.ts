@@ -1803,7 +1803,7 @@ export class Chart {
 
   // --- Replay ---
 
-  replay(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
+  replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
     const data = this.dataManager.getData();
     this.replayManager.load(data);

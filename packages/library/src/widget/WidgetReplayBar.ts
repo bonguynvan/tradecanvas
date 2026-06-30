@@ -2,7 +2,7 @@
  * Replay scrubber bar — surfaces the chart's existing replay engine as a
  * visible bottom-of-chart control. Mounts under the chart container, owns
  * its own lifecycle, and reports user intent up via callbacks (no chart
- * coupling — the host calls chart.replay() / replayPause() / etc.).
+ * coupling — the host calls chart.replayStart() / replayPause() / etc.).
  */
 export interface ReplayBarCallbacks {
   onPlay: () => void;

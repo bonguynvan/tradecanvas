@@ -17,3 +17,5 @@ Everything an open-source trading chart needs, batteries-included and zero-depen
 - **Performance** — LTTB downsampling keeps 100k+ bar line charts smooth.
 
 **Frozen 1.0 contracts** (semver-stable for the 1.x line): `DataAdapter`, `ExecutionAdapter`, the Plugin SDK (`IndicatorPlugin` / `DrawingPlugin` / `ChartTypePlugin` / `OverlayPlugin`), and the chart event names + payloads.
+
+**Breaking from 0.x:** `chart.replay()` is renamed to `chart.replayStart()`, for consistency with `replayPause` / `replayResume` / `replayStop` / `replaySeek`.
