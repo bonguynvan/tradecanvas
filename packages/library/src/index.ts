@@ -2,7 +2,7 @@ export { Chart } from './Chart.js';
 export { DataManager } from './DataManager.js';
 export { ThemeManager } from './ThemeManager.js';
 export { LayoutManager } from './layout/LayoutManager.js';
-export { PluginManager } from './plugins/PluginManager.js';
+export * from './plugins/index.js';
 export { parseOHLCV, DragDropImporter } from './io/index.js';
 export type { ParseResult, DragDropImporterCallbacks } from './io/index.js';
 
@@ -71,6 +71,13 @@ export type {
   OrderCancelIntent,
   PositionModifyIntent,
   PositionCloseIntent,
+  ExecutionAdapter,
+  ExecutionConfig,
+  ExecutionEvent,
+  ExecutionEventType,
+  ExecutionListener,
+  FillEvent,
+  ExecutionError,
   Locale,
   LocaleStrings,
   MarketConfig,
@@ -123,7 +130,8 @@ export {
 export { IndicatorBase, DrawingBase } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/core';
+export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
 // Re-export UI
