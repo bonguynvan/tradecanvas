@@ -45,6 +45,14 @@ export type ChartPlugin =
   | { kind: 'chartType'; plugin: ChartTypePlugin }
   | { kind: 'overlay'; plugin: OverlayPlugin };
 
+/** Overlays whose target layer matches `layer` (the default layer is `overlay`). */
+export function overlaysForLayer(
+  overlays: OverlayPlugin[],
+  layer: 'main' | 'overlay' | 'ui',
+): OverlayPlugin[] {
+  return overlays.filter((o) => (o.descriptor.layer ?? 'overlay') === layer);
+}
+
 /** Stable identity for a plugin, used for registry de-duplication and `list()`. */
 export function pluginKey(p: ChartPlugin): string {
   switch (p.kind) {

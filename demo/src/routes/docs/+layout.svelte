@@ -20,6 +20,7 @@
         { label: 'Chart Types', href: '/docs/chart-types' },
         { label: 'Indicators', href: '/docs/indicators' },
         { label: 'Drawing Tools', href: '/docs/drawing-tools' },
+        { label: 'Plugins', href: '/docs/plugins' },
       ],
     },
     {

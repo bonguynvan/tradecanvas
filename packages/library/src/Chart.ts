@@ -92,6 +92,7 @@ import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
+import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
@@ -162,7 +163,7 @@ export class Chart {
   private currentSymbol: string = '';
 
 
-  constructor(container: HTMLElement, options: ChartOptions) {
+  constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
     this.container = container;
     this.options = options;
     this.numberLocale = options.numberLocale ?? 'en-US';
@@ -211,7 +212,7 @@ export class Chart {
     this.themeManager = new ThemeManager(options.theme);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
-    this.pluginManager = new PluginManager(this.indicatorEngine);
+    this.pluginManager = new PluginManager(this.indicatorEngine, { plugins: options.plugins });
     this.eventBus = new EventBus();
 
     registerBuiltInIndicators(this.indicatorEngine);
@@ -747,6 +748,11 @@ export class Chart {
 
   registerIndicator(plugin: IndicatorPlugin): void {
     this.pluginManager.registerIndicator(plugin);
+  }
+
+  /** The chart's plugin registry — register custom indicators / drawings / chart types / overlays. */
+  get plugins(): PluginManager {
+    return this.pluginManager;
   }
 
   static indicators(): IndicatorDescriptor[] {
@@ -2197,7 +2203,25 @@ export class Chart {
       theme: this.themeManager.getTheme(),
       data: displayData,
       numberLocale: this.numberLocale,
+      renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });
+  }
+
+  /** Draw registered overlay plugins for a layer (called by the engine). */
+  private drawOverlayPlugins(
+    ctx: CanvasRenderingContext2D,
+    layer: 'main' | 'overlay' | 'ui',
+  ): void {
+    const overlays = overlaysForLayer(this.pluginManager.getOverlays(), layer);
+    if (overlays.length === 0) return;
+    const context = {
+      viewport: this.viewport.getState(),
+      data: this.getDisplayData(),
+      theme: this.themeManager.getTheme(),
+    };
+    for (const overlay of overlays) {
+      overlay.render(ctx, context);
+    }
   }
 
   private buildPriceLimits() {

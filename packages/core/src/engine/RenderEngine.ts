@@ -65,6 +65,8 @@ export interface RenderContext {
   data: DataSeries;
   /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
   numberLocale?: string;
+  /** Draw registered overlay plugins for a layer (populated by the Chart). */
+  renderOverlayPlugins?: ((ctx: CanvasRenderingContext2D, layer: 'main' | 'overlay' | 'ui') => void) | null;
 }
 
 export class RenderEngine {
@@ -178,6 +180,7 @@ export class RenderEngine {
       ctx.indicatorEngine?.renderOverlays(c, viewport);
       ctx.periodLevels?.render(c, data, viewport, theme);
       ctx.pivotMarkers?.render(c, data, viewport, theme);
+      ctx.renderOverlayPlugins?.(c, 'main');
 
       c.restore();
 
@@ -252,6 +255,7 @@ export class RenderEngine {
       ctx.alertManager?.render(c, viewport, theme);
       ctx.measureOverlay?.render(c, viewport, theme);
       ctx.crosshairHandler?.render(c, viewport, theme);
+      ctx.renderOverlayPlugins?.(c, 'overlay');
 
       // Panel crosshair — draw crosshair lines in the hovered panel
       const cursorPos = ctx.crosshairHandler?.getPosition();
@@ -310,6 +314,7 @@ export class RenderEngine {
       ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
       ctx.chartLegend?.render(c, viewport, theme, data);
       ctx.barCountdown?.render(c, viewport, theme, data);
+      ctx.renderOverlayPlugins?.(c, 'ui');
 
       // Panel Y-axis + crosshair value label + header values
       if (ctx.panels.length > 0) {

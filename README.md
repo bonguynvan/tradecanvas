@@ -13,7 +13,9 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
 - **TradingView-grade interaction** *(new in 0.9)* — drag the price/time axes to scale, double-click to auto-fit, `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
-- **Real-time streaming** — Built-in Binance adapter. Plug in your own data source with the adapter interface.
+- **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines.
+- **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
+- **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
 - **Replay mode** — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed. *(new in 0.9)* The widget now ships a floating bottom scrubber UI (play/pause/step/seek + 0.5×–100× speed) on top of it.
 - **Volume Profile** *(new in 0.9)* — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
@@ -337,6 +339,76 @@ chart.appendBar(newBar)
 chart.updateLastBar(updatedBar)
 chart.setCurrentPrice(3500.42)
 ```
+
+**Built-in adapters** (all free, no API key): `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`, `KrakenAdapter`, plus `MockAdapter` for offline/testing.
+
+```typescript
+import { BybitAdapter, KrakenAdapter, CoinbaseAdapter } from '@tradecanvas/chart'
+
+chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
+chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+```
+
+**Any feed in ~20 lines.** Extend `WebSocketAdapter` (live + REST history) or `PollingAdapter` (REST-only feeds) — the base handles the connection lifecycle, reconnect, decoding, and event emission. You supply a URL and a parse function:
+
+```typescript
+import { WebSocketAdapter } from '@tradecanvas/chart'
+
+const myAdapter = new WebSocketAdapter({
+  name: 'myexchange',
+  wsUrl: (c) => `wss://api.myexchange.com/ws/${c.symbol}@kline_${c.timeframe}`,
+  fetchHistory: (symbol, tf, limit) => fetch(`/candles?...`).then((r) => r.json()),
+  parseMessage: (raw) => ({ bar: toBar(raw), closed: raw.k.x }),
+})
+```
+
+### Live Execution
+
+Connect an `ExecutionAdapter` to turn the display-only trading overlay into a real trading surface. The chart routes its order/position intents into the adapter, and renders the authoritative `orders` / `positions` the adapter emits back — the **adapter is the single source of truth**. With no adapter connected, those intents stay plain events (backward-compatible).
+
+```typescript
+import { PaperExecutionAdapter } from '@tradecanvas/chart'
+
+chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64000 }))
+
+// Drag-to-create an order, then confirm:
+chart.startOrderDraft('buy')   // draggable line at the latest close
+chart.confirmOrderDraft()      // emits orderPlace → adapter fills → chart renders the position
+// chart.cancelOrderDraft()
+
+// One channel for failures (adapter-reported or a failed command):
+chart.on('executionError', (e) => toast(e.payload.message))
+```
+
+Implement `ExecutionAdapter` (it mirrors `DataAdapter`) to wire a real broker / OMS: `placeOrder`, `modifyOrder`, `cancelOrder`, `modifyPosition`, `closePosition`, plus `orders` / `positions` / `fill` / `error` events. `PaperExecutionAdapter` is a virtual-fill sandbox for demos and tests. The order type of a drag-to-create order (limit vs stop) is inferred from where you drop the line relative to the current price.
+
+### Plugins — extend the chart
+
+Register custom **indicators**, **drawing tools**, **chart types**, and **overlays** — globally (every chart created afterward inherits) or per-chart.
+
+```typescript
+import { Chart, registerPlugin, IndicatorBase } from '@tradecanvas/chart'
+
+class MyIndicator extends IndicatorBase { /* descriptor, calculate(), render() */ }
+
+// 1) Global — available to every chart created afterward:
+registerPlugin({ kind: 'indicator', plugin: new MyIndicator() })
+
+// 2) Per-chart at construction:
+const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] })
+
+// 3) Imperative on an instance:
+chart.plugins.register({ kind: 'chartType', plugin: myCustomCandles })
+chart.setChartType('my-custom-candles')   // custom chart types render via the plugin
+```
+
+| Plugin kind | Contract |
+|---|---|
+| `indicator` | `IndicatorPlugin` — `calculate()` + `render()` |
+| `drawing` | `DrawingPlugin` — `render()` + `hitTest()` |
+| `chartType` | `ChartTypePlugin` — `createRenderer()` + optional `transform()` |
+| `overlay` | `OverlayPlugin` — `render(ctx, { viewport, data, theme })` on the `main` / `overlay` / `ui` layer |
 
 ### Web Worker indicator pipeline
 

@@ -10,13 +10,41 @@
 <h1>Realtime &amp; replay</h1>
 <p>Stream live data, aggregate ticks into bars, and replay historical data at controlled speed.</p>
 
+<h2>Built-in adapters</h2>
+<p>All free, no API key — connect any of them the same way:</p>
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+
+chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
+chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
+chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+
 <h2>DataAdapter interface</h2>
 <pre><code>{`interface DataAdapter {
+  name: string
+  connect(config): void
+  disconnect(): void
+  getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  subscribe(symbol, timeframe, handler): () => void
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  off(event, listener): void
+  dispose(): void
 }`}</code></pre>
 
-<p>Built-in: <code>BinanceAdapter</code> (REST + WS, typed validators, auto-reconnect).</p>
+<h2>Any feed in ~20 lines</h2>
+<p>
+  Extend <code>WebSocketAdapter</code> (live + REST history) or <code>PollingAdapter</code>
+  (REST-only feeds). The base handles the connection lifecycle, reconnect, decoding, and
+  event emission — you supply a URL and a parse function.
+</p>
+<pre><code>{`import { WebSocketAdapter } from '@tradecanvas/chart'
+
+const myAdapter = new WebSocketAdapter({
+  name: 'myexchange',
+  wsUrl: (c) => 'wss://api.myexchange.com/ws/' + c.symbol + '@kline_' + c.timeframe,
+  fetchHistory: (symbol, tf, limit) => fetch('/candles?...').then((r) => r.json()),
+  parseMessage: (raw) => ({ bar: toBar(raw), closed: raw.k.x }),
+})`}</code></pre>
 
 <h2>Tick aggregation</h2>
 <p>Roll raw ticks into OHLC bars per timeframe:</p>
@@ -32,13 +60,11 @@ const closed = agg.flushClosedBars()        // bars that have rolled over`}</cod
 <p><code>ReconnectManager</code> handles exponential backoff with a cap and a final give-up.</p>
 <pre><code>{`import { ReconnectManager } from '@tradecanvas/chart'
 
-const rm = new ReconnectManager({
-  maxAttempts: 6,
-  baseDelayMs: 500,
-  capMs: 30_000,
-})
+const rm = new ReconnectManager({ maxRetries: 6, baseDelay: 500, maxDelay: 30_000 })
 
-rm.attempt(async () => connectWebsocket())`}</code></pre>
+rm.start()
+rm.schedule(() => connectWebsocket())   // call on disconnect; backs off automatically
+rm.onConnected()                        // call on a successful connect to reset`}</code></pre>
 
 <h2>Replay mode (0.8)</h2>
 <p>

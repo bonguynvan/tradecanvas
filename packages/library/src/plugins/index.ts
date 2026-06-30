@@ -6,7 +6,7 @@ export {
   getGlobalPlugins,
   clearGlobalPlugins,
 } from './registry.js';
-export { PLUGIN_API_VERSION, pluginKey } from './contracts.js';
+export { PLUGIN_API_VERSION, pluginKey, overlaysForLayer } from './contracts.js';
 export type {
   ChartPlugin,
   ChartTypePlugin,

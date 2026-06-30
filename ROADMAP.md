@@ -61,7 +61,7 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
   - [x] Coinbase (polling) / Bybit (WS) / Kraken (WS) exchange adapters — docs-verified, 15 parser tests
   - [ ] First-class multi-pane (resizable, reorderable, independent scales)
   - [x] Render-time consumption of `ChartTypePlugin` — custom chart types render (6 tests)
-  - [ ] Render-time consumption of `OverlayPlugin` (needs a core engine render hook)
+  - [x] Render-time consumption of `OverlayPlugin` — engine render hook + per-chart registration (`chart.plugins`, constructor `plugins`) (4 tests)
 - **Phase 2 — Trading surface**
   - [x] `chart.connectExecution(adapter)` wiring (intents → adapter, adapter → render) + `executionError` event (5 tests)
   - [x] Drag-to-create orders — `OrderDraftTool` + `chart.startOrderDraft()`, limit/stop inferred vs market (7 tests)
