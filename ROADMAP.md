@@ -63,7 +63,7 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
   - [ ] Render-time consumption of `ChartTypePlugin` / `OverlayPlugin`
 - **Phase 2 — Trading surface**
   - [x] `chart.connectExecution(adapter)` wiring (intents → adapter, adapter → render) + `executionError` event (5 tests)
-  - [ ] Drag-to-create orders (produce an `OrderPlaceIntent` from the chart)
+  - [x] Drag-to-create orders — `OrderDraftTool` + `chart.startOrderDraft()`, limit/stop inferred vs market (7 tests)
   - [ ] Alerts → automation (webhook / notification / sound)
 - **Phase 3 — Reach & UX** — mobile/touch gestures, accessibility pass.
 - **Phase 4 — Performance** — LTTB downsampling + virtualization; publish benchmark numbers.

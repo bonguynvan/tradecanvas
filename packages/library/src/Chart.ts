@@ -1021,6 +1021,34 @@ export class Chart {
   }
 
   /**
+   * Begin a drag-to-create single order at `price` (default: latest close) for
+   * `side`. Drag the line to a level — the order type (limit/stop) is inferred
+   * from the level vs the current price. Confirm with `confirmOrderDraft()`
+   * (emits `orderPlace`) or cancel with `cancelOrderDraft()`. Returns false if
+   * trading is disabled or no price is available.
+   */
+  startOrderDraft(side: import('@tradecanvas/commons').OrderSide, price?: number): boolean {
+    if (!this.features.trading) return false;
+    const data = this.dataManager.getData();
+    const p = price ?? (data.length > 0 ? data[data.length - 1].close : null);
+    if (p === null) return false;
+    this.tradingManager.startOrderDraft(side, p);
+    return true;
+  }
+
+  cancelOrderDraft(): void {
+    if (this.features.trading) this.tradingManager.cancelOrderDraft();
+  }
+
+  confirmOrderDraft(): boolean {
+    return this.features.trading ? this.tradingManager.confirmOrderDraft() : false;
+  }
+
+  isOrderDraftActive(): boolean {
+    return this.features.trading && this.tradingManager.isOrderDraftActive();
+  }
+
+  /**
    * Emit an `orderPlace` intent (e.g. from a depth-ladder click). The chart
    * does not create the order itself — the host listens via
    * `chart.on('orderPlace', …)` and submits to its OMS.
