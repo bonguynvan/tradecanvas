@@ -22,6 +22,7 @@ import {
   toRenko,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
+import type { ChartTypePlugin } from '../plugins/contracts.js';
 
 /**
  * Pure mapping from `ChartType` to the renderer class that draws it. Several
@@ -116,4 +117,32 @@ function averageClose(raw: DataSeries): number {
   let sum = 0;
   for (const b of raw) sum += b.close;
   return sum / raw.length;
+}
+
+/** Look up a registered custom chart-type plugin by its `type` string. */
+export type ChartTypeLookup = (type: string) => ChartTypePlugin | undefined;
+
+/**
+ * Resolve the renderer for a chart type, preferring a registered
+ * `ChartTypePlugin` over the built-in mapping.
+ */
+export function resolveRenderer(type: string, lookup?: ChartTypeLookup): ChartRendererInterface {
+  const plugin = lookup?.(type);
+  if (plugin) return plugin.createRenderer();
+  return createRendererFor(type as ChartType);
+}
+
+/**
+ * Resolve the display series for a chart type, preferring a plugin's
+ * `transform` over the built-in transforms.
+ */
+export function resolveDisplayData(
+  type: string,
+  raw: DataSeries,
+  lookup?: ChartTypeLookup,
+): DataSeries {
+  if (raw.length === 0) return raw;
+  const plugin = lookup?.(type);
+  if (plugin?.transform) return plugin.transform(raw);
+  return transformDisplayData(type as ChartType, raw);
 }

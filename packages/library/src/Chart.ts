@@ -84,7 +84,7 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { createRendererFor, transformDisplayData } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData } from './charts/ChartTypeStrategy.js';
 import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
@@ -698,10 +698,10 @@ export class Chart {
 
   // --- Chart type ---
 
-  setChartType(type: ChartType): void {
-    this.options.chartType = type;
+  setChartType(type: ChartType | (string & {})): void {
+    this.options.chartType = type as ChartType;
     this.chartRenderer = this.createChartRenderer(type);
-    this.chartLegend.setChartType(type);
+    this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
   }
@@ -2014,8 +2014,8 @@ export class Chart {
 
   // --- Internal ---
 
-  private createChartRenderer(type: ChartType): ChartRendererInterface {
-    return createRendererFor(type);
+  private createChartRenderer(type: ChartType | string): ChartRendererInterface {
+    return resolveRenderer(type, (t) => this.pluginManager.getChartType(t));
   }
 
   /** Cached display data. Invalidated when raw data or chart type changes. */
@@ -2023,7 +2023,7 @@ export class Chart {
     if (this.displayDataCache) return this.displayDataCache;
     const raw = this.dataManager.getData();
     if (raw.length === 0) return raw;
-    const result = transformDisplayData(this.options.chartType, raw);
+    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t));
     this.displayDataCache = result;
     return result;
   }
