@@ -1,8 +1,19 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { readFileSync } from 'fs';
 import dts from 'vite-plugin-dts';
 
+const pkg = JSON.parse(
+  readFileSync(resolve(__dirname, 'package.json'), 'utf-8'),
+) as { version: string };
+
 export default defineConfig({
+  // Inject the real package version at build time so `Chart.version` can never
+  // drift from package.json again. Replaced literally; falls back to a dev
+  // sentinel when bundled outside Vite (e.g. ts-node).
+  define: {
+    __TC_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     dts({ tsconfigPath: './tsconfig.json' }),
   ],

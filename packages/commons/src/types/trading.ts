@@ -95,7 +95,9 @@ export interface OrderPlaceIntent {
 export interface OrderModifyIntent {
   orderId: string;
   newPrice: number;
-  previousPrice: number;
+  /** The price before the change, when known (e.g. from a drag). Optional so
+   *  the chart's `orderModify` event payload routes straight to an adapter. */
+  previousPrice?: number;
 }
 
 export interface OrderCancelIntent {

@@ -19,6 +19,7 @@ export type ChartEventType =
   | 'orderCancel'
   | 'positionClose'
   | 'positionModify'
+  | 'executionError'
   | 'bracketPlace'
   | 'drawingCreate'
   | 'drawingRemove'
@@ -80,6 +81,11 @@ export interface OrderPlacePayload {
   price: number;
   stopPrice?: number;
   quantity?: number;
+}
+
+export interface ExecutionErrorPayload {
+  message: string;
+  cause?: unknown;
 }
 
 export interface BracketPlacePayload {
@@ -169,6 +175,7 @@ export interface ChartEventMap {
   orderCancel: OrderCancelPayload;
   positionClose: PositionClosePayload;
   positionModify: PositionModifyPayload;
+  executionError: ExecutionErrorPayload;
   drawingCreate: DrawingCreatePayload;
   drawingRemove: DrawingRemovePayload;
   signalMarkerAdd: SignalMarkerAddPayload;

@@ -28,6 +28,8 @@ import type {
   ConnectionInfo,
   TimeFrame,
   FeaturesConfig,
+  ExecutionAdapter,
+  ExecutionConfig,
 } from '@tradecanvas/commons';
 import { LayerType, setLocale as setGlobalLocale, computePriceLimits } from '@tradecanvas/commons';
 import {
@@ -89,9 +91,14 @@ import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { PluginManager } from './plugins/PluginManager.js';
+import { wireExecution } from './trading/wireExecution.js';
+
+// Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
+// guard keeps this safe when the source runs un-bundled (tests, ts-node).
+declare const __TC_VERSION__: string;
 
 export class Chart {
-  static version = '0.7.0';
+  static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
 
   private engine: RenderEngine;
   private viewport: Viewport;
@@ -106,6 +113,8 @@ export class Chart {
   private tradingRenderer: TradingRenderer;
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
+  private executionAdapter: ExecutionAdapter | null = null;
+  private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
@@ -1177,6 +1186,52 @@ export class Chart {
     }
   }
 
+  /**
+   * Connect an execution adapter, turning the trading overlay into a live
+   * trading surface. The adapter is the source of truth: the chart routes its
+   * emitted order/position intents into the adapter and renders the
+   * `orders` / `positions` the adapter emits back. With no adapter connected,
+   * those intents remain plain events (the default). Listen for failures via
+   * `chart.on('executionError', …)`.
+   */
+  connectExecution(adapter: ExecutionAdapter, config: ExecutionConfig = {}): void {
+    if (!this.features.trading) {
+      throw new Error('connectExecution requires features.trading to be enabled');
+    }
+    this.disconnectExecution();
+    this.executionAdapter = adapter;
+    this.execTeardown = wireExecution(adapter, {
+      onIntent: (type, handler) => {
+        const wrapped = (e: ChartEvent) => handler(e.payload);
+        this.eventBus.on(type, wrapped);
+        return () => this.eventBus.off(type, wrapped);
+      },
+      setOrders: (orders) => this.setOrders(orders),
+      setPositions: (positions) => this.setPositions(positions),
+      onError: (error) => this.eventBus.emit('executionError', error),
+    });
+    Promise.resolve(adapter.connect(config)).catch((cause) =>
+      this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
+    );
+  }
+
+  /** Tear down the active execution adapter (if any) and stop routing intents. */
+  disconnectExecution(): void {
+    if (this.execTeardown) {
+      this.execTeardown();
+      this.execTeardown = null;
+    }
+    if (this.executionAdapter) {
+      this.executionAdapter.disconnect();
+      this.executionAdapter = null;
+    }
+  }
+
+  /** The connected execution adapter, or null (e.g. for adapter-specific calls). */
+  getExecutionAdapter(): ExecutionAdapter | null {
+    return this.executionAdapter;
+  }
+
   setBarCountdownVisible(visible: boolean): void {
     this.barCountdown.setVisible(visible);
     this.engine.requestRender(LayerType.UI);
@@ -1911,6 +1966,7 @@ export class Chart {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     this.disableAutoSave();
     this.disconnectStream();
+    this.disconnectExecution();
     if (this.onWindowKeyDown) {
       window.removeEventListener('keydown', this.onWindowKeyDown);
       this.onWindowKeyDown = null;
