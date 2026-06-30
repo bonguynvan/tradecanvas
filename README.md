@@ -802,6 +802,23 @@ onUnmounted(() => chart?.destroy())
 </script>
 ```
 
+## Performance
+
+A multi-layer Canvas2D pipeline repaints only dirty layers each frame. Two things keep large data fast:
+
+- **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
+- **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series.
+
+Downsampling throughput (`pnpm bench`, single core):
+
+| Visible points → 1600 | Time / frame | Throughput |
+|---|---|---|
+| 10,000 | ~0.025 ms | 39,600 / s |
+| 100,000 | ~0.32 ms | 3,100 / s |
+| 1,000,000 | ~2.6 ms | 380 / s |
+
+A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame budget — then draws ~62× fewer points (100k → 1600).
+
 ## Architecture
 
 Multi-layer canvas for optimal rendering — only dirty layers repaint each frame:

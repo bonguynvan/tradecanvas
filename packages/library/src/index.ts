@@ -140,6 +140,7 @@ export type { LegendConfig, SessionBreakConfig } from '@tradecanvas/core';
 
 // Re-export chart renderers and transforms
 export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';
+export { lttbDownsample, lttbVisibleIndices } from '@tradecanvas/core';
 export type { CompareSymbol } from '@tradecanvas/core';
 export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars } from '@tradecanvas/core';
 

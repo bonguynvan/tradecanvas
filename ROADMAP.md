@@ -54,7 +54,7 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
   - [x] Lock `ExecutionAdapter` contract + ship `PaperExecutionAdapter` reference (6 tests)
   - [x] Freeze `DataAdapter` contract as-is (generic WS/Polling base adapters → Phase 1)
   - [x] Define the **Plugin SDK** contract + registry — global + constructor + instance (6 tests)
-  - [ ] Benchmark harness baseline (measure as we add)
+  - [x] Benchmark harness baseline (`pnpm bench` — vitest bench)
   - [ ] Stand up `commons` test infra (currently 0 tests)
 - **Phase 1 — Batteries & data**
   - [x] `WebSocketAdapter` + `PollingAdapter` generic base classes (14 tests)
@@ -67,7 +67,10 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
   - [x] Drag-to-create orders — `OrderDraftTool` + `chart.startOrderDraft()`, limit/stop inferred vs market (7 tests)
   - [ ] Alerts → automation (webhook / notification / sound)
 - **Phase 3 — Reach & UX** — mobile/touch gestures, accessibility pass.
-- **Phase 4 — Performance** — LTTB downsampling + virtualization; publish benchmark numbers.
+- **Phase 4 — Performance**
+  - [x] LTTB downsampling for line/area charts — `lttbDownsample` / `lttbVisibleIndices` (7 tests)
+  - [x] Benchmark harness (`pnpm bench`) + published numbers (100k→1600 in ~0.32 ms)
+  - [ ] History virtualization for non-line chart types (future)
 - **Phase 5 — DX & onboarding** — Plugin SDK docs + examples, `create-tradecanvas`, typed-events cleanup.
 - **Phase 6 — Freeze & harden gate** — close DoD, changeset, tag `1.0.0`.
 
