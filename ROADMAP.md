@@ -59,7 +59,7 @@ Contracts are first because the additive work hangs off them. After Phase 0, the
 - **Phase 1 — Batteries & data**
   - [x] `WebSocketAdapter` + `PollingAdapter` generic base classes (14 tests)
   - [x] Coinbase (polling) / Bybit (WS) / Kraken (WS) exchange adapters — docs-verified, 15 parser tests
-  - [ ] First-class multi-pane (resizable, reorderable, independent scales)
+  - [x] First-class multi-pane — drag-to-resize panes (mouse + touch), independent scales; `PaneResizeHandler` + `setPanelSize` relayout fix (6 tests). Pane reorder = future.
   - [x] Render-time consumption of `ChartTypePlugin` — custom chart types render (6 tests)
   - [x] Render-time consumption of `OverlayPlugin` — engine render hook + per-chart registration (`chart.plugins`, constructor `plugins`) (4 tests)
 - **Phase 2 — Trading surface**

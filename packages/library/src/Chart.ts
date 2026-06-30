@@ -39,6 +39,7 @@ import {
   PriceAxis,
   TimeAxis,
   InteractionManager,
+  PaneResizeHandler,
   PanHandler,
   ZoomHandler,
   AxisDragHandler,
@@ -541,6 +542,14 @@ export class Chart {
       const alertDrag = new AlertDragHandler(this.alertManager, () => this.viewport.getState());
       this.interactionManager.setAlertDragHandler(alertDrag);
     }
+
+    // Drag pane dividers to resize indicator panels.
+    const paneResize = new PaneResizeHandler();
+    paneResize.configure(
+      () => this.getResolvedLayout(),
+      (panelId, size) => this.setPanelSize(panelId, size),
+    );
+    this.interactionManager.setPaneResizeHandler(paneResize);
     // Alt-click pins the OHLC tooltip at the bar under the cursor. Hitting
     // it a second time on the same bar unpins.
     this.interactionManager.setAltClickHandler((pos) => {
@@ -770,7 +779,7 @@ export class Chart {
 
   setPanelSize(instanceId: string, size: number): void {
     this.layoutManager.setPanelSize(instanceId, size);
-    this.engine.requestRender();
+    this.updateViewportAndRender();
   }
 
   // --- Drawing tools ---

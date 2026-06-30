@@ -523,6 +523,7 @@ Every gesture you'd expect from a desktop trading chart is built in:
 | Double-click price axis | Re-enable auto-scale |
 | Double-click time axis | Fit all data to viewport |
 | Wheel | Zoom around cursor |
+| Drag a pane divider | Resize the indicator pane (`ns-resize` cursor on hover) |
 | `Shift` + drag | Measure ruler (bars × time × price Δ × %) |
 | `Alt` + click | Pin OHLC tooltip; live crosshair shows Δ to pinned bar |
 | Hover | Price + time pill labels follow on both axes |
