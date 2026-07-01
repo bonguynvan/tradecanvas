@@ -707,7 +707,23 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+
 
 ## Framework Integration
 
-TradeCanvas is framework-agnostic. The `Chart` class takes a DOM element and manages its own canvas layers.
+Official wrapper components — reactive props, refs, zero boilerplate. Published at `1.x` alongside the core:
+
+```bash
+npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
+```
+
+```tsx
+import { TradeCanvas } from '@tradecanvas/react'
+
+<TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+```
+
+All three share the same prop surface and hand you the underlying `Chart` (for drawings, trading, execution, plugins) via `onReady` / ref / `bind:chart`. See the [frameworks docs](https://bonguynvan.github.io/tradecanvas/docs/frameworks).
+
+### Headless (own the lifecycle)
+
+The `Chart` class also takes a DOM element directly — framework-agnostic:
 
 **React:**
 
