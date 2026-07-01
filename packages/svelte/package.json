@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/svelte",
-  "version": "0.7.10",
+  "version": "0.7.12",
   "private": true,
   "type": "module",
   "description": "Svelte 5 component for @tradecanvas/chart — reactive props, runes, zero boilerplate.",

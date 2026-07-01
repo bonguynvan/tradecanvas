@@ -1,5 +1,87 @@
 # @tradecanvas/core
 
+## 1.0.0
+
+### Major Changes
+
+- 96946ac: TradeCanvas 1.0 — first stable release. The public API is now semver-stable.
+
+  Everything an open-source trading chart needs, batteries-included and zero-dependency:
+
+  - **Charting** — 17 chart types, 60+ technical indicators, 24 drawing tools, multi-chart grid, and finance charts (sparkline, depth, equity, heatmap, waterfall, gauge).
+  - **Data** — built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines.
+  - **Trading** — a real execution surface: connect an `ExecutionAdapter` to route the chart's order/position intents to a broker/OMS and render the fills it reports; drag on the chart to create orders; ships a `PaperExecutionAdapter` sandbox.
+  - **Extensibility** — a stable Plugin SDK for custom indicators, drawing tools, chart types, and overlays, registered globally or per-chart.
+  - **Layout** — resizable indicator panes with independent price scales.
+  - **Performance** — LTTB downsampling keeps 100k+ bar line charts smooth.
+
+  **Frozen 1.0 contracts** (semver-stable for the 1.x line): `DataAdapter`, `ExecutionAdapter`, the Plugin SDK (`IndicatorPlugin` / `DrawingPlugin` / `ChartTypePlugin` / `OverlayPlugin`), and the chart event names + payloads.
+
+  **Breaking from 0.x:** `chart.replay()` is renamed to `chart.replayStart()`, for consistency with `replayPause` / `replayResume` / `replayStop` / `replaySeek`.
+
+### Patch Changes
+
+- Updated dependencies [96946ac]
+  - @tradecanvas/commons@1.0.0
+
+## 0.15.0
+
+### Minor Changes
+
+- 9a4cc2b: Add drag-to-create orders. `chart.startOrderDraft(side, price?)` begins a draggable single-order line at a price level (default: the latest close); drag it to a level and `confirmOrderDraft()` emits an `orderPlace` intent — which a connected `ExecutionAdapter` then fills. The order type (limit vs stop) is inferred from the level relative to the current price. `cancelOrderDraft()` and `isOrderDraftActive()` round out the API.
+
+  The geometry and state live in a pure, testable `OrderDraftTool` (mirrors `BracketTool`), exported from `@tradecanvas/core` along with `inferOrderType`.
+
+- b06c803: Add built-in Coinbase, Bybit, and Kraken data adapters (no API key required), built on the new generic adapter base classes:
+
+  - **`CoinbaseAdapter`** — Coinbase Exchange REST candle polling, covering all supported granularities (the WS candles channel does not). Product ids use the `BTC-USD` format.
+  - **`BybitAdapter`** — Bybit v5 `kline` WebSocket stream + REST history. Symbols use the `BTCUSDT` format; `spot` / `linear` / `inverse` categories.
+  - **`KrakenAdapter`** — Kraken WebSocket v2 `ohlc` channel + REST history. WS symbols use the `BTC/USD` format; the REST pair is derived by stripping the slash.
+
+  Each was implemented against the exchange's official API docs — candle field order, interval encoding, and ms-vs-seconds time units verified — with parser unit tests over documented sample payloads.
+
+- b06c803: Add the v1 extension contracts — the frozen foundation for a real trading surface and a plugin ecosystem.
+
+  - **`ExecutionAdapter`** — a strategy interface (mirroring `DataAdapter`) that turns the display-only trading overlay into a trading surface. The chart routes its emitted order/position intents into the adapter; the adapter is the single source of truth and emits authoritative `orders` / `positions` back for the chart to render. Fully backward-compatible: with no adapter connected, intents remain plain events.
+  - **`PaperExecutionAdapter`** — reference in-memory implementation: virtual fills, hedging-style positions, pending limit/stop triggering via `setMarkPrice`, and SL/TP auto-close. The safe sandbox for demos and tests.
+  - **Plugin SDK** — `PluginManager` is now a real registry over four plugin kinds (`IndicatorPlugin`, `DrawingPlugin`, plus new `ChartTypePlugin` and `OverlayPlugin`), unified by a `ChartPlugin` union. Adds a global `registerPlugin()` (inherited by every chart created afterward), a constructor `plugins: []` option, and `chart.plugins.register/unregister/list`. The legacy `registerIndicator` still works.
+
+  Also fixes `Chart.version`, which was hardcoded to a stale `0.7.0`; it is now injected from `package.json` at build time so it can never drift again.
+
+- b06c803: Add generic data-adapter base classes so any feed plugs in with ~20 lines instead of a full `DataAdapter` implementation:
+
+  - **`WebSocketAdapter`** — configurable WebSocket adapter: supply a `wsUrl`, a `parseMessage` that returns a bar/tick, an optional `subscribeMessage`, and a REST `fetchHistory`. The base handles the connection lifecycle, frame decoding, subscribe/unsubscribe, tick synthesis, and event emission, with an injectable socket factory for testing. Reconnection stays orchestrated by `StreamManager`, matching `BinanceAdapter`.
+  - **`PollingAdapter`** — REST-polling adapter for feeds without a WebSocket (most stock / FX APIs): supply `fetchBars` + an interval. Emits the latest bar as forming and the prior bar as closed on bucket rollover.
+
+  These are the foundation for the upcoming Coinbase / Bybit / Kraken adapters.
+
+- e9ca1a0: Performance: LTTB downsampling for line/area charts, plus a benchmark harness.
+
+  - **LTTB downsampling** — `LineRenderer` and `AreaRenderer` automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when the bar count far exceeds the pixel width, keeping 100k+ bar line charts smooth. Visually identical, and a no-op at normal zoom. The pure `lttbDownsample` / `lttbVisibleIndices` utilities are exported.
+  - **Benchmark** — a `pnpm bench` script (vitest bench). Downsampling 100k points to 1,600 runs in ~0.32 ms (3,100/s); 1M in ~2.6 ms — well inside a 16.6 ms frame budget.
+
+- 3930b56: Overlay plugins now render, and the plugin registration surface is complete.
+
+  - **`OverlayPlugin` render-time consumption** — registered overlays draw each frame on their chosen layer (`main` / `overlay` / `ui`) via a new engine render hook, receiving the live `{ viewport, data, theme }`.
+  - **Per-chart plugin registration** — `new Chart(el, { plugins: [...] })` and a `chart.plugins` accessor (`register` / `unregister` / `list`) join the existing global `registerPlugin`, completing the global + constructor + instance model.
+
+  Docs + demo updated: new Plugins docs page; the realtime page's `DataAdapter` / `ReconnectManager` examples corrected and the new adapters added; the trading page gains live-execution + drag-to-create sections.
+
+- 09dc432: First-class resizable panes. Drag the divider between the main chart and an indicator pane (or between panes) to resize it — `ns-resize` cursor on hover, working with both mouse and touch. Each pane keeps its own independent price scale. The geometry lives in a pure, testable `PaneResizeHandler`.
+
+  Also fixes `chart.setPanelSize()`, which previously only requested a render without re-resolving the layout (so the pane didn't actually resize); it now performs a full relayout.
+
+### Patch Changes
+
+- c79be24: Fix widget popups that could not be closed (Price Alerts panel, bracket bar). Their `display: flex` rule silently overrode the `hidden` attribute's `display: none`, so calling `el.hidden = true` left them on screen. Added a namespaced normalize rule that forces `hidden` to win for every `tcw-`-prefixed widget element, fixing the current cases and future-proofing the rest.
+
+  Also fix the Price Alerts form overflowing the panel: its grid inputs/selects now get `width: 100%; min-width: 0; box-sizing: border-box` so they shrink to their column instead of spilling past the panel edge.
+
+- Updated dependencies [b06c803]
+- Updated dependencies [b06c803]
+- Updated dependencies [c79be24]
+  - @tradecanvas/commons@0.15.0
+
 ## 0.14.0
 
 ### Minor Changes
