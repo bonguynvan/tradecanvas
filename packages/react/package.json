@@ -35,7 +35,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tradecanvas/chart": "workspace:*"
@@ -45,10 +46,13 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.1.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.5.2",
+    "jsdom": "^25.0.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "vitest": "^2.1.8"
   }
 }

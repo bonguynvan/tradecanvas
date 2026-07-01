@@ -119,6 +119,18 @@ onMounted(() => {
     chart.connect({ adapter, symbol: props.symbol, timeframe: props.timeframe, historyLimit: props.historyLimit });
   }
 
+  // Apply initial reactive collections not covered by the constructor options.
+  // Vue's watches aren't immediate, so without this the first render of
+  // indicators / signal markers / trade zones would be dropped.
+  for (const name of props.indicators) {
+    const instanceId = chart.addIndicator(name);
+    if (instanceId) indicatorIds.set(name, instanceId);
+  }
+  if (props.signalMarkers) chart.setSignalMarkers(props.signalMarkers);
+  if (props.signalMarkerStyle) chart.setSignalMarkerStyle(props.signalMarkerStyle);
+  if (props.tradeZones) chart.setTradeZones(props.tradeZones);
+  if (props.tradeZoneStyle) chart.setTradeZoneStyle(props.tradeZoneStyle);
+
   emit('ready', chart);
 });
 
