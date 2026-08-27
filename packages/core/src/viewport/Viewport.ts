@@ -202,11 +202,18 @@ export class Viewport {
       minOffset = -(this.state.chartRect.width * 0.5);
       maxOffset = endOffset;
     } else {
-      // Short data: lock the viewport to the right-aligned position. There's
-      // nothing to scroll to — all bars fit, with empty space on the left.
-      // TradingView does this same lock for sparse charts.
-      minOffset = endOffset;
-      maxOffset = endOffset;
+      // Short data: every bar already fits, with empty space left over — the
+      // right-aligned `endOffset` is still where the view RESTS by default
+      // (unchanged, matches TradingView), but it is no longer a lock. A trader
+      // reasonably expects to drag the (few) bars toward the centre or left of
+      // the pane instead of having them welded to the right edge — reported
+      // against a 3-bar year chart, 2026-08-27. Half a viewport of play on each
+      // side of the resting position mirrors the "long data" branch's own
+      // half-viewport breathing room above, rather than inventing a new
+      // constant.
+      const play = this.state.chartRect.width * 0.5;
+      minOffset = endOffset - play;
+      maxOffset = endOffset + play;
     }
 
     this.state.offset = clamp(this.state.offset, minOffset, maxOffset);
