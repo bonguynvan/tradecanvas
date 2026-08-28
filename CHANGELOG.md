@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.1 (2026-08-28)
+
+Patch release for the core packages, plus the first public release of the framework wrappers.
+
+### Fixes
+
+- **`visibleRangeChange` now fires** — along with the sibling `priceRangeChange` and `zoomChange` events. All three were typed and documented but never emitted anywhere in `Chart`; they now fire on every pan, zoom, resize, and data update, but only when that slice of viewport state actually changed. `visibleRangeChange` payload is `{ from, to }` bar indices, `priceRangeChange` is `{ min, max }`, `zoomChange` is `{ barWidth }` CSS pixels per bar.
+- **Sparse-series panning** — a chart whose loaded bars don't fill the pane (e.g. a Year view with a handful of candles) could not be panned at all; the offset was welded to a single value. The view still rests at the same right-aligned position by default, it's just no longer locked there. Dense series are unaffected.
+
+### Framework wrappers
+
+- **`@tradecanvas/react`, `@tradecanvas/vue`, and `@tradecanvas/svelte` are now public** (1.0.0) — thin reactive `<TradeCanvas>` components around `@tradecanvas/chart` with props for symbol / timeframe / theme / chart type / indicators / data / adapter / signal markers / trade zones, lifecycle cleanup, and access to the underlying `Chart` via `onReady` / ref / `bind:chart`. Pinned to `@tradecanvas/chart@^1`.
+
 ## 1.0.0 (2026-07-01)
 
 First stable release — everything an open-source trading chart needs, batteries-included and zero-dependency. The public API is now semver-stable for the 1.x line. Cumulative since 0.9.0 (0.10–0.14 added 30+ indicators and several chart types); the headline additions:

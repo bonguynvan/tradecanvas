@@ -1,5 +1,18 @@
 # @tradecanvas/vue
 
+## 1.0.0
+
+### Major Changes
+
+- e433cc5: First public release of the framework wrapper components.
+
+  `@tradecanvas/react`, `@tradecanvas/vue`, and `@tradecanvas/svelte` are no longer private — thin, reactive `<TradeCanvas>` components around `@tradecanvas/chart` with props for symbol / timeframe / theme / chart type / indicators / data / adapter / signal markers / trade zones, proper lifecycle cleanup, and access to the underlying `Chart` (for drawings, trading, execution adapters, plugins, resizable panes) via `onReady` / ref / `bind:chart`. Pinned to `@tradecanvas/chart@^1`.
+
+### Patch Changes
+
+- Updated dependencies [d0c938d]
+  - @tradecanvas/chart@1.0.1
+
 ## 0.7.12
 
 ### Patch Changes
