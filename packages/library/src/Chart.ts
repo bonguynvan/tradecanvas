@@ -99,6 +99,11 @@ import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
 declare const __TC_VERSION__: string;
 
+// A chart-body drag only takes over the vertical price scale once its
+// cumulative vertical travel passes this many pixels — so a normal
+// mostly-horizontal pan doesn't knock the chart off auto-scale.
+const VERTICAL_PAN_ENGAGE_PX = 6;
+
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
 
@@ -478,11 +483,34 @@ export class Chart {
     // Interaction
     this.interactionManager = new InteractionManager(container);
     if (this.features.panning) {
+      // Per-gesture accumulator for vertical travel, reset on each pointer-down.
+      let verticalDragTravel = 0;
       this.interactionManager.setPanHandler(
-        new PanHandler((deltaX) => {
-          this.viewport.scrollBy(deltaX);
-          this.updateViewportAndRender();
-        }),
+        new PanHandler(
+          (deltaX, deltaY) => {
+            if (deltaX) this.viewport.scrollBy(deltaX);
+
+            if (deltaY) {
+              verticalDragTravel += deltaY;
+              // Grab-and-drag the price scale vertically. Auto-scale would
+              // just recompute the range on the next frame, so engaging the
+              // drag turns it off (double-click the price axis to restore),
+              // mirroring the price-axis drag-scale gesture.
+              const engaged =
+                this.options.autoScale === false ||
+                Math.abs(verticalDragTravel) > VERTICAL_PAN_ENGAGE_PX;
+              if (engaged) {
+                this.options.autoScale = false;
+                this.viewport.panPriceRange(deltaY);
+              }
+            }
+
+            this.updateViewportAndRender();
+          },
+          () => {
+            verticalDragTravel = 0;
+          },
+        ),
       );
     }
     if (this.features.zooming) {

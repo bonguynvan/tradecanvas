@@ -138,6 +138,35 @@ export class Viewport {
     this.updateVisibleRange();
   }
 
+  /**
+   * Shift the visible price range vertically by a pixel delta, keeping its
+   * span fixed. `deltaPixels` uses PanHandler's sign (`lastY - y`), so a
+   * drag UP is positive and moves the candles up with the cursor — i.e.
+   * the price window slides DOWN to lower values.
+   *
+   * Only meaningful with auto-scale off — otherwise the next `updateData`
+   * recomputes the range and the shift is lost. Used by vertical
+   * chart-body panning, the counterpart to `scrollBy` on the time axis.
+   */
+  panPriceRange(deltaPixels: number): void {
+    const h = this.state.chartRect.height;
+    if (h <= 0 || deltaPixels === 0) return;
+    const { min, max } = this.state.priceRange;
+    const frac = deltaPixels / h;
+    if (this.isLogScale() && min > 0 && max > 0) {
+      const logMin = Math.log(min);
+      const logMax = Math.log(max);
+      const shift = (logMax - logMin) * frac;
+      this.state.priceRange = {
+        min: Math.exp(logMin - shift),
+        max: Math.exp(logMax - shift),
+      };
+      return;
+    }
+    const shift = (max - min) * frac;
+    this.state.priceRange = { min: min - shift, max: max - shift };
+  }
+
   /** Returns true if the viewport is scrolled to show the latest bars. */
   isAtEnd(): boolean {
     const barUnit = this.state.barWidth + this.state.barSpacing;

@@ -1,69 +1,89 @@
 import type { Point } from '@tradecanvas/commons';
 
-export type PanCallback = (deltaX: number) => void;
+/**
+ * Drag delta since the last pointer sample, in CSS pixels.
+ * `deltaX > 0` when the pointer moved left (content should scroll right);
+ * `deltaY > 0` when the pointer moved up. Both follow the "content follows
+ * the cursor" convention the chart pans with.
+ *
+ * Existing single-argument callbacks stay valid — `deltaY` is simply extra.
+ */
+export type PanCallback = (deltaX: number, deltaY: number) => void;
 
 /**
- * Handles drag-to-pan with momentum/inertia scrolling.
+ * Handles drag-to-pan with momentum/inertia scrolling on both axes.
  * On release, velocity decays smoothly over ~500ms.
  */
 export class PanHandler {
   private dragging = false;
   private lastX = 0;
+  private lastY = 0;
   private lastTime = 0;
-  private velocity = 0;
+  private velocityX = 0;
+  private velocityY = 0;
   private momentumId = 0;
   private callback: PanCallback;
+  private onStart?: () => void;
   private friction = 0.92;
 
-  constructor(callback: PanCallback) {
+  constructor(callback: PanCallback, onStart?: () => void) {
     this.callback = callback;
+    this.onStart = onStart;
   }
 
   onPointerDown(pos: Point): void {
     this.dragging = true;
     this.lastX = pos.x;
+    this.lastY = pos.y;
     this.lastTime = Date.now();
-    this.velocity = 0;
+    this.velocityX = 0;
+    this.velocityY = 0;
     this.stopMomentum();
+    this.onStart?.();
   }
 
   onPointerMove(pos: Point): void {
     if (!this.dragging) return;
     const now = Date.now();
-    const delta = this.lastX - pos.x;
+    const deltaX = this.lastX - pos.x;
+    const deltaY = this.lastY - pos.y;
     const dt = now - this.lastTime;
 
     // Track velocity (pixels per ms)
     if (dt > 0) {
-      this.velocity = delta / dt;
+      this.velocityX = deltaX / dt;
+      this.velocityY = deltaY / dt;
     }
 
     this.lastX = pos.x;
+    this.lastY = pos.y;
     this.lastTime = now;
-    this.callback(delta);
+    this.callback(deltaX, deltaY);
   }
 
   onPointerUp(): void {
     if (!this.dragging) return;
     this.dragging = false;
 
-    // Start momentum if flick was fast enough
-    if (Math.abs(this.velocity) > 0.1) {
+    // Start momentum if flick was fast enough on either axis
+    if (Math.hypot(this.velocityX, this.velocityY) > 0.1) {
       this.startMomentum();
     }
   }
 
   private startMomentum(): void {
     this.stopMomentum();
-    let v = this.velocity * 16; // Convert to pixels per frame (~16ms)
+    let vx = this.velocityX * 16; // Convert to pixels per frame (~16ms)
+    let vy = this.velocityY * 16;
 
     const tick = () => {
-      v *= this.friction;
-      if (Math.abs(v) < 0.5) {
+      vx *= this.friction;
+      vy *= this.friction;
+      if (Math.hypot(vx, vy) < 0.5) {
         this.momentumId = 0;
         return;
       }
-      this.callback(v);
+      this.callback(vx, vy);
       this.momentumId = requestAnimationFrame(tick);
     };
 
