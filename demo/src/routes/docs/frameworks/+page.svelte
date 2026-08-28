@@ -4,15 +4,19 @@
 </svelte:head>
 
 <h1>Framework wrappers</h1>
-<p>Idiomatic wrappers for React, Vue, and Svelte. All three expose the same prop surface and forward a ref to the underlying <code>Chart</code> instance.</p>
+<p>Idiomatic wrappers for React, Vue, and Svelte. All three expose the same prop surface and hand you the underlying <code>Chart</code> instance.</p>
+
+<h2>Install</h2>
+<pre><code>{`npm install @tradecanvas/react   # or @tradecanvas/vue · @tradecanvas/svelte
+npm install @tradecanvas/chart   # the core (peer of each wrapper)`}</code></pre>
 
 <h2>React</h2>
-<pre><code>{`import { TradeCanvas, type TradeCanvasHandle } from '@tradecanvas/react'
+<pre><code>{`import { TradeCanvas, type TradeCanvasRef } from '@tradecanvas/react'
 import { BinanceAdapter } from '@tradecanvas/chart'
 import { useRef } from 'react'
 
 function App() {
-  const chartRef = useRef<TradeCanvasHandle>(null)
+  const chartRef = useRef<TradeCanvasRef>(null)
 
   return (
     <TradeCanvas
@@ -77,7 +81,8 @@ const adapter = new BinanceAdapter()
 </table>
 
 <blockquote>
-  The wrapper packages are currently demo/docs-only and not published to npm.
-  Their source lives in <code>packages/react</code>, <code>packages/vue</code>,
-  and <code>packages/svelte</code> — copy them into your project for now.
+  Need something beyond the props? Reach the underlying <code>Chart</code> via
+  <code>onReady</code>, a ref (React / Vue), or <code>bind:chart</code> (Svelte)
+  for the full API — drawings, trading, execution adapters, plugins, resizable
+  panes, and more.
 </blockquote>

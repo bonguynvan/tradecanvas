@@ -39,8 +39,8 @@ We are broadening before we freeze. The discipline that makes that safe: new cha
 - **Performance** — benchmark harness + published numbers + LTTB downsampling / history virtualization.
 - **Freeze & harden** — see Definition of Done.
 
-### ⏭️ Deferred to 1.1
-- Published, version-aligned, tested **React / Vue / Svelte** packages (wrappers exist but are `private` and version-drifted).
+### ✅ 1.1 — Framework wrappers (done)
+- Published, version-aligned (1.0.0), tested **React / Vue / Svelte** packages: un-privated, npm READMEs, vite `sourcemap`/`target` fixed, 14 component tests (mock `Chart`, no canvas), Vue initial-props bug fixed, docs/demo updated. Pinned to `@tradecanvas/chart@^1`.
 
 ### 🌙 Deferred to v2
 - **WebGL / WebGPU renderer** (1M+ points). Needs the unstable API window that 1.0 closes. WebGPU went fully cross-browser in Jan 2026 — strong v2 headline.

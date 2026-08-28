@@ -45,6 +45,15 @@ export interface CrosshairMovePayload {
   indicatorValues?: Record<string, IndicatorValue>;
 }
 
+/**
+ * Payload for `visibleRangeChange`. Fired whenever the horizontal viewport
+ * moves — panning, zooming, resizing, `setVisibleRange`, `scrollToEnd`,
+ * `fitContent`, or a data update that shifts the range.
+ *
+ * `from` / `to` are **bar indices** into the current data series (integers,
+ * clamped to `[0, data.length - 1]`), not timestamps. Resolve to time with
+ * `chart.getData()[from].time`.
+ */
 export interface VisibleRangeChangePayload {
   from: number;
   to: number;
@@ -112,10 +121,25 @@ export interface ResizePayload {
   height: number;
 }
 
+/**
+ * Payload for `zoomChange`. Fired when the horizontal zoom level changes
+ * (wheel zoom, keyboard zoom, time-axis drag).
+ *
+ * `barWidth` is the rendered width of a single bar in **CSS pixels** — the
+ * value `Viewport.zoom()` mutates. Larger means zoomed in.
+ */
 export interface ZoomChangePayload {
   barWidth: number;
 }
 
+/**
+ * Payload for `priceRangeChange`. Fired when the vertical (price) range
+ * changes — auto-scale after a pan/zoom/data update, or a manual price-axis
+ * drag-scale.
+ *
+ * `min` / `max` are prices in the data's own units, bounding the visible
+ * area of the main pane.
+ */
 export interface PriceRangeChangePayload {
   min: number;
   max: number;

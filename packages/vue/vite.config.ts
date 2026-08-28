@@ -13,5 +13,7 @@ export default defineConfig({
     rollupOptions: {
       external: ['vue', '@tradecanvas/chart'],
     },
+    sourcemap: true,
+    target: 'es2022',
   },
 });

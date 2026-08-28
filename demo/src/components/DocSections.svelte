@@ -1456,7 +1456,9 @@ chart.<span class="fn">setFeatures</span>({'{'} drawings: <span class="bool">fal
         <tbody>
           <tr><td><code>crosshairMove</code></td><td><code>point, bar?, indicatorValues?</code></td><td>Crosshair position changes</td></tr>
           <tr><td><code>click</code></td><td><code>point</code></td><td>Chart area clicked</td></tr>
-          <tr><td><code>visibleRangeChange</code></td><td><code>from, to</code></td><td>Visible time range changed</td></tr>
+          <tr><td><code>visibleRangeChange</code></td><td><code>from, to</code></td><td>Horizontal range changed (pan/zoom/resize/data). <code>from</code>/<code>to</code> are bar indices, not timestamps</td></tr>
+          <tr><td><code>priceRangeChange</code></td><td><code>min, max</code></td><td>Visible price bounds changed (auto-scale or price-axis drag)</td></tr>
+          <tr><td><code>zoomChange</code></td><td><code>barWidth</code></td><td>Horizontal zoom changed; <code>barWidth</code> is pixels per bar</td></tr>
           <tr><td><code>dataUpdate</code></td><td><code>bars</code></td><td>Data array modified</td></tr>
           <tr><td><code>orderModify</code></td><td><code>orderId, newPrice</code></td><td>User drags an order line</td></tr>
           <tr><td><code>positionModify</code></td><td><code>positionId, stopLoss?, takeProfit?</code></td><td>User drags SL/TP</td></tr>

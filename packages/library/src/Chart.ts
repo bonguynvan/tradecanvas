@@ -124,6 +124,11 @@ export class Chart {
   private renderScheduled = false;
   private containerSizeCache: { width: number; height: number } | null = null;
   private containerSizeCacheTime = 0;
+  // Last-emitted viewport values, used to fire visibleRangeChange /
+  // priceRangeChange / zoomChange only when something actually moved.
+  private lastEmittedRange: { from: number; to: number } | null = null;
+  private lastEmittedPriceRange: { min: number; max: number } | null = null;
+  private lastEmittedBarWidth: number | null = null;
   private chartLegend: ChartLegend;
   private watermark: Watermark;
   private barCountdown: BarCountdown;
@@ -498,6 +503,7 @@ export class Chart {
           this.viewport.scalePriceRange(factor);
           this.syncRenderContext();
           this.engine.requestRender();
+          this.emitViewportEvents();
         },
         (factor) => {
           const cw = this.viewport.getState().chartRect.width;
@@ -2102,6 +2108,45 @@ export class Chart {
 
     this.syncRenderContext();
     this.engine.requestRender();
+
+    this.emitViewportEvents();
+  }
+
+  /**
+   * Fire the public viewport events (`visibleRangeChange`, `priceRangeChange`,
+   * `zoomChange`) whenever the corresponding piece of viewport state changed
+   * since the last render. Called at the end of every updateViewportAndRender,
+   * so panning, zooming, resizing, and data updates all surface to consumers.
+   */
+  private emitViewportEvents(): void {
+    const vs = this.viewport.getState();
+
+    const from = Math.max(0, Math.floor(vs.visibleRange.from));
+    const to = Math.max(from, Math.ceil(vs.visibleRange.to));
+    if (
+      !this.lastEmittedRange ||
+      this.lastEmittedRange.from !== from ||
+      this.lastEmittedRange.to !== to
+    ) {
+      this.lastEmittedRange = { from, to };
+      this.eventBus.emit('visibleRangeChange', { from, to });
+    }
+
+    const { min, max } = vs.priceRange;
+    if (
+      !this.lastEmittedPriceRange ||
+      this.lastEmittedPriceRange.min !== min ||
+      this.lastEmittedPriceRange.max !== max
+    ) {
+      this.lastEmittedPriceRange = { min, max };
+      this.eventBus.emit('priceRangeChange', { min, max });
+    }
+
+    // `barWidth` here is pixels-per-bar — the value Viewport.zoom() mutates.
+    if (this.lastEmittedBarWidth !== vs.barWidth) {
+      this.lastEmittedBarWidth = vs.barWidth;
+      this.eventBus.emit('zoomChange', { barWidth: vs.barWidth });
+    }
   }
 
   private getResolvedLayout() {

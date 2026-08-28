@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.0.1 (2026-08-28)
+
+Patch release for the core packages, plus the first public release of the framework wrappers.
+
+### Fixes
+
+- **`visibleRangeChange` now fires** — along with the sibling `priceRangeChange` and `zoomChange` events. All three were typed and documented but never emitted anywhere in `Chart`; they now fire on every pan, zoom, resize, and data update, but only when that slice of viewport state actually changed. `visibleRangeChange` payload is `{ from, to }` bar indices, `priceRangeChange` is `{ min, max }`, `zoomChange` is `{ barWidth }` CSS pixels per bar.
+- **Sparse-series panning** — a chart whose loaded bars don't fill the pane (e.g. a Year view with a handful of candles) could not be panned at all; the offset was welded to a single value. The view still rests at the same right-aligned position by default, it's just no longer locked there. Dense series are unaffected.
+
+### Framework wrappers
+
+- **`@tradecanvas/react`, `@tradecanvas/vue`, and `@tradecanvas/svelte` are now public** (1.0.0) — thin reactive `<TradeCanvas>` components around `@tradecanvas/chart` with props for symbol / timeframe / theme / chart type / indicators / data / adapter / signal markers / trade zones, lifecycle cleanup, and access to the underlying `Chart` via `onReady` / ref / `bind:chart`. Pinned to `@tradecanvas/chart@^1`.
+
+## 1.0.0 (2026-07-01)
+
+First stable release — everything an open-source trading chart needs, batteries-included and zero-dependency. The public API is now semver-stable for the 1.x line. Cumulative since 0.9.0 (0.10–0.14 added 30+ indicators and several chart types); the headline additions:
+
+### Data
+
+- **Coinbase, Bybit, and Kraken adapters** (free, no API key) join the built-in Binance adapter.
+- **Generic adapter bases** — `WebSocketAdapter` (live + REST history) and `PollingAdapter` (REST-only feeds) let any source plug in with ~20 lines: a URL and a parse function. The base handles the connection lifecycle, reconnect, decoding, and event emission.
+
+### Trading
+
+- **Live execution** — `chart.connectExecution(adapter)` turns the display-only trading overlay into a real trading surface. The chart routes its order/position intents into an `ExecutionAdapter` and renders the authoritative orders/positions it reports back (the adapter is the single source of truth). Ships a `PaperExecutionAdapter` sandbox; failures surface on a single `executionError` event.
+- **Drag-to-create orders** — `chart.startOrderDraft(side)` drops a draggable order line; drag it to a level and `confirmOrderDraft()` places it (limit vs stop inferred from the level relative to the current price).
+
+### Extensibility
+
+- **Plugin SDK** — register custom **indicators**, **drawing tools**, **chart types**, and **overlays**: globally via `registerPlugin`, per-chart via `new Chart(el, { plugins })`, or imperatively via `chart.plugins.register`. Custom chart types and overlays render through the engine.
+
+### Layout
+
+- **Resizable panes** — drag the divider between the main chart and an indicator pane (or between panes) to resize it, with mouse or touch; each pane keeps an independent price scale.
+
+### Performance
+
+- **LTTB downsampling** — line and area charts downsample the visible range to ~2 points per pixel (Largest-Triangle-Three-Buckets) when the bar count far exceeds the pixel width, keeping 100k+ bar charts smooth. Visually identical, and a no-op at normal zoom.
+- **Benchmark harness** — a new `pnpm bench` (vitest bench). Downsampling 100k points to 1,600 runs in ~0.32 ms.
+
+### Frozen contracts
+
+The `DataAdapter`, `ExecutionAdapter`, and Plugin SDK interfaces (`IndicatorPlugin` / `DrawingPlugin` / `ChartTypePlugin` / `OverlayPlugin`), plus the chart event names and payloads, are now semver-stable for the 1.x line.
+
+### Breaking changes
+
+- `chart.replay()` is renamed to `chart.replayStart()`, for consistency with `replayPause` / `replayResume` / `replayStop` / `replaySeek`.
+
+### Notes
+
+- The React / Vue / Svelte wrapper packages remain private and are deferred to 1.1.
+
 ## 0.9.0 (2026-06-02)
 
 Major UX upgrade — TradingView-grade interaction across the board, with new
