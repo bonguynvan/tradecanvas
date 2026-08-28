@@ -51,6 +51,7 @@ export function alignToTimeframe(timestamp: number, tf: TimeFrame): number {
 }
 
 export interface TimeParts {
+  year: number;
   month: number; // 1-12
   day: number;
   hours: number;
@@ -64,10 +65,34 @@ export interface TimeParts {
 export function timeParts(timeMs: number, tzOffsetMinutes: number | null): TimeParts {
   if (tzOffsetMinutes === null) {
     const d = new Date(timeMs);
-    return { month: d.getMonth() + 1, day: d.getDate(), hours: d.getHours(), minutes: d.getMinutes() };
+    return {
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+      hours: d.getHours(),
+      minutes: d.getMinutes(),
+    };
   }
   const d = new Date(timeMs + tzOffsetMinutes * 60_000);
-  return { month: d.getUTCMonth() + 1, day: d.getUTCDate(), hours: d.getUTCHours(), minutes: d.getUTCMinutes() };
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate(),
+    hours: d.getUTCHours(),
+    minutes: d.getUTCMinutes(),
+  };
+}
+
+/**
+ * A bar with no time-of-day component (a daily, weekly, monthly or yearly candle — always anchored
+ * to a calendar-day boundary, so hours/minutes read 00:00) needs the YEAR in its label instead: a
+ * bare `month/day` is ambiguous across years, and `00:00` tells a trader nothing. Detected from the
+ * parts themselves rather than a separate timeframe parameter, so every caller that formats a bar's
+ * time gets the same rule for free. The one false positive this accepts — a genuine intraday bar
+ * landing exactly on midnight — is acceptable: real trade-driven timestamps essentially never do.
+ */
+export function isDateOnly(parts: Pick<TimeParts, 'hours' | 'minutes'>): boolean {
+  return parts.hours === 0 && parts.minutes === 0;
 }
 
 /** A short timezone label like `UTC-5` or `UTC+5:30` (browser-local when null). */
