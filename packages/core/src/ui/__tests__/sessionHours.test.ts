@@ -42,3 +42,55 @@ describe('isRegularSession', () => {
     expect(isRegularSession(at(17, 30), overnight)).toBe(false); // 17:30 the daily break
   });
 });
+
+describe('isRegularSession — split session (midday recess)', () => {
+  // SET: 10:00–12:30 morning, 14:30–16:30 afternoon. UTC+7 → tz offset +420.
+  // Test timestamps are Bangkok local, converted to UTC by subtracting 7h.
+  const set = {
+    startMinute: 10 * 60,
+    endMinute: 16 * 60 + 30,
+    tzOffsetMinutes: 7 * 60,
+    windows: [
+      { startMinute: 10 * 60, endMinute: 12 * 60 + 30 },
+      { startMinute: 14 * 60 + 30, endMinute: 16 * 60 + 30 },
+    ],
+  };
+  const bkk = (h: number, m: number) => Date.UTC(2023, 0, 3, h - 7, m, 0);
+
+  it('is in-session inside either window', () => {
+    expect(isRegularSession(bkk(10, 0), set)).toBe(true);   // morning open
+    expect(isRegularSession(bkk(12, 29), set)).toBe(true);  // just before recess
+    expect(isRegularSession(bkk(14, 30), set)).toBe(true);  // afternoon open
+    expect(isRegularSession(bkk(16, 29), set)).toBe(true);  // just before close
+  });
+
+  it('dims the midday recess and the pre-/post-market span', () => {
+    expect(isRegularSession(bkk(12, 30), set)).toBe(false); // recess start (end exclusive)
+    expect(isRegularSession(bkk(13, 30), set)).toBe(false); // mid recess
+    expect(isRegularSession(bkk(9, 30), set)).toBe(false);  // pre-market
+    expect(isRegularSession(bkk(16, 30), set)).toBe(false); // close (end exclusive)
+    expect(isRegularSession(bkk(18, 0), set)).toBe(false);  // after-hours
+  });
+
+  it('falls back to startMinute/endMinute when windows is empty', () => {
+    const noWindows = { ...set, windows: [] };
+    expect(isRegularSession(bkk(13, 30), noWindows)).toBe(true); // lunch now counts — single 10:00–16:30 window
+  });
+
+  it('supports a window that itself wraps midnight', () => {
+    // Two windows: an evening block and an early-morning block on the next day.
+    const cfg = {
+      startMinute: 0,
+      endMinute: 0,
+      tzOffsetMinutes: 0,
+      windows: [
+        { startMinute: 22 * 60, endMinute: 2 * 60 }, // 22:00 → 02:00 wraps
+        { startMinute: 9 * 60, endMinute: 11 * 60 },
+      ],
+    };
+    expect(isRegularSession(at(23, 0), cfg)).toBe(true);  // inside the wrapping window
+    expect(isRegularSession(at(1, 0), cfg)).toBe(true);   // still inside it, past midnight
+    expect(isRegularSession(at(10, 0), cfg)).toBe(true);  // inside the plain window
+    expect(isRegularSession(at(5, 0), cfg)).toBe(false);  // between windows
+  });
+});

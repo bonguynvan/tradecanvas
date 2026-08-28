@@ -1,6 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
-import { isRegularSession, type SessionHoursConfig } from './sessionHours.js';
+import { isRegularSession, type SessionHoursConfig, type SessionWindow } from './sessionHours.js';
 
 /** US equity regular trading hours (09:30–16:00 ET) as a sensible default. */
 export const DEFAULT_SESSION_HOURS: SessionHoursConfig = {
@@ -25,10 +25,16 @@ export class SessionShading {
     return this.visible;
   }
   setConfig(config: Partial<SessionHoursConfig>): void {
-    this.config = { ...this.config, ...config };
+    const next = { ...this.config, ...config };
+    // Own the windows array so later mutation by the caller can't leak in.
+    next.windows = next.windows ? next.windows.map((w) => ({ ...w })) : undefined;
+    this.config = next;
   }
   getConfig(): SessionHoursConfig {
-    return { ...this.config };
+    return {
+      ...this.config,
+      windows: this.config.windows?.map((w: SessionWindow) => ({ ...w })),
+    };
   }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
