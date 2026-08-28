@@ -482,11 +482,18 @@ chart.setTheme({
 ```typescript
 chart.on('crosshairMove', (e) => { /* { point, bar, barIndex, indicatorValues } */ })
 chart.on('barClick', (e) => { /* { bar, barIndex, point } */ })
-chart.on('visibleRangeChange', (e) => { /* { from, to } */ })
+chart.on('visibleRangeChange', (e) => { /* { from, to } — bar indices, not timestamps */ })
+chart.on('priceRangeChange', (e) => { /* { min, max } — visible price bounds */ })
+chart.on('zoomChange', (e) => { /* { barWidth } — pixels per bar */ })
 chart.on('drawingCreate', (e) => { /* ... */ })
 chart.on('orderModify', (e) => { /* ... */ })
 chart.on('positionModify', (e) => { /* ... */ })
 ```
+
+`visibleRangeChange`, `priceRangeChange`, and `zoomChange` fire on every pan,
+zoom, resize, and data update — but only when that piece of viewport state
+actually changed. Resolve a `visibleRangeChange` index to time with
+`chart.getData()[e.payload.from].time`.
 
 ### Replay Mode
 
