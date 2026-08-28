@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { formatPrice, timeParts } from '@tradecanvas/commons';
+import { formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -269,6 +269,10 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
 
 function formatBarTime(rawTime: number, tzOffsetMinutes: number | null): string {
   const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
-  const { month: m, day, hours: h, minutes: mm } = timeParts(ms, tzOffsetMinutes);
+  const parts = timeParts(ms, tzOffsetMinutes);
+  const { year, month: m, day, hours: h, minutes: mm } = parts;
+  // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the
+  // year takes that space instead — `${m}/${day}` alone is ambiguous once bars span years apart.
+  if (isDateOnly(parts)) return `${m}/${day}/${year}`;
   return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }

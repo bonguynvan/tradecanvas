@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { timeParts, tzLabel } from '@tradecanvas/commons';
+import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -47,11 +47,17 @@ export class TimeAxis {
       // Handle both milliseconds and seconds timestamps
       const rawTime = data[i].time;
       const timeMs = rawTime > 1e12 ? rawTime : rawTime * 1000;
-      const { day, month, hours, minutes } = timeParts(timeMs, this.tzOffsetMinutes);
+      const parts = timeParts(timeMs, this.tzOffsetMinutes);
+      const { year, day, month, hours, minutes } = parts;
 
-      // Smart format: show date on day change, time otherwise
+      // Smart format: a daily/weekly/monthly/yearly bar has no time-of-day component at all —
+      // `month/day` alone is ambiguous across years (a Year chart's handful of bars can span
+      // decades), so it carries the year instead. Otherwise show date on day change, time
+      // otherwise, same as before.
       let label: string;
-      if (day !== prevDay) {
+      if (isDateOnly(parts)) {
+        label = `${month}/${day}/${year}`;
+      } else if (day !== prevDay) {
         label = `${month}/${day}`;
         prevDay = day;
       } else {
