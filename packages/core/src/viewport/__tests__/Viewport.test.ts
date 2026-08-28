@@ -60,8 +60,66 @@ describe('Viewport — sparse-series panning (2026-08-27)', () => {
     expect(Number.isFinite(max)).toBe(true);
     expect(max).toBeGreaterThan(min);
   });
+});
 
-  it('leaves long-data panning behaviour unchanged (regression guard)', () => {
+describe('Viewport.panPriceRange — vertical chart-body panning', () => {
+  it('a drag UP (positive delta) slides the price window DOWN, span preserved', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setPriceRange(100, 200);
+    const h = vp.getState().chartRect.height;
+
+    vp.panPriceRange(h / 2); // dragged up half the pane
+
+    const { min, max } = vp.getState().priceRange;
+    expect(max - min).toBeCloseTo(100, 6); // span unchanged
+    expect(min).toBeCloseTo(50, 6); // shifted down by half the range (50)
+    expect(max).toBeCloseTo(150, 6);
+  });
+
+  it('a drag DOWN (negative delta) slides the price window UP', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setPriceRange(100, 200);
+    const h = vp.getState().chartRect.height;
+
+    vp.panPriceRange(-h / 4);
+
+    const { min, max } = vp.getState().priceRange;
+    expect(min).toBeCloseTo(125, 6);
+    expect(max).toBeCloseTo(225, 6);
+  });
+
+  it('is a no-op for a zero delta', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setPriceRange(100, 200);
+
+    vp.panPriceRange(0);
+
+    expect(vp.getState().priceRange).toEqual({ min: 100, max: 200 });
+  });
+
+  it('shifts multiplicatively on a log scale (equal pixel travel = equal ratio)', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setLogScale(true);
+    vp.setPriceRange(10, 1000);
+    const h = vp.getState().chartRect.height;
+
+    vp.panPriceRange(h); // one full pane up
+
+    const { min, max } = vp.getState().priceRange;
+    // log-span (log10 → 2 decades) is preserved; both bounds divided by the same factor
+    expect(Math.log(max) - Math.log(min)).toBeCloseTo(Math.log(1000) - Math.log(10), 6);
+    expect(min).toBeLessThan(10);
+    expect(max).toBeLessThan(1000);
+    expect(max / min).toBeCloseTo(100, 6);
+  });
+});
+
+describe('Viewport — long-data panning (regression guard)', () => {
+  it('leaves long-data panning behaviour unchanged', () => {
     // 500 bars at up to 30px/bar comfortably overflows a 1000px pane — squarely the "long data"
     // branch, untouched by this fix.
     const vp = new Viewport(1000, 600, 2, 30, 5);

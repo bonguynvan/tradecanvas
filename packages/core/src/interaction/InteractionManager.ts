@@ -449,11 +449,12 @@ export class InteractionManager {
           this.zoomHandler?.onWheel(-delta * 100, mid);
         }
 
-        // Two-finger pan
+        // Two-finger pan — horizontal only, so a pinch doesn't also drag the
+        // price scale. Feed a point with the anchor's y to zero the vertical delta.
         const dx = this.lastTouchMid.x - mid.x;
         if (Math.abs(dx) > 1) {
           this.panHandler?.onPointerDown(this.lastTouchMid);
-          this.panHandler?.onPointerMove(mid);
+          this.panHandler?.onPointerMove({ x: mid.x, y: this.lastTouchMid.y });
         }
 
         this.lastTouchDist = dist;

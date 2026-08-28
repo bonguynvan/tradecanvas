@@ -453,6 +453,8 @@ Every gesture you'd expect from a desktop trading chart is built in:
 
 | Gesture | Result |
 |---|---|
+| Drag chart body left/right | Pan through time |
+| Drag chart body up/down | Pan the price scale (freezes auto-scale; double-click price axis to restore) |
 | Drag price axis up/down | Compress / expand vertical scale (freezes auto-scale) |
 | Drag time axis left/right | Zoom time axis |
 | Double-click price axis | Re-enable auto-scale |
