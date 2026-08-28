@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [debdff7]
+  - @tradecanvas/core@1.0.3
+  - @tradecanvas/commons@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes

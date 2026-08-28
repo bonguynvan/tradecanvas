@@ -6,5 +6,5 @@ export { BarCountdown } from './BarCountdown.js';
 export { SessionBreaks } from './SessionBreaks.js';
 export type { SessionBreakConfig } from './SessionBreaks.js';
 export { SessionShading, DEFAULT_SESSION_HOURS } from './SessionShading.js';
-export { isRegularSession, minuteOfDay } from './sessionHours.js';
-export type { SessionHoursConfig } from './sessionHours.js';
+export { isRegularSession, isInWindow, minuteOfDay } from './sessionHours.js';
+export type { SessionHoursConfig, SessionWindow } from './sessionHours.js';

@@ -135,8 +135,8 @@ export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, Pol
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
 // Re-export UI
-export { ChartLegend, Screenshot, Watermark, BarCountdown, SessionBreaks, DEFAULT_LEGEND_CONFIG } from '@tradecanvas/core';
-export type { LegendConfig, SessionBreakConfig } from '@tradecanvas/core';
+export { ChartLegend, Screenshot, Watermark, BarCountdown, SessionBreaks, SessionShading, DEFAULT_LEGEND_CONFIG, DEFAULT_SESSION_HOURS } from '@tradecanvas/core';
+export type { LegendConfig, SessionBreakConfig, SessionHoursConfig, SessionWindow } from '@tradecanvas/core';
 
 // Re-export chart renderers and transforms
 export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';

@@ -1677,7 +1677,11 @@ export class Chart {
     return this.sessionShading.isVisible();
   }
 
-  /** Configure the regular session window (minutes-of-day + tz offset). */
+  /**
+   * Configure the regular session window (minutes-of-day + tz offset). Pass
+   * `windows` for a split session — a market with a midday recess (e.g. SET's
+   * 10:00–12:30 and 14:30–16:30) — so the lunch break dims like pre-/post-market.
+   */
   setSessionShadingConfig(config: Partial<import('@tradecanvas/core').SessionHoursConfig>): void {
     this.sessionShading.setConfig(config);
     this.engine.requestRender(LayerType.Background);
