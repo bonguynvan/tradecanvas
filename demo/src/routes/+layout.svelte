@@ -136,6 +136,8 @@
     <a href="{base}/changelog">Changelog</a>
     <span class="footer-sep">·</span>
     <a href="https://www.npmjs.com/package/@tradecanvas/chart">npm</a>
+    <span class="footer-sep">·</span>
+    <a href="https://bonguynvan.github.io/bo-grid/" target="_blank" rel="noopener">bo-grid</a>
   </div>
   <div style="margin-top: 8px">MIT · v1.0.0</div>
 </footer>

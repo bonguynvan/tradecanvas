@@ -853,6 +853,10 @@ Multi-layer canvas for optimal rendering — only dirty layers repaint each fram
   Background    (grid, watermark)                     z=0
 ```
 
+## Related projects
+
+- **[bo-grid](https://github.com/bonguynvan/bo-grid)** — tiny, fast **Svelte 5** data grid for fintech UIs: canvas sparklines, batched realtime cell updates, virtual scrolling, grouping / pivot / tree data, and Excel export, with a core that gzips to ~32 KB. The table half of the same toolkit — pair it with TradeCanvas for a full trading desk. **[Live demo](https://bonguynvan.github.io/bo-grid/)**
+
 ## License
 
 [MIT](./LICENSE)
