@@ -1,5 +1,11 @@
 # @tradecanvas/core
 
+## 1.1.1
+
+### Patch Changes
+
+- @tradecanvas/commons@1.1.1
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 1.1.1
+
+### Patch Changes
+
+- 24b1bed: docs: add a "Related projects" cross-link to bo-grid (sibling Svelte 5 fintech data grid) in the README, and add `fintech` / `realtime` keywords for npm discovery.
+  - @tradecanvas/commons@1.1.1
+  - @tradecanvas/core@1.1.1
+
 ## 1.1.0
 
 ### Minor Changes
