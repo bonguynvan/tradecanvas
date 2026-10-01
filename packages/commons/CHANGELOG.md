@@ -1,5 +1,87 @@
 # @tradecanvas/commons
 
+## 1.2.0
+
+### Minor Changes
+
+- 14 new drawing tools (26 → 40), the next step of TradingView Advanced Charts
+  drawing-tool parity:
+
+  - **Lines:** `infoLine` (trend line with a stats box: price change and %,
+    bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
+    `crossLine` (horizontal + vertical line through one point, single click).
+  - **Fibonacci:** `fibChannel` (A→B base, C sets the width; parallels at
+    Fibonacci fractions), `fibSpeedResistanceFan` (rays through Fibonacci
+    fractions of the move in both price and time).
+  - **Pitchforks:** `schiffPitchfork` and `modifiedSchiffPitchfork` alongside
+    Andrews' `pitchfork` (which gains a protected `origin()` hook the variants
+    override).
+  - **Patterns:** `xabcdPattern` (harmonic XABCD with XB / AC / BD / XD ratios),
+    `abcdPattern` (BC/AB, CD/BC ratios), `headAndShoulders` (seven pivots with
+    the neckline through both neck points).
+  - **Shapes / measuring / cycles / annotation:** `circle`,
+    `dateAndPriceRange` (price change, bars, time and volume traded in one box),
+    `cyclicLines` (vertical lines repeating at the A→B interval), `priceLabel`
+    (callout showing a point's price, or `style.text`).
+
+  Measuring labels format prices at the precision of the instrument's price
+  level (2 decimals for most, 4 for FX-range prices, significant digits for
+  prices under 1) instead of a fixed 2 decimals.
+
+  `ChartWidget` (and the demo) drawing toolbar is regrouped TradingView-style
+  into Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes,
+  Gann & Pitchforks, Patterns (new), Measure, Annotation and Forecasting — which
+  also exposes three tools that were registered but missing from the toolbar:
+  Fib Time Zones, Anchored VWAP and Fixed Range Volume Profile.
+
+  `ChartWidget`'s status bar no longer reads "Connecting..." forever when it
+  shows static data without an adapter.
+
+- 43b4ff5: Performance audit, round 2 — measured in a live browser profiler before and
+  after each change.
+
+  **Incremental indicators on live ticks (new API).** A live tick only changes
+  the forming bar, but every tick re-ran every indicator over the whole
+  history: ~30 ms per tick at 20k bars, ~150 ms at 100k, plus megabytes of
+  garbage — a main-thread freeze on every websocket update. New optional
+  `IndicatorPlugin.update(data, config, prev, from)` recomputes only bars from
+  `from` onward; `IndicatorEngine.recalculateFrom(data, from)` uses it and
+  falls back to `calculate()` when a plugin doesn't implement it or declines.
+  Implemented for SMA, EMA, WMA, VWMA, Bollinger Bands, Envelope, RSI, MACD,
+  ATR, OBV and Stochastic, each verified equal to a full recalculation across
+  ticks, bar closes and multi-bar appends. Ticks, `appendBar(s)`, stream bar
+  closes and replay steps now use it: a tick with 4 indicators at 100k bars
+  went from ~96 ms to ~0.001 ms (`pnpm bench`). Note: outputs returned by
+  `getIndicatorOutput()` are now updated in place on ticks rather than
+  replaced. `IndicatorBase` gains `canResume()` / `writePoint()` helpers.
+
+  **Price scale no longer jumps while live data streams in.** The live-tick
+  render path fit the price range to candles only, while the pan/zoom path
+  also included overlay indicators (Bollinger, Keltner, Ichimoku…) — so the
+  scale snapped back and forth by several percent every second. Both now share
+  one auto-scale routine.
+
+  **Switching symbol/timeframe while scrolled into history fits the new data.**
+  Auto-scale was computed before scrolling to the end, i.e. over the old
+  window, leaving every bar of the new series off-screen.
+
+  **New bars no longer yank you out of history.** `appendBar` and stream bar
+  closes now follow the live edge only if the view is already there (as
+  `appendBars` already did), and scroll after the viewport knows the new
+  length.
+
+  **Cheaper per-frame text.** `formatPrice` (axes, legend, crosshair pills,
+  current-price tag, panel axes) and session-break date labels used
+  `toLocaleString`/`toLocaleDateString`, which build a new `Intl` formatter on
+  every call (~20–40 µs each). Formatters are now cached per locale/precision
+  (~0.4 µs). Hover frames dropped from ~0.64 ms to ~0.23 ms.
+
+  **Other fixes found along the way:** `SessionBreaks` rescanned every bar on
+  every frame for series with no day boundary; `ATR` threw on series shorter
+  than its period; stream bar closes didn't invalidate the display cache (so
+  Heikin-Ashi etc. missed the new bar); `replayStart()` rendered the stale
+  pre-replay series and stacked a new step listener on every restart.
+
 ## 1.1.1
 
 ## 1.1.0
