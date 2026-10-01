@@ -60,7 +60,7 @@ export class AcceleratorOscillatorIndicator extends IndicatorBase {
     const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
     const zeroY = toY(0);
 
-    ctx.strokeStyle = style.colors[1] ?? '#787B86';
+    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -77,7 +77,7 @@ export class AcceleratorOscillatorIndicator extends IndicatorBase {
       const x = barIndexToX(i, viewport);
       const y = toY(v);
       const rising = prev === undefined ? v >= 0 : v >= prev;
-      ctx.fillStyle = rising ? 'rgba(38,166,154,0.85)' : 'rgba(239,83,80,0.85)';
+      ctx.fillStyle = rising ? 'rgba(31, 168, 116,0.85)' : 'rgba(232, 80, 91,0.85)';
       const top = Math.min(y, zeroY);
       ctx.fillRect(x - barW / 2, top, barW, Math.max(1, Math.abs(y - zeroY)));
       prev = v;

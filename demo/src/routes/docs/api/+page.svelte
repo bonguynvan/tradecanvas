@@ -52,7 +52,7 @@
 <h3>Axis &amp; scale</h3>
 <p>
   The price axis (right strip) and time axis (bottom strip) accept direct
-  pointer interaction — same gestures as TradingView:
+  pointer interaction, with the gestures traders already know:
 </p>
 <table>
   <thead><tr><th>Gesture</th><th>Effect</th></tr></thead>
@@ -358,9 +358,9 @@ widget.setWatchlistEntry('ETHUSDT', {
   save named <strong>templates</strong> persisted to localStorage for one-click
   reuse. Programmatic equivalents:
 </p>
-<pre><code>{`chart.setDrawingStyle({ color: '#f23645', lineWidth: 2, lineStyle: 'dashed' })
+<pre><code>{`chart.setDrawingStyle({ color: '#e8505b', lineWidth: 2, lineStyle: 'dashed' })
 chart.getDrawingStyle()
-chart.setSelectedDrawingStyle({ color: '#089981' })  // restyle the selected drawing`}</code></pre>
+chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected drawing`}</code></pre>
 
 <h3>Object tree</h3>
 <p>

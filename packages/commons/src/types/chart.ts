@@ -49,7 +49,7 @@ export interface FeaturesConfig {
   crosshair?: boolean;
   /**
    * Show the floating OHLCV tooltip that follows the cursor on hover.
-   * TradingView-style charts rely on the top-left legend (`legend`) instead
+   * Pro trading charts usually rely on the top-left legend (`legend`) instead
    * of a cursor-following popup — set this to `false` to match that and
    * keep only the legend updating on hover.
    */

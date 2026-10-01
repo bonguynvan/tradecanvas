@@ -45,7 +45,7 @@ export interface ViewportState {
    * Optional reference to the current bar series. When set, drawings/indicators
    * treat `anchor.time` as a real timestamp and convert to bar index via
    * `timestampToBarIndex(time, data)` at render/hit-test time. This lets
-   * anchors survive timeframe / symbol switches like TradingView. When unset,
+   * anchors survive timeframe / symbol switches. When unset,
    * `anchor.time` is treated as a raw bar index (legacy behavior).
    */
   data?: ReadonlyArray<{ time: number }>;

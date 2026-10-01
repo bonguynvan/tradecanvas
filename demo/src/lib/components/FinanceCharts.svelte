@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { siteTheme, onSiteThemeChange } from '$lib/site';
+  import type { Theme } from '@tradecanvas/chart';
   import { onMount, onDestroy, tick } from 'svelte';
   import {
     SparklineChart,
@@ -137,12 +139,13 @@
     value: 72,
     min: 0,
     max: 100,
-    label: 'Fear & Greed',
+    label: 'Fear & Greed index',
     zones: [
-      { from: 0, to: 25, color: '#ef4444' },
-      { from: 25, to: 50, color: '#f59e0b' },
-      { from: 50, to: 75, color: '#eab308' },
-      { from: 75, to: 100, color: '#10b981' },
+      { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
+      { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
+      { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
+      { from: 55, to: 75, color: '#62c895', label: 'Greed' },
+      { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
     ],
   };
 
@@ -163,13 +166,6 @@
   let gaugeChart: GaugeChart | null = null;
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
-  function isDarkMode(): boolean {
-    return !document.body.classList.contains('light');
-  }
-
-  function currentThemeName(): 'dark' | 'light' {
-    return isDarkMode() ? 'dark' : 'light';
-  }
 
   function formatPrice(price: number): string {
     if (price >= 1000) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
@@ -177,11 +173,9 @@
     return `$${price.toFixed(4)}`;
   }
 
-  // Observer to detect theme changes on body
-  let themeObserver: MutationObserver | null = null;
+  let stopThemeSync: (() => void) | null = null;
 
-  function applyThemeToAll(): void {
-    const theme = currentThemeName();
+  function applyThemeToAll(theme: Theme): void {
     for (const sc of sparkCharts) {
       sc.setTheme(theme);
     }
@@ -195,7 +189,7 @@
   onMount(async () => {
     // Wait for DOM to be fully laid out
     await tick();
-    const theme = currentThemeName();
+    const theme = siteTheme();
 
     // Create sparkline charts — query DOM for containers
     if (sparkGridEl) {
@@ -204,13 +198,13 @@
         if (i >= cryptos.length) return;
         const crypto = cryptos[i];
         const isUp = crypto.change > 0;
+        const tone = isUp ? theme.candleUp : theme.candleDown;
         const chart = new SparklineChart(el, {
           data: crypto.data,
           mode: 'area',
-          color: isUp ? '#10b981' : '#ef4444',
-          fillColor: isUp ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          color: tone,
           showLastPoint: true,
-          lastPointColor: isUp ? '#10b981' : '#ef4444',
+          lastPointColor: tone,
           lineWidth: 1.5,
           theme,
         });
@@ -223,8 +217,6 @@
       equityChart = new EquityCurveChart(equityContainer, {
         data: equityData,
         drawdown: true,
-        lineColor: '#3b82f6',
-        benchmarkColor: '#6b7280',
         benchmark: benchmarkData,
         benchmarkLabel: 'Benchmark',
         crosshair: true,
@@ -263,7 +255,7 @@
         data: waterfallData,
         showValues: true,
         connectorStyle: 'dashed',
-        valueFormat: (v: number) => `$${v.toLocaleString()}`,
+        valueFormat: (v: number) => `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString()}`,
         crosshair: true,
         theme,
       });
@@ -285,14 +277,7 @@
       }, 3000);
     }
 
-    // Watch for theme changes on <body>
-    themeObserver = new MutationObserver(() => {
-      applyThemeToAll();
-    });
-    themeObserver.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
+    stopThemeSync = onSiteThemeChange(applyThemeToAll);
   });
 
   onDestroy(() => {
@@ -314,14 +299,17 @@
       clearInterval(gaugeInterval);
       gaugeInterval = null;
     }
-    themeObserver?.disconnect();
-    themeObserver = null;
+    stopThemeSync?.();
+    stopThemeSync = null;
   });
 </script>
 
 <section class="finance-section">
-  <h2 class="section-title">Finance Charts</h2>
-  <p class="section-subtitle">Beyond candlesticks — visualize portfolios, order books, market sectors, and KPI metrics.</p>
+  <header class="section-head">
+    <span class="eyebrow">Finance charts</span>
+    <h2 class="section-title">Beyond candlesticks</h2>
+    <p class="section-subtitle">Sparklines, equity curves, order-book depth, sector heatmaps, waterfalls and gauges for portfolios and KPIs.</p>
+  </header>
 
   <!-- Sparklines Row -->
   <div class="spark-grid" bind:this={sparkGridEl}>
@@ -378,24 +366,9 @@
 
 <style>
   .finance-section {
-    padding: 48px clamp(24px, 4vw, 72px);
-    max-width: 1600px;
+    padding: var(--section-pad) var(--gutter);
+    max-width: var(--page-max);
     margin: 0 auto;
-  }
-
-  .section-title {
-    text-align: center;
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0 0 8px;
-    color: var(--text);
-  }
-
-  .section-subtitle {
-    text-align: center;
-    font-size: 15px;
-    color: var(--text-muted);
-    margin: 0 0 32px;
   }
 
   /* --- Sparkline grid --- */
@@ -510,10 +483,6 @@
   }
 
   @media (max-width: 768px) {
-    .finance-section {
-      padding: 32px 12px;
-    }
-
     .spark-grid {
       grid-template-columns: repeat(2, 1fr);
     }

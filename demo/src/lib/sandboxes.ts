@@ -6,7 +6,7 @@ const WRAPPER_VERSION = '^1.0.4';
 const VITE_VERSION = '^6.0.0';
 const TS_VERSION = '~5.7.0';
 
-const BODY_CSS = 'html, body { margin: 0; height: 100%; background: #131722; }';
+const BODY_CSS = 'html, body { margin: 0; height: 100%; background: #0c1016; }';
 
 const TSCONFIG = JSON.stringify(
   {
@@ -340,8 +340,8 @@ export function openFinanceChartsSandbox(): void {
         '/src/main.ts',
         '<div class="grid"><div class="card"><div class="card-label">P&amp;L Attribution</div><div id="waterfall" class="chart"></div></div><div class="card"><div class="card-label">Fear &amp; Greed</div><div id="gauge" class="chart"></div></div></div>',
         ' .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }'
-          + ' .card { background: #1e222d; border-radius: 8px; overflow: hidden; }'
-          + ' .card-label { padding: 10px 16px; font: 600 11px sans-serif; color: #787b86; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2a2e39; }'
+          + ' .card { background: #161b23; border-radius: 8px; overflow: hidden; }'
+          + ' .card-label { padding: 10px 16px; font: 600 11px sans-serif; color: #7d8696; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #1f2630; }'
           + ' .chart { height: 320px; width: 100%; }',
       ),
       'src/main.ts': `import { WaterfallChart, GaugeChart } from '@tradecanvas/chart';
@@ -360,7 +360,7 @@ new WaterfallChart(document.getElementById('waterfall')!, {
   data: waterfallData,
   showValues: true,
   connectorStyle: 'dashed',
-  valueFormat: (v) => \`$\${v.toLocaleString()}\`,
+  valueFormat: (v) => \`\${v < 0 ? '-' : ''}$\${Math.abs(v).toLocaleString()}\`,
   crosshair: true,
 });
 
@@ -370,10 +370,11 @@ const gauge = new GaugeChart(document.getElementById('gauge')!, {
   max: 100,
   label: 'Fear & Greed',
   zones: [
-    { from: 0, to: 25, color: '#ef4444' },
-    { from: 25, to: 50, color: '#f59e0b' },
-    { from: 50, to: 75, color: '#eab308' },
-    { from: 75, to: 100, color: '#10b981' },
+    { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
+    { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
+    { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
+    { from: 55, to: 75, color: '#62c895', label: 'Greed' },
+    { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
   ],
   animate: true,
 });

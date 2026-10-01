@@ -104,7 +104,7 @@ export class StochasticIndicator extends IndicatorBase {
     const toY = (val: number) => chartRect.y + chartRect.height * (1 - val / 100);
 
     // Levels
-    ctx.strokeStyle = style.colors[2] ?? '#787B86';
+    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     for (const level of [20, 80]) {
@@ -135,6 +135,6 @@ export class StochasticIndicator extends IndicatorBase {
     };
 
     drawLine('k', style.colors[0]);
-    drawLine('d', style.colors[1] ?? '#FF9800');
+    drawLine('d', style.colors[1] ?? '#f2a93b');
   }
 }

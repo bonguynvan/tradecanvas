@@ -55,7 +55,7 @@ export class DonchianChannelIndicator extends IndicatorBase {
 
     this.drawBand(ctx, upperPts, lowerPts, withAlpha(style.colors[0], 0.08));
     this.drawLine(ctx, upperPts, style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, middlePts, style.colors[1] ?? '#787B86', 1);
+    this.drawLine(ctx, middlePts, style.colors[1] ?? '#7d8696', 1);
     this.drawLine(ctx, lowerPts, style.colors[0], style.lineWidths[0]);
   }
 }

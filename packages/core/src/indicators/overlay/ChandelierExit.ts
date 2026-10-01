@@ -76,7 +76,7 @@ export class ChandelierExitIndicator extends IndicatorBase {
       ctx.setLineDash([]);
     };
 
-    drawLine('long', style.colors[0] ?? '#26A69A');
-    drawLine('short', style.colors[1] ?? '#EF5350');
+    drawLine('long', style.colors[0] ?? '#1fa874');
+    drawLine('short', style.colors[1] ?? '#e8505b');
   }
 }

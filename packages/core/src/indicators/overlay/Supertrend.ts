@@ -76,7 +76,7 @@ export class SupertrendIndicator extends IndicatorBase {
     const { from, to } = viewport.visibleRange;
 
     const upColor = style.colors[0];
-    const downColor = style.colors[1] ?? '#EF5350';
+    const downColor = style.colors[1] ?? '#e8505b';
 
     // Draw segments per trend direction
     let prevX = 0, prevY = 0, prevTrend = 0;

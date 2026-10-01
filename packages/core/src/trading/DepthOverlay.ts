@@ -11,8 +11,8 @@ export class DepthOverlay {
     if (!config.depthOverlay?.enabled) return;
 
     const { chartRect } = viewport;
-    const bidColor = config.depthOverlay.bidColor ?? 'rgba(38,166,154,0.15)';
-    const askColor = config.depthOverlay.askColor ?? 'rgba(239,83,80,0.15)';
+    const bidColor = config.depthOverlay.bidColor ?? 'rgba(31, 168, 116,0.15)';
+    const askColor = config.depthOverlay.askColor ?? 'rgba(232, 80, 91,0.15)';
     const maxWidth = config.depthOverlay.maxWidth ?? 100;
 
     // Compute cumulative volumes

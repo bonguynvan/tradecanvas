@@ -21,34 +21,36 @@
   font-feature-settings: 'cv11', 'ss01', 'ss03';
   font-size: 13px;
   line-height: 1.4;
-  color: #d1d4dc;
-  background: #0d0f17;
+  color: #d9dde4;
+  background: #080b10;
   position: relative;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
   /* --- Dark theme tokens (default) --- */
-  --tcw-bg: #0d0f17;
-  --tcw-bg-surface: #131722;
-  --tcw-bg-elevated: #1a1e2d;
-  --tcw-bg-overlay: #20253480;
-  --tcw-border: #2a2e39;
-  --tcw-border-strong: #363a45;
-  --tcw-text: #e9ebf0;
-  --tcw-text-dim: #b2b5be;
-  --tcw-text-muted: #6b6f7a;
+  --tcw-bg: #080b10;
+  --tcw-bg-surface: #0c1016;
+  --tcw-bg-elevated: #141922;
+  --tcw-bg-overlay: rgba(20, 25, 34, 0.5);
+  --tcw-border: #1f2630;
+  --tcw-border-strong: #2a323e;
+  --tcw-text: #e7e9ee;
+  --tcw-text-dim: #aab1bd;
+  --tcw-text-muted: #758091;
 
-  --tcw-accent: #4f88ff;
-  --tcw-accent-hover: #6b9aff;
-  --tcw-accent-soft: rgba(79, 136, 255, 0.14);
-  --tcw-accent-glow: rgba(79, 136, 255, 0.22);
-  --tcw-accent-line: rgba(79, 136, 255, 0.55);
+  /* TradeCanvas amber. --tcw-accent-ink is the text colour on an accent fill. */
+  --tcw-accent: #f2a93b;
+  --tcw-accent-hover: #f5b95c;
+  --tcw-accent-ink: #1a1204;
+  --tcw-accent-soft: rgba(242, 169, 59, 0.14);
+  --tcw-accent-glow: rgba(242, 169, 59, 0.22);
+  --tcw-accent-line: rgba(242, 169, 59, 0.55);
 
-  --tcw-red: #f23645;
-  --tcw-red-soft: rgba(242, 54, 69, 0.12);
-  --tcw-green: #26a17b;
-  --tcw-green-soft: rgba(38, 161, 123, 0.12);
+  --tcw-red: #e8505b;
+  --tcw-red-soft: rgba(232, 80, 91, 0.12);
+  --tcw-green: #1fa874;
+  --tcw-green-soft: rgba(31, 168, 116, 0.12);
   --tcw-amber: #ff9f43;
 
   --tcw-hover-bg: rgba(255, 255, 255, 0.05);
@@ -73,34 +75,43 @@
   --tcw-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2);
   --tcw-shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
   --tcw-shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.55), 0 12px 24px rgba(0, 0, 0, 0.35);
-  --tcw-ring: 0 0 0 2px rgba(79, 136, 255, 0.45);
+  --tcw-ring: 0 0 0 2px rgba(242, 169, 59, 0.45);
 
   /* Type */
   --tcw-font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace;
 }
 
 .tcw-root[data-tcw-theme='light'] {
-  color: #131722;
+  color: #0c1016;
   background: #fcfcfd;
 
   --tcw-bg: #fcfcfd;
   --tcw-bg-surface: #ffffff;
   --tcw-bg-elevated: #ffffff;
   --tcw-bg-overlay: rgba(255, 255, 255, 0.75);
-  --tcw-border: #e7e9ef;
-  --tcw-border-strong: #d4d7e0;
-  --tcw-text: #131722;
-  --tcw-text-dim: #50545e;
-  --tcw-text-muted: #8b8f99;
+  --tcw-border: #e3e6eb;
+  --tcw-border-strong: #d2d6dd;
+  --tcw-text: #0c1016;
+  --tcw-text-dim: #3f4754;
+  --tcw-text-muted: #626a77;
 
-  --tcw-accent: #2962ff;
-  --tcw-accent-hover: #1e4fd6;
-  --tcw-accent-soft: rgba(41, 98, 255, 0.10);
-  --tcw-accent-glow: rgba(41, 98, 255, 0.16);
-  --tcw-accent-line: rgba(41, 98, 255, 0.45);
+  /* Deeper amber: readable as text on the light ground, white text readable on it. */
+  --tcw-accent: #a0610a;
+  --tcw-accent-hover: #874f07;
+  --tcw-accent-ink: #ffffff;
+  --tcw-accent-soft: rgba(160, 97, 10, 0.10);
+  --tcw-accent-glow: rgba(160, 97, 10, 0.16);
+  --tcw-accent-line: rgba(160, 97, 10, 0.45);
+  --tcw-ring: 0 0 0 2px rgba(160, 97, 10, 0.4);
+
+  /* Darker semantic colours: used as text on white. */
+  --tcw-red: #c42f3e;
+  --tcw-red-soft: rgba(196, 47, 62, 0.10);
+  --tcw-green: #0b7d50;
+  --tcw-green-soft: rgba(11, 125, 80, 0.10);
 
   --tcw-hover-bg: rgba(0, 0, 0, 0.04);
-  --tcw-active-bg: rgba(41, 98, 255, 0.08);
+  --tcw-active-bg: rgba(160, 97, 10, 0.08);
   --tcw-divider: rgba(0, 0, 0, 0.06);
 
   --tcw-shadow-sm: 0 1px 2px rgba(20, 28, 56, 0.05);
@@ -409,7 +420,7 @@
   position: relative;
 }
 
-/* === Loading overlay (TradingView-style skeleton bars) === */
+/* === Loading overlay (skeleton bars) === */
 
 .tcw-loading-overlay {
   /* Uses a modifier class rather than the `hidden` attribute — the global
@@ -945,7 +956,7 @@
   font-size: 12.5px;
   font-weight: 600;
   background: var(--tcw-accent);
-  color: #fff;
+  color: var(--tcw-accent-ink);
   border: none;
   border-radius: var(--tcw-radius);
   cursor: pointer;
@@ -1000,7 +1011,7 @@
 
 .tcw-status-dot.tcw-connected {
   background: var(--tcw-green);
-  box-shadow: 0 0 0 3px rgba(38, 161, 123, 0.18);
+  box-shadow: 0 0 0 3px rgba(31, 168, 116, 0.18);
 }
 
 .tcw-status-dot.tcw-connected::after {
@@ -1020,7 +1031,7 @@
 
 .tcw-status-dot.tcw-error {
   background: var(--tcw-red);
-  box-shadow: 0 0 0 3px rgba(242, 54, 69, 0.2);
+  box-shadow: 0 0 0 3px rgba(232, 80, 91, 0.2);
 }
 
 /* === Command Palette === */
@@ -1364,7 +1375,7 @@
 
 .tcw-replay-btn.tcw-replay-play {
   background: var(--tcw-accent);
-  color: #fff;
+  color: var(--tcw-accent-ink);
   width: 32px;
   height: 32px;
   box-shadow: 0 0 0 3px var(--tcw-accent-glow);
@@ -1738,7 +1749,7 @@
   height: 34px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--tcw-accent-ink);
   background: var(--tcw-accent);
   border: none;
   border-radius: var(--tcw-radius-sm);
@@ -2065,7 +2076,7 @@
 }
 .tcw-bracket-cancel:hover { color: var(--tcw-text); }
 .tcw-bracket-confirm {
-  color: #fff;
+  color: var(--tcw-accent-ink);
   background: var(--tcw-accent);
 }
 .tcw-bracket-confirm:hover { background: var(--tcw-accent-hover); }
@@ -2184,7 +2195,7 @@
   height: 28px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--tcw-accent-ink);
   background: var(--tcw-accent);
   border: none;
   border-radius: var(--tcw-radius-sm);

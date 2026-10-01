@@ -40,7 +40,7 @@ yarn add @tradecanvas/chart
 
 ## Quick Start
 
-The fastest path is `ChartWidget` — drop-in component with a full TradingView-like UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
+The fastest path is `ChartWidget` — drop-in component with a full trading UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -154,22 +154,23 @@ See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) a
 
 | Variable | Default (dark) | Purpose |
 |---|---|---|
-| `--tcw-bg` | `#0d0f17` | Root background |
-| `--tcw-bg-surface` | `#131722` | Panel / toolbar surface |
-| `--tcw-bg-elevated` | `#1a1e2d` | Popovers, dropdowns, modals |
-| `--tcw-bg-overlay` | `#20253480` | Backdrop behind overlays |
-| `--tcw-border` | `#2a2e39` | Default border |
-| `--tcw-border-strong` | `#363a45` | Emphasized border (focus rings, dividers) |
-| `--tcw-text` | `#e9ebf0` | Primary text |
-| `--tcw-text-dim` | `#b2b5be` | Secondary text |
-| `--tcw-text-muted` | `#6b6f7a` | Tertiary / placeholder text |
-| `--tcw-accent` | `#4f88ff` | Primary accent (active tab, focus, links) |
-| `--tcw-accent-hover` | `#6b9aff` | Accent hover state |
-| `--tcw-accent-soft` | `rgba(79,136,255,.14)` | Accent tint (selected row background) |
-| `--tcw-accent-glow` | `rgba(79,136,255,.22)` | Accent glow (focus halo) |
-| `--tcw-accent-line` | `rgba(79,136,255,.55)` | Accent border/underline |
-| `--tcw-red` / `--tcw-red-soft` | `#f23645` / tint | Down/sell/negative |
-| `--tcw-green` / `--tcw-green-soft` | `#26a17b` / tint | Up/buy/positive |
+| `--tcw-bg` | `#080b10` | Root background |
+| `--tcw-bg-surface` | `#0c1016` | Panel / toolbar surface |
+| `--tcw-bg-elevated` | `#141922` | Popovers, dropdowns, modals |
+| `--tcw-bg-overlay` | `rgba(20,25,34,.5)` | Backdrop behind overlays |
+| `--tcw-border` | `#1f2630` | Default border |
+| `--tcw-border-strong` | `#2a323e` | Emphasized border (focus rings, dividers) |
+| `--tcw-text` | `#e7e9ee` | Primary text |
+| `--tcw-text-dim` | `#aab1bd` | Secondary text |
+| `--tcw-text-muted` | `#758091` | Tertiary / placeholder text |
+| `--tcw-accent` | `#f2a93b` | Primary accent (active tab, focus, links) |
+| `--tcw-accent-ink` | `#1a1204` | Text and icons on an accent fill |
+| `--tcw-accent-hover` | `#f5b95c` | Accent hover state |
+| `--tcw-accent-soft` | `rgba(242,169,59,.14)` | Accent tint (selected row background) |
+| `--tcw-accent-glow` | `rgba(242,169,59,.22)` | Accent glow (focus halo) |
+| `--tcw-accent-line` | `rgba(242,169,59,.55)` | Accent border/underline |
+| `--tcw-red` / `--tcw-red-soft` | `#e8505b` / tint | Down/sell/negative |
+| `--tcw-green` / `--tcw-green-soft` | `#1fa874` / tint | Up/buy/positive |
 | `--tcw-amber` | `#ff9f43` | Warning |
 | `--tcw-hover-bg` | `rgba(255,255,255,.05)` | Row/button hover background |
 | `--tcw-active-bg` | `rgba(255,255,255,.08)` | Row/button pressed background |
@@ -178,7 +179,7 @@ See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) a
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Transition durations |
 | `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | Corner radii — set to `0` for a square look |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow values | Elevation |
-| `--tcw-ring` | `0 0 0 2px rgba(79,136,255,.45)` | Focus ring |
+| `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | Focus ring |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | Monospace font stack (price ladder, code) |
 
 Light theme (`[data-tcw-theme="light"]`) redefines the color group (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) with its own defaults — override both selectors if you support both themes.
@@ -248,7 +249,7 @@ import {
 } from '@tradecanvas/chart'
 
 // Sparkline in a 120x48 container
-new SparklineChart(el, { data: [100, 102, 98, 105, 103], mode: 'area', color: '#26A69A' })
+new SparklineChart(el, { data: [100, 102, 98, 105, 103], mode: 'area', color: '#1fa874' })
 
 // Equity curve with drawdown
 new EquityCurveChart(el, { data: equityPoints, drawdown: true, benchmark: spyData })
@@ -269,13 +270,18 @@ new WaterfallChart(el, {
   ],
 })
 
-// Fear & Greed gauge
+// Fear & Greed gauge: zones light up to the value, the label shows the current zone
 const gauge = new GaugeChart(el, {
   value: 72,
+  label: 'Fear & Greed',
   zones: [
-    { from: 0, to: 25, color: '#ef4444' },
-    { from: 75, to: 100, color: '#10b981' },
+    { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
+    { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
+    { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
+    { from: 55, to: 75, color: '#62c895', label: 'Greed' },
+    { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
   ],
+  // pointer: 'needle',  // classic needle instead of the ring marker
 })
 gauge.setValue(85) // animates smoothly
 ```
@@ -361,8 +367,8 @@ chart.addSignalMarker({
 // Color-code by source
 chart.setSignalMarkerStyle({
   sourceColors: {
-    'ema-crossover': '#2196F3',
-    'rsi-divergence': '#FF9800',
+    'ema-crossover': '#4c8dff',
+    'rsi-divergence': '#f2a93b',
     'whale-flow': '#9C27B0',
   },
 })
@@ -540,8 +546,8 @@ chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D 
 // Or customize any preset
 chart.setTheme({
   ...DARK_THEME,
-  candleUp: '#26A69A',
-  candleDown: '#EF5350',
+  candleUp: '#1fa874',
+  candleDown: '#e8505b',
   background: '#0a0a0f',
 })
 ```
@@ -588,7 +594,7 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
-### Chart Interaction (TradingView-style)
+### Chart Interaction
 
 Every gesture you'd expect from a desktop trading chart is built in:
 

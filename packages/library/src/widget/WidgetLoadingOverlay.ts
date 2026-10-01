@@ -8,7 +8,7 @@ export const LOADING_SHOW_DELAY_MS = 200;
 const SKELETON_BARS = 20;
 
 /**
- * TradingView-style loading state for the chart area.
+ * Loading state for the chart area.
  *
  * - First load (nothing to show yet): opaque skeleton, shown immediately.
  * - Switch (a chart is already on screen): the old chart stays visible and is

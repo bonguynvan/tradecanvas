@@ -18,7 +18,7 @@
     },
     {
       title: 'ChartWidget',
-      blurb: 'The full TradingView-style UI in one call — toolbar, 40 drawing tools, watchlist, trading, replay, English or Vietnamese.',
+      blurb: 'The full trading UI in one call: toolbar, 40 drawing tools, watchlist, trading, replay, English or Vietnamese.',
       open: openWidgetSandbox,
     },
     {
@@ -49,35 +49,68 @@
 </script>
 
 <svelte:head>
-  <title>Examples — TradeCanvas</title>
+  <title>Examples · TradeCanvas</title>
   <meta name="description" content="Live StackBlitz examples for vanilla JS, React, Vue, Svelte, the ChartWidget, and finance dashboards." />
 </svelte:head>
 
 <section class="hero">
-  <h1 class="hero-title" style="font-size: clamp(2rem, 4vw, 3rem)">Examples</h1>
+  <span class="eyebrow">Examples · StackBlitz</span>
+  <h1 class="hero-title">Examples</h1>
   <p class="hero-subtitle">
-    Live sandboxes you can fork in one click — each opens in StackBlitz with the
-    latest 1.x packages wired up. To try features without any setup, use the
+    Live sandboxes you can fork in one click. Each opens in StackBlitz with the latest 1.x
+    packages wired up. To try features without any setup, use the
     <a href="{base}/#lab-title">Feature Lab</a> on the home page.
   </p>
 </section>
 
-<div class="examples-grid">
+<ul class="examples-grid">
   {#each examples as ex}
-    <button type="button" class="example-card" onclick={() => handle(ex.open)}>
-      <h3>{ex.title}</h3>
+    <li class="example-card">
+      <h2>{ex.title}</h2>
       <p>{ex.blurb}</p>
-      <p style="margin-top: 12px; color: var(--accent); font-size: 12.5px; font-weight: 500">Open in StackBlitz →</p>
-    </button>
+      <button type="button" class="open" onclick={() => handle(ex.open)}>
+        Open {ex.title} in StackBlitz <span aria-hidden="true">↗</span>
+      </button>
+    </li>
   {/each}
-</div>
+</ul>
 
 <style>
-  .example-card {
-    text-align: left;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-    width: 100%;
+  .hero { display: grid; gap: 14px; justify-items: start; }
+
+  .hero-subtitle a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: var(--accent-dim);
+    text-underline-offset: 3px;
   }
+
+  .examples-grid { list-style: none; }
+
+  .example-card { position: relative; }
+
+  .example-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* The whole card is the click target: the button's ::after covers it. */
+  .open {
+    justify-self: start;
+    margin-top: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 500 12px var(--font-mono);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: color var(--transition);
+  }
+
+  .open::after { content: ''; position: absolute; inset: 0; }
+  .open:focus-visible { outline: none; }
+  .example-card:has(.open:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .example-card:hover .open { color: var(--accent); }
 </style>

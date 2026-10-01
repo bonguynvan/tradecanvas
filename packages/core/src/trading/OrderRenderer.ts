@@ -18,8 +18,8 @@ export class OrderRenderer {
     config: TradingConfig,
     dragState: DragState | null,
   ): void {
-    const buyColor = config.orderColors?.buy ?? '#26A69A';
-    const sellColor = config.orderColors?.sell ?? '#EF5350';
+    const buyColor = config.orderColors?.buy ?? '#1fa874';
+    const sellColor = config.orderColors?.sell ?? '#e8505b';
     const { chartRect } = viewport;
 
     for (const order of orders) {
@@ -98,8 +98,8 @@ export class OrderRenderer {
     config: TradingConfig,
     dragState: DragState | null,
   ): void {
-    const buyColor = config.orderColors?.buy ?? '#26A69A';
-    const sellColor = config.orderColors?.sell ?? '#EF5350';
+    const buyColor = config.orderColors?.buy ?? '#1fa874';
+    const sellColor = config.orderColors?.sell ?? '#e8505b';
     const precision = config.pricePrecision ?? 2;
     const { chartRect } = viewport;
     const axisX = chartRect.x + chartRect.width + 1;

@@ -134,7 +134,7 @@ export class CrosshairHandler {
   /**
    * Render the axis hover labels — price pill on the right, time pill on the
    * bottom. Called on the UI pass (after the axes) so the badges always sit
-   * on top of the static axis labels. TradingView-style with a small notch.
+   * on top of the static axis labels, with a small notch.
    *
    * `timeAxisY` lets the host place the bottom label at the actual time axis
    * baseline (which moves when bottom panels are open).
@@ -217,7 +217,7 @@ interface AxisPillOptions {
 }
 
 /**
- * TradingView-style axis hover pill. A rectangle with a small triangular
+ * Axis hover pill. A rectangle with a small triangular
  * notch pointing toward the crosshair line, painted in inverted theme
  * colors so it always pops against the axis strip.
  */

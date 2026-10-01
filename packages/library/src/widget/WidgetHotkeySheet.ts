@@ -3,7 +3,7 @@ import type { MessageKey, Translator } from './i18n.js';
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
  * shortcuts so users discover the widget's hidden interaction model — a
- * premium-feel detail TradingView, Linear, Figma, etc. all ship.
+ * premium-feel detail polished desktop tools all ship.
  */
 export interface HotkeySheetCallbacks {
   onClose: () => void;

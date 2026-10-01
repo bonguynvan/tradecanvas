@@ -17,8 +17,8 @@ export class TradingContextMenu {
       position: absolute;
       left: ${pos.x}px;
       top: ${pos.y}px;
-      background: #1e222d;
-      border: 1px solid #363a45;
+      background: #161b23;
+      border: 1px solid #2a323e;
       border-radius: 6px;
       padding: 4px 0;
       z-index: 1000;
@@ -42,10 +42,10 @@ export class TradingContextMenu {
       el.style.cssText = `
         padding: 6px 12px;
         cursor: pointer;
-        color: ${isBuy ? '#26A69A' : '#EF5350'};
+        color: ${isBuy ? '#1fa874' : '#e8505b'};
         transition: background 0.1s;
       `;
-      el.addEventListener('mouseenter', () => { el.style.background = '#2a2e39'; });
+      el.addEventListener('mouseenter', () => { el.style.background = '#1f2630'; });
       el.addEventListener('mouseleave', () => { el.style.background = 'transparent'; });
       el.addEventListener('click', () => {
         this.onItemSelect?.(item.intent);

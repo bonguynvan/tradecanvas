@@ -60,7 +60,7 @@ function afterPaint(): Promise<void> {
 }
 
 /** Distinct line colors for comparison overlays, cycled by add order. */
-const COMPARE_COLORS = ['#f7931a', '#627eea', '#26a17b', '#e84142', '#8247e5', '#f3ba2f'];
+const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
 
 export class ChartWidget {
   private chart: Chart;
@@ -234,7 +234,7 @@ export class ChartWidget {
     this.chartContainer.className = 'tcw-chart-container';
     body.appendChild(this.chartContainer);
 
-    // TradingView-style loading state: covers the empty chart until the first
+    // Loading state: covers the empty chart until the first
     // bars land, then veils the previous chart during slow switches.
     this.loading = new WidgetLoadingOverlay(this.chartContainer, this.t('status.loading'));
 
@@ -271,7 +271,7 @@ export class ChartWidget {
         volume: true,
         legend: true,
         crosshair: true,
-        // TradingView itself has no cursor-following OHLCV popup — just the
+        // Pro trading charts have no cursor-following OHLCV popup — just the
         // legend, which ChartWidget already renders. Off by default here
         // (the headless Chart's own default stays `true`); opt back in via
         // `chartOptions: { features: { crosshairTooltip: true } }`.
@@ -649,7 +649,7 @@ export class ChartWidget {
   private handleSymbolClick(): void {
     // Opens the fuzzy search modal. The cycle-through behaviour the toolbar
     // used to do is gone — a real search scales past 3-4 symbols and matches
-    // user expectations from TradingView, Bloomberg, etc.
+    // what users expect from professional trading terminals.
     this.symbolSearch?.open(this.symbols, this.state.symbol);
   }
 

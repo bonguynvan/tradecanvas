@@ -87,8 +87,8 @@ export class ChaikinOscillatorIndicator extends IndicatorBase {
     const zeroY = toY(0);
     const halfBar = viewport.barWidth / 2;
 
-    const upColor = style.colors[0] ?? '#26A69A';
-    const downColor = style.colors[1] ?? '#EF5350';
+    const upColor = style.colors[0] ?? '#1fa874';
+    const downColor = style.colors[1] ?? '#e8505b';
 
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];

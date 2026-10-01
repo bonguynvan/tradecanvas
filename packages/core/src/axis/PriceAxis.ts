@@ -29,7 +29,7 @@ export class PriceAxis {
     const invRange = 1 / range;
 
     // Subtle vertical divider — single pixel, less assertive than a solid axis
-    // line. Looks closer to TradingView's premium feel.
+    // line, for a calmer frame.
     ctx.strokeStyle = theme.axisLine;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;

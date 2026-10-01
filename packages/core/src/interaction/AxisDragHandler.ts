@@ -4,7 +4,7 @@ export type AxisScaleCallback = (factor: number) => void;
 export type AxisResetCallback = () => void;
 
 /**
- * Drag-to-scale handler for price + time axes (TradingView style).
+ * Drag-to-scale handler for price + time axes.
  *
  * Price axis: drag down compresses (factor > 1, expand price range);
  *             drag up expands  (factor < 1, compress price range).

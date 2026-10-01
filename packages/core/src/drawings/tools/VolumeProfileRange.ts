@@ -67,7 +67,7 @@ export class VolumeProfileRangeTool extends DrawingBase {
     const rightX = barIndexToX(endIdx, viewport) + viewport.barWidth;
     const maxBarWidth = 100; // Max histogram bar width in pixels
     const color = state.style.color;
-    const pocColor = state.style.fillColor ?? '#FF9800';
+    const pocColor = state.style.fillColor ?? '#f2a93b';
 
     ctx.save();
 

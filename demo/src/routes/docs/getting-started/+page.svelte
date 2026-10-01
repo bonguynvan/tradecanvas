@@ -21,7 +21,7 @@ yarn add @tradecanvas/chart</code></pre>
 <h2>Drop-in widget</h2>
 <p>
   <code>ChartWidget</code> is the fastest path to a working chart. It renders a full
-  TradingView-like UI inside any host element — toolbar, drawing sidebar, settings
+  trading UI inside any host element — toolbar, drawing sidebar, settings
   dialog, status bar — with zero framework dependency.
 </p>
 

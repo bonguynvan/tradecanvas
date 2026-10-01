@@ -2,12 +2,12 @@
 
 ## 1.2.0 (2026-10-01)
 
-TradingView Advanced Charts parity, and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
+advanced-charting parity, and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
 
 ### Drawing tools — 26 → 40
 
 - **New:** Info Line, Trend Angle, Cross Line, Fib Channel, Fib Speed Resistance Fan, Schiff and Modified Schiff Pitchforks, XABCD and ABCD patterns, Head and Shoulders, Circle, Date and Price Range (with volume traded), Cyclic Lines, Price Label. Earlier in this release: Horizontal Ray and Long/Short Position.
-- **Widget toolbar regrouped TradingView-style** (Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes, Gann & Pitchforks, Patterns, Measure, Annotation, Forecasting) — also surfaces Fib Time Zones, Anchored VWAP and Fixed Range Volume Profile, which were registered but missing from the toolbar.
+- **Widget toolbar regrouped by tool family** (Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes, Gann & Pitchforks, Patterns, Measure, Annotation, Forecasting) — also surfaces Fib Time Zones, Anchored VWAP and Fixed Range Volume Profile, which were registered but missing from the toolbar.
 - Measuring labels use a precision that fits the price level instead of a fixed 2 decimals.
 
 ### Indicators — 70
@@ -28,7 +28,7 @@ TradingView Advanced Charts parity, and a performance pass measured in a live br
 
 ### Symbol / timeframe switching
 
-- **TradingView-style loading** — fast switches swap in place with no flash; slow ones veil the previous chart with a loading card after 200 ms; failures say so and recover on retry.
+- **Smooth loading** — fast switches swap in place with no flash; slow ones veil the previous chart with a loading card after 200 ms; failures say so and recover on retry.
 - **Race-free** — superseded history responses are dropped (`StreamManager`, `ChartWidget`, `Chart.connect`); adapters detach every socket handler on disconnect.
 - `setData` resets auto-scale so each switch fits the new data.
 
@@ -92,7 +92,7 @@ The `DataAdapter`, `ExecutionAdapter`, and Plugin SDK interfaces (`IndicatorPlug
 
 ## 0.9.0 (2026-06-02)
 
-Major UX upgrade — TradingView-grade interaction across the board, with new
+Major UX upgrade — pro-grade interaction across the board, with new
 analytics depth and workflow features.
 
 ### Chart interaction
@@ -100,7 +100,7 @@ analytics depth and workflow features.
 - **Axis-drag scaling**: drag the price axis vertically to compress / expand the price scale; drag the time axis to zoom. Double-click either axis to reset (auto-scale / fit-content).
 - **Shift+drag measure ruler**: transient overlay showing bars × time × price Δ × % between two points. Tracks data through pan/zoom.
 - **Alt+click pinned tooltip**: anchor an OHLC tooltip at a bar; the live crosshair tooltip then shows the price / % / bar-count delta to the pinned bar. `Esc` unpins.
-- **Hover axis pills**: TradingView-style price (right) + time (bottom) pill badges follow the crosshair with a triangular notch pointing at the line. Inverted theme colors so they always pop.
+- **Hover axis pills**: Price (right) + time (bottom) pill badges follow the crosshair with a triangular notch pointing at the line. Inverted theme colors so they always pop.
 - **Bar hover highlight**: subtle translucent column behind the crosshair marks which bar the cursor is on — disambiguates dense candle charts.
 - **Cursor hints**: `ns-resize` over the price axis strip, `ew-resize` over the time axis strip.
 
@@ -119,7 +119,7 @@ analytics depth and workflow features.
 
 - **Volume Profile**: optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting. `chart.setVolumeProfileVisible(true)`.
 - **Day-separator dividers**: faint vertical lines at day boundaries on intraday data, heavier at week/month/year with inline date labels (`Mar 4`, `Apr '26`, `2027`). Auto-suppressed on daily-or-coarser timeframes.
-- **In-canvas axis polish**: price + time axes now render with subtle dividers, thin tick notches, and refined typography weight (dropped the heavy per-label background rectangles for a TradingView-like feel).
+- **In-canvas axis polish**: price + time axes now render with subtle dividers, thin tick notches, and refined typography weight (dropped the heavy per-label background rectangles for a cleaner feel).
 
 ### Analytics
 
@@ -269,7 +269,7 @@ In both cases, native browser right-click works on the chart as expected.
 
 ### Features
 
-- **ChartWidget — built-in TradingView-like UI** — new `@tradecanvas/chart/widget` subpath export. One-line embed with complete toolbar, drawing sidebar, settings modal, and status bar. Zero framework dependencies, CSS scoped with `tcw-` prefix
+- **ChartWidget — built-in trading UI** — new `@tradecanvas/chart/widget` subpath export. One-line embed with complete toolbar, drawing sidebar, settings modal, and status bar. Zero framework dependencies, CSS scoped with `tcw-` prefix
 - **Typed event payloads** — `chart.on('orderModify', e => e.payload.orderId)` infers payload type via `ChartEventMap`. Includes `OrderModifyPayload`, `PositionModifyPayload`, `OrderPlacePayload`, and 10 more typed payloads
 - **Timestamp normalization** — `normalizeBar({ t, o, h, l, c, v })` converts wire format to OHLCBar. `normalizeBarTime()` auto-detects seconds vs milliseconds
 - **`chart.setTimeframe(tf)`** — switch timeframes on active stream without destroy/rebuild
@@ -371,7 +371,7 @@ In both cases, native browser right-click works on the chart as expected.
 
 ### Features
 
-- **Demo site** — Svelte 5 demo with TradingView-style UI (live chart, drawing sidebar, dropdowns, settings modal)
+- **Demo site** — Svelte 5 demo with a full trading UI (live chart, drawing sidebar, dropdowns, settings modal)
 - **Developer documentation** — 11 guide sections: Getting Started, Data, Adapter, Themes, Indicators, Drawings, Trading, Features, Events, State, API Reference
 - **StackBlitz sandboxes** — interactive "Open in StackBlitz" for Vanilla JS, React, Svelte, Vue
 - **Paper trading panel** — fake buy/sell with balance, PnL, localStorage persistence

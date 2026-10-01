@@ -3,8 +3,8 @@ import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
 
-const UP_FILL = 'rgba(33, 150, 243, 0.12)';
-const DOWN_FILL = 'rgba(239, 83, 80, 0.12)';
+const UP_FILL = 'rgba(76, 141, 255, 0.12)';
+const DOWN_FILL = 'rgba(232, 80, 91, 0.12)';
 
 /** Summed volume of the bars between the two anchors, or null without data. */
 export function volumeBetween(state: DrawingState, viewport: ViewportState): number | null {

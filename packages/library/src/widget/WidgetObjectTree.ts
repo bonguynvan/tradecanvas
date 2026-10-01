@@ -32,7 +32,7 @@ export interface ObjectTreeCallbacks {
 }
 
 /**
- * Object-tree panel — TradingView's layers manager. Lists every active
+ * Object-tree panel — a layers manager. Lists every active
  * indicator and drawing on the chart with per-item controls: indicators can be
  * removed; drawings can be shown/hidden, locked/unlocked, and removed. Toggled
  * from the toolbar layers button; the host wires actions back to the chart.

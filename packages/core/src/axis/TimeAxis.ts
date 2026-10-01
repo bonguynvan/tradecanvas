@@ -71,7 +71,7 @@ export class TimeAxis {
       ctx.fillText(label, x, axisY + 7);
     }
 
-    // ─── Timezone indicator (bottom-right, like TradingView) ───
+    // ─── Timezone indicator (bottom-right) ───
     const tzX = chartRect.x + chartRect.width - 4;
     const tzY = axisY + 7;
     ctx.font = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;

@@ -78,12 +78,12 @@ export class PercentagePriceOscillatorIndicator extends IndicatorBase {
       if (h === undefined) continue;
       const x = barIndexToX(i, viewport);
       const y = toY(h);
-      ctx.fillStyle = h >= 0 ? 'rgba(38,166,154,0.5)' : 'rgba(239,83,80,0.5)';
+      ctx.fillStyle = h >= 0 ? 'rgba(31, 168, 116,0.5)' : 'rgba(232, 80, 91,0.5)';
       const top = Math.min(y, zeroY);
       ctx.fillRect(x - barW / 2, top, barW, Math.max(1, Math.abs(y - zeroY)));
     }
 
-    ctx.strokeStyle = style.colors[2] ?? '#787B86';
+    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -109,8 +109,8 @@ export class PercentagePriceOscillatorIndicator extends IndicatorBase {
       ctx.stroke();
     };
 
-    line('value', style.colors[0] ?? '#2962FF');
-    line('signal', style.colors[1] ?? '#FF9800');
+    line('value', style.colors[0] ?? '#4c8dff');
+    line('signal', style.colors[1] ?? '#f2a93b');
   }
 }
 

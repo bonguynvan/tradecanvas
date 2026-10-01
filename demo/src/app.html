@@ -4,10 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="%sveltekit.assets%/favicon.svg" />
-  <meta name="theme-color" content="#3b82f6" />
+  <meta name="theme-color" content="#0b0e13" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" />
   %sveltekit.head%
 </head>
 <body data-sveltekit-preload-data="hover">
+  <script>
+    // Apply the visitor's stored theme before first paint (no dark flash).
+    // The embed route renders its own chart theme, so it is left alone.
+    try {
+      if (!/\/embed\/?$/.test(location.pathname) && localStorage.getItem('tc-site-theme') === 'light') {
+        document.body.classList.add('light');
+        document.documentElement.style.colorScheme = 'light';
+      }
+    } catch (e) {}
+  </script>
   <div style="display: contents">%sveltekit.body%</div>
 </body>
 </html>

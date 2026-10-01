@@ -537,7 +537,7 @@ export class Chart {
         }),
       );
 
-      // Axis drag-scaling (TradingView-style):
+      // Axis drag-scaling:
       //   drag price axis  → scalePriceRange(factor), disables autoScale
       //   drag time axis   → zoom around chart center
       //   dblclick axis    → reset (price: re-enable autoScale; time: fitContent)
@@ -2261,7 +2261,7 @@ export class Chart {
 
   /**
    * Size the price axis to its widest label (tick labels, last-price tag,
-   * crosshair pill), like TradingView's auto-width scale — so a sub-cent
+   * crosshair pill), as an auto-width scale — so a sub-cent
    * price isn't clipped. Returns true when the width, and so the layout,
    * changed.
    */

@@ -54,7 +54,7 @@ export class CMFIndicator extends IndicatorBase {
 
     // Zero line
     if (0 >= adjMin && 0 <= adjMax) {
-      ctx.strokeStyle = '#787B86';
+      ctx.strokeStyle = '#7d8696';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -72,7 +72,7 @@ export class CMFIndicator extends IndicatorBase {
         const x = barIndexToX(i, viewport);
         const y = toY(val.value);
         const zeroY = toY(0);
-        ctx.fillStyle = val.value >= 0 ? (style.colors[0]) : (style.colors[1] ?? '#EF5350');
+        ctx.fillStyle = val.value >= 0 ? (style.colors[0]) : (style.colors[1] ?? '#e8505b');
         const top = Math.min(y, zeroY);
         ctx.fillRect(x - halfBar, top, viewport.barWidth, Math.max(Math.abs(y - zeroY), 1));
       }

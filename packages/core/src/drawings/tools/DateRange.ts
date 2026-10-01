@@ -12,7 +12,7 @@ export class DateRangeTool extends DrawingBase {
     const { chartRect } = viewport;
     const x1 = Math.min(p1.x, p2.x), x2 = Math.max(p1.x, p2.x);
 
-    ctx.fillStyle = 'rgba(33, 150, 243, 0.08)';
+    ctx.fillStyle = 'rgba(76, 141, 255, 0.08)';
     ctx.fillRect(x1, chartRect.y, x2 - x1, chartRect.height);
 
     this.applyLineStyle(ctx, state.style);
