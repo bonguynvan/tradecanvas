@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { drawZeroCenteredLine } from './EaseOfMovement.js';
 
@@ -21,7 +22,7 @@ export class ChaikinVolatilityIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const emaP = getIntParam(config, 'ema', 10, 1);
     const rocP = getIntParam(config, 'roc', 10, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n <= rocP) return { values, series };

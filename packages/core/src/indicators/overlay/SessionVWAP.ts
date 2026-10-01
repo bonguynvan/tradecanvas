@@ -1,6 +1,7 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { timeframeBucketStart } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -23,7 +24,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const bands = Math.min(3, getIntParam(config, 'bands', 1, 0));
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };
 

@@ -1,6 +1,7 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState, TimeFrame } from '@tradecanvas/commons';
 import { timeframeBucketStart } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -23,7 +24,7 @@ export class MTFMovingAverageIndicator extends IndicatorBase {
     const period = getIntParam(config, 'period', 50, 1);
     const tf = String(config.params.timeframe ?? '1d') as TimeFrame;
 
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };
 

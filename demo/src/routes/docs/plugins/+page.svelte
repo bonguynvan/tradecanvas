@@ -41,19 +41,24 @@ chart.plugins.list()`}</code></pre>
 
 <h2>Custom indicator</h2>
 <p>Extend <code>IndicatorBase</code> for the drawing helpers, then register and add it like any built-in:</p>
-<pre><code>{`import { IndicatorBase, registerPlugin } from '@tradecanvas/chart'
+<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
 
 class DoubleSMA extends IndicatorBase {
   descriptor = {
     id: 'double-sma', name: 'Double SMA',
     placement: 'overlay', defaultConfig: { fast: 10, slow: 30 },
   }
-  calculate(data, config) { /* return { values, series } */ }
+  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
   render(ctx, output, viewport, style) { /* draw lines */ }
 }
 
 registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
 chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+<p>
+  For <code>values</code>, use <code>new IndicatorValueMap()</code> instead of <code>new Map()</code>: it's a drop-in
+  <code>Map</code> that is several times cheaper to fill one bar at a time in time order, which is what every
+  symbol or timeframe switch does over the whole history.
+</p>
 
 <h3>Fast live updates (optional)</h3>
 <p>

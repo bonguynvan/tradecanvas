@@ -127,7 +127,7 @@ export {
 } from '@tradecanvas/commons';
 
 // Re-export base classes for custom indicators and drawing tools
-export { IndicatorBase, DrawingBase } from '@tradecanvas/core';
+export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';
 
 // Re-export realtime module
 export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/core';

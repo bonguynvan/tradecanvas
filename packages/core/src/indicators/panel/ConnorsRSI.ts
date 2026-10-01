@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -23,7 +24,7 @@ export class ConnorsRSIIndicator extends IndicatorBase {
     const rsiPeriod = getIntParam(config, 'rsiPeriod', 3, 1);
     const streakPeriod = getIntParam(config, 'streakPeriod', 2, 1);
     const rankPeriod = getIntParam(config, 'rankPeriod', 100, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n < 2) return { values, series };

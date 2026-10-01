@@ -901,13 +901,14 @@ A multi-layer Canvas2D pipeline repaints only dirty layers each frame. Three thi
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
 - **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.
 - **Incremental indicators on live ticks** — a tick only changes the forming bar, so built-in indicators that implement `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) recompute just that bar instead of the whole history. Others fall back to a full recalculation. Custom plugins can opt in via `IndicatorPlugin.update`.
+- **Cheap full loads** — a symbol/timeframe switch recomputes every indicator once. Their per-bar `values` lookup is an `IndicatorValueMap` (array-backed while bars arrive in time order, ~3x cheaper to build than a `Map` keyed by timestamps), and `setData` reuses already well-formed bars instead of copying each one.
 
-Live tick with BB + EMA + RSI + MACD (`pnpm bench`, single core):
+BB + EMA + RSI + MACD (`pnpm bench`, single core):
 
-| History | Full recalculation | Incremental `update()` |
+| History | Full recalculation (switch / `setData`) | Incremental `update()` (live tick) |
 |---|---|---|
-| 20,000 bars | ~13 ms | ~0.0005 ms |
-| 100,000 bars | ~96 ms | ~0.001 ms |
+| 20,000 bars | ~5 ms | ~0.0005 ms |
+| 100,000 bars | ~27 ms | ~0.001 ms |
 
 Downsampling throughput (`pnpm bench`, single core):
 

@@ -7,6 +7,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { getIntParam } from '../params.js';
 
@@ -24,7 +25,7 @@ export class HullMAIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 21, 2);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < period) return { values, series };
 

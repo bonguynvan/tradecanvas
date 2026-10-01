@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
@@ -16,7 +17,7 @@ export class IchimokuIndicator extends IndicatorBase {
     const tenkanPeriod = getIntParam(config, 'tenkan', 9, 1);
     const kijunPeriod = getIntParam(config, 'kijun', 26, 1);
     const senkouBPeriod = getIntParam(config, 'senkou', 52, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
     // Precompute rolling high/low for each period using deque-style sliding window

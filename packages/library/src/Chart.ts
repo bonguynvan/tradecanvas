@@ -1252,7 +1252,11 @@ export class Chart {
     this.autoScrollOnNewBar = config.autoScroll !== false;
     this.currentSymbol = config.symbol;
 
-    await this.streamManager.connect(config);
+    const manager = this.streamManager;
+    await manager.connect(config);
+    // Superseded by a newer connect() (fast symbol/timeframe switching) or a
+    // disconnect while history was loading — leave the countdown to it.
+    if (this.streamManager !== manager) return;
 
     // Set up bar countdown timer based on timeframe
     const tfMs = timeframeToMs(config.timeframe);
@@ -1273,6 +1277,7 @@ export class Chart {
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) return;
     this.currentSymbol = symbol;
+    this.barCountdown.setTimeframeMs(timeframeToMs(timeframe));
     await this.streamManager.switchTo(symbol, timeframe);
   }
 

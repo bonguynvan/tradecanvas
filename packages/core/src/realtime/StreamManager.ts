@@ -62,6 +62,8 @@ export class StreamManager extends Emitter<StreamEvents> {
   private unsubscribers: (() => void)[] = [];
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime = 0;
+  /** Bumped by every connect attempt and by disconnect — see doConnect. */
+  private connectSeq = 0;
 
   constructor() {
     super();
@@ -104,6 +106,7 @@ export class StreamManager extends Emitter<StreamEvents> {
   }
 
   disconnect(): void {
+    this.connectSeq++;
     this.reconnector.stop();
     this.stopHeartbeat();
 
@@ -132,7 +135,13 @@ export class StreamManager extends Emitter<StreamEvents> {
   async switchTo(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.config || !this.adapter) return;
 
+    // A deliberate switch isn't a dropped connection. Stop the reconnector
+    // around the disconnect so an adapter that reports 'disconnected' (or a
+    // retry already pending) can't schedule a doConnect that would later
+    // supersede this switch's history request.
+    this.reconnector.stop();
     this.adapter.disconnect();
+    this.reconnector.start();
     this.aggregator?.reset();
     this.aggregator?.setTimeframe(timeframe);
     this.lastPrice = null;
@@ -164,16 +173,22 @@ export class StreamManager extends Emitter<StreamEvents> {
 
   private async doConnect(): Promise<void> {
     if (!this.config || !this.adapter) return;
+    const seq = ++this.connectSeq;
+    const { symbol, timeframe } = this.config;
 
     this.setState('connecting');
 
     try {
       // 1. Load historical data
       const history = await this.adapter.fetchHistory(
-        this.config.symbol,
-        this.config.timeframe,
+        symbol,
+        timeframe,
         this.config.historyLimit ?? 500,
       );
+      // A newer connect, switchTo or disconnect started while this request
+      // was in flight (fast symbol/timeframe switching). Its history would
+      // land on top of the newer one, so drop it.
+      if (seq !== this.connectSeq || !this.adapter) return;
 
       if (history.length > 0) {
         this.previousClose = history[history.length - 1].close;
@@ -183,13 +198,11 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.emit('snapshot', history);
 
       // 2. Start streaming
-      this.adapter.connect({
-        symbol: this.config.symbol,
-        timeframe: this.config.timeframe,
-      });
+      this.adapter.connect({ symbol, timeframe });
 
       this.startHeartbeat();
     } catch (err) {
+      if (seq !== this.connectSeq) return;
       const message = err instanceof Error ? err.message : String(err);
       this.emit('error', { message, code: 'CONNECT_FAILED' });
       this.setState('error');

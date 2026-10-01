@@ -1,5 +1,6 @@
 export { IndicatorBase } from './IndicatorBase.js';
 export { IndicatorEngine } from './IndicatorEngine.js';
+export { IndicatorValueMap } from './IndicatorValueMap.js';
 export { registerBuiltInIndicators } from './registry.js';
 // Overlays
 export { SMAIndicator } from './overlay/SMA.js';

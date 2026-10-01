@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class OBVIndicator extends IndicatorBase {
@@ -11,7 +12,7 @@ export class OBVIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, _config: IndicatorConfig): IndicatorOutput {
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };
 

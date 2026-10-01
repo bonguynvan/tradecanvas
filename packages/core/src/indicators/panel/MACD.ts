@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -18,7 +19,7 @@ export class MACDIndicator extends IndicatorBase {
     const fast = getIntParam(config, 'fast', 12, 1);
     const slow = getIntParam(config, 'slow', 26, 1);
     const signalPeriod = getIntParam(config, 'signal', 9, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const output: IndicatorOutput = { values, series };
 

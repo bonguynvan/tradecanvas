@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -13,7 +14,7 @@ export class CMFIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 20, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
     for (let i = period - 1; i < data.length; i++) {

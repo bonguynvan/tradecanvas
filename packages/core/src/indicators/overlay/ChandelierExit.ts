@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam, getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -21,7 +22,7 @@ export class ChandelierExitIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 22, 1);
     const mult = getNumberParam(config, 'multiplier', 3);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n <= period) return { values, series };

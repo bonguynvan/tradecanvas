@@ -419,10 +419,8 @@
   inset: 0;
   z-index: 5;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   background: var(--tcw-bg);
   opacity: 1;
   transition: opacity var(--tcw-dur-slow) var(--tcw-ease-out);
@@ -431,6 +429,37 @@
 
 .tcw-loading-overlay--hidden {
   opacity: 0;
+}
+
+.tcw-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--tcw-radius-lg);
+}
+
+/* A slow switch: the previous chart stays readable underneath, dimmed, so the
+   click visibly registered without blanking the screen. */
+.tcw-loading-overlay--veil {
+  background: color-mix(in srgb, var(--tcw-bg) 55%, transparent);
+}
+
+.tcw-loading-overlay--veil .tcw-loading-card {
+  background: var(--tcw-bg-elevated);
+  border-color: var(--tcw-border);
+  box-shadow: var(--tcw-shadow-lg);
+}
+
+.tcw-loading-overlay--error .tcw-loading-bars {
+  display: none;
+}
+
+.tcw-loading-overlay--error .tcw-loading-label {
+  color: var(--tcw-red);
+  font-size: 13px;
 }
 
 .tcw-loading-bars {

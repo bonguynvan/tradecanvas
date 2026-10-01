@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 import { drawCumulativeLine } from './WilliamsAD.js';
 
@@ -19,7 +20,7 @@ export class PriceVolumeTrendIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries, _config: IndicatorConfig): IndicatorOutput {
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n === 0) return { values, series };

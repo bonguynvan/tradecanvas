@@ -4,6 +4,7 @@ import type {
   IndicatorWorkerRequest,
   IndicatorWorkerResponse,
 } from './messages.js';
+import { toCloneableOutput } from './messages.js';
 
 import { SMAIndicator } from '../overlay/SMA.js';
 import { EMAIndicator } from '../overlay/EMA.js';
@@ -94,7 +95,7 @@ ctx.addEventListener('message', (ev: MessageEvent<IndicatorWorkerRequest>) => {
         res = { type: 'error', requestId: req.requestId, message: `Unknown indicator: ${req.indicatorId}` };
       } else {
         const output = plugin.calculate(req.data, req.config);
-        res = { type: 'result', requestId: req.requestId, output };
+        res = { type: 'result', requestId: req.requestId, output: toCloneableOutput(output) };
       }
     } else {
       res = { type: 'error', requestId: (req as { requestId: number }).requestId, message: 'Unknown request type' };

@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -15,7 +16,7 @@ export class StochasticIndicator extends IndicatorBase {
     const kPeriod = getIntParam(config, 'kPeriod', 14, 1);
     const dPeriod = getIntParam(config, 'dPeriod', 3, 1);
     const smooth = getIntParam(config, 'smooth', 3, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
 
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 

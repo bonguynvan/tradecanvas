@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -21,7 +22,7 @@ export class SchaffTrendCycleIndicator extends IndicatorBase {
     const fast = getIntParam(config, 'fast', 23, 1);
     const slow = getIntParam(config, 'slow', 50, 1);
     const cycle = getIntParam(config, 'cycle', 10, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n === 0) return { values, series };

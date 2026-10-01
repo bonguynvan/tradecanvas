@@ -7,6 +7,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -27,7 +28,7 @@ export class VolumeDeltaIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const cumulative = getNumberParam(config, 'mode', 0) >= 1;
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
     let running = 0;
