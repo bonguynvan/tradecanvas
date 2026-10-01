@@ -34,22 +34,22 @@
   <title>TradeCanvas — High-Performance Canvas Trading Chart</title>
   <meta
     name="description"
-    content="Production-ready canvas trading chart with built-in TradingView-like UI: 66 indicators, 24 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
+    content="Production-ready canvas trading chart with built-in TradingView-like UI: 69 indicators, 24 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
   />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="TradeCanvas — Trading chart library" />
-  <meta property="og:description" content="High-performance canvas trading chart with built-in UI, 66 indicators, real-time streaming, and backtesting." />
+  <meta property="og:description" content="High-performance canvas trading chart with built-in UI, 69 indicators, real-time streaming, and backtesting." />
   <meta property="og:image" content="https://bonguynvan.github.io/tradecanvas/og.svg" />
   <meta property="og:url" content="https://bonguynvan.github.io/tradecanvas/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="TradeCanvas" />
-  <meta name="twitter:description" content="High-performance canvas trading chart with built-in UI, 66 indicators, real-time streaming, and backtesting." />
+  <meta name="twitter:description" content="High-performance canvas trading chart with built-in UI, 69 indicators, real-time streaming, and backtesting." />
   <meta name="twitter:image" content="https://bonguynvan.github.io/tradecanvas/og.svg" />
 </svelte:head>
 
 <section class="hero-split">
   <div class="hero-copy">
-    <span class="hero-eyebrow"><span class="dot"></span> v0.14 · 66 indicators</span>
+    <span class="hero-eyebrow"><span class="dot"></span> v0.14 · 69 indicators</span>
     <h1 class="hero-h1">The trading chart that ships with its&nbsp;UI.</h1>
     <p class="hero-lede">
       A high-performance, zero-dependency canvas charting engine with a built-in

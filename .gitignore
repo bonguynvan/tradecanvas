@@ -13,6 +13,9 @@ demo/build/
 # Local agent config
 .claude/
 
+# Third-party reference source (proprietary, never commit/distribute)
+/no-commit/
+
 # IDE
 .vscode/
 .idea/
