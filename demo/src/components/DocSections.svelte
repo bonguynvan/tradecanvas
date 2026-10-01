@@ -1377,6 +1377,7 @@ npm install @tradecanvas/chart @tradecanvas/svelte</pre>
           <tr><td><code>panning</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Enable mouse/touch panning</td></tr>
           <tr><td><code>zooming</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Enable mouse wheel / pinch zoom</td></tr>
           <tr><td><code>crosshair</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show crosshair</td></tr>
+          <tr><td><code>crosshairTooltip</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show the floating OHLCV popup that follows the cursor. Set <code>false</code> for a TradingView-style chart that updates only the top-left legend on hover.</td></tr>
           <tr><td><code>volume</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show volume bars</td></tr>
           <tr><td><code>screenshot</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Enable screenshot capture</td></tr>
           <tr><td><code>replay</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Enable bar replay</td></tr>
