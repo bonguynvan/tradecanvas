@@ -96,7 +96,7 @@
 </script>
 
 <section class="gallery">
-  <header class="section-head">
+  <header class="section-head" data-reveal data-reveal-stagger>
     <span class="eyebrow">Chart types</span>
     <h2 class="section-title">Every chart type, live in the page</h2>
     <p class="section-subtitle">
@@ -105,7 +105,7 @@
     </p>
   </header>
 
-  <div class="bento" bind:this={gridEl}>
+  <div class="bento" bind:this={gridEl} data-reveal data-reveal-stagger>
     {#each tiles as t, i}
       <article class="tile" class:tile--wide={i === 0}>
         <header class="tile-head">

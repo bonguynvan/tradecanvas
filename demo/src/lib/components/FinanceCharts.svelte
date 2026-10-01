@@ -305,14 +305,14 @@
 </script>
 
 <section class="finance-section">
-  <header class="section-head">
+  <header class="section-head" data-reveal data-reveal-stagger>
     <span class="eyebrow">Finance charts</span>
     <h2 class="section-title">Beyond candlesticks</h2>
     <p class="section-subtitle">Sparklines, equity curves, order-book depth, sector heatmaps, waterfalls and gauges for portfolios and KPIs.</p>
   </header>
 
   <!-- Sparklines Row -->
-  <div class="spark-grid" bind:this={sparkGridEl}>
+  <div class="spark-grid" bind:this={sparkGridEl} data-reveal data-reveal-stagger>
     {#each cryptos as crypto}
       <div class="spark-card">
         <div class="spark-header">
@@ -334,7 +334,7 @@
   </div>
 
   <!-- Equity + Depth Row -->
-  <div class="mid-grid">
+  <div class="mid-grid" data-reveal data-reveal-stagger>
     <div class="chart-card">
       <div class="card-label">Portfolio Performance</div>
       <div class="card-chart card-chart--300" bind:this={equityContainer}></div>
@@ -346,13 +346,13 @@
   </div>
 
   <!-- Heatmap -->
-  <div class="chart-card chart-card--spaced">
+  <div class="chart-card chart-card--spaced" data-reveal>
     <div class="card-label">Crypto Market Heatmap</div>
     <div class="card-chart card-chart--350" bind:this={heatmapContainer}></div>
   </div>
 
   <!-- Waterfall + Gauge Row -->
-  <div class="mid-grid">
+  <div class="mid-grid" data-reveal data-reveal-stagger>
     <div class="chart-card">
       <div class="card-label">P&amp;L Attribution</div>
       <div class="card-chart card-chart--300" bind:this={waterfallContainer}></div>

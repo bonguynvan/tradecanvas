@@ -157,7 +157,7 @@
 </script>
 
 <section class="lab" bind:this={section} aria-labelledby="lab-title">
-  <header class="lab-head">
+  <header class="lab-head" data-reveal data-reveal-stagger>
     <span class="eyebrow">Feature lab</span>
     <h2 id="lab-title" class="lab-title">Every feature, on a live chart.</h2>
     <p class="lab-sub">
@@ -166,7 +166,7 @@
     </p>
   </header>
 
-  <div class="lab-body">
+  <div class="lab-body" data-reveal>
     <ol class="lab-rail" role="tablist" aria-label="Feature scenes">
       {#each FEATURE_SCENES as s, i}
         <li role="presentation">
