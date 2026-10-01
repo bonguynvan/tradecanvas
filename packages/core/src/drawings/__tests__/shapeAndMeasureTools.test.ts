@@ -23,7 +23,7 @@ describe('CircleTool', () => {
   });
 
   it('hits anywhere inside a filled circle', () => {
-    const filled = drawing('circle', outline.anchors, { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', fillColor: '#2196F3' } });
+    const filled = drawing('circle', outline.anchors, { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', fillColor: '#4c8dff' } });
     expect(tool.hitTest({ x: 120, y: 55 }, filled, unitViewport, 2)).toBe(true);
   });
 

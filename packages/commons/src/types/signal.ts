@@ -23,8 +23,8 @@ export interface SignalMarkerStyle {
 }
 
 export const DEFAULT_SIGNAL_STYLE: SignalMarkerStyle = {
-  longColor: '#26A69A',
-  shortColor: '#EF5350',
+  longColor: '#1fa874',
+  shortColor: '#e8505b',
   neutralColor: '#9E9E9E',
   arrowSize: 12,
   showLabel: true,
@@ -57,9 +57,9 @@ export interface TradeZoneStyle {
 }
 
 export const DEFAULT_TRADE_ZONE_STYLE: TradeZoneStyle = {
-  profitColor: '#26A69A',
-  lossColor: '#EF5350',
-  activeColor: '#2196F3',
+  profitColor: '#1fa874',
+  lossColor: '#e8505b',
+  activeColor: '#4c8dff',
   fillOpacity: 0.12,
   borderWidth: 1,
   showLabel: true,

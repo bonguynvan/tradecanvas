@@ -1,3 +1,4 @@
+import { DARK_THEME } from '@tradecanvas/commons';
 import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/commons';
 import type { IndicatorDef, DrawingToolGroupDef, ChartSettingsState } from './types.js';
 
@@ -201,12 +202,12 @@ export const DEFAULT_SYMBOLS = [
 ];
 
 export const DEFAULT_SETTINGS: ChartSettingsState = {
-  candleUpColor: '#26A69A',
-  candleDownColor: '#EF5350',
-  candleUpWick: '#26A69A',
-  candleDownWick: '#EF5350',
-  backgroundColor: '#131722',
-  gridColor: '#1E222D',
+  candleUpColor: DARK_THEME.candleUp,
+  candleDownColor: DARK_THEME.candleDown,
+  candleUpWick: DARK_THEME.candleUpWick,
+  candleDownWick: DARK_THEME.candleDownWick,
+  backgroundColor: DARK_THEME.background,
+  gridColor: DARK_THEME.grid,
   gridVisible: true,
   volumeVisible: true,
   volumeProfileVisible: false,

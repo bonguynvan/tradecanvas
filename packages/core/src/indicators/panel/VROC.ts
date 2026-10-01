@@ -49,7 +49,7 @@ export class VROCIndicator extends IndicatorBase {
 
     // Zero line
     if (0 >= adjMin && 0 <= adjMax) {
-      ctx.strokeStyle = '#787B86';
+      ctx.strokeStyle = '#7d8696';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();

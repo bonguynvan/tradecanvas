@@ -85,7 +85,7 @@ export class VortexIndicator extends IndicatorBase {
 
     // Reference line at 1.0 (the VI pivot).
     if (1 >= min && 1 <= max) {
-      ctx.strokeStyle = style.colors[2] ?? '#787B86';
+      ctx.strokeStyle = style.colors[2] ?? '#7d8696';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       const y = toY(1);
@@ -113,7 +113,7 @@ export class VortexIndicator extends IndicatorBase {
       ctx.stroke();
     };
 
-    drawLine('viPlus', style.colors[0] ?? '#26A69A');
-    drawLine('viMinus', style.colors[1] ?? '#EF5350');
+    drawLine('viPlus', style.colors[0] ?? '#1fa874');
+    drawLine('viMinus', style.colors[1] ?? '#e8505b');
   }
 }

@@ -21,7 +21,7 @@ export const unitViewport: ViewportState = {
 };
 
 export const defaultStyle: DrawingStyle = {
-  color: '#2196F3',
+  color: '#4c8dff',
   lineWidth: 1,
   lineStyle: 'solid',
 };

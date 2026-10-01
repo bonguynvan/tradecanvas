@@ -17,9 +17,9 @@ export class PositionRenderer {
     config: TradingConfig,
   ): void {
     const { chartRect } = viewport;
-    const profitColor = config.positionColors?.profit ?? '#26A69A';
-    const lossColor = config.positionColors?.loss ?? '#EF5350';
-    const entryColor = config.positionColors?.entry ?? '#2196F3';
+    const profitColor = config.positionColors?.profit ?? '#1fa874';
+    const lossColor = config.positionColors?.loss ?? '#e8505b';
+    const entryColor = config.positionColors?.entry ?? '#4c8dff';
     const precision = config.pricePrecision ?? 2;
 
     for (const pos of positions) {
@@ -133,7 +133,7 @@ export class PositionRenderer {
     config: TradingConfig,
   ): void {
     const { chartRect } = viewport;
-    const entryColor = config.positionColors?.entry ?? '#2196F3';
+    const entryColor = config.positionColors?.entry ?? '#4c8dff';
     const precision = config.pricePrecision ?? 2;
     const axisX = chartRect.x + chartRect.width + 1;
 

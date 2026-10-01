@@ -9,7 +9,7 @@ export interface DrawingStyleCallbacks {
   getStyle: () => DrawingStyle;
 }
 
-const SWATCHES = ['#2962ff', '#089981', '#f23645', '#ff9800', '#ab47bc', '#26c6da', '#ffffff', '#787b86'];
+const SWATCHES = ['#4c8dff', '#1fa874', '#e8505b', '#f2a93b', '#a57cff', '#1398a8', '#ffffff', '#7d8696'];
 const WIDTHS = [1, 2, 3, 4];
 const LINE_STYLES: DrawingStyle['lineStyle'][] = ['solid', 'dashed', 'dotted'];
 

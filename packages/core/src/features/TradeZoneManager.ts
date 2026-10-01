@@ -136,10 +136,10 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     );
 
     const fillColor = isActive
-      ? (style.activeColor ?? '#2196F3')
+      ? (style.activeColor ?? '#4c8dff')
       : isProfit
-        ? (style.profitColor ?? '#26A69A')
-        : (style.lossColor ?? '#EF5350');
+        ? (style.profitColor ?? '#1fa874')
+        : (style.lossColor ?? '#e8505b');
 
     ctx.fillStyle = fillColor;
     ctx.globalAlpha = style.fillOpacity ?? 0.12;

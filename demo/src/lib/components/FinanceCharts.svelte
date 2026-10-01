@@ -139,12 +139,13 @@
     value: 72,
     min: 0,
     max: 100,
-    label: 'Fear & Greed',
+    label: 'Fear & Greed index',
     zones: [
-      { from: 0, to: 25, color: '#ef4444' },
-      { from: 25, to: 50, color: '#f59e0b' },
-      { from: 50, to: 75, color: '#eab308' },
-      { from: 75, to: 100, color: '#10b981' },
+      { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
+      { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
+      { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
+      { from: 55, to: 75, color: '#62c895', label: 'Greed' },
+      { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
     ],
   };
 
@@ -254,7 +255,7 @@
         data: waterfallData,
         showValues: true,
         connectorStyle: 'dashed',
-        valueFormat: (v: number) => `$${v.toLocaleString()}`,
+        valueFormat: (v: number) => `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString()}`,
         crosshair: true,
         theme,
       });

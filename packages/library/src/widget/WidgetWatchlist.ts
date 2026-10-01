@@ -218,7 +218,7 @@ function drawSparkline(canvas: HTMLCanvasElement, samples: number[], ref: number
   const span = Math.max(hi - lo, 1e-9);
   const last = samples[samples.length - 1];
   const up = last >= ref;
-  const color = up ? '#26a17b' : '#f23645';
+  const color = up ? '#1fa874' : '#e8505b';
 
   ctx.clearRect(0, 0, w, h);
   ctx.lineWidth = 1.4 * dpr;

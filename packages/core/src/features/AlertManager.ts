@@ -203,7 +203,8 @@ export class AlertManager extends Emitter<AlertEvents> {
       const y = priceToY(alert.price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 
-      const color = alert.triggered ? '#FF9800' : '#FFD700';
+      // Armed: blue. Triggered: amber.
+      const color = alert.triggered ? '#f2a93b' : '#4c8dff';
 
       // Alert line
       ctx.setLineDash([2, 6]);

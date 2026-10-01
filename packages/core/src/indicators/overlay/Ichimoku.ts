@@ -99,7 +99,7 @@ export class IchimokuIndicator extends IndicatorBase {
       for (let i = 1; i < n; i++) ctx.lineTo(senkouAXs[i], senkouAYs[i]);
       for (let i = n - 1; i >= 0; i--) ctx.lineTo(senkouBXs[i], senkouBYs[i]);
       ctx.closePath();
-      ctx.fillStyle = withAlpha(style.colors[2] ?? '#26A69A', 0.15);
+      ctx.fillStyle = withAlpha(style.colors[2] ?? '#1fa874', 0.15);
       ctx.fill();
     }
 
@@ -116,8 +116,8 @@ export class IchimokuIndicator extends IndicatorBase {
     };
 
     drawTypedLine(tenkanXs, tenkanYs, tenkanN, style.colors[0], style.lineWidths[0]);
-    drawTypedLine(kijunXs, kijunYs, kijunN, style.colors[1] ?? '#FF9800', style.lineWidths[0]);
-    drawTypedLine(senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#26A69A', 1);
-    drawTypedLine(senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#EF5350', 1);
+    drawTypedLine(kijunXs, kijunYs, kijunN, style.colors[1] ?? '#f2a93b', style.lineWidths[0]);
+    drawTypedLine(senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#1fa874', 1);
+    drawTypedLine(senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#e8505b', 1);
   }
 }

@@ -69,7 +69,7 @@ export class CoppockIndicator extends IndicatorBase {
     const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
 
     const zeroY = toY(0);
-    ctx.strokeStyle = style.colors[1] ?? '#787B86';
+    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();

@@ -60,7 +60,7 @@ function afterPaint(): Promise<void> {
 }
 
 /** Distinct line colors for comparison overlays, cycled by add order. */
-const COMPARE_COLORS = ['#f7931a', '#627eea', '#26a17b', '#e84142', '#8247e5', '#f3ba2f'];
+const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
 
 export class ChartWidget {
   private chart: Chart;

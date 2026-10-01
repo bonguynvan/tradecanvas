@@ -109,10 +109,10 @@ export class MACDIndicator extends IndicatorBase {
     const halfBar = viewport.barWidth / 2;
 
     // Single pass: histogram + collect MACD/signal points
-    const posColor = style.colors[2] ?? '#26A69A';
-    const negColor = style.colors[3] ?? '#EF5350';
+    const posColor = style.colors[2] ?? '#1fa874';
+    const negColor = style.colors[3] ?? '#e8505b';
     const macdColor = style.colors[0];
-    const signalColor = style.colors[1] ?? '#FF9800';
+    const signalColor = style.colors[1] ?? '#f2a93b';
 
     // Histogram — batch by color: two paths
     ctx.beginPath();

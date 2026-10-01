@@ -40,9 +40,9 @@ export class RiskRewardTool extends DrawingBase {
     const rewardTop = Math.min(entryY, targetY);
     const rewardH = Math.abs(targetY - entryY);
 
-    ctx.fillStyle = 'rgba(239, 83, 80, 0.18)';
+    ctx.fillStyle = 'rgba(232, 80, 91, 0.18)';
     ctx.fillRect(x, riskTop, w, riskH);
-    ctx.fillStyle = 'rgba(38, 166, 154, 0.18)';
+    ctx.fillStyle = 'rgba(31, 168, 116, 0.18)';
     ctx.fillRect(x, rewardTop, w, rewardH);
 
     ctx.strokeStyle = state.style.color;
@@ -56,9 +56,9 @@ export class RiskRewardTool extends DrawingBase {
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#EF5350';
+    ctx.fillStyle = '#e8505b';
     ctx.fillText(`Risk ${risk.toFixed(2)} (${pct(stopPrice).toFixed(2)}%)`, x + 4, (entryY + stopY) / 2);
-    ctx.fillStyle = '#26A69A';
+    ctx.fillStyle = '#1fa874';
     const ratioLabel = `R:R 1:${DEFAULT_REWARD_RATIO}`;
     ctx.fillText(
       `Reward ${(risk * DEFAULT_REWARD_RATIO).toFixed(2)} (${pct(targetPrice).toFixed(2)}%) · ${ratioLabel}`,

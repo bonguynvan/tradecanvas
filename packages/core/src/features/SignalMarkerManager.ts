@@ -123,8 +123,8 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     if (marker.color) return marker.color;
     if (style.sourceColors?.[marker.source]) return style.sourceColors[marker.source];
     switch (marker.direction) {
-      case 'long': return style.longColor ?? '#26A69A';
-      case 'short': return style.shortColor ?? '#EF5350';
+      case 'long': return style.longColor ?? '#1fa874';
+      case 'short': return style.shortColor ?? '#e8505b';
       default: return style.neutralColor ?? '#9E9E9E';
     }
   }

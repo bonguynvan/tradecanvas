@@ -84,7 +84,7 @@ export class ParabolicSARIndicator extends IndicatorBase {
       const y = priceToY(val.value, viewport);
       ctx.beginPath();
       ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-      ctx.fillStyle = val.trend === 1 ? (style.colors[0]) : (style.colors[1] ?? '#EF5350');
+      ctx.fillStyle = val.trend === 1 ? (style.colors[0]) : (style.colors[1] ?? '#e8505b');
       ctx.fill();
     }
   }

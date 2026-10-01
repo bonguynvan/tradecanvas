@@ -17,7 +17,7 @@ const drawing: DrawingState = {
     { time: 0, price: 100 },
     { time: 10, price: 120 },
   ],
-  style: { color: '#2196F3', lineWidth: 1, lineStyle: 'solid' },
+  style: { color: '#4c8dff', lineWidth: 1, lineStyle: 'solid' },
   visible: true,
   locked: false,
 };

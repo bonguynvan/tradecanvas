@@ -65,8 +65,8 @@ export class PivotPointsIndicator extends IndicatorBase {
     const { from, to } = viewport.visibleRange;
 
     const ppColor = style.colors[0];
-    const rColor = style.colors[1] ?? '#EF5350';
-    const sColor = style.colors[2] ?? '#26A69A';
+    const rColor = style.colors[1] ?? '#e8505b';
+    const sColor = style.colors[2] ?? '#1fa874';
     const lineWidth = style.lineWidths[0];
 
     const colorFor = (key: LevelKey): string => {
