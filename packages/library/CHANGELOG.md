@@ -4,6 +4,9 @@
 
 ### Minor Changes
 
+- `ChartWidget.toggleReplay()` is now public: open or close bar replay with
+  its scrubber from code — what the toolbar's Replay button does.
+
 - Sub-cent prices (e.g. PEPE at 0.0000043) no longer read "0.00". The OHLC
   legend, the crosshair price pill and the last-price tag now use the
   market's `pricePrecision` when `setMarket()` sets one, and otherwise the

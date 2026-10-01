@@ -1264,7 +1264,8 @@ export class ChartWidget {
 
   // --- Replay ---
 
-  private toggleReplay(): void {
+  /** Open (or close) bar replay with its scrubber — what the toolbar's Replay button does. */
+  toggleReplay(): void {
     if (this.replayBar?.isMounted()) {
       this.exitReplay();
     } else {

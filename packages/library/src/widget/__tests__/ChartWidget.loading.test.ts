@@ -214,3 +214,14 @@ describe('ChartWidget status bar — static data', () => {
     expect(status()).not.toContain('Connecting');
   });
 });
+
+describe('ChartWidget.toggleReplay', () => {
+  it('opens the replay scrubber and closes it again', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', timeframe: '1m', watchlist: false });
+    widget.setData(bars(50));
+    widget.toggleReplay();
+    expect(document.querySelector('.tcw-replay-bar')).not.toBeNull();
+    widget.toggleReplay();
+    expect(document.querySelector('.tcw-replay-bar')).toBeNull();
+  });
+});

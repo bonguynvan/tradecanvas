@@ -772,12 +772,9 @@ interface OHLCBar {
 
 | Example | Description |
 |---|---|
-| [Live Demo](https://bonguynvan.github.io/tradecanvas/) | Full-featured demo with live Binance data |
-| [examples/basic](./examples/basic/) | Vanilla JS + live Binance streaming |
-| [examples/vanilla-static](./examples/vanilla-static/) | Vanilla JS + static data (offline) |
-| [examples/react](./examples/react/) | React 19 integration |
-| [examples/svelte](./examples/svelte/) | Svelte 5 integration |
-| [examples/vue](./examples/vue/) | Vue 3 integration |
+| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, replay, sub-cent prices + Vietnamese UI, 200k bars, slow-network switching — each on a live chart |
+| [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
+| [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | Framework components — reactive props, typed, zero boilerplate |
 
 ## Browser Support
 

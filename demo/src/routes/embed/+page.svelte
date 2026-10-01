@@ -2,38 +2,27 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
 
-  import type { OHLCBar } from '@tradecanvas/chart';
+  import { generateBars } from '$lib/sampleData';
 
   let host: HTMLDivElement | undefined = $state();
   let widget: { destroy?: () => void } | null = null;
 
-  /** Deterministic random-walk 1m bars, seeded per symbol so each ticker differs. */
-  function generateBars(count: number, symbol: string): OHLCBar[] {
-    let seed = [...symbol].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-    const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-    const step = 60_000;
-    const start = Math.floor(Date.now() / step) * step - count * step;
-    const bars: OHLCBar[] = [];
-    let price = 100 + (seed % 900);
-    for (let i = 0; i < count; i++) {
-      const open = price;
-      const close = Math.max(1, open * (1 + (rand() - 0.5) * 0.004));
-      const high = Math.max(open, close) * (1 + rand() * 0.0015);
-      const low = Math.min(open, close) * (1 - rand() * 0.0015);
-      bars.push({ time: start + i * step, open, high, low, close, volume: 50 + rand() * 500 });
-      price = close;
-    }
-    return bars;
-  }
-
-  onMount(async () => {
+  onMount(() => {
     if (!browser || !host) return;
+    void mountWidget(host);
+    // onMount ignores a cleanup returned from an async callback, so it lives here.
+    return () => {
+      widget?.destroy?.();
+    };
+  });
+
+  async function mountWidget(host: HTMLDivElement) {
 
     const params = new URLSearchParams(window.location.search);
     const symbol = params.get('symbol') ?? 'BTCUSDT';
     const timeframe = (params.get('timeframe') ?? '5m') as
       | '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
-    const theme = (params.get('theme') ?? 'dark') as 'dark' | 'light' | 'darkTerminal';
+    const theme = params.get('theme') === 'light' ? 'light' : 'dark';
     const chartType = params.get('chartType') as
       | undefined
       | 'candlestick' | 'line' | 'area' | 'bar' | 'heikinAshi' | 'equivolume';
@@ -69,13 +58,16 @@
         symbol,
         timeframe,
         theme,
-        chartType,
         adapter,
         historyLimit: 500,
         trading,
         watchlist,
         locale,
-        chartOptions: numberLocale ? { numberLocale } : undefined,
+        // ChartWidget takes the starting chart type through chartOptions.
+        chartOptions: {
+          ...(numberLocale ? { numberLocale } : {}),
+          ...(chartType ? { chartType } : {}),
+        },
         onReady: (chart) => {
           for (const id of indicators) {
             chart.addIndicator(id, {});
@@ -94,11 +86,7 @@
         host.innerHTML = `<div style="padding:24px;color:#a1a1aa;font-family:monospace;">Failed to load widget: ${String(err)}</div>`;
       }
     }
-
-    return () => {
-      widget?.destroy?.();
-    };
-  });
+  }
 </script>
 
 <svelte:head>

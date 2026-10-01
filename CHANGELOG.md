@@ -35,6 +35,7 @@ TradingView Advanced Charts parity, and a performance pass measured in a live br
 ### Widget
 
 - `locale` / `messages` i18n with built-in Vietnamese; `numberLocale` fixes; watchlist `refPrice` precedence.
+- `widget.toggleReplay()` opens bar replay from code.
 - The cursor-following OHLCV popup is off by default (the legend shows the same data); `chartOptions.features` no longer wipes the other feature defaults.
 
 ## 1.0.1 (2026-08-28)
