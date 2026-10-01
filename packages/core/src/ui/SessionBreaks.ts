@@ -22,9 +22,14 @@ export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
   private cachedBreaksTyped: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
   private lastDataLength = 0;
+  private locale = 'en-US';
 
   setConfig(config: Partial<SessionBreakConfig>): void {
     Object.assign(this.config, config);
+  }
+
+  setLocale(locale: string): void {
+    this.locale = locale;
   }
 
   isVisible(): boolean {
@@ -119,11 +124,11 @@ export class SessionBreaks {
         alpha = 0.22;
       } else if (brk.kind === 'week') {
         alpha = 0.34;
-        label = formatMonthDay(brk.date);
+        label = formatMonthDay(brk.date, this.locale);
       } else if (brk.kind === 'month') {
         alpha = 0.5;
         width = lineWidth + 0.5;
-        label = formatMonthYear(brk.date);
+        label = formatMonthYear(brk.date, this.locale);
       } else {
         alpha = 0.7;
         width = lineWidth + 1;
@@ -155,14 +160,16 @@ export class SessionBreaks {
   }
 }
 
-const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function formatMonthDay(d: Date): string {
-  return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+// Month-boundary labels use the FULL year ("Oct 2026"), not a 2-digit one
+// ("Oct 26") — a 2-digit year reads identically to a week-boundary's
+// "month day" label (e.g. "Oct 26" could mean October 26th), which misled
+// readers into thinking the chart had jumped to the wrong date.
+function formatMonthDay(d: Date, locale: string): string {
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
-function formatMonthYear(d: Date): string {
-  return `${MONTH_ABBR[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+function formatMonthYear(d: Date, locale: string): string {
+  return d.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 }
 
 /**

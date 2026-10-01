@@ -193,6 +193,7 @@ export class Chart {
       panning: f.panning ?? true,
       zooming: f.zooming ?? true,
       crosshair: f.crosshair ?? true,
+      crosshairTooltip: f.crosshairTooltip ?? true,
       keyboard: f.keyboard ?? true,
       priceAxis: f.priceAxis ?? true,
       timeAxis: f.timeAxis ?? true,
@@ -317,7 +318,7 @@ export class Chart {
         this.chartLegend.setHoverBar(bar ?? null);
 
         // Update tooltip (DOM, lightweight update only when bar changes)
-        if (bar) {
+        if (bar && this.features.crosshairTooltip) {
           this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize());
         }
 
@@ -343,6 +344,7 @@ export class Chart {
     // Chart legend (OHLCV overlay)
     this.chartLegend = new ChartLegend();
     this.chartLegend.setChartType(options.chartType);
+    this.chartLegend.setLocale(this.numberLocale);
 
     // Watermark + Volume
     this.watermark = new Watermark();
@@ -357,6 +359,7 @@ export class Chart {
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
     this.sessionBreaks = new SessionBreaks();
+    this.sessionBreaks.setLocale(this.numberLocale);
     this.sessionShading = new SessionShading();
     this.compareRenderer = new CompareRenderer();
 
@@ -1933,6 +1936,8 @@ export class Chart {
     this.numberLocale = locale;
     this.priceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);
+    this.chartLegend.setLocale(locale);
+    this.sessionBreaks.setLocale(locale);
     this.syncRenderContext();
     this.engine.requestRender();
   }
@@ -2001,7 +2006,7 @@ export class Chart {
     Object.assign(this.features, patch);
 
     // Apply immediate side-effects
-    if (patch.crosshair === false) {
+    if (patch.crosshair === false || patch.crosshairTooltip === false) {
       this.crosshairTooltip.hide();
     }
     if (patch.grid !== undefined) {

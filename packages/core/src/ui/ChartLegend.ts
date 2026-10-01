@@ -1,4 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { computeTickStep, formatPrice } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -32,9 +33,14 @@ export class ChartLegend {
   private hoverBar: OHLCBar | null = null;
   private indicators: { name: string; color: string; value: string }[] = [];
   private statusText: string | null = null;
+  private locale = 'en-US';
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
+  }
+
+  setLocale(locale: string): void {
+    this.locale = locale;
   }
 
   setSymbol(symbol: string): void {
@@ -95,7 +101,14 @@ export class ChartLegend {
     if (this.config.showOHLC) {
       ctx.font = `${fs}px ${theme.font.family}`;
       const isUp = bar.close >= bar.open;
-      const fmt = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      // Match the price axis's precision so sub-$1 assets (e.g. ~$0.34) don't
+      // round to "0.34 0.34 0.34 0.34" — derive decimals from the same tick
+      // step the axis uses, instead of a hardcoded 2.
+      const { min, max } = viewport.priceRange;
+      const range = max - min;
+      const step = range > 0 ? computeTickStep(min, max, 8) : 1;
+      const precision = step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+      const fmt = (v: number) => formatPrice(v, precision, this.locale);
 
       const items = [
         { label: 'O', value: fmt(bar.open), color: theme.text },
@@ -108,9 +121,10 @@ export class ChartLegend {
         const change = bar.close - prevBar.close;
         const changePct = prevBar.close !== 0 ? (change / prevBar.close) * 100 : 0;
         const sign = change >= 0 ? '+' : '';
+        const pctText = changePct.toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         items.push({
           label: '',
-          value: `${sign}${fmt(change)} (${sign}${changePct.toFixed(2)}%)`,
+          value: `${sign}${fmt(change)} (${sign}${pctText}%)`,
           color: change >= 0 ? theme.candleUp : theme.candleDown,
         });
       }
