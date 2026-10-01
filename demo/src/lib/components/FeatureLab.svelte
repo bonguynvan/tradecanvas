@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { siteTheme, onSiteThemeChange } from '$lib/site';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { Chart, DataAdapter } from '@tradecanvas/chart';
@@ -15,8 +16,6 @@
   let mountToken = 0;
 
   const scene = $derived(FEATURE_SCENES[active]);
-
-  const isLight = () => document.body.classList.contains('light');
 
   function fmtMs(ms: number): string {
     return ms < 10 ? `${ms.toFixed(1)} ms` : `${Math.round(ms)} ms`;
@@ -72,7 +71,7 @@
     let pending: { label: string; t: number } | null = null;
 
     const w: ChartWidget = new ChartWidget(host, {
-      theme: isLight() ? 'light' : 'dark',
+      theme: siteTheme(),
       historyLimit: 500,
       ...opts,
       onSymbolChange: (sym) => {
@@ -114,6 +113,23 @@
     if (started) void mountScene(index);
   }
 
+  /** Arrow keys move between scenes (roving tabindex). */
+  function onRailKey(e: KeyboardEvent) {
+    const last = FEATURE_SCENES.length - 1;
+    const forward = e.key === 'ArrowDown' || e.key === 'ArrowRight';
+    const back = e.key === 'ArrowUp' || e.key === 'ArrowLeft';
+    const next =
+      forward ? (active === last ? 0 : active + 1)
+      : back ? (active === 0 ? last : active - 1)
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    select(next);
+    document.getElementById(`lab-tab-${next}`)?.focus();
+  }
+
   onMount(() => {
     if (!browser || !section) return;
 
@@ -128,12 +144,11 @@
     io.observe(section);
 
     // Follow the site's light/dark toggle.
-    const mo = new MutationObserver(() => widget?.setTheme(isLight() ? 'light' : 'dark'));
-    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    const stopThemeSync = onSiteThemeChange((theme) => widget?.setTheme(theme));
 
     return () => {
       io.disconnect();
-      mo.disconnect();
+      stopThemeSync();
       mountToken++;
       widget?.destroy();
       widget = null;
@@ -143,7 +158,7 @@
 
 <section class="lab" bind:this={section} aria-labelledby="lab-title">
   <header class="lab-head">
-    <span class="lab-eyebrow">Feature lab</span>
+    <span class="eyebrow">Feature lab</span>
     <h2 id="lab-title" class="lab-title">Every feature, on a live chart.</h2>
     <p class="lab-sub">
       Pick a scene. Each one boots the full <code>ChartWidget</code> into a state that shows
@@ -154,15 +169,18 @@
   <div class="lab-body">
     <ol class="lab-rail" role="tablist" aria-label="Feature scenes">
       {#each FEATURE_SCENES as s, i}
-        <li>
+        <li role="presentation">
           <button
             type="button"
             role="tab"
+            id="lab-tab-{i}"
             class="rail-item"
             class:active={i === active}
             aria-selected={i === active}
             aria-controls="lab-stage"
+            tabindex={i === active ? 0 : -1}
             onclick={() => select(i)}
+            onkeydown={onRailKey}
           >
             <span class="rail-num">{String(i + 1).padStart(2, '0')}</span>
             <span class="rail-title">{s.title}</span>
@@ -175,7 +193,7 @@
       {/each}
     </ol>
 
-    <div class="lab-stage" id="lab-stage" role="tabpanel">
+    <div class="lab-stage" id="lab-stage" role="tabpanel" aria-labelledby="lab-tab-{active}" tabindex="-1">
       <p class="stage-blurb">{scene.blurb}</p>
       <div class="stage-frame">
         <div class="stage-host" bind:this={host}></div>
@@ -210,9 +228,9 @@
 
 <style>
   .lab {
-    max-width: 1600px;
+    max-width: var(--page-max);
     margin: 0 auto;
-    padding: 72px clamp(20px, 4vw, 72px) 56px;
+    padding: var(--section-pad) var(--gutter) 64px;
   }
 
   .lab-head {
@@ -220,18 +238,12 @@
     margin-bottom: 32px;
   }
 
-  .lab-eyebrow {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-
   .lab-title {
-    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
-    line-height: 1.08;
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+    font-weight: 600;
     letter-spacing: -0.025em;
+    text-wrap: balance;
     margin: 10px 0 12px;
   }
 
@@ -244,7 +256,7 @@
   .lab-sub code {
     font-family: var(--font-mono);
     font-size: 0.88em;
-    color: var(--accent);
+    color: var(--text);
   }
 
   .lab-body {
@@ -346,7 +358,7 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: var(--bg-elevated);
-    box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.6);
+    box-shadow: var(--shadow-lg);
   }
 
   .stage-host {

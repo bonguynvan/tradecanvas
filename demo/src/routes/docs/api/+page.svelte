@@ -52,7 +52,7 @@
 <h3>Axis &amp; scale</h3>
 <p>
   The price axis (right strip) and time axis (bottom strip) accept direct
-  pointer interaction — same gestures as TradingView:
+  pointer interaction, with the gestures traders already know:
 </p>
 <table>
   <thead><tr><th>Gesture</th><th>Effect</th></tr></thead>

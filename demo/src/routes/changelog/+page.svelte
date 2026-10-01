@@ -139,8 +139,8 @@
   .changelog :global(code) {
     font-family: var(--font-mono);
     font-size: 0.88em;
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--accent);
+    background: var(--bg-panel);
+    color: var(--text);
     padding: 2px 6px;
     border-radius: 4px;
   }
