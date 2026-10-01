@@ -70,6 +70,7 @@ export class ChartWidget {
   private activeLayoutKey: string | null = null;
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
+  private loadingOverlay: HTMLDivElement;
   private destroyed = false;
   private options: ChartWidgetOptions;
   private symbols: string[];
@@ -198,6 +199,28 @@ export class ChartWidget {
     this.chartContainer.className = 'tcw-chart-container';
     body.appendChild(this.chartContainer);
 
+    // TradingView-style loading state — skeleton bars + label, cross-fades
+    // out once the first snapshot of bars lands (see updateUI). Shown again
+    // on every connect (symbol/timeframe switch), matching TradingView.
+    this.loadingOverlay = document.createElement('div');
+    this.loadingOverlay.className = 'tcw-loading-overlay';
+    const bars = document.createElement('div');
+    bars.className = 'tcw-loading-bars';
+    for (let i = 0; i < 20; i++) {
+      const bar = document.createElement('span');
+      bar.className = 'tcw-loading-bar';
+      const h = 20 + Math.round(Math.sin(i * 0.9) * 18 + 18);
+      bar.style.height = `${h}px`;
+      bar.style.animationDelay = `${i * 45}ms`;
+      bars.appendChild(bar);
+    }
+    this.loadingOverlay.appendChild(bars);
+    const loadingLabel = document.createElement('div');
+    loadingLabel.className = 'tcw-loading-label';
+    loadingLabel.textContent = this.t('status.loading');
+    this.loadingOverlay.appendChild(loadingLabel);
+    this.chartContainer.appendChild(this.loadingOverlay);
+
     // Watchlist sidebar (right side). Appended AFTER the chart container so
     // it sits to the right of the canvas in the flexbox row.
     if (options.watchlist) {
@@ -216,6 +239,11 @@ export class ChartWidget {
       theme: resolvedTheme,
       autoScale: true,
       crosshair: { mode: 'magnet' },
+      ...options.chartOptions,
+      // `features` is merged explicitly (host overrides win per-key) rather
+      // than inherited wholesale from the `...options.chartOptions` spread
+      // above — otherwise passing e.g. `chartOptions: { features: { x } }`
+      // would silently drop every other default below.
       features: {
         drawings: true,
         drawingMagnet: true,
@@ -226,14 +254,19 @@ export class ChartWidget {
         volume: true,
         legend: true,
         crosshair: true,
+        // TradingView itself has no cursor-following OHLCV popup — just the
+        // legend, which ChartWidget already renders. Off by default here
+        // (the headless Chart's own default stays `true`); opt back in via
+        // `chartOptions: { features: { crosshairTooltip: true } }`.
+        crosshairTooltip: false,
         keyboard: true,
         screenshot: true,
         alerts: true,
         barCountdown: true,
         logScale: true,
         watermark: true,
+        ...options.chartOptions?.features,
       },
-      ...options.chartOptions,
     });
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
@@ -1354,6 +1387,7 @@ export class ChartWidget {
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
     });
+    this.loadingOverlay.classList.toggle('tcw-loading-overlay--hidden', this.state.connectionState !== 'connecting');
   }
 
   private resolveIsDark(theme?: import('@tradecanvas/commons').ThemeName | Theme): boolean {

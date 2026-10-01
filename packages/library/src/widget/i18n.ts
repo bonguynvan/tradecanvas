@@ -47,6 +47,7 @@ export const EN_MESSAGES = {
   'status.connecting': 'Connecting...',
   'status.live': 'Live',
   'status.connectionFailed': 'Connection failed',
+  'status.loading': 'Loading chart...',
 
   // Settings panel
   'settings.title': 'Chart Settings',
@@ -103,6 +104,7 @@ export const VI_MESSAGES: Partial<Record<MessageKey, string>> = {
   'status.connecting': 'Đang kết nối...',
   'status.live': 'Trực tiếp',
   'status.connectionFailed': 'Kết nối thất bại',
+  'status.loading': 'Đang tải biểu đồ...',
 
   'settings.title': 'Cài đặt biểu đồ',
   'settings.tab.style': 'Giao diện',
