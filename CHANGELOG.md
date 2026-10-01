@@ -1,8 +1,39 @@
 # Changelog
 
+## 1.3.0 (2026-10-02)
+
+Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look by default and a redesigned gauge. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.6 pick up the new core.
+
+### Dragging and panning
+
+- **The press that selects a drawing also grabs it**: no second drag needed; locked drawings let the press pan the chart. Clicks that only select no longer move the drawing or add an undo step.
+- **Drags are followed outside the chart** until the button is released (also axis scaling, pane resizing, drawings and trading lines); price drags are pinned to the plot's edge; a release outside the window is detected.
+- **A sloppy horizontal drag keeps auto-scale on**: vertical panning needs a deliberate move (> 24 px and at least half the horizontal travel).
+- **Momentum** is measured over the last 100 ms, ignored after a rest, capped and stopped by any new gesture.
+- **Free panning** past the newest bar into empty future space, or past the oldest bar, down to `panLimits.minVisibleBars`; the time axis, grid, crosshair and drawings (magnet included) extend into the future. `freePan: false` keeps the old clamp. `setVisibleRange()` / `fitContent()` show exactly the requested range.
+- **Context cursors**: crosshair, grabbing hand, hand over drawings, move over handles, resize arrows over axes, pane dividers and draggable lines.
+- **Ctrl/⌘-drag selects drawings** in a box, Ctrl/⌘-click toggles one; the group moves, restyles and deletes together as one undo step.
+- The right-click order menu is off by default (`features.tradingContextMenu: true` to opt in).
+
+### Rendering
+
+- **Two canvases instead of four**: a scene canvas and a thin top canvas for pointer-tied visuals. A hover repaints only the top canvas and the browser composites two surfaces instead of four. New `LayerType.Hover`.
+- After the page or a scrolling container scrolls, the crosshair follows the pointer exactly (it used to stay offset until the next click).
+- The price-axis tick label under the last-price tag is hidden instead of half-covered; Anchored VWAP caches its series.
+
+### TradeCanvas look
+
+- **Default palette**: `DARK_THEME` / `LIGHT_THEME`, indicators, orders, signal markers, drawing tools and the `ChartWidget` chrome share one palette — ink ground, mint/coral candles, amber accent. New `TC_PALETTE` and `TC_SERIES_COLORS`. Tests keep theme-neutral colours at 3:1 on both backgrounds and widget text at 4.5:1.
+- Armed price alerts are blue, triggered ones amber; comparison lines no longer start with an orange that blends into the main line.
+- **Gauge redesign**: a thin ring with rounded ends and zone gaps, bright up to the value and dimmed beyond it; a knob marks the value so the number is never crossed by a needle; the current zone's label shows above it; text fits small dials. `pointer: 'needle'` keeps the classic needle. New defaults: 240° sweep, `thickness` 0.14.
+
+### Site
+
+- Redesigned demo and docs site with the new mark (a candle between code brackets), a dark terminal look with a designed light theme, and the library's default themes on every live chart.
+
 ## 1.2.0 (2026-10-01)
 
-advanced-charting parity, and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
+Advanced-charting parity and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
 
 ### Drawing tools — 26 → 40
 
