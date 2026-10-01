@@ -3,14 +3,17 @@ import type { ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { SessionBreaks } from '../SessionBreaks.js';
 
+// Wide enough to show all 72 bars: SessionBreaks finds boundaries in *local*
+// time, so the month break moves with the machine's timezone (bar 34 at
+// UTC+14 … bar 60 at UTC-12) and must be on screen wherever the tests run.
 function viewport(): ViewportState {
   return {
-    visibleRange: { from: 0, to: 40 },
+    visibleRange: { from: 0, to: 80 },
     priceRange: { min: 0, max: 100 },
     barWidth: 10,
     barSpacing: 2,
     offset: 0,
-    chartRect: { x: 0, y: 0, width: 500, height: 100 },
+    chartRect: { x: 0, y: 0, width: 1000, height: 100 },
   };
 }
 
