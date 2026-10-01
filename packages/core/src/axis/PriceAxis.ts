@@ -1,5 +1,5 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
-import { computeTickStep, formatPriceScaleLabel, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { autoPricePrecision, computeTickStep, formatPriceScaleLabel } from '@tradecanvas/commons';
 
 export class PriceAxis {
   private locale = 'en-US';
@@ -29,7 +29,7 @@ export class PriceAxis {
     // Compute labels
     const step = computeTickStep(priceRange.min, priceRange.max, 8);
     const firstPrice = Math.ceil(priceRange.min / step) * step;
-    const precision = step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+    const precision = autoPricePrecision(priceRange.min, priceRange.max);
     const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
@@ -62,6 +62,5 @@ export class PriceAxis {
     for (const { y, text } of labels) {
       ctx.fillText(text, axisX + 8, y);
     }
-    void PRICE_AXIS_WIDTH;
   }
 }

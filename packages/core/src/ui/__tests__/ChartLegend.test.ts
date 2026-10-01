@@ -69,3 +69,25 @@ describe('ChartLegend — OHLC precision and locale', () => {
     expect(fillTextCalls.some((t) => /^\d+\.\d+$/.test(t))).toBe(false);
   });
 });
+
+describe('ChartLegend — sub-cent assets', () => {
+  // PEPE-like prices: ~0.0000043 with a range of ~3e-7.
+  const pepe = (close: number): OHLCBar => ({ time: 0, open: 0.000004343, high: 0.000004401, low: 0.000004311, close, volume: 1 });
+
+  it('follows the axis precision instead of rounding to 0.00', () => {
+    const legend = new ChartLegend();
+    const { ctx, fillTextCalls } = mockCtx();
+    legend.render(ctx, viewport(0.0000042, 0.0000045), DARK_THEME, [pepe(0.000004343), pepe(0.000004349)]);
+    expect(fillTextCalls).not.toContain('0.00');
+    expect(fillTextCalls).toContain('0.00000434'); // open, at the axis's 8 decimals
+  });
+
+  it("uses a market's explicit precision and the number locale when set", () => {
+    const legend = new ChartLegend();
+    legend.setLocale('vi-VN');
+    legend.setPricePrecision(10);
+    const { ctx, fillTextCalls } = mockCtx();
+    legend.render(ctx, viewport(0.0000042, 0.0000045), DARK_THEME, [pepe(0.000004343), pepe(0.000004349)]);
+    expect(fillTextCalls).toContain('0,0000043430');
+  });
+});

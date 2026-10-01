@@ -31,7 +31,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits } from '@tradecanvas/commons';
+import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -91,6 +91,7 @@ import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
+import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
 import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
@@ -127,6 +128,9 @@ export class Chart {
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
   private panelInfoCache: import('@tradecanvas/core').PanelRenderInfo[] | null = null;
   private renderScheduled = false;
+  /** Current price-axis width; grows to fit long (e.g. sub-cent) labels. */
+  private priceAxisWidth = PRICE_AXIS_WIDTH;
+  private measureCtx: CanvasRenderingContext2D | null | undefined;
   private containerSizeCache: { width: number; height: number } | null = null;
   private containerSizeCacheTime = 0;
   // Last-emitted viewport values, used to fire visibleRangeChange /
@@ -1234,9 +1238,9 @@ export class Chart {
       this.scheduleRender();
     });
 
-    this.streamManager.on('priceChange', ({ price }) => {
+    this.streamManager.on('priceChange', ({ price, previousClose }) => {
       this.tradingManager.setCurrentPrice(price);
-      this.currentPriceLine.setPrice(price);
+      this.currentPriceLine.setPrice(price, previousClose ?? undefined);
       this.engine.requestRender(LayerType.Overlay);
       this.engine.requestRender(LayerType.UI);
     });
@@ -1994,8 +1998,8 @@ export class Chart {
     this.chartLegend.setLocale(locale);
     this.sessionBreaks.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
-    this.syncRenderContext();
-    this.engine.requestRender();
+    // Separators change label widths; the axis may need to refit.
+    this.updateViewportAndRender();
   }
 
   getNumberLocale(): string {
@@ -2027,11 +2031,13 @@ export class Chart {
       this.tradingManager.setConfig({ pricePrecision: config.pricePrecision });
       this.alertManager.setPricePrecision(config.pricePrecision);
       this.streamManager?.priceLine.setPricePrecision(config.pricePrecision);
+      this.currentPriceLine.setPricePrecision(config.pricePrecision);
       this.crosshairHandler.setPricePrecision(config.pricePrecision);
+      this.chartLegend.setPricePrecision(config.pricePrecision);
     }
 
-    this.syncRenderContext();
-    this.engine.requestRender();
+    // Longer price labels may need a wider axis.
+    this.updateViewportAndRender();
   }
 
   getMarket(): MarketConfig | null {
@@ -2149,6 +2155,7 @@ export class Chart {
     requestAnimationFrame(() => {
       this.renderScheduled = false;
       this.applyDataToViewport();
+      if (this.fitPriceAxisWidth()) this.applyDataToViewport();
       this.syncRenderContext();
       this.engine.requestRender();
       this.emitViewportEvents();
@@ -2218,11 +2225,57 @@ export class Chart {
     this.viewport.setChartRect(resolved.mainChartRect);
 
     this.applyDataToViewport(scrollToEnd);
+    // A wider/narrower axis changes the plot width, so fit the data again.
+    if (this.fitPriceAxisWidth()) this.applyDataToViewport(scrollToEnd);
 
     this.syncRenderContext();
     this.engine.requestRender();
 
     this.emitViewportEvents();
+  }
+
+  /**
+   * Size the price axis to its widest label (tick labels, last-price tag,
+   * crosshair pill), like TradingView's auto-width scale — so a sub-cent
+   * price isn't clipped. Returns true when the width, and so the layout,
+   * changed.
+   */
+  private fitPriceAxisWidth(): boolean {
+    if (!this.features.priceAxis) return false;
+    const { priceRange } = this.viewport.getState();
+    const theme = this.themeManager.getTheme();
+    const required = requiredPriceAxisWidth({
+      min: priceRange.min,
+      max: priceRange.max,
+      lastPrice: this.currentPriceLine.getPrice(),
+      tagPrecision: this.marketConfig?.pricePrecision ?? null,
+      locale: this.numberLocale,
+      fontFamily: theme.font.family,
+      fontSizeSmall: theme.font.sizeSmall,
+      measure: (text, font) => this.measureText(text, font),
+    });
+    const next = nextPriceAxisWidth(this.priceAxisWidth, required);
+    if (next === this.priceAxisWidth) return false;
+
+    this.priceAxisWidth = next;
+    this.layoutManager.setPriceAxisWidth(next);
+    this.viewport.setPriceAxisWidth(next);
+    this.resolvedLayoutCache = null;
+    this.panelInfoCache = null;
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+    return true;
+  }
+
+  private measureText(text: string, font: string): number {
+    if (this.measureCtx === undefined) {
+      this.measureCtx = typeof document !== 'undefined'
+        ? document.createElement('canvas').getContext('2d')
+        : null;
+    }
+    const ctx = this.measureCtx;
+    if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
+    ctx.font = font;
+    return ctx.measureText(text).width;
   }
 
   /**
@@ -2344,7 +2397,7 @@ export class Chart {
       indicatorEngine: this.features.indicators ? this.indicatorEngine : null,
       drawingRenderer: this.features.drawings ? this.drawingRenderer : null,
       tradingRenderer: this.features.trading ? this.tradingRenderer : null,
-      currentPriceLine: this.streamManager?.priceLine ?? this.currentPriceLine,
+      currentPriceLine: this.currentPriceLine,
       chartLegend: this.features.legend ? this.chartLegend : null,
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,
       volumeProfile: this.volumeProfile,

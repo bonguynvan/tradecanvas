@@ -1,6 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, formatPrice } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 
 /**
  * Renders the current (last) price as a horizontal line with a badge.
@@ -11,7 +11,8 @@ export class CurrentPriceLine {
   private previousClose: number | null = null;
   private visible = true;
   private flashUntil = 0;
-  private pricePrecision = 2;
+  /** Fixed decimals for the tag; `null` follows the price axis. */
+  private pricePrecision: number | null = null;
   private locale = 'en-US';
 
   setLocale(locale: string): void {
@@ -30,7 +31,7 @@ export class CurrentPriceLine {
     this.visible = v;
   }
 
-  setPricePrecision(precision: number): void {
+  setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }
 
@@ -64,10 +65,12 @@ export class CurrentPriceLine {
 
     // Price badge on axis
     const axisX = chartRect.x + chartRect.width + 1;
-    const text = formatPrice(this.price, this.pricePrecision, this.locale);
+    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+    const text = formatPrice(this.price, precision, this.locale);
     ctx.font = `bold 11px ${theme.font.family}`;
     const textWidth = ctx.measureText(text).width;
-    const badgeWidth = Math.min(textWidth + 12, PRICE_AXIS_WIDTH - 2);
+    const axisWidth = viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    const badgeWidth = Math.min(textWidth + 12, axisWidth - 2);
 
     ctx.fillStyle = color;
     ctx.fillRect(axisX, y - 10, badgeWidth, 20);

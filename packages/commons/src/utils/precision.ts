@@ -26,7 +26,20 @@ export function formatPrice(value: number, precision = 2, locale = 'en-US'): str
   return numberFormat(locale, precision).format(value);
 }
 
+/**
+ * Decimals the price axis uses for a visible price range: one more than its
+ * tick step needs, 2 at minimum. Everything that prints a price next to the
+ * axis (legend, crosshair pill, last-price tag) shares it, so a sub-cent
+ * asset reads "0.000004349" everywhere instead of "0.00" off the axis.
+ */
+export function autoPricePrecision(min: number, max: number): number {
+  if (!(max > min) || !Number.isFinite(min) || !Number.isFinite(max)) return 2;
+  const step = computeTickStep(min, max, 8);
+  return step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+}
+
 import type { PriceScaleMode } from '../types/rendering.js';
+import { computeTickStep } from './math.js';
 
 /**
  * Format a price-axis label for a given scale mode.

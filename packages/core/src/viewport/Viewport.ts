@@ -4,6 +4,8 @@ import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEI
 
 export class Viewport {
   private state: ViewportState;
+  // A field rather than state: computeChartRect runs while state is being built.
+  private priceAxisWidth = PRICE_AXIS_WIDTH;
   /**
    * `getState()` used to deep-clone on every single call — cheap in
    * isolation, but a single render pass calls it 8-10+ times (render
@@ -57,6 +59,7 @@ export class Viewport {
         logScale: this.state.logScale,
         scaleMode: this.state.scaleMode,
         scaleBaseline: this.state.scaleBaseline,
+        priceAxisWidth: this.state.priceAxisWidth,
       };
     }
     return this.stateCache;
@@ -96,11 +99,19 @@ export class Viewport {
     this.rightMarginBars = bars;
   }
 
+  /** Width of the price axis strip; see `ViewportState.priceAxisWidth`. */
+  setPriceAxisWidth(width: number): void {
+    if (this.priceAxisWidth === width) return;
+    this.priceAxisWidth = width;
+    this.state.priceAxisWidth = width;
+    this.invalidate();
+  }
+
   private computeChartRect(width: number, height: number): Rect {
     return {
       x: 0,
       y: 0,
-      width: Math.max(0, width - PRICE_AXIS_WIDTH),
+      width: Math.max(0, width - this.priceAxisWidth),
       height: Math.max(0, height - TIME_AXIS_HEIGHT),
     };
   }

@@ -22,8 +22,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build commons (workspace dep)
-        run: pnpm --filter @tradecanvas/commons build
+      # The React/Vue/Svelte wrapper tests import the built @tradecanvas/chart
+      # entry (and its commons/core deps), so build that whole chain first.
+      - name: Build chart and its workspace deps
+        run: pnpm --filter "@tradecanvas/chart..." build
 
       - name: Run tests
         run: pnpm test

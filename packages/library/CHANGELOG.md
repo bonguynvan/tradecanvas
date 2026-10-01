@@ -4,6 +4,18 @@
 
 ### Minor Changes
 
+- Sub-cent prices (e.g. PEPE at 0.0000043) no longer read "0.00". The OHLC
+  legend, the crosshair price pill and the last-price tag now use the
+  market's `pricePrecision` when `setMarket()` sets one, and otherwise the
+  price axis's own precision (new `autoPricePrecision()` in commons), always
+  in the configured `numberLocale`. The last-price tag is now the chart's own
+  — locale-aware, and set by `setMarket()` even without a stream adapter.
+  The price axis widens to fit its longest label (tick labels, last-price
+  tag, crosshair pill) like TradingView's auto-sized scale, instead of
+  clipping at a fixed 70px; it shrinks back with some slack so panning
+  doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
+  renderers and plugins.
+
 - 14 new drawing tools (26 → 40), the next step of TradingView Advanced Charts
   drawing-tool parity:
 

@@ -49,6 +49,12 @@ export interface ViewportState {
    * `anchor.time` is treated as a raw bar index (legacy behavior).
    */
   data?: ReadonlyArray<{ time: number }>;
+  /**
+   * Width of the price axis strip right of `chartRect`, in CSS pixels. The
+   * chart widens it to fit long labels (sub-cent prices); renderers drawing
+   * badges on the axis size them to it. Defaults to `PRICE_AXIS_WIDTH`.
+   */
+  priceAxisWidth?: number;
 }
 
 export enum LayerType {

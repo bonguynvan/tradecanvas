@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Viewport } from '../Viewport.js';
 import type { OHLCBar } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 
 /** Minimal ascending bars, one per minute — only `time`/`close` matter to `Viewport`. */
 function bars(n: number): OHLCBar[] {
@@ -238,5 +239,18 @@ describe('Viewport — long-data panning (regression guard)', () => {
 
     vp.scrollBy(-1_000_000);
     expect(vp.getState().offset).toBeCloseTo(-(state.chartRect.width * 0.5), 6);
+  });
+});
+
+describe('Viewport — price axis width', () => {
+  it('reserves the default axis width, then a widened one, and reports it in snapshots', () => {
+    const vp = new Viewport(800, 400);
+    expect(vp.getState().chartRect.width).toBe(800 - PRICE_AXIS_WIDTH);
+    expect(vp.getState().priceAxisWidth).toBeUndefined();
+
+    vp.setPriceAxisWidth(96);
+    expect(vp.getState().priceAxisWidth).toBe(96);
+    vp.resize(800, 400);
+    expect(vp.getState().chartRect.width).toBe(800 - 96);
   });
 });

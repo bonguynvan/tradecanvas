@@ -21,6 +21,11 @@ TradingView Advanced Charts parity, and a performance pass measured in a live br
 - `Viewport.getState()` snapshots are cached instead of deep-cloned 8–10× per frame; indicator auto-scale scans only the visible range; `Intl` number/date formatters are cached (hover frames ~0.64 → ~0.23 ms).
 - The price scale no longer jumps while live data streams in; new bars don't yank you out of history.
 
+### Sub-cent prices
+
+- Legend, crosshair pill and last-price tag follow the market's `pricePrecision` (or the axis's precision) in the configured `numberLocale` — PEPE-class prices no longer show "0.00".
+- The price axis auto-widens to fit long labels instead of clipping them; ordinary prices keep the 70px default.
+
 ### Symbol / timeframe switching
 
 - **TradingView-style loading** — fast switches swap in place with no flash; slow ones veil the previous chart with a loading card after 200 ms; failures say so and recover on retry.

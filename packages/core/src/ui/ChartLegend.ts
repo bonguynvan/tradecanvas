@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { computeTickStep, formatPrice } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -34,9 +34,18 @@ export class ChartLegend {
   private indicators: { name: string; color: string; value: string }[] = [];
   private statusText: string | null = null;
   private locale = 'en-US';
+  private pricePrecision: number | null = null;
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
+  }
+
+  /**
+   * Fixed decimals for OHLC values (e.g. a market's `pricePrecision`); `null`
+   * follows the price axis.
+   */
+  setPricePrecision(precision: number | null): void {
+    this.pricePrecision = precision;
   }
 
   setLocale(locale: string): void {
@@ -101,13 +110,10 @@ export class ChartLegend {
     if (this.config.showOHLC) {
       ctx.font = `${fs}px ${theme.font.family}`;
       const isUp = bar.close >= bar.open;
-      // Match the price axis's precision so sub-$1 assets (e.g. ~$0.34) don't
-      // round to "0.34 0.34 0.34 0.34" — derive decimals from the same tick
-      // step the axis uses, instead of a hardcoded 2.
-      const { min, max } = viewport.priceRange;
-      const range = max - min;
-      const step = range > 0 ? computeTickStep(min, max, 8) : 1;
-      const precision = step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+      // A market's explicit precision wins; otherwise match the price axis so
+      // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
+      const precision = this.pricePrecision
+        ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
       const fmt = (v: number) => formatPrice(v, precision, this.locale);
 
       const items = [

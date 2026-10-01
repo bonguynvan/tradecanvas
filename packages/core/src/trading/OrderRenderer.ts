@@ -115,7 +115,7 @@ export class OrderRenderer {
       ctx.font = `11px ${theme.font.family}`;
       const badgeWidth = ctx.measureText(priceText).width + 10;
       ctx.fillStyle = color;
-      ctx.fillRect(axisX, y - 9, Math.min(badgeWidth, PRICE_AXIS_WIDTH - 2), 18);
+      ctx.fillRect(axisX, y - 9, Math.min(badgeWidth, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2), 18);
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
