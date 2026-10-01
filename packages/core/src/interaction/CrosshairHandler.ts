@@ -1,6 +1,6 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
-import { xToBarIndex, yToPrice, barIndexToX } from '../viewport/ScaleMapping.js';
+import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
 
@@ -82,11 +82,15 @@ export class CrosshairHandler {
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
     if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
 
-    let barIndex = xToBarIndex(x, viewport);
-    barIndex = Math.max(0, Math.min(this.data.length - 1, barIndex));
+    // The slot under the cursor — may lie past the newest bar (empty future
+    // space the chart can be panned into). Magnet snaps to slots there too,
+    // instead of welding the line to the last bar.
+    const slot = xToBarIndex(x, viewport);
+    const barIndex = Math.max(0, Math.min(this.data.length - 1, slot));
+    const onBar = slot >= 0 && slot < this.data.length;
 
-    if (this.magnetMode && barIndex >= 0 && barIndex < this.data.length) {
-      x = barIndexToX(barIndex, viewport);
+    if (this.magnetMode) {
+      x = barIndexToX(slot, viewport);
     }
 
     // Defer callback — only fire if bar changed, and fire AFTER render via microtask
@@ -100,7 +104,7 @@ export class CrosshairHandler {
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're
     // sitting on. Especially helpful in dense candle charts.
-    if (this.magnetMode && barIndex >= 0 && barIndex < this.data.length) {
+    if (this.magnetMode && onBar) {
       const barUnit = viewport.barWidth + viewport.barSpacing;
       const halfUnit = barUnit / 2;
       ctx.fillStyle = theme.crosshair;
@@ -148,10 +152,9 @@ export class CrosshairHandler {
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
     if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
 
-    let barIndex = xToBarIndex(x, viewport);
-    barIndex = Math.max(0, Math.min(data.length - 1, barIndex));
-    if (this.magnetMode && barIndex >= 0 && barIndex < data.length) {
-      x = barIndexToX(barIndex, viewport);
+    const slot = xToBarIndex(x, viewport);
+    if (this.magnetMode) {
+      x = barIndexToX(slot, viewport);
     }
 
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
@@ -172,8 +175,9 @@ export class CrosshairHandler {
     });
 
     // ── Time pill (bottom axis) ──
-    if (barIndex >= 0 && barIndex < data.length) {
-      const timeText = formatBarTime(data[barIndex].time, this.tzOffsetMinutes);
+    if (data.length > 0) {
+      // Past either end of the data the time is extrapolated.
+      const timeText = formatBarTime(barIndexToTime(slot, data), this.tzOffsetMinutes);
       const axisY = timeAxisY ?? (chartRect.y + chartRect.height);
       drawAxisPill(ctx, {
         text: timeText,

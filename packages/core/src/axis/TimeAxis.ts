@@ -1,5 +1,6 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
+import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -29,8 +30,11 @@ export class TimeAxis {
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const minLabelSpacing = 80;
     const barsPerLabel = Math.max(1, Math.ceil(minLabelSpacing / barUnit));
-    const { from, to } = viewport.visibleRange;
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
+    // Label every slot on screen — including the empty future right of the
+    // newest bar, which the chart can be panned into — not just loaded bars.
+    const from = Math.floor(viewport.offset / barUnit);
+    const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
 
     ctx.font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'top';
@@ -40,12 +44,12 @@ export class TimeAxis {
     // Detect timeframe from bar spacing (approximate)
     let prevDay = -1;
 
-    for (let i = from; i <= to && i < data.length; i++) {
+    for (let i = from; i <= to && data.length > 0; i++) {
       if (i % barsPerLabel !== 0) continue;
       const x = i * barUnit + offsetX;
 
       // Handle both milliseconds and seconds timestamps
-      const rawTime = data[i].time;
+      const rawTime = barIndexToTime(i, data);
       const timeMs = rawTime > 1e12 ? rawTime : rawTime * 1000;
       const parts = timeParts(timeMs, this.tzOffsetMinutes);
       const { year, day, month, hours, minutes } = parts;

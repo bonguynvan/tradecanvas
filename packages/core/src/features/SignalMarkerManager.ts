@@ -69,7 +69,7 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     const data = this.dataGetter?.();
     if (!data || data.length === 0 || this.markers.length === 0) return;
 
-    const { chartRect, visibleRange } = viewport;
+    const { chartRect } = viewport;
     const style = this.style;
     const arrowSize = style.arrowSize ?? 12;
 
@@ -80,7 +80,7 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
 
     for (const marker of this.markers) {
       const barIdx = timestampToBarIndex(marker.time, data);
-      if (barIdx < visibleRange.from - 1 || barIdx > visibleRange.to + 1) continue;
+      // Pixel bounds below decide visibility (markers may sit past the last bar).
 
       const x = barIndexToX(barIdx, viewport);
       const y = priceToY(marker.price, viewport);

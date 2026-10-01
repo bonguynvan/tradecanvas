@@ -1,0 +1,72 @@
+import { describe, it, expect, vi } from 'vitest';
+import type { ViewportState } from '@tradecanvas/commons';
+import { DARK_THEME } from '@tradecanvas/commons';
+import { barTimeStep, barIndexToTime, timestampToBarIndex, xToTime, timeToX } from '../ScaleMapping.js';
+import { TimeAxis } from '../../axis/TimeAxis.js';
+
+const MIN = 60_000;
+/** Ten 1-minute bars starting at t = 0, with one 5-minute gap after bar 4. */
+const data = Array.from({ length: 10 }, (_, i) => ({ time: (i < 5 ? i : i + 4) * MIN }));
+
+describe('barTimeStep', () => {
+  it('is the median interval, so one gap does not skew it', () => {
+    expect(barTimeStep(data)).toBe(MIN);
+  });
+
+  it('is 0 without at least two bars', () => {
+    expect(barTimeStep([{ time: 5 }])).toBe(0);
+  });
+});
+
+describe('time ↔ index beyond the data', () => {
+  it('extrapolates times past the newest and before the oldest bar', () => {
+    expect(barIndexToTime(9, data)).toBe(13 * MIN);
+    expect(barIndexToTime(12, data)).toBe(16 * MIN); // 3 bars into the future
+    expect(barIndexToTime(-2, data)).toBe(-2 * MIN);
+  });
+
+  it('maps future timestamps back to future indices instead of clamping to the last bar', () => {
+    expect(timestampToBarIndex(16 * MIN, data)).toBe(12);
+    expect(timestampToBarIndex(-2 * MIN, data)).toBe(-2);
+    expect(timestampToBarIndex(13 * MIN, data)).toBe(9);
+  });
+
+  it('round-trips a drawing anchor placed in the future', () => {
+    const vp: ViewportState = {
+      visibleRange: { from: 0, to: 9 },
+      priceRange: { min: 0, max: 100 },
+      barWidth: 10,
+      barSpacing: 0,
+      offset: 0,
+      chartRect: { x: 0, y: 0, width: 300, height: 100 },
+      data,
+    };
+    const x = 12 * 10 + 5; // slot 12, past the last bar (9)
+    const t = xToTime(x, vp);
+    expect(t).toBe(16 * MIN);
+    expect(timeToX(t, vp)).toBe(x);
+  });
+});
+
+describe('TimeAxis', () => {
+  it('labels slots in the empty future, not only loaded bars', () => {
+    const texts: string[] = [];
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (_t, key) => (key === 'fillText' ? (t: string) => texts.push(t) : vi.fn()),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const vp: ViewportState = {
+      visibleRange: { from: 0, to: 9 },
+      priceRange: { min: 0, max: 100 },
+      barWidth: 80,
+      barSpacing: 0,
+      offset: 0,
+      chartRect: { x: 0, y: 0, width: 2000, height: 100 },
+    };
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    axis.render(ctx, vp, DARK_THEME, data);
+    // 25 slots fit; bars 10–24 are future and get labels too (one per slot at 80px).
+    expect(texts.filter((t) => t !== 'UTC').length).toBeGreaterThan(10);
+  });
+});

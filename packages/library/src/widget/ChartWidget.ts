@@ -267,7 +267,7 @@ export class ChartWidget {
         drawingUndoRedo: true,
         indicators: true,
         trading: options.trading !== false,
-        tradingContextMenu: options.trading !== false,
+        tradingContextMenu: false,
         volume: true,
         legend: true,
         crosshair: true,

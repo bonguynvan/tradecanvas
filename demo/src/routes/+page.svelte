@@ -205,7 +205,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 
     <article class="tile tile--wide">
       <h3>Analytics and gestures</h3>
-      <p>Bar-by-bar <code>Backtester</code> with Monte Carlo bands, a Web Worker indicator pipeline — and the moves traders expect: drag axes to scale, double-click to reset, <kbd>Shift</kbd>+drag to measure, <kbd>Alt</kbd>+click to pin a tooltip.</p>
+      <p>Bar-by-bar <code>Backtester</code> with Monte Carlo bands, a Web Worker indicator pipeline — and the moves traders expect: pan past the last bar into empty future space, drag axes to scale, double-click to reset, <kbd>Ctrl</kbd>+drag to select several drawings, <kbd>Shift</kbd>+drag to measure, <kbd>Alt</kbd>+click to pin a tooltip.</p>
     </article>
   </div>
 </section>

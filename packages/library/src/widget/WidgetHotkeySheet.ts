@@ -45,6 +45,9 @@ const GROUPS: HotkeyGroup[] = [
   {
     title: 'Chart manipulation',
     entries: [
+      { keys: ['Drag'], label: 'Pan — past the last bar into empty future space' },
+      { keys: [mod, 'Drag'], label: 'Select drawings in a box' },
+      { keys: [mod, 'Click'], label: 'Add / remove a drawing from the selection' },
       { keys: ['Shift', 'Drag'], label: 'Measure tool (bars × price Δ)' },
       { keys: ['Drag', 'Price axis'], label: 'Compress / expand vertical scale' },
       { keys: ['Drag', 'Time axis'], label: 'Zoom time axis' },

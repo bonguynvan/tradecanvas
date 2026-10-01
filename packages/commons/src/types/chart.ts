@@ -31,7 +31,7 @@ export interface FeaturesConfig {
   // --- Trading ---
   /** Enable trading features (orders, positions, context menu) */
   trading?: boolean;
-  /** Enable right-click context menu for placing orders */
+  /** Right-click menu for placing orders. Default `false` — opt in explicitly. */
   tradingContextMenu?: boolean;
 
   // --- Indicators ---
@@ -120,6 +120,15 @@ export interface ChartOptions {
   features?: FeaturesConfig;
   /** BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'. */
   numberLocale?: string;
+  /**
+   * Free panning (default `true`): drag past the newest bar
+   * into empty future space, or past the oldest bar, until `panLimits.minVisibleBars`
+   * bars remain. `false` restores the pre-1.3 clamp (newest bar stops at its
+   * resting position).
+   */
+  freePan?: boolean;
+  /** Bounds for free panning. */
+  panLimits?: { minVisibleBars?: number };
 }
 
 export interface SessionBreakOptions {

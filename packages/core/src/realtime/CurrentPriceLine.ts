@@ -31,6 +31,10 @@ export class CurrentPriceLine {
     this.visible = v;
   }
 
+  isVisible(): boolean {
+    return this.visible;
+  }
+
   setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }

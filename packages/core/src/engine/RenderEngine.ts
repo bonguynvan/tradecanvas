@@ -56,6 +56,7 @@ export interface RenderContext {
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
   measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
+  selectionBoxOverlay?: import('../features/SelectionBoxOverlay.js').SelectionBoxOverlay | null;
   tradeZoneManager: TradeZoneManager | null;
   panels: PanelRenderInfo[];
   priceLimits?: { ceiling: number; floor: number; reference: number; colors?: { ceiling?: string; floor?: string; reference?: string } } | null;
@@ -254,6 +255,7 @@ export class RenderEngine {
       ctx.signalMarkerManager?.render(c, viewport, theme);
       ctx.alertManager?.render(c, viewport, theme);
       ctx.measureOverlay?.render(c, viewport, theme);
+      ctx.selectionBoxOverlay?.render(c, viewport, theme);
       ctx.crosshairHandler?.render(c, viewport, theme);
       ctx.renderOverlayPlugins?.(c, 'overlay');
 

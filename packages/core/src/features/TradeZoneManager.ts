@@ -104,15 +104,15 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     theme: Theme,
     style: TradeZoneStyle,
   ): void {
-    const { chartRect, visibleRange } = viewport;
+    const { chartRect } = viewport;
 
     const entryIdx = timestampToBarIndex(zone.entryTime, data);
     const exitIdx = zone.exitTime != null
       ? timestampToBarIndex(zone.exitTime, data)
       : data.length - 1;
 
-    if (exitIdx < visibleRange.from || entryIdx > visibleRange.to) return;
-
+    // Off-screen check in pixels: an entry in the forming bar maps just past
+    // the last index, which a data-clamped visible range would cull.
     const x1 = barIndexToX(entryIdx, viewport);
     const x2 = barIndexToX(exitIdx, viewport);
     const left = Math.max(chartRect.x, Math.min(x1, x2));

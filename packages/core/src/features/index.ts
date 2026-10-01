@@ -10,3 +10,5 @@ export { DataExporter } from './DataExporter.js';
 export { SignalMarkerManager } from './SignalMarkerManager.js';
 export { TradeZoneManager } from './TradeZoneManager.js';
 export { MeasureOverlay } from './MeasureOverlay.js';
+export { SelectionBoxOverlay, SELECTION_BOX_MIN_SIZE } from './SelectionBoxOverlay.js';
+export type { SelectionBox } from './SelectionBoxOverlay.js';

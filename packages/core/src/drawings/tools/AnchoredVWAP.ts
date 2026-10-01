@@ -102,7 +102,33 @@ export class AnchoredVWAPTool extends DrawingBase {
     ctx.stroke();
   }
 
-  private computeVWAP(data: DataSeries, startIdx: number): {
+  /**
+   * Last result, reused while the series, anchor and forming bar are
+   * unchanged — hover hit-testing runs on every mouse move and would
+   * otherwise rebuild five O(n) arrays each time.
+   */
+  private vwapCache: {
+    data: DataSeries;
+    length: number;
+    startIdx: number;
+    lastClose: number;
+    lastVolume: number;
+    result: ReturnType<AnchoredVWAPTool['computeVWAPUncached']>;
+  } | null = null;
+
+  private computeVWAP(data: DataSeries, startIdx: number): ReturnType<AnchoredVWAPTool['computeVWAPUncached']> {
+    const last = data[data.length - 1];
+    const c = this.vwapCache;
+    if (c && c.data === data && c.length === data.length && c.startIdx === startIdx
+      && c.lastClose === last?.close && c.lastVolume === (last?.volume ?? 0)) {
+      return c.result;
+    }
+    const result = this.computeVWAPUncached(data, startIdx);
+    this.vwapCache = { data, length: data.length, startIdx, lastClose: last?.close, lastVolume: last?.volume ?? 0, result };
+    return result;
+  }
+
+  private computeVWAPUncached(data: DataSeries, startIdx: number): {
     vwap: number[];
     upper1: number[];
     lower1: number[];

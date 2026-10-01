@@ -8,7 +8,7 @@ import type {
   Point,
 } from '@tradecanvas/commons';
 import { DEFAULT_TRADING_CONFIG } from '@tradecanvas/commons';
-import { yToPrice } from '../viewport/ScaleMapping.js';
+import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { OrderRenderer } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
 import { DepthOverlay } from './DepthOverlay.js';
@@ -145,6 +145,20 @@ export class TradingManager {
 
   isOrderDraftActive(): boolean {
     return this.orderDraft.isActive();
+  }
+
+  /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
+  isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
+    if (!this.config.enabled) return false;
+    const near = (price: number | undefined) =>
+      price !== undefined && Math.abs(pos.y - priceToY(price, viewport)) <= tolerance;
+    for (const o of this.orders) {
+      if (o.draggable !== false && near(o.price)) return true;
+    }
+    for (const p of this.positions) {
+      if (near(p.stopLoss) || near(p.takeProfit)) return true;
+    }
+    return false;
   }
 
   // --- Pointer events ---

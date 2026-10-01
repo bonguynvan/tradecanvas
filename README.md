@@ -11,7 +11,7 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **70 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
 - **40 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan), horizontal/vertical lines, channels, pitchforks (Andrews, Schiff, modified Schiff), Gann fans / boxes, cyclic lines, harmonic patterns (XABCD, ABCD, head and shoulders, Elliott waves), date & price range, Long/Short Position, Volume Profile range. With undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
-- **TradingView-grade interaction** — drag the price/time axes to scale, double-click to auto-fit, `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, axis-following price/time pill labels under the cursor, bar-hover highlight.
+- **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines.
 - **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
@@ -71,7 +71,7 @@ const chart = new Chart(document.getElementById('chart')!, {
     drawings: true,
     indicators: true,
     trading: true,           // set false to disable orders/positions entirely
-    tradingContextMenu: true, // set false to keep overlay but drop right-click menu
+    tradingContextMenu: true, // opt-in right-click order menu (off by default)
     volume: true,
   },
 })
