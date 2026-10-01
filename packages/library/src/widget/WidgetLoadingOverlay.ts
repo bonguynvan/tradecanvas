@@ -5,10 +5,26 @@
  */
 export const LOADING_SHOW_DELAY_MS = 200;
 
-const SKELETON_BARS = 20;
+/**
+ * Silhouette of the loading mark: a short rising run of candles as
+ * [body top, body height, wick top, wick height, rising] in a 64 px box
+ * (y grows downward).
+ */
+const SKELETON_CANDLES: readonly (readonly [number, number, number, number, boolean])[] = [
+  [34, 16, 28, 26, false],
+  [30, 14, 24, 26, true],
+  [26, 18, 20, 30, true],
+  [30, 10, 24, 22, false],
+  [20, 16, 14, 28, true],
+  [14, 18, 8, 30, true],
+  [18, 10, 12, 20, false],
+  [8, 18, 2, 30, true],
+];
 
 /**
- * Loading state for the chart area.
+ * Loading state for the chart area: a run of candles lit one after another
+ * over a sweeping accent line. The status text is for screen readers only;
+ * an error message is shown.
  *
  * - First load (nothing to show yet): opaque skeleton, shown immediately.
  * - Switch (a chart is already on screen): the old chart stays visible and is
@@ -29,21 +45,31 @@ export class WidgetLoadingOverlay {
     this.el.setAttribute('role', 'status');
     this.el.setAttribute('aria-live', 'polite');
 
-    // Bars + label share a card: transparent on the opaque first-load screen,
-    // a raised panel when veiling a chart so it reads over the candles.
+    // Candles + label share a card: transparent on the opaque first-load
+    // screen, a raised panel when veiling a chart so it reads over the candles.
     const card = document.createElement('div');
     card.className = 'tcw-loading-card';
 
-    const bars = document.createElement('div');
-    bars.className = 'tcw-loading-bars';
-    for (let i = 0; i < SKELETON_BARS; i++) {
-      const bar = document.createElement('span');
-      bar.className = 'tcw-loading-bar';
-      bar.style.height = `${20 + Math.round(Math.sin(i * 0.9) * 18 + 18)}px`;
-      bar.style.animationDelay = `${i * 45}ms`;
-      bars.appendChild(bar);
-    }
-    card.appendChild(bars);
+    const candles = document.createElement('div');
+    candles.className = 'tcw-loading-candles';
+    candles.setAttribute('aria-hidden', 'true');
+    SKELETON_CANDLES.forEach(([bodyTop, bodyHeight, wickTop, wickHeight, rising], i) => {
+      const candle = document.createElement('span');
+      candle.className = rising ? 'tcw-loading-candle tcw-loading-candle--up' : 'tcw-loading-candle';
+      candle.style.setProperty('--tcw-body-top', `${bodyTop}px`);
+      candle.style.setProperty('--tcw-body-h', `${bodyHeight}px`);
+      candle.style.setProperty('--tcw-wick-top', `${wickTop}px`);
+      candle.style.setProperty('--tcw-wick-h', `${wickHeight}px`);
+      candle.style.animationDelay = `${i * 110}ms`;
+      candles.appendChild(candle);
+    });
+    card.appendChild(candles);
+
+    const track = document.createElement('div');
+    track.className = 'tcw-loading-track';
+    track.setAttribute('aria-hidden', 'true');
+    track.appendChild(document.createElement('span'));
+    card.appendChild(track);
 
     this.label = document.createElement('div');
     this.label.className = 'tcw-loading-label';

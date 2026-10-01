@@ -157,7 +157,8 @@ export { Animator, Easing } from '@tradecanvas/core';
 export type { EasingFn, AnimationOptions } from '@tradecanvas/core';
 
 // Re-export interaction
-export { KeyboardHandler, CrosshairTooltip } from '@tradecanvas/core';
+export { KeyboardHandler, CrosshairTooltip, formatTooltipTime } from '@tradecanvas/core';
+export type { CrosshairTooltipContext } from '@tradecanvas/core';
 
 // Multi-chart grid
 export { ChartGrid } from './grid/ChartGrid.js';

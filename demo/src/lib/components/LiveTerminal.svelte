@@ -119,11 +119,10 @@
     </div>
   </div>
 
-  <div class="terminal-frame" class:is-loading={status !== 'ready'}>
+  <!-- While loading, the widget shows its own candle skeleton. -->
+  <div class="terminal-frame">
     <div class="terminal-host" bind:this={host}></div>
-    {#if status === 'loading'}
-      <div class="terminal-overlay"><span class="pulse"></span><span>Connecting to Binance…</span></div>
-    {:else if status === 'error'}
+    {#if status === 'error'}
       <div class="terminal-overlay terminal-overlay--error">Live feed unavailable: {errorMessage}</div>
     {/if}
   </div>
@@ -201,8 +200,6 @@
     background: var(--bg);
   }
 
-  .terminal-frame.is-loading .terminal-host { opacity: 0; }
-
   .terminal-host {
     width: 100%;
     height: 100%;
@@ -226,20 +223,6 @@
     color: var(--red);
     padding: 0 24px;
     text-align: center;
-  }
-
-  .pulse {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.6s infinite;
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
-    70% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent); }
-    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
   }
 
   .terminal-status {

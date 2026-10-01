@@ -420,7 +420,7 @@
   position: relative;
 }
 
-/* === Loading overlay (skeleton bars) === */
+/* === Loading overlay (candle skeleton) === */
 
 .tcw-loading-overlay {
   /* Uses a modifier class rather than the `hidden` attribute — the global
@@ -446,8 +446,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 20px 28px 16px;
+  gap: 14px;
+  padding: 22px 26px 20px;
   border: 1px solid transparent;
   border-radius: var(--tcw-radius-lg);
 }
@@ -464,38 +464,123 @@
   box-shadow: var(--tcw-shadow-lg);
 }
 
-.tcw-loading-overlay--error .tcw-loading-bars {
+.tcw-loading-candles {
+  position: relative;
+  display: flex;
+  gap: 7px;
+  height: 64px;
+}
+
+/* One candle: the element is the wick's column, ::before the wick, ::after the body. */
+.tcw-loading-candle {
+  position: relative;
+  width: 8px;
+  height: 100%;
+  color: var(--tcw-red);
+  opacity: 0.28;
+  animation: tcw-candle-light 1.6s var(--tcw-ease) infinite;
+}
+
+.tcw-loading-candle--up { color: var(--tcw-green); }
+
+.tcw-loading-candle::before,
+.tcw-loading-candle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.tcw-loading-candle::before {
+  top: var(--tcw-wick-top);
+  width: 1.5px;
+  height: var(--tcw-wick-h);
+}
+
+.tcw-loading-candle::after {
+  top: var(--tcw-body-top);
+  width: 8px;
+  height: var(--tcw-body-h);
+  border-radius: 1.5px;
+}
+
+/* Each candle brightens and lifts slightly in turn, left to right. */
+@keyframes tcw-candle-light {
+  0%, 55%, 100% { opacity: 0.28; transform: translateY(0); }
+  20% { opacity: 1; transform: translateY(-2px); }
+}
+
+.tcw-loading-track {
+  position: relative;
+  width: 100%;
+  min-width: 88px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--tcw-border);
+  overflow: hidden;
+}
+
+.tcw-loading-track > span {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--tcw-accent), transparent);
+  animation: tcw-loading-sweep 1.6s var(--tcw-ease) infinite;
+}
+
+@keyframes tcw-loading-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+/* The status text is announced, not shown — the candles say "loading". */
+.tcw-loading-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tcw-loading-overlay--error .tcw-loading-candles,
+.tcw-loading-overlay--error .tcw-loading-track {
   display: none;
 }
 
+/* A failure is shown: why the chart is empty and that a retry is running. */
 .tcw-loading-overlay--error .tcw-loading-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  max-width: 320px;
+  text-align: center;
   color: var(--tcw-red);
   font-size: 13px;
 }
 
-.tcw-loading-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 64px;
-}
-
-.tcw-loading-bar {
-  width: 5px;
-  border-radius: 2px 2px 0 0;
-  background: var(--tcw-border-strong);
-  animation: tcw-skeleton-pulse 1.1s ease-in-out infinite;
-}
-
-@keyframes tcw-skeleton-pulse {
-  0%, 100% { opacity: 0.35; transform: scaleY(0.55); }
-  50% { opacity: 0.85; transform: scaleY(1); }
-}
-
-.tcw-loading-label {
-  font-size: 12px;
-  color: var(--tcw-text-muted);
-  letter-spacing: 0.02em;
+@media (prefers-reduced-motion: reduce) {
+  .tcw-loading-candle,
+  .tcw-loading-track > span {
+    animation: none;
+  }
+  .tcw-loading-candle { opacity: 0.6; }
+  .tcw-loading-track > span { transform: translateX(75%); }
+  /* Static candles don't say "loading" on their own: show the text. */
+  .tcw-loading-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    font-size: 12px;
+    color: var(--tcw-text-muted);
+  }
 }
 
 /* === Sidebar === */

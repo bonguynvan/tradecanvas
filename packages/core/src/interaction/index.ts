@@ -7,5 +7,6 @@ export { PaneResizeHandler } from './PaneResizeHandler.js';
 export { CrosshairHandler } from './CrosshairHandler.js';
 export type { CrosshairMode } from './CrosshairHandler.js';
 export { KeyboardHandler } from './KeyboardHandler.js';
-export { CrosshairTooltip } from './CrosshairTooltip.js';
+export { CrosshairTooltip, formatTooltipTime } from './CrosshairTooltip.js';
+export type { CrosshairTooltipContext } from './CrosshairTooltip.js';
 export { PinnedTooltip } from './PinnedTooltip.js';

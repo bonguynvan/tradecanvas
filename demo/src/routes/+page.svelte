@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { base } from '$app/paths';
+  import 'lenis/dist/lenis.css';
+  import { initLandingMotion } from '$lib/motion';
   import LiveTerminal from '$lib/components/LiveTerminal.svelte';
   import ChartGallery from '$lib/components/ChartGallery.svelte';
   import FinanceCharts from '$lib/components/FinanceCharts.svelte';
@@ -9,21 +12,43 @@
   import { VERSION, LINKS } from '$lib/site';
 
   /** Counts come from the source: ChartType, DrawingToolType, the indicator registry. */
+  // `value` is what counts up on scroll; `prefix` stays put.
   const SPECS = [
-    { value: '17', unit: '', label: 'chart types' },
-    { value: '70', unit: '', label: 'indicators' },
-    { value: '40', unit: '', label: 'drawing tools' },
-    { value: '0', unit: '', label: 'runtime dependencies' },
-    { value: '≈100', unit: 'kB', label: 'gzip, headless core' },
-    { value: '<0.3', unit: 'ms', label: 'hover frame at 100k bars' },
+    { prefix: '', value: '17', unit: '', label: 'chart types' },
+    { prefix: '', value: '70', unit: '', label: 'indicators' },
+    { prefix: '', value: '40', unit: '', label: 'drawing tools' },
+    { prefix: '', value: '0', unit: '', label: 'runtime dependencies' },
+    { prefix: '≈', value: '100', unit: 'kB', label: 'gzip, headless core' },
+    { prefix: '<', value: '0.3', unit: 'ms', label: 'hover frame at 100k bars' },
   ];
 
   const PERF = [
-    { value: '0.001', unit: 'ms', label: 'live tick with 4 indicators on 100k bars' },
-    { value: '27', unit: 'ms', label: 'full recalculation after a symbol switch, 100k bars' },
-    { value: '0.32', unit: 'ms', label: 'LTTB downsample, 100k → 1,600 points' },
-    { value: '<0.3', unit: 'ms', label: 'hover frame, flat from 500 to 100k bars' },
+    { prefix: '', value: '0.001', unit: 'ms', label: 'live tick with 4 indicators on 100k bars' },
+    { prefix: '', value: '27', unit: 'ms', label: 'full recalculation after a symbol switch, 100k bars' },
+    { prefix: '', value: '0.32', unit: 'ms', label: 'LTTB downsample, 100k → 1,600 points' },
+    { prefix: '<', value: '0.3', unit: 'ms', label: 'hover frame, flat from 500 to 100k bars' },
   ];
+
+  let page: HTMLElement | undefined = $state();
+  onMount(() => {
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    if (page) {
+      initLandingMotion(page)
+        .then((dispose) => {
+          if (cancelled) dispose();
+          else stop = dispose;
+        })
+        .catch((err) => {
+          // Motion is decoration: the page is complete without it.
+          console.warn('Landing motion unavailable:', err);
+        });
+    }
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  });
 
   const CAPABILITIES = [
     {
@@ -160,7 +185,9 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   <meta name="twitter:image" content="https://bonguynvan.github.io/tradecanvas/og.svg" />
 </svelte:head>
 
+<div class="home" bind:this={page}>
 <section class="home-hero">
+  <div class="hero-grid" data-parallax aria-hidden="true"></div>
   <div class="home-hero-inner">
     <div class="hero-copy">
       <a class="hero-release" href="{base}/changelog">
@@ -198,7 +225,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   <dl class="spec-grid">
     {#each SPECS as s}
       <div class="spec">
-        <dt>{s.value}{#if s.unit}<small>{s.unit}</small>{/if}</dt>
+        <dt>{s.prefix}<span class="count" data-count={s.value} style:min-width="{s.value.length}ch">{s.value}</span>{#if s.unit}<small>{s.unit}</small>{/if}</dt>
         <dd>{s.label}</dd>
       </div>
     {/each}
@@ -210,19 +237,19 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 <ChartGallery />
 
 <section class="features-section" aria-labelledby="hood-title">
-  <header class="section-head">
+  <header class="section-head" data-reveal data-reveal-stagger>
     <span class="eyebrow">Under the hood</span>
     <h2 class="section-title" id="hood-title">Measured, documented, yours to extend</h2>
     <p class="section-subtitle">The engine behind the Feature Lab. Every number below is reproducible with <code>pnpm bench</code>.</p>
   </header>
 
   <div class="hood">
-    <div class="perf-panel">
+    <div class="perf-panel" data-reveal>
       <h3 class="panel-label">Frame budget</h3>
       <dl class="perf-grid">
         {#each PERF as p}
           <div>
-            <dt>{p.value}<small>{p.unit}</small></dt>
+            <dt>{p.prefix}<span class="count" data-count={p.value} style:min-width="{p.value.length}ch">{p.value}</span><small>{p.unit}</small></dt>
             <dd>{p.label}</dd>
           </div>
         {/each}
@@ -239,7 +266,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
       </dl>
     </div>
 
-    <dl class="caps">
+    <dl class="caps" data-reveal data-reveal-stagger>
       {#each CAPABILITIES as c}
         <div class="cap">
           <dt><span class="cap-label">{c.label}</span>{c.title}</dt>
@@ -253,13 +280,13 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 <FinanceCharts />
 
 <section class="quickstart-section" aria-labelledby="qs-title">
-  <header class="section-head">
+  <header class="section-head" data-reveal data-reveal-stagger>
     <span class="eyebrow">Quick start</span>
     <h2 class="section-title" id="qs-title">Same chart, five ways in</h2>
     <p class="section-subtitle">The full widget, a framework component or the headless engine. They share one renderer.</p>
   </header>
 
-  <div class="qs">
+  <div class="qs" data-reveal>
     <div class="qs-tabs" role="tablist" aria-label="Quick start flavour">
       {#each QUICKSTART as q, i}
         <button
@@ -283,7 +310,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 </section>
 
 <section class="closing" aria-labelledby="closing-title">
-  <div class="closing-inner">
+  <div class="closing-inner" data-reveal data-reveal-stagger>
     <h2 class="closing-title" id="closing-title">Put a live chart in your app today.</h2>
     <div class="closing-actions">
       <InstallCommand />
@@ -294,18 +321,30 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     </div>
   </div>
 </section>
+</div>
 
 <style>
   /* --- Hero --- */
   .home-hero {
+    position: relative;
+    overflow: hidden;
     border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  /* Its own layer so it can drift (parallax) while the hero scrolls out. */
+  .hero-grid {
+    position: absolute;
+    inset: -25% 0 0;
     background:
       linear-gradient(to right, var(--border-subtle) 1px, transparent 1px) 0 0 / 64px 64px,
       linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px) 0 0 / 64px 64px;
-    background-color: var(--bg);
+    mask-image: radial-gradient(120% 90% at 30% 35%, #000 40%, transparent 100%);
+    pointer-events: none;
   }
 
   .home-hero-inner {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
     gap: clamp(32px, 4vw, 64px);
@@ -320,6 +359,31 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     gap: 22px;
     justify-items: start;
     min-width: 0;
+  }
+
+  /* Entrance: pure CSS, so it plays on first paint without waiting for JS
+     (reduced motion collapses it to the final frame, see app.css). */
+  .hero-copy > :global(*) {
+    animation: hero-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .hero-copy > :global(:nth-child(2)) { animation-delay: 0.06s; }
+  .hero-copy > :global(:nth-child(3)) { animation-delay: 0.12s; }
+  .hero-copy > :global(:nth-child(4)) { animation-delay: 0.18s; }
+  .hero-copy > :global(:nth-child(5)) { animation-delay: 0.24s; }
+  .hero-copy > :global(:nth-child(6)) { animation-delay: 0.3s; }
+
+  .hero-stage {
+    animation: hero-stage-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  }
+
+  @keyframes hero-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes hero-stage-in {
+    from { opacity: 0; transform: translateY(24px) scale(0.985); }
+    to { opacity: 1; transform: none; }
   }
 
   .hero-release {
@@ -422,6 +486,8 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
   }
+
+  .count { display: inline-block; font-variant-numeric: tabular-nums; }
 
   .spec dt small, .perf-grid dt small {
     font-size: 0.5em;
