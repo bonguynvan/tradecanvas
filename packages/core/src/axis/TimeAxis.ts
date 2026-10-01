@@ -4,6 +4,9 @@ import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
+/** Space kept between the last tick label and the timezone tag. */
+export const TZ_LABEL_GAP_PX = 8;
+
 export class TimeAxis {
   /** null = browser-local timezone; a number = fixed UTC offset in minutes. */
   private tzOffsetMinutes: number | null = null;
@@ -35,6 +38,14 @@ export class TimeAxis {
     // newest bar, which the chart can be panned into — not just loaded bars.
     const from = Math.floor(viewport.offset / barUnit);
     const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
+
+    // The timezone tag sits at the right end: measure it first so a tick
+    // label never draws on top of it (they used to merge into "UTC10/2").
+    const tzText = tzLabel(this.tzOffsetMinutes);
+    const tzFont = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
+    const tzRight = chartRect.x + chartRect.width - 4;
+    ctx.font = tzFont;
+    const tzLeft = tzRight - ctx.measureText(tzText).width - TZ_LABEL_GAP_PX;
 
     ctx.font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'top';
@@ -68,18 +79,17 @@ export class TimeAxis {
         label = `${_pad2(hours)}:${_pad2(minutes)}`;
       }
 
+      if (x + ctx.measureText(label).width / 2 > tzLeft) continue;
       ctx.fillText(label, x, axisY + 7);
     }
 
     // ─── Timezone indicator (bottom-right) ───
-    const tzX = chartRect.x + chartRect.width - 4;
-    const tzY = axisY + 7;
-    ctx.font = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
+    ctx.font = tzFont;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.globalAlpha = 0.75;
     ctx.fillStyle = theme.textSecondary;
-    ctx.fillText(tzLabel(this.tzOffsetMinutes), tzX, tzY);
+    ctx.fillText(tzText, tzRight, axisY + 7);
     ctx.globalAlpha = 1;
   }
 }

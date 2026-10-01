@@ -19,22 +19,53 @@ export interface CrosshairTooltipContext {
   barStepMs?: number;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Building an Intl.DateTimeFormat costs ~40µs: keep one per locale/shape.
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
+/** "Mar 4" / "Mar 4, 2026" in `locale`, for the wall-clock date of `ms`. */
+function formatDate(ms: number, tzOffsetMinutes: number | null, locale: string, withYear: boolean): string {
+  // A fixed offset is applied by shifting the instant and reading it as UTC;
+  // browser-local time is Intl's default.
+  const fixed = tzOffsetMinutes !== null;
+  const key = `${locale}|${withYear ? 'y' : ''}|${fixed ? 'utc' : 'local'}`;
+  let format = dateFormats.get(key);
+  if (!format) {
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+      ...(withYear ? { year: 'numeric' } : {}),
+      ...(fixed ? { timeZone: 'UTC' } : {}),
+    };
+    try {
+      format = new Intl.DateTimeFormat(locale, options);
+    } catch {
+      format = new Intl.DateTimeFormat('en-US', options); // unknown locale tag
+    }
+    dateFormats.set(key, format);
+  }
+  return format.format(new Date(fixed ? ms + (tzOffsetMinutes as number) * 60_000 : ms));
+}
 
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
 /**
- * The bar's time as the card shows it, in the chart's timezone: "Mar 4, 2026"
- * for daily-or-larger bars, "Mar 4 · 14:05" for intraday ones and
- * "Mar 4 · 14:05:30" for sub-minute ones. Pass the bar spacing when known:
- * without it, a midnight bar can't be told from a daily one.
+ * The bar's time as the card shows it, in the chart's timezone and locale:
+ * "Mar 4, 2026" for daily-or-larger bars, "Mar 4 · 14:05" for intraday ones
+ * and "Mar 4 · 14:05:30" for sub-minute ones ("4 thg 3 · 14:05" in vi-VN).
+ * Pass the bar spacing in ms when known: without it, a midnight bar can't be
+ * told from a daily one.
  */
-export function formatTooltipTime(rawTime: number, tzOffsetMinutes: number | null, barStepMs?: number): string {
+export function formatTooltipTime(
+  rawTime: number,
+  tzOffsetMinutes: number | null,
+  barStepMs?: number,
+  locale = 'en-US',
+): string {
   const ms = normalizeBarTime(rawTime);
   const parts = timeParts(ms, tzOffsetMinutes);
-  const date = `${MONTHS[parts.month - 1]} ${parts.day}`;
   const daily = barStepMs !== undefined && barStepMs > 0 ? barStepMs >= DAY_MS : isDateOnly(parts);
-  if (daily) return `${date}, ${parts.year}`;
+  if (daily) return formatDate(ms, tzOffsetMinutes, locale, true);
+  const date = formatDate(ms, tzOffsetMinutes, locale, false);
   const clock = `${pad2(parts.hours)}:${pad2(parts.minutes)}`;
   if (barStepMs !== undefined && barStepMs > 0 && barStepMs < 60_000) {
     // Timezone offsets are whole minutes: the seconds are the same everywhere.
@@ -175,7 +206,7 @@ export class CrosshairTooltip {
     const tone = up ? theme.candleUp : theme.candleDown;
     const sign = up ? '+' : '−';
 
-    this.timeEl.textContent = formatTooltipTime(bar.time, this.tzOffsetMinutes, context.barStepMs);
+    this.timeEl.textContent = formatTooltipTime(bar.time, this.tzOffsetMinutes, context.barStepMs, this.locale);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);
