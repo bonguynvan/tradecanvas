@@ -21,6 +21,14 @@ afterEach(() => {
 });
 
 describe('WidgetLoadingOverlay', () => {
+  it('draws a candle skeleton hidden from screen readers, keeping the status text for them', () => {
+    const candles = parent.querySelector('.tcw-loading-candles');
+    expect(candles?.getAttribute('aria-hidden')).toBe('true');
+    expect(candles?.querySelectorAll('.tcw-loading-candle').length).toBeGreaterThan(4);
+    expect(el().getAttribute('role')).toBe('status');
+    expect(label()).toBe('Loading chart...');
+  });
+
   it('starts visible and loading — the widget mounts before its first bars', () => {
     expect(visible()).toBe(true);
     expect(overlay.isActive()).toBe(true);

@@ -70,6 +70,7 @@ import {
   MeasureOverlay,
   SelectionBoxOverlay,
   timestampToBarIndex,
+  barTimeStep,
   ReplayManager,
   ChartStateManager,
   UndoRedoManager,
@@ -156,6 +157,8 @@ export class Chart {
   private selectionBoxOverlay = new SelectionBoxOverlay();
   private replayManager: ReplayManager;
   private replayBarUnsub: (() => void) | null = null;
+  /** True while `replaySeek` runs: its bar is a jump, not a replay step. */
+  private replaySeeking = false;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -325,8 +328,9 @@ export class Chart {
     if (options.crosshair?.mode) {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
-    // Crosshair callback — fired via microtask AFTER render, only when bar changes.
-    // No DOM writes, no layout reads, no extra render requests.
+    // Crosshair callback — fired via microtask AFTER render, only when the bar
+    // changes: no extra render requests, and the tooltip's one measurement
+    // happens once per bar, not per mouse move.
     this.crosshairHandler.setCallback((barIndex, point) => {
       if (barIndex !== null && point) {
         const data = this.dataManager.getData();
@@ -337,7 +341,13 @@ export class Chart {
 
         // Update tooltip (DOM, lightweight update only when bar changes)
         if (bar && this.features.crosshairTooltip) {
-          this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize());
+          const vs = this.viewport.getState();
+          this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize(), {
+            prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
+            priceRange: vs.priceRange,
+            plot: vs.chartRect,
+            barStepMs: barTimeStep(data),
+          });
         }
 
         // Refresh the pinned tooltip's delta strip against the hovered bar.
@@ -404,6 +414,7 @@ export class Chart {
     // Crosshair tooltip (DOM)
     this.crosshairTooltip = new CrosshairTooltip();
     this.crosshairTooltip.create(container);
+    this.crosshairTooltip.setLocale(this.numberLocale);
     this.pinnedTooltip = new PinnedTooltip();
     this.pinnedTooltip.create(container);
 
@@ -1713,6 +1724,7 @@ export class Chart {
   setTimezoneOffset(minutes: number | null): void {
     this.timeAxis.setTimezoneOffset(minutes);
     this.crosshairHandler.setTimezoneOffset(minutes);
+    this.crosshairTooltip.setTimezoneOffset(minutes);
     this.engine.requestRender(LayerType.UI);
   }
 
@@ -1921,7 +1933,15 @@ export class Chart {
     this.replayBarUnsub?.();
     this.replayBarUnsub = this.replayManager.on('bar', ({ bar: _bar, index }) => {
       const nextLen = index + 1;
-      if (loaded > 0 && nextLen > loaded && this.dataManager.getLength() === loaded) {
+      const forward = loaded > 0 && nextLen > loaded && this.dataManager.getLength() === loaded;
+      // Like live data: a replay step follows the newest bar while the view
+      // rests at the end, and leaves it alone while the user looks at history.
+      // The first step and any seek (back or forward) show the replay
+      // position. (Read before the new bars land: `isAtEnd` compares against
+      // the old length.)
+      const step = forward && !this.replaySeeking;
+      const follow = !step || (this.autoScrollOnNewBar && this.viewport.isAtEnd());
+      if (forward) {
         // Forward step: append just the newly revealed bars and update
         // indicators from there — not re-copy, re-sanitize and recompute the
         // whole prefix on every tick of the replay clock.
@@ -1937,7 +1957,7 @@ export class Chart {
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
       this.displayDataCache = null;
-      this.updateViewportAndRender();
+      this.updateViewportAndRender(follow);
     });
     this.replayManager.play(config);
   }
@@ -1945,7 +1965,14 @@ export class Chart {
   replayPause(): void { this.replayManager.pause(); }
   replayResume(): void { this.replayManager.resume(); }
   replayStop(): void { this.replayManager.stop(); }
-  replaySeek(index: number): void { this.replayManager.seekTo(index); }
+  replaySeek(index: number): void {
+    this.replaySeeking = true;
+    try {
+      this.replayManager.seekTo(index);
+    } finally {
+      this.replaySeeking = false;
+    }
+  }
   setReplaySpeed(speed: number): void { this.replayManager.setSpeed(speed); }
   getReplayState(): 'playing' | 'paused' | 'stopped' { return this.replayManager.getState(); }
   getReplayProgress(): { current: number; total: number; percent: number } { return this.replayManager.getProgress(); }
@@ -2021,6 +2048,7 @@ export class Chart {
     this.priceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);
     this.chartLegend.setLocale(locale);
+    this.crosshairTooltip.setLocale(locale);
     this.sessionBreaks.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
     // Separators change label widths; the axis may need to refit.
@@ -2059,6 +2087,7 @@ export class Chart {
       this.currentPriceLine.setPricePrecision(config.pricePrecision);
       this.crosshairHandler.setPricePrecision(config.pricePrecision);
       this.chartLegend.setPricePrecision(config.pricePrecision);
+      this.crosshairTooltip.setPricePrecision(config.pricePrecision);
     }
 
     // Longer price labels may need a wider axis.
