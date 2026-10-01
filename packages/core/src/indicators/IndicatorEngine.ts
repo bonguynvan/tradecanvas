@@ -147,7 +147,14 @@ export class IndicatorEngine {
     Object.assign(instance.style, style);
   }
 
-  /** Compute the min/max of all visible overlay indicator values within a bar index range. */
+  /**
+   * Compute the min/max of all visible overlay indicator values within a bar
+   * index range. Called on every autoScale render (i.e. every pan/zoom
+   * frame while any overlay indicator is active) — must stay O(visible
+   * range), not O(dataset length). Walks `output.series` (array, indexed by
+   * bar position) directly over `[from, to]` instead of iterating the full
+   * `output.values` Map and discarding everything outside the range.
+   */
   getOverlayPriceRange(from: number, to: number): { min: number; max: number } | null {
     let gMin = Infinity;
     let gMax = -Infinity;
@@ -156,18 +163,20 @@ export class IndicatorEngine {
       if (!instance.output || !instance.config.visible) continue;
       if (instance.plugin.descriptor.placement !== 'overlay') continue;
 
-      let idx = 0;
-      for (const [, val] of instance.output.values) {
-        if (idx >= from && idx <= to) {
-          for (const key in val) {
-            const v = val[key];
-            if (v !== undefined && isFinite(v)) {
-              if (v < gMin) gMin = v;
-              if (v > gMax) gMax = v;
-            }
+      const series = instance.output.series;
+      if (!series) continue; // no array form published — nothing to scan safely in range
+
+      const end = Math.min(to, series.length - 1);
+      for (let idx = Math.max(0, from); idx <= end; idx++) {
+        const val = series[idx];
+        if (!val) continue;
+        for (const key in val) {
+          const v = val[key];
+          if (v !== undefined && isFinite(v)) {
+            if (v < gMin) gMin = v;
+            if (v > gMax) gMax = v;
           }
         }
-        idx++;
       }
     }
 

@@ -68,4 +68,26 @@ describe('computeIndicatorPriceRange', () => {
     expect(range.min).toBeCloseTo(8);
     expect(range.max).toBeCloseTo(32);
   });
+
+  it('uses the series array (not the values map) when present, staying windowed the same way', () => {
+    // Real indicator instances populate both `values` and `series` — this is
+    // the actual hot path hit on every pan/zoom frame, so it must window
+    // correctly without ever touching the out-of-range entries.
+    const series: (IndicatorValue | null)[] = [
+      { value: -100 }, null, { value: 10 }, { value: 30 }, { value: 9999 },
+    ];
+    const out: IndicatorOutput = { values: new Map(), series };
+    const range = computeIndicatorPriceRange(out, 2, 3);
+    expect(range.min).toBeCloseTo(8);
+    expect(range.max).toBeCloseTo(32);
+  });
+
+  it('skips null entries in the series array', () => {
+    // Only one real value in range (50) -> flat range, same 0.1-fallback padding as the Map path.
+    const series: (IndicatorValue | null)[] = [null, null, { value: 50 }];
+    const out: IndicatorOutput = { values: new Map(), series };
+    const range = computeIndicatorPriceRange(out, 0, 2);
+    expect(range.min).toBeCloseTo(49.9);
+    expect(range.max).toBeCloseTo(50.1);
+  });
 });

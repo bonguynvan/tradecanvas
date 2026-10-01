@@ -101,6 +101,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'ema', name: 'EMA', type: 'overlay' },
   { id: 'tema', name: 'Triple EMA', type: 'overlay' },
   { id: 'vwma', name: 'VWMA', type: 'overlay' },
+  { id: 'wma', name: 'Weighted MA', type: 'overlay' },
   { id: 'hma', name: 'Hull MA', type: 'overlay' },
   { id: 'mtfma', name: 'MTF Moving Average', type: 'overlay' },
   { id: 'bb', name: 'Bollinger Bands', type: 'overlay' },

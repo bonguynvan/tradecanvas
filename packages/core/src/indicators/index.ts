@@ -21,6 +21,7 @@ export { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
 export { ChandelierExitIndicator } from './overlay/ChandelierExit.js';
 export { AlligatorIndicator } from './overlay/Alligator.js';
 export { VWMAIndicator } from './overlay/VWMA.js';
+export { WMAIndicator } from './overlay/WMA.js';
 export { EnvelopeIndicator } from './overlay/Envelope.js';
 export { TEMAIndicator } from './overlay/TEMA.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
