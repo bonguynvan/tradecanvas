@@ -169,6 +169,13 @@ export class Chart {
   private container: HTMLElement;
   private currentPriceLine: import('@tradecanvas/core').CurrentPriceLine;
   private numberLocale: string;
+  /**
+   * The `autoScale` the chart was constructed with — distinct from
+   * `this.options.autoScale`, which drag-to-scale/vertical-pan mutate at
+   * runtime to freeze the Y-axis. `setData()` restores this default so a
+   * freeze on the old symbol doesn't silently carry over to a new one.
+   */
+  private defaultAutoScale: boolean;
   private keyboardHandler: KeyboardHandler | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
@@ -178,6 +185,7 @@ export class Chart {
     this.container = container;
     this.options = options;
     this.numberLocale = options.numberLocale ?? 'en-US';
+    this.defaultAutoScale = options.autoScale !== false;
 
     // Resolve feature flags (all default to true)
     const f = options.features ?? {};
@@ -676,6 +684,12 @@ export class Chart {
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
+    // A full data replace means a new series (symbol/timeframe switch, not
+    // a live tick — those go through appendBar/updateLastBar instead), so
+    // un-freeze the Y-axis the same way scrollToEnd below resets the X-axis.
+    // Otherwise a price-axis drag or vertical pan on the old symbol silently
+    // keeps the new symbol's chart stuck on the old price range.
+    this.options.autoScale = this.defaultAutoScale;
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     this.alertManager.clearLastValues();
@@ -1494,6 +1508,10 @@ export class Chart {
 
   setAutoScale(enabled: boolean): void {
     this.options.autoScale = enabled;
+    // Unlike the drag-to-scale/vertical-pan gesture freeze, an explicit call
+    // here is a deliberate preference — it should survive the next setData()
+    // the same way a constructor-time `autoScale: false` would.
+    this.defaultAutoScale = enabled;
     this.updateViewportAndRender();
   }
 

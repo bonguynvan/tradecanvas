@@ -113,8 +113,11 @@ export interface IndicatorDef {
 export const INDICATORS: IndicatorDef[] = [
   { id: 'sma', name: 'SMA', type: 'overlay' },
   { id: 'ema', name: 'EMA', type: 'overlay' },
+  { id: 'tema', name: 'Triple EMA', type: 'overlay' },
+  { id: 'vwma', name: 'VWMA', type: 'overlay' },
   { id: 'hma', name: 'Hull MA', type: 'overlay' },
   { id: 'bb', name: 'Bollinger Bands', type: 'overlay' },
+  { id: 'envelope', name: 'Envelope', type: 'overlay' },
   { id: 'vwap', name: 'VWAP', type: 'overlay' },
   { id: 'avwap', name: 'Anchored VWAP', type: 'overlay' },
   { id: 'ichimoku', name: 'Ichimoku Cloud', type: 'overlay' },
