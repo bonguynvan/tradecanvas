@@ -137,15 +137,16 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
     title: 'Bar replay',
     stat: 'scrubber',
     blurb:
-      'Step through history bar by bar to practice reads without hindsight. Play, pause, step, seek and change speed; indicators update incrementally as bars arrive.',
+      'Step through history bar by bar to practice reads without hindsight. Live data is held aside while you replay; the price scale fits every step.',
     tryThis: [
-      'Press play on the scrubber, or step one bar at a time',
+      'Press play, or step one bar at a time with Shift+→ / Shift+←',
       'Click any revealed bar to jump the cursor there',
-      'Close the scrubber to restore the full series',
+      '“Back to realtime” returns to the live series',
     ],
-    code: `widget.toggleReplay()        // scrubber UI
-chart.replayStart({ startIndex: 200, speed: 2 })
-chart.replayPause() / replayResume() / replaySeek(i)`,
+    code: `widget.toggleReplay()             // pick a start bar on the chart
+widget.replayFrom(220)            // or start at a bar directly
+chart.replayStart({ startIndex: 220, paused: true, interval: 1000, speed: 5 })
+chart.replayStop()                // back to the live series`,
     options: () => ({
       symbol: 'DEMO',
       symbols: ['DEMO'],
@@ -154,9 +155,7 @@ chart.replayPause() / replayResume() / replaySeek(i)`,
     }),
     data: (symbol) => generateBars(400, symbol, HOUR, 120),
     setup: (widget, chart) => {
-      widget.toggleReplay();
-      const total = chart.getData().length;
-      chart.replaySeek(Math.floor(total * 0.55));
+      widget.replayFrom(Math.floor(chart.getData().length * 0.55));
     },
   },
   {
