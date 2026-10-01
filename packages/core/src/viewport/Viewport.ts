@@ -4,6 +4,19 @@ import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEI
 
 export class Viewport {
   private state: ViewportState;
+  // A field rather than state: computeChartRect runs while state is being built.
+  private priceAxisWidth = PRICE_AXIS_WIDTH;
+  /**
+   * `getState()` used to deep-clone on every single call — cheap in
+   * isolation, but a single render pass calls it 8-10+ times (render
+   * context, panel layout, overlay plugins, event emission, …), and it
+   * runs on every pan/zoom/resize frame. That's a lot of short-lived
+   * garbage generated at 60fps, which shows up as GC-pause micro-stutter
+   * during continuous dragging. Cached here and invalidated by every
+   * mutating method instead — multiple reads between mutations now return
+   * the same object instead of re-cloning.
+   */
+  private stateCache: ViewportState | null = null;
   private dataLength = 0;
   private minBarWidth: number;
   private maxBarWidth: number;
@@ -30,19 +43,31 @@ export class Viewport {
     };
   }
 
-  /** Returns a snapshot (deep copy). Safe to store/pass. */
+  /**
+   * Returns a snapshot (deep copy). Safe to store/pass. Cached: repeated
+   * calls between mutations return the same object rather than re-cloning.
+   */
   getState(): ViewportState {
-    return {
-      visibleRange: { ...this.state.visibleRange },
-      priceRange: { ...this.state.priceRange },
-      barWidth: this.state.barWidth,
-      barSpacing: this.state.barSpacing,
-      offset: this.state.offset,
-      chartRect: { ...this.state.chartRect },
-      logScale: this.state.logScale,
-      scaleMode: this.state.scaleMode,
-      scaleBaseline: this.state.scaleBaseline,
-    };
+    if (!this.stateCache) {
+      this.stateCache = {
+        visibleRange: { ...this.state.visibleRange },
+        priceRange: { ...this.state.priceRange },
+        barWidth: this.state.barWidth,
+        barSpacing: this.state.barSpacing,
+        offset: this.state.offset,
+        chartRect: { ...this.state.chartRect },
+        logScale: this.state.logScale,
+        scaleMode: this.state.scaleMode,
+        scaleBaseline: this.state.scaleBaseline,
+        priceAxisWidth: this.state.priceAxisWidth,
+      };
+    }
+    return this.stateCache;
+  }
+
+  /** Drop the cached snapshot — called by every method that mutates `state`. */
+  private invalidate(): void {
+    this.stateCache = null;
   }
 
   setLogScale(enabled: boolean): void {
@@ -57,6 +82,7 @@ export class Viewport {
   setScaleMode(mode: PriceScaleMode): void {
     this.state.scaleMode = mode;
     this.state.logScale = mode === 'logarithmic';
+    this.invalidate();
   }
 
   getScaleMode(): PriceScaleMode {
@@ -66,23 +92,33 @@ export class Viewport {
   /** Reference price for percentage / indexed-to-100 axis labels. */
   setScaleBaseline(price: number | undefined): void {
     this.state.scaleBaseline = price;
+    this.invalidate();
   }
 
   setRightMargin(bars: number): void {
     this.rightMarginBars = bars;
   }
 
+  /** Width of the price axis strip; see `ViewportState.priceAxisWidth`. */
+  setPriceAxisWidth(width: number): void {
+    if (this.priceAxisWidth === width) return;
+    this.priceAxisWidth = width;
+    this.state.priceAxisWidth = width;
+    this.invalidate();
+  }
+
   private computeChartRect(width: number, height: number): Rect {
     return {
       x: 0,
       y: 0,
-      width: Math.max(0, width - PRICE_AXIS_WIDTH),
+      width: Math.max(0, width - this.priceAxisWidth),
       height: Math.max(0, height - TIME_AXIS_HEIGHT),
     };
   }
 
   resize(width: number, height: number): void {
     this.state.chartRect = this.computeChartRect(width, height);
+    this.invalidate();
     this.clampOffset();
   }
 
@@ -93,6 +129,7 @@ export class Viewport {
       width: Math.max(0, rect.width),
       height: Math.max(0, rect.height),
     };
+    this.invalidate();
     this.clampOffset();
     this.updateVisibleRange();
   }
@@ -111,11 +148,13 @@ export class Viewport {
         Math.min(this.state.visibleRange.to, this.dataLength - 1),
         0.08, // 8% padding for more breathing room
       );
+      this.invalidate();
     }
   }
 
   setPriceRange(min: number, max: number): void {
     this.state.priceRange = { min, max };
+    this.invalidate();
   }
 
   /**
@@ -130,10 +169,12 @@ export class Viewport {
     const half = (max - min) / 2;
     const newHalf = Math.max(half * factor, 1e-9);
     this.state.priceRange = { min: mid - newHalf, max: mid + newHalf };
+    this.invalidate();
   }
 
   scrollBy(deltaPixels: number): void {
     this.state.offset += deltaPixels;
+    this.invalidate();
     this.clampOffset();
     this.updateVisibleRange();
   }
@@ -161,10 +202,12 @@ export class Viewport {
         min: Math.exp(logMin - shift),
         max: Math.exp(logMax - shift),
       };
+      this.invalidate();
       return;
     }
     const shift = (max - min) * frac;
     this.state.priceRange = { min: min - shift, max: max - shift };
+    this.invalidate();
   }
 
   /** Returns true if the viewport is scrolled to show the latest bars. */
@@ -187,6 +230,7 @@ export class Viewport {
     // the bars on the right side of the viewport with empty space on the
     // left, matching TradingView's behaviour for sparse charts.
     this.state.offset = totalWidth - this.state.chartRect.width + rightMarginPx;
+    this.invalidate();
     this.updateVisibleRange();
   }
 
@@ -205,6 +249,7 @@ export class Viewport {
     this.state.barWidth = newBarWidth;
     const newBarUnit = newBarWidth + this.state.barSpacing;
     this.state.offset = centerBarIndex * newBarUnit - centerX;
+    this.invalidate();
 
     this.clampOffset();
     this.updateVisibleRange();
@@ -246,6 +291,7 @@ export class Viewport {
     }
 
     this.state.offset = clamp(this.state.offset, minOffset, maxOffset);
+    this.invalidate();
   }
 
   private updateVisibleRange(): void {
@@ -255,5 +301,6 @@ export class Viewport {
     const visibleBars = Math.ceil(this.state.chartRect.width / barUnit) + 1;
     const to = Math.min(from + visibleBars, this.dataLength - 1);
     this.state.visibleRange = { from: Math.max(0, from), to: Math.max(0, to) };
+    this.invalidate();
   }
 }

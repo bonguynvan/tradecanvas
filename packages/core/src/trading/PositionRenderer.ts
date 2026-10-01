@@ -140,7 +140,7 @@ export class PositionRenderer {
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
       ctx.fillStyle = entryColor;
-      ctx.fillRect(axisX, entryY - 9, PRICE_AXIS_WIDTH - 2, 18);
+      ctx.fillRect(axisX, entryY - 9, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 18);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `11px ${theme.font.family}`;
       ctx.textAlign = 'left';

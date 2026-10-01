@@ -96,8 +96,15 @@ export class WebSocketAdapter implements DataAdapter {
           // best-effort unsubscribe during teardown
         }
       }
-      this.ws.onclose = null; // prevent reconnect trigger (matches BinanceAdapter)
-      this.ws.close();
+      // Detach every handler (matches BinanceAdapter): a still-CONNECTING
+      // socket fires `error` on close, which would reach the next
+      // connection's listeners on this (reused) adapter.
+      const ws = this.ws;
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+      ws.close();
       this.ws = null;
     }
     this.setState('disconnected');

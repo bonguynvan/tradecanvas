@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -14,7 +15,7 @@ export class EMAIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 20, 1);
     const multiplier = 2 / (period + 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
     let ema = 0;
@@ -33,6 +34,20 @@ export class EMAIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    const period = getIntParam(config, 'period', 20, 1);
+    // Resume needs a post-seed EMA at from-1; inside the warm-up, recompute.
+    if (from < period || !this.canResume(data, prev, from)) return null;
+    let ema = prev.series![from - 1]?.value;
+    if (ema === undefined) return null;
+    const multiplier = 2 / (period + 1);
+    for (let i = from; i < data.length; i++) {
+      ema = (data[i].close - ema) * multiplier + ema;
+      this.writePoint(prev, data, i, { value: ema });
+    }
+    return prev;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {

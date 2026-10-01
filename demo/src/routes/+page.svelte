@@ -4,6 +4,7 @@
   import LiveTerminal from '$lib/components/LiveTerminal.svelte';
   import ChartGallery from '$lib/components/ChartGallery.svelte';
   import FinanceCharts from '$lib/components/FinanceCharts.svelte';
+  import FeatureLab from '$lib/components/FeatureLab.svelte';
 
   const PM_COMMANDS = [
     { label: 'npm', cmd: 'npm install @tradecanvas/chart' },
@@ -23,10 +24,77 @@
   }
 
   const STATS = [
-    { value: '66', label: 'Indicators' },
-    { value: '24', label: 'Drawing tools' },
+    { value: '70', label: 'Indicators' },
+    { value: '40', label: 'Drawing tools' },
     { value: '17', label: 'Chart types' },
     { value: '0', label: 'Dependencies' },
+  ];
+
+  const QUICKSTART = [
+    {
+      label: 'Widget',
+      code: `import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  adapter: new BinanceAdapter(),
+  locale: 'en',            // or 'vi'
+  trading: true,
+})`,
+    },
+    {
+      label: 'React',
+      code: `import { TradeCanvas } from '@tradecanvas/react'
+
+export function Chart() {
+  return (
+    <div style={{ height: 520 }}>
+      <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['bb', 'rsi']} />
+    </div>
+  )
+}`,
+    },
+    {
+      label: 'Vue',
+      code: `<script setup lang="ts">
+import { TradeCanvas } from '@tradecanvas/vue'
+<` + `/script>
+
+<template>
+  <div style="height: 520px">
+    <TradeCanvas symbol="BTCUSDT" timeframe="5m" :indicators="['bb', 'rsi']" />
+  </div>
+</template>`,
+    },
+    {
+      label: 'Svelte',
+      code: `<script lang="ts">
+  import { TradeCanvas } from '@tradecanvas/svelte'
+<` + `/script>
+
+<div style="height: 520px">
+  <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['bb', 'rsi']} />
+</div>`,
+    },
+    {
+      label: 'Chart (headless)',
+      code: `import { Chart, BinanceAdapter } from '@tradecanvas/chart'
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '5m' })
+chart.addIndicator('ema', { period: 21 })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
+    },
+  ];
+  let activeQuickstart = $state(0);
+
+  const PERF = [
+    { value: '0.001 ms', label: 'live tick, 4 indicators, 100k bars' },
+    { value: '27 ms', label: 'full recalc on a switch, 100k bars' },
+    { value: '0.32 ms', label: 'LTTB downsample 100k → 1,600 points' },
+    { value: '< 0.3 ms', label: 'hover frame, flat from 500 to 100k bars' },
   ];
 </script>
 
@@ -34,22 +102,22 @@
   <title>TradeCanvas — High-Performance Canvas Trading Chart</title>
   <meta
     name="description"
-    content="Production-ready canvas trading chart with built-in TradingView-like UI: 66 indicators, 24 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
+    content="Production-ready canvas trading chart with built-in TradingView-like UI: 70 indicators, 40 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
   />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="TradeCanvas — Trading chart library" />
-  <meta property="og:description" content="High-performance canvas trading chart with built-in UI, 66 indicators, real-time streaming, and backtesting." />
+  <meta property="og:description" content="High-performance canvas trading chart with built-in UI, 70 indicators, real-time streaming, and backtesting." />
   <meta property="og:image" content="https://bonguynvan.github.io/tradecanvas/og.svg" />
   <meta property="og:url" content="https://bonguynvan.github.io/tradecanvas/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="TradeCanvas" />
-  <meta name="twitter:description" content="High-performance canvas trading chart with built-in UI, 66 indicators, real-time streaming, and backtesting." />
+  <meta name="twitter:description" content="High-performance canvas trading chart with built-in UI, 70 indicators, real-time streaming, and backtesting." />
   <meta name="twitter:image" content="https://bonguynvan.github.io/tradecanvas/og.svg" />
 </svelte:head>
 
 <section class="hero-split">
   <div class="hero-copy">
-    <span class="hero-eyebrow"><span class="dot"></span> v0.14 · 66 indicators</span>
+    <span class="hero-eyebrow"><span class="dot"></span> v1.2 · MIT · zero dependencies</span>
     <h1 class="hero-h1">The trading chart that ships with its&nbsp;UI.</h1>
     <p class="hero-lede">
       A high-performance, zero-dependency canvas charting engine with a built-in
@@ -88,92 +156,57 @@
   </div>
 </section>
 
+<FeatureLab />
+
 <ChartGallery />
 
 <section class="features-section">
-  <h2 class="section-title">Built for trading</h2>
-  <p class="section-subtitle">Everything you need for a professional trading chart, in a single package.</p>
+  <h2 class="section-title">Under the hood</h2>
+  <p class="section-subtitle">What the Feature Lab runs on — measured, documented, and yours to extend.</p>
 
-  <div class="feature-grid">
-    <div class="feature-card">
-      <div class="feature-icon">/\</div>
-      <h3>66 technical indicators</h3>
-      <p>
-        SMA, EMA, RSI, MACD, Bollinger, Ichimoku, Stochastic RSI, Supertrend,
-        Anchored VWAP, plus a deep oscillator bench (PPO, RMI, Disparity, Qstick,
-        PGO, and more) — all computed internally with zero external math libraries.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon feature-icon--green">//</div>
-      <h3>24 drawing tools</h3>
-      <p>
-        Trendlines, Fibonacci (incl. Time Zones), channels, Elliott waves, Gann tools.
-        Click-to-place with magnet snapping, undo/redo, and full serialization.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">[/]</div>
-      <h3>17 chart types</h3>
-      <p>
-        Candlestick, OHLC bars, line, area, baseline, hollow candles, Heikin-Ashi,
-        Renko, Kagi, Line Break, Point &amp; Figure, Range Bars, Volume Candles,
-        Equivolume, HLC Area, Step Line, and Line+Markers.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon feature-icon--green">▦</div>
-      <h3>ChartWidget (built-in UI)</h3>
-      <p>
-        One-line embed — <code>new ChartWidget(host, &#123;...&#125;)</code> ships a full
-        TradingView-like UI: toolbar, drawing sidebar, settings dialog, status bar.
-        Framework-agnostic.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">$</div>
-      <h3>Trading overlay</h3>
-      <p>
-        Render positions, orders, SL/TP markers directly on the chart. Drag to modify.
-        Partial-close strips, multi-stop P&amp;L gradient, custom label templates.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon feature-icon--green">~</div>
-      <h3>Real-time streaming</h3>
-      <p>
-        Built-in Binance WebSocket adapter with typed REST + WS validators. Or plug in
-        your own data source with the simple <code>DataAdapter</code> interface.
-        Auto-reconnect included.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">⚙</div>
-      <h3>Web Worker pipeline</h3>
-      <p>
-        Indicator math runs off the render loop via <code>IndicatorWorkerHost</code> —
-        Promise-based <code>calculate()</code>, sync fallback for SSR/tests,
-        per-request timeout. No frozen frames.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon feature-icon--green">⊕</div>
-      <h3>Backtester + Monte Carlo</h3>
-      <p>
-        Bar-by-bar <code>Backtester</code> with virtual fills, slippage / commission models,
-        plus a 4-strategy reference library. <code>runMonteCarlo()</code> exposes
-        path-dependence with P5/P95 equity bands and probability-of-profit.
-      </p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">⤴</div>
-      <h3>TradingView gestures</h3>
-      <p>
-        Drag the price/time axes to scale, double-click to reset, <kbd>Shift</kbd>+drag for
-        a measure ruler, <kbd>Alt</kbd>+click to pin a tooltip, hover for axis pill labels
-        that follow the cursor. The set of moves a serious trader expects.
-      </p>
-    </div>
+  <div class="bento">
+    <article class="tile tile--perf">
+      <h3>Performance you can measure</h3>
+      <dl class="perf-grid">
+        {#each PERF as p}
+          <div>
+            <dt>{p.value}</dt>
+            <dd>{p.label}</dd>
+          </div>
+        {/each}
+      </dl>
+      <p class="tile-foot">Multi-layer Canvas2D, dirty-layer repaint, visible-range rendering. Run <code>pnpm bench</code> to reproduce.</p>
+    </article>
+
+    <article class="tile">
+      <h3>One call, full UI</h3>
+      <p><code>ChartWidget</code>: toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay, command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>), English and Vietnamese.</p>
+    </article>
+
+    <article class="tile">
+      <h3>Any data feed</h3>
+      <p>Binance, Coinbase, Bybit and Kraken built in; <code>WebSocketAdapter</code> / <code>PollingAdapter</code> for the rest. Auto-reconnect, race-free switching.</p>
+    </article>
+
+    <article class="tile">
+      <h3>A trading surface</h3>
+      <p><code>ExecutionAdapter</code> with a paper broker, drag-to-create orders, brackets, draggable SL/TP, alerts to webhooks and desktop notifications.</p>
+    </article>
+
+    <article class="tile">
+      <h3>React, Vue, Svelte</h3>
+      <p><code>@tradecanvas/react</code>, <code>/vue</code>, <code>/svelte</code> — reactive props, typed, the full <code>Chart</code> one ref away.</p>
+    </article>
+
+    <article class="tile">
+      <h3>Plugin SDK</h3>
+      <p>Custom indicators (with incremental <code>update()</code>), drawing tools, chart types and overlays — registered globally or per chart.</p>
+    </article>
+
+    <article class="tile tile--wide">
+      <h3>Analytics and gestures</h3>
+      <p>Bar-by-bar <code>Backtester</code> with Monte Carlo bands, a Web Worker indicator pipeline — and the moves traders expect: drag axes to scale, double-click to reset, <kbd>Shift</kbd>+drag to measure, <kbd>Alt</kbd>+click to pin a tooltip.</p>
+    </article>
   </div>
 </section>
 
@@ -181,29 +214,18 @@
 
 <section class="quickstart-section">
   <h2 class="section-title">Quick start</h2>
-  <p class="section-subtitle">
-    A full-featured trading chart with live data in one call. Drop-in
-    <code>ChartWidget</code> — no framework needed.
-  </p>
+  <p class="section-subtitle">The full widget, a framework component, or the headless engine — same chart underneath.</p>
 
-  <pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  historyLimit: 500,
-  trading: true,
-  onReady: (chart) => {
-    chart.on('orderPlace', (e) => console.log('order intent', e.payload))
-  },
-})`}</code></pre>
+  <div class="qs-tabs" role="tablist" aria-label="Quick start flavor">
+    {#each QUICKSTART as q, i}
+      <button type="button" role="tab" class="qs-tab" class:active={activeQuickstart === i} aria-selected={activeQuickstart === i} onclick={() => { activeQuickstart = i; }}>{q.label}</button>
+    {/each}
+  </div>
+  <pre><code>{QUICKSTART[activeQuickstart].code}</code></pre>
 
   <div style="text-align: center; margin-top: 32px;">
     <a href="{base}/docs/getting-started" class="cta-btn cta-btn--primary">Read the docs</a>
-    <a href="{base}/examples" class="cta-btn cta-btn--ghost" style="margin-left: 8px">See examples</a>
+    <a href="{base}/examples" class="cta-btn cta-btn--ghost" style="margin-left: 8px">Open a sandbox</a>
   </div>
 </section>
 
@@ -323,6 +345,114 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
     font-weight: 500;
   }
 
+  /* --- Bento --- */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  .tile {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+
+  .tile:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    transform: translateY(-2px);
+  }
+
+  .tile h3 {
+    font-size: 15px;
+    margin: 0 0 8px;
+  }
+
+  .tile p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .tile code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    color: var(--accent);
+  }
+
+  .tile--perf {
+    grid-column: span 2;
+    grid-row: span 2;
+    background:
+      radial-gradient(120% 80% at 0% 0%, var(--accent-glow), transparent 60%),
+      var(--bg-card);
+  }
+
+  /* Fills the last row: Plugin SDK (1) + this (3). */
+  .tile--wide { grid-column: span 3; }
+
+  .perf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 24px;
+    margin: 18px 0;
+  }
+
+  .perf-grid dt {
+    font-family: var(--font-mono);
+    font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .perf-grid dd {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .tile p.tile-foot { font-size: 12.5px; }
+
+  /* --- Quick start tabs --- */
+  .qs-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .qs-tab {
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color var(--transition), border-color var(--transition), background var(--transition);
+  }
+
+  .qs-tab:hover { color: var(--text); }
+  .qs-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .qs-tab.active {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .qs-tab { transition: none; }
+    .tile:hover { transform: none; }
+  }
+
   pre {
     background: var(--bg-elevated);
     border: 1px solid var(--border);
@@ -343,6 +473,17 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
       text-align: left;
     }
     .hero-split::before { left: -10%; }
+  }
+
+  @media (max-width: 1024px) {
+    .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tile--perf { grid-row: auto; }
+    .tile--wide { grid-column: auto; }
+  }
+
+  @media (max-width: 640px) {
+    .bento { grid-template-columns: 1fr; }
+    .tile--perf, .tile--wide { grid-column: auto; grid-row: auto; }
   }
 
   @media (max-width: 768px) {

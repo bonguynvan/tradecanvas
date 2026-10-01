@@ -1,4 +1,5 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput } from '@tradecanvas/commons';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 
 /** Request sent from main thread → worker. */
 export type IndicatorWorkerRequest =
@@ -22,4 +23,15 @@ export function isWorkerResponse(value: unknown): value is IndicatorWorkerRespon
   const v = value as { type?: unknown; requestId?: unknown };
   if (typeof v.requestId !== 'number') return false;
   return v.type === 'result' || v.type === 'pong' || v.type === 'error';
+}
+
+/**
+ * Make a calculate() result safe to `postMessage`. Structured clone copies a
+ * Map's internal entries without calling its methods, and an
+ * `IndicatorValueMap` keeps most entries outside them — it would arrive empty.
+ */
+export function toCloneableOutput(output: IndicatorOutput): IndicatorOutput {
+  return output.values instanceof IndicatorValueMap
+    ? { ...output, values: new Map(output.values) }
+    : output;
 }

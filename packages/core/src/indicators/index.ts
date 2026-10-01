@@ -1,5 +1,6 @@
 export { IndicatorBase } from './IndicatorBase.js';
 export { IndicatorEngine } from './IndicatorEngine.js';
+export { IndicatorValueMap } from './IndicatorValueMap.js';
 export { registerBuiltInIndicators } from './registry.js';
 // Overlays
 export { SMAIndicator } from './overlay/SMA.js';
@@ -20,6 +21,10 @@ export { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 export { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
 export { ChandelierExitIndicator } from './overlay/ChandelierExit.js';
 export { AlligatorIndicator } from './overlay/Alligator.js';
+export { VWMAIndicator } from './overlay/VWMA.js';
+export { WMAIndicator } from './overlay/WMA.js';
+export { EnvelopeIndicator } from './overlay/Envelope.js';
+export { TEMAIndicator } from './overlay/TEMA.js';
 export { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 export { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 export { VolumeDeltaIndicator } from './panel/VolumeDelta.js';

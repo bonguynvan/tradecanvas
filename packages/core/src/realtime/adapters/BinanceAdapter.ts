@@ -52,8 +52,16 @@ export class BinanceAdapter implements DataAdapter {
 
   disconnect(): void {
     if (this.ws) {
-      this.ws.onclose = null; // prevent reconnect trigger
-      this.ws.close();
+      // Detach every handler, not just onclose: closing a socket that is
+      // still CONNECTING fires `error`, and the adapter is typically reused by
+      // the next connection (symbol/timeframe switch) — a stale error or
+      // message would land on that connection's listeners.
+      const ws = this.ws;
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+      ws.close();
       this.ws = null;
     }
     this.setState('disconnected');

@@ -8,8 +8,8 @@ High-performance canvas trading chart with built-in indicators, drawing tools, a
 
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
-- **33 built-in indicators** — SMA, EMA, Hull MA, RSI, MACD, Bollinger, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
-- **24 drawing tools** — Trendlines, Fibonacci (retracement, extension, time zones), horizontal/vertical lines, channels, Elliott waves, Gann fans / boxes, Pitchfork, Volume Profile range. With undo/redo and full serialization.
+- **70 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
+- **40 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan), horizontal/vertical lines, channels, pitchforks (Andrews, Schiff, modified Schiff), Gann fans / boxes, cyclic lines, harmonic patterns (XABCD, ABCD, head and shoulders, Elliott waves), date & price range, Long/Short Position, Volume Profile range. With undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
 - **TradingView-grade interaction** *(new in 0.9)* — drag the price/time axes to scale, double-click to auto-fit, `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
@@ -53,7 +53,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 33 indicators, all 24 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 70 indicators, all 40 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -100,6 +100,30 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `onSymbolChange` | `(symbol) => void` | — | Symbol change callback |
 | `onTimeframeChange` | `(tf) => void` | — | Timeframe change callback |
 | `onReady` | `(chart) => void` | — | Fired when chart is ready |
+| `locale` | `string` | `'en'` | UI chrome language — built-in `'en'` / `'vi'`, see **Widget i18n** below |
+| `messages` | `Partial<Record<MessageKey, string>>` | — | Override or add individual UI strings on top of `locale` |
+
+### Widget i18n
+
+`locale` and `messages` translate `ChartWidget`'s own chrome — toolbar, watchlist, indicator-picker section headers (Popular/All, overlay/panel tags), status bar, settings panel (titles/tabs/section headers), and hotkey sheet (title/group headers). Set at construction; not currently hot-swappable at runtime.
+
+```ts
+new ChartWidget(el, {
+  locale: 'vi',                              // built-in Vietnamese table
+  messages: { 'watchlist.title': 'Theo dõi' }, // override/add individual keys — always wins
+  chartOptions: { numberLocale: 'vi-VN' },    // separate: number/date formatting (see below)
+});
+```
+
+`locale`/`messages` only cover chrome **text**; they're independent of `chartOptions.numberLocale`, which controls number/date **formatting** (price axis, legend, watchlist prices, current-price tag, session-break dates) via `Intl`/`toLocaleString`.
+
+Not yet covered by `locale` (still English; PRs welcome, or override via `messages`/your own CSS):
+- Indicator and drawing-tool **names** (SMA, Bollinger Bands, Trend Line, …) — these come from `widgetConfig.ts`'s data tables, not the message catalog.
+- Individual settings rows beyond the tab/section level (e.g. "Up Body", "Grid Lines").
+- Individual hotkey-sheet shortcut labels and key-cap text (group titles are translated).
+- Alerts panel, symbol search, command palette, data window, depth ladder, bracket bar, replay bar, drawing-style panel, object tree.
+
+See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) and the English/Vietnamese tables.
 
 ### Widget vs Headless
 
@@ -111,6 +135,51 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | Framework | Any (React, Vue, Svelte, vanilla) | Vanilla JS DOM (works everywhere) |
 | Customization | Full control | Toggle sections on/off |
 | Advanced access | Direct API | `widget.getChart()` for direct API |
+
+### Widget Theming
+
+`ChartWidget`'s own chrome (toolbar, sidebars, settings panel, watchlist — everything *outside* the canvas) is styled entirely through CSS custom properties on `.tcw-root`, the widget's own root element. These are a **stable, documented contract**: additive-only across minor/patch releases — a property is never renamed or removed without a major version bump. Override them from the host page; no build step or theme object needed.
+
+```css
+/* Dark is the default (no attribute needed); light sets data-tcw-theme="light" */
+.my-app .tcw-root:not([data-tcw-theme="light"]) {
+  --tcw-bg: #0a0a0f;
+  --tcw-accent: #7c5cff;
+  --tcw-radius: 0px;
+  --tcw-radius-lg: 0px;
+}
+```
+
+| Variable | Default (dark) | Purpose |
+|---|---|---|
+| `--tcw-bg` | `#0d0f17` | Root background |
+| `--tcw-bg-surface` | `#131722` | Panel / toolbar surface |
+| `--tcw-bg-elevated` | `#1a1e2d` | Popovers, dropdowns, modals |
+| `--tcw-bg-overlay` | `#20253480` | Backdrop behind overlays |
+| `--tcw-border` | `#2a2e39` | Default border |
+| `--tcw-border-strong` | `#363a45` | Emphasized border (focus rings, dividers) |
+| `--tcw-text` | `#e9ebf0` | Primary text |
+| `--tcw-text-dim` | `#b2b5be` | Secondary text |
+| `--tcw-text-muted` | `#6b6f7a` | Tertiary / placeholder text |
+| `--tcw-accent` | `#4f88ff` | Primary accent (active tab, focus, links) |
+| `--tcw-accent-hover` | `#6b9aff` | Accent hover state |
+| `--tcw-accent-soft` | `rgba(79,136,255,.14)` | Accent tint (selected row background) |
+| `--tcw-accent-glow` | `rgba(79,136,255,.22)` | Accent glow (focus halo) |
+| `--tcw-accent-line` | `rgba(79,136,255,.55)` | Accent border/underline |
+| `--tcw-red` / `--tcw-red-soft` | `#f23645` / tint | Down/sell/negative |
+| `--tcw-green` / `--tcw-green-soft` | `#26a17b` / tint | Up/buy/positive |
+| `--tcw-amber` | `#ff9f43` | Warning |
+| `--tcw-hover-bg` | `rgba(255,255,255,.05)` | Row/button hover background |
+| `--tcw-active-bg` | `rgba(255,255,255,.08)` | Row/button pressed background |
+| `--tcw-divider` | `rgba(255,255,255,.06)` | Hairline dividers |
+| `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | Transition easing |
+| `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Transition durations |
+| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | Corner radii — set to `0` for a square look |
+| `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow values | Elevation |
+| `--tcw-ring` | `0 0 0 2px rgba(79,136,255,.45)` | Focus ring |
+| `--tcw-font-mono` | `'JetBrains Mono', …` | Monospace font stack (price ladder, code) |
+
+Light theme (`[data-tcw-theme="light"]`) redefines the color group (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) with its own defaults — override both selectors if you support both themes.
 
 ## Features
 
@@ -632,12 +701,9 @@ interface OHLCBar {
 
 | Example | Description |
 |---|---|
-| [Live Demo](https://bonguynvan.github.io/tradecanvas/) | Full-featured demo with live Binance data |
-| [examples/basic](./examples/basic/) | Vanilla JS + live Binance streaming |
-| [examples/vanilla-static](./examples/vanilla-static/) | Vanilla JS + static data (offline) |
-| [examples/react](./examples/react/) | React 19 integration |
-| [examples/svelte](./examples/svelte/) | Svelte 5 integration |
-| [examples/vue](./examples/vue/) | Vue 3 integration |
+| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, replay, sub-cent prices + Vietnamese UI, 200k bars, slow-network switching — each on a live chart |
+| [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
+| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | Framework components — reactive props, typed, zero boilerplate |
 
 ## Browser Support
 

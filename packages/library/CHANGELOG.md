@@ -1,5 +1,286 @@
 # @tradecanvas/chart
 
+## 1.2.0
+
+### Minor Changes
+
+- `ChartWidget.toggleReplay()` is now public: open or close bar replay with
+  its scrubber from code — what the toolbar's Replay button does.
+
+- Sub-cent prices (e.g. PEPE at 0.0000043) no longer read "0.00". The OHLC
+  legend, the crosshair price pill and the last-price tag now use the
+  market's `pricePrecision` when `setMarket()` sets one, and otherwise the
+  price axis's own precision (new `autoPricePrecision()` in commons), always
+  in the configured `numberLocale`. The last-price tag is now the chart's own
+  — locale-aware, and set by `setMarket()` even without a stream adapter.
+  The price axis widens to fit its longest label (tick labels, last-price
+  tag, crosshair pill) like TradingView's auto-sized scale, instead of
+  clipping at a fixed 70px; it shrinks back with some slack so panning
+  doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
+  renderers and plugins.
+
+- 14 new drawing tools (26 → 40), the next step of TradingView Advanced Charts
+  drawing-tool parity:
+
+  - **Lines:** `infoLine` (trend line with a stats box: price change and %,
+    bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
+    `crossLine` (horizontal + vertical line through one point, single click).
+  - **Fibonacci:** `fibChannel` (A→B base, C sets the width; parallels at
+    Fibonacci fractions), `fibSpeedResistanceFan` (rays through Fibonacci
+    fractions of the move in both price and time).
+  - **Pitchforks:** `schiffPitchfork` and `modifiedSchiffPitchfork` alongside
+    Andrews' `pitchfork` (which gains a protected `origin()` hook the variants
+    override).
+  - **Patterns:** `xabcdPattern` (harmonic XABCD with XB / AC / BD / XD ratios),
+    `abcdPattern` (BC/AB, CD/BC ratios), `headAndShoulders` (seven pivots with
+    the neckline through both neck points).
+  - **Shapes / measuring / cycles / annotation:** `circle`,
+    `dateAndPriceRange` (price change, bars, time and volume traded in one box),
+    `cyclicLines` (vertical lines repeating at the A→B interval), `priceLabel`
+    (callout showing a point's price, or `style.text`).
+
+  Measuring labels format prices at the precision of the instrument's price
+  level (2 decimals for most, 4 for FX-range prices, significant digits for
+  prices under 1) instead of a fixed 2 decimals.
+
+  `ChartWidget` (and the demo) drawing toolbar is regrouped TradingView-style
+  into Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes,
+  Gann & Pitchforks, Patterns (new), Measure, Annotation and Forecasting — which
+  also exposes three tools that were registered but missing from the toolbar:
+  Fib Time Zones, Anchored VWAP and Fixed Range Volume Profile.
+
+  `ChartWidget`'s status bar no longer reads "Connecting..." forever when it
+  shows static data without an adapter.
+
+- 43b4ff5: Performance audit, round 2 — measured in a live browser profiler before and
+  after each change.
+
+  **Incremental indicators on live ticks (new API).** A live tick only changes
+  the forming bar, but every tick re-ran every indicator over the whole
+  history: ~30 ms per tick at 20k bars, ~150 ms at 100k, plus megabytes of
+  garbage — a main-thread freeze on every websocket update. New optional
+  `IndicatorPlugin.update(data, config, prev, from)` recomputes only bars from
+  `from` onward; `IndicatorEngine.recalculateFrom(data, from)` uses it and
+  falls back to `calculate()` when a plugin doesn't implement it or declines.
+  Implemented for SMA, EMA, WMA, VWMA, Bollinger Bands, Envelope, RSI, MACD,
+  ATR, OBV and Stochastic, each verified equal to a full recalculation across
+  ticks, bar closes and multi-bar appends. Ticks, `appendBar(s)`, stream bar
+  closes and replay steps now use it: a tick with 4 indicators at 100k bars
+  went from ~96 ms to ~0.001 ms (`pnpm bench`). Note: outputs returned by
+  `getIndicatorOutput()` are now updated in place on ticks rather than
+  replaced. `IndicatorBase` gains `canResume()` / `writePoint()` helpers.
+
+  **Price scale no longer jumps while live data streams in.** The live-tick
+  render path fit the price range to candles only, while the pan/zoom path
+  also included overlay indicators (Bollinger, Keltner, Ichimoku…) — so the
+  scale snapped back and forth by several percent every second. Both now share
+  one auto-scale routine.
+
+  **Switching symbol/timeframe while scrolled into history fits the new data.**
+  Auto-scale was computed before scrolling to the end, i.e. over the old
+  window, leaving every bar of the new series off-screen.
+
+  **New bars no longer yank you out of history.** `appendBar` and stream bar
+  closes now follow the live edge only if the view is already there (as
+  `appendBars` already did), and scroll after the viewport knows the new
+  length.
+
+  **Cheaper per-frame text.** `formatPrice` (axes, legend, crosshair pills,
+  current-price tag, panel axes) and session-break date labels used
+  `toLocaleString`/`toLocaleDateString`, which build a new `Intl` formatter on
+  every call (~20–40 µs each). Formatters are now cached per locale/precision
+  (~0.4 µs). Hover frames dropped from ~0.64 ms to ~0.23 ms.
+
+  **Other fixes found along the way:** `SessionBreaks` rescanned every bar on
+  every frame for series with no day boundary; `ATR` threw on series shorter
+  than its period; stream bar closes didn't invalidate the display cache (so
+  Heikin-Ashi etc. missed the new bar); `replayStart()` rendered the stale
+  pre-replay series and stacked a new step listener on every restart.
+
+- 021ea2e: Faster, race-free symbol/timeframe switching with a TradingView-style
+  loading state — measured in the live demo before and after.
+
+  **Loading only when it's slow.** `ChartWidget` used to blank the chart with
+  its loading overlay on every switch, so a normal ~130 ms request flashed.
+  Now the previous chart stays on screen and is veiled (dimmed, with a
+  "Loading chart..." card) only if the switch outlasts 200 ms; fast switches
+  just swap. The first load still shows the opaque skeleton immediately. Local
+  timeframe switches over static data (resampling) that are slow — 50k+ bars,
+  or the last one took 48 ms+ — veil the chart and let it paint _before_ the
+  main thread gets busy, instead of looking frozen. A failed history request
+  shows "Connection failed" on the veil and the status bar, and clears itself
+  when the stream's automatic retry succeeds. Outside a load, the status bar
+  now follows the stream's connection state (reconnecting / error / live)
+  instead of claiming "Live" no matter what — while a single transient error
+  on a healthy connection (one failed poll) no longer sticks.
+
+  **Fixed: the widget's loading overlay never went away without an adapter.**
+  It was tied to the connection state, which stays `connecting` when the host
+  feeds static data via `widget.setData()` / `getChart().setData()`. Any new
+  bars now end the loading state.
+
+  **Fixed: stale responses during fast switching.**
+
+  - `StreamManager`: a history request that a newer `connect()`,
+    `switchTo()` or `disconnect()` superseded is dropped instead of
+    overwriting the newer data (with `switchTo`, a slow earlier timeframe
+    could land last and win), and its failure is no longer reported or
+    retried. `switchTo()` also no longer lets the adapter's own
+    `'disconnected'` (e.g. `PollingAdapter`) schedule a reconnect that
+    superseded the switch when its request took longer than the retry delay.
+  - `ChartWidget`: a superseded connect no longer marks the widget connected
+    or hides the loading state while the newer one is still loading.
+  - `BinanceAdapter` / `WebSocketAdapter` (Bybit, Coinbase, Kraken):
+    `disconnect()` now detaches all socket handlers, not just `onclose` —
+    closing a socket that was still connecting fired `error` into the next
+    connection's listeners on the reused adapter.
+  - `Chart.connect()` superseded by a newer one no longer resets the bar
+    countdown to the old timeframe; `Chart.switchStream()` / `setTimeframe()`
+    now update the countdown at all.
+
+  **Cheaper full loads.** A switch recomputes every indicator over the whole
+  history; most of that time went into building each indicator's `values`
+  `Map` keyed by timestamps. New `IndicatorValueMap` (exported) is a drop-in
+  `Map<number, IndicatorValue>` that keeps entries in arrays while keys arrive
+  in ascending order and binary-searches lookups, falling back to a real Map
+  otherwise; all built-in indicators use it (the indicator Web Worker posts
+  results as plain Maps, since structured clone can't see its array-held
+  entries). `setData` also reuses
+  already-valid bars instead of copying each one. BB + EMA + RSI + MACD full
+  recalculation: 20k bars ~13 → ~5 ms, 100k bars ~96 → ~27 ms (`pnpm bench`).
+
+  Demo: `/embed?latency=1500` simulates a slow network (shows the veil on
+  switches); `/embed?bars=200000&timeframe=1m` loads a large static series
+  whose timeframe switches resample locally.
+
+- 6cf12af: Add three new built-in indicators toward TradingView Advanced Charts parity:
+
+  - `vwma` — Volume Weighted Moving Average
+  - `envelope` — Moving Average Envelope (SMA ± a fixed % band)
+  - `tema` — Triple EMA (`3×EMA1 − 3×EMA2 + EMA3`, less lag than a plain EMA)
+
+  Also corrects the long-stale "33 indicators" marketing figure across the
+  READMEs and demo docs — the registry actually has 69 registered indicators
+  (69 after this change); the count had drifted out of sync for a while.
+
+- edbdb56: Second increment of TradingView Advanced Charts drawing-tool parity:
+
+  - `horizontalRay` — like `horizontalLine`, but only extends forward in time
+    from the anchor instead of spanning the full chart width.
+  - `riskReward` — TradingView's "Long/Short Position" tool: drag from an
+    entry price to a stop price and it draws the risk zone plus a reward zone
+    (2:1 by default) on the far side, with direction inferred automatically
+    and $/% labels at each level.
+
+  Both tools are wired into the demo and `ChartWidget` drawing toolbars (new
+  "Position" group) and object-tree labels, not just the headless API.
+
+  Corrects the stale "24 drawing tools" figure to 26 everywhere it's a live
+  (non-changelog) figure.
+
+- 1edf5a2: Three fixes/features requested after embedding `ChartWidget` with
+  `numberLocale: 'vi-VN'`:
+
+  - **i18n for widget chrome** — new `locale` (`'en'` default, built-in `'vi'`)
+    and `messages` (per-key override/addition) options translate the toolbar,
+    watchlist header, indicator-picker (Popular/All, overlay/panel tags),
+    status bar, settings panel (titles/tabs/section headers), and hotkey
+    sheet (title/group headers). See README "Widget i18n" for exact coverage
+    and what's still English.
+  - **`numberLocale` now applied to the watchlist and the current-price axis
+    tag** — both hardcoded `en-US`/raw `toFixed()` formatting before, so a
+    vi-VN host saw `83638.46` in the watchlist next to a correctly-formatted
+    `125,00` on the price axis. Also fixed: `ChartWidget`'s own
+    `settingsState.numberLocale` was never seeded from the constructor's
+    `chartOptions.numberLocale` — it silently stayed on `'en-US'` until the
+    host touched the Settings UI, even though the headless `Chart` itself had
+    the right locale the whole time.
+  - **Watchlist % for the active symbol now respects a host-provided
+    `refPrice`** — previously `setWatchlistEntry(activeSymbol, { refPrice })`
+    was silently overwritten every tick by the widget's own session-open
+    guess. A host-pushed refPrice (even for the active symbol) now always
+    wins; falls back to the auto-computed one only when the host hasn't set
+    one for that symbol.
+
+  Also documents the `--tcw-*` CSS custom properties on `.tcw-root` as a
+  stable, additive-only theming contract (README "Widget Theming").
+
+### Patch Changes
+
+- 2b58ddf: Fix: switching symbol or timeframe no longer gets stuck on the previous
+  symbol's price range after a manual price-axis drag or vertical pan.
+
+  `setData()` is always a full series replace (live ticks go through
+  `appendBar`/`updateLastBar` instead), so it now restores the chart's
+  configured `autoScale` default the same way it already resets the X-axis
+  scroll position — matching TradingView, which always fits a freshly
+  loaded symbol/timeframe regardless of how the previous one was scaled.
+  An explicit `chart.setAutoScale(false)` still sticks across `setData()`
+  calls, same as a constructor-time `autoScale: false`.
+
+  Also wires the newly-added indicators (`vwma`, `envelope`, `tema`) and
+  drawing tools (`horizontalRay`, `riskReward`) into `ChartWidget`'s own
+  indicator/drawing-tool catalogs (`widgetConfig.ts`) — they were only
+  reachable through the headless API before, not the widget's pickers,
+  which is what the demo site actually runs.
+
+- 2846b8a: Fix two display bugs reported for sub-$1 assets and non-English locales:
+
+  - The OHLCV legend hardcoded 2-decimal, `en-US` number formatting, so a ~$0.34
+    asset showed "0.34 0.34 0.34 0.34" and ignored `numberLocale`. It now derives
+    decimals from the same tick step the price axis uses, and formats with the
+    chart's locale.
+  - The month-boundary session-break label used a hardcoded English month array
+    and a 2-digit year (e.g. "Oct 26" for October 2026), which read exactly like
+    a day-of-month and was mistaken for the wrong date. It now uses the chart's
+    locale and always renders the full 4-digit year.
+
+  Also adds `features.crosshairTooltip` to hide the floating OHLCV popup that
+  follows the cursor, for embedders who want the TradingView-style
+  legend-only hover behavior.
+
+- 2ccf273: Fix a real performance bug behind reports of panning/zooming feeling janky
+  with indicators active: both `IndicatorEngine.getOverlayPriceRange` (overlay
+  indicators auto-scaling the main pane) and `computeIndicatorPriceRange`
+  (panel indicators auto-scaling their own pane) ran on **every autoScale
+  render frame** — i.e. every pan/zoom/resize, while any indicator is active —
+  but walked the indicator's _entire_ `values` Map and discarded everything
+  outside the visible range, instead of only visiting the visible bars. That's
+  O(dataset length) wasted work per indicator per frame instead of O(visible
+  range); with more history loaded or more active indicators, panning did
+  proportionally more pointless work on every single frame. Both now walk
+  `output.series` (the array already indexed by bar position, maintained
+  specifically for this kind of fast lookup) directly over `[from, to]`.
+
+  Also adds the `wma` (Weighted Moving Average) indicator — linear
+  recency-weighted, computed incrementally in O(1) per bar. Registry now at 70.
+
+- 999f7fe: - `ChartWidget` now defaults `features.crosshairTooltip` to `false` — the
+  floating OHLCV popup that follows the cursor isn't something TradingView
+  has either; the widget already shows the same data in its OHLCV legend.
+  (The headless `Chart` class's own default is unchanged — still `true`.)
+  Opt back in with `chartOptions: { features: { crosshairTooltip: true } }`.
+  - Fixed a real bug found while wiring that default in: `ChartWidget` spread
+    `...options.chartOptions` _after_ its own `features` object, so any host
+    passing `chartOptions.features` silently wiped every other feature
+    default (drawings, indicators, trading, …). `features` is now merged
+    per-key, with host overrides winning.
+  - New TradingView-style loading overlay — animated skeleton bars + a
+    localized "Loading chart..." label, cross-fading out once the first
+    snapshot of bars lands. Shows on every connect (initial load and
+    symbol/timeframe switches), not just the first one.
+- Updated dependencies
+- Updated dependencies [2846b8a]
+- Updated dependencies [43b4ff5]
+- Updated dependencies [2ccf273]
+- Updated dependencies [021ea2e]
+- Updated dependencies [6cf12af]
+- Updated dependencies [edbdb56]
+- Updated dependencies [5053d94]
+- Updated dependencies [1edf5a2]
+  - @tradecanvas/commons@1.2.0
+  - @tradecanvas/core@1.2.0
+
 ## 1.1.1
 
 ### Patch Changes

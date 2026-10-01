@@ -21,10 +21,20 @@ export interface SessionBreakConfig {
 export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
   private cachedBreaksTyped: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
+  private cachedMedianStep = 0;
+  // Explicit validity flag: a series with no day boundaries legitimately
+  // yields zero breaks, and keying the cache on `breaks.length > 0` made
+  // that case rescan every bar on every frame.
+  private cacheValid = false;
   private lastDataLength = 0;
+  private locale = 'en-US';
 
   setConfig(config: Partial<SessionBreakConfig>): void {
     Object.assign(this.config, config);
+  }
+
+  setLocale(locale: string): void {
+    this.locale = locale;
   }
 
   isVisible(): boolean {
@@ -44,7 +54,7 @@ export class SessionBreaks {
     if (data.length < 2) return [];
 
     // Cache: only recompute when data changes
-    if (data.length === this.lastDataLength && this.cachedBreaksTyped.length > 0) {
+    if (this.cacheValid && data.length === this.lastDataLength) {
       return this.cachedBreaksTyped;
     }
 
@@ -67,6 +77,8 @@ export class SessionBreaks {
 
     this.lastDataLength = data.length;
     this.cachedBreaksTyped = out;
+    this.cachedMedianStep = medianBarInterval(data);
+    this.cacheValid = true;
     return out;
   }
 
@@ -88,8 +100,7 @@ export class SessionBreaks {
     // Suppress separators when the dataset is already at day-or-coarser
     // granularity — every bar would be a "day boundary" and the screen
     // would fill with lines.
-    const medianStep = medianBarInterval(data);
-    if (medianStep >= 23 * 60 * 60 * 1000) return;
+    if (this.cachedMedianStep >= 23 * 60 * 60 * 1000) return;
 
     const { chartRect } = viewport;
     const baseColor = this.config.color ?? theme.axisLine;
@@ -119,11 +130,11 @@ export class SessionBreaks {
         alpha = 0.22;
       } else if (brk.kind === 'week') {
         alpha = 0.34;
-        label = formatMonthDay(brk.date);
+        label = formatMonthDay(brk.date, this.locale);
       } else if (brk.kind === 'month') {
         alpha = 0.5;
         width = lineWidth + 0.5;
-        label = formatMonthYear(brk.date);
+        label = formatMonthYear(brk.date, this.locale);
       } else {
         alpha = 0.7;
         width = lineWidth + 1;
@@ -152,17 +163,40 @@ export class SessionBreaks {
   invalidateCache(): void {
     this.lastDataLength = 0;
     this.cachedBreaksTyped = [];
+    this.cachedMedianStep = 0;
+    this.cacheValid = false;
   }
 }
 
-const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// `toLocaleDateString(locale, opts)` builds a fresh Intl.DateTimeFormat per
+// call (~40µs in V8) and these labels re-render on every pan/zoom frame, so
+// the formatters are cached per locale. Output is identical by spec.
+const monthDayFormats = new Map<string, Intl.DateTimeFormat>();
+const monthYearFormats = new Map<string, Intl.DateTimeFormat>();
 
-function formatMonthDay(d: Date): string {
-  return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+function cachedDateFormat(
+  cache: Map<string, Intl.DateTimeFormat>,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  let f = cache.get(locale);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, options);
+    cache.set(locale, f);
+  }
+  return f;
 }
 
-function formatMonthYear(d: Date): string {
-  return `${MONTH_ABBR[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+// Month-boundary labels use the FULL year ("Oct 2026"), not a 2-digit one
+// ("Oct 26") — a 2-digit year reads identically to a week-boundary's
+// "month day" label (e.g. "Oct 26" could mean October 26th), which misled
+// readers into thinking the chart had jumped to the wrong date.
+function formatMonthDay(d: Date, locale: string): string {
+  return cachedDateFormat(monthDayFormats, locale, { month: 'short', day: 'numeric' }).format(d);
+}
+
+function formatMonthYear(d: Date, locale: string): string {
+  return cachedDateFormat(monthYearFormats, locale, { month: 'short', year: 'numeric' }).format(d);
 }
 
 /**

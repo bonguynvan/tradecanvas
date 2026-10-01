@@ -16,6 +16,13 @@ function isValidBar(bar: OHLCBar): boolean {
   return true;
 }
 
+/** Whether a valid bar already satisfies everything `sanitizeBar` enforces. */
+function isSanitized(bar: OHLCBar): boolean {
+  return bar.volume !== undefined
+    && bar.high >= bar.open && bar.high >= bar.close
+    && bar.low <= bar.open && bar.low <= bar.close;
+}
+
 /** Sanitize a bar: clamp high/low to envelope OHLC values. */
 function sanitizeBar(bar: OHLCBar): OHLCBar {
   return {
@@ -34,10 +41,18 @@ export class DataManager {
   }
 
   setData(data: DataSeries): void {
-    // Filter out completely invalid bars, sanitize the rest
-    this.data = data
-      .filter(isValidBar)
-      .map(sanitizeBar);
+    // Drop invalid bars and sanitize the rest in one pass. Bars that are
+    // already well-formed (the norm for exchange data) are kept as-is rather
+    // than copied — bar objects are never mutated here, only replaced, so
+    // sharing them with the caller is safe, and it saves allocating a fresh
+    // object per bar on every symbol/timeframe switch.
+    const out: OHLCBar[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const bar = data[i];
+      if (!isValidBar(bar)) continue;
+      out.push(isSanitized(bar) ? bar : sanitizeBar(bar));
+    }
+    this.data = out;
   }
 
   appendBar(bar: OHLCBar): void {

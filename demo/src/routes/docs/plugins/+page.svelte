@@ -41,19 +41,39 @@ chart.plugins.list()`}</code></pre>
 
 <h2>Custom indicator</h2>
 <p>Extend <code>IndicatorBase</code> for the drawing helpers, then register and add it like any built-in:</p>
-<pre><code>{`import { IndicatorBase, registerPlugin } from '@tradecanvas/chart'
+<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
 
 class DoubleSMA extends IndicatorBase {
   descriptor = {
     id: 'double-sma', name: 'Double SMA',
     placement: 'overlay', defaultConfig: { fast: 10, slow: 30 },
   }
-  calculate(data, config) { /* return { values, series } */ }
+  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
   render(ctx, output, viewport, style) { /* draw lines */ }
 }
 
 registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
 chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+<p>
+  For <code>values</code>, use <code>new IndicatorValueMap()</code> instead of <code>new Map()</code>: it's a drop-in
+  <code>Map</code> that is several times cheaper to fill one bar at a time in time order, which is what every
+  symbol or timeframe switch does over the whole history.
+</p>
+
+<h3>Fast live updates (optional)</h3>
+<p>
+  On every live tick only the forming bar changes. Implement <code>update()</code> to recompute just
+  the bars from <code>from</code> onward instead of the whole history — the chart uses it on ticks and
+  new bars, and falls back to <code>calculate()</code> when it's missing or returns <code>null</code>.
+  It must produce the same values <code>calculate()</code> would.
+</p>
+<pre><code>{`update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
+  for (let i = from; i < data.length; i++) {
+    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
+  }
+  return prev
+}`}</code></pre>
 
 <h2>Custom chart type</h2>
 <p>A <code>ChartTypePlugin</code> supplies a renderer and an optional data transform; switch to it like a built-in:</p>

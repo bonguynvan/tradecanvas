@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Viewport } from '../Viewport.js';
 import type { OHLCBar } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 
 /** Minimal ascending bars, one per minute — only `time`/`close` matter to `Viewport`. */
 function bars(n: number): OHLCBar[] {
@@ -118,6 +119,107 @@ describe('Viewport.panPriceRange — vertical chart-body panning', () => {
   });
 });
 
+describe('Viewport.getState — caching', () => {
+  it('returns the same object reference across repeated calls with no mutation in between', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+
+    const a = vp.getState();
+    const b = vp.getState();
+    expect(a).toBe(b);
+  });
+
+  it('returns a fresh object after scrollBy, even when clamping snaps the value back', () => {
+    // The object identity must change on every mutation regardless of
+    // whether clampOffset happens to land back on the same numeric value
+    // (e.g. a short series already resting at its clamp boundary) — a
+    // stale cached reference would be the real bug to catch here.
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false); // long series, not clamp-pinned
+    const before = vp.getState();
+
+    vp.scrollBy(5);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+    expect(after.offset).not.toBe(before.offset);
+  });
+
+  it('returns a fresh object after setPriceRange', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    const before = vp.getState();
+
+    vp.setPriceRange(10, 20);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+    expect(after.priceRange).toEqual({ min: 10, max: 20 });
+  });
+
+  it('returns a fresh object after zoom', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    const before = vp.getState();
+
+    vp.zoom(0.5, 500);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+  });
+
+  it('returns a fresh object after setChartRect / resize', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    const before = vp.getState();
+
+    vp.resize(1200, 700);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+    expect(after.chartRect.width).not.toBe(before.chartRect.width);
+  });
+
+  it('returns a fresh object after panPriceRange', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setPriceRange(100, 200);
+    const before = vp.getState();
+
+    vp.panPriceRange(10);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+  });
+
+  it('returns a fresh object after setScaleMode / setScaleBaseline', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+
+    const before1 = vp.getState();
+    vp.setScaleMode('logarithmic');
+    const after1 = vp.getState();
+    expect(after1).not.toBe(before1);
+    expect(after1.scaleMode).toBe('logarithmic');
+
+    vp.setScaleBaseline(42);
+    const after2 = vp.getState();
+    expect(after2).not.toBe(after1);
+    expect(after2.scaleBaseline).toBe(42);
+  });
+
+  it('a subsequent updateData with autoScale on produces a fresh snapshot', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), true);
+    const before = vp.getState();
+
+    vp.updateData(bars(20), true);
+
+    const after = vp.getState();
+    expect(after).not.toBe(before);
+  });
+});
+
 describe('Viewport — long-data panning (regression guard)', () => {
   it('leaves long-data panning behaviour unchanged', () => {
     // 500 bars at up to 30px/bar comfortably overflows a 1000px pane — squarely the "long data"
@@ -137,5 +239,18 @@ describe('Viewport — long-data panning (regression guard)', () => {
 
     vp.scrollBy(-1_000_000);
     expect(vp.getState().offset).toBeCloseTo(-(state.chartRect.width * 0.5), 6);
+  });
+});
+
+describe('Viewport — price axis width', () => {
+  it('reserves the default axis width, then a widened one, and reports it in snapshots', () => {
+    const vp = new Viewport(800, 400);
+    expect(vp.getState().chartRect.width).toBe(800 - PRICE_AXIS_WIDTH);
+    expect(vp.getState().priceAxisWidth).toBeUndefined();
+
+    vp.setPriceAxisWidth(96);
+    expect(vp.getState().priceAxisWidth).toBe(96);
+    vp.resize(800, 400);
+    expect(vp.getState().chartRect.width).toBe(800 - 96);
   });
 });

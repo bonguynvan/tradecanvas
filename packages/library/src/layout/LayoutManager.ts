@@ -8,6 +8,7 @@ export class LayoutManager {
   private panels: PanelConfig[] = [];
   private containerWidth = 0;
   private containerHeight = 0;
+  private priceAxisWidth = PRICE_AXIS_WIDTH;
 
   resize(width: number, height: number): void {
     this.containerWidth = width;
@@ -49,6 +50,11 @@ export class LayoutManager {
     }
   }
 
+  /** Width reserved for the price axis right of the main chart. */
+  setPriceAxisWidth(width: number): void {
+    this.priceAxisWidth = width;
+  }
+
   getPanels(): PanelConfig[] {
     return this.panels;
   }
@@ -67,7 +73,7 @@ export class LayoutManager {
     const mainChartRect: Rect = {
       x: leftWidth,
       y: topHeight,
-      width: Math.max(0, this.containerWidth - leftWidth - rightWidth - PRICE_AXIS_WIDTH),
+      width: Math.max(0, this.containerWidth - leftWidth - rightWidth - this.priceAxisWidth),
       height: Math.max(0, this.containerHeight - topHeight - bottomHeight - TIME_AXIS_HEIGHT),
     };
 
@@ -120,7 +126,7 @@ export class LayoutManager {
     }
 
     // Right panels
-    x = leftWidth + mainChartRect.width + PRICE_AXIS_WIDTH;
+    x = leftWidth + mainChartRect.width + this.priceAxisWidth;
     for (const panel of rightPanels) {
       resolvedPanels.push({
         config: panel,

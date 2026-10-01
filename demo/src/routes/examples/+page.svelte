@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { base } from '$app/paths';
   import {
     openVanillaSandbox,
     openReactSandbox,
@@ -12,27 +13,27 @@
   const examples = [
     {
       title: 'Vanilla JS',
-      blurb: 'Lowest-level usage — Chart class with a Binance live stream and an SMA overlay.',
+      blurb: 'The headless Chart: live Binance stream, Bollinger + RSI, and the drawing tools on your own UI.',
       open: openVanillaSandbox,
     },
     {
       title: 'ChartWidget',
-      blurb: 'One-line embed of the full TradingView-like widget with toolbar and drawing sidebar.',
+      blurb: 'The full TradingView-style UI in one call — toolbar, 40 drawing tools, watchlist, trading, replay, English or Vietnamese.',
       open: openWidgetSandbox,
     },
     {
       title: 'React',
-      blurb: 'TradeCanvas React wrapper — typed props, ref-forwarded chart instance.',
+      blurb: '@tradecanvas/react — reactive props, typed, the underlying Chart through a ref.',
       open: openReactSandbox,
     },
     {
       title: 'Vue 3',
-      blurb: 'TradeCanvas Vue wrapper — composition API + script setup.',
+      blurb: '@tradecanvas/vue — script setup, reactive props, the Chart from @ready.',
       open: openVueSandbox,
     },
     {
       title: 'Svelte 5',
-      blurb: 'TradeCanvas Svelte wrapper — runes + reactive props.',
+      blurb: '@tradecanvas/svelte — runes, reactive props, bind:chart.',
       open: openSvelteSandbox,
     },
     {
@@ -55,8 +56,9 @@
 <section class="hero">
   <h1 class="hero-title" style="font-size: clamp(2rem, 4vw, 3rem)">Examples</h1>
   <p class="hero-subtitle">
-    Live sandboxes you can fork in one click. Each opens in StackBlitz with the
-    package wired up.
+    Live sandboxes you can fork in one click — each opens in StackBlitz with the
+    latest 1.x packages wired up. To try features without any setup, use the
+    <a href="{base}/#lab-title">Feature Lab</a> on the home page.
   </p>
 </section>
 

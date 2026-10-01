@@ -1,4 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -32,9 +33,23 @@ export class ChartLegend {
   private hoverBar: OHLCBar | null = null;
   private indicators: { name: string; color: string; value: string }[] = [];
   private statusText: string | null = null;
+  private locale = 'en-US';
+  private pricePrecision: number | null = null;
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
+  }
+
+  /**
+   * Fixed decimals for OHLC values (e.g. a market's `pricePrecision`); `null`
+   * follows the price axis.
+   */
+  setPricePrecision(precision: number | null): void {
+    this.pricePrecision = precision;
+  }
+
+  setLocale(locale: string): void {
+    this.locale = locale;
   }
 
   setSymbol(symbol: string): void {
@@ -95,7 +110,11 @@ export class ChartLegend {
     if (this.config.showOHLC) {
       ctx.font = `${fs}px ${theme.font.family}`;
       const isUp = bar.close >= bar.open;
-      const fmt = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      // A market's explicit precision wins; otherwise match the price axis so
+      // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
+      const precision = this.pricePrecision
+        ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+      const fmt = (v: number) => formatPrice(v, precision, this.locale);
 
       const items = [
         { label: 'O', value: fmt(bar.open), color: theme.text },
@@ -108,9 +127,10 @@ export class ChartLegend {
         const change = bar.close - prevBar.close;
         const changePct = prevBar.close !== 0 ? (change / prevBar.close) * 100 : 0;
         const sign = change >= 0 ? '+' : '';
+        const pctText = formatPrice(changePct, 2, this.locale);
         items.push({
           label: '',
-          value: `${sign}${fmt(change)} (${sign}${changePct.toFixed(2)}%)`,
+          value: `${sign}${fmt(change)} (${sign}${pctText}%)`,
           color: change >= 0 ? theme.candleUp : theme.candleDown,
         });
       }

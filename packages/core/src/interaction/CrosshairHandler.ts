@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -18,7 +18,8 @@ export class CrosshairHandler {
   }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
-  private pricePrecision = 2;
+  /** Fixed decimals for the price pill; `null` follows the price axis. */
+  private pricePrecision: number | null = null;
   private locale = 'en-US';
 
   // Deferred callback state — avoid calling during render
@@ -49,7 +50,7 @@ export class CrosshairHandler {
     return this.mode;
   }
 
-  setPricePrecision(precision: number): void {
+  setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }
 
@@ -157,7 +158,8 @@ export class CrosshairHandler {
 
     // ── Price pill (right axis) ──
     const price = yToPrice(y, viewport);
-    const priceText = formatPrice(price, this.pricePrecision, this.locale);
+    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+    const priceText = formatPrice(price, precision, this.locale);
     const priceAxisX = chartRect.x + chartRect.width;
     drawAxisPill(ctx, {
       text: priceText,

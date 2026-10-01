@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
@@ -15,7 +16,7 @@ export class BollingerBandsIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 20, 1);
     const stdDevMult = getNumberParam(config, 'stdDev', 2);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
     // Running sum and sum-of-squares for O(n) calculation
@@ -49,6 +50,30 @@ export class BollingerBandsIndicator extends IndicatorBase {
       }
     }
     return { values, series };
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const period = getIntParam(config, 'period', 20, 1);
+    const stdDevMult = getNumberParam(config, 'stdDev', 2);
+    for (let i = from; i < data.length; i++) {
+      if (i < period - 1) { this.writePoint(prev, data, i, null); continue; }
+      let sum = 0;
+      let sumSq = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        const c = data[j].close;
+        sum += c;
+        sumSq += c * c;
+      }
+      const sma = sum / period;
+      const stdDev = Math.sqrt(Math.max(0, sumSq / period - sma * sma));
+      this.writePoint(prev, data, i, {
+        middle: sma,
+        upper: sma + stdDevMult * stdDev,
+        lower: sma - stdDevMult * stdDev,
+      });
+    }
+    return prev;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {

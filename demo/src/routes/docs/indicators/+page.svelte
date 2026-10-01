@@ -1,6 +1,6 @@
 <svelte:head>
   <title>Indicators — TradeCanvas docs</title>
-  <meta name="description" content="66 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
+  <meta name="description" content="70 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
 </svelte:head>
 
 <h1>Indicators</h1>
@@ -18,10 +18,13 @@ chart.removeIndicator(instanceId)`}</code></pre>
   <tbody>
     <tr><td><code>sma</code></td><td>Simple Moving Average</td></tr>
     <tr><td><code>ema</code></td><td>Exponential Moving Average</td></tr>
-    <tr><td><code>wma</code></td><td>Weighted Moving Average</td></tr>
+    <tr><td><code>tema</code></td><td>Triple EMA (3×EMA1 − 3×EMA2 + EMA3, less lag than a plain EMA)</td></tr>
+    <tr><td><code>vwma</code></td><td>Volume Weighted Moving Average</td></tr>
+    <tr><td><code>wma</code></td><td>Weighted Moving Average (linear recency weighting)</td></tr>
     <tr><td><code>hullMa</code></td><td>Hull Moving Average</td></tr>
     <tr><td><code>mtfma</code></td><td>MTF Moving Average (higher-timeframe MA, non-repainting)</td></tr>
     <tr><td><code>bollingerBands</code></td><td>Bollinger Bands</td></tr>
+    <tr><td><code>envelope</code></td><td>Moving Average Envelope (SMA ± a fixed % band)</td></tr>
     <tr><td><code>keltnerChannels</code></td><td>Keltner Channels</td></tr>
     <tr><td><code>donchianChannels</code></td><td>Donchian Channels</td></tr>
     <tr><td><code>vwap</code></td><td>VWAP</td></tr>

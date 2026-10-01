@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
@@ -22,7 +23,7 @@ export class AcceleratorOscillatorIndicator extends IndicatorBase {
   };
 
   calculate(data: DataSeries): IndicatorOutput {
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n < 38) return { values, series };

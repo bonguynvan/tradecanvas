@@ -2,19 +2,24 @@ import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon } from './icons.js';
 
 const GROUP_ICONS = [
-  'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'ruler', 'type',
+  'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'zigzag', 'ruler', 'type', 'ladder',
 ];
 
 /** Icon for a drawing tool in the favorites strip — falls back to a pen. */
 const TOOL_ICONS: Record<string, string> = {
   trendLine: 'trendingUp', ray: 'trendingUp', extendedLine: 'trendingUp',
-  horizontalLine: 'minus', verticalLine: 'penLine',
-  rectangle: 'square', ellipse: 'square', triangle: 'square', arrow: 'trendingUp',
-  parallelChannel: 'gitBranch', regressionChannel: 'gitBranch', pitchfork: 'gitBranch',
-  fibRetracement: 'hash', fibExtension: 'hash', fibTimeZones: 'hash',
-  gannBox: 'hash', gannFan: 'gitBranch', elliottWave: 'trendingUp',
-  priceRange: 'ruler', dateRange: 'ruler', measure: 'ruler',
-  textAnnotation: 'type', anchoredVWAP: 'trendingUp', volumeProfileRange: 'barChart',
+  infoLine: 'trendingUp', trendAngle: 'trendingUp',
+  horizontalLine: 'minus', horizontalRay: 'minus', verticalLine: 'penLine', crossLine: 'plus',
+  rectangle: 'square', circle: 'square', ellipse: 'square', triangle: 'square', arrow: 'trendingUp',
+  parallelChannel: 'gitBranch', regressionChannel: 'gitBranch',
+  pitchfork: 'gitBranch', schiffPitchfork: 'gitBranch', modifiedSchiffPitchfork: 'gitBranch',
+  fibRetracement: 'hash', fibExtension: 'hash', fibTimeZones: 'hash', fibChannel: 'hash', fibSpeedResistanceFan: 'hash',
+  gannBox: 'hash', gannFan: 'gitBranch', cyclicLines: 'barChart',
+  elliottWave: 'zigzag', xabcdPattern: 'zigzag', abcdPattern: 'zigzag', headAndShoulders: 'zigzag',
+  priceRange: 'ruler', dateRange: 'ruler', dateAndPriceRange: 'ruler', measure: 'ruler',
+  text: 'type', textAnnotation: 'type', priceLabel: 'type',
+  anchoredVWAP: 'trendingUp', volumeProfileRange: 'barChart',
+  riskReward: 'square',
 };
 
 function toolIcon(tool: string): string {

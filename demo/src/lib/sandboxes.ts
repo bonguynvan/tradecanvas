@@ -1,15 +1,20 @@
 import sdk from '@stackblitz/sdk';
 
-const CHART_VERSION = '^0.7.0';
+// Caret ranges: each sandbox installs the latest published 1.x.
+const CHART_VERSION = '^1.1.0';
+const WRAPPER_VERSION = '^1.0.4';
+const VITE_VERSION = '^6.0.0';
+const TS_VERSION = '~5.7.0';
 
-const BODY_CSS = 'body { margin: 0; background: #131722; }';
+const BODY_CSS = 'html, body { margin: 0; height: 100%; background: #131722; }';
 
-const BASIC_TSCONFIG = JSON.stringify(
+const TSCONFIG = JSON.stringify(
   {
     compilerOptions: {
       target: 'ES2020',
       module: 'ESNext',
       moduleResolution: 'bundler',
+      jsx: 'react-jsx',
       strict: true,
       esModuleInterop: true,
       skipLibCheck: true,
@@ -21,573 +26,360 @@ const BASIC_TSCONFIG = JSON.stringify(
   2,
 );
 
+function indexHtml(title: string, entry: string, body = '<div id="app"></div>', css = ''): string {
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="UTF-8" />',
+    '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+    `  <title>${title}</title>`,
+    `  <style>${BODY_CSS}${css}</style>`,
+    '</head>',
+    '<body>',
+    `  ${body}`,
+    `  <script type="module" src="${entry}"></script>`,
+    '</body>',
+    '</html>',
+  ].join('\n');
+}
+
+interface ViteSandbox {
+  slug: string;
+  title: string;
+  dependencies: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  files: Record<string, string>;
+  openFile: string;
+}
+
+/** Open a Vite project on StackBlitz: package.json + tsconfig + the given files. */
+function openViteSandbox(box: ViteSandbox): void {
+  sdk.openProject(
+    {
+      title: `TradeCanvas — ${box.title}`,
+      template: 'node',
+      files: {
+        'package.json': JSON.stringify(
+          {
+            name: `tc-sandbox-${box.slug}`,
+            private: true,
+            type: 'module',
+            scripts: { dev: 'vite' },
+            dependencies: box.dependencies,
+            devDependencies: { vite: VITE_VERSION, typescript: TS_VERSION, ...box.devDependencies },
+          },
+          null,
+          2,
+        ),
+        'tsconfig.json': TSCONFIG,
+        ...box.files,
+      },
+    },
+    { openFile: box.openFile, newWindow: true },
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Vanilla JS
+// Vanilla — the headless Chart
 // ---------------------------------------------------------------------------
 
 export function openVanillaSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — Vanilla JS',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-vanilla',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: { '@tradecanvas/chart': CHART_VERSION },
-            devDependencies: { vite: '^6.0.0', typescript: '~5.7.0' },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': BASIC_TSCONFIG,
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — Vanilla JS</title>',
-          `  <style>${BODY_CSS}</style>`,
-          '</head>',
-          '<body>',
-          '  <div id="chart" style="width:100%;height:100vh"></div>',
-          '  <script type="module" src="/src/main.ts"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.ts': [
-          "import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart';",
-          '',
-          "const container = document.getElementById('chart')!;",
-          '',
-          'const chart = new Chart(container, {',
-          "  chartType: 'candlestick',",
-          '  theme: DARK_THEME,',
-          '  autoScale: true,',
-          '  features: { drawings: true, indicators: true, volume: true },',
-          '});',
-          '',
-          'const adapter = new BinanceAdapter();',
-          "chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m' });",
-          '',
-          '// Add an SMA indicator',
-          "chart.addIndicator('sma', { period: 20 });",
-        ].join('\n'),
-      },
+  openViteSandbox({
+    slug: 'vanilla',
+    title: 'Vanilla Chart',
+    dependencies: { '@tradecanvas/chart': CHART_VERSION },
+    openFile: 'src/main.ts',
+    files: {
+      'index.html': indexHtml('TradeCanvas — Vanilla', '/src/main.ts', '<div id="chart" style="height:100vh"></div>'),
+      'src/main.ts': `import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  theme: DARK_THEME,
+  features: { drawings: true, indicators: true, volume: true },
+});
+
+void chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '15m' });
+
+chart.addIndicator('bb', { period: 20, stdDev: 2 });
+chart.addIndicator('rsi');
+
+// Let the user draw: try 'fibRetracement', 'infoLine', 'xabcdPattern', …
+chart.setDrawingTool('trendLine');
+
+chart.on('crosshairMove', (e) => {
+  // e.payload.bar has the hovered OHLCV
+});
+`,
     },
-    { openFile: 'src/main.ts', newWindow: true },
-  );
+  });
 }
 
 // ---------------------------------------------------------------------------
-// React
-// ---------------------------------------------------------------------------
-
-export function openReactSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — React',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-react',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: {
-              react: '^19.0.0',
-              'react-dom': '^19.0.0',
-              '@tradecanvas/chart': CHART_VERSION,
-            },
-            devDependencies: {
-              '@vitejs/plugin-react': '^4.0.0',
-              '@types/react': '^19.0.0',
-              '@types/react-dom': '^19.0.0',
-              vite: '^6.0.0',
-              typescript: '~5.7.0',
-            },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': JSON.stringify(
-          {
-            compilerOptions: {
-              target: 'ES2020',
-              module: 'ESNext',
-              moduleResolution: 'bundler',
-              jsx: 'react-jsx',
-              strict: true,
-              esModuleInterop: true,
-              skipLibCheck: true,
-              forceConsistentCasingInFileNames: true,
-            },
-            include: ['src'],
-          },
-          null,
-          2,
-        ),
-        'vite.config.ts': [
-          "import { defineConfig } from 'vite';",
-          "import react from '@vitejs/plugin-react';",
-          '',
-          'export default defineConfig({',
-          '  plugins: [react()],',
-          '});',
-        ].join('\n'),
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — React</title>',
-          `  <style>${BODY_CSS}</style>`,
-          '</head>',
-          '<body>',
-          '  <div id="root"></div>',
-          '  <script type="module" src="/src/main.tsx"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.tsx': [
-          "import { createRoot } from 'react-dom/client';",
-          "import { App } from './App';",
-          '',
-          "createRoot(document.getElementById('root')!).render(<App />);",
-        ].join('\n'),
-        'src/App.tsx': [
-          "import { TradingChart } from './TradingChart';",
-          '',
-          'export function App() {',
-          '  return <TradingChart />;',
-          '}',
-        ].join('\n'),
-        'src/TradingChart.tsx': [
-          "import { useRef, useEffect } from 'react';",
-          "import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart';",
-          '',
-          'export function TradingChart() {',
-          '  const containerRef = useRef<HTMLDivElement>(null);',
-          '',
-          '  useEffect(() => {',
-          '    if (!containerRef.current) return;',
-          '',
-          '    const chart = new Chart(containerRef.current, {',
-          "      chartType: 'candlestick',",
-          '      theme: DARK_THEME,',
-          '      autoScale: true,',
-          '      features: { drawings: true, indicators: true, volume: true },',
-          '    });',
-          '',
-          '    const adapter = new BinanceAdapter();',
-          "    chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m' });",
-          "    chart.addIndicator('sma', { period: 20 });",
-          '',
-          '    return () => chart.destroy();',
-          '  }, []);',
-          '',
-          '  return <div ref={containerRef} style={{ width: "100%", height: "100vh" }} />;',
-          '}',
-        ].join('\n'),
-      },
-    },
-    { openFile: 'src/TradingChart.tsx', newWindow: true },
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Svelte
-// ---------------------------------------------------------------------------
-
-export function openSvelteSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — Svelte',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-svelte',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: { '@tradecanvas/chart': CHART_VERSION },
-            devDependencies: {
-              svelte: '^5.0.0',
-              '@sveltejs/vite-plugin-svelte': '^5.0.0',
-              vite: '^6.0.0',
-              typescript: '~5.7.0',
-            },
-          },
-          null,
-          2,
-        ),
-        'svelte.config.js': [
-          "import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';",
-          '',
-          'export default {',
-          '  preprocess: vitePreprocess(),',
-          '};',
-        ].join('\n'),
-        'tsconfig.json': JSON.stringify(
-          {
-            compilerOptions: {
-              target: 'ES2020',
-              module: 'ESNext',
-              moduleResolution: 'bundler',
-              strict: true,
-              esModuleInterop: true,
-              skipLibCheck: true,
-              forceConsistentCasingInFileNames: true,
-            },
-            include: ['src'],
-          },
-          null,
-          2,
-        ),
-        'vite.config.ts': [
-          "import { defineConfig } from 'vite';",
-          "import { svelte } from '@sveltejs/vite-plugin-svelte';",
-          '',
-          'export default defineConfig({',
-          '  plugins: [svelte()],',
-          '});',
-        ].join('\n'),
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — Svelte</title>',
-          `  <style>${BODY_CSS}</style>`,
-          '</head>',
-          '<body>',
-          '  <div id="app"></div>',
-          '  <script type="module" src="/src/main.ts"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.ts': [
-          "import { mount } from 'svelte';",
-          "import App from './App.svelte';",
-          '',
-          "mount(App, { target: document.getElementById('app')! });",
-        ].join('\n'),
-        'src/App.svelte': [
-          '<script lang="ts">',
-          "  import TradingChart from './TradingChart.svelte';",
-          '</script>',
-          '',
-          '<TradingChart />',
-        ].join('\n'),
-        'src/TradingChart.svelte': [
-          '<script lang="ts">',
-          "  import { onMount, onDestroy } from 'svelte';",
-          "  import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart';",
-          '',
-          '  let container: HTMLDivElement;',
-          '  let chart: Chart | null = null;',
-          '',
-          '  onMount(() => {',
-          '    chart = new Chart(container, {',
-          "      chartType: 'candlestick',",
-          '      theme: DARK_THEME,',
-          '      autoScale: true,',
-          '      features: { drawings: true, indicators: true, volume: true },',
-          '    });',
-          '',
-          '    const adapter = new BinanceAdapter();',
-          "    chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m' });",
-          "    chart.addIndicator('sma', { period: 20 });",
-          '  });',
-          '',
-          '  onDestroy(() => chart?.destroy());',
-          '</script>',
-          '',
-          '<div bind:this={container} style="width: 100%; height: 100vh" />',
-        ].join('\n'),
-      },
-    },
-    { openFile: 'src/TradingChart.svelte', newWindow: true },
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Vue
-// ---------------------------------------------------------------------------
-
-export function openVueSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — Vue',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-vue',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: {
-              vue: '^3.5.0',
-              '@tradecanvas/chart': CHART_VERSION,
-            },
-            devDependencies: {
-              '@vitejs/plugin-vue': '^5.0.0',
-              vite: '^6.0.0',
-              typescript: '~5.7.0',
-            },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': JSON.stringify(
-          {
-            compilerOptions: {
-              target: 'ES2020',
-              module: 'ESNext',
-              moduleResolution: 'bundler',
-              strict: true,
-              esModuleInterop: true,
-              skipLibCheck: true,
-              forceConsistentCasingInFileNames: true,
-            },
-            include: ['src'],
-          },
-          null,
-          2,
-        ),
-        'vite.config.ts': [
-          "import { defineConfig } from 'vite';",
-          "import vue from '@vitejs/plugin-vue';",
-          '',
-          'export default defineConfig({',
-          '  plugins: [vue()],',
-          '});',
-        ].join('\n'),
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — Vue</title>',
-          `  <style>${BODY_CSS}</style>`,
-          '</head>',
-          '<body>',
-          '  <div id="app"></div>',
-          '  <script type="module" src="/src/main.ts"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.ts': [
-          "import { createApp } from 'vue';",
-          "import App from './App.vue';",
-          '',
-          "createApp(App).mount('#app');",
-        ].join('\n'),
-        'src/App.vue': [
-          '<template>',
-          '  <TradingChart />',
-          '</template>',
-          '',
-          '<script setup lang="ts">',
-          "import TradingChart from './TradingChart.vue';",
-          '</script>',
-        ].join('\n'),
-        'src/TradingChart.vue': [
-          '<template>',
-          '  <div ref="chartContainer" style="width: 100%; height: 100vh" />',
-          '</template>',
-          '',
-          '<script setup lang="ts">',
-          "import { ref, onMounted, onUnmounted } from 'vue';",
-          "import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart';",
-          '',
-          'const chartContainer = ref<HTMLDivElement>();',
-          'let chart: Chart | null = null;',
-          '',
-          'onMounted(() => {',
-          '  if (!chartContainer.value) return;',
-          '',
-          '  chart = new Chart(chartContainer.value, {',
-          "    chartType: 'candlestick',",
-          '    theme: DARK_THEME,',
-          '    autoScale: true,',
-          '    features: { drawings: true, indicators: true, volume: true },',
-          '  });',
-          '',
-          '  const adapter = new BinanceAdapter();',
-          "  chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m' });",
-          "  chart.addIndicator('sma', { period: 20 });",
-          '});',
-          '',
-          'onUnmounted(() => chart?.destroy());',
-          '</script>',
-        ].join('\n'),
-      },
-    },
-    { openFile: 'src/TradingChart.vue', newWindow: true },
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Widget (ChartWidget)
+// ChartWidget — full UI in one call
 // ---------------------------------------------------------------------------
 
 export function openWidgetSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — ChartWidget',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-widget',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: { '@tradecanvas/chart': CHART_VERSION },
-            devDependencies: { vite: '^6.0.0', typescript: '~5.7.0' },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': BASIC_TSCONFIG,
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — ChartWidget</title>',
-          `  <style>${BODY_CSS} #chart { width: 100%; height: 100vh; }</style>`,
-          '</head>',
-          '<body>',
-          '  <div id="chart"></div>',
-          '  <script type="module" src="/src/main.ts"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.ts': [
-          "import { ChartWidget } from '@tradecanvas/chart/widget';",
-          "import { BinanceAdapter } from '@tradecanvas/chart';",
-          '',
-          "const container = document.getElementById('chart')!;",
-          '',
-          'const widget = new ChartWidget(container, {',
-          "  symbol: 'BTCUSDT',",
-          "  timeframe: '5m',",
-          '  adapter: new BinanceAdapter(),',
-          "  theme: 'dark',",
-          '  onReady: (chart) => {',
-          "    chart.addIndicator('sma', { period: 20 });",
-          '  },',
-          '});',
-        ].join('\n'),
-      },
+  openViteSandbox({
+    slug: 'widget',
+    title: 'ChartWidget',
+    dependencies: { '@tradecanvas/chart': CHART_VERSION },
+    openFile: 'src/main.ts',
+    files: {
+      'index.html': indexHtml('TradeCanvas — ChartWidget', '/src/main.ts', '<div id="chart" style="height:100vh"></div>'),
+      'src/main.ts': `import { ChartWidget } from '@tradecanvas/chart/widget';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'PEPEUSDT'],
+  timeframe: '5m',
+  adapter: new BinanceAdapter(),
+  theme: 'dark',
+  locale: 'en', // 'vi' for the Vietnamese UI
+  watchlist: true,
+  trading: true,
+  onReady: (chart) => {
+    chart.addIndicator('ema', { period: 21 });
+    chart.addIndicator('macd');
+  },
+});
+
+// widget.toggleReplay()  — bar replay with a scrubber
+// widget.setSymbol('ETHUSDT') / widget.setTimeframe('1h')
+`,
     },
-    { openFile: 'src/main.ts', newWindow: true },
-  );
+  });
 }
 
 // ---------------------------------------------------------------------------
-// Finance Charts — Waterfall + Gauge (combined)
+// React — @tradecanvas/react
+// ---------------------------------------------------------------------------
+
+export function openReactSandbox(): void {
+  openViteSandbox({
+    slug: 'react',
+    title: 'React',
+    dependencies: {
+      '@tradecanvas/chart': CHART_VERSION,
+      '@tradecanvas/react': WRAPPER_VERSION,
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+    },
+    devDependencies: {
+      '@vitejs/plugin-react': '^4.3.0',
+      '@types/react': '^19.0.0',
+      '@types/react-dom': '^19.0.0',
+    },
+    openFile: 'src/App.tsx',
+    files: {
+      'vite.config.ts': `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({ plugins: [react()] });
+`,
+      'index.html': indexHtml('TradeCanvas — React', '/src/main.tsx'),
+      'src/main.tsx': `import { createRoot } from 'react-dom/client';
+import { App } from './App';
+
+createRoot(document.getElementById('app')!).render(<App />);
+`,
+      'src/App.tsx': `import { useRef, useState } from 'react';
+import { TradeCanvas, type TradeCanvasRef } from '@tradecanvas/react';
+import type { TimeFrame } from '@tradecanvas/chart';
+
+const TIMEFRAMES: TimeFrame[] = ['1m', '5m', '15m', '1h', '4h'];
+
+export function App() {
+  const [timeframe, setTimeframe] = useState<TimeFrame>('15m');
+  const ref = useRef<TradeCanvasRef>(null);
+
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <nav style={{ display: 'flex', gap: 6, padding: 8 }}>
+        {TIMEFRAMES.map((tf) => (
+          <button key={tf} onClick={() => setTimeframe(tf)} disabled={tf === timeframe}>{tf}</button>
+        ))}
+        <button onClick={() => ref.current?.getChart()?.setDrawingTool('fibRetracement')}>Fib</button>
+      </nav>
+      <div style={{ flex: 1 }}>
+        <TradeCanvas ref={ref} symbol="BTCUSDT" timeframe={timeframe} indicators={['bb', 'rsi']} />
+      </div>
+    </div>
+  );
+}
+`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Vue 3 — @tradecanvas/vue
+// ---------------------------------------------------------------------------
+
+export function openVueSandbox(): void {
+  openViteSandbox({
+    slug: 'vue',
+    title: 'Vue 3',
+    dependencies: {
+      '@tradecanvas/chart': CHART_VERSION,
+      '@tradecanvas/vue': WRAPPER_VERSION,
+      vue: '^3.5.0',
+    },
+    devDependencies: { '@vitejs/plugin-vue': '^5.2.0' },
+    openFile: 'src/App.vue',
+    files: {
+      'vite.config.ts': `import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+
+export default defineConfig({ plugins: [vue()] });
+`,
+      'index.html': indexHtml('TradeCanvas — Vue', '/src/main.ts'),
+      'src/main.ts': `import { createApp } from 'vue';
+import App from './App.vue';
+
+createApp(App).mount('#app');
+`,
+      'src/env.d.ts': `declare module '*.vue' {
+  import type { DefineComponent } from 'vue';
+  const component: DefineComponent;
+  export default component;
+}
+`,
+      'src/App.vue': `<script setup lang="ts">
+import { ref } from 'vue';
+import { TradeCanvas } from '@tradecanvas/vue';
+import type { Chart, TimeFrame } from '@tradecanvas/chart';
+
+const timeframes: TimeFrame[] = ['1m', '5m', '15m', '1h', '4h'];
+const timeframe = ref<TimeFrame>('15m');
+let chart: Chart | null = null;
+</script>
+
+<template>
+  <div style="height: 100vh; display: flex; flex-direction: column">
+    <nav style="display: flex; gap: 6px; padding: 8px">
+      <button v-for="tf in timeframes" :key="tf" :disabled="tf === timeframe" @click="timeframe = tf">{{ tf }}</button>
+      <button @click="chart?.setDrawingTool('fibRetracement')">Fib</button>
+    </nav>
+    <div style="flex: 1">
+      <TradeCanvas symbol="BTCUSDT" :timeframe="timeframe" :indicators="['bb', 'rsi']" @ready="(c: Chart) => (chart = c)" />
+    </div>
+  </div>
+</template>
+`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Svelte 5 — @tradecanvas/svelte
+// ---------------------------------------------------------------------------
+
+export function openSvelteSandbox(): void {
+  openViteSandbox({
+    slug: 'svelte',
+    title: 'Svelte 5',
+    dependencies: {
+      '@tradecanvas/chart': CHART_VERSION,
+      '@tradecanvas/svelte': WRAPPER_VERSION,
+      svelte: '^5.0.0',
+    },
+    devDependencies: { '@sveltejs/vite-plugin-svelte': '^5.0.0' },
+    openFile: 'src/App.svelte',
+    files: {
+      'vite.config.ts': `import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+export default defineConfig({ plugins: [svelte()] });
+`,
+      'index.html': indexHtml('TradeCanvas — Svelte', '/src/main.ts'),
+      'src/main.ts': `import { mount } from 'svelte';
+import App from './App.svelte';
+
+mount(App, { target: document.getElementById('app')! });
+`,
+      'src/App.svelte': `<script lang="ts">
+  import { TradeCanvas } from '@tradecanvas/svelte';
+  import type { Chart, TimeFrame } from '@tradecanvas/chart';
+
+  const timeframes: TimeFrame[] = ['1m', '5m', '15m', '1h', '4h'];
+  let timeframe = $state<TimeFrame>('15m');
+  let chart = $state<Chart | null>(null);
+</script>
+
+<div style="height: 100vh; display: flex; flex-direction: column">
+  <nav style="display: flex; gap: 6px; padding: 8px">
+    {#each timeframes as tf}
+      <button disabled={tf === timeframe} onclick={() => (timeframe = tf)}>{tf}</button>
+    {/each}
+    <button onclick={() => chart?.setDrawingTool('fibRetracement')}>Fib</button>
+  </nav>
+  <div style="flex: 1">
+    <TradeCanvas symbol="BTCUSDT" {timeframe} indicators={['bb', 'rsi']} bind:chart />
+  </div>
+</div>
+`,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Finance charts — Waterfall + Gauge
 // ---------------------------------------------------------------------------
 
 export function openFinanceChartsSandbox(): void {
-  sdk.openProject(
-    {
-      title: 'TradeCanvas — Finance Charts (Waterfall + Gauge)',
-      template: 'node',
-      files: {
-        'package.json': JSON.stringify(
-          {
-            name: 'tc-sandbox-finance',
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite' },
-            dependencies: { '@tradecanvas/chart': CHART_VERSION },
-            devDependencies: { vite: '^6.0.0', typescript: '~5.7.0' },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': BASIC_TSCONFIG,
-        'index.html': [
-          '<!DOCTYPE html>',
-          '<html lang="en">',
-          '<head>',
-          '  <meta charset="UTF-8" />',
-          '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-          '  <title>TradeCanvas — Finance Charts</title>',
-          `  <style>${BODY_CSS} .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }`,
-          `    .card { background: #1e222d; border-radius: 8px; overflow: hidden; }`,
-          `    .card-label { padding: 10px 16px; font: 600 11px sans-serif; color: #787b86; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2a2e39; }`,
-          `    .chart { height: 320px; width: 100%; }</style>`,
-          '</head>',
-          '<body>',
-          '  <div class="grid">',
-          '    <div class="card"><div class="card-label">P&L Attribution</div><div id="waterfall" class="chart"></div></div>',
-          '    <div class="card"><div class="card-label">Fear & Greed</div><div id="gauge" class="chart"></div></div>',
-          '  </div>',
-          '  <script type="module" src="/src/main.ts"></script>',
-          '</body>',
-          '</html>',
-        ].join('\n'),
-        'src/main.ts': [
-          "import { WaterfallChart, GaugeChart } from '@tradecanvas/chart';",
-          "import type { WaterfallBar } from '@tradecanvas/chart';",
-          '',
-          '// P&L Attribution Waterfall',
-          'const waterfallData: WaterfallBar[] = [',
-          "  { label: 'Start', value: 10000, type: 'total' },",
-          "  { label: 'BTC Long', value: 1850 },",
-          "  { label: 'ETH Short', value: -620 },",
-          "  { label: 'SOL Long', value: 420 },",
-          "  { label: 'Fees', value: -85 },",
-          "  { label: 'End', value: 11565, type: 'total' },",
-          '];',
-          '',
-          "const waterfallEl = document.getElementById('waterfall')!;",
-          'new WaterfallChart(waterfallEl, {',
-          '  data: waterfallData,',
-          '  showValues: true,',
-          "  connectorStyle: 'dashed',",
-          '  valueFormat: (v) => `$${v.toLocaleString()}`,',
-          '  crosshair: true,',
-          '});',
-          '',
-          '// Fear & Greed Gauge',
-          "const gaugeEl = document.getElementById('gauge')!;",
-          'const gauge = new GaugeChart(gaugeEl, {',
-          '  value: 72,',
-          '  min: 0,',
-          '  max: 100,',
-          "  label: 'Fear & Greed',",
-          '  zones: [',
-          "    { from: 0, to: 25, color: '#ef4444' },",
-          "    { from: 25, to: 50, color: '#f59e0b' },",
-          "    { from: 50, to: 75, color: '#eab308' },",
-          "    { from: 75, to: 100, color: '#10b981' },",
-          '  ],',
-          '  animate: true,',
-          '});',
-          '',
-          '// Animate the gauge value every 3 seconds',
-          'setInterval(() => {',
-          '  gauge.setValue(Math.round(30 + Math.random() * 60));',
-          '}, 3000);',
-        ].join('\n'),
-      },
+  openViteSandbox({
+    slug: 'finance',
+    title: 'Finance Charts',
+    dependencies: { '@tradecanvas/chart': CHART_VERSION },
+    openFile: 'src/main.ts',
+    files: {
+      'index.html': indexHtml(
+        'TradeCanvas — Finance Charts',
+        '/src/main.ts',
+        '<div class="grid"><div class="card"><div class="card-label">P&amp;L Attribution</div><div id="waterfall" class="chart"></div></div><div class="card"><div class="card-label">Fear &amp; Greed</div><div id="gauge" class="chart"></div></div></div>',
+        ' .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }'
+          + ' .card { background: #1e222d; border-radius: 8px; overflow: hidden; }'
+          + ' .card-label { padding: 10px 16px; font: 600 11px sans-serif; color: #787b86; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2a2e39; }'
+          + ' .chart { height: 320px; width: 100%; }',
+      ),
+      'src/main.ts': `import { WaterfallChart, GaugeChart } from '@tradecanvas/chart';
+import type { WaterfallBar } from '@tradecanvas/chart';
+
+const waterfallData: WaterfallBar[] = [
+  { label: 'Start', value: 10000, type: 'total' },
+  { label: 'BTC Long', value: 1850 },
+  { label: 'ETH Short', value: -620 },
+  { label: 'SOL Long', value: 420 },
+  { label: 'Fees', value: -85 },
+  { label: 'End', value: 11565, type: 'total' },
+];
+
+new WaterfallChart(document.getElementById('waterfall')!, {
+  data: waterfallData,
+  showValues: true,
+  connectorStyle: 'dashed',
+  valueFormat: (v) => \`$\${v.toLocaleString()}\`,
+  crosshair: true,
+});
+
+const gauge = new GaugeChart(document.getElementById('gauge')!, {
+  value: 72,
+  min: 0,
+  max: 100,
+  label: 'Fear & Greed',
+  zones: [
+    { from: 0, to: 25, color: '#ef4444' },
+    { from: 25, to: 50, color: '#f59e0b' },
+    { from: 50, to: 75, color: '#eab308' },
+    { from: 75, to: 100, color: '#10b981' },
+  ],
+  animate: true,
+});
+
+setInterval(() => gauge.setValue(Math.round(30 + Math.random() * 60)), 3000);
+`,
     },
-    { openFile: 'src/main.ts', newWindow: true },
-  );
+  });
 }

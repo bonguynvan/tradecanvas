@@ -7,6 +7,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -25,7 +26,7 @@ export class ZigZagIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const devPct = Math.max(0.01, getNumberParam(config, 'deviation', 5)) / 100;
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < 2) return { values, series, meta: { pivots: [] } };
 

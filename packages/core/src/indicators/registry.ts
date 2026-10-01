@@ -18,6 +18,10 @@ import { MTFMovingAverageIndicator } from './overlay/MTFMovingAverage.js';
 import { SessionVWAPIndicator } from './overlay/SessionVWAP.js';
 import { ChandelierExitIndicator } from './overlay/ChandelierExit.js';
 import { AlligatorIndicator } from './overlay/Alligator.js';
+import { VWMAIndicator } from './overlay/VWMA.js';
+import { WMAIndicator } from './overlay/WMA.js';
+import { EnvelopeIndicator } from './overlay/Envelope.js';
+import { TEMAIndicator } from './overlay/TEMA.js';
 import { AwesomeOscillatorIndicator } from './panel/AwesomeOscillator.js';
 import { ChaikinOscillatorIndicator } from './panel/ChaikinOscillator.js';
 // Panels
@@ -88,6 +92,10 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new SessionVWAPIndicator());
   engine.register(new ChandelierExitIndicator());
   engine.register(new AlligatorIndicator());
+  engine.register(new VWMAIndicator());
+  engine.register(new WMAIndicator());
+  engine.register(new EnvelopeIndicator());
+  engine.register(new TEMAIndicator());
   // Panels
   engine.register(new RSIIndicator());
   engine.register(new MACDIndicator());

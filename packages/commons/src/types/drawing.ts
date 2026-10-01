@@ -1,16 +1,19 @@
 import type { Point, ViewportState } from './rendering.js';
 
 export type DrawingToolType =
-  | 'trendLine' | 'horizontalLine' | 'verticalLine' | 'ray' | 'extendedLine'
+  | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
+  | 'crossLine' | 'trendAngle' | 'infoLine'
   | 'parallelChannel' | 'regressionChannel'
-  | 'fibRetracement' | 'fibExtension' | 'fibTimeZones'
-  | 'rectangle' | 'ellipse' | 'triangle'
-  | 'pitchfork' | 'elliottWave'
-  | 'priceRange' | 'dateRange' | 'measure'
-  | 'text' | 'arrow'
-  | 'gannFan' | 'gannBox'
+  | 'fibRetracement' | 'fibExtension' | 'fibTimeZones' | 'fibChannel' | 'fibSpeedResistanceFan'
+  | 'rectangle' | 'ellipse' | 'triangle' | 'circle'
+  | 'pitchfork' | 'schiffPitchfork' | 'modifiedSchiffPitchfork' | 'elliottWave'
+  | 'xabcdPattern' | 'abcdPattern' | 'headAndShoulders'
+  | 'priceRange' | 'dateRange' | 'dateAndPriceRange' | 'measure'
+  | 'text' | 'arrow' | 'priceLabel'
+  | 'gannFan' | 'gannBox' | 'cyclicLines'
   | 'anchoredVWAP'
-  | 'volumeProfileRange';
+  | 'volumeProfileRange'
+  | 'riskReward';
 
 export interface AnchorPoint {
   time: number;

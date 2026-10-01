@@ -47,6 +47,13 @@ export interface FeaturesConfig {
   zooming?: boolean;
   /** Enable crosshair */
   crosshair?: boolean;
+  /**
+   * Show the floating OHLCV tooltip that follows the cursor on hover.
+   * TradingView-style charts rely on the top-left legend (`legend`) instead
+   * of a cursor-following popup — set this to `false` to match that and
+   * keep only the legend updating on hover.
+   */
+  crosshairTooltip?: boolean;
   /** Enable keyboard shortcuts (arrows, +/-, Home/End, Space) */
   keyboard?: boolean;
 

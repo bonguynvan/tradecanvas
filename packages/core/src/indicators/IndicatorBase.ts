@@ -3,6 +3,7 @@ import type {
   IndicatorDescriptor,
   IndicatorConfig,
   IndicatorOutput,
+  IndicatorValue,
   ResolvedIndicatorStyle,
   DataSeries,
   ViewportState,
@@ -13,6 +14,28 @@ import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 export abstract class IndicatorBase implements IndicatorPlugin {
   abstract descriptor: IndicatorDescriptor;
   abstract calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput;
+
+  /**
+   * Whether `prev` can be extended incrementally from bar `from`: it must
+   * cover `[0, from)`, not be longer than `data`, and its recomputed tail must
+   * still sit on the same bar times — a last bar replaced with a different
+   * timestamp would otherwise leave a stale key in `values`.
+   */
+  protected canResume(data: DataSeries, prev: IndicatorOutput, from: number): boolean {
+    const series = prev.series;
+    if (!series || from <= 0 || from > series.length || series.length > data.length) return false;
+    for (let i = from; i < series.length; i++) {
+      if (series[i] && !prev.values.has(data[i].time)) return false;
+    }
+    return true;
+  }
+
+  /** Store bar `i`'s recomputed point in both `series` and the `values` map. */
+  protected writePoint(out: IndicatorOutput, data: DataSeries, i: number, val: IndicatorValue | null): void {
+    out.series![i] = val;
+    if (val) out.values.set(data[i].time, val);
+    else out.values.delete(data[i].time);
+  }
   abstract render(
     ctx: CanvasRenderingContext2D,
     output: IndicatorOutput,

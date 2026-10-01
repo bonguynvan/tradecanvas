@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -22,7 +23,7 @@ export class PercentagePriceOscillatorIndicator extends IndicatorBase {
     const fastP = getIntParam(config, 'fast', 12, 1);
     const slowP = getIntParam(config, 'slow', 26, 1);
     const signalP = getIntParam(config, 'signal', 9, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     if (n <= slowP) return { values, series };

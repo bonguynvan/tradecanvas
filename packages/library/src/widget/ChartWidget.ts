@@ -29,6 +29,35 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
+import { resolveMessages, createTranslator, type Translator } from './i18n.js';
+import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
+
+/**
+ * A local timeframe switch (resampling static data) that took at least this
+ * long last time is announced with the loading veil before it runs, since the
+ * main thread is about to be busy for several frames.
+ */
+const SLOW_LOCAL_SWITCH_MS = 48;
+/** Base series this long are assumed slow to resample before any timing exists. */
+const LARGE_SERIES_BARS = 50_000;
+
+/** Upper bound on waiting for a paint — rAF never fires in a frame that isn't rendering. */
+const PAINT_WAIT_MAX_MS = 100;
+
+/** Resolve once the browser has painted the current DOM state (or gave up waiting). */
+function afterPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== 'function' || document.hidden) {
+      setTimeout(resolve, 0);
+      return;
+    }
+    const fallback = setTimeout(resolve, PAINT_WAIT_MAX_MS);
+    requestAnimationFrame(() => setTimeout(() => {
+      clearTimeout(fallback);
+      resolve();
+    }, 0));
+  });
+}
 
 /** Distinct line colors for comparison overlays, cycled by add order. */
 const COMPARE_COLORS = ['#f7931a', '#627eea', '#26a17b', '#e84142', '#8247e5', '#f3ba2f'];
@@ -58,6 +87,8 @@ export class ChartWidget {
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
+  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
+  private hostWatchlistRefPrice = new Map<string, number>();
   private watchlistInterval: ReturnType<typeof setInterval> | null = null;
   private replayOriginalData: DataSeries | null = null;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
@@ -67,10 +98,18 @@ export class ChartWidget {
   private activeLayoutKey: string | null = null;
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
+  private loading: WidgetLoadingOverlay;
+  /** Bumped per stream connect; a connect that is no longer the latest leaves the UI to the newer one. */
+  private connectSeq = 0;
+  /** Bumped per local resample and widget.setData; a deferred local switch that is no longer the latest is skipped. */
+  private localSeq = 0;
+  /** Duration of the last local resample + setData, for SLOW_LOCAL_SWITCH_MS. */
+  private lastLocalSwitchMs = 0;
   private destroyed = false;
   private options: ChartWidgetOptions;
   private symbols: string[];
   private settingsState: ChartSettingsState;
+  private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
   // Finest-resolution series the widget has seen. When no live adapter is
@@ -83,7 +122,17 @@ export class ChartWidget {
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
-    this.settingsState = { ...DEFAULT_SETTINGS };
+    // `numberLocale` lives in two places: the headless Chart gets it via
+    // `chartOptions` (spread straight into `new Chart()` below) — but the
+    // widget's own chrome (watchlist, alerts, hotkey sheet, settings panel)
+    // reads `settingsState.numberLocale`, which otherwise stays on
+    // DEFAULT_SETTINGS' 'en-US' until the host touches the Settings UI.
+    // Seed it from the same option so both layers start in sync.
+    this.settingsState = {
+      ...DEFAULT_SETTINGS,
+      ...(options.chartOptions?.numberLocale ? { numberLocale: options.chartOptions.numberLocale } : {}),
+    };
+    this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
     // Resolve layout persistence config. Treated as opt-in — defaults to
     // `false` so existing apps don't suddenly start writing to localStorage.
@@ -106,8 +155,9 @@ export class ChartWidget {
       activeIndicators: new Map(),
       activeTool: null,
       magnetEnabled: true,
-      connectionState: 'connecting',
-      connectionMessage: 'Connecting...',
+      // Static data (no adapter) has no connection to report.
+      connectionState: options.adapter ? 'connecting' : 'disconnected',
+      connectionMessage: options.adapter ? this.t('status.connecting') : '',
     };
 
 
@@ -150,6 +200,7 @@ export class ChartWidget {
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
         },
+        this.t,
       );
     }
 
@@ -183,13 +234,18 @@ export class ChartWidget {
     this.chartContainer.className = 'tcw-chart-container';
     body.appendChild(this.chartContainer);
 
+    // TradingView-style loading state: covers the empty chart until the first
+    // bars land, then veils the previous chart during slow switches.
+    this.loading = new WidgetLoadingOverlay(this.chartContainer, this.t('status.loading'));
+
     // Watchlist sidebar (right side). Appended AFTER the chart container so
     // it sits to the right of the canvas in the flexbox row.
     if (options.watchlist) {
       this.watchlist = new WidgetWatchlist(body, this.symbols, {
         onSelect: (sym) => { void this.setSymbol(sym); },
-      });
+      }, this.t('watchlist.title'));
       this.watchlist.setActive(this.state.symbol);
+      this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
     }
 
     this.root.appendChild(body);
@@ -200,6 +256,11 @@ export class ChartWidget {
       theme: resolvedTheme,
       autoScale: true,
       crosshair: { mode: 'magnet' },
+      ...options.chartOptions,
+      // `features` is merged explicitly (host overrides win per-key) rather
+      // than inherited wholesale from the `...options.chartOptions` spread
+      // above — otherwise passing e.g. `chartOptions: { features: { x } }`
+      // would silently drop every other default below.
       features: {
         drawings: true,
         drawingMagnet: true,
@@ -210,15 +271,25 @@ export class ChartWidget {
         volume: true,
         legend: true,
         crosshair: true,
+        // TradingView itself has no cursor-following OHLCV popup — just the
+        // legend, which ChartWidget already renders. Off by default here
+        // (the headless Chart's own default stays `true`); opt back in via
+        // `chartOptions: { features: { crosshairTooltip: true } }`.
+        crosshairTooltip: false,
         keyboard: true,
         screenshot: true,
         alerts: true,
         barCountdown: true,
         logScale: true,
         watermark: true,
+        ...options.chartOptions?.features,
       },
-      ...options.chartOptions,
     });
+
+    // New bars end the loading state, whoever supplied them (stream snapshot,
+    // widget.setData, or the host calling getChart().setData directly); stream
+    // errors surface in the status bar and, mid-load, on the loading veil.
+    this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
     // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
@@ -248,7 +319,7 @@ export class ChartWidget {
         onChange: (patch) => this.applySettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
-      });
+      }, this.t);
     }
 
     // 8a. Symbol search
@@ -256,7 +327,7 @@ export class ChartWidget {
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
     });
-    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t);
 
     // Replay: click a revealed bar to jump the replay cursor there.
     this.chart.on('barClick', (e) => {
@@ -466,8 +537,15 @@ export class ChartWidget {
    * Push an entry into the watchlist (e.g., from your own WebSocket).
    * Call with the symbols you care about; the active symbol is updated
    * automatically from the chart's live data.
+   *
+   * A host-supplied `refPrice` takes precedence over the widget's own
+   * session-open guess for that symbol — including the active one, so the
+   * auto-tick loop stops clobbering it (see `tickWatchlist`).
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
+    if (entry.refPrice !== undefined) {
+      this.hostWatchlistRefPrice.set(symbol, entry.refPrice);
+    }
     this.watchlist?.setEntry(symbol, entry);
   }
 
@@ -476,10 +554,12 @@ export class ChartWidget {
     const data = this.chart.getData();
     if (data.length === 0) return;
     const last = data[data.length - 1];
+    const hostRef = this.hostWatchlistRefPrice.get(this.state.symbol);
     // Reference price: first bar of the loaded slice — that's the closest
-    // approximation of "session open" without timezone bookkeeping. Apps
-    // that need true session-open can override via `setWatchlistEntry`.
-    if (this.sessionRefPrice === null) {
+    // approximation of "session open" without timezone bookkeeping. Only
+    // used as a fallback; a refPrice the host already pushed via
+    // `setWatchlistEntry` (even for the active symbol) always wins.
+    if (hostRef === undefined && this.sessionRefPrice === null) {
       this.sessionRefPrice = data[0].open;
     }
 
@@ -490,7 +570,7 @@ export class ChartWidget {
 
     this.watchlist.setEntry(this.state.symbol, {
       lastPrice: last.close,
-      refPrice: this.sessionRefPrice,
+      refPrice: hostRef ?? this.sessionRefPrice ?? data[0].open,
       sparkline: buf.slice(),
     });
   }
@@ -500,12 +580,21 @@ export class ChartWidget {
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
     if (this.adapter) {
+      // Live adapter owns the data — refetch at the native resolution.
       await this.connectStream();
       return;
     }
-    if (this.options.resampleTimeframes !== false) {
-      this.applyTimeframeData();
+    if (this.options.resampleTimeframes === false) return;
+    // Static data: aggregate the base series locally. Lazily adopt whatever is
+    // currently on the chart as the base if the host fed it via getChart().
+    if (!this.baseSeries) {
+      const current = this.chart.getData();
+      if (current.length > 0) {
+        this.baseSeries = current;
+        this.baseTimeframeMs = inferTimeframeMs(current);
+      }
     }
+    await this.switchLocalTimeframe();
   }
 
   setTheme(theme: import('@tradecanvas/commons').ThemeName | Theme): void {
@@ -549,6 +638,7 @@ export class ChartWidget {
     this.sidebar?.destroy();
     this.settings?.destroy();
     this.statusBar?.destroy();
+    this.loading.destroy();
     this.chart.destroy();
     this.root.remove();
     removeWidgetStyles();
@@ -564,25 +654,7 @@ export class ChartWidget {
   }
 
   private handleTimeframe(tf: TimeFrame): void {
-    this.state = { ...this.state, timeframe: tf };
-    this.options.onTimeframeChange?.(tf);
-    this.updateUI();
-    if (this.adapter) {
-      // Live adapter owns the data — refetch at the native resolution.
-      this.connectStream();
-      return;
-    }
-    if (this.options.resampleTimeframes === false) return;
-    // Static data: aggregate the base series locally. Lazily adopt whatever is
-    // currently on the chart as the base if the host fed it via getChart().
-    if (!this.baseSeries) {
-      const current = this.chart.getData();
-      if (current.length > 0) {
-        this.baseSeries = current;
-        this.baseTimeframeMs = inferTimeframeMs(current);
-      }
-    }
-    this.applyTimeframeData();
+    void this.setTimeframe(tf);
   }
 
   /**
@@ -592,14 +664,44 @@ export class ChartWidget {
    * when that timeframe is coarser than the data's native spacing).
    */
   setData(data: DataSeries): void {
+    this.localSeq++; // supersedes a local switch still waiting to run
     this.baseSeries = data;
     this.baseTimeframeMs = inferTimeframeMs(data);
     this.applyTimeframeData();
+    // Static data is loaded the moment it's set, even an empty series. With a
+    // live adapter the stream's own load decides (connectStream).
+    if (!this.adapter) this.loading.end();
+  }
+
+  /**
+   * Local timeframe switch. When it is expected to block the main thread for
+   * several frames, veil the chart first and let that paint — otherwise the
+   * click would look ignored until the new chart pops in.
+   */
+  private async switchLocalTimeframe(): Promise<void> {
+    if (!this.baseSeries) return;
+    const seq = ++this.localSeq;
+    const expectSlow = this.lastLocalSwitchMs >= SLOW_LOCAL_SWITCH_MS
+      || this.baseSeries.length >= LARGE_SERIES_BARS;
+    try {
+      if (expectSlow) {
+        this.loading.begin(this.chart.getData().length > 0, true);
+        await afterPaint();
+        // Superseded: the newer switch or setData() ends the loading state.
+        if (seq !== this.localSeq || this.destroyed) return;
+      }
+      this.applyTimeframeData();
+    } finally {
+      // Also on a throw (bad data, a failing custom indicator) — never leave
+      // the veil up.
+      if (seq === this.localSeq) this.loading.end();
+    }
   }
 
   /** Render the base series at the active timeframe, resampling when coarser. */
   private applyTimeframeData(): void {
     if (!this.baseSeries) return;
+    const started = performance.now();
     const targetMs = timeframeToMs(this.state.timeframe);
     if (this.baseTimeframeMs > 0 && targetMs > this.baseTimeframeMs) {
       const weekStartsOn = this.options.weekStartsOn ?? 1;
@@ -607,6 +709,50 @@ export class ChartWidget {
     } else {
       this.chart.setData(this.baseSeries);
     }
+    this.lastLocalSwitchMs = performance.now() - started;
+  }
+
+  private handleDataUpdate(payload: unknown): void {
+    if (!payload || typeof payload !== 'object') return;
+    const p = payload as { length?: number; error?: string; connection?: { state?: string } };
+    if (typeof p.length === 'number') {
+      if (p.length > 0 && this.loading.isActive()) {
+        this.loading.end();
+        // A retry after a failed load just delivered history.
+        if (this.state.connectionState === 'error') this.setConnectionState('connected', this.t('status.live'));
+      }
+      return;
+    }
+    if (p.error !== undefined) {
+      // Only a failed *load* is reported from the error itself. Errors outside
+      // one can be transient (a single failed poll on a healthy connection);
+      // the status bar follows the stream's connection state below instead.
+      if (this.loading.isActive()) {
+        this.loading.fail(this.t('status.connectionFailed'));
+        this.setConnectionState('error', p.error || this.t('status.connectionFailed'));
+      }
+      return;
+    }
+    switch (p.connection?.state) {
+      case 'connected':
+        // A retry that brought back an empty history ends a failed load too.
+        if (this.loading.hasFailed()) this.loading.end();
+        if (!this.loading.isActive() && this.state.connectionState !== 'connected') {
+          this.setConnectionState('connected', this.t('status.live'));
+        }
+        break;
+      case 'reconnecting':
+        if (!this.loading.isActive()) this.setConnectionState('connecting', this.t('status.connecting'));
+        break;
+      case 'error':
+        if (!this.loading.isActive()) this.setConnectionState('error', this.t('status.connectionFailed'));
+        break;
+    }
+  }
+
+  private setConnectionState(connectionState: WidgetState['connectionState'], connectionMessage: string): void {
+    this.state = { ...this.state, connectionState, connectionMessage };
+    this.updateUI();
   }
 
   private toggleAlerts(): void {
@@ -1118,7 +1264,8 @@ export class ChartWidget {
 
   // --- Replay ---
 
-  private toggleReplay(): void {
+  /** Open (or close) bar replay with its scrubber — what the toolbar's Replay button does. */
+  toggleReplay(): void {
     if (this.replayBar?.isMounted()) {
       this.exitReplay();
     } else {
@@ -1240,7 +1387,10 @@ export class ChartWidget {
       this.chart.setLogScale(patch.logScale);
       this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
     }
-    if (patch.numberLocale !== undefined) this.chart.setNumberLocale(patch.numberLocale);
+    if (patch.numberLocale !== undefined) {
+      this.chart.setNumberLocale(patch.numberLocale);
+      this.watchlist?.setLocale(patch.numberLocale || undefined);
+    }
     if (patch.timezone !== undefined) {
       this.chart.setTimezoneOffset(patch.timezone === 'local' ? null : Number(patch.timezone));
     }
@@ -1269,13 +1419,17 @@ export class ChartWidget {
 
   private async connectStream(): Promise<void> {
     if (!this.adapter) return;
+    const seq = ++this.connectSeq;
 
     this.state = {
       ...this.state,
       connectionState: 'connecting',
-      connectionMessage: 'Connecting...',
+      connectionMessage: this.t('status.connecting'),
     };
     this.updateUI();
+    // Keep the previous chart up while the next one loads; it only gets the
+    // veil if the request is slow (see WidgetLoadingOverlay).
+    this.loading.begin(this.chart.getData().length > 0);
 
     try {
       this.chart.disconnectStream();
@@ -1285,6 +1439,8 @@ export class ChartWidget {
         timeframe: this.state.timeframe,
         historyLimit: this.options.historyLimit ?? 500,
       });
+      // A newer switch started while this one was loading — it owns the UI now.
+      if (seq !== this.connectSeq || this.destroyed) return;
 
       this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
         fontSize: 48,
@@ -1296,21 +1452,30 @@ export class ChartWidget {
       // recalculate against the loaded data, not the previous symbol's data.
       this.applySymbolLayout(this.state.symbol);
 
-      this.state = {
-        ...this.state,
-        connectionState: 'connected',
-        connectionMessage: 'Live',
-      };
+      if (this.loading.hasFailed()) {
+        // History failed to load; the stream keeps retrying and the next
+        // snapshot ends the loading state (handleDataUpdate).
+        this.state = { ...this.state, connectionState: 'error' };
+      } else {
+        this.loading.end();
+        this.state = {
+          ...this.state,
+          connectionState: 'connected',
+          connectionMessage: this.t('status.live'),
+        };
+      }
 
       // Re-pull comparison overlays at the (possibly new) timeframe so they
       // stay aligned with the main series. Drop the active symbol if it ended
       // up in the compare set after a symbol switch.
       void this.refetchCompares();
     } catch (err: unknown) {
+      if (seq !== this.connectSeq || this.destroyed) return;
+      this.loading.fail(this.t('status.connectionFailed'));
       this.state = {
         ...this.state,
         connectionState: 'error',
-        connectionMessage: err instanceof Error ? err.message : 'Connection failed',
+        connectionMessage: err instanceof Error ? err.message : this.t('status.connectionFailed'),
       };
     }
 

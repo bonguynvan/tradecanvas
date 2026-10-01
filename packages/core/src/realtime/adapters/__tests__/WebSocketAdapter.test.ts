@@ -133,6 +133,32 @@ describe('WebSocketAdapter', () => {
     expect(adapter.getConnectionState()).toBe('disconnected');
   });
 
+  it('a socket closed while still connecting cannot leak events into the next connection', () => {
+    const { adapter, socket } = makeAdapter(() => ({
+      bar: { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 },
+    }));
+    const errors: unknown[] = [];
+    adapter.on('error', (e) => errors.push(e.data));
+    adapter.on('connectionChange', (e) => connEvents.push(e.data));
+    adapter.on('bar', (e) => barEvents.push(e.data as { bar: OHLCBar; closed: boolean }));
+
+    adapter.connect(CONFIG);
+    // Switch away before the handshake completes, as a fast symbol change does.
+    adapter.disconnect();
+    connEvents = [];
+
+    expect(socket.onopen).toBeNull();
+    expect(socket.onmessage).toBeNull();
+    expect(socket.onerror).toBeNull();
+    // What the browser does next to the abandoned socket must go nowhere.
+    socket.onerror?.(undefined);
+    socket.fireMessage('{}');
+    socket.fireOpen();
+    expect(errors).toHaveLength(0);
+    expect(barEvents).toHaveLength(0);
+    expect(connEvents).toHaveLength(0);
+  });
+
   it('delegates fetchHistory to the supplied fetcher', async () => {
     const { adapter, history } = makeAdapter(() => null);
     await expect(adapter.fetchHistory('BTCUSDT', '1m', 10)).resolves.toEqual(history);

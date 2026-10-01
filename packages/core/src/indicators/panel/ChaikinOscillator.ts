@@ -7,6 +7,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 import { getIntParam } from '../params.js';
 
@@ -26,7 +27,7 @@ export class ChaikinOscillatorIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const fast = getIntParam(config, 'fast', 3, 1);
     const slow = getIntParam(config, 'slow', 10, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length < slow) return { values, series };
 

@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -22,7 +23,7 @@ export class CoppockIndicator extends IndicatorBase {
     const longRoc = getIntParam(config, 'longRoc', 14, 1);
     const shortRoc = getIntParam(config, 'shortRoc', 11, 1);
     const wmaPeriod = getIntParam(config, 'wma', 10, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     const n = data.length;
     const maxRoc = Math.max(longRoc, shortRoc);

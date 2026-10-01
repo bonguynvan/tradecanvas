@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
@@ -23,7 +24,7 @@ export class UltimateOscillatorIndicator extends IndicatorBase {
     const fast = getIntParam(config, 'fast', 7, 1);
     const mid = getIntParam(config, 'mid', 14, 1);
     const slow = getIntParam(config, 'slow', 28, 1);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length <= slow) return { values, series };
 

@@ -1,5 +1,6 @@
 import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
+import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
@@ -26,7 +27,7 @@ export class AlligatorIndicator extends IndicatorBase {
     const jawShift = getIntParam(config, 'jawShift', 8, 0);
     const teethShift = getIntParam(config, 'teethShift', 5, 0);
     const lipsShift = getIntParam(config, 'lipsShift', 3, 0);
-    const values = new Map<number, IndicatorValue>();
+    const values = new IndicatorValueMap();
     const n = data.length;
     const series: (IndicatorValue | null)[] = new Array(n).fill(null);
     if (n === 0) return { values, series };

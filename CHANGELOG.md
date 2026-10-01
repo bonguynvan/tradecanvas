@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.2.0 (2026-10-01)
+
+TradingView Advanced Charts parity, and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
+
+### Drawing tools — 26 → 40
+
+- **New:** Info Line, Trend Angle, Cross Line, Fib Channel, Fib Speed Resistance Fan, Schiff and Modified Schiff Pitchforks, XABCD and ABCD patterns, Head and Shoulders, Circle, Date and Price Range (with volume traded), Cyclic Lines, Price Label. Earlier in this release: Horizontal Ray and Long/Short Position.
+- **Widget toolbar regrouped TradingView-style** (Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes, Gann & Pitchforks, Patterns, Measure, Annotation, Forecasting) — also surfaces Fib Time Zones, Anchored VWAP and Fixed Range Volume Profile, which were registered but missing from the toolbar.
+- Measuring labels use a precision that fits the price level instead of a fixed 2 decimals.
+
+### Indicators — 70
+
+- **New:** VWMA, Envelope, TEMA, Weighted MA.
+- **Incremental updates on live ticks** — new optional `IndicatorPlugin.update()`; built-ins recompute only the forming bar (a tick with 4 indicators at 100k bars: ~96 ms → ~0.001 ms).
+- **`IndicatorValueMap`** — array-backed drop-in `Map` for indicator values; full recalculation on a symbol/timeframe switch is ~2.5–3.5× faster.
+
+### Performance
+
+- `Viewport.getState()` snapshots are cached instead of deep-cloned 8–10× per frame; indicator auto-scale scans only the visible range; `Intl` number/date formatters are cached (hover frames ~0.64 → ~0.23 ms).
+- The price scale no longer jumps while live data streams in; new bars don't yank you out of history.
+
+### Sub-cent prices
+
+- Legend, crosshair pill and last-price tag follow the market's `pricePrecision` (or the axis's precision) in the configured `numberLocale` — PEPE-class prices no longer show "0.00".
+- The price axis auto-widens to fit long labels instead of clipping them; ordinary prices keep the 70px default.
+
+### Symbol / timeframe switching
+
+- **TradingView-style loading** — fast switches swap in place with no flash; slow ones veil the previous chart with a loading card after 200 ms; failures say so and recover on retry.
+- **Race-free** — superseded history responses are dropped (`StreamManager`, `ChartWidget`, `Chart.connect`); adapters detach every socket handler on disconnect.
+- `setData` resets auto-scale so each switch fits the new data.
+
+### Widget
+
+- `locale` / `messages` i18n with built-in Vietnamese; `numberLocale` fixes; watchlist `refPrice` precedence.
+- `widget.toggleReplay()` opens bar replay from code.
+- The cursor-following OHLCV popup is off by default (the legend shows the same data); `chartOptions.features` no longer wipes the other feature defaults.
+
 ## 1.0.1 (2026-08-28)
 
 Patch release for the core packages, plus the first public release of the framework wrappers.

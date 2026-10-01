@@ -6,7 +6,6 @@
   let host: HTMLDivElement | undefined = $state();
   let status = $state<'loading' | 'ready' | 'error'>('loading');
   let errorMessage = $state('');
-  let busy = $state(false);
 
   let activeSymbol = $state('BTCUSDT');
   let activeTf = $state<TimeFrame>('5m');
@@ -34,20 +33,18 @@
     { id: 'baseline', label: 'Baseline' },
   ];
 
-  async function pickSymbol(sym: string) {
-    if (sym === activeSymbol || !widget || busy) return;
-    busy = true;
+  // No local busy state: the widget drops superseded switches itself and
+  // shows its own loading veil only when a switch is actually slow.
+  function pickSymbol(sym: string) {
+    if (sym === activeSymbol || !widget) return;
     activeSymbol = sym;
-    try { await widget.setSymbol(sym); } catch (e) { console.error(e); }
-    busy = false;
+    void widget.setSymbol(sym);
   }
 
-  async function pickTf(tf: TimeFrame) {
-    if (tf === activeTf || !widget || busy) return;
-    busy = true;
+  function pickTf(tf: TimeFrame) {
+    if (tf === activeTf || !widget) return;
     activeTf = tf;
-    try { await widget.setTimeframe(tf); } catch (e) { console.error(e); }
-    busy = false;
+    void widget.setTimeframe(tf);
   }
 
   function pickType(type: ChartType) {
@@ -126,8 +123,6 @@
       <div class="terminal-overlay"><span class="pulse"></span><span>Connecting to Binance…</span></div>
     {:else if status === 'error'}
       <div class="terminal-overlay terminal-overlay--error">Live feed unavailable — {errorMessage}</div>
-    {:else if busy}
-      <div class="terminal-overlay terminal-overlay--soft"><span class="pulse"></span></div>
     {/if}
   </div>
 
@@ -247,11 +242,6 @@
     font-size: 13px;
     pointer-events: none;
     background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
-  }
-
-  .terminal-overlay--soft {
-    background: transparent;
-    inset: auto 12px 12px auto;
   }
 
   .terminal-overlay--error {

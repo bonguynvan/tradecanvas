@@ -380,7 +380,7 @@ export class RenderEngine {
             const valText = formatPrice(hoverVal, precision, locale);
             c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
             const tw = c.measureText(valText).width;
-            const badgeW = Math.min(tw + 10, PRICE_AXIS_WIDTH - 2);
+            const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
 
             c.fillStyle = theme.crosshair;
             c.fillRect(axisX + 1, cursorPos2.y - 9, badgeW, 18);
@@ -459,7 +459,7 @@ export class RenderEngine {
       // Axis badge
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
-      ctx.fillRect(axisX, y - 7, PRICE_AXIS_WIDTH - 2, 14);
+      ctx.fillRect(axisX, y - 7, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 14);
       ctx.fillStyle = '#000';
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';

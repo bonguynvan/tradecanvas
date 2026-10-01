@@ -33,12 +33,12 @@ function App() {
 }`}</code></pre>
 
 <h2>Vue</h2>
-<pre><code>{`<script setup lang="ts">
+<pre><code>{'<' + `script setup lang="ts">
 import { TradeCanvas } from '@tradecanvas/vue'
 import { BinanceAdapter } from '@tradecanvas/chart'
 
 const adapter = new BinanceAdapter()
-</script>
+` + '<' + `/script>
 
 <template>
   <TradeCanvas
@@ -51,12 +51,12 @@ const adapter = new BinanceAdapter()
 </template>`}</code></pre>
 
 <h2>Svelte</h2>
-<pre><code>{`<script lang="ts">
+<pre><code>{'<' + `script lang="ts">
   import { TradeCanvas } from '@tradecanvas/svelte'
   import { BinanceAdapter } from '@tradecanvas/chart'
 
   const adapter = new BinanceAdapter()
-</script>
+` + '<' + `/script>
 
 <TradeCanvas
   symbol="BTCUSDT"
