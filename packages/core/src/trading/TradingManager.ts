@@ -264,8 +264,8 @@ export class TradingManager {
   }
 
   /**
-   * Draw position/order price badges on the price axis. Intended for the
-   * UI layer so they paint ON TOP of the regular axis labels.
+   * Draw position/order price badges on the price axis. Drawn after the
+   * price axis so they paint ON TOP of the regular axis labels.
    */
   renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (!this.config.enabled) return;

@@ -53,7 +53,7 @@ export class OrderRenderer {
       ctx.fillText(label, chartRect.x + 8, y);
 
       // Price + qty badge on axis — rendered separately via renderAxisBadges()
-      // on the UI layer so it paints on top of the price axis labels.
+      // after the price axis so it paints on top of its labels.
 
       // Side indicator (small triangle)
       const triX = chartRect.x + 4 + labelWidth + 6;
@@ -87,7 +87,7 @@ export class OrderRenderer {
   }
 
   /**
-   * Draw order price badges on the price axis. Called from the UI layer
+   * Draw order price badges on the price axis. Called after the price axis
    * so they paint ON TOP of the regular axis tick labels.
    */
   renderAxisBadges(

@@ -693,12 +693,10 @@ export class Chart {
       cancel: () => this.selectionBoxOverlay.cancel(),
     });
 
-    this.interactionManager.setOverlayDirtyCallback(() => {
-      this.engine.requestRender(LayerType.Overlay);
-      // UI also dirties on every pointer move because the crosshair hover
-      // pills (price + time axis labels) live on the UI layer so they
-      // can sit above the static axis labels.
-      this.engine.requestRender(LayerType.UI);
+    // A plain hover only moves pointer-tied visuals (crosshair, its axis
+    // pills, measure ruler, selection box): repaint just the top canvas.
+    this.interactionManager.setOverlayDirtyCallback((hoverOnly) => {
+      this.engine.requestRender(hoverOnly ? LayerType.Hover : LayerType.Overlay);
     });
     this.interactionManager.attach();
 
@@ -1266,7 +1264,6 @@ export class Chart {
       this.tradingManager.setCurrentPrice(price);
       this.currentPriceLine.setPrice(price, previousClose ?? undefined);
       this.engine.requestRender(LayerType.Overlay);
-      this.engine.requestRender(LayerType.UI);
     });
 
     this.streamManager.on('connectionChange', (info) => {
@@ -1294,7 +1291,7 @@ export class Chart {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     this.countdownInterval = setInterval(() => {
       if (this.barCountdown.isVisible()) {
-        this.engine.requestRender(LayerType.UI);
+        this.engine.requestRender(LayerType.Hover);
       }
     }, 1000);
   }
@@ -1376,7 +1373,7 @@ export class Chart {
 
   setBarCountdownVisible(visible: boolean): void {
     this.barCountdown.setVisible(visible);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   setSessionBreaksVisible(visible: boolean): void {
@@ -1576,7 +1573,7 @@ export class Chart {
 
   setCrosshairMode(mode: 'normal' | 'magnet' | 'hidden'): void {
     this.crosshairHandler.setMode(mode);
-    this.engine.requestRender(LayerType.Overlay);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   getCrosshairMode(): string {
@@ -1587,7 +1584,7 @@ export class Chart {
     if (point) {
       this.crosshairHandler.onPointerMove(point);
     }
-    this.engine.requestRender(LayerType.Overlay);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   getData(): DataSeries {
@@ -1717,7 +1714,6 @@ export class Chart {
     this.timeAxis.setTimezoneOffset(minutes);
     this.crosshairHandler.setTimezoneOffset(minutes);
     this.engine.requestRender(LayerType.UI);
-    this.engine.requestRender(LayerType.Overlay);
   }
 
   // --- Pivot / swing markers ---
@@ -1771,12 +1767,12 @@ export class Chart {
 
   setLegend(config: Partial<import('@tradecanvas/core').LegendConfig>): void {
     this.chartLegend.setConfig(config);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   setSymbolName(symbol: string): void {
     this.chartLegend.setSymbol(symbol);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   /**
@@ -1785,7 +1781,7 @@ export class Chart {
    */
   setStatusText(text: string | null): void {
     this.chartLegend.setStatusText(text);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   // --- Screenshot ---

@@ -40,7 +40,8 @@ export class InteractionManager {
   private tradingManager: TradingManager | null = null;
   private paneResizeHandler: PaneResizeHandler | null = null;
   private viewportGetter: (() => ViewportState) | null = null;
-  private onOverlayDirty: (() => void) | null = null;
+  /** `hoverOnly`: only pointer-tied visuals changed (crosshair, measure ruler, selection box). */
+  private onOverlayDirty: ((hoverOnly?: boolean) => void) | null = null;
   private boundHandlers: (() => void)[] = [];
 
   // Touch state
@@ -58,7 +59,12 @@ export class InteractionManager {
 
   constructor(private element: HTMLElement) {}
 
-  setOverlayDirtyCallback(cb: () => void): void { this.onOverlayDirty = cb; }
+  /**
+   * Called when a pointer event changed what's drawn. `hoverOnly` is true when
+   * only pointer-tied visuals changed (crosshair, axis pills, measure ruler,
+   * selection box) — the chart then redraws just its thin top canvas.
+   */
+  setOverlayDirtyCallback(cb: (hoverOnly?: boolean) => void): void { this.onOverlayDirty = cb; }
 
   setPanHandler(handler: PanHandler): void { this.panHandler = handler; }
   setZoomHandler(handler: ZoomHandler): void { this.zoomHandler = handler; }
@@ -271,7 +277,7 @@ export class InteractionManager {
         this.boxSelecting = true;
         this.boxSelectHandlers.begin(pos);
         setCursor(idleCursor());
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
 
@@ -281,7 +287,7 @@ export class InteractionManager {
       if (e.shiftKey && this.measureHandlers) {
         this.measuring = true;
         this.measureHandlers.begin(pos);
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
 
@@ -352,13 +358,13 @@ export class InteractionManager {
 
       if (this.measuring && this.measureHandlers) {
         this.measureHandlers.move(pos);
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
 
       if (this.boxSelecting && this.boxSelectHandlers) {
         this.boxSelectHandlers.move(pos);
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
 
@@ -378,7 +384,8 @@ export class InteractionManager {
       }
       this.panHandler?.onPointerMove(pos);
       this.crosshairHandler?.onPointerMove(pos);
-      this.onOverlayDirty?.();
+      // Hover-only unless a press is panning the chart.
+      this.onOverlayDirty?.(!pressActive);
     };
 
     const onMouseUp = (e: MouseEvent) => {
@@ -390,7 +397,7 @@ export class InteractionManager {
       if (this.boxSelecting && this.boxSelectHandlers) {
         this.boxSelecting = false;
         this.boxSelectHandlers.end();
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
       if (this.axisDragHandler?.isActive()) {
@@ -409,7 +416,7 @@ export class InteractionManager {
       if (this.measuring && this.measureHandlers) {
         this.measuring = false;
         this.measureHandlers.end();
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
       if (this.tradingManager?.onPointerUp()) return;
@@ -438,7 +445,7 @@ export class InteractionManager {
         // The gesture continues outside (document listener); only the hover
         // crosshair goes away.
         this.crosshairHandler?.onPointerLeave();
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
         return;
       }
       setCursor('');
@@ -465,7 +472,7 @@ export class InteractionManager {
       if (e.key === 'Escape' && this.boxSelecting && this.boxSelectHandlers) {
         this.boxSelecting = false;
         this.boxSelectHandlers.cancel();
-        this.onOverlayDirty?.();
+        this.onOverlayDirty?.(true);
       }
       if (e.key === 'Escape' && this.onEscape) {
         this.onEscape();
@@ -528,7 +535,7 @@ export class InteractionManager {
             // Stop the pan gesture that started under the press so it doesn't
             // suddenly jolt the chart when the user lifts their finger.
             this.panHandler?.onPointerUp();
-            this.onOverlayDirty?.();
+            this.onOverlayDirty?.(true);
           }, this.longPressMs);
         }
 
@@ -600,6 +607,7 @@ export class InteractionManager {
         this.lastTouchDist = dist;
         this.lastTouchMid = mid;
       }
+      // A finger on the chart pans or zooms it: the scene changes.
       this.onOverlayDirty?.();
     };
 
@@ -622,8 +630,13 @@ export class InteractionManager {
       }
     };
 
+    // The pointer → chart mapping uses a cached bounding rect. Anything that
+    // can move the chart on screen drops it: a window resize, a scroll of the
+    // page or of any scrolling ancestor (scroll doesn't bubble, so listen in
+    // the capture phase), and the pointer entering (covers layout shifts).
     const onWindowResize = () => this.invalidateRect();
-    const onElementScroll = () => this.invalidateRect();
+    const onAnyScroll = () => this.invalidateRect();
+    const onMouseEnter = () => this.invalidateRect();
 
     // Attach all — mouseup on document so we catch it even if cursor leaves the chart
     this.element.addEventListener('mousedown', onMouseDown);
@@ -638,7 +651,8 @@ export class InteractionManager {
     this.element.addEventListener('touchend', onTouchEnd);
     document.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', onWindowResize);
-    this.element.addEventListener('scroll', onElementScroll, { passive: true });
+    document.addEventListener('scroll', onAnyScroll, { capture: true, passive: true });
+    this.element.addEventListener('mouseenter', onMouseEnter);
 
     this.boundHandlers.push(
       endPress,
@@ -654,7 +668,8 @@ export class InteractionManager {
       () => this.element.removeEventListener('touchend', onTouchEnd),
       () => document.removeEventListener('keydown', onKeyDown),
       () => window.removeEventListener('resize', onWindowResize),
-      () => this.element.removeEventListener('scroll', onElementScroll),
+      () => document.removeEventListener('scroll', onAnyScroll, { capture: true }),
+      () => this.element.removeEventListener('mouseenter', onMouseEnter),
     );
   }
 

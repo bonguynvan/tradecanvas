@@ -57,10 +57,18 @@ export interface ViewportState {
   priceAxisWidth?: number;
 }
 
+/**
+ * What changed, for `requestRender()`. The chart paints two canvases: a scene
+ * (everything that follows data, viewport and chart objects) and a thin top
+ * canvas for pointer-tied visuals. Any type except `Hover` redraws both;
+ * `Hover` redraws only the top canvas (crosshair, its axis pills, legend,
+ * bar countdown, measure ruler, selection box).
+ */
 export enum LayerType {
   Background = 0,
   Main = 1,
   Panel = 2,
   Overlay = 3,
   UI = 4,
+  Hover = 5,
 }

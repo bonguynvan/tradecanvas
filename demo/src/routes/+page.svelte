@@ -175,7 +175,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
           </div>
         {/each}
       </dl>
-      <p class="tile-foot">Multi-layer Canvas2D, dirty-layer repaint, visible-range rendering. Run <code>pnpm bench</code> to reproduce.</p>
+      <p class="tile-foot">Two-canvas Canvas2D (hover repaints only the top one), visible-range rendering. Run <code>pnpm bench</code> to reproduce.</p>
     </article>
 
     <article class="tile">

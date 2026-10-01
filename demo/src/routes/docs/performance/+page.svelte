@@ -4,12 +4,12 @@
 
 <svelte:head>
   <title>Performance — TradeCanvas docs</title>
-  <meta name="description" content="How TradeCanvas stays fast: dirty-layer rendering, visible-range work, incremental indicators, cheap full loads, LTTB downsampling — with benchmark numbers." />
+  <meta name="description" content="How TradeCanvas stays fast: two-canvas rendering, visible-range work, incremental indicators, cheap full loads, LTTB downsampling — with benchmark numbers." />
 </svelte:head>
 
 <h1>Performance</h1>
 <p>
-  A multi-layer Canvas2D pipeline repaints only the layers that changed, and every per-frame step
+  A two-canvas Canvas2D pipeline repaints only what changed, and every per-frame step
   is bounded by what is on screen, not by how much history is loaded. The numbers below come from
   <code>pnpm bench</code> (single core) and from profiling the live widget; the
   <a href="{base}/#lab-title">Feature Lab</a> times real switches as you click.
@@ -17,7 +17,7 @@
 
 <h2>Frames: flat from 500 to 100,000 bars</h2>
 <ul>
-  <li><strong>Dirty layers</strong> — background, main, overlay and UI canvases repaint independently; a hover redraws only overlay + UI (~0.23 ms).</li>
+  <li><strong>Two canvases</strong> — a scene canvas (grid, series, indicators, chart objects, axes) and a thin top canvas for the crosshair, legend and other pointer-tied visuals. A hover repaints only the top canvas (~0.2 ms), and the browser composites two surfaces, not four.</li>
   <li><strong>Visible-range rendering</strong> — every renderer, the auto-scale and the indicator price range walk only the bars in view.</li>
   <li><strong>No per-frame garbage</strong> — viewport snapshots are cached between changes; number and date formatters are reused instead of rebuilt per label.</li>
   <li><strong>Auto-sized price axis</strong> — fitting the axis to its longest label costs ~0.05 ms and only relayouts when the width really changes.</li>

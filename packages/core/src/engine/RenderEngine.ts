@@ -25,6 +25,15 @@ import type { AlertManager } from '../features/AlertManager.js';
 import type { SignalMarkerManager } from '../features/SignalMarkerManager.js';
 import type { TradeZoneManager } from '../features/TradeZoneManager.js';
 
+/** Height of an indicator pane's title strip; the indicator draws below it. */
+const PANEL_HEADER_HEIGHT = 20;
+
+/** Decimals for a pane's axis labels and header values, from its tick step. */
+function panelPrecision(step: number): number {
+  if (step < 1) return Math.ceil(-Math.log10(step)) + 1;
+  return step < 10 ? 1 : 0;
+}
+
 export interface PanelRenderInfo {
   instanceId: string;
   rect: Rect;
@@ -76,11 +85,9 @@ export class RenderEngine {
   readonly dprManager: DPRManager;
   private renderCtx: RenderContext | null = null;
 
-  // Cached layer references — avoid Map lookup per frame
-  private bgLayer: CanvasLayer | undefined;
-  private mainLayer: CanvasLayer | undefined;
-  private overlayLayer: CanvasLayer | undefined;
-  private uiLayer: CanvasLayer | undefined;
+  // Cached canvas references — avoid a lookup per frame
+  private sceneLayer: CanvasLayer | undefined;
+  private topLayer: CanvasLayer | undefined;
 
   /**
    * Optional hook fired AFTER the canvas layers have been resized in
@@ -116,10 +123,8 @@ export class RenderEngine {
   }
 
   private cacheLayerRefs(): void {
-    this.bgLayer = this.layerManager.getLayer(LayerType.Background);
-    this.mainLayer = this.layerManager.getLayer(LayerType.Main);
-    this.overlayLayer = this.layerManager.getLayer(LayerType.Overlay);
-    this.uiLayer = this.layerManager.getLayer(LayerType.UI);
+    this.sceneLayer = this.layerManager.getLayer(LayerType.Main);
+    this.topLayer = this.layerManager.getLayer(LayerType.Hover);
   }
 
   setRenderContext(ctx: RenderContext): void {
@@ -145,281 +150,283 @@ export class RenderEngine {
   private render(dirtyLayers: ReadonlySet<LayerType>): void {
     const ctx = this.renderCtx;
     if (!ctx) return;
-    const { viewport, theme, data } = ctx;
-    const locale = ctx.numberLocale ?? 'en-US';
 
     // Skip rendering if viewport has zero dimensions
-    if (viewport.chartRect.width <= 0 || viewport.chartRect.height <= 0) return;
+    const { chartRect } = ctx.viewport;
+    if (chartRect.width <= 0 || chartRect.height <= 0) return;
 
-    if (dirtyLayers.has(LayerType.Background) && this.bgLayer) {
-      this.bgLayer.clear();
-      ctx.gridRenderer?.render(this.bgLayer.ctx, viewport, theme);
-      ctx.sessionShading?.render(this.bgLayer.ctx, data, viewport, theme);
-      ctx.sessionBreaks?.render(this.bgLayer.ctx, viewport, theme, data);
-      ctx.watermark?.render(this.bgLayer.ctx, viewport, theme);
+    // Anything except a hover-only change redraws the scene. The top canvas
+    // always follows: it is nearly empty, and what it shows (legend values,
+    // crosshair pills) can depend on any of it.
+    let sceneDirty = false;
+    for (const layer of dirtyLayers) {
+      if (layer !== LayerType.Hover) { sceneDirty = true; break; }
     }
+    if (sceneDirty && this.sceneLayer) this.renderScene(this.sceneLayer, ctx);
+    if (this.topLayer) this.renderTop(this.topLayer, ctx);
+  }
 
-    if (dirtyLayers.has(LayerType.Main) && this.mainLayer) {
-      this.mainLayer.clear();
-      const c = this.mainLayer.ctx;
+  /** Everything that only changes with data, viewport or chart objects. */
+  private renderScene(layer: CanvasLayer, ctx: RenderContext): void {
+    const { viewport, theme, data } = ctx;
+    layer.clear();
+    const c = layer.ctx;
 
-      // Clip main chart area
+    // --- Background: grid, session shading/breaks, watermark ---
+    ctx.gridRenderer?.render(c, viewport, theme);
+    ctx.sessionShading?.render(c, data, viewport, theme);
+    ctx.sessionBreaks?.render(c, viewport, theme, data);
+    ctx.watermark?.render(c, viewport, theme);
+
+    // --- Series, volume, overlay indicators (clipped to the main chart) ---
+    c.save();
+    c.beginPath();
+    c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
+    c.clip();
+    // Liquidity heatmap (backmost, behind volume + candles)
+    ctx.depthHeatmap?.render(c, viewport, theme);
+    // Volume bars (drawn first, behind candles)
+    ctx.volumeRenderer?.render(c, data, viewport, theme);
+    ctx.volumeProfile?.render(c, data, viewport, theme);
+    ctx.marketProfile?.render(c, data, viewport, theme);
+    ctx.chartRenderer?.render(c, data, viewport, theme);
+    ctx.compareRenderer?.render(c, data, viewport, theme);
+    ctx.indicatorEngine?.renderOverlays(c, viewport);
+    ctx.periodLevels?.render(c, data, viewport, theme);
+    ctx.pivotMarkers?.render(c, data, viewport, theme);
+    ctx.renderOverlayPlugins?.(c, 'main');
+    c.restore();
+
+    this.renderPanels(c, ctx);
+
+    // --- Chart objects: limits, trade zones, drawings, orders, markers, alerts ---
+    if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits);
+    ctx.tradeZoneManager?.render(c, viewport, theme);
+    ctx.drawingRenderer?.render(c, viewport);
+    ctx.tradingRenderer?.render(c, viewport, theme);
+    ctx.signalMarkerManager?.render(c, viewport, theme);
+    ctx.alertManager?.render(c, viewport, theme);
+
+    // --- Axes and price tags ---
+    ctx.priceAxis?.render(c, viewport, theme);
+    // Trading axis badges paint ON TOP of the regular price axis labels
+    // so position entry prices and order trigger prices are always visible.
+    ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
+    ctx.currentPriceLine?.render(c, viewport, theme);
+    ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
+    this.renderPanelAxes(c, ctx);
+  }
+
+  /**
+   * Pointer-tied visuals only — crosshair, its axis pills, the legend (it
+   * shows the hovered bar), bar countdown, measure ruler, selection box.
+   * A hover redraws just this thin layer, never the scene underneath.
+   */
+  private renderTop(layer: CanvasLayer, ctx: RenderContext): void {
+    const { viewport, theme, data } = ctx;
+    layer.clear();
+    const c = layer.ctx;
+
+    ctx.measureOverlay?.render(c, viewport, theme);
+    ctx.selectionBoxOverlay?.render(c, viewport, theme);
+    ctx.crosshairHandler?.render(c, viewport, theme);
+    // Overlay plugins sit above the crosshair and repaint with it, as they did
+    // when every pointer move repainted the overlay layer.
+    ctx.renderOverlayPlugins?.(c, 'overlay');
+    this.renderPanelCrosshair(c, ctx);
+    // Crosshair axis hover pills sit on top of the static price/time labels.
+    ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
+    ctx.chartLegend?.render(c, viewport, theme, data);
+    ctx.barCountdown?.render(c, viewport, theme, data);
+    ctx.renderOverlayPlugins?.(c, 'ui');
+    this.renderPanelHoverValues(c, ctx);
+  }
+
+  /** Indicator panes: background, divider, name and the indicator itself. */
+  private renderPanels(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const { theme } = ctx;
+    const panels = ctx.panels;
+    const indicatorEngine = ctx.indicatorEngine;
+    if (!indicatorEngine || panels.length === 0) return;
+
+    // Cache font string once for all panels
+    const panelFont = `10px ${theme.font.family}`;
+    // Build descriptor lookup once per frame — avoids O(n*m) .find() per panel
+    const descMap = this.panelDescriptors(indicatorEngine);
+
+    for (const panel of panels) {
+      if (panel.rect.width <= 0 || panel.rect.height <= 0) continue;
+
       c.save();
       c.beginPath();
-      c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
+      c.rect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
       c.clip();
 
-      // Liquidity heatmap (backmost, behind volume + candles)
-      ctx.depthHeatmap?.render(c, viewport, theme);
+      // Panel background
+      c.fillStyle = theme.background;
+      c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
 
-      // Volume bars (drawn first, behind candles)
-      ctx.volumeRenderer?.render(c, data, viewport, theme);
-      ctx.volumeProfile?.render(c, data, viewport, theme);
-      ctx.marketProfile?.render(c, data, viewport, theme);
-      ctx.chartRenderer?.render(c, data, viewport, theme);
-      ctx.compareRenderer?.render(c, data, viewport, theme);
-      ctx.indicatorEngine?.renderOverlays(c, viewport);
-      ctx.periodLevels?.render(c, data, viewport, theme);
-      ctx.pivotMarkers?.render(c, data, viewport, theme);
-      ctx.renderOverlayPlugins?.(c, 'main');
+      // Thick divider bar at top of panel
+      c.fillStyle = theme.axisLine;
+      c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, 3);
 
+      // Panel indicator name in header area
+      c.fillStyle = theme.textSecondary;
+      c.font = panelFont;
+      c.textBaseline = 'top';
+      c.textAlign = 'left';
+      const desc = descMap.get(panel.instanceId);
+      if (desc) c.fillText(desc.descriptor.name, panel.rect.x + 6, panel.rect.y + 6);
+
+      // Clip indicator rendering to below the header
+      c.save();
+      c.beginPath();
+      c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
+      c.clip();
+      indicatorEngine.renderPanel(c, panel.instanceId, panel.viewport);
       c.restore();
 
-      // Render panel indicators in their own clipped regions
-      const panels = ctx.panels;
-      const indicatorEngine = ctx.indicatorEngine;
-      if (indicatorEngine && panels.length > 0) {
-        // Cache font string once for all panels
-        const panelFont = `10px ${theme.font.family}`;
+      c.restore();
+    }
+  }
 
-        // Build descriptor lookup once per frame — avoids O(n*m) .find() per panel
-        const panelDescs = indicatorEngine.getPanelIndicators();
-        const descMap = new Map<string, typeof panelDescs[0]>();
-        for (const d of panelDescs) descMap.set(d.instanceId, d);
+  /** Panel Y-axes: axis line, ticks and value labels. */
+  private renderPanelAxes(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const { theme } = ctx;
+    const locale = ctx.numberLocale ?? 'en-US';
+    const panelFont = `${theme.font.sizeSmall}px ${theme.font.family}`;
 
-        for (const panel of panels) {
-          if (panel.rect.width <= 0 || panel.rect.height <= 0) continue;
+    for (const panel of ctx.panels) {
+      const pv = panel.viewport;
+      const pr = panel.rect;
+      const { min, max } = pv.priceRange;
+      if (max - min <= 0 || pr.height <= 0) continue;
 
-          c.save();
-          c.beginPath();
-          c.rect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
-          c.clip();
+      const axisX = pr.x + pr.width;
+      const insetRect = pv.chartRect; // already inset by header
 
-          const PANEL_HEADER_HEIGHT = 20;
+      c.strokeStyle = theme.axisLine;
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(axisX + 0.5, pr.y);
+      c.lineTo(axisX + 0.5, pr.y + pr.height);
+      c.stroke();
 
-          // Panel background
-          c.fillStyle = theme.background;
-          c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
+      const step = computeTickStep(min, max, 4);
+      const firstVal = Math.ceil(min / step) * step;
+      const precision = panelPrecision(step);
 
-          // Thick divider bar at top of panel
-          c.fillStyle = theme.axisLine;
-          c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, 3);
+      c.font = panelFont;
+      c.textBaseline = 'middle';
+      c.textAlign = 'left';
 
-          // Panel indicator name in header area
-          c.fillStyle = theme.textSecondary;
-          c.font = panelFont;
-          c.textBaseline = 'top';
-          c.textAlign = 'left';
-          const desc = descMap.get(panel.instanceId);
-          if (desc) {
-            c.fillText(desc.descriptor.name, panel.rect.x + 6, panel.rect.y + 6);
-          }
-
-          // Clip indicator rendering to below the header
-          c.save();
-          c.beginPath();
-          c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
-          c.clip();
-
-          indicatorEngine.renderPanel(c, panel.instanceId, panel.viewport);
-
-          c.restore();
-
-          c.restore();
-        }
+      for (let val = firstVal; val <= max; val += step) {
+        const y = priceToY(val, pv);
+        if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
+        c.strokeStyle = theme.axisLine;
+        c.beginPath();
+        c.moveTo(axisX, Math.round(y) + 0.5);
+        c.lineTo(axisX + 4, Math.round(y) + 0.5);
+        c.stroke();
+        c.fillStyle = theme.axisLabel;
+        c.fillText(formatPrice(val, precision, locale), axisX + 6, y);
       }
     }
+  }
 
-    if (dirtyLayers.has(LayerType.Overlay) && this.overlayLayer) {
-      this.overlayLayer.clear();
-      const c = this.overlayLayer.ctx;
-
-      // Price limit lines (ceiling/floor/reference)
-      if (ctx.priceLimits) {
-        this.renderPriceLimits(c, viewport, theme, ctx.priceLimits);
+  /** Crosshair lines inside the hovered indicator pane. */
+  private renderPanelCrosshair(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const cursorPos = ctx.crosshairHandler?.getPosition();
+    if (!cursorPos || ctx.panels.length === 0) return;
+    const { theme } = ctx;
+    for (const panel of ctx.panels) {
+      const pr = panel.rect;
+      if (cursorPos.x < pr.x || cursorPos.x > pr.x + pr.width || cursorPos.y < pr.y || cursorPos.y > pr.y + pr.height) {
+        continue;
       }
+      const pv = panel.viewport;
+      // Vertical line (synced with main chart bar snapping)
+      const barIdx = xToBarIndex(cursorPos.x, pv);
+      const snappedIdx = Math.max(0, Math.min((ctx.data?.length ?? 1) - 1, Math.round(barIdx)));
+      const cx = barIndexToX(snappedIdx, pv);
 
-      ctx.tradeZoneManager?.render(c, viewport, theme);
-      ctx.drawingRenderer?.render(c, viewport);
-      ctx.tradingRenderer?.render(c, viewport, theme);
-      ctx.signalMarkerManager?.render(c, viewport, theme);
-      ctx.alertManager?.render(c, viewport, theme);
-      ctx.measureOverlay?.render(c, viewport, theme);
-      ctx.selectionBoxOverlay?.render(c, viewport, theme);
-      ctx.crosshairHandler?.render(c, viewport, theme);
-      ctx.renderOverlayPlugins?.(c, 'overlay');
-
-      // Panel crosshair — draw crosshair lines in the hovered panel
-      const cursorPos = ctx.crosshairHandler?.getPosition();
-      if (cursorPos && ctx.panels.length > 0) {
-        for (const panel of ctx.panels) {
-          const pr = panel.rect;
-          if (cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width &&
-              cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
-            const pv = panel.viewport;
-            // Vertical line (synced with main chart bar snapping)
-            let cx = cursorPos.x;
-            const barIdx = xToBarIndex(cx, pv);
-            const snappedIdx = Math.max(0, Math.min((ctx.data?.length ?? 1) - 1, Math.round(barIdx)));
-            cx = barIndexToX(snappedIdx, pv);
-
-            c.save();
-            c.beginPath();
-            c.rect(pr.x, pr.y, pr.width, pr.height);
-            c.clip();
-
-            c.setLineDash([4, 4]);
-            c.strokeStyle = theme.crosshair;
-            c.lineWidth = 1;
-
-            // Vertical
-            c.beginPath();
-            c.moveTo(Math.round(cx) + 0.5, pr.y);
-            c.lineTo(Math.round(cx) + 0.5, pr.y + pr.height);
-            c.stroke();
-
-            // Horizontal
-            c.beginPath();
-            c.moveTo(pr.x, Math.round(cursorPos.y) + 0.5);
-            c.lineTo(pr.x + pr.width, Math.round(cursorPos.y) + 0.5);
-            c.stroke();
-
-            c.setLineDash([]);
-            c.restore();
-            break;
-          }
-        }
-      }
+      c.save();
+      c.beginPath();
+      c.rect(pr.x, pr.y, pr.width, pr.height);
+      c.clip();
+      c.setLineDash([4, 4]);
+      c.strokeStyle = theme.crosshair;
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(Math.round(cx) + 0.5, pr.y);
+      c.lineTo(Math.round(cx) + 0.5, pr.y + pr.height);
+      c.stroke();
+      c.beginPath();
+      c.moveTo(pr.x, Math.round(cursorPos.y) + 0.5);
+      c.lineTo(pr.x + pr.width, Math.round(cursorPos.y) + 0.5);
+      c.stroke();
+      c.setLineDash([]);
+      c.restore();
+      break;
     }
+  }
 
-    if (dirtyLayers.has(LayerType.UI) && this.uiLayer) {
-      this.uiLayer.clear();
-      const c = this.uiLayer.ctx;
-      ctx.priceAxis?.render(c, viewport, theme);
-      // Trading axis badges paint ON TOP of the regular price axis labels
-      // so position entry prices and order trigger prices are always visible.
-      ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
-      ctx.currentPriceLine?.render(c, viewport, theme);
-      ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
-      // Crosshair axis hover pills — drawn AFTER the axes so they always
-      // sit on top of the static price/time labels.
-      ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
-      ctx.chartLegend?.render(c, viewport, theme, data);
-      ctx.barCountdown?.render(c, viewport, theme, data);
-      ctx.renderOverlayPlugins?.(c, 'ui');
+  /** Crosshair value badge on a pane's axis and the hovered bar's values in each pane header. */
+  private renderPanelHoverValues(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const cursorPos = ctx.crosshairHandler?.getPosition();
+    const indicatorEngine = ctx.indicatorEngine;
+    if (!cursorPos || ctx.panels.length === 0) return;
+    const { theme, viewport, data } = ctx;
+    const locale = ctx.numberLocale ?? 'en-US';
+    const panelFont = `${theme.font.sizeSmall}px ${theme.font.family}`;
+    const descMap = indicatorEngine ? this.panelDescriptors(indicatorEngine) : null;
 
-      // Panel Y-axis + crosshair value label + header values
-      if (ctx.panels.length > 0) {
-        const cursorPos2 = ctx.crosshairHandler?.getPosition();
-        const indicatorEngine2 = ctx.indicatorEngine;
-        const panelFont = `${theme.font.sizeSmall}px ${theme.font.family}`;
+    for (const panel of ctx.panels) {
+      const pv = panel.viewport;
+      const pr = panel.rect;
+      const { min, max } = pv.priceRange;
+      if (max - min <= 0 || pr.height <= 0) continue;
+      const axisX = pr.x + pr.width;
+      const precision = panelPrecision(computeTickStep(min, max, 4));
 
-        // Build descriptor lookup once for UI layer panels
-        let uiDescMap: Map<string, { instanceId: string; descriptor: any }> | undefined;
-        if (indicatorEngine2) {
-          const descs = indicatorEngine2.getPanelIndicators();
-          uiDescMap = new Map();
-          for (const d of descs) uiDescMap.set(d.instanceId, d);
-        }
-
-        for (const panel of ctx.panels) {
-          const pv = panel.viewport;
-          const pr = panel.rect;
-          const { min, max } = pv.priceRange;
-          const range = max - min;
-          if (range <= 0 || pr.height <= 0) continue;
-
-          const axisX = pr.x + pr.width;
-          const insetRect = pv.chartRect; // already inset by header
-
-          // --- Panel Y-axis ---
-          // Axis line
-          c.strokeStyle = theme.axisLine;
-          c.lineWidth = 1;
-          c.beginPath();
-          c.moveTo(axisX + 0.5, pr.y);
-          c.lineTo(axisX + 0.5, pr.y + pr.height);
-          c.stroke();
-
-          // Value labels
-          const step = computeTickStep(min, max, 4);
-          const firstVal = Math.ceil(min / step) * step;
-          const precision = step < 1 ? Math.ceil(-Math.log10(step)) + 1 : step < 10 ? 1 : 0;
-
-          c.font = panelFont;
-          c.textBaseline = 'middle';
-          c.textAlign = 'left';
-
-          for (let val = firstVal; val <= max; val += step) {
-            const y = priceToY(val, pv);
-            if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
-            // Tick mark
-            c.strokeStyle = theme.axisLine;
-            c.beginPath();
-            c.moveTo(axisX, Math.round(y) + 0.5);
-            c.lineTo(axisX + 4, Math.round(y) + 0.5);
-            c.stroke();
-            // Label
-            c.fillStyle = theme.axisLabel;
-            c.fillText(formatPrice(val, precision, locale), axisX + 6, y);
-          }
-
-          // --- Crosshair value badge on panel Y-axis ---
-          if (cursorPos2 &&
-              cursorPos2.x >= pr.x && cursorPos2.x <= pr.x + pr.width &&
-              cursorPos2.y >= pr.y && cursorPos2.y <= pr.y + pr.height) {
-            const hoverVal = yToPrice(cursorPos2.y, pv);
-            const valText = formatPrice(hoverVal, precision, locale);
-            c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
-            const tw = c.measureText(valText).width;
-            const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
-
-            c.fillStyle = theme.crosshair;
-            c.fillRect(axisX + 1, cursorPos2.y - 9, badgeW, 18);
-            c.fillStyle = theme.background;
-            c.textBaseline = 'middle';
-            c.textAlign = 'left';
-            c.fillText(valText, axisX + 5, cursorPos2.y);
-          }
-
-          // --- Indicator values at crosshair bar in panel header ---
-          if (cursorPos2 && indicatorEngine2) {
-            const barIdx = xToBarIndex(cursorPos2.x, pv);
-            const snappedIdx = Math.max(0, Math.min((data?.length ?? 1) - 1, Math.round(barIdx)));
-            const output = indicatorEngine2.getOutput(panel.instanceId);
-            if (output?.series && snappedIdx < output.series.length) {
-              const val = output.series[snappedIdx];
-              if (val) {
-                const parts: string[] = [];
-                for (const key in val) {
-                  const v = val[key];
-                  if (v !== undefined) parts.push(`${key}: ${v.toFixed(precision)}`);
-                }
-                if (parts.length > 0) {
-                  const desc = uiDescMap?.get(panel.instanceId);
-                  const nameWidth = desc ? c.measureText(desc.descriptor.name).width + 14 : 10;
-                  c.font = panelFont;
-                  c.fillStyle = theme.textSecondary;
-                  c.textBaseline = 'top';
-                  c.textAlign = 'left';
-                  c.fillText(parts.join('  '), pr.x + nameWidth, pr.y + 6);
-                }
-              }
-            }
-          }
-        }
+      if (cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
+        const valText = formatPrice(yToPrice(cursorPos.y, pv), precision, locale);
+        c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
+        const tw = c.measureText(valText).width;
+        const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
+        c.fillStyle = theme.crosshair;
+        c.fillRect(axisX + 1, cursorPos.y - 9, badgeW, 18);
+        c.fillStyle = theme.background;
+        c.textBaseline = 'middle';
+        c.textAlign = 'left';
+        c.fillText(valText, axisX + 5, cursorPos.y);
       }
+
+      if (!indicatorEngine) continue;
+      const snappedIdx = Math.max(0, Math.min((data?.length ?? 1) - 1, Math.round(xToBarIndex(cursorPos.x, pv))));
+      const output = indicatorEngine.getOutput(panel.instanceId);
+      const val = output?.series && snappedIdx < output.series.length ? output.series[snappedIdx] : null;
+      if (!val) continue;
+      const parts: string[] = [];
+      for (const key in val) {
+        const v = val[key];
+        if (v !== undefined) parts.push(`${key}: ${v.toFixed(precision)}`);
+      }
+      if (parts.length === 0) continue;
+      const desc = descMap?.get(panel.instanceId);
+      c.font = panelFont;
+      const nameWidth = desc ? c.measureText(desc.descriptor.name).width + 14 : 10;
+      c.fillStyle = theme.textSecondary;
+      c.textBaseline = 'top';
+      c.textAlign = 'left';
+      c.fillText(parts.join('  '), pr.x + nameWidth, pr.y + 6);
     }
+  }
+
+  private panelDescriptors(indicatorEngine: IndicatorEngine): Map<string, ReturnType<IndicatorEngine['getPanelIndicators']>[number]> {
+    const map = new Map<string, ReturnType<IndicatorEngine['getPanelIndicators']>[number]>();
+    for (const d of indicatorEngine.getPanelIndicators()) map.set(d.instanceId, d);
+    return map;
   }
 
   private renderPriceLimits(

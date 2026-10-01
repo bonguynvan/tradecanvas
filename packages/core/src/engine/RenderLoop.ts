@@ -26,6 +26,7 @@ export class RenderLoop {
     this.dirtyLayers.add(LayerType.Main);
     this.dirtyLayers.add(LayerType.Overlay);
     this.dirtyLayers.add(LayerType.UI);
+    this.dirtyLayers.add(LayerType.Hover);
     if (this.running && !this.animFrameId) {
       this.scheduleFrame();
     }

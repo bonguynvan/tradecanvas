@@ -5,7 +5,8 @@
 ---
 
 Drag/pan audit — the chart no longer feels stuck while dragging — plus free
-panning into the future, context cursors and Ctrl/⌘-drag multi-selection.
+panning into the future, context cursors, Ctrl/⌘-drag multi-selection and a
+lighter two-canvas renderer.
 
 **Why dragging felt stuck (fixed):**
 - **Pressing on a drawing swallowed the drag.** The first press on an
@@ -63,6 +64,22 @@ undo action). `DrawingManager.getSelectedDrawingIds()`, `selectInRect()`,
 
 **Right-click order menu is now off by default** (`ChartWidget` and `Chart`).
 Opt in with `features.tradingContextMenu: true`.
+
+**Two canvases instead of four.** The chart used to stack four full-size
+canvases (background, series, overlay, UI); moving the mouse repainted two of
+them, including every drawing, order line and axis. It now paints a scene
+canvas (grid, series, indicators, panes, chart objects, axes) and a thin top
+canvas for what follows the pointer (crosshair and its axis pills, legend,
+bar countdown, measure ruler, selection box). A hover repaints only the top
+canvas, and the browser composites two surfaces instead of four — less GPU
+memory and work, most noticeable on large high-DPI screens. New
+`LayerType.Hover` for `requestRender()`; every other `LayerType` repaints the
+scene, and `LayerManager.getLayer()` returns the scene canvas for every type
+but `Hover`. Overlay plugins behave as before: `main` draws with the series,
+`overlay` and `ui` above the crosshair, repainting as the pointer moves. The
+measure ruler's box stays inside the plot (its info pill may overhang). Also
+fixed: after the page or a scrolling container scrolled, the crosshair
+followed the pointer at an offset until the next click.
 
 **Price axis:** the tick label the last-price tag would cover is hidden instead
 of showing half-hidden behind it. Anchored VWAP drawings cache their series, so

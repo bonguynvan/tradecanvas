@@ -75,7 +75,7 @@ export class PositionRenderer {
       }
 
       // Entry badge on axis — rendered separately via renderAxisBadges()
-      // on the UI layer so it paints on top of the price axis labels.
+      // after the price axis so it paints on top of its labels.
 
       // SL line
       if (pos.stopLoss !== undefined) {
@@ -122,7 +122,7 @@ export class PositionRenderer {
   }
 
   /**
-   * Draw position entry badges on the price axis. Called from the UI layer
+   * Draw position entry badges on the price axis. Called after the price axis
    * so they paint ON TOP of the regular axis tick labels.
    */
   renderAxisBadges(

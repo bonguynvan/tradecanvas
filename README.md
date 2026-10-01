@@ -893,7 +893,7 @@ onUnmounted(() => chart?.destroy())
 
 ## Performance
 
-A multi-layer Canvas2D pipeline repaints only dirty layers each frame. Three things keep large data fast:
+A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Three things keep large data fast:
 
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
 - **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.
@@ -919,13 +919,11 @@ A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame bud
 
 ## Architecture
 
-Multi-layer canvas for optimal rendering — only dirty layers repaint each frame:
+Two stacked canvases — a hover repaints only the thin top one:
 
 ```
-  UI Layer      (price axis, legend, live price)     z=3
-  Overlay Layer (drawings, trading positions/orders) z=2
-  Main Layer    (candles, indicators, volume)         z=1
-  Background    (grid, watermark)                     z=0
+  Top canvas    (crosshair + axis pills, legend, countdown, measure)   z=1
+  Scene canvas  (grid, candles, indicators, drawings, orders, axes)    z=0
 ```
 
 ## Related projects

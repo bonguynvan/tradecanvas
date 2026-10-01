@@ -4,6 +4,7 @@ import { InteractionManager } from '../InteractionManager.js';
 import { PanHandler } from '../PanHandler.js';
 import type { CrosshairHandler } from '../CrosshairHandler.js';
 import type { TradingManager } from '../../trading/TradingManager.js';
+import type { DrawingManager } from '../../drawings/DrawingManager.js';
 import type { ViewportState } from '@tradecanvas/commons';
 
 let el: HTMLDivElement;
@@ -91,6 +92,77 @@ describe('InteractionManager — cursors', () => {
     im.setCrosshairHandler(crosshair('hidden'));
     el.dispatchEvent(at('mousemove', 100));
     expect(el.style.cursor).toBe('');
+  });
+});
+
+describe('InteractionManager — pointer position after the page moves', () => {
+  const tracking = () => {
+    const seen: { x: number; y: number }[] = [];
+    im.setCrosshairHandler({ getMode: () => 'normal', onPointerMove: (p: { x: number; y: number }) => seen.push(p), onPointerLeave() {} } as unknown as CrosshairHandler);
+    return seen;
+  };
+  const scrolledBy = (dy: number) => {
+    el.getBoundingClientRect = () => ({ left: 0, top: -dy, right: 400, bottom: 300 - dy, width: 400, height: 300, x: 0, y: -dy, toJSON: () => ({}) });
+  };
+
+  it('maps the hover to the chart again after a scrolling ancestor scrolls', () => {
+    const seen = tracking();
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    el.dispatchEvent(at('mousemove', 100));
+    scrolledBy(40);
+    // `scroll` doesn't bubble: only a capture-phase listener sees it.
+    scroller.dispatchEvent(new Event('scroll'));
+    el.dispatchEvent(at('mousemove', 100));
+    expect(seen.map((p) => p.y)).toEqual([50, 90]);
+    scroller.remove();
+  });
+
+  it('re-reads the position when the pointer enters (layout may have shifted)', () => {
+    const seen = tracking();
+    el.dispatchEvent(at('mousemove', 100));
+    scrolledBy(40);
+    el.dispatchEvent(at('mouseenter', 100));
+    el.dispatchEvent(at('mousemove', 100));
+    expect(seen.map((p) => p.y)).toEqual([50, 90]);
+  });
+
+  it('removes the page-scroll listener on detach', () => {
+    const remove = vi.spyOn(document, 'removeEventListener');
+    im.detach();
+    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    im.attach();
+  });
+});
+
+describe('InteractionManager — what a pointer move repaints', () => {
+  let dirty: (boolean | undefined)[];
+  beforeEach(() => {
+    dirty = [];
+    im.setOverlayDirtyCallback((hoverOnly) => dirty.push(hoverOnly));
+  });
+
+  it('a plain hover repaints only pointer-tied visuals', () => {
+    el.dispatchEvent(at('mousemove', 100));
+    expect(dirty).toEqual([true]);
+  });
+
+  it('a pan repaints the scene', () => {
+    el.dispatchEvent(at('mousedown', 200, { button: 0, buttons: 1 }));
+    dirty.length = 0;
+    document.dispatchEvent(at('mousemove', 150, { buttons: 1 }));
+    expect(dirty).toEqual([false]);
+  });
+
+  it('a move the drawing tools consume (preview, drag) repaints the scene', () => {
+    const drawings = {
+      onPointerMove: () => true,
+      hoverCursorAt: () => null,
+    } as unknown as DrawingManager;
+    const vp = { chartRect: { x: 0, y: 0, width: 400, height: 300 } } as ViewportState;
+    im.setDrawingManager(drawings, () => vp);
+    el.dispatchEvent(at('mousemove', 100));
+    expect(dirty).toEqual([undefined]);
   });
 });
 

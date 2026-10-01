@@ -2,7 +2,7 @@ import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commo
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /**
- * Transient "measure" overlay (TradingView shift-drag ruler).
+ * Transient "measure" overlay (the shift-drag ruler).
  *
  * The tool is owned by the chart but lives outside the persistent drawing
  * system on purpose: it is reset on every mouseup so it never clutters saved
@@ -69,6 +69,10 @@ export class MeasureOverlay {
     const fill = withAlpha(color, 0.14);
 
     ctx.save();
+    const { chartRect } = viewport;
+    ctx.beginPath();
+    ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
+    ctx.clip();
 
     // Selection rectangle
     ctx.fillStyle = fill;
@@ -91,6 +95,7 @@ export class MeasureOverlay {
     // Anchor dots
     drawDot(ctx, x1, y1, color);
     drawDot(ctx, x2, y2, color);
+    ctx.restore();
 
     // Info pill — placed near the end anchor
     const bars = Math.abs(this.endBar - this.startBar);
@@ -106,8 +111,8 @@ export class MeasureOverlay {
     lines.push(`${sign}${formatPrice(absDelta)}  (${sign}${Math.abs(pricePct).toFixed(2)}%)`);
     lines.push(`${bars} bars${timeSpan ? '  ·  ' + timeSpan : ''}`);
 
+    ctx.save();
     drawPill(ctx, x2, y2, lines, color, theme);
-
     ctx.restore();
   }
 }
