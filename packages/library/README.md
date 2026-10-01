@@ -38,7 +38,7 @@ yarn add @tradecanvas/chart
 
 ## Quick Start
 
-The fastest path is `ChartWidget` — drop-in component with a full TradingView-like UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
+The fastest path is `ChartWidget` — drop-in component with a full trading UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -516,7 +516,7 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
-### Chart Interaction (TradingView-style)
+### Chart Interaction
 
 Every gesture you'd expect from a desktop trading chart is built in:
 

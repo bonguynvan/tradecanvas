@@ -4,9 +4,9 @@
 
 ## The 1.0 story
 
-The JS charting market is bifurcated: free-but-dumb (lightweight-charts v5 still ships **zero** indicators and **zero** drawing tools) vs. expensive-and-closed (Highcharts Stock, SciChart, AnyChart, TradingView's own Charting Library). TradeCanvas is the **only open-source, MIT, zero-dependency library that bundles indicators + drawing tools + a trading overlay + a backtester**.
+The JS charting market is bifurcated: free-but-dumb (lightweight-charts v5 still ships **zero** indicators and **zero** drawing tools) vs. expensive-and-closed (Highcharts Stock, SciChart, AnyChart, proprietary vendor charting libraries). TradeCanvas is the **only open-source, MIT, zero-dependency library that bundles indicators + drawing tools + a trading overlay + a backtester**.
 
-**Headline:** *"Everything TradingView's paid Charting Library gives you — indicators, drawings, trading — MIT-licensed and zero-dependency."*
+**Headline:** *"Everything a paid charting library gives you — indicators, drawings, trading — MIT-licensed and zero-dependency."*
 
 Batteries-included is the umbrella; **three pillars** hold it up, and every v1 workstream reinforces one:
 

@@ -4,7 +4,7 @@ import { DrawingBase } from '../DrawingBase.js';
 const DEFAULT_REWARD_RATIO = 2;
 
 /**
- * TradingView's "Long/Short Position" tool: drag from an entry price to a
+ * "Long/Short Position" tool: drag from an entry price to a
  * stop price, and it draws the risk zone between them plus a reward zone of
  * equal width on the far side — sized by a fixed reward:risk ratio — with
  * labels for the $ and % at each level. Direction (long vs short) is

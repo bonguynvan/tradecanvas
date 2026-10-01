@@ -333,7 +333,7 @@ export class Viewport {
     } else {
       // Short data: every bar already fits, with empty space left over — the
       // right-aligned `endOffset` is still where the view RESTS by default
-      // (unchanged, matches TradingView), but it is no longer a lock. A trader
+      // (unchanged), but it is no longer a lock. A trader
       // reasonably expects to drag the (few) bars toward the centre or left of
       // the pane instead of having them welded to the right edge — reported
       // against a 3-bar year chart, 2026-08-27. Half a viewport of play on each

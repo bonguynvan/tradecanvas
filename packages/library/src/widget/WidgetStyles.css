@@ -409,7 +409,7 @@
   position: relative;
 }
 
-/* === Loading overlay (TradingView-style skeleton bars) === */
+/* === Loading overlay (skeleton bars) === */
 
 .tcw-loading-overlay {
   /* Uses a modifier class rather than the `hidden` attribute — the global

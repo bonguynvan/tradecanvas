@@ -231,7 +231,7 @@
     respective strips.
   - **In-canvas axis polish**: price + time axes now render with subtle dividers,
     thin tick notches, and refined typography weight — drops the heavy per-label
-    background rectangles for a TradingView-like feel.
+    background rectangles for a cleaner feel.
   - **Widget CSS refresh**: new design tokens (typography, motion, elevation,
     shape), Inter + JetBrains Mono stacks, smooth cubic-bezier transitions,
     refined hover/active/focus states, subtle gradient toolbar/sidebar surfaces,
@@ -273,7 +273,7 @@
     at the hovered bar. The live crosshair tooltip then shows the price / %
     / bar-count delta to the pinned bar. Esc unpins. New `PinnedTooltip`
     export from `@tradecanvas/core`.
-  - **Hover axis labels**: TradingView-style pill badges follow the crosshair
+  - **Hover axis labels**: Pill badges follow the crosshair
     on the right axis (current price under cursor) and the bottom axis
     (current time). Rendered with inverted theme colors + a triangular notch
     pointing at the crosshair line. Painted on the UI layer so they always
