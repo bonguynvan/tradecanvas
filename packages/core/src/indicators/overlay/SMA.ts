@@ -28,6 +28,18 @@ export class SMAIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const period = getIntParam(config, 'period', 20, 1);
+    for (let i = from; i < data.length; i++) {
+      if (i < period - 1) { this.writePoint(prev, data, i, null); continue; }
+      let sum = 0;
+      for (let j = i - period + 1; j <= i; j++) sum += data[j].close;
+      this.writePoint(prev, data, i, { value: sum / period });
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

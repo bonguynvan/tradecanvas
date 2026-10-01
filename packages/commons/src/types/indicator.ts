@@ -44,6 +44,22 @@ export interface ResolvedIndicatorStyle {
 export interface IndicatorPlugin {
   descriptor: IndicatorDescriptor;
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput;
+  /**
+   * Optional incremental recompute, used on live ticks and new bars instead
+   * of re-running `calculate` over the whole history.
+   *
+   * `prev` is this plugin's own earlier output for a series whose bars
+   * `[0, from)` are unchanged; bars at `from` and later changed or were
+   * appended. Must yield the same values `calculate(data, config)` would
+   * (up to floating-point rounding). May update and return `prev` in place.
+   * Return `null` to fall back to a full `calculate`.
+   */
+  update?(
+    data: DataSeries,
+    config: IndicatorConfig,
+    prev: IndicatorOutput,
+    from: number,
+  ): IndicatorOutput | null;
   render(
     ctx: CanvasRenderingContext2D,
     output: IndicatorOutput,

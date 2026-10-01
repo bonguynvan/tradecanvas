@@ -896,10 +896,18 @@ onUnmounted(() => chart?.destroy())
 
 ## Performance
 
-A multi-layer Canvas2D pipeline repaints only dirty layers each frame. Two things keep large data fast:
+A multi-layer Canvas2D pipeline repaints only dirty layers each frame. Three things keep large data fast:
 
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
-- **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series.
+- **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.
+- **Incremental indicators on live ticks** — a tick only changes the forming bar, so built-in indicators that implement `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) recompute just that bar instead of the whole history. Others fall back to a full recalculation. Custom plugins can opt in via `IndicatorPlugin.update`.
+
+Live tick with BB + EMA + RSI + MACD (`pnpm bench`, single core):
+
+| History | Full recalculation | Incremental `update()` |
+|---|---|---|
+| 20,000 bars | ~13 ms | ~0.0005 ms |
+| 100,000 bars | ~96 ms | ~0.001 ms |
 
 Downsampling throughput (`pnpm bench`, single core):
 

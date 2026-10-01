@@ -21,6 +21,11 @@ export interface SessionBreakConfig {
 export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
   private cachedBreaksTyped: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
+  private cachedMedianStep = 0;
+  // Explicit validity flag: a series with no day boundaries legitimately
+  // yields zero breaks, and keying the cache on `breaks.length > 0` made
+  // that case rescan every bar on every frame.
+  private cacheValid = false;
   private lastDataLength = 0;
   private locale = 'en-US';
 
@@ -49,7 +54,7 @@ export class SessionBreaks {
     if (data.length < 2) return [];
 
     // Cache: only recompute when data changes
-    if (data.length === this.lastDataLength && this.cachedBreaksTyped.length > 0) {
+    if (this.cacheValid && data.length === this.lastDataLength) {
       return this.cachedBreaksTyped;
     }
 
@@ -72,6 +77,8 @@ export class SessionBreaks {
 
     this.lastDataLength = data.length;
     this.cachedBreaksTyped = out;
+    this.cachedMedianStep = medianBarInterval(data);
+    this.cacheValid = true;
     return out;
   }
 
@@ -93,8 +100,7 @@ export class SessionBreaks {
     // Suppress separators when the dataset is already at day-or-coarser
     // granularity — every bar would be a "day boundary" and the screen
     // would fill with lines.
-    const medianStep = medianBarInterval(data);
-    if (medianStep >= 23 * 60 * 60 * 1000) return;
+    if (this.cachedMedianStep >= 23 * 60 * 60 * 1000) return;
 
     const { chartRect } = viewport;
     const baseColor = this.config.color ?? theme.axisLine;
@@ -157,7 +163,28 @@ export class SessionBreaks {
   invalidateCache(): void {
     this.lastDataLength = 0;
     this.cachedBreaksTyped = [];
+    this.cachedMedianStep = 0;
+    this.cacheValid = false;
   }
+}
+
+// `toLocaleDateString(locale, opts)` builds a fresh Intl.DateTimeFormat per
+// call (~40µs in V8) and these labels re-render on every pan/zoom frame, so
+// the formatters are cached per locale. Output is identical by spec.
+const monthDayFormats = new Map<string, Intl.DateTimeFormat>();
+const monthYearFormats = new Map<string, Intl.DateTimeFormat>();
+
+function cachedDateFormat(
+  cache: Map<string, Intl.DateTimeFormat>,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  let f = cache.get(locale);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, options);
+    cache.set(locale, f);
+  }
+  return f;
 }
 
 // Month-boundary labels use the FULL year ("Oct 2026"), not a 2-digit one
@@ -165,11 +192,11 @@ export class SessionBreaks {
 // "month day" label (e.g. "Oct 26" could mean October 26th), which misled
 // readers into thinking the chart had jumped to the wrong date.
 function formatMonthDay(d: Date, locale: string): string {
-  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  return cachedDateFormat(monthDayFormats, locale, { month: 'short', day: 'numeric' }).format(d);
 }
 
 function formatMonthYear(d: Date, locale: string): string {
-  return d.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+  return cachedDateFormat(monthYearFormats, locale, { month: 'short', year: 'numeric' }).format(d);
 }
 
 /**

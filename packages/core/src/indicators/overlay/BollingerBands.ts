@@ -51,6 +51,30 @@ export class BollingerBandsIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const period = getIntParam(config, 'period', 20, 1);
+    const stdDevMult = getNumberParam(config, 'stdDev', 2);
+    for (let i = from; i < data.length; i++) {
+      if (i < period - 1) { this.writePoint(prev, data, i, null); continue; }
+      let sum = 0;
+      let sumSq = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        const c = data[j].close;
+        sum += c;
+        sumSq += c * c;
+      }
+      const sma = sum / period;
+      const stdDev = Math.sqrt(Math.max(0, sumSq / period - sma * sma));
+      this.writePoint(prev, data, i, {
+        middle: sma,
+        upper: sma + stdDevMult * stdDev,
+        lower: sma - stdDevMult * stdDev,
+      });
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

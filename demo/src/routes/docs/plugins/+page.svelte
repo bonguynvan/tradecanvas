@@ -55,6 +55,21 @@ class DoubleSMA extends IndicatorBase {
 registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
 chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
 
+<h3>Fast live updates (optional)</h3>
+<p>
+  On every live tick only the forming bar changes. Implement <code>update()</code> to recompute just
+  the bars from <code>from</code> onward instead of the whole history — the chart uses it on ticks and
+  new bars, and falls back to <code>calculate()</code> when it's missing or returns <code>null</code>.
+  It must produce the same values <code>calculate()</code> would.
+</p>
+<pre><code>{`update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
+  for (let i = from; i < data.length; i++) {
+    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
+  }
+  return prev
+}`}</code></pre>
+
 <h2>Custom chart type</h2>
 <p>A <code>ChartTypePlugin</code> supplies a renderer and an optional data transform; switch to it like a built-in:</p>
 <pre><code>{`registerPlugin({

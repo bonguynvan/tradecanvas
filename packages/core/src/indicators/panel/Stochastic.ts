@@ -58,6 +58,43 @@ export class StochasticIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const kPeriod = getIntParam(config, 'kPeriod', 14, 1);
+    const dPeriod = getIntParam(config, 'dPeriod', 3, 1);
+    const smooth = getIntParam(config, 'smooth', 3, 1);
+    const startIdx = kPeriod - 1 + smooth - 1;
+
+    // Same formulas as calculate(), evaluated only for the windows the
+    // changed bars feed into — O(dPeriod * smooth * kPeriod) per bar.
+    const rawK = (j: number): number => {
+      let high = -Infinity;
+      let low = Infinity;
+      for (let m = j - kPeriod + 1; m <= j; m++) {
+        if (data[m].high > high) high = data[m].high;
+        if (data[m].low < low) low = data[m].low;
+      }
+      return high === low ? 50 : ((data[j].close - low) / (high - low)) * 100;
+    };
+    const kAt = (j: number): number => {
+      let sum = 0;
+      for (let m = j - smooth + 1; m <= j; m++) sum += rawK(m);
+      return sum / smooth;
+    };
+
+    for (let i = from; i < data.length; i++) {
+      if (i < startIdx || data.length < kPeriod) { this.writePoint(prev, data, i, null); continue; }
+      const val: IndicatorValue = { k: kAt(i) };
+      if (i >= startIdx + dPeriod - 1) {
+        let sum = 0;
+        for (let j = i - dPeriod + 1; j <= i; j++) sum += kAt(j);
+        val.d = sum / dPeriod;
+      }
+      this.writePoint(prev, data, i, val);
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

@@ -152,6 +152,7 @@ export class Chart {
   private tradeZoneManager: TradeZoneManager;
   private measureOverlay: MeasureOverlay;
   private replayManager: ReplayManager;
+  private replayBarUnsub: (() => void) | null = null;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -704,12 +705,17 @@ export class Chart {
   }
 
   appendBar(bar: OHLCBar): void {
+    // Follow the live edge only if the view is already there — browsing
+    // history shouldn't be yanked back to the end on every new bar.
+    const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
     this.dataManager.appendBar(bar);
-    this.crosshairHandler.setData(this.dataManager.getData());
+    const data = this.dataManager.getData();
+    this.crosshairHandler.setData(data);
     this.displayDataCache = null;
-    if (this.autoScrollOnNewBar) this.viewport.scrollToEnd();
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
-    this.updateViewportAndRender();
+    // Re-finalise the bar that just closed (its last tick may differ from the
+    // final close) and compute the new one; everything older is untouched.
+    this.indicatorEngine.recalculateFrom(data, data.length - 2);
+    this.updateViewportAndRender(follow);
   }
 
   /**
@@ -719,13 +725,15 @@ export class Chart {
    */
   appendBars(bars: OHLCBar[]): void {
     if (bars.length === 0) return;
+    const follow = this.viewport.isAtEnd();
+    const firstChanged = this.dataManager.getLength() - 1;
     for (const bar of bars) {
       this.dataManager.appendBar(bar);
     }
     this.displayDataCache = null;
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    this.indicatorEngine.recalculateFrom(this.dataManager.getData(), firstChanged);
     this.crosshairHandler.setData(this.dataManager.getData());
-    this.updateViewportAndRender(this.viewport.isAtEnd());
+    this.updateViewportAndRender(follow);
   }
 
   updateLastBar(bar: OHLCBar): void {
@@ -740,8 +748,9 @@ export class Chart {
       this.displayDataCache = null;
     }
     // Keep indicator lines in sync with the forming bar. Without this, panel
-    // + overlay indicators freeze until bar close.
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    // + overlay indicators freeze until bar close. Only the last bar changed.
+    const data = this.dataManager.getData();
+    this.indicatorEngine.recalculateFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -754,7 +763,8 @@ export class Chart {
         && this.options.chartType !== 'hollowCandle') {
       this.displayDataCache = null;
     }
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    const data = this.dataManager.getData();
+    this.indicatorEngine.recalculateFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -1204,19 +1214,23 @@ export class Chart {
     });
 
     this.streamManager.on('barClose', (bar) => {
+      const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
       this.dataManager.appendBar(bar);
-      this.crosshairHandler.setData(this.dataManager.getData());
-      if (this.autoScrollOnNewBar) this.viewport.scrollToEnd();
-      this.indicatorEngine.recalculateAll(this.dataManager.getData());
-      this.updateViewportAndRender();
+      const data = this.dataManager.getData();
+      this.crosshairHandler.setData(data);
+      this.displayDataCache = null;
+      this.indicatorEngine.recalculateFrom(data, data.length - 2);
+      this.updateViewportAndRender(follow);
     });
 
     this.streamManager.on('barUpdate', (bar) => {
       this.dataManager.updateLastBar(bar);
       this.currentPriceLine.setPrice(bar.close);
       // Recalculate indicators so panel/overlay series track the forming bar
-      // instead of freezing until bar close.
-      this.indicatorEngine.recalculateAll(this.dataManager.getData());
+      // instead of freezing until bar close — incrementally, since only the
+      // last bar changed.
+      const data = this.dataManager.getData();
+      this.indicatorEngine.recalculateFrom(data, data.length - 1);
       this.scheduleRender();
     });
 
@@ -1867,11 +1881,28 @@ export class Chart {
     if (!this.features.replay) return;
     const data = this.dataManager.getData();
     this.replayManager.load(data);
-    this.replayManager.on('bar', ({ bar: _bar, index }) => {
-      const slice = data.slice(0, index + 1);
-      this.dataManager.setData(slice);
-      this.crosshairHandler.setData(slice);
-      this.indicatorEngine.recalculateAll(slice);
+    let loaded = -1; // bars of `data` currently in the DataManager, as of the last step
+    // Each replayStart used to stack another 'bar' listener, so a restarted
+    // replay ran every step once per previous start.
+    this.replayBarUnsub?.();
+    this.replayBarUnsub = this.replayManager.on('bar', ({ bar: _bar, index }) => {
+      const nextLen = index + 1;
+      if (loaded > 0 && nextLen > loaded && this.dataManager.getLength() === loaded) {
+        // Forward step: append just the newly revealed bars and update
+        // indicators from there — not re-copy, re-sanitize and recompute the
+        // whole prefix on every tick of the replay clock.
+        for (let j = loaded; j < nextLen; j++) this.dataManager.appendBar(data[j]);
+        this.indicatorEngine.recalculateFrom(this.dataManager.getData(), loaded);
+      } else {
+        // First step, or a seek backwards: reload the prefix.
+        this.dataManager.setData(data.slice(0, nextLen));
+        this.indicatorEngine.recalculateAll(this.dataManager.getData());
+      }
+      loaded = nextLen;
+      this.crosshairHandler.setData(this.dataManager.getData());
+      // The display cache isn't keyed to the data array — without this the
+      // chart kept drawing the pre-replay series.
+      this.displayDataCache = null;
       this.updateViewportAndRender();
     });
     this.replayManager.play(config);
@@ -2112,36 +2143,46 @@ export class Chart {
     this.renderScheduled = true;
     requestAnimationFrame(() => {
       this.renderScheduled = false;
-      const displayData = this.getDisplayData();
-      this.viewport.updateData(displayData, this.options.autoScale !== false);
+      this.applyDataToViewport();
       this.syncRenderContext();
       this.engine.requestRender();
+      this.emitViewportEvents();
     });
   }
 
-  /** Full update: resolve layout, update viewport, sync context, request render. */
-  private updateViewportAndRender(scrollToEnd = false): void {
-    // Invalidate layout cache
-    this.resolvedLayoutCache = null;
-    this.panelInfoCache = null;
-
-    const resolved = this.getResolvedLayout();
-    this.viewport.setChartRect(resolved.mainChartRect);
-
+  /**
+   * Push the display data into the viewport and apply auto-scale. The single
+   * place auto-scale is computed — both the live-tick path (`scheduleRender`)
+   * and the pan/zoom/data path (`updateViewportAndRender`) go through it.
+   * They used to diverge: ticks fit candles only while pan/zoom also fit
+   * overlay indicators (Bollinger, Keltner, Ichimoku…), so the price scale
+   * jumped on every tick and jumped back on every pan frame.
+   */
+  private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
-    this.viewport.updateData(displayData, this.options.autoScale !== false);
+    const autoScale = this.options.autoScale !== false;
+
+    // updateData first so dataLength is current for scrollToEnd — but only
+    // fit the price range once the FINAL visible window is known. Fitting
+    // before scrollToEnd measured the old window (e.g. deep history) and left
+    // every bar of a freshly loaded series off-screen.
+    this.viewport.updateData(displayData, autoScale && !scrollToEnd);
+    if (scrollToEnd) {
+      this.viewport.scrollToEnd();
+      if (autoScale) this.viewport.updateData(displayData, true);
+    }
+
+    const vs = this.viewport.getState();
 
     // Baseline for percentage / indexed-to-100 axis labels: the close of the
-    // first visible bar. Cheap to set every frame; ignored by other modes.
+    // first visible bar. Ignored by other scale modes.
     if (displayData.length > 0) {
-      const vs = this.viewport.getState();
       const baseIdx = Math.max(0, Math.min(vs.visibleRange.from, displayData.length - 1));
       this.viewport.setScaleBaseline(displayData[baseIdx]?.close);
     }
 
-    // Expand price range to include overlay indicator values (BB, Ichimoku, etc.)
-    if (this.options.autoScale !== false) {
-      const vs = this.viewport.getState();
+    // Expand the fitted range to include overlay indicator values (BB, Ichimoku, etc.)
+    if (autoScale) {
       const overlayRange = this.indicatorEngine.getOverlayPriceRange(
         vs.visibleRange.from,
         Math.min(vs.visibleRange.to, displayData.length - 1),
@@ -2159,9 +2200,19 @@ export class Chart {
         }
       }
     }
+    return displayData;
+  }
 
-    // Scroll to end AFTER updateData so dataLength is current
-    if (scrollToEnd) this.viewport.scrollToEnd();
+  /** Full update: resolve layout, update viewport, sync context, request render. */
+  private updateViewportAndRender(scrollToEnd = false): void {
+    // Invalidate layout cache
+    this.resolvedLayoutCache = null;
+    this.panelInfoCache = null;
+
+    const resolved = this.getResolvedLayout();
+    this.viewport.setChartRect(resolved.mainChartRect);
+
+    this.applyDataToViewport(scrollToEnd);
 
     this.syncRenderContext();
     this.engine.requestRender();

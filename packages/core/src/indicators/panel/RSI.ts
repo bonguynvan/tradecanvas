@@ -11,13 +11,19 @@ export class RSIIndicator extends IndicatorBase {
     defaultConfig: { period: 14 },
   };
 
+  /** Wilder's running averages per bar — the RSI value alone can't be inverted back into them. */
+  private smoothing = new WeakMap<IndicatorOutput, { gain: number[]; loss: number[] }>();
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 14, 1);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
+    const output: IndicatorOutput = { values, series };
 
-    if (data.length < period + 1) return { values, series };
+    if (data.length < period + 1) return output;
 
+    const gains: number[] = [];
+    const losses: number[] = [];
     let avgGain = 0;
     let avgLoss = 0;
 
@@ -28,6 +34,8 @@ export class RSIIndicator extends IndicatorBase {
     }
     avgGain /= period;
     avgLoss /= period;
+    gains[period] = avgGain;
+    losses[period] = avgLoss;
 
     const rsi = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
     const val0: IndicatorValue = { value: rsi };
@@ -40,12 +48,37 @@ export class RSIIndicator extends IndicatorBase {
       const loss = change < 0 ? -change : 0;
       avgGain = (avgGain * (period - 1) + gain) / period;
       avgLoss = (avgLoss * (period - 1) + loss) / period;
+      gains[i] = avgGain;
+      losses[i] = avgLoss;
       const rs = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
       const val: IndicatorValue = { value: rs };
       values.set(data[i].time, val);
       series[i] = val;
     }
-    return { values, series };
+    this.smoothing.set(output, { gain: gains, loss: losses });
+    return output;
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    const period = getIntParam(config, 'period', 14, 1);
+    const state = this.smoothing.get(prev);
+    // Needs the smoothed averages at from-1, which exist from bar `period` on.
+    if (!state || from <= period || !this.canResume(data, prev, from)) return null;
+    let avgGain = state.gain[from - 1];
+    let avgLoss = state.loss[from - 1];
+    if (avgGain === undefined || avgLoss === undefined) return null;
+    for (let i = from; i < data.length; i++) {
+      const change = data[i].close - data[i - 1].close;
+      const gain = change > 0 ? change : 0;
+      const loss = change < 0 ? -change : 0;
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+      state.gain[i] = avgGain;
+      state.loss[i] = avgLoss;
+      const rs = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+      this.writePoint(prev, data, i, { value: rs });
+    }
+    return prev;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {

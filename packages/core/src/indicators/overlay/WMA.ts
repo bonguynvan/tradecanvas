@@ -42,6 +42,20 @@ export class WMAIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const period = getIntParam(config, 'period', 20, 1);
+    const denom = (period * (period + 1)) / 2;
+    for (let i = from; i < data.length; i++) {
+      if (i < period - 1) { this.writePoint(prev, data, i, null); continue; }
+      let numerator = 0;
+      const start = i - period + 1;
+      for (let j = 0; j < period; j++) numerator += data[start + j].close * (j + 1);
+      this.writePoint(prev, data, i, { value: numerator / denom });
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

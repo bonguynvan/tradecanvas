@@ -81,6 +81,27 @@ export class IndicatorEngine {
     }
   }
 
+  /**
+   * Recompute after bars at index `from` and later changed or were appended,
+   * with bars `[0, from)` untouched — a live tick (`from = length - 1`) or a
+   * new bar (`from = length - 2`, re-finalising the bar that just closed).
+   *
+   * Plugins with an incremental `update` only touch the changed tail, so a
+   * tick costs O(1)–O(period) per indicator instead of O(history); a full
+   * `calculate` over 20k bars took ~30ms per tick on a desktop. Plugins
+   * without `update`, or whose `update` declines, are fully recalculated.
+   */
+  recalculateFrom(data: DataSeries, from: number): void {
+    for (const instance of this.instances.values()) {
+      const prev = instance.output;
+      let next: IndicatorOutput | null = null;
+      if (prev && instance.plugin.update && from > 0) {
+        next = instance.plugin.update(data, instance.config, prev, from);
+      }
+      instance.output = next ?? instance.plugin.calculate(data, instance.config);
+    }
+  }
+
   getOutput(instanceId: string): IndicatorOutput | null {
     return this.instances.get(instanceId)?.output ?? null;
   }

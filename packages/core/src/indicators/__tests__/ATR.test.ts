@@ -11,6 +11,14 @@ describe('ATRIndicator', () => {
     expect(values.size).toBe(0);
   });
 
+  it('returns empty output (instead of throwing) when there are fewer bars than the period', () => {
+    // e.g. a newly listed stock with 10 daily bars and the default ATR(14)
+    const data = ohlcBars(Array.from({ length: 10 }, (_, i) => ({ o: 10 + i, h: 11 + i, l: 9 + i, c: 10.5 + i })));
+    const { values, series } = atr.calculate(data, indicatorConfig('atr', { period: 14 }));
+    expect(values.size).toBe(0);
+    expect(series!.every((v) => v === null)).toBe(true);
+  });
+
   it('first non-null index equals period - 1', () => {
     const data = ohlcBars(
       Array.from({ length: 30 }, (_, i) => ({

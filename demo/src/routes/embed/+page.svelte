@@ -43,6 +43,8 @@
           }
         },
       });
+      // Dev-only handle for profiling the live widget from the console.
+      if (import.meta.env.DEV) (window as unknown as { __tcWidget: unknown }).__tcWidget = widget;
     } catch (err) {
       if (host) {
         host.innerHTML = `<div style="padding:24px;color:#a1a1aa;font-family:monospace;">Failed to load widget: ${String(err)}</div>`;

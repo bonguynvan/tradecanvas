@@ -39,6 +39,22 @@ export class VWMAIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const period = getIntParam(config, 'period', 20, 1);
+    for (let i = from; i < data.length; i++) {
+      if (i < period - 1) { this.writePoint(prev, data, i, null); continue; }
+      let pvSum = 0;
+      let volSum = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        pvSum += data[j].close * data[j].volume;
+        volSum += data[j].volume;
+      }
+      this.writePoint(prev, data, i, volSum > 0 ? { value: pvSum / volSum } : null);
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

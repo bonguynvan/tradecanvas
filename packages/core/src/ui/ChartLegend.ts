@@ -121,7 +121,7 @@ export class ChartLegend {
         const change = bar.close - prevBar.close;
         const changePct = prevBar.close !== 0 ? (change / prevBar.close) * 100 : 0;
         const sign = change >= 0 ? '+' : '';
-        const pctText = changePct.toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const pctText = formatPrice(changePct, 2, this.locale);
         items.push({
           label: '',
           value: `${sign}${fmt(change)} (${sign}${pctText}%)`,

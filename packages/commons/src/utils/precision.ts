@@ -1,8 +1,29 @@
+const NUMBER_FORMAT_CACHE_LIMIT = 64;
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+
+/**
+ * `Number#toLocaleString(locale, options)` constructs a fresh
+ * `Intl.NumberFormat` on every call — ~20µs in V8 versus ~0.4µs to reuse one.
+ * Axis labels, the legend, crosshair pills and panel axes format dozens of
+ * numbers per frame, so formatters are cached per (locale, precision). The
+ * output is identical: per spec, `toLocaleString` is defined as exactly this.
+ */
+function numberFormat(locale: string, precision: number): Intl.NumberFormat {
+  const key = `${locale}|${precision}`;
+  let nf = numberFormatCache.get(key);
+  if (!nf) {
+    if (numberFormatCache.size >= NUMBER_FORMAT_CACHE_LIMIT) numberFormatCache.clear();
+    nf = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: precision,
+      maximumFractionDigits: precision,
+    });
+    numberFormatCache.set(key, nf);
+  }
+  return nf;
+}
+
 export function formatPrice(value: number, precision = 2, locale = 'en-US'): string {
-  return value.toLocaleString(locale, {
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
-  });
+  return numberFormat(locale, precision).format(value);
 }
 
 import type { PriceScaleMode } from '../types/rendering.js';
@@ -30,7 +51,7 @@ export function formatPriceScaleLabel(
       return `${sign}${pct.toFixed(2)}%`;
     }
     const indexed = (price / baseline) * 100;
-    return indexed.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return formatPrice(indexed, 2, locale);
   }
   return formatPrice(price, precision, locale);
 }

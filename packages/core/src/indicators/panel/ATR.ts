@@ -17,7 +17,9 @@ export class ATRIndicator extends IndicatorBase {
 
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
-    if (data.length < 2) return { values, series };
+    // Fewer bars than the period can't seed the average (and used to throw
+    // reading data[period - 1]); emit an empty series like other indicators.
+    if (data.length < Math.max(2, period)) return { values, series };
 
     const trueRanges: number[] = [data[0].high - data[0].low];
     for (let i = 1; i < data.length; i++) {
@@ -43,6 +45,24 @@ export class ATRIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    const period = getIntParam(config, 'period', 14, 1);
+    // Wilder smoothing resumes from the ATR at from-1 (seeded at period-1).
+    if (from < period || !this.canResume(data, prev, from)) return null;
+    let atr = prev.series![from - 1]?.value;
+    if (atr === undefined) return null;
+    for (let i = from; i < data.length; i++) {
+      const tr = Math.max(
+        data[i].high - data[i].low,
+        Math.abs(data[i].high - data[i - 1].close),
+        Math.abs(data[i].low - data[i - 1].close),
+      );
+      atr = (atr * (period - 1) + tr) / period;
+      this.writePoint(prev, data, i, { value: atr });
+    }
+    return prev;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {

@@ -11,19 +11,24 @@ export class MACDIndicator extends IndicatorBase {
     defaultConfig: { fast: 12, slow: 26, signal: 9 },
   };
 
+  /** Fast/slow EMA per bar — `macd = fast - slow` can't be split back into the two. */
+  private emas = new WeakMap<IndicatorOutput, { fast: number[]; slow: number[] }>();
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const fast = getIntParam(config, 'fast', 12, 1);
     const slow = getIntParam(config, 'slow', 26, 1);
     const signalPeriod = getIntParam(config, 'signal', 9, 1);
     const values = new Map<number, IndicatorValue>();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
+    const output: IndicatorOutput = { values, series };
 
-    if (data.length < slow) return { values, series };
+    if (data.length < slow) return output;
 
-    // Compute EMA incrementally without storing full arrays
     const fastMult = 2 / (fast + 1);
     const slowMult = 2 / (slow + 1);
     const signalMult = 2 / (signalPeriod + 1);
+    const fastHist: number[] = new Array(data.length);
+    const slowHist: number[] = new Array(data.length);
 
     let fastEma = data[0].close;
     let slowEma = data[0].close;
@@ -34,6 +39,8 @@ export class MACDIndicator extends IndicatorBase {
       const c = data[i].close;
       if (i === 0) { fastEma = c; slowEma = c; }
       else { fastEma = (c - fastEma) * fastMult + fastEma; slowEma = (c - slowEma) * slowMult + slowEma; }
+      fastHist[i] = fastEma;
+      slowHist[i] = slowEma;
 
       if (i >= slow - 1) {
         const macd = fastEma - slowEma;
@@ -45,7 +52,36 @@ export class MACDIndicator extends IndicatorBase {
         series[i] = val;
       }
     }
-    return { values, series };
+    this.emas.set(output, { fast: fastHist, slow: slowHist });
+    return output;
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    const fast = getIntParam(config, 'fast', 12, 1);
+    const slow = getIntParam(config, 'slow', 26, 1);
+    const signalPeriod = getIntParam(config, 'signal', 9, 1);
+    const state = this.emas.get(prev);
+    // Resuming needs a started signal line at from-1 (bar slow-1 onward).
+    if (!state || from < slow || !this.canResume(data, prev, from)) return null;
+    let fastEma = state.fast[from - 1];
+    let slowEma = state.slow[from - 1];
+    let sig = prev.series![from - 1]?.signal;
+    if (fastEma === undefined || slowEma === undefined || sig === undefined) return null;
+
+    const fastMult = 2 / (fast + 1);
+    const slowMult = 2 / (slow + 1);
+    const signalMult = 2 / (signalPeriod + 1);
+    for (let i = from; i < data.length; i++) {
+      const c = data[i].close;
+      fastEma = (c - fastEma) * fastMult + fastEma;
+      slowEma = (c - slowEma) * slowMult + slowEma;
+      state.fast[i] = fastEma;
+      state.slow[i] = slowEma;
+      const macd = fastEma - slowEma;
+      sig = (macd - sig) * signalMult + sig;
+      this.writePoint(prev, data, i, { macd, signal: sig, histogram: macd - sig });
+    }
+    return prev;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {

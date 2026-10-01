@@ -35,6 +35,20 @@ export class EMAIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    const period = getIntParam(config, 'period', 20, 1);
+    // Resume needs a post-seed EMA at from-1; inside the warm-up, recompute.
+    if (from < period || !this.canResume(data, prev, from)) return null;
+    let ema = prev.series![from - 1]?.value;
+    if (ema === undefined) return null;
+    const multiplier = 2 / (period + 1);
+    for (let i = from; i < data.length; i++) {
+      ema = (data[i].close - ema) * multiplier + ema;
+      this.writePoint(prev, data, i, { value: ema });
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;

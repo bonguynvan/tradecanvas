@@ -30,6 +30,18 @@ export class OBVIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  update(data: DataSeries, _config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    let obv = prev.series![from - 1]?.value;
+    if (obv === undefined) return null;
+    for (let i = from; i < data.length; i++) {
+      if (data[i].close > data[i - 1].close) obv += data[i].volume;
+      else if (data[i].close < data[i - 1].close) obv -= data[i].volume;
+      this.writePoint(prev, data, i, { value: obv });
+    }
+    return prev;
+  }
+
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;
