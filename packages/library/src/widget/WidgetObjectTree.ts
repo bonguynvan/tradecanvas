@@ -255,6 +255,7 @@ const DRAWING_TYPE_LABELS: Record<string, string> = {
   ray: 'Ray',
   extendedLine: 'Extended Line',
   horizontalLine: 'Horizontal Line',
+  horizontalRay: 'Horizontal Ray',
   verticalLine: 'Vertical Line',
   rectangle: 'Rectangle',
   ellipse: 'Ellipse',
@@ -275,6 +276,7 @@ const DRAWING_TYPE_LABELS: Record<string, string> = {
   textAnnotation: 'Text',
   anchoredVWAP: 'Anchored VWAP',
   volumeProfileRange: 'Volume Profile',
+  riskReward: 'Long/Short Position',
 };
 
 /** Human-readable label for a drawing type, falling back to the raw key. */

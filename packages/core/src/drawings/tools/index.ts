@@ -1,5 +1,6 @@
 export { TrendLineTool } from './TrendLine.js';
 export { HorizontalLineTool } from './HorizontalLine.js';
+export { HorizontalRayTool } from './HorizontalRay.js';
 export { VerticalLineTool } from './VerticalLine.js';
 export { RayTool } from './Ray.js';
 export { ExtendedLineTool } from './ExtendedLine.js';
@@ -22,10 +23,12 @@ export { GannBoxTool } from './GannBox.js';
 export { AnchoredVWAPTool } from './AnchoredVWAP.js';
 export { VolumeProfileRangeTool } from './VolumeProfileRange.js';
 export { FibTimeZonesTool } from './FibTimeZones.js';
+export { RiskRewardTool } from './RiskReward.js';
 
 import type { DrawingManager } from '../DrawingManager.js';
 import { TrendLineTool } from './TrendLine.js';
 import { HorizontalLineTool } from './HorizontalLine.js';
+import { HorizontalRayTool } from './HorizontalRay.js';
 import { VerticalLineTool } from './VerticalLine.js';
 import { RayTool } from './Ray.js';
 import { ExtendedLineTool } from './ExtendedLine.js';
@@ -48,10 +51,12 @@ import { GannBoxTool } from './GannBox.js';
 import { AnchoredVWAPTool } from './AnchoredVWAP.js';
 import { VolumeProfileRangeTool } from './VolumeProfileRange.js';
 import { FibTimeZonesTool } from './FibTimeZones.js';
+import { RiskRewardTool } from './RiskReward.js';
 
 export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new TrendLineTool());
   manager.register(new HorizontalLineTool());
+  manager.register(new HorizontalRayTool());
   manager.register(new VerticalLineTool());
   manager.register(new RayTool());
   manager.register(new ExtendedLineTool());
@@ -74,4 +79,5 @@ export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new AnchoredVWAPTool());
   manager.register(new VolumeProfileRangeTool());
   manager.register(new FibTimeZonesTool());
+  manager.register(new RiskRewardTool());
 }

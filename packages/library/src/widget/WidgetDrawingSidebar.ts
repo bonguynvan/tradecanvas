@@ -2,19 +2,20 @@ import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon } from './icons.js';
 
 const GROUP_ICONS = [
-  'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'ruler', 'type',
+  'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'ruler', 'type', 'ladder',
 ];
 
 /** Icon for a drawing tool in the favorites strip — falls back to a pen. */
 const TOOL_ICONS: Record<string, string> = {
   trendLine: 'trendingUp', ray: 'trendingUp', extendedLine: 'trendingUp',
-  horizontalLine: 'minus', verticalLine: 'penLine',
+  horizontalLine: 'minus', horizontalRay: 'minus', verticalLine: 'penLine',
   rectangle: 'square', ellipse: 'square', triangle: 'square', arrow: 'trendingUp',
   parallelChannel: 'gitBranch', regressionChannel: 'gitBranch', pitchfork: 'gitBranch',
   fibRetracement: 'hash', fibExtension: 'hash', fibTimeZones: 'hash',
   gannBox: 'hash', gannFan: 'gitBranch', elliottWave: 'trendingUp',
   priceRange: 'ruler', dateRange: 'ruler', measure: 'ruler',
   textAnnotation: 'type', anchoredVWAP: 'trendingUp', volumeProfileRange: 'barChart',
+  riskReward: 'square',
 };
 
 function toolIcon(tool: string): string {

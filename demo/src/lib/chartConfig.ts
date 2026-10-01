@@ -46,6 +46,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     label: 'Horizontal/Vertical',
     tools: [
       { label: 'Horizontal Line', value: 'horizontalLine' },
+      { label: 'Horizontal Ray', value: 'horizontalRay' },
       { label: 'Vertical Line', value: 'verticalLine' },
     ],
   },
@@ -93,6 +94,12 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     tools: [
       { label: 'Text', value: 'text' },
       { label: 'Arrow', value: 'arrow' },
+    ],
+  },
+  {
+    label: 'Position',
+    tools: [
+      { label: 'Long/Short Position', value: 'riskReward' },
     ],
   },
 ];

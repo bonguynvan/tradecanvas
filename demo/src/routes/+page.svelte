@@ -34,7 +34,7 @@
   <title>TradeCanvas — High-Performance Canvas Trading Chart</title>
   <meta
     name="description"
-    content="Production-ready canvas trading chart with built-in TradingView-like UI: 69 indicators, 24 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
+    content="Production-ready canvas trading chart with built-in TradingView-like UI: 69 indicators, 26 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
   />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="TradeCanvas — Trading chart library" />
@@ -106,7 +106,7 @@
     </div>
     <div class="feature-card">
       <div class="feature-icon feature-icon--green">//</div>
-      <h3>24 drawing tools</h3>
+      <h3>26 drawing tools</h3>
       <p>
         Trendlines, Fibonacci (incl. Time Zones), channels, Elliott waves, Gann tools.
         Click-to-place with magnet snapping, undo/redo, and full serialization.

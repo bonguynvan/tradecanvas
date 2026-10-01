@@ -1,7 +1,7 @@
 import type { Point, ViewportState } from './rendering.js';
 
 export type DrawingToolType =
-  | 'trendLine' | 'horizontalLine' | 'verticalLine' | 'ray' | 'extendedLine'
+  | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
   | 'parallelChannel' | 'regressionChannel'
   | 'fibRetracement' | 'fibExtension' | 'fibTimeZones'
   | 'rectangle' | 'ellipse' | 'triangle'
@@ -10,7 +10,8 @@ export type DrawingToolType =
   | 'text' | 'arrow'
   | 'gannFan' | 'gannBox'
   | 'anchoredVWAP'
-  | 'volumeProfileRange';
+  | 'volumeProfileRange'
+  | 'riskReward';
 
 export interface AnchorPoint {
   time: number;

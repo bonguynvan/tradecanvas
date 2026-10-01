@@ -2,7 +2,7 @@
   import type { DrawingToolType } from '@tradecanvas/chart';
   import {
     TrendingUp, Minus, PenLine, Hash, Square, GitBranch,
-    Ruler, Type, MousePointer, Magnet, Undo2, Redo2, Trash2,
+    Ruler, Type, Target, MousePointer, Magnet, Undo2, Redo2, Trash2,
   } from 'lucide-svelte';
   import { DRAWING_TOOL_GROUPS } from '../lib/chartConfig';
   import type { Component } from 'svelte';
@@ -26,7 +26,7 @@
 
   // Map group index to icon component
   const GROUP_ICONS: Component[] = [
-    TrendingUp, Minus, PenLine, Hash, Square, GitBranch, Ruler, Type,
+    TrendingUp, Minus, PenLine, Hash, Square, GitBranch, Ruler, Type, Target,
   ];
 
   let hoveredGroup: number | null = $state(null);

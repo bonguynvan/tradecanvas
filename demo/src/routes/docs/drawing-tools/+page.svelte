@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Drawing tools — TradeCanvas docs</title>
-  <meta name="description" content="23 built-in drawing tools: trendlines, Fibonacci, channels, Gann, Elliott waves, Volume Profile range, and more." />
+  <meta name="description" content="26 built-in drawing tools: trendlines, Fibonacci, channels, Gann, Elliott waves, Volume Profile range, Long/Short Position, and more." />
 </svelte:head>
 
 <h1>Drawing tools</h1>
-<p>23 built-in drawing tools. All tools support magnet snapping, undo/redo, and full JSON serialization.</p>
+<p>26 built-in drawing tools. All tools support magnet snapping, undo/redo, and full JSON serialization.</p>
 
 <h2>Activating a tool</h2>
 <pre><code>{`chart.activateDrawingTool('trendLine')
@@ -30,6 +30,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`}</code></pre>
   <li><code>ray</code></li>
   <li><code>extendedLine</code></li>
   <li><code>horizontalLine</code></li>
+  <li><code>horizontalRay</code> — like <code>horizontalLine</code>, but only extends forward in time from the anchor.</li>
   <li><code>verticalLine</code></li>
 </ul>
 
@@ -74,6 +75,11 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`}</code></pre>
 <ul>
   <li><code>text</code></li>
   <li><code>arrow</code></li>
+</ul>
+
+<h3>Position</h3>
+<ul>
+  <li><code>riskReward</code> — "Long/Short Position": drag from entry to stop; direction and a shaded risk/reward zone (2:1 by default) are computed automatically.</li>
 </ul>
 
 <h2>Serialization</h2>
