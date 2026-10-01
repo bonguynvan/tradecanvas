@@ -15,6 +15,17 @@ export interface ChartWidgetOptions {
   timeframe?: TimeFrame;
   theme?: ThemeName | Theme;
 
+  /**
+   * UI chrome language (toolbar, watchlist, indicator picker, status bar,
+   * settings panel, hotkey sheet). A built-in table ('en', the default, or
+   * 'vi'), layered under `messages` for host overrides/additions. Does not
+   * translate the data-driven indicator/drawing-tool names from
+   * `widgetConfig.ts` — see README "Widget i18n".
+   */
+  locale?: string;
+  /** Override or add individual UI strings, on top of `locale`'s built-in table. */
+  messages?: Partial<Record<import('./i18n.js').MessageKey, string>>;
+
   // UI toggles (default true)
   toolbar?: boolean;
   drawingTools?: boolean;

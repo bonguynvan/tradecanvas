@@ -29,6 +29,7 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
+import { resolveMessages, createTranslator, type Translator } from './i18n.js';
 
 /** Distinct line colors for comparison overlays, cycled by add order. */
 const COMPARE_COLORS = ['#f7931a', '#627eea', '#26a17b', '#e84142', '#8247e5', '#f3ba2f'];
@@ -58,6 +59,8 @@ export class ChartWidget {
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
+  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
+  private hostWatchlistRefPrice = new Map<string, number>();
   private watchlistInterval: ReturnType<typeof setInterval> | null = null;
   private replayOriginalData: DataSeries | null = null;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
@@ -71,6 +74,7 @@ export class ChartWidget {
   private options: ChartWidgetOptions;
   private symbols: string[];
   private settingsState: ChartSettingsState;
+  private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
   // Finest-resolution series the widget has seen. When no live adapter is
@@ -83,7 +87,17 @@ export class ChartWidget {
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
-    this.settingsState = { ...DEFAULT_SETTINGS };
+    // `numberLocale` lives in two places: the headless Chart gets it via
+    // `chartOptions` (spread straight into `new Chart()` below) — but the
+    // widget's own chrome (watchlist, alerts, hotkey sheet, settings panel)
+    // reads `settingsState.numberLocale`, which otherwise stays on
+    // DEFAULT_SETTINGS' 'en-US' until the host touches the Settings UI.
+    // Seed it from the same option so both layers start in sync.
+    this.settingsState = {
+      ...DEFAULT_SETTINGS,
+      ...(options.chartOptions?.numberLocale ? { numberLocale: options.chartOptions.numberLocale } : {}),
+    };
+    this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
     // Resolve layout persistence config. Treated as opt-in — defaults to
     // `false` so existing apps don't suddenly start writing to localStorage.
@@ -107,7 +121,7 @@ export class ChartWidget {
       activeTool: null,
       magnetEnabled: true,
       connectionState: 'connecting',
-      connectionMessage: 'Connecting...',
+      connectionMessage: this.t('status.connecting'),
     };
 
 
@@ -150,6 +164,7 @@ export class ChartWidget {
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
         },
+        this.t,
       );
     }
 
@@ -188,8 +203,9 @@ export class ChartWidget {
     if (options.watchlist) {
       this.watchlist = new WidgetWatchlist(body, this.symbols, {
         onSelect: (sym) => { void this.setSymbol(sym); },
-      });
+      }, this.t('watchlist.title'));
       this.watchlist.setActive(this.state.symbol);
+      this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
     }
 
     this.root.appendChild(body);
@@ -248,7 +264,7 @@ export class ChartWidget {
         onChange: (patch) => this.applySettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
-      });
+      }, this.t);
     }
 
     // 8a. Symbol search
@@ -256,7 +272,7 @@ export class ChartWidget {
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
     });
-    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} });
+    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t);
 
     // Replay: click a revealed bar to jump the replay cursor there.
     this.chart.on('barClick', (e) => {
@@ -466,8 +482,15 @@ export class ChartWidget {
    * Push an entry into the watchlist (e.g., from your own WebSocket).
    * Call with the symbols you care about; the active symbol is updated
    * automatically from the chart's live data.
+   *
+   * A host-supplied `refPrice` takes precedence over the widget's own
+   * session-open guess for that symbol — including the active one, so the
+   * auto-tick loop stops clobbering it (see `tickWatchlist`).
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
+    if (entry.refPrice !== undefined) {
+      this.hostWatchlistRefPrice.set(symbol, entry.refPrice);
+    }
     this.watchlist?.setEntry(symbol, entry);
   }
 
@@ -476,10 +499,12 @@ export class ChartWidget {
     const data = this.chart.getData();
     if (data.length === 0) return;
     const last = data[data.length - 1];
+    const hostRef = this.hostWatchlistRefPrice.get(this.state.symbol);
     // Reference price: first bar of the loaded slice — that's the closest
-    // approximation of "session open" without timezone bookkeeping. Apps
-    // that need true session-open can override via `setWatchlistEntry`.
-    if (this.sessionRefPrice === null) {
+    // approximation of "session open" without timezone bookkeeping. Only
+    // used as a fallback; a refPrice the host already pushed via
+    // `setWatchlistEntry` (even for the active symbol) always wins.
+    if (hostRef === undefined && this.sessionRefPrice === null) {
       this.sessionRefPrice = data[0].open;
     }
 
@@ -490,7 +515,7 @@ export class ChartWidget {
 
     this.watchlist.setEntry(this.state.symbol, {
       lastPrice: last.close,
-      refPrice: this.sessionRefPrice,
+      refPrice: hostRef ?? this.sessionRefPrice ?? data[0].open,
       sparkline: buf.slice(),
     });
   }
@@ -1240,7 +1265,10 @@ export class ChartWidget {
       this.chart.setLogScale(patch.logScale);
       this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
     }
-    if (patch.numberLocale !== undefined) this.chart.setNumberLocale(patch.numberLocale);
+    if (patch.numberLocale !== undefined) {
+      this.chart.setNumberLocale(patch.numberLocale);
+      this.watchlist?.setLocale(patch.numberLocale || undefined);
+    }
     if (patch.timezone !== undefined) {
       this.chart.setTimezoneOffset(patch.timezone === 'local' ? null : Number(patch.timezone));
     }
@@ -1273,7 +1301,7 @@ export class ChartWidget {
     this.state = {
       ...this.state,
       connectionState: 'connecting',
-      connectionMessage: 'Connecting...',
+      connectionMessage: this.t('status.connecting'),
     };
     this.updateUI();
 
@@ -1299,7 +1327,7 @@ export class ChartWidget {
       this.state = {
         ...this.state,
         connectionState: 'connected',
-        connectionMessage: 'Live',
+        connectionMessage: this.t('status.live'),
       };
 
       // Re-pull comparison overlays at the (possibly new) timeframe so they
@@ -1310,7 +1338,7 @@ export class ChartWidget {
       this.state = {
         ...this.state,
         connectionState: 'error',
-        connectionMessage: err instanceof Error ? err.message : 'Connection failed',
+        connectionMessage: err instanceof Error ? err.message : this.t('status.connectionFailed'),
       };
     }
 

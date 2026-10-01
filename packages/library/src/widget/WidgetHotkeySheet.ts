@@ -1,3 +1,5 @@
+import type { MessageKey, Translator } from './i18n.js';
+
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
  * shortcuts so users discover the widget's hidden interaction model — a
@@ -6,6 +8,16 @@
 export interface HotkeySheetCallbacks {
   onClose: () => void;
 }
+
+// Group titles translate via this lookup; individual shortcut labels (and
+// the `keys` badges) stay English for now — see README "Widget i18n".
+const GROUP_TITLE_KEYS: Record<string, MessageKey> = {
+  'Search & navigation': 'hotkeys.group.searchNavigation',
+  'Chart manipulation': 'hotkeys.group.chartManipulation',
+  'Touch (mobile / tablet)': 'hotkeys.group.touch',
+  'Keyboard': 'hotkeys.group.keyboard',
+  'Drawing': 'hotkeys.group.drawing',
+};
 
 interface HotkeyEntry {
   keys: string[];
@@ -74,10 +86,12 @@ export class WidgetHotkeySheet {
   private backdrop: HTMLDivElement | null = null;
   private modal: HTMLDivElement | null = null;
   private callbacks: HotkeySheetCallbacks;
+  private t: Translator;
   private boundKeydown: (e: KeyboardEvent) => void;
 
-  constructor(callbacks: HotkeySheetCallbacks) {
+  constructor(callbacks: HotkeySheetCallbacks, t: Translator) {
     this.callbacks = callbacks;
+    this.t = t;
     this.boundKeydown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -99,10 +113,10 @@ export class WidgetHotkeySheet {
 
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
-    header.innerHTML = '<h3>Keyboard shortcuts</h3>';
+    header.innerHTML = `<h3>${this.t('hotkeys.title')}</h3>`;
     const closeBtn = document.createElement('button');
     closeBtn.className = 'tcw-modal-close';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', this.t('hotkeys.close'));
     closeBtn.innerHTML = '×';
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(closeBtn);
@@ -119,7 +133,8 @@ export class WidgetHotkeySheet {
       section.className = 'tcw-hotkey-section';
       const title = document.createElement('div');
       title.className = 'tcw-settings-section-title';
-      title.textContent = group.title;
+      const titleKey = GROUP_TITLE_KEYS[group.title];
+      title.textContent = titleKey ? this.t(titleKey) : group.title;
       section.appendChild(title);
 
       for (const entry of group.entries) {
@@ -161,7 +176,7 @@ export class WidgetHotkeySheet {
     footer.innerHTML = '<span style="font-size:11px;color:var(--tcw-text-muted)">Press ? anytime to show this sheet</span>';
     const ok = document.createElement('button');
     ok.className = 'tcw-done-btn';
-    ok.textContent = 'Got it';
+    ok.textContent = this.t('hotkeys.gotIt');
     ok.addEventListener('click', () => this.close());
     footer.appendChild(ok);
     this.modal.appendChild(footer);

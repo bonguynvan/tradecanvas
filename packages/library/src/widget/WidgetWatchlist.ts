@@ -31,8 +31,9 @@ export class WidgetWatchlist {
   private entries = new Map<string, WatchlistEntry>();
   private active: string | null = null;
   private callbacks: WatchlistCallbacks;
+  private locale: string | undefined;
 
-  constructor(host: HTMLElement, symbols: string[], callbacks: WatchlistCallbacks) {
+  constructor(host: HTMLElement, symbols: string[], callbacks: WatchlistCallbacks, title = 'Watchlist') {
     this.callbacks = callbacks;
 
     this.el = document.createElement('div');
@@ -40,7 +41,7 @@ export class WidgetWatchlist {
 
     const header = document.createElement('div');
     header.className = 'tcw-watchlist-header';
-    header.textContent = 'Watchlist';
+    header.textContent = title;
     this.el.appendChild(header);
 
     this.listEl = document.createElement('div');
@@ -53,6 +54,12 @@ export class WidgetWatchlist {
     }
 
     host.appendChild(this.el);
+  }
+
+  /** Set the BCP 47 locale used for price/percent formatting. */
+  setLocale(locale: string | undefined): void {
+    this.locale = locale;
+    for (const symbol of this.entries.keys()) this.renderRow(symbol);
   }
 
   /** Replace the symbol set. Rows are diff'd so DOM churn is minimal. */
@@ -149,14 +156,15 @@ export class WidgetWatchlist {
     if (!ref || !entry) return;
 
     if (entry.lastPrice !== undefined) {
-      ref.priceEl.textContent = formatPrice(entry.lastPrice);
+      ref.priceEl.textContent = formatPrice(entry.lastPrice, this.locale);
     }
 
     if (entry.lastPrice !== undefined && entry.refPrice !== undefined && entry.refPrice !== 0) {
       const diff = entry.lastPrice - entry.refPrice;
       const pct = (diff / entry.refPrice) * 100;
-      const sign = diff >= 0 ? '+' : '';
-      ref.changeEl.textContent = `${sign}${pct.toFixed(2)}%`;
+      const sign = diff >= 0 ? '+' : '-';
+      const pctText = Math.abs(pct).toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      ref.changeEl.textContent = `${sign}${pctText}%`;
       ref.changeEl.className = `tcw-watchlist-change ${diff >= 0 ? 'tcw-up' : 'tcw-down'}`;
     } else {
       ref.changeEl.textContent = '';
@@ -179,12 +187,16 @@ function formatSymbol(symbol: string): string {
   return symbol;
 }
 
-function formatPrice(v: number): string {
+function formatPrice(v: number, locale: string | undefined): string {
   if (v === 0) return '0';
   const abs = Math.abs(v);
-  if (abs >= 1000) return v.toFixed(2);
-  if (abs >= 1) return v.toFixed(4);
-  return v.toPrecision(4);
+  if (abs >= 1000) return v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (abs >= 1) return v.toLocaleString(locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  // toPrecision(4) has no locale-aware equivalent via toLocaleString (it
+  // targets significant digits, not decimal places) — reformat its raw
+  // fixed-notation output through Number.toLocaleString for the separator.
+  const precise = Number(v.toPrecision(4));
+  return precise.toLocaleString(locale, { maximumFractionDigits: 10 });
 }
 
 function drawSparkline(canvas: HTMLCanvasElement, samples: number[], ref: number): void {

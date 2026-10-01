@@ -1,6 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, formatPrice } from '@tradecanvas/commons';
 
 /**
  * Renders the current (last) price as a horizontal line with a badge.
@@ -12,6 +12,11 @@ export class CurrentPriceLine {
   private visible = true;
   private flashUntil = 0;
   private pricePrecision = 2;
+  private locale = 'en-US';
+
+  setLocale(locale: string): void {
+    this.locale = locale;
+  }
 
   setPrice(price: number, previousClose?: number): void {
     if (this.price !== null && price !== this.price) {
@@ -59,7 +64,7 @@ export class CurrentPriceLine {
 
     // Price badge on axis
     const axisX = chartRect.x + chartRect.width + 1;
-    const text = this.price.toFixed(this.pricePrecision);
+    const text = formatPrice(this.price, this.pricePrecision, this.locale);
     ctx.font = `bold 11px ${theme.font.family}`;
     const textWidth = ctx.measureText(text).width;
     const badgeWidth = Math.min(textWidth + 12, PRICE_AXIS_WIDTH - 2);

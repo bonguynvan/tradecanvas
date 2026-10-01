@@ -1,11 +1,13 @@
 import type { ChartSettingsState, SettingsCallbacks } from './types.js';
 import { createIcon } from './icons.js';
+import type { Translator } from './i18n.js';
 
 type Tab = 'style' | 'display' | 'scale';
 const TABS: Tab[] = ['style', 'display', 'scale'];
 
 export class WidgetSettings {
   private callbacks: SettingsCallbacks;
+  private t: Translator;
   private backdrop: HTMLDivElement | null = null;
   private modal: HTMLDivElement | null = null;
   private currentTab: Tab = 'style';
@@ -13,8 +15,9 @@ export class WidgetSettings {
   private bodyEl: HTMLDivElement | null = null;
   private tabButtons: HTMLButtonElement[] = [];
 
-  constructor(callbacks: SettingsCallbacks) {
+  constructor(callbacks: SettingsCallbacks, t: Translator) {
     this.callbacks = callbacks;
+    this.t = t;
   }
 
   open(currentSettings: ChartSettingsState): void {
@@ -50,7 +53,7 @@ export class WidgetSettings {
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
     const h3 = document.createElement('h3');
-    h3.textContent = 'Chart Settings';
+    h3.textContent = this.t('settings.title');
     header.appendChild(h3);
     const closeBtn = document.createElement('button');
     closeBtn.className = 'tcw-modal-close';
@@ -69,7 +72,7 @@ export class WidgetSettings {
     for (const tab of TABS) {
       const btn = document.createElement('button');
       btn.className = 'tcw-modal-tab';
-      btn.textContent = tab;
+      btn.textContent = this.t(`settings.tab.${tab}` as Parameters<Translator>[0]);
       btn.dataset.tab = tab;
       if (tab === this.currentTab) btn.classList.add('tcw-active');
       btn.addEventListener('click', () => {
@@ -93,12 +96,12 @@ export class WidgetSettings {
     footer.className = 'tcw-modal-footer';
     const resetBtn = document.createElement('button');
     resetBtn.className = 'tcw-reset-link';
-    resetBtn.textContent = 'Reset to defaults';
+    resetBtn.textContent = this.t('settings.resetToDefaults');
     resetBtn.addEventListener('click', () => this.callbacks.onReset());
     footer.appendChild(resetBtn);
     const doneBtn = document.createElement('button');
     doneBtn.className = 'tcw-done-btn';
-    doneBtn.textContent = 'Done';
+    doneBtn.textContent = this.t('settings.done');
     doneBtn.addEventListener('click', () => {
       this.callbacks.onClose();
       this.close();
@@ -141,7 +144,7 @@ export class WidgetSettings {
     const s = this.currentSettings;
 
     // Candle Colors
-    const candleSection = this.section('Candle Colors');
+    const candleSection = this.section(this.t('settings.section.candleColors'));
     candleSection.appendChild(this.colorRow('Up Body', s.candleUpColor, (v) => this.patch({ candleUpColor: v })));
     candleSection.appendChild(this.colorRow('Down Body', s.candleDownColor, (v) => this.patch({ candleDownColor: v })));
     candleSection.appendChild(this.colorRow('Up Wick', s.candleUpWick, (v) => this.patch({ candleUpWick: v })));
@@ -149,7 +152,7 @@ export class WidgetSettings {
     this.bodyEl.appendChild(candleSection);
 
     // Background
-    const bgSection = this.section('Background');
+    const bgSection = this.section(this.t('settings.section.background'));
     bgSection.appendChild(this.colorRow('Background', s.backgroundColor, (v) => this.patch({ backgroundColor: v })));
     bgSection.appendChild(this.colorRow('Grid', s.gridColor, (v) => this.patch({ gridColor: v })));
     this.bodyEl.appendChild(bgSection);

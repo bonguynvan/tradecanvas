@@ -18,6 +18,9 @@
       | 'candlestick' | 'line' | 'area' | 'bar' | 'heikinAshi' | 'equivolume';
     const indicators = params.get('indicators')?.split(',').filter(Boolean) ?? [];
     const trading = params.get('trading') === 'true';
+    const watchlist = params.get('watchlist') === 'true';
+    const locale = params.get('locale') ?? undefined;
+    const numberLocale = params.get('numberLocale') ?? undefined;
 
     try {
       const { ChartWidget } = await import('@tradecanvas/chart/widget');
@@ -31,6 +34,9 @@
         adapter: new BinanceAdapter(),
         historyLimit: 500,
         trading,
+        watchlist,
+        locale,
+        chartOptions: numberLocale ? { numberLocale } : undefined,
         onReady: (chart) => {
           for (const id of indicators) {
             chart.addIndicator(id, {});

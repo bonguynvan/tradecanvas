@@ -443,6 +443,7 @@ export class Chart {
 
     // Current price line (standalone, works without StreamManager)
     this.currentPriceLine = new CurrentPriceLine();
+    this.currentPriceLine.setLocale(this.numberLocale);
 
     // Alerts
     this.alertManager = new AlertManager();
@@ -1956,6 +1957,7 @@ export class Chart {
     this.crosshairHandler.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.sessionBreaks.setLocale(locale);
+    this.currentPriceLine.setLocale(locale);
     this.syncRenderContext();
     this.engine.requestRender();
   }
