@@ -2,7 +2,7 @@
 
 ## 1.3.0 (2026-10-02)
 
-Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look by default and a redesigned gauge. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.6 pick up the new core.
+Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look by default, a redesigned gauge, crosshair tooltip and loader, and replay that follows its newest bar. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.6 pick up the new core.
 
 ### Dragging and panning
 
@@ -27,9 +27,17 @@ Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look 
 - Armed price alerts are blue, triggered ones amber; comparison lines no longer start with an orange that blends into the main line.
 - **Gauge redesign**: a thin ring with rounded ends and zone gaps, bright up to the value and dimmed beyond it; a knob marks the value so the number is never crossed by a needle; the current zone's label shows above it; text fits small dials. `pointer: 'needle'` keeps the classic needle. New defaults: 240° sweep, `thickness` 0.14.
 
+- **Crosshair tooltip redesign**: bar time and a change pill (vs the previous close), an aligned O/H/L/C grid with only the close coloured, and volume; the chart's precision (sub-cent prices no longer show `0.00`), locale, timezone and bar spacing; stays inside the plot. New `setLocale`, `setPricePrecision`, `setTimezoneOffset`, `CrosshairTooltipContext` and `formatTooltipTime`.
+- **Loader redesign** (`ChartWidget`): a run of candles lit one after another over a sweeping accent line; the "Loading chart…" text is for screen readers only (shown under reduced motion and on failure).
+
+### Replay
+
+- **Replay follows the newest bar again**: the first step and every seek show the replay position; each new bar keeps the view at the latest bar while it rests there, and panning back into history pauses the follow.
+
 ### Site
 
 - Redesigned demo and docs site with the new mark (a candle between code brackets), a dark terminal look with a designed light theme, and the library's default themes on every live chart.
+- Landing page: smooth scrolling and scroll-driven reveals, count-ups and a parallax hero grid; charts keep the wheel for zooming; nothing moves under reduced motion.
 
 ## 1.2.0 (2026-10-01)
 
