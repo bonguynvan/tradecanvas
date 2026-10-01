@@ -32,6 +32,8 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Trend Line', value: 'trendLine' as DrawingToolType },
       { label: 'Ray', value: 'ray' as DrawingToolType },
       { label: 'Extended Line', value: 'extendedLine' as DrawingToolType },
+      { label: 'Info Line', value: 'infoLine' as DrawingToolType },
+      { label: 'Trend Angle', value: 'trendAngle' as DrawingToolType },
     ],
   },
   {
@@ -40,6 +42,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Horizontal Line', value: 'horizontalLine' as DrawingToolType },
       { label: 'Horizontal Ray', value: 'horizontalRay' as DrawingToolType },
       { label: 'Vertical Line', value: 'verticalLine' as DrawingToolType },
+      { label: 'Cross Line', value: 'crossLine' as DrawingToolType },
     ],
   },
   {
@@ -54,22 +57,37 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     tools: [
       { label: 'Fib Retracement', value: 'fibRetracement' as DrawingToolType },
       { label: 'Fib Extension', value: 'fibExtension' as DrawingToolType },
+      { label: 'Fib Channel', value: 'fibChannel' as DrawingToolType },
+      { label: 'Fib Time Zones', value: 'fibTimeZones' as DrawingToolType },
+      { label: 'Fib Speed Resistance Fan', value: 'fibSpeedResistanceFan' as DrawingToolType },
     ],
   },
   {
     label: 'Shapes',
     tools: [
       { label: 'Rectangle', value: 'rectangle' as DrawingToolType },
+      { label: 'Circle', value: 'circle' as DrawingToolType },
       { label: 'Ellipse', value: 'ellipse' as DrawingToolType },
       { label: 'Triangle', value: 'triangle' as DrawingToolType },
     ],
   },
   {
-    label: 'Gann & Advanced',
+    label: 'Gann & Pitchforks',
     tools: [
       { label: 'Pitchfork', value: 'pitchfork' as DrawingToolType },
+      { label: 'Schiff Pitchfork', value: 'schiffPitchfork' as DrawingToolType },
+      { label: 'Modified Schiff Pitchfork', value: 'modifiedSchiffPitchfork' as DrawingToolType },
       { label: 'Gann Fan', value: 'gannFan' as DrawingToolType },
       { label: 'Gann Box', value: 'gannBox' as DrawingToolType },
+      { label: 'Cyclic Lines', value: 'cyclicLines' as DrawingToolType },
+    ],
+  },
+  {
+    label: 'Patterns',
+    tools: [
+      { label: 'XABCD Pattern', value: 'xabcdPattern' as DrawingToolType },
+      { label: 'ABCD Pattern', value: 'abcdPattern' as DrawingToolType },
+      { label: 'Head and Shoulders', value: 'headAndShoulders' as DrawingToolType },
       { label: 'Elliott Wave', value: 'elliottWave' as DrawingToolType },
     ],
   },
@@ -78,6 +96,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     tools: [
       { label: 'Price Range', value: 'priceRange' as DrawingToolType },
       { label: 'Date Range', value: 'dateRange' as DrawingToolType },
+      { label: 'Date and Price Range', value: 'dateAndPriceRange' as DrawingToolType },
       { label: 'Measure', value: 'measure' as DrawingToolType },
     ],
   },
@@ -85,13 +104,16 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     label: 'Annotation',
     tools: [
       { label: 'Text', value: 'text' as DrawingToolType },
+      { label: 'Price Label', value: 'priceLabel' as DrawingToolType },
       { label: 'Arrow', value: 'arrow' as DrawingToolType },
     ],
   },
   {
-    label: 'Position',
+    label: 'Forecasting',
     tools: [
       { label: 'Long/Short Position', value: 'riskReward' as DrawingToolType },
+      { label: 'Anchored VWAP', value: 'anchoredVWAP' as DrawingToolType },
+      { label: 'Fixed Range Volume Profile', value: 'volumeProfileRange' as DrawingToolType },
     ],
   },
 ];

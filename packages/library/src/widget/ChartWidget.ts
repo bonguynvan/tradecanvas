@@ -155,8 +155,9 @@ export class ChartWidget {
       activeIndicators: new Map(),
       activeTool: null,
       magnetEnabled: true,
-      connectionState: 'connecting',
-      connectionMessage: this.t('status.connecting'),
+      // Static data (no adapter) has no connection to report.
+      connectionState: options.adapter ? 'connecting' : 'disconnected',
+      connectionMessage: options.adapter ? this.t('status.connecting') : '',
     };
 
 

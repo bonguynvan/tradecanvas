@@ -848,7 +848,7 @@ chart.<span class="fn">removeIndicator</span>(rsiId)</pre>
   <!-- Drawing Tools -->
   <section class="doc-section" id="drawings">
     <h2 class="section-title">Drawing Tools</h2>
-    <p class="section-subtitle">23 drawing tools with magnet snapping, undo/redo, and full serialization.</p>
+    <p class="section-subtitle">40 drawing tools with magnet snapping, undo/redo, and full serialization.</p>
 
     <h3>Available Tools</h3>
     <div class="doc-table-wrap">
@@ -2136,7 +2136,7 @@ gauge.<span class="fn">setValue</span>(<span class="bool">85</span>)</pre>
           <ul>
             <li>16 chart types (Candlestick, Line, Area, Heikin-Ashi, Renko, Kagi, Volume Candles, HLC Area, Step Line, ...)</li>
             <li>26 built-in indicators (SMA, EMA, RSI, MACD, Bollinger, Ichimoku, ...)</li>
-            <li>23 drawing tools with magnet snapping and undo/redo</li>
+            <li>40 drawing tools with magnet snapping and undo/redo</li>
             <li>Trading overlay with positions, orders, drag-to-modify SL/TP</li>
             <li>Real-time streaming with built-in Binance adapter</li>
             <li>Save/load chart state, replay mode, screenshots</li>

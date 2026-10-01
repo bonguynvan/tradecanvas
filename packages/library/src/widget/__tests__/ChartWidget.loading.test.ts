@@ -207,3 +207,10 @@ describe('ChartWidget loading state — static data', () => {
     expect(FakeChart.last.data).toEqual([]);
   });
 });
+
+describe('ChartWidget status bar — static data', () => {
+  it('does not claim to be connecting without an adapter', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', timeframe: '1m', watchlist: false });
+    expect(status()).not.toContain('Connecting');
+  });
+});

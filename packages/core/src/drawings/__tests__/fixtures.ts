@@ -41,3 +41,33 @@ export function drawing(
     meta: overrides.meta,
   };
 }
+
+/**
+ * Canvas stand-in that records what a tool draws: every method call (with
+ * args) and every text drawn. Property writes (fillStyle, font…) are
+ * accepted and ignored; measureText reports 6px per character.
+ */
+export function recordingCtx(): {
+  ctx: CanvasRenderingContext2D;
+  calls: { name: string; args: unknown[] }[];
+  texts: string[];
+} {
+  const calls: { name: string; args: unknown[] }[] = [];
+  const texts: string[] = [];
+  const props: Record<string, unknown> = {};
+  const ctx = new Proxy({} as Record<string, unknown>, {
+    get(_t, key: string) {
+      if (key in props) return props[key];
+      if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
+      return (...args: unknown[]) => {
+        calls.push({ name: key, args });
+        if (key === 'fillText') texts.push(String(args[0]));
+      };
+    },
+    set(_t, key: string, value) {
+      props[key] = value;
+      return true;
+    },
+  }) as unknown as CanvasRenderingContext2D;
+  return { ctx, calls, texts };
+}

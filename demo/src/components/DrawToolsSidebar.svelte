@@ -2,10 +2,9 @@
   import type { DrawingToolType } from '@tradecanvas/chart';
   import {
     TrendingUp, Minus, PenLine, Hash, Square, GitBranch,
-    Ruler, Type, Target, MousePointer, Magnet, Undo2, Redo2, Trash2,
+    Activity, Ruler, Type, Target, MousePointer, Magnet, Undo2, Redo2, Trash2,
   } from 'lucide-svelte';
   import { DRAWING_TOOL_GROUPS } from '../lib/chartConfig';
-  import type { Component } from 'svelte';
 
   interface Props {
     activeTool: DrawingToolType | null;
@@ -24,9 +23,10 @@
     onUndo, onRedo, onClearDrawings,
   }: Props = $props();
 
-  // Map group index to icon component
-  const GROUP_ICONS: Component[] = [
-    TrendingUp, Minus, PenLine, Hash, Square, GitBranch, Ruler, Type, Target,
+  // Map group index to icon component (lucide-svelte ships Svelte 4 class
+  // components, which aren't assignable to Svelte 5's `Component` type).
+  const GROUP_ICONS: (typeof TrendingUp)[] = [
+    TrendingUp, Minus, PenLine, Hash, Square, GitBranch, Activity, Ruler, Type, Target,
   ];
 
   let hoveredGroup: number | null = $state(null);

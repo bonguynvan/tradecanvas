@@ -1,8 +1,16 @@
-import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
 export class PitchforkTool extends DrawingBase {
-  descriptor = { type: 'pitchfork' as const, name: "Andrews' Pitchfork", requiredAnchors: 3 };
+  descriptor: DrawingDescriptor = { type: 'pitchfork', name: "Andrews' Pitchfork", requiredAnchors: 3 };
+
+  /**
+   * Where the median line starts, given pivot A and the first reaction B.
+   * Andrews' starts at A; the Schiff variants shift it toward B.
+   */
+  protected origin(p0: Point, _p1: Point): Point {
+    return p0;
+  }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 3) {
@@ -19,12 +27,25 @@ export class PitchforkTool extends DrawingBase {
       return;
     }
 
-    const p0 = this.anchorToPixel(state.anchors[0], viewport);
+    const a = this.anchorToPixel(state.anchors[0], viewport);
     const p1 = this.anchorToPixel(state.anchors[1], viewport);
     const p2 = this.anchorToPixel(state.anchors[2], viewport);
+    const p0 = this.origin(a, p1);
     const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
 
-    // Median line (from p0 through midpoint of p1-p2)
+    if (p0.x !== a.x || p0.y !== a.y) {
+      // Schiff variants: show how the shifted origin relates to pivot A.
+      ctx.strokeStyle = state.style.color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(p0.x, p0.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Median line (from the origin through midpoint of p1-p2)
     const dx = mid.x - p0.x, dy = mid.y - p0.y;
     const len = Math.hypot(dx, dy) || 1;
     const ext = Math.hypot(viewport.chartRect.width, viewport.chartRect.height);
@@ -57,9 +78,9 @@ export class PitchforkTool extends DrawingBase {
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 3) return false;
-    const p0 = this.anchorToPixel(state.anchors[0], viewport);
     const p1 = this.anchorToPixel(state.anchors[1], viewport);
     const p2 = this.anchorToPixel(state.anchors[2], viewport);
+    const p0 = this.origin(this.anchorToPixel(state.anchors[0], viewport), p1);
     const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
     if (this.distanceToInfiniteLine(point, p0, mid) <= tolerance) return true;
     const dx = mid.x - p0.x, dy = mid.y - p0.y;
@@ -68,5 +89,23 @@ export class PitchforkTool extends DrawingBase {
     if (this.distanceToInfiniteLine(point, p1, p1end) <= tolerance) return true;
     if (this.distanceToInfiniteLine(point, p2, p2end) <= tolerance) return true;
     return false;
+  }
+}
+
+/** Schiff Pitchfork: the median starts halfway in price from A to B, at A's time. */
+export class SchiffPitchforkTool extends PitchforkTool {
+  override descriptor: DrawingDescriptor = { type: 'schiffPitchfork', name: 'Schiff Pitchfork', requiredAnchors: 3 };
+
+  protected override origin(p0: Point, p1: Point): Point {
+    return { x: p0.x, y: (p0.y + p1.y) / 2 };
+  }
+}
+
+/** Modified Schiff Pitchfork: the median starts at the midpoint of A and B, in both time and price. */
+export class ModifiedSchiffPitchforkTool extends PitchforkTool {
+  override descriptor: DrawingDescriptor = { type: 'modifiedSchiffPitchfork', name: 'Modified Schiff Pitchfork', requiredAnchors: 3 };
+
+  protected override origin(p0: Point, p1: Point): Point {
+    return { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
   }
 }

@@ -24,7 +24,7 @@
 
   const STATS = [
     { value: '66', label: 'Indicators' },
-    { value: '24', label: 'Drawing tools' },
+    { value: '40', label: 'Drawing tools' },
     { value: '17', label: 'Chart types' },
     { value: '0', label: 'Dependencies' },
   ];
@@ -34,7 +34,7 @@
   <title>TradeCanvas — High-Performance Canvas Trading Chart</title>
   <meta
     name="description"
-    content="Production-ready canvas trading chart with built-in TradingView-like UI: 70 indicators, 26 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
+    content="Production-ready canvas trading chart with built-in TradingView-like UI: 70 indicators, 40 drawing tools, 17 chart types, multi-chart grid, replay mode, strategy backtester, real-time streaming. Zero dependencies."
   />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="TradeCanvas — Trading chart library" />
@@ -97,7 +97,7 @@
   <div class="feature-grid">
     <div class="feature-card">
       <div class="feature-icon">/\</div>
-      <h3>66 technical indicators</h3>
+      <h3>70 technical indicators</h3>
       <p>
         SMA, EMA, RSI, MACD, Bollinger, Ichimoku, Stochastic RSI, Supertrend,
         Anchored VWAP, plus a deep oscillator bench (PPO, RMI, Disparity, Qstick,
@@ -106,9 +106,10 @@
     </div>
     <div class="feature-card">
       <div class="feature-icon feature-icon--green">//</div>
-      <h3>26 drawing tools</h3>
+      <h3>40 drawing tools</h3>
       <p>
-        Trendlines, Fibonacci (incl. Time Zones), channels, Elliott waves, Gann tools.
+        Trendlines, info lines, Fibonacci channels and fans, Schiff pitchforks,
+        harmonic XABCD / head-and-shoulders patterns, Gann and cycle tools.
         Click-to-place with magnet snapping, undo/redo, and full serialization.
       </p>
     </div>

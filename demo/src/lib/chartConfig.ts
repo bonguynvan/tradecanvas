@@ -40,6 +40,8 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Trend Line', value: 'trendLine' },
       { label: 'Ray', value: 'ray' },
       { label: 'Extended Line', value: 'extendedLine' },
+      { label: 'Info Line', value: 'infoLine' },
+      { label: 'Trend Angle', value: 'trendAngle' },
     ],
   },
   {
@@ -48,6 +50,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Horizontal Line', value: 'horizontalLine' },
       { label: 'Horizontal Ray', value: 'horizontalRay' },
       { label: 'Vertical Line', value: 'verticalLine' },
+      { label: 'Cross Line', value: 'crossLine' },
     ],
   },
   {
@@ -62,22 +65,37 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     tools: [
       { label: 'Fib Retracement', value: 'fibRetracement' },
       { label: 'Fib Extension', value: 'fibExtension' },
+      { label: 'Fib Channel', value: 'fibChannel' },
+      { label: 'Fib Time Zones', value: 'fibTimeZones' },
+      { label: 'Fib Speed Resistance Fan', value: 'fibSpeedResistanceFan' },
     ],
   },
   {
     label: 'Shapes',
     tools: [
       { label: 'Rectangle', value: 'rectangle' },
+      { label: 'Circle', value: 'circle' },
       { label: 'Ellipse', value: 'ellipse' },
       { label: 'Triangle', value: 'triangle' },
     ],
   },
   {
-    label: 'Gann & Advanced',
+    label: 'Gann & Pitchforks',
     tools: [
       { label: 'Pitchfork', value: 'pitchfork' },
+      { label: 'Schiff Pitchfork', value: 'schiffPitchfork' },
+      { label: 'Modified Schiff Pitchfork', value: 'modifiedSchiffPitchfork' },
       { label: 'Gann Fan', value: 'gannFan' },
       { label: 'Gann Box', value: 'gannBox' },
+      { label: 'Cyclic Lines', value: 'cyclicLines' },
+    ],
+  },
+  {
+    label: 'Patterns',
+    tools: [
+      { label: 'XABCD Pattern', value: 'xabcdPattern' },
+      { label: 'ABCD Pattern', value: 'abcdPattern' },
+      { label: 'Head and Shoulders', value: 'headAndShoulders' },
       { label: 'Elliott Wave', value: 'elliottWave' },
     ],
   },
@@ -86,6 +104,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     tools: [
       { label: 'Price Range', value: 'priceRange' },
       { label: 'Date Range', value: 'dateRange' },
+      { label: 'Date and Price Range', value: 'dateAndPriceRange' },
       { label: 'Measure', value: 'measure' },
     ],
   },
@@ -93,13 +112,16 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     label: 'Annotation',
     tools: [
       { label: 'Text', value: 'text' },
+      { label: 'Price Label', value: 'priceLabel' },
       { label: 'Arrow', value: 'arrow' },
     ],
   },
   {
-    label: 'Position',
+    label: 'Forecasting',
     tools: [
       { label: 'Long/Short Position', value: 'riskReward' },
+      { label: 'Anchored VWAP', value: 'anchoredVWAP' },
+      { label: 'Fixed Range Volume Profile', value: 'volumeProfileRange' },
     ],
   },
 ];
