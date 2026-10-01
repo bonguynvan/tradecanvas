@@ -14,13 +14,13 @@
   in the configured `numberLocale`. The last-price tag is now the chart's own
   — locale-aware, and set by `setMarket()` even without a stream adapter.
   The price axis widens to fit its longest label (tick labels, last-price
-  tag, crosshair pill) like TradingView's auto-sized scale, instead of
+  tag, crosshair pill) like an auto-sized price scale, instead of
   clipping at a fixed 70px; it shrinks back with some slack so panning
   doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
   renderers and plugins.
 
-- 14 new drawing tools (26 → 40), the next step of TradingView Advanced Charts
-  drawing-tool parity:
+- 14 new drawing tools (26 → 40), the next step toward
+  advanced drawing-tool parity:
 
   - **Lines:** `infoLine` (trend line with a stats box: price change and %,
     bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
@@ -43,7 +43,7 @@
   level (2 decimals for most, 4 for FX-range prices, significant digits for
   prices under 1) instead of a fixed 2 decimals.
 
-  `ChartWidget` (and the demo) drawing toolbar is regrouped TradingView-style
+  `ChartWidget` (and the demo) drawing toolbar is regrouped by tool family
   into Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes,
   Gann & Pitchforks, Patterns (new), Measure, Annotation and Forecasting — which
   also exposes three tools that were registered but missing from the toolbar:
@@ -97,7 +97,7 @@
   Heikin-Ashi etc. missed the new bar); `replayStart()` rendered the stale
   pre-replay series and stacked a new step listener on every restart.
 
-- 021ea2e: Faster, race-free symbol/timeframe switching with a TradingView-style
+- 021ea2e: Faster, race-free symbol/timeframe switching with a
   loading state — measured in the live demo before and after.
 
   **Loading only when it's slow.** `ChartWidget` used to blank the chart with
@@ -153,7 +153,7 @@
   switches); `/embed?bars=200000&timeframe=1m` loads a large static series
   whose timeframe switches resample locally.
 
-- 6cf12af: Add three new built-in indicators toward TradingView Advanced Charts parity:
+- 6cf12af: Add three new built-in indicators toward advanced-charting parity:
 
   - `vwma` — Volume Weighted Moving Average
   - `envelope` — Moving Average Envelope (SMA ± a fixed % band)
@@ -163,11 +163,11 @@
   READMEs and demo docs — the registry actually has 69 registered indicators
   (69 after this change); the count had drifted out of sync for a while.
 
-- edbdb56: Second increment of TradingView Advanced Charts drawing-tool parity:
+- edbdb56: Second increment of advanced drawing-tool parity:
 
   - `horizontalRay` — like `horizontalLine`, but only extends forward in time
     from the anchor instead of spanning the full chart width.
-  - `riskReward` — TradingView's "Long/Short Position" tool: drag from an
+  - `riskReward` — a "Long/Short Position" tool: drag from an
     entry price to a stop price and it draws the risk zone plus a reward zone
     (2:1 by default) on the far side, with direction inferred automatically
     and $/% labels at each level.
@@ -213,8 +213,8 @@
   `setData()` is always a full series replace (live ticks go through
   `appendBar`/`updateLastBar` instead), so it now restores the chart's
   configured `autoScale` default the same way it already resets the X-axis
-  scroll position — matching TradingView, which always fits a freshly
-  loaded symbol/timeframe regardless of how the previous one was scaled.
+  scroll position — a freshly loaded symbol/timeframe always fits,
+  just as traders expect, regardless of how the previous one was scaled.
   An explicit `chart.setAutoScale(false)` still sticks across `setData()`
   calls, same as a constructor-time `autoScale: false`.
 
@@ -236,7 +236,7 @@
     locale and always renders the full 4-digit year.
 
   Also adds `features.crosshairTooltip` to hide the floating OHLCV popup that
-  follows the cursor, for embedders who want the TradingView-style
+  follows the cursor, for embedders who want
   legend-only hover behavior.
 
 - 2ccf273: Fix a real performance bug behind reports of panning/zooming feeling janky
@@ -256,8 +256,8 @@
   recency-weighted, computed incrementally in O(1) per bar. Registry now at 70.
 
 - 999f7fe: - `ChartWidget` now defaults `features.crosshairTooltip` to `false` — the
-  floating OHLCV popup that follows the cursor isn't something TradingView
-  has either; the widget already shows the same data in its OHLCV legend.
+  floating OHLCV popup that follows the cursor isn't standard on pro
+  trading charts; the widget already shows the same data in its OHLCV legend.
   (The headless `Chart` class's own default is unchanged — still `true`.)
   Opt back in with `chartOptions: { features: { crosshairTooltip: true } }`.
   - Fixed a real bug found while wiring that default in: `ChartWidget` spread
@@ -265,7 +265,7 @@
     passing `chartOptions.features` silently wiped every other feature
     default (drawings, indicators, trading, …). `features` is now merged
     per-key, with host overrides winning.
-  - New TradingView-style loading overlay — animated skeleton bars + a
+  - New loading overlay — animated skeleton bars + a
     localized "Loading chart..." label, cross-fading out once the first
     snapshot of bars lands. Shows on every connect (initial load and
     symbol/timeframe switches), not just the first one.
@@ -1128,7 +1128,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
     respective strips.
   - **In-canvas axis polish**: price + time axes now render with subtle dividers,
     thin tick notches, and refined typography weight — drops the heavy per-label
-    background rectangles for a TradingView-like feel.
+    background rectangles for a cleaner feel.
   - **Widget CSS refresh**: new design tokens (typography, motion, elevation,
     shape), Inter + JetBrains Mono stacks, smooth cubic-bezier transitions,
     refined hover/active/focus states, subtle gradient toolbar/sidebar surfaces,
@@ -1170,7 +1170,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
     at the hovered bar. The live crosshair tooltip then shows the price / %
     / bar-count delta to the pinned bar. Esc unpins. New `PinnedTooltip`
     export from `@tradecanvas/core`.
-  - **Hover axis labels**: TradingView-style pill badges follow the crosshair
+  - **Hover axis labels**: Pill badges follow the crosshair
     on the right axis (current price under cursor) and the bottom axis
     (current time). Rendered with inverted theme colors + a triangular notch
     pointing at the crosshair line. Painted on the UI layer so they always
@@ -1276,7 +1276,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
 
   Drawings now store anchors as real timestamps instead of fragile bar indices,
   so they keep pointing at the same wall-clock time when the bar series changes
-  (timeframe switch, symbol switch, etc.) — matching TradingView behavior.
+  (timeframe switch, symbol switch, etc.) — the behaviour traders expect.
 
   **Implementation**
 

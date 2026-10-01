@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import { onSiteThemeChange } from '$lib/site';
 
   type AnalyticsResult = {
     metrics: {
@@ -88,6 +89,12 @@
   ) {
     const ctx = canvasEl.getContext('2d');
     if (!ctx) return;
+    const css = getComputedStyle(canvasEl);
+    const token = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+    const muted = token('--text-muted', '#758091');
+    const down = token('--red', '#f0616d');
+    const accent = token('--accent', '#f2a93b');
+    const monoFont = token('--font-mono', 'monospace');
 
     const dpr = window.devicePixelRatio || 1;
     const cssWidth = canvasEl.clientWidth;
@@ -126,7 +133,8 @@
     // Baseline at initialCash
     if (result) {
       const baseY = y(result.initialCash);
-      ctx.strokeStyle = 'rgba(161,161,170,0.25)';
+      ctx.strokeStyle = muted;
+      ctx.globalAlpha = 0.4;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -139,7 +147,8 @@
     // Drawdown fill — current peak from running max
     const totalForX = equityCurve.length;
     let peak = slice[0].equity;
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+    ctx.globalAlpha = 0.14;
+    ctx.fillStyle = down;
     ctx.beginPath();
     ctx.moveTo(x(0, totalForX), y(slice[0].equity));
     for (let i = 0; i < slice.length; i++) {
@@ -152,8 +161,9 @@
     ctx.closePath();
     ctx.fill();
 
-    // Equity line
-    ctx.strokeStyle = '#3b82f6';
+    // Equity line, in the page's accent colour
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = accent;
     ctx.lineWidth = 1.8;
     ctx.beginPath();
     for (let i = 0; i < slice.length; i++) {
@@ -166,14 +176,14 @@
 
     // Final dot at scrub position
     const lastIdx = slice.length - 1;
-    ctx.fillStyle = '#3b82f6';
+    ctx.fillStyle = accent;
     ctx.beginPath();
     ctx.arc(x(lastIdx, totalForX), y(slice[lastIdx].equity), 3, 0, Math.PI * 2);
     ctx.fill();
 
     // Axis labels
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '11px -apple-system, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = muted;
+    ctx.font = `11px ${monoFont}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillText(`$${max.toFixed(0)}`, left + 4, top + 6);
@@ -247,7 +257,12 @@
     }
   });
 
+  // Bumped when the page flips light/dark so the canvas picks up new colours.
+  let themeTick = $state(0);
+  onMount(() => onSiteThemeChange(() => { themeTick++; }));
+
   $effect(() => {
+    void themeTick;
     if (status !== 'ready' || !canvas || !result) return;
     renderCurve(canvas, result.equityCurve, scrubIndex);
   });
@@ -333,11 +348,11 @@
       </div>
 
       <div class="backtest-metrics">
-        <div><span>Total return</span><strong style:color={result.metrics.totalReturnPct >= 0 ? '#10b981' : '#ef4444'}>{fmtPct(result.metrics.totalReturnPct)}</strong></div>
+        <div><span>Total return</span><strong style:color={result.metrics.totalReturnPct >= 0 ? 'var(--green)' : 'var(--red)'}>{fmtPct(result.metrics.totalReturnPct)}</strong></div>
         <div><span>CAGR</span><strong>{fmtPct(result.metrics.cagr)}</strong></div>
         <div><span>Sharpe</span><strong>{fmtNum(result.metrics.sharpe)}</strong></div>
         <div><span>Sortino</span><strong>{fmtNum(result.metrics.sortino)}</strong></div>
-        <div><span>Max DD</span><strong style:color="#ef4444">{fmtPct(result.metrics.maxDrawdownPct)}</strong></div>
+        <div><span>Max DD</span><strong style:color="var(--red)">{fmtPct(result.metrics.maxDrawdownPct)}</strong></div>
         <div><span>Win rate</span><strong>{fmtPct(result.metrics.winRate)}</strong></div>
         <div><span>Profit factor</span><strong>{fmtNum(result.metrics.profitFactor)}</strong></div>
         <div><span>Trades</span><strong>{result.metrics.trades}</strong></div>
@@ -383,8 +398,8 @@
   }
 
   .bt-btn {
-    background: var(--accent);
-    color: white;
+    background: var(--accent-fill);
+    color: var(--accent-ink);
     border: none;
     border-radius: var(--radius);
     padding: 6px 14px;
@@ -394,7 +409,7 @@
     transition: background var(--transition);
   }
 
-  .bt-btn:hover { background: #2563eb; }
+  .bt-btn:hover { background: color-mix(in srgb, var(--accent-fill) 85%, #fff); }
 
   .bt-btn-ghost {
     background: transparent;
@@ -415,13 +430,14 @@
   }
 
   .backtest-error {
-    color: #ef4444;
+    color: var(--red);
     font-family: var(--font-mono);
     font-size: 12px;
   }
 
   .backtest-canvas-wrap {
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     height: 220px;
     overflow: hidden;

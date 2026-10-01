@@ -115,14 +115,25 @@ export interface GaugeOptions extends BaseFinanceChartOptions {
   value: number;
   min?: number;
   max?: number;
+  /** Coloured bands; the part below the value is drawn bright, the rest dimmed. */
   zones?: GaugeZone[];
+  /** Ring width as a share of the radius. Default `0.14`. */
   thickness?: number;
+  /** Arc start in degrees, clockwise from 3 o'clock. Default `150` (a 240° sweep open at the bottom). */
   startAngle?: number;
+  /** Arc end in degrees. Default `390`. */
   endAngle?: number;
   showValue?: boolean;
   showZoneLabels?: boolean;
   label?: string;
   valueFormat?: (v: number) => string;
+  /**
+   * How the value is pointed at: `'marker'` (default) rides a knob on the
+   * ring and keeps the centre free for the number; `'needle'` draws a classic
+   * needle from a hub, with the number moved below it.
+   */
+  pointer?: 'marker' | 'needle';
+  /** Needle colour (`pointer: 'needle'`); without zones, also the progress colour. */
   needleColor?: string;
   trackColor?: string;
   animate?: boolean;

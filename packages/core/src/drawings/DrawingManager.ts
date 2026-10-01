@@ -6,8 +6,9 @@ import type {
   Point,
   ViewportState,
   OHLCBar,
+  AnchorPoint,
 } from '@tradecanvas/commons';
-import { timestampToBarIndex, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
+import { priceToY, timeToX, timestampToBarIndex, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 import type { UndoRedoManager } from '../features/UndoRedoManager.js';
 
 type DrawingEventCallback = (event: string, data: unknown) => void;
@@ -31,16 +32,27 @@ function cloneDrawing(d: DrawingState): DrawingState {
   };
 }
 
+/** Pointer travel (px) before pressing a drawing turns into moving it. */
+const DRAG_START_PX = 3;
+
+function sameAnchors(a: readonly AnchorPoint[], b: readonly AnchorPoint[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].time !== b[i].time || a[i].price !== b[i].price) return false;
+  }
+  return true;
+}
+
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
   private drawings: DrawingState[] = [];
   private state: DrawingInteractionState = 'idle';
   private activeTool: DrawingToolType | null = null;
   private activeStyle: DrawingStyle = {
-    color: '#2196F3',
+    color: '#4c8dff',
     lineWidth: 1,
     lineStyle: 'solid',
-    fillColor: 'rgba(33, 150, 243, 0.1)',
+    fillColor: 'rgba(76, 141, 255, 0.1)',
     fillOpacity: 0.1,
     fontSize: 12,
   };
@@ -48,6 +60,10 @@ export class DrawingManager {
   private committedAnchors = 0; // how many anchors have been clicked (not preview)
   private previewAnchor: { time: number; price: number } | null = null;
   private selectedDrawingId: string | null = null;
+  /** Drawings selected together with `selectedDrawingId` (Ctrl/⌘-drag or Ctrl/⌘-click). */
+  private groupIds = new Set<string>();
+  /** Start state of the other group members while the group is dragged. */
+  private groupDrag: { id: string; anchors: AnchorPoint[]; before: DrawingState }[] = [];
   private dragAnchorIndex = -1;
   private dragStartPoint: Point | null = null;
   private dragStartAnchors: { time: number; price: number }[] = [];
@@ -109,13 +125,11 @@ export class DrawingManager {
     if (data.length === 0) return { time, price };
 
     const useTimestamps = !!(viewport?.data && viewport.data.length > 0);
-    const idx = Math.max(
-      0,
-      Math.min(
-        data.length - 1,
-        Math.round(useTimestamps ? timestampToBarIndex(time, data) : time),
-      ),
-    );
+    const rawIdx = Math.round(useTimestamps ? timestampToBarIndex(time, data) : time);
+    // Past either end there is no bar to snap to — keep the point where it
+    // was placed (e.g. a target drawn into the empty future).
+    if (rawIdx < 0 || rawIdx > data.length - 1) return { time, price };
+    const idx = rawIdx;
     const bar = data[idx];
 
     // Find closest OHLC value
@@ -159,7 +173,17 @@ export class DrawingManager {
   }
 
   private applyUndoAction(action: import('../features/UndoRedoManager.js').UndoableAction): void {
+    this.undoOne(action);
+    this.clearSelection();
+    this.state = 'idle';
+    this.requestRender?.();
+  }
+
+  private undoOne(action: import('../features/UndoRedoManager.js').UndoableAction): void {
     switch (action.type) {
+      case 'drawingBatch':
+        for (const a of [...(action.actions ?? [])].reverse()) this.undoOne(a);
+        break;
       case 'drawingCreate':
         // Undo create = remove
         if (action.after) {
@@ -180,13 +204,20 @@ export class DrawingManager {
         }
         break;
     }
-    this.selectedDrawingId = null;
+  }
+
+  private applyRedoAction(action: import('../features/UndoRedoManager.js').UndoableAction): void {
+    this.redoOne(action);
+    this.clearSelection();
     this.state = 'idle';
     this.requestRender?.();
   }
 
-  private applyRedoAction(action: import('../features/UndoRedoManager.js').UndoableAction): void {
+  private redoOne(action: import('../features/UndoRedoManager.js').UndoableAction): void {
     switch (action.type) {
+      case 'drawingBatch':
+        for (const a of action.actions ?? []) this.redoOne(a);
+        break;
       case 'drawingCreate':
         // Redo create = add again
         if (action.after) {
@@ -207,12 +238,114 @@ export class DrawingManager {
         }
         break;
     }
-    this.selectedDrawingId = null;
-    this.state = 'idle';
-    this.requestRender?.();
   }
 
-  // --- Bulk operations (TradingView-like) ---
+  /**
+   * Run `fn`, recording every undo action it pushes as one undo step, so a
+   * group move/delete/restyle comes back with a single Ctrl+Z.
+   */
+  private batchUndo(fn: () => void): void {
+    const real = this.undoRedo;
+    if (!real) { fn(); return; }
+    const actions: import('../features/UndoRedoManager.js').UndoableAction[] = [];
+    this.undoRedo = { push: (a: import('../features/UndoRedoManager.js').UndoableAction) => { actions.push(a); } } as unknown as UndoRedoManager;
+    try {
+      fn();
+    } finally {
+      this.undoRedo = real;
+    }
+    if (actions.length === 1) real.push(actions[0]);
+    else if (actions.length > 1) real.push({ type: 'drawingBatch', before: null, after: null, actions });
+  }
+
+  // --- Multi-selection: Ctrl/⌘-drag a box, Ctrl/⌘-click ---
+
+  private isSelectedId(id: string): boolean {
+    return id === this.selectedDrawingId || this.groupIds.has(id);
+  }
+
+  private clearSelection(): void {
+    this.selectedDrawingId = null;
+    this.groupIds.clear();
+  }
+
+  private addToSelection(id: string): void {
+    if (!this.selectedDrawingId) this.selectedDrawingId = id;
+    else if (id !== this.selectedDrawingId) this.groupIds.add(id);
+    this.state = 'selected';
+  }
+
+  /** Ids of every selected drawing, the primary one first. */
+  getSelectedDrawingIds(): string[] {
+    return this.selectedDrawingId ? [this.selectedDrawingId, ...this.groupIds] : [];
+  }
+
+  /**
+   * Select every visible drawing with an anchor inside the pixel rectangle
+   * (the Ctrl/⌘-drag selection). Replaces the current selection.
+   * Returns how many were selected.
+   */
+  selectInRect(rect: { x0: number; y0: number; x1: number; y1: number }, viewport: ViewportState): number {
+    if (this.state === 'creating') return 0;
+    this.clearSelection();
+    this.state = 'idle';
+    const left = Math.min(rect.x0, rect.x1);
+    const right = Math.max(rect.x0, rect.x1);
+    const top = Math.min(rect.y0, rect.y1);
+    const bottom = Math.max(rect.y0, rect.y1);
+    for (const d of this.drawings) {
+      if (!d.visible) continue;
+      const inside = d.anchors.some((a) => {
+        const x = timeToX(a.time, viewport);
+        const y = priceToY(a.price, viewport);
+        return x >= left && x <= right && y >= top && y <= bottom;
+      });
+      if (inside) this.addToSelection(d.id);
+    }
+    this.requestRender?.();
+    return this.getSelectedDrawingIds().length;
+  }
+
+  /** Ctrl/⌘-click: add the drawing under `pos` to the selection, or take it out. */
+  toggleSelectionAt(pos: Point, viewport: ViewportState): boolean {
+    if (this.state === 'creating') return false;
+    for (let i = this.drawings.length - 1; i >= 0; i--) {
+      const d = this.drawings[i];
+      if (!d.visible) continue;
+      const plugin = this.registry.get(d.type);
+      if (!plugin?.hitTest(pos, d, viewport, 8)) continue;
+      if (!this.isSelectedId(d.id)) {
+        this.addToSelection(d.id);
+      } else if (d.id === this.selectedDrawingId) {
+        // Promote another member to primary, if any.
+        const next = this.groupIds.values().next();
+        this.selectedDrawingId = next.done ? null : next.value;
+        if (!next.done) this.groupIds.delete(next.value);
+      } else {
+        this.groupIds.delete(d.id);
+      }
+      if (!this.selectedDrawingId) this.state = 'idle';
+      this.requestRender?.();
+      return true;
+    }
+    return false;
+  }
+
+  /** Begin moving `primary` — and every other selected drawing with it. */
+  private beginMove(pos: Point, primary: DrawingState): void {
+    this.state = 'moving';
+    this.dragStartPoint = pos;
+    this.dragStartAnchors = primary.anchors.map((a) => ({ ...a }));
+    this.dragBeforeState = cloneDrawing(primary);
+    this.groupDrag = [];
+    for (const id of this.getSelectedDrawingIds()) {
+      if (id === primary.id) continue;
+      const d = this.drawings.find((x) => x.id === id);
+      if (d && !d.locked) this.groupDrag.push({ id, anchors: d.anchors.map((a) => ({ ...a })), before: cloneDrawing(d) });
+    }
+  }
+
+  // --- Bulk operations ---
 
   lockAllDrawings(): void {
     for (const d of this.drawings) d.locked = true;
@@ -226,7 +359,7 @@ export class DrawingManager {
 
   hideAllDrawings(): void {
     for (const d of this.drawings) d.visible = false;
-    this.selectedDrawingId = null;
+    this.clearSelection();
     this.state = 'idle';
     this.requestRender?.();
   }
@@ -241,7 +374,7 @@ export class DrawingManager {
     const d = this.drawings.find((x) => x.id === id);
     if (!d) return null;
     d.visible = visible;
-    if (!visible && this.selectedDrawingId === id) this.selectedDrawingId = null;
+    if (!visible && this.isSelectedId(id)) this.clearSelection();
     this.requestRender?.();
     return visible;
   }
@@ -283,15 +416,21 @@ export class DrawingManager {
    * entry. Returns true if a drawing was restyled.
    */
   setSelectedDrawingStyle(style: Partial<DrawingStyle>, id?: string): boolean {
-    const targetId = id ?? this.selectedDrawingId;
-    if (!targetId) return false;
-    const drawing = this.drawings.find((d) => d.id === targetId);
-    if (!drawing || drawing.locked) return false;
-    const before = cloneDrawing(drawing);
-    drawing.style = { ...drawing.style, ...style };
-    this.undoRedo?.push({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
-    this.requestRender?.();
-    return true;
+    // Without an explicit id, every selected drawing is restyled together.
+    const targetIds = id ? [id] : this.getSelectedDrawingIds();
+    let changed = false;
+    this.batchUndo(() => {
+      for (const targetId of targetIds) {
+        const drawing = this.drawings.find((d) => d.id === targetId);
+        if (!drawing || drawing.locked) continue;
+        const before = cloneDrawing(drawing);
+        drawing.style = { ...drawing.style, ...style };
+        this.undoRedo?.push({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
+        changed = true;
+      }
+    });
+    if (changed) this.requestRender?.();
+    return changed;
   }
 
   // --- Pointer events (returns true if consumed) ---
@@ -333,17 +472,23 @@ export class DrawingManager {
 
   onPointerUp(): boolean {
     if (this.state === 'moving' || this.state === 'resizing') {
-      // Record undo for the completed move/resize
-      if (this.dragBeforeState && this.selectedDrawingId) {
-        const drawing = this.drawings.find(d => d.id === this.selectedDrawingId);
-        if (drawing) {
-          this.undoRedo?.push({
-            type: 'drawingModify',
-            before: this.dragBeforeState,
-            after: cloneDrawing(drawing),
-          });
+      // Record undo for the completed move/resize — not for a press that
+      // only selected the drawing without moving it.
+      const moved = [
+        ...(this.dragBeforeState && this.selectedDrawingId
+          ? [{ id: this.selectedDrawingId, before: this.dragBeforeState }]
+          : []),
+        ...this.groupDrag.map((m) => ({ id: m.id, before: m.before })),
+      ];
+      this.batchUndo(() => {
+        for (const { id, before } of moved) {
+          const drawing = this.drawings.find((d) => d.id === id);
+          if (drawing && !sameAnchors(drawing.anchors, before.anchors)) {
+            this.undoRedo?.push({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
+          }
         }
-      }
+      });
+      this.groupDrag = [];
       this.state = 'selected';
       this.dragStartPoint = null;
       this.dragStartAnchors = [];
@@ -377,7 +522,7 @@ export class DrawingManager {
         return true;
       }
       if (this.state === 'selected') {
-        this.selectedDrawingId = null;
+        this.clearSelection();
         this.state = 'idle';
         this.requestRender?.();
         return true;
@@ -385,10 +530,12 @@ export class DrawingManager {
     }
     if (key === 'Delete' || key === 'Backspace') {
       if (this.state === 'selected' && this.selectedDrawingId) {
-        const drawing = this.drawings.find(d => d.id === this.selectedDrawingId);
-        if (drawing?.locked) return false; // Can't delete locked drawings
-        this.removeDrawing(this.selectedDrawingId);
-        this.selectedDrawingId = null;
+        // Every selected drawing that isn't locked goes, as one undo step.
+        const removable = this.getSelectedDrawingIds()
+          .filter((id) => !this.drawings.find((d) => d.id === id)?.locked);
+        if (removable.length === 0) return false; // Can't delete locked drawings
+        this.batchUndo(() => { for (const id of removable) this.removeDrawing(id); });
+        this.clearSelection();
         this.state = 'idle';
         this.requestRender?.();
         return true;
@@ -503,7 +650,7 @@ export class DrawingManager {
 
   clearDrawings(): void {
     this.drawings = [];
-    this.selectedDrawingId = null;
+    this.clearSelection();
     this.state = 'idle';
     this.requestRender?.();
   }
@@ -525,7 +672,7 @@ export class DrawingManager {
       if (!drawing.visible) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
-      const isSelected = drawing.id === this.selectedDrawingId;
+      const isSelected = this.isSelectedId(drawing.id);
       plugin.render(ctx, drawing, viewport, isSelected);
     }
 
@@ -630,6 +777,33 @@ export class DrawingManager {
     this.state = 'selected';
   }
 
+  /** True while a drawing is being moved or reshaped by its handle. */
+  isDragging(): boolean {
+    return this.state === 'moving' || this.state === 'resizing';
+  }
+
+  /**
+   * Cursor for hovering `pos`: 'move' over a handle of the selected drawing,
+   * 'pointer' over any drawing that can be grabbed, otherwise null. Null too
+   * while a drawing tool is active (the chart keeps its crosshair).
+   */
+  hoverCursorAt(pos: Point, viewport: ViewportState): 'move' | 'pointer' | null {
+    if (this.activeTool || this.state === 'creating') return null;
+    const tolerance = 8;
+    if (this.selectedDrawingId) {
+      const selected = this.drawings.find((d) => d.id === this.selectedDrawingId);
+      const plugin = selected && !selected.locked ? this.registry.get(selected.type) : undefined;
+      if (selected && plugin && plugin.hitTestAnchor(pos, selected, viewport, tolerance) >= 0) return 'move';
+    }
+    for (let i = this.drawings.length - 1; i >= 0; i--) {
+      const d = this.drawings[i];
+      if (!d.visible || d.locked) continue;
+      const plugin = this.registry.get(d.type);
+      if (plugin?.hitTest(pos, d, viewport, tolerance)) return 'pointer';
+    }
+    return null;
+  }
+
   private handleSelectionClick(pos: Point, viewport: ViewportState): boolean {
     const tolerance = 8;
 
@@ -648,10 +822,7 @@ export class DrawingManager {
             return true;
           }
           if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
-            this.state = 'moving';
-            this.dragStartPoint = pos;
-            this.dragStartAnchors = drawing.anchors.map((a) => ({ ...a }));
-            this.dragBeforeState = cloneDrawing(drawing);
+            this.beginMove(pos, drawing);
             return true;
           }
         }
@@ -665,16 +836,35 @@ export class DrawingManager {
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
       if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
-        this.selectedDrawingId = drawing.id;
-        this.state = 'selected';
+        if (this.isSelectedId(drawing.id)) {
+          // Part of the current selection: make it the primary, keep the group.
+          if (this.selectedDrawingId && this.selectedDrawingId !== drawing.id) {
+            this.groupIds.add(this.selectedDrawingId);
+          }
+          this.groupIds.delete(drawing.id);
+          this.selectedDrawingId = drawing.id;
+        } else {
+          this.clearSelection();
+          this.selectedDrawingId = drawing.id;
+        }
         this.requestRender?.();
+        if (drawing.locked) {
+          // A locked drawing can be selected but not moved — let the same
+          // press pan the chart instead of swallowing it.
+          this.state = 'selected';
+          return false;
+        }
+        // The press that selects a drawing also grabs it: dragging moves it
+        // straight away. Selecting first and needing a second drag felt like
+        // the chart was stuck.
+        this.beginMove(pos, drawing);
         return true;
       }
     }
 
     // Clicked empty space — deselect
     if (this.selectedDrawingId) {
-      this.selectedDrawingId = null;
+      this.clearSelection();
       this.state = 'idle';
       this.requestRender?.();
     }
@@ -684,6 +874,11 @@ export class DrawingManager {
   private handleMove(pos: Point, viewport: ViewportState): boolean {
     const drawing = this.drawings.find((d) => d.id === this.selectedDrawingId);
     if (!drawing || !this.dragStartPoint) return false;
+    // A click that wobbles a pixel or two shouldn't nudge the drawing.
+    if (Math.hypot(pos.x - this.dragStartPoint.x, pos.y - this.dragStartPoint.y) < DRAG_START_PX
+      && drawing.anchors.every((a, i) => a.time === this.dragStartAnchors[i]?.time && a.price === this.dragStartAnchors[i]?.price)) {
+      return true;
+    }
 
     // Translate by anchor-time delta. In timestamp mode this is a wall-clock
     // seconds difference; in bar-index mode it's a bar-count difference —
@@ -695,6 +890,10 @@ export class DrawingManager {
       time: a.time + dTime,
       price: a.price + dPrice,
     }));
+    for (const member of this.groupDrag) {
+      const d = this.drawings.find((x) => x.id === member.id);
+      if (d) d.anchors = member.anchors.map((a) => ({ time: a.time + dTime, price: a.price + dPrice }));
+    }
 
     this.requestRender?.();
     return true;

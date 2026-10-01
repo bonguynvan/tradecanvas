@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { ChartType, TimeFrame } from '@tradecanvas/chart';
+  import { siteTheme, onSiteThemeChange } from '$lib/site';
 
   let host: HTMLDivElement | undefined = $state();
   let status = $state<'loading' | 'ready' | 'error'>('loading');
@@ -56,6 +57,7 @@
   onMount(() => {
     if (!browser || !host) return;
     let cancelled = false;
+    const stopThemeSync = onSiteThemeChange((theme) => widget?.setTheme?.(theme));
 
     (async () => {
       try {
@@ -66,7 +68,7 @@
         widget = new ChartWidget(host, {
           symbol: activeSymbol,
           timeframe: activeTf,
-          theme: document.body.classList.contains('light') ? 'light' : 'dark',
+          theme: siteTheme(),
           adapter: new BinanceAdapter(),
           historyLimit: 320,
           toolbar: false,
@@ -90,6 +92,7 @@
 
     return () => {
       cancelled = true;
+      stopThemeSync();
       widget?.destroy?.();
       widget = null;
       chart = null;
@@ -99,22 +102,21 @@
 
 <div class="terminal">
   <div class="terminal-bar">
-    <div class="seg seg--symbol">
+    <div class="seg seg--symbol" role="group" aria-label="Symbol">
       {#each SYMBOLS as s}
-        <button class="chip" class:active={activeSymbol === s.id} onclick={() => pickSymbol(s.id)} type="button">{s.label}</button>
+        <button class="chip" class:active={activeSymbol === s.id} aria-pressed={activeSymbol === s.id} onclick={() => pickSymbol(s.id)} type="button">{s.label}</button>
       {/each}
     </div>
-    <div class="seg seg--tf">
+    <div class="seg seg--tf" role="group" aria-label="Timeframe">
       {#each TIMEFRAMES as tf}
-        <button class="chip chip--sm" class:active={activeTf === tf} onclick={() => pickTf(tf)} type="button">{tf}</button>
+        <button class="chip chip--sm" class:active={activeTf === tf} aria-pressed={activeTf === tf} onclick={() => pickTf(tf)} type="button">{tf}</button>
       {/each}
     </div>
-    <div class="seg seg--type">
+    <div class="seg seg--type" role="group" aria-label="Chart type">
       {#each TYPES as t}
-        <button class="chip chip--ghost" class:active={activeType === t.id} onclick={() => pickType(t.id)} type="button">{t.label}</button>
+        <button class="chip chip--ghost" class:active={activeType === t.id} aria-pressed={activeType === t.id} onclick={() => pickType(t.id)} type="button">{t.label}</button>
       {/each}
     </div>
-    <span class="live-dot" class:on={status === 'ready'} title={status === 'ready' ? 'Live' : 'Connecting'}></span>
   </div>
 
   <div class="terminal-frame" class:is-loading={status !== 'ready'}>
@@ -122,15 +124,20 @@
     {#if status === 'loading'}
       <div class="terminal-overlay"><span class="pulse"></span><span>Connecting to Binance…</span></div>
     {:else if status === 'error'}
-      <div class="terminal-overlay terminal-overlay--error">Live feed unavailable — {errorMessage}</div>
+      <div class="terminal-overlay terminal-overlay--error">Live feed unavailable: {errorMessage}</div>
     {/if}
   </div>
 
-  <div class="terminal-hint">
-    <span><strong>Drag</strong> to pan</span>
-    <span><strong>Scroll</strong> to zoom</span>
-    <span><strong>Drag axes</strong> to scale</span>
-    <span><strong>Hover</strong> for crosshair</span>
+  <div class="terminal-status">
+    <span class="status-feed">
+      <span class="live-dot" class:on={status === 'ready'}></span>
+      {status === 'ready' ? 'LIVE' : status === 'error' ? 'OFFLINE' : 'CONNECTING'} · BINANCE · {activeSymbol} · {activeTf}
+    </span>
+    <span class="status-hints">
+      <span><kbd>Drag</kbd> pan</span>
+      <span><kbd>Scroll</kbd> zoom</span>
+      <span><kbd>Drag axis</kbd> scale</span>
+    </span>
   </div>
 </div>
 
@@ -138,89 +145,60 @@
   .terminal {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
   }
 
   .terminal-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px 14px;
     flex-wrap: wrap;
-    padding: 8px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
   }
 
-  .seg {
-    display: inline-flex;
-    gap: 4px;
-    padding: 2px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--bg) 60%, transparent);
-  }
-
+  .seg { display: inline-flex; gap: 2px; }
   .seg--type { margin-left: auto; }
 
   .chip {
-    font-family: var(--font);
+    font-family: var(--font-mono);
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-weight: 500;
     color: var(--text-muted);
     background: transparent;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 6px;
+    border: 1px solid transparent;
+    padding: 4px 9px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: color var(--transition), background var(--transition);
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
     white-space: nowrap;
   }
 
-  .chip--sm { padding: 5px 8px; font-size: 11px; }
-  .chip--ghost { font-weight: 500; }
+  .chip--sm { padding: 4px 7px; font-size: 11.5px; }
+  .chip--ghost { font-family: var(--font); font-size: 12.5px; }
 
-  .chip:hover { color: var(--text); }
+  .chip:hover { color: var(--text); background: var(--bg-panel); }
 
   .chip.active {
-    color: #fff;
-    background: var(--accent);
+    color: var(--accent-ink);
+    background: var(--accent-fill);
   }
 
   .chip--ghost.active {
-    color: var(--accent);
-    background: var(--accent-glow);
-  }
-
-  .live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    flex-shrink: 0;
-    margin-left: 4px;
-  }
-
-  .live-dot.on {
-    background: var(--green);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-    animation: live 1.8s infinite;
-  }
-
-  @keyframes live {
-    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
-    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    color: var(--text);
+    background: transparent;
+    border-color: var(--border);
   }
 
   .terminal-frame {
     position: relative;
-    height: 440px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    background: var(--bg-elevated);
+    height: clamp(360px, 46vw, 470px);
+    background: var(--bg);
   }
 
   .terminal-frame.is-loading .terminal-host { opacity: 0; }
@@ -239,47 +217,69 @@
     justify-content: center;
     gap: 10px;
     color: var(--text-dim);
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
     pointer-events: none;
-    background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
   }
 
   .terminal-overlay--error {
     color: var(--red);
-    font-family: var(--font-mono);
-    font-size: 12px;
     padding: 0 24px;
     text-align: center;
   }
 
   .pulse {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
     animation: pulse 1.6s infinite;
   }
 
   @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
-    70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+    70% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
   }
 
-  .terminal-hint {
+  .terminal-status {
     display: flex;
-    gap: 18px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 16px;
     flex-wrap: wrap;
-    padding: 0 4px;
-    font-size: 11.5px;
+    padding: 7px 12px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--text-muted);
   }
 
-  .terminal-hint strong { color: var(--text-dim); font-weight: 600; }
+  .status-feed { display: inline-flex; align-items: center; gap: 8px; letter-spacing: 0.04em; }
+  .status-hints { display: inline-flex; gap: 14px; flex-wrap: wrap; }
+  .status-hints kbd { font-size: 10.5px; padding: 0 4px; }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .live-dot.on {
+    background: var(--green);
+    animation: live 1.8s infinite;
+  }
+
+  @keyframes live {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 50%, transparent); }
+    70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--green) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 0%, transparent); }
+  }
 
   @media (max-width: 768px) {
-    .terminal-frame { height: 360px; }
     .seg--type { margin-left: 0; }
+    .status-hints { display: none; }
   }
 </style>

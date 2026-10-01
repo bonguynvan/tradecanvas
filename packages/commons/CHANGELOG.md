@@ -11,13 +11,13 @@
   in the configured `numberLocale`. The last-price tag is now the chart's own
   — locale-aware, and set by `setMarket()` even without a stream adapter.
   The price axis widens to fit its longest label (tick labels, last-price
-  tag, crosshair pill) like TradingView's auto-sized scale, instead of
+  tag, crosshair pill) like an auto-sized price scale, instead of
   clipping at a fixed 70px; it shrinks back with some slack so panning
   doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
   renderers and plugins.
 
-- 14 new drawing tools (26 → 40), the next step of TradingView Advanced Charts
-  drawing-tool parity:
+- 14 new drawing tools (26 → 40), the next step toward
+  advanced drawing-tool parity:
 
   - **Lines:** `infoLine` (trend line with a stats box: price change and %,
     bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
@@ -40,7 +40,7 @@
   level (2 decimals for most, 4 for FX-range prices, significant digits for
   prices under 1) instead of a fixed 2 decimals.
 
-  `ChartWidget` (and the demo) drawing toolbar is regrouped TradingView-style
+  `ChartWidget` (and the demo) drawing toolbar is regrouped by tool family
   into Lines, Horizontal/Vertical, Channels, Fibonacci, Shapes,
   Gann & Pitchforks, Patterns (new), Measure, Annotation and Forecasting — which
   also exposes three tools that were registered but missing from the toolbar:
@@ -358,7 +358,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
     respective strips.
   - **In-canvas axis polish**: price + time axes now render with subtle dividers,
     thin tick notches, and refined typography weight — drops the heavy per-label
-    background rectangles for a TradingView-like feel.
+    background rectangles for a cleaner feel.
   - **Widget CSS refresh**: new design tokens (typography, motion, elevation,
     shape), Inter + JetBrains Mono stacks, smooth cubic-bezier transitions,
     refined hover/active/focus states, subtle gradient toolbar/sidebar surfaces,
@@ -400,7 +400,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
     at the hovered bar. The live crosshair tooltip then shows the price / %
     / bar-count delta to the pinned bar. Esc unpins. New `PinnedTooltip`
     export from `@tradecanvas/core`.
-  - **Hover axis labels**: TradingView-style pill badges follow the crosshair
+  - **Hover axis labels**: Pill badges follow the crosshair
     on the right axis (current price under cursor) and the bottom axis
     (current time). Rendered with inverted theme colors + a triangular notch
     pointing at the crosshair line. Painted on the UI layer so they always
@@ -465,7 +465,7 @@ null)` (e.g. -300 for EST, 330 for IST, null for local), with a Timezone
 
   Drawings now store anchors as real timestamps instead of fragile bar indices,
   so they keep pointing at the same wall-clock time when the bar series changes
-  (timeframe switch, symbol switch, etc.) — matching TradingView behavior.
+  (timeframe switch, symbol switch, etc.) — the behaviour traders expect.
 
   **Implementation**
 

@@ -159,9 +159,9 @@ export function renderHeatmap(
   if (cells.length === 0 || layoutRects.length === 0 || width <= 0 || height <= 0) return null;
 
   const colorScale = options.colorScale ?? {
-    negative: '#EF5350',
+    negative: '#e8505b',
     zero: '#424242',
-    positive: '#26A69A',
+    positive: '#1fa874',
   };
   const cellRadius = options.cellRadius ?? 4;
   const showLabels = options.showLabels !== false;

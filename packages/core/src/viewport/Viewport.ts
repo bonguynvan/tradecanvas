@@ -21,6 +21,8 @@ export class Viewport {
   private minBarWidth: number;
   private maxBarWidth: number;
   private rightMarginBars: number;
+  private freePan = true;
+  private minVisibleBars = 3;
 
   constructor(
     containerWidth: number,
@@ -99,6 +101,30 @@ export class Viewport {
     this.rightMarginBars = bars;
   }
 
+  getRightMargin(): number {
+    return this.rightMarginBars;
+  }
+
+  /**
+   * How far the chart can be dragged. `freePan` (default) allows dragging
+   * past the newest bar into empty future space, or past the
+   * oldest bar, until only `minVisibleBars` bars remain at the edge. With
+   * `freePan: false` the newest bar stops at its resting position, as in 1.x
+   * before 1.3.
+   */
+  setPanLimits(limits: { freePan?: boolean; minVisibleBars?: number }): void {
+    if (limits.freePan !== undefined) this.freePan = limits.freePan;
+    if (limits.minVisibleBars !== undefined) this.minVisibleBars = Math.max(1, Math.floor(limits.minVisibleBars));
+    this.clampOffset();
+    this.updateVisibleRange();
+  }
+
+  /** Offset at which the newest bar sits `rightMargin` bars from the right edge — the resting view. */
+  private endOffset(): number {
+    const barUnit = this.state.barWidth + this.state.barSpacing;
+    return this.dataLength * barUnit - this.state.chartRect.width + this.rightMarginBars * barUnit;
+  }
+
   /** Width of the price axis strip; see `ViewportState.priceAxisWidth`. */
   setPriceAxisWidth(width: number): void {
     if (this.priceAxisWidth === width) return;
@@ -135,8 +161,12 @@ export class Viewport {
   }
 
   updateData(data: DataSeries, autoScale: boolean): void {
+    const wasEmpty = this.dataLength === 0;
     this.dataLength = data.length;
     if (this.dataLength === 0) return;
+    // A chart that gets its first bars (e.g. only via appendBar) rests at the
+    // live edge, so following new bars works from the start.
+    if (wasEmpty) this.state.offset = this.endOffset();
 
     this.clampOffset();
     this.updateVisibleRange();
@@ -210,26 +240,22 @@ export class Viewport {
     this.invalidate();
   }
 
-  /** Returns true if the viewport is scrolled to show the latest bars. */
+  /**
+   * Whether the view rests at the latest bars (within two bars of the resting
+   * position). Panned into history — or out into empty future space — it is
+   * not, so a new bar doesn't yank the view back.
+   */
   isAtEnd(): boolean {
     const barUnit = this.state.barWidth + this.state.barSpacing;
-    const rightMarginPx = this.rightMarginBars * barUnit;
-    const totalWidth = this.dataLength * barUnit;
-    // Natural "scrolled to end" offset — may be negative when data is shorter
-    // than the viewport (right-aligned with empty space on the left).
-    const endOffset = totalWidth - this.state.chartRect.width + rightMarginPx;
-    return this.state.offset >= endOffset - barUnit * 2;
+    return Math.abs(this.state.offset - this.endOffset()) <= barUnit * 2;
   }
 
   scrollToEnd(): void {
-    const barUnit = this.state.barWidth + this.state.barSpacing;
-    const rightMarginPx = this.rightMarginBars * barUnit;
-    const totalWidth = this.dataLength * barUnit;
     // Position last bar with rightMargin breathing room from the right edge.
     // For short data this offset is negative — that's intentional. It puts
     // the bars on the right side of the viewport with empty space on the
-    // left, matching TradingView's behaviour for sparse charts.
-    this.state.offset = totalWidth - this.state.chartRect.width + rightMarginPx;
+    // left, the usual behaviour for sparse charts.
+    this.state.offset = this.endOffset();
     this.invalidate();
     this.updateVisibleRange();
   }
@@ -243,14 +269,34 @@ export class Viewport {
     );
     if (newBarWidth === oldBarWidth) return;
 
+    const atEnd = this.isAtEnd();
     const barUnit = this.state.barWidth + this.state.barSpacing;
     const centerBarIndex = (this.state.offset + centerX) / barUnit;
 
     this.state.barWidth = newBarWidth;
     const newBarUnit = newBarWidth + this.state.barSpacing;
-    this.state.offset = centerBarIndex * newBarUnit - centerX;
+    // Zooming at the live edge keeps the newest bar pinned there, instead of
+    // drifting off it and silently stopping the follow of new bars.
+    this.state.offset = atEnd ? this.endOffset() : centerBarIndex * newBarUnit - centerX;
     this.invalidate();
 
+    this.clampOffset();
+    this.updateVisibleRange();
+  }
+
+  /**
+   * Fit bar slots `from`..`to` (inclusive, fractional allowed, may extend past
+   * the data) across the chart width. If the bar width hits its min/max the
+   * range is centred instead.
+   */
+  zoomToBarRange(from: number, to: number): void {
+    const width = this.state.chartRect.width;
+    if (width <= 0 || !Number.isFinite(from) || !Number.isFinite(to) || to < from) return;
+    const slots = to - from + 1;
+    this.state.barWidth = clamp(width / slots - this.state.barSpacing, this.minBarWidth, this.maxBarWidth);
+    const unit = this.state.barWidth + this.state.barSpacing;
+    this.state.offset = ((from + to + 1) / 2) * unit - width / 2;
+    this.invalidate();
     this.clampOffset();
     this.updateVisibleRange();
   }
@@ -258,34 +304,43 @@ export class Viewport {
   private clampOffset(): void {
     if (this.state.chartRect.width <= 0) return;
     const barUnit = this.state.barWidth + this.state.barSpacing;
-    const totalWidth = this.dataLength * barUnit;
-    const rightMarginPx = this.rightMarginBars * barUnit;
+    const width = this.state.chartRect.width;
 
     // Natural "scrolled to end" offset — last bar `rightMarginPx` from the
     // right edge of the chart area. Positive when data overflows the
     // viewport, negative when data is shorter than the viewport.
-    const endOffset = totalWidth - this.state.chartRect.width + rightMarginPx;
+    const endOffset = this.endOffset();
 
     let minOffset: number;
     let maxOffset: number;
 
-    if (endOffset > 0) {
+    if (this.freePan && this.dataLength > 0) {
+      // Drag until only `minVisibleBars` bars remain —
+      // the newest ones at the left edge (empty future to the right) or the
+      // oldest ones at the right edge. Same rule for long and short series.
+      const keep = Math.min(this.minVisibleBars, this.dataLength);
+      minOffset = keep * barUnit - width;
+      maxOffset = (this.dataLength - keep) * barUnit;
+      // Never lock the resting view out (e.g. a huge right margin).
+      minOffset = Math.min(minOffset, endOffset);
+      maxOffset = Math.max(maxOffset, endOffset);
+    } else if (endOffset > 0) {
       // Long data: user can pan left to history or scroll right to the end.
       // Allow a half-viewport of "empty space on the left" past offset 0
       // for breathing room when looking at the oldest bars.
-      minOffset = -(this.state.chartRect.width * 0.5);
+      minOffset = -(width * 0.5);
       maxOffset = endOffset;
     } else {
       // Short data: every bar already fits, with empty space left over — the
       // right-aligned `endOffset` is still where the view RESTS by default
-      // (unchanged, matches TradingView), but it is no longer a lock. A trader
+      // (unchanged), but it is no longer a lock. A trader
       // reasonably expects to drag the (few) bars toward the centre or left of
       // the pane instead of having them welded to the right edge — reported
       // against a 3-bar year chart, 2026-08-27. Half a viewport of play on each
       // side of the resting position mirrors the "long data" branch's own
       // half-viewport breathing room above, rather than inventing a new
       // constant.
-      const play = this.state.chartRect.width * 0.5;
+      const play = width * 0.5;
       minOffset = endOffset - play;
       maxOffset = endOffset + play;
     }

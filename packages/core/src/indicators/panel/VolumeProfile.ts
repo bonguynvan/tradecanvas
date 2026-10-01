@@ -62,8 +62,8 @@ export class VolumeProfileIndicator extends IndicatorBase {
       const width = (bins[i] / maxVolume) * maxBarWidth;
 
       ctx.fillStyle = bins[i] > maxVolume * 0.7
-        ? (style.colors[1] ?? 'rgba(255, 152, 0, 0.5)')
-        : (style.colors[0] ?? 'rgba(33, 150, 243, 0.3)');
+        ? (style.colors[1] ?? 'rgba(242, 169, 59, 0.5)')
+        : (style.colors[0] ?? 'rgba(76, 141, 255, 0.3)');
       ctx.fillRect(chartRect.x, y - barHeight / 2, width, Math.max(barHeight - 1, 1));
     }
   }

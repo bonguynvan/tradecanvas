@@ -11,18 +11,17 @@
 
 <h2>Disabling trading</h2>
 <p>
-  Trading is opt-out, not opt-in. Projects that don't need trading affordances
-  have two off-switches:
+  The trading overlay is on by default; the right-click order menu is not (since 1.3).
 </p>
-<pre><code>{`// Drop the entire trading subsystem (no orders, no positions, no overlay, no menu)
+<pre><code>{`// Drop the entire trading subsystem (no orders, no positions, no overlay)
 new Chart(host, { features: { trading: false } })
 
-// Keep positions and orders visible, but remove the right-click order menu
-new Chart(host, { features: { tradingContextMenu: false } })`}</code></pre>
+// Opt in to the right-click "Buy / Sell here" order menu
+new Chart(host, { features: { tradingContextMenu: true } })
+new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } } })`}</code></pre>
 
 <p>
-  With either flag set, native browser right-click works on the chart as expected
-  (previously the custom menu suppressed it unconditionally — fixed in 0.8.1).
+  Without the menu, native browser right-click works on the chart as expected.
 </p>
 
 <h2>Positions</h2>

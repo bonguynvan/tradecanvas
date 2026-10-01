@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
   import { Chart } from '@tradecanvas/chart';
+  import { siteTheme, onSiteThemeChange } from '$lib/site';
   import type { ChartType, DataSeries } from '@tradecanvas/chart';
 
   // --- Deterministic synthetic OHLC ---
@@ -42,16 +43,12 @@
   let gridEl: HTMLDivElement | undefined = $state();
   let charts: Chart[] = [];
   let observers: ResizeObserver[] = [];
-  let themeObserver: MutationObserver | null = null;
-
-  function themeName(): 'dark' | 'light' {
-    return document.body.classList.contains('light') ? 'light' : 'dark';
-  }
+  let stopThemeSync: (() => void) | null = null;
 
   onMount(async () => {
     await tick();
     if (!gridEl) return;
-    const theme = themeName();
+    const theme = siteTheme();
     const hosts = gridEl.querySelectorAll<HTMLDivElement>('.tile-chart');
 
     hosts.forEach((el, i) => {
@@ -83,11 +80,9 @@
       observers.push(ro);
     });
 
-    themeObserver = new MutationObserver(() => {
-      const name = themeName();
-      for (const c of charts) c.setTheme(name);
+    stopThemeSync = onSiteThemeChange((next) => {
+      for (const c of charts) c.setTheme(next);
     });
-    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   });
 
   onDestroy(() => {
@@ -95,20 +90,20 @@
     observers = [];
     for (const c of charts) c.destroy();
     charts = [];
-    themeObserver?.disconnect();
-    themeObserver = null;
+    stopThemeSync?.();
+    stopThemeSync = null;
   });
 </script>
 
 <section class="gallery">
-  <div class="gallery-head">
-    <span class="eyebrow">Interactive · no screenshots</span>
-    <h2 class="gallery-title">Every chart type, live in the page</h2>
-    <p class="gallery-sub">
-      Each tile is a real <code>Chart</code> instance, not an image. Drag to pan,
-      scroll to zoom, hover for the crosshair — every one responds independently.
+  <header class="section-head">
+    <span class="eyebrow">Chart types</span>
+    <h2 class="section-title">Every chart type, live in the page</h2>
+    <p class="section-subtitle">
+      Each tile is a real <code>Chart</code> instance, not an image. Drag to pan, scroll to zoom
+      and hover for the crosshair; every tile responds on its own.
     </p>
-  </div>
+  </header>
 
   <div class="bento" bind:this={gridEl}>
     {#each tiles as t, i}
@@ -125,47 +120,9 @@
 
 <style>
   .gallery {
-    max-width: 1600px;
+    max-width: var(--page-max);
     margin: 0 auto;
-    padding: 72px clamp(24px, 4vw, 72px);
-  }
-
-  .gallery-head {
-    max-width: 620px;
-    margin: 0 0 32px;
-  }
-
-  .eyebrow {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 10px;
-  }
-
-  .gallery-title {
-    font-size: clamp(1.5rem, 3vw, 2.1rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 10px;
-    color: var(--text);
-  }
-
-  .gallery-sub {
-    font-size: 15px;
-    color: var(--text-dim);
-    margin: 0;
-  }
-
-  .gallery-sub code {
-    font-family: var(--font-mono);
-    font-size: 0.85em;
-    color: var(--accent);
-    background: var(--accent-glow);
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--section-pad) var(--gutter);
   }
 
   .bento {
@@ -178,17 +135,14 @@
   .tile {
     display: flex;
     flex-direction: column;
-    background: var(--bg-elevated);
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: border-color var(--transition), transform 200ms ease;
+    transition: border-color var(--transition);
   }
 
-  .tile:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
+  .tile:hover { border-color: var(--text-muted); }
 
   .tile--wide {
     grid-column: span 2;
@@ -211,14 +165,12 @@
   }
 
   .tile-tag {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-muted);
-    background: color-mix(in srgb, var(--bg) 60%, transparent);
-    padding: 3px 8px;
-    border-radius: 999px;
   }
 
   .tile-chart {

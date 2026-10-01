@@ -68,6 +68,8 @@ import {
   SignalMarkerManager,
   TradeZoneManager,
   MeasureOverlay,
+  SelectionBoxOverlay,
+  timestampToBarIndex,
   ReplayManager,
   ChartStateManager,
   UndoRedoManager,
@@ -92,6 +94,7 @@ import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
+import { VerticalPanGate } from './interaction/verticalPanGate.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
 import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
@@ -99,11 +102,6 @@ import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
 declare const __TC_VERSION__: string;
-
-// A chart-body drag only takes over the vertical price scale once its
-// cumulative vertical travel passes this many pixels — so a normal
-// mostly-horizontal pan doesn't knock the chart off auto-scale.
-const VERTICAL_PAN_ENGAGE_PX = 6;
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -155,6 +153,7 @@ export class Chart {
   private signalMarkerManager: SignalMarkerManager;
   private tradeZoneManager: TradeZoneManager;
   private measureOverlay: MeasureOverlay;
+  private selectionBoxOverlay = new SelectionBoxOverlay();
   private replayManager: ReplayManager;
   private replayBarUnsub: (() => void) | null = null;
   private undoRedoManager: UndoRedoManager;
@@ -200,7 +199,9 @@ export class Chart {
       drawingMagnet: f.drawingMagnet ?? true,
       drawingUndoRedo: f.drawingUndoRedo ?? true,
       trading: f.trading ?? true,
-      tradingContextMenu: f.tradingContextMenu ?? true,
+      // Off by default: right-click is the browser's, and a stray right-click
+      // shouldn't be one step from an order. Opt in with features.tradingContextMenu.
+      tradingContextMenu: f.tradingContextMenu ?? false,
       indicators: f.indicators ?? true,
       indicatorIds: f.indicatorIds ?? [],
       panning: f.panning ?? true,
@@ -287,6 +288,10 @@ export class Chart {
       options.maxBarSpacing ?? 30,
       options.rightMargin ?? 5,
     );
+    this.viewport.setPanLimits({
+      freePan: options.freePan ?? true,
+      minVisibleBars: options.panLimits?.minVisibleBars ?? 3,
+    });
     this.layoutManager.resize(size.width, size.height);
 
     // Sync viewport + layout when the container resizes. Without this hook
@@ -449,6 +454,8 @@ export class Chart {
     // Current price line (standalone, works without StreamManager)
     this.currentPriceLine = new CurrentPriceLine();
     this.currentPriceLine.setLocale(this.numberLocale);
+    this.priceAxis.setReservedPriceProvider(() =>
+      this.currentPriceLine.isVisible() ? this.currentPriceLine.getPrice() : null);
 
     // Alerts
     this.alertManager = new AlertManager();
@@ -500,33 +507,25 @@ export class Chart {
     // Interaction
     this.interactionManager = new InteractionManager(container);
     if (this.features.panning) {
-      // Per-gesture accumulator for vertical travel, reset on each pointer-down.
-      let verticalDragTravel = 0;
+      // Decides per gesture when a drag also moves the price scale.
+      const verticalGate = new VerticalPanGate();
       this.interactionManager.setPanHandler(
         new PanHandler(
           (deltaX, deltaY) => {
             if (deltaX) this.viewport.scrollBy(deltaX);
 
-            if (deltaY) {
-              verticalDragTravel += deltaY;
-              // Grab-and-drag the price scale vertically. Auto-scale would
-              // just recompute the range on the next frame, so engaging the
-              // drag turns it off (double-click the price axis to restore),
-              // mirroring the price-axis drag-scale gesture.
-              const engaged =
-                this.options.autoScale === false ||
-                Math.abs(verticalDragTravel) > VERTICAL_PAN_ENGAGE_PX;
-              if (engaged) {
-                this.options.autoScale = false;
-                this.viewport.panPriceRange(deltaY);
-              }
+            // Grab-and-drag the price scale vertically. Auto-scale would just
+            // recompute the range on the next frame, so engaging the drag
+            // turns it off (double-click the price axis to restore), mirroring
+            // the price-axis drag-scale gesture.
+            if (verticalGate.step(deltaX, deltaY, this.options.autoScale !== false) && deltaY) {
+              this.options.autoScale = false;
+              this.viewport.panPriceRange(deltaY);
             }
 
             this.updateViewportAndRender();
           },
-          () => {
-            verticalDragTravel = 0;
-          },
+          () => verticalGate.reset(),
         ),
       );
     }
@@ -538,7 +537,7 @@ export class Chart {
         }),
       );
 
-      // Axis drag-scaling (TradingView-style):
+      // Axis drag-scaling:
       //   drag price axis  → scalePriceRange(factor), disables autoScale
       //   drag time axis   → zoom around chart center
       //   dblclick axis    → reset (price: re-enable autoScale; time: fitContent)
@@ -669,12 +668,35 @@ export class Chart {
       },
     });
 
-    this.interactionManager.setOverlayDirtyCallback(() => {
-      this.engine.requestRender(LayerType.Overlay);
-      // UI also dirties on every pointer move because the crosshair hover
-      // pills (price + time axis labels) live on the UI layer so they
-      // can sit above the static axis labels.
-      this.engine.requestRender(LayerType.UI);
+    // Ctrl/⌘-drag: select every drawing the box covers; Ctrl/⌘-click adds or
+    // removes one. The box is kept inside the plot (moves are followed
+    // off-chart), so the selection matches what the box showed.
+    const inPlot = (pos: { x: number; y: number }) => {
+      const r = this.viewport.getState().chartRect;
+      return {
+        x: Math.max(r.x, Math.min(r.x + r.width, pos.x)),
+        y: Math.max(r.y, Math.min(r.y + r.height, pos.y)),
+      };
+    };
+    this.interactionManager.setBoxSelectHandlers({
+      begin: (pos) => this.selectionBoxOverlay.begin(inPlot(pos)),
+      move: (pos) => this.selectionBoxOverlay.update(inPlot(pos)),
+      end: () => {
+        const box = this.selectionBoxOverlay.end();
+        if (!box || !this.features.drawings) return;
+        // With the bar series, so anchors resolve as timestamps (as for drawing hit-tests).
+        const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+        if (box.isClick) this.drawingManager.toggleSelectionAt({ x: box.x1, y: box.y1 }, vs);
+        else this.drawingManager.selectInRect(box, vs);
+        this.engine.requestRender(LayerType.Overlay);
+      },
+      cancel: () => this.selectionBoxOverlay.cancel(),
+    });
+
+    // A plain hover only moves pointer-tied visuals (crosshair, its axis
+    // pills, measure ruler, selection box): repaint just the top canvas.
+    this.interactionManager.setOverlayDirtyCallback((hoverOnly) => {
+      this.engine.requestRender(hoverOnly ? LayerType.Hover : LayerType.Overlay);
     });
     this.interactionManager.attach();
 
@@ -1242,7 +1264,6 @@ export class Chart {
       this.tradingManager.setCurrentPrice(price);
       this.currentPriceLine.setPrice(price, previousClose ?? undefined);
       this.engine.requestRender(LayerType.Overlay);
-      this.engine.requestRender(LayerType.UI);
     });
 
     this.streamManager.on('connectionChange', (info) => {
@@ -1270,7 +1291,7 @@ export class Chart {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     this.countdownInterval = setInterval(() => {
       if (this.barCountdown.isVisible()) {
-        this.engine.requestRender(LayerType.UI);
+        this.engine.requestRender(LayerType.Hover);
       }
     }, 1000);
   }
@@ -1352,7 +1373,7 @@ export class Chart {
 
   setBarCountdownVisible(visible: boolean): void {
     this.barCountdown.setVisible(visible);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   setSessionBreaksVisible(visible: boolean): void {
@@ -1448,26 +1469,24 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /**
+   * Show the bars between two timestamps edge to edge. Times past either end
+   * of the data are allowed (they map into the empty future / past).
+   */
   setVisibleRange(fromTimestamp: number, toTimestamp: number): void {
     const data = this.dataManager.getData();
-    let fromIdx = 0;
-    let toIdx = data.length - 1;
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].time >= fromTimestamp) { fromIdx = i; break; }
-    }
-    for (let i = data.length - 1; i >= 0; i--) {
-      if (data[i].time <= toTimestamp) { toIdx = i; break; }
-    }
-    const barCount = toIdx - fromIdx + 1;
-    if (barCount > 0) {
-      const chartWidth = this.viewport.getState().chartRect.width;
-      const targetBarUnit = chartWidth / barCount;
-      const newBarWidth = Math.max(2, targetBarUnit - this.viewport.getState().barSpacing);
-      this.viewport.zoom(
-        (newBarWidth - this.viewport.getState().barWidth) / this.viewport.getState().barWidth,
-        chartWidth / 2,
-      );
-    }
+    if (data.length === 0) return;
+    const a = timestampToBarIndex(Math.min(fromTimestamp, toTimestamp), data);
+    const b = timestampToBarIndex(Math.max(fromTimestamp, toTimestamp), data);
+    // Previously this only changed the bar width around the centre, so the
+    // requested range was not actually what ended up on screen.
+    this.viewport.zoomToBarRange(a, b);
+    this.updateViewportAndRender();
+  }
+
+  /** Change free-panning bounds at runtime — see `ChartOptions.freePan` / `panLimits`. */
+  setPanLimits(limits: { freePan?: boolean; minVisibleBars?: number }): void {
+    this.viewport.setPanLimits(limits);
     this.updateViewportAndRender();
   }
 
@@ -1483,10 +1502,17 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /**
+   * Fit all bars on screen with the usual right margin, resting at the live
+   * edge — so new bars keep following afterwards. If they can't all fit at
+   * the minimum bar width, the newest ones are shown.
+   */
   fitContent(): void {
-    const data = this.dataManager.getData();
-    if (data.length === 0) return;
-    this.setVisibleRange(data[0].time, data[data.length - 1].time);
+    const n = this.dataManager.getLength();
+    if (n === 0) return;
+    this.viewport.zoomToBarRange(0, n - 1 + this.viewport.getRightMargin());
+    this.viewport.scrollToEnd();
+    this.updateViewportAndRender();
   }
 
   // --- Events ---
@@ -1547,7 +1573,7 @@ export class Chart {
 
   setCrosshairMode(mode: 'normal' | 'magnet' | 'hidden'): void {
     this.crosshairHandler.setMode(mode);
-    this.engine.requestRender(LayerType.Overlay);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   getCrosshairMode(): string {
@@ -1558,7 +1584,7 @@ export class Chart {
     if (point) {
       this.crosshairHandler.onPointerMove(point);
     }
-    this.engine.requestRender(LayerType.Overlay);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   getData(): DataSeries {
@@ -1688,7 +1714,6 @@ export class Chart {
     this.timeAxis.setTimezoneOffset(minutes);
     this.crosshairHandler.setTimezoneOffset(minutes);
     this.engine.requestRender(LayerType.UI);
-    this.engine.requestRender(LayerType.Overlay);
   }
 
   // --- Pivot / swing markers ---
@@ -1742,12 +1767,12 @@ export class Chart {
 
   setLegend(config: Partial<import('@tradecanvas/core').LegendConfig>): void {
     this.chartLegend.setConfig(config);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   setSymbolName(symbol: string): void {
     this.chartLegend.setSymbol(symbol);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   /**
@@ -1756,7 +1781,7 @@ export class Chart {
    */
   setStatusText(text: string | null): void {
     this.chartLegend.setStatusText(text);
-    this.engine.requestRender(LayerType.UI);
+    this.engine.requestRender(LayerType.Hover);
   }
 
   // --- Screenshot ---
@@ -2236,7 +2261,7 @@ export class Chart {
 
   /**
    * Size the price axis to its widest label (tick labels, last-price tag,
-   * crosshair pill), like TradingView's auto-width scale — so a sub-cent
+   * crosshair pill), as an auto-width scale — so a sub-cent
    * price isn't clipped. Returns true when the width, and so the layout,
    * changed.
    */
@@ -2412,6 +2437,7 @@ export class Chart {
       compareRenderer: this.compareRenderer,
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,
+      selectionBoxOverlay: this.selectionBoxOverlay,
       signalMarkerManager: this.signalMarkerManager,
       tradeZoneManager: this.tradeZoneManager,
       panels,

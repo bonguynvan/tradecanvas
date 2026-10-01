@@ -56,7 +56,7 @@ export class DetrendedPriceOscillatorIndicator extends IndicatorBase {
     const zeroY = toY(0);
     const halfBar = viewport.barWidth / 2;
 
-    ctx.strokeStyle = style.colors[2] ?? '#787B86';
+    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -65,8 +65,8 @@ export class DetrendedPriceOscillatorIndicator extends IndicatorBase {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    const up = style.colors[0] ?? '#26A69A';
-    const down = style.colors[1] ?? '#EF5350';
+    const up = style.colors[0] ?? '#1fa874';
+    const down = style.colors[1] ?? '#e8505b';
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
       if (!val || val.value === undefined) continue;

@@ -31,6 +31,10 @@ export class CurrentPriceLine {
     this.visible = v;
   }
 
+  isVisible(): boolean {
+    return this.visible;
+  }
+
   setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }
@@ -48,7 +52,7 @@ export class CurrentPriceLine {
     if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
 
     const isUp = this.previousClose !== null ? this.price >= this.previousClose : true;
-    const color = isUp ? (theme.candleUp ?? '#26A69A') : (theme.candleDown ?? '#EF5350');
+    const color = isUp ? (theme.candleUp ?? '#1fa874') : (theme.candleDown ?? '#e8505b');
     const isFlashing = Date.now() < this.flashUntil;
 
     // Dashed price line

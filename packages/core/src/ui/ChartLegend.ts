@@ -22,7 +22,7 @@ export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
 };
 
 /**
- * Renders an OHLCV legend overlay on the chart (like TradingView top-left).
+ * Renders an OHLCV legend overlay in the chart's top-left corner.
  * Shows: Symbol, O, H, L, C, Change%, Volume
  * Updates on crosshair hover or shows last bar by default.
  */

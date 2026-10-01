@@ -7,6 +7,7 @@ import type {
   DataSeries,
   ViewportState,
 } from '@tradecanvas/commons';
+import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -45,9 +46,8 @@ export class IndicatorEngine {
       visible: true,
     };
 
-    const defaultColors = ['#2196F3', '#FF9800', '#4CAF50', '#E91E63', '#9C27B0'];
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? defaultColors,
+      colors: config.style?.colors ?? [...TC_SERIES_COLORS],
       lineWidths: config.style?.lineWidths ?? [1.5],
       opacity: config.style?.opacity ?? 1,
     };

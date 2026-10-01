@@ -73,6 +73,9 @@ importers:
         specifier: workspace:*
         version: link:../commons
     devDependencies:
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(jsdom@25.0.1)(lightningcss@1.32.0)

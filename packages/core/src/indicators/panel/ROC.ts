@@ -49,7 +49,7 @@ export class ROCIndicator extends IndicatorBase {
 
     // Zero line
     if (0 >= adjMin && 0 <= adjMax) {
-      ctx.strokeStyle = style.colors[1] ?? '#787B86';
+      ctx.strokeStyle = style.colors[1] ?? '#7d8696';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       const y = toY(0);

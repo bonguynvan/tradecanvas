@@ -121,7 +121,7 @@ export class ADXIndicator extends IndicatorBase {
     };
 
     drawLine('adx', style.colors[0]);
-    drawLine('plusDI', style.colors[1] ?? '#26A69A');
-    drawLine('minusDI', style.colors[2] ?? '#EF5350');
+    drawLine('plusDI', style.colors[1] ?? '#1fa874');
+    drawLine('minusDI', style.colors[2] ?? '#e8505b');
   }
 }

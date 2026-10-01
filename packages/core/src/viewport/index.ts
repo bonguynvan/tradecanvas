@@ -6,6 +6,8 @@ export {
   yToPrice,
   timestampToBarIndex,
   resolveBarIndex,
+  barTimeStep,
+  barIndexToTime,
   timeToX,
   xToTime,
 } from './ScaleMapping.js';

@@ -17,9 +17,9 @@ export class PositionRenderer {
     config: TradingConfig,
   ): void {
     const { chartRect } = viewport;
-    const profitColor = config.positionColors?.profit ?? '#26A69A';
-    const lossColor = config.positionColors?.loss ?? '#EF5350';
-    const entryColor = config.positionColors?.entry ?? '#2196F3';
+    const profitColor = config.positionColors?.profit ?? '#1fa874';
+    const lossColor = config.positionColors?.loss ?? '#e8505b';
+    const entryColor = config.positionColors?.entry ?? '#4c8dff';
     const precision = config.pricePrecision ?? 2;
 
     for (const pos of positions) {
@@ -75,7 +75,7 @@ export class PositionRenderer {
       }
 
       // Entry badge on axis — rendered separately via renderAxisBadges()
-      // on the UI layer so it paints on top of the price axis labels.
+      // after the price axis so it paints on top of its labels.
 
       // SL line
       if (pos.stopLoss !== undefined) {
@@ -122,7 +122,7 @@ export class PositionRenderer {
   }
 
   /**
-   * Draw position entry badges on the price axis. Called from the UI layer
+   * Draw position entry badges on the price axis. Called after the price axis
    * so they paint ON TOP of the regular axis tick labels.
    */
   renderAxisBadges(
@@ -133,7 +133,7 @@ export class PositionRenderer {
     config: TradingConfig,
   ): void {
     const { chartRect } = viewport;
-    const entryColor = config.positionColors?.entry ?? '#2196F3';
+    const entryColor = config.positionColors?.entry ?? '#4c8dff';
     const precision = config.pricePrecision ?? 2;
     const axisX = chartRect.x + chartRect.width + 1;
 

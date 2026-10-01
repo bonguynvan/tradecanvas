@@ -59,7 +59,7 @@ export class ElderRayIndicator extends IndicatorBase {
     const zeroY = toY(0);
     const halfBar = viewport.barWidth / 2;
 
-    ctx.strokeStyle = style.colors[2] ?? '#787B86';
+    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -68,8 +68,8 @@ export class ElderRayIndicator extends IndicatorBase {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    const bull = style.colors[0] ?? '#26A69A';
-    const bear = style.colors[1] ?? '#EF5350';
+    const bull = style.colors[0] ?? '#1fa874';
+    const bear = style.colors[1] ?? '#e8505b';
     // Bull power as thin bars from zero; bear power overlaid (usually opposite sign).
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];

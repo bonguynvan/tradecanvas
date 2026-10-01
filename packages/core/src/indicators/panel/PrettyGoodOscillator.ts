@@ -69,7 +69,7 @@ export class PrettyGoodOscillatorIndicator extends IndicatorBase {
     }
     const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
 
-    ctx.strokeStyle = style.colors[1] ?? '#787B86';
+    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     for (const level of [-3, 0, 3]) {
@@ -82,7 +82,7 @@ export class PrettyGoodOscillatorIndicator extends IndicatorBase {
     ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.strokeStyle = style.colors[0] ?? '#2962FF';
+    ctx.strokeStyle = style.colors[0] ?? '#4c8dff';
     ctx.lineWidth = style.lineWidths[0];
     ctx.lineJoin = 'round';
     let started = false;

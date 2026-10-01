@@ -32,8 +32,11 @@ export class GridRenderer {
     // Vertical grid lines (time intervals)
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const barsPerGrid = Math.max(1, Math.ceil(80 / barUnit));
-    const { from, to } = viewport.visibleRange;
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
+    // Every slot on screen — the empty space past either end of the data
+    // (where the chart can be panned) keeps its grid too.
+    const from = Math.floor(viewport.offset / barUnit);
+    const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
     for (let i = from; i <= to; i++) {
       if (i % barsPerGrid !== 0) continue;
       const x = Math.round(i * barUnit + offsetX) + 0.5;

@@ -16,17 +16,15 @@ npm install @tradecanvas/chart
 
 ### Rendering Engine
 
-Multi-layer canvas rendering for optimal performance -- only dirty layers repaint each frame:
+Two stacked canvases — a hover repaints only the thin top one:
 
 ```
-  UI Layer      (price axis, legend, live price)      z=3
-  Overlay Layer (drawings, trading positions/orders)  z=2
-  Main Layer    (candles, indicators, volume)          z=1
-  Background    (grid, watermark)                      z=0
+  Top canvas    (crosshair + axis pills, legend, countdown, measure)   z=1
+  Scene canvas  (grid, candles, indicators, drawings, orders, axes)    z=0
 ```
 
 - `RenderEngine` -- orchestrates the render pipeline
-- `LayerManager` -- manages canvas layer stack
+- `LayerManager` -- the scene and top canvases
 - `RenderLoop` -- requestAnimationFrame loop with dirty tracking
 - `DPRManager` -- device pixel ratio handling for crisp rendering
 

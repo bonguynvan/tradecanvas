@@ -60,6 +60,6 @@ export class AroonIndicator extends IndicatorBase {
     };
 
     drawLine('up', style.colors[0]);
-    drawLine('down', style.colors[1] ?? '#EF5350');
+    drawLine('down', style.colors[1] ?? '#e8505b');
   }
 }

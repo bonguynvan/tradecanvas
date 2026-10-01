@@ -21,7 +21,7 @@ yarn add @tradecanvas/chart</code></pre>
 <h2>Drop-in widget</h2>
 <p>
   <code>ChartWidget</code> is the fastest path to a working chart. It renders a full
-  TradingView-like UI inside any host element — toolbar, drawing sidebar, settings
+  trading UI inside any host element — toolbar, drawing sidebar, settings
   dialog, status bar — with zero framework dependency.
 </p>
 
@@ -42,8 +42,9 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })`}</code></pre>
 
 <p>
-  Out of the box, the widget supports a full set of TradingView-style gestures:
-  drag the price/time axes to scale, <kbd>Shift</kbd>+drag to measure,
+  Out of the box, the widget supports a full set of pro-trader gestures:
+  drag past the last bar into empty future space, drag the price/time axes to scale,
+  <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+drag to select several drawings, <kbd>Shift</kbd>+drag to measure,
   <kbd>Alt</kbd>+click to pin a tooltip, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
   for the command palette, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd> for symbol search,
   and <kbd>?</kbd> to see the full shortcut sheet.

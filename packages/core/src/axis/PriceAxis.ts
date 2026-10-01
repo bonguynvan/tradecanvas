@@ -1,8 +1,21 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { autoPricePrecision, computeTickStep, formatPriceScaleLabel } from '@tradecanvas/commons';
+import { priceToY } from '../viewport/ScaleMapping.js';
+
+/** Tick labels this close (px) to the last-price tag's centre are hidden under it. */
+const TAG_CLEARANCE_PX = 12;
 
 export class PriceAxis {
   private locale = 'en-US';
+  private reservedPrice: (() => number | null) | null = null;
+
+  /**
+   * Price whose tag sits on the axis (the last-price tag). Tick labels it
+   * would cover are skipped instead of showing half-hidden behind it.
+   */
+  setReservedPriceProvider(provider: (() => number | null) | null): void {
+    this.reservedPrice = provider;
+  }
 
   setLocale(locale: string): void {
     this.locale = locale;
@@ -16,7 +29,7 @@ export class PriceAxis {
     const invRange = 1 / range;
 
     // Subtle vertical divider — single pixel, less assertive than a solid axis
-    // line. Looks closer to TradingView's premium feel.
+    // line, for a calmer frame.
     ctx.strokeStyle = theme.axisLine;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
@@ -36,8 +49,11 @@ export class PriceAxis {
     const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
     const baseline = viewport.scaleBaseline;
     const labels: { y: number; text: string }[] = [];
+    const reserved = this.reservedPrice?.() ?? null;
+    const reservedY = reserved === null ? null : priceToY(reserved, viewport);
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = chartRect.y + chartRect.height * (1 - (price - priceRange.min) * invRange);
+      if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       labels.push({ y, text: formatPriceScaleLabel(price, mode, baseline, precision, this.locale) });
     }
 

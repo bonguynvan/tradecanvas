@@ -80,9 +80,9 @@ export class AlligatorIndicator extends IndicatorBase {
       ctx.stroke();
     };
 
-    drawLine('jaw', style.colors[0] ?? '#2962FF');   // blue
-    drawLine('teeth', style.colors[1] ?? '#EF5350'); // red
-    drawLine('lips', style.colors[2] ?? '#26A69A');  // green
+    drawLine('jaw', style.colors[0] ?? '#4c8dff');   // blue
+    drawLine('teeth', style.colors[1] ?? '#e8505b'); // red
+    drawLine('lips', style.colors[2] ?? '#1fa874');  // green
   }
 }
 

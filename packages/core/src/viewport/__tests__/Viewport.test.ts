@@ -38,6 +38,7 @@ describe('Viewport — sparse-series panning (2026-08-27)', () => {
     // `play` — half a viewport), never arbitrarily far off, and callers that want the OLD exact
     // right-aligned snap on a fresh series still get it from an explicit `scrollToEnd()` call.
     const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.setPanLimits({ freePan: false }); // the pre-1.3 clamp this test describes
     vp.updateData(bars(3), false);
     const state = vp.getState();
     const barUnit = state.barWidth + state.barSpacing;
@@ -220,11 +221,12 @@ describe('Viewport.getState — caching', () => {
   });
 });
 
-describe('Viewport — long-data panning (regression guard)', () => {
-  it('leaves long-data panning behaviour unchanged', () => {
+describe('Viewport — long-data panning with freePan: false (regression guard)', () => {
+  it('keeps the pre-1.3 clamp when free panning is turned off', () => {
     // 500 bars at up to 30px/bar comfortably overflows a 1000px pane — squarely the "long data"
-    // branch, untouched by this fix.
+    // branch of the legacy clamp.
     const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.setPanLimits({ freePan: false });
     vp.updateData(bars(500), false);
     vp.zoom(1, 500); // widen bars so the series overflows even at a small bar count
     const state = vp.getState();
@@ -252,5 +254,107 @@ describe('Viewport — price axis width', () => {
     expect(vp.getState().priceAxisWidth).toBe(96);
     vp.resize(800, 400);
     expect(vp.getState().chartRect.width).toBe(800 - 96);
+  });
+});
+
+describe('Viewport — free panning', () => {
+  function longViewport(): { vp: Viewport; unit: number; width: number } {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.scrollToEnd();
+    const s = vp.getState();
+    return { vp, unit: s.barWidth + s.barSpacing, width: s.chartRect.width };
+  }
+
+  it('drags past the newest bar into empty future space, down to 3 visible bars', () => {
+    const { vp, unit } = longViewport();
+    vp.scrollBy(1_000_000);
+    // Offset puts bar 497 at the left edge: bars 497–499 visible, the rest is future.
+    expect(vp.getState().offset).toBeCloseTo(497 * unit, 6);
+    expect(vp.getState().visibleRange).toEqual({ from: 497, to: 499 });
+  });
+
+  it('drags past the oldest bar until only 3 bars remain at the right edge', () => {
+    const { vp, unit, width } = longViewport();
+    vp.scrollBy(-1_000_000);
+    expect(vp.getState().offset).toBeCloseTo(3 * unit - width, 6);
+  });
+
+  it('honours a custom minVisibleBars', () => {
+    const { vp, unit } = longViewport();
+    vp.setPanLimits({ minVisibleBars: 10 });
+    vp.scrollBy(1_000_000);
+    expect(vp.getState().offset).toBeCloseTo(490 * unit, 6);
+  });
+
+  it('does the same for a short series, whose bars already fit', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(3), false);
+    vp.scrollToEnd();
+    const s = vp.getState();
+    const unit = s.barWidth + s.barSpacing;
+    vp.scrollBy(1_000_000);
+    expect(vp.getState().offset).toBeCloseTo(0, 6); // all 3 at the left edge
+    vp.scrollBy(-1_000_000);
+    expect(vp.getState().offset).toBeCloseTo(3 * unit - s.chartRect.width, 6);
+  });
+
+  it('is at the end only near the resting view — not when panned into the future', () => {
+    const { vp, unit } = longViewport();
+    expect(vp.isAtEnd()).toBe(true);
+    vp.scrollBy(unit); // a bar into the future: still effectively live
+    expect(vp.isAtEnd()).toBe(true);
+    vp.scrollBy(20 * unit);
+    expect(vp.isAtEnd()).toBe(false);
+    vp.scrollToEnd();
+    expect(vp.isAtEnd()).toBe(true);
+  });
+
+  it('zooming at the cursor stays within the same limits', () => {
+    const { vp } = longViewport();
+    vp.scrollBy(1_000_000);
+    vp.zoom(-0.5, 0); // zoom out anchored at the left edge
+    const s = vp.getState();
+    const unit = s.barWidth + s.barSpacing;
+    expect(s.offset).toBeLessThanOrEqual(497 * unit + 1e-6);
+  });
+});
+
+describe('Viewport — following the live edge with free panning', () => {
+  it('rests at the end once a fresh chart receives its first bars', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(1), false); // e.g. the first appendBar
+    expect(vp.isAtEnd()).toBe(true);
+    vp.updateData(bars(2), false);
+    expect(vp.isAtEnd()).toBe(true);
+  });
+
+  it('keeps the newest bar pinned when zooming at the live edge', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.scrollToEnd();
+    vp.zoom(-0.2, 500);
+    expect(vp.isAtEnd()).toBe(true);
+    vp.zoom(0.5, 500);
+    expect(vp.isAtEnd()).toBe(true);
+  });
+
+  it('zooms around the cursor as before when panned into history', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.scrollToEnd();
+    vp.scrollBy(-2000);
+    vp.zoom(0.5, 500);
+    expect(vp.isAtEnd()).toBe(false);
+  });
+
+  it('zoomToBarRange puts the requested slots edge to edge', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.zoomToBarRange(100, 149); // 50 slots
+    const s = vp.getState();
+    const unit = s.barWidth + s.barSpacing;
+    expect(unit).toBeCloseTo(s.chartRect.width / 50, 6);
+    expect(s.offset).toBeCloseTo(100 * unit, 6);
   });
 });

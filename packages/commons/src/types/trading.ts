@@ -116,9 +116,9 @@ export interface PositionCloseIntent {
 
 export const DEFAULT_TRADING_CONFIG: TradingConfig = {
   enabled: true,
-  orderColors: { buy: '#26A69A', sell: '#EF5350' },
-  positionColors: { profit: '#26A69A', loss: '#EF5350', entry: '#2196F3' },
-  depthOverlay: { enabled: false, bidColor: 'rgba(38,166,154,0.15)', askColor: 'rgba(239,83,80,0.15)', maxWidth: 100 },
+  orderColors: { buy: '#1fa874', sell: '#e8505b' },
+  positionColors: { profit: '#1fa874', loss: '#e8505b', entry: '#4c8dff' },
+  depthOverlay: { enabled: false, bidColor: 'rgba(31, 168, 116,0.15)', askColor: 'rgba(232, 80, 91,0.15)', maxWidth: 100 },
   contextMenu: { enabled: true },
   pricePrecision: 2,
   dragThreshold: 3,

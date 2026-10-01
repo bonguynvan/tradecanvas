@@ -67,7 +67,7 @@ export class RelativeMomentumIndexIndicator extends IndicatorBase {
     const { from, to } = viewport.visibleRange;
     const toY = (v: number) => chartRect.y + chartRect.height * (1 - v / 100);
 
-    ctx.strokeStyle = style.colors[1] ?? '#787B86';
+    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     for (const level of [30, 70]) {
@@ -80,7 +80,7 @@ export class RelativeMomentumIndexIndicator extends IndicatorBase {
     ctx.setLineDash([]);
 
     ctx.beginPath();
-    ctx.strokeStyle = style.colors[0] ?? '#2962FF';
+    ctx.strokeStyle = style.colors[0] ?? '#4c8dff';
     ctx.lineWidth = style.lineWidths[0];
     ctx.lineJoin = 'round';
     let started = false;

@@ -70,10 +70,10 @@ export interface DrawingPlugin {
 }
 
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {
-  color: '#2196F3',
+  color: '#4c8dff',
   lineWidth: 1,
   lineStyle: 'solid',
-  fillColor: 'rgba(33, 150, 243, 0.1)',
+  fillColor: 'rgba(76, 141, 255, 0.1)',
   fillOpacity: 0.1,
   fontSize: 12,
 };

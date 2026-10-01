@@ -3,7 +3,7 @@ import type { MessageKey, Translator } from './i18n.js';
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
  * shortcuts so users discover the widget's hidden interaction model — a
- * premium-feel detail TradingView, Linear, Figma, etc. all ship.
+ * premium-feel detail polished desktop tools all ship.
  */
 export interface HotkeySheetCallbacks {
   onClose: () => void;
@@ -45,6 +45,9 @@ const GROUPS: HotkeyGroup[] = [
   {
     title: 'Chart manipulation',
     entries: [
+      { keys: ['Drag'], label: 'Pan — past the last bar into empty future space' },
+      { keys: [mod, 'Drag'], label: 'Select drawings in a box' },
+      { keys: [mod, 'Click'], label: 'Add / remove a drawing from the selection' },
       { keys: ['Shift', 'Drag'], label: 'Measure tool (bars × price Δ)' },
       { keys: ['Drag', 'Price axis'], label: 'Compress / expand vertical scale' },
       { keys: ['Drag', 'Time axis'], label: 'Zoom time axis' },

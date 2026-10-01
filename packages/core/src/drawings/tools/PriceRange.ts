@@ -13,7 +13,7 @@ export class PriceRangeTool extends DrawingBase {
 
     // Fill
     const isUp = state.anchors[1].price > state.anchors[0].price;
-    ctx.fillStyle = isUp ? 'rgba(38, 166, 154, 0.15)' : 'rgba(239, 83, 80, 0.15)';
+    ctx.fillStyle = isUp ? 'rgba(31, 168, 116, 0.15)' : 'rgba(232, 80, 91, 0.15)';
     ctx.fillRect(x, top, w, h);
 
     this.applyLineStyle(ctx, state.style);
@@ -26,7 +26,7 @@ export class PriceRangeTool extends DrawingBase {
     const label = `${priceDiff >= 0 ? '+' : ''}${priceDiff.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}%)`;
 
     ctx.font = '12px sans-serif';
-    ctx.fillStyle = isUp ? '#26A69A' : '#EF5350';
+    ctx.fillStyle = isUp ? '#1fa874' : '#e8505b';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, x + w / 2, top + h / 2);
