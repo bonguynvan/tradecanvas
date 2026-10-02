@@ -113,6 +113,15 @@ export function isTransformedChartType(type: ChartType): boolean {
   }
 }
 
+/**
+ * Transformed chart types that redraw the series into bars of their own
+ * (bricks, lines, columns), so a drawn bar is not a data bar. Heikin-Ashi
+ * keeps one bar per data bar.
+ */
+export function isReshapedChartType(type: ChartType): boolean {
+  return type !== 'heikinAshi' && isTransformedChartType(type);
+}
+
 function averageClose(raw: DataSeries): number {
   let sum = 0;
   for (const b of raw) sum += b.close;

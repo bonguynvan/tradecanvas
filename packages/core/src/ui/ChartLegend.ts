@@ -76,6 +76,22 @@ export class ChartLegend {
     this.statusText = text;
   }
 
+  /**
+   * How far below the plot's top edge the symbol, OHLC and volume rows reach
+   * (the indicator row excluded), so other content can stack under them.
+   * 0 when hidden or drawn in the top-right corner.
+   */
+  getHeight(): number {
+    if (!this.config.visible || this.config.position !== 'top-left') return 0;
+    const fs = this.config.fontSize;
+    let h = 6;
+    if (this.config.showSymbol) h += fs + 6;
+    else if (this.statusText) h += fs + 4;
+    if (this.config.showOHLC) h += fs + 3;
+    if (this.config.showVolume) h += fs + 2;
+    return h;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
     if (!this.config.visible || data.length === 0) return;
 

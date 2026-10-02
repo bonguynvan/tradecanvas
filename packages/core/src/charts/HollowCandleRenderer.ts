@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Hollow Candle: filled body when close < open (bearish), hollow when close >= open (bullish).
@@ -17,10 +18,8 @@ export class HollowCandleRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     // Path2D objects batched by color and type
     const upWickPath = new Path2D();

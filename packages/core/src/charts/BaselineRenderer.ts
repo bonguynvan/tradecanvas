@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Baseline chart: line chart split at a baseline price.
@@ -26,10 +27,8 @@ export class BaselineRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     // Auto-detect baseline as average of visible range if not set
     const baseline = this.baselinePrice ?? this.computeBaseline(data, from, to);
@@ -49,8 +48,11 @@ export class BaselineRenderer implements ChartRendererInterface {
 
     // Fill above baseline (bullish) using Path2D
     ctx.save();
+    // "Above" means higher prices: up on screen, or down when the scale is inverted.
+    const highEdgeY = toY(max);
+    const lowEdgeY = toY(min);
     const clipAbove = new Path2D();
-    clipAbove.rect(chartRect.x, chartRect.y, chartRect.width, baselineY - chartRect.y);
+    clipAbove.rect(chartRect.x, Math.min(baselineY, highEdgeY), chartRect.width, Math.abs(highEdgeY - baselineY));
     ctx.clip(clipAbove);
 
     const fillAbovePath = new Path2D();
@@ -65,7 +67,7 @@ export class BaselineRenderer implements ChartRendererInterface {
     // Fill below baseline (bearish) using Path2D
     ctx.save();
     const clipBelow = new Path2D();
-    clipBelow.rect(chartRect.x, baselineY, chartRect.width, chartRect.y + chartRect.height - baselineY);
+    clipBelow.rect(chartRect.x, Math.min(baselineY, lowEdgeY), chartRect.width, Math.abs(lowEdgeY - baselineY));
     ctx.clip(clipBelow);
 
     const fillBelowPath = new Path2D();
@@ -81,7 +83,9 @@ export class BaselineRenderer implements ChartRendererInterface {
     const abovePath = new Path2D();
     const belowPath = new Path2D();
     for (let i = 1; i <= lastIdx; i++) {
-      const path = ys[i] <= baselineY ? abovePath : belowPath;
+      // At or above the baseline price: up on screen, down when inverted.
+      const above = viewport.invertScale ? ys[i] >= baselineY : ys[i] <= baselineY;
+      const path = above ? abovePath : belowPath;
       path.moveTo(xs[i - 1], ys[i - 1]);
       path.lineTo(xs[i], ys[i]);
     }

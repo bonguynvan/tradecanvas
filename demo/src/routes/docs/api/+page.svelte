@@ -75,8 +75,11 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <p>The same effects are also available programmatically:</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
+chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data
-chart.scrollToEnd()`}</code></pre>
+chart.scrollToEnd()
+chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
 
 <p>
   <strong>Price scale modes.</strong> Beyond regular and logarithmic, the axis

@@ -23,10 +23,14 @@ export class CrosshairHandler {
   private locale = 'en-US';
 
   // Deferred callback state — avoid calling during render
+  private syncedSlot: number | null = null;
   private pendingBarIndex: number | null = null;
   private pendingPoint: Point | null = null;
   private callbackScheduled = false;
   private lastCallbackBarIndex = -1;
+  /** Vertical span (px) where the hovered bar is reported; null = the price pane only. */
+  private reportTop: number | null = null;
+  private reportBottom: number | null = null;
 
   setCallback(cb: CrosshairCallback): void {
     this.callback = cb;
@@ -62,6 +66,29 @@ export class CrosshairHandler {
     return this.position;
   }
 
+  /**
+   * Mirror another chart's crosshair: a vertical line and time label at bar
+   * slot `slot` (null clears it). Never fires the callback, so a mirrored
+   * crosshair is not echoed back. The pointer's own crosshair wins.
+   */
+  setSyncedSlot(slot: number | null): void {
+    this.syncedSlot = slot !== null && Number.isFinite(slot) ? slot : null;
+  }
+
+  getSyncedSlot(): number | null {
+    return this.syncedSlot;
+  }
+
+  /**
+   * Also report the hovered bar between `top` and `bottom` (px), e.g. over
+   * indicator panes stacked above and below the price pane. The crosshair is
+   * still drawn on the price pane only. `null` reports on the price pane only.
+   */
+  setReportBounds(bounds: { top: number; bottom: number } | null): void {
+    this.reportTop = bounds?.top ?? null;
+    this.reportBottom = bounds?.bottom ?? null;
+  }
+
   onPointerMove(pos: Point): void {
     this.position = pos;
   }
@@ -75,12 +102,21 @@ export class CrosshairHandler {
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    if (!this.position || this.mode === 'hidden') return;
+    if (this.mode === 'hidden') return;
+    if (!this.position) {
+      if (this.syncedSlot !== null) this.renderSynced(ctx, viewport, theme, this.syncedSlot);
+      return;
+    }
     const { chartRect } = viewport;
     let { x, y } = this.position;
 
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
-    if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
+    const plotBottom = chartRect.y + chartRect.height;
+    // Over the indicator panes the hovered bar is still reported; they draw
+    // their own crosshair.
+    if (y < Math.min(this.reportTop ?? chartRect.y, chartRect.y)) return;
+    if (y > Math.max(this.reportBottom ?? plotBottom, plotBottom)) return;
+    const inPlot = y >= chartRect.y && y <= plotBottom;
 
     // The slot under the cursor — may lie past the newest bar (empty future
     // space the chart can be panned into). Magnet snaps to slots there too,
@@ -100,29 +136,17 @@ export class CrosshairHandler {
       this.lastCallbackBarIndex = barIndex;
       this.scheduleCallback();
     }
+    if (!inPlot) return;
 
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're
     // sitting on. Especially helpful in dense candle charts.
-    if (this.magnetMode && onBar) {
-      const barUnit = viewport.barWidth + viewport.barSpacing;
-      const halfUnit = barUnit / 2;
-      ctx.fillStyle = theme.crosshair;
-      ctx.globalAlpha = 0.08;
-      ctx.fillRect(x - halfUnit, chartRect.y, barUnit, chartRect.height);
-      ctx.globalAlpha = 1;
-    }
+    if (this.magnetMode && onBar) drawBarTint(ctx, x, viewport, theme);
 
     // Draw crosshair lines — minimal work, no DOM, no allocations
+    drawVerticalLine(ctx, x, chartRect, theme);
+
     ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = theme.crosshair;
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    ctx.moveTo(Math.round(x) + 0.5, chartRect.y);
-    ctx.lineTo(Math.round(x) + 0.5, chartRect.y + chartRect.height);
-    ctx.stroke();
-
     ctx.beginPath();
     ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
     ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
@@ -146,7 +170,11 @@ export class CrosshairHandler {
     data: DataSeries,
     timeAxisY?: number,
   ): void {
-    if (!this.position || this.mode === 'hidden') return;
+    if (this.mode === 'hidden') return;
+    if (!this.position) {
+      if (this.syncedSlot !== null) this.renderSyncedTimeLabel(ctx, viewport, theme, data, this.syncedSlot, timeAxisY);
+      return;
+    }
     const { chartRect } = viewport;
     let { x, y } = this.position;
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
@@ -175,20 +203,53 @@ export class CrosshairHandler {
     });
 
     // ── Time pill (bottom axis) ──
-    if (data.length > 0) {
-      // Past either end of the data the time is extrapolated.
-      const timeText = formatBarTime(barIndexToTime(slot, data), this.tzOffsetMinutes);
-      const axisY = timeAxisY ?? (chartRect.y + chartRect.height);
-      drawAxisPill(ctx, {
-        text: timeText,
-        anchorX: x,
-        anchorY: axisY,
-        orientation: 'bottom',
-        bg: theme.text,
-        fg: theme.background,
-        font,
-      });
-    }
+    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY);
+  }
+
+  /** The mirrored crosshair: only the time is shared, so only the vertical line. */
+  private renderSynced(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, slot: number): void {
+    const x = barIndexToX(slot, viewport);
+    const { chartRect } = viewport;
+    if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
+    if (this.magnetMode && slot >= 0 && slot < this.data.length) drawBarTint(ctx, x, viewport, theme);
+    drawVerticalLine(ctx, x, chartRect, theme);
+  }
+
+  private renderSyncedTimeLabel(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+    slot: number,
+    timeAxisY?: number,
+  ): void {
+    const x = barIndexToX(slot, viewport);
+    const { chartRect } = viewport;
+    if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
+    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY);
+  }
+
+  private drawTimePill(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+    slot: number,
+    x: number,
+    timeAxisY?: number,
+  ): void {
+    if (data.length === 0) return;
+    // Past either end of the data the time is extrapolated.
+    const timeText = formatBarTime(barIndexToTime(slot, data), this.tzOffsetMinutes);
+    drawAxisPill(ctx, {
+      text: timeText,
+      anchorX: x,
+      anchorY: timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height),
+      orientation: 'bottom',
+      bg: theme.text,
+      fg: theme.background,
+      font: `600 ${theme.font.sizeSmall}px ${theme.font.family}`,
+    });
   }
 
   /** Fire callback outside of render frame via microtask */
@@ -204,6 +265,25 @@ export class CrosshairHandler {
   private flushCallback(barIndex: number | null, point: Point | null): void {
     this.callback?.(barIndex, point);
   }
+}
+
+function drawBarTint(ctx: CanvasRenderingContext2D, x: number, viewport: ViewportState, theme: Theme): void {
+  const barUnit = viewport.barWidth + viewport.barSpacing;
+  ctx.fillStyle = theme.crosshair;
+  ctx.globalAlpha = 0.08;
+  ctx.fillRect(x - barUnit / 2, viewport.chartRect.y, barUnit, viewport.chartRect.height);
+  ctx.globalAlpha = 1;
+}
+
+function drawVerticalLine(ctx: CanvasRenderingContext2D, x: number, chartRect: ViewportState['chartRect'], theme: Theme): void {
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = theme.crosshair;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(Math.round(x) + 0.5, chartRect.y);
+  ctx.lineTo(Math.round(x) + 0.5, chartRect.y + chartRect.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 interface AxisPillOptions {

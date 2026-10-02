@@ -46,8 +46,14 @@ export class IndicatorEngine {
       visible: true,
     };
 
+    // A second EMA must not look like the first: each further instance of an
+    // indicator starts one step along the palette.
+    const taken = new Set<string>();
+    for (const other of this.instances.values()) if (other.config.id === id) taken.add(other.style.colors[0]);
+    let shift = TC_SERIES_COLORS.findIndex((c) => !taken.has(c));
+    if (shift < 0) shift = taken.size % TC_SERIES_COLORS.length;
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? [...TC_SERIES_COLORS],
+      colors: config.style?.colors ?? [...TC_SERIES_COLORS.slice(shift), ...TC_SERIES_COLORS.slice(0, shift)],
       lineWidths: config.style?.lineWidths ?? [1.5],
       opacity: config.style?.opacity ?? 1,
     };
@@ -159,6 +165,13 @@ export class IndicatorEngine {
       });
     }
     return result;
+  }
+
+  /** The style the indicator draws with (a copy). */
+  getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
+    const style = this.instances.get(instanceId)?.style;
+    if (!style) return null;
+    return { colors: [...style.colors], lineWidths: [...style.lineWidths], opacity: style.opacity };
   }
 
   /** Update indicator style (colors, line widths) at runtime */

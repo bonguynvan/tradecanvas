@@ -12,6 +12,7 @@ import type {
   IndicatorPlugin,
   IndicatorDescriptor,
   IndicatorOutput,
+  ResolvedIndicatorStyle,
   DrawingToolType,
   DrawingState,
   DrawingStyle,
@@ -31,7 +32,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -71,6 +72,7 @@ import {
   SelectionBoxOverlay,
   timestampToBarIndex,
   barTimeStepMs,
+  rangePresetStart,
   ReplayManager,
   ChartStateManager,
   UndoRedoManager,
@@ -86,9 +88,9 @@ import {
   xToBarIndex,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface } from '@tradecanvas/core';
+import type { ChartRendererInterface, RangePreset } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
@@ -103,6 +105,9 @@ import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
 declare const __TC_VERSION__: string;
+
+/** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
+const SECONDS_TIME_LIMIT = 1e12;
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -124,6 +129,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
+  private indicatorUpdateFrom: number | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
   private panelInfoCache: import('@tradecanvas/core').PanelRenderInfo[] | null = null;
   private renderScheduled = false;
@@ -140,6 +147,14 @@ export class Chart {
   private chartLegend: ChartLegend;
   private watermark: Watermark;
   private barCountdown: BarCountdown;
+  /**
+   * Indicators of the loaded layout this chart could not add (an unknown or
+   * not yet registered id, a whitelist): saved back as they were, so saving
+   * the layout again doesn't drop them.
+   */
+  private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
+  /** Display timezone, minutes east of UTC; null = the browser's. */
+  private displayTzOffset: number | null = null;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   private compareRenderer: CompareRenderer;
@@ -182,6 +197,9 @@ export class Chart {
   private container: HTMLElement;
   private currentPriceLine: import('@tradecanvas/core').CurrentPriceLine;
   private numberLocale: string;
+  /** The market's price precision, when set: otherwise it follows the visible range. */
+  private marketPricePrecision: number | null = null;
+  private paneTitles = true;
   /**
    * The `autoScale` the chart was constructed with — distinct from
    * `this.options.autoScale`, which drag-to-scale/vertical-pan mutate at
@@ -265,13 +283,16 @@ export class Chart {
     this.drawingManager.setEventCallback((event, data) => {
       this.eventBus.emit(event as ChartEventType, data);
     });
+    // Pasted drawings obey the same switches as drawing tools.
+    this.drawingManager.setToolFilter((type) =>
+      this.features.drawings && (this.features.drawingTools.length === 0 || this.features.drawingTools.includes(type)));
     // Undo/redo
     this.undoRedoManager = new UndoRedoManager();
     this.drawingManager.setUndoRedoManager(this.undoRedoManager);
     this.drawingManager.setDataGetter(() => this.dataManager.getData());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
-    if (options.crosshair?.mode === 'magnet') {
+    if (options.crosshair?.mode === 'magnet' && this.features.drawingMagnet) {
       this.drawingManager.setMagnetMode('magnet');
     }
 
@@ -345,15 +366,19 @@ export class Chart {
         // Update legend (canvas-rendered, will show on next UI paint)
         this.chartLegend.setHoverBar(bar ?? null);
 
-        // Update tooltip (DOM, lightweight update only when bar changes)
-        if (bar && this.features.crosshairTooltip) {
-          const vs = this.viewport.getState();
+        // Update tooltip (DOM, lightweight update only when bar changes).
+        // Over an indicator pane there is no price crosshair to sit beside.
+        const vs = this.viewport.getState();
+        const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
+        if (bar && inPlot && this.features.crosshairTooltip) {
           this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize(), {
             prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
             priceRange: vs.priceRange,
             plot: vs.chartRect,
             barStepMs: barTimeStepMs(data),
           });
+        } else {
+          this.crosshairTooltip.hide();
         }
 
         // Refresh the pinned tooltip's delta strip against the hovered bar.
@@ -372,6 +397,7 @@ export class Chart {
       } else {
         this.crosshairTooltip.hide();
         this.chartLegend.setHoverBar(null);
+        this.eventBus.emit('crosshairLeave', {});
       }
     });
 
@@ -392,6 +418,7 @@ export class Chart {
 
     // Bar countdown timer
     this.barCountdown = new BarCountdown();
+    this.barCountdown.setVisible(this.features.barCountdown);
     this.sessionBreaks = new SessionBreaks();
     this.sessionBreaks.setLocale(this.numberLocale);
     this.sessionShading = new SessionShading();
@@ -410,7 +437,7 @@ export class Chart {
     }
 
     // Apply log scale from options
-    if (options.logScale) {
+    if (options.logScale && this.features.logScale) {
       this.viewport.setLogScale(true);
     }
 
@@ -740,7 +767,7 @@ export class Chart {
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     this.alertManager.clearLastValues();
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    this.recalcIndicators(this.dataManager.getData());
     // Auto-set current price line from last bar's close
     if (data.length > 0) {
       this.currentPriceLine.setPrice(data[data.length - 1].close);
@@ -763,7 +790,7 @@ export class Chart {
     this.displayDataCache = null;
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
-    this.indicatorEngine.recalculateFrom(data, data.length - 2);
+    this.recalcIndicatorsFrom(data, data.length - 2);
     this.updateViewportAndRender(follow);
   }
 
@@ -784,7 +811,7 @@ export class Chart {
       this.dataManager.appendBar(bar);
     }
     this.displayDataCache = null;
-    this.indicatorEngine.recalculateFrom(this.dataManager.getData(), firstChanged);
+    this.recalcIndicatorsFrom(this.dataManager.getData(), firstChanged);
     this.crosshairHandler.setData(this.dataManager.getData());
     this.updateViewportAndRender(follow);
   }
@@ -807,7 +834,7 @@ export class Chart {
     // Keep indicator lines in sync with the forming bar. Without this, panel
     // + overlay indicators freeze until bar close. Only the last bar changed.
     const data = this.dataManager.getData();
-    this.indicatorEngine.recalculateFrom(data, data.length - 1);
+    this.recalcIndicatorsFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -826,7 +853,7 @@ export class Chart {
       this.displayDataCache = null;
     }
     const data = this.dataManager.getData();
-    this.indicatorEngine.recalculateFrom(data, data.length - 1);
+    this.recalcIndicatorsFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -855,12 +882,15 @@ export class Chart {
       this.engine.requestRender();
     }
     this.eventBus.emit('indicatorAdd', { instanceId, id });
+    this.scheduleAutoSave();
     return instanceId;
   }
 
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>): void {
     this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
+    this.announceIndicatorUpdate(0);
     this.engine.requestRender();
+    this.scheduleAutoSave();
   }
 
   removeIndicator(instanceId: string): void {
@@ -868,11 +898,17 @@ export class Chart {
     this.indicatorEngine.removeIndicator(instanceId);
     this.layoutManager.removePanel(instanceId);
     this.eventBus.emit('indicatorRemove', { instanceId });
+    this.scheduleAutoSave();
     if (hadPanel) {
       this.updateViewportAndRender();
     } else {
       this.engine.requestRender();
     }
+  }
+
+  /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
+  getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
+    return this.indicatorEngine.getIndicatorStyle(instanceId);
   }
 
   getIndicatorOutput(instanceId: string): IndicatorOutput | null {
@@ -904,6 +940,46 @@ export class Chart {
   setPanelSize(instanceId: string, size: number): void {
     this.layoutManager.setPanelSize(instanceId, size);
     this.updateViewportAndRender();
+    this.eventBus.emit('paneResize', { instanceId, size });
+  }
+
+  /**
+   * Indicator panes, in CSS pixels relative to the container: the whole pane,
+   * its 20 px header (where the name is written) included.
+   */
+  getIndicatorPanes(): { instanceId: string; rect: { x: number; y: number; width: number; height: number } }[] {
+    return this.buildPanelRenderInfos().map((p) => ({ instanceId: p.instanceId, rect: { ...p.rect } }));
+  }
+
+  /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
+  setPaneTitlesVisible(visible: boolean): void {
+    this.paneTitles = visible;
+    this.engine.requestRender();
+  }
+
+  /**
+   * The y (CSS px, container-relative) just below the OHLCV legend — where
+   * content stacked under it starts. The plot's top edge when it is hidden.
+   */
+  getLegendBottom(): number {
+    const top = this.viewport.getState().chartRect.y;
+    return this.features.legend ? top + this.chartLegend.getHeight() : top;
+  }
+
+  /**
+   * Whether each drawn bar is one data bar (candles, lines, Heikin-Ashi…).
+   * Renko, Kagi, point & figure, line break and range bars redraw the series,
+   * so a bar index on screen is not an index into the data.
+   */
+  isTimeAligned(): boolean {
+    if (isReshapedChartType(this.options.chartType)) return false;
+    return this.getDisplayData().length === this.dataManager.getLength();
+  }
+
+  /** A price as the price axis writes it: the market's precision or the visible range's, in the number locale. */
+  formatPrice(price: number): string {
+    const { min, max } = this.viewport.getState().priceRange;
+    return formatPrice(price, this.marketPricePrecision ?? autoPricePrecision(min, max), this.numberLocale);
   }
 
   // --- Drawing tools ---
@@ -917,6 +993,29 @@ export class Chart {
 
   getDrawingTool(): DrawingToolType | null {
     return this.drawingManager.getActiveTool();
+  }
+
+  /** Keep the drawing tool after each drawing, to draw several in a row (Esc ends). */
+  setStayInDrawingMode(enabled: boolean): void {
+    this.drawingManager.setStayInDrawingMode(enabled);
+  }
+
+  isStayInDrawingMode(): boolean {
+    return this.drawingManager.isStayInDrawingMode();
+  }
+
+  /** Copy the selected drawings (also Ctrl/⌘+C on the chart). Returns how many. */
+  copyDrawings(): number {
+    return this.drawingManager.copySelection();
+  }
+
+  /**
+   * Paste copied drawings (also Ctrl/⌘+V) — from this chart or another one on
+   * the page. Returns the new drawings' ids.
+   */
+  pasteDrawings(): string[] {
+    if (!this.features.drawings) return [];
+    return this.drawingManager.paste();
   }
 
   setDrawingStyle(style: Partial<DrawingStyle>): void {
@@ -1010,8 +1109,9 @@ export class Chart {
 
   // --- Drawing magnet ---
 
+  /** Ignored (stays off) when `features.drawingMagnet` is false. */
   setDrawingMagnet(enabled: boolean): void {
-    this.drawingManager.setMagnetMode(enabled ? 'magnet' : 'none');
+    this.drawingManager.setMagnetMode(enabled && this.features.drawingMagnet ? 'magnet' : 'none');
   }
 
   getDrawingMagnet(): boolean {
@@ -1046,7 +1146,9 @@ export class Chart {
 
   // --- Data export ---
 
+  /** Does nothing when `features.dataExport` is false. */
   exportVisibleData(format: 'csv' | 'json' = 'csv', filename?: string): void {
+    if (!this.features.dataExport) return;
     const vp = this.viewport.getState();
     const data = this.dataManager.getData();
     const from = Math.max(0, vp.visibleRange.from);
@@ -1062,7 +1164,9 @@ export class Chart {
     }
   }
 
+  /** Does nothing when `features.dataExport` is false. */
   exportAllData(format: 'csv' | 'json' = 'csv', filename?: string): void {
+    if (!this.features.dataExport) return;
     const data = this.dataManager.getData();
     if (format === 'json') {
       const content = DataExporter.toJSON(data);
@@ -1109,6 +1213,7 @@ export class Chart {
   setIndicatorVisible(instanceId: string, visible: boolean): void {
     if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
       this.updateViewportAndRender();
+      this.scheduleAutoSave();
     }
   }
 
@@ -1123,6 +1228,7 @@ export class Chart {
   updateIndicatorStyle(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
     this.indicatorEngine.updateIndicatorStyle(instanceId, style);
     this.engine.requestRender();
+    this.scheduleAutoSave();
   }
 
   // --- Trading ---
@@ -1298,7 +1404,7 @@ export class Chart {
       const data = this.dataManager.getData();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
-      this.indicatorEngine.recalculateFrom(data, data.length - 2);
+      this.recalcIndicatorsFrom(data, data.length - 2);
       this.updateViewportAndRender(follow);
     });
 
@@ -1313,7 +1419,7 @@ export class Chart {
       // instead of freezing until bar close — incrementally, since only the
       // last bar changed.
       const data = this.dataManager.getData();
-      this.indicatorEngine.recalculateFrom(data, data.length - 1);
+      this.recalcIndicatorsFrom(data, data.length - 1);
       this.scheduleRender();
     });
 
@@ -1369,12 +1475,20 @@ export class Chart {
     await this.streamManager.switchTo(symbol, timeframe);
   }
 
+  /** False when `features.timeframes` is set and does not list `timeframe`. */
+  isTimeframeAllowed(timeframe: TimeFrame): boolean {
+    const allowed = this.features.timeframes;
+    return allowed.length === 0 || allowed.includes(timeframe);
+  }
+
   /**
    * Switch to a new timeframe. Requires an active stream connection.
+   * Ignored when `features.timeframes` does not list it.
    * Internally calls switchStream with the current symbol.
    */
   async setTimeframe(timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) throw new Error('No active stream. Call connect() first.');
+    if (!this.isTimeframeAllowed(timeframe)) return;
     await this.switchStream(this.currentSymbol, timeframe);
   }
 
@@ -1434,8 +1548,9 @@ export class Chart {
     return this.executionAdapter;
   }
 
+  /** Ignored (stays hidden) when `features.barCountdown` is false. */
   setBarCountdownVisible(visible: boolean): void {
-    this.barCountdown.setVisible(visible);
+    this.barCountdown.setVisible(visible && this.features.barCountdown);
     this.engine.requestRender(LayerType.Hover);
   }
 
@@ -1446,7 +1561,9 @@ export class Chart {
 
   // --- Compare symbols ---
 
+  /** Does nothing when `features.compareSymbols` is false. */
   addCompareSymbol(id: string, label: string, data: DataSeries, color: string): void {
+    if (!this.features.compareSymbols) return;
     this.compareRenderer.addSymbol({ id, label, data, color, visible: true });
     this.engine.requestRender(LayerType.Main);
   }
@@ -1473,7 +1590,9 @@ export class Chart {
 
   // --- Price scale ---
 
+  /** Turning it on is ignored when `features.logScale` is false. */
   setLogScale(enabled: boolean): void {
+    if (enabled && !this.features.logScale) return;
     this.viewport.setLogScale(enabled);
     this.updateViewportAndRender();
   }
@@ -1482,12 +1601,23 @@ export class Chart {
     return this.viewport.isLogScale();
   }
 
+  /** Turn the price scale upside down: higher prices lower on screen. */
+  setInvertScale(inverted: boolean): void {
+    this.viewport.setInvertScale(inverted);
+    this.updateViewportAndRender();
+  }
+
+  isInvertScale(): boolean {
+    return this.viewport.isInvertScale();
+  }
+
   /**
    * Set the price-scale presentation: `regular`, `logarithmic`, `percentage`
    * (axis labels show % change from the first visible bar), or `indexedTo100`
    * (rebased so the first visible bar reads as 100).
    */
   setScaleMode(mode: import('@tradecanvas/commons').PriceScaleMode): void {
+    if (mode === 'logarithmic' && !this.features.logScale) return;
     this.viewport.setScaleMode(mode);
     this.updateViewportAndRender();
   }
@@ -1525,6 +1655,46 @@ export class Chart {
         return;
       }
     }
+  }
+
+  /**
+   * Centre the bar that contains `time` — in the bars' own unit, ms or s —
+   * (the first or last bar when `time` lies outside the data), keeping the zoom. Returns that bar's index, or -1
+   * without data.
+   */
+  goToTime(time: number): number {
+    const data = this.getDisplayData(); // the series on screen (renko bricks, kagi lines…)
+    if (data.length === 0 || !Number.isFinite(time)) return -1;
+    const index = Math.max(0, Math.min(data.length - 1, Math.floor(timestampToBarIndex(time, data))));
+    const vs = this.viewport.getState();
+    const centredOffset = index * (vs.barWidth + vs.barSpacing) + vs.barWidth / 2 - vs.chartRect.width / 2;
+    this.viewport.scrollBy(centredOffset - vs.offset);
+    this.updateViewportAndRender();
+    return index;
+  }
+
+  /**
+   * Show a span that ends at the last bar: 1D, 5D, 1M, 3M, 6M, YTD, 1Y, 5Y or
+   * All. Months and YTD follow the calendar in the display timezone. Only
+   * loaded bars can be shown, so a span longer than the data shows all of it.
+   */
+  setVisibleRangePreset(preset: RangePreset): void {
+    const data = this.getDisplayData();
+    if (data.length === 0) return;
+    const last = data.length - 1;
+    // Bars may carry seconds rather than milliseconds; the calendar works in ms.
+    const unit = data[last].time > SECONDS_TIME_LIMIT ? 1 : 1000;
+    const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTzOffset);
+    const start = startMs === null ? null : startMs / unit;
+    if (start === null || start < data[0].time) {
+      this.fitContent();
+      return;
+    }
+    // The first bar after `start`, so "1D" on 1-minute bars is 1440 bars, not 1441.
+    const first = Math.min(last, Math.floor(timestampToBarIndex(start, data)) + 1);
+    this.viewport.zoomToBarRange(first, last + this.viewport.getRightMargin());
+    this.viewport.scrollToEnd();
+    this.updateViewportAndRender();
   }
 
   scrollToEnd(): void {
@@ -1646,7 +1816,22 @@ export class Chart {
   setCrosshairPosition(point: { x: number; y: number } | null): void {
     if (point) {
       this.crosshairHandler.onPointerMove(point);
+    } else {
+      this.crosshairHandler.onPointerLeave();
     }
+    this.engine.requestRender(LayerType.Hover);
+  }
+
+  /**
+   * Show a time-only crosshair — a vertical line and time label on the bar
+   * that contains `time` — as when mirroring another chart; null clears it.
+   * Fires no crosshair events, so linked charts don't echo each other.
+   */
+  setCrosshairTime(time: number | null): void {
+    const data = this.getDisplayData();
+    const slot = time === null || data.length === 0 ? null : Math.floor(timestampToBarIndex(time, data));
+    if (slot === this.crosshairHandler.getSyncedSlot()) return;
+    this.crosshairHandler.setSyncedSlot(slot);
     this.engine.requestRender(LayerType.Hover);
   }
 
@@ -1774,6 +1959,7 @@ export class Chart {
    * for EST, 330 for IST).
    */
   setTimezoneOffset(minutes: number | null): void {
+    this.displayTzOffset = minutes;
     this.timeAxis.setTimezoneOffset(minutes);
     this.crosshairHandler.setTimezoneOffset(minutes);
     this.crosshairTooltip.setTimezoneOffset(minutes);
@@ -2015,11 +2201,11 @@ export class Chart {
         // indicators from there — not re-copy, re-sanitize and recompute the
         // whole prefix on every tick of the replay clock.
         for (let j = loaded; j < nextLen; j++) this.dataManager.appendBar(data[j]);
-        this.indicatorEngine.recalculateFrom(this.dataManager.getData(), loaded);
+        this.recalcIndicatorsFrom(this.dataManager.getData(), loaded);
       } else {
         // First step, or a seek backwards: reload the prefix.
         this.dataManager.setData(data.slice(0, nextLen));
-        this.indicatorEngine.recalculateAll(this.dataManager.getData());
+        this.recalcIndicators(this.dataManager.getData());
       }
       loaded = nextLen;
       // The price line follows the replay, not the live market.
@@ -2078,16 +2264,33 @@ export class Chart {
 
   // --- Save / Load ---
 
-  saveState(key?: string): string | null {
-    if (!this.features.saveLoad) return null;
-    const snapshot = ChartStateManager.capture(
+  /** Everything `loadState` restores: chart type, theme, drawings, indicators, alerts. */
+  private captureSnapshot(): import('@tradecanvas/core').ChartSnapshot {
+    const panels = this.layoutManager.getPanels();
+    return ChartStateManager.capture(
       {
         getDrawings: () => this.getDrawings(),
         getTheme: () => this.getTheme(),
         getAlerts: () => this.getAlerts(),
+        getIndicators: () => [
+          ...this.indicatorEngine.getActiveIndicators().map((ind) => ({
+            id: ind.id,
+            instanceId: ind.instanceId,
+            params: ind.params,
+            position: panels.find((p) => p.id === ind.instanceId)?.position,
+            style: this.indicatorEngine.getIndicatorStyle(ind.instanceId) ?? undefined,
+            visible: ind.visible,
+          })),
+          ...this.unrestoredIndicators,
+        ],
       },
-      { chartType: this.options.chartType },
+      { chartType: this.options.chartType, symbol: this.currentSymbol || undefined },
     );
+  }
+
+  saveState(key?: string): string | null {
+    if (!this.features.saveLoad) return null;
+    const snapshot = this.captureSnapshot();
     const json = ChartStateManager.serialize(snapshot);
     if (key) ChartStateManager.saveToStorage(key, snapshot);
     return json;
@@ -2099,12 +2302,46 @@ export class Chart {
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
     if (snapshot.theme) this.setTheme(snapshot.theme as any);
-    if (snapshot.alerts) {
-      this.clearAlerts();
-      for (const a of snapshot.alerts) {
-        this.addAlert(a.price, a.condition, a.message);
+
+    // Indicators get new instance ids: remember old → new for alert channels.
+    // Version-1 saves never captured indicators, so they leave them alone.
+    const instanceIds = new Map<string, string>();
+    if (snapshot.version >= 2 && this.features.indicators) {
+      this.unrestoredIndicators = [];
+      const known = new Set(this.indicatorEngine.getAvailableIndicators().map((d) => d.id));
+      for (const active of this.indicatorEngine.getActiveIndicators()) this.removeIndicator(active.instanceId);
+      for (const ind of snapshot.indicators) {
+        const position = (['top', 'bottom', 'left', 'right'] as const).find((p) => p === ind.position) ?? 'bottom';
+        let instanceId: string | null = null;
+        try {
+          if (!known.has(ind.id)) throw new Error('no such indicator is registered');
+          instanceId = this.addIndicator(ind.id, ind.params as Record<string, number | string | boolean>, position);
+        } catch (err) {
+          console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
+        }
+        if (!instanceId) {
+          this.unrestoredIndicators.push(ind);
+          continue;
+        }
+        instanceIds.set(ind.instanceId, instanceId);
+        if (ind.style) this.updateIndicatorStyle(instanceId, ind.style);
+        if (ind.visible === false) this.setIndicatorVisible(instanceId, false);
       }
     }
+
+    if (snapshot.alerts && this.features.alerts) {
+      this.alertManager.clearAlerts();
+      for (const a of snapshot.alerts) {
+        // A one-shot alert that already fired stays fired (as AlertManager's own storage does).
+        if (a.triggered && !a.repeating) continue;
+        // `<instanceId>:<key>` channels follow their indicator to its new id.
+        const sep = a.channel.indexOf(':');
+        const renamed = sep > 0 ? instanceIds.get(a.channel.slice(0, sep)) : undefined;
+        const channel = renamed ? renamed + a.channel.slice(sep) : a.channel;
+        this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
+      }
+    }
+    this.scheduleAutoSave();
   }
 
   loadStateFromStorage(key: string): boolean {
@@ -2117,11 +2354,7 @@ export class Chart {
 
   downloadState(filename?: string): void {
     if (!this.features.saveLoad) return;
-    const snapshot = ChartStateManager.capture(
-      { getDrawings: () => this.getDrawings(), getTheme: () => this.getTheme(), getAlerts: () => this.getAlerts() },
-      { chartType: this.options.chartType },
-    );
-    ChartStateManager.downloadFile(snapshot, filename);
+    ChartStateManager.downloadFile(this.captureSnapshot(), filename);
   }
 
   async loadStateFromFile(): Promise<void> {
@@ -2180,6 +2413,7 @@ export class Chart {
 
     // Apply price precision to trading, alerts, and price line
     if (config.pricePrecision !== undefined) {
+      this.marketPricePrecision = config.pricePrecision;
       this.tradingManager.setConfig({ pricePrecision: config.pricePrecision });
       this.alertManager.setPricePrecision(config.pricePrecision);
       this.streamManager?.priceLine.setPricePrecision(config.pricePrecision);
@@ -2299,6 +2533,36 @@ export class Chart {
     const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t));
     this.displayDataCache = result;
     return result;
+  }
+
+  /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
+  private recalcIndicatorsFrom(data: DataSeries, from: number): void {
+    this.indicatorEngine.recalculateFrom(data, from);
+    this.announceIndicatorUpdate(from);
+  }
+
+  private recalcIndicators(data: DataSeries): void {
+    this.indicatorEngine.recalculateAll(data);
+    this.announceIndicatorUpdate(0);
+  }
+
+  /**
+   * Emit `indicatorUpdate` once per task, from the earliest changed bar, after
+   * the update that caused it has finished and scheduled its redraw: a
+   * listener can neither interrupt a live tick nor read the layout before
+   * the chart has updated it.
+   */
+  private announceIndicatorUpdate(from: number): void {
+    if (this.indicatorUpdateFrom !== null) {
+      this.indicatorUpdateFrom = Math.min(this.indicatorUpdateFrom, from);
+      return;
+    }
+    this.indicatorUpdateFrom = from;
+    queueMicrotask(() => {
+      const first = this.indicatorUpdateFrom;
+      this.indicatorUpdateFrom = null;
+      if (first !== null) this.eventBus.emit('indicatorUpdate', { from: first });
+    });
   }
 
   /** Lightweight render for streaming updates. No layout resolve, no indicator recalc. */
@@ -2471,8 +2735,22 @@ export class Chart {
   private getResolvedLayout() {
     if (!this.resolvedLayoutCache) {
       this.resolvedLayoutCache = this.layoutManager.resolve();
+      this.syncCrosshairBounds(this.resolvedLayoutCache);
     }
     return this.resolvedLayoutCache;
+  }
+
+  /** The hovered bar is reported over the price pane and the panes above and below it. */
+  private syncCrosshairBounds(layout: import('@tradecanvas/commons').ResolvedLayout): void {
+    const main = layout.mainChartRect;
+    let top = main.y;
+    let bottom = main.y + main.height;
+    for (const panel of layout.panels) {
+      if (panel.config.position !== 'top' && panel.config.position !== 'bottom') continue;
+      top = Math.min(top, panel.rect.y);
+      bottom = Math.max(bottom, panel.rect.y + panel.rect.height);
+    }
+    this.crosshairHandler.setReportBounds({ top, bottom });
   }
 
   /** Cache container size for 500ms to avoid layout thrashing on rapid calls */
@@ -2512,6 +2790,11 @@ export class Chart {
           ...mainVP,
           chartRect: insetRect,
           priceRange,
+          // Panes keep their own upright, linear value scale; log and
+          // inverted belong to the price pane only.
+          logScale: false,
+          scaleMode: 'regular' as const,
+          invertScale: false,
         },
       };
     });
@@ -2577,6 +2860,7 @@ export class Chart {
       theme: this.themeManager.getTheme(),
       data: displayData,
       numberLocale: this.numberLocale,
+      paneTitles: this.paneTitles,
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });
   }

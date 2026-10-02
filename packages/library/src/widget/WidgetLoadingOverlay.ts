@@ -60,7 +60,8 @@ export class WidgetLoadingOverlay {
       candle.style.setProperty('--tcw-body-h', `${bodyHeight}px`);
       candle.style.setProperty('--tcw-wick-top', `${wickTop}px`);
       candle.style.setProperty('--tcw-wick-h', `${wickHeight}px`);
-      candle.style.animationDelay = `${i * 110}ms`;
+      // A custom property, so a page-wide `animation-delay: 0 !important` reset can't flatten the wave.
+      candle.style.setProperty('--tcw-delay', `${i * 110}ms`);
       candles.appendChild(candle);
     });
     card.appendChild(candles);

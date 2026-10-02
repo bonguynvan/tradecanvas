@@ -75,6 +75,8 @@ export interface RenderContext {
   data: DataSeries;
   /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
   numberLocale?: string;
+  /** Write each indicator pane's name, and the values under the cursor, in its header (default). Off when the host labels panes itself. */
+  paneTitles?: boolean;
   /** Draw registered overlay plugins for a layer (populated by the Chart). */
   renderOverlayPlugins?: ((ctx: CanvasRenderingContext2D, layer: 'main' | 'overlay' | 'ui') => void) | null;
 }
@@ -276,7 +278,7 @@ export class RenderEngine {
       c.textBaseline = 'top';
       c.textAlign = 'left';
       const desc = descMap.get(panel.instanceId);
-      if (desc) c.fillText(desc.descriptor.name, panel.rect.x + 6, panel.rect.y + 6);
+      if (desc && ctx.paneTitles !== false) c.fillText(desc.descriptor.name, panel.rect.x + 6, panel.rect.y + 6);
 
       // Clip indicator rendering to below the header
       c.save();
@@ -402,7 +404,8 @@ export class RenderEngine {
         c.fillText(valText, axisX + 5, cursorPos.y);
       }
 
-      if (!indicatorEngine) continue;
+      // The values at the cursor go in the header, unless the host shows them itself.
+      if (!indicatorEngine || ctx.paneTitles === false) continue;
       const snappedIdx = Math.max(0, Math.min((data?.length ?? 1) - 1, Math.round(xToBarIndex(cursorPos.x, pv))));
       const output = indicatorEngine.getOutput(panel.instanceId);
       const val = output?.series && snappedIdx < output.series.length ? output.series[snappedIdx] : null;

@@ -33,6 +33,19 @@ export interface ChartWidgetOptions {
   trading?: boolean;
   statusBar?: boolean;
   /**
+   * Range presets (1D, 5D, 1M … All) and "go to date" (also Alt+G) on the
+   * status bar. Default `true`; needs the status bar.
+   */
+  rangeBar?: boolean;
+  /**
+   * The indicators on the chart, under the OHLCV legend and at the top of
+   * their panes, with show / settings / remove. Default `true`; `false`
+   * leaves only the toolbar's indicator count.
+   */
+  indicatorLegend?: boolean;
+  /** Fullscreen button in the toolbar, where the browser allows it. Default `true`. */
+  fullscreen?: boolean;
+  /**
    * Price-alerts UI — a bell button in the toolbar that opens a floating panel
    * to add / list / delete price alerts, plus a toast when one triggers.
    * Default `true`.
@@ -126,21 +139,33 @@ export interface ChartWidgetOptions {
   onReady?: (chart: Chart) => void;
 }
 
+export interface ActiveIndicatorInfo {
+  id: string;
+  /** Chip label: short name plus the main parameters, e.g. "EMA 20". */
+  label: string;
+}
+
 export interface WidgetState {
   symbol: string;
   timeframe: TimeFrame;
   chartType: ChartType;
   isDark: boolean;
-  activeIndicators: Map<string, string>; // indicatorId -> instanceId
+  /** One entry per indicator instance (several EMAs can be on at once). */
+  activeIndicators: Map<string, ActiveIndicatorInfo>; // instanceId -> indicator id + chip label
   activeTool: DrawingToolType | null;
   magnetEnabled: boolean;
+  /** Keep the drawing tool after each drawing. */
+  stayInDrawing: boolean;
   connectionState: string;
   connectionMessage: string;
 }
 
 export interface ToolbarConfig {
   symbols: string[];
+  /** Every timeframe on offer, shortest first; the menu lists them all. */
   timeframes: { label: string; value: TimeFrame }[];
+  /** The ones shown as buttons. Defaults to all of `timeframes`. */
+  timeframeFavorites?: TimeFrame[];
   chartTypes: { label: string; value: ChartType }[];
   indicators: IndicatorDef[];
   popularIndicatorIds: string[];
@@ -149,9 +174,10 @@ export interface ToolbarConfig {
 export interface ToolbarCallbacks {
   onSymbolClick: () => void;
   onTimeframe: (tf: TimeFrame) => void;
+  /** Pin or unpin a timeframe; enables the timeframe menu. */
+  onToggleTimeframeFavorite?: (tf: TimeFrame) => void;
   onChartType: (type: ChartType) => void;
   onAddIndicator: (id: string) => void;
-  onRemoveIndicator: (instanceId: string) => void;
   onScreenshot: () => void;
   onSettings: () => void;
   onToggleTheme: () => void;
@@ -160,6 +186,8 @@ export interface ToolbarCallbacks {
   onToggleObjects?: () => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
+  /** Shown only when given (and the browser allows fullscreen). */
+  onToggleFullscreen?: () => void;
 }
 
 export interface SidebarConfig {
@@ -171,12 +199,14 @@ export interface SidebarConfig {
 export interface SidebarCallbacks {
   onDrawingTool: (tool: DrawingToolType) => void;
   onCancelDrawing: () => void;
-  onToggleMagnet: () => void;
+  /** Omitted when the magnet is switched off (`features.drawingMagnet: false`). */
+  onToggleMagnet?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClearDrawings: () => void;
   onToggleStyle?: () => void;
+  onToggleStayInDrawing?: () => void;
 }
 
 export interface SettingsCallbacks {
@@ -213,6 +243,8 @@ export interface ChartSettingsState {
   logScale: boolean;
   scaleMode: PriceScaleMode;
   autoScale: boolean;
+  /** Price scale upside down. */
+  invertScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;
   /** 'local' = browser timezone, otherwise a fixed UTC offset in minutes (as a string). */
@@ -230,8 +262,4 @@ export interface DrawingToolGroupDef {
   tools: { label: string; value: DrawingToolType }[];
 }
 
-export interface ActiveIndicator {
-  instanceId: string;
-  id: string;
-  label: string;
-}
+

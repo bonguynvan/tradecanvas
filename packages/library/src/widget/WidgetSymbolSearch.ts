@@ -1,3 +1,4 @@
+import { escapeHtml } from './escapeHtml.js';
 /**
  * Lightweight fuzzy symbol picker. Reuses the command-palette CSS for visual
  * consistency. Scoring is a cheap subsequence match — good enough for symbol
@@ -27,7 +28,11 @@ export class WidgetSymbolSearch {
   /** One-shot pick override — when set, this open() routes picks here instead. */
   private pickOverride: ((symbol: string) => void) | null = null;
 
-  constructor(callbacks: SymbolSearchCallbacks) {
+  /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
+  constructor(
+    callbacks: SymbolSearchCallbacks,
+    private readonly host: () => HTMLElement = () => document.body,
+  ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
   }
@@ -80,8 +85,7 @@ export class WidgetSymbolSearch {
     footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Open</span><span>Esc Close</span>';
     this.modal.appendChild(footer);
 
-    document.body.appendChild(this.backdrop);
-    document.body.appendChild(this.modal);
+    this.host().append(this.backdrop, this.modal);
 
     this.renderList();
     this.input.focus();
@@ -250,11 +254,6 @@ function highlight(symbol: string, query: string): string {
   return out;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  } as Record<string, string>)[ch]);
-}
 
 function svgSearch(): string {
   return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';

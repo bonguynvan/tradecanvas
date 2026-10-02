@@ -91,8 +91,11 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `settings` | `boolean` | `true` | Show settings button |
 | `trading` | `boolean` | `true` | Enable trading overlay |
 | `statusBar` | `boolean` | `true` | Show bottom status bar |
+| `rangeBar` | `boolean` | `true` | Range presets (1D … All) and go to date (Alt+G) on the status bar |
+| `indicatorLegend` | `boolean` | `true` | Indicators listed on the chart (under the OHLCV legend and atop their panes) with show / settings / remove |
+| `fullscreen` | `boolean` | `true` | Fullscreen button in the toolbar |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Searchable symbol catalog |
-| `timeframes` | `TimeFrame[]` | 1m to 1d | Available timeframes |
+| `timeframes` | `TimeFrame[]` | 1m to 1M | Timeframes on offer; pin favourites from the ▾ menu |
 | `chartTypes` | `ChartType[]` | 11 types | Available chart types |
 | `watchlist` | `boolean` | `false` | Right-side watchlist sidebar |
 | `dragDropImport` | `boolean` | `true` | Drop CSV / JSON files onto the chart to load data |
@@ -102,6 +105,17 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `onReady` | `(chart) => void` | — | Fired when chart is ready |
 | `locale` | `string` | `'en'` | UI chrome language — built-in `'en'` / `'vi'`, see **Widget i18n** below |
 | `messages` | `Partial<Record<MessageKey, string>>` | — | Override or add individual UI strings on top of `locale` |
+
+### Icons
+
+The widget's icon set is exported for your own UI: `createIcon(name)`,
+`createToolIcon(drawingTool)`, `createChartTypeIcon(chartType)` return inline
+SVG strings drawn in `currentColor` (24 px grid, 1.75 px strokes).
+
+```ts
+import { createToolIcon } from '@tradecanvas/chart/widget'
+button.innerHTML = createToolIcon('fibRetracement', 16)
+```
 
 ### Widget i18n
 
@@ -461,7 +475,13 @@ chart.loadState(localStorage.getItem('my-chart')!)
 // Download / upload files
 chart.downloadState('my-chart.json')
 await chart.loadStateFromFile()
+
+// Or keep a layout saved as it changes (debounced)
+chart.setAutoSave('my-chart', 1500)
 ```
+
+A saved layout holds the chart type, theme, drawings, indicators (inputs, pane,
+colours, visibility) and alerts, including alerts on indicator lines.
 
 ### Themes
 
@@ -483,7 +503,11 @@ chart.setTheme({
 ### Events
 
 ```typescript
-chart.on('crosshairMove', (e) => { /* { point, bar, barIndex, indicatorValues } */ })
+chart.on('crosshairMove', (e) => { /* { point, bar, barIndex, indicatorValues } — also over indicator panes */ })
+chart.on('crosshairLeave', () => { /* the pointer left the plot */ })
+chart.on('drawingToolChange', (e) => { /* { tool } — null once a drawing is finished or cancelled */ })
+chart.on('indicatorUpdate', (e) => { /* { from } — indicator values recomputed from this bar on */ })
+chart.on('paneResize', (e) => { /* { instanceId, size } — an indicator pane was resized */ })
 chart.on('barClick', (e) => { /* { bar, barIndex, point } */ })
 chart.on('visibleRangeChange', (e) => { /* { from, to } — bar indices, not timestamps */ })
 chart.on('priceRangeChange', (e) => { /* { min, max } — visible price bounds */ })
@@ -683,7 +707,13 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `setVolumeProfileVisible(v)` | Toggle the horizontal volume-profile overlay |
 | `setVolumeProfileConfig({ buckets, widthRatio, opacity, highlightPoC })` | Tune the volume profile |
 | `setAutoScale(v)` / `setLogScale(v)` | Lock or change price-scale mode |
+| `setInvertScale(v)` | Turn the price scale upside down |
 | `fitContent()` / `scrollToEnd()` | Fit all data / jump to live edge |
+| `setVisibleRangePreset(p)` | Show `1D`, `5D`, `1M`, `3M`, `6M`, `YTD`, `1Y`, `5Y` or `All` |
+| `goToTime(time)` | Centre the bar at a time |
+| `setCrosshairTime(time)` | Mirror another chart's crosshair (vertical line only) |
+| `copyDrawings()` / `pasteDrawings()` | Copy the selection, paste into this or another chart |
+| `setStayInDrawingMode(v)` | Keep the drawing tool after each drawing |
 | `saveState(key?)` | Serialize chart state |
 | `loadState(json)` | Restore chart state |
 | `screenshot()` | Download chart as image |

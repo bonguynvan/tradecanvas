@@ -1,15 +1,6 @@
 import { DARK_THEME } from '@tradecanvas/commons';
-import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType } from '@tradecanvas/commons';
 import type { IndicatorDef, DrawingToolGroupDef, ChartSettingsState } from './types.js';
-
-export const TIMEFRAMES: { label: string; value: TimeFrame }[] = [
-  { label: '1m', value: '1m' },
-  { label: '5m', value: '5m' },
-  { label: '15m', value: '15m' },
-  { label: '1H', value: '1h' },
-  { label: '4H', value: '4h' },
-  { label: '1D', value: '1d' },
-];
 
 export const CHART_TYPES: { label: string; value: ChartType }[] = [
   { label: 'Candlestick', value: 'candlestick' },
@@ -229,6 +220,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   logScale: false,
   scaleMode: 'regular',
   autoScale: true,
+  invertScale: false,
   crosshairMode: 'magnet',
   numberLocale: 'en-US',
   timezone: 'local',

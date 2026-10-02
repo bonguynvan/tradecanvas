@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 export class VolumeCandleRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -10,8 +11,6 @@ export class VolumeCandleRenderer implements ChartRendererInterface {
 
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
     const maxBarWidth = viewport.barWidth;
 
     let maxVolume = 0;
@@ -26,7 +25,7 @@ export class VolumeCandleRenderer implements ChartRendererInterface {
     const downBodyPath = new Path2D();
 
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     for (let i = from; i <= to && i < data.length; i++) {
       const bar = data[i];
@@ -45,7 +44,7 @@ export class VolumeCandleRenderer implements ChartRendererInterface {
       wickPath.moveTo(x, highY);
       wickPath.lineTo(x, lowY);
 
-      const bodyTop = isUp ? closeY : openY;
+      const bodyTop = Math.min(openY, closeY);
       const bodyHeight = Math.max(Math.abs(closeY - openY), 1);
       const bodyPath = isUp ? upBodyPath : downBodyPath;
       bodyPath.rect(x - halfW, bodyTop, w, bodyHeight);

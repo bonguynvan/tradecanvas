@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Renders Point & Figure chart. Data should be transformed via toPointAndFigure().
@@ -23,10 +24,9 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
     const priceScale = viewport.chartRect.height / priceRange;
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     const boxPixelHeight = Math.abs(this.boxSize * priceScale);
     const symbolSize = Math.min(halfBar * 0.8, boxPixelHeight * 0.8);

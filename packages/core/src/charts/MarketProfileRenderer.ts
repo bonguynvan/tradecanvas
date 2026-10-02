@@ -1,6 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
-import { barIndexToX } from '../viewport/ScaleMapping.js';
+import { barIndexToX, priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Market Profile (TPO) — a horizontal histogram of *time at price* over the
@@ -88,7 +88,7 @@ export class MarketProfileRenderer {
     const n = profile.buckets.length;
     const profileWidth = chartRect.width * this.widthRatio;
     const left = chartRect.x;
-    const bucketHeight = chartRect.height / n;
+    const toY = priceToYMapper(viewport);
     const inv = 1 / profile.maxCount;
 
     ctx.save();
@@ -97,16 +97,13 @@ export class MarketProfileRenderer {
     for (let b = 0; b < n; b++) {
       const bucket = profile.buckets[b];
       if (bucket.count === 0) continue;
-      const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
+      const row = priceBucketRow(b, n, viewport, toY);
       const w = bucket.count * inv * profileWidth;
       const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
       ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
       ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
-      ctx.fillRect(left, y + 0.5, w, bucketHeight - 1);
+      ctx.fillRect(left, row.top + 0.5, w, row.height - 1);
     }
-
-    const priceToYLinear = (price: number): number =>
-      chartRect.y + chartRect.height * (1 - (price - priceRange.min) / (priceRange.max - priceRange.min));
 
     // Value-area boundary lines (VAH / VAL) — faint dotted guides.
     ctx.globalAlpha = 0.6;
@@ -114,7 +111,7 @@ export class MarketProfileRenderer {
     ctx.lineWidth = 1;
     ctx.setLineDash([1, 3]);
     for (const price of [profile.valueAreaHigh, profile.valueAreaLow]) {
-      const y = priceToYLinear(price);
+      const y = toY(price);
       ctx.beginPath();
       ctx.moveTo(left, Math.round(y) + 0.5);
       ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
@@ -124,7 +121,7 @@ export class MarketProfileRenderer {
 
     // Point of control — dashed line across the busiest price row.
     if (this.highlightPoC) {
-      const y = priceToYLinear(pocPrice);
+      const y = toY(pocPrice);
       ctx.globalAlpha = 1;
       ctx.strokeStyle = theme.crosshair;
       ctx.lineWidth = 1;
@@ -159,9 +156,7 @@ export class MarketProfileRenderer {
     });
     if (sessions.length === 0) return;
 
-    const span = priceRange.max - priceRange.min;
-    const priceToYLinear = (price: number): number =>
-      chartRect.y + chartRect.height * (1 - (price - priceRange.min) / span);
+    const toY = priceToYMapper(viewport);
     const halfBar = viewport.barWidth / 2;
 
     ctx.save();
@@ -189,7 +184,7 @@ export class MarketProfileRenderer {
         for (let b = 0; b < n; b++) {
           const col = letterCols[b];
           if (col.length === 0) continue;
-          const y = chartRect.y + chartRect.height - (b + 0.5) * bucketHeight;
+          const y = priceBucketRow(b, n, viewport, toY).mid;
           const inVA = profile.buckets[b].mid >= profile.valueAreaLow && profile.buckets[b].mid <= profile.valueAreaHigh;
           ctx.globalAlpha = inVA ? 0.95 : 0.6;
           ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
@@ -202,17 +197,17 @@ export class MarketProfileRenderer {
         for (let b = 0; b < n; b++) {
           const bucket = profile.buckets[b];
           if (bucket.count === 0) continue;
-          const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
+          const row = priceBucketRow(b, n, viewport, toY);
           const w = bucket.count * inv * sessionWidth;
           const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
           ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
           ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
-          ctx.fillRect(leftX, y + 0.5, w, bucketHeight - 1);
+          ctx.fillRect(leftX, row.top + 0.5, w, row.height - 1);
         }
       }
 
       if (this.highlightPoC) {
-        const y = priceToYLinear(profile.buckets[profile.pocIndex].mid);
+        const y = toY(profile.buckets[profile.pocIndex].mid);
         ctx.globalAlpha = 1;
         ctx.strokeStyle = theme.crosshair;
         ctx.lineWidth = 1;

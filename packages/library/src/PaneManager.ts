@@ -47,6 +47,10 @@ export class PaneManager {
       ...mainViewport,
       chartRect: panel.rect,
       priceRange: { min: 0, max: 100 },
+      // Panes keep their own upright, linear scale.
+      logScale: false,
+      scaleMode: 'regular',
+      invertScale: false,
     };
   }
 

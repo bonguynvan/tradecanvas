@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InteractionManager } from '../InteractionManager.js';
 import { PanHandler } from '../PanHandler.js';
 import type { CrosshairHandler } from '../CrosshairHandler.js';
+import type { ZoomHandler } from '../ZoomHandler.js';
 import type { TradingManager } from '../../trading/TradingManager.js';
 import type { DrawingManager } from '../../drawings/DrawingManager.js';
 import type { ViewportState } from '@tradecanvas/commons';
@@ -218,5 +219,116 @@ describe('InteractionManager — Ctrl-drag selection box', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     document.dispatchEvent(at('mouseup', 150, { button: 0 }));
     expect(calls).toEqual(['begin', 'cancel']);
+  });
+});
+
+describe('InteractionManager — drawing shortcuts', () => {
+  const withDrawings = () => {
+    const keys: string[] = [];
+    // Records keys; any other drawing call (hover, press) is a no-op.
+    const fake = { onKeyDown: (key: string) => { keys.push(key); return true; } };
+    const drawings = new Proxy(fake, {
+      get: (target, prop) => (prop in target ? Reflect.get(target, prop) : () => null),
+    });
+    im.setDrawingManager(drawings as unknown as DrawingManager, () => ({}) as ViewportState);
+    return keys;
+  };
+  const press = (key: string, target: EventTarget = document) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: key.length === 1, bubbles: true }));
+
+  /** A second chart on the page. */
+  const otherChart = () => {
+    const other = document.createElement('div');
+    other.tabIndex = 0;
+    document.body.appendChild(other);
+    const otherIm = new InteractionManager(other);
+    otherIm.attach();
+    return { other, done: () => { otherIm.detach(); other.remove(); } };
+  };
+
+  it('reach the chart pressed last, even after a button beside it took focus', () => {
+    const keys = withDrawings();
+    const { done } = otherChart();
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    const toolbarButton = document.createElement('button');
+    document.body.appendChild(toolbarButton);
+    toolbarButton.focus();
+    press('v', toolbarButton);
+    press('Delete', toolbarButton);
+    toolbarButton.remove();
+    done();
+    expect(keys).toEqual(['v', 'Delete']);
+  });
+
+  it('leave this chart alone once another chart is used, or while typing', () => {
+    const keys = withDrawings();
+    const { other, done } = otherChart();
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    other.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+    press('v');
+    other.focus();
+    press('z', other);
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    press('Backspace', field);
+    field.remove();
+    done();
+    expect(keys).toEqual([]);
+  });
+
+  it('still let Escape cancel a tool picked outside the chart', () => {
+    const keys = withDrawings();
+    press('Escape');
+    expect(keys).toEqual(['Escape']);
+  });
+});
+
+describe('InteractionManager — touch on HTML layered over the chart', () => {
+  it('leaves the tap to the control, so its click still fires', () => {
+    const control = document.createElement('button');
+    el.appendChild(control);
+    const start = new Event('touchstart', { bubbles: true, cancelable: true });
+    const move = new Event('touchmove', { bubbles: true, cancelable: true });
+    control.dispatchEvent(start);
+    control.dispatchEvent(move);
+    expect(start.defaultPrevented).toBe(false);
+    expect(move.defaultPrevented).toBe(false);
+  });
+
+  /** A touch event carrying `points` as its current touches. */
+  const touches = (type: string, points: [number, number][]) => {
+    const e = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(e, 'touches', { value: points.map(([clientX, clientY]) => ({ clientX, clientY })) });
+    return e;
+  };
+
+  it('still pinches when the second finger lands on the control', () => {
+    const control = document.createElement('button');
+    el.appendChild(control);
+    const zoom = vi.fn();
+    im.setZoomHandler({ onWheel: zoom } as unknown as ZoomHandler);
+    el.dispatchEvent(touches('touchstart', [[100, 50]]));
+    const second = touches('touchstart', [[100, 50], [200, 50]]);
+    control.dispatchEvent(second);
+    control.dispatchEvent(touches('touchmove', [[80, 50], [220, 50]]));
+    expect(second.defaultPrevented).toBe(true);
+    expect(zoom).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('InteractionManager — mouse over HTML layered over the chart', () => {
+  it('leaves the crosshair where it was', () => {
+    const moves: number[] = [];
+    im.setCrosshairHandler({ getMode: () => 'normal', onPointerMove: (p: { x: number }) => moves.push(p.x), onPointerLeave() {} } as unknown as CrosshairHandler);
+    const control = document.createElement('button');
+    el.appendChild(control);
+    el.dispatchEvent(at('mousemove', 100));
+    control.dispatchEvent(at('mousemove', 20)); // also the mousemove a browser sends after a tap
+    expect(moves).toEqual([100]);
   });
 });

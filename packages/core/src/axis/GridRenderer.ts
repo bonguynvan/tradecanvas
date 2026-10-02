@@ -1,5 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { computeTickStep } from '@tradecanvas/commons';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 export class GridRenderer {
   private visible = true;
@@ -13,9 +14,8 @@ export class GridRenderer {
     ctx.strokeStyle = theme.grid;
     ctx.lineWidth = 1;
 
-    const range = priceRange.max - priceRange.min;
-    if (range <= 0) return;
-    const invRange = 1 / range;
+    if (priceRange.max - priceRange.min <= 0) return;
+    const toY = priceToYMapper(viewport);
 
     // Single path for all grid lines — one stroke call
     ctx.beginPath();
@@ -24,7 +24,7 @@ export class GridRenderer {
     const priceStep = computeTickStep(priceRange.min, priceRange.max, 8);
     const firstPrice = Math.ceil(priceRange.min / priceStep) * priceStep;
     for (let price = firstPrice; price <= priceRange.max; price += priceStep) {
-      const y = Math.round(chartRect.y + chartRect.height * (1 - (price - priceRange.min) * invRange)) + 0.5;
+      const y = Math.round(toY(price)) + 0.5;
       ctx.moveTo(chartRect.x, y);
       ctx.lineTo(chartRect.x + chartRect.width, y);
     }

@@ -1,12 +1,34 @@
+import type { RangePreset } from '@tradecanvas/core';
+import { createIcon } from './icons.js';
+
+export interface StatusBarRange {
+  presets: readonly RangePreset[];
+  /** Button text per preset; the preset itself when missing. */
+  presetLabels?: Partial<Record<RangePreset, string>>;
+  groupLabel: string;
+  goToLabel: string;
+  onPreset: (preset: RangePreset) => void;
+  onGoTo: () => void;
+}
+
+/**
+ * Bottom bar: range presets and "go to date" on the left (when `range` is
+ * given), connection state and symbol on the right.
+ */
 export class WidgetStatusBar {
   private el: HTMLDivElement;
   private dotEl: HTMLSpanElement;
   private messageEl: HTMLSpanElement;
   private infoEl: HTMLSpanElement;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, range?: StatusBarRange) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-statusbar';
+
+    if (range) this.el.appendChild(this.buildRange(range));
+
+    const right = document.createElement('div');
+    right.className = 'tcw-status-right';
 
     const indicator = document.createElement('div');
     indicator.className = 'tcw-status-indicator';
@@ -18,11 +40,13 @@ export class WidgetStatusBar {
     this.messageEl = document.createElement('span');
     indicator.appendChild(this.messageEl);
 
-    this.el.appendChild(indicator);
+    right.appendChild(indicator);
 
     this.infoEl = document.createElement('span');
-    this.el.appendChild(this.infoEl);
+    this.infoEl.className = 'tcw-status-info';
+    right.appendChild(this.infoEl);
 
+    this.el.appendChild(right);
     host.appendChild(this.el);
   }
 
@@ -40,5 +64,33 @@ export class WidgetStatusBar {
 
   destroy(): void {
     this.el.remove();
+  }
+
+  private buildRange(range: StatusBarRange): HTMLDivElement {
+    const group = document.createElement('div');
+    group.className = 'tcw-range-bar';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', range.groupLabel);
+
+    for (const preset of range.presets) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tcw-range-btn';
+      btn.dataset.range = preset;
+      btn.textContent = range.presetLabels?.[preset] ?? preset;
+      btn.addEventListener('click', () => range.onPreset(preset));
+      group.appendChild(btn);
+    }
+
+    const goTo = document.createElement('button');
+    goTo.type = 'button';
+    goTo.className = 'tcw-range-btn tcw-range-goto';
+    goTo.dataset.role = 'goto';
+    goTo.title = `${range.goToLabel} (Alt+G)`;
+    goTo.setAttribute('aria-label', range.goToLabel);
+    goTo.innerHTML = createIcon('calendar', 13);
+    goTo.addEventListener('click', range.onGoTo);
+    group.appendChild(goTo);
+    return group;
   }
 }

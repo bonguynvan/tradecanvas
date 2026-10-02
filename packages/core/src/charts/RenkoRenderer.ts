@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Renders Renko bricks. Data should already be transformed via toRenko().
@@ -17,10 +18,8 @@ export class RenkoRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     // Batch fills and strokes by color using Path2D
     const upFillPath = new Path2D();
@@ -33,9 +32,10 @@ export class RenkoRenderer implements ChartRendererInterface {
       const x = toX(i);
       const isUp = bar.close >= bar.open;
 
-      const topY = toY(Math.max(bar.open, bar.close));
-      const bottomY = toY(Math.min(bar.open, bar.close));
-      const height = Math.max(bottomY - topY, 1);
+      const highY = toY(Math.max(bar.open, bar.close));
+      const lowY = toY(Math.min(bar.open, bar.close));
+      const topY = Math.min(highY, lowY);
+      const height = Math.max(Math.abs(lowY - highY), 1);
 
       const rectX = x - halfBar;
       if (isUp) {

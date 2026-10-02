@@ -12,6 +12,54 @@
   display: none !important;
 }
 
+/* Control tooltips (WidgetTooltip): quick to appear, slide in from the control. */
+.tcw-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  max-width: 240px;
+  padding: 5px 8px;
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-tooltip-bg);
+  color: var(--tcw-tooltip-fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  width: max-content;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(var(--tcw-tip-dx, 0), var(--tcw-tip-dy, 0));
+  transition:
+    opacity 110ms var(--tcw-ease-out),
+    transform 110ms var(--tcw-ease-out),
+    visibility 0s linear 110ms;
+}
+
+.tcw-tooltip--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 110ms var(--tcw-ease-out),
+    transform 110ms var(--tcw-ease-out),
+    visibility 0s;
+}
+
+/* The modal portal: carries the tokens and fonts, but no box of its own. */
+.tcw-root.tcw-portal {
+  display: contents;
+}
+
+/* Fullscreen: the root fills the screen; the chart resizes with it. */
+.tcw-root:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+
 .tcw-root {
   display: flex;
   flex-direction: column;
@@ -35,6 +83,8 @@
   --tcw-bg-overlay: rgba(20, 25, 34, 0.5);
   --tcw-border: #1f2630;
   --tcw-border-strong: #2a323e;
+  --tcw-tooltip-bg: #262e3a;
+  --tcw-tooltip-fg: #eef0f4;
   --tcw-text: #e7e9ee;
   --tcw-text-dim: #aab1bd;
   --tcw-text-muted: #758091;
@@ -91,6 +141,8 @@
   --tcw-bg-overlay: rgba(255, 255, 255, 0.75);
   --tcw-border: #e3e6eb;
   --tcw-border-strong: #d2d6dd;
+  --tcw-tooltip-bg: #1f2630;
+  --tcw-tooltip-fg: #f4f5f8;
   --tcw-text: #0c1016;
   --tcw-text-dim: #3f4754;
   --tcw-text-muted: #626a77;
@@ -256,52 +308,6 @@
   font-family: var(--tcw-font-mono);
 }
 
-.tcw-indicator-chips {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 4px;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-
-.tcw-indicator-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 6px 3px 9px;
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--tcw-accent-soft);
-  color: var(--tcw-accent);
-  border-radius: 9999px;
-  white-space: nowrap;
-  line-height: 1.4;
-  letter-spacing: -0.005em;
-  border: 1px solid transparent;
-  transition: border-color var(--tcw-dur-fast) var(--tcw-ease);
-}
-
-.tcw-indicator-chip:hover {
-  border-color: var(--tcw-accent-line);
-}
-
-.tcw-chip-remove {
-  cursor: pointer;
-  opacity: 0.55;
-  padding: 0 2px;
-  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
-  border: none;
-  background: transparent;
-  color: inherit;
-  display: inline-flex;
-  align-items: center;
-}
-
-.tcw-chip-remove:hover {
-  opacity: 1;
-}
-
 /* === Dropdown === */
 
 .tcw-dropdown-trigger {
@@ -372,10 +378,78 @@
   color: var(--tcw-text);
 }
 
+/* A menu row led by an icon (chart types): icon then label, not spread apart. */
+.tcw-dropdown-item--icon {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.tcw-dropdown-item svg,
+.tcw-flyout-item svg {
+  flex-shrink: 0;
+}
+
+/* The drawing-group button's icon holder: a plain box for the swapped SVG. */
+.tcw-sidebar-icon {
+  display: inline-flex;
+}
+
 .tcw-dropdown-item.tcw-active {
   color: var(--tcw-accent);
   background: var(--tcw-accent-soft);
   font-weight: 600;
+}
+
+/* Timeframe menu: pick on the left, pin (star) on the right. */
+.tcw-tf-more {
+  padding: 6px 5px;
+}
+
+.tcw-tf-more svg {
+  display: block;
+}
+
+.tcw-tf-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tcw-tf-row .tcw-dropdown-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.tcw-tf-star {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-tf-star:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-tf-star.tcw-active {
+  color: var(--tcw-accent);
+}
+
+.tcw-tf-star.tcw-active svg {
+  fill: currentColor;
+}
+
+.tcw-tf-star:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
 }
 
 .tcw-dropdown-label {
@@ -479,6 +553,7 @@
   color: var(--tcw-red);
   opacity: 0.28;
   animation: tcw-candle-light 1.6s var(--tcw-ease) infinite;
+  animation-delay: var(--tcw-delay, 0ms);
 }
 
 .tcw-loading-candle--up { color: var(--tcw-green); }
@@ -564,23 +639,180 @@
   font-size: 13px;
 }
 
+/* Reduced motion: nothing slides or lifts, but the candles still glow in
+   turn and the track breathes, so the wait never looks frozen. */
 @media (prefers-reduced-motion: reduce) {
-  .tcw-loading-candle,
+  .tcw-loading-candle {
+    animation: tcw-candle-glow 2.4s ease-in-out infinite;
+    animation-delay: var(--tcw-delay, 0ms);
+  }
   .tcw-loading-track > span {
-    animation: none;
+    width: 100%;
+    background: var(--tcw-accent);
+    animation: tcw-loading-breathe 2.4s ease-in-out infinite;
   }
-  .tcw-loading-candle { opacity: 0.6; }
-  .tcw-loading-track > span { transform: translateX(75%); }
-  /* Static candles don't say "loading" on their own: show the text. */
-  .tcw-loading-label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    font-size: 12px;
-    color: var(--tcw-text-muted);
+}
+
+@keyframes tcw-candle-glow {
+  0%, 60%, 100% { opacity: 0.28; }
+  25% { opacity: 0.9; }
+}
+
+@keyframes tcw-loading-breathe {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.7; }
+}
+
+/* === On-chart indicator legend (WidgetIndicatorLegend) === */
+
+.tcw-ind-legend {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  max-width: calc(100% - 140px);
+  pointer-events: none;
+}
+
+.tcw-ind-legend--collapsed > .tcw-ind-legend-row {
+  display: none;
+}
+
+.tcw-ind-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 0 4px;
+  border-radius: var(--tcw-radius-sm);
+  font-size: 11.5px;
+  line-height: 19px;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+  color: var(--tcw-text-dim);
+  pointer-events: auto;
+  cursor: default;
+  /* A narrow pane: the values shrink first, then the row is clipped. */
+  overflow: hidden;
+}
+
+/* A pane's indicator: at the top of its pane, where the canvas title was. */
+.tcw-ind-legend-row--pane {
+  position: absolute;
+  z-index: 3;
+}
+
+.tcw-ind-legend-row:hover,
+.tcw-ind-legend-row:focus-within {
+  background: color-mix(in srgb, var(--tcw-bg-elevated) 90%, transparent);
+  box-shadow: 0 0 0 1px var(--tcw-border);
+}
+
+.tcw-ind-legend-name {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--tcw-text);
+  cursor: pointer;
+}
+
+.tcw-ind-legend-name:hover {
+  color: var(--tcw-accent);
+}
+
+.tcw-ind-legend-values {
+  display: inline-flex;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tcw-ind-legend-row--hidden .tcw-ind-legend-name,
+.tcw-ind-legend-row--hidden .tcw-ind-legend-values {
+  opacity: 0.45;
+}
+
+/* Show / settings / remove: on hover or keyboard focus (always on touch). */
+.tcw-ind-legend-actions {
+  display: none;
+  gap: 1px;
+  margin-left: -2px;
+}
+
+.tcw-ind-legend-row:hover .tcw-ind-legend-actions,
+.tcw-ind-legend-row:focus-within .tcw-ind-legend-actions {
+  display: inline-flex;
+}
+
+@media (hover: none) {
+  .tcw-ind-legend-actions {
+    display: inline-flex;
   }
+
+  /* Finger-sized targets. */
+  .tcw-ind-legend-act,
+  .tcw-ind-legend-toggle {
+    min-width: 28px;
+    min-height: 24px;
+  }
+}
+
+.tcw-ind-legend-act {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+
+.tcw-ind-legend-act:hover {
+  color: var(--tcw-text);
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-ind-legend-act[data-act='remove']:hover {
+  color: var(--tcw-red);
+}
+
+.tcw-ind-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+  padding: 1px 5px;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.tcw-ind-legend-toggle[hidden] {
+  display: none;
+}
+
+.tcw-ind-legend-toggle:hover {
+  color: var(--tcw-text);
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-ind-legend-name:focus-visible,
+.tcw-ind-legend-act:focus-visible,
+.tcw-ind-legend-toggle:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
 }
 
 /* === Sidebar === */
@@ -681,6 +913,16 @@
   animation: tcw-slide-right var(--tcw-dur-normal) var(--tcw-ease-out);
 }
 
+/* Spans the gap to the toolbar button: crossing it stays inside the menu. */
+.tcw-flyout::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  right: 100%;
+  width: 8px;
+}
+
 @keyframes tcw-slide-right {
   from { opacity: 0; transform: translateX(-4px); }
   to { opacity: 1; transform: translateX(0); }
@@ -695,13 +937,23 @@
   font-weight: 600;
 }
 
+.tcw-flyout-hint {
+  padding: 6px 10px 2px;
+  border-top: 1px solid var(--tcw-border);
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--tcw-text-muted);
+}
+
 .tcw-flyout-item {
   padding: 7px 10px;
   font-size: 12.5px;
   color: var(--tcw-text-dim);
   cursor: pointer;
   width: 100%;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border: none;
   background: transparent;
   text-align: left;
@@ -1066,6 +1318,9 @@
 /* === Status Bar === */
 
 .tcw-statusbar {
+  /* Above sidebar buttons that overflow a short chart; menus (z 30+) stay on top. */
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1076,6 +1331,151 @@
   color: var(--tcw-text-muted);
   flex-shrink: 0;
   font-feature-settings: 'tnum';
+}
+
+.tcw-status-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* Narrow screens: the toolbar already names the symbol and timeframe, so the
+   range bar gets the room. */
+@media (max-width: 640px) {
+  .tcw-status-info {
+    display: none;
+  }
+
+  .tcw-range-btn {
+    padding: 4px 5px;
+  }
+}
+
+/* Range presets + go to date, bottom left */
+.tcw-range-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin: -4px 12px -4px -8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tcw-range-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tcw-range-btn {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--tcw-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-range-btn:hover {
+  color: var(--tcw-text);
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-range-btn:active {
+  color: var(--tcw-accent);
+}
+
+.tcw-range-btn:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
+}
+
+.tcw-range-goto {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 6px;
+  padding: 4px 6px;
+}
+
+.tcw-range-goto svg {
+  display: block;
+}
+
+/* Go-to-date popover, anchored above the range bar */
+.tcw-goto {
+  position: absolute;
+  left: 10px;
+  bottom: 40px;
+  z-index: 40;
+  display: grid;
+  gap: 10px;
+  width: 232px;
+  padding: 14px;
+  background: var(--tcw-bg-elevated);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  color: var(--tcw-text);
+  font-size: 12px;
+}
+
+.tcw-goto-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.tcw-goto-field {
+  display: grid;
+  gap: 4px;
+  color: var(--tcw-text-muted);
+  font-size: 11px;
+}
+
+.tcw-goto-input {
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--tcw-text);
+  background: var(--tcw-bg);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  color-scheme: dark;
+}
+
+.tcw-root[data-tcw-theme='light'] .tcw-goto-input {
+  color-scheme: light;
+}
+
+.tcw-goto-input:focus {
+  outline: none;
+  border-color: var(--tcw-accent);
+  box-shadow: 0 0 0 2px var(--tcw-accent-soft);
+}
+
+.tcw-goto-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tcw-goto-submit {
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+  font-weight: 600;
+}
+
+.tcw-goto-submit:hover {
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+  filter: brightness(1.08);
 }
 
 .tcw-status-indicator {
@@ -1689,9 +2089,6 @@
     height: 44px;            /* Apple HIG minimum touch target */
   }
   .tcw-toolbar-sep {
-    display: none;
-  }
-  .tcw-indicator-chips {
     display: none;
   }
   .tcw-btn,
@@ -2610,5 +3007,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Except the loader's slow glow (opacity only): without it a long wait
+     looks frozen. */
+  .tcw-root .tcw-loading-candle,
+  .tcw-root .tcw-loading-track > span {
+    animation-duration: 2.4s !important;
+    animation-iteration-count: infinite !important;
+    animation-delay: var(--tcw-delay, 0ms) !important;
   }
 }

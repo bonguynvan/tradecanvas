@@ -1,5 +1,5 @@
-import type { ChartType, DrawingState, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
-import type { PriceAlert } from './AlertManager.js';
+import type { ChartType, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import type { AlertCondition, PriceAlert } from './AlertManager.js';
 
 /**
  * Serializable chart state for save/load functionality.
@@ -25,13 +25,8 @@ export interface ChartSnapshot {
   theme?: string | Theme;
   locale?: string;
 
-  // Indicators
-  indicators: {
-    id: string;
-    instanceId: string;
-    params: Record<string, unknown>;
-    position?: string;
-  }[];
+  // Indicators (captured from version 2 on; version-1 saves never had them)
+  indicators: SnapshotIndicator[];
 
   // Drawings (fully serializable)
   drawings: DrawingState[];
@@ -44,7 +39,23 @@ export interface ChartSnapshot {
   alerts: PriceAlert[];
 }
 
-const CURRENT_VERSION = 1;
+export interface SnapshotIndicator {
+  id: string;
+  /** The instance id when saved: alert channels (`<instanceId>:<key>`) refer to it. */
+  instanceId: string;
+  params: Record<string, unknown>;
+  /** Pane position for panel indicators. */
+  position?: string;
+  style?: IndicatorStyleConfig;
+  visible?: boolean;
+}
+
+/**
+ * 2: indicators (params, pane, style, visibility) and full alerts (channel,
+ * repeating, label) are captured. Version-1 saves carry no indicators.
+ */
+export const SNAPSHOT_VERSION = 2;
+const CURRENT_VERSION = SNAPSHOT_VERSION;
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -100,6 +111,35 @@ function validateOrder(raw: unknown): TradingOrder | null {
   return raw as unknown as TradingOrder;
 }
 
+function validateIndicatorStyle(raw: unknown): IndicatorStyleConfig | undefined {
+  if (!isObject(raw)) return undefined;
+  const style: IndicatorStyleConfig = {};
+  // Empty lists would blank the indicator's own defaults, so they are dropped.
+  const colors = asArray(raw.colors).filter((c): c is string => typeof c === 'string');
+  if (colors.length > 0) style.colors = colors;
+  const lineWidths = asArray(raw.lineWidths).filter((w): w is number => typeof w === 'number' && Number.isFinite(w) && w > 0);
+  if (lineWidths.length > 0) style.lineWidths = lineWidths;
+  if (typeof raw.opacity === 'number' && Number.isFinite(raw.opacity)) style.opacity = Math.min(1, Math.max(0, raw.opacity));
+  return Object.keys(style).length > 0 ? style : undefined;
+}
+
+const ALERT_CONDITIONS: readonly AlertCondition[] = ['crossingUp', 'crossingDown', 'crossing', 'greaterThan', 'lessThan'];
+
+function validateAlert(raw: unknown): PriceAlert | null {
+  if (!isObject(raw) || typeof raw.id !== 'string') return null;
+  if (typeof raw.price !== 'number' || !Number.isFinite(raw.price)) return null;
+  return {
+    id: raw.id,
+    price: raw.price,
+    condition: ALERT_CONDITIONS.find((c) => c === raw.condition) ?? 'crossing',
+    message: typeof raw.message === 'string' ? raw.message : undefined,
+    triggered: raw.triggered === true,
+    repeating: raw.repeating === true,
+    channel: asString(raw.channel, 'price'),
+    label: typeof raw.label === 'string' ? raw.label : undefined,
+  };
+}
+
 function validatePosition(raw: unknown): TradingPosition | null {
   if (!isObject(raw)) return null;
   if (typeof raw.id !== 'string' || typeof raw.side !== 'string') return null;
@@ -112,8 +152,8 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
     return emptySnapshot();
   }
 
-  if (typeof raw.version === 'number' && raw.version !== CURRENT_VERSION) {
-    console.warn(`Chart state version mismatch: ${raw.version} vs ${CURRENT_VERSION}`);
+  if (typeof raw.version === 'number' && raw.version > CURRENT_VERSION) {
+    console.warn(`Chart state from a newer version (${raw.version}); loading what this version understands.`);
   }
 
   const viewport = isObject(raw.viewport) ? raw.viewport : {};
@@ -128,6 +168,8 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       instanceId: ind.instanceId,
       params: ind.params,
       position: typeof ind.position === 'string' ? ind.position : undefined,
+      style: validateIndicatorStyle(ind.style),
+      visible: typeof ind.visible === 'boolean' ? ind.visible : undefined,
     });
   }
 
@@ -151,11 +193,14 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
 
   const alerts: PriceAlert[] = [];
   for (const a of asArray(raw.alerts)) {
-    if (isObject(a) && typeof a.id === 'string') alerts.push(a as unknown as PriceAlert);
+    const v = validateAlert(a);
+    if (v) alerts.push(v);
   }
 
   return {
-    version: typeof raw.version === 'number' ? raw.version : CURRENT_VERSION,
+    // Without an indicators list there is nothing to restore them from: read
+    // it as version 1, which leaves the chart's indicators alone.
+    version: typeof raw.version === 'number' && Array.isArray(raw.indicators) ? raw.version : 1,
     timestamp: asNumber(raw.timestamp, Date.now()),
     symbol: typeof raw.symbol === 'string' ? raw.symbol : undefined,
     timeframe: typeof raw.timeframe === 'string' ? raw.timeframe : undefined,
@@ -175,9 +220,10 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
   };
 }
 
+/** What unreadable input becomes. Version 1: it holds no indicators to restore. */
 function emptySnapshot(): ChartSnapshot {
   return {
-    version: CURRENT_VERSION,
+    version: 1,
     timestamp: Date.now(),
     chartType: 'candlestick',
     viewport: { barWidth: 8, barSpacing: 2, offset: 0 },
@@ -199,10 +245,11 @@ export class ChartStateManager {
     getPositions?: () => TradingPosition[];
     getAlerts?: () => PriceAlert[];
     getTheme: () => Theme;
-    getIndicators?: () => { id: string; instanceId: string; params: Record<string, unknown> }[];
+    getIndicators?: () => SnapshotIndicator[];
   }, meta?: { symbol?: string; timeframe?: string; chartType?: ChartType }): ChartSnapshot {
     return {
-      version: CURRENT_VERSION,
+      // Version 2 promises the indicator list; without `getIndicators` it is a version-1 save.
+      version: chart.getIndicators ? CURRENT_VERSION : 1,
       timestamp: Date.now(),
       chartType: meta?.chartType ?? 'candlestick',
       symbol: meta?.symbol,

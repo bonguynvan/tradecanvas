@@ -147,6 +147,8 @@ export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBa
 
 // Re-export data export
 export { DataExporter } from '@tradecanvas/core';
+export { RANGE_PRESETS, rangePresetStart } from '@tradecanvas/core';
+export type { RangePreset } from '@tradecanvas/core';
 
 // Re-export features
 export { AlertManager, ReplayManager, ChartStateManager, UndoRedoManager, SignalMarkerManager, TradeZoneManager } from '@tradecanvas/core';

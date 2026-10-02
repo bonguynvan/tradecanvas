@@ -15,7 +15,17 @@ export class WidgetSettings {
   private bodyEl: HTMLDivElement | null = null;
   private tabButtons: HTMLButtonElement[] = [];
 
-  constructor(callbacks: SettingsCallbacks, t: Translator) {
+  /**
+   * `barCountdown` / `logScale` false leave out the controls for features the
+   * chart has switched off.
+   */
+  constructor(
+    callbacks: SettingsCallbacks,
+    t: Translator,
+    private readonly available: { barCountdown?: boolean; logScale?: boolean } = {},
+    /** Where the panel mounts (the widget's portal: themed, and inside it when fullscreen). */
+    private readonly host: () => HTMLElement = () => document.body,
+  ) {
     this.callbacks = callbacks;
     this.t = t;
   }
@@ -43,7 +53,7 @@ export class WidgetSettings {
       this.callbacks.onClose();
       this.close();
     });
-    document.body.appendChild(this.backdrop);
+    this.host().appendChild(this.backdrop);
 
     // Modal
     this.modal = document.createElement('div');
@@ -109,7 +119,7 @@ export class WidgetSettings {
     footer.appendChild(doneBtn);
     this.modal.appendChild(footer);
 
-    document.body.appendChild(this.modal);
+    this.host().appendChild(this.modal);
 
     // Escape key
     const onKeyDown = (e: KeyboardEvent) => {
@@ -183,7 +193,9 @@ export class WidgetSettings {
       { value: 'week', label: 'Prior Week (PWH/PWL)' },
     ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })));
     section.appendChild(this.toggleRow('OHLC Legend', s.legendVisible, (v) => this.patch({ legendVisible: v })));
-    section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
+    if (this.available.barCountdown !== false) {
+      section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
+    }
 
     // Crosshair mode
     section.appendChild(this.selectRow('Crosshair Mode', s.crosshairMode, [
@@ -221,12 +233,15 @@ export class WidgetSettings {
 
     const section = this.section();
     section.appendChild(this.toggleRow('Auto Scale', s.autoScale, (v) => this.patch({ autoScale: v })));
-    section.appendChild(this.selectRow('Price Scale', s.scaleMode, [
+    section.appendChild(this.toggleRow('Invert Scale (Alt+I)', s.invertScale, (v) => this.patch({ invertScale: v })));
+    const scales = [
       { value: 'regular', label: 'Regular' },
       { value: 'logarithmic', label: 'Logarithmic' },
       { value: 'percentage', label: 'Percentage' },
       { value: 'indexedTo100', label: 'Indexed to 100' },
-    ], (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
+    ].filter((o) => o.value !== 'logarithmic' || this.available.logScale !== false);
+    section.appendChild(this.selectRow('Price Scale', s.scaleMode, scales,
+      (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
     this.bodyEl.appendChild(section);
   }
 

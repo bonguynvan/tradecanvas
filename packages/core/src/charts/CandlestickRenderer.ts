@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 export class CandlestickRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -13,13 +14,10 @@ export class CandlestickRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const chartH = viewport.chartRect.height;
-    const priceScale = chartH / priceRange;
 
     // Inline coordinate conversions
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     // Batch: collect up/down wicks and bodies into Path2D objects — single draw call per color
     const upWickPath = new Path2D();
@@ -42,7 +40,7 @@ export class CandlestickRenderer implements ChartRendererInterface {
       wickPath.lineTo(x, lowY);
 
       // Body
-      const bodyTop = isUp ? closeY : openY;
+      const bodyTop = Math.min(openY, closeY);
       const bodyHeight = Math.max(Math.abs(closeY - openY), 1);
       const bodyPath = isUp ? upBodyPath : downBodyPath;
       bodyPath.rect(x - halfBar, bodyTop, barWidth, bodyHeight);

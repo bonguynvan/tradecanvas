@@ -1,4 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Volume Profile — horizontal histogram of traded volume bucketed by price.
@@ -81,7 +82,7 @@ export class VolumeProfileRenderer {
 
     const profileWidth = chartRect.width * this.widthRatio;
     const profileRight = chartRect.x + chartRect.width;
-    const bucketHeight = chartRect.height / this.buckets;
+    const toY = priceToYMapper(viewport);
     const inv = 1 / maxBucket;
 
     ctx.save();
@@ -93,7 +94,7 @@ export class VolumeProfileRenderer {
       const total = buckets[b];
       if (total === 0) continue;
 
-      const y = chartRect.y + chartRect.height - (b + 1) * bucketHeight;
+      const row = priceBucketRow(b, this.buckets, viewport, toY);
       const totalW = (total * inv) * profileWidth;
       const upW = (upBuckets[b] * inv) * profileWidth;
       const downW = (downBuckets[b] * inv) * profileWidth;
@@ -101,11 +102,11 @@ export class VolumeProfileRenderer {
       // Layered: green block first, red stacks on top of it horizontally.
       if (upW > 0) {
         ctx.fillStyle = theme.candleUp;
-        ctx.fillRect(profileRight - upW, y + 0.5, upW, bucketHeight - 1);
+        ctx.fillRect(profileRight - upW, row.top + 0.5, upW, row.height - 1);
       }
       if (downW > 0) {
         ctx.fillStyle = theme.candleDown;
-        ctx.fillRect(profileRight - totalW, y + 0.5, downW, bucketHeight - 1);
+        ctx.fillRect(profileRight - totalW, row.top + 0.5, downW, row.height - 1);
       }
 
       // Point of control — overlay a thin outline + brighter alpha so it
@@ -116,8 +117,8 @@ export class VolumeProfileRenderer {
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 2]);
         ctx.beginPath();
-        ctx.moveTo(chartRect.x, y + bucketHeight / 2 + 0.5);
-        ctx.lineTo(profileRight - totalW - 2, y + bucketHeight / 2 + 0.5);
+        ctx.moveTo(chartRect.x, row.mid + 0.5);
+        ctx.lineTo(profileRight - totalW - 2, row.mid + 0.5);
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.globalAlpha = this.opacity;

@@ -1,9 +1,11 @@
 import type { OHLCBar, DataSeries } from './ohlc.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
+import type { DrawingToolType } from './drawing.js';
 
 export type ChartEventType =
   | 'crosshairMove'
+  | 'crosshairLeave'
   | 'click'
   | 'barClick'
   | 'visibleRangeChange'
@@ -12,6 +14,8 @@ export type ChartEventType =
   | 'dataUpdate'
   | 'indicatorAdd'
   | 'indicatorRemove'
+  | 'paneResize'
+  | 'indicatorUpdate'
   | 'themeChange'
   | 'resize'
   | 'orderPlace'
@@ -23,6 +27,7 @@ export type ChartEventType =
   | 'bracketPlace'
   | 'drawingCreate'
   | 'drawingRemove'
+  | 'drawingToolChange'
   | 'signalMarkerAdd'
   | 'signalMarkerRemove'
   | 'tradeZoneAdd'
@@ -183,6 +188,8 @@ export interface AlertPayload {
 
 export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
+  /** The pointer left the plot; the crosshair is gone. */
+  crosshairLeave: Record<string, never>;
   click: { x: number; y: number };
   barClick: BarClickPayload;
   visibleRangeChange: VisibleRangeChangePayload;
@@ -191,6 +198,10 @@ export interface ChartEventMap {
   dataUpdate: DataSeries;
   indicatorAdd: IndicatorChangePayload;
   indicatorRemove: IndicatorChangePayload;
+  /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
+  paneResize: { instanceId: string; size: number };
+  /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */
+  indicatorUpdate: { from: number };
   themeChange: ThemeChangePayload;
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
@@ -202,6 +213,8 @@ export interface ChartEventMap {
   executionError: ExecutionErrorPayload;
   drawingCreate: DrawingCreatePayload;
   drawingRemove: DrawingRemovePayload;
+  /** The active drawing tool changed — picked, finished, or cancelled (`tool: null`). */
+  drawingToolChange: { tool: DrawingToolType | null };
   signalMarkerAdd: SignalMarkerAddPayload;
   signalMarkerRemove: SignalMarkerRemovePayload;
   tradeZoneAdd: TradeZoneAddPayload;

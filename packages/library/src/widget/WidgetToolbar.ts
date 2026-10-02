@@ -1,6 +1,7 @@
-import type { ChartType } from '@tradecanvas/commons';
-import type { ToolbarConfig, ToolbarCallbacks, WidgetState, ActiveIndicator } from './types.js';
-import { createIcon } from './icons.js';
+import type { ChartType, TimeFrame } from '@tradecanvas/commons';
+import type { ToolbarConfig, ToolbarCallbacks, WidgetState } from './types.js';
+import { createChartTypeIcon, createIcon } from './icons.js';
+import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import type { Translator } from './i18n.js';
 
@@ -11,9 +12,12 @@ export class WidgetToolbar {
   private el: HTMLDivElement;
   private chartTypeDropdown: WidgetDropdown | null = null;
   private indicatorDropdown: WidgetDropdown | null = null;
-  private tfButtons: HTMLButtonElement[] = [];
-  private chipsContainer: HTMLDivElement | null = null;
+  private tfGroup: HTMLDivElement | null = null;
+  private tfDropdown: WidgetDropdown | null = null;
+  private tfFavorites: TimeFrame[] = [];
+  private tfRendered = '';
   private themeBtn: HTMLButtonElement | null = null;
+  private fullscreenBtn: HTMLButtonElement | null = null;
 
   constructor(host: HTMLElement, config: ToolbarConfig, callbacks: ToolbarCallbacks, t: Translator) {
     this.config = config;
@@ -36,19 +40,27 @@ export class WidgetToolbar {
     el.appendChild(symbolBtn);
     el.appendChild(this.sep());
 
-    // Timeframes
-    const tfGroup = document.createElement('div');
-    tfGroup.className = 'tcw-toolbar-group';
-    for (const tf of config.timeframes) {
-      const btn = document.createElement('button');
-      btn.className = 'tcw-btn';
-      btn.textContent = tf.label;
-      btn.dataset.tf = tf.value;
-      btn.addEventListener('click', () => callbacks.onTimeframe(tf.value));
-      tfGroup.appendChild(btn);
-      this.tfButtons.push(btn);
+    // Timeframes: the favourites as buttons (plus the current one if it isn't
+    // pinned); the menu lists them all, with a star to pin or unpin.
+    this.tfFavorites = [...(config.timeframeFavorites ?? config.timeframes.map((tf) => tf.value))];
+    this.tfGroup = document.createElement('div');
+    this.tfGroup.className = 'tcw-toolbar-group';
+    el.appendChild(this.tfGroup);
+    if (callbacks.onToggleTimeframeFavorite && config.timeframes.length > 0) {
+      const tfWrap = document.createElement('div');
+      tfWrap.style.position = 'relative';
+      tfWrap.style.display = 'inline-flex';
+      const tfTrigger = document.createElement('button');
+      tfTrigger.className = 'tcw-btn tcw-tf-more';
+      tfTrigger.dataset.role = 'timeframes';
+      tfTrigger.title = this.t('toolbar.timeframes');
+      tfTrigger.setAttribute('aria-label', this.t('toolbar.timeframes'));
+      tfTrigger.innerHTML = createIcon('chevronDown', 12);
+      tfWrap.appendChild(tfTrigger);
+      el.appendChild(tfWrap);
+      this.tfDropdown = new WidgetDropdown(tfWrap, { width: '150px' });
+      this.buildTimeframeMenu();
     }
-    el.appendChild(tfGroup);
     el.appendChild(this.sep());
 
     // Chart type dropdown
@@ -81,10 +93,6 @@ export class WidgetToolbar {
     this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px' });
     this.buildIndicatorMenu();
 
-    // Indicator chips
-    this.chipsContainer = document.createElement('div');
-    this.chipsContainer.className = 'tcw-indicator-chips';
-    el.appendChild(this.chipsContainer);
 
     // Spacer
     el.appendChild(this.spacer());
@@ -135,6 +143,22 @@ export class WidgetToolbar {
     this.themeBtn = this.iconBtn('moon', this.t('toolbar.toggleTheme'), callbacks.onToggleTheme);
     this.themeBtn.dataset.role = 'theme';
     el.appendChild(this.themeBtn);
+
+    if (callbacks.onToggleFullscreen) {
+      this.fullscreenBtn = this.iconBtn('maximize', this.t('toolbar.fullscreen'), callbacks.onToggleFullscreen);
+      this.fullscreenBtn.dataset.role = 'fullscreen';
+      this.fullscreenBtn.setAttribute('aria-pressed', 'false');
+      el.appendChild(this.fullscreenBtn);
+    }
+  }
+
+  /** Swap the fullscreen button between enter and exit. */
+  setFullscreen(on: boolean): void {
+    if (!this.fullscreenBtn) return;
+    const label = this.t(on ? 'toolbar.exitFullscreen' : 'toolbar.fullscreen');
+    this.fullscreenBtn.innerHTML = createIcon(on ? 'minimize' : 'maximize', 14);
+    this.fullscreenBtn.title = label;
+    this.fullscreenBtn.setAttribute('aria-pressed', String(on));
   }
 
   private chartTypeLabel(ct: { value: ChartType; label: string }): string {
@@ -146,7 +170,7 @@ export class WidgetToolbar {
   private buildChartTypeMenu(): void {
     if (!this.chartTypeDropdown) return;
     const items = this.config.chartTypes.map(ct =>
-      `<button class="tcw-dropdown-item" data-ct="${ct.value}">${this.chartTypeLabel(ct)}</button>`
+      `<button class="tcw-dropdown-item tcw-dropdown-item--icon" data-ct="${esc(ct.value)}">${createChartTypeIcon(ct.value, 16)}<span>${esc(this.chartTypeLabel(ct))}</span></button>`
     ).join('');
     this.chartTypeDropdown.setContent(items);
 
@@ -161,6 +185,62 @@ export class WidgetToolbar {
     });
   }
 
+  /** Re-pin after the user starred or unstarred a timeframe. */
+  setTimeframeFavorites(favorites: TimeFrame[]): void {
+    this.tfFavorites = [...favorites];
+    this.tfRendered = '';
+    this.buildTimeframeMenu();
+  }
+
+  private buildTimeframeMenu(): void {
+    if (!this.tfDropdown) return;
+    const pin = esc(this.t('toolbar.timeframes.pin'));
+    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.timeframes'))}</div>`;
+    for (const tf of this.config.timeframes) {
+      const pinned = this.tfFavorites.includes(tf.value);
+      const [value, label] = [esc(tf.value), esc(tf.label)];
+      html += `<div class="tcw-tf-row">`
+        + `<button class="tcw-dropdown-item" data-tf-pick="${value}">${label}</button>`
+        + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${value}" aria-pressed="${pinned}"`
+        + ` title="${pin}" aria-label="${pin}: ${label}">${createIcon('star', 12)}</button>`
+        + `</div>`;
+    }
+    this.tfDropdown.setContent(html);
+
+    const panel = this.tfDropdown['panel'] as HTMLDivElement;
+    panel.querySelectorAll<HTMLButtonElement>('[data-tf-pick]').forEach((btn) => {
+      btn.addEventListener('click', () => this.callbacks.onTimeframe(btn.dataset.tfPick as TimeFrame));
+    });
+    panel.querySelectorAll<HTMLButtonElement>('[data-tf-star]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // pinning keeps the menu open
+        this.callbacks.onToggleTimeframeFavorite?.(btn.dataset.tfStar as TimeFrame);
+      });
+    });
+  }
+
+  private renderTimeframes(current: TimeFrame): void {
+    if (!this.tfGroup) return;
+    const shown = this.config.timeframes.filter((tf) => this.tfFavorites.includes(tf.value) || tf.value === current);
+    const key = `${shown.map((tf) => tf.value).join(',')}|${current}`;
+    if (key === this.tfRendered) return;
+    this.tfRendered = key;
+
+    this.tfGroup.replaceChildren(...shown.map((tf) => {
+      const btn = document.createElement('button');
+      btn.className = 'tcw-btn';
+      btn.textContent = tf.label;
+      btn.dataset.tf = tf.value;
+      btn.classList.toggle('tcw-active', tf.value === current);
+      btn.addEventListener('click', () => this.callbacks.onTimeframe(tf.value));
+      return btn;
+    }));
+    const panel = this.tfDropdown?.['panel'] as HTMLDivElement | undefined;
+    panel?.querySelectorAll<HTMLButtonElement>('[data-tf-pick]').forEach((btn) => {
+      btn.classList.toggle('tcw-active', btn.dataset.tfPick === current);
+    });
+  }
+
   private buildIndicatorMenu(): void {
     if (!this.indicatorDropdown) return;
     const { indicators, popularIndicatorIds } = this.config;
@@ -170,15 +250,13 @@ export class WidgetToolbar {
 
     const typeLabel = (type: string) => this.t(`indicatorType.${type}` as Parameters<Translator>[0]);
 
-    let html = `<div class="tcw-dropdown-label">${this.t('toolbar.indicators.popular')}</div>`;
-    for (const ind of popular) {
-      html += `<button class="tcw-dropdown-item" data-ind="${ind.id}"><span>${ind.name}</span><span class="tcw-tag">${typeLabel(ind.type)}</span></button>`;
-    }
+    const row = (ind: (typeof indicators)[number]) =>
+      `<button class="tcw-dropdown-item" data-ind="${esc(ind.id)}"><span>${esc(ind.name)}</span><span class="tcw-tag">${esc(typeLabel(ind.type))}</span></button>`;
+    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.popular'))}</div>`;
+    for (const ind of popular) html += row(ind);
     html += '<div class="tcw-dropdown-divider"></div>';
-    html += `<div class="tcw-dropdown-label">${this.t('toolbar.indicators.all')}</div>`;
-    for (const ind of other) {
-      html += `<button class="tcw-dropdown-item" data-ind="${ind.id}"><span>${ind.name}</span><span class="tcw-tag">${typeLabel(ind.type)}</span></button>`;
-    }
+    html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.all'))}</div>`;
+    for (const ind of other) html += row(ind);
 
     this.indicatorDropdown.setContent(html);
 
@@ -197,16 +275,14 @@ export class WidgetToolbar {
     if (symbolBtn) symbolBtn.textContent = state.symbol;
 
     // Timeframe buttons
-    for (const btn of this.tfButtons) {
-      btn.classList.toggle('tcw-active', btn.dataset.tf === state.timeframe);
-    }
+    this.renderTimeframes(state.timeframe);
 
     // Chart type trigger label
     const ctTrigger = this.el.querySelector('[data-role="charttype"]') as HTMLElement | null;
     if (ctTrigger) {
       const ct = this.config.chartTypes.find(ct => ct.value === state.chartType);
       const label = ct ? this.chartTypeLabel(ct) : state.chartType;
-      ctTrigger.innerHTML = `${createIcon('barChart', 14)} ${label} ${createIcon('chevronDown', 12)}`;
+      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} ${esc(label)} ${createIcon('chevronDown', 12)}`;
     }
 
     // Indicator trigger + badge
@@ -220,40 +296,10 @@ export class WidgetToolbar {
       indTrigger.innerHTML = inner;
     }
 
-    // Chips
-    if (this.chipsContainer) {
-      const activeList = this.getActiveIndicatorList(state);
-      this.chipsContainer.innerHTML = '';
-      for (const ind of activeList) {
-        const chip = document.createElement('div');
-        chip.className = 'tcw-indicator-chip';
-
-        const label = document.createElement('span');
-        label.textContent = ind.label;
-        chip.appendChild(label);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'tcw-chip-remove';
-        removeBtn.innerHTML = createIcon('x', 10);
-        removeBtn.addEventListener('click', () => this.callbacks.onRemoveIndicator(ind.instanceId));
-        chip.appendChild(removeBtn);
-
-        this.chipsContainer.appendChild(chip);
-      }
-    }
-
     // Theme toggle icon
     if (this.themeBtn) {
       this.themeBtn.innerHTML = state.isDark ? createIcon('moon', 14) : createIcon('sun', 14);
     }
-  }
-
-  private getActiveIndicatorList(state: WidgetState): ActiveIndicator[] {
-    const result: ActiveIndicator[] = [];
-    for (const [id, instanceId] of state.activeIndicators.entries()) {
-      result.push({ instanceId, id, label: id.toUpperCase() });
-    }
-    return result;
   }
 
   private sep(): HTMLSpanElement {
