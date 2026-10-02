@@ -74,6 +74,14 @@ export interface ChartWidgetOptions {
    */
   depthLadder?: boolean;
 
+  /**
+   * The account panel at the bottom: open positions with their profit and
+   * loss, working orders and the fills so far, with close, reverse and cancel,
+   * and an order ticket. A toolbar button opens it. Default `true` when
+   * trading is on.
+   */
+  accountPanel?: boolean;
+
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
@@ -205,6 +213,7 @@ export interface ToolbarCallbacks {
   onToggleReplay?: () => void;
   onToggleAlerts?: () => void;
   onToggleObjects?: () => void;
+  onToggleAccount?: () => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
   /** Shown only when given (and the browser allows fullscreen). */

@@ -22,6 +22,9 @@ import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateSto
 import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
+import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
+import { WidgetAccountPanel } from './WidgetAccountPanel.js';
+import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import {
   availableTimeframes,
@@ -137,6 +140,10 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
+  private chartMenu: WidgetContextMenu | null = null;
+  private accountPanel: WidgetAccountPanel | null = null;
+  private orderTicket: WidgetOrderTicket | null = null;
+  private accountFrame = 0;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
   private depthLadder: WidgetDepthLadder | null = null;
@@ -230,6 +237,8 @@ export class ChartWidget {
       indicators: true,
       trading: options.trading !== false,
       tradingContextMenu: false,
+      // The "+" by the price axis offers an alert, an order or a line at a price.
+      priceAxisAddButton: options.alerts !== false || options.trading !== false || options.drawingTools !== false,
       volume: true,
       legend: true,
       crosshair: true,
@@ -330,6 +339,7 @@ export class ChartWidget {
           onToggleReplay: () => this.toggleReplay(),
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
+          onToggleAccount: options.trading !== false && options.accountPanel !== false ? () => this.accountPanel?.toggle() : undefined,
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
           onToggleFullscreen: options.fullscreen !== false && typeof document !== 'undefined' && document.fullscreenEnabled
@@ -393,6 +403,10 @@ export class ChartWidget {
     }
 
     this.root.appendChild(body);
+    // The account panel docks under the chart, above the status bar.
+    const accountHost = document.createElement('div');
+    accountHost.className = 'tcw-account-dock';
+    this.root.appendChild(accountHost);
 
     // 5. Create chart
     this.chart = new Chart(this.chartContainer, {
@@ -614,6 +628,51 @@ export class ChartWidget {
       const { id, x, y } = e.payload as { id: string; x: number; y: number };
       this.openDrawingMenu(id, x, y);
     });
+
+    // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
+    // by the price axis: what to do at its price.
+    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
+    this.chart.on('chartContextMenu', (e) => {
+      const { area, x, y, price } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, price);
+    });
+    this.chart.on('priceAxisAdd', (e) => {
+      const { price, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
+      this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, price);
+    });
+
+    // Account panel and order ticket.
+    if (options.trading !== false && options.accountPanel !== false) {
+      this.orderTicket = new WidgetOrderTicket(this.root, {
+        onSubmit: (intent) => {
+          this.chart.placeOrderIntent(intent);
+          this.toast(fill(this.t('ticket.sent'), {
+            side: this.t(intent.side === 'buy' ? 'ticket.buy' : 'ticket.sell'),
+            quantity: intent.quantity ?? 1,
+            price: this.formatAlertPrice(intent.price),
+          }));
+        },
+        formatPrice: (p) => this.formatAlertPrice(p),
+      }, this.t);
+      this.accountPanel = new WidgetAccountPanel(accountHost, {
+        onClosePosition: (id) => this.chart.closePositionIntent(id),
+        onReversePosition: (id) => this.chart.reversePositionIntent(id),
+        onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
+        onNewOrder: () => this.openOrderTicket(),
+        formatPrice: (p) => this.formatAlertPrice(p),
+        formatTime: (ms) => {
+          const { date, time } = utcToWallTime(ms, this.displayTimezone());
+          return `${date} ${time}`;
+        },
+        onToggle: (open) => {
+          this.toolbar?.setActive('account', open);
+          this.refreshAccount();
+        },
+      }, this.t);
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate'] as const) {
+        this.chart.on(event, () => this.refreshAccountSoon());
+      }
+    }
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
@@ -947,6 +1006,10 @@ export class ChartWidget {
     this.drawingStyle?.destroy();
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
+    this.chartMenu?.destroy();
+    this.accountPanel?.destroy();
+    this.orderTicket?.destroy();
+    if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
     this.bracketBar?.destroy();
     this.alertNotifier?.destroy();
     this.depthLadder?.destroy();
@@ -1093,6 +1156,127 @@ export class ChartWidget {
       }
     }
     if (this.objectTree?.isOpen()) this.refreshObjects();
+  }
+
+  /** What the chart's menus can offer here, and how the chart is set now. */
+  private chartMenuContext(price: number | undefined): ChartMenuContext {
+    const drawings = this.chart.getDrawings();
+    const data = this.chart.getData();
+    return {
+      price,
+      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      formatPrice: (p) => this.formatAlertPrice(p),
+      canAlert: this.alertsPanel !== null,
+      canTrade: this.options.trading !== false,
+      canOrderTicket: this.orderTicket !== null,
+      canDraw: this.options.drawingTools !== false,
+      hasDrawings: drawings.length > 0,
+      drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
+      canGoToDate: this.goToDate !== null,
+      autoScale: this.chart.isAutoScale(),
+      scaleMode: this.settingsState.scaleMode,
+      inverted: this.chart.isInvertScale(),
+    };
+  }
+
+  /** Open a chart menu at (x, y) in the chart's pixels; nothing when it has no entries. */
+  private openChartMenu(entries: import('./WidgetContextMenu.js').ContextMenuEntry[], x: number, y: number, price: number | undefined): void {
+    if (!this.chartMenu || entries.length === 0) return;
+    const chartRect = this.chartContainer.getBoundingClientRect();
+    const rootRect = this.root.getBoundingClientRect();
+    this.chartMenu.open(entries, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y,
+      (action) => this.runChartMenuAction(action as ChartMenuAction, price));
+  }
+
+  private runChartMenuAction(action: ChartMenuAction, price: number | undefined): void {
+    const at = price ?? NaN;
+    switch (action) {
+      case 'alert':
+        this.chart.addAlert(at, 'crossing');
+        this.toast(fill(this.t('chartMenu.alertAdded'), { price: this.formatAlertPrice(at) }));
+        break;
+      case 'buyLimit':
+      case 'sellLimit':
+      case 'buyStop':
+      case 'sellStop':
+        this.placeOrderAt(action, at);
+        break;
+      case 'orderTicket':
+        this.openOrderTicket(price);
+        break;
+      case 'horizontalLine': {
+        const data = this.chart.getData();
+        if (data.length > 0) this.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[data.length - 1].time, price: at }] });
+        break;
+      }
+      case 'resetView':
+        this.chart.fitContent();
+        this.applySettings({ autoScale: true });
+        break;
+      case 'hideDrawings':
+        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
+        break;
+      case 'showDrawings':
+        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), true);
+        break;
+      case 'removeDrawings':
+        // One undo step; locked drawings stay.
+        this.chart.removeDrawings(this.chart.getDrawings().map((d) => d.id));
+        break;
+      case 'settings':
+        this.openSettings();
+        break;
+      case 'autoScale':
+        this.applySettings({ autoScale: !this.chart.isAutoScale() });
+        break;
+      case 'logScale':
+        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' });
+        break;
+      case 'percentScale':
+        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' });
+        break;
+      case 'invertScale':
+        this.applySettings({ invertScale: !this.chart.isInvertScale() });
+        break;
+      case 'goToDate':
+        this.toggleGoToDate();
+        break;
+    }
+    if (this.objectTree?.isOpen()) this.refreshObjects();
+  }
+
+  /** The order ticket, at a price from the chart (or the market). */
+  private openOrderTicket(price?: number): void {
+    const data = this.chart.getData();
+    this.orderTicket?.open({ price, lastPrice: data.length > 0 ? data[data.length - 1].close : null });
+  }
+
+  /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
+  private refreshAccountSoon(): void {
+    if (this.accountFrame || !this.accountPanel) return;
+    this.accountFrame = requestAnimationFrame(() => {
+      this.accountFrame = 0;
+      if (!this.destroyed) this.refreshAccount();
+    });
+  }
+
+  private refreshAccount(): void {
+    if (!this.accountPanel) return;
+    const data = this.chart.getData();
+    this.accountPanel.update({
+      positions: this.chart.getPositions(),
+      orders: this.chart.getOrders(),
+      fills: this.chart.getFills(),
+      price: data.length > 0 ? data[data.length - 1].close : null,
+    });
+  }
+
+  /** Ask for a limit or stop order at `price` (one unit), and say so. */
+  private placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
+    const side = kind.startsWith('buy') ? 'buy' : 'sell';
+    const stop = kind.endsWith('Stop');
+    this.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
+    this.toast(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
   }
 
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */

@@ -29,6 +29,8 @@ export type ChartEventType =
   | 'positionReverse'
   | 'positionModify'
   | 'executionFill'
+  | 'ordersChange'
+  | 'positionsChange'
   | 'executionError'
   | 'bracketPlace'
   | 'drawingCreate'

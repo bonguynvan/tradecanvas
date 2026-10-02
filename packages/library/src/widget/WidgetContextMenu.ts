@@ -1,7 +1,8 @@
 import { createIcon } from './icons.js';
 
 export type ContextMenuEntry =
-  | { id: string; label: string; icon?: string; danger?: boolean }
+  /** `checked` makes it a switch (ticked when on). */
+  | { id: string; label: string; icon?: string; danger?: boolean; checked?: boolean }
   | 'separator';
 
 /** Room kept between the menu and the edge it would touch. */
@@ -91,10 +92,13 @@ export class WidgetContextMenu {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = `tcw-context-item${entry.danger ? ' tcw-context-danger' : ''}`;
-    item.setAttribute('role', 'menuitem');
+    item.setAttribute('role', entry.checked === undefined ? 'menuitem' : 'menuitemcheckbox');
+    if (entry.checked !== undefined) item.setAttribute('aria-checked', String(entry.checked));
     item.tabIndex = -1;
     item.dataset.id = entry.id;
-    item.innerHTML = entry.icon ? createIcon(entry.icon, 14) : '<span class="tcw-context-icon"></span>';
+    // A switch shows a tick when on, and room for one when off.
+    const icon = entry.checked !== undefined ? (entry.checked ? 'check' : '') : entry.icon ?? '';
+    item.innerHTML = icon ? createIcon(icon, 14) : '<span class="tcw-context-icon"></span>';
     const text = document.createElement('span');
     text.textContent = entry.label;
     item.appendChild(text);
@@ -109,7 +113,7 @@ export class WidgetContextMenu {
   }
 
   private items(): HTMLButtonElement[] {
-    return [...this.el.querySelectorAll<HTMLButtonElement>('[role=menuitem]')];
+    return [...this.el.querySelectorAll<HTMLButtonElement>('[role=menuitem], [role=menuitemcheckbox]')];
   }
 
   private onKeyDown(e: KeyboardEvent): void {

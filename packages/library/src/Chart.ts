@@ -1802,6 +1802,7 @@ export class Chart {
   setOrders(orders: TradingOrder[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setOrders(orders);
+    this.eventBus.emit('ordersChange', { orders });
   }
 
   /**
@@ -1872,6 +1873,7 @@ export class Chart {
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setPositions(positions);
+    this.eventBus.emit('positionsChange', { positions });
   }
 
   /** The working orders on the chart (`setOrders`, or the execution adapter's). */

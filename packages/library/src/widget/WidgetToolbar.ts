@@ -127,6 +127,13 @@ export class WidgetToolbar {
       el.appendChild(ladderBtn);
     }
 
+    if (callbacks.onToggleAccount) {
+      const accountBtn = this.iconBtn('receipt', this.t('toolbar.account'), callbacks.onToggleAccount);
+      accountBtn.dataset.role = 'account';
+      accountBtn.setAttribute('aria-pressed', 'false');
+      el.appendChild(accountBtn);
+    }
+
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', this.t('toolbar.objects'), callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';
@@ -155,6 +162,14 @@ export class WidgetToolbar {
       this.fullscreenBtn.setAttribute('aria-pressed', 'false');
       el.appendChild(this.fullscreenBtn);
     }
+  }
+
+  /** Show a panel button (by its role: 'account', 'objects'…) as on or off. */
+  setActive(role: string, on: boolean): void {
+    const btn = this.el.querySelector<HTMLButtonElement>(`[data-role="${role}"]`);
+    if (!btn) return;
+    btn.classList.toggle('tcw-active', on);
+    btn.setAttribute('aria-pressed', String(on));
   }
 
   /** Swap the fullscreen button between enter and exit. */

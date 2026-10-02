@@ -3361,3 +3361,133 @@
 .tcw-context-item:focus-visible { box-shadow: inset 0 0 0 1px var(--tcw-accent); }
 .tcw-context-danger, .tcw-context-danger svg { color: var(--tcw-red); }
 .tcw-context-sep { height: 1px; margin: 4px 6px; background: var(--tcw-divider); }
+
+/* --- Account panel (positions, orders, history) --- */
+.tcw-account-dock {
+  flex: none;
+}
+.tcw-account {
+  display: flex;
+  flex-direction: column;
+  height: 220px;
+  border-top: 1px solid var(--tcw-border);
+  background: var(--tcw-bg-surface);
+}
+.tcw-account-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--tcw-divider);
+}
+.tcw-account-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+.tcw-account-tab {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tcw-account-tab:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
+.tcw-account-tab[aria-selected="true"] { color: var(--tcw-text); background: var(--tcw-active-bg); }
+.tcw-account-tab:focus-visible, .tcw-account-new:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--tcw-accent); }
+.tcw-account-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--tcw-accent-line);
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-accent-soft);
+  color: var(--tcw-accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tcw-account-new:hover { background: var(--tcw-accent-glow); }
+.tcw-account-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.tcw-account-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tcw-account-table th {
+  position: sticky;
+  top: 0;
+  padding: 6px 10px;
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text-muted);
+  font-weight: 500;
+  text-align: left;
+  border-bottom: 1px solid var(--tcw-divider);
+}
+.tcw-account-table td {
+  padding: 5px 10px;
+  color: var(--tcw-text);
+  border-bottom: 1px solid var(--tcw-divider);
+  white-space: nowrap;
+}
+.tcw-account-table tr:hover td { background: var(--tcw-hover-bg); }
+.tcw-account-side { font-weight: 600; }
+.tcw-account-buy, .tcw-account-up { color: var(--tcw-green); }
+.tcw-account-sell, .tcw-account-down { color: var(--tcw-red); }
+.tcw-account-actions { display: flex; gap: 2px; }
+.tcw-account-empty, .tcw-account-summary {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--tcw-text-muted);
+  font-size: 12px;
+}
+.tcw-account-summary { padding: 8px 12px; color: var(--tcw-text-dim); }
+@media (max-width: 640px) {
+  .tcw-account { height: 45vh; }
+}
+
+/* --- Order ticket --- */
+.tcw-ticket-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tcw-ticket-side-btn {
+  padding: 8px;
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tcw-ticket-buy[aria-pressed="true"] { background: var(--tcw-green-soft); border-color: var(--tcw-green); color: var(--tcw-green); }
+.tcw-ticket-sell[aria-pressed="true"] { background: var(--tcw-red-soft); border-color: var(--tcw-red); color: var(--tcw-red); }
+.tcw-ticket-side-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
+.tcw-ticket-optional { display: flex; align-items: center; gap: 8px; }
+.tcw-ticket-optional > span { flex: 1; }
+.tcw-ticket-optional .tcw-indi-input { width: 110px; }
+.tcw-ticket-problems {
+  min-height: 18px;
+  padding: 0 22px 8px;
+  font-size: 12px;
+  color: var(--tcw-text-dim);
+}
+.tcw-ticket-problems p { margin: 2px 0; }
+.tcw-ticket-problems.tcw-ticket-bad { color: var(--tcw-red); }
+.tcw-done-btn.tcw-ticket-sell { background: var(--tcw-red); color: #fff; }
+.tcw-done-btn:disabled { opacity: 0.45; cursor: not-allowed; }
