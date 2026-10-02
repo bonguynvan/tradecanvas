@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>Referencia de la API</h1>
-<p>Superficie pública de las tres clases de nivel superior: <code>Chart</code>, <code>ChartWidget</code> y <code>ChartGrid</code>.</p>
+<p>Superficie pública de las clases de nivel superior: <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code> y <code>ChartGrid</code>.</p>
 
 <h2>Chart</h2>
 <p>Renderizador sin interfaz. Tú pones la UI, te suscribes a los eventos y modificas el estado de forma imperativa.</p>
@@ -218,7 +218,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p>Envuelve <code>Chart</code> en una interfaz completa. La misma instancia está disponible en <code>widget.chart</code>.</p>
@@ -245,6 +250,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Paleta de comandos (indicadores, tipos de gráfico, dibujos…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Búsqueda de símbolos: selector difuso sobre la lista de símbolos configurada</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Guarda el diseño (pide un nombre la primera vez)</td></tr>
     <tr><td><kbd>?</kbd></td><td>Muestra la hoja de atajos de teclado</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
@@ -276,9 +282,51 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>Diseños guardados</h3>
+<h3>Diseños con nombre</h3>
 <p>
-  Guarda automáticamente en <code>localStorage</code>, por símbolo, los
+  El botón de diseño de la barra de herramientas guarda el gráfico con un nombre:
+  símbolo, temporalidad, escala de precio, tipo de gráfico, indicadores, dibujos y
+  alertas (no el tema, que sigue siendo el de quien mira). Abre, renombra y elimina
+  diseños desde su menú; el diseño abierto se guarda solo a medida que cambia, y
+  <kbd>Ctrl/⌘ S</kbd> lo guarda. Los diseños viven en el <code>localStorage</code> de
+  este navegador salvo que indiques un <code>storage</code>: cuatro llamadas, y cada
+  una puede devolver una promesa.
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } o null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // o false para ninguno
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } o null
+layouts.setAutoSave(false)
+
+// Solo el contenido, para guardarlo donde quieras
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  <code>localStorageLayouts(prefix)</code> y <code>memoryLayouts()</code> son los dos
+  almacenamientos incluidos. El contenido guardado se lee de forma defensiva: un
+  diseño que no se puede interpretar se rechaza, en lugar de aplicarse a medias. Cada
+  diseño registra su <code>kind</code> (<code>'chart'</code> o <code>'grid'</code>), así
+  que un widget y una cuadrícula pueden compartir un mismo almacenamiento y cada uno
+  lista solo los suyos. Guardar, abrir y el guardado automático se ejecutan de uno en
+  uno, así que un guardado nunca acaba en un diseño abierto después de él.
+</p>
+
+<h3>Diseños por símbolo</h3>
+<p>
+  Por separado, guarda automáticamente en <code>localStorage</code>, por símbolo, los
   indicadores, dibujos, alertas y el tipo de gráfico:
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -471,12 +519,72 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Tus propios botones y entradas de menú</h3>
+<p>
+  Añade botones a la barra de herramientas (un icono integrado o un elemento tuyo,
+  texto, un interruptor) y entradas a los menús del clic derecho del gráfico, después
+  de las del propio widget.
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // o un elemento <svg>; o text: 'News'
+  side: 'right',           // 'left' se coloca junto a los controles del gráfico
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  Varios widgets de gráfico uno junto a otro, cada uno con su propio símbolo,
+  temporalidad, indicadores y dibujos. Una barra encima de ellos elige la disposición,
+  vincula los gráficos y guarda toda la cuadrícula como un diseño con nombre. El
+  último gráfico pulsado es el activo (con contorno).
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // todos los gráficos
+  adapter: () => new BinanceAdapter(),            // uno por gráfico: un adaptador mantiene un único flujo
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // alinea los demás con el gráfico activo
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// Cada gráfico según se crea (al inicio y al crecer la cuadrícula)
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  La sincronización de la cruz muestra en todos los gráficos la hora bajo el puntero;
+  la del tiempo desplaza y amplía los demás junto con el gráfico que se está usando;
+  los dibujos se copian a los gráficos que muestran el mismo símbolo (al activarla se
+  juntan sus dibujos, sin perder ninguno). Los gráficos que sobran cuando la cuadrícula
+  se reduce se guardan aparte, se conservan en el diseño guardado y vuelven tal como
+  estaban cuando crece de nuevo; un gráfico totalmente nuevo se abre con el símbolo y
+  la temporalidad del gráfico activo cuando estos están sincronizados.
+</p>
+
 <h2>ChartGrid</h2>
-<p>Disposiciones de varios gráficos sincronizados.</p>
+<p>Disposiciones de varios gráficos sin interfaz (sin barra de herramientas) sincronizados; consulta <code>ChartWidgetGrid</code> para la interfaz completa.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// Un adaptador por gráfico: un adaptador mantiene un único flujo
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Disposiciones: <code>'1x2'</code>, <code>'2x2'</code>, <code>'2x3'</code>, <code>'3x3'</code>.</p>
+<p>Disposiciones: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>

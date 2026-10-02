@@ -14,7 +14,7 @@
 - **69 種類の描画ツール** — トレンドライン（情報ライン、トレンドアングル、十字線）、フィボナッチ（リトレースメント、エクステンション、チャネル、タイムゾーン、スピード抵抗ファンとアーク、サークル、スパイラル、ウェッジ）、水平線 / 垂直線、チャネル、ピッチフォークとピッチファン、ギャン・ファン / ボックス / スクエア、サイクル、ハーモニックパターン（XABCD、サイファー、ABCD、スリードライブ、ヘッド・アンド・ショルダーズ）、エリオット波動、ノート、吹き出しとマーク、ブラシとパス、予測と投影、ポジションサイズ計算付きのロング / ショートポジション、期間指定の価格帯別出来高。ツールごとの設定、トレンドラインのアラート、グループとレイヤー、元に戻す / やり直す、完全なシリアライズに対応しています。
 - **17 種類のチャートタイプ** — ローソク足、ライン、エリア、バー、中空ローソク足、ベースライン、平均足、Renko、Kagi、Line Break、Point & Figure、Range Bars、出来高ローソク足、**エクイボリューム**、HLC エリア、ステップライン、マーカー付きライン。
 - **プロ品質の操作性** — 最後のバーより先の何もない未来の領域まで自由にパン（描画もそこに置けます）、価格軸 / 時間軸をドラッグして拡大縮小、ダブルクリックで自動フィット、`Ctrl/⌘+drag` で複数の描画を選択（まとめて移動、スタイル変更、削除が可能）、`Shift+drag` で計測（バー数 × 価格差 × %）、`Alt+click` で比較用ツールチップを固定、状況に応じたカーソル（クロスヘア、掴む手、サイズ変更の矢印）、カーソルの下で軸に追従する価格 / 時間のピルラベル、ホバー中のバーのハイライト。
-- **トレーディングオーバーレイ** — 保有中のポジションを、エントリーライン、損益ゾーン、SL/TP マーカーとともに表示します。注文は破線で表示。SL/TP はドラッグで変更できます。トレードを扱わないプロジェクトでは `features.trading: false` で簡単に無効化できます。
+- **トレーディングオーバーレイ** — 保有中のポジションを、エントリーライン、損益ゾーン、SL/TP マーカーとともに表示します。注文は破線で表示。SL/TP はドラッグで変更でき、各ラインのボタンからキャンセル / 決済 / ドテンができ、約定はすべてそのバーにマークされます。ChartWidget には、入力しながら注文をチェックする注文チケットと、ポジション・未約定の注文・履歴を表示する口座パネルも加わります。トレードを扱わないプロジェクトでは `features.trading: false` で簡単に無効化できます。
 - **リアルタイムストリーミング** — Binance、Coinbase、Bybit、Kraken のアダプターを内蔵し、汎用の `WebSocketAdapter` / `PollingAdapter` ベースクラスを使えば、どんなフィードも約 20 行で接続できます。過去へスクロールすると古いバーを読み込み、任意の間隔（`7m`、`90m`、`2d`）をフィード本来の足から組み立て、シンボル検索もフィードから取得します。
 - **タイムゾーン** — 夏時間を含む任意の IANA タイムゾーン（`'America/New_York'`）、固定オフセット、または取引所自身のタイムゾーンを、軸、クロスヘア、日の区切り、取引時間に使えます。
 - **14 言語** — `ChartWidget` は英語、ベトナム語、簡体字中国語、繁体字中国語、日本語、韓国語、スペイン語、ポルトガル語、フランス語、ドイツ語、ロシア語、トルコ語、インドネシア語、タイ語に対応しています。
@@ -25,10 +25,11 @@
 - **価格帯別出来高** — 表示範囲の出来高を価格ごとにまとめた水平ヒストグラムを任意で表示し、POC（point of control）を強調します。
 - **ウォッチリストサイドバー** — 任意で有効にできる縦型パネルで、シンボルごとに最新価格、変化率、ミニスパークラインを表示します。行をクリックするとチャートが切り替わります。
 - **CSV / JSON のドラッグ＆ドロップ** — ファイルをチャートにドロップすると、すぐに解析して読み込みます。ヘッダーの形式、ISO / UNIX 秒 / UNIX ミリ秒のタイムスタンプ、配列形式とオブジェクト形式の JSON を自動判別します。
-- **レイアウトの保存** — 任意で有効にでき、チャートタイプ、インジケーター構成、描画、アラートをシンボルごとに localStorage へ保存します。シンボルを切り替えて戻っても、設定はそのまま残ります。
-- **マルチチャートグリッド** — `ChartGrid` で、クロスヘアと時間軸を共有して同期する 2×2 / 2×3 レイアウトを作れます。
+- **名前付きレイアウト** — チャート（シンボル、時間足、スケール、インジケーター、描画、アラート）に名前を付けて保存し、開く、名前の変更、削除、開いているレイアウトの自動保存、`Ctrl/⌘+S` に対応します。保存先はブラウザのほか、4 つのメソッドだけの `LayoutStorage` を通じて自分のサーバーにもできます。シンボルごとの自動保存（`persistLayouts`）も引き続き使えます。
+- **マルチチャート** — `ChartWidgetGrid` は最大 6 つのフル機能ウィジェットを並べ、シンボル、時間足、クロスヘア、時間、描画のうち選んだものを連動させ、まとめて 1 つのレイアウトとして保存します。ウィジェットなしのチャートには `ChartGrid` で同じことができます。
 - **シグナルマーカーとトレードゾーン** — ボットやアルゴリズムの出力（方向を示す矢印、エントリー→エグジットの長方形）を、チャートの正式なレイヤーとして描画します。
 - **ショートカット一覧** — ウィジェット内で `?` を押すと、カテゴリ別のキーボードショートカット一覧が開きます。
+- **拡張できるウィジェット** — 独自のツールバーボタンや右クリックメニューの項目を追加できます（`addToolbarButton`、`chartMenuItems`）。
 - **チャート状態の保存 / 読み込み** — 描画、インジケーター、テーマ、チャートタイプを JSON に保存し、1 回の呼び出しで復元できます。
 - **依存関係ゼロ** — ライブラリ全体が自己完結しています。`d3` も `chart.js` も `fancy-canvas` も不要です。
 
@@ -239,8 +240,22 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncTimeAxis: true,
 })
 
-const adapter = new BinanceAdapter()
-grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+// An adapter keeps one stream: give each chart its own
+grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+```
+
+各チャートにフル機能のウィジェットを載せ、配置と同期を選ぶバーを付け、グリッド全体を名前付きレイアウトとして保存するには、次のようにします。
+
+```typescript
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
+})
+workspace.setSync({ time: true })
 ```
 
 対応レイアウト：`'1x1'`、`'1x2'`、`'2x1'`、`'2x2'`、`'1x3'`、`'3x1'`、`'2x3'`、`'3x2'`。
@@ -386,6 +401,11 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+
+// The × and ⇅ buttons on the lines raise these; so can your own UI
+chart.cancelOrderIntent('order-1')
+chart.reversePositionIntent('pos-1')
+chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
 ```
 
 ### シグナルマーカー

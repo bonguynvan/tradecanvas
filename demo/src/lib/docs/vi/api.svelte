@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>Tham chiếu API</h1>
-<p>API công khai của ba lớp cấp cao nhất: <code>Chart</code>, <code>ChartWidget</code> và <code>ChartGrid</code>.</p>
+<p>API công khai của các lớp cấp cao nhất: <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code> và <code>ChartGrid</code>.</p>
 
 <h2>Chart</h2>
 <p>Bộ render headless. Bạn tự làm giao diện, đăng ký nghe sự kiện và thay đổi trạng thái bằng các lời gọi trực tiếp.</p>
@@ -212,7 +212,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p>Bọc <code>Chart</code> trong một giao diện hoàn chỉnh. Có thể truy cập chính instance đó qua <code>widget.chart</code>.</p>
@@ -239,6 +244,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh (chỉ báo, loại biểu đồ, công cụ vẽ…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã — tìm gần đúng trong danh sách mã đã cấu hình</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
     <tr><td><kbd>?</kbd></td><td>Hiện bảng phím tắt</td></tr>
     <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí con trỏ chữ thập hiện tại)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>
@@ -270,9 +276,50 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>Lưu bố cục</h3>
+<h3>Bố cục có tên</h3>
 <p>
-  Tự động lưu bộ chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
+  Nút bố cục trên thanh công cụ lưu biểu đồ dưới một cái tên: mã, khung thời gian,
+  thang giá, loại biểu đồ, chỉ báo, hình vẽ và cảnh báo (không gồm giao diện, vì đó
+  là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
+  đang mở tự lưu mỗi khi thay đổi, và <kbd>Ctrl/⌘ S</kbd> sẽ lưu nó. Bố cục được lưu
+  trong <code>localStorage</code> của trình duyệt này, trừ khi bạn truyền vào một
+  <code>storage</code>: bốn hàm, hàm nào cũng có thể trả về một promise.
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } hoặc null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // hoặc false để tắt
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } hoặc null
+layouts.setAutoSave(false)
+
+// Chỉ lấy phần nội dung, để cất ở đâu tuỳ bạn
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  <code>localStorageLayouts(prefix)</code> và <code>memoryLayouts()</code> là hai kiểu
+  lưu trữ có sẵn. Nội dung đã lưu được đọc một cách thận trọng: bố cục nào không phân
+  tích được sẽ bị từ chối, chứ không bị áp dụng nửa chừng. Mỗi bố cục ghi lại
+  <code>kind</code> của nó (<code>'chart'</code> hoặc <code>'grid'</code>), nên một widget
+  và một lưới có thể dùng chung một nơi lưu trữ mà mỗi bên chỉ liệt kê bố cục của riêng
+  mình. Việc lưu, mở và tự động lưu chạy lần lượt từng việc một, nên một lần lưu không bao
+  giờ ghi vào bố cục được mở sau nó.
+</p>
+
+<h3>Bố cục theo từng mã</h3>
+<p>
+  Ngoài ra, có thể tự động lưu bộ chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
   vào <code>localStorage</code>:
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -454,12 +501,70 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Nút và mục menu của riêng bạn</h3>
+<p>
+  Thêm nút vào thanh công cụ (một biểu tượng có sẵn hoặc phần tử của bạn, chữ, một công
+  tắc) và thêm mục vào các menu chuột phải của biểu đồ, xếp sau các mục của widget.
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // hoặc một phần tử <svg>; hoặc text: 'News'
+  side: 'right',           // 'left' nằm cùng các nút điều khiển biểu đồ
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  Nhiều widget biểu đồ đặt cạnh nhau, mỗi biểu đồ có mã, khung thời gian, chỉ báo và
+  hình vẽ riêng. Một thanh phía trên chọn cách sắp xếp, liên kết các biểu đồ và lưu cả
+  lưới thành một bố cục có tên. Biểu đồ được bấm gần nhất là biểu đồ đang chọn (có viền).
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // cho mọi biểu đồ
+  adapter: () => new BinanceAdapter(),            // mỗi biểu đồ một adapter: một adapter giữ một luồng
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // đưa các biểu đồ khác về cùng khung với biểu đồ đang chọn
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// Từng biểu đồ ngay khi được tạo (lúc đầu và khi lưới thêm ô)
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  Đồng bộ con trỏ chữ thập hiện thời điểm dưới con trỏ chuột trên mọi biểu đồ; đồng bộ
+  thời gian cuộn và phóng to/thu nhỏ các biểu đồ khác theo biểu đồ đang dùng; hình vẽ được
+  sao chép sang các biểu đồ đang hiện cùng mã (bật mục này sẽ gộp hình vẽ của các biểu đồ
+  đó lại, không mất hình nào). Các biểu đồ bị bớt đi khi lưới thu nhỏ sẽ được cất đi, vẫn
+  được giữ trong bố cục đã lưu, và trở lại nguyên như cũ khi lưới mở rộng lại; một biểu đồ
+  hoàn toàn mới sẽ mở theo mã và khung thời gian của biểu đồ đang chọn nếu hai mục đó đang
+  được đồng bộ.
+</p>
+
 <h2>ChartGrid</h2>
-<p>Bố cục nhiều biểu đồ đồng bộ với nhau.</p>
+<p>Bố cục nhiều biểu đồ headless (không có thanh công cụ) đồng bộ với nhau; xem <code>ChartWidgetGrid</code> nếu cần giao diện đầy đủ.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// Mỗi biểu đồ một adapter: một adapter giữ một luồng
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Bố cục: <code>'1x2'</code>, <code>'2x2'</code>, <code>'2x3'</code>, <code>'3x3'</code>.</p>
+<p>Bố cục: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>

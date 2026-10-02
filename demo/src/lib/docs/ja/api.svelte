@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>API リファレンス</h1>
-<p>3 つのトップレベルクラス <code>Chart</code>、<code>ChartWidget</code>、<code>ChartGrid</code> の公開 API です。</p>
+<p>トップレベルクラス <code>Chart</code>、<code>ChartWidget</code>、<code>ChartWidgetGrid</code>、<code>ChartGrid</code> の公開 API です。</p>
 
 <h2>Chart</h2>
 <p>ヘッドレスなレンダラーです。UI は自前で用意し、イベントを購読し、メソッド呼び出しで状態を変更します。</p>
@@ -207,7 +207,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p><code>Chart</code> を完全な UI で包みます。同じインスタンスに <code>widget.chart</code> でアクセスできます。</p>
@@ -234,6 +239,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット（インジケーター、チャートタイプ、描画など）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索 — 設定したシンボル一覧からのあいまい検索</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>レイアウトを保存（初回は名前を尋ねます）</td></tr>
     <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧を表示</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
@@ -263,10 +269,49 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>レイアウトの保存</h3>
+<h3>名前付きレイアウト</h3>
 <p>
-  シンボルごとのインジケーター構成、描画、アラート、チャートタイプを
-  <code>localStorage</code> に自動で保存します：
+  ツールバーのレイアウトボタンで、チャートに名前を付けて保存できます。保存されるのはシンボル、時間足、
+  価格スケール、チャートタイプ、インジケーター、描画、アラートです（テーマは閲覧者ごとのものなので含みません）。
+  レイアウトを開く、名前を変更する、削除するといった操作は、このボタンのメニューから行います。
+  開いているレイアウトは変更のたびに自動保存され、<kbd>Ctrl/⌘ S</kbd> でも保存できます。
+  <code>storage</code> を渡さない限り、レイアウトはこのブラウザーの <code>localStorage</code> に保存されます。
+  <code>storage</code> は 4 つのメソッドからなり、どれも Promise を返してかまいません。
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } または null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // 使わない場合は false
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } または null
+layouts.setAutoSave(false)
+
+// 内容だけを取り出して、好きな場所に保存する
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  同梱のストレージは <code>localStorageLayouts(prefix)</code> と <code>memoryLayouts()</code> の 2 つです。
+  保存された内容は慎重に読み込まれ、解析できないレイアウトは中途半端に適用されず、拒否されます。
+  各レイアウトは自分の <code>kind</code>（<code>'chart'</code> または <code>'grid'</code>）を記録するため、
+  ウィジェットとグリッドで 1 つのストレージを共有しても、それぞれ自分のレイアウトだけを一覧に表示します。
+  保存、開く、自動保存は 1 つずつ順に実行されるため、保存がその後に開いたレイアウトに書き込まれることはありません。
+</p>
+
+<h3>シンボルごとのレイアウト</h3>
+<p>
+  これとは別に、シンボルごとのインジケーター構成、描画、アラート、チャートタイプを
+  <code>localStorage</code> に自動で保存できます：
 </p>
 <pre><code>{`new ChartWidget(host, {
   symbol: 'BTCUSDT',
@@ -440,12 +485,69 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>独自のボタンとメニュー項目</h3>
+<p>
+  ツールバーにボタン（組み込みのアイコンや独自の要素、テキスト、スイッチ）を、チャートの右クリックメニューに
+  項目を追加できます。どちらもウィジェット自身の項目の後ろに並びます。
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // または <svg> 要素、あるいは text: 'News'
+  side: 'right',           // 'left' はチャートの操作ボタンと並ぶ
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  複数のチャートウィジェットを並べて表示します。チャートごとにシンボル、時間足、インジケーター、描画を持てます。
+  上部のバーで配置を選び、チャートを連動させ、グリッド全体を名前付きレイアウトとして保存できます。
+  最後に押したチャートがアクティブなチャート（枠線付き）になります。
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // すべてのチャートに適用
+  adapter: () => new BinanceAdapter(),            // チャートごとに 1 つ：アダプターは 1 本のストリームを保持する
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // ほかのチャートをアクティブなチャートにそろえる
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// チャートが作られるたびに（最初と、グリッドが増えたとき）
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  クロスヘアの同期では、ポインター位置の時刻がすべてのチャートに表示されます。時間軸の同期では、
+  操作中のチャートに合わせてほかのチャートもスクロール・ズームします。描画は、同じシンボルを表示している
+  チャートにコピーされます（オンにすると、それらのチャートの描画がまとめられ、失われるものはありません）。
+  グリッドが減ったときに外れたチャートはしまわれて保存済みのレイアウトに残り、グリッドが再び増えたときに
+  元の状態で戻ります。まったく新しいチャートは、シンボルと時間足が同期されていれば、
+  アクティブなチャートのシンボルと時間足で開きます。
+</p>
+
 <h2>ChartGrid</h2>
-<p>同期したマルチチャートレイアウトです。</p>
+<p>ヘッドレスなチャート（ツールバーなし）を同期させたマルチチャートレイアウトです。完全な UI が必要な場合は <code>ChartWidgetGrid</code> を参照してください。</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// チャートごとにアダプターを 1 つ：アダプターは 1 本のストリームを保持する
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>レイアウト：<code>'1x2'</code>、<code>'2x2'</code>、<code>'2x3'</code>、<code>'3x3'</code>。</p>
+<p>レイアウト：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'2x2'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>。</p>

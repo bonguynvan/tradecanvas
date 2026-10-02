@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>API reference</h1>
-<p>Public surface of the three top-level classes: <code>Chart</code>, <code>ChartWidget</code>, and <code>ChartGrid</code>.</p>
+<p>Public surface of the top-level classes: <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code> and <code>ChartGrid</code>.</p>
 
 <h2>Chart</h2>
 <p>Headless renderer. Bring your own UI; subscribe to events; mutate state imperatively.</p>
@@ -212,7 +212,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p>Wraps <code>Chart</code> in a complete UI. Same instance is available via <code>widget.chart</code>.</p>
@@ -239,6 +244,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette (indicators, chart types, drawings…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search — fuzzy picker over the configured symbol list</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Save the layout (asks for a name the first time)</td></tr>
     <tr><td><kbd>?</kbd></td><td>Show the keyboard shortcuts sheet</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
@@ -270,9 +276,49 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>Saved layouts</h3>
+<h3>Named layouts</h3>
 <p>
-  Persist per-symbol indicator stacks, drawings, alerts, and chart type
+  The layout button on the toolbar saves the chart under a name: symbol,
+  interval, price scale, chart type, indicators, drawings and alerts (not the
+  theme, which stays the viewer's). Open, rename and delete layouts from its
+  menu; the layout open auto-saves as it changes, and <kbd>Ctrl/⌘ S</kbd> saves
+  it. Layouts live in this browser's <code>localStorage</code> unless you give a
+  <code>storage</code>: four calls, each may return a promise.
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } or null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // or false for none
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } or null
+layouts.setAutoSave(false)
+
+// The content alone, to keep wherever you like
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  <code>localStorageLayouts(prefix)</code> and <code>memoryLayouts()</code> are the
+  two storages that ship. Stored content is read defensively: a layout that does
+  not parse is refused, not half applied. Each layout records its
+  <code>kind</code> (<code>'chart'</code> or <code>'grid'</code>), so a widget and a
+  grid can share one storage and each lists only its own. Saving, opening and
+  auto-saving run one at a time, so a save never lands in a layout opened after it.
+</p>
+
+<h3>Per-symbol layouts</h3>
+<p>
+  Separately, persist per-symbol indicator stacks, drawings, alerts, and chart type
   to <code>localStorage</code> automatically:
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -454,12 +500,70 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Your own buttons and menu entries</h3>
+<p>
+  Add buttons to the toolbar (a built-in icon or an element of yours, text, a
+  switch) and entries to the chart's right-click menus, after the widget's own.
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // or an <svg> element; or text: 'News'
+  side: 'right',           // 'left' sits with the chart controls
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  Several chart widgets side by side, each with its own symbol, interval,
+  indicators and drawings. A bar above them picks the arrangement, links the
+  charts and saves the whole grid as a named layout. The chart pressed last is
+  the active one (outlined).
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // every chart
+  adapter: () => new BinanceAdapter(),            // one per chart: an adapter keeps one stream
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // lines the others up with the active chart
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// Each chart as it is made (at the start, and when the grid grows)
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  Crosshair sync shows the time under the pointer on every chart; time sync
+  scrolls and zooms the others with the chart being used; drawings are copied
+  to the charts showing the same symbol (switching it on puts their drawings
+  together, none lost). Charts the grid shrinks from are put away, kept in the
+  saved layout, and come back as they were when it grows again; a brand-new
+  chart opens on the active chart's symbol and interval when those are synced.
+</p>
+
 <h2>ChartGrid</h2>
-<p>Synchronized multi-chart layouts.</p>
+<p>Synchronized multi-chart layouts of headless charts (no toolbar); see <code>ChartWidgetGrid</code> for the full UI.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// One adapter per chart: an adapter keeps one stream
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Layouts: <code>'1x2'</code>, <code>'2x2'</code>, <code>'2x3'</code>, <code>'3x3'</code>.</p>
+<p>Layouts: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>

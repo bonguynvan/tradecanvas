@@ -14,7 +14,7 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **69 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan and arcs, circles, spiral, wedge), horizontal/vertical lines, channels, pitchforks and pitchfan, Gann fan / box / square, cycles, harmonic patterns (XABCD, cypher, ABCD, three drives, head and shoulders), Elliott waves, notes, callouts and marks, brush and path, forecast and projection, Long/Short Position with position sizing, Volume Profile range. Each with its own settings, alerts on trend lines, groups and layers, undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
 - **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
-- **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
+- **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify, cancel / close / reverse from the buttons on each line, and see every fill marked on its bar. ChartWidget adds an order ticket that checks the order as you fill it in, and an account panel with positions, working orders and history. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines. Older bars load as you scroll back, any interval (`7m`, `90m`, `2d`) is built from the feed's own, and symbol search comes from the feed.
 - **Time zones** — any IANA zone with daylight saving time (`'America/New_York'`), a fixed offset, or the exchange's own zone, for the axis, crosshair, day breaks and session hours.
 - **14 languages** — `ChartWidget` in English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian and Thai.
@@ -25,10 +25,11 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **Volume Profile** — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
 - **Watchlist sidebar** — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
 - **CSV / JSON drag-and-drop** — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.
-- **Saved layouts** — opt-in per-symbol persistence of chart type + indicator stack + drawings + alerts to localStorage. Switch symbol, switch back, your setup is intact.
-- **Multi-chart grid** — `ChartGrid` for synchronized 2×2 / 2×3 layouts with linked crosshairs and shared time axis.
+- **Named layouts** — save the chart under a name (symbol, interval, scale, indicators, drawings, alerts), open, rename, delete, auto-save the open one, `Ctrl/⌘+S`. Kept in the browser, or on your server through a four-call `LayoutStorage`. Per-symbol auto-persistence (`persistLayouts`) is there too.
+- **Multi-chart** — `ChartWidgetGrid` puts up to six full widgets side by side, linked by symbol, interval, crosshair, time or drawings as you choose, and saves them as one layout. `ChartGrid` does the same for bare charts.
 - **Signal markers & trade zones** — render bot/algorithm output (directional arrows, entry→exit rectangles) as a first-class chart layer.
 - **Hotkey sheet** — press `?` in the widget to open a categorized keyboard-shortcut reference.
+- **Extensible widget** — add your own toolbar buttons and right-click menu entries (`addToolbarButton`, `chartMenuItems`).
 - **Save/load chart state** — Persist drawings, indicators, theme, and chart type to JSON. Restore with one call.
 - **Zero dependencies** — The entire library is self-contained. No `d3`, no `chart.js`, no `fancy-canvas`.
 
@@ -239,8 +240,22 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncTimeAxis: true,
 })
 
-const adapter = new BinanceAdapter()
-grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+// An adapter keeps one stream: give each chart its own
+grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+```
+
+With the full widget on each chart, a bar to pick the arrangement and sync, and the whole grid saved as a named layout:
+
+```typescript
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
+})
+workspace.setSync({ time: true })
 ```
 
 Supported layouts: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
@@ -386,6 +401,11 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+
+// The × and ⇅ buttons on the lines raise these; so can your own UI
+chart.cancelOrderIntent('order-1')
+chart.reversePositionIntent('pos-1')
+chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
 ```
 
 ### Signal Markers

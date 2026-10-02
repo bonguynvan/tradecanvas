@@ -1,5 +1,5 @@
 import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
-import type { ChartWidget, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
+import type { ChartWidget, ChartWidgetGrid, ChartWidgetGridOptions, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
 import type { SiteMessages } from './i18n/messages';
 import { generateBars } from './sampleData';
 
@@ -28,6 +28,10 @@ export interface FeatureScene {
   languages?: boolean;
   /** Runs once the first bars are on the chart. */
   setup?: (widget: ChartWidget, chart: Chart, env: SceneEnv) => void | Promise<void>;
+  /** Several charts at once (ChartWidgetGrid) instead of one widget; `options` go to every chart. */
+  grid?: (env: SceneEnv) => Omit<ChartWidgetGridOptions, 'widget' | 'onChartAdd'>;
+  /** For a grid: runs once the charts have their bars. */
+  gridSetup?: (grid: ChartWidgetGrid, env: SceneEnv) => void | Promise<void>;
 }
 
 const HOUR = 3_600_000;
@@ -121,20 +125,53 @@ chart.addIndicator('macd')`,
     id: 'trading',
     code: `const broker = new PaperExecutionAdapter({ markPrice })
 chart.connectExecution(broker)
-chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1,
+  stopLoss, takeProfit, timeInForce: 'gtc' })
+chart.reversePositionIntent(position.id)     // or ⇅ on the line
+chart.on('executionFill', (e) => e.payload.pnl)
+widget.toggleAccountPanel(true)`,
     options: () => ({ symbol: 'DEMO', symbols: ['DEMO', 'ALPHA'], timeframe: '15m', trading: true }),
     data: (symbol) => generateBars(500, symbol, 15 * 60_000, 2500),
-    setup: async (_widget, chart, env) => {
+    setup: async (widget, chart, env) => {
       const data = chart.getData();
       const last = data[data.length - 1]?.close;
       if (!last) return;
       const broker = new env.lib.PaperExecutionAdapter({ markPrice: last });
       chart.connectExecution(broker);
+      // A short closed at a profit, for the history tab and the fill marks.
+      broker.setMarkPrice(last * 1.012);
+      await broker.placeOrder({ side: 'sell', type: 'market', price: last * 1.012, quantity: 1 });
+      const short = broker.getPositions()[0];
+      broker.setMarkPrice(last);
+      if (short) await broker.closePosition({ positionId: short.id });
       await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 2 });
       const pos = broker.getPositions()[0];
       if (pos) await broker.modifyPosition({ positionId: pos.id, stopLoss: last * 0.975, takeProfit: last * 1.04 });
       chart.placeOrderIntent({ side: 'buy', type: 'limit', price: last * 0.985, quantity: 1 });
       chart.placeOrderIntent({ side: 'sell', type: 'limit', price: last * 1.02, quantity: 1 });
+      widget.toggleAccountPanel(true);
+    },
+  },
+  {
+    id: 'workspace',
+    code: `const workspace = new ChartWidgetGrid(host, {
+  layout: '1x2',
+  cells: [{ symbol: 'DEMO' }, { symbol: 'ALPHA', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false },
+})
+workspace.setSync({ time: true })
+await workspace.getLayoutSession()?.saveAs('Pair')`,
+    options: () => ({ symbols: ['DEMO', 'ALPHA', 'BETA', 'GAMMA'], timeframe: '15m', statusBar: false }),
+    data: (symbol) => generateBars(500, symbol, 15 * 60_000, 2500),
+    grid: () => ({
+      layout: '1x2',
+      layoutChoices: ['1x1', '1x2', '2x1', '2x2'],
+      cells: [{ symbol: 'DEMO' }, { symbol: 'ALPHA', timeframe: '1h' }, { symbol: 'BETA' }, { symbol: 'GAMMA', timeframe: '4h' }],
+      sync: { crosshair: true },
+    }),
+    gridSetup: (grid) => {
+      grid.getWidget(0)?.getChart().addIndicator('ema', { period: 21 });
+      grid.getWidget(1)?.getChart().addIndicator('rsi', { period: 14 });
     },
   },
   {

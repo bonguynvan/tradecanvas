@@ -4,6 +4,18 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Trading and workspace
+
+- **Act on orders and positions from the chart**: × on an order line cancels it, × on a position closes it, ⇅ reverses it, × on a stop-loss or take-profit removes it. They raise the usual intents (a new `positionReverse` among them), so a connected adapter acts on them; an adapter without `reversePosition` gets a close and a market order the other way. Orders take a stop-loss, a take-profit and a time in force that carry over to the position. Adapter authors: `PositionModifyIntent.stopLoss` / `takeProfit` can now be `null`, meaning remove it (a missing field still means keep it).
+- **Fills on the chart**: a mark on the bar of each fill, solid where it opened a position and hollow where it closed one. `executionFill` says why (order, close, reverse, stop-loss, take-profit) and the P&L realised.
+- **Right-click menus that know where you clicked**: the plot, a pane, the price axis or the time axis, with the price and time there. A "+" by the price axis follows the crosshair. ChartWidget offers an alert, a buy and a sell at the price (a limit where it would wait, else a stop), an order ticket and a horizontal line on the plot, the scale switches on the price axis, and go to date on the time axis.
+- **Order ticket and account panel** in ChartWidget: open positions with their P&L, working orders and the fills so far, each with close, reverse or cancel; an order ticket that checks the order as you fill it in and shows the reward:risk.
+- **Named layouts**: save the chart under a name (symbol, interval, scale, chart type, indicators, drawings, alerts), open, rename, delete, auto-save the open one, Ctrl/Cmd+S. Kept in the browser, or on your server through a four-call `LayoutStorage`.
+- **ChartWidgetGrid**: up to six charts side by side, linked by symbol, interval, crosshair, time or drawings as you choose, saved together as one layout.
+- **Your own toolbar buttons and menu entries**: `widget.addToolbarButton()` and `chartMenuItems`.
+- Fixed: `ChartGrid.connectAll` with one adapter object sent every chart the last symbol's bars (an adapter keeps one stream). It now takes a function that makes one per chart, as does `ChartWidgetGrid`'s `adapter` option.
+- New events `ordersChange`, `positionsChange` and `stateChange`. With several widgets on a page, Ctrl/Cmd+K and +P now go to the one used last instead of all of them.
+
 ### Drawing toolkit
 
 - **Each tool has its own settings**: Fibonacci levels (edit, hide, add, colour), prices and percentages, labels left or right, extending lines either way, backgrounds, a wave degree, an icon. Double-clicking a drawing in ChartWidget opens its settings (style, the tool's settings, its points in the chart's time zone); changes show as you make them and Cancel takes them back. "Save as default" keeps a tool's settings for the next drawing, and templates keep settings as well as style. API: `getDrawingOptions` / `setDrawingOptions`, `updateDrawing`, `beginDrawingEdit` / `endDrawingEdit`, `setDrawingToolDefaults`.

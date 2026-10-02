@@ -175,9 +175,55 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncCrosshair: true,
   syncTimeAxis: true,
 });
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m');
+// An adapter keeps one stream: each chart needs its own.
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m');
 grid.getChart(0)?.addIndicator('ema', { period: 50 });
 ```
+
+With the full widget on each chart, `ChartWidgetGrid` adds a bar to pick the
+arrangement and the sync, and saves the whole grid as a named layout:
+
+```ts
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),   // one per chart
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: true },
+});
+workspace.getActiveWidget().getChart().addIndicator('rsi', { period: 14 });
+```
+
+## Named layouts on your own server
+
+```ts
+import { ChartWidget, type LayoutStorage, type SavedLayout } from '@tradecanvas/chart/widget';
+
+const server: LayoutStorage = {
+  list: async () => (await fetch('/api/layouts')).json(),
+  load: async (id) => {
+    const res = await fetch(`/api/layouts/${encodeURIComponent(id)}`);
+    return res.ok ? ((await res.json()) as SavedLayout) : null;
+  },
+  save: async (layout) => {
+    await fetch(`/api/layouts/${encodeURIComponent(layout.id)}`, { method: 'PUT', body: JSON.stringify(layout) });
+  },
+  remove: async (id) => {
+    await fetch(`/api/layouts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  layouts: { storage: server, openLast: true },   // Ctrl/Cmd+S saves, the open layout auto-saves
+});
+await widget.getLayoutSession()?.saveAs('Swing BTC');
+```
+
+Treat what the server returns as untrusted: the widget refuses content it
+cannot read, but your API should still check who owns a layout.
 
 ## The widget, saved per symbol and in Vietnamese
 

@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>트레이딩 오버레이 — TradeCanvas 문서</title>
   <meta name="description" content="TradeCanvas 트레이딩 오버레이로 포지션, 주문, 신호 마커, 거래 구간을 차트에 직접 렌더링합니다." />
@@ -67,6 +73,99 @@ chart.on('executionError', (e) => toast(e.payload.message))
   <code>modifyPosition</code>, <code>closePosition</code>, 그리고 <code>orders</code> /
   <code>positions</code> / <code>fill</code> / <code>error</code> 이벤트.
   <code>PaperExecutionAdapter</code>는 데모와 테스트를 위한 가상 체결 샌드박스입니다.
+</p>
+
+<h2>차트에서 주문과 포지션 다루기</h2>
+<p>
+  주문선과 포지션선의 오른쪽 끝에는 작은 버튼이 있습니다. <strong>×</strong>는 주문을
+  취소하거나 포지션을 청산하고, <strong>⇅</strong>는 포지션을 반전하며, 손절선이나 익절선의
+  ×는 해당 선을 제거합니다. 이 버튼들은 API와 같은 의도(<code>orderCancel</code>,
+  <code>positionClose</code>, <code>positionReverse</code>, <code>null</code>을 넘긴
+  <code>positionModify</code>)를 발생시키므로, 연결된 어댑터가 이를 처리하고 어댑터가 없는
+  호스트 앱은 이벤트를 받습니다. 버튼은 그 위에서 손을 뗄 때 동작하며, 누른 채로 버튼
+  밖으로 벗어나면 아무 동작도 하지 않습니다. <code>setTradingConfig</code>의 <code>lineButtons</code>로
+  원하는 버튼을 끌 수 있습니다.
+</p>
+<pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
+
+chart.cancelOrderIntent('ord-1')
+chart.closePositionIntent('pos-1')
+chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
+chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+<p>
+  한 번에 반전할 수 있는 어댑터는 <code>reversePosition</code>을 구현합니다.
+  구현하지 않으면 차트가 포지션을 청산한 뒤 반대 방향으로 시장가 주문을 보냅니다.
+  주문에는 <code>stopLoss</code>, <code>takeProfit</code>,
+  <code>timeInForce</code>(<code>'gtc'</code> 또는 <code>'day'</code>)를 지정할 수 있으며,
+  이 값은 주문으로 생긴 포지션에 그대로 이어집니다.
+</p>
+<p>
+  <strong>어댑터 작성자를 위한 참고:</strong> <code>PositionModifyIntent</code>에서
+  <code>stopLoss: null</code>(또는 <code>takeProfit: null</code>)은 제거를 뜻하고,
+  필드가 없으면 그대로 둔다는 뜻입니다. <code>intent.stopLoss ?? position.stopLoss</code>처럼
+  작성한 코드는 사용자가 제거한 손절을 그대로 남겨 둡니다.
+</p>
+
+<h2>차트 위의 체결</h2>
+<p>
+  체결은 해당 봉 위에 작은 표시로 나타납니다. 포지션을 연 체결은 속이 찬 표시,
+  포지션을 닫은 체결은 속이 빈 표시입니다. 차트는 어댑터가 보고한 체결을 기록하고,
+  체결 이유(<code>'order'</code>, <code>'close'</code>, <code>'reverse'</code>,
+  <code>'stopLoss'</code>, <code>'takeProfit'</code>)와 실현 손익을 담아
+  <code>executionFill</code>을 발생시킵니다.
+</p>
+<pre><code>{`chart.on('executionFill', (e) => {
+  const { side, price, quantity, reason, pnl } = e.payload
+})
+
+chart.addFill({ orderId: 'o-7', side: 'buy', price: 64_150, quantity: 1, time: Date.now() })
+chart.getFills()        // the latest 1000
+chart.getRealisedPnl()  // every fill's P&L since the last clearFills
+chart.clearFills()
+chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
+
+<h2>오른쪽 클릭 메뉴와 가격 축의 “+”</h2>
+<p>
+  차트를 오른쪽 클릭하면 클릭한 영역(<code>'plot'</code>, <code>'pane'</code>,
+  <code>'priceAxis'</code>, <code>'timeAxis'</code>)과 그 위치의 가격, 시간을 담은
+  <code>chartContextMenu</code>가 발생합니다. <code>features.priceAxisAddButton</code>을 켜면
+  가격 축을 따라 십자선을 따라다니는 “+”가 나타나고, 이를 누르면 그 가격을 담은
+  <code>priceAxisAdd</code>가 발생합니다.
+</p>
+<pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
+
+chart.on('chartContextMenu', (e) => {
+  const { area, x, y, price, time } = e.payload
+  openMyMenu(x, y)
+})
+chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
+<p>
+  ChartWidget의 메뉴는 이 이벤트를 바탕으로 만들어집니다. 플롯 영역을 오른쪽 클릭하면 그 가격의
+  알림, 매수와 매도(체결을 기다리는 쪽이면 지정가, 반대쪽이면 스톱), 주문 티켓, 수평선,
+  보기 재설정, 그림 관련 항목이 나옵니다. 가격 축에서는 눈금 전환, 시간 축에서는 보기 재설정과
+  날짜로 이동이 나옵니다. <code>chartMenuItems</code>로 직접 항목을 추가할 수 있습니다
+  (<a href={href('/docs/api')}>API 레퍼런스</a> 참고).
+</p>
+
+<h2>주문 티켓과 계좌 패널 (ChartWidget)</h2>
+<p>
+  위젯의 영수증 버튼을 누르면 차트 아래에 계좌 패널이 열립니다. 보유 포지션과 손익,
+  대기 주문, 지금까지의 체결과 실현 손익이 표시되며, 각 행에서 청산, 반전, 취소를 할 수
+  있습니다. <strong>새 주문</strong>을 누르면 주문 티켓이 열립니다. 매수 또는 매도,
+  시장가·지정가·스톱, 수량, 가격, 선택 사항인 손절과 익절, 주문 유효 기간을 정합니다.
+  입력하는 동안 주문을 검사하고(매수 지정가는 시장가보다 아래, 손절은 진입가 기준 손실 쪽…)
+  손익비를 보여 줍니다. 주문을 넣으면 <code>orderPlace</code> 의도가 전송됩니다.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  trading: true,         // default
+  accountPanel: true,    // default when trading is on
+})
+widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+widget.toggleAccountPanel(true)
+// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+<p>
+  체결 표시는 차트에 표시된 종목에 속합니다. 위젯에서 종목을 바꾸면 다음 종목은 체결 표시
+  없이 시작합니다.
 </p>
 
 <h2>드래그로 주문 만들기</h2>

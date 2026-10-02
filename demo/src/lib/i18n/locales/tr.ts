@@ -163,11 +163,25 @@ const tr: SiteMessages = {
       title: 'Alım satım',
       stat: 'demo broker',
       blurb:
-        'Sürüklenebilir zarar durdur ve kâr al seviyeleriyle pozisyonlar, bekleyen emirler, braket emirleri ve Uzun/Kısa pozisyon araçları; hepsi bir ExecutionAdapter üzerinden yönlendirilir, burada pakete dahil demo broker.',
+        'Grafikten yönettiğiniz emirler ve pozisyonlar: stopları ve hedefleri sürükleyin, çizgi üzerinden iptal edin, kapatın ya da ters çevirin; her gerçekleşen işlem kendi barında işaretlenir. Grafiğin altında bir emir formu ve bir hesap paneli bulunur; hepsi bir ExecutionAdapter üzerinden yönlendirilir, burada pakete dahil demo broker.',
       tryThis: [
+        'Açık uzun pozisyonda ⇅ ile pozisyonu ters çevirin ya da × ile kapatın; gerçekleşen işlem kendi barında bir işaret olarak görünür',
+        'Fiyatın altına sağ tıklayın: o fiyattan limit alış, stop satış ya da yeni emir',
+        'Grafiğin altındaki hesap paneli pozisyonları K/Z’leriyle birlikte, emirleri ve geçmişi listeler',
         'Açık uzun pozisyonun SL / TP çizgilerini sürükleyin; broker onları günceller',
-        'Bekleyen bir emri yeni bir fiyata sürükleyin',
-        'Üst araç çubuğundaki Al/Sat braket düğmelerini kullanın',
+        'Fiyat ekseninin yanındaki + düğmesi o fiyata bir alarm, emir ya da çizgi eklemeyi sunar',
+      ],
+    },
+    workspace: {
+      title: 'Çalışma alanı',
+      stat: 'çoklu grafik',
+      blurb:
+        'Yan yana iki grafik, artı imleçle bağlı; dilerseniz sembol, zaman dilimi, zaman ve çizimlerle de. Tüm çalışma alanını adlandırılmış bir düzen olarak kaydedin ve istediğiniz zaman ona geri dönün.',
+      tryThis: [
+        'Bir grafiğin üzerinde gezinin: diğeri aynı zamanı gösterir',
+        'Eşitle çubuğunda Zaman dilimi seçeneğini açın, ardından bir grafiğin zaman dilimini değiştirin',
+        'Çubukta dört grafik seçin; Sembol eşitlenmişken yeni grafikler etkin grafiğin sembolüyle açılır',
+        'Düzen ▾ → Farklı kaydet…, bir şeyi değiştirin, sonra düzeni yeniden açın (Ctrl+S kaydeder)',
       ],
     },
     navigation: {
