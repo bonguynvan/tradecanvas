@@ -180,7 +180,22 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'disparity', name: 'Disparity Index', type: 'panel' },
   { id: 'qstick', name: 'Qstick', type: 'panel' },
   { id: 'pgo', name: 'Pretty Good Oscillator', type: 'panel' },
-  { id: 'volumeProfile', name: 'Volume Profile', type: 'panel' },
+  { id: 'volumeProfile', name: 'Volume Profile', type: 'overlay' },
+  { id: 'dema', name: 'Double EMA', type: 'overlay' },
+  { id: 'smma', name: 'Smoothed MA', type: 'overlay' },
+  { id: 'alma', name: 'Arnaud Legoux MA', type: 'overlay' },
+  { id: 'kama', name: 'Kaufman Adaptive MA', type: 'overlay' },
+  { id: 'lsma', name: 'Least Squares MA', type: 'overlay' },
+  { id: 'mcginley', name: 'McGinley Dynamic', type: 'overlay' },
+  { id: 'macross', name: 'MA Cross', type: 'overlay' },
+  { id: 'fractals', name: 'Williams Fractals', type: 'overlay' },
+  { id: 'cks', name: 'Chande Kroll Stop', type: 'overlay' },
+  { id: 'bbpb', name: 'Bollinger %B', type: 'panel' },
+  { id: 'bbw', name: 'Bollinger BandWidth', type: 'panel' },
+  { id: 'mom', name: 'Momentum', type: 'panel' },
+  { id: 'hv', name: 'Historical Volatility', type: 'panel' },
+  { id: 'vo', name: 'Volume Oscillator', type: 'panel' },
+  { id: 'ulcer', name: 'Ulcer Index', type: 'panel' },
 ];
 
 export const POPULAR_INDICATORS = [

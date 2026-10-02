@@ -72,6 +72,22 @@ import { VolumeProfileIndicator } from './panel/VolumeProfile.js';
 import { AccumulationDistributionIndicator } from './panel/AccumulationDistribution.js';
 import { VROCIndicator } from './panel/VROC.js';
 
+import { DEMAIndicator } from './overlay/DEMA.js';
+import { SMMAIndicator } from './overlay/SMMA.js';
+import { ALMAIndicator } from './overlay/ALMA.js';
+import { KAMAIndicator } from './overlay/KAMA.js';
+import { LSMAIndicator } from './overlay/LSMA.js';
+import { McGinleyDynamicIndicator } from './overlay/McGinleyDynamic.js';
+import { MACrossIndicator } from './overlay/MACross.js';
+import { WilliamsFractalsIndicator } from './overlay/WilliamsFractals.js';
+import { ChandeKrollStopIndicator } from './overlay/ChandeKrollStop.js';
+import { BollingerPercentBIndicator } from './panel/BollingerPercentB.js';
+import { BollingerBandWidthIndicator } from './panel/BollingerBandWidth.js';
+import { MomentumIndicator } from './panel/Momentum.js';
+import { HistoricalVolatilityIndicator } from './panel/HistoricalVolatility.js';
+import { VolumeOscillatorIndicator } from './panel/VolumeOscillator.js';
+import { UlcerIndexIndicator } from './panel/UlcerIndex.js';
+
 export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   // Overlays
   engine.register(new SMAIndicator());
@@ -145,4 +161,19 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new DisparityIndexIndicator());
   engine.register(new QstickIndicator());
   engine.register(new PrettyGoodOscillatorIndicator());
+  engine.register(new DEMAIndicator());
+  engine.register(new SMMAIndicator());
+  engine.register(new ALMAIndicator());
+  engine.register(new KAMAIndicator());
+  engine.register(new LSMAIndicator());
+  engine.register(new McGinleyDynamicIndicator());
+  engine.register(new MACrossIndicator());
+  engine.register(new WilliamsFractalsIndicator());
+  engine.register(new ChandeKrollStopIndicator());
+  engine.register(new BollingerPercentBIndicator());
+  engine.register(new BollingerBandWidthIndicator());
+  engine.register(new MomentumIndicator());
+  engine.register(new HistoricalVolatilityIndicator());
+  engine.register(new VolumeOscillatorIndicator());
+  engine.register(new UlcerIndexIndicator());
 }
