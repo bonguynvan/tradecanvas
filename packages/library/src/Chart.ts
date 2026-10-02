@@ -142,6 +142,9 @@ const LEFT_SCALE_PADDING = 0.08;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
+/** Narrowest box (px) the zoom-area tool zooms into. */
+const MIN_ZOOM_BOX_PX = 8;
+
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
 
@@ -823,8 +826,8 @@ export class Chart {
       end: () => {
         const box = this.selectionBoxOverlay.end();
         if (box && this.zoomAreaMode) {
-          // A click instead of a box keeps the tool waiting.
-          if (box.isClick) return;
+          // A click, or a box too narrow to hold a bar or two, keeps the tool waiting.
+          if (box.x1 - box.x0 < MIN_ZOOM_BOX_PX) return;
           this.zoomToBox(box);
           this.setZoomAreaMode(false);
           return;

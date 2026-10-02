@@ -10,21 +10,22 @@ const DOWN_COLOR = '#ef5350';
 /** Most bars a bars pattern copies. */
 const MAX_PATTERN_BARS = 500;
 
-/** Whether the target was reached after the forecast was made, missed (its time passed), or neither yet. */
+/** Whether the target was reached by its time, missed (its time passed first), or neither yet. */
 export type ForecastOutcome = 'reached' | 'missed' | 'pending';
 
 /** How a forecast from `from` to `to` turned out on `bars`. */
 export function forecastOutcome(bars: readonly OHLCBar[], from: { time: number; price: number }, to: { time: number; price: number }): ForecastOutcome {
   const up = to.price >= from.price;
-  // Only the bars after the forecast's start: found by search, not a scan.
+  // Only the bars between the forecast's start and its deadline: the first
+  // found by search, the scan stopping at the deadline.
   const first = bars.length > 0 ? Math.max(0, Math.floor(timestampToBarIndex(from.time, bars)) + 1) : 0;
   for (let i = first; i < bars.length; i++) {
     const bar = bars[i];
     if (bar.time <= from.time) continue;
+    if (bar.time > to.time) return 'missed';
     if (up ? bar.high >= to.price : bar.low <= to.price) return 'reached';
   }
-  const last = bars[bars.length - 1];
-  return last && last.time > to.time ? 'missed' : 'pending';
+  return 'pending';
 }
 
 /**
@@ -166,6 +167,8 @@ export class BarsPatternTool extends DrawingBase {
     const [a, b, c] = state.anchors;
     const i0 = Math.max(0, Math.round(timestampToBarIndex(Math.min(a.time, b.time), data)));
     const i1 = Math.min(data.length - 1, Math.round(timestampToBarIndex(Math.max(a.time, b.time), data)));
+    // Both points before the first bar (or after the last): nothing to copy.
+    if (i1 < i0) return [];
     const source = data.slice(i0, Math.min(i1 + 1, i0 + MAX_PATTERN_BARS));
     if (source.length === 0) return [];
     const flipped = this.option<boolean>(state, 'flipped');
@@ -186,8 +189,14 @@ export class BarsPatternTool extends DrawingBase {
     const start = resolveBarIndex(state.anchors[2].time, viewport);
     const x0 = barIndexToX(start, viewport) - viewport.barWidth / 2;
     const x1 = barIndexToX(start + bars.length - 1, viewport) + viewport.barWidth / 2;
-    const top = priceToY(Math.max(...bars.map((bar) => bar.high)), viewport);
-    const bottom = priceToY(Math.min(...bars.map((bar) => bar.low)), viewport);
+    let high = -Infinity;
+    let low = Infinity;
+    for (const bar of bars) {
+      if (bar.high > high) high = bar.high;
+      if (bar.low < low) low = bar.low;
+    }
+    const top = priceToY(high, viewport);
+    const bottom = priceToY(low, viewport);
     return { x: x0, y: Math.min(top, bottom), width: x1 - x0, height: Math.abs(bottom - top) };
   }
 

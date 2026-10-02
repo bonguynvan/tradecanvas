@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
 
 /** Most cycles drawn, however small they are on screen. */
-const MAX_CYCLES = 200;
+const MAX_CYCLES = 400;
 const ARC_STEPS = 32;
 /** Pixels between the points a sine line is drawn through. */
 const SINE_STEP_PX = 3;
@@ -14,29 +14,43 @@ const SINE_STEP_PX = 3;
 export class TimeCyclesTool extends DrawingBase {
   descriptor = { type: 'timeCycles' as const, name: 'Time Cycles', requiredAnchors: 2, fill: true };
 
-  /** Each cycle as points: a half circle above the first point's price. */
-  private cycles(state: DrawingState, viewport: ViewportState): Point[][] {
+  /**
+   * The cycles on screen, each as its centre: half circles of radius `r`
+   * above the first point's price, repeating from it (the way it was drawn).
+   */
+  private visibleCycles(state: DrawingState, viewport: ViewportState): { y: number; r: number; centres: number[] } {
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);
     const length = b.x - a.x;
-    if (Math.abs(length) < 2) return [];
     const r = Math.abs(length) / 2;
-    const step = Math.sign(length);
-    const right = viewport.chartRect.x + viewport.chartRect.width;
+    if (r < 1) return { y: a.y, r, centres: [] };
     const left = viewport.chartRect.x;
-    const out: Point[][] = [];
-    for (let i = 0; i < MAX_CYCLES; i++) {
-      const start = a.x + length * i;
-      if ((step > 0 && start > right) || (step < 0 && start < left)) break;
-      const cx = start + length / 2;
+    const right = left + viewport.chartRect.width;
+    // Cycle i spans a.x + length·i to a.x + length·(i + 1): start at the first one in view.
+    const far = length > 0 ? left : right;
+    const first = Math.max(0, Math.floor((far - a.x) / length) - 1);
+    const centres: number[] = [];
+    for (let i = first; centres.length < MAX_CYCLES; i++) {
+      const cx = a.x + length * (i + 0.5);
+      if (cx - r > right || cx + r < left) {
+        if (centres.length > 0 || (length > 0 ? cx - r > right : cx + r < left)) break;
+        continue;
+      }
+      centres.push(cx);
+    }
+    return { y: a.y, r, centres };
+  }
+
+  private cycles(state: DrawingState, viewport: ViewportState): Point[][] {
+    const { y, r, centres } = this.visibleCycles(state, viewport);
+    return centres.map((cx) => {
       const pts: Point[] = [];
       for (let j = 0; j <= ARC_STEPS; j++) {
         const angle = Math.PI + (Math.PI * j) / ARC_STEPS; // the upper half, left to right
-        pts.push({ x: cx + r * Math.cos(angle), y: a.y + r * Math.sin(angle) });
+        pts.push({ x: cx + r * Math.cos(angle), y: y + r * Math.sin(angle) });
       }
-      out.push(pts);
-    }
-    return out;
+      return pts;
+    });
   }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
@@ -56,7 +70,10 @@ export class TimeCyclesTool extends DrawingBase {
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
-    return this.cycles(state, viewport).some((pts) => nearPolyline(point, pts, tolerance));
+    // On a cycle's arc: as far from its centre as the radius, above the base.
+    const { y, r, centres } = this.visibleCycles(state, viewport);
+    if (point.y > y + tolerance) return false;
+    return centres.some((cx) => Math.abs(Math.hypot(point.x - cx, point.y - y) - r) <= tolerance);
   }
 }
 

@@ -121,3 +121,53 @@ describe('tools drawn from the bars', () => {
     }
   });
 });
+
+describe('drawing, the review cases', () => {
+  const click = (x: number, y: number) => {
+    manager.onPointerDown({ x, y }, vp);
+    manager.onPointerUp();
+  };
+
+  it('Ctrl+Z while drawing takes back the last point, and leaves older history alone', () => {
+    manager.addDrawing({ type: 'trendLine', anchors: [{ time: 0, price: 10 }, { time: 5, price: 10 }] });
+    manager.setActiveTool('path');
+    click(10, 50);
+    click(50, 20);
+    click(90, 60);
+    expect(manager.onKeyDown('z', true)).toBe(true); // (90, 60) is taken back
+    click(90, 60); // so this adds it again…
+    click(90, 60); // …and this, on the last point, ends the path
+    const path = manager.getDrawings().find((d) => d.type === 'path')!;
+    expect(path.anchors).toHaveLength(3);
+    expect(manager.getDrawings()).toHaveLength(2); // the trend line is still there
+  });
+
+  it('ends a path on its last point even after the chart moved under it', () => {
+    manager.setActiveTool('path');
+    click(10, 50);
+    click(50, 20);
+    const panned = { ...vp, offset: vp.offset + 30 }; // everything 30 px to the left
+    manager.onPointerDown({ x: 20, y: 20 }, panned); // where the last point is now
+    manager.onPointerUp();
+    expect(manager.getDrawings()[0].anchors).toHaveLength(2);
+  });
+
+  it('thins a very long stroke instead of cutting its end', () => {
+    manager.setActiveTool('brush');
+    manager.onPointerDown({ x: 0, y: 50 }, vp);
+    for (let x = 1; x <= 5000; x++) manager.onPointerMove({ x: x / 2, y: 50 + (x % 7) }, vp);
+    manager.onPointerUp();
+    const stroke = manager.getDrawings()[0];
+    expect(stroke.anchors.length).toBeLessThanOrEqual(2000);
+    expect(stroke.anchors.at(-1)!.time).toBeGreaterThan(240); // reaches the end of the drag (x 2500 = bar 249.5)
+  });
+
+  it('lets a drawing finished earlier be double-clicked straight away', () => {
+    manager.setActiveTool('trendLine');
+    click(10, 50);
+    click(60, 20);
+    expect(manager.justFinished()).toBe(true); // the click that finished it
+    manager.setActiveTool('path');
+    expect(manager.justFinished()).toBe(true);
+  });
+});

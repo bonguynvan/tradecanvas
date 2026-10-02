@@ -1093,6 +1093,8 @@
 .tcw-flyout {
   position: absolute;
   margin-left: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   min-width: 180px;
   background: var(--tcw-bg-elevated);
   border: 1px solid var(--tcw-border);
@@ -1157,6 +1159,12 @@
 .tcw-flyout-item:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
+}
+.tcw-flyout-item:focus-visible {
+  outline: none;
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+  box-shadow: inset 0 0 0 1px var(--tcw-accent);
 }
 
 .tcw-flyout-item.tcw-active {

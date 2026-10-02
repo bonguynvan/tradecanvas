@@ -1,5 +1,6 @@
-import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { AnchorPoint, DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
+import { priceToY, timeToX } from '../../viewport/ScaleMapping.js';
 
 /** Segments a curve or an arc is drawn and hit-tested with. */
 const CURVE_STEPS = 48;
@@ -50,6 +51,24 @@ export function insidePolygon(point: Point, pts: readonly Point[]): boolean {
   return inside;
 }
 
+/** The time and price a stroke spans, kept per anchors list (a new list after every edit). */
+const strokeBounds = new WeakMap<readonly AnchorPoint[], { t0: number; t1: number; p0: number; p1: number }>();
+
+function boundsOf(anchors: readonly AnchorPoint[]) {
+  let b = strokeBounds.get(anchors);
+  if (!b) {
+    b = { t0: Infinity, t1: -Infinity, p0: Infinity, p1: -Infinity };
+    for (const a of anchors) {
+      if (a.time < b.t0) b.t0 = a.time;
+      if (a.time > b.t1) b.t1 = a.time;
+      if (a.price < b.p0) b.p0 = a.price;
+      if (a.price > b.p1) b.p1 = a.price;
+    }
+    strokeBounds.set(anchors, b);
+  }
+  return b;
+}
+
 /** A freehand stroke: press and drag. It moves as a whole; its points have no handles. */
 export class BrushTool extends DrawingBase {
   descriptor: DrawingDescriptor = { type: 'brush', name: 'Brush', requiredAnchors: 2, creation: 'freehand' };
@@ -73,19 +92,26 @@ export class BrushTool extends DrawingBase {
     ctx.lineCap = 'butt';
     ctx.lineJoin = 'miter';
     this.resetLineStyle(ctx);
-    if (selected) this.renderBounds(ctx, state, pts);
+    if (selected) this.renderBounds(ctx, state, viewport);
   }
 
   /** A selected stroke shows the box around it instead of hundreds of handles. */
-  private renderBounds(ctx: CanvasRenderingContext2D, state: DrawingState, pts: readonly Point[]): void {
-    const xs = pts.map((p) => p.x);
-    const ys = pts.map((p) => p.y);
+  private renderBounds(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
+    const box = this.screenBox(state, viewport);
     const pad = this.stroke(state).width / 2 + 3;
     ctx.strokeStyle = state.style.color;
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
-    ctx.strokeRect(Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) - Math.min(...xs) + pad * 2, Math.max(...ys) - Math.min(...ys) + pad * 2);
+    ctx.strokeRect(box.x0 - pad, box.y0 - pad, box.x1 - box.x0 + pad * 2, box.y1 - box.y0 + pad * 2);
     ctx.setLineDash([]);
+  }
+
+  /** The stroke's box on screen, from its time and price span. */
+  private screenBox(state: DrawingState, viewport: ViewportState): { x0: number; x1: number; y0: number; y1: number } {
+    const { t0, t1, p0, p1 } = boundsOf(state.anchors);
+    const ya = priceToY(p0, viewport);
+    const yb = priceToY(p1, viewport);
+    return { x0: timeToX(t0, viewport), x1: timeToX(t1, viewport), y0: Math.min(ya, yb), y1: Math.max(ya, yb) };
   }
 
   hitTestAnchor(): number {
@@ -94,8 +120,12 @@ export class BrushTool extends DrawingBase {
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
+    const reach = tolerance + this.stroke(state).width / 2;
+    // Off its box, a stroke of hundreds of points needs no closer look.
+    const box = this.screenBox(state, viewport);
+    if (point.x < box.x0 - reach || point.x > box.x1 + reach || point.y < box.y0 - reach || point.y > box.y1 + reach) return false;
     const pts = state.anchors.map((a) => this.anchorToPixel(a, viewport));
-    return nearPolyline(point, pts, tolerance + this.stroke(state).width / 2);
+    return nearPolyline(point, pts, reach);
   }
 }
 

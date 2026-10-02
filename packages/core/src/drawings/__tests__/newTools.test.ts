@@ -282,3 +282,38 @@ describe('forecast, projection and bars pattern', () => {
     expect(tool.hitTest({ x: 225, y: 79 }, flipped, vp, 0)).toBe(true); // falls to 20
   });
 });
+
+describe('review cases', () => {
+  it('a forecast is missed when the target is only touched after its time', () => {
+    expect(forecastOutcome([bar(1, 9, 11), bar(6, 10, 15)], { time: 1, price: 10 }, { time: 5, price: 14 })).toBe('missed');
+  });
+
+  it('a bars pattern before the first bar copies nothing', () => {
+    const tool = new BarsPatternTool();
+    const data = Array.from({ length: 1000 }, (_, i) => bar(100 + i, 10, 20));
+    tool.setDataGetter(() => data);
+    const copy = drawing('barsPattern', [at(5, 10), at(10, 40), at(20, 50)]);
+    expect(tool.hitTest({ x: 225, y: 60 }, copy, vp, 0)).toBe(false);
+    const { ctx, calls } = recordingCtx();
+    tool.render(ctx, copy, vp, false);
+    expect(calls.filter((c) => c.name === 'fillRect' || c.name === 'strokeRect')).toHaveLength(0);
+  });
+
+  it('time cycles are drawn where the chart is, however far from their first one', () => {
+    const tool = new TimeCyclesTool();
+    // Cycles of 2 bars (20 px) starting 500 bars left of the chart.
+    const cycles = drawing('timeCycles', [at(-500, 50), at(-498, 50)]);
+    const { ctx, calls } = recordingCtx();
+    tool.render(ctx, cycles, vp, false);
+    expect(calls.filter((c) => c.name === 'fill').length).toBeGreaterThan(40);
+    expect(tool.hitTest({ x: 15, y: 40 }, cycles, vp, 1)).toBe(true); // the top of the cycle over x 5–25
+  });
+
+  it('cuts a long word quickly', () => {
+    let calls = 0;
+    const measure = (t: string) => { calls++; return t.length * 6; };
+    const [line] = wrapText(measure, 'x'.repeat(2000), 120);
+    expect(measure(line)).toBeLessThanOrEqual(120);
+    expect(calls).toBeLessThan(40);
+  });
+});

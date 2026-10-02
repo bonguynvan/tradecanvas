@@ -90,3 +90,16 @@ describe('eraser', () => {
     expect(manager.hoverCursorAt({ x: 55, y: 90 }, unitViewport)).toBeNull();
   });
 });
+
+describe('eraser and locked drawings', () => {
+  it('reaches a drawing under a locked one, and shows no pointer over a locked one alone', () => {
+    const under = drawing('trendLine', [{ time: 0, price: 50 }, { time: 10, price: 50 }], { id: 'under' });
+    const over = drawing('trendLine', [{ time: 0, price: 50 }, { time: 10, price: 50 }], { id: 'over', locked: true });
+    const lone = drawing('trendLine', [{ time: 0, price: 20 }, { time: 10, price: 20 }], { id: 'lone', locked: true });
+    manager.setDrawings([under, over, lone]);
+    manager.setEraser(true);
+    expect(manager.hoverCursorAt({ x: 55, y: 80 }, unitViewport)).toBeNull();
+    expect(manager.onPointerDown({ x: 55, y: 50 }, unitViewport)).toBe(true);
+    expect(manager.getDrawings().map((d) => d.id)).toEqual(['over', 'lone']);
+  });
+});

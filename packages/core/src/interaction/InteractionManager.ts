@@ -278,6 +278,8 @@ export class InteractionManager {
       if (this.alertDragHandler?.isOverAlert(pos)) return 'ns-resize';
       const vp = getVP();
       if (vp && this.tradingManager?.isOverDraggableLine(pos, vp)) return 'ns-resize';
+      // The zoom tool keeps its cursor over drawings too.
+      if (this.zoomArea) return 'zoom-in';
       const drawingCursor = vp ? this.drawingManager?.hoverCursorAt(pos, vp) : null;
       return drawingCursor ?? idleCursor();
     };
@@ -353,8 +355,8 @@ export class InteractionManager {
       const placing = !!this.drawingManager?.getActiveTool()
         || !!this.tradingManager?.isBracketActive()
         || !!this.tradingManager?.isOrderDraftActive();
-      // The zoom-area tool takes a plain drag for its box.
-      if ((e.ctrlKey || e.metaKey || this.zoomArea) && this.boxSelectHandlers && !placing) {
+      // The zoom-area tool takes a plain drag for its box (before anything being placed).
+      if (this.boxSelectHandlers && (this.zoomArea || ((e.ctrlKey || e.metaKey) && !placing))) {
         this.boxSelecting = true;
         this.boxSelectHandlers.begin(pos);
         setCursor(idleCursor());

@@ -53,10 +53,32 @@ export function wrapText(measure: (text: string) => number, text: string, maxWid
   return lines;
 }
 
+/** The longest start of `word` that fits with an ellipsis (found by halving, not letter by letter). */
 function cutToWidth(measure: (text: string) => number, word: string, maxWidth: number): string {
-  let end = word.length;
-  while (end > 1 && measure(`${word.slice(0, end)}…`) > maxWidth) end--;
-  return end < word.length ? `${word.slice(0, end)}…` : word;
+  if (measure(word) <= maxWidth) return word;
+  let lo = 1;
+  let hi = word.length - 1;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (measure(`${word.slice(0, mid)}…`) <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return `${word.slice(0, lo)}…`;
+}
+
+/** Most wrapped texts remembered; text is drawn every frame but rarely changes. */
+const MAX_WRAPPED = 200;
+const wrapped = new Map<string, string[]>();
+
+/** `wrapText`, remembered by text, font size and width. */
+function wrapCached(measure: (text: string) => number, text: string, maxWidth: number, fontSize: number): string[] {
+  const key = `${fontSize}|${maxWidth}|${text}`;
+  const hit = wrapped.get(key);
+  if (hit) return hit;
+  if (wrapped.size >= MAX_WRAPPED) wrapped.clear();
+  const lines = wrapText(measure, text, maxWidth);
+  wrapped.set(key, lines);
+  return lines;
 }
 
 /** The box `lines` take at `look.fontSize`, its top-left at (x, y). */
@@ -70,7 +92,7 @@ export function textBoxRect(measure: (text: string) => number, lines: readonly s
 export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, look: TextBoxLook): Rect {
   ctx.font = boxFont(look.fontSize);
   const measure = (t: string) => ctx.measureText(t).width;
-  const lines = wrapText(measure, text, look.maxWidth);
+  const lines = wrapCached(measure, text, look.maxWidth, look.fontSize);
   const rect = textBoxRect(measure, lines, x, y, look.fontSize);
   if (look.fill) {
     ctx.fillStyle = look.fill;

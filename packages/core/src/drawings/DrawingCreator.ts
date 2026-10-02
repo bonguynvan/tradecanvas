@@ -30,6 +30,8 @@ export class DrawingCreator {
   private preview: AnchorPoint | null = null;
   private lastPos: Point | null = null;
   private dragging = false;
+  /** Pixels between freehand points; doubled each time the stroke is thinned. */
+  private step = FREEHAND_STEP_PX;
 
   /** The drawing being made (its committed anchors), or null. */
   get current(): DrawingState | null {
@@ -42,10 +44,23 @@ export class DrawingCreator {
     this.preview = null;
     this.lastPos = null;
     this.dragging = false;
+    this.step = FREEHAND_STEP_PX;
   }
 
-  /** A press at `anchor` (at `pos` on screen). `start` makes the drawing on the first one. */
-  press(plugin: DrawingPlugin, start: () => DrawingState, anchor: AnchorPoint, pos: Point): CreationStep {
+  /**
+   * A press at `anchor` (at `pos` on screen). `start` makes the drawing on the
+   * first one. `onScreen` puts an anchor where it is now, so a path ends on a
+   * click on its last point even after the chart was panned.
+   */
+  press(
+    plugin: DrawingPlugin,
+    start: () => DrawingState,
+    anchor: AnchorPoint,
+    pos: Point,
+    onScreen?: (anchor: AnchorPoint) => Point,
+  ): CreationStep {
+    // A press during a stroke (its release was lost) changes nothing.
+    if (this.dragging) return 'continue';
     const mode = creationMode(plugin);
     if (!this.drawing) {
       this.plugin = plugin;
@@ -58,7 +73,9 @@ export class DrawingCreator {
       }
       return mode === 'clicks' && plugin.descriptor.requiredAnchors <= 1 ? 'done' : 'continue';
     }
-    if (mode === 'path' && this.lastPos && Math.hypot(pos.x - this.lastPos.x, pos.y - this.lastPos.y) <= SAME_POINT_PX) {
+    const last = this.drawing.anchors[this.drawing.anchors.length - 1];
+    const lastPos = onScreen ? onScreen(last) : this.lastPos;
+    if (mode === 'path' && lastPos && Math.hypot(pos.x - lastPos.x, pos.y - lastPos.y) <= SAME_POINT_PX) {
       return this.finish();
     }
     this.commit(anchor, pos);
@@ -71,8 +88,14 @@ export class DrawingCreator {
     if (!this.drawing || !this.plugin) return false;
     if (this.dragging) {
       const last = this.lastPos;
-      if (last && Math.hypot(pos.x - last.x, pos.y - last.y) < FREEHAND_STEP_PX) return true;
-      if (this.drawing.anchors.length < MAX_FREEHAND_POINTS) this.commit(anchor, pos);
+      if (last && Math.hypot(pos.x - last.x, pos.y - last.y) < this.step) return true;
+      // A long stroke is thinned rather than cut: every other point goes,
+      // and points come half as often from then on.
+      if (this.drawing.anchors.length >= MAX_FREEHAND_POINTS) {
+        this.drawing.anchors = this.drawing.anchors.filter((_, i) => i % 2 === 0);
+        this.step *= 2;
+      }
+      this.commit(anchor, pos);
       return true;
     }
     if (creationMode(this.plugin) === 'path' || this.drawing.anchors.length < this.plugin.descriptor.requiredAnchors) {
@@ -87,6 +110,21 @@ export class DrawingCreator {
     if (!this.dragging) return null;
     this.dragging = false;
     return this.hasEnough() ? 'done' : 'cancel';
+  }
+
+  /**
+   * Take back the last point clicked (Ctrl+Z while drawing). False when there
+   * was only the first one: the drawing is dropped then.
+   */
+  undoPoint(): boolean {
+    if (!this.drawing || this.dragging || this.drawing.anchors.length <= 1) {
+      this.reset();
+      return false;
+    }
+    this.drawing.anchors.pop();
+    this.preview = null;
+    this.lastPos = null;
+    return true;
   }
 
   /** End a path here (Enter, or a double-click): done when it has enough points. */

@@ -61,8 +61,9 @@ export class DrawingManager {
   };
   /** The drawing being made with the pointer. */
   private creator = new DrawingCreator();
-  /** When the last drawing was finished (ms): the double-click that ends one isn't a double-click on it. */
+  /** When the last drawing was finished, and the last press that drew (ms). */
   private finishedAt = -Infinity;
+  private creationPressAt = -Infinity;
   /** The eraser: a click on a drawing removes it. */
   private eraser = false;
   private selection = new DrawingSelection();
@@ -554,6 +555,12 @@ export class DrawingManager {
       case 'back':
         return primary !== null && this.moveDrawing(primary, shortcut);
       case 'undo':
+        // While drawing, Ctrl+Z takes back the last point, not an older action.
+        if (this.state === 'creating' && this.creator.current) {
+          this.creator.undoPoint();
+          this.requestRender?.();
+          return true;
+        }
         return this.undo();
       case 'redo':
         return this.redo();
@@ -1028,7 +1035,9 @@ export class DrawingManager {
       locked: false,
       options: this.initialOptions(type),
     });
-    this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, viewport), pos));
+    this.creationPressAt = Date.now();
+    const onScreen = (a: AnchorPoint): Point => ({ x: timeToX(a.time, viewport), y: priceToY(a.price, viewport) });
+    this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, viewport), pos, onScreen));
     return true;
   }
 
@@ -1060,16 +1069,29 @@ export class DrawingManager {
 
   /** The eraser at `pos`: remove the drawing there. A press off any drawing is left to the chart (a pan). */
   private erase(pos: Point, viewport: ViewportState): boolean {
-    const id = this.drawingAt(pos, viewport);
-    const drawing = id ? this.drawings.find((d) => d.id === id) : undefined;
-    if (!drawing || drawing.locked) return false;
-    this.removeDrawing(drawing.id);
+    const id = this.erasableAt(pos, viewport);
+    if (!id) return false;
+    this.removeDrawing(id);
     return true;
   }
 
-  /** Whether a drawing was just finished: the double-click that ended a path, say. */
+  /** The topmost drawing the eraser would take at `pos`: locked ones are passed over. */
+  private erasableAt(pos: Point, viewport: ViewportState): string | null {
+    for (let i = this.drawings.length - 1; i >= 0; i--) {
+      const d = this.drawings[i];
+      if (!d.visible || d.locked) continue;
+      if (this.registry.get(d.type)?.hitTest(pos, d, viewport, 8)) return d.id;
+    }
+    return null;
+  }
+
+  /**
+   * Whether a press that drew just finished a drawing: the double-click that
+   * ended a path isn't a double-click on it. A drawing finished earlier can be
+   * double-clicked straight away.
+   */
   justFinished(withinMs = 500): boolean {
-    return Date.now() - this.finishedAt < withinMs;
+    return Date.now() - this.creationPressAt < withinMs && this.finishedAt >= this.creationPressAt;
   }
 
   private finalizeCreation(): void {
@@ -1112,7 +1134,7 @@ export class DrawingManager {
   }
 
   hoverCursorAt(pos: Point, viewport: ViewportState): 'move' | 'pointer' | null {
-    if (this.eraser) return this.drawingAt(pos, viewport) ? 'pointer' : null;
+    if (this.eraser) return this.erasableAt(pos, viewport) ? 'pointer' : null;
     if (this.activeTool || this.state === 'creating') return null;
     const tolerance = 8;
     if (this.selection.primary) {
