@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SMAIndicator } from '../overlay/SMA.js';
+import { EMAIndicator } from '../overlay/EMA.js';
+import type { IndicatorPlugin } from '@tradecanvas/commons';
 import type { OHLCBar } from '@tradecanvas/commons';
 import { indicatorSource } from '@tradecanvas/commons';
 import { IndicatorEngine } from '../IndicatorEngine.js';
@@ -75,6 +77,7 @@ describe('indicators on indicators', () => {
     const sma = e.addIndicator('sma', { period: 5, source: indicatorSource(rsi, 'value') }, data);
     const ema = e.addIndicator('ema', { period: 4, source: indicatorSource(sma, 'value') }, data);
     const full = vi.spyOn(SMAIndicator.prototype, 'calculate');
+    const fullEma = vi.spyOn(EMAIndicator.prototype, 'calculate');
     for (let step = 0; step < 12; step++) {
       const last = data[data.length - 1];
       if (step % 3 === 2) {
@@ -86,7 +89,9 @@ describe('indicators on indicators', () => {
       }
     }
     expect(full).not.toHaveBeenCalled(); // the SMA of RSI was extended, never recomputed
+    expect(fullEma).not.toHaveBeenCalled(); // and so was the EMA of that
     full.mockRestore();
+    fullEma.mockRestore();
     const fresh = engine();
     const fRsi = fresh.addIndicator('rsi', { period: 14 }, data);
     const fSma = fresh.addIndicator('sma', { period: 5, source: indicatorSource(fRsi, 'value') }, data);
@@ -101,6 +106,60 @@ describe('indicators on indicators', () => {
       });
       expect([...a.values.keys()].sort()).toEqual([...b.values.keys()].sort());
     }
+  });
+
+  it('catches up when the line it reads changes before the new bar (a fractal confirmed late)', () => {
+    // Peaks at bar 4 (known at bar 6) and bar 9, which the new bar 11 confirms.
+    const highs = [10, 11, 12, 13, 30, 13, 12, 11, 12, 40, 14, 13];
+    const make = (n: number) => highs.slice(0, n).map((h, i) => ({ time: i * 60_000, open: 10, high: h, low: 9, close: 10, volume: 1 }));
+    const e = engine();
+    let data = make(11);
+    const fractals = e.addIndicator('fractals', { period: 2 }, data);
+    const sma = e.addIndicator('sma', { period: 1, source: indicatorSource(fractals, 'up') }, data);
+    data = make(12); // the fractal at bar 9, before `from` (10), appears
+    e.recalculateFrom(data, data.length - 2);
+    const fresh = engine();
+    const f2 = fresh.addIndicator('fractals', { period: 2 }, data);
+    const s2 = fresh.addIndicator('sma', { period: 1, source: indicatorSource(f2, 'up') }, data);
+    expect(e.getOutput(sma)!.series!.map((v) => v?.value)).toEqual(fresh.getOutput(s2)!.series!.map((v) => v?.value));
+    expect(e.getOutput(sma)!.series![9]!.value).toBe(40);
+    expect(e.getOutput(sma)!.series![11]!.value).toBe(40);
+  });
+
+  it('stays right on a line that repaints (ZigZag), step after step', () => {
+    let data = bars(120).map((b, i) => ({ ...b, high: b.close + (i % 7), low: b.close - (i % 5) }));
+    const e = engine();
+    const zz = e.addIndicator('zigzag', { deviation: 1 }, data);
+    const sma = e.addIndicator('sma', { period: 2, source: indicatorSource(zz, 'pivot') }, data);
+    for (let step = 0; step < 20; step++) {
+      const last = data[data.length - 1];
+      const swing = step % 2 ? 6 : -6;
+      data = [...data, { ...last, time: last.time + 60_000, close: last.close + swing, high: last.close + swing + 1, low: last.close + swing - 1 }];
+      e.recalculateFrom(data, data.length - 2);
+      const fresh = engine();
+      const zz2 = fresh.addIndicator('zigzag', { deviation: 1 }, data);
+      const sma2 = fresh.addIndicator('sma', { period: 2, source: indicatorSource(zz2, 'pivot') }, data);
+      expect(e.getOutput(sma)!.series!.map((v) => v?.value), `step ${step}`).toEqual(fresh.getOutput(sma2)!.series!.map((v) => v?.value));
+    }
+  });
+
+  it('handles a reader whose plugin publishes no series', () => {
+    const plain: IndicatorPlugin = {
+      descriptor: { id: 'plain', name: 'Plain', placement: 'overlay', defaultConfig: { source: 'close' }, inputs: { source: { source: true } } },
+      calculate: (data) => ({ values: new Map(data.map((b) => [b.time, { value: b.close }])) }),
+      update: (data, _config, prev) => {
+        for (const b of data) prev.values.set(b.time, { value: b.close });
+        return prev;
+      },
+      render: () => {},
+    };
+    const e = engine();
+    e.register(plain);
+    let data = bars(40);
+    const rsi = e.addIndicator('rsi', { period: 14 }, data);
+    e.addIndicator('plain', { source: indicatorSource(rsi, 'value') }, data);
+    data = [...data.slice(0, -1), { ...data[39], close: data[39].close + 2 }];
+    expect(() => e.recalculateFrom(data, data.length - 1)).not.toThrow();
   });
 
   it('recomputes the readers when the read indicator changes', () => {

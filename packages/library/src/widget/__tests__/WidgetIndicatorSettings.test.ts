@@ -122,8 +122,18 @@ describe('WidgetIndicatorSettings keyboard and screen readers', () => {
     expect(host.querySelector('[role="tabpanel"]')!.getAttribute('aria-labelledby')).toBe(tabs()[1].id);
     key(tabs()[1], 'End');
     expect(document.activeElement).toBe(tabs()[2]);
-    tabs()[0].click();
-    expect(tabs()[0].isConnected).toBe(true); // marked in place, not rebuilt
+    const first = tabs()[0];
+    first.click();
+    expect(tabs()[0]).toBe(first); // marked in place, not rebuilt
+  });
+
+  it('applies a value still being typed when Escape closes it', () => {
+    dialog.open(macdTarget());
+    const fast = host.querySelector<HTMLInputElement>('.tcw-modal-body input')!;
+    fast.focus();
+    fast.value = '8';
+    key(fast, 'Escape');
+    expect(onApply).toHaveBeenLastCalledWith('m1', { fast: 8 });
   });
 
   it('closes on Escape and gives focus back', () => {

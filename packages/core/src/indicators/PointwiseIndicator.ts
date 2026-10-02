@@ -26,6 +26,10 @@ export abstract class PointwiseIndicator<P> extends IndicatorBase {
     return 0;
   }
 
+  revisesBefore(config: IndicatorConfig): number {
+    return this.lookback(this.read(config));
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const params = this.read(config);
     const points: (IndicatorValue | null)[] = new Array(data.length);

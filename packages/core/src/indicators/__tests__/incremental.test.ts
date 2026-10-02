@@ -249,3 +249,18 @@ describe('IndicatorEngine.recalculateFrom', () => {
     expect(engine.getOutput(id)).not.toBe(before);
   });
 });
+
+describe('fractals incremental update', () => {
+  it('confirms a fractal before the changed bar', () => {
+    // Bar 3 is a peak; it becomes a fractal once bar 5 exists (two lower bars after it).
+    const highs = [10, 11, 12, 20, 12, 11];
+    const bars = highs.map((high, i) => ({ time: i * 60_000, open: 10, high, low: 9, close: 10, volume: 1 }));
+    const plugin = new WilliamsFractalsIndicator();
+    const config = indicatorConfig('fractals', { period: 2 });
+    const prev = plugin.calculate(bars.slice(0, 5), config);
+    expect(prev.series![3]).toBeNull(); // not yet: only one bar after it
+    const out = plugin.update!(bars, config, prev, 4); // bar 4 closed, bar 5 is new
+    expect(out!.series![3]).toEqual({ up: 20 });
+    expectSameOutput(out!, plugin.calculate(bars, config));
+  });
+});

@@ -21,6 +21,12 @@ interface IndicatorInstance {
   sourceBars?: OHLCBar[];
   /** What an indicator read from another's line was computed on, kept for incremental updates. */
   lineInput?: LineInput;
+  /**
+   * The first bar whose values the last computation may have changed: what
+   * indicators read from this one must recompute from. 0 after a full
+   * computation.
+   */
+  changedFrom: number;
 }
 
 interface LineInput {
@@ -91,7 +97,7 @@ export class IndicatorEngine {
       opacity: config.style?.opacity ?? 1,
     };
 
-    const instance: IndicatorInstance = { plugin, config, output: null, style };
+    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0 };
     this.instances.set(instanceId, instance);
     this.order = null;
     if (data) this.compute(instance, data);
@@ -169,47 +175,57 @@ export class IndicatorEngine {
     const prev = instance.output;
     let next: IndicatorOutput | null = null;
     if (from !== undefined && from > 0 && prev && plugin.update) next = plugin.update(bars, config, prev, from);
+    instance.changedFrom = next ? Math.max(0, from! - (plugin.revisesBefore?.(config) ?? 0)) : 0;
     instance.output = next ?? plugin.calculate(bars, config);
   }
 
   /**
-   * Compute an instance from another indicator's line `key`. On a tick, the
-   * line's first value is before `from` and stays put: only the bars made
-   * of the changed tail are rebuilt and the plugin's `update` runs on them.
+   * Compute an instance from another indicator's line `key`. On a tick, only
+   * the bars made of the changed part of the line are rebuilt — from `from`,
+   * or from wherever the line itself last changed if that is earlier (a
+   * fractal confirmed late, a repainting ZigZag) — and the plugin's `update`
+   * runs on them. When the line changed before its first value, or before
+   * the start of what is kept, it is recomputed in full.
    */
   private computeFromLine(instance: IndicatorInstance, data: DataSeries, sourceId: string, key: string, from?: number): void {
     const { plugin, config } = instance;
-    const line = this.instances.get(sourceId)?.output?.series;
+    const source = this.instances.get(sourceId);
+    const line = source?.output?.series;
     const cached = instance.lineInput;
+    const changed = from === undefined ? undefined : Math.min(from, source?.changedFrom ?? 0);
     if (
-      from !== undefined && line && plugin.update && cached
+      changed !== undefined && line && plugin.update && cached && cached.raw.series && cached.aligned.series
       && cached.sourceId === sourceId && cached.key === key
-      && cached.start < from && from <= cached.start + cached.bars.length
+      && cached.start < changed && changed <= cached.start + cached.bars.length
     ) {
       const { start, bars } = cached;
       bars.length = data.length - start;
-      let last = bars[from - 1 - start].close;
-      for (let i = from; i < data.length; i++) {
+      let last = bars[changed - 1 - start].close;
+      for (let i = changed; i < data.length; i++) {
         const v = line[i]?.[key];
         if (v !== undefined && Number.isFinite(v)) last = v;
         bars[i - start] = { time: data[i].time, open: last, high: last, low: last, close: last, volume: data[i].volume };
       }
-      const next = plugin.update(bars, config, cached.raw, from - start);
-      if (next) {
+      const next = plugin.update(bars, config, cached.raw, changed - start);
+      if (next?.series) {
+        // What this update rewrote, including bars before `changed` it may revise.
+        const rewritten = Math.max(start, changed - (plugin.revisesBefore?.(config) ?? 0));
         cached.raw = next;
         if (start === 0) {
           cached.aligned = next;
         } else {
-          const series = cached.aligned.series!;
+          const series = cached.aligned.series;
           series.length = data.length;
-          for (let i = from; i < data.length; i++) series[i] = next.series?.[i - start] ?? null;
+          for (let i = rewritten; i < data.length; i++) series[i] = next.series[i - start] ?? null;
           cached.aligned.values = next.values;
           cached.aligned.meta = next.meta;
         }
         instance.output = cached.aligned;
+        instance.changedFrom = rewritten;
         return;
       }
     }
+    instance.changedFrom = 0;
     const input = lineSourceBars(data, line, key);
     if (!input) {
       delete instance.lineInput;

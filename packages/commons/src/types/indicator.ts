@@ -130,6 +130,12 @@ export interface IndicatorPlugin {
     prev: IndicatorOutput,
     from: number,
   ): IndicatorOutput | null;
+  /**
+   * How many bars before `from` an `update` may rewrite (a fractal is decided
+   * by the bars after it). Default 0: only bars from `from` on change.
+   * Indicators read from this one recompute from that far back.
+   */
+  revisesBefore?(config: IndicatorConfig): number;
   render(
     ctx: CanvasRenderingContext2D,
     output: IndicatorOutput,

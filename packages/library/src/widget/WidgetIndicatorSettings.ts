@@ -90,6 +90,8 @@ export class WidgetIndicatorSettings {
     this.modal.setAttribute('role', 'dialog');
     this.modal.setAttribute('aria-modal', 'true');
     this.modal.setAttribute('aria-labelledby', `tcw-indi-title-${this.uid}`);
+    // Focusable, so keys still reach it after a click on its blank parts.
+    this.modal.tabIndex = -1;
     this.modal.addEventListener('keydown', (e) => this.onKeyDown(e));
 
     const header = document.createElement('div');
@@ -145,11 +147,17 @@ export class WidgetIndicatorSettings {
     this.renderTabs();
     this.renderBody();
     this.backdrop.hidden = false;
-    // Start on the first input, or the tabs when there is none.
-    (this.bodyEl.querySelector<HTMLElement>(FOCUSABLE) ?? this.tabButtons[0] ?? this.modal.querySelector<HTMLElement>(FOCUSABLE))?.focus();
+    // Start on the first input, else the tabs, else the dialog itself.
+    const firstTab = this.tabsEl.hidden ? null : this.tabButtons[0] ?? null;
+    (this.bodyEl.querySelector<HTMLElement>(FOCUSABLE) ?? firstTab ?? this.modal).focus();
   }
 
   close(): void {
+    // A value typed but not yet committed (Escape pressed in the field) still applies.
+    const active = document.activeElement;
+    if ((active instanceof HTMLInputElement || active instanceof HTMLSelectElement) && this.modal.contains(active)) {
+      active.dispatchEvent(new Event('change'));
+    }
     this.backdrop.hidden = true;
     this.target = null;
     this.callbacks.onClose();

@@ -981,8 +981,7 @@ export class Chart {
 
   /**
    * Remove one indicator. The first pane indicator drawn in its pane takes the
-   * pane over and the others stay in it; without one, they go back to the
-   * price pane or to panes of their own.
+   * pane over and the others stay in it.
    */
   private detachIndicator(instanceId: string): void {
     if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
@@ -997,15 +996,10 @@ export class Chart {
     } else {
       this.layoutManager.removePanel(instanceId);
     }
+    // With an heir the others stay in its pane; without one (only price-pane
+    // indicators were drawn here) they go back to the price pane.
     for (const member of members) {
-      if (member === heir) {
-        // already moved
-      } else if (heir) {
-        this.indicatorEngine.setPane(member, heir);
-      } else {
-        this.indicatorEngine.setPane(member, null);
-        if (isPanel(member)) this.layoutManager.addPanel(member, panel?.position ?? 'bottom');
-      }
+      if (member !== heir) this.indicatorEngine.setPane(member, heir);
       this.eventBus.emit('indicatorChange', { instanceId: member, change: 'pane' });
     }
     this.eventBus.emit('indicatorRemove', { instanceId });
