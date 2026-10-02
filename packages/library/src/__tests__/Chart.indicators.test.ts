@@ -145,3 +145,50 @@ describe('chart options', () => {
     plain.destroy();
   });
 });
+
+describe('indicator review fixes', () => {
+  const panes = () => chart.getIndicatorPanes().map((p) => p.instanceIds);
+
+  it('ignores a source that would read from itself, and removes such chains cleanly', () => {
+    const a = chart.addIndicator('sma', { period: 5 })!;
+    const b = chart.addIndicator('sma', { period: 5, source: indicatorSource(a, 'value') })!;
+    chart.updateIndicator(a, { source: indicatorSource(b, 'value'), period: 7 });
+    const params = chart.getActiveIndicators().find((i) => i.instanceId === a)!.params;
+    expect(params.source).toBe('close'); // the loop was refused…
+    expect(params.period).toBe(7);       // …the rest applied
+    expect(() => chart.removeIndicator(a)).not.toThrow();
+    expect(chart.getActiveIndicators()).toEqual([]);
+  });
+
+  it('keeps an indicator placed in a pane there when its inputs change', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const ema = chart.addIndicator('ema', { period: 9 }, 'bottom', { pane: rsi })!;
+    chart.updateIndicator(ema, { period: 14 });
+    expect(panes()).toEqual([[rsi, ema]]);
+  });
+
+  it('hands a pane to its first pane indicator, keeping the others in it', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const ema = chart.addIndicator('ema', { period: 9 }, 'bottom', { pane: rsi })!;
+    const stoch = chart.addIndicator('stochastic', {}, 'bottom', { pane: rsi })!;
+    chart.removeIndicator(rsi);
+    expect(panes()).toEqual([[stoch, ema]]);
+  });
+
+  it('only lets a pane indicator own a pane', () => {
+    const ema = chart.addIndicator('ema', { period: 9 })!;
+    const sma = chart.addIndicator('sma', { period: 9 }, 'bottom', { pane: ema })!;
+    expect(chart.getActiveIndicators().find((i) => i.instanceId === sma)!.pane).toBeUndefined();
+  });
+
+  it('refits a pane’s scale to a live tick', async () => {
+    const data = bars(300);
+    chart.setData(data);
+    const macd = chart.addIndicator('macd')!;
+    const range = () => (chart as unknown as PaneProbe).buildPanelRenderInfos().find((p) => p.instanceId === macd)!.viewport.priceRange;
+    const before = range();
+    chart.updateLastBar({ ...data[299], close: data[299].close + 40, high: data[299].close + 40 });
+    await new Promise((r) => setTimeout(r, 40));
+    expect(range().max).toBeGreaterThan(before.max);
+  });
+});

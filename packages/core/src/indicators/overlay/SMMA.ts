@@ -22,4 +22,16 @@ export class SMMAIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     return outputOf(data, pointsOf(rmaOf(closes(data), getIntParam(config, 'period', 14, 1))));
   }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    let value = prev.series![from - 1]?.value;
+    if (value === undefined) return null;
+    const period = getIntParam(config, 'period', 14, 1);
+    for (let i = from; i < data.length; i++) {
+      value += (data[i].close - value) / period;
+      this.writePoint(prev, data, i, { value });
+    }
+    return prev;
+  }
 }

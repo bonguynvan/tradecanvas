@@ -100,6 +100,13 @@ describe('renderPlots', () => {
     expect(points.map((p) => p.color)).toEqual(['#up', '#down']);
   });
 
+  it('falls back to the first colour when a plot’s colour is not in the list', () => {
+    const { ctx, points } = recorder();
+    const plots: IndicatorPlot[] = [{ key: 'h', title: 'H', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 }];
+    renderPlots(ctx, out([{ h: 10 }, { h: -20 }]), { ...viewport, priceRange: { min: -50, max: 50 } }, { ...style, colors: ['#only'] }, plots);
+    expect(points.map((p) => p.color)).toEqual(['#only', '#only']);
+  });
+
   it('names the drawn fields and their colours', () => {
     const plot: IndicatorPlot = { key: 'value', title: 'SAR', color: 0, tone: { field: 'trend' }, downColor: 1 };
     expect(drawnKeys({ plots: [plot] })).toEqual(['value']);

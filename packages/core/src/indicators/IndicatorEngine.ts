@@ -10,7 +10,7 @@ import type {
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneValueRange, plotColor } from './plots.js';
-import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars } from './sources.js';
+import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -19,6 +19,21 @@ interface IndicatorInstance {
   style: ResolvedIndicatorStyle;
   /** Bars with `close` replaced by the price source, kept for incremental updates. */
   sourceBars?: OHLCBar[];
+  /** What an indicator read from another's line was computed on, kept for incremental updates. */
+  lineInput?: LineInput;
+}
+
+interface LineInput {
+  sourceId: string;
+  key: string;
+  /** Index in the chart's bars of the line's first value. */
+  start: number;
+  /** Bars made of the line, from `start` on. */
+  bars: OHLCBar[];
+  /** The plugin's own output over `bars`. */
+  raw: IndicatorOutput;
+  /** `raw` re-indexed to the chart's bars: the instance's output. */
+  aligned: IndicatorOutput;
 }
 
 let nextId = 1;
@@ -68,7 +83,7 @@ export class IndicatorEngine {
       params: { ...plugin.descriptor.defaultConfig, ...params } as Record<string, number | string | boolean>,
       visible: true,
     };
-    if (options.pane && this.instances.has(options.pane)) config.pane = options.pane;
+    if (options.pane && this.canHost(options.pane)) config.pane = options.pane;
 
     const style: ResolvedIndicatorStyle = {
       colors: config.style?.colors ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
@@ -88,12 +103,22 @@ export class IndicatorEngine {
     this.order = null;
   }
 
-  /** Change an instance's parameters; it and the indicators that read it are recomputed. */
+  /**
+   * Change an instance's parameters; it and the indicators that read it are
+   * recomputed. A source that would read, through other indicators, from the
+   * instance itself is ignored (the old source stays).
+   */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>, data?: DataSeries): void {
     const instance = this.instances.get(instanceId);
     if (!instance) return;
+    const name = sourceParam(instance.plugin.descriptor);
+    if (name && name in params && this.readsFromItself(instanceId, { ...instance.config.params, ...params })) {
+      const { [name]: _ignored, ...rest } = params;
+      params = rest;
+    }
     Object.assign(instance.config.params, params);
     delete instance.sourceBars;
+    delete instance.lineInput;
     this.order = null;
     if (!data) return;
     const affected = new Set([instanceId, ...this.getDependents(instanceId)]);
@@ -123,21 +148,17 @@ export class IndicatorEngine {
   /**
    * Compute one instance from its source: the bars, a price source in
    * `close`, or another indicator's line. With `from`, bars before it are
-   * unchanged and an incremental `update` is tried first; an indicator read
-   * from another indicator's line is always recomputed in full (the line it
-   * reads may have changed anywhere it was still settling).
+   * unchanged (and so are the lines read from them) and an incremental
+   * `update` is tried first.
    */
   private compute(instance: IndicatorInstance, data: DataSeries, from?: number): void {
     const { plugin, config } = instance;
     const source = inputSource(plugin.descriptor, config.params);
     if (source.kind === 'line') {
-      const line = this.instances.get(source.instanceId)?.output?.series;
-      const input = lineSourceBars(data, line, source.key);
-      instance.output = input
-        ? alignOutput(plugin.calculate(input.bars, config), input.start, data.length)
-        : emptyOutput(data.length);
+      this.computeFromLine(instance, data, source.instanceId, source.key, from);
       return;
     }
+    delete instance.lineInput;
     let bars: DataSeries = data;
     if (source.kind === 'price') {
       instance.sourceBars = priceSourceBars(data, source.source, instance.sourceBars ?? null, from ?? 0);
@@ -149,6 +170,56 @@ export class IndicatorEngine {
     let next: IndicatorOutput | null = null;
     if (from !== undefined && from > 0 && prev && plugin.update) next = plugin.update(bars, config, prev, from);
     instance.output = next ?? plugin.calculate(bars, config);
+  }
+
+  /**
+   * Compute an instance from another indicator's line `key`. On a tick, the
+   * line's first value is before `from` and stays put: only the bars made
+   * of the changed tail are rebuilt and the plugin's `update` runs on them.
+   */
+  private computeFromLine(instance: IndicatorInstance, data: DataSeries, sourceId: string, key: string, from?: number): void {
+    const { plugin, config } = instance;
+    const line = this.instances.get(sourceId)?.output?.series;
+    const cached = instance.lineInput;
+    if (
+      from !== undefined && line && plugin.update && cached
+      && cached.sourceId === sourceId && cached.key === key
+      && cached.start < from && from <= cached.start + cached.bars.length
+    ) {
+      const { start, bars } = cached;
+      bars.length = data.length - start;
+      let last = bars[from - 1 - start].close;
+      for (let i = from; i < data.length; i++) {
+        const v = line[i]?.[key];
+        if (v !== undefined && Number.isFinite(v)) last = v;
+        bars[i - start] = { time: data[i].time, open: last, high: last, low: last, close: last, volume: data[i].volume };
+      }
+      const next = plugin.update(bars, config, cached.raw, from - start);
+      if (next) {
+        cached.raw = next;
+        if (start === 0) {
+          cached.aligned = next;
+        } else {
+          const series = cached.aligned.series!;
+          series.length = data.length;
+          for (let i = from; i < data.length; i++) series[i] = next.series?.[i - start] ?? null;
+          cached.aligned.values = next.values;
+          cached.aligned.meta = next.meta;
+        }
+        instance.output = cached.aligned;
+        return;
+      }
+    }
+    const input = lineSourceBars(data, line, key);
+    if (!input) {
+      delete instance.lineInput;
+      instance.output = emptyOutput(data.length);
+      return;
+    }
+    const raw = plugin.calculate(input.bars, config);
+    const aligned = alignOutput(raw, input.start, data.length);
+    instance.lineInput = { sourceId, key, start: input.start, bars: input.bars, raw, aligned };
+    instance.output = aligned;
   }
 
   /** Instances ordered so each comes after the indicators it reads (insertion order otherwise). */
@@ -169,6 +240,29 @@ export class IndicatorEngine {
     for (const instance of this.instances.values()) visit(instance);
     this.order = out;
     return out;
+  }
+
+  /** Whether `params` would make `instanceId` read, directly or through others, from its own lines. */
+  private readsFromItself(instanceId: string, params: Readonly<Record<string, unknown>>): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return false;
+    let source = inputSource(instance.plugin.descriptor, params);
+    const seen = new Set<string>();
+    while (source.kind === 'line') {
+      if (source.instanceId === instanceId) return true;
+      if (seen.has(source.instanceId)) return false;
+      seen.add(source.instanceId);
+      const next = this.instances.get(source.instanceId);
+      if (!next) return false;
+      source = inputSource(next.plugin.descriptor, next.config.params);
+    }
+    return false;
+  }
+
+  /** Whether `hostId` owns a pane others can be drawn in: a pane indicator not itself drawn in another's pane. */
+  private canHost(hostId: string): boolean {
+    const host = this.instances.get(hostId);
+    return !!host && host.plugin.descriptor.placement === 'panel' && !host.config.pane;
   }
 
   /** The instances that read `instanceId`'s lines, directly or through others. */
@@ -206,7 +300,7 @@ export class IndicatorEngine {
    */
   setPane(instanceId: string, hostId: string | null): boolean {
     const instance = this.instances.get(instanceId);
-    if (!instance || hostId === instanceId || (hostId !== null && !this.instances.has(hostId))) return false;
+    if (!instance || hostId === instanceId || (hostId !== null && !this.canHost(hostId))) return false;
     if (hostId === null) delete instance.config.pane;
     else instance.config.pane = hostId;
     if (isPalette(instance.style.colors)) {
@@ -335,7 +429,7 @@ export class IndicatorEngine {
     // The pane's own indicator and those drawn in it share one scale.
     for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
       const instance = this.instances.get(id);
-      if (!instance || (id !== instanceId && instance.config.visible === false)) continue;
+      if (!instance || instance.config.visible === false) continue;
       const descriptor = instance.plugin.descriptor;
       const own = paneValueRange(instance.output, from, to, {
         keys: drawnKeys(descriptor),

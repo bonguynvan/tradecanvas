@@ -35,6 +35,11 @@ export interface IndicatorSettingsCallbacks {
 
 type Tab = 'inputs' | 'style' | 'levels';
 
+/** Ids for the dialog's labelling (several widgets may share a page). */
+let nextDialogId = 1;
+
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const LINE_WIDTHS = [1, 1.5, 2, 3, 4];
 
@@ -64,6 +69,9 @@ export class WidgetIndicatorSettings {
   private colors: string[] = [];
   private levels: number[] = [];
   private tab: Tab = 'inputs';
+  private tabButtons: HTMLButtonElement[] = [];
+  private returnFocus: HTMLElement | null = null;
+  private readonly uid = nextDialogId++;
   private readonly t: Translator;
 
   constructor(host: HTMLElement, callbacks: IndicatorSettingsCallbacks, t?: Translator) {
@@ -81,15 +89,18 @@ export class WidgetIndicatorSettings {
     this.modal.className = 'tcw-modal tcw-modal-narrow';
     this.modal.setAttribute('role', 'dialog');
     this.modal.setAttribute('aria-modal', 'true');
+    this.modal.setAttribute('aria-labelledby', `tcw-indi-title-${this.uid}`);
+    this.modal.addEventListener('keydown', (e) => this.onKeyDown(e));
 
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
     this.titleEl = document.createElement('h3');
+    this.titleEl.id = `tcw-indi-title-${this.uid}`;
     this.titleEl.textContent = 'Indicator';
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-modal-close';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', this.t('indicatorSettings.close'));
     closeBtn.innerHTML = createIcon('x', 16);
     closeBtn.addEventListener('click', () => this.close());
     header.append(this.titleEl, closeBtn);
@@ -97,9 +108,11 @@ export class WidgetIndicatorSettings {
     this.tabsEl = document.createElement('div');
     this.tabsEl.className = 'tcw-modal-tabs';
     this.tabsEl.setAttribute('role', 'tablist');
+    this.tabsEl.addEventListener('keydown', (e) => this.onTabKey(e));
 
     this.bodyEl = document.createElement('div');
     this.bodyEl.className = 'tcw-modal-body';
+    this.bodyEl.id = `tcw-indi-panel-${this.uid}`;
     this.bodyEl.setAttribute('role', 'tabpanel');
 
     const footer = document.createElement('div');
@@ -122,6 +135,7 @@ export class WidgetIndicatorSettings {
   }
 
   open(target: IndicatorSettingsTarget): void {
+    if (this.backdrop.hidden) this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.target = target;
     this.titleEl.textContent = this.t('indicatorSettings.title').replace('{name}', target.name);
     this.draft = {};
@@ -131,12 +145,17 @@ export class WidgetIndicatorSettings {
     this.renderTabs();
     this.renderBody();
     this.backdrop.hidden = false;
+    // Start on the first input, or the tabs when there is none.
+    (this.bodyEl.querySelector<HTMLElement>(FOCUSABLE) ?? this.tabButtons[0] ?? this.modal.querySelector<HTMLElement>(FOCUSABLE))?.focus();
   }
 
   close(): void {
     this.backdrop.hidden = true;
     this.target = null;
     this.callbacks.onClose();
+    // Back to where the dialog was opened from (a legend row, the object tree).
+    if (this.returnFocus?.isConnected) this.returnFocus.focus();
+    this.returnFocus = null;
   }
 
   isOpen(): boolean {
@@ -156,26 +175,77 @@ export class WidgetIndicatorSettings {
     return out;
   }
 
+  /** The tab buttons for this indicator; built on open, then only marked (focus stays put). */
   private renderTabs(): void {
     const tabs = this.tabs();
     this.tabsEl.hidden = tabs.length < 2;
-    this.tabsEl.replaceChildren(...tabs.map((tab) => {
+    this.tabButtons = tabs.map((tab) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tcw-modal-tab';
+      btn.id = `tcw-indi-tab-${this.uid}-${tab}`;
       btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-controls', this.bodyEl.id);
       btn.dataset.tab = tab;
       btn.textContent = this.t(`indicatorSettings.tab.${tab}`);
-      const selected = tab === this.tab;
+      btn.addEventListener('click', () => this.selectTab(tab));
+      return btn;
+    });
+    this.tabsEl.replaceChildren(...this.tabButtons);
+    this.markTabs();
+  }
+
+  private markTabs(): void {
+    for (const btn of this.tabButtons) {
+      const selected = btn.dataset.tab === this.tab;
       btn.classList.toggle('tcw-active', selected);
       btn.setAttribute('aria-selected', String(selected));
-      btn.addEventListener('click', () => {
-        this.tab = tab;
-        this.renderTabs();
-        this.renderBody();
-      });
-      return btn;
-    }));
+      btn.tabIndex = selected ? 0 : -1;
+      if (selected) this.bodyEl.setAttribute('aria-labelledby', btn.id);
+    }
+  }
+
+  private selectTab(tab: Tab, focus = false): void {
+    this.tab = tab;
+    this.markTabs();
+    this.renderBody();
+    if (focus) this.tabButtons.find((b) => b.dataset.tab === tab)?.focus();
+  }
+
+  /** Arrow keys, Home and End move between tabs. */
+  private onTabKey(e: KeyboardEvent): void {
+    const tabs = this.tabButtons.map((b) => b.dataset.tab as Tab);
+    const at = tabs.indexOf(this.tab);
+    const next = e.key === 'ArrowRight' ? (at + 1) % tabs.length
+      : e.key === 'ArrowLeft' ? (at - 1 + tabs.length) % tabs.length
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? tabs.length - 1
+      : -1;
+    if (next < 0 || tabs.length === 0) return;
+    e.preventDefault();
+    this.selectTab(tabs[next], true);
+  }
+
+  /** Escape closes; Tab stays inside the dialog. */
+  private onKeyDown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      this.close();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const items = [...this.modal.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0 || el === document.activeElement);
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   private renderBody(): void {
@@ -346,9 +416,9 @@ export class WidgetIndicatorSettings {
       const input = document.createElement('input');
       input.type = 'number';
       input.className = 'tcw-indi-input';
+      input.id = `tcw-indi-level-${this.uid}-${i}`;
       input.value = String(level);
       input.step = 'any';
-      input.setAttribute('aria-label', `${this.t('indicatorSettings.tab.levels')} ${i + 1}`);
       input.addEventListener('change', () => {
         const n = Number(input.value);
         if (!Number.isFinite(n) || input.value.trim() === '') return;
@@ -361,16 +431,26 @@ export class WidgetIndicatorSettings {
       remove.innerHTML = createIcon('x', 12);
       const label = this.t('indicatorSettings.removeLevel');
       remove.title = label;
-      remove.setAttribute('aria-label', `${label} ${level}`);
+      remove.setAttribute('aria-label', `${label} ${i + 1}`);
       remove.addEventListener('click', () => {
         this.levels = this.levels.filter((_, j) => j !== i);
         this.applyLevels();
         this.renderBody();
+        // Keep the keyboard nearby: the next level's remove, else Add.
+        (this.bodyEl.querySelectorAll<HTMLElement>('.tcw-indi-remove')[i]
+          ?? this.bodyEl.querySelector<HTMLElement>('.tcw-indi-add'))?.focus();
       });
       const controls = document.createElement('span');
       controls.className = 'tcw-indi-level';
       controls.append(input, remove);
-      section.appendChild(this.row(`#${i + 1}`, controls));
+      const row = document.createElement('div');
+      row.className = 'tcw-settings-row';
+      const text = document.createElement('label');
+      text.className = 'tcw-settings-label';
+      text.htmlFor = input.id;
+      text.textContent = `${this.t('indicatorSettings.level')} ${i + 1}`;
+      row.append(text, controls);
+      section.appendChild(row);
     });
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
@@ -381,6 +461,8 @@ export class WidgetIndicatorSettings {
       this.levels = [...this.levels, last === undefined ? 0 : last + 10];
       this.applyLevels();
       this.renderBody();
+      const inputs = this.bodyEl.querySelectorAll<HTMLInputElement>('.tcw-indi-level input');
+      inputs[inputs.length - 1]?.focus();
     });
     section.appendChild(addBtn);
   }

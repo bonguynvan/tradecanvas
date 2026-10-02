@@ -16,8 +16,8 @@
   pane `scale`, default `levels` and how `inputs` are edited. All built-ins do,
   and a contract test checks every one. `IndicatorBase.render` draws the
   declared plots, so a custom indicator needs no rendering code.
-- **Sources.** 26 close-based indicators take a `source`: a price (`close`,
-  `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another
+- **Sources.** 38 indicators that read the close take a `source`: a price
+  (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another
   indicator's line (`indicatorSource(instanceId, key)`). An indicator on a pane
   indicator (an SMA of RSI) is drawn in its pane, recomputed when it changes
   and removed with it.
@@ -47,3 +47,15 @@
 - **Exports.** `PRICE_SOURCES`, `sourcePrice`, `indicatorSource`,
   `parseIndicatorSource` and the plot, scale and input types are exported from
   `@tradecanvas/chart`.
+- **Faster live updates.** The new indicators and indicators read from another
+  indicator's line follow live ticks incrementally.
+- **Behaviour changes to note.**
+  - Value tags are on by default; turn them off with
+    `features.indicatorValueLabels: false`.
+  - Built-in pane indicators draw with the viewport's value scale
+    (`viewport.priceRange`) and no longer fit their own. Code that calls a
+    plugin's `render` directly must pass the pane's viewport with its range
+    (`getPaneValueRange`).
+  - `new Chart(container, options)` keeps a copy of `options`; changing that
+    object afterwards does not affect the chart.
+  - A source that would make an indicator read from itself is ignored.

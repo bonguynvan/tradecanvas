@@ -1,15 +1,13 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput } from '@tradecanvas/commons';
-import { IndicatorBase } from '../IndicatorBase.js';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorValue } from '@tradecanvas/commons';
+import { PointwiseIndicator } from '../PointwiseIndicator.js';
 import { getIntParam } from '../params.js';
-import { outputOf } from '../math.js';
-import type { IndicatorValue } from '@tradecanvas/commons';
 
 /**
  * Williams Fractals: a high above the `period` bars on each side (up
  * fractal, marked at the high) or a low below them (down fractal, at the
  * low). A fractal is known only `period` bars after it.
  */
-export class WilliamsFractalsIndicator extends IndicatorBase {
+export class WilliamsFractalsIndicator extends PointwiseIndicator<number> {
   descriptor: IndicatorDescriptor = {
     id: 'fractals',
     name: 'Williams Fractals',
@@ -23,19 +21,25 @@ export class WilliamsFractalsIndicator extends IndicatorBase {
     ],
   };
 
-  calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const n = getIntParam(config, 'period', 2, 1);
-    const points: (IndicatorValue | null)[] = new Array(data.length).fill(null);
-    for (let i = n; i < data.length - n; i++) {
-      let up = true;
-      let down = true;
-      for (let j = i - n; j <= i + n && (up || down); j++) {
-        if (j === i) continue;
-        if (data[j].high >= data[i].high) up = false;
-        if (data[j].low <= data[i].low) down = false;
-      }
-      if (up || down) points[i] = { ...(up ? { up: data[i].high } : {}), ...(down ? { down: data[i].low } : {}) };
+  protected read(config: IndicatorConfig): number {
+    return getIntParam(config, 'period', 2, 1);
+  }
+
+  /** A change to a bar can make or unmake the fractal `n` bars before it. */
+  protected lookback(n: number): number {
+    return n;
+  }
+
+  protected pointAt(data: DataSeries, i: number, n: number): IndicatorValue | null {
+    if (i < n || i > data.length - n - 1) return null;
+    let up = true;
+    let down = true;
+    for (let j = i - n; j <= i + n && (up || down); j++) {
+      if (j === i) continue;
+      if (data[j].high >= data[i].high) up = false;
+      if (data[j].low <= data[i].low) down = false;
     }
-    return outputOf(data, points);
+    if (!up && !down) return null;
+    return { ...(up ? { up: data[i].high } : {}), ...(down ? { down: data[i].low } : {}) };
   }
 }

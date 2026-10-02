@@ -102,6 +102,52 @@ describe('WidgetIndicatorSettings', () => {
   });
 });
 
+describe('WidgetIndicatorSettings keyboard and screen readers', () => {
+  const key = (el: Element, k: string, init: KeyboardEventInit = {}) =>
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
+
+  it('names the dialog by its title and starts on the first input', () => {
+    dialog.open(macdTarget());
+    const modal = host.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(document.getElementById(modal.getAttribute('aria-labelledby')!)!.textContent).toBe('MACD settings');
+    expect(document.activeElement).toBe(host.querySelector('.tcw-modal-body input'));
+  });
+
+  it('moves between tabs with the arrow keys, keeping focus on the tabs', () => {
+    dialog.open(macdTarget());
+    tabs()[0].focus();
+    key(tabs()[0], 'ArrowRight');
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(tabs().map((t) => t.tabIndex)).toEqual([-1, 0, -1]);
+    expect(host.querySelector('[role="tabpanel"]')!.getAttribute('aria-labelledby')).toBe(tabs()[1].id);
+    key(tabs()[1], 'End');
+    expect(document.activeElement).toBe(tabs()[2]);
+    tabs()[0].click();
+    expect(tabs()[0].isConnected).toBe(true); // marked in place, not rebuilt
+  });
+
+  it('closes on Escape and gives focus back', () => {
+    const opener = document.createElement('button');
+    host.appendChild(opener);
+    opener.focus();
+    dialog.open(macdTarget());
+    key(document.activeElement!, 'Escape');
+    expect(host.querySelector<HTMLElement>('.tcw-modal-backdrop')!.hidden).toBe(true);
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('keeps focus nearby when levels are added and removed', () => {
+    dialog.open(macdTarget());
+    tab('levels');
+    host.querySelector<HTMLButtonElement>('.tcw-indi-add')!.click();
+    const inputs = host.querySelectorAll<HTMLInputElement>('.tcw-indi-level input');
+    expect(document.activeElement).toBe(inputs[inputs.length - 1]);
+    expect(host.querySelector(`label[for="${inputs[0].id}"]`)!.textContent).toBe('Level 1');
+    host.querySelector<HTMLButtonElement>('.tcw-indi-remove')!.click();
+    expect(document.activeElement).toBe(host.querySelector('.tcw-indi-remove'));
+  });
+});
+
 describe('lineSourcesFor', () => {
   const active = (id: string, instanceId: string, params: Record<string, unknown> = {}) => {
     const d = descriptor(id);

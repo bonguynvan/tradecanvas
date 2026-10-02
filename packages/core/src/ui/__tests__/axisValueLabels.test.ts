@@ -11,6 +11,13 @@ describe('spreadLabels', () => {
     expect(spreadLabels([50, 52, 55], 0, 200)).toEqual([50, 50 + AXIS_LABEL_HEIGHT, 50 + 2 * AXIS_LABEL_HEIGHT]);
   });
 
+  it('keeps the first tags inside a short axis when not all fit', () => {
+    const ys = spreadLabels([20, 20, 20], 0, 40);
+    expect(ys[0]).toBe(AXIS_LABEL_HEIGHT / 2);
+    expect(ys[1]).toBe(ys[0] + AXIS_LABEL_HEIGHT);
+    expect(ys[2]).toBeGreaterThan(40 - AXIS_LABEL_HEIGHT / 2); // past the bottom: left out
+  });
+
   it('keeps every tag inside the axis, pushing up from the bottom edge', () => {
     const ys = spreadLabels([190, 195, 199], 0, 200);
     expect(ys[2]).toBe(200 - AXIS_LABEL_HEIGHT / 2);

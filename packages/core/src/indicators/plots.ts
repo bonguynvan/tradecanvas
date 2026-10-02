@@ -147,7 +147,9 @@ export function renderPlots(
     const kind = plot.kind ?? 'line';
     const passes = plot.tone && plot.downColor !== undefined ? [true, false] : [null];
     for (const up of passes) {
-      const color = up === false ? style.colors[plot.downColor!] ?? style.colors[plot.color] : style.colors[plot.color];
+      // A shorter colour list (one colour set by hand) falls back to its first colour.
+      const upColor = style.colors[plot.color] ?? style.colors[0];
+      const color = up === false ? style.colors[plot.downColor!] ?? upColor : upColor;
       const take = (val: IndicatorValue) => up === null || isUpTone(plot, val) === up;
       if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, take);
       else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, take);

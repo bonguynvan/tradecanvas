@@ -127,3 +127,41 @@ export function lowestAt(src: readonly Num[], i: number, period: number): Num {
 export function pointsOf(src: readonly Num[], key = 'value'): (IndicatorValue | null)[] {
   return src.map((v) => (v !== undefined && Number.isFinite(v) ? { [key]: v } : null));
 }
+
+/** Mean and population standard deviation of the closes of the `period` bars ending at `i`. */
+export function closeStatsAt(data: DataSeries, i: number, period: number): { mean: number; sd: number } | undefined {
+  if (i < period - 1 || i >= data.length) return undefined;
+  let sum = 0;
+  let sumSq = 0;
+  for (let j = i - period + 1; j <= i; j++) {
+    const c = data[j].close;
+    sum += c;
+    sumSq += c * c;
+  }
+  const mean = sum / period;
+  return { mean, sd: Math.sqrt(Math.max(0, sumSq / period - mean * mean)) };
+}
+
+/** Highest high of the `period` bars ending at `i`. */
+export function highAt(data: DataSeries, i: number, period: number): number | undefined {
+  if (i < period - 1) return undefined;
+  let best = -Infinity;
+  for (let j = i - period + 1; j <= i; j++) if (data[j].high > best) best = data[j].high;
+  return best;
+}
+
+/** Lowest low of the `period` bars ending at `i`. */
+export function lowAt(data: DataSeries, i: number, period: number): number | undefined {
+  if (i < period - 1) return undefined;
+  let best = Infinity;
+  for (let j = i - period + 1; j <= i; j++) if (data[j].low < best) best = data[j].low;
+  return best;
+}
+
+/** Simple average of the closes of the `period` bars ending at `i`. */
+export function closeMeanAt(data: DataSeries, i: number, period: number): number | undefined {
+  if (i < period - 1) return undefined;
+  let sum = 0;
+  for (let j = i - period + 1; j <= i; j++) sum += data[j].close;
+  return sum / period;
+}

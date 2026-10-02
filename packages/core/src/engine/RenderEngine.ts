@@ -76,11 +76,11 @@ export interface RenderContext {
   viewport: ViewportState;
   theme: Theme;
   data: DataSeries;
-  /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
   /** Tag each indicator line's latest value on its value axis (default on). */
   indicatorValueLabels?: boolean;
   /** Price text as the price axis writes it (precision, locale). */
   formatPrice?: (price: number) => string;
+  /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
   numberLocale?: string;
   /** Write each indicator pane's name, and the values under the cursor, in its header (default). Off when the host labels panes itself. */
   paneTitles?: boolean;
@@ -294,7 +294,9 @@ export class RenderEngine {
       c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
       c.clip();
       const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
-      for (const id of ids) this.renderLevels(c, indicatorEngine.getLevels(id), panel.viewport, theme);
+      for (const id of ids) {
+        if (indicatorEngine.isVisible(id)) this.renderLevels(c, indicatorEngine.getLevels(id), panel.viewport, theme);
+      }
       for (const id of ids) indicatorEngine.renderPanel(c, id, panel.viewport);
       c.restore();
 

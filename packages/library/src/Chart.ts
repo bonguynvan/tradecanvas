@@ -898,16 +898,25 @@ export class Chart {
     return instanceId;
   }
 
+  /**
+   * Change an indicator's inputs. A source that would make it read from its
+   * own lines (through other indicators) is ignored.
+   */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>): void {
+    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
+    const name = descriptor ? sourceParam(descriptor) : null;
+    const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
     this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
     this.announceIndicatorUpdate(0);
     this.scheduleAutoSave();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
-    // A price-pane indicator follows its source into a pane, or back out of it.
-    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
+    // A price-pane indicator follows a new source into its pane, and leaves
+    // it when it no longer reads from it; otherwise it stays where it is.
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
-    if (descriptor?.placement === 'overlay' && config) {
-      const pane = this.paneFor(descriptor, config.params, undefined, instanceId);
+    if (descriptor?.placement === 'overlay' && config && name && config.params[name] !== before) {
+      const line = parseIndicatorSource(config.params[name]);
+      const pane = line ? this.paneHostOf(line.instanceId, instanceId)
+        : parseIndicatorSource(before) ? null : config.pane ?? null;
       if ((pane ?? undefined) !== config.pane) {
         this.indicatorEngine.setPane(instanceId, pane);
         this.eventBus.emit('indicatorChange', { instanceId, change: 'pane' });
@@ -963,31 +972,43 @@ export class Chart {
    */
   removeIndicator(instanceId: string): void {
     if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
-    for (const reader of this.indicatorEngine.getDependents(instanceId).reverse()) {
-      if (this.indicatorEngine.getIndicatorConfig(reader)) this.removeIndicator(reader);
-    }
+    // It and everything computed from its lines, the last readers first.
+    const doomed = [instanceId, ...this.indicatorEngine.getDependents(instanceId)];
+    for (const id of doomed.reverse()) this.detachIndicator(id);
+    this.scheduleAutoSave();
+    this.updateViewportAndRender();
+  }
+
+  /**
+   * Remove one indicator. The first pane indicator drawn in its pane takes the
+   * pane over and the others stay in it; without one, they go back to the
+   * price pane or to panes of their own.
+   */
+  private detachIndicator(instanceId: string): void {
+    if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
     const panel = this.layoutManager.getPanels().find((p) => p.id === instanceId);
     const members = this.indicatorEngine.getPaneMembers(instanceId);
+    const isPanel = (id: string) => this.indicatorEngine.getIndicatorDescriptor(id)?.placement === 'panel';
+    const heir = panel ? members.find(isPanel) ?? null : null;
     this.indicatorEngine.removeIndicator(instanceId);
-    let heir: string | null = null;
+    if (heir) {
+      this.indicatorEngine.setPane(heir, null);
+      this.layoutManager.renamePanel(instanceId, heir);
+    } else {
+      this.layoutManager.removePanel(instanceId);
+    }
     for (const member of members) {
-      const isPanel = this.indicatorEngine.getIndicatorDescriptor(member)?.placement === 'panel';
-      if (isPanel && panel && !heir) {
-        heir = member;
-        this.indicatorEngine.setPane(member, null);
-        this.layoutManager.renamePanel(instanceId, member);
+      if (member === heir) {
+        // already moved
       } else if (heir) {
         this.indicatorEngine.setPane(member, heir);
       } else {
         this.indicatorEngine.setPane(member, null);
-        if (isPanel) this.layoutManager.addPanel(member, panel?.position ?? 'bottom');
+        if (isPanel(member)) this.layoutManager.addPanel(member, panel?.position ?? 'bottom');
       }
       this.eventBus.emit('indicatorChange', { instanceId: member, change: 'pane' });
     }
-    if (!heir) this.layoutManager.removePanel(instanceId);
     this.eventBus.emit('indicatorRemove', { instanceId });
-    this.scheduleAutoSave();
-    this.updateViewportAndRender();
   }
 
   /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
@@ -2693,6 +2714,8 @@ export class Chart {
     this.renderScheduled = true;
     requestAnimationFrame(() => {
       this.renderScheduled = false;
+      // A tick moves indicator values: refit the panes' scales.
+      this.panelInfoCache = null;
       this.applyDataToViewport();
       if (this.fitPriceAxisWidth()) this.applyDataToViewport();
       this.syncRenderContext();

@@ -86,8 +86,9 @@ sized element and call `destroy()` in the unmount hook.
 
 ## A signal from an indicator on an indicator
 
-An SMA of RSI, drawn in RSI's pane, and a check on each update for RSI
-crossing above it:
+An SMA of RSI, drawn in RSI's pane, and a signal when RSI closes above it.
+It looks at the two last *closed* bars (the forming one still moves) and fires
+once per bar:
 
 ```ts
 import { Chart, BinanceAdapter, indicatorSource } from '@tradecanvas/chart';
@@ -98,12 +99,18 @@ await chart.connect({ adapter: new BinanceAdapter(), symbol: 'ETHUSDT', timefram
 const rsi = chart.addIndicator('rsi', { period: 14 })!;
 const signal = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })!;
 
+let lastSignalBar = -1;
 chart.on('indicatorUpdate', () => {
   const r = chart.getIndicatorOutput(rsi)?.series ?? [];
   const s = chart.getIndicatorOutput(signal)?.series ?? [];
-  const i = r.length - 1;
-  const crossedUp = (r[i - 1]?.value ?? 0) <= (s[i - 1]?.value ?? 0) && (r[i]?.value ?? 0) > (s[i]?.value ?? 0);
-  if (crossedUp) console.log('RSI crossed above its average');
+  const i = r.length - 2; // the bar that closed last
+  if (i <= lastSignalBar) return;
+  const [r0, r1, s0, s1] = [r[i - 1]?.value, r[i]?.value, s[i - 1]?.value, s[i]?.value];
+  if (r0 === undefined || r1 === undefined || s0 === undefined || s1 === undefined) return;
+  if (r0 <= s0 && r1 > s1) {
+    lastSignalBar = i;
+    console.log('RSI closed above its average');
+  }
 });
 ```
 

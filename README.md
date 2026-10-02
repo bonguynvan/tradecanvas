@@ -519,42 +519,20 @@ chart.setChartType('my-custom-candles')   // custom chart types render via the p
 | `chartType` | `ChartTypePlugin` — `createRenderer()` + optional `transform()` |
 | `overlay` | `OverlayPlugin` — `render(ctx, { viewport, data, theme })` on the `main` / `overlay` / `ui` layer |
 
-### Web Worker indicator pipeline
+### Indicators outside the chart
 
-Heavy charts (1,000+ bars × 10+ indicators) can stutter when `calculate()` runs on the main thread. `IndicatorWorkerHost` offloads calculation to a worker so the render loop stays smooth.
-
-```typescript
-import { IndicatorWorkerHost } from '@tradecanvas/core'
-
-// Bundler-supported worker URL (Vite, webpack 5, esbuild, etc.)
-const worker = new Worker(
-  new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url),
-  { type: 'module' },
-)
-const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
-
-const output = await host.calculate(
-  'rsi',
-  { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } },
-  bars,
-)
-
-// Health check / cleanup
-await host.ping()
-host.terminate()
-```
-
-No worker available (SSR, tests, or as a safety net)? Pass `null` and register fallback plugins for synchronous calculation:
+`IndicatorWorkerHost` computes an indicator from bars with the same messages a
+Web Worker would use. The worker script is not part of the published packages
+yet; pass `null` and register the plugins to compute in place (SSR, tests,
+scripts):
 
 ```typescript
 import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
 
 const host = new IndicatorWorkerHost(null)
 host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', config, bars)  // runs synchronously
+const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
 ```
-
-Render still happens on the main thread (it needs `CanvasRenderingContext2D`). Only the heavy compute moves off-thread.
 
 ### Save / Load
 

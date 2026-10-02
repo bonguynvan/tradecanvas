@@ -119,12 +119,14 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
 </p>
 <pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
 
-<h2>Web Worker pipeline</h2>
-<p>For heavy indicator workloads, compute off the main thread:</p>
-<pre><code>{`import { IndicatorWorkerHost } from '@tradecanvas/core'
+<h2>Computing outside the chart</h2>
+<p>
+  <code>IndicatorWorkerHost</code> computes an indicator from bars with the same messages a Web Worker would
+  use. The worker script is not part of the published packages yet, so pass <code>null</code> and register
+  the plugins to compute in place (SSR, tests, scripts):
+</p>
+<pre><code>{`import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
 
-const worker = new Worker(new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url), { type: 'module' })
-const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
-host.terminate()`}</code></pre>
-<p>Pass <code>null</code> as the worker and register fallback plugins to compute synchronously (SSR, tests).</p>
+const host = new IndicatorWorkerHost(null)
+host.registerFallbackPlugin(new RSIIndicator())
+const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)`}</code></pre>

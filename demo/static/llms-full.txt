@@ -1,6 +1,6 @@
 # TradeCanvas
 
-> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): 17 chart types, 85 indicators, 40 drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 85 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
 
 Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
 
@@ -315,8 +315,9 @@ sized element and call `destroy()` in the unmount hook.
 
 ## A signal from an indicator on an indicator
 
-An SMA of RSI, drawn in RSI's pane, and a check on each update for RSI
-crossing above it:
+An SMA of RSI, drawn in RSI's pane, and a signal when RSI closes above it.
+It looks at the two last *closed* bars (the forming one still moves) and fires
+once per bar:
 
 ```ts
 import { Chart, BinanceAdapter, indicatorSource } from '@tradecanvas/chart';
@@ -327,12 +328,18 @@ await chart.connect({ adapter: new BinanceAdapter(), symbol: 'ETHUSDT', timefram
 const rsi = chart.addIndicator('rsi', { period: 14 })!;
 const signal = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })!;
 
+let lastSignalBar = -1;
 chart.on('indicatorUpdate', () => {
   const r = chart.getIndicatorOutput(rsi)?.series ?? [];
   const s = chart.getIndicatorOutput(signal)?.series ?? [];
-  const i = r.length - 1;
-  const crossedUp = (r[i - 1]?.value ?? 0) <= (s[i - 1]?.value ?? 0) && (r[i]?.value ?? 0) > (s[i]?.value ?? 0);
-  if (crossedUp) console.log('RSI crossed above its average');
+  const i = r.length - 2; // the bar that closed last
+  if (i <= lastSignalBar) return;
+  const [r0, r1, s0, s1] = [r[i - 1]?.value, r[i]?.value, s[i - 1]?.value, s[i]?.value];
+  if (r0 === undefined || r1 === undefined || s0 === undefined || s1 === undefined) return;
+  if (r0 <= s0 && r1 > s1) {
+    lastSignalBar = i;
+    console.log('RSI closed above its average');
+  }
 });
 ```
 
@@ -981,42 +988,20 @@ chart.updateLastBar(updatedBar)
 chart.setCurrentPrice(3500.42)
 ```
 
-### Web Worker indicator pipeline
+### Indicators outside the chart
 
-Heavy charts (1,000+ bars × 10+ indicators) can stutter when `calculate()` runs on the main thread. `IndicatorWorkerHost` offloads calculation to a worker so the render loop stays smooth.
-
-```typescript
-import { IndicatorWorkerHost } from '@tradecanvas/core'
-
-// Bundler-supported worker URL (Vite, webpack 5, esbuild, etc.)
-const worker = new Worker(
-  new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url),
-  { type: 'module' },
-)
-const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
-
-const output = await host.calculate(
-  'rsi',
-  { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } },
-  bars,
-)
-
-// Health check / cleanup
-await host.ping()
-host.terminate()
-```
-
-No worker available (SSR, tests, or as a safety net)? Pass `null` and register fallback plugins for synchronous calculation:
+`IndicatorWorkerHost` computes an indicator from bars with the same messages a
+Web Worker would use. The worker script is not part of the published packages
+yet; pass `null` and register the plugins to compute in place (SSR, tests,
+scripts):
 
 ```typescript
 import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
 
 const host = new IndicatorWorkerHost(null)
 host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', config, bars)  // runs synchronously
+const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
 ```
-
-Render still happens on the main thread (it needs `CanvasRenderingContext2D`). Only the heavy compute moves off-thread.
 
 ### Save / Load
 

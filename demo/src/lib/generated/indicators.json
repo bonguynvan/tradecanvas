@@ -1762,7 +1762,8 @@
     },
     "inputs": {
       "period": {
-        "min": 1
+        "min": 1,
+        "max": 5000
       },
       "offset": {
         "min": 0,
@@ -1830,7 +1831,8 @@
     },
     "inputs": {
       "period": {
-        "min": 2
+        "min": 2,
+        "max": 5000
       },
       "offset": {
         "step": 1

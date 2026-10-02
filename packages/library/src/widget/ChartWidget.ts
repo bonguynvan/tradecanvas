@@ -162,6 +162,8 @@ export class ChartWidget {
   private options: ChartWidgetOptions;
   private symbols: string[];
   private settingsState: ChartSettingsState;
+  /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
+  private settingsDefaults: ChartSettingsState;
   private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
@@ -224,6 +226,15 @@ export class ChartWidget {
       watermark: true,
       ...options.chartOptions?.features,
     };
+
+    // The display toggles start where the host's features put them, and Reset goes back there.
+    this.settingsDefaults = {
+      ...this.settingsState,
+      legendVisible: features.legend !== false,
+      barCountdown: features.barCountdown !== false,
+      indicatorValueLabels: features.indicatorValueLabels !== false,
+    };
+    this.settingsState = { ...this.settingsDefaults };
 
     this.timeframes = availableTimeframes(options.timeframes, features.timeframes);
     // First run, or none of the saved pins is on offer here: start from the defaults.
@@ -1740,7 +1751,7 @@ export class ChartWidget {
   }
 
   private resetSettings(): void {
-    this.settingsState = { ...DEFAULT_SETTINGS };
+    this.settingsState = { ...this.settingsDefaults };
     this.applySettings(this.settingsState);
   }
 
@@ -1845,7 +1856,12 @@ export class ChartWidget {
           color: v.color,
         })),
         pane: pane
-          ? { x: pane.x + LEGEND_INSET, y: pane.y + PANE_ROW_TOP + pane.row * PANE_ROW_STEP, width: pane.width - 2 * LEGEND_INSET }
+          ? {
+            x: pane.x + LEGEND_INSET,
+            // A short pane with many indicators: the last rows overlap rather than spill out.
+            y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
+            width: pane.width - 2 * LEGEND_INSET,
+          }
           : null,
       };
     });

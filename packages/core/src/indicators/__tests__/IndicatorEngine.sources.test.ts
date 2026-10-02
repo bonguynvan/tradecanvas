@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { SMAIndicator } from '../overlay/SMA.js';
 import type { OHLCBar } from '@tradecanvas/commons';
 import { indicatorSource } from '@tradecanvas/commons';
 import { IndicatorEngine } from '../IndicatorEngine.js';
@@ -65,6 +66,41 @@ describe('indicators on indicators', () => {
     expect(smaSeries[17]).toBeNull();
     const mean = [14, 15, 16, 17, 18].reduce((s, i) => s + rsiSeries[i]!.value!, 0) / 5;
     expect(smaSeries[18]!.value).toBeCloseTo(mean, 9);
+  });
+
+  it('follows live ticks and new bars incrementally, matching a fresh computation', () => {
+    let data = bars(80);
+    const e = engine();
+    const rsi = e.addIndicator('rsi', { period: 14 }, data);
+    const sma = e.addIndicator('sma', { period: 5, source: indicatorSource(rsi, 'value') }, data);
+    const ema = e.addIndicator('ema', { period: 4, source: indicatorSource(sma, 'value') }, data);
+    const full = vi.spyOn(SMAIndicator.prototype, 'calculate');
+    for (let step = 0; step < 12; step++) {
+      const last = data[data.length - 1];
+      if (step % 3 === 2) {
+        data = [...data, { ...last, time: last.time + 60_000, close: last.close + 0.7 }];
+        e.recalculateFrom(data, data.length - 2);
+      } else {
+        data = [...data.slice(0, -1), { ...last, close: last.close + (step % 2 ? -1.3 : 0.9) }];
+        e.recalculateFrom(data, data.length - 1);
+      }
+    }
+    expect(full).not.toHaveBeenCalled(); // the SMA of RSI was extended, never recomputed
+    full.mockRestore();
+    const fresh = engine();
+    const fRsi = fresh.addIndicator('rsi', { period: 14 }, data);
+    const fSma = fresh.addIndicator('sma', { period: 5, source: indicatorSource(fRsi, 'value') }, data);
+    const fEma = fresh.addIndicator('ema', { period: 4, source: indicatorSource(fSma, 'value') }, data);
+    for (const [mine, theirs] of [[sma, fSma], [ema, fEma]]) {
+      const a = e.getOutput(mine)!;
+      const b = fresh.getOutput(theirs)!;
+      expect(a.series).toHaveLength(data.length);
+      a.series!.forEach((v, i) => {
+        if (!b.series![i]) expect(v).toBeNull();
+        else expect(v!.value).toBeCloseTo(b.series![i]!.value!, 9);
+      });
+      expect([...a.values.keys()].sort()).toEqual([...b.values.keys()].sort());
+    }
   });
 
   it('recomputes the readers when the read indicator changes', () => {

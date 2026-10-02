@@ -1,10 +1,10 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput } from '@tradecanvas/commons';
-import { IndicatorBase } from '../IndicatorBase.js';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorValue } from '@tradecanvas/commons';
+import { PointwiseIndicator } from '../PointwiseIndicator.js';
 import { getIntParam, getNumberParam } from '../params.js';
-import { closes, outputOf, pointsOf, smaOf, stdevOf, type Num } from '../math.js';
+import { closeStatsAt } from '../math.js';
 
 /** Bollinger BandWidth: the width of the bands relative to their middle; a squeeze shows as a low. */
-export class BollingerBandWidthIndicator extends IndicatorBase {
+export class BollingerBandWidthIndicator extends PointwiseIndicator<{ period: number; k: number }> {
   descriptor: IndicatorDescriptor = {
     id: 'bbw',
     name: 'Bollinger BandWidth',
@@ -15,17 +15,12 @@ export class BollingerBandWidthIndicator extends IndicatorBase {
     plots: [{ key: 'value', title: 'BBW', color: 0 }],
   };
 
-  calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const period = getIntParam(config, 'period', 20, 2);
-    const k = getNumberParam(config, 'stdDev', 2);
-    const src = closes(data);
-    const mean = smaOf(src, period);
-    const sd = stdevOf(src, period);
-    const out: Num[] = src.map((_, i) => {
-      const m = mean[i];
-      const s = sd[i];
-      return m === undefined || s === undefined || m === 0 ? undefined : (2 * k * s) / m;
-    });
-    return outputOf(data, pointsOf(out));
+  protected read(config: IndicatorConfig) {
+    return { period: getIntParam(config, 'period', 20, 2), k: getNumberParam(config, 'stdDev', 2) };
+  }
+
+  protected pointAt(data: DataSeries, i: number, { period, k }: { period: number; k: number }): IndicatorValue | null {
+    const stats = closeStatsAt(data, i, period);
+    return !stats || stats.mean === 0 ? null : { value: (2 * k * stats.sd) / stats.mean };
   }
 }

@@ -23,7 +23,9 @@ export const AXIS_LABEL_HEIGHT = 16;
 
 /**
  * Positions for tags at `ys` (sorted ascending) so that none overlap, each as
- * close to its own value as the others allow, all within `[top, bottom]`.
+ * close to its own value as the others allow, within `[top, bottom]`. When
+ * they cannot all fit, the first ones keep their place and the rest run past
+ * `bottom` (the renderer leaves those out).
  */
 export function spreadLabels(ys: readonly number[], top: number, bottom: number, height = AXIS_LABEL_HEIGHT): number[] {
   const half = height / 2;
@@ -33,6 +35,11 @@ export function spreadLabels(ys: readonly number[], top: number, bottom: number,
   // Upward pass: what ran off the bottom moves back up.
   if (out.length > 0) out[out.length - 1] = Math.min(out[out.length - 1], bottom - half);
   for (let i = out.length - 2; i >= 0; i--) out[i] = Math.min(out[i], out[i + 1] - height);
+  // Too many to fit: back inside the top, and down from there.
+  if (out.length > 0 && out[0] < top + half) {
+    out[0] = top + half;
+    for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] + height);
+  }
   return out;
 }
 
@@ -79,6 +86,7 @@ export function renderAxisValueLabels(
   for (let i = 0; i < shown.length; i++) {
     const label = shown[i];
     const y = ys[i];
+    if (y + half > bounds.bottom + 0.5) break; // no room left on this axis
     const width = Math.min(ctx.measureText(label.text).width + 10, axisWidth - 2);
     ctx.fillStyle = label.color;
     ctx.fillRect(axisX + 1, Math.round(y - half), width, AXIS_LABEL_HEIGHT);

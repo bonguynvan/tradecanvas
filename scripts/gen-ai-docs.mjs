@@ -69,8 +69,8 @@ function llmsTxt() {
   return [
     '# TradeCanvas',
     '',
-    '> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): 17 chart types, '
-      + `${catalog.length} indicators, 40 drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. `
+    '> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, '
+      + `${catalog.length} indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. `
       + 'npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.',
     '',
     'Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. '

@@ -1,13 +1,13 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput } from '@tradecanvas/commons';
-import { IndicatorBase } from '../IndicatorBase.js';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorValue } from '@tradecanvas/commons';
+import { PointwiseIndicator } from '../PointwiseIndicator.js';
 import { getIntParam, getNumberParam } from '../params.js';
-import { closes, outputOf, pointsOf, smaOf, stdevOf, type Num } from '../math.js';
+import { closeStatsAt } from '../math.js';
 
 /**
  * Bollinger %B: where the close sits in its Bollinger Bands, 0 at the lower
  * band, 1 at the upper (beyond them below 0 or above 1).
  */
-export class BollingerPercentBIndicator extends IndicatorBase {
+export class BollingerPercentBIndicator extends PointwiseIndicator<{ period: number; k: number }> {
   descriptor: IndicatorDescriptor = {
     id: 'bbpb',
     name: 'Bollinger Bands %B',
@@ -19,18 +19,13 @@ export class BollingerPercentBIndicator extends IndicatorBase {
     levels: [0, 0.5, 1],
   };
 
-  calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const period = getIntParam(config, 'period', 20, 2);
-    const k = getNumberParam(config, 'stdDev', 2);
-    const src = closes(data);
-    const mean = smaOf(src, period);
-    const sd = stdevOf(src, period);
-    const out: Num[] = src.map((c, i) => {
-      const m = mean[i];
-      const s = sd[i];
-      if (m === undefined || s === undefined || s === 0) return undefined;
-      return (c - (m - k * s)) / (2 * k * s);
-    });
-    return outputOf(data, pointsOf(out));
+  protected read(config: IndicatorConfig) {
+    return { period: getIntParam(config, 'period', 20, 2), k: getNumberParam(config, 'stdDev', 2) };
+  }
+
+  protected pointAt(data: DataSeries, i: number, { period, k }: { period: number; k: number }): IndicatorValue | null {
+    const stats = closeStatsAt(data, i, period);
+    if (!stats || stats.sd === 0) return null;
+    return { value: (data[i].close - (stats.mean - k * stats.sd)) / (2 * k * stats.sd) };
   }
 }
