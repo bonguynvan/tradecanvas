@@ -12,6 +12,17 @@
   display: none !important;
 }
 
+/* The modal portal: carries the tokens and fonts, but no box of its own. */
+.tcw-root.tcw-portal {
+  display: contents;
+}
+
+/* Fullscreen: the root fills the screen; the chart resizes with it. */
+.tcw-root:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+
 .tcw-root {
   display: flex;
   flex-direction: column;
@@ -376,6 +387,58 @@
   color: var(--tcw-accent);
   background: var(--tcw-accent-soft);
   font-weight: 600;
+}
+
+/* Timeframe menu: pick on the left, pin (star) on the right. */
+.tcw-tf-more {
+  padding: 6px 5px;
+}
+
+.tcw-tf-more svg {
+  display: block;
+}
+
+.tcw-tf-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tcw-tf-row .tcw-dropdown-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.tcw-tf-star {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-tf-star:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-tf-star.tcw-active {
+  color: var(--tcw-accent);
+}
+
+.tcw-tf-star.tcw-active svg {
+  fill: currentColor;
+}
+
+.tcw-tf-star:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
 }
 
 .tcw-dropdown-label {
@@ -1066,6 +1129,9 @@
 /* === Status Bar === */
 
 .tcw-statusbar {
+  /* Above sidebar buttons that overflow a short chart; menus (z 30+) stay on top. */
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1076,6 +1142,151 @@
   color: var(--tcw-text-muted);
   flex-shrink: 0;
   font-feature-settings: 'tnum';
+}
+
+.tcw-status-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* Narrow screens: the toolbar already names the symbol and timeframe, so the
+   range bar gets the room. */
+@media (max-width: 640px) {
+  .tcw-status-info {
+    display: none;
+  }
+
+  .tcw-range-btn {
+    padding: 4px 5px;
+  }
+}
+
+/* Range presets + go to date, bottom left */
+.tcw-range-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin: -4px 12px -4px -8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tcw-range-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tcw-range-btn {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--tcw-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-range-btn:hover {
+  color: var(--tcw-text);
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-range-btn:active {
+  color: var(--tcw-accent);
+}
+
+.tcw-range-btn:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
+}
+
+.tcw-range-goto {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 6px;
+  padding: 4px 6px;
+}
+
+.tcw-range-goto svg {
+  display: block;
+}
+
+/* Go-to-date popover, anchored above the range bar */
+.tcw-goto {
+  position: absolute;
+  left: 10px;
+  bottom: 40px;
+  z-index: 40;
+  display: grid;
+  gap: 10px;
+  width: 232px;
+  padding: 14px;
+  background: var(--tcw-bg-elevated);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  color: var(--tcw-text);
+  font-size: 12px;
+}
+
+.tcw-goto-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.tcw-goto-field {
+  display: grid;
+  gap: 4px;
+  color: var(--tcw-text-muted);
+  font-size: 11px;
+}
+
+.tcw-goto-input {
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--tcw-text);
+  background: var(--tcw-bg);
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-sm);
+  color-scheme: dark;
+}
+
+.tcw-root[data-tcw-theme='light'] .tcw-goto-input {
+  color-scheme: light;
+}
+
+.tcw-goto-input:focus {
+  outline: none;
+  border-color: var(--tcw-accent);
+  box-shadow: 0 0 0 2px var(--tcw-accent-soft);
+}
+
+.tcw-goto-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tcw-goto-submit {
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+  font-weight: 600;
+}
+
+.tcw-goto-submit:hover {
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+  filter: brightness(1.08);
 }
 
 .tcw-status-indicator {

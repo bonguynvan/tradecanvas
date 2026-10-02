@@ -59,6 +59,7 @@ class FakeChart {
     });
   }
 
+  isTimeframeAllowed(): boolean { return true; }
   getIndicators(): unknown[] { return []; }
   getDrawings(): unknown[] { return []; }
   getAlerts(): unknown[] { return []; }

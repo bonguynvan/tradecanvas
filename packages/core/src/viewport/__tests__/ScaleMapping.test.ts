@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ViewportState } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
-import { barTimeStep, barIndexToTime, timestampToBarIndex, xToTime, timeToX } from '../ScaleMapping.js';
+import {
+  barTimeStep, barIndexToTime, timestampToBarIndex, xToTime, timeToX,
+  priceToY, priceToYMapper, yToPrice, priceBucketRow,
+} from '../ScaleMapping.js';
 import { TimeAxis } from '../../axis/TimeAxis.js';
 
 const MIN = 60_000;
@@ -68,5 +71,45 @@ describe('TimeAxis', () => {
     axis.render(ctx, vp, DARK_THEME, data);
     // 25 slots fit; bars 10–24 are future and get labels too (one per slot at 80px).
     expect(texts.filter((t) => t !== 'UTC').length).toBeGreaterThan(10);
+  });
+});
+
+describe('price ↔ y on every scale', () => {
+  // Plot from y = 10 to y = 210; prices 100..200.
+  const base = {
+    visibleRange: { from: 0, to: 10 }, priceRange: { min: 100, max: 200 },
+    barWidth: 8, barSpacing: 2, offset: 0, chartRect: { x: 0, y: 10, width: 500, height: 200 },
+  } as ViewportState;
+  const scales: [string, ViewportState][] = [
+    ['linear', base],
+    ['linear inverted', { ...base, invertScale: true }],
+    ['log', { ...base, logScale: true }],
+    ['log inverted', { ...base, logScale: true, invertScale: true }],
+  ];
+
+  it('puts the top price at the top, or at the bottom when inverted', () => {
+    expect([priceToY(200, base), priceToY(100, base)]).toEqual([10, 210]);
+    const inv = { ...base, invertScale: true };
+    expect([priceToY(200, inv), priceToY(100, inv)]).toEqual([210, 10]);
+  });
+
+  it.each(scales)('%s: the mapper agrees with priceToY, and yToPrice undoes it', (_name, vp) => {
+    const toY = priceToYMapper(vp);
+    for (const price of [100, 117.5, 150, 199]) {
+      expect(toY(price)).toBeCloseTo(priceToY(price, vp), 9);
+      expect(yToPrice(priceToY(price, vp), vp)).toBeCloseTo(price, 9);
+    }
+  });
+
+  it('log puts the geometric mean in the middle', () => {
+    const vp = { ...base, logScale: true };
+    expect(priceToY(Math.sqrt(100 * 200), vp)).toBeCloseTo(110, 9);
+  });
+
+  it('places price buckets on screen, lowest bucket nearest the low edge', () => {
+    const toY = priceToYMapper(base);
+    expect(priceBucketRow(0, 4, base, toY)).toEqual({ top: 160, height: 50, mid: 185 });
+    const inv = { ...base, invertScale: true };
+    expect(priceBucketRow(0, 4, inv, priceToYMapper(inv))).toEqual({ top: 10, height: 50, mid: 35 });
   });
 });

@@ -220,3 +220,69 @@ describe('InteractionManager — Ctrl-drag selection box', () => {
     expect(calls).toEqual(['begin', 'cancel']);
   });
 });
+
+describe('InteractionManager — drawing shortcuts', () => {
+  const withDrawings = () => {
+    const keys: string[] = [];
+    // Records keys; any other drawing call (hover, press) is a no-op.
+    const fake = { onKeyDown: (key: string) => { keys.push(key); return true; } };
+    const drawings = new Proxy(fake, {
+      get: (target, prop) => (prop in target ? Reflect.get(target, prop) : () => null),
+    });
+    im.setDrawingManager(drawings as unknown as DrawingManager, () => ({}) as ViewportState);
+    return keys;
+  };
+  const press = (key: string, target: EventTarget = document) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: key.length === 1, bubbles: true }));
+
+  /** A second chart on the page. */
+  const otherChart = () => {
+    const other = document.createElement('div');
+    other.tabIndex = 0;
+    document.body.appendChild(other);
+    const otherIm = new InteractionManager(other);
+    otherIm.attach();
+    return { other, done: () => { otherIm.detach(); other.remove(); } };
+  };
+
+  it('reach the chart pressed last, even after a button beside it took focus', () => {
+    const keys = withDrawings();
+    const { done } = otherChart();
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    const toolbarButton = document.createElement('button');
+    document.body.appendChild(toolbarButton);
+    toolbarButton.focus();
+    press('v', toolbarButton);
+    press('Delete', toolbarButton);
+    toolbarButton.remove();
+    done();
+    expect(keys).toEqual(['v', 'Delete']);
+  });
+
+  it('leave this chart alone once another chart is used, or while typing', () => {
+    const keys = withDrawings();
+    const { other, done } = otherChart();
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    other.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+    press('v');
+    other.focus();
+    press('z', other);
+    el.dispatchEvent(at('mousedown', 100, { button: 0 }));
+    document.dispatchEvent(at('mouseup', 100, { button: 0 }));
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    press('Backspace', field);
+    field.remove();
+    done();
+    expect(keys).toEqual([]);
+  });
+
+  it('still let Escape cancel a tool picked outside the chart', () => {
+    const keys = withDrawings();
+    press('Escape');
+    expect(keys).toEqual(['Escape']);
+  });
+});

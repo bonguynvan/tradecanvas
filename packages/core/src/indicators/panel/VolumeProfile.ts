@@ -2,6 +2,7 @@ import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, Reso
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
+import { priceToYMapper } from '../../viewport/ScaleMapping.js';
 
 export class VolumeProfileIndicator extends IndicatorBase {
   descriptor = {
@@ -52,19 +53,19 @@ export class VolumeProfileIndicator extends IndicatorBase {
     if (!meta || meta.maxVolume === 0) return;
 
     const { minPrice, rows, rowHeight, bins, maxVolume } = meta;
-    const barHeight = chartRect.height / rows;
     const maxBarWidth = chartRect.width * 0.3;
+    const toY = priceToYMapper(viewport);
 
     for (let i = 0; i < rows; i++) {
-      const price = minPrice + (i + 0.5) * rowHeight;
-      const ratio = (price - viewport.priceRange.min) / (viewport.priceRange.max - viewport.priceRange.min);
-      const y = chartRect.y + chartRect.height * (1 - ratio);
+      // Each row covers its own price band, wherever the scale puts it.
+      const yLow = toY(minPrice + i * rowHeight);
+      const yHigh = toY(minPrice + (i + 1) * rowHeight);
       const width = (bins[i] / maxVolume) * maxBarWidth;
 
       ctx.fillStyle = bins[i] > maxVolume * 0.7
         ? (style.colors[1] ?? 'rgba(242, 169, 59, 0.5)')
         : (style.colors[0] ?? 'rgba(76, 141, 255, 0.3)');
-      ctx.fillRect(chartRect.x, y - barHeight / 2, width, Math.max(barHeight - 1, 1));
+      ctx.fillRect(chartRect.x, Math.min(yLow, yHigh), width, Math.max(Math.abs(yLow - yHigh) - 1, 1));
     }
   }
 }

@@ -41,6 +41,8 @@ export interface ViewportState {
    * close of the first visible bar. Set by the chart each frame.
    */
   scaleBaseline?: number;
+  /** Upside down: higher prices lower on screen. */
+  invertScale?: boolean;
   /**
    * Optional reference to the current bar series. When set, drawings/indicators
    * treat `anchor.time` as a real timestamp and convert to bar index via

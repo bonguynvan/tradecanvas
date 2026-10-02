@@ -42,17 +42,19 @@ export class PivotMarkersRenderer {
       const y = priceToY(p.price, viewport);
       const isHigh = p.type === 'high';
       const color = isHigh ? theme.candleDown : theme.candleUp;
-      const tipY = isHigh ? y - 8 : y + 8;
+      // Outside the bar: highs above it on screen, lows below — swapped when inverted.
+      const above = isHigh !== (viewport.invertScale === true);
+      const tipY = above ? y - 8 : y + 8;
 
       ctx.fillStyle = color;
       ctx.beginPath();
-      if (isHigh) {
-        // ▼ pointing down, sitting above the high
+      if (above) {
+        // ▼ pointing down, sitting above the bar
         ctx.moveTo(x - size, tipY - size);
         ctx.lineTo(x + size, tipY - size);
         ctx.lineTo(x, tipY);
       } else {
-        // ▲ pointing up, sitting below the low
+        // ▲ pointing up, sitting below the bar
         ctx.moveTo(x - size, tipY + size);
         ctx.lineTo(x + size, tipY + size);
         ctx.lineTo(x, tipY);
@@ -63,8 +65,8 @@ export class PivotMarkersRenderer {
       const text: string | null =
         this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? formatPrice(p.price) : null;
       if (text) {
-        ctx.textBaseline = isHigh ? 'bottom' : 'top';
-        ctx.fillText(text, x, isHigh ? tipY - size - 1 : tipY + size + 1);
+        ctx.textBaseline = above ? 'bottom' : 'top';
+        ctx.fillText(text, x, above ? tipY - size - 1 : tipY + size + 1);
       }
     }
     ctx.restore();

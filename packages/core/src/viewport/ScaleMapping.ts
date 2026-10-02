@@ -7,18 +7,61 @@ export function barIndexToX(index: number, viewport: ViewportState): number {
 
 export function priceToY(price: number, viewport: ViewportState): number {
   const { min, max } = viewport.priceRange;
+  const { y: top, height } = viewport.chartRect;
+  let ratio: number;
   if (viewport.logScale && min > 0 && max > 0) {
     const logMin = Math.log(min);
-    const logMax = Math.log(max);
-    const logRange = logMax - logMin;
-    if (logRange === 0) return viewport.chartRect.y + viewport.chartRect.height / 2;
-    const ratio = (Math.log(Math.max(price, Number.EPSILON)) - logMin) / logRange;
-    return viewport.chartRect.y + viewport.chartRect.height * (1 - ratio);
+    const logRange = Math.log(max) - logMin;
+    if (logRange === 0) return top + height / 2;
+    ratio = (Math.log(Math.max(price, Number.EPSILON)) - logMin) / logRange;
+  } else {
+    const range = max - min;
+    if (range === 0) return top + height / 2;
+    ratio = (price - min) / range;
+  }
+  return top + height * (viewport.invertScale ? ratio : 1 - ratio);
+}
+
+/**
+ * `priceToY` for one frame, with the per-call work hoisted out: for renderers
+ * that map every visible bar. Follows the log scale and the inverted scale.
+ */
+export function priceToYMapper(viewport: ViewportState): (price: number) => number {
+  const { min, max } = viewport.priceRange;
+  const { y: top, height } = viewport.chartRect;
+  const invert = viewport.invertScale === true;
+  if (viewport.logScale && min > 0 && max > 0) {
+    const logMin = Math.log(min);
+    const logRange = Math.log(max) - logMin;
+    if (logRange === 0) return () => top + height / 2;
+    const k = height / logRange;
+    const bottom = top + height;
+    return invert
+      ? (price) => top + (Math.log(Math.max(price, Number.EPSILON)) - logMin) * k
+      : (price) => bottom - (Math.log(Math.max(price, Number.EPSILON)) - logMin) * k;
   }
   const range = max - min;
-  if (range === 0) return viewport.chartRect.y + viewport.chartRect.height / 2;
-  const ratio = (price - min) / range;
-  return viewport.chartRect.y + viewport.chartRect.height * (1 - ratio);
+  if (range === 0) return () => top + height / 2;
+  const k = height / range;
+  return invert ? (price) => top + (price - min) * k : (price) => top + (max - price) * k;
+}
+
+/**
+ * Where bucket `b` of `count` equal price buckets across the price range sits
+ * on screen (bucket 0 holds the lowest prices), on any scale. `toY` is the
+ * frame's `priceToYMapper`.
+ */
+export function priceBucketRow(
+  b: number,
+  count: number,
+  viewport: ViewportState,
+  toY: (price: number) => number,
+): { top: number; height: number; mid: number } {
+  const { min, max } = viewport.priceRange;
+  const step = (max - min) / count;
+  const yLow = toY(min + b * step);
+  const yHigh = toY(min + (b + 1) * step);
+  return { top: Math.min(yLow, yHigh), height: Math.abs(yLow - yHigh), mid: (yLow + yHigh) / 2 };
 }
 
 export function xToBarIndex(x: number, viewport: ViewportState): number {
@@ -28,7 +71,8 @@ export function xToBarIndex(x: number, viewport: ViewportState): number {
 
 export function yToPrice(y: number, viewport: ViewportState): number {
   const { min, max } = viewport.priceRange;
-  const ratio = 1 - (y - viewport.chartRect.y) / viewport.chartRect.height;
+  const fromTop = (y - viewport.chartRect.y) / viewport.chartRect.height;
+  const ratio = viewport.invertScale ? fromTop : 1 - fromTop;
   if (viewport.logScale && min > 0 && max > 0) {
     const logMin = Math.log(min);
     const logMax = Math.log(max);

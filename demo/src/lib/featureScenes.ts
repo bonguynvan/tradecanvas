@@ -133,6 +133,38 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
     },
   },
   {
+    id: 'navigation',
+    title: 'Ranges & layouts',
+    stat: '1D … All',
+    blurb:
+      'Jump to a span or a date, flip the price scale, pin the timeframes you use, run the same indicator several times — and get it all back from a saved layout.',
+    tryThis: [
+      'Click 1M, 3M or 6M under the chart; Alt+G goes to a date',
+      'Alt+I turns the price scale upside down; the log scale is in Settings',
+      'Star a timeframe in the ▾ menu next to the timeframe buttons',
+      'Turn on the ↻ button in the left toolbar to draw several lines in a row; Ctrl+C / Ctrl+V copies them',
+    ],
+    code: `chart.setVisibleRangePreset('6M')    // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.goToTime(Date.UTC(2025, 0, 1))
+chart.setInvertScale(true)
+chart.addIndicator('ema', { period: 50 })
+chart.addIndicator('ema', { period: 200 })   // as many as you like
+const layout = chart.saveState()             // indicators, styles, alerts, drawings`,
+    options: () => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO', 'ALPHA'],
+      timeframe: '1d',
+      onReady: (chart) => {
+        chart.addIndicator('ema', { period: 50 });
+        chart.addIndicator('ema', { period: 200 });
+      },
+    }),
+    data: (symbol) => generateBars(1500, symbol, 24 * HOUR, 140),
+    setup: (_widget, chart) => {
+      chart.setVisibleRangePreset('6M');
+    },
+  },
+  {
     id: 'replay',
     title: 'Bar replay',
     stat: 'scrubber',

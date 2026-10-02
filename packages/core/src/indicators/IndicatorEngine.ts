@@ -161,6 +161,13 @@ export class IndicatorEngine {
     return result;
   }
 
+  /** The style the indicator draws with (a copy). */
+  getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
+    const style = this.instances.get(instanceId)?.style;
+    if (!style) return null;
+    return { colors: [...style.colors], lineWidths: [...style.lineWidths], opacity: style.opacity };
+  }
+
   /** Update indicator style (colors, line widths) at runtime */
   updateIndicatorStyle(instanceId: string, style: Partial<ResolvedIndicatorStyle>): void {
     const instance = this.instances.get(instanceId);

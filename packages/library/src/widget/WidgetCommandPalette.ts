@@ -28,7 +28,11 @@ export class WidgetCommandPalette {
   private callbacks: CommandPaletteCallbacks;
   private boundKeydown: (e: KeyboardEvent) => void;
 
-  constructor(callbacks: CommandPaletteCallbacks) {
+  /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
+  constructor(
+    callbacks: CommandPaletteCallbacks,
+    private readonly host: () => HTMLElement = () => document.body,
+  ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
   }
@@ -77,8 +81,7 @@ export class WidgetCommandPalette {
     footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Select</span><span>Esc Close</span>';
     this.modal.appendChild(footer);
 
-    document.body.appendChild(this.backdrop);
-    document.body.appendChild(this.modal);
+    this.host().append(this.backdrop, this.modal);
 
     this.renderList();
     this.input.focus();

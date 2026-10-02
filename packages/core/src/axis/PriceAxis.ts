@@ -1,6 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { autoPricePrecision, computeTickStep, formatPriceScaleLabel } from '@tradecanvas/commons';
-import { priceToY } from '../viewport/ScaleMapping.js';
+import { priceToY, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /** Tick labels this close (px) to the last-price tag's centre are hidden under it. */
 const TAG_CLEARANCE_PX = 12;
@@ -24,9 +24,8 @@ export class PriceAxis {
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const { chartRect, priceRange } = viewport;
     const axisX = chartRect.x + chartRect.width;
-    const range = priceRange.max - priceRange.min;
-    if (range <= 0) return;
-    const invRange = 1 / range;
+    if (priceRange.max - priceRange.min <= 0) return;
+    const toY = priceToYMapper(viewport);
 
     // Subtle vertical divider — single pixel, less assertive than a solid axis
     // line, for a calmer frame.
@@ -52,7 +51,7 @@ export class PriceAxis {
     const reserved = this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
     for (let price = firstPrice; price <= priceRange.max; price += step) {
-      const y = chartRect.y + chartRect.height * (1 - (price - priceRange.min) * invRange);
+      const y = toY(price);
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       labels.push({ y, text: formatPriceScaleLabel(price, mode, baseline, precision, this.locale) });
     }

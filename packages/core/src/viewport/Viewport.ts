@@ -61,6 +61,7 @@ export class Viewport {
         logScale: this.state.logScale,
         scaleMode: this.state.scaleMode,
         scaleBaseline: this.state.scaleBaseline,
+        invertScale: this.state.invertScale,
         priceAxisWidth: this.state.priceAxisWidth,
       };
     }
@@ -89,6 +90,16 @@ export class Viewport {
 
   getScaleMode(): PriceScaleMode {
     return this.state.scaleMode ?? (this.state.logScale ? 'logarithmic' : 'regular');
+  }
+
+  /** Turn the price scale upside down (higher prices lower on screen). */
+  setInvertScale(inverted: boolean): void {
+    this.state.invertScale = inverted;
+    this.invalidate();
+  }
+
+  isInvertScale(): boolean {
+    return this.state.invertScale === true;
   }
 
   /** Reference price for percentage / indexed-to-100 axis labels. */
@@ -223,7 +234,8 @@ export class Viewport {
     const h = this.state.chartRect.height;
     if (h <= 0 || deltaPixels === 0) return;
     const { min, max } = this.state.priceRange;
-    const frac = deltaPixels / h;
+    // Upside down, dragging up has to reveal higher prices instead.
+    const frac = (this.state.invertScale ? -deltaPixels : deltaPixels) / h;
     if (this.isLogScale() && min > 0 && max > 0) {
       const logMin = Math.log(min);
       const logMax = Math.log(max);

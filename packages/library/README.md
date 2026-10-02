@@ -461,7 +461,13 @@ chart.loadState(localStorage.getItem('my-chart')!)
 // Download / upload files
 chart.downloadState('my-chart.json')
 await chart.loadStateFromFile()
+
+// Or keep a layout saved as it changes (debounced)
+chart.setAutoSave('my-chart', 1500)
 ```
+
+A saved layout holds the chart type, theme, drawings, indicators (inputs, pane,
+colours, visibility) and alerts, including alerts on indicator lines.
 
 ### Themes
 
@@ -484,6 +490,8 @@ chart.setTheme({
 
 ```typescript
 chart.on('crosshairMove', (e) => { /* { point, bar, barIndex, indicatorValues } */ })
+chart.on('crosshairLeave', () => { /* the pointer left the plot */ })
+chart.on('drawingToolChange', (e) => { /* { tool } — null once a drawing is finished or cancelled */ })
 chart.on('barClick', (e) => { /* { bar, barIndex, point } */ })
 chart.on('visibleRangeChange', (e) => { /* { from, to } — bar indices, not timestamps */ })
 chart.on('priceRangeChange', (e) => { /* { min, max } — visible price bounds */ })
@@ -683,7 +691,13 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `setVolumeProfileVisible(v)` | Toggle the horizontal volume-profile overlay |
 | `setVolumeProfileConfig({ buckets, widthRatio, opacity, highlightPoC })` | Tune the volume profile |
 | `setAutoScale(v)` / `setLogScale(v)` | Lock or change price-scale mode |
+| `setInvertScale(v)` | Turn the price scale upside down |
 | `fitContent()` / `scrollToEnd()` | Fit all data / jump to live edge |
+| `setVisibleRangePreset(p)` | Show `1D`, `5D`, `1M`, `3M`, `6M`, `YTD`, `1Y`, `5Y` or `All` |
+| `goToTime(time)` | Centre the bar at a time |
+| `setCrosshairTime(time)` | Mirror another chart's crosshair (vertical line only) |
+| `copyDrawings()` / `pasteDrawings()` | Copy the selection, paste into this or another chart |
+| `setStayInDrawingMode(v)` | Keep the drawing tool after each drawing |
 | `saveState(key?)` | Serialize chart state |
 | `loadState(json)` | Restore chart state |
 | `screenshot()` | Download chart as image |

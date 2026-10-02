@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { lttbVisibleIndices } from './downsample.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 export class LineRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -13,8 +14,7 @@ export class LineRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
+    const toY = priceToYMapper(viewport);
 
     ctx.beginPath();
     ctx.strokeStyle = theme.lineColor;
@@ -27,7 +27,7 @@ export class LineRenderer implements ChartRendererInterface {
     let started = false;
     for (const i of indices) {
       const x = i * barUnit + offsetX;
-      const y = chartY + (max - data[i].close) * priceScale;
+      const y = toY(data[i].close);
       if (!started) { ctx.moveTo(x, y); started = true; }
       else ctx.lineTo(x, y);
     }

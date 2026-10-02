@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { lttbVisibleIndices } from './downsample.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 export class AreaRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -13,10 +14,9 @@ export class AreaRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
-    const chartY = viewport.chartRect.y;
-    const chartH = viewport.chartRect.height;
-    const priceScale = chartH / priceRange;
-    const bottomY = chartY + chartH;
+    const toY = priceToYMapper(viewport);
+    // The fill runs toward the low-price edge: the bottom, or the top when inverted.
+    const baseY = toY(min);
 
     // LTTB-downsample the visible range when it far exceeds the pixel width;
     // a no-op for normally-zoomed data. Used for both the fill and the line.
@@ -25,25 +25,25 @@ export class AreaRenderer implements ChartRendererInterface {
 
     const firstI = indices[0];
     const firstX = firstI * barUnit + offsetX;
-    const firstY = chartY + (max - data[firstI].close) * priceScale;
+    const firstY = toY(data[firstI].close);
 
     // Fill
-    const gradient = ctx.createLinearGradient(0, chartY, 0, bottomY);
+    const gradient = ctx.createLinearGradient(0, toY(max), 0, baseY);
     gradient.addColorStop(0, theme.areaTopColor);
     gradient.addColorStop(1, theme.areaBottomColor);
 
     ctx.beginPath();
-    ctx.moveTo(firstX, bottomY);
+    ctx.moveTo(firstX, baseY);
     ctx.lineTo(firstX, firstY);
 
     let lastX = firstX;
     for (let k = 1; k < indices.length; k++) {
       const i = indices[k];
       lastX = i * barUnit + offsetX;
-      ctx.lineTo(lastX, chartY + (max - data[i].close) * priceScale);
+      ctx.lineTo(lastX, toY(data[i].close));
     }
 
-    ctx.lineTo(lastX, bottomY);
+    ctx.lineTo(lastX, baseY);
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
@@ -56,7 +56,7 @@ export class AreaRenderer implements ChartRendererInterface {
     ctx.moveTo(firstX, firstY);
     for (let k = 1; k < indices.length; k++) {
       const i = indices[k];
-      ctx.lineTo(i * barUnit + offsetX, chartY + (max - data[i].close) * priceScale);
+      ctx.lineTo(i * barUnit + offsetX, toY(data[i].close));
     }
     ctx.stroke();
   }

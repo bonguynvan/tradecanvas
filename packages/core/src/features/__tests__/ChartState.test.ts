@@ -5,7 +5,7 @@ import type {
   TradingPosition,
   Theme,
 } from '@tradecanvas/commons';
-import { ChartStateManager } from '../ChartState.js';
+import { ChartStateManager, SNAPSHOT_VERSION } from '../ChartState.js';
 import type { PriceAlert } from '../AlertManager.js';
 
 const fakeTheme = { name: 'dark' } as unknown as Theme;
@@ -43,9 +43,13 @@ const position: TradingPosition = {
 const alert: PriceAlert = {
   id: 'a1',
   price: 105,
-  condition: 'above',
-  enabled: true,
-} as unknown as PriceAlert;
+  condition: 'crossingUp',
+  message: 'breakout',
+  triggered: false,
+  repeating: true,
+  channel: 'rsi-1:value',
+  label: 'RSI',
+};
 
 const fullChart = {
   getDrawings: () => [drawing],
@@ -55,7 +59,10 @@ const fullChart = {
   getTheme: () => fakeTheme,
   getIndicators: () => [
     { id: 'sma', instanceId: 'sma-1', params: { period: 20 } },
-    { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } },
+    {
+      id: 'rsi', instanceId: 'rsi-1', params: { period: 14 }, position: 'top',
+      style: { colors: ['#ff00aa'], lineWidths: [2], opacity: 0.5 }, visible: false,
+    },
   ],
 };
 
@@ -72,7 +79,7 @@ describe('ChartStateManager.capture', () => {
       chartType: 'candlestick',
     });
 
-    expect(snap.version).toBe(1);
+    expect(snap.version).toBe(SNAPSHOT_VERSION);
     expect(snap.timestamp).toBeGreaterThan(0);
     expect(snap.symbol).toBe('BTCUSDT');
     expect(snap.timeframe).toBe('1m');
@@ -104,6 +111,10 @@ describe('ChartStateManager serialize/deserialize round-trip', () => {
     expect(restored).toEqual(snap);
     expect(restored.drawings[0].anchors).toEqual(drawing.anchors);
     expect(restored.indicators[0].params.period).toBe(20);
+    expect(restored.indicators[1]).toMatchObject({
+      position: 'top', style: { colors: ['#ff00aa'], lineWidths: [2], opacity: 0.5 }, visible: false,
+    });
+    expect(restored.alerts[0]).toEqual(alert);
     expect(restored.positions[0].closedQuantity).toBe(1);
   });
 
@@ -196,6 +207,56 @@ describe('ChartStateManager.deserialize validation', () => {
       }),
     );
     expect(restored.viewport).toEqual({ barWidth: 8, barSpacing: 2, offset: 0 });
+  });
+
+  it('reads unreadable input and saves without an indicator list as version 1', () => {
+    for (const json of ['null', '42', '[]']) expect(ChartStateManager.deserialize(json).version).toBe(1);
+    expect(ChartStateManager.deserialize(JSON.stringify({ version: 2, chartType: 'line' })).version).toBe(1);
+    expect(ChartStateManager.capture(minimalChart).version).toBe(1);
+  });
+
+  it('treats a save without a version as version 1', () => {
+    expect(ChartStateManager.deserialize(JSON.stringify({ chartType: 'line' })).version).toBe(1);
+  });
+
+  it('does not warn about older saves', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    ChartStateManager.deserialize(JSON.stringify({ version: 1, chartType: 'line' }));
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('fills alert fields older saves left out and drops alerts without a usable price', () => {
+    const restored = ChartStateManager.deserialize(JSON.stringify({
+      version: 1,
+      alerts: [
+        { id: 'a1', price: 100, condition: 'crossingDown' },
+        { id: 'a2', price: 'high', condition: 'crossing' },
+        { id: 'a3', price: 101, condition: 'sideways', channel: 7 },
+        { price: 102 },
+      ],
+    }));
+    expect(restored.alerts).toEqual([
+      { id: 'a1', price: 100, condition: 'crossingDown', message: undefined, triggered: false, repeating: false, channel: 'price', label: undefined },
+      { id: 'a3', price: 101, condition: 'crossing', message: undefined, triggered: false, repeating: false, channel: 'price', label: undefined },
+    ]);
+  });
+
+  it('keeps only well-formed indicator style fields', () => {
+    const restored = ChartStateManager.deserialize(JSON.stringify({
+      version: 2,
+      indicators: [
+        { id: 'ema', instanceId: 'e1', params: {}, style: { colors: ['#fff', 3], lineWidths: [1, 'x'], opacity: 'half' }, visible: 'no' },
+        { id: 'sma', instanceId: 's1', params: {}, style: 'red' },
+      ],
+    }));
+    expect(restored.indicators[0].style).toEqual({ colors: ['#fff'], lineWidths: [1] });
+    const blank = ChartStateManager.deserialize(JSON.stringify({
+      version: 2, indicators: [{ id: 'ema', instanceId: 'e', params: {}, style: { colors: [], lineWidths: [0], opacity: 3 } }],
+    }));
+    expect(blank.indicators[0].style).toEqual({ opacity: 1 });
+    expect(restored.indicators[0].visible).toBeUndefined();
+    expect(restored.indicators[1].style).toBeUndefined();
   });
 
   it('drops indicators missing id, instanceId, or params', () => {

@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
+import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
  * Equivolume (Richard Arms) — boxes spanning the full high/low range with
@@ -20,8 +21,6 @@ export class EquivolumeRenderer implements ChartRendererInterface {
 
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
-    const chartY = viewport.chartRect.y;
-    const priceScale = viewport.chartRect.height / priceRange;
     const maxBoxWidth = viewport.barWidth;
 
     let maxVolume = 0;
@@ -36,7 +35,7 @@ export class EquivolumeRenderer implements ChartRendererInterface {
     const downEdgePath = new Path2D();
 
     const toX = (i: number) => i * barUnit + offsetX;
-    const toY = (price: number) => chartY + (max - price) * priceScale;
+    const toY = priceToYMapper(viewport);
 
     for (let i = from; i <= to && i < data.length; i++) {
       const bar = data[i];
@@ -49,12 +48,13 @@ export class EquivolumeRenderer implements ChartRendererInterface {
       const volRatio = Math.max(0.15, bar.volume / maxVolume);
       const w = maxBoxWidth * volRatio;
       const halfW = w / 2;
-      const height = Math.max(lowY - highY, 1);
+      const top = Math.min(highY, lowY);
+      const height = Math.max(Math.abs(lowY - highY), 1);
 
       const bodyPath = isUp ? upBodyPath : downBodyPath;
       const edgePath = isUp ? upEdgePath : downEdgePath;
-      bodyPath.rect(x - halfW, highY, w, height);
-      edgePath.rect(x - halfW, highY, w, height);
+      bodyPath.rect(x - halfW, top, w, height);
+      edgePath.rect(x - halfW, top, w, height);
     }
 
     ctx.fillStyle = withAlpha(theme.candleUp, 0.55);

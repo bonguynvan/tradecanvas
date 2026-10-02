@@ -1,9 +1,11 @@
 import type { OHLCBar, DataSeries } from './ohlc.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
+import type { DrawingToolType } from './drawing.js';
 
 export type ChartEventType =
   | 'crosshairMove'
+  | 'crosshairLeave'
   | 'click'
   | 'barClick'
   | 'visibleRangeChange'
@@ -23,6 +25,7 @@ export type ChartEventType =
   | 'bracketPlace'
   | 'drawingCreate'
   | 'drawingRemove'
+  | 'drawingToolChange'
   | 'signalMarkerAdd'
   | 'signalMarkerRemove'
   | 'tradeZoneAdd'
@@ -183,6 +186,8 @@ export interface AlertPayload {
 
 export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
+  /** The pointer left the plot; the crosshair is gone. */
+  crosshairLeave: Record<string, never>;
   click: { x: number; y: number };
   barClick: BarClickPayload;
   visibleRangeChange: VisibleRangeChangePayload;
@@ -202,6 +207,8 @@ export interface ChartEventMap {
   executionError: ExecutionErrorPayload;
   drawingCreate: DrawingCreatePayload;
   drawingRemove: DrawingRemovePayload;
+  /** The active drawing tool changed — picked, finished, or cancelled (`tool: null`). */
+  drawingToolChange: { tool: DrawingToolType | null };
   signalMarkerAdd: SignalMarkerAddPayload;
   signalMarkerRemove: SignalMarkerRemovePayload;
   tradeZoneAdd: TradeZoneAddPayload;

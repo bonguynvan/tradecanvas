@@ -68,76 +68,81 @@ export class ChartGrid {
   private createCells(): void {
     const { cols, rows } = LAYOUT_MAP[this.layout];
     const count = cols * rows;
+    for (let i = 0; i < count; i++) this.cells.push(this.createCell(i));
+  }
 
-    for (let i = 0; i < count; i++) {
-      const cellConfig = this.options.cells?.[i] ?? {};
+  private createCell(i: number): GridCell {
+    const cellConfig = this.options.cells?.[i] ?? {};
 
-      const cellEl = document.createElement('div');
-      cellEl.style.cssText = 'position:relative;overflow:hidden;min-width:0;min-height:0;';
-      this.root.appendChild(cellEl);
+    const cellEl = document.createElement('div');
+    cellEl.style.cssText = 'position:relative;overflow:hidden;min-width:0;min-height:0;';
+    this.root.appendChild(cellEl);
 
-      const chartOpts: ChartOptions = {
-        chartType: 'candlestick',
-        autoScale: true,
-        features: {
-          crosshair: true,
-          keyboard: true,
-          volume: true,
-          legend: true,
-          priceAxis: true,
-          timeAxis: true,
-          grid: true,
-        },
-        ...this.options.chartOptions,
-        ...cellConfig.chartOptions,
-        theme: this.options.theme,
-      };
+    const chartOpts: ChartOptions = {
+      chartType: 'candlestick',
+      autoScale: true,
+      features: {
+        crosshair: true,
+        keyboard: true,
+        volume: true,
+        legend: true,
+        priceAxis: true,
+        timeAxis: true,
+        grid: true,
+      },
+      ...this.options.chartOptions,
+      ...cellConfig.chartOptions,
+      theme: this.options.theme,
+    };
 
-      const chart = new Chart(cellEl, chartOpts);
+    const chart = new Chart(cellEl, chartOpts);
 
-      const cell: GridCell = {
-        container: cellEl,
-        chart,
-        symbol: cellConfig.symbol ?? `Chart ${i + 1}`,
-        timeframe: cellConfig.timeframe ?? '5m',
-      };
+    const cell: GridCell = {
+      container: cellEl,
+      chart,
+      symbol: cellConfig.symbol ?? `Chart ${i + 1}`,
+      timeframe: cellConfig.timeframe ?? '5m',
+    };
 
-      if (this.options.syncCrosshair !== false) {
-        chart.on('crosshairMove', (e) => {
-          if (this.syncing) return;
-          this.syncing = true;
-          for (const other of this.cells) {
-            if (other.chart !== chart) {
-              other.chart.setCrosshairPosition(e.payload.point);
-            }
-          }
-          this.syncing = false;
-        });
-      }
+    // Charts can differ in symbol and timeframe, so the crosshair is linked by
+    // time: the others show a vertical line on the bar containing that time.
+    if (this.options.syncCrosshair !== false) {
+      chart.on('crosshairMove', (e) => {
+        const time = e.payload.bar?.time;
+        if (time === undefined) return;
+        for (const other of this.cells) {
+          if (other.chart !== chart) other.chart.setCrosshairTime(time);
+        }
+      });
+      chart.on('crosshairLeave', () => {
+        for (const other of this.cells) {
+          if (other.chart !== chart) other.chart.setCrosshairTime(null);
+        }
+      });
+    }
 
-      if (this.options.syncTimeAxis !== false) {
-        chart.on('visibleRangeChange', (e) => {
-          if (this.syncing) return;
-          this.syncing = true;
-          const { from, to } = e.payload;
-          const srcData = chart.getData();
-          if (srcData.length > 0 && from >= 0 && to < srcData.length) {
-            const fromTime = srcData[from]?.time;
-            const toTime = srcData[to]?.time;
-            if (fromTime && toTime) {
-              for (const other of this.cells) {
-                if (other.chart !== chart) {
-                  other.chart.setVisibleRange(fromTime, toTime);
-                }
+    if (this.options.syncTimeAxis !== false) {
+      chart.on('visibleRangeChange', (e) => {
+        if (this.syncing) return;
+        this.syncing = true;
+        const { from, to } = e.payload;
+        const srcData = chart.getData();
+        if (srcData.length > 0 && from >= 0 && to < srcData.length) {
+          const fromTime = srcData[from]?.time;
+          const toTime = srcData[to]?.time;
+          if (fromTime && toTime) {
+            for (const other of this.cells) {
+              if (other.chart !== chart) {
+                other.chart.setVisibleRange(fromTime, toTime);
               }
             }
           }
-          this.syncing = false;
-        });
-      }
-
-      this.cells.push(cell);
+        }
+        this.syncing = false;
+      });
     }
+
+    return cell;
   }
 
   setLayout(layout: GridLayout): void {
@@ -158,29 +163,8 @@ export class ChartGrid {
     this.layout = layout;
     this.applyLayout();
 
-    if (newCount > oldCount) {
-      for (let i = oldCount; i < newCount; i++) {
-        const cellConfig = this.options.cells?.[i] ?? {};
-        const cellEl = document.createElement('div');
-        cellEl.style.cssText = 'position:relative;overflow:hidden;min-width:0;min-height:0;';
-        this.root.appendChild(cellEl);
-
-        const chart = new Chart(cellEl, {
-          chartType: 'candlestick',
-          autoScale: true,
-          ...this.options.chartOptions,
-          ...cellConfig.chartOptions,
-          theme: this.options.theme,
-        });
-
-        this.cells.push({
-          container: cellEl,
-          chart,
-          symbol: cellConfig.symbol ?? `Chart ${i + 1}`,
-          timeframe: cellConfig.timeframe ?? '5m',
-        });
-      }
-    }
+    // New cells get the same options and linking as the first ones.
+    for (let i = oldCount; i < newCount; i++) this.cells.push(this.createCell(i));
   }
 
   getChart(index: number): Chart | null {

@@ -1,8 +1,8 @@
-import type { ChartType, DrawingToolType, Theme, TimeFrame } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, Theme, TimeFrame } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
-import type { ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
-import { TIMEFRAMES, CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
+import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
+import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { WidgetToolbar } from './WidgetToolbar.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
@@ -19,6 +19,9 @@ import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
+import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from './widgetTimeframes.js';
+import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
+import { RANGE_PRESETS } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -62,6 +65,18 @@ function afterPaint(): Promise<void> {
 /** Distinct line colors for comparison overlays, cycled by add order. */
 const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
 
+/** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
+let lastPressedWidget: ChartWidget | null = null;
+
+/** 1 when bar times are milliseconds, 1000 when they are seconds. */
+const barTimeUnit = (data: ReadonlyArray<{ time: number }>): number =>
+  (data[data.length - 1]?.time ?? 0) > 1e12 ? 1 : 1000;
+
+const isTyping = (): boolean => {
+  const active = document.activeElement as HTMLElement | null;
+  return !!active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable);
+};
+
 export class ChartWidget {
   private chart: Chart;
   private state: WidgetState;
@@ -69,6 +84,23 @@ export class ChartWidget {
   private sidebar: WidgetDrawingSidebar | null = null;
   private settings: WidgetSettings | null = null;
   private statusBar: WidgetStatusBar | null = null;
+  private goToDate: WidgetGoToDate | null = null;
+  /**
+   * Modals (settings, search, command palette, hotkeys) mount here: it carries
+   * the theme tokens to `document.body`, and moves inside the widget while
+   * the widget is fullscreen, where nothing outside it is shown.
+   */
+  private readonly portal = document.createElement('div');
+  private readonly overlayHost = (): HTMLElement => {
+    const host = document.fullscreenElement === this.root ? this.root : document.body;
+    if (this.portal.parentElement !== host) host.appendChild(this.portal);
+    return this.portal;
+  };
+  private readonly onRootPointerDown = () => { lastPressedWidget = this; };
+  private readonly onFullscreenChange = () => {
+    this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
+    if (this.portal.isConnected) this.overlayHost(); // an open modal follows
+  };
   private commandPalette: WidgetCommandPalette | null = null;
   private symbolSearch: WidgetSymbolSearch | null = null;
   private hotkeySheet: WidgetHotkeySheet | null = null;
@@ -84,6 +116,10 @@ export class ChartWidget {
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
   private favoritesStore = new DrawingFavoritesStore();
+  /** Timeframes pinned to the toolbar (same store shape as drawing favourites). */
+  private timeframeFavorites = new DrawingFavoritesStore('tcw:tf-favorites');
+  /** Timeframes on offer, shortest first. */
+  private timeframes: TimeFrame[] = [];
   private watchlist: WidgetWatchlist | null = null;
   private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
@@ -148,15 +184,53 @@ export class ChartWidget {
     const isDark = this.resolveIsDark(options.theme);
     const resolvedTheme = this.resolveTheme(options.theme);
 
+    // The chart's feature flags; controls for switched-off features are left out.
+    // Host overrides win per key (see the Chart below).
+    const features: FeaturesConfig = {
+      drawings: true,
+      drawingMagnet: true,
+      drawingUndoRedo: true,
+      indicators: true,
+      trading: options.trading !== false,
+      tradingContextMenu: false,
+      volume: true,
+      legend: true,
+      crosshair: true,
+      // Pro trading charts have no cursor-following OHLCV popup — just the
+      // legend, which ChartWidget already renders. Off by default here
+      // (the headless Chart's own default stays `true`); opt back in via
+      // `chartOptions: { features: { crosshairTooltip: true } }`.
+      crosshairTooltip: false,
+      keyboard: true,
+      screenshot: true,
+      alerts: true,
+      barCountdown: true,
+      logScale: true,
+      watermark: true,
+      ...options.chartOptions?.features,
+    };
+
+    this.timeframes = availableTimeframes(options.timeframes, features.timeframes);
+    // First run, or none of the saved pins is on offer here: start from the defaults.
+    if (!this.timeframes.some((tf) => this.timeframeFavorites.has(tf))) {
+      const initial = initialTimeframeFavorites(this.timeframes, features.defaultTimeframeFavorites, !!options.timeframes?.length);
+      for (const tf of initial) this.timeframeFavorites.add(tf);
+    }
+    const requestedTimeframe = options.timeframe ?? '5m';
+    const startTimeframe = !features.timeframes?.length || features.timeframes.includes(requestedTimeframe)
+      ? requestedTimeframe
+      : this.timeframes[0] ?? requestedTimeframe;
+
     // Initialize state
     this.state = {
       symbol: options.symbol ?? this.symbols[0] ?? 'BTCUSDT',
-      timeframe: options.timeframe ?? '5m',
+      timeframe: startTimeframe,
       chartType: options.chartOptions?.chartType ?? 'candlestick',
       isDark,
       activeIndicators: new Map(),
       activeTool: null,
-      magnetEnabled: true,
+      magnetEnabled: features.drawingMagnet !== false,
+      stayInDrawing: false,
       // Static data (no adapter) has no connection to report.
       connectionState: options.adapter ? 'connecting' : 'disconnected',
       connectionMessage: options.adapter ? this.t('status.connecting') : '',
@@ -171,6 +245,8 @@ export class ChartWidget {
     this.root.className = 'tcw-root';
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     container.appendChild(this.root);
+    this.portal.className = 'tcw-root tcw-portal';
+    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
 
     // 3. Create toolbar
     if (options.toolbar !== false) {
@@ -178,9 +254,8 @@ export class ChartWidget {
         this.root,
         {
           symbols: this.symbols,
-          timeframes: options.timeframes
-            ? TIMEFRAMES.filter(tf => (options.timeframes as TimeFrame[]).includes(tf.value))
-            : TIMEFRAMES,
+          timeframes: this.timeframes.map((value) => ({ value, label: timeframeLabel(value) })),
+          timeframeFavorites: this.pinnedTimeframes(),
           chartTypes: options.chartTypes
             ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
             : CHART_TYPES,
@@ -190,6 +265,7 @@ export class ChartWidget {
         {
           onSymbolClick: () => this.handleSymbolClick(),
           onTimeframe: (tf) => this.handleTimeframe(tf),
+          onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
           onChartType: (type) => this.handleChartType(type),
           onAddIndicator: (id) => this.handleAddIndicator(id),
           onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
@@ -201,6 +277,9 @@ export class ChartWidget {
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
+          onToggleFullscreen: options.fullscreen !== false && typeof document !== 'undefined' && document.fullscreenEnabled
+            ? () => this.toggleFullscreen()
+            : undefined,
         },
         this.t,
       );
@@ -218,7 +297,7 @@ export class ChartWidget {
         {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
-          onToggleMagnet: () => this.handleToggleMagnet(),
+          onToggleMagnet: features.drawingMagnet !== false ? () => this.handleToggleMagnet() : undefined,
           onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
           onUndo: () => this.chart.undo(),
           onRedo: () => this.chart.redo(),
@@ -228,6 +307,7 @@ export class ChartWidget {
             this.updateUI();
           },
           onToggleStyle: () => this.drawingStyle?.toggle(),
+          onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         },
       );
     }
@@ -262,30 +342,8 @@ export class ChartWidget {
       // `features` is merged explicitly (host overrides win per-key) rather
       // than inherited wholesale from the `...options.chartOptions` spread
       // above — otherwise passing e.g. `chartOptions: { features: { x } }`
-      // would silently drop every other default below.
-      features: {
-        drawings: true,
-        drawingMagnet: true,
-        drawingUndoRedo: true,
-        indicators: true,
-        trading: options.trading !== false,
-        tradingContextMenu: false,
-        volume: true,
-        legend: true,
-        crosshair: true,
-        // Pro trading charts have no cursor-following OHLCV popup — just the
-        // legend, which ChartWidget already renders. Off by default here
-        // (the headless Chart's own default stays `true`); opt back in via
-        // `chartOptions: { features: { crosshairTooltip: true } }`.
-        crosshairTooltip: false,
-        keyboard: true,
-        screenshot: true,
-        alerts: true,
-        barCountdown: true,
-        logScale: true,
-        watermark: true,
-        ...options.chartOptions?.features,
-      },
+      // would silently drop every other default.
+      features,
     });
 
     // New bars end the loading state, whoever supplied them (stream snapshot,
@@ -312,7 +370,24 @@ export class ChartWidget {
 
     // 6. Create status bar
     if (options.statusBar !== false) {
-      this.statusBar = new WidgetStatusBar(this.root);
+      const range = options.rangeBar !== false;
+      this.statusBar = new WidgetStatusBar(this.root, range ? {
+        presets: RANGE_PRESETS,
+        presetLabels: { All: this.t('range.all') },
+        groupLabel: this.t('range.presets'),
+        goToLabel: this.t('range.goTo'),
+        onPreset: (preset) => this.chart.setVisibleRangePreset(preset),
+        onGoTo: () => this.toggleGoToDate(),
+      } : undefined);
+      if (range) {
+        this.goToDate = new WidgetGoToDate(this.root, {
+          title: this.t('range.goTo'),
+          date: this.t('range.date'),
+          time: this.t('range.time'),
+          submit: this.t('range.goToSubmit'),
+          cancel: this.t('range.cancel'),
+        }, ({ date, time }) => this.goToWallTime(date, time));
+      }
     }
 
     // 7. Create settings (lazy, not appended until opened)
@@ -321,15 +396,28 @@ export class ChartWidget {
         onChange: (patch) => this.applySettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
-      }, this.t);
+      }, this.t, { barCountdown: features.barCountdown, logScale: features.logScale }, this.overlayHost);
     }
 
     // 8a. Symbol search
     this.symbolSearch = new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
+    }, this.overlayHost);
+    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost);
+
+    // The sidebar follows the chart's drawing tool: finished, cancelled with
+    // Esc, or kept for the next drawing in stay-in-drawing mode.
+    this.chart.on('drawingToolChange', (e) => {
+      const tool = (e.payload as { tool: DrawingToolType | null }).tool;
+      if (tool === this.state.activeTool) return;
+      this.state = { ...this.state, activeTool: tool };
+      this.updateUI();
     });
-    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t);
+
+    // The chip strip mirrors the chart's indicators, whoever adds or removes them.
+    this.chart.on('indicatorAdd', () => this.syncIndicatorsFromChart());
+    this.chart.on('indicatorRemove', () => this.syncIndicatorsFromChart());
 
     // Replay: while picking, a click starts the replay at that bar; during a
     // replay it jumps the cursor there.
@@ -438,7 +526,10 @@ export class ChartWidget {
     // 8a-ter. Object tree (indicators + drawings manager)
     if (options.objectTree !== false) {
       this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
-        onApply: (instanceId, params) => this.chart.updateIndicator(instanceId, params),
+        onApply: (instanceId, params) => {
+          this.chart.updateIndicator(instanceId, params);
+          this.syncIndicatorsFromChart(); // the chip shows the parameters
+        },
         onClose: () => {},
       });
       this.objectTree = new WidgetObjectTree(this.root, {
@@ -460,7 +551,7 @@ export class ChartWidget {
           this.chart.setDrawingLocked(id, locked);
           this.refreshObjects();
         },
-        onAddCompare: () => this.handleAddCompare(),
+        onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onRemoveCompare: (id) => this.handleRemoveCompare(id),
       });
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
@@ -478,7 +569,7 @@ export class ChartWidget {
       onTimeframe: (tf) => this.handleTimeframe(tf),
       onAction: (id) => this.handleAction(id),
       onClose: () => {},
-    });
+    }, this.overlayHost);
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
@@ -489,6 +580,18 @@ export class ChartWidget {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         e.preventDefault();
         this.symbolSearch?.open(this.symbols, this.state.symbol);
+      } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
+        // By key position: on macOS Alt+G types "©".
+        if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
+        if (e.code === 'KeyI') {
+          // Alt+I → invert the price scale.
+          e.preventDefault();
+          this.applySettings({ invertScale: !this.settingsState.invertScale });
+        } else if (this.goToDate) {
+          // Alt+G → go to date.
+          e.preventDefault();
+          this.toggleGoToDate();
+        }
       } else if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Only fire when the user isn't typing into an input.
         const active = document.activeElement as HTMLElement | null;
@@ -498,6 +601,8 @@ export class ChartWidget {
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
+    document.addEventListener('fullscreenchange', this.onFullscreenChange);
+    this.root.addEventListener('pointerdown', this.onRootPointerDown, true);
 
     // 9. Connect stream
     if (options.adapter) {
@@ -589,7 +694,9 @@ export class ChartWidget {
     });
   }
 
+  /** Ignored when the chart's `features.timeframes` whitelist leaves `tf` out. */
   async setTimeframe(tf: TimeFrame): Promise<void> {
+    if (!this.chart.isTimeframeAllowed(tf)) return;
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
@@ -616,6 +723,7 @@ export class ChartWidget {
     const resolved = this.resolveTheme(theme);
     this.state = { ...this.state, isDark };
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
+    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     this.chart.setTheme(resolved);
     this.updateUI();
   }
@@ -631,6 +739,11 @@ export class ChartWidget {
     if (this.boundGlobalKeydown) {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
     }
+    document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+    this.root.removeEventListener('pointerdown', this.onRootPointerDown, true);
+    if (lastPressedWidget === this) lastPressedWidget = null;
+    this.portal.remove();
+    if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
     this.flushActiveLayout();
     this.commandPalette?.destroy();
     this.symbolSearch?.destroy();
@@ -653,6 +766,7 @@ export class ChartWidget {
     this.sidebar?.destroy();
     this.settings?.destroy();
     this.statusBar?.destroy();
+    this.goToDate?.destroy();
     this.loading.destroy();
     this.chart.destroy();
     this.root.remove();
@@ -670,6 +784,58 @@ export class ChartWidget {
 
   private handleTimeframe(tf: TimeFrame): void {
     void this.setTimeframe(tf);
+  }
+
+  /** Fill the screen with the widget, or leave fullscreen. */
+  toggleFullscreen(): void {
+    if (document.fullscreenElement === this.root) {
+      void document.exitFullscreen().catch(() => {});
+      return;
+    }
+    this.root.requestFullscreen().catch((err: unknown) => {
+      this.toast(err instanceof Error ? err.message : 'Fullscreen is not available', 'error');
+    });
+  }
+
+  /** The display timezone from the settings: minutes east of UTC, null = local. */
+  private displayTzOffset(): number | null {
+    const tz = this.settingsState.timezone;
+    return tz === 'local' || !Number.isFinite(Number(tz)) ? null : Number(tz);
+  }
+
+  private toggleGoToDate(): void {
+    if (!this.goToDate) return;
+    if (this.goToDate.isOpen()) {
+      this.goToDate.close();
+      return;
+    }
+    const data = this.chart.getData();
+    if (data.length === 0) return;
+    this.goToDate.open(
+      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTzOffset()),
+      this.root.querySelector('[data-role="goto"]'),
+    );
+  }
+
+  private goToWallTime(date: string, time: string): void {
+    const ms = wallTimeToUtc(date, time, this.displayTzOffset());
+    const data = this.chart.getData();
+    if (ms === null || data.length === 0) return;
+    const ts = ms / barTimeUnit(data); // the bars' own unit
+    this.chart.goToTime(ts);
+    if (ts < data[0].time) this.toast(this.t('range.beforeData'));
+  }
+
+  /** Pinned timeframes that are still on offer, shortest first. */
+  private pinnedTimeframes(): TimeFrame[] {
+    const pinned = this.timeframeFavorites.list();
+    return this.timeframes.filter((tf) => pinned.includes(tf));
+  }
+
+  private handleToggleTimeframeFavorite(tf: TimeFrame): void {
+    this.timeframeFavorites.toggle(tf);
+    this.toolbar?.setTimeframeFavorites(this.pinnedTimeframes());
+    this.updateUI();
   }
 
   /**
@@ -812,13 +978,8 @@ export class ChartWidget {
     if (s.chartType) this.handleChartType(s.chartType);
     this.chart.setScaleMode(s.scaleMode);
 
-    for (const [, instanceId] of this.state.activeIndicators) this.chart.removeIndicator(instanceId);
-    const map = new Map<string, string>();
-    for (const ind of s.indicators) {
-      const iid = this.chart.addIndicator(ind.id, ind.params);
-      if (iid) map.set(ind.id, iid);
-    }
-    this.state = { ...this.state, activeIndicators: map };
+    for (const instanceId of [...this.state.activeIndicators.keys()]) this.chart.removeIndicator(instanceId);
+    for (const ind of s.indicators) this.chart.addIndicator(ind.id, ind.params);
     this.chart.setDrawings(s.drawings);
     this.updateUI();
     return true;
@@ -1039,36 +1200,16 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /**
+   * Add another instance — picking EMA twice gives two EMAs (e.g. 20 and 50
+   * once their settings are changed). Remove one from its chip.
+   */
   private handleAddIndicator(indId: string): void {
-    if (this.state.activeIndicators.has(indId)) {
-      // Toggle off
-      const instanceId = this.state.activeIndicators.get(indId)!;
-      this.chart.removeIndicator(instanceId);
-      const next = new Map(this.state.activeIndicators);
-      next.delete(indId);
-      this.state = { ...this.state, activeIndicators: next };
-    } else {
-      const instanceId = this.chart.addIndicator(indId);
-      if (instanceId) {
-        const next = new Map(this.state.activeIndicators);
-        next.set(indId, instanceId);
-        this.state = { ...this.state, activeIndicators: next };
-      }
-    }
-    this.updateUI();
+    this.chart.addIndicator(indId); // the chip strip follows the indicatorAdd event
   }
 
   private handleRemoveIndicator(instanceId: string): void {
     this.chart.removeIndicator(instanceId);
-    const next = new Map(this.state.activeIndicators);
-    for (const [id, iid] of next.entries()) {
-      if (iid === instanceId) {
-        next.delete(id);
-        break;
-      }
-    }
-    this.state = { ...this.state, activeIndicators: next };
-    this.updateUI();
   }
 
   private toggleCommandPalette(): void {
@@ -1087,7 +1228,7 @@ export class ChartWidget {
         id: ind.id,
         label: ind.name,
         category: 'indicator',
-        active: this.state.activeIndicators.has(ind.id),
+        active: [...this.state.activeIndicators.values()].some((a) => a.id === ind.id),
       });
     }
 
@@ -1111,12 +1252,12 @@ export class ChartWidget {
       }
     }
 
-    for (const tf of TIMEFRAMES) {
+    for (const tf of this.timeframes) {
       items.push({
-        id: tf.value,
-        label: tf.label,
+        id: tf,
+        label: timeframeLabel(tf),
         category: 'timeframe',
-        active: this.state.timeframe === tf.value,
+        active: this.state.timeframe === tf,
       });
     }
 
@@ -1179,6 +1320,13 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  private handleToggleStayInDrawing(): void {
+    const stayInDrawing = !this.state.stayInDrawing;
+    this.state = { ...this.state, stayInDrawing };
+    this.chart.setStayInDrawingMode(stayInDrawing);
+    this.updateUI();
+  }
+
   private handleToggleMagnet(): void {
     const magnetEnabled = !this.state.magnetEnabled;
     this.state = { ...this.state, magnetEnabled };
@@ -1190,6 +1338,7 @@ export class ChartWidget {
     const isDark = !this.state.isDark;
     this.state = { ...this.state, isDark };
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
+    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     this.chart.setTheme(isDark ? DARK_THEME : LIGHT_THEME);
     this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
       fontSize: 48,
@@ -1248,7 +1397,7 @@ export class ChartWidget {
       // fall back to a fresh layout — a corrupted layout shouldn't break the
       // chart.
       const ok = this.chart.loadStateFromStorage(key);
-      if (ok) this.rebuildActiveIndicatorsMapFromChart();
+      if (ok) this.syncIndicatorsFromChart();
     } catch { /* swallow — layout will be rebuilt from user actions */ }
 
     // Wire chart-level auto-save so any further drawing/indicator change
@@ -1263,15 +1412,11 @@ export class ChartWidget {
     this.activeLayoutKey = null;
   }
 
-  /**
-   * After loading a layout, the chart restores indicator instances but our
-   * `state.activeIndicators` map (used to render the chip strip) is stale.
-   * Rebuild it from the live `getActiveIndicators` list.
-   */
-  private rebuildActiveIndicatorsMapFromChart(): void {
-    const next = new Map<string, string>();
+  /** Rebuild the chip strip from the chart's indicator instances. */
+  private syncIndicatorsFromChart(): void {
+    const next = new Map<string, ActiveIndicatorInfo>();
     for (const a of this.chart.getActiveIndicators()) {
-      next.set(a.id, a.instanceId);
+      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig) });
     }
     this.state = { ...this.state, activeIndicators: next };
     this.updateUI();
@@ -1486,6 +1631,7 @@ export class ChartWidget {
     if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
+    if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
     if (patch.scaleMode !== undefined) {
       this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
@@ -1627,4 +1773,23 @@ export class ChartWidget {
     }
     return true;
   }
+}
+
+/**
+ * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name plus up to three
+ * numeric parameters, in the indicator's own order, so two instances of the
+ * same indicator can be told apart.
+ */
+export function indicatorChipLabel(
+  id: string,
+  params: Record<string, unknown>,
+  defaults?: Record<string, unknown>,
+): string {
+  const order = defaults ? Object.keys(defaults) : Object.keys(params);
+  const numbers = order
+    .map((k) => params[k])
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
+    .slice(0, 3)
+    .map((v) => String(Number(v.toFixed(4))));
+  return [id.toUpperCase(), ...numbers].join(' ');
 }

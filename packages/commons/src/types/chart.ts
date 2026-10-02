@@ -23,7 +23,7 @@ export interface FeaturesConfig {
   drawings?: boolean;
   /** Whitelist of allowed drawing tool types. When set, only these tools are available. */
   drawingTools?: DrawingToolType[];
-  /** Enable magnet/snap for drawing anchors */
+  /** Allow magnet/snap for drawing anchors. When false, `setDrawingMagnet(true)` is ignored. */
   drawingMagnet?: boolean;
   /** Enable undo/redo for drawings (Ctrl+Z / Ctrl+Y) */
   drawingUndoRedo?: boolean;
@@ -82,19 +82,22 @@ export interface FeaturesConfig {
   replay?: boolean;
   /** Show session break lines (day separators) */
   sessionBreaks?: boolean;
-  /** Show bar countdown timer (time until current candle closes) */
+  /** Show bar countdown timer (time until current candle closes). When false it stays hidden. */
   barCountdown?: boolean;
-  /** Enable compare/overlay symbols */
+  /** Enable compare/overlay symbols. When false, `addCompareSymbol` does nothing. */
   compareSymbols?: boolean;
-  /** Enable data export (CSV/JSON) */
+  /** Enable data export (CSV/JSON). When false, `exportVisibleData` / `exportAllData` do nothing. */
   dataExport?: boolean;
-  /** Enable logarithmic price scale toggle */
+  /** Allow the logarithmic price scale. When false, switching to it is ignored. */
   logScale?: boolean;
 
   // --- Timeframes ---
-  /** Whitelist of available timeframes. When set, only these are selectable. */
+  /**
+   * Whitelist of timeframes. When set, `setTimeframe` ignores any other, and
+   * ChartWidget offers only these.
+   */
   timeframes?: TimeFrame[];
-  /** Default favorite timeframes shown in the quick-access bar */
+  /** ChartWidget: timeframes on the quick-access bar until the user changes them. */
   defaultTimeframeFavorites?: TimeFrame[];
 }
 

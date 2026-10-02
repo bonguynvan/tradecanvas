@@ -92,6 +92,20 @@ describe('Viewport.panPriceRange — vertical chart-body panning', () => {
     expect(max).toBeCloseTo(225, 6);
   });
 
+  it('moves the candles with the pointer on an inverted scale too', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(10), false);
+    vp.setPriceRange(100, 200);
+    vp.setInvertScale(true);
+    const h = vp.getState().chartRect.height;
+
+    // Dragged up: upside down, higher prices come into view from below.
+    vp.panPriceRange(h / 2);
+
+    expect(vp.getState().priceRange.min).toBeCloseTo(150, 6);
+    expect(vp.getState().priceRange.max).toBeCloseTo(250, 6);
+  });
+
   it('is a no-op for a zero delta', () => {
     const vp = new Viewport(1000, 600, 2, 30, 5);
     vp.updateData(bars(10), false);

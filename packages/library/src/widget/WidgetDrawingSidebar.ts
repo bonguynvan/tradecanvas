@@ -43,6 +43,7 @@ export class WidgetDrawingSidebar {
   private groupButtons: HTMLButtonElement[] = [];
   private cursorBtn: HTMLButtonElement | null = null;
   private magnetBtn: HTMLButtonElement | null = null;
+  private stayBtn: HTMLButtonElement | null = null;
   private flyoutEl: HTMLDivElement | null = null;
   private favoritesEl: HTMLDivElement | null = null;
   private favoritesDivider: HTMLDivElement | null = null;
@@ -127,12 +128,25 @@ export class WidgetDrawingSidebar {
       el.appendChild(styleBtn);
     }
 
-    this.magnetBtn = document.createElement('button');
-    this.magnetBtn.className = 'tcw-sidebar-btn';
-    this.magnetBtn.title = 'Magnet';
-    this.magnetBtn.innerHTML = createIcon('magnet', 14);
-    this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
-    el.appendChild(this.magnetBtn);
+    if (callbacks.onToggleMagnet) {
+      this.magnetBtn = document.createElement('button');
+      this.magnetBtn.className = 'tcw-sidebar-btn';
+      this.magnetBtn.title = 'Magnet';
+      this.magnetBtn.innerHTML = createIcon('magnet', 14);
+      this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
+      el.appendChild(this.magnetBtn);
+    }
+
+    if (callbacks.onToggleStayInDrawing) {
+      this.stayBtn = document.createElement('button');
+      this.stayBtn.className = 'tcw-sidebar-btn';
+      this.stayBtn.dataset.role = 'stay';
+      this.stayBtn.title = 'Stay in drawing mode';
+      this.stayBtn.setAttribute('aria-pressed', 'false');
+      this.stayBtn.innerHTML = createIcon('repeat', 14);
+      this.stayBtn.addEventListener('click', callbacks.onToggleStayInDrawing);
+      el.appendChild(this.stayBtn);
+    }
 
     const undoBtn = document.createElement('button');
     undoBtn.className = 'tcw-sidebar-btn';
@@ -254,6 +268,11 @@ export class WidgetDrawingSidebar {
     if (this.magnetBtn) {
       this.magnetBtn.classList.toggle('tcw-active', state.magnetEnabled);
       this.magnetBtn.title = state.magnetEnabled ? 'Magnet ON' : 'Magnet OFF';
+    }
+
+    if (this.stayBtn) {
+      this.stayBtn.classList.toggle('tcw-active', state.stayInDrawing);
+      this.stayBtn.setAttribute('aria-pressed', String(state.stayInDrawing));
     }
   }
 

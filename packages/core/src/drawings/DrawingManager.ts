@@ -19,6 +19,12 @@ export type MagnetMode = 'none' | 'magnet';
 let nextDrawingId = 1;
 
 /**
+ * Copied drawings, shared by every chart on the page so a copy can be pasted
+ * into another chart. `pastes` counts pastes since the copy, to stagger them.
+ */
+const clipboard: { drawings: DrawingState[]; pastes: number } = { drawings: [], pastes: 0 };
+
+/**
  * Shallow clone tailored for DrawingState. Avoids `structuredClone` in hot
  * paths (drag, resize, duplicate) where the well-known shape lets us spread
  * much faster than the structured-clone algorithm.
@@ -74,6 +80,10 @@ export class DrawingManager {
   private magnetMode: MagnetMode = 'none';
   private dataGetter: (() => OHLCBar[]) | null = null;
   private displayDataGetter: (() => OHLCBar[]) | null = null;
+  /** Keep the tool after a drawing is finished, to draw several in a row. */
+  private stayInDrawingMode = false;
+  /** Tools this chart allows (e.g. a whitelist); pasting skips the others. */
+  private toolAllowed: (type: DrawingToolType) => boolean = () => true;
 
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
@@ -174,8 +184,19 @@ export class DrawingManager {
 
   private applyUndoAction(action: import('../features/UndoRedoManager.js').UndoableAction): void {
     this.undoOne(action);
+    this.settleAfterHistory();
+  }
+
+  /**
+   * After undo/redo nothing is selected, and a picked tool (stay-in-drawing
+   * mode, or one picked mid-drawing) stays ready for a fresh drawing.
+   */
+  private settleAfterHistory(): void {
     this.clearSelection();
-    this.state = 'idle';
+    this.creatingDrawing = null;
+    this.committedAnchors = 0;
+    this.previewAnchor = null;
+    this.state = this.activeTool ? 'creating' : 'idle';
     this.requestRender?.();
   }
 
@@ -208,9 +229,7 @@ export class DrawingManager {
 
   private applyRedoAction(action: import('../features/UndoRedoManager.js').UndoableAction): void {
     this.redoOne(action);
-    this.clearSelection();
-    this.state = 'idle';
-    this.requestRender?.();
+    this.settleAfterHistory();
   }
 
   private redoOne(action: import('../features/UndoRedoManager.js').UndoableAction): void {
@@ -391,11 +410,68 @@ export class DrawingManager {
   // --- Tool selection ---
 
   setActiveTool(type: DrawingToolType | null): void {
+    const changed = type !== this.activeTool;
     this.activeTool = type;
     this.state = type ? 'creating' : 'idle';
     this.creatingDrawing = null;
     this.committedAnchors = 0;
     this.previewAnchor = null;
+    if (changed) this.eventCallback?.('drawingToolChange', { tool: type });
+  }
+
+  /** When on, finishing a drawing keeps its tool active for the next one. */
+  setStayInDrawingMode(enabled: boolean): void {
+    this.stayInDrawingMode = enabled;
+  }
+
+  isStayInDrawingMode(): boolean {
+    return this.stayInDrawingMode;
+  }
+
+  setToolFilter(allowed: (type: DrawingToolType) => boolean): void {
+    this.toolAllowed = allowed;
+  }
+
+  // --- Copy / paste ---
+
+  /** Copy the selected drawings. Returns how many were copied. */
+  copySelection(): number {
+    const selected = this.getSelectedDrawingIds()
+      .map((id) => this.drawings.find((d) => d.id === id))
+      .filter((d): d is DrawingState => d !== undefined);
+    if (selected.length === 0) return 0;
+    clipboard.drawings = selected.map((d) => structuredClone(d)); // meta can nest
+    clipboard.pastes = 0;
+    return selected.length;
+  }
+
+  /**
+   * Paste the copied drawings as new, unlocked, selected drawings — one undo
+   * step. Pasted back into the chart they came from, each paste is offset by
+   * a few more bars so it doesn't cover the original. Returns the new ids.
+   */
+  paste(): string[] {
+    if (clipboard.drawings.length === 0 || this.state === 'creating') return [];
+    const fromHere = clipboard.drawings.every((c) => this.drawings.some((d) => d.id === c.id));
+    clipboard.pastes += 1;
+    const shift = fromHere ? this.computeBarOffsetTime(3 * clipboard.pastes) : 0;
+    const ids: string[] = [];
+    this.batchUndo(() => {
+      for (const source of clipboard.drawings) {
+        if (!this.registry.has(source.type) || !this.toolAllowed(source.type)) continue;
+        ids.push(this.addDrawing({
+          type: source.type,
+          anchors: source.anchors.map((a) => ({ ...a, time: a.time + shift })),
+          style: { ...source.style },
+          meta: source.meta ? structuredClone(source.meta) : undefined,
+        }));
+      }
+    });
+    if (ids.length === 0) return ids;
+    this.clearSelection();
+    for (const id of ids) this.addToSelection(id);
+    this.requestRender?.();
+    return ids;
   }
 
   getActiveTool(): DrawingToolType | null {
@@ -500,6 +576,15 @@ export class DrawingManager {
   }
 
   onKeyDown(key: string, ctrlKey = false): boolean {
+    // Ctrl+C / Ctrl+V copy and paste drawings; with nothing to copy or paste
+    // the keys are left to the browser.
+    if (ctrlKey && (key === 'c' || key === 'C')) {
+      return this.state === 'selected' && this.copySelection() > 0;
+    }
+    if (ctrlKey && (key === 'v' || key === 'V')) {
+      return this.paste().length > 0;
+    }
+
     // Ctrl+D to duplicate selected drawing
     if (ctrlKey && (key === 'd' || key === 'D')) {
       if (this.state === 'selected' && this.selectedDrawingId) {
@@ -773,8 +858,15 @@ export class DrawingManager {
     this.creatingDrawing = null;
     this.committedAnchors = 0;
     this.previewAnchor = null;
+    if (this.stayInDrawingMode && this.activeTool) {
+      // Ready for the next one; selecting the finished drawing would get in the way.
+      this.clearSelection();
+      this.state = 'creating';
+      return;
+    }
     this.activeTool = null;
     this.state = 'selected';
+    this.eventCallback?.('drawingToolChange', { tool: null });
   }
 
   /** True while a drawing is being moved or reshaped by its handle. */

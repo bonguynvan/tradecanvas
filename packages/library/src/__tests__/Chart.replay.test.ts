@@ -2,26 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
-
-/** jsdom has no 2D context: a recorder that accepts any call or assignment. */
-function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const store: Record<string | symbol, unknown> = { canvas };
-  return new Proxy(store, {
-    get: (target, prop) => {
-      if (prop in target) return target[prop];
-      if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
-      if (prop === 'getImageData' || prop === 'createImageData') return () => ({ data: new Uint8ClampedArray(4) });
-      if (prop === 'createLinearGradient' || prop === 'createRadialGradient' || prop === 'createPattern') {
-        return () => ({ addColorStop: () => {} });
-      }
-      return () => {};
-    },
-    set: (target, prop, value) => {
-      target[prop] = value;
-      return true;
-    },
-  }) as unknown as CanvasRenderingContext2D;
-}
+import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
 function bars(n: number): OHLCBar[] {
   const t0 = Date.UTC(2026, 0, 1);
@@ -44,17 +25,8 @@ let chart: Chart;
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16));
-  vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
-  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
-  vi.stubGlobal('Path2D', class { moveTo() {} lineTo() {} rect() {} arc() {} closePath() {} });
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
-    return fakeContext(this) as never;
-  });
-  host = document.createElement('div');
-  Object.defineProperty(host, 'clientWidth', { value: 800 });
-  Object.defineProperty(host, 'clientHeight', { value: 400 });
-  document.body.appendChild(host);
+  installChartStubs();
+  host = sizedHost();
   chart = new Chart(host, { chartType: 'candlestick' });
   chart.setData(bars(300));
 });

@@ -250,3 +250,112 @@ describe('DrawingManager — multi-selection', () => {
     expect(manager.getSelectedDrawingIds()).toEqual(['c']);
   });
 });
+
+describe('DrawingManager — stay in drawing mode', () => {
+  it('keeps the tool after each drawing when on', () => {
+    const events: [string, unknown][] = [];
+    manager.setEventCallback((event, data) => events.push([event, data]));
+    manager.setStayInDrawingMode(true);
+    manager.setActiveTool('trendLine');
+    manager.onPointerDown({ x: 5, y: 50 }, unitViewport);
+    manager.onPointerDown({ x: 55, y: 50 }, unitViewport);
+    manager.onPointerDown({ x: 105, y: 20 }, unitViewport);
+    manager.onPointerDown({ x: 155, y: 20 }, unitViewport);
+    expect(manager.getDrawings()).toHaveLength(2);
+    expect(manager.getActiveTool()).toBe('trendLine');
+    expect(manager.getSelectedDrawingIds()).toEqual([]);
+    expect(events.filter(([e]) => e === 'drawingToolChange')).toEqual([['drawingToolChange', { tool: 'trendLine' }]]);
+
+    manager.onKeyDown('Escape');
+    expect(manager.getActiveTool()).toBeNull();
+    expect(events.at(-1)).toEqual(['drawingToolChange', { tool: null }]);
+  });
+
+  it('drops the tool after one drawing when off, and says so', () => {
+    const events: [string, unknown][] = [];
+    manager.setEventCallback((event, data) => events.push([event, data]));
+    manager.setActiveTool('trendLine');
+    manager.onPointerDown({ x: 5, y: 50 }, unitViewport);
+    manager.onPointerDown({ x: 55, y: 50 }, unitViewport);
+    expect(manager.getActiveTool()).toBeNull();
+    expect(manager.getSelectedDrawingIds()).toHaveLength(1);
+    expect(events.at(-1)).toEqual(['drawingToolChange', { tool: null }]);
+  });
+});
+
+describe('DrawingManager — copy and paste', () => {
+  const line = (id: string, t: number) =>
+    drawing('trendLine', [{ time: t, price: 50 }, { time: t + 10, price: 60 }], { id, locked: true });
+
+  it('pastes copies of the selection, staggered, selected, as one undo step', () => {
+    const undo = new UndoRedoManager();
+    manager.setUndoRedoManager(undo);
+    manager.setDrawings([line('a', 0), line('b', 20), line('c', 60)]);
+    manager.selectInRect({ x0: 0, y0: 0, x1: 260, y1: 100 }, unitViewport); // a and b
+    expect(manager.onKeyDown('c', true)).toBe(true);
+
+    expect(manager.onKeyDown('v', true)).toBe(true);
+    const pasted = manager.getSelectedDrawingIds();
+    expect(pasted).toHaveLength(2);
+    const copies = manager.getDrawings().filter((d) => pasted.includes(d.id));
+    expect(copies.map((d) => d.anchors[0].time).sort((x, y) => x - y)).toEqual([3, 23]);
+    expect(copies.every((d) => !d.locked)).toBe(true);
+
+    manager.paste();
+    const second = manager.getDrawings().slice(-2).map((d) => d.anchors[0].time).sort((x, y) => x - y);
+    expect(second).toEqual([6, 26]);
+
+    manager.undo(); // takes back the whole second paste
+    expect(manager.getDrawings()).toHaveLength(5);
+  });
+
+  it('pastes into another chart at the same place', () => {
+    manager.setDrawings([line('a', 0)]);
+    manager.selectInRect({ x0: 0, y0: 0, x1: 50, y1: 100 }, unitViewport);
+    manager.copySelection();
+
+    const other = new DrawingManager();
+    other.register(new TrendLineTool());
+    expect(other.paste()).toHaveLength(1);
+    expect(other.getDrawings()[0].anchors).toEqual([{ time: 0, price: 50 }, { time: 10, price: 60 }]);
+  });
+
+  it('leaves Ctrl+C to the browser when nothing is selected', () => {
+    manager.setDrawings([line('a', 0)]);
+    expect(manager.onKeyDown('c', true)).toBe(false);
+  });
+
+  it('does not paste while a drawing is being made', () => {
+    manager.setDrawings([line('a', 0)]);
+    manager.selectInRect({ x0: 0, y0: 0, x1: 50, y1: 100 }, unitViewport);
+    manager.copySelection();
+    manager.setActiveTool('trendLine');
+    expect(manager.paste()).toEqual([]);
+  });
+});
+
+describe('DrawingManager — after undo', () => {
+  it('stays ready to draw in stay-in-drawing mode', () => {
+    manager.setUndoRedoManager(new UndoRedoManager());
+    manager.setStayInDrawingMode(true);
+    manager.setActiveTool('trendLine');
+    manager.onPointerDown({ x: 5, y: 50 }, unitViewport);
+    manager.onPointerDown({ x: 55, y: 50 }, unitViewport);
+    manager.undo();
+    expect(manager.getDrawings()).toHaveLength(0);
+    expect(manager.getActiveTool()).toBe('trendLine');
+    // The next clicks draw again instead of selecting.
+    manager.onPointerDown({ x: 5, y: 40 }, unitViewport);
+    manager.onPointerDown({ x: 55, y: 40 }, unitViewport);
+    expect(manager.getDrawings()).toHaveLength(1);
+  });
+
+  it('pastes only tools the chart allows', () => {
+    manager.setDrawings([drawing('trendLine', [{ time: 0, price: 50 }, { time: 10, price: 60 }], { id: 'a' })]);
+    manager.selectInRect({ x0: 0, y0: 0, x1: 120, y1: 100 }, unitViewport);
+    manager.copySelection();
+    manager.setToolFilter((type) => type !== 'trendLine');
+    expect(manager.paste()).toEqual([]);
+    expect(manager.getSelectedDrawingIds()).toEqual(['a']);
+  });
+});

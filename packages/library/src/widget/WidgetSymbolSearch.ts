@@ -27,7 +27,11 @@ export class WidgetSymbolSearch {
   /** One-shot pick override — when set, this open() routes picks here instead. */
   private pickOverride: ((symbol: string) => void) | null = null;
 
-  constructor(callbacks: SymbolSearchCallbacks) {
+  /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
+  constructor(
+    callbacks: SymbolSearchCallbacks,
+    private readonly host: () => HTMLElement = () => document.body,
+  ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
   }
@@ -80,8 +84,7 @@ export class WidgetSymbolSearch {
     footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Open</span><span>Esc Close</span>';
     this.modal.appendChild(footer);
 
-    document.body.appendChild(this.backdrop);
-    document.body.appendChild(this.modal);
+    this.host().append(this.backdrop, this.modal);
 
     this.renderList();
     this.input.focus();

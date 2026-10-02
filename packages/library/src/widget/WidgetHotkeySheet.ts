@@ -39,6 +39,8 @@ const GROUPS: HotkeyGroup[] = [
     entries: [
       { keys: [mod, 'K'], label: 'Command palette' },
       { keys: [mod, 'P'], label: 'Symbol search' },
+      { keys: ['Alt', 'G'], label: 'Go to date' },
+      { keys: ['Alt', 'I'], label: 'Invert price scale' },
       { keys: ['?'], label: 'Show this sheet' },
     ],
   },
@@ -81,6 +83,8 @@ const GROUPS: HotkeyGroup[] = [
       { keys: [mod, 'Z'], label: 'Undo' },
       { keys: [mod, 'Shift', 'Z'], label: 'Redo' },
       { keys: ['Esc'], label: 'Cancel active drawing' },
+      { keys: [mod, 'C'], label: 'Copy selected drawings' },
+      { keys: [mod, 'V'], label: 'Paste drawings (into any chart on the page)' },
     ],
   },
 ];
@@ -92,7 +96,12 @@ export class WidgetHotkeySheet {
   private t: Translator;
   private boundKeydown: (e: KeyboardEvent) => void;
 
-  constructor(callbacks: HotkeySheetCallbacks, t: Translator) {
+  /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
+  constructor(
+    callbacks: HotkeySheetCallbacks,
+    t: Translator,
+    private readonly host: () => HTMLElement = () => document.body,
+  ) {
     this.callbacks = callbacks;
     this.t = t;
     this.boundKeydown = (e) => {
@@ -184,8 +193,7 @@ export class WidgetHotkeySheet {
     footer.appendChild(ok);
     this.modal.appendChild(footer);
 
-    document.body.appendChild(this.backdrop);
-    document.body.appendChild(this.modal);
+    this.host().append(this.backdrop, this.modal);
 
     document.addEventListener('keydown', this.boundKeydown);
   }

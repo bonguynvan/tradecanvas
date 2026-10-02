@@ -8,6 +8,10 @@ import type { DrawingManager } from '../drawings/DrawingManager.js';
 import type { TradingManager } from '../trading/TradingManager.js';
 import type { PaneResizeHandler } from './PaneResizeHandler.js';
 
+/** Every attached chart, and the one pressed last: drawing shortcuts go to one chart. */
+const attachedCharts = new Set<HTMLElement>();
+let lastPressedChart: HTMLElement | null = null;
+
 export class InteractionManager {
   private panHandler: PanHandler | null = null;
   private zoomHandler: ZoomHandler | null = null;
@@ -157,6 +161,7 @@ export class InteractionManager {
 
   attach(): void {
     const getVP = () => this.viewportGetter?.() ?? null;
+    attachedCharts.add(this.element);
 
     // Axis hit-test: returns 'price' if pointer is in the right-side price
     // axis strip, 'time' if in the bottom time-axis strip, null otherwise.
@@ -235,6 +240,7 @@ export class InteractionManager {
     };
 
     const onMouseDown = (e: MouseEvent) => {
+      lastPressedChart = this.element;
       // Only the primary button starts gestures; right-click belongs to the
       // context menu and must not start a pan underneath it.
       if (e.button !== 0) return;
@@ -481,6 +487,10 @@ export class InteractionManager {
         e.preventDefault();
         return;
       }
+      // Drawing shortcuts (copy/paste, undo/redo, delete) go to one chart, and
+      // never to a text field being typed in. Escape still cancels a tool
+      // picked from outside the chart.
+      if (e.key !== 'Escape' && !this.ownsShortcuts()) return;
       if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey)) e.preventDefault();
     };
 
@@ -495,6 +505,7 @@ export class InteractionManager {
 
     // --- Touch events ---
     const onTouchStart = (e: TouchEvent) => {
+      lastPressedChart = this.element;
       e.preventDefault();
       this.invalidateRect();
       if (e.touches.length === 1) {
@@ -674,6 +685,8 @@ export class InteractionManager {
   }
 
   detach(): void {
+    attachedCharts.delete(this.element);
+    if (lastPressedChart === this.element) lastPressedChart = null;
     for (const remove of this.boundHandlers) remove();
     this.boundHandlers = [];
     this.cachedRect = null;
@@ -697,6 +710,22 @@ export class InteractionManager {
       this.cachedRect = this.element.getBoundingClientRect();
     }
     return this.cachedRect;
+  }
+
+  /**
+   * Whether drawing shortcuts are this chart's: not while typing in a text
+   * field; the chart holding focus if any does; else the chart pressed last
+   * (so clicking a toolbar button beside it keeps them working); else any.
+   */
+  private ownsShortcuts(): boolean {
+    const active = document.activeElement as HTMLElement | null;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
+      return false;
+    }
+    for (const chart of attachedCharts) {
+      if (active && chart.contains(active)) return chart === this.element;
+    }
+    return lastPressedChart === null || lastPressedChart === this.element;
   }
 
   private getMousePos(e: MouseEvent): Point {
