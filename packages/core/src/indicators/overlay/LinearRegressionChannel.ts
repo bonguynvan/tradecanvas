@@ -1,11 +1,4 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
@@ -17,11 +10,18 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * and offsets it by `stdDev` standard deviations of residuals to form upper/lower bands.
  */
 export class LinearRegressionChannelIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'lrc',
     name: 'Linear Regression Channel',
     placement: 'overlay' as const,
-    defaultConfig: { period: 100, stdDev: 2 },
+    defaultConfig: { period: 100, stdDev: 2, source: 'close' },
+    shortName: 'LRC',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'upper', title: 'Upper', color: 0 },
+      { key: 'middle', title: 'Basis', color: 1 },
+      { key: 'lower', title: 'Lower', color: 0 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

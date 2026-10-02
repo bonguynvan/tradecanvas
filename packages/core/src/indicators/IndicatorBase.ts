@@ -10,6 +10,7 @@ import type {
   Point,
 } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+import { renderPlots } from './plots.js';
 
 export abstract class IndicatorBase implements IndicatorPlugin {
   abstract descriptor: IndicatorDescriptor;
@@ -36,12 +37,18 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     if (val) out.values.set(data[i].time, val);
     else out.values.delete(data[i].time);
   }
-  abstract render(
+  /**
+   * Draws the descriptor's `plots` with the viewport's value scale. Indicators
+   * that draw more (bands, clouds, profiles) override it.
+   */
+  render(
     ctx: CanvasRenderingContext2D,
     output: IndicatorOutput,
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
-  ): void;
+  ): void {
+    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots);
+  }
 
   protected drawLine(
     ctx: CanvasRenderingContext2D,

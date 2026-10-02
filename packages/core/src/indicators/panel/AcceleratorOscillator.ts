@@ -1,7 +1,6 @@
-import type { DataSeries, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Accelerator Oscillator (Bill Williams) — measures the acceleration or
@@ -11,15 +10,18 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * AO = SMA(median, 5) − SMA(median, 34),  median = (high + low) / 2
  * AC = AO − SMA(AO, 5)
  *
- * Drawn as a histogram: green when the bar is higher than the previous one
- * (accelerating up), red when lower (accelerating down).
+ * Drawn as a histogram in the up colour when the bar is higher than the
+ * previous one (accelerating up), the down colour when lower. `up` is 1 on
+ * an up bar, 0 otherwise.
  */
 export class AcceleratorOscillatorIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'ac',
     name: 'Accelerator Oscillator',
     placement: 'panel' as const,
     defaultConfig: {},
+    shortName: 'AC',
+    plots: [{ key: 'value', title: 'AC', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };
 
   calculate(data: DataSeries): IndicatorOutput {
@@ -34,54 +36,18 @@ export class AcceleratorOscillatorIndicator extends IndicatorBase {
       ao[i] = sma(median, i, 5) - sma(median, i, 34);
     }
 
+    let prev: number | undefined;
     for (let i = 33 + 4; i < n; i++) {
       let s = 0;
       for (let j = i - 4; j <= i; j++) s += ao[j]!;
       const ac = ao[i]! - s / 5;
-      const val: IndicatorValue = { value: ac };
+      const rising = prev === undefined ? ac >= 0 : ac >= prev;
+      prev = ac;
+      const val: IndicatorValue = { value: ac, up: rising ? 1 : 0 };
       values.set(data[i].time, val);
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let absMax = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i]?.value;
-      if (v !== undefined && Math.abs(v) > absMax) absMax = Math.abs(v);
-    }
-    if (absMax === 0) return;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-    const zeroY = toY(0);
-
-    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, zeroY);
-    ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const barW = Math.max(1, (chartRect.width / (to - from + 1)) * 0.6);
-    let prev: number | undefined;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i]?.value;
-      if (v === undefined) { prev = undefined; continue; }
-      const x = barIndexToX(i, viewport);
-      const y = toY(v);
-      const rising = prev === undefined ? v >= 0 : v >= prev;
-      ctx.fillStyle = rising ? 'rgba(31, 168, 116,0.85)' : 'rgba(232, 80, 91,0.85)';
-      const top = Math.min(y, zeroY);
-      ctx.fillRect(x - barW / 2, top, barW, Math.max(1, Math.abs(y - zeroY)));
-      prev = v;
-    }
   }
 }
 

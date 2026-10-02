@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState, TimeFrame } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState, TimeFrame } from '@tradecanvas/commons';
 import { timeframeBucketStart } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
@@ -13,11 +13,14 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * never contributes until it closes).
  */
 export class MTFMovingAverageIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'mtfma',
     name: 'MTF Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 50, timeframe: '1d' },
+    defaultConfig: { period: 50, timeframe: '1d', source: 'close' },
+    shortName: 'MTF MA',
+    inputs: { source: { source: true } },
+    plots: [{ key: 'value', title: 'MA', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

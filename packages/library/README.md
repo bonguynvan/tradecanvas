@@ -53,7 +53,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 70 indicators, all 40 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 85 indicators, all 40 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -300,13 +300,33 @@ gauge.setValue(85) // animates smoothly
 
 ### Indicators (built-in)
 
-**Overlay** (drawn on the price chart):
-SMA, EMA, Hull MA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP, Anchored VWAP, Pivot Points (Classic), ZigZag, Linear Regression Channel
+85 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+LSMA, McGinley, SMMA, MA Cross, MTF MA), bands and channels (Bollinger,
+Keltner, Donchian, Envelope, Linear Regression), trend and stops (Ichimoku,
+Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,
+Fractals, Pivot Points), VWAPs and Volume Profile on the price pane; RSI, MACD,
+Stochastic, ATR, ADX, CCI, OBV, MFI, Bollinger %B and BandWidth, Historical
+Volatility, Ulcer Index and 40 more oscillators, volume and volatility
+indicators in panes. The [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators)
+lists every id with its inputs, lines and levels.
 
-**Panel** (separate sub-chart):
-RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Awesome Oscillator, Chaikin Oscillator, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+```typescript
+import { indicatorSource } from '@tradecanvas/chart'
 
-All indicator parameters are validated at runtime — invalid values (NaN, Infinity, non-numeric strings, missing keys) fall back to documented defaults instead of silently propagating to calculations.
+const rsi = chart.addIndicator('rsi', { period: 14 })!
+chart.addIndicator('ema', { period: 21, source: 'hlc3' })                     // another price
+chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') }) // RSI's own average, in RSI's pane
+chart.setIndicatorLevels(rsi, [20, 50, 80])
+```
+
+- **Sources**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, or another indicator's line.
+- **Panes**: one value scale per pane for lines, levels, axis and crosshair; indicators can share a pane.
+- **Levels**: editable per instance (RSI 30/70, CCI ±100 …), kept in saved layouts.
+- **Value tags**: each line's latest value on its axis, in its colour.
+- **Custom indicators** declare their lines (`plots`), scale, levels and inputs; the chart draws and labels them.
+
+Invalid parameters (NaN, Infinity, non-numeric strings, missing keys) fall back
+to the defaults instead of reaching the calculations.
 
 ### Drawing Tools
 
@@ -427,42 +447,20 @@ chart.updateLastBar(updatedBar)
 chart.setCurrentPrice(3500.42)
 ```
 
-### Web Worker indicator pipeline
+### Indicators outside the chart
 
-Heavy charts (1,000+ bars × 10+ indicators) can stutter when `calculate()` runs on the main thread. `IndicatorWorkerHost` offloads calculation to a worker so the render loop stays smooth.
-
-```typescript
-import { IndicatorWorkerHost } from '@tradecanvas/core'
-
-// Bundler-supported worker URL (Vite, webpack 5, esbuild, etc.)
-const worker = new Worker(
-  new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url),
-  { type: 'module' },
-)
-const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
-
-const output = await host.calculate(
-  'rsi',
-  { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } },
-  bars,
-)
-
-// Health check / cleanup
-await host.ping()
-host.terminate()
-```
-
-No worker available (SSR, tests, or as a safety net)? Pass `null` and register fallback plugins for synchronous calculation:
+`IndicatorWorkerHost` computes an indicator from bars with the same messages a
+Web Worker would use. The worker script is not part of the published packages
+yet; pass `null` and register the plugins to compute in place (SSR, tests,
+scripts):
 
 ```typescript
 import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
 
 const host = new IndicatorWorkerHost(null)
 host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', config, bars)  // runs synchronously
+const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
 ```
-
-Render still happens on the main thread (it needs `CanvasRenderingContext2D`). Only the heavy compute moves off-thread.
 
 ### Save / Load
 
@@ -508,6 +506,7 @@ chart.on('crosshairLeave', () => { /* the pointer left the plot */ })
 chart.on('drawingToolChange', (e) => { /* { tool } — null once a drawing is finished or cancelled */ })
 chart.on('indicatorUpdate', (e) => { /* { from } — indicator values recomputed from this bar on */ })
 chart.on('paneResize', (e) => { /* { instanceId, size } — an indicator pane was resized */ })
+chart.on('indicatorChange', (e) => { /* { instanceId, change } — shown/hidden, restyled, levels, inputs or pane changed */ })
 chart.on('barClick', (e) => { /* { bar, barIndex, point } */ })
 chart.on('visibleRangeChange', (e) => { /* { from, to } — bar indices, not timestamps */ })
 chart.on('priceRangeChange', (e) => { /* { min, max } — visible price bounds */ })
@@ -724,7 +723,7 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 
 ```typescript
 interface OHLCBar {
-  time: number    // Unix timestamp (seconds)
+  time: number    // Unix time in ms or seconds (up to 1e12 is read as seconds); ascending
   open: number
   high: number
   low: number
@@ -740,6 +739,17 @@ interface OHLCBar {
 | [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, replay, sub-cent prices + Vietnamese UI, 200k bars, slow-network switching — each on a live chart |
 | [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
 | [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | Framework components — reactive props, typed, zero boilerplate |
+
+## AI coding tools
+
+- [`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) and
+  [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) give
+  assistants the docs in one place.
+- An agent skill, [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md), teaches
+  coding agents to build with TradeCanvas: the entry points, the rules that
+  avoid most bugs, and worked examples that CI type-checks against the library.
+  Copy the folder into your project's `.claude/skills/` (or your agent's skills
+  folder) to use it.
 
 ## Browser Support
 

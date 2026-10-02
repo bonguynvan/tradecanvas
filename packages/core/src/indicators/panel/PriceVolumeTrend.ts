@@ -1,8 +1,6 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
-import { drawCumulativeLine } from './WilliamsAD.js';
 
 /**
  * Price Volume Trend (PVT) — a cumulative volume line like OBV, but each bar's
@@ -12,11 +10,13 @@ import { drawCumulativeLine } from './WilliamsAD.js';
  * PVT[i] = PVT[i−1] + volume[i] · (close[i] − close[i−1]) / close[i−1].
  */
 export class PriceVolumeTrendIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'pvt',
     name: 'Price Volume Trend',
     placement: 'panel' as const,
     defaultConfig: {},
+    shortName: 'PVT',
+    plots: [{ key: 'value', title: 'PVT', color: 0 }],
   };
 
   calculate(data: DataSeries, _config: IndicatorConfig): IndicatorOutput {
@@ -37,9 +37,5 @@ export class PriceVolumeTrendIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    drawCumulativeLine(ctx, output, viewport, style, barIndexToX);
   }
 }

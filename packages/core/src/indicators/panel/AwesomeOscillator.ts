@@ -1,22 +1,16 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class AwesomeOscillatorIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'ao',
     name: 'Awesome Oscillator',
     placement: 'panel' as const,
     defaultConfig: { fast: 5, slow: 34 },
+    shortName: 'AO',
+    plots: [{ key: 'value', title: 'AO', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -50,45 +44,5 @@ export class AwesomeOscillatorIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(
-    ctx: CanvasRenderingContext2D,
-    output: IndicatorOutput,
-    viewport: ViewportState,
-    style: ResolvedIndicatorStyle,
-  ): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let minVal = Infinity;
-    let maxVal = -Infinity;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i]?.value;
-      if (v === undefined) continue;
-      if (v < minVal) minVal = v;
-      if (v > maxVal) maxVal = v;
-    }
-    if (minVal === Infinity) return;
-    const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal)) || 1;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-    const zeroY = toY(0);
-    const halfBar = viewport.barWidth / 2;
-
-    const upColor = style.colors[0] ?? '#1fa874';
-    const downColor = style.colors[1] ?? '#e8505b';
-
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = toY(val.value);
-      const top = Math.min(y, zeroY);
-      const h = Math.max(Math.abs(y - zeroY), 1);
-      ctx.fillStyle = val.up ? upColor : downColor;
-      ctx.fillRect(x - halfBar, top, viewport.barWidth, h);
-    }
   }
 }

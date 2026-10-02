@@ -12,6 +12,21 @@ import { MACDIndicator } from '../panel/MACD.js';
 import { ATRIndicator } from '../panel/ATR.js';
 import { OBVIndicator } from '../panel/OBV.js';
 import { StochasticIndicator } from '../panel/Stochastic.js';
+import { DEMAIndicator } from '../overlay/DEMA.js';
+import { SMMAIndicator } from '../overlay/SMMA.js';
+import { ALMAIndicator } from '../overlay/ALMA.js';
+import { KAMAIndicator } from '../overlay/KAMA.js';
+import { LSMAIndicator } from '../overlay/LSMA.js';
+import { McGinleyDynamicIndicator } from '../overlay/McGinleyDynamic.js';
+import { MACrossIndicator } from '../overlay/MACross.js';
+import { WilliamsFractalsIndicator } from '../overlay/WilliamsFractals.js';
+import { ChandeKrollStopIndicator } from '../overlay/ChandeKrollStop.js';
+import { BollingerPercentBIndicator } from '../panel/BollingerPercentB.js';
+import { BollingerBandWidthIndicator } from '../panel/BollingerBandWidth.js';
+import { MomentumIndicator } from '../panel/Momentum.js';
+import { HistoricalVolatilityIndicator } from '../panel/HistoricalVolatility.js';
+import { VolumeOscillatorIndicator } from '../panel/VolumeOscillator.js';
+import { UlcerIndexIndicator } from '../panel/UlcerIndex.js';
 import { IndicatorEngine } from '../IndicatorEngine.js';
 
 /** Deterministic random walk so failures are reproducible. */
@@ -94,6 +109,22 @@ const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
   ['atr', new ATRIndicator(), { period: 14 }],
   ['obv', new OBVIndicator(), {}],
   ['stochastic', new StochasticIndicator(), { kPeriod: 14, dPeriod: 3, smooth: 3 }],
+  ['dema', new DEMAIndicator(), { period: 20 }],
+  ['smma', new SMMAIndicator(), { period: 14 }],
+  ['alma', new ALMAIndicator(), { period: 9, offset: 0.85, sigma: 6 }],
+  ['kama', new KAMAIndicator(), { period: 10, fast: 2, slow: 30 }],
+  ['lsma', new LSMAIndicator(), { period: 25, offset: 0 }],
+  ['mcginley', new McGinleyDynamicIndicator(), { period: 14 }],
+  ['macross', new MACrossIndicator(), { fast: 9, slow: 21 }],
+  ['macross-ema', new MACrossIndicator(), { fast: 9, slow: 21, type: 'ema' as unknown as number }],
+  ['fractals', new WilliamsFractalsIndicator(), { period: 2 }],
+  ['cks', new ChandeKrollStopIndicator(), { p: 10, x: 1, q: 9 }],
+  ['bbpb', new BollingerPercentBIndicator(), { period: 20, stdDev: 2 }],
+  ['bbw', new BollingerBandWidthIndicator(), { period: 20, stdDev: 2 }],
+  ['mom', new MomentumIndicator(), { period: 10 }],
+  ['hv', new HistoricalVolatilityIndicator(), { period: 10, annual: 365 }],
+  ['vo', new VolumeOscillatorIndicator(), { short: 5, long: 10 }],
+  ['ulcer', new UlcerIndexIndicator(), { period: 14 }],
 ];
 
 describe.each(CASES)('%s incremental update', (id, plugin, params) => {
@@ -216,5 +247,20 @@ describe('IndicatorEngine.recalculateFrom', () => {
     const before = engine.getOutput(id);
     engine.recalculateFrom(bars, 0);
     expect(engine.getOutput(id)).not.toBe(before);
+  });
+});
+
+describe('fractals incremental update', () => {
+  it('confirms a fractal before the changed bar', () => {
+    // Bar 3 is a peak; it becomes a fractal once bar 5 exists (two lower bars after it).
+    const highs = [10, 11, 12, 20, 12, 11];
+    const bars = highs.map((high, i) => ({ time: i * 60_000, open: 10, high, low: 9, close: 10, volume: 1 }));
+    const plugin = new WilliamsFractalsIndicator();
+    const config = indicatorConfig('fractals', { period: 2 });
+    const prev = plugin.calculate(bars.slice(0, 5), config);
+    expect(prev.series![3]).toBeNull(); // not yet: only one bar after it
+    const out = plugin.update!(bars, config, prev, 4); // bar 4 closed, bar 5 is new
+    expect(out!.series![3]).toEqual({ up: 20 });
+    expectSameOutput(out!, plugin.calculate(bars, config));
   });
 });

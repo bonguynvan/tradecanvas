@@ -40,3 +40,5 @@ pnpm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+# Agent skill example check (scripts/check-skill-examples.mjs)
+skills/tradecanvas/.check/

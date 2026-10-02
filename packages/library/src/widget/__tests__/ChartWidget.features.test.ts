@@ -35,6 +35,10 @@ class FakeChart {
   setStayInDrawingMode(on: boolean): void { this.stay.push(on); }
   inverted: boolean[] = [];
   setInvertScale(on: boolean): void { this.inverted.push(on); }
+  display: string[] = [];
+  setLegend(config: { visible?: boolean }): void { this.display.push(`legend:${config.visible}`); }
+  setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
+  setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
   getData(): { time: number }[] { return this.data; }
   setVisibleRangePreset(preset: string): void { this.presets.push(preset); }
   goToTime(time: number): number { this.goTos.push(time); return 0; }
@@ -161,6 +165,15 @@ describe('ChartWidget range bar', () => {
     expect(labels).toEqual(['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All']);
     host.querySelector<HTMLButtonElement>('[data-range="3M"]')!.click();
     expect(FakeChart.last.presets).toEqual(['3M']);
+  });
+
+  it('applies the legend, countdown and indicator value toggles to the chart', () => {
+    make();
+    const apply = (p: object) => (widget as unknown as { applySettings(p: object): void }).applySettings(p);
+    apply({ legendVisible: false });
+    apply({ barCountdown: false });
+    apply({ indicatorValueLabels: false });
+    expect(FakeChart.last.display).toEqual(['legend:false', 'countdown:false', 'values:false']);
   });
 
   it('goes to the date typed in the popover, read in the display timezone', () => {

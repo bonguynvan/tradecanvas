@@ -48,6 +48,10 @@ export interface SnapshotIndicator {
   position?: string;
   style?: IndicatorStyleConfig;
   visible?: boolean;
+  /** Its own reference levels; absent = the indicator's defaults. */
+  levels?: number[];
+  /** The instance (id when saved) whose pane it is drawn in, when not its own. */
+  pane?: string;
 }
 
 /**
@@ -170,6 +174,10 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       position: typeof ind.position === 'string' ? ind.position : undefined,
       style: validateIndicatorStyle(ind.style),
       visible: typeof ind.visible === 'boolean' ? ind.visible : undefined,
+      levels: Array.isArray(ind.levels)
+        ? ind.levels.filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
+        : undefined,
+      pane: typeof ind.pane === 'string' ? ind.pane : undefined,
     });
   }
 

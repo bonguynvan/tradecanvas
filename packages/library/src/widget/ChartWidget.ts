@@ -1,6 +1,6 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, Theme, TimeFrame } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
 import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -23,8 +23,8 @@ import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from '
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
-import { formatIndicatorValue, legendLineColor, legendNumbers } from './legendValues.js';
-import { RANGE_PRESETS } from '@tradecanvas/core';
+import { formatIndicatorValue, legendValues } from './legendValues.js';
+import { RANGE_PRESETS, sourceParam } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -70,6 +70,10 @@ const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '
 
 /** Gap between the on-chart indicator rows and the plot or pane edge, px. */
 const LEGEND_INSET = 4;
+/** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
+const PANE_ROW_TOP = 7;
+/** Rows of the indicators sharing a pane, one under the other (px). */
+const PANE_ROW_STEP = 17;
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 let lastPressedWidget: ChartWidget | null = null;
@@ -158,6 +162,8 @@ export class ChartWidget {
   private options: ChartWidgetOptions;
   private symbols: string[];
   private settingsState: ChartSettingsState;
+  /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
+  private settingsDefaults: ChartSettingsState;
   private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
@@ -220,6 +226,15 @@ export class ChartWidget {
       watermark: true,
       ...options.chartOptions?.features,
     };
+
+    // The display toggles start where the host's features put them, and Reset goes back there.
+    this.settingsDefaults = {
+      ...this.settingsState,
+      legendVisible: features.legend !== false,
+      barCountdown: features.barCountdown !== false,
+      indicatorValueLabels: features.indicatorValueLabels !== false,
+    };
+    this.settingsState = { ...this.settingsDefaults };
 
     this.timeframes = availableTimeframes(options.timeframes, features.timeframes);
     // First run, or none of the saved pins is on offer here: start from the defaults.
@@ -459,7 +474,7 @@ export class ChartWidget {
         this.legendHoverIndex = null;
         this.scheduleLegend();
       });
-      for (const event of ['indicatorUpdate', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
+      for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
         this.chart.on(event, () => this.scheduleLegend());
       }
     }
@@ -573,10 +588,12 @@ export class ChartWidget {
       this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
         onApply: (instanceId, params) => {
           this.chart.updateIndicator(instanceId, params);
-          this.syncIndicatorsFromChart(); // the chip shows the parameters
+          this.syncIndicatorsFromChart(); // the legend shows the parameters
         },
+        onStyle: (instanceId, style) => this.chart.updateIndicatorStyle(instanceId, style),
+        onLevels: (instanceId, levels) => this.chart.setIndicatorLevels(instanceId, levels),
         onClose: () => {},
-      });
+      }, this.t);
       this.objectTree = new WidgetObjectTree(this.root, {
         onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
         onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
@@ -605,6 +622,7 @@ export class ChartWidget {
       this.chart.on('drawingRemove', refresh);
       this.chart.on('indicatorAdd', refresh);
       this.chart.on('indicatorRemove', refresh);
+      this.chart.on('indicatorChange', refresh);
     }
 
     // 8b. Command palette
@@ -1080,10 +1098,13 @@ export class ChartWidget {
     const indicators = this.chart.getActiveIndicators().map((ind) => {
       const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
       const point = series?.[idx] ?? null;
+      // The drawn lines by their titles ("Signal"), else every field by its key.
+      const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
+        ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
       const values = point
-        ? Object.entries(point)
-            .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
-            .map(([key, v]) => ({ key, value: v as number }))
+        ? fields
+            .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
+            .map(([key, title]) => ({ key: title, value: point[key] as number }))
         : [];
       return { name: ind.descriptor.name, values };
     }).filter((i) => i.values.length > 0);
@@ -1110,13 +1131,24 @@ export class ChartWidget {
 
   private openIndicatorSettings(instanceId: string): void {
     if (!this.indicatorSettings) return;
-    const ind = this.chart.getActiveIndicators().find((i) => i.instanceId === instanceId);
+    const active = this.chart.getActiveIndicators();
+    const ind = active.find((i) => i.instanceId === instanceId);
     if (!ind) return;
+    const style = this.chart.getIndicatorStyle(instanceId);
+    const pane = ind.descriptor.placement === 'panel' || !!ind.pane;
     this.indicatorSettings.open({
       instanceId,
       name: ind.descriptor.name,
       defaults: ind.descriptor.defaultConfig,
       params: ind.params,
+      inputs: ind.descriptor.inputs,
+      lineSources: lineSourcesFor(instanceId, active),
+      plots: ind.descriptor.plots,
+      colors: style?.colors,
+      lineWidth: style?.lineWidths[0],
+      // Levels belong to pane indicators.
+      levels: pane ? this.chart.getIndicatorLevels(instanceId) : undefined,
+      defaultLevels: ind.descriptor.levels,
     });
   }
 
@@ -1465,7 +1497,7 @@ export class ChartWidget {
   private syncIndicatorsFromChart(): void {
     const next = new Map<string, ActiveIndicatorInfo>();
     for (const a of this.chart.getActiveIndicators()) {
-      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig) });
+      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig, a.descriptor.shortName) });
     }
     this.state = { ...this.state, activeIndicators: next };
     this.updateUI();
@@ -1679,6 +1711,9 @@ export class ChartWidget {
     if (patch.pivotStructureLabels !== undefined) this.chart.setPivotMarkersConfig({ structureLabels: patch.pivotStructureLabels });
     if (patch.periodLevelsVisible !== undefined) this.chart.setPeriodLevelsVisible(patch.periodLevelsVisible);
     if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
+    if (patch.legendVisible !== undefined) this.chart.setLegend({ visible: patch.legendVisible });
+    if (patch.barCountdown !== undefined) this.chart.setBarCountdownVisible(patch.barCountdown);
+    if (patch.indicatorValueLabels !== undefined) this.chart.setIndicatorValueLabelsVisible(patch.indicatorValueLabels);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
@@ -1716,7 +1751,7 @@ export class ChartWidget {
   }
 
   private resetSettings(): void {
-    this.settingsState = { ...DEFAULT_SETTINGS };
+    this.settingsState = { ...this.settingsDefaults };
     this.applySettings(this.settingsState);
   }
 
@@ -1801,24 +1836,33 @@ export class ChartWidget {
     // data bar, so their values stay on the latest one.
     const hover = this.chart.isTimeAligned() ? this.legendHoverIndex : null;
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
-    const panes = new Map(this.chart.getIndicatorPanes().map((p) => [p.instanceId, p.rect]));
+    // Each pane's indicators, its own first, stacked down from its top.
+    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
+    for (const pane of this.chart.getIndicatorPanes()) {
+      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
+    }
     const locale = this.settingsState.numberLocale || 'en-US';
     const rows: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = idx >= 0 ? series?.[idx] : null;
-      const numbers = legendNumbers(ind.id, point);
-      // One line (judged at the latest bar, past any warm-up): the line's
-      // colour there. Several: which value is which line isn't known here,
-      // so they share the neutral colour rather than guess.
-      const lines = idx === last ? numbers.length : legendNumbers(ind.id, last >= 0 ? series?.[last] : null).length;
-      const color = lines === 1 ? legendLineColor(ind.id, this.chart.getIndicatorStyle(ind.instanceId)?.colors ?? [], point) : null;
+      const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
+      const colors = this.chart.getIndicatorStyle(ind.instanceId)?.colors ?? [];
+      const values = legendValues(ind.descriptor, point, colors);
       return {
         instanceId: ind.instanceId,
-        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig),
+        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName),
         visible: ind.visible,
-        values: numbers.map((v) => ({ text: pane ? formatIndicatorValue(v, locale) : this.chart.formatPrice(v), color })),
-        pane: pane ? { x: pane.x + LEGEND_INSET, y: pane.y + 1, width: pane.width - 2 * LEGEND_INSET } : null,
+        values: values.map((v) => ({
+          text: pane ? formatIndicatorValue(v.value, locale) : this.chart.formatPrice(v.value),
+          color: v.color,
+        })),
+        pane: pane
+          ? {
+            x: pane.x + LEGEND_INSET,
+            // A short pane with many indicators: the last rows overlap rather than spill out.
+            y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
+            width: pane.width - 2 * LEGEND_INSET,
+          }
+          : null,
       };
     });
     const plot = this.chart.getPlotRect();
@@ -1867,14 +1911,15 @@ export class ChartWidget {
 }
 
 /**
- * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name plus up to three
- * numeric parameters, in the indicator's own order, so two instances of the
- * same indicator can be told apart.
+ * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name (`shortName`, else the
+ * id in capitals) plus up to three numeric parameters, in the indicator's own
+ * order, so two instances of the same indicator can be told apart.
  */
 export function indicatorChipLabel(
   id: string,
   params: Record<string, unknown>,
   defaults?: Record<string, unknown>,
+  shortName?: string,
 ): string {
   const order = defaults ? Object.keys(defaults) : Object.keys(params);
   const numbers = order
@@ -1882,5 +1927,39 @@ export function indicatorChipLabel(
     .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
     .slice(0, 3)
     .map((v) => String(Number(v.toFixed(4))));
-  return [id.toUpperCase(), ...numbers].join(' ');
+  return [shortName ?? id.toUpperCase(), ...numbers].join(' ');
+}
+
+type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
+
+/**
+ * The lines `instanceId` can be computed from: every drawn line of the other
+ * indicators, except those that already read from it (that would be a loop).
+ */
+export function lineSourcesFor(instanceId: string, active: readonly ActiveIndicator[]): { value: string; label: string }[] {
+  const readsFrom = (ind: ActiveIndicator): string | null => {
+    const name = sourceParam(ind.descriptor);
+    return (name && parseIndicatorSource(ind.params[name])?.instanceId) || null;
+  };
+  // Everything downstream of `instanceId`.
+  const downstream = new Set([instanceId]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const ind of active) {
+      const from = readsFrom(ind);
+      if (from && downstream.has(from) && !downstream.has(ind.instanceId)) {
+        downstream.add(ind.instanceId);
+        grew = true;
+      }
+    }
+  }
+  const out: { value: string; label: string }[] = [];
+  for (const ind of active) {
+    if (downstream.has(ind.instanceId)) continue;
+    const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+    for (const plot of ind.descriptor.plots ?? []) {
+      out.push({ value: indicatorSource(ind.instanceId, plot.key), label: `${name}: ${plot.title}` });
+    }
+  }
+  return out;
 }

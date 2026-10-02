@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Know Sure Thing (Martin Pring) — a momentum oscillator built from four
@@ -11,11 +10,18 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * shifts. Zero-centered, auto-scaled.
  */
 export class KSTIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'kst',
     name: 'Know Sure Thing',
     placement: 'panel' as const,
-    defaultConfig: { roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9 },
+    defaultConfig: { roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9, source: 'close' },
+    shortName: 'KST',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'value', title: 'KST', color: 0 },
+      { key: 'signal', title: 'Signal', color: 1 },
+    ],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -55,55 +61,6 @@ export class KSTIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let absMax = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v) continue;
-      for (const k of ['value', 'signal'] as const) {
-        const x = v[k];
-        if (x !== undefined && Math.abs(x) > absMax) absMax = Math.abs(x);
-      }
-    }
-    if (absMax === 0) return;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-
-    const zeroY = toY(0);
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, zeroY);
-    ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const drawLine = (key: 'value' | 'signal', color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) { started = false; continue; }
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('value', style.colors[0] ?? '#4c8dff');
-    drawLine('signal', style.colors[1] ?? '#f2a93b');
   }
 }
 

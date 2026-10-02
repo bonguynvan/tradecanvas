@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Vortex Indicator (VI+ / VI−). Captures trend direction and strength from the
@@ -11,11 +10,17 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * the stronger the trend.
  */
 export class VortexIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'vortex',
     name: 'Vortex Indicator',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    shortName: 'VI',
+    plots: [
+      { key: 'viPlus', title: 'VI+', color: 0 },
+      { key: 'viMinus', title: 'VI−', color: 1 },
+    ],
+    levels: [1],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -56,64 +61,5 @@ export class VortexIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let min = Infinity;
-    let max = -Infinity;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v) continue;
-      for (const k of ['viPlus', 'viMinus'] as const) {
-        const x = v[k];
-        if (x === undefined) continue;
-        if (x < min) min = x;
-        if (x > max) max = x;
-      }
-    }
-    if (min === Infinity) return;
-    const pad = (max - min) * 0.1 || 0.1;
-    min -= pad;
-    max += pad;
-    const span = max - min || 1;
-    const toY = (val: number) => chartRect.y + chartRect.height * (1 - (val - min) / span);
-
-    // Reference line at 1.0 (the VI pivot).
-    if (1 >= min && 1 <= max) {
-      ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      const y = toY(1);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    const drawLine = (key: 'viPlus' | 'viMinus', color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) continue;
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('viPlus', style.colors[0] ?? '#1fa874');
-    drawLine('viMinus', style.colors[1] ?? '#e8505b');
   }
 }

@@ -1,15 +1,17 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class SupertrendIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'supertrend',
     name: 'Supertrend',
     placement: 'overlay' as const,
     defaultConfig: { period: 10, multiplier: 3 },
+    shortName: 'Supertrend',
+    plots: [{ key: 'value', title: 'Supertrend', color: 0, tone: { field: 'trend' }, downColor: 1 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

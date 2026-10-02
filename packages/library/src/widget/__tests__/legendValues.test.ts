@@ -1,57 +1,47 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { formatIndicatorValue, legendLineColor, legendNumbers } from '../legendValues.js';
+import type { IndicatorPlot } from '@tradecanvas/commons';
+import { formatIndicatorValue, legendValues } from '../legendValues.js';
 
-const COLORS = ['#up', '#down', '#third'];
+const COLORS = ['#first', '#second', '#third', '#fourth'];
+const plots = (...list: IndicatorPlot[]) => ({ plots: list });
 
-describe('legendNumbers', () => {
-  it('keeps the line values in output order', () => {
-    expect(legendNumbers('bb', { upper: 105, middle: 101, lower: 97 })).toEqual([105, 101, 97]);
+describe('legendValues', () => {
+  it('lists the drawn plots in order, each in its own colour', () => {
+    const bb = plots(
+      { key: 'upper', title: 'Upper', color: 0 },
+      { key: 'middle', title: 'Basis', color: 1 },
+      { key: 'lower', title: 'Lower', color: 0 },
+    );
+    expect(legendValues(bb, { lower: 97, middle: 101, upper: 105 }, COLORS)).toEqual([
+      { value: 105, color: '#first' },
+      { value: 101, color: '#second' },
+      { value: 97, color: '#first' },
+    ]);
   });
 
-  it('leaves out flags and running state', () => {
-    expect(legendNumbers('psar', { value: 99.5, trend: -1 })).toEqual([99.5]);
-    expect(legendNumbers('svwap', { value: 101, session: 20_250_101 })).toEqual([101]);
-    expect(legendNumbers('chaikinOsc', { value: 12, adl: 3400 })).toEqual([12]);
+  it('leaves out fields that are not drawn, and missing values', () => {
+    const adx = plots({ key: 'adx', title: 'ADX', color: 0 }, { key: 'plusDI', title: '+DI', color: 1 });
+    expect(legendValues(adx, { plusDI: 25, dx: 16, adx: Number.NaN }, COLORS)).toEqual([{ value: 25, color: '#second' }]);
+    expect(legendValues(adx, null, COLORS)).toEqual([]);
   });
 
-  it('leaves out intermediate values that are not drawn', () => {
-    expect(legendNumbers('adx', { plusDI: 25, minusDI: 18, dx: 16, adx: 22 })).toEqual([25, 18, 22]);
-    expect(legendNumbers('lrc', { middle: 101, upper: 104, lower: 98, slope: 0.4 })).toEqual([101, 104, 98]);
-    expect(legendNumbers('ichimoku', { tenkan: 100, kijun: 99, senkouA: 99.5, senkouB: 98, chikou: 101 }))
-      .toEqual([100, 99, 99.5, 98]);
+  it('follows the up or down colour of a two-tone plot', () => {
+    const st = plots({ key: 'value', title: 'ST', color: 0, tone: { field: 'trend' }, downColor: 1 });
+    expect(legendValues(st, { value: 101, trend: -1 }, COLORS)).toEqual([{ value: 101, color: '#second' }]);
+    const hist = plots({ key: 'h', title: 'H', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 });
+    expect(legendValues(hist, { h: -0.5 }, COLORS)).toEqual([{ value: -0.5, color: '#fourth' }]);
   });
 
-  it('keeps a field that is a line elsewhere (Aroon Up)', () => {
-    expect(legendNumbers('aroon', { up: 71.4, down: 14.3 })).toEqual([71.4, 14.3]);
-  });
-
-  it('skips missing and non-finite values', () => {
-    expect(legendNumbers('macd', { macd: 0.5, signal: undefined, histogram: Number.NaN })).toEqual([0.5]);
-    expect(legendNumbers('ema', null)).toEqual([]);
-  });
-});
-
-describe('legendLineColor', () => {
-  it('uses the line colour of a one-colour indicator', () => {
-    expect(legendLineColor('ema', COLORS, { value: 1 })).toBe('#up');
-  });
-
-  it('follows the up or down colour a two-tone indicator is drawn in', () => {
-    expect(legendLineColor('supertrend', COLORS, { value: 1, trend: 1 })).toBe('#up');
-    expect(legendLineColor('supertrend', COLORS, { value: 1, trend: -1 })).toBe('#down');
-    expect(legendLineColor('ao', COLORS, { value: -2, up: 1 })).toBe('#up');
-    expect(legendLineColor('cmf', COLORS, { value: -0.1 })).toBe('#down');
-  });
-
-  it('stays neutral when the colour is not known', () => {
-    expect(legendLineColor('ac', COLORS, { value: 1 })).toBeNull(); // draws in its own colours
-    expect(legendLineColor('psar', COLORS, null)).toBeNull();
-    expect(legendLineColor('psar', ['#up'], { value: 1, trend: -1 })).toBeNull();
-    expect(legendLineColor('ema', [], { value: 1 })).toBeNull();
+  it('shows every value of an indicator that declares no plots, coloured only when alone', () => {
+    expect(legendValues({}, { a: 1, b: 2 }, COLORS)).toEqual([{ value: 1, color: null }, { value: 2, color: null }]);
+    expect(legendValues({}, { a: 1 }, COLORS)).toEqual([{ value: 1, color: '#first' }]);
+    expect(legendValues({}, { a: 1 }, [])).toEqual([{ value: 1, color: null }]);
   });
 });
 
 describe('formatIndicatorValue', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('fits the decimals to the size and shortens big values', () => {
     expect(formatIndicatorValue(54.321)).toBe('54.32');
     expect(formatIndicatorValue(0.001234)).toBe('0.001234');
@@ -60,8 +50,6 @@ describe('formatIndicatorValue', () => {
     expect(formatIndicatorValue(-2_345_678)).toBe('-2.35M');
     expect(formatIndicatorValue(54.321, 'vi-VN')).toBe('54,32');
   });
-
-  afterEach(() => vi.restoreAllMocks());
 
   it('builds a number format once per locale and shape, not per value', () => {
     formatIndicatorValue(-7_654_321, 'fr-FR');

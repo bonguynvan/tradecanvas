@@ -66,6 +66,8 @@ export interface FeaturesConfig {
   grid?: boolean;
   /** Show OHLCV legend overlay */
   legend?: boolean;
+  /** Tag each indicator line's latest value on its value axis. Default true. */
+  indicatorValueLabels?: boolean;
   /** Show volume bars below candles */
   volume?: boolean;
   /** Show watermark text */
@@ -104,7 +106,8 @@ export interface FeaturesConfig {
 export interface ChartOptions {
   width?: number;
   height?: number;
-  chartType: ChartType;
+  /** Default `'candlestick'`. */
+  chartType?: ChartType;
   theme?: ThemeName | Theme;
   autoScale?: boolean;
   rightMargin?: number;

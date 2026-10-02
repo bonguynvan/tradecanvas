@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { drawZeroCenteredLine } from './EaseOfMovement.js';
 
 /**
  * Chaikin Volatility — the percent rate of change of an EMA of the high-low
@@ -12,11 +11,14 @@ import { drawZeroCenteredLine } from './EaseOfMovement.js';
  * CV = (EMA(range, n) − EMA(range, n)[i − roc]) / EMA(range, n)[i − roc] · 100
  */
 export class ChaikinVolatilityIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'chaikinvol',
     name: 'Chaikin Volatility',
     placement: 'panel' as const,
     defaultConfig: { ema: 10, roc: 10 },
+    shortName: 'CV',
+    plots: [{ key: 'value', title: 'CV', color: 0 }],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -45,9 +47,5 @@ export class ChaikinVolatilityIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    drawZeroCenteredLine(ctx, output, viewport, style);
   }
 }

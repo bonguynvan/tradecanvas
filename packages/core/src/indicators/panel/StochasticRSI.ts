@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Stochastic RSI (Chande & Kroll) — applies the stochastic oscillator to RSI
@@ -10,11 +9,19 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * reading. %K and %D lines; reference bands at 20 / 80.
  */
 export class StochasticRSIIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'stochrsi',
     name: 'Stochastic RSI',
     placement: 'panel' as const,
-    defaultConfig: { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3 },
+    defaultConfig: { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: 'close' },
+    shortName: 'Stoch RSI',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'k', title: '%K', color: 0 },
+      { key: 'd', title: '%D', color: 1 },
+    ],
+    scale: { min: 0, max: 100 },
+    levels: [20, 80],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -55,46 +62,6 @@ export class StochasticRSIIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - v / 100);
-
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    for (const level of [20, 80]) {
-      const y = toY(level);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    const drawLine = (key: 'k' | 'd', color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) { started = false; continue; }
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('k', style.colors[0] ?? '#4c8dff');
-    drawLine('d', style.colors[1] ?? '#f2a93b');
   }
 }
 

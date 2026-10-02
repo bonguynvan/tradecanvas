@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam, getIntParam } from '../params.js';
@@ -12,11 +12,16 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * line. Drawn as two lines (green long stop, red short stop).
  */
 export class ChandelierExitIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'chandelier',
     name: 'Chandelier Exit',
     placement: 'overlay' as const,
     defaultConfig: { period: 22, multiplier: 3 },
+    shortName: 'CE',
+    plots: [
+      { key: 'long', title: 'Long', color: 0 },
+      { key: 'short', title: 'Short', color: 1 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

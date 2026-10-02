@@ -1,0 +1,2165 @@
+[
+  {
+    "id": "sma",
+    "name": "Simple Moving Average",
+    "shortName": "SMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "SMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "ema",
+    "name": "Exponential Moving Average",
+    "shortName": "EMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "EMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "bb",
+    "name": "Bollinger Bands",
+    "shortName": "BB",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "stdDev": 2,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "middle",
+        "title": "Basis",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "vwap",
+    "name": "Volume Weighted Average Price",
+    "shortName": "VWAP",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "VWAP",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "ichimoku",
+    "name": "Ichimoku Cloud",
+    "shortName": "Ichimoku",
+    "placement": "overlay",
+    "params": {
+      "tenkan": 9,
+      "kijun": 26,
+      "senkou": 52,
+      "displacement": 26
+    },
+    "plots": [
+      {
+        "key": "tenkan",
+        "title": "Conversion",
+        "kind": "line"
+      },
+      {
+        "key": "kijun",
+        "title": "Base",
+        "kind": "line"
+      },
+      {
+        "key": "senkouA",
+        "title": "Lead A",
+        "kind": "line"
+      },
+      {
+        "key": "senkouB",
+        "title": "Lead B",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "psar",
+    "name": "Parabolic SAR",
+    "shortName": "SAR",
+    "placement": "overlay",
+    "params": {
+      "step": 0.02,
+      "max": 0.2
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "SAR",
+        "kind": "dots"
+      }
+    ]
+  },
+  {
+    "id": "supertrend",
+    "name": "Supertrend",
+    "shortName": "Supertrend",
+    "placement": "overlay",
+    "params": {
+      "period": 10,
+      "multiplier": 3
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Supertrend",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "keltner",
+    "name": "Keltner Channel",
+    "shortName": "KC",
+    "placement": "overlay",
+    "params": {
+      "emaPeriod": 20,
+      "atrPeriod": 10,
+      "multiplier": 1.5
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "middle",
+        "title": "Basis",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "donchian",
+    "name": "Donchian Channel",
+    "shortName": "DC",
+    "placement": "overlay",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "middle",
+        "title": "Basis",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "pivots",
+    "name": "Pivot Points (Classic)",
+    "shortName": "Pivots",
+    "placement": "overlay",
+    "params": {
+      "lookback": 24
+    },
+    "plots": [
+      {
+        "key": "r3",
+        "title": "R3",
+        "kind": "line"
+      },
+      {
+        "key": "r2",
+        "title": "R2",
+        "kind": "line"
+      },
+      {
+        "key": "r1",
+        "title": "R1",
+        "kind": "line"
+      },
+      {
+        "key": "pp",
+        "title": "P",
+        "kind": "line"
+      },
+      {
+        "key": "s1",
+        "title": "S1",
+        "kind": "line"
+      },
+      {
+        "key": "s2",
+        "title": "S2",
+        "kind": "line"
+      },
+      {
+        "key": "s3",
+        "title": "S3",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "avwap",
+    "name": "Anchored VWAP",
+    "shortName": "AVWAP",
+    "placement": "overlay",
+    "params": {
+      "anchorTime": 0
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "AVWAP",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "zigzag",
+    "name": "ZigZag",
+    "shortName": "ZigZag",
+    "placement": "overlay",
+    "params": {
+      "deviation": 5
+    },
+    "plots": [
+      {
+        "key": "pivot",
+        "title": "Pivot",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "lrc",
+    "name": "Linear Regression Channel",
+    "shortName": "LRC",
+    "placement": "overlay",
+    "params": {
+      "period": 100,
+      "stdDev": 2,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "middle",
+        "title": "Basis",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "hma",
+    "name": "Hull Moving Average",
+    "shortName": "HMA",
+    "placement": "overlay",
+    "params": {
+      "period": 21,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "HMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "mtfma",
+    "name": "MTF Moving Average",
+    "shortName": "MTF MA",
+    "placement": "overlay",
+    "params": {
+      "period": 50,
+      "timeframe": "1d",
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "MA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "svwap",
+    "name": "Session VWAP",
+    "shortName": "SVWAP",
+    "placement": "overlay",
+    "params": {
+      "bands": 1
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "VWAP",
+        "kind": "line"
+      },
+      {
+        "key": "u1",
+        "title": "+1σ",
+        "kind": "line"
+      },
+      {
+        "key": "l1",
+        "title": "−1σ",
+        "kind": "line"
+      },
+      {
+        "key": "u2",
+        "title": "+2σ",
+        "kind": "line"
+      },
+      {
+        "key": "l2",
+        "title": "−2σ",
+        "kind": "line"
+      },
+      {
+        "key": "u3",
+        "title": "+3σ",
+        "kind": "line"
+      },
+      {
+        "key": "l3",
+        "title": "−3σ",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "chandelier",
+    "name": "Chandelier Exit",
+    "shortName": "CE",
+    "placement": "overlay",
+    "params": {
+      "period": 22,
+      "multiplier": 3
+    },
+    "plots": [
+      {
+        "key": "long",
+        "title": "Long",
+        "kind": "line"
+      },
+      {
+        "key": "short",
+        "title": "Short",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "alligator",
+    "name": "Alligator",
+    "shortName": "Alligator",
+    "placement": "overlay",
+    "params": {
+      "jaw": 13,
+      "teeth": 8,
+      "lips": 5,
+      "jawShift": 8,
+      "teethShift": 5,
+      "lipsShift": 3
+    },
+    "plots": [
+      {
+        "key": "jaw",
+        "title": "Jaw",
+        "kind": "line"
+      },
+      {
+        "key": "teeth",
+        "title": "Teeth",
+        "kind": "line"
+      },
+      {
+        "key": "lips",
+        "title": "Lips",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "vwma",
+    "name": "Volume Weighted Moving Average",
+    "shortName": "VWMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "VWMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "wma",
+    "name": "Weighted Moving Average",
+    "shortName": "WMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "WMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "envelope",
+    "name": "Moving Average Envelope",
+    "shortName": "Env",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "percent": 2.5,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "basis",
+        "title": "Basis",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "tema",
+    "name": "Triple EMA",
+    "shortName": "TEMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "TEMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "rsi",
+    "name": "Relative Strength Index",
+    "shortName": "RSI",
+    "placement": "panel",
+    "params": {
+      "period": 14,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "RSI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      30,
+      70
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "macd",
+    "name": "MACD",
+    "shortName": "MACD",
+    "placement": "panel",
+    "params": {
+      "fast": 12,
+      "slow": 26,
+      "signal": 9,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "histogram",
+        "title": "Histogram",
+        "kind": "histogram"
+      },
+      {
+        "key": "macd",
+        "title": "MACD",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "stochastic",
+    "name": "Stochastic Oscillator",
+    "shortName": "Stoch",
+    "placement": "panel",
+    "params": {
+      "kPeriod": 14,
+      "dPeriod": 3,
+      "smooth": 3
+    },
+    "plots": [
+      {
+        "key": "k",
+        "title": "%K",
+        "kind": "line"
+      },
+      {
+        "key": "d",
+        "title": "%D",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      20,
+      80
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "atr",
+    "name": "Average True Range",
+    "shortName": "ATR",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "ATR",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "adx",
+    "name": "Average Directional Index",
+    "shortName": "ADX",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "adx",
+        "title": "ADX",
+        "kind": "line"
+      },
+      {
+        "key": "plusDI",
+        "title": "+DI",
+        "kind": "line"
+      },
+      {
+        "key": "minusDI",
+        "title": "−DI",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "obv",
+    "name": "On Balance Volume",
+    "shortName": "OBV",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "OBV",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "williamsR",
+    "name": "Williams %R",
+    "shortName": "%R",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "%R",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -80,
+      -20
+    ],
+    "scale": {
+      "min": -100,
+      "max": 0
+    }
+  },
+  {
+    "id": "cci",
+    "name": "Commodity Channel Index",
+    "shortName": "CCI",
+    "placement": "panel",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CCI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -100,
+      0,
+      100
+    ]
+  },
+  {
+    "id": "mfi",
+    "name": "Money Flow Index",
+    "shortName": "MFI",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "MFI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      20,
+      80
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "aroon",
+    "name": "Aroon",
+    "shortName": "Aroon",
+    "placement": "panel",
+    "params": {
+      "period": 25
+    },
+    "plots": [
+      {
+        "key": "up",
+        "title": "Up",
+        "kind": "line"
+      },
+      {
+        "key": "down",
+        "title": "Down",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "roc",
+    "name": "Rate of Change",
+    "shortName": "ROC",
+    "placement": "panel",
+    "params": {
+      "period": 12,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "ROC",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "tsi",
+    "name": "True Strength Index",
+    "shortName": "TSI",
+    "placement": "panel",
+    "params": {
+      "longPeriod": 25,
+      "shortPeriod": 13,
+      "signalPeriod": 7,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "tsi",
+        "title": "TSI",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "cmf",
+    "name": "Chaikin Money Flow",
+    "shortName": "CMF",
+    "placement": "panel",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CMF",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "stddev",
+    "name": "Standard Deviation",
+    "shortName": "StdDev",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "StdDev",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "volumeProfile",
+    "name": "Volume Profile",
+    "shortName": "VP",
+    "placement": "overlay",
+    "params": {
+      "rows": 24
+    },
+    "plots": []
+  },
+  {
+    "id": "ad",
+    "name": "Accumulation/Distribution",
+    "shortName": "A/D",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "A/D",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "vroc",
+    "name": "Volume Rate of Change",
+    "shortName": "VROC",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "VROC",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "ao",
+    "name": "Awesome Oscillator",
+    "shortName": "AO",
+    "placement": "panel",
+    "params": {
+      "fast": 5,
+      "slow": 34
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "AO",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "chaikinOsc",
+    "name": "Chaikin Oscillator",
+    "shortName": "Chaikin Osc",
+    "placement": "panel",
+    "params": {
+      "fast": 3,
+      "slow": 10
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Chaikin",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "voldelta",
+    "name": "Volume Delta",
+    "shortName": "Vol Δ",
+    "placement": "panel",
+    "params": {
+      "mode": 0
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Delta",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "vortex",
+    "name": "Vortex Indicator",
+    "shortName": "VI",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "viPlus",
+        "title": "VI+",
+        "kind": "line"
+      },
+      {
+        "key": "viMinus",
+        "title": "VI−",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      1
+    ]
+  },
+  {
+    "id": "chop",
+    "name": "Choppiness Index",
+    "shortName": "CHOP",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CHOP",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      38.2,
+      61.8
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "uo",
+    "name": "Ultimate Oscillator",
+    "shortName": "UO",
+    "placement": "panel",
+    "params": {
+      "fast": 7,
+      "mid": 14,
+      "slow": 28
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "UO",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      30,
+      70
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "fi",
+    "name": "Force Index",
+    "shortName": "EFI",
+    "placement": "panel",
+    "params": {
+      "period": 13
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "EFI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "crsi",
+    "name": "Connors RSI",
+    "shortName": "CRSI",
+    "placement": "panel",
+    "params": {
+      "rsiPeriod": 3,
+      "streakPeriod": 2,
+      "rankPeriod": 100,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CRSI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      10,
+      90
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "coppock",
+    "name": "Coppock Curve",
+    "shortName": "Coppock",
+    "placement": "panel",
+    "params": {
+      "longRoc": 14,
+      "shortRoc": 11,
+      "wma": 10,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Coppock",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "kst",
+    "name": "Know Sure Thing",
+    "shortName": "KST",
+    "placement": "panel",
+    "params": {
+      "roc1": 10,
+      "roc2": 15,
+      "roc3": 20,
+      "roc4": 30,
+      "sma1": 10,
+      "sma2": 10,
+      "sma3": 10,
+      "sma4": 15,
+      "signal": 9,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "KST",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "elderray",
+    "name": "Elder Ray",
+    "shortName": "Elder Ray",
+    "placement": "panel",
+    "params": {
+      "period": 13
+    },
+    "plots": [
+      {
+        "key": "bull",
+        "title": "Bull",
+        "kind": "histogram"
+      },
+      {
+        "key": "bear",
+        "title": "Bear",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "stc",
+    "name": "Schaff Trend Cycle",
+    "shortName": "STC",
+    "placement": "panel",
+    "params": {
+      "fast": 23,
+      "slow": 50,
+      "cycle": 10,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "STC",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      25,
+      75
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "kvo",
+    "name": "Klinger Oscillator",
+    "shortName": "KVO",
+    "placement": "panel",
+    "params": {
+      "fast": 34,
+      "slow": 55,
+      "signal": 13
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "KVO",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "fisher",
+    "name": "Fisher Transform",
+    "shortName": "Fisher",
+    "placement": "panel",
+    "params": {
+      "period": 9
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Fisher",
+        "kind": "line"
+      },
+      {
+        "key": "trigger",
+        "title": "Trigger",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "dpo",
+    "name": "Detrended Price Oscillator",
+    "shortName": "DPO",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "DPO",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "bop",
+    "name": "Balance of Power",
+    "shortName": "BOP",
+    "placement": "panel",
+    "params": {
+      "smooth": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "BOP",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ],
+    "scale": {
+      "min": -1,
+      "max": 1
+    }
+  },
+  {
+    "id": "massindex",
+    "name": "Mass Index",
+    "shortName": "Mass",
+    "placement": "panel",
+    "params": {
+      "ema": 9,
+      "sum": 25
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Mass",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      26.5,
+      27
+    ]
+  },
+  {
+    "id": "cmo",
+    "name": "Chande Momentum",
+    "shortName": "CMO",
+    "placement": "panel",
+    "params": {
+      "period": 9,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CMO",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -50,
+      0,
+      50
+    ],
+    "scale": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "trix",
+    "name": "TRIX",
+    "shortName": "TRIX",
+    "placement": "panel",
+    "params": {
+      "period": 15,
+      "signal": 9,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "TRIX",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "emv",
+    "name": "Ease of Movement",
+    "shortName": "EOM",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "EOM",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "pvt",
+    "name": "Price Volume Trend",
+    "shortName": "PVT",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "PVT",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "wad",
+    "name": "Williams A/D",
+    "shortName": "WAD",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "WAD",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "chaikinvol",
+    "name": "Chaikin Volatility",
+    "shortName": "CV",
+    "placement": "panel",
+    "params": {
+      "ema": 10,
+      "roc": 10
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "CV",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "rvi",
+    "name": "Relative Vigor Index",
+    "shortName": "RVGI",
+    "placement": "panel",
+    "params": {
+      "period": 10
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "RVGI",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "stochrsi",
+    "name": "Stochastic RSI",
+    "shortName": "Stoch RSI",
+    "placement": "panel",
+    "params": {
+      "rsiPeriod": 14,
+      "stochPeriod": 14,
+      "k": 3,
+      "d": 3,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "k",
+        "title": "%K",
+        "kind": "line"
+      },
+      {
+        "key": "d",
+        "title": "%D",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      20,
+      80
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "ppo",
+    "name": "Percentage Price Oscillator",
+    "shortName": "PPO",
+    "placement": "panel",
+    "params": {
+      "fast": 12,
+      "slow": 26,
+      "signal": 9,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "hist",
+        "title": "Histogram",
+        "kind": "histogram"
+      },
+      {
+        "key": "value",
+        "title": "PPO",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "ac",
+    "name": "Accelerator Oscillator",
+    "shortName": "AC",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "AC",
+        "kind": "histogram"
+      }
+    ]
+  },
+  {
+    "id": "rmi",
+    "name": "Relative Momentum Index",
+    "shortName": "RMI",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "momentum": 5,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "RMI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      30,
+      70
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "disparity",
+    "name": "Disparity Index",
+    "shortName": "DI",
+    "placement": "panel",
+    "params": {
+      "period": 14,
+      "source": "close"
+    },
+    "inputs": {
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "DI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "qstick",
+    "name": "Qstick",
+    "shortName": "Qstick",
+    "placement": "panel",
+    "params": {
+      "period": 8
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Qstick",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "pgo",
+    "name": "Pretty Good Oscillator",
+    "shortName": "PGO",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "PGO",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -3,
+      0,
+      3
+    ]
+  },
+  {
+    "id": "dema",
+    "name": "Double Exponential Moving Average",
+    "shortName": "DEMA",
+    "placement": "overlay",
+    "params": {
+      "period": 20,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "DEMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "smma",
+    "name": "Smoothed Moving Average",
+    "shortName": "SMMA",
+    "placement": "overlay",
+    "params": {
+      "period": 14,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "SMMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "alma",
+    "name": "Arnaud Legoux Moving Average",
+    "shortName": "ALMA",
+    "placement": "overlay",
+    "params": {
+      "period": 9,
+      "offset": 0.85,
+      "sigma": 6,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1,
+        "max": 5000
+      },
+      "offset": {
+        "min": 0,
+        "max": 1,
+        "step": 0.05
+      },
+      "sigma": {
+        "min": 0.5,
+        "step": 0.5
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "ALMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "kama",
+    "name": "Kaufman Adaptive Moving Average",
+    "shortName": "KAMA",
+    "placement": "overlay",
+    "params": {
+      "period": 10,
+      "fast": 2,
+      "slow": 30,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "fast": {
+        "min": 1
+      },
+      "slow": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "KAMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "lsma",
+    "name": "Least Squares Moving Average",
+    "shortName": "LSMA",
+    "placement": "overlay",
+    "params": {
+      "period": 25,
+      "offset": 0,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 2,
+        "max": 5000
+      },
+      "offset": {
+        "step": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "LSMA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "mcginley",
+    "name": "McGinley Dynamic",
+    "shortName": "McGinley",
+    "placement": "overlay",
+    "params": {
+      "period": 14,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "McGinley",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "macross",
+    "name": "MA Cross",
+    "shortName": "MA Cross",
+    "placement": "overlay",
+    "params": {
+      "fast": 9,
+      "slow": 21,
+      "type": "sma",
+      "source": "close"
+    },
+    "inputs": {
+      "fast": {
+        "min": 1
+      },
+      "slow": {
+        "min": 1
+      },
+      "type": {
+        "options": [
+          "sma",
+          "ema"
+        ]
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "fast",
+        "title": "Fast",
+        "kind": "line"
+      },
+      {
+        "key": "slow",
+        "title": "Slow",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "fractals",
+    "name": "Williams Fractals",
+    "shortName": "Fractals",
+    "placement": "overlay",
+    "params": {
+      "period": 2
+    },
+    "inputs": {
+      "period": {
+        "min": 1,
+        "max": 10
+      }
+    },
+    "plots": [
+      {
+        "key": "up",
+        "title": "Up",
+        "kind": "dots"
+      },
+      {
+        "key": "down",
+        "title": "Down",
+        "kind": "dots"
+      }
+    ]
+  },
+  {
+    "id": "cks",
+    "name": "Chande Kroll Stop",
+    "shortName": "CKS",
+    "placement": "overlay",
+    "params": {
+      "p": 10,
+      "x": 1,
+      "q": 9
+    },
+    "inputs": {
+      "p": {
+        "label": "ATR length",
+        "min": 1
+      },
+      "x": {
+        "label": "ATR multiplier",
+        "min": 0,
+        "step": 0.1
+      },
+      "q": {
+        "label": "Stop length",
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "long",
+        "title": "Stop Long",
+        "kind": "line"
+      },
+      {
+        "key": "short",
+        "title": "Stop Short",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "bbpb",
+    "name": "Bollinger Bands %B",
+    "shortName": "%B",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "stdDev": 2,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      },
+      "stdDev": {
+        "min": 0.1,
+        "step": 0.1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "%B",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0,
+      0.5,
+      1
+    ]
+  },
+  {
+    "id": "bbw",
+    "name": "Bollinger BandWidth",
+    "shortName": "BBW",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "stdDev": 2,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      },
+      "stdDev": {
+        "min": 0.1,
+        "step": 0.1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "BBW",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "mom",
+    "name": "Momentum",
+    "shortName": "MOM",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "MOM",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "hv",
+    "name": "Historical Volatility",
+    "shortName": "HV",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "annual": 365,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      },
+      "annual": {
+        "label": "Bars per year",
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "HV",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "vo",
+    "name": "Volume Oscillator",
+    "shortName": "Vol Osc",
+    "placement": "panel",
+    "params": {
+      "short": 5,
+      "long": 10
+    },
+    "inputs": {
+      "short": {
+        "min": 1
+      },
+      "long": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Vol Osc",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "ulcer",
+    "name": "Ulcer Index",
+    "shortName": "Ulcer",
+    "placement": "panel",
+    "params": {
+      "period": 14,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Ulcer",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  }
+]

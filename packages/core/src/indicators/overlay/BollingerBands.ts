@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
@@ -6,11 +6,18 @@ import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class BollingerBandsIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'bb',
     name: 'Bollinger Bands',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20, stdDev: 2 },
+    defaultConfig: { period: 20, stdDev: 2, source: 'close' },
+    shortName: 'BB',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'upper', title: 'Upper', color: 0 },
+      { key: 'middle', title: 'Basis', color: 1 },
+      { key: 'lower', title: 'Lower', color: 0 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

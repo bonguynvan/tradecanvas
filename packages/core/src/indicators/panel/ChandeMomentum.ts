@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Chande Momentum Oscillator (Tushar Chande) — like RSI but uses net momentum
@@ -12,11 +11,16 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * CMO = 100 · (ΣUp − ΣDown) / (ΣUp + ΣDown) over `period`.
  */
 export class ChandeMomentumIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'cmo',
     name: 'Chande Momentum',
     placement: 'panel' as const,
-    defaultConfig: { period: 9 },
+    defaultConfig: { period: 9, source: 'close' },
+    shortName: 'CMO',
+    inputs: { source: { source: true } },
+    plots: [{ key: 'value', title: 'CMO', color: 0 }],
+    scale: { min: -100, max: 100 },
+    levels: [-50, 0, 50],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -52,40 +56,5 @@ export class ChandeMomentumIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + 100) / 200);
-
-    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    for (const level of [-50, 0, 50]) {
-      const y = toY(level);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-    let started = false;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = toY(val.value);
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
   }
 }

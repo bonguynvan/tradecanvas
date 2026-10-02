@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -13,11 +13,17 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * a few bars short of the latest bar, as intended.
  */
 export class AlligatorIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'alligator',
     name: 'Alligator',
     placement: 'overlay' as const,
     defaultConfig: { jaw: 13, teeth: 8, lips: 5, jawShift: 8, teethShift: 5, lipsShift: 3 },
+    shortName: 'Alligator',
+    plots: [
+      { key: 'jaw', title: 'Jaw', color: 0 },
+      { key: 'teeth', title: 'Teeth', color: 1 },
+      { key: 'lips', title: 'Lips', color: 2 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

@@ -1,15 +1,21 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class MACDIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'macd',
     name: 'MACD',
     placement: 'panel' as const,
-    defaultConfig: { fast: 12, slow: 26, signal: 9 },
+    defaultConfig: { fast: 12, slow: 26, signal: 9, source: 'close' },
+    shortName: 'MACD',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'histogram', title: 'Histogram', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 },
+      { key: 'macd', title: 'MACD', color: 0 },
+      { key: 'signal', title: 'Signal', color: 1 },
+    ],
   };
 
   /** Fast/slow EMA per bar — `macd = fast - slow` can't be split back into the two. */
@@ -83,85 +89,5 @@ export class MACDIndicator extends IndicatorBase {
       this.writePoint(prev, data, i, { macd, signal: sig, histogram: macd - sig });
     }
     return prev;
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    // Find range for scaling — single pass
-    let minVal = Infinity;
-    let maxVal = -Infinity;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val) continue;
-      if (val.macd !== undefined) { if (val.macd < minVal) minVal = val.macd; if (val.macd > maxVal) maxVal = val.macd; }
-      if (val.signal !== undefined) { if (val.signal < minVal) minVal = val.signal; if (val.signal > maxVal) maxVal = val.signal; }
-      if (val.histogram !== undefined) { if (val.histogram < minVal) minVal = val.histogram; if (val.histogram > maxVal) maxVal = val.histogram; }
-    }
-    if (minVal === Infinity) return;
-    const range = maxVal - minVal || 1;
-
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v - minVal) / range);
-    const zeroY = toY(0);
-    const halfBar = viewport.barWidth / 2;
-
-    // Single pass: histogram + collect MACD/signal points
-    const posColor = style.colors[2] ?? '#1fa874';
-    const negColor = style.colors[3] ?? '#e8505b';
-    const macdColor = style.colors[0];
-    const signalColor = style.colors[1] ?? '#f2a93b';
-
-    // Histogram — batch by color: two paths
-    ctx.beginPath();
-    const posPath = new Path2D();
-    const negPath = new Path2D();
-
-    let macdStarted = false;
-    let sigStarted = false;
-    const macdPath = new Path2D();
-    const sigPath = new Path2D();
-
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val) continue;
-      const x = barIndexToX(i, viewport);
-
-      if (val.histogram !== undefined) {
-        const y = toY(val.histogram);
-        const top = Math.min(y, zeroY);
-        const h = Math.max(Math.abs(y - zeroY), 1);
-        if (val.histogram >= 0) posPath.rect(x - halfBar, top, viewport.barWidth, h);
-        else negPath.rect(x - halfBar, top, viewport.barWidth, h);
-      }
-
-      if (val.macd !== undefined) {
-        const y = toY(val.macd);
-        if (!macdStarted) { macdPath.moveTo(x, y); macdStarted = true; }
-        else macdPath.lineTo(x, y);
-      }
-      if (val.signal !== undefined) {
-        const y = toY(val.signal);
-        if (!sigStarted) { sigPath.moveTo(x, y); sigStarted = true; }
-        else sigPath.lineTo(x, y);
-      }
-    }
-
-    // Draw histogram
-    ctx.fillStyle = posColor;
-    ctx.fill(posPath);
-    ctx.fillStyle = negColor;
-    ctx.fill(negPath);
-
-    // Draw lines
-    ctx.strokeStyle = macdColor;
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-    ctx.stroke(macdPath);
-
-    ctx.strokeStyle = signalColor;
-    ctx.stroke(sigPath);
   }
 }

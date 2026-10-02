@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { drawZeroCenteredLine } from './EaseOfMovement.js';
 
 /**
  * Disparity Index (Steve Nison) — the percentage distance of the close from its
@@ -12,11 +11,15 @@ import { drawZeroCenteredLine } from './EaseOfMovement.js';
  * Disparity = (close − SMA(close, n)) / SMA(close, n) · 100
  */
 export class DisparityIndexIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'disparity',
     name: 'Disparity Index',
     placement: 'panel' as const,
-    defaultConfig: { period: 14 },
+    defaultConfig: { period: 14, source: 'close' },
+    shortName: 'DI',
+    inputs: { source: { source: true } },
+    plots: [{ key: 'value', title: 'DI', color: 0 }],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -39,9 +42,5 @@ export class DisparityIndexIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    drawZeroCenteredLine(ctx, output, viewport, style);
   }
 }

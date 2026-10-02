@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
@@ -6,11 +6,17 @@ import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class KeltnerChannelIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'keltner',
     name: 'Keltner Channel',
     placement: 'overlay' as const,
     defaultConfig: { emaPeriod: 20, atrPeriod: 10, multiplier: 1.5 },
+    shortName: 'KC',
+    plots: [
+      { key: 'upper', title: 'Upper', color: 0 },
+      { key: 'middle', title: 'Basis', color: 1 },
+      { key: 'lower', title: 'Lower', color: 0 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

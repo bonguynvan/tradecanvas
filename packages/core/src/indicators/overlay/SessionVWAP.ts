@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { timeframeBucketStart } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
@@ -15,11 +15,21 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * the session VWAP — the classic VWAP band envelope.
  */
 export class SessionVWAPIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'svwap',
     name: 'Session VWAP',
     placement: 'overlay' as const,
     defaultConfig: { bands: 1 },
+    shortName: 'SVWAP',
+    plots: [
+      { key: 'value', title: 'VWAP', color: 0 },
+      { key: 'u1', title: '+1σ', color: 1 },
+      { key: 'l1', title: '−1σ', color: 1 },
+      { key: 'u2', title: '+2σ', color: 1 },
+      { key: 'l2', title: '−2σ', color: 1 },
+      { key: 'u3', title: '+3σ', color: 1 },
+      { key: 'l3', title: '−3σ', color: 1 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

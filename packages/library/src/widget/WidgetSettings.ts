@@ -193,6 +193,7 @@ export class WidgetSettings {
       { value: 'week', label: 'Prior Week (PWH/PWL)' },
     ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })));
     section.appendChild(this.toggleRow('OHLC Legend', s.legendVisible, (v) => this.patch({ legendVisible: v })));
+    section.appendChild(this.toggleRow('Indicator values on scale', s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })));
     if (this.available.barCountdown !== false) {
       section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
     }

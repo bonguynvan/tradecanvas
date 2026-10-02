@@ -168,7 +168,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   }
 
   const DESCRIPTION =
-    'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 70 indicators, 40 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.';
+    'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 85 indicators, 40 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.';
 </script>
 
 <svelte:head>
@@ -198,7 +198,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
       </a>
       <h1 class="hero-h1">The chart engine for trading&nbsp;apps.</h1>
       <p class="hero-lede">
-        Candlesticks to Renko, 70 indicators, 40 drawing tools, live exchange feeds and orders
+        Candlesticks to Renko, 85 indicators, 40 drawing tools, live exchange feeds and orders
         on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full
         <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.
       </p>

@@ -1,11 +1,4 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
@@ -17,11 +10,13 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * If anchorTime is missing or precedes the dataset, behaves like regular VWAP.
  */
 export class AnchoredVWAPIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'avwap',
     name: 'Anchored VWAP',
     placement: 'overlay' as const,
     defaultConfig: { anchorTime: 0 },
+    shortName: 'AVWAP',
+    plots: [{ key: 'value', title: 'AVWAP', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

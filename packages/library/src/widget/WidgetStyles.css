@@ -698,10 +698,12 @@
   overflow: hidden;
 }
 
-/* A pane's indicator: at the top of its pane, where the canvas title was. */
+/* A pane's indicator: at the top of its pane, where the canvas title was,
+   short enough to sit in the pane's header below the divider's grab zone. */
 .tcw-ind-legend-row--pane {
   position: absolute;
   z-index: 3;
+  line-height: 15px;
 }
 
 .tcw-ind-legend-row:hover,
@@ -2821,6 +2823,40 @@
 .tcw-indi-input:focus {
   border-color: var(--tcw-accent);
   box-shadow: 0 0 0 2px var(--tcw-accent-soft);
+}
+.tcw-indi-select {
+  width: 150px;
+  padding-right: 4px;
+  cursor: pointer;
+}
+/* A level: its value and a remove button. */
+.tcw-indi-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tcw-indi-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+.tcw-indi-remove:hover {
+  color: var(--tcw-red);
+  background: var(--tcw-hover-bg);
+}
+.tcw-indi-remove:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
+}
+.tcw-indi-add {
+  margin-top: 8px;
 }
 .tcw-indi-color {
   width: 36px;

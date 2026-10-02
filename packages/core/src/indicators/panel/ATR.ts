@@ -1,15 +1,16 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class ATRIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'atr',
     name: 'Average True Range',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    shortName: 'ATR',
+    plots: [{ key: 'value', title: 'ATR', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -64,47 +65,5 @@ export class ATRIndicator extends IndicatorBase {
       this.writePoint(prev, data, i, { value: atr });
     }
     return prev;
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let minVal = Infinity;
-    let maxVal = -Infinity;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (val && val.value !== undefined) {
-        minVal = Math.min(minVal, val.value);
-        maxVal = Math.max(maxVal, val.value);
-      }
-    }
-    if (minVal === Infinity) return;
-    const range = maxVal - minVal || 1;
-    const padding = range * 0.1;
-    const adjMin = minVal - padding;
-    const adjMax = maxVal + padding;
-    const adjRange = adjMax - adjMin;
-
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v - adjMin) / adjRange);
-
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-
-    let started = false;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (val && val.value !== undefined) {
-        const x = barIndexToX(i, viewport);
-        const y = toY(val.value);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-    }
-    ctx.stroke();
   }
 }

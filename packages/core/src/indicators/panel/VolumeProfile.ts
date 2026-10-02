@@ -1,15 +1,17 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { priceToYMapper } from '../../viewport/ScaleMapping.js';
 
 export class VolumeProfileIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'volumeProfile',
     name: 'Volume Profile',
-    placement: 'panel' as const,
+    placement: 'overlay' as const,
     defaultConfig: { rows: 24 },
+    shortName: 'VP',
+    plots: [],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

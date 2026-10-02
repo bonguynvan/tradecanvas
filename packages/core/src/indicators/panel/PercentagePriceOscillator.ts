@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Percentage Price Oscillator (PPO) — MACD expressed in percentage terms, so it
@@ -12,11 +11,19 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * Signal = EMA(PPO, signal);  Histogram = PPO − Signal.
  */
 export class PercentagePriceOscillatorIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'ppo',
     name: 'Percentage Price Oscillator',
     placement: 'panel' as const,
-    defaultConfig: { fast: 12, slow: 26, signal: 9 },
+    defaultConfig: { fast: 12, slow: 26, signal: 9, source: 'close' },
+    shortName: 'PPO',
+    inputs: { source: { source: true } },
+    plots: [
+      { key: 'hist', title: 'Histogram', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 },
+      { key: 'value', title: 'PPO', color: 0 },
+      { key: 'signal', title: 'Signal', color: 1 },
+    ],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -51,66 +58,6 @@ export class PercentagePriceOscillatorIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let absMax = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v) continue;
-      for (const k of ['value', 'signal', 'hist'] as const) {
-        const x = v[k];
-        if (x !== undefined && Math.abs(x) > absMax) absMax = Math.abs(x);
-      }
-    }
-    if (absMax === 0) return;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-
-    const zeroY = toY(0);
-    const barW = Math.max(1, (chartRect.width / (to - from + 1)) * 0.6);
-    for (let i = from; i <= to && i < series.length; i++) {
-      const h = series[i]?.hist;
-      if (h === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = toY(h);
-      ctx.fillStyle = h >= 0 ? 'rgba(31, 168, 116,0.5)' : 'rgba(232, 80, 91,0.5)';
-      const top = Math.min(y, zeroY);
-      ctx.fillRect(x - barW / 2, top, barW, Math.max(1, Math.abs(y - zeroY)));
-    }
-
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, zeroY);
-    ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const line = (key: 'value' | 'signal', color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) { started = false; continue; }
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    line('value', style.colors[0] ?? '#4c8dff');
-    line('signal', style.colors[1] ?? '#f2a93b');
   }
 }
 

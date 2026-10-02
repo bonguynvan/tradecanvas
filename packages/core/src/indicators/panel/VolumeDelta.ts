@@ -1,15 +1,7 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Directional volume ("volume delta") panel. Approximates buy/sell pressure
@@ -19,11 +11,13 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * bid/ask data, which an OHLCV series doesn't carry.)
  */
 export class VolumeDeltaIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'voldelta',
     name: 'Volume Delta',
     placement: 'panel' as const,
     defaultConfig: { mode: 0 },
+    shortName: 'Vol Δ',
+    plots: [{ key: 'value', title: 'Delta', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -45,41 +39,5 @@ export class VolumeDeltaIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(
-    ctx: CanvasRenderingContext2D,
-    output: IndicatorOutput,
-    viewport: ViewportState,
-    style: ResolvedIndicatorStyle,
-  ): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let absMax = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i]?.value;
-      if (v !== undefined && Math.abs(v) > absMax) absMax = Math.abs(v);
-    }
-    if (absMax === 0) return;
-
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-    const zeroY = toY(0);
-    const halfBar = viewport.barWidth / 2;
-    const upColor = style.colors[0] ?? '#1fa874';
-    const downColor = style.colors[1] ?? '#e8505b';
-
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = toY(val.value);
-      const top = Math.min(y, zeroY);
-      const h = Math.max(Math.abs(y - zeroY), 1);
-      ctx.fillStyle = val.up ? upColor : downColor;
-      ctx.fillRect(x - halfBar, top, viewport.barWidth, h);
-    }
   }
 }

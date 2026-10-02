@@ -83,23 +83,30 @@ chart.setDrawingTool('headAndShoulders') // or let the user draw`,
   {
     id: 'indicators',
     title: 'Indicators',
-    stat: '70 built-in',
+    stat: '85 built-in',
     blurb:
       'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
     tryThis: [
-      'Press the Indicators button (or Ctrl+K) and search any of the 70',
-      'Click an indicator name in the legend to edit its inputs',
+      'Press the Indicators button (or Ctrl+K) and search any of the 85',
+      'Click an indicator name in the legend: inputs, colours and levels',
+      'Set a moving average’s Source to another indicator’s line',
       'Drag the line between panes to resize them',
     ],
     code: `chart.addIndicator('bb', { period: 20, stdDev: 2 })
-chart.addIndicator('rsi')
+const rsi = chart.addIndicator('rsi')
+chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })
 chart.addIndicator('macd')`,
     options: (env) => ({
       symbol: 'BTCUSDT',
       timeframe: '15m',
       adapter: env.binance(),
       onReady: (chart) => {
-        for (const id of ['bb', 'ema', 'rsi', 'macd']) chart.addIndicator(id, {});
+        chart.addIndicator('bb', {});
+        chart.addIndicator('ema', {});
+        const rsi = chart.addIndicator('rsi', {});
+        // RSI's own moving average, drawn in RSI's pane.
+        if (rsi) chart.addIndicator('sma', { period: 9, source: `ind:${rsi}:value` });
+        chart.addIndicator('macd', {});
       },
     }),
   },

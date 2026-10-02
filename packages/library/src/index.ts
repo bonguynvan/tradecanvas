@@ -118,6 +118,17 @@ export {
 // Re-export data utilities
 export { normalizeBarTime, normalizeBar } from '@tradecanvas/commons';
 
+// Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)
+export { PRICE_SOURCES, isPriceSource, sourcePrice, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
+export type {
+  PriceSource,
+  IndicatorPlot,
+  IndicatorPlotKind,
+  IndicatorScale,
+  IndicatorInputSpec,
+  IndicatorSettingsChangePayload,
+} from '@tradecanvas/commons';
+
 // Re-export i18n
 export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, formatVolumeLoc } from '@tradecanvas/commons';
 
