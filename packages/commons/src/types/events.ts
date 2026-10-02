@@ -204,7 +204,7 @@ export interface HistoryLoadPayload {
 /** What changed on an indicator (`indicatorChange`). */
 export interface IndicatorSettingsChangePayload {
   instanceId: string;
-  change: 'visible' | 'style' | 'levels' | 'params' | 'pane';
+  change: 'visible' | 'style' | 'levels' | 'params' | 'pane' | 'scale';
 }
 
 export interface ChartEventMap {

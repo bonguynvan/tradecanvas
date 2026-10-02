@@ -31,6 +31,8 @@ import type {
   DataAdapter,
   TimeZoneSetting,
   SymbolInfo,
+  OverlayScale,
+  ViewportState,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
@@ -119,6 +121,8 @@ const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 const SECONDS_TIME_LIMIT = 1e12;
 /** `setTimezone(EXCHANGE_TIMEZONE)` shows the time zone of the symbol's exchange. */
 export const EXCHANGE_TIMEZONE = 'exchange';
+/** Room above and below the left scale's overlays, as a share of their range. */
+const LEFT_SCALE_PADDING = 0.08;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -210,6 +214,12 @@ export class Chart {
   private chartRenderer: ChartRendererInterface;
   private gridRenderer: GridRenderer;
   private priceAxis: PriceAxis;
+  /** The left price scale: overlays put on it, else a mirror of the price scale. */
+  private leftPriceAxis = new PriceAxis();
+  private leftScaleRequested = false;
+  private leftAxisWidth = PRICE_AXIS_WIDTH;
+  /** The left scale's viewport this frame; null while it is hidden. */
+  private leftViewport: ViewportState | null = null;
   private timeAxis: TimeAxis;
   private options: ChartOptions & { chartType: ChartType };
   private features: Required<FeaturesConfig>;
@@ -783,6 +793,7 @@ export class Chart {
     this.interactionManager.attach();
 
     if (options.timeZone !== undefined && options.timeZone !== null) this.setTimezone(options.timeZone);
+    if (options.leftPriceScale) this.leftScaleRequested = true;
 
     // Set render context
     this.syncRenderContext();
@@ -1040,13 +1051,16 @@ export class Chart {
     id: string,
     params: Record<string, number | string | boolean> = {},
     position: PanelPosition = 'bottom',
-    options: { pane?: string } = {},
+    options: { pane?: string; scale?: OverlayScale } = {},
   ): string | null {
     if (!this.features.indicators) return null;
     if (this.features.indicatorIds.length > 0 && !this.features.indicatorIds.includes(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), pane ? { pane } : {});
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), {
+      ...(pane ? { pane } : {}),
+      ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
+    });
     if (descriptor?.placement === 'panel' && !pane) this.layoutManager.addPanel(instanceId, position);
     // The layout (a new pane) or the price scale (a new overlay) may change.
     this.updateViewportAndRender();
@@ -1115,6 +1129,60 @@ export class Chart {
   }
 
   /** Set an indicator's reference levels; `null` restores its indicator's defaults. */
+  /**
+   * Put a price-pane overlay on the left price scale (fit to its own values,
+   * the scale shows by itself) or back on the price scale. False when the
+   * indicator isn't a price-pane overlay.
+   */
+  setIndicatorScale(instanceId: string, scale: OverlayScale): boolean {
+    if (!this.indicatorEngine.setScale(instanceId, scale)) return false;
+    this.updateViewportAndRender();
+    this.scheduleAutoSave();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'scale' });
+    return true;
+  }
+
+  getIndicatorScale(instanceId: string): OverlayScale {
+    return this.indicatorEngine.getIndicatorConfig(instanceId)?.scale === 'left' ? 'left' : 'right';
+  }
+
+  /** Show the left price scale even without overlays on it (it then mirrors the price scale). */
+  setLeftPriceScaleVisible(visible: boolean): void {
+    this.leftScaleRequested = visible;
+    this.updateViewportAndRender();
+  }
+
+  /** Whether the left price scale is on screen: asked for, or carrying an overlay. */
+  isLeftPriceScaleShown(): boolean {
+    return this.features.priceAxis !== false && (this.leftScaleRequested || this.indicatorEngine.hasLeftScaleOverlays());
+  }
+
+  /** The left price scale's range on screen, or null while it is hidden. */
+  getLeftPriceRange(): { min: number; max: number } | null {
+    return this.leftViewport ? { ...this.leftViewport.priceRange } : null;
+  }
+
+  /**
+   * The left scale's viewport for this frame: fit to the overlays on it over
+   * the visible bars (on a plain linear scale), or the price scale's when
+   * none is.
+   */
+  private computeLeftViewport(): ViewportState | null {
+    if (!this.isLeftPriceScaleShown()) return null;
+    const vs = this.viewport.getState();
+    if (!this.indicatorEngine.hasLeftScaleOverlays()) return vs;
+    const range = this.indicatorEngine.getOverlayPriceRange(vs.visibleRange.from, vs.visibleRange.to, 'left');
+    if (!range) return vs;
+    const span = range.max - range.min || Math.abs(range.max) || 1;
+    return {
+      ...vs,
+      priceRange: { min: range.min - span * LEFT_SCALE_PADDING, max: range.max + span * LEFT_SCALE_PADDING },
+      logScale: false,
+      scaleMode: 'regular',
+      invertScale: false,
+    };
+  }
+
   setIndicatorLevels(instanceId: string, levels: readonly number[] | null): void {
     if (!this.indicatorEngine.setLevels(instanceId, levels)) return;
     this.updateViewportAndRender();
@@ -2663,6 +2731,7 @@ export class Chart {
             visible: ind.visible,
             levels: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.levels?.slice(),
             pane: ind.pane,
+            scale: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.scale,
           })),
           ...this.unrestoredIndicators,
         ],
@@ -2710,7 +2779,10 @@ export class Chart {
         try {
           if (!known.has(ind.id)) throw new Error('no such indicator is registered');
           const pane = ind.pane ? instanceIds.get(ind.pane) : undefined;
-          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, pane ? { pane } : {});
+          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, {
+            ...(pane ? { pane } : {}),
+            ...(ind.scale === 'left' ? { scale: 'left' as const } : {}),
+          });
         } catch (err) {
           console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
         }
@@ -3052,6 +3124,7 @@ export class Chart {
     this.resolvedLayoutCache = null;
     this.panelInfoCache = null;
 
+    this.layoutManager.setLeftAxisWidth(this.isLeftPriceScaleShown() ? this.leftAxisWidth : 0);
     const resolved = this.getResolvedLayout();
     this.viewport.setChartRect(resolved.mainChartRect);
 
@@ -3063,6 +3136,31 @@ export class Chart {
     this.engine.requestRender();
 
     this.emitViewportEvents();
+  }
+
+  /** Size the left scale to its widest label; true when the layout changed. */
+  private fitLeftAxisWidth(): boolean {
+    const left = this.leftViewport;
+    if (!left) return false;
+    const theme = this.themeManager.getTheme();
+    const required = requiredPriceAxisWidth({
+      min: left.priceRange.min,
+      max: left.priceRange.max,
+      lastPrice: null,
+      tagPrecision: null,
+      locale: this.numberLocale,
+      fontFamily: theme.font.family,
+      fontSizeSmall: theme.font.sizeSmall,
+      measure: (text, font) => this.measureText(text, font),
+    });
+    const next = nextPriceAxisWidth(this.leftAxisWidth, required);
+    if (next === this.leftAxisWidth) return false;
+    this.leftAxisWidth = next;
+    this.layoutManager.setLeftAxisWidth(next);
+    this.resolvedLayoutCache = null;
+    this.panelInfoCache = null;
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+    return true;
   }
 
   /**
@@ -3241,7 +3339,12 @@ export class Chart {
     const timeAxisY = resolved.mainChartRect.y + resolved.mainChartRect.height + bottomPanelHeight;
 
     const displayData = this.getDisplayData();
+    this.leftViewport = this.computeLeftViewport();
+    if (this.fitLeftAxisWidth()) this.leftViewport = this.computeLeftViewport();
     this.engine.setRenderContext({
+      leftViewport: this.leftViewport,
+      leftPriceAxis: this.leftPriceAxis,
+      leftAxisWidth: this.leftAxisWidth,
       chartRenderer: this.chartRenderer,
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,

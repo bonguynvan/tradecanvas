@@ -75,6 +75,19 @@
   - ChartWidget's timezone setting lists 28 zones by city, each with the offset
     in force (older fixed-offset settings still apply).
   - YTD now starts on the bar at 1 January 00:00 instead of the one after it.
+- **A left price scale.**
+  - `addIndicator(id, params, position, { scale: 'left' })` or
+    `chart.setIndicatorScale(id, 'left')` put an overlay on a scale of its own
+    on the left, fit to its values over the visible bars. A volume-like line
+    over price no longer squashes the candles.
+  - The scale shows by itself while an overlay is on it.
+    `setLeftPriceScaleVisible(true)` (or `ChartOptions.leftPriceScale`)
+    shows it anyway, mirroring the price scale.
+  - New `isLeftPriceScaleShown()`, `getLeftPriceRange()` and
+    `getIndicatorScale()`; `indicatorChange` reports `'scale'`.
+  - The scale is kept in saved layouts. Its overlays get value tags on it.
+  - ChartWidget: a "Left price scale" switch in the settings, and a price
+    scale choice in an overlay's Style tab.
 - **Symbol search and symbol info.**
   - New optional `DataAdapter.searchSymbols(query, { limit, signal })` and
     `resolveSymbol(symbol)` that return `SymbolInfo`: description, exchange,

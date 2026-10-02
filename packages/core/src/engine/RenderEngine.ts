@@ -1,7 +1,7 @@
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, computeTickStep, formatPrice } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice } from '@tradecanvas/commons';
 import { LayerManager } from './LayerManager.js';
 import { renderAxisValueLabels, indicatorValuePrecision, type AxisValueLabel } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
@@ -47,6 +47,13 @@ export interface RenderContext {
   chartRenderer: ChartRendererInterface | null;
   gridRenderer: GridRenderer | null;
   priceAxis: PriceAxis | null;
+  /**
+   * The left price scale, when shown: overlays on it draw with this viewport
+   * (its own range), and its axis sits left of the plot, `leftAxisWidth` wide.
+   */
+  leftViewport?: ViewportState | null;
+  leftPriceAxis?: PriceAxis | null;
+  leftAxisWidth?: number;
   timeAxis: TimeAxis | null;
   crosshairHandler: CrosshairHandler | null;
   indicatorEngine: IndicatorEngine | null;
@@ -200,7 +207,7 @@ export class RenderEngine {
     ctx.marketProfile?.render(c, data, viewport, theme);
     ctx.chartRenderer?.render(c, data, viewport, theme);
     ctx.compareRenderer?.render(c, data, viewport, theme);
-    ctx.indicatorEngine?.renderOverlays(c, viewport);
+    ctx.indicatorEngine?.renderOverlays(c, viewport, ctx.leftViewport ?? undefined);
     ctx.periodLevels?.render(c, data, viewport, theme);
     ctx.pivotMarkers?.render(c, data, viewport, theme);
     ctx.renderOverlayPlugins?.(c, 'main');
@@ -219,6 +226,10 @@ export class RenderEngine {
     // --- Axes and price tags ---
     ctx.priceAxis?.render(c, viewport, theme);
     if (ctx.indicatorValueLabels !== false) this.renderOverlayValueLabels(c, ctx);
+    if (ctx.leftViewport) {
+      ctx.leftPriceAxis?.render(c, ctx.leftViewport, theme, 'left');
+      if (ctx.indicatorValueLabels !== false) this.renderLeftValueLabels(c, ctx, ctx.leftViewport);
+    }
     // Trading axis badges paint ON TOP of the regular price axis labels
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
@@ -314,6 +325,22 @@ export class RenderEngine {
     const labels: AxisValueLabel[] = values.map((v) => ({ y: priceToY(v.value, viewport), text: format(v.value), color: v.color }));
     renderAxisValueLabels(c, labels, chartRect.x + chartRect.width, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
       { top: chartRect.y, bottom: chartRect.y + chartRect.height }, theme);
+  }
+
+  /** Left-scale overlays' latest values as tags on the left axis. */
+  private renderLeftValueLabels(c: CanvasRenderingContext2D, ctx: RenderContext, left: ViewportState): void {
+    const values = ctx.indicatorEngine?.getLatestOverlayValues('left');
+    if (!values?.length) return;
+    const { chartRect } = left;
+    const width = ctx.leftAxisWidth ?? PRICE_AXIS_WIDTH;
+    // Its own precision: volume-like values don't take the price's decimals.
+    const precision = autoPricePrecision(left.priceRange.min, left.priceRange.max);
+    const locale = ctx.numberLocale ?? 'en-US';
+    const labels: AxisValueLabel[] = values.map((v) => ({
+      y: priceToY(v.value, left), text: formatPrice(v.value, precision, locale), color: v.color,
+    }));
+    renderAxisValueLabels(c, labels, chartRect.x - width, width,
+      { top: chartRect.y, bottom: chartRect.y + chartRect.height }, ctx.theme);
   }
 
   /** An indicator's reference levels (RSI 30 / 70): faint dashed lines across its pane, under the plots. */

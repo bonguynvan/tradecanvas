@@ -262,6 +262,8 @@ export interface ChartSettingsState {
   autoScale: boolean;
   /** Price scale upside down. */
   invertScale: boolean;
+  /** A price scale on the left too (it carries overlays put on it, else mirrors the price scale). */
+  leftPriceScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;
   /** 'local' = browser timezone; an IANA zone ('America/New_York'); or a fixed UTC offset in minutes (as a string, from older settings). */

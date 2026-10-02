@@ -23,6 +23,8 @@ export interface IndicatorSettingsTarget {
   /** Its levels and its indicator's defaults; with them, the Levels tab. */
   levels?: readonly number[];
   defaultLevels?: readonly number[];
+  /** The price scale an overlay is on; set only for price-pane overlays. */
+  scale?: 'right' | 'left';
 }
 
 export interface IndicatorSettingsCallbacks {
@@ -30,6 +32,8 @@ export interface IndicatorSettingsCallbacks {
   onStyle?: (instanceId: string, style: { colors?: string[]; lineWidths?: number[] }) => void;
   /** `null` restores the indicator's default levels. */
   onLevels?: (instanceId: string, levels: number[] | null) => void;
+  /** Move an overlay to the left price scale or back to the price scale. */
+  onScale?: (instanceId: string, scale: 'right' | 'left') => void;
   onClose: () => void;
 }
 
@@ -414,6 +418,20 @@ export class WidgetIndicatorSettings {
     width.value = String(target.lineWidth ?? 1.5);
     width.addEventListener('change', () => this.callbacks.onStyle?.(target.instanceId, { lineWidths: [Number(width.value)] }));
     section.appendChild(this.row(this.t('indicatorSettings.lineWidth'), width));
+
+    if (target.scale && this.callbacks.onScale) {
+      const scale = document.createElement('select');
+      scale.className = 'tcw-indi-input tcw-indi-select';
+      scale.appendChild(this.option('right', this.t('indicatorSettings.scale.right')));
+      scale.appendChild(this.option('left', this.t('indicatorSettings.scale.left')));
+      scale.value = target.scale;
+      scale.addEventListener('change', () => {
+        const next = scale.value === 'left' ? 'left' : 'right';
+        this.target = { ...target, scale: next };
+        this.callbacks.onScale?.(target.instanceId, next);
+      });
+      section.appendChild(this.row(this.t('indicatorSettings.scale'), scale));
+    }
   }
 
   // --- Levels ---

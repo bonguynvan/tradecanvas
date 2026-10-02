@@ -232,6 +232,7 @@ export class WidgetSettings {
     const section = this.section();
     section.appendChild(this.toggleRow(this.t('settings.autoScale'), s.autoScale, (v) => this.patch({ autoScale: v })));
     section.appendChild(this.toggleRow(this.t('settings.invertScale'), s.invertScale, (v) => this.patch({ invertScale: v })));
+    section.appendChild(this.toggleRow(this.t('settings.leftScale'), s.leftPriceScale, (v) => this.patch({ leftPriceScale: v })));
     const scales = [
       { value: 'regular', label: this.t('settings.scale.regular') },
       { value: 'logarithmic', label: this.t('settings.scale.logarithmic') },

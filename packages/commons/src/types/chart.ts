@@ -139,6 +139,12 @@ export interface ChartOptions {
    * fixed offset in minutes east of UTC, or null (default) for the browser's.
    */
   timeZone?: string | number | null;
+  /**
+   * Show a price scale on the left too. It carries the overlays put on it
+   * (`addIndicator(…, { scale: 'left' })`), else it mirrors the price scale.
+   * It shows by itself once an overlay is on it.
+   */
+  leftPriceScale?: boolean;
   /** Bounds for free panning. */
   panLimits?: { minVisibleBars?: number };
 }

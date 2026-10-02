@@ -52,6 +52,8 @@ export interface SnapshotIndicator {
   levels?: number[];
   /** The instance (id when saved) whose pane it is drawn in, when not its own. */
   pane?: string;
+  /** `'left'`: an overlay on the left price scale. */
+  scale?: 'left';
 }
 
 /**
@@ -178,6 +180,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
         ? ind.levels.filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
         : undefined,
       pane: typeof ind.pane === 'string' ? ind.pane : undefined,
+      scale: ind.scale === 'left' ? 'left' : undefined,
     });
   }
 

@@ -627,6 +627,7 @@ export class ChartWidget {
         },
         onStyle: (instanceId, style) => this.chart.updateIndicatorStyle(instanceId, style),
         onLevels: (instanceId, levels) => this.chart.setIndicatorLevels(instanceId, levels),
+        onScale: (instanceId, scale) => this.chart.setIndicatorScale(instanceId, scale),
         onClose: () => {},
       }, this.t);
       this.objectTree = new WidgetObjectTree(this.root, {
@@ -1222,6 +1223,7 @@ export class ChartWidget {
       // Levels belong to pane indicators.
       levels: pane ? this.chart.getIndicatorLevels(instanceId) : undefined,
       defaultLevels: ind.descriptor.levels,
+      scale: pane ? undefined : this.chart.getIndicatorScale(instanceId),
     });
   }
 
@@ -1793,6 +1795,7 @@ export class ChartWidget {
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
+    if (patch.leftPriceScale !== undefined) this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
     if (patch.scaleMode !== undefined) {
       this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
