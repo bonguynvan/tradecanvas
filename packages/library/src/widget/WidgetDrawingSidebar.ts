@@ -1,3 +1,4 @@
+import type { DrawingToolType } from '@tradecanvas/commons';
 import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon, createToolIcon } from './icons.js';
 
@@ -24,7 +25,7 @@ export class WidgetDrawingSidebar {
   private groupButtons: HTMLButtonElement[] = [];
   /** Per group, the icon holder in its button and the tool it stands for (the last one used). */
   private groupIcons: HTMLSpanElement[] = [];
-  private groupTools: string[] = [];
+  private groupTools: DrawingToolType[] = [];
   private cursorBtn: HTMLButtonElement | null = null;
   private magnetBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
@@ -75,11 +76,12 @@ export class WidgetDrawingSidebar {
 
       const btn = document.createElement('button');
       btn.className = 'tcw-sidebar-btn';
-      // A group with a menu names itself in the menu's header: no tooltip on top of it.
-      if (group.tools.length > 1) btn.setAttribute('aria-label', group.label);
-      else btn.title = group.label;
       // The group shows, and picks, its last used tool — the first until then.
-      const tool = group.tools[0]?.value ?? '';
+      const tool = group.tools[0]?.value;
+      if (!tool) return;
+      // A group with a menu names itself in the menu's header: no tooltip on top of it.
+      if (group.tools.length > 1) btn.setAttribute('aria-label', `${group.label}: ${group.tools[0].label}`);
+      else btn.title = group.label;
       const icon = document.createElement('span');
       icon.className = 'tcw-sidebar-icon';
       icon.innerHTML = createToolIcon(tool, TOOL_ICON_PX);
@@ -93,12 +95,16 @@ export class WidgetDrawingSidebar {
         btn.appendChild(dot);
       }
 
-      btn.addEventListener('click', () => callbacks.onDrawingTool(this.groupTools[idx] as never));
+      btn.addEventListener('click', () => callbacks.onDrawingTool(this.groupTools[idx]));
       wrap.appendChild(btn);
 
-      // Flyout events via JS (not CSS hover)
+      // Flyout events via JS (not CSS hover); keyboard focus opens it too.
       wrap.addEventListener('mouseenter', () => this.showFlyout(idx));
       wrap.addEventListener('mouseleave', () => this.scheduleHideFlyout());
+      btn.addEventListener('focus', () => { if (btn.matches(':focus-visible')) this.showFlyout(idx); });
+      wrap.addEventListener('focusout', (e) => {
+        if (!wrap.contains(e.relatedTarget as Node | null)) this.scheduleHideFlyout();
+      });
 
       el.appendChild(wrap);
       this.groupWraps.push(wrap);
@@ -287,6 +293,9 @@ export class WidgetDrawingSidebar {
       if (isActive && state.activeTool && state.activeTool !== this.groupTools[i]) {
         this.groupTools[i] = state.activeTool;
         this.groupIcons[i].innerHTML = createToolIcon(state.activeTool, TOOL_ICON_PX);
+        if (drawingToolGroups[i].tools.length > 1) {
+          this.groupButtons[i].setAttribute('aria-label', `${drawingToolGroups[i].label}: ${toolLabel(drawingToolGroups, state.activeTool)}`);
+        }
       }
     }
 

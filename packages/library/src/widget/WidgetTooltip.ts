@@ -7,57 +7,63 @@ const EDGE_PX = 4;
 const SLIDE_PX = 3;
 
 type Side = 'top' | 'bottom' | 'left' | 'right';
+const TIPPED = '[title]:not([title=""]), [data-tip]:not([data-tip=""])';
 
 /**
  * Quick, styled tooltips for the widget's controls, in place of the
  * browser's `title` tooltip (a fixed ~1 s wait, unstyled). Any element in
- * the widget with a `title` gets one: on first hover or focus the title moves
- * to `data-tip` — and becomes the accessible name of an icon-only control —
- * so the browser's own never appears. `data-tip-side` picks a side.
+ * the widget with a `title` gets one. While the pointer is on it, its title
+ * is lifted into `data-tip` so the browser's own tooltip can't appear, and
+ * put back when the pointer leaves — so the title keeps doing its other jobs
+ * (accessible description, selectors). Keyboard focus shows the tooltip too,
+ * leaving the title in place. `data-tip-side` picks a side.
  */
 export class WidgetTooltip {
   private readonly el: HTMLDivElement;
   private target: HTMLElement | null = null;
-  /** The control just pressed: no tooltip on it until the pointer leaves. */
+  private source: 'pointer' | 'focus' | null = null;
+  /** The control just pressed (or keyed): no tooltip on it until the pointer leaves. */
   private pressed: HTMLElement | null = null;
   private showTimer: ReturnType<typeof setTimeout> | null = null;
+  private watchFrame = 0;
   private warmUntil = 0;
   private readonly observer: MutationObserver;
 
   constructor(private readonly root: HTMLElement) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-tooltip';
-    this.el.setAttribute('aria-hidden', 'true'); // the control's own name carries the text
+    this.el.setAttribute('aria-hidden', 'true'); // the control's title still describes it
     root.appendChild(this.el);
 
     root.addEventListener('pointerover', this.onOver);
     root.addEventListener('pointerout', this.onOut);
     root.addEventListener('pointerdown', this.onPress, true);
+    root.addEventListener('keydown', this.onPress, true);
     root.addEventListener('focusin', this.onFocus);
-    root.addEventListener('focusout', this.onOut);
+    root.addEventListener('focusout', this.onBlur);
     root.addEventListener('wheel', this.hide, { passive: true });
 
-    // Code that sets a title again later (e.g. "Magnet ON" ↔ "Magnet OFF")
-    // must not bring the browser's tooltip back on a control already taken over.
-    this.observer = new MutationObserver((records) => {
-      for (const r of records) {
-        const el = r.target as HTMLElement;
-        if (!el.hasAttribute('title') || !('tip' in el.dataset)) continue;
-        adopt(el);
-        if (el === this.target) this.el.textContent = el.dataset.tip ?? '';
-      }
+    // Code that sets the title while the pointer is on the control (e.g.
+    // "Magnet ON" ↔ "Magnet OFF" on click) mustn't bring the browser's back.
+    this.observer = new MutationObserver(() => {
+      const t = this.target;
+      if (!t || this.source !== 'pointer' || !t.hasAttribute('title')) return;
+      lift(t);
+      if (this.isVisible()) this.show(t);
     });
     this.observer.observe(root, { subtree: true, attributes: true, attributeFilter: ['title'] });
   }
 
   destroy(): void {
-    this.clearTimer();
+    this.hide();
+    if (this.pressed) restore(this.pressed);
     this.observer.disconnect();
     this.root.removeEventListener('pointerover', this.onOver);
     this.root.removeEventListener('pointerout', this.onOut);
     this.root.removeEventListener('pointerdown', this.onPress, true);
+    this.root.removeEventListener('keydown', this.onPress, true);
     this.root.removeEventListener('focusin', this.onFocus);
-    this.root.removeEventListener('focusout', this.onOut);
+    this.root.removeEventListener('focusout', this.onBlur);
     this.root.removeEventListener('wheel', this.hide);
     this.el.remove();
   }
@@ -65,50 +71,73 @@ export class WidgetTooltip {
   private readonly onOver = (e: PointerEvent): void => {
     if (e.pointerType === 'touch') return;
     const target = this.tipTarget(e.target);
-    if (!target || target === this.target || target === this.pressed) return;
-    this.schedule(target, Date.now() < this.warmUntil || this.isVisible());
+    if (!target || target === this.pressed) return;
+    if (target === this.target && this.source === 'pointer') return;
+    lift(target);
+    this.schedule(target, 'pointer', Date.now() < this.warmUntil || this.isVisible());
   };
 
-  private readonly onOut = (e: PointerEvent | FocusEvent): void => {
+  private readonly onOut = (e: PointerEvent): void => {
     const next = e.relatedTarget as Node | null;
-    const current = this.target ?? this.pressed;
-    if (current && next && current.contains(next)) return; // still on the same control
-    this.pressed = null;
-    this.hide();
+    const within = (el: HTMLElement | null) => !!el && !!next && el.contains(next); // still on that control
+    if (this.pressed && !within(this.pressed)) {
+      restore(this.pressed);
+      this.pressed = null;
+    }
+    if (this.source === 'pointer' && !within(this.target)) this.hide();
   };
 
   private readonly onPress = (): void => {
-    this.pressed = this.target;
+    const was = this.target;
+    const lifted = this.source === 'pointer';
     this.warmUntil = 0;
     this.clearTimer();
+    cancelAnimationFrame(this.watchFrame);
     this.el.classList.remove('tcw-tooltip--visible');
     this.target = null;
+    this.source = null;
+    // The title stays lifted while the pointer stays, or the browser's tooltip would take over.
+    if (this.pressed && this.pressed !== was) restore(this.pressed);
+    this.pressed = lifted ? was : null;
   };
 
   private readonly onFocus = (e: FocusEvent): void => {
     const target = this.tipTarget(e.target);
     // Keyboard focus only: a click focuses the control too, and that is no time for a tooltip.
-    if (target && target.matches(':focus-visible')) this.schedule(target, true);
+    if (!target || !isFocusVisible(target) || target === this.pressed) return;
+    this.schedule(target, 'focus', true);
+  };
+
+  private readonly onBlur = (e: FocusEvent): void => {
+    if (this.source !== 'focus') return;
+    const next = e.relatedTarget as Node | null;
+    if (this.target && next && this.target.contains(next)) return;
+    this.hide();
   };
 
   private readonly hide = (): void => {
     this.clearTimer();
+    cancelAnimationFrame(this.watchFrame);
     if (this.isVisible()) this.warmUntil = Date.now() + TOOLTIP_WARM_MS;
     this.el.classList.remove('tcw-tooltip--visible');
+    if (this.target && this.source === 'pointer') restore(this.target);
     this.target = null;
+    this.source = null;
   };
 
   private tipTarget(node: EventTarget | null): HTMLElement | null {
     if (!(node instanceof Element)) return null;
-    const el = node.closest<HTMLElement>('[title], [data-tip]');
-    if (!el || !this.root.contains(el) || el === this.el) return null;
-    adopt(el);
-    return el.dataset.tip ? el : null;
+    const el = node.closest<HTMLElement>(TIPPED);
+    return el && el !== this.el && this.root.contains(el) ? el : null;
   }
 
-  private schedule(target: HTMLElement, now: boolean): void {
+  private schedule(target: HTMLElement, source: 'pointer' | 'focus', now: boolean): void {
+    const previous = this.target;
     this.clearTimer();
+    cancelAnimationFrame(this.watchFrame);
+    if (previous && previous !== target && this.source === 'pointer') restore(previous);
     this.target = target;
+    this.source = source;
     if (now) {
       this.show(target);
       return;
@@ -116,14 +145,29 @@ export class WidgetTooltip {
     this.el.classList.remove('tcw-tooltip--visible');
     this.showTimer = setTimeout(() => {
       this.showTimer = null;
-      if (this.target === target && target.isConnected) this.show(target);
+      if (this.target === target) this.show(target);
     }, TOOLTIP_DELAY_MS);
   }
 
   private show(target: HTMLElement): void {
-    this.el.textContent = target.dataset.tip ?? '';
+    if (!isShown(target)) {
+      this.hide();
+      return;
+    }
+    this.el.textContent = tipText(target);
     this.place(target);
     this.el.classList.add('tcw-tooltip--visible');
+    this.watch(target);
+  }
+
+  /** While shown, follow the control: gone, hidden or disabled takes the tooltip with it. */
+  private watch(target: HTMLElement): void {
+    cancelAnimationFrame(this.watchFrame);
+    this.watchFrame = requestAnimationFrame(() => {
+      if (this.target !== target) return;
+      if (!isShown(target)) this.hide();
+      else this.watch(target);
+    });
   }
 
   /** Beside the control on its preferred side, flipped and clamped to stay inside the widget. */
@@ -170,16 +214,36 @@ export class WidgetTooltip {
   }
 }
 
-/** Move `title` to `data-tip`; an icon-only control also gets it as its accessible name. */
-function adopt(el: HTMLElement): void {
+/** Take the title off while the pointer is on the control, keeping its text in `data-tip`. */
+function lift(el: HTMLElement): void {
   const title = el.getAttribute('title');
   if (title === null) return;
-  el.removeAttribute('title');
   el.dataset.tip = title;
-  const ownsLabel = el.dataset.tipLabel === 'true';
-  if (ownsLabel || (!el.hasAttribute('aria-label') && !el.textContent?.trim())) {
-    el.setAttribute('aria-label', title);
-    el.dataset.tipLabel = 'true';
+  el.removeAttribute('title');
+}
+
+/** Put a lifted title back. */
+function restore(el: HTMLElement): void {
+  if (el.dataset.tip !== undefined && !el.hasAttribute('title')) {
+    el.setAttribute('title', el.dataset.tip);
+    delete el.dataset.tip;
+  }
+}
+
+function tipText(el: HTMLElement): string {
+  return el.dataset.tip ?? el.getAttribute('title') ?? '';
+}
+
+/** Still on screen and usable: attached, laid out, not disabled. */
+function isShown(el: HTMLElement): boolean {
+  return el.isConnected && el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled;
+}
+
+function isFocusVisible(el: HTMLElement): boolean {
+  try {
+    return el.matches(':focus-visible');
+  } catch {
+    return false; // engines without :focus-visible
   }
 }
 

@@ -21,6 +21,8 @@ const button = (title: string, text = '') => {
   const b = document.createElement('button');
   b.title = title;
   b.textContent = text;
+  // jsdom has no layout: count every attached element as on screen.
+  b.getClientRects = () => (b.isConnected && !b.hidden ? [{} as DOMRect] : []) as unknown as DOMRectList;
   root.appendChild(b);
   return b;
 };
@@ -32,6 +34,8 @@ const out = (el: Element, to: Element | null = null) =>
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(0), 16) as unknown as number);
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
   root = document.createElement('div');
   document.body.appendChild(root);
   tooltip = new WidgetTooltip(root);
@@ -40,19 +44,19 @@ beforeEach(() => {
 afterEach(() => {
   tooltip.destroy();
   root.remove();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
 describe('WidgetTooltip', () => {
-  it('takes over the title so the browser tooltip never shows, naming icon-only controls', () => {
+  it('lifts the title only while the pointer is on the control', () => {
     const icon = button('Screenshot');
-    const labelled = button('Close the panel', 'Close');
     over(icon);
-    over(labelled);
-    expect(icon.hasAttribute('title')).toBe(false);
+    expect(icon.hasAttribute('title')).toBe(false); // the browser's tooltip can't show
     expect(icon.dataset.tip).toBe('Screenshot');
-    expect(icon.getAttribute('aria-label')).toBe('Screenshot');
-    expect(labelled.hasAttribute('aria-label')).toBe(false); // its text already names it
+    out(icon, root);
+    expect(icon.getAttribute('title')).toBe('Screenshot');
+    expect(icon.dataset.tip).toBeUndefined();
   });
 
   it('shows after a short pause, then at once for the next control', () => {
@@ -69,6 +73,7 @@ describe('WidgetTooltip', () => {
     over(b);
     expect(visible()).toBe(true);
     expect(tip().textContent).toBe('Redo');
+    expect(a.getAttribute('title')).toBe('Undo');
 
     out(b, root);
     vi.advanceTimersByTime(TOOLTIP_WARM_MS + 10);
@@ -82,8 +87,36 @@ describe('WidgetTooltip', () => {
     vi.advanceTimersByTime(TOOLTIP_DELAY_MS);
     a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     expect(visible()).toBe(false);
+    expect(a.hasAttribute('title')).toBe(false); // still lifted while hovered
     over(a);
     vi.advanceTimersByTime(TOOLTIP_DELAY_MS * 2);
+    expect(visible()).toBe(false);
+    out(a, root);
+    expect(a.getAttribute('title')).toBe('Settings');
+  });
+
+  it('hides on a key press', () => {
+    const a = button('Alerts');
+    over(a);
+    vi.advanceTimersByTime(TOOLTIP_DELAY_MS);
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(visible()).toBe(false);
+  });
+
+  it('goes when its control is removed or hidden while it shows', () => {
+    const a = button('Bid 101.5');
+    over(a);
+    vi.advanceTimersByTime(TOOLTIP_DELAY_MS);
+    expect(visible()).toBe(true);
+    a.remove(); // e.g. a live depth ladder redrawing its rows
+    vi.advanceTimersByTime(20);
+    expect(visible()).toBe(false);
+
+    const b = button('Play');
+    over(b);
+    vi.advanceTimersByTime(TOOLTIP_DELAY_MS);
+    b.hidden = true;
+    vi.advanceTimersByTime(20);
     expect(visible()).toBe(false);
   });
 
@@ -95,7 +128,8 @@ describe('WidgetTooltip', () => {
     await Promise.resolve(); // mutation observer
     expect(magnet.hasAttribute('title')).toBe(false);
     expect(tip().textContent).toBe('Magnet ON');
-    expect(magnet.getAttribute('aria-label')).toBe('Magnet ON');
+    out(magnet, root);
+    expect(magnet.getAttribute('title')).toBe('Magnet ON');
   });
 
   it('ignores touch, which has no hover', () => {
@@ -103,5 +137,14 @@ describe('WidgetTooltip', () => {
     a.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'touch' }));
     vi.advanceTimersByTime(TOOLTIP_DELAY_MS * 2);
     expect(visible()).toBe(false);
+    expect(a.getAttribute('title')).toBe('Alerts');
+  });
+
+  it('puts every lifted title back when destroyed', () => {
+    const a = button('Fullscreen');
+    over(a);
+    tooltip.destroy();
+    expect(a.getAttribute('title')).toBe('Fullscreen');
+    tooltip = new WidgetTooltip(root); // for afterEach
   });
 });

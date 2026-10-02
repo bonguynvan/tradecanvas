@@ -1,6 +1,7 @@
 import type { ChartType, TimeFrame } from '@tradecanvas/commons';
 import type { ToolbarConfig, ToolbarCallbacks, WidgetState, ActiveIndicator } from './types.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
+import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import type { Translator } from './i18n.js';
 
@@ -174,7 +175,7 @@ export class WidgetToolbar {
   private buildChartTypeMenu(): void {
     if (!this.chartTypeDropdown) return;
     const items = this.config.chartTypes.map(ct =>
-      `<button class="tcw-dropdown-item tcw-dropdown-item--icon" data-ct="${ct.value}">${createChartTypeIcon(ct.value, 16)}<span>${this.chartTypeLabel(ct)}</span></button>`
+      `<button class="tcw-dropdown-item tcw-dropdown-item--icon" data-ct="${esc(ct.value)}">${createChartTypeIcon(ct.value, 16)}<span>${esc(this.chartTypeLabel(ct))}</span></button>`
     ).join('');
     this.chartTypeDropdown.setContent(items);
 
@@ -198,14 +199,15 @@ export class WidgetToolbar {
 
   private buildTimeframeMenu(): void {
     if (!this.tfDropdown) return;
-    const pin = this.t('toolbar.timeframes.pin');
-    let html = `<div class="tcw-dropdown-label">${this.t('toolbar.timeframes')}</div>`;
+    const pin = esc(this.t('toolbar.timeframes.pin'));
+    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.timeframes'))}</div>`;
     for (const tf of this.config.timeframes) {
       const pinned = this.tfFavorites.includes(tf.value);
+      const [value, label] = [esc(tf.value), esc(tf.label)];
       html += `<div class="tcw-tf-row">`
-        + `<button class="tcw-dropdown-item" data-tf-pick="${tf.value}">${tf.label}</button>`
-        + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${tf.value}" aria-pressed="${pinned}"`
-        + ` title="${pin}" aria-label="${pin}: ${tf.label}">${createIcon('star', 12)}</button>`
+        + `<button class="tcw-dropdown-item" data-tf-pick="${value}">${label}</button>`
+        + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${value}" aria-pressed="${pinned}"`
+        + ` title="${pin}" aria-label="${pin}: ${label}">${createIcon('star', 12)}</button>`
         + `</div>`;
     }
     this.tfDropdown.setContent(html);
@@ -253,15 +255,13 @@ export class WidgetToolbar {
 
     const typeLabel = (type: string) => this.t(`indicatorType.${type}` as Parameters<Translator>[0]);
 
-    let html = `<div class="tcw-dropdown-label">${this.t('toolbar.indicators.popular')}</div>`;
-    for (const ind of popular) {
-      html += `<button class="tcw-dropdown-item" data-ind="${ind.id}"><span>${ind.name}</span><span class="tcw-tag">${typeLabel(ind.type)}</span></button>`;
-    }
+    const row = (ind: (typeof indicators)[number]) =>
+      `<button class="tcw-dropdown-item" data-ind="${esc(ind.id)}"><span>${esc(ind.name)}</span><span class="tcw-tag">${esc(typeLabel(ind.type))}</span></button>`;
+    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.popular'))}</div>`;
+    for (const ind of popular) html += row(ind);
     html += '<div class="tcw-dropdown-divider"></div>';
-    html += `<div class="tcw-dropdown-label">${this.t('toolbar.indicators.all')}</div>`;
-    for (const ind of other) {
-      html += `<button class="tcw-dropdown-item" data-ind="${ind.id}"><span>${ind.name}</span><span class="tcw-tag">${typeLabel(ind.type)}</span></button>`;
-    }
+    html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.all'))}</div>`;
+    for (const ind of other) html += row(ind);
 
     this.indicatorDropdown.setContent(html);
 
@@ -287,7 +287,7 @@ export class WidgetToolbar {
     if (ctTrigger) {
       const ct = this.config.chartTypes.find(ct => ct.value === state.chartType);
       const label = ct ? this.chartTypeLabel(ct) : state.chartType;
-      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} ${label} ${createIcon('chevronDown', 12)}`;
+      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} ${esc(label)} ${createIcon('chevronDown', 12)}`;
     }
 
     // Indicator trigger + badge

@@ -17,5 +17,7 @@
   your own UI.
 - **Tooltips** on the widget's controls replace the browser's: the first after
   300 ms, the next at once while you move along a toolbar, sliding in beside
-  the control and gone when you click it. Icon-only controls now carry an
-  accessible name.
+  the control, and gone when you click, press a key, or the control goes away.
+  Keyboard focus shows them too. A control's `title` is lifted only while the
+  pointer is on it (so the browser's tooltip can't double up) and put back
+  when it leaves.

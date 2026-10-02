@@ -1,3 +1,4 @@
+import { escapeHtml } from './escapeHtml.js';
 /**
  * Replay control bar. Surfaces the chart's replay engine as a floating
  * bottom-of-chart control and reports user intent through callbacks (no
@@ -205,9 +206,6 @@ export class WidgetReplayBar {
   }
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-}
 
 function svgPlay(): string {
   return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg>';
