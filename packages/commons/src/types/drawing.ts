@@ -37,14 +37,47 @@ export interface DrawingState {
   style: DrawingStyle;
   visible: boolean;
   locked: boolean;
+  /** The tool's own settings (levels, extend left/right…); see `DrawingDescriptor.options`. */
+  options?: DrawingOptions;
+  /** The group it belongs to: drawings selected, hidden and locked together. */
+  group?: { id: string; name: string };
   meta?: Record<string, unknown>;
 }
+
+/** One level of a Fibonacci or Gann tool: a ratio, shown or not, in its own colour. */
+export interface DrawingLevel {
+  value: number;
+  visible: boolean;
+  /** CSS colour; the drawing's colour when left out. */
+  color?: string;
+}
+
+export type DrawingOptionValue = boolean | number | string | DrawingLevel[];
+
+/** A drawing's settings beyond the shared style, by key. Missing keys take the tool's defaults. */
+export type DrawingOptions = Record<string, DrawingOptionValue>;
+
+/** A setting a drawing tool offers beyond the shared style, with its default. */
+export type DrawingOptionDef =
+  | { kind: 'boolean'; label: string; default: boolean }
+  | { kind: 'number'; label: string; default: number; min?: number; max?: number; step?: number }
+  | { kind: 'choice'; label: string; default: string; choices: readonly { value: string; label: string }[] }
+  | { kind: 'levels'; label: string; default: readonly DrawingLevel[] }
+  | { kind: 'text'; label: string; default: string };
+
+export type DrawingOptionDefs = Readonly<Record<string, DrawingOptionDef>>;
 
 export interface DrawingDescriptor {
   type: DrawingToolType;
   name: string;
   requiredAnchors: number;
   singleClick?: boolean;
+  /** Settings the tool offers beyond the shared style; a settings dialog is built from them. */
+  options?: DrawingOptionDefs;
+  /** It fills an area with `style.fillColor` (a settings dialog offers the fill). */
+  fill?: boolean;
+  /** It draws `style.text` (a settings dialog offers the text and its size). */
+  text?: boolean;
 }
 
 export interface DrawingPlugin {
@@ -67,6 +100,18 @@ export interface DrawingPlugin {
     viewport: ViewportState,
     tolerance: number,
   ): number;
+  /**
+   * The drawing after handle `index` (from `hitTestAnchor`) is dragged to
+   * `anchor`. Without it, the handle is anchor `index` and moves there. A
+   * tool with handles that are not anchors (a position's target, say)
+   * changes its options instead.
+   */
+  moveHandle?(state: DrawingState, index: number, anchor: AnchorPoint): DrawingState;
+  /**
+   * The prices of the drawing's lines at `time` (what an alert on it
+   * crosses), or null where it doesn't reach. Tools without it take no alerts.
+   */
+  priceAt?(state: DrawingState, time: number): number[] | null;
 }
 
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {

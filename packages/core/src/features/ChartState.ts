@@ -105,6 +105,11 @@ function validateDrawing(raw: unknown): DrawingState | null {
     style: style as unknown as DrawingState['style'],
     visible: typeof raw.visible === 'boolean' ? raw.visible : true,
     locked: typeof raw.locked === 'boolean' ? raw.locked : false,
+    // Checked against the tool when the drawings are set on a chart.
+    options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
+    group: isObject(raw.group) && typeof raw.group.id === 'string' && typeof raw.group.name === 'string'
+      ? { id: raw.group.id, name: raw.group.name }
+      : undefined,
     meta: isObject(raw.meta) ? raw.meta : undefined,
   };
 }
@@ -133,10 +138,14 @@ const ALERT_CONDITIONS: readonly AlertCondition[] = ['crossingUp', 'crossingDown
 
 function validateAlert(raw: unknown): PriceAlert | null {
   if (!isObject(raw) || typeof raw.id !== 'string') return null;
-  if (typeof raw.price !== 'number' || !Number.isFinite(raw.price)) return null;
+  // An alert on a drawing follows the drawing: its price is only the last level seen.
+  const drawingId = typeof raw.drawingId === 'string' ? raw.drawingId : undefined;
+  const price = typeof raw.price === 'number' && Number.isFinite(raw.price) ? raw.price : null;
+  if (price === null && !drawingId) return null;
   return {
     id: raw.id,
-    price: raw.price,
+    price: price ?? Number.NaN,
+    drawingId,
     condition: ALERT_CONDITIONS.find((c) => c === raw.condition) ?? 'crossing',
     message: typeof raw.message === 'string' ? raw.message : undefined,
     triggered: raw.triggered === true,

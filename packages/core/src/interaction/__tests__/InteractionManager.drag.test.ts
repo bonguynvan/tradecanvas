@@ -352,3 +352,36 @@ describe('InteractionManager — pinch', () => {
     expect(onWheel).not.toHaveBeenCalled();
   });
 });
+
+describe('InteractionManager — double-click on a drawing', () => {
+  it('reports the drawing under the pointer', () => {
+    const opened: string[] = [];
+    im.setDrawingManager(
+      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null) } as unknown as DrawingManager,
+      () => ({ chartRect: { x: 0, y: 0, width: 400, height: 300 } }) as ViewportState,
+    );
+    im.setDrawingDoubleClick((id) => opened.push(id));
+    el.dispatchEvent(at('dblclick', 120));
+    el.dispatchEvent(at('dblclick', 300));
+    expect(opened).toEqual(['d1']);
+  });
+});
+
+describe('InteractionManager — right-click on a drawing', () => {
+  it('opens the drawing’s menu instead of the browser’s', () => {
+    const opened: [string, number][] = [];
+    im.setDrawingManager(
+      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null) } as unknown as DrawingManager,
+      () => ({ chartRect: { x: 0, y: 0, width: 400, height: 300 } }) as ViewportState,
+    );
+    im.setDrawingContextMenu((id, pos) => opened.push([id, pos.x]));
+    const onDrawing = at('contextmenu', 120, { cancelable: true });
+    el.dispatchEvent(onDrawing);
+    const elsewhere = at('contextmenu', 300, { cancelable: true });
+    el.dispatchEvent(elsewhere);
+    expect(opened).toEqual([['d1', 120]]);
+    expect(onDrawing.defaultPrevented).toBe(true);
+    expect(elsewhere.defaultPrevented).toBe(false);
+  });
+});
+

@@ -3,7 +3,7 @@ import { DrawingBase } from '../DrawingBase.js';
 
 /** Circle from a center point and a point on its edge. */
 export class CircleTool extends DrawingBase {
-  descriptor = { type: 'circle' as const, name: 'Circle', requiredAnchors: 2 };
+  descriptor = { type: 'circle' as const, name: 'Circle', requiredAnchors: 2, fill: true };
 
   private geometry(state: DrawingState, viewport: ViewportState): { c: Point; r: number } {
     const c = this.anchorToPixel(state.anchors[0], viewport);

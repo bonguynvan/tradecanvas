@@ -16,6 +16,9 @@ import type {
   DrawingToolType,
   DrawingState,
   DrawingStyle,
+  DrawingOptions,
+  DrawingOptionDefs,
+  DrawingDescriptor,
   DrawingPlugin,
   PanelPosition,
   TradingOrder,
@@ -98,7 +101,7 @@ import {
   xToBarIndex,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, RangePreset, SessionHoursConfig } from '@tradecanvas/core';
+import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
@@ -345,6 +348,8 @@ export class Chart {
       this.scheduleAutoSave();
     });
     this.drawingManager.setEventCallback((event, data) => {
+      // A drawing's alerts go with it.
+      if (event === 'drawingRemove') this.alertManager?.removeDrawingAlerts((data as { id: string }).id);
       this.eventBus.emit(event as ChartEventType, data);
     });
     // Pasted drawings obey the same switches as drawing tools.
@@ -568,6 +573,11 @@ export class Chart {
 
     // Alerts
     this.alertManager = new AlertManager();
+    // Alerts on drawings check the drawing's lines where they are at the latest bar.
+    this.alertManager.setDrawingLevels((id) => {
+      const data = this.dataManager.getData();
+      return data.length > 0 ? this.drawingManager.priceAt(id, data[data.length - 1].time) : null;
+    });
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.alertManager.on('triggered', (alert) => {
       const payload = { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered };
@@ -701,6 +711,11 @@ export class Chart {
         // timestamps (survives timeframe/symbol switches).
         () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
+      this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
+      this.interactionManager.setDrawingContextMenu((id, pos) => {
+        this.drawingManager.select(id);
+        this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
+      });
     }
     if (this.features.trading) {
       this.interactionManager.setTradingManager(
@@ -1416,6 +1431,8 @@ export class Chart {
     type: import('@tradecanvas/commons').DrawingToolType;
     anchors: import('@tradecanvas/commons').AnchorPoint[];
     style?: Partial<DrawingStyle>;
+    /** The tool's own settings (see `getDrawingOptionDefs`); its defaults fill the rest. */
+    options?: DrawingOptions;
     visible?: boolean;
     locked?: boolean;
     meta?: Record<string, unknown>;
@@ -1443,6 +1460,63 @@ export class Chart {
     this.drawingManager.removeDrawing(id);
   }
 
+  /** Remove several drawings as one undo step; locked ones stay. Returns how many went. */
+  removeDrawings(ids: readonly string[]): number {
+    return this.drawingManager.removeDrawings(ids);
+  }
+
+  /** A drawing tool's name, anchors, options and style fields; null for an unknown tool. */
+  getDrawingToolDescriptor(type: DrawingToolType): DrawingDescriptor | null {
+    const descriptor = this.drawingManager.getDescriptor(type);
+    return descriptor ? structuredClone(descriptor) : null;
+  }
+
+  /** The settings a drawing tool offers beyond the shared style (levels, extend…), with defaults. */
+  getDrawingOptionDefs(type: DrawingToolType): DrawingOptionDefs {
+    return this.drawingManager.getOptionDefs(type);
+  }
+
+  /** Every option of a drawing, its tool's defaults filled in. */
+  getDrawingOptions(id: string): DrawingOptions {
+    return this.drawingManager.getDrawingOptions(id);
+  }
+
+  /** Change some of a drawing's options; invalid ones are dropped. False for an unknown drawing. */
+  setDrawingOptions(id: string, options: DrawingOptions): boolean {
+    return this.updateDrawing(id, { options });
+  }
+
+  /**
+   * Change a drawing's anchors (as many as it has), style or options, as one
+   * undo step — or as part of the edit begun with `beginDrawingEdit`.
+   * Applies to locked drawings too. False for an unknown drawing or wrong anchors.
+   */
+  updateDrawing(id: string, patch: DrawingPatch): boolean {
+    const changed = this.drawingManager.updateDrawing(id, patch);
+    if (changed) this.scheduleAutoSave();
+    return changed;
+  }
+
+  /** Start an edit (a settings dialog): the `updateDrawing` calls until `endDrawingEdit` are one undo step. */
+  beginDrawingEdit(id: string): boolean {
+    return this.drawingManager.beginEdit(id);
+  }
+
+  /** Keep the edit as one undo step, or with `cancel` put the drawing back as it was. */
+  endDrawingEdit(id: string, options: { cancel?: boolean } = {}): void {
+    this.drawingManager.endEdit(id, options);
+    this.scheduleAutoSave();
+  }
+
+  /** Options new drawings of `type` start with; null clears them. */
+  setDrawingToolDefaults(type: DrawingToolType, options: DrawingOptions | null): void {
+    this.drawingManager.setToolDefaults(type, options);
+  }
+
+  getDrawingToolDefaults(type: DrawingToolType): DrawingOptions {
+    return this.drawingManager.getToolDefaults(type);
+  }
+
   setDrawingVisible(id: string, visible: boolean): void {
     this.drawingManager.setDrawingVisible(id, visible);
   }
@@ -1452,6 +1526,7 @@ export class Chart {
   }
 
   clearDrawings(): void {
+    for (const d of this.drawingManager.getDrawings()) this.alertManager.removeDrawingAlerts(d.id);
     this.drawingManager.clearDrawings();
   }
 
@@ -2565,6 +2640,73 @@ export class Chart {
     this.scheduleAutoSave();
   }
 
+  // --- Drawing order and groups ---
+
+  /** Ids of the selected drawings, the one clicked last first. */
+  getSelectedDrawingIds(): string[] {
+    return this.drawingManager.getSelectedDrawingIds();
+  }
+
+  /** Draw a drawing on top of the others, under them, or one step up or down. False when already there. */
+  moveDrawing(id: string, to: DrawingOrderMove): boolean {
+    const moved = this.drawingManager.moveDrawing(id, to);
+    if (moved) this.scheduleAutoSave();
+    return moved;
+  }
+
+  /** Group drawings (two or more): they are then selected, hidden and locked together. Returns the group id. */
+  groupDrawings(ids: readonly string[], name?: string): string | null {
+    const group = this.drawingManager.groupDrawings(ids, name);
+    if (group) this.scheduleAutoSave();
+    return group;
+  }
+
+  ungroupDrawings(groupId: string): boolean {
+    return this.afterDrawingChange(this.drawingManager.ungroup(groupId));
+  }
+
+  renameDrawingGroup(groupId: string, name: string): boolean {
+    return this.afterDrawingChange(this.drawingManager.renameGroup(groupId, name));
+  }
+
+  setDrawingGroupVisible(groupId: string, visible: boolean): boolean {
+    return this.afterDrawingChange(this.drawingManager.setGroupVisible(groupId, visible));
+  }
+
+  setDrawingGroupLocked(groupId: string, locked: boolean): boolean {
+    return this.afterDrawingChange(this.drawingManager.setGroupLocked(groupId, locked));
+  }
+
+  /** Every drawing group, its drawings bottom to top. */
+  getDrawingGroups(): { id: string; name: string; ids: string[] }[] {
+    return this.drawingManager.getGroups();
+  }
+
+  private afterDrawingChange(changed: boolean): boolean {
+    if (changed) this.scheduleAutoSave();
+    return changed;
+  }
+
+  /** Whether a drawing has lines an alert can cross (trend lines, rays, horizontals, channels). */
+  canAddDrawingAlert(drawingId: string): boolean {
+    return this.features.alerts && this.drawingManager.hasPriceLevels(drawingId);
+  }
+
+  /**
+   * Alert when the price crosses a drawing's line(s): a trend line where it
+   * is at the latest bar, any line of a channel. Removed with the drawing.
+   * Null when the drawing has no line to cross.
+   */
+  addDrawingAlert(
+    drawingId: string,
+    options: { condition?: 'crossing' | 'crossingUp' | 'crossingDown'; message?: string; repeating?: boolean; label?: string } = {},
+  ): string | null {
+    if (!this.canAddDrawingAlert(drawingId)) return null;
+    const id = this.alertManager.addDrawingAlert(drawingId, options.condition ?? 'crossing', options.message, options.repeating ?? false, options.label);
+    this.scheduleAutoSave();
+    return id;
+  }
+
   getAlerts(): import('@tradecanvas/core').PriceAlert[] {
     return this.alertManager.getAlerts();
   }
@@ -2847,6 +2989,12 @@ export class Chart {
         const sep = a.channel.indexOf(':');
         const renamed = sep > 0 ? instanceIds.get(a.channel.slice(0, sep)) : undefined;
         const channel = renamed ? renamed + a.channel.slice(sep) : a.channel;
+        if (a.drawingId) {
+          if (this.drawingManager.hasPriceLevels(a.drawingId) && (a.condition === 'crossing' || a.condition === 'crossingUp' || a.condition === 'crossingDown')) {
+            this.alertManager.addDrawingAlert(a.drawingId, a.condition, a.message, a.repeating, a.label);
+          }
+          continue;
+        }
         this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
       }
     }

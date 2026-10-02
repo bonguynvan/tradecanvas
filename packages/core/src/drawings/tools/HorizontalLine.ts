@@ -5,6 +5,10 @@ import { priceToY } from '../../viewport/ScaleMapping.js';
 export class HorizontalLineTool extends DrawingBase {
   descriptor = { type: 'horizontalLine' as const, name: 'Horizontal Line', requiredAnchors: 1 };
 
+  priceAt(state: DrawingState): number[] | null {
+    return state.anchors.length < 1 ? null : [state.anchors[0].price];
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const y = priceToY(state.anchors[0].price, viewport);

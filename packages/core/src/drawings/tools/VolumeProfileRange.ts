@@ -8,7 +8,7 @@ import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapp
  * across price levels within that range and renders a horizontal histogram.
  */
 export class VolumeProfileRangeTool extends DrawingBase {
-  descriptor = { type: 'volumeProfileRange' as const, name: 'Volume Profile (Range)', requiredAnchors: 2 };
+  descriptor = { type: 'volumeProfileRange' as const, name: 'Volume Profile (Range)', requiredAnchors: 2, fill: true };
 
   private dataGetter: (() => DataSeries) | null = null;
   private numBins = 40;

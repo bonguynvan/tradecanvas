@@ -111,7 +111,7 @@ abstract class PatternTool extends DrawingBase {
 
 /** Harmonic XABCD pattern (Gartley, Bat, Butterfly, Crab…) with its four Fibonacci ratios. */
 export class XABCDPatternTool extends PatternTool {
-  descriptor = { type: 'xabcdPattern' as const, name: 'XABCD Pattern', requiredAnchors: 5 };
+  descriptor = { type: 'xabcdPattern' as const, name: 'XABCD Pattern', requiredAnchors: 5, fill: true };
   protected readonly pointLabels = ['X', 'A', 'B', 'C', 'D'];
   protected override readonly ratioLinks: RatioLink[] = [
     { from: 0, to: 2, num: [1, 2], den: [0, 1] }, // XB = AB / XA
@@ -124,7 +124,7 @@ export class XABCDPatternTool extends PatternTool {
 
 /** ABCD pattern: two equal-ish legs, with the BC retracement and CD projection ratios. */
 export class ABCDPatternTool extends PatternTool {
-  descriptor = { type: 'abcdPattern' as const, name: 'ABCD Pattern', requiredAnchors: 4 };
+  descriptor = { type: 'abcdPattern' as const, name: 'ABCD Pattern', requiredAnchors: 4, fill: true };
   protected readonly pointLabels = ['A', 'B', 'C', 'D'];
   protected override readonly ratioLinks: RatioLink[] = [
     { from: 0, to: 2, num: [1, 2], den: [0, 1] }, // BC / AB
@@ -137,7 +137,7 @@ export class ABCDPatternTool extends PatternTool {
  * right shoulder, end); the neckline runs through the two neck points.
  */
 export class HeadAndShouldersTool extends PatternTool {
-  descriptor = { type: 'headAndShoulders' as const, name: 'Head and Shoulders', requiredAnchors: 7 };
+  descriptor = { type: 'headAndShoulders' as const, name: 'Head and Shoulders', requiredAnchors: 7, fill: true };
   protected readonly pointLabels = ['', 'Left Shoulder', '', 'Head', '', 'Right Shoulder', ''];
   protected override readonly triangles: [number, number, number][] = [[0, 1, 2], [2, 3, 4], [4, 5, 6]];
 

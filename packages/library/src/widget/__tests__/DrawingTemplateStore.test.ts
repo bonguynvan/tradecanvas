@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DrawingTemplateStore, type KeyValueStorage } from '../DrawingTemplateStore.js';
+import { DrawingDefaultsStore, DrawingTemplateStore, type KeyValueStorage } from '../DrawingTemplateStore.js';
 
 class MemoryStorage implements KeyValueStorage {
   private map = new Map<string, string>();
@@ -76,3 +76,46 @@ describe('DrawingTemplateStore', () => {
     expect(store.get('T')?.style.color).toBe('#f00'); // in-memory still works
   });
 });
+
+describe('DrawingTemplateStore with tool options', () => {
+  it('keeps a tool’s options with its template and lists it only for that tool', () => {
+    const storage = new MemoryStorage();
+    const store = new DrawingTemplateStore('k', storage);
+    store.save('Plain', { color: '#fff' });
+    store.save('Golden', { color: '#fc0' }, { type: 'fibRetracement', options: { reverse: true } });
+    const reloaded = new DrawingTemplateStore('k', storage);
+    expect(reloaded.list('fibRetracement').map((t) => t.name)).toEqual(['Plain', 'Golden']);
+    expect(reloaded.list('trendLine').map((t) => t.name)).toEqual(['Plain']);
+    expect(reloaded.get('Golden', 'fibRetracement')).toEqual({
+      name: 'Golden', style: { color: '#fc0' }, type: 'fibRetracement', options: { reverse: true },
+    });
+  });
+
+  it('lets two tools have a template of the same name', () => {
+    const store = new DrawingTemplateStore('k', new MemoryStorage());
+    store.save('Mine', { color: '#111' }, { type: 'trendLine', options: {} });
+    store.save('Mine', { color: '#222' }, { type: 'rectangle', options: {} });
+    expect(store.get('Mine', 'trendLine')?.style.color).toBe('#111');
+    expect(store.get('Mine', 'rectangle')?.style.color).toBe('#222');
+    store.remove('Mine', 'rectangle');
+    expect(store.list('rectangle')).toEqual([]);
+  });
+});
+
+describe('DrawingDefaultsStore', () => {
+  it('remembers each tool’s default options', () => {
+    const storage = new MemoryStorage();
+    const store = new DrawingDefaultsStore('d', storage);
+    store.set('fibRetracement', { reverse: true });
+    store.set('trendLine', { extendRight: true });
+    store.set('trendLine', null);
+    expect(new DrawingDefaultsStore('d', storage).all()).toEqual({ fibRetracement: { reverse: true } });
+  });
+
+  it('reads nothing from corrupt storage', () => {
+    const storage = new MemoryStorage();
+    storage.setItem('d', '{nope');
+    expect(new DrawingDefaultsStore('d', storage).all()).toEqual({});
+  });
+});
+

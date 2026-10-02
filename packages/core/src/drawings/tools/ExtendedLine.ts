@@ -30,6 +30,12 @@ export class ExtendedLineTool extends DrawingBase {
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
+  priceAt(state: DrawingState, time: number): number[] | null {
+    if (state.anchors.length < 2) return null;
+    const price = this.linePriceAt(state.anchors[0], state.anchors[1], time, true, true);
+    return price === null ? null : [price];
+  }
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const p1 = this.anchorToPixel(state.anchors[0], viewport);

@@ -35,6 +35,8 @@ export class InteractionManager {
   private alertDragHandler: AlertDragHandler | null = null;
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
+  private onDrawingDoubleClick: ((id: string) => void) | null = null;
+  private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
   private axisStrips: (() => AxisStrips) | null = null;
   private savedTouchAction = '';
   private measureHandlers: {
@@ -159,6 +161,16 @@ export class InteractionManager {
   setDrawingManager(manager: DrawingManager, viewportGetter: () => ViewportState): void {
     this.drawingManager = manager;
     this.viewportGetter = viewportGetter;
+  }
+
+  /** Called when a drawing is right-clicked (to open its menu); the browser's menu stays shut. */
+  setDrawingContextMenu(cb: (id: string, pos: Point) => void): void {
+    this.onDrawingContextMenu = cb;
+  }
+
+  /** Called with a drawing's id when it is double-clicked (to open its settings, say). */
+  setDrawingDoubleClick(cb: (id: string) => void): void {
+    this.onDrawingDoubleClick = cb;
   }
 
   /** Enable dragging price-alert lines. Hit-tested after trading/drawing. */
@@ -492,9 +504,13 @@ export class InteractionManager {
     const onDblClick = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
       const axis = hitAxis(pos);
-      if (axis && axis !== 'inert' && this.onAxisDoubleClick) {
-        this.onAxisDoubleClick(axis);
+      if (axis) {
+        if (axis !== 'inert') this.onAxisDoubleClick?.(axis);
+        return;
       }
+      const vp = getVP();
+      const id = vp ? this.drawingManager?.drawingAt(pos, vp) : null;
+      if (id) this.onDrawingDoubleClick?.(id);
     };
 
     const onMouseLeave = () => {
@@ -547,8 +563,17 @@ export class InteractionManager {
 
     const onContextMenu = (e: MouseEvent) => {
       const vp = getVP();
-      if (!this.tradingManager || !vp) return;
-      const shown = this.tradingManager.onContextMenu(this.getMousePos(e), vp);
+      if (!vp) return;
+      const pos = this.getMousePos(e);
+      // A drawing under the pointer has a menu of its own.
+      const drawingId = this.onDrawingContextMenu ? this.drawingManager?.drawingAt(pos, vp) : null;
+      if (drawingId) {
+        e.preventDefault();
+        this.onDrawingContextMenu?.(drawingId, pos);
+        return;
+      }
+      if (!this.tradingManager) return;
+      const shown = this.tradingManager.onContextMenu(pos, vp);
       // Only suppress the native menu when the trading context menu actually
       // opened — otherwise users with trading disabled lose right-click entirely.
       if (shown) e.preventDefault();

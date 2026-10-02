@@ -1,13 +1,17 @@
 import type { DrawingState } from '@tradecanvas/commons';
 
 export interface UndoableAction {
-  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch';
+  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch' | 'drawingOrder';
   /** State before the action (null for create) */
   before: DrawingState | null;
   /** State after the action (null for remove) */
   after: DrawingState | null;
   /** For 'drawingBatch': the actions undone/redone together as one step. */
   actions?: UndoableAction[];
+  /** For 'drawingRemove': where the drawing was, so undo puts it back there. */
+  index?: number;
+  /** For 'drawingOrder': the drawings' ids, bottom to top, before and after. */
+  order?: { before: string[]; after: string[] };
 }
 
 export class UndoRedoManager {

@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { timeToX } from '../../viewport/ScaleMapping.js';
+import { levelList } from './options.js';
 
 /**
  * Vertical lines at Fibonacci intervals (1, 2, 3, 5, 8, 13, 21, 34, 55)
@@ -10,13 +11,14 @@ import { timeToX } from '../../viewport/ScaleMapping.js';
  *
  * Useful for projecting future turning points based on prior swing duration.
  */
-const FIB_TIME_LEVELS = [1, 2, 3, 5, 8, 13, 21, 34, 55];
+export const FIB_TIME_LEVELS = [1, 2, 3, 5, 8, 13, 21, 34, 55];
 
 export class FibTimeZonesTool extends DrawingBase {
   descriptor = {
     type: 'fibTimeZones' as const,
     name: 'Fibonacci Time Zones',
     requiredAnchors: 2,
+    options: { levels: { kind: 'levels' as const, label: 'Levels', default: levelList(FIB_TIME_LEVELS, [0, 89, 144]) } },
   };
 
   render(
@@ -36,8 +38,8 @@ export class FibTimeZonesTool extends DrawingBase {
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
 
-    this.applyLineStyle(ctx, state.style);
-    for (const mult of FIB_TIME_LEVELS) {
+    for (const { value: mult, color } of this.visibleLevels(state)) {
+      this.applyLineStyle(ctx, { ...state.style, color: color ?? state.style.color });
       const t = anchorA.time + unit * mult;
       const x = timeToX(t, viewport);
       if (x < chartRect.x || x > chartRect.x + chartRect.width) continue;
@@ -48,7 +50,7 @@ export class FibTimeZonesTool extends DrawingBase {
       ctx.lineTo(x, chartRect.y + chartRect.height);
       ctx.stroke();
 
-      ctx.fillStyle = state.style.color;
+      ctx.fillStyle = color ?? state.style.color;
       ctx.fillText(String(mult), x, chartRect.y + 2);
     }
     ctx.globalAlpha = 1;
@@ -72,7 +74,7 @@ export class FibTimeZonesTool extends DrawingBase {
     if (point.y < chartRect.y || point.y > chartRect.y + chartRect.height) {
       return false;
     }
-    for (const mult of FIB_TIME_LEVELS) {
+    for (const { value: mult } of this.visibleLevels(state)) {
       const t = anchorA.time + unit * mult;
       const x = timeToX(t, viewport);
       if (Math.abs(point.x - x) <= tolerance) return true;
