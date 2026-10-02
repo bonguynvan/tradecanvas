@@ -36,6 +36,7 @@ export class InteractionManager {
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
   private axisStrips: (() => AxisStrips) | null = null;
+  private savedTouchAction = '';
   private measureHandlers: {
     begin: (pos: Point) => void;
     move: (pos: Point) => void;
@@ -188,6 +189,10 @@ export class InteractionManager {
   attach(): void {
     const getVP = () => this.viewportGetter?.() ?? null;
     attachedCharts.add(this.element);
+    // The chart handles its own touch gestures: no page pinch-zoom or
+    // scrolling starts on it.
+    this.savedTouchAction = this.element.style.getPropertyValue('touch-action');
+    this.element.style.setProperty('touch-action', 'none');
 
     // Axis hit-test: returns 'price' if pointer is in the price pane's axis
     // strip (right, or a left one that mirrors it), 'time' if in the bottom
@@ -654,11 +659,9 @@ export class InteractionManager {
         const dist = this.getTouchDistance(e.touches[0], e.touches[1]);
         const mid = this.getTouchMidpoint(e.touches[0], e.touches[1]);
 
-        // Pinch zoom
-        if (this.lastTouchDist > 0) {
-          const scale = dist / this.lastTouchDist;
-          const delta = (scale - 1) * 0.5; // Dampen
-          this.zoomHandler?.onWheel(-delta * 100, mid);
+        // Pinch zoom: the bars scale with the distance between the fingers.
+        if (this.lastTouchDist > 0 && dist > 0) {
+          this.zoomHandler?.onPinch(dist / this.lastTouchDist, mid);
         }
 
         // Two-finger pan — horizontal only, so a pinch doesn't also drag the
@@ -740,6 +743,8 @@ export class InteractionManager {
 
   detach(): void {
     attachedCharts.delete(this.element);
+    if (this.savedTouchAction) this.element.style.setProperty('touch-action', this.savedTouchAction);
+    else this.element.style.removeProperty('touch-action');
     if (lastPressedChart === this.element) lastPressedChart = null;
     for (const remove of this.boundHandlers) remove();
     this.boundHandlers = [];

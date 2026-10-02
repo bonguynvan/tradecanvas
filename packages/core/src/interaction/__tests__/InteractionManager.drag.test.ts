@@ -311,7 +311,7 @@ describe('InteractionManager — touch on HTML layered over the chart', () => {
     const control = document.createElement('button');
     el.appendChild(control);
     const zoom = vi.fn();
-    im.setZoomHandler({ onWheel: zoom } as unknown as ZoomHandler);
+    im.setZoomHandler({ onPinch: zoom } as unknown as ZoomHandler);
     el.dispatchEvent(touches('touchstart', [[100, 50]]));
     const second = touches('touchstart', [[100, 50], [200, 50]]);
     control.dispatchEvent(second);
@@ -330,5 +330,25 @@ describe('InteractionManager — mouse over HTML layered over the chart', () => 
     el.dispatchEvent(at('mousemove', 100));
     control.dispatchEvent(at('mousemove', 20)); // also the mousemove a browser sends after a tap
     expect(moves).toEqual([100]);
+  });
+});
+
+describe('InteractionManager — pinch', () => {
+  const touches = (...xs: number[]) => xs.map((x) => ({ clientX: x, clientY: 100 }));
+  const touch = (type: string, ...xs: number[]) => {
+    const e = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(e, 'touches', { value: touches(...xs) });
+    el.dispatchEvent(e);
+  };
+
+  it('zooms by as much as the fingers spread', () => {
+    const onWheel = vi.fn();
+    const onPinch = vi.fn();
+    im.setZoomHandler({ onWheel, onPinch } as unknown as ZoomHandler);
+    touch('touchstart', 150, 250); // 100px apart
+    for (let x = 0; x <= 50; x += 10) touch('touchmove', 150 - x, 250 + x); // to 200px apart
+    const total = onPinch.mock.calls.reduce((product, [scale]) => product * scale, 1);
+    expect(total).toBeCloseTo(2);
+    expect(onWheel).not.toHaveBeenCalled();
   });
 });

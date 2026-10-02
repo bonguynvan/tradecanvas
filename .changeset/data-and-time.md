@@ -140,6 +140,9 @@
     `MessageKey` / `WidgetMessages` types.
   - The settings offer number formats for these languages.
 - The widget's replay bar sits above the time axis.
+- Pinch-zoom follows the fingers (new `ZoomHandler.onPinch`): spreading them
+  twice as far apart doubles the bar width. It used to move about a twentieth
+  of that. The chart's surface gets `touch-action: none` while attached.
 - Dragging inside an indicator pane pans the chart. It used to zoom time as if
   the time axis had been dragged (the time strip started at the bottom of the
   price pane, not below the panes). The axis strip beside a pane takes no
