@@ -77,6 +77,34 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>自定义画线工具</h2>
+<p>
+  继承 <code>DrawingBase</code> 以使用它的辅助方法（锚点转像素、线型、控制点），再描述该工具并注册。
+  <code>descriptor.options</code> 中列出的设置会出现在组件的设置对话框里，并随画线一起保存。
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* 在 this.anchorToPixel(state.anchors[0], viewport) 处 */ }
+  hitTest(point, state, viewport, tolerance) { /* 指针是否在它上面？ */ return false }
+  // 可选：各条线的价格，便于提醒跟随它们
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  描述对象还可以说明工具的绘制方式（<code>creation</code>：
+  <code>'clicks'</code>、<code>'freehand'</code> 或 <code>'path'</code>，并可配合
+  <code>maxAnchors</code>），以及对话框是否提供填充（<code>fill</code>）或文本
+  （<code>text</code>）。工具可以用 <code>moveHandle()</code> 移动不属于锚点的控制点；
+  如果绘制时需要用到图表的K线，则通过 <code>setDataGetter()</code> 获取。
+</p>
+
 <h2>自定义图表类型</h2>
 <p><code>ChartTypePlugin</code> 提供一个渲染器和一个可选的数据变换；切换方式与内置类型相同：</p>
 <pre><code>{`registerPlugin({

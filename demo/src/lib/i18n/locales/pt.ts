@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading em Canvas2D: 17 tipos de gráfico, 85 indicadores, 40 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting. Zero dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading em Canvas2D: 17 tipos de gráfico, 85 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting. Zero dependências, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const pt: SiteMessages = {
     release: 'renderizador com dois canvas, deslocamento livre',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 85 indicadores, 40 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado em Canvas2D, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 85 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado em Canvas2D, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -138,13 +138,13 @@ const pt: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Ferramentas de desenho',
-      stat: '40 ferramentas',
+      stat: '69 ferramentas',
       blurb:
-        'Linhas de tendência, de informação e de ângulo, canais e leques de Fibonacci, tridentes de Andrews e de Schiff, XABCD harmônico, ombro-cabeça-ombro, ciclos, caixas de medição. Ímã, desfazer/refazer, salvar e restaurar em JSON.',
+        'Ferramentas de Fibonacci e Gann com níveis próprios, ondas de Elliott, padrões harmônicos, notas e pincéis. Clique duplo em um desenho abre suas configurações e clique direito, seu menu; os alertas acompanham as linhas de tendência, e a ferramenta de posição comprada/vendida calcula o tamanho da posição.',
       tryThis: [
-        'Abra o grupo zigue-zague (Padrões) na barra de ferramentas à esquerda e posicione um ABCD',
-        'Clique em um desenho, arraste as alças e depois pressione Ctrl+Z',
-        'Os desenhos ficam ancorados no tempo, então sobrevivem à troca de tempo gráfico',
+        'Dê um clique duplo na retração de Fibonacci e edite seus níveis',
+        'Clique direito em um desenho: avance-o, agrupe-o ou adicione um alerta',
+        'Escolha o pincel ou a ferramenta de caminho; Enter encerra um caminho',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const pt: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 40 ferramentas de desenho, lista de observação, trading, replay, em 14 idiomas.',
+        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 69 ferramentas de desenho, lista de observação, trading, replay, em 14 idiomas.',
       },
       react: {
         title: 'React',

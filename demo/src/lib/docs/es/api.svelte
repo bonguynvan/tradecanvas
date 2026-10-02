@@ -384,17 +384,32 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <p>
   El botón de capas de la barra de herramientas abre un panel con el árbol de
   objetos, que lista todos los indicadores y dibujos activos. Los indicadores se
-  pueden quitar; cada dibujo se puede mostrar / ocultar, bloquear / desbloquear y
-  eliminar. Activado por defecto; desactívalo con <code>objectTree: false</code>.
+  pueden quitar; cada dibujo se puede mostrar / ocultar, bloquear / desbloquear,
+  configurar y eliminar, y los grupos aparecen con sus dibujos debajo. Activado
+  por defecto; desactívalo con <code>objectTree: false</code>.
   Los controles de dibujo corresponden a:
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
 chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
+chart.groupDrawings(ids, 'Weekly levels')  // se ocultan, bloquean y seleccionan juntos
+chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<h3>Configuración y menú del dibujo</h3>
+<p>
+  Haz doble clic en un dibujo, o usa su engranaje en el árbol de objetos, para
+  abrir su configuración: el estilo, la configuración propia de la herramienta
+  (niveles de Fibonacci, extensiones, etiquetas…) y sus puntos en la zona horaria
+  del gráfico. Haz clic derecho en un dibujo para ver su menú: configuración, una
+  alerta en su línea, orden, agrupar, bloquear, ocultar, duplicar y eliminar. La
+  barra lateral también tiene un borrador, una herramienta de zoom y un imán que
+  puede estar desactivado, débil o fuerte. Consulta
+  <a href={href('/docs/drawing-tools')}>Herramientas de dibujo</a> para ver la API que hay debajo.
+</p>
+
 <p>
   El botón de engranaje de cada fila de indicador abre un <strong>cuadro de
   configuración</strong> que examina los parámetros del indicador (números,

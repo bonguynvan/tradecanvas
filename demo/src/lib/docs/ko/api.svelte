@@ -373,16 +373,29 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <p>
   도구 모음의 레이어 버튼을 누르면 모든 활성 지표와 그림을 나열하는 개체 트리
   패널이 열립니다. 지표는 삭제할 수 있고, 그림은 항목마다
-  표시 / 숨기기, 잠금 / 잠금 해제, 삭제를 할 수 있습니다. 기본적으로 활성화되어 있으며
+  표시 / 숨기기, 잠금 / 잠금 해제, 설정, 삭제를 할 수 있고, 그룹은 소속된 그림과
+  함께 그 아래에 나열됩니다. 기본적으로 활성화되어 있으며
   <code>objectTree: false</code>로 끌 수 있습니다. 그림 관련 컨트롤은 다음 API에 대응합니다.
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
 chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
+chart.groupDrawings(ids, 'Weekly levels')  // 함께 숨기고, 잠그고, 선택됨
+chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<h3>그림 설정과 메뉴</h3>
+<p>
+  그림을 더블 클릭하거나 개체 트리의 톱니바퀴 버튼을 누르면 그 그림의 설정이 열립니다.
+  스타일, 도구 고유의 설정(피보나치 레벨, 연장, 라벨 등), 차트 시간대 기준의 각 점을
+  다룰 수 있습니다. 그림을 오른쪽 클릭하면 메뉴가 열리며, 설정, 선에 거는 알림, 순서,
+  그룹, 잠금, 숨기기, 복제, 삭제를 고를 수 있습니다. 사이드바에는 지우개, 확대 도구,
+  그리고 꺼짐·약함·강함으로 바꾸는 자석도 있습니다. 바탕이 되는 API는
+  <a href={href('/docs/drawing-tools')}>그리기 도구</a>를 참고하세요.
+</p>
+
 <p>
   각 지표 행의 톱니바퀴 버튼을 누르면 <strong>설정 대화상자</strong>가 열립니다.
   이 대화상자는 지표의 파라미터(숫자, 토글, 색상)를 자동으로 읽어 오고, 변경 사항을

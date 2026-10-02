@@ -11,7 +11,7 @@ High-performance canvas trading chart with built-in indicators, drawing tools, a
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
 - **85 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
-- **40 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan), horizontal/vertical lines, channels, pitchforks (Andrews, Schiff, modified Schiff), Gann fans / boxes, cyclic lines, harmonic patterns (XABCD, ABCD, head and shoulders, Elliott waves), date & price range, Long/Short Position, Volume Profile range. With undo/redo and full serialization.
+- **69 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan and arcs, circles, spiral, wedge), horizontal/vertical lines, channels, pitchforks and pitchfan, Gann fan / box / square, cycles, harmonic patterns (XABCD, cypher, ABCD, three drives, head and shoulders), Elliott waves, notes, callouts and marks, brush and path, forecast and projection, Long/Short Position with position sizing, Volume Profile range. Each with its own settings, alerts on trend lines, groups and layers, undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
 - **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
@@ -59,7 +59,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 85 indicators, all 40 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 85 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -727,7 +727,7 @@ mc.worstMaxDrawdownPct
 | Chart types | 17 + 6 finance | 4 | 8 (non-financial) | 10+ |
 | Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
 | Built-in indicators | 85 | 0 | 0 | ~30 |
-| Drawing tools | 40 | 0 | 0 | Some |
+| Drawing tools | 69 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |
 | Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |
 | Save/load state | Yes | No | No | Yes |

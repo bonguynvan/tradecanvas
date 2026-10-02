@@ -129,12 +129,23 @@ chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
 import type { Chart } from '@tradecanvas/chart';
 
 declare const chart: Chart;
+declare const t1: number, t2: number; // bar times
 
 chart.setDrawingTool('fibRetracement'); // the user clicks the points; null cancels
+const line = chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 61_800 }, { time: t2, price: 63_400 }],
+  options: { extendRight: true },        // each tool's own settings: chart.getDrawingOptionDefs(type)
+});
+if (line && chart.canAddDrawingAlert(line)) chart.addDrawingAlert(line, { condition: 'crossingDown' });
 chart.addAlert(65_000, 'crossingUp', 'BTC above 65k');
 chart.setPositions([{ id: 'p1', side: 'buy', entryPrice: 62_500, quantity: 0.5, stopLoss: 61_000, takeProfit: 66_000 }]);
 chart.on('positionModify', (e) => console.log('stop or target dragged', e.payload));
 ```
+
+69 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
+and drawings can be grouped (`groupDrawings`), reordered (`moveDrawing`) and erased
+(`setEraserMode`). `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
 
 ## Saving layouts
 
@@ -165,7 +176,11 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
 | `indicatorUpdate` | `{ from }`: values recomputed from that bar on (once per update) |
-| `drawingCreate`, `orderModify`, `positionModify` | the object |
+| `drawingCreate` | `{ id, type, drawing }` (also when an undo brings a drawing back) |
+| `drawingUpdate`, `drawingRemove`, `drawingDoubleClick` | `{ id }` |
+| `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
+| `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
+| `orderModify`, `positionModify` | the object |
 
 ## Theming
 

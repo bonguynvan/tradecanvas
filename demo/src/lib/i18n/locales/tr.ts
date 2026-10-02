@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 85 gösterge, 40 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 85 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const tr: SiteMessages = {
     release: 'iki katmanlı canvas çizimi, serbest kaydırma',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 85 gösterge, 40 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 85 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -138,13 +138,13 @@ const tr: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Çizim araçları',
-      stat: '40 araç',
+      stat: '69 araç',
       blurb:
-        'Trend, bilgi ve açı çizgileri, Fibonacci kanalları ve yelpazeleri, Andrews ve Schiff dirgenleri, harmonik XABCD, omuz baş omuz, döngüler, ölçüm kutuları. Mıknatısla yapışma, geri al/yinele, JSON olarak kaydetme ve geri yükleme.',
+        'Kendi seviyelerinizi kullanabildiğiniz Fibonacci ve Gann araçları, Elliott dalgaları, harmonik formasyonlar, notlar ve fırçalar. Bir çizime çift tıklamak ayarlarını, sağ tıklamak menüsünü açar; alarmlar trend çizgilerini izler, Uzun/Kısa pozisyon aracı pozisyon büyüklüğünü hesaplar.',
       tryThis: [
-        'Sol araç çubuğunda zikzak (Formasyonlar) grubunu açın ve bir ABCD yerleştirin',
-        'Bir çizime tıklayın, tutamaçlarını sürükleyin, ardından Ctrl+Z’ye basın',
-        'Çizimler zamana bağlı kalır, bu yüzden zaman dilimi değişse de yerinde durur',
+        'Fibonacci düzeltmesine çift tıklayın ve seviyelerini düzenleyin',
+        'Bir çizime sağ tıklayın: bir öne getirin, gruplayın ya da alarm ekleyin',
+        'Fırçayı ya da yol aracını seçin; Enter bir yolu bitirir',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const tr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 40 çizim aracı, izleme listesi, alım satım, tekrar; 14 dilde.',
+        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 14 dilde.',
       },
       react: {
         title: 'React',
