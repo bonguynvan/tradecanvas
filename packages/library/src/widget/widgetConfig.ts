@@ -217,6 +217,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   periodLevelsPeriod: 'day',
   legendVisible: true,
   barCountdown: true,
+  indicatorValueLabels: true,
   logScale: false,
   scaleMode: 'regular',
   autoScale: true,

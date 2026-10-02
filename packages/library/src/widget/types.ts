@@ -240,6 +240,8 @@ export interface ChartSettingsState {
   periodLevelsPeriod: 'day' | 'week';
   legendVisible: boolean;
   barCountdown: boolean;
+  /** Tag each indicator line's latest value on its scale. */
+  indicatorValueLabels: boolean;
   logScale: boolean;
   scaleMode: PriceScaleMode;
   autoScale: boolean;

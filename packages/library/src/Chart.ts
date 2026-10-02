@@ -1301,7 +1301,7 @@ export class Chart {
   }
 
   /** Get all active indicator instances with their current params */
-  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] {
+  getActiveIndicators(): import('@tradecanvas/core').ActiveIndicatorInfo[] {
     return this.indicatorEngine.getActiveIndicators();
   }
 

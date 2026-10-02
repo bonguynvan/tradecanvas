@@ -77,7 +77,7 @@ describe('IndicatorEngine.getOverlayPriceRange', () => {
 });
 
 describe('IndicatorEngine colours', () => {
-  it('starts each further instance of an indicator one step along the palette', () => {
+  it('gives each new line in the price pane a colour no line there has', () => {
     const engine = new IndicatorEngine();
     engine.register(fakeOverlayPlugin('ema'));
     engine.register(fakeOverlayPlugin('sma'));
@@ -85,9 +85,34 @@ describe('IndicatorEngine colours', () => {
     const other = engine.addIndicator('sma', {}, bars(5));
     const second = engine.addIndicator('ema', {}, bars(5));
     const colour = (id: string) => engine.getIndicatorStyle(id)!.colors[0];
-    expect(colour(other)).toBe(colour(first)); // a different indicator keeps its usual colour
-    expect(colour(second)).not.toBe(colour(first));
+    expect(new Set([colour(first), colour(other), colour(second)]).size).toBe(3);
     expect(engine.getIndicatorStyle(second)!.colors).toHaveLength(engine.getIndicatorStyle(first)!.colors.length);
+  });
+
+  it('keeps the usual colour for a pane indicator in a pane of its own', () => {
+    const engine = new IndicatorEngine();
+    engine.register(fakeOverlayPlugin('ema'));
+    engine.register(fakePanelPlugin('rsi'));
+    const ema = engine.addIndicator('ema', {}, bars(5));
+    const rsi = engine.addIndicator('rsi', {}, bars(5));
+    expect(engine.getIndicatorStyle(rsi)!.colors[0]).toBe(engine.getIndicatorStyle(ema)!.colors[0]);
+  });
+
+  it('recolours a line moved into a pane where its colour is taken, unless it was chosen', () => {
+    const engine = new IndicatorEngine();
+    engine.register(fakeOverlayPlugin('sma'));
+    engine.register(fakePanelPlugin('rsi'));
+    const rsi = engine.addIndicator('rsi', {}, bars(5));
+    const sma = engine.addIndicator('sma', {}, bars(5));
+    const colour = (id: string) => engine.getIndicatorStyle(id)!.colors[0];
+    expect(colour(sma)).toBe(colour(rsi)); // different panes
+    engine.setPane(sma, rsi);
+    expect(colour(sma)).not.toBe(colour(rsi));
+
+    const chosen = engine.addIndicator('sma', {}, bars(5));
+    engine.updateIndicatorStyle(chosen, { colors: [colour(rsi)] });
+    engine.setPane(chosen, rsi);
+    expect(colour(chosen)).toBe(colour(rsi)); // someone's choice stays
   });
 
   it('gives a new instance a colour no remaining instance uses', () => {

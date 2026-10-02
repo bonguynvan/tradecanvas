@@ -70,14 +70,8 @@ export class IndicatorEngine {
     };
     if (options.pane && this.instances.has(options.pane)) config.pane = options.pane;
 
-    // A second EMA must not look like the first: each further instance of an
-    // indicator starts one step along the palette.
-    const taken = new Set<string>();
-    for (const other of this.instances.values()) if (other.config.id === id) taken.add(other.style.colors[0]);
-    let shift = TC_SERIES_COLORS.findIndex((c) => !taken.has(c));
-    if (shift < 0) shift = taken.size % TC_SERIES_COLORS.length;
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? [...TC_SERIES_COLORS.slice(shift), ...TC_SERIES_COLORS.slice(0, shift)],
+      colors: config.style?.colors ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
       lineWidths: config.style?.lineWidths ?? [1.5],
       opacity: config.style?.opacity ?? 1,
     };
@@ -206,13 +200,53 @@ export class IndicatorEngine {
     return out;
   }
 
-  /** Move an instance into another instance's pane (`null`: back to its own place). */
+  /**
+   * Move an instance into another instance's pane (`null`: back to its own
+   * place). Still on its default colours, it takes one no line there has.
+   */
   setPane(instanceId: string, hostId: string | null): boolean {
     const instance = this.instances.get(instanceId);
     if (!instance || hostId === instanceId || (hostId !== null && !this.instances.has(hostId))) return false;
     if (hostId === null) delete instance.config.pane;
     else instance.config.pane = hostId;
+    if (isPalette(instance.style.colors)) {
+      const placement = instance.plugin.descriptor.placement;
+      const pane = instance.config.pane ?? null;
+      if (this.colorsInPane(placement, pane, instanceId).has(instance.style.colors[0])) {
+        instance.style.colors = paletteFrom(this.freeColor(instance.config.id, placement, pane, instanceId));
+      }
+    }
     return true;
+  }
+
+  /**
+   * The main colours of the lines drawn where an indicator would go: the
+   * price pane (an overlay), another instance's pane, or a pane of its own.
+   */
+  private colorsInPane(placement: IndicatorDescriptor['placement'], pane: string | null, except?: string): Set<string> {
+    const out = new Set<string>();
+    for (const other of this.instances.values()) {
+      if (other.config.instanceId === except) continue;
+      const there = pane !== null
+        ? other.config.instanceId === pane || other.config.pane === pane
+        : placement === 'overlay' && other.plugin.descriptor.placement === 'overlay' && !other.config.pane;
+      if (there) out.add(other.style.colors[0]);
+    }
+    return out;
+  }
+
+  /**
+   * The first palette colour no line in the indicator's pane and no other
+   * instance of it starts with, so a second EMA, or an SMA next to an EMA,
+   * does not look like the first.
+   */
+  private freeColor(id: string, placement: IndicatorDescriptor['placement'], pane: string | null, except?: string): number {
+    const taken = this.colorsInPane(placement, pane, except);
+    for (const other of this.instances.values()) {
+      if (other.config.id === id && other.config.instanceId !== except) taken.add(other.style.colors[0]);
+    }
+    const free = TC_SERIES_COLORS.findIndex((c) => !taken.has(c));
+    return free >= 0 ? free : taken.size % TC_SERIES_COLORS.length;
   }
 
   getOutput(instanceId: string): IndicatorOutput | null {
@@ -422,4 +456,17 @@ function latestValues(instance: IndicatorInstance): { value: number; color: stri
     if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
   }
   return out;
+}
+
+/** The series palette rotated to start at `shift`. */
+function paletteFrom(shift: number): string[] {
+  return [...TC_SERIES_COLORS.slice(shift), ...TC_SERIES_COLORS.slice(0, shift)];
+}
+
+/** Whether `colors` is still a rotation of the palette (not chosen by someone). */
+function isPalette(colors: readonly string[]): boolean {
+  const n = TC_SERIES_COLORS.length;
+  if (colors.length !== n) return false;
+  const shift = TC_SERIES_COLORS.indexOf(colors[0]);
+  return shift >= 0 && colors.every((c, i) => c === TC_SERIES_COLORS[(shift + i) % n]);
 }

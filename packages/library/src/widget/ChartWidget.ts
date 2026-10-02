@@ -1,6 +1,6 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, Theme, TimeFrame } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
 import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -24,7 +24,7 @@ import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.j
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS } from '@tradecanvas/core';
+import { RANGE_PRESETS, sourceParam } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -577,10 +577,12 @@ export class ChartWidget {
       this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
         onApply: (instanceId, params) => {
           this.chart.updateIndicator(instanceId, params);
-          this.syncIndicatorsFromChart(); // the chip shows the parameters
+          this.syncIndicatorsFromChart(); // the legend shows the parameters
         },
+        onStyle: (instanceId, style) => this.chart.updateIndicatorStyle(instanceId, style),
+        onLevels: (instanceId, levels) => this.chart.setIndicatorLevels(instanceId, levels),
         onClose: () => {},
-      });
+      }, this.t);
       this.objectTree = new WidgetObjectTree(this.root, {
         onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
         onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
@@ -1118,13 +1120,24 @@ export class ChartWidget {
 
   private openIndicatorSettings(instanceId: string): void {
     if (!this.indicatorSettings) return;
-    const ind = this.chart.getActiveIndicators().find((i) => i.instanceId === instanceId);
+    const active = this.chart.getActiveIndicators();
+    const ind = active.find((i) => i.instanceId === instanceId);
     if (!ind) return;
+    const style = this.chart.getIndicatorStyle(instanceId);
+    const pane = ind.descriptor.placement === 'panel' || !!ind.pane;
     this.indicatorSettings.open({
       instanceId,
       name: ind.descriptor.name,
       defaults: ind.descriptor.defaultConfig,
       params: ind.params,
+      inputs: ind.descriptor.inputs,
+      lineSources: lineSourcesFor(instanceId, active),
+      plots: ind.descriptor.plots,
+      colors: style?.colors,
+      lineWidth: style?.lineWidths[0],
+      // Levels belong to pane indicators.
+      levels: pane ? this.chart.getIndicatorLevels(instanceId) : undefined,
+      defaultLevels: ind.descriptor.levels,
     });
   }
 
@@ -1687,6 +1700,9 @@ export class ChartWidget {
     if (patch.pivotStructureLabels !== undefined) this.chart.setPivotMarkersConfig({ structureLabels: patch.pivotStructureLabels });
     if (patch.periodLevelsVisible !== undefined) this.chart.setPeriodLevelsVisible(patch.periodLevelsVisible);
     if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
+    if (patch.legendVisible !== undefined) this.chart.setLegend({ visible: patch.legendVisible });
+    if (patch.barCountdown !== undefined) this.chart.setBarCountdownVisible(patch.barCountdown);
+    if (patch.indicatorValueLabels !== undefined) this.chart.setIndicatorValueLabelsVisible(patch.indicatorValueLabels);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
@@ -1896,4 +1912,38 @@ export function indicatorChipLabel(
     .slice(0, 3)
     .map((v) => String(Number(v.toFixed(4))));
   return [shortName ?? id.toUpperCase(), ...numbers].join(' ');
+}
+
+type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
+
+/**
+ * The lines `instanceId` can be computed from: every drawn line of the other
+ * indicators, except those that already read from it (that would be a loop).
+ */
+export function lineSourcesFor(instanceId: string, active: readonly ActiveIndicator[]): { value: string; label: string }[] {
+  const readsFrom = (ind: ActiveIndicator): string | null => {
+    const name = sourceParam(ind.descriptor);
+    return (name && parseIndicatorSource(ind.params[name])?.instanceId) || null;
+  };
+  // Everything downstream of `instanceId`.
+  const downstream = new Set([instanceId]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const ind of active) {
+      const from = readsFrom(ind);
+      if (from && downstream.has(from) && !downstream.has(ind.instanceId)) {
+        downstream.add(ind.instanceId);
+        grew = true;
+      }
+    }
+  }
+  const out: { value: string; label: string }[] = [];
+  for (const ind of active) {
+    if (downstream.has(ind.instanceId)) continue;
+    const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+    for (const plot of ind.descriptor.plots ?? []) {
+      out.push({ value: indicatorSource(ind.instanceId, plot.key), label: `${name}: ${plot.title}` });
+    }
+  }
+  return out;
 }
