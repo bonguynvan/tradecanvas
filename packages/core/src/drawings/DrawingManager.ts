@@ -11,7 +11,7 @@ import type {
   AnchorPoint,
 } from '@tradecanvas/commons';
 import { resolveDrawingOptions, sanitizeDrawingOptions } from '@tradecanvas/commons';
-import { priceToY, timeToX, timestampToBarIndex, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
+import { priceToY, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 import type { UndoRedoManager, UndoableAction } from '../features/UndoRedoManager.js';
 import {
   MAX_GROUP_NAME,
@@ -28,14 +28,16 @@ import {
 import { orderTarget, redoAction, undoAction } from './drawingHistory.js';
 import { drawingShortcut } from './drawingShortcuts.js';
 import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
+import { snapToBar, type MagnetMode } from './magnetSnap.js';
+import { DrawingSelection } from './DrawingSelection.js';
+import { DrawingDrag } from './DrawingDrag.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
 type DrawingEventCallback = (event: string, data: unknown) => void;
 
 export type DrawingInteractionState = 'idle' | 'creating' | 'selected' | 'moving' | 'resizing';
-/** 'magnet' snaps an anchor to the nearest open, high, low or close within reach; 'strong' always does. */
-export type MagnetMode = 'none' | 'magnet' | 'strong';
+export type { MagnetMode } from './magnetSnap.js';
 
 /**
  * Copied drawings, shared by every chart on the page so a copy can be pasted
@@ -43,8 +45,6 @@ export type MagnetMode = 'none' | 'magnet' | 'strong';
  */
 const clipboard: { drawings: DrawingState[]; pastes: number } = { drawings: [], pastes: 0 };
 
-/** Pointer travel (px) before pressing a drawing turns into moving it. */
-const DRAG_START_PX = 3;
 
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
@@ -65,15 +65,10 @@ export class DrawingManager {
   private finishedAt = -Infinity;
   /** The eraser: a click on a drawing removes it. */
   private eraser = false;
-  private selectedDrawingId: string | null = null;
-  /** Drawings selected together with `selectedDrawingId` (Ctrl/⌘-drag or Ctrl/⌘-click). */
-  private groupIds = new Set<string>();
+  private selection = new DrawingSelection();
   /** Start state of the other group members while the group is dragged. */
-  private groupDrag: { id: string; anchors: AnchorPoint[]; before: DrawingState }[] = [];
-  private dragAnchorIndex = -1;
-  private dragStartPoint: Point | null = null;
-  private dragStartAnchors: { time: number; price: number }[] = [];
-  private dragBeforeState: DrawingState | null = null;
+  /** Drawings being moved or reshaped with the pointer. */
+  private drag = new DrawingDrag((id) => this.drawings.find((d) => d.id === id));
   private eventCallback: DrawingEventCallback | null = null;
   private requestRender: (() => void) | null = null;
   private undoRedo: UndoRedoManager | null = null;
@@ -129,48 +124,10 @@ export class DrawingManager {
 
   // --- Magnet snap ---
 
-  /**
-   * Snap an in-progress anchor to the closest OHLC value of the underlying
-   * bar. `time` is interpreted as a timestamp when `viewport.data` is set
-   * (the modern, recommended mode) or as a bar index otherwise. The returned
-   * `time` matches the input convention so the caller doesn't need to know.
-   */
-  private snapToOHLC(time: number, price: number, viewport?: ViewportState): { time: number; price: number } {
-    if (this.magnetMode === 'none' || !this.dataGetter) {
-      return { time, price };
-    }
-    // Use display data for magnet snap (matches what's visually rendered, e.g. Heikin Ashi)
-    const data = this.displayDataGetter?.() ?? this.dataGetter();
-    if (data.length === 0) return { time, price };
-
-    const useTimestamps = !!(viewport?.data && viewport.data.length > 0);
-    const rawIdx = Math.round(useTimestamps ? timestampToBarIndex(time, data) : time);
-    // Past either end there is no bar to snap to — keep the point where it
-    // was placed (e.g. a target drawn into the empty future).
-    if (rawIdx < 0 || rawIdx > data.length - 1) return { time, price };
-    const idx = rawIdx;
-    const bar = data[idx];
-
-    // Find closest OHLC value
-    const candidates = [bar.open, bar.high, bar.low, bar.close];
-    let closest = candidates[0];
-    let minDist = Math.abs(price - closest);
-    for (let i = 1; i < candidates.length; i++) {
-      const d = Math.abs(price - candidates[i]);
-      if (d < minDist) { minDist = d; closest = candidates[i]; }
-    }
-
-    // The weak magnet only snaps within reach; the strong one always does.
-    if (viewport && this.magnetMode === 'magnet') {
-      const pxPerPrice = viewport.chartRect.height / (viewport.priceRange.max - viewport.priceRange.min || 1);
-      const distPx = minDist * pxPerPrice;
-      if (distPx > 30) {
-        // Too far — don't snap, use the raw input position (bar-aligned).
-        return { time: useTimestamps ? bar.time : idx, price };
-      }
-    }
-
-    return { time: useTimestamps ? bar.time : idx, price: closest };
+  /** Snap a point being placed to the bar under it (see `snapToBar`), on the bars as drawn (Heikin Ashi, say). */
+  private snapToOHLC(time: number, price: number, viewport?: ViewportState): AnchorPoint {
+    const bars = this.magnetMode === 'none' ? [] : this.displayDataGetter?.() ?? this.dataGetter?.() ?? [];
+    return snapToBar(time, price, this.magnetMode, bars, viewport);
   }
 
   // --- Undo / Redo ---
@@ -227,7 +184,7 @@ export class DrawingManager {
    * mode, or one picked mid-drawing) stays ready for a fresh drawing.
    */
   private settleAfterHistory(): void {
-    this.clearSelection();
+    this.selection.clear();
     this.creator.reset();
     this.state = this.activeTool ? 'creating' : 'idle';
     this.requestRender?.();
@@ -262,40 +219,20 @@ export class DrawingManager {
 
   // --- Multi-selection: Ctrl/⌘-drag a box, Ctrl/⌘-click ---
 
-  private isSelectedId(id: string): boolean {
-    return id === this.selectedDrawingId || this.groupIds.has(id);
-  }
-
-  private clearSelection(): void {
-    this.selectedDrawingId = null;
-    this.groupIds.clear();
-  }
-
   /** Take drawings out of the selection (hidden or removed); another selected one becomes the primary. */
   private deselect(ids: Iterable<string>): void {
-    let changed = false;
-    for (const id of ids) {
-      if (this.groupIds.delete(id)) changed = true;
-      if (id === this.selectedDrawingId) {
-        this.selectedDrawingId = null;
-        changed = true;
-      }
-    }
-    if (!changed) return;
-    if (!this.selectedDrawingId) {
-      const next = this.groupIds.values().next();
-      if (!next.done) {
-        this.selectedDrawingId = next.value;
-        this.groupIds.delete(next.value);
-      }
-    }
-    if (!this.selectedDrawingId && this.state === 'selected') this.state = 'idle';
+    if (this.selection.remove(ids) && !this.selection.primary && this.state === 'selected') this.state = 'idle';
   }
 
   private addToSelection(id: string): void {
-    if (!this.selectedDrawingId) this.selectedDrawingId = id;
-    else if (id !== this.selectedDrawingId) this.groupIds.add(id);
+    this.selection.add(id);
     this.state = 'selected';
+  }
+
+  /** The other drawings of `drawing`'s group (selected along with it). */
+  private groupMates(drawing: DrawingState): string[] {
+    const group = drawing.group?.id;
+    return group ? this.drawings.filter((d) => d.group?.id === group && d.id !== drawing.id).map((d) => d.id) : [];
   }
 
   /**
@@ -307,15 +244,7 @@ export class DrawingManager {
     if (this.state === 'creating') return false;
     const drawing = this.drawings.find((d) => d.id === id);
     if (!drawing || !drawing.visible) return false;
-    if (!this.isSelectedId(id)) {
-      this.clearSelection();
-      this.selectedDrawingId = id;
-      if (drawing.group) {
-        for (const d of this.drawings) {
-          if (d.group?.id === drawing.group.id && d.id !== id) this.groupIds.add(d.id);
-        }
-      }
-    }
+    if (!this.selection.has(id)) this.selection.only(id, this.groupMates(drawing));
     this.state = 'selected';
     this.requestRender?.();
     return true;
@@ -323,7 +252,7 @@ export class DrawingManager {
 
   /** Ids of every selected drawing, the primary one first. */
   getSelectedDrawingIds(): string[] {
-    return this.selectedDrawingId ? [this.selectedDrawingId, ...this.groupIds] : [];
+    return this.selection.ids();
   }
 
   /**
@@ -333,7 +262,7 @@ export class DrawingManager {
    */
   selectInRect(rect: { x0: number; y0: number; x1: number; y1: number }, viewport: ViewportState): number {
     if (this.state === 'creating') return 0;
-    this.clearSelection();
+    this.selection.clear();
     this.state = 'idle';
     const left = Math.min(rect.x0, rect.x1);
     const right = Math.max(rect.x0, rect.x1);
@@ -360,35 +289,23 @@ export class DrawingManager {
       if (!d.visible) continue;
       const plugin = this.registry.get(d.type);
       if (!plugin?.hitTest(pos, d, viewport, 8)) continue;
-      if (!this.isSelectedId(d.id)) {
-        this.addToSelection(d.id);
-      } else if (d.id === this.selectedDrawingId) {
-        // Promote another member to primary, if any.
-        const next = this.groupIds.values().next();
-        this.selectedDrawingId = next.done ? null : next.value;
-        if (!next.done) this.groupIds.delete(next.value);
-      } else {
-        this.groupIds.delete(d.id);
-      }
-      if (!this.selectedDrawingId) this.state = 'idle';
+      // Out of the selection, another selected drawing becomes the primary.
+      if (!this.selection.has(d.id)) this.addToSelection(d.id);
+      else this.deselect([d.id]);
       this.requestRender?.();
       return true;
     }
     return false;
   }
 
-  /** Begin moving `primary` — and every other selected drawing with it. */
+  /** Begin moving `primary` — and every other selected drawing that isn't locked with it. */
   private beginMove(pos: Point, primary: DrawingState): void {
     this.state = 'moving';
-    this.dragStartPoint = pos;
-    this.dragStartAnchors = primary.anchors.map((a) => ({ ...a }));
-    this.dragBeforeState = cloneDrawing(primary);
-    this.groupDrag = [];
-    for (const id of this.getSelectedDrawingIds()) {
-      if (id === primary.id) continue;
-      const d = this.drawings.find((x) => x.id === id);
-      if (d && !d.locked) this.groupDrag.push({ id, anchors: d.anchors.map((a) => ({ ...a })), before: cloneDrawing(d) });
-    }
+    const others = this.getSelectedDrawingIds()
+      .filter((id) => id !== primary.id)
+      .map((id) => this.drawings.find((d) => d.id === id))
+      .filter((d): d is DrawingState => d !== undefined && !d.locked);
+    this.drag.beginMove(pos, [primary, ...others]);
   }
 
   // --- Bulk operations ---
@@ -514,7 +431,7 @@ export class DrawingManager {
       }
     });
     if (ids.length === 0) return ids;
-    this.clearSelection();
+    this.selection.clear();
     for (const id of ids) this.addToSelection(id);
     this.requestRender?.();
     return ids;
@@ -577,12 +494,11 @@ export class DrawingManager {
       return true;
     }
 
-    if (this.state === 'moving' && this.selectedDrawingId && this.dragStartPoint) {
-      return this.handleMove(pos, viewport);
-    }
-
-    if (this.state === 'resizing' && this.selectedDrawingId && this.dragAnchorIndex >= 0) {
-      return this.handleResize(pos, viewport);
+    if ((this.state === 'moving' || this.state === 'resizing') && this.drag.isActive()) {
+      const primary = this.drawings.find((d) => d.id === this.selection.primary);
+      if (!this.drag.move(pos, viewport, primary && this.registry.get(primary.type))) return false;
+      this.requestRender?.();
+      return true;
     }
 
     return false;
@@ -598,26 +514,15 @@ export class DrawingManager {
     if (this.state === 'moving' || this.state === 'resizing') {
       // Record undo for the completed move/resize — not for a press that
       // only selected the drawing without moving it.
-      const moved = [
-        ...(this.dragBeforeState && this.selectedDrawingId
-          ? [{ id: this.selectedDrawingId, before: this.dragBeforeState }]
-          : []),
-        ...this.groupDrag.map((m) => ({ id: m.id, before: m.before })),
-      ];
+      const moved = this.drag.end();
       this.batchUndo(() => {
-        for (const { id, before } of moved) {
-          const drawing = this.drawings.find((d) => d.id === id);
-          if (drawing && !(sameAnchors(drawing.anchors, before.anchors) && sameOptions(drawing.options, before.options))) {
+        for (const { before, drawing } of moved) {
+          if (!(sameAnchors(drawing.anchors, before.anchors) && sameOptions(drawing.options, before.options))) {
             this.record({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
           }
         }
       });
-      this.groupDrag = [];
       this.state = 'selected';
-      this.dragStartPoint = null;
-      this.dragStartAnchors = [];
-      this.dragAnchorIndex = -1;
-      this.dragBeforeState = null;
       return true;
     }
     return false;
@@ -630,7 +535,7 @@ export class DrawingManager {
   onKeyDown(key: string, ctrlKey = false, shiftKey?: boolean): boolean {
     const shortcut = drawingShortcut(key, ctrlKey, shiftKey);
     if (!shortcut) return false;
-    const primary = this.state === 'selected' ? this.selectedDrawingId : null;
+    const primary = this.state === 'selected' ? this.selection.primary : null;
     switch (shortcut) {
       // With nothing to copy or paste the keys are left to the browser.
       case 'copy':
@@ -679,7 +584,7 @@ export class DrawingManager {
       return true;
     }
     if (this.state === 'selected') {
-      this.clearSelection();
+      this.selection.clear();
       this.state = 'idle';
       this.requestRender?.();
       return true;
@@ -1038,8 +943,7 @@ export class DrawingManager {
       before: null,
       after: structuredClone(newDrawing),
     });
-    this.clearSelection();
-    this.selectedDrawingId = newDrawing.id;
+    this.selection.only(newDrawing.id);
     this.state = 'selected';
     this.eventCallback?.('drawingCreate', { id: newDrawing.id, type: newDrawing.type, drawing: newDrawing });
     this.requestRender?.();
@@ -1048,13 +952,13 @@ export class DrawingManager {
 
   clearDrawings(): void {
     this.drawings = [];
-    this.clearSelection();
+    this.selection.clear();
     this.state = 'idle';
     this.requestRender?.();
   }
 
   getSelectedDrawingId(): string | null {
-    return this.selectedDrawingId;
+    return this.selection.primary;
   }
 
   // --- Render ---
@@ -1070,7 +974,7 @@ export class DrawingManager {
       if (!drawing.visible) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
-      const isSelected = this.isSelectedId(drawing.id);
+      const isSelected = this.selection.has(drawing.id);
       plugin.render(ctx, drawing, viewport, isSelected);
     }
 
@@ -1143,7 +1047,7 @@ export class DrawingManager {
     this.eraser = on;
     if (on) {
       this.setActiveTool(null);
-      this.clearSelection();
+      this.selection.clear();
       this.state = 'idle';
     }
     this.eventCallback?.('toolModeChange', { eraser: on });
@@ -1173,12 +1077,12 @@ export class DrawingManager {
     if (!drawing) return;
     this.finishedAt = Date.now();
     this.drawings.push(drawing);
-    this.selectedDrawingId = drawing.id;
+    this.selection.only(drawing.id);
     this.record({ type: 'drawingCreate', before: null, after: structuredClone(drawing) });
     this.eventCallback?.('drawingCreate', { id: drawing.id, type: drawing.type, drawing });
     if (this.stayInDrawingMode && this.activeTool) {
       // Ready for the next one; selecting the finished drawing would get in the way.
-      this.clearSelection();
+      this.selection.clear();
       this.state = 'creating';
       return;
     }
@@ -1211,8 +1115,8 @@ export class DrawingManager {
     if (this.eraser) return this.drawingAt(pos, viewport) ? 'pointer' : null;
     if (this.activeTool || this.state === 'creating') return null;
     const tolerance = 8;
-    if (this.selectedDrawingId) {
-      const selected = this.drawings.find((d) => d.id === this.selectedDrawingId);
+    if (this.selection.primary) {
+      const selected = this.drawings.find((d) => d.id === this.selection.primary);
       const plugin = selected && selected.visible && !selected.locked ? this.registry.get(selected.type) : undefined;
       if (selected && plugin && plugin.hitTestAnchor(pos, selected, viewport, tolerance) >= 0) return 'move';
     }
@@ -1229,17 +1133,15 @@ export class DrawingManager {
     const tolerance = 8;
 
     // If already selected, check for anchor drag
-    if (this.selectedDrawingId) {
-      const drawing = this.drawings.find((d) => d.id === this.selectedDrawingId);
+    if (this.selection.primary) {
+      const drawing = this.drawings.find((d) => d.id === this.selection.primary);
       if (drawing && drawing.visible && !drawing.locked) {
         const plugin = this.registry.get(drawing.type);
         if (plugin) {
           const anchorIdx = plugin.hitTestAnchor(pos, drawing, viewport, tolerance);
           if (anchorIdx >= 0) {
             this.state = 'resizing';
-            this.dragAnchorIndex = anchorIdx;
-            this.dragStartPoint = pos;
-            this.dragBeforeState = cloneDrawing(drawing);
+            this.drag.beginResize(pos, drawing, anchorIdx);
             return true;
           }
           if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
@@ -1257,22 +1159,10 @@ export class DrawingManager {
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
       if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
-        if (this.isSelectedId(drawing.id)) {
-          // Part of the current selection: make it the primary, keep the group.
-          if (this.selectedDrawingId && this.selectedDrawingId !== drawing.id) {
-            this.groupIds.add(this.selectedDrawingId);
-          }
-          this.groupIds.delete(drawing.id);
-          this.selectedDrawingId = drawing.id;
-        } else {
-          this.clearSelection();
-          this.selectedDrawingId = drawing.id;
-          if (drawing.group) {
-            for (const d of this.drawings) {
-              if (d.group?.id === drawing.group.id && d.id !== drawing.id) this.groupIds.add(d.id);
-            }
-          }
-        }
+        // Part of the selection: it becomes the primary, the rest stays. Else it
+        // is selected with its group.
+        if (this.selection.has(drawing.id)) this.selection.focus(drawing.id);
+        else this.selection.only(drawing.id, this.groupMates(drawing));
         this.requestRender?.();
         if (drawing.locked) {
           // A locked drawing can be selected but not moved — let the same
@@ -1289,60 +1179,12 @@ export class DrawingManager {
     }
 
     // Clicked empty space — deselect
-    if (this.selectedDrawingId) {
-      this.clearSelection();
+    if (this.selection.primary) {
+      this.selection.clear();
       this.state = 'idle';
       this.requestRender?.();
     }
     return false;
-  }
-
-  private handleMove(pos: Point, viewport: ViewportState): boolean {
-    const drawing = this.drawings.find((d) => d.id === this.selectedDrawingId);
-    if (!drawing || !this.dragStartPoint) return false;
-    // A click that wobbles a pixel or two shouldn't nudge the drawing.
-    if (Math.hypot(pos.x - this.dragStartPoint.x, pos.y - this.dragStartPoint.y) < DRAG_START_PX
-      && drawing.anchors.every((a, i) => a.time === this.dragStartAnchors[i]?.time && a.price === this.dragStartAnchors[i]?.price)) {
-      return true;
-    }
-
-    // Translate by anchor-time delta. In timestamp mode this is a wall-clock
-    // seconds difference; in bar-index mode it's a bar-count difference —
-    // `xToTime` returns whichever unit the viewport is set up for.
-    const dTime = xToTime(pos.x, viewport) - xToTime(this.dragStartPoint.x, viewport);
-    const dPrice = yToPrice(pos.y, viewport) - yToPrice(this.dragStartPoint.y, viewport);
-
-    drawing.anchors = this.dragStartAnchors.map((a) => ({
-      time: a.time + dTime,
-      price: a.price + dPrice,
-    }));
-    for (const member of this.groupDrag) {
-      const d = this.drawings.find((x) => x.id === member.id);
-      if (d) d.anchors = member.anchors.map((a) => ({ time: a.time + dTime, price: a.price + dPrice }));
-    }
-
-    this.requestRender?.();
-    return true;
-  }
-
-  private handleResize(pos: Point, viewport: ViewportState): boolean {
-    const drawing = this.drawings.find((d) => d.id === this.selectedDrawingId);
-    if (!drawing || this.dragAnchorIndex < 0) return false;
-
-    const anchor = { time: xToTime(pos.x, viewport), price: yToPrice(pos.y, viewport) };
-    const plugin = this.registry.get(drawing.type);
-    if (plugin?.moveHandle) {
-      const moved = plugin.moveHandle(cloneDrawing(drawing), this.dragAnchorIndex, anchor);
-      drawing.anchors = moved.anchors;
-      drawing.options = moved.options && Object.keys(moved.options).length > 0
-        ? sanitizeDrawingOptions(plugin.descriptor.options, moved.options)
-        : undefined;
-    } else {
-      drawing.anchors[this.dragAnchorIndex] = anchor;
-    }
-
-    this.requestRender?.();
-    return true;
   }
 }
 
