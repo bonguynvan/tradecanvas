@@ -5,6 +5,9 @@ const GROUP_ICONS = [
   'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'zigzag', 'ruler', 'type', 'ladder',
 ];
 
+/** How long a tool menu stays after the pointer leaves it. */
+const FLYOUT_CLOSE_DELAY_MS = 150;
+
 /** Icon for a drawing tool in the favorites strip — falls back to a pen. */
 const TOOL_ICONS: Record<string, string> = {
   trendLine: 'trendingUp', ray: 'trendingUp', extendedLine: 'trendingUp',
@@ -45,6 +48,8 @@ export class WidgetDrawingSidebar {
   private magnetBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
   private flyoutEl: HTMLDivElement | null = null;
+  private flyoutIdx = -1;
+  private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
   private favoritesEl: HTMLDivElement | null = null;
   private favoritesDivider: HTMLDivElement | null = null;
   private favorites: string[] = [];
@@ -103,7 +108,7 @@ export class WidgetDrawingSidebar {
 
       // Flyout events via JS (not CSS hover)
       wrap.addEventListener('mouseenter', () => this.showFlyout(idx));
-      wrap.addEventListener('mouseleave', () => this.hideFlyout());
+      wrap.addEventListener('mouseleave', () => this.scheduleHideFlyout());
 
       el.appendChild(wrap);
       this.groupWraps.push(wrap);
@@ -199,8 +204,13 @@ export class WidgetDrawingSidebar {
   }
 
   private showFlyout(idx: number): void {
+    this.cancelHideFlyout();
+    if (this.flyoutEl && this.flyoutIdx === idx) return; // back before it closed: keep it
     const group = this.config.drawingToolGroups[idx];
-    if (!group || group.tools.length <= 1) return;
+    if (!group || group.tools.length <= 1) {
+      this.hideFlyout();
+      return;
+    }
 
     this.hideFlyout();
 
@@ -233,14 +243,35 @@ export class WidgetDrawingSidebar {
     }
 
     this.flyoutEl = flyout;
+    this.flyoutIdx = idx;
     this.groupWraps[idx].appendChild(flyout);
   }
 
+  /**
+   * Close a moment after the pointer leaves, so one that slips off the menu
+   * on its way to an item (a diagonal move) doesn't lose it.
+   */
+  private scheduleHideFlyout(): void {
+    this.cancelHideFlyout();
+    this.flyoutHideTimer = setTimeout(() => {
+      this.flyoutHideTimer = null;
+      this.hideFlyout();
+    }, FLYOUT_CLOSE_DELAY_MS);
+  }
+
+  private cancelHideFlyout(): void {
+    if (this.flyoutHideTimer === null) return;
+    clearTimeout(this.flyoutHideTimer);
+    this.flyoutHideTimer = null;
+  }
+
   private hideFlyout(): void {
+    this.cancelHideFlyout();
     if (this.flyoutEl) {
       this.flyoutEl.remove();
       this.flyoutEl = null;
     }
+    this.flyoutIdx = -1;
   }
 
   update(state: WidgetState): void {

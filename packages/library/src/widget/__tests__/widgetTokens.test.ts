@@ -52,3 +52,21 @@ describe('widget colour tokens', () => {
     expect(contrast(t['--tcw-text-muted'], t['--tcw-bg'])).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe('loading overlay styles', () => {
+  const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  const block = reduced.slice(0, reduced.indexOf('\n}\n') + 2);
+
+  it('keeps an animation when motion is reduced, without sliding anything', () => {
+    expect(block).toMatch(/\.tcw-loading-candle\s*{[^}]*animation:\s*tcw-candle-glow/);
+    expect(block).not.toMatch(/translate/);
+    expect(css).toMatch(/@keyframes tcw-candle-glow\s*{[^@]*opacity[^@]*}/);
+    // The widget-wide reduced-motion reset must leave the loader running.
+    expect(css).toMatch(/\.tcw-root \.tcw-loading-candle,[^{]*{[^}]*animation-iteration-count:\s*infinite !important/);
+  });
+
+  it('never shows the loading text, only an error', () => {
+    expect(block).not.toMatch(/\.tcw-loading-label/);
+    expect(css).toMatch(/\.tcw-loading-overlay--error \.tcw-loading-label\s*{[^}]*position:\s*static/);
+  });
+});

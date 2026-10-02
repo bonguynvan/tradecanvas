@@ -542,6 +542,7 @@
   color: var(--tcw-red);
   opacity: 0.28;
   animation: tcw-candle-light 1.6s var(--tcw-ease) infinite;
+  animation-delay: var(--tcw-delay, 0ms);
 }
 
 .tcw-loading-candle--up { color: var(--tcw-green); }
@@ -627,23 +628,28 @@
   font-size: 13px;
 }
 
+/* Reduced motion: nothing slides or lifts, but the candles still glow in
+   turn and the track breathes, so the wait never looks frozen. */
 @media (prefers-reduced-motion: reduce) {
-  .tcw-loading-candle,
+  .tcw-loading-candle {
+    animation: tcw-candle-glow 2.4s ease-in-out infinite;
+    animation-delay: var(--tcw-delay, 0ms);
+  }
   .tcw-loading-track > span {
-    animation: none;
+    width: 100%;
+    background: var(--tcw-accent);
+    animation: tcw-loading-breathe 2.4s ease-in-out infinite;
   }
-  .tcw-loading-candle { opacity: 0.6; }
-  .tcw-loading-track > span { transform: translateX(75%); }
-  /* Static candles don't say "loading" on their own: show the text. */
-  .tcw-loading-label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    font-size: 12px;
-    color: var(--tcw-text-muted);
-  }
+}
+
+@keyframes tcw-candle-glow {
+  0%, 60%, 100% { opacity: 0.28; }
+  25% { opacity: 0.9; }
+}
+
+@keyframes tcw-loading-breathe {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.7; }
 }
 
 /* === Sidebar === */
@@ -742,6 +748,16 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: tcw-slide-right var(--tcw-dur-normal) var(--tcw-ease-out);
+}
+
+/* Spans the gap to the toolbar button: crossing it stays inside the menu. */
+.tcw-flyout::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  right: 100%;
+  width: 8px;
 }
 
 @keyframes tcw-slide-right {
@@ -2821,5 +2837,14 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Except the loader's slow glow (opacity only): without it a long wait
+     looks frozen. */
+  .tcw-root .tcw-loading-candle,
+  .tcw-root .tcw-loading-track > span {
+    animation-duration: 2.4s !important;
+    animation-iteration-count: infinite !important;
+    animation-delay: var(--tcw-delay, 0ms) !important;
   }
 }
