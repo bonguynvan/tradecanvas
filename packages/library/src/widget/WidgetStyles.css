@@ -1417,6 +1417,68 @@
 
 /* === Replay scrubber === */
 
+/* Picking the replay start: the bars right of the pointer would be hidden. */
+.tcw-replay-shade {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--tcw-bg) 62%, transparent);
+  border-left: 1.5px dashed var(--tcw-accent);
+}
+
+.tcw-replay-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tcw-replay-group[hidden] { display: none; }
+
+.tcw-replay-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  color: var(--tcw-text-dim);
+  white-space: nowrap;
+}
+
+.tcw-replay-text-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--tcw-border);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast), border-color var(--tcw-dur-fast), color var(--tcw-dur-fast);
+}
+
+.tcw-replay-text-btn:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
+.tcw-replay-text-btn:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+
+/* At the last bar: the way out is the next thing to do. */
+.tcw-replay-bar--ended .tcw-replay-realtime {
+  background: var(--tcw-accent);
+  border-color: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+}
+
+.tcw-replay-btn:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 640px) {
+  .tcw-replay-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100% - 24px);
+    border-radius: 14px;
+  }
+  .tcw-replay-hint { white-space: normal; }
+}
+
 .tcw-replay-bar {
   position: absolute;
   left: 50%;

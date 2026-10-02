@@ -132,3 +132,91 @@ describe('Chart replay', () => {
     expect(from).toBeLessThanOrEqual(60);
   });
 });
+
+describe('Chart replay session', () => {
+  const last = () => (chart.getData() as OHLCBar[]).at(-1)!;
+  const priceLine = () => (chart as unknown as { currentPriceLine: { getPrice(): number | null } }).currentPriceLine.getPrice();
+
+  it('shows the cut at once when started paused', () => {
+    chart.replayStart({ startIndex: 120, interval: 100, speed: 1, paused: true });
+    expect(chart.getData().length).toBe(121);
+    expect(chart.getReplayState()).toBe('paused');
+    expect(chart.isReplayActive()).toBe(true);
+  });
+
+  it('keeps live bars out of the replay and brings them back on stop', () => {
+    const live = bars(300);
+    chart.replayStart({ startIndex: 100, interval: 100, speed: 1, paused: true });
+    const next = { ...live[299], time: live[299].time + 60_000, close: 999 };
+    chart.appendBar(next);
+    chart.updateLastBar({ ...next, close: 1001 });
+    expect(chart.getData().length).toBe(101);
+    expect(last().close).not.toBe(1001);
+
+    chart.replayStop();
+    expect(chart.isReplayActive()).toBe(false);
+    expect(chart.getData().length).toBe(301);
+    expect(last().close).toBe(1001);
+  });
+
+  it('puts the price line on the replayed close', () => {
+    const live = bars(300);
+    chart.replayStart({ startIndex: 50, interval: 100, speed: 1, paused: true });
+    expect(priceLine()).toBe(live[50].close);
+    chart.replaySeek(80);
+    expect(priceLine()).toBe(live[80].close);
+  });
+
+  it('ends the replay when a new series is set', () => {
+    chart.replayStart({ startIndex: 50, interval: 100, speed: 1, paused: true });
+    chart.setData(bars(40));
+    expect(chart.isReplayActive()).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(chart.getData().length).toBe(40);
+  });
+
+  it('turns auto-scale back on for the replay', () => {
+    (chart as unknown as { options: { autoScale: boolean } }).options.autoScale = false;
+    chart.replayStart({ startIndex: 50, interval: 100, speed: 1, paused: true });
+    expect((chart as unknown as { options: { autoScale: boolean } }).options.autoScale).toBe(true);
+  });
+
+  it('keeps live ticks and setCurrentPrice off the replayed bar and price line', () => {
+    const live = bars(300);
+    chart.replayStart({ startIndex: 100, interval: 100, speed: 1, paused: true });
+    chart.updateLastBarFromTick({ price: 4242, time: live[299].time });
+    chart.setCurrentPrice(4343);
+    expect(last().close).toBe(live[100].close);
+    expect(priceLine()).toBe(live[100].close);
+
+    chart.replayStop();
+    expect(last().close).toBe(4242);
+    expect(priceLine()).toBe(4343);
+  });
+
+  it('a restart replays the live series including bars that arrived meanwhile', () => {
+    const live = bars(300);
+    chart.replayStart({ startIndex: 100, interval: 100, speed: 1, paused: true });
+    chart.appendBar({ ...live[299], time: live[299].time + 60_000, close: 777 });
+    chart.replayStart({ startIndex: 300, interval: 100, speed: 1, paused: true });
+    expect(chart.getData().length).toBe(301);
+    expect(last().close).toBe(777);
+  });
+
+  it('does not open a session without data', () => {
+    chart.setData([]);
+    chart.replayStart({ startIndex: 0, paused: true });
+    expect(chart.isReplayActive()).toBe(false);
+    chart.appendBar(bars(1)[0]);
+    expect(chart.getData().length).toBe(1);
+  });
+
+  it('pauses on the last bar at the end', () => {
+    chart.replayStart({ startIndex: 297, interval: 100, speed: 1 });
+    vi.advanceTimersByTime(1000);
+    expect(chart.getReplayState()).toBe('paused');
+    expect(chart.getReplayProgress().current).toBe(299);
+    expect(chart.getData().length).toBe(300);
+  });
+});
+

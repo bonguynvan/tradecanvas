@@ -159,6 +159,12 @@ export class Chart {
   private replayBarUnsub: (() => void) | null = null;
   /** True while `replaySeek` runs: its bar is a jump, not a replay step. */
   private replaySeeking = false;
+  /**
+   * While a replay runs, the live series keeps moving here — stream and
+   * host updates land in `live` instead of the replayed slice — and comes
+   * back on `replayStop()`. `price` is the latest live tick.
+   */
+  private replaySession: { live: DataManager; price: { price: number; previousClose?: number } | null } | null = null;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -719,6 +725,8 @@ export class Chart {
   // --- Data ---
 
   setData(data: DataSeries): void {
+    // A full replace is a new series: any replay of the old one ends.
+    this.endReplaySession();
     this.dataManager.setData(data);
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
@@ -742,6 +750,10 @@ export class Chart {
   }
 
   appendBar(bar: OHLCBar): void {
+    if (this.replaySession) {
+      this.replaySession.live.appendBar(bar);
+      return;
+    }
     // Follow the live edge only if the view is already there — browsing
     // history shouldn't be yanked back to the end on every new bar.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
@@ -762,6 +774,10 @@ export class Chart {
    */
   appendBars(bars: OHLCBar[]): void {
     if (bars.length === 0) return;
+    if (this.replaySession) {
+      for (const bar of bars) this.replaySession.live.appendBar(bar);
+      return;
+    }
     const follow = this.viewport.isAtEnd();
     const firstChanged = this.dataManager.getLength() - 1;
     for (const bar of bars) {
@@ -774,6 +790,10 @@ export class Chart {
   }
 
   updateLastBar(bar: OHLCBar): void {
+    if (this.replaySession) {
+      this.replaySession.live.updateLastBar(bar);
+      return;
+    }
     this.dataManager.updateLastBar(bar);
     this.currentPriceLine.setPrice(bar.close);
     // For non-transform chart types, the displayDataCache still points to the
@@ -793,6 +813,11 @@ export class Chart {
 
   /** Merge a price tick into the current last bar (convenience for live feeds) */
   updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+    if (this.replaySession) {
+      this.replaySession.live.updateLastBarFromTick(tick);
+      if (Number.isFinite(tick.price)) this.replaySession.price = { price: tick.price };
+      return;
+    }
     this.dataManager.updateLastBarFromTick(tick);
     this.currentPriceLine.setPrice(tick.price);
     if (this.options.chartType !== 'candlestick' && this.options.chartType !== 'line'
@@ -1184,9 +1209,15 @@ export class Chart {
 
   setCurrentPrice(price: number, _pulseColor?: string): void {
     this.tradingManager.setCurrentPrice(price);
-    // Also update standalone price line (visible even without trading feature)
-    this.currentPriceLine.setPrice(price);
-    this.scheduleRender();
+    if (this.replaySession) {
+      // During a replay the price line shows the replayed close; the live
+      // price comes back with replayStop(). Orders and alerts stay live.
+      this.replaySession.price = { price };
+    } else {
+      // Also update standalone price line (visible even without trading feature)
+      this.currentPriceLine.setPrice(price);
+      this.scheduleRender();
+    }
     if (this.features.alerts) {
       this.alertManager.checkPrice(price);
       this.feedIndicatorAlerts();
@@ -1242,15 +1273,26 @@ export class Chart {
    * });
    */
   async connect(config: StreamConfig): Promise<void> {
+    // Back to the live series first, so a failed history load can't leave
+    // the replayed slice on screen.
+    this.replayStop();
     this.disconnectStream();
 
     this.streamManager = new StreamManager();
 
     this.streamManager.on('snapshot', (bars) => {
+      if (this.replaySession) {
+        this.replaySession.live.setData(bars);
+        return;
+      }
       this.setData(bars);
     });
 
     this.streamManager.on('barClose', (bar) => {
+      if (this.replaySession) {
+        this.replaySession.live.appendBar(bar);
+        return;
+      }
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
       this.dataManager.appendBar(bar);
       const data = this.dataManager.getData();
@@ -1261,6 +1303,10 @@ export class Chart {
     });
 
     this.streamManager.on('barUpdate', (bar) => {
+      if (this.replaySession) {
+        this.replaySession.live.updateLastBar(bar);
+        return;
+      }
       this.dataManager.updateLastBar(bar);
       this.currentPriceLine.setPrice(bar.close);
       // Recalculate indicators so panel/overlay series track the forming bar
@@ -1272,7 +1318,13 @@ export class Chart {
     });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
+      // Orders keep tracking the live market during a replay; the price line
+      // shows the replayed close instead.
       this.tradingManager.setCurrentPrice(price);
+      if (this.replaySession) {
+        this.replaySession.price = { price, previousClose: previousClose ?? undefined };
+        return;
+      }
       this.currentPriceLine.setPrice(price, previousClose ?? undefined);
       this.engine.requestRender(LayerType.Overlay);
     });
@@ -1923,9 +1975,26 @@ export class Chart {
 
   // --- Replay ---
 
+  /**
+   * Replay the series bar by bar. While it runs the chart is detached from
+   * live data: stream ticks and `appendBar`/`updateLastBar` calls are kept
+   * aside (orders still track the live price), the price line shows the
+   * replayed close, and auto-scale refits every step. `replayStop()` brings
+   * back the live series, including everything that arrived meanwhile.
+   */
   replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
-    const data = this.dataManager.getData();
+    if (!this.replaySession) {
+      if (this.dataManager.getLength() === 0) return; // nothing to replay
+      const live = new DataManager();
+      live.setData(this.dataManager.getData());
+      this.replaySession = { live, price: null };
+    }
+    // Replay the live series as it stands now (a restart includes bars that
+    // arrived during the previous run).
+    const data = this.replaySession.live.getData().slice();
+    // A replay fits each step; a price-axis drag from before shouldn't pin it.
+    this.options.autoScale = true;
     this.replayManager.load(data);
     let loaded = -1; // bars of `data` currently in the DataManager, as of the last step
     // Each replayStart used to stack another 'bar' listener, so a restarted
@@ -1953,6 +2022,8 @@ export class Chart {
         this.indicatorEngine.recalculateAll(this.dataManager.getData());
       }
       loaded = nextLen;
+      // The price line follows the replay, not the live market.
+      this.currentPriceLine.setPrice(data[index].close, index > 0 ? data[index - 1].close : undefined);
       this.crosshairHandler.setData(this.dataManager.getData());
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
@@ -1964,7 +2035,35 @@ export class Chart {
 
   replayPause(): void { this.replayManager.pause(); }
   replayResume(): void { this.replayManager.resume(); }
-  replayStop(): void { this.replayManager.stop(); }
+  /** End the replay and return to the live series (with updates that arrived meanwhile). */
+  replayStop(): void {
+    const session = this.replaySession;
+    this.endReplaySession();
+    if (!session) return;
+    this.setData(session.live.getData());
+    if (session.price) this.currentPriceLine.setPrice(session.price.price, session.price.previousClose);
+  }
+
+  /** Whether a replay session is open (playing or paused). */
+  isReplayActive(): boolean {
+    return this.replaySession !== null;
+  }
+
+  /** The plot area in CSS pixels, relative to the chart container (no axes). */
+  getPlotRect(): { x: number; y: number; width: number; height: number } {
+    const { x, y, width, height } = this.viewport.getState().chartRect;
+    return { x, y, width, height };
+  }
+
+  /** Stop the replay clock and drop the session without touching the data. */
+  private endReplaySession(): void {
+    if (!this.replaySession) return;
+    this.replaySession = null;
+    this.replayBarUnsub?.();
+    this.replayBarUnsub = null;
+    this.replayManager.stop();
+  }
+
   replaySeek(index: number): void {
     this.replaySeeking = true;
     try {
