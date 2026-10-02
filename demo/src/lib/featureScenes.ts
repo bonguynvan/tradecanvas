@@ -172,6 +172,36 @@ const layout = chart.saveState()             // indicators, styles, alerts, draw
     },
   },
   {
+    id: 'history',
+    title: 'Scroll back in time',
+    stat: 'paged history',
+    blurb:
+      'Older bars load as you drag toward the oldest one, a page at a time, and what is on screen stays put. Zoom out until every loaded bar fits: below a pixel per bar the candles merge per pixel column, so thousands of bars stay readable.',
+    tryThis: [
+      'Drag the chart to the right: a pill on the left shows older bars loading',
+      'Scroll to zoom out, past a few hundred bars down to a quarter pixel per bar',
+      'Click All under the chart to fit everything loaded so far',
+    ],
+    code: `// Adapters with fetchHistoryBefore page by themselves
+chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m', historyPageSize: 500 })
+
+// Or page your own source
+chart.setHistoryLoader((before, limit) => api.bars({ end: before, limit }))
+chart.on('historyLoad', (e) => console.log(e.payload.state, e.payload.count))`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      timeframe: '1m',
+      adapter: env.binance(),
+      historyLimit: 300,
+      historyPageSize: 500,
+    }),
+    setup: (_widget, chart) => {
+      // Everything loaded fits on screen, so the next page starts loading at once.
+      chart.fitContent();
+    },
+  },
+  {
     id: 'replay',
     title: 'Bar replay',
     stat: 'scrubber',

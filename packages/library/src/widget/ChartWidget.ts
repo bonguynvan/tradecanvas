@@ -1784,6 +1784,7 @@ export class ChartWidget {
         symbol: this.state.symbol,
         timeframe: this.state.timeframe,
         historyLimit: this.options.historyLimit ?? 500,
+        historyPageSize: this.options.historyPageSize,
       });
       // A newer switch started while this one was loading — it owns the UI now.
       if (seq !== this.connectSeq || this.destroyed) return;

@@ -1,5 +1,54 @@
 # Changelog
 
+## Unreleased
+
+Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
+
+### Data and time
+
+- **Zoom out until every loaded bar fits.** Below the old 2 px bar + 2 px gap floor, the bar and its gap keep shrinking (down to a quarter pixel) as long as the loaded bars don't fit yet; a short series still stops at the old floor. Below a pixel per bar, candles, OHLC bars and volume merge per pixel column, so thousands of bars stay readable and cheap to draw. "All" and the 1Y / 5Y presets are no longer capped at about 200 bars.
+- **Older bars load as you scroll back.** Adapters can implement `fetchHistoryBefore(symbol, timeframe, before, limit)`; Binance, Bybit and Mock do, and `WebSocketAdapter` / `PollingAdapter` take it as an option. A connected chart loads a page when less than a screen of bars is left of the view, one request at a time, keeping the same bars on screen. New `chart.prependBars()`, `setHistoryLoader()`, `loadMoreHistory()`, `hasMoreHistory()`, `isLoadingHistory()`, the `historyLoad` event and `StreamConfig.historyPageSize`. ChartWidget shows a small pill while older bars load.
+- The replay bar sits above the time axis, so its dates stay readable.
+
+### Indicators in depth
+
+- **One scale per pane**: a pane's lines, levels, axis labels and crosshair share one value scale (RSI's 30 line used to read as 38). The price scale no longer stretches to fields that are not drawn.
+- **Declared plots**: descriptors declare what they draw (`plots`), their pane `scale`, default `levels` and how `inputs` are edited; a custom indicator needs no rendering code.
+- **Sources and indicators on indicators**: 38 indicators take a price source or another indicator's line (`indicatorSource(instanceId, key)`), e.g. an SMA of RSI in RSI's pane.
+- **Shared panes**, **editable levels** and **value tags** on the axis, all kept in saved layouts.
+- **15 new indicators (85 in all)**: DEMA, SMMA, ALMA, KAMA, LSMA, McGinley Dynamic, MA Cross, Williams Fractals, Chande Kroll Stop, Bollinger %B, Bollinger BandWidth, Momentum, Historical Volatility, Volume Oscillator, Ulcer Index.
+- ChartWidget: an indicator settings dialog with Inputs, Style and Levels tabs; the legend colours each value as its line.
+
+### For AI coding tools
+
+- `skills/tradecanvas`: an agent skill with entry points, rules, recipes and a generated indicator reference.
+- `llms.txt` and `llms-full.txt` on the site; the indicator catalog on the docs site is generated from the registry, and CI checks that the generated files are current and that the skill's examples type-check.
+
+## 1.4.0 (2026-10-02)
+
+Layouts that come back whole, ranges and dates, scale options, indicators listed on the chart, an icon set and reworked bar replay. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.7 pick up the new core.
+
+### Layouts, ranges and scales
+
+- **Saved layouts restore indicators and alerts**: inputs, panes, colours, visibility; alerts keep their channel, repeat and label. Indicator changes trigger the auto-save.
+- **Ranges and dates**: `setVisibleRangePreset('1D' … 'All')` and `goToTime()`; ChartWidget shows the presets under the chart with a go-to-date button (Alt+G).
+- **Inverted price scale** (`setInvertScale`, Alt+I), and the log scale now applies to candles, axis and grid as well as drawings and indicators.
+- **Timeframe favourites** in ChartWidget, and feature flags that used to do nothing now apply (`drawingMagnet`, `barCountdown`, `compareSymbols`, `dataExport`, `logScale`, `timeframes`).
+- **Drawing**: stay-in-drawing mode, and Ctrl/⌘+C / Ctrl/⌘+V copy drawings, also between charts. ChartGrid links the crosshair by time.
+
+### Indicators on the chart
+
+- ChartWidget lists each indicator on the chart, under the OHLCV legend or at the top of its pane, with its value at the hovered bar and show/hide, settings and remove actions. Several instances of one indicator each get their own colour.
+
+### Icons and tooltips
+
+- Every drawing tool and chart type has its own icon; the interface icons share one grid. `createIcon`, `createToolIcon`, `createChartTypeIcon` and the icon maps are exported.
+- Tooltips on the widget's controls replace the browser's.
+
+### Replay
+
+- Live data stays out of the replay and comes back with `replayStop()`; the replay ends paused on its last bar. ChartWidget asks for a start bar, offers a random bar, speeds in bars per second and "Back to realtime".
+
 ## 1.3.0 (2026-10-02)
 
 Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look by default, a redesigned gauge, crosshair tooltip and loader, and replay that follows its newest bar. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.6 pick up the new core.

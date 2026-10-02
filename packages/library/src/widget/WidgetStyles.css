@@ -1936,7 +1936,8 @@
 .tcw-replay-bar {
   position: absolute;
   left: 50%;
-  bottom: 16px;
+  /* Above the 30px time axis, so its dates stay readable. */
+  bottom: 40px;
   transform: translateX(-50%);
   z-index: 25;
   display: flex;

@@ -81,6 +81,8 @@ export interface ChartWidgetOptions {
   // Data
   adapter?: DataAdapter;
   historyLimit?: number;
+  /** Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500. */
+  historyPageSize?: number;
 
   // Chart pass-through
   chartOptions?: Partial<ChartOptions>;
