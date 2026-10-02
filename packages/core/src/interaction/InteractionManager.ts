@@ -239,14 +239,17 @@ export class InteractionManager {
       document.removeEventListener('mousemove', onDocMouseMove);
     };
 
+    // HTML controls layered inside the chart (indicator legend, replay bar,
+    // overlays) own the presses, taps and moves on them: no chart gesture,
+    // no crosshair move, and no preventDefault that would swallow a tap's click.
+    const onChartSurface = (target: EventTarget | null) => target === this.element || target instanceof HTMLCanvasElement;
+
     const onMouseDown = (e: MouseEvent) => {
       lastPressedChart = this.element;
       // Only the primary button starts gestures; right-click belongs to the
       // context menu and must not start a pan underneath it.
       if (e.button !== 0) return;
-      // Presses on HTML controls layered inside the chart (replay scrubber,
-      // overlays) belong to them, not to a chart gesture.
-      if (e.target !== this.element && !(e.target instanceof HTMLCanvasElement)) return;
+      if (!onChartSurface(e.target)) return;
       // Any new gesture stops coasting from a previous flick.
       this.panHandler?.cancelMomentum();
       beginPress();
@@ -329,6 +332,10 @@ export class InteractionManager {
       // During a press the document listener handles every move (this event
       // bubbles there too) — don't process it twice.
       if (pressActive) return;
+      // Over a layered control the crosshair stays put. This also ignores the
+      // mousemove a browser sends after a tap on one, which would otherwise
+      // leave a crosshair behind that no mouseleave clears.
+      if (!onChartSurface(e.target)) return;
       handleMove(e);
     };
 
@@ -504,8 +511,11 @@ export class InteractionManager {
     };
 
     // --- Touch events ---
+    // A gesture starts on the chart surface; a second finger may then land
+    // anywhere (on the legend, say) and still pinch.
     const onTouchStart = (e: TouchEvent) => {
       lastPressedChart = this.element;
+      if (!this.touchActive && !onChartSurface(e.target)) return;
       e.preventDefault();
       this.invalidateRect();
       if (e.touches.length === 1) {
@@ -565,6 +575,7 @@ export class InteractionManager {
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      if (!this.touchActive && !onChartSurface(e.target)) return;
       e.preventDefault();
       if (e.touches.length === 1 && this.touchActive) {
         const pos = this.getTouchPos(e.touches[0]);

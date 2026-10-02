@@ -1,5 +1,5 @@
 import type { ChartType, TimeFrame } from '@tradecanvas/commons';
-import type { ToolbarConfig, ToolbarCallbacks, WidgetState, ActiveIndicator } from './types.js';
+import type { ToolbarConfig, ToolbarCallbacks, WidgetState } from './types.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
@@ -16,7 +16,6 @@ export class WidgetToolbar {
   private tfDropdown: WidgetDropdown | null = null;
   private tfFavorites: TimeFrame[] = [];
   private tfRendered = '';
-  private chipsContainer: HTMLDivElement | null = null;
   private themeBtn: HTMLButtonElement | null = null;
   private fullscreenBtn: HTMLButtonElement | null = null;
 
@@ -94,10 +93,6 @@ export class WidgetToolbar {
     this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px' });
     this.buildIndicatorMenu();
 
-    // Indicator chips
-    this.chipsContainer = document.createElement('div');
-    this.chipsContainer.className = 'tcw-indicator-chips';
-    el.appendChild(this.chipsContainer);
 
     // Spacer
     el.appendChild(this.spacer());
@@ -301,40 +296,10 @@ export class WidgetToolbar {
       indTrigger.innerHTML = inner;
     }
 
-    // Chips
-    if (this.chipsContainer) {
-      const activeList = this.getActiveIndicatorList(state);
-      this.chipsContainer.innerHTML = '';
-      for (const ind of activeList) {
-        const chip = document.createElement('div');
-        chip.className = 'tcw-indicator-chip';
-
-        const label = document.createElement('span');
-        label.textContent = ind.label;
-        chip.appendChild(label);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'tcw-chip-remove';
-        removeBtn.innerHTML = createIcon('x', 10);
-        removeBtn.addEventListener('click', () => this.callbacks.onRemoveIndicator(ind.instanceId));
-        chip.appendChild(removeBtn);
-
-        this.chipsContainer.appendChild(chip);
-      }
-    }
-
     // Theme toggle icon
     if (this.themeBtn) {
       this.themeBtn.innerHTML = state.isDark ? createIcon('moon', 14) : createIcon('sun', 14);
     }
-  }
-
-  private getActiveIndicatorList(state: WidgetState): ActiveIndicator[] {
-    const result: ActiveIndicator[] = [];
-    for (const [instanceId, info] of state.activeIndicators.entries()) {
-      result.push({ instanceId, id: info.id, label: info.label });
-    }
-    return result;
   }
 
   private sep(): HTMLSpanElement {

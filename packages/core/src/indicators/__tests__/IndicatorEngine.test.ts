@@ -75,3 +75,31 @@ describe('IndicatorEngine.getOverlayPriceRange', () => {
     expect(engine.getOverlayPriceRange(0, 10)).toBeNull();
   });
 });
+
+describe('IndicatorEngine colours', () => {
+  it('starts each further instance of an indicator one step along the palette', () => {
+    const engine = new IndicatorEngine();
+    engine.register(fakeOverlayPlugin('ema'));
+    engine.register(fakeOverlayPlugin('sma'));
+    const first = engine.addIndicator('ema', {}, bars(5));
+    const other = engine.addIndicator('sma', {}, bars(5));
+    const second = engine.addIndicator('ema', {}, bars(5));
+    const colour = (id: string) => engine.getIndicatorStyle(id)!.colors[0];
+    expect(colour(other)).toBe(colour(first)); // a different indicator keeps its usual colour
+    expect(colour(second)).not.toBe(colour(first));
+    expect(engine.getIndicatorStyle(second)!.colors).toHaveLength(engine.getIndicatorStyle(first)!.colors.length);
+  });
+
+  it('gives a new instance a colour no remaining instance uses', () => {
+    const engine = new IndicatorEngine();
+    engine.register(fakeOverlayPlugin('ema'));
+    const first = engine.addIndicator('ema', {}, bars(5));
+    const second = engine.addIndicator('ema', {}, bars(5));
+    const colour = (id: string) => engine.getIndicatorStyle(id)!.colors[0];
+    const usual = colour(first);
+    engine.removeIndicator(first);
+    const third = engine.addIndicator('ema', {}, bars(5));
+    expect(colour(third)).not.toBe(colour(second)); // not two lines in one colour
+    expect(colour(third)).toBe(usual); // the freed colour comes back
+  });
+});

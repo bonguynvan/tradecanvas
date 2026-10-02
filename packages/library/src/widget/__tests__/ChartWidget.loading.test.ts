@@ -60,6 +60,14 @@ class FakeChart {
   }
 
   isTimeframeAllowed(): boolean { return true; }
+  getIndicatorPanes(): unknown[] { return []; }
+  getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
+  getLegendBottom(): number { return 40; }
+  isTimeAligned(): boolean { return true; }
+  getIndicatorStyle() { return { colors: ['#4c8dff'], lineWidths: [1.5], opacity: 1 }; }
+  formatPrice(v: number): string { return v.toFixed(2); }
+  getActiveIndicators(): unknown[] { return []; }
+  getIndicatorOutput(): null { return null; }
   getIndicators(): unknown[] { return []; }
   getDrawings(): unknown[] { return []; }
   getAlerts(): unknown[] { return []; }

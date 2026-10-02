@@ -14,6 +14,8 @@ export type ChartEventType =
   | 'dataUpdate'
   | 'indicatorAdd'
   | 'indicatorRemove'
+  | 'paneResize'
+  | 'indicatorUpdate'
   | 'themeChange'
   | 'resize'
   | 'orderPlace'
@@ -196,6 +198,10 @@ export interface ChartEventMap {
   dataUpdate: DataSeries;
   indicatorAdd: IndicatorChangePayload;
   indicatorRemove: IndicatorChangePayload;
+  /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
+  paneResize: { instanceId: string; size: number };
+  /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */
+  indicatorUpdate: { from: number };
   themeChange: ThemeChangePayload;
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;

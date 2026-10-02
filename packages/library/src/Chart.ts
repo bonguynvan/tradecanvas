@@ -12,6 +12,7 @@ import type {
   IndicatorPlugin,
   IndicatorDescriptor,
   IndicatorOutput,
+  ResolvedIndicatorStyle,
   DrawingToolType,
   DrawingState,
   DrawingStyle,
@@ -31,7 +32,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -89,7 +90,7 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
@@ -128,6 +129,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
+  private indicatorUpdateFrom: number | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
   private panelInfoCache: import('@tradecanvas/core').PanelRenderInfo[] | null = null;
   private renderScheduled = false;
@@ -194,6 +197,9 @@ export class Chart {
   private container: HTMLElement;
   private currentPriceLine: import('@tradecanvas/core').CurrentPriceLine;
   private numberLocale: string;
+  /** The market's price precision, when set: otherwise it follows the visible range. */
+  private marketPricePrecision: number | null = null;
+  private paneTitles = true;
   /**
    * The `autoScale` the chart was constructed with — distinct from
    * `this.options.autoScale`, which drag-to-scale/vertical-pan mutate at
@@ -360,15 +366,19 @@ export class Chart {
         // Update legend (canvas-rendered, will show on next UI paint)
         this.chartLegend.setHoverBar(bar ?? null);
 
-        // Update tooltip (DOM, lightweight update only when bar changes)
-        if (bar && this.features.crosshairTooltip) {
-          const vs = this.viewport.getState();
+        // Update tooltip (DOM, lightweight update only when bar changes).
+        // Over an indicator pane there is no price crosshair to sit beside.
+        const vs = this.viewport.getState();
+        const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
+        if (bar && inPlot && this.features.crosshairTooltip) {
           this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize(), {
             prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
             priceRange: vs.priceRange,
             plot: vs.chartRect,
             barStepMs: barTimeStep(data),
           });
+        } else {
+          this.crosshairTooltip.hide();
         }
 
         // Refresh the pinned tooltip's delta strip against the hovered bar.
@@ -757,7 +767,7 @@ export class Chart {
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     this.alertManager.clearLastValues();
-    this.indicatorEngine.recalculateAll(this.dataManager.getData());
+    this.recalcIndicators(this.dataManager.getData());
     // Auto-set current price line from last bar's close
     if (data.length > 0) {
       this.currentPriceLine.setPrice(data[data.length - 1].close);
@@ -780,7 +790,7 @@ export class Chart {
     this.displayDataCache = null;
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
-    this.indicatorEngine.recalculateFrom(data, data.length - 2);
+    this.recalcIndicatorsFrom(data, data.length - 2);
     this.updateViewportAndRender(follow);
   }
 
@@ -801,7 +811,7 @@ export class Chart {
       this.dataManager.appendBar(bar);
     }
     this.displayDataCache = null;
-    this.indicatorEngine.recalculateFrom(this.dataManager.getData(), firstChanged);
+    this.recalcIndicatorsFrom(this.dataManager.getData(), firstChanged);
     this.crosshairHandler.setData(this.dataManager.getData());
     this.updateViewportAndRender(follow);
   }
@@ -824,7 +834,7 @@ export class Chart {
     // Keep indicator lines in sync with the forming bar. Without this, panel
     // + overlay indicators freeze until bar close. Only the last bar changed.
     const data = this.dataManager.getData();
-    this.indicatorEngine.recalculateFrom(data, data.length - 1);
+    this.recalcIndicatorsFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -843,7 +853,7 @@ export class Chart {
       this.displayDataCache = null;
     }
     const data = this.dataManager.getData();
-    this.indicatorEngine.recalculateFrom(data, data.length - 1);
+    this.recalcIndicatorsFrom(data, data.length - 1);
     this.scheduleRender();
   }
 
@@ -878,6 +888,7 @@ export class Chart {
 
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>): void {
     this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
+    this.announceIndicatorUpdate(0);
     this.engine.requestRender();
     this.scheduleAutoSave();
   }
@@ -893,6 +904,11 @@ export class Chart {
     } else {
       this.engine.requestRender();
     }
+  }
+
+  /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
+  getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
+    return this.indicatorEngine.getIndicatorStyle(instanceId);
   }
 
   getIndicatorOutput(instanceId: string): IndicatorOutput | null {
@@ -924,6 +940,46 @@ export class Chart {
   setPanelSize(instanceId: string, size: number): void {
     this.layoutManager.setPanelSize(instanceId, size);
     this.updateViewportAndRender();
+    this.eventBus.emit('paneResize', { instanceId, size });
+  }
+
+  /**
+   * Indicator panes, in CSS pixels relative to the container: the whole pane,
+   * its 20 px header (where the name is written) included.
+   */
+  getIndicatorPanes(): { instanceId: string; rect: { x: number; y: number; width: number; height: number } }[] {
+    return this.buildPanelRenderInfos().map((p) => ({ instanceId: p.instanceId, rect: { ...p.rect } }));
+  }
+
+  /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
+  setPaneTitlesVisible(visible: boolean): void {
+    this.paneTitles = visible;
+    this.engine.requestRender();
+  }
+
+  /**
+   * The y (CSS px, container-relative) just below the OHLCV legend — where
+   * content stacked under it starts. The plot's top edge when it is hidden.
+   */
+  getLegendBottom(): number {
+    const top = this.viewport.getState().chartRect.y;
+    return this.features.legend ? top + this.chartLegend.getHeight() : top;
+  }
+
+  /**
+   * Whether each drawn bar is one data bar (candles, lines, Heikin-Ashi…).
+   * Renko, Kagi, point & figure, line break and range bars redraw the series,
+   * so a bar index on screen is not an index into the data.
+   */
+  isTimeAligned(): boolean {
+    if (isReshapedChartType(this.options.chartType)) return false;
+    return this.getDisplayData().length === this.dataManager.getLength();
+  }
+
+  /** A price as the price axis writes it: the market's precision or the visible range's, in the number locale. */
+  formatPrice(price: number): string {
+    const { min, max } = this.viewport.getState().priceRange;
+    return formatPrice(price, this.marketPricePrecision ?? autoPricePrecision(min, max), this.numberLocale);
   }
 
   // --- Drawing tools ---
@@ -1348,7 +1404,7 @@ export class Chart {
       const data = this.dataManager.getData();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
-      this.indicatorEngine.recalculateFrom(data, data.length - 2);
+      this.recalcIndicatorsFrom(data, data.length - 2);
       this.updateViewportAndRender(follow);
     });
 
@@ -1363,7 +1419,7 @@ export class Chart {
       // instead of freezing until bar close — incrementally, since only the
       // last bar changed.
       const data = this.dataManager.getData();
-      this.indicatorEngine.recalculateFrom(data, data.length - 1);
+      this.recalcIndicatorsFrom(data, data.length - 1);
       this.scheduleRender();
     });
 
@@ -2145,11 +2201,11 @@ export class Chart {
         // indicators from there — not re-copy, re-sanitize and recompute the
         // whole prefix on every tick of the replay clock.
         for (let j = loaded; j < nextLen; j++) this.dataManager.appendBar(data[j]);
-        this.indicatorEngine.recalculateFrom(this.dataManager.getData(), loaded);
+        this.recalcIndicatorsFrom(this.dataManager.getData(), loaded);
       } else {
         // First step, or a seek backwards: reload the prefix.
         this.dataManager.setData(data.slice(0, nextLen));
-        this.indicatorEngine.recalculateAll(this.dataManager.getData());
+        this.recalcIndicators(this.dataManager.getData());
       }
       loaded = nextLen;
       // The price line follows the replay, not the live market.
@@ -2357,6 +2413,7 @@ export class Chart {
 
     // Apply price precision to trading, alerts, and price line
     if (config.pricePrecision !== undefined) {
+      this.marketPricePrecision = config.pricePrecision;
       this.tradingManager.setConfig({ pricePrecision: config.pricePrecision });
       this.alertManager.setPricePrecision(config.pricePrecision);
       this.streamManager?.priceLine.setPricePrecision(config.pricePrecision);
@@ -2476,6 +2533,36 @@ export class Chart {
     const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t));
     this.displayDataCache = result;
     return result;
+  }
+
+  /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
+  private recalcIndicatorsFrom(data: DataSeries, from: number): void {
+    this.indicatorEngine.recalculateFrom(data, from);
+    this.announceIndicatorUpdate(from);
+  }
+
+  private recalcIndicators(data: DataSeries): void {
+    this.indicatorEngine.recalculateAll(data);
+    this.announceIndicatorUpdate(0);
+  }
+
+  /**
+   * Emit `indicatorUpdate` once per task, from the earliest changed bar, after
+   * the update that caused it has finished and scheduled its redraw: a
+   * listener can neither interrupt a live tick nor read the layout before
+   * the chart has updated it.
+   */
+  private announceIndicatorUpdate(from: number): void {
+    if (this.indicatorUpdateFrom !== null) {
+      this.indicatorUpdateFrom = Math.min(this.indicatorUpdateFrom, from);
+      return;
+    }
+    this.indicatorUpdateFrom = from;
+    queueMicrotask(() => {
+      const first = this.indicatorUpdateFrom;
+      this.indicatorUpdateFrom = null;
+      if (first !== null) this.eventBus.emit('indicatorUpdate', { from: first });
+    });
   }
 
   /** Lightweight render for streaming updates. No layout resolve, no indicator recalc. */
@@ -2648,8 +2735,22 @@ export class Chart {
   private getResolvedLayout() {
     if (!this.resolvedLayoutCache) {
       this.resolvedLayoutCache = this.layoutManager.resolve();
+      this.syncCrosshairBounds(this.resolvedLayoutCache);
     }
     return this.resolvedLayoutCache;
+  }
+
+  /** The hovered bar is reported over the price pane and the panes above and below it. */
+  private syncCrosshairBounds(layout: import('@tradecanvas/commons').ResolvedLayout): void {
+    const main = layout.mainChartRect;
+    let top = main.y;
+    let bottom = main.y + main.height;
+    for (const panel of layout.panels) {
+      if (panel.config.position !== 'top' && panel.config.position !== 'bottom') continue;
+      top = Math.min(top, panel.rect.y);
+      bottom = Math.max(bottom, panel.rect.y + panel.rect.height);
+    }
+    this.crosshairHandler.setReportBounds({ top, bottom });
   }
 
   /** Cache container size for 500ms to avoid layout thrashing on rapid calls */
@@ -2759,6 +2860,7 @@ export class Chart {
       theme: this.themeManager.getTheme(),
       data: displayData,
       numberLocale: this.numberLocale,
+      paneTitles: this.paneTitles,
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });
   }

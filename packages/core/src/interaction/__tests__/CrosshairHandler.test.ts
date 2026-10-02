@@ -82,3 +82,40 @@ describe('CrosshairHandler mirrored crosshair', () => {
     expect(handler.getSyncedSlot()).toBeNull();
   });
 });
+
+describe('CrosshairHandler over indicator panes', () => {
+  /** Hover at (x, y) and report what the callback heard and what was drawn. */
+  const hover = async (handler: CrosshairHandler, y: number, vp: ViewportState = viewport) => {
+    const callback = vi.fn();
+    handler.setCallback(callback);
+    handler.setData(bars);
+    handler.onPointerMove({ x: 124, y }); // over bar 12
+    const { ctx, lines } = recorder();
+    handler.render(ctx, vp, theme);
+    await Promise.resolve();
+    return { callback, lines };
+  };
+
+  it('reports the hovered bar over a pane below without drawing there', async () => {
+    const handler = new CrosshairHandler();
+    handler.setReportBounds({ top: 0, bottom: 400 }); // a 100 px pane under the 300 px price pane
+    const { callback, lines } = await hover(handler, 360);
+    expect(callback).toHaveBeenCalledWith(12, { x: 124, y: 360 });
+    expect(lines).toEqual([]);
+  });
+
+  it('reports over a pane above the price pane too', async () => {
+    const handler = new CrosshairHandler();
+    handler.setReportBounds({ top: 0, bottom: 400 });
+    const below = { ...viewport, chartRect: { x: 0, y: 100, width: 500, height: 300 } };
+    const { callback } = await hover(handler, 50, below);
+    expect(callback).toHaveBeenCalledWith(12, { x: 124, y: 50 });
+  });
+
+  it('stays quiet past the panes (time axis) and without panes', async () => {
+    const bounded = new CrosshairHandler();
+    bounded.setReportBounds({ top: 0, bottom: 400 });
+    expect((await hover(bounded, 420)).callback).not.toHaveBeenCalled();
+    expect((await hover(new CrosshairHandler(), 360)).callback).not.toHaveBeenCalled();
+  });
+});

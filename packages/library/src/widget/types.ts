@@ -37,6 +37,12 @@ export interface ChartWidgetOptions {
    * status bar. Default `true`; needs the status bar.
    */
   rangeBar?: boolean;
+  /**
+   * The indicators on the chart, under the OHLCV legend and at the top of
+   * their panes, with show / settings / remove. Default `true`; `false`
+   * leaves only the toolbar's indicator count.
+   */
+  indicatorLegend?: boolean;
   /** Fullscreen button in the toolbar, where the browser allows it. Default `true`. */
   fullscreen?: boolean;
   /**
@@ -172,7 +178,6 @@ export interface ToolbarCallbacks {
   onToggleTimeframeFavorite?: (tf: TimeFrame) => void;
   onChartType: (type: ChartType) => void;
   onAddIndicator: (id: string) => void;
-  onRemoveIndicator: (instanceId: string) => void;
   onScreenshot: () => void;
   onSettings: () => void;
   onToggleTheme: () => void;
@@ -257,8 +262,4 @@ export interface DrawingToolGroupDef {
   tools: { label: string; value: DrawingToolType }[];
 }
 
-export interface ActiveIndicator {
-  instanceId: string;
-  id: string;
-  label: string;
-}
+

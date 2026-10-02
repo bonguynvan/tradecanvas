@@ -28,6 +28,9 @@ export class CrosshairHandler {
   private pendingPoint: Point | null = null;
   private callbackScheduled = false;
   private lastCallbackBarIndex = -1;
+  /** Vertical span (px) where the hovered bar is reported; null = the price pane only. */
+  private reportTop: number | null = null;
+  private reportBottom: number | null = null;
 
   setCallback(cb: CrosshairCallback): void {
     this.callback = cb;
@@ -76,6 +79,16 @@ export class CrosshairHandler {
     return this.syncedSlot;
   }
 
+  /**
+   * Also report the hovered bar between `top` and `bottom` (px), e.g. over
+   * indicator panes stacked above and below the price pane. The crosshair is
+   * still drawn on the price pane only. `null` reports on the price pane only.
+   */
+  setReportBounds(bounds: { top: number; bottom: number } | null): void {
+    this.reportTop = bounds?.top ?? null;
+    this.reportBottom = bounds?.bottom ?? null;
+  }
+
   onPointerMove(pos: Point): void {
     this.position = pos;
   }
@@ -98,7 +111,12 @@ export class CrosshairHandler {
     let { x, y } = this.position;
 
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
-    if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
+    const plotBottom = chartRect.y + chartRect.height;
+    // Over the indicator panes the hovered bar is still reported; they draw
+    // their own crosshair.
+    if (y < Math.min(this.reportTop ?? chartRect.y, chartRect.y)) return;
+    if (y > Math.max(this.reportBottom ?? plotBottom, plotBottom)) return;
+    const inPlot = y >= chartRect.y && y <= plotBottom;
 
     // The slot under the cursor — may lie past the newest bar (empty future
     // space the chart can be panned into). Magnet snaps to slots there too,
@@ -118,6 +136,7 @@ export class CrosshairHandler {
       this.lastCallbackBarIndex = barIndex;
       this.scheduleCallback();
     }
+    if (!inPlot) return;
 
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're

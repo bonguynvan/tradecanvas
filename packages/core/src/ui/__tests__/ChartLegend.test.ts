@@ -91,3 +91,21 @@ describe('ChartLegend — sub-cent assets', () => {
     expect(fillTextCalls).toContain('0,0000043430');
   });
 });
+
+describe('ChartLegend.getHeight', () => {
+  it('covers the rows it draws, and nothing when hidden', () => {
+    const legend = new ChartLegend();
+    legend.setConfig({ showSymbol: false, showOHLC: true, showVolume: true, fontSize: 12 });
+    expect(legend.getHeight()).toBe(6 + 15 + 14);
+    legend.setConfig({ showVolume: false });
+    expect(legend.getHeight()).toBe(6 + 15);
+    legend.setConfig({ visible: false });
+    expect(legend.getHeight()).toBe(0);
+  });
+
+  it('takes no room at the top left when drawn in the top-right corner', () => {
+    const legend = new ChartLegend();
+    legend.setConfig({ showSymbol: false, showOHLC: true, showVolume: false, fontSize: 12, position: 'top-right' });
+    expect(legend.getHeight()).toBe(0);
+  });
+});

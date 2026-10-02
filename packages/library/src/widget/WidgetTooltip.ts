@@ -46,6 +46,8 @@ export class WidgetTooltip {
     // Code that sets the title while the pointer is on the control (e.g.
     // "Magnet ON" ↔ "Magnet OFF" on click) mustn't bring the browser's back.
     this.observer = new MutationObserver(() => {
+      // The control just clicked often renames itself (Hide → Show).
+      if (this.pressed?.hasAttribute('title')) lift(this.pressed);
       const t = this.target;
       if (!t || this.source !== 'pointer' || !t.hasAttribute('title')) return;
       lift(t);

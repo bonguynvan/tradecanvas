@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InteractionManager } from '../InteractionManager.js';
 import { PanHandler } from '../PanHandler.js';
 import type { CrosshairHandler } from '../CrosshairHandler.js';
+import type { ZoomHandler } from '../ZoomHandler.js';
 import type { TradingManager } from '../../trading/TradingManager.js';
 import type { DrawingManager } from '../../drawings/DrawingManager.js';
 import type { ViewportState } from '@tradecanvas/commons';
@@ -284,5 +285,50 @@ describe('InteractionManager — drawing shortcuts', () => {
     const keys = withDrawings();
     press('Escape');
     expect(keys).toEqual(['Escape']);
+  });
+});
+
+describe('InteractionManager — touch on HTML layered over the chart', () => {
+  it('leaves the tap to the control, so its click still fires', () => {
+    const control = document.createElement('button');
+    el.appendChild(control);
+    const start = new Event('touchstart', { bubbles: true, cancelable: true });
+    const move = new Event('touchmove', { bubbles: true, cancelable: true });
+    control.dispatchEvent(start);
+    control.dispatchEvent(move);
+    expect(start.defaultPrevented).toBe(false);
+    expect(move.defaultPrevented).toBe(false);
+  });
+
+  /** A touch event carrying `points` as its current touches. */
+  const touches = (type: string, points: [number, number][]) => {
+    const e = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(e, 'touches', { value: points.map(([clientX, clientY]) => ({ clientX, clientY })) });
+    return e;
+  };
+
+  it('still pinches when the second finger lands on the control', () => {
+    const control = document.createElement('button');
+    el.appendChild(control);
+    const zoom = vi.fn();
+    im.setZoomHandler({ onWheel: zoom } as unknown as ZoomHandler);
+    el.dispatchEvent(touches('touchstart', [[100, 50]]));
+    const second = touches('touchstart', [[100, 50], [200, 50]]);
+    control.dispatchEvent(second);
+    control.dispatchEvent(touches('touchmove', [[80, 50], [220, 50]]));
+    expect(second.defaultPrevented).toBe(true);
+    expect(zoom).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('InteractionManager — mouse over HTML layered over the chart', () => {
+  it('leaves the crosshair where it was', () => {
+    const moves: number[] = [];
+    im.setCrosshairHandler({ getMode: () => 'normal', onPointerMove: (p: { x: number }) => moves.push(p.x), onPointerLeave() {} } as unknown as CrosshairHandler);
+    const control = document.createElement('button');
+    el.appendChild(control);
+    el.dispatchEvent(at('mousemove', 100));
+    control.dispatchEvent(at('mousemove', 20)); // also the mousemove a browser sends after a tap
+    expect(moves).toEqual([100]);
   });
 });

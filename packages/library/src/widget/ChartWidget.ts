@@ -22,6 +22,8 @@ import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
+import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
+import { formatIndicatorValue, legendLineColor, legendNumbers } from './legendValues.js';
 import { RANGE_PRESETS } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
@@ -66,6 +68,9 @@ function afterPaint(): Promise<void> {
 /** Distinct line colors for comparison overlays, cycled by add order. */
 const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
 
+/** Gap between the on-chart indicator rows and the plot or pane edge, px. */
+const LEGEND_INSET = 4;
+
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 let lastPressedWidget: ChartWidget | null = null;
 
@@ -87,6 +92,8 @@ export class ChartWidget {
   private statusBar: WidgetStatusBar | null = null;
   private goToDate: WidgetGoToDate | null = null;
   private readonly tooltip: WidgetTooltip;
+  private indicatorLegend: WidgetIndicatorLegend | null = null;
+  private legendFrame = 0;
   /**
    * Modals (settings, search, command palette, hotkeys) mount here: it carries
    * the theme tokens to `document.body`, and moves inside the widget while
@@ -117,6 +124,8 @@ export class ChartWidget {
   private depthLadder: WidgetDepthLadder | null = null;
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
+  /** The bar the on-chart indicator values are read at; null = the latest. */
+  private legendHoverIndex: number | null = null;
   private favoritesStore = new DrawingFavoritesStore();
   /** Timeframes pinned to the toolbar (same store shape as drawing favourites). */
   private timeframeFavorites = new DrawingFavoritesStore('tcw:tf-favorites');
@@ -271,7 +280,6 @@ export class ChartWidget {
           onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
           onChartType: (type) => this.handleChartType(type),
           onAddIndicator: (id) => this.handleAddIndicator(id),
-          onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
           onScreenshot: () => this.chart.screenshot(),
           onSettings: () => this.openSettings(),
           onToggleTheme: () => this.handleToggleTheme(),
@@ -418,9 +426,43 @@ export class ChartWidget {
       this.updateUI();
     });
 
-    // The chip strip mirrors the chart's indicators, whoever adds or removes them.
+    // The indicator list mirrors the chart's indicators, whoever adds or removes them.
     this.chart.on('indicatorAdd', () => this.syncIndicatorsFromChart());
     this.chart.on('indicatorRemove', () => this.syncIndicatorsFromChart());
+
+    // The indicators on the chart itself, instead of toolbar chips that overflow.
+    if (options.indicatorLegend !== false) {
+      this.chart.setPaneTitlesVisible(false);
+      this.indicatorLegend = new WidgetIndicatorLegend(this.chartContainer, {
+        onToggleVisible: (iid, visible) => {
+          this.chart.setIndicatorVisible(iid, visible);
+          this.scheduleLegend();
+          if (this.objectTree?.isOpen()) this.refreshObjects();
+        },
+        onSettings: (iid) => this.openIndicatorSettings(iid),
+        onRemove: (iid) => this.handleRemoveIndicator(iid),
+      }, {
+        show: this.t('legend.show'),
+        hide: this.t('legend.hide'),
+        settings: this.t('legend.settings'),
+        remove: this.t('legend.remove'),
+        collapse: this.t('legend.collapse'),
+        expand: this.t('legend.expand'),
+      });
+      this.chart.on('crosshairMove', (e) => {
+        const p = e.payload as { barIndex?: number };
+        this.legendHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
+        this.scheduleLegend();
+      });
+      // Off the chart, the values go back to the latest bar.
+      this.chart.on('crosshairLeave', () => {
+        this.legendHoverIndex = null;
+        this.scheduleLegend();
+      });
+      for (const event of ['indicatorUpdate', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
+        this.chart.on(event, () => this.scheduleLegend());
+      }
+    }
 
     // Replay: while picking, a click starts the replay at that bar; during a
     // replay it jumps the cursor there.
@@ -541,6 +583,7 @@ export class ChartWidget {
         onToggleIndicatorVisible: (iid, visible) => {
           this.chart.setIndicatorVisible(iid, visible);
           this.refreshObjects();
+          this.scheduleLegend();
         },
         onRemoveDrawing: (id) => {
           this.chart.removeDrawing(id);
@@ -745,6 +788,8 @@ export class ChartWidget {
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
     this.root.removeEventListener('pointerdown', this.onRootPointerDown, true);
     this.tooltip.destroy();
+    if (this.legendFrame) cancelAnimationFrame(this.legendFrame);
+    this.indicatorLegend?.destroy();
     if (lastPressedWidget === this) lastPressedWidget = null;
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
@@ -1616,6 +1661,7 @@ export class ChartWidget {
 
   private applySettings(patch: Partial<ChartSettingsState>): void {
     this.settingsState = { ...this.settingsState, ...patch };
+    this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
     if (patch.volumeVisible !== undefined) this.chart.setVolumeVisible(patch.volumeVisible);
@@ -1739,7 +1785,48 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** Redraw the on-chart indicator list on the next frame (coalesced). */
+  private scheduleLegend(): void {
+    if (!this.indicatorLegend || this.legendFrame) return;
+    this.legendFrame = requestAnimationFrame(() => {
+      this.legendFrame = 0;
+      this.renderLegend();
+    });
+  }
+
+  private renderLegend(): void {
+    if (!this.indicatorLegend || this.destroyed) return;
+    const last = this.chart.getData().length - 1;
+    // Renko, Kagi and the like redraw the series: the hovered bar is not a
+    // data bar, so their values stay on the latest one.
+    const hover = this.chart.isTimeAligned() ? this.legendHoverIndex : null;
+    const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
+    const panes = new Map(this.chart.getIndicatorPanes().map((p) => [p.instanceId, p.rect]));
+    const locale = this.settingsState.numberLocale || 'en-US';
+    const rows: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
+      const pane = panes.get(ind.instanceId) ?? null;
+      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
+      const point = idx >= 0 ? series?.[idx] : null;
+      const numbers = legendNumbers(ind.id, point);
+      // One line (judged at the latest bar, past any warm-up): the line's
+      // colour there. Several: which value is which line isn't known here,
+      // so they share the neutral colour rather than guess.
+      const lines = idx === last ? numbers.length : legendNumbers(ind.id, last >= 0 ? series?.[last] : null).length;
+      const color = lines === 1 ? legendLineColor(ind.id, this.chart.getIndicatorStyle(ind.instanceId)?.colors ?? [], point) : null;
+      return {
+        instanceId: ind.instanceId,
+        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig),
+        visible: ind.visible,
+        values: numbers.map((v) => ({ text: pane ? formatIndicatorValue(v, locale) : this.chart.formatPrice(v), color })),
+        pane: pane ? { x: pane.x + LEGEND_INSET, y: pane.y + 1, width: pane.width - 2 * LEGEND_INSET } : null,
+      };
+    });
+    const plot = this.chart.getPlotRect();
+    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + 1 });
+  }
+
   private updateUI(): void {
+    this.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
     this.statusBar?.update({

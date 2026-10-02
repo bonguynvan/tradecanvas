@@ -132,6 +132,17 @@ describe('WidgetTooltip', () => {
     expect(magnet.getAttribute('title')).toBe('Magnet ON');
   });
 
+  it('keeps the browser tooltip off a control that renames itself when clicked', async () => {
+    const eye = button('Hide');
+    over(eye);
+    eye.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    eye.title = 'Show'; // the click toggled it
+    await Promise.resolve(); // mutation observer
+    expect(eye.hasAttribute('title')).toBe(false);
+    out(eye, root);
+    expect(eye.getAttribute('title')).toBe('Show');
+  });
+
   it('ignores touch, which has no hover', () => {
     const a = button('Alerts');
     a.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'touch' }));
