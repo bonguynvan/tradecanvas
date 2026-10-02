@@ -25,6 +25,10 @@ import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
+import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
+import { readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
+import { LayoutSession } from '../state/LayoutSession.js';
+import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import {
   availableTimeframes,
@@ -144,6 +148,8 @@ export class ChartWidget {
   private accountPanel: WidgetAccountPanel | null = null;
   private orderTicket: WidgetOrderTicket | null = null;
   private accountFrame = 0;
+  private layoutSession: LayoutSession | null = null;
+  private layoutsUI: WidgetLayoutsUI | null = null;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
   private depthLadder: WidgetDepthLadder | null = null;
@@ -340,6 +346,7 @@ export class ChartWidget {
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
           onToggleAccount: options.trading !== false && options.accountPanel !== false ? () => this.accountPanel?.toggle() : undefined,
+          onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
           onToggleFullscreen: options.fullscreen !== false && typeof document !== 'undefined' && document.fullscreenEnabled
@@ -633,13 +640,16 @@ export class ChartWidget {
     // by the price axis: what to do at its price.
     this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
     this.chart.on('chartContextMenu', (e) => {
-      const { area, x, y, price } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
-      this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, price);
+      const { area, x, y, price, time } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, { area, price, time });
     });
     this.chart.on('priceAxisAdd', (e) => {
       const { price, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
-      this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, price);
+      this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, { area: 'priceAxisAdd', price });
     });
+
+    // Named layouts: save, open, rename, delete, auto-save.
+    if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
 
     // Account panel and order ticket.
     if (options.trading !== false && options.accountPanel !== false) {
@@ -818,13 +828,22 @@ export class ChartWidget {
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
+      // With several widgets on the page, the shortcuts go to the one used last.
+      const mine = lastPressedWidget === null || lastPressedWidget === this;
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        if (!mine) return;
         e.preventDefault();
         this.toggleCommandPalette();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
+        if (!mine) return;
         e.preventDefault();
         this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+      } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        // Ctrl/Cmd+S → save the layout (rather than the page).
+        if (!mine || !this.layoutSession) return;
+        e.preventDefault();
+        void this.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
@@ -892,6 +911,7 @@ export class ChartWidget {
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
     this.watchlist?.setActive(symbol);
+    this.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
     }
@@ -945,6 +965,7 @@ export class ChartWidget {
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
+    this.layoutSession?.changed();
     if (this.adapter) {
       // Live adapter owns the data — refetch at the native resolution.
       await this.connectStream();
@@ -1007,6 +1028,8 @@ export class ChartWidget {
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
     this.chartMenu?.destroy();
+    this.layoutSession?.destroy();
+    this.layoutsUI?.destroy();
     this.accountPanel?.destroy();
     this.orderTicket?.destroy();
     if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
@@ -1179,13 +1202,56 @@ export class ChartWidget {
     };
   }
 
-  /** Open a chart menu at (x, y) in the chart's pixels; nothing when it has no entries. */
-  private openChartMenu(entries: import('./WidgetContextMenu.js').ContextMenuEntry[], x: number, y: number, price: number | undefined): void {
-    if (!this.chartMenu || entries.length === 0) return;
+  /**
+   * Open a chart menu at (x, y) in the chart's pixels, the host's own entries
+   * last; nothing when it has no entries.
+   */
+  private openChartMenu(
+    entries: import('./WidgetContextMenu.js').ContextMenuEntry[],
+    x: number,
+    y: number,
+    context: import('./types.js').ChartMenuItemsContext,
+  ): void {
+    if (!this.chartMenu) return;
+    const extra = this.options.chartMenuItems?.(context) ?? [];
+    const all: import('./WidgetContextMenu.js').ContextMenuEntry[] = [
+      ...entries,
+      ...(entries.length > 0 && extra.length > 0 ? ['separator' as const] : []),
+      ...extra.map((item, i) => ({ id: `host:${i}`, label: item.label, icon: item.icon, danger: item.danger, checked: item.checked })),
+    ];
+    if (all.length === 0) return;
     const chartRect = this.chartContainer.getBoundingClientRect();
     const rootRect = this.root.getBoundingClientRect();
-    this.chartMenu.open(entries, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y,
-      (action) => this.runChartMenuAction(action as ChartMenuAction, price));
+    this.chartMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
+      if (action.startsWith('host:')) extra[Number(action.slice('host:'.length))]?.onSelect();
+      else this.runChartMenuAction(action as ChartMenuAction, context.price);
+    });
+  }
+
+  /**
+   * A button of your own on the toolbar: an icon (built-in or yours), text,
+   * a switch. `null` without a toolbar.
+   */
+  addToolbarButton(spec: import('./types.js').ToolbarButtonSpec): import('./types.js').ToolbarButtonHandle | null {
+    if (!this.toolbar) return null;
+    const element = this.toolbar.addHostButton(spec);
+    const textSpan = (): HTMLSpanElement => {
+      const found = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
+      if (found) return found;
+      const added = document.createElement('span');
+      added.className = 'tcw-host-btn-text';
+      element.appendChild(added);
+      return added;
+    };
+    return {
+      element,
+      setActive: (on) => {
+        element.classList.toggle('tcw-active', on);
+        if (spec.toggle) element.setAttribute('aria-pressed', String(on));
+      },
+      setText: (text) => { textSpan().textContent = text; },
+      remove: () => element.remove(),
+    };
   }
 
   private runChartMenuAction(action: ChartMenuAction, price: number | undefined): void {
@@ -1905,6 +1971,98 @@ export class ChartWidget {
     }, 3500);
   }
 
+  // --- Named layouts ---
+
+  /** Named layouts: save, open, rename, delete, auto-save. `null` with `layouts: false`. */
+  getLayoutSession(): LayoutSession | null {
+    return this.layoutSession;
+  }
+
+  /** This chart as a layout: symbol, interval, scale and the chart's state (no theme). */
+  captureLayout(): WidgetLayoutContent {
+    const json = this.chart.saveState();
+    const chart = json ? parseLayoutJson(json) as Record<string, unknown> | null : null;
+    if (chart) {
+      // The theme stays the viewer's; the time of the capture would make every capture differ.
+      delete chart.theme;
+      delete chart.timestamp;
+    }
+    return {
+      v: 1,
+      symbol: this.state.symbol,
+      timeframe: this.state.timeframe,
+      scaleMode: this.settingsState.scaleMode,
+      invertScale: this.settingsState.invertScale,
+      chart,
+    };
+  }
+
+  /** Show a layout from `captureLayout()`. */
+  async restoreLayout(content: WidgetLayoutContent): Promise<void> {
+    if (content.symbol !== this.state.symbol) await this.setSymbol(content.symbol);
+    if (content.timeframe !== this.state.timeframe) await this.setTimeframe(content.timeframe);
+    if (this.destroyed) return;
+    if (content.chart) {
+      this.chart.loadState(JSON.stringify(content.chart));
+      const type = content.chart.chartType;
+      if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
+    }
+    this.applySettings({ scaleMode: content.scaleMode, invertScale: content.invertScale });
+    this.syncIndicatorsFromChart();
+    this.updateUI();
+  }
+
+  /** `captureLayout()` as JSON. */
+  getLayoutContent(): string {
+    return JSON.stringify(this.captureLayout());
+  }
+
+  /** Show a layout from `getLayoutContent()`; `false` when it is not one. */
+  async applyLayoutContent(content: string): Promise<boolean> {
+    const layout = readWidgetLayout(parseLayoutJson(content));
+    if (!layout) return false;
+    await this.restoreLayout(layout);
+    return true;
+  }
+
+  private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
+    const session = new LayoutSession(cfg.storage ?? localStorageLayouts(), {
+      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.state.timeframe }),
+      apply: async (layout: SavedLayout) => {
+        if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a widget layout');
+      },
+    }, {
+      autoSave: cfg.autoSave,
+      debounceMs: cfg.debounceMs,
+      onChange: () => this.toolbar?.setLayout(session.current()?.name ?? null, session.isDirty()),
+      onError: () => this.toast(this.t('layouts.saveFailed'), 'error'),
+    });
+    this.layoutSession = session;
+    this.layoutsUI = new WidgetLayoutsUI(session, {
+      root: this.root,
+      t: this.t,
+      toast: (message, kind) => this.toast(message, kind),
+      formatTime: (ms) => {
+        const { date, time } = utcToWallTime(ms, this.displayTimezone());
+        return `${date} ${time}`;
+      },
+    });
+    this.chart.on('stateChange', () => session.changed());
+    if (cfg.openLast) {
+      void session.list().then(([last]) => (last && !this.destroyed ? this.openLayout(last.id) : undefined), () => undefined);
+    }
+  }
+
+  /** Save into the open layout, or ask for a name when there is none. */
+  async saveLayout(): Promise<void> {
+    await this.layoutsUI?.save();
+  }
+
+  /** Open a saved layout by id; `false` when it could not be. */
+  async openLayout(id: string): Promise<boolean> {
+    return (await this.layoutsUI?.open(id)) ?? false;
+  }
+
   // --- Layout persistence ---
 
   /**
@@ -2147,6 +2305,7 @@ export class ChartWidget {
 
   private applySettings(patch: Partial<ChartSettingsState>): void {
     this.settingsState = { ...this.settingsState, ...patch };
+    if (patch.scaleMode !== undefined || patch.logScale !== undefined || patch.invertScale !== undefined) this.layoutSession?.changed();
     this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);

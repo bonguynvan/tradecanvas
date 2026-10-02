@@ -49,7 +49,12 @@ export type ChartEventType =
   | 'alertAdd'
   | 'alertRemove'
   | 'alertTriggered'
-  | 'alertUpdate';
+  | 'alertUpdate'
+  /**
+   * Something a saved layout holds may have changed: drawings, indicators,
+   * alerts, the chart type or the theme. Fires often; debounce it.
+   */
+  | 'stateChange';
 
 export interface ChartEvent<T = unknown> {
   type: ChartEventType;

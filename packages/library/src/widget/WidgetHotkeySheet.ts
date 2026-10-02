@@ -41,6 +41,7 @@ const GROUPS: HotkeyGroup[] = [
       { keys: [mod, 'P'], label: 'hotkeys.symbolSearch' },
       { keys: ['Alt', 'G'], label: 'hotkeys.goToDate' },
       { keys: ['Alt', 'I'], label: 'hotkeys.invertScale' },
+      { keys: [mod, 'S'], label: 'hotkeys.saveLayout' },
       { keys: ['?'], label: 'hotkeys.showSheet' },
     ],
   },

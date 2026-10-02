@@ -1117,6 +1117,7 @@ export class Chart {
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    this.scheduleAutoSave();
   }
 
   // --- Indicators ---
@@ -1751,8 +1752,10 @@ export class Chart {
     this.autoSaveScheduler.disable();
   }
 
+  /** Something a saved layout holds may have changed: auto-save it, and say so. */
   private scheduleAutoSave(): void {
     this.autoSaveScheduler.schedule();
+    if (this.eventBus.hasListeners('stateChange')) this.eventBus.emit('stateChange', {});
   }
 
   // --- Indicator introspection ---
@@ -2424,6 +2427,7 @@ export class Chart {
     this.container.style.backgroundColor = this.themeManager.getTheme().background;
     this.engine.requestRender();
     this.eventBus.emit('themeChange', { theme: themeOrName });
+    this.scheduleAutoSave();
   }
 
   getTheme(): Theme {

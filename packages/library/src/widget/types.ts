@@ -82,6 +82,21 @@ export interface ChartWidgetOptions {
    */
   accountPanel?: boolean;
 
+  /**
+   * Named layouts: a toolbar button to save the chart (symbol, interval,
+   * scale, chart type, indicators, drawings, alerts) under a name, open,
+   * rename and delete layouts, and auto-save the one open; Ctrl/Cmd+S saves.
+   * Kept in this browser's `localStorage` unless `storage` says otherwise.
+   * Default `true`.
+   */
+  layouts?: boolean | WidgetLayoutsOptions;
+
+  /**
+   * Your own entries at the end of the chart's right-click menus (and of the
+   * "+" by the price axis), after the widget's. Called each time a menu opens.
+   */
+  chartMenuItems?: (context: ChartMenuItemsContext) => readonly WidgetMenuItem[];
+
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
@@ -158,6 +173,64 @@ export interface ChartWidgetOptions {
   onReady?: (chart: Chart) => void;
 }
 
+/** Where a chart menu opened, for `chartMenuItems`. */
+export interface ChartMenuItemsContext {
+  /** The part of the chart right-clicked, or `'priceAxisAdd'` for the "+" by the price axis. */
+  area: import('@tradecanvas/commons').ChartContextArea | 'priceAxisAdd';
+  /** The price there, on the price pane and the price axis. */
+  price?: number;
+  /** The time there, on the plot and the time axis (ms). */
+  time?: number;
+}
+
+/** An entry of yours in a widget menu. */
+export interface WidgetMenuItem {
+  label: string;
+  /** A built-in icon's name (see the docs' icon list). */
+  icon?: string;
+  /** Shown in red, for something that removes. */
+  danger?: boolean;
+  /** Makes it a switch, ticked when `true`. */
+  checked?: boolean;
+  onSelect: () => void;
+}
+
+/** A button of yours on the widget's toolbar; see `ChartWidget.addToolbarButton`. */
+export interface ToolbarButtonSpec {
+  /** Tells your buttons apart (`data-host-button` on the element). */
+  id: string;
+  /** Its accessible name and tooltip. */
+  label: string;
+  /** A built-in icon's name, or an element of your own (an `<svg>`, say). */
+  icon?: string | Element;
+  /** Text after the icon. Without an icon or text the label shows. */
+  text?: string;
+  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  side?: 'left' | 'right';
+  /** A switch that shows pressed while on (see `setActive`). */
+  toggle?: boolean;
+  onClick: (button: HTMLButtonElement) => void;
+}
+
+export interface ToolbarButtonHandle {
+  readonly element: HTMLButtonElement;
+  /** Show a `toggle` button as on or off. */
+  setActive(on: boolean): void;
+  setText(text: string): void;
+  remove(): void;
+}
+
+export interface WidgetLayoutsOptions {
+  /** Where the layouts are kept: your server, say. Default: `localStorageLayouts()`. */
+  storage?: import('../state/layoutStorage.js').LayoutStorage;
+  /** Save the open layout by itself as it changes. Default `true`. */
+  autoSave?: boolean;
+  /** How long changes settle before an auto-save. Default 1500 ms. */
+  debounceMs?: number;
+  /** Open the layout saved last when the widget starts. Default `false`. */
+  openLast?: boolean;
+}
+
 export interface ActiveIndicatorInfo {
   id: string;
   /** Chip label: short name plus the main parameters, e.g. "EMA 20". */
@@ -214,6 +287,8 @@ export interface ToolbarCallbacks {
   onToggleAlerts?: () => void;
   onToggleObjects?: () => void;
   onToggleAccount?: () => void;
+  /** The layouts button was pressed: open its menu under it. */
+  onLayouts?: (anchor: HTMLElement) => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
   /** Shown only when given (and the browser allows fullscreen). */
