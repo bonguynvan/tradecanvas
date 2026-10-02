@@ -81,4 +81,15 @@ describe('IndicatorEngine left scale', () => {
     expect(engine.getLatestOverlayValues().map((v) => v.value)).toEqual([9]);
     expect(engine.getLatestOverlayValues('left').map((v) => v.value)).toEqual([9000]);
   });
+
+  it('takes an overlay off the left scale when it moves into a pane', () => {
+    const engine = new IndicatorEngine();
+    engine.register(overlay('volume', 1000, []));
+    engine.register({ ...overlay('osc', 1, []), descriptor: { id: 'osc', name: 'osc', placement: 'panel', defaultConfig: {} } });
+    const osc = engine.addIndicator('osc', {}, bars(10));
+    const id = engine.addIndicator('volume', {}, bars(10), { scale: 'left' });
+    expect(engine.setPane(id, osc)).toBe(true);
+    expect(engine.getIndicatorConfig(id)?.scale).toBeUndefined();
+    expect(engine.hasLeftScaleOverlays()).toBe(false);
+  });
 });

@@ -104,6 +104,7 @@ export const EN_MESSAGES = {
 
   // Hotkey sheet
   'hotkeys.title': 'Keyboard shortcuts',
+  'hotkeys.footer': 'Press ? anytime to show this sheet',
   'hotkeys.close': 'Close',
   'hotkeys.gotIt': 'Got it',
   'hotkeys.group.searchNavigation': 'Search & navigation',
@@ -192,6 +193,7 @@ export const EN_MESSAGES = {
   'objects.indicators': 'Indicators',
   'objects.drawings': 'Drawings',
   'objects.compare': 'Compare',
+  'objects.addCompare': 'Add a symbol to compare',
   'objects.noIndicators': 'No indicators',
   'objects.noDrawings': 'No drawings',
   'objects.noComparisons': 'No comparisons',
@@ -303,6 +305,8 @@ export const EN_MESSAGES = {
   'ladder.price': 'Price',
   'ladder.ask': 'Ask',
   'ladder.empty': 'No order-book data',
+  'ladder.sellAt': 'Sell @ {price}',
+  'ladder.buyAt': 'Buy @ {price}',
   'dataWindow.title': 'Data window',
   'dataWindow.hover': 'Hover the chart',
   'dataWindow.open': 'Open',
@@ -314,6 +318,7 @@ export const EN_MESSAGES = {
 
   // Brackets and orders
   'bracket.place': 'Place',
+  'bracket.hint': 'drag lines to adjust',
   'bracket.longPlaced': 'Long bracket placed · {rr}R',
   'bracket.shortPlaced': 'Short bracket placed · {rr}R',
   'order.buyLimit': 'Buy limit @ {price}',
@@ -322,6 +327,7 @@ export const EN_MESSAGES = {
   // Toasts
   'toast.pinned': 'Pinned to favorites',
   'toast.unpinned': 'Unpinned',
+  'sidebar.unpinHint': '{tool} (right-click to unpin)',
   'toast.imageCopied': 'Chart image copied',
   'toast.imageCopyFailed': 'Copy failed — image clipboard unavailable',
   'toast.linkCopied': 'Share link copied',

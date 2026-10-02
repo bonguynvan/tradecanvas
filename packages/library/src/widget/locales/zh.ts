@@ -97,6 +97,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'settings.section.background': '背景',
 
   'hotkeys.title': '快捷键',
+  'hotkeys.footer': '随时按 ? 打开此列表',
   'hotkeys.close': '关闭',
   'hotkeys.gotIt': '知道了',
   'hotkeys.group.searchNavigation': '搜索与导航',
@@ -181,6 +182,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'objects.indicators': '指标',
   'objects.drawings': '画线',
   'objects.compare': '对比',
+  'objects.addCompare': '添加对比品种',
   'objects.noIndicators': '暂无指标',
   'objects.noDrawings': '暂无画线',
   'objects.noComparisons': '暂无对比',
@@ -286,6 +288,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ladder.price': '价格',
   'ladder.ask': '卖价',
   'ladder.empty': '暂无盘口数据',
+  'ladder.sellAt': '卖出 @ {price}',
+  'ladder.buyAt': '买入 @ {price}',
   'dataWindow.title': '数据窗口',
   'dataWindow.hover': '将鼠标移到图表上',
   'dataWindow.open': '开盘',
@@ -296,6 +300,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'dataWindow.volume': '成交量',
 
   'bracket.place': '下单',
+  'bracket.hint': '拖动线条进行调整',
   'bracket.longPlaced': '已下做多括号单 · {rr}R',
   'bracket.shortPlaced': '已下做空括号单 · {rr}R',
   'order.buyLimit': '限价买入 @ {price}',
@@ -303,6 +308,7 @@ export const ZH_MESSAGES: WidgetMessages = {
 
   'toast.pinned': '已固定到收藏',
   'toast.unpinned': '已取消固定',
+  'sidebar.unpinHint': '{tool}（右键取消固定）',
   'toast.imageCopied': '已复制图表图片',
   'toast.imageCopyFailed': '复制失败：无法写入图片剪贴板',
   'toast.linkCopied': '已复制分享链接',

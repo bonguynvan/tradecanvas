@@ -40,6 +40,7 @@ describe('DataManager.setData', () => {
       bar(2, NaN, 12, 9, 11, 1),
       bar(3, 10, 8, 9, 11, 1), // high < low
       bar(4, 10, 12, 9, 11, -1),
+      bar(NaN, 10, 12, 9, 11, 1),
       bar(5, 10, 12, 9, 11, 1),
     ]);
     expect(dm.getData().map((b) => b.time)).toEqual([1, 5]);

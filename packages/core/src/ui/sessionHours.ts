@@ -33,6 +33,19 @@ export interface SessionHoursConfig {
 
 const DAY_MS = 86_400_000;
 
+/**
+ * `patch` over `base`. A fixed offset given without a zone replaces the zone,
+ * since the zone would otherwise win over it.
+ */
+export function mergeSessionHours(base: SessionHoursConfig, patch: Partial<SessionHoursConfig>): SessionHoursConfig {
+  const next: SessionHoursConfig = { ...base, ...patch };
+  if (patch.tzOffsetMinutes !== undefined && patch.timeZone === undefined) delete next.timeZone;
+  // Own the windows array so later mutation by the caller can't leak in.
+  if (next.windows) next.windows = next.windows.map((w) => ({ ...w }));
+  else delete next.windows;
+  return next;
+}
+
 /** Minute-of-day (0–1439) for a timestamp in the configured timezone. */
 export function minuteOfDay(timeMs: number, tzOffsetMinutes: number): number {
   const shifted = timeMs + tzOffsetMinutes * 60_000;

@@ -97,6 +97,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.section.background': '배경',
 
   'hotkeys.title': '키보드 단축키',
+  'hotkeys.footer': '언제든 ? 키를 눌러 이 목록을 볼 수 있습니다',
   'hotkeys.close': '닫기',
   'hotkeys.gotIt': '확인',
   'hotkeys.group.searchNavigation': '검색 및 이동',
@@ -181,6 +182,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'objects.indicators': '지표',
   'objects.drawings': '그림',
   'objects.compare': '비교',
+  'objects.addCompare': '비교할 종목 추가',
   'objects.noIndicators': '지표가 없습니다',
   'objects.noDrawings': '그림이 없습니다',
   'objects.noComparisons': '비교 종목이 없습니다',
@@ -286,6 +288,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'ladder.price': '가격',
   'ladder.ask': '매도',
   'ladder.empty': '호가 데이터가 없습니다',
+  'ladder.sellAt': '매도 @ {price}',
+  'ladder.buyAt': '매수 @ {price}',
   'dataWindow.title': '데이터 창',
   'dataWindow.hover': '차트 위에 마우스를 올리세요',
   'dataWindow.open': '시가',
@@ -296,6 +300,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'dataWindow.volume': '거래량',
 
   'bracket.place': '주문',
+  'bracket.hint': '선을 드래그해 조정',
   'bracket.longPlaced': '롱 브래킷 주문 완료 · {rr}R',
   'bracket.shortPlaced': '숏 브래킷 주문 완료 · {rr}R',
   'order.buyLimit': '지정가 매수 @ {price}',
@@ -303,6 +308,7 @@ export const KO_MESSAGES: WidgetMessages = {
 
   'toast.pinned': '즐겨찾기에 고정했습니다',
   'toast.unpinned': '고정을 해제했습니다',
+  'sidebar.unpinHint': '{tool} (오른쪽 클릭으로 고정 해제)',
   'toast.imageCopied': '차트 이미지를 복사했습니다',
   'toast.imageCopyFailed': '복사 실패 — 이미지 클립보드를 사용할 수 없습니다',
   'toast.linkCopied': '공유 링크를 복사했습니다',

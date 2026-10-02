@@ -3,7 +3,7 @@ import { mergeBar } from '@tradecanvas/commons';
 
 /** Validate a single OHLC bar. Returns true if bar is usable. */
 function isValidBar(bar: OHLCBar): boolean {
-  if (!bar || typeof bar.time !== 'number') return false;
+  if (!bar || typeof bar.time !== 'number' || !Number.isFinite(bar.time)) return false;
   const { open, high, low, close } = bar;
   // Reject NaN / Infinity
   if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) return false;

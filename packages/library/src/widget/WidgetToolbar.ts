@@ -4,6 +4,7 @@ import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import type { Translator } from './i18n.js';
+import { chartTypeLabel } from './widgetLocales.js';
 
 let toolbarCount = 0;
 
@@ -166,9 +167,7 @@ export class WidgetToolbar {
   }
 
   private chartTypeLabel(ct: { value: ChartType; label: string }): string {
-    const key = `chartType.${ct.value}` as const;
-    const translated = this.t(key as Parameters<Translator>[0]);
-    return translated === key ? ct.label : translated;
+    return chartTypeLabel(ct, this.t);
   }
 
   private buildChartTypeMenu(): void {

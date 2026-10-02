@@ -1,7 +1,7 @@
 import type { DrawingToolType } from '@tradecanvas/commons';
 import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon, createToolIcon } from './icons.js';
-import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 
 /** Drawing tool icons carry more detail than interface glyphs: a size up. */
 const TOOL_ICON_PX = 16;
@@ -188,7 +188,7 @@ export class WidgetDrawingSidebar {
     for (const tool of this.favorites) {
       const btn = document.createElement('button');
       btn.className = 'tcw-sidebar-btn';
-      btn.title = `${toolLabel(this.config.drawingToolGroups, tool)} (right-click to unpin)`;
+      btn.title = fill(this.t('sidebar.unpinHint'), { tool: toolLabel(this.config.drawingToolGroups, tool) });
       btn.dataset.toolValue = tool;
       btn.innerHTML = createToolIcon(tool, TOOL_ICON_PX);
       btn.addEventListener('click', () => this.callbacks.onDrawingTool(tool as never));

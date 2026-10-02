@@ -97,6 +97,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Arka plan',
 
   'hotkeys.title': 'Klavye kısayolları',
+  'hotkeys.footer': 'Bu listeyi açmak için istediğiniz zaman ? tuşuna basın',
   'hotkeys.close': 'Kapat',
   'hotkeys.gotIt': 'Anladım',
   'hotkeys.group.searchNavigation': 'Arama ve gezinme',
@@ -181,6 +182,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Göstergeler',
   'objects.drawings': 'Çizimler',
   'objects.compare': 'Karşılaştır',
+  'objects.addCompare': 'Karşılaştırmak için sembol ekle',
   'objects.noIndicators': 'Gösterge yok',
   'objects.noDrawings': 'Çizim yok',
   'objects.noComparisons': 'Karşılaştırma yok',
@@ -286,6 +288,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'ladder.price': 'Fiyat',
   'ladder.ask': 'Satış',
   'ladder.empty': 'Emir defteri verisi yok',
+  'ladder.sellAt': 'Sat @ {price}',
+  'ladder.buyAt': 'Al @ {price}',
   'dataWindow.title': 'Veri penceresi',
   'dataWindow.hover': 'İmleci grafiğin üzerine getirin',
   'dataWindow.open': 'Açılış',
@@ -296,6 +300,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Hacim',
 
   'bracket.place': 'Gönder',
+  'bracket.hint': 'ayarlamak için çizgileri sürükleyin',
   'bracket.longPlaced': 'Uzun braket emri gönderildi · {rr}R',
   'bracket.shortPlaced': 'Kısa braket emri gönderildi · {rr}R',
   'order.buyLimit': 'Limit alış @ {price}',
@@ -303,6 +308,7 @@ export const TR_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Favorilere sabitlendi',
   'toast.unpinned': 'Sabitleme kaldırıldı',
+  'sidebar.unpinHint': '{tool} (sabitlemeyi kaldırmak için sağ tıklayın)',
   'toast.imageCopied': 'Grafik görüntüsü kopyalandı',
   'toast.imageCopyFailed': 'Kopyalanamadı: görüntü panosu kullanılamıyor',
   'toast.linkCopied': 'Bağlantı kopyalandı',

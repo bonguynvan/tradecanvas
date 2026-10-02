@@ -25,6 +25,35 @@ describe('zoneOffsetMinutes', () => {
     expect(zoneOffsetMinutes(NY, Date.UTC(2026, 2, 8, 6, 59))).toBe(-300);
     expect(zoneOffsetMinutes(NY, Date.UTC(2026, 2, 8, 7, 0))).toBe(-240);
   });
+
+  it('agrees with the zone at every quarter hour of a year', () => {
+    const direct = (zone: string, ms: number) => {
+      const p = Object.fromEntries(
+        new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+          .formatToParts(new Date(ms)).map((x) => [x.type, Number(x.value)]),
+      );
+      return Math.round((Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute) - ms) / 60_000);
+    };
+    for (const zone of [NY, 'Europe/London', 'Australia/Sydney', 'Pacific/Chatham']) {
+      // Read backwards, so the order a cache fills in can't hide a wrong answer.
+      for (let ms = Date.UTC(2027, 0, 1); ms >= Date.UTC(2026, 0, 1); ms -= 15 * 60_000) {
+        if (zoneOffsetMinutes(zone, ms) !== direct(zone, ms)) {
+          throw new Error(`${zone} at ${new Date(ms).toISOString()}: ${zoneOffsetMinutes(zone, ms)} vs ${direct(zone, ms)}`);
+        }
+      }
+    }
+  });
+
+  it('reads UTC and its aliases as no offset', () => {
+    for (const zone of ['UTC', 'Etc/UTC', 'GMT', 'Etc/GMT']) {
+      expect(offsetAt(zone, Date.UTC(2026, 6, 15))).toBe(0);
+    }
+  });
+
+  it('gives a time that is not a number no offset instead of throwing', () => {
+    expect(zoneOffsetMinutes(NY, Number.NaN)).toBe(0);
+    expect(() => timeParts(Number.NaN, NY)).not.toThrow();
+  });
 });
 
 describe('isValidTimeZone', () => {
@@ -91,5 +120,24 @@ describe('wallToUtc when the clocks go back', () => {
   it('takes the first of a time that occurs twice', () => {
     // 2026-11-01 01:30 happens at 05:30 UTC (EDT) and again at 06:30 UTC (EST).
     expect(wallToUtc(Date.UTC(2026, 10, 1, 1, 30), NY)).toBe(Date.UTC(2026, 10, 1, 5, 30));
+  });
+});
+
+describe('wallToUtc far east of UTC', () => {
+  const AKL = 'Pacific/Auckland';
+
+  it('takes the first of a time that occurs twice', () => {
+    // 2026-04-05 03:00 NZDT → 02:00 NZST: 02:30 happens at +13, then at +12.
+    expect(wallToUtc(Date.UTC(2026, 3, 5, 2, 30), AKL)).toBe(Date.UTC(2026, 3, 4, 13, 30));
+  });
+
+  it('moves a skipped time forward', () => {
+    // 2026-09-27 02:00 NZST → 03:00 NZDT: 02:30 is read as 03:30 NZDT.
+    expect(wallToUtc(Date.UTC(2026, 8, 27, 2, 30), AKL)).toBe(Date.UTC(2026, 8, 26, 14, 30));
+  });
+
+  it('turns ordinary times into instants at +12:45 and +13', () => {
+    expect(wallToUtc(Date.UTC(2026, 0, 15, 9, 0), 'Pacific/Chatham')).toBe(Date.UTC(2026, 0, 14, 19, 15));
+    expect(wallToUtc(Date.UTC(2026, 0, 15, 9, 0), 'Pacific/Apia')).toBe(Date.UTC(2026, 0, 14, 20, 0));
   });
 });

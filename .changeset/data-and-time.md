@@ -26,7 +26,9 @@
     - Chart types that reshape the bars (Renko, Kagi…) only page on
       `loadMore()`.
     - A loader set with `setHistoryLoader` wins over the stream's.
-    - A reconnect keeps the paged-in bars and the view.
+    - A reconnect keeps the paged-in bars and the view when its bars reach
+      back over them. After a longer outage the chart starts over instead of
+      joining the two across a gap; a host's `setData` also ends the merging.
   - New `chart.prependBars()`, `setHistoryLoader()`, `loadMoreHistory()`,
     `hasMoreHistory()`, `isLoadingHistory()` and the `historyLoad` event.
   - ChartWidget shows a small pill while older bars load (`historyPageSize`
@@ -68,7 +70,14 @@
     the tooltip, day/week/month breaks, the range presets and go-to-date.
     Before, day breaks always followed the browser's zone.
   - Session hours take `timeZone`, so NYSE's 09:30–16:00 holds through
-    daylight-saving changes.
+    daylight-saving changes. `DEFAULT_SESSION_HOURS` now uses
+    `'America/New_York'`, and `SessionHoursConfig.tzOffsetMinutes` is
+    optional. A `tzOffsetMinutes` given without `timeZone` replaces a zone set
+    before (new `mergeSessionHours`).
+  - The Alt-click pinned tooltip shows the time in the chart's zone too.
+  - Zone offsets are cached per week, so a zone costs about what the browser's
+    own zone does, and UTC costs nothing. A bar whose time is not a finite
+    number is dropped.
   - New commons helpers: `TimeZoneSetting`, `isValidTimeZone`,
     `zoneOffsetMinutes`, `offsetAt`, `wallToUtc`, `zonedDateFormatter`.
     `timeParts` and `tzLabel` accept a zone.
@@ -86,6 +95,8 @@
   - New `isLeftPriceScaleShown()`, `getLeftPriceRange()` and
     `getIndicatorScale()`; `indicatorChange` reports `'scale'`.
   - The scale is kept in saved layouts. Its overlays get value tags on it.
+  - Its strip never starts a drawing or a pan. While it mirrors the price
+    scale, dragging it scales prices and a double-click resets them.
   - ChartWidget: a "Left price scale" switch in the settings, and a price
     scale choice in an overlay's Style tab.
 - **Symbol search and symbol info.**
@@ -97,10 +108,13 @@
     and loads again after a failure. Mock (a `symbols` option) and the
     WebSocket/Polling adapters (options) implement them too.
   - A connected chart asks `resolveSymbol` about its symbol and drops a late
-    answer about a symbol it left.
+    answer about a symbol it left. A failed lookup is logged with
+    `console.warn` and is not a feed error; no answer keeps what the host set.
   - New `chart.setSymbolInfo` / `getSymbolInfo` and the `symbolInfoChange`
     event. The symbol's precision applies unless `setMarket` set one, and its
-    sessions feed the session shading.
+    sessions feed the session shading. A symbol without sessions goes back to
+    the host's hours, and `setSessionShadingConfig` wins until the next
+    symbol brings its own.
   - `setTimezone('exchange')` (`EXCHANGE_TIMEZONE`) follows the symbol's zone;
     `getEffectiveTimezone()` returns the resolved zone.
   - ChartWidget's symbol search asks the feed (or a `searchSymbols` option) as
@@ -126,3 +140,7 @@
     `MessageKey` / `WidgetMessages` types.
   - The settings offer number formats for these languages.
 - The widget's replay bar sits above the time axis.
+- Dragging inside an indicator pane pans the chart. It used to zoom time as if
+  the time axis had been dragged (the time strip started at the bottom of the
+  price pane, not below the panes). The axis strip beside a pane takes no
+  drawing or pan.

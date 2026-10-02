@@ -195,6 +195,13 @@ describe('Chart time zone', () => {
     expect(chart.getTimezone()).toBeNull();
   });
 
+  it('refuses an unknown ChartOptions.timeZone before building anything', () => {
+    const other = sizedHost();
+    expect(() => new Chart(other, { timeZone: 'Mars/Olympus' })).toThrow(RangeError);
+    expect(other.children).toHaveLength(0);
+    other.remove();
+  });
+
   it('starts in ChartOptions.timeZone', () => {
     const other = new Chart(sizedHost(), { timeZone: 'Asia/Tokyo' });
     expect(other.getTimezone()).toBe('Asia/Tokyo');

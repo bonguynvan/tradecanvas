@@ -97,6 +97,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Фон',
 
   'hotkeys.title': 'Сочетания клавиш',
+  'hotkeys.footer': 'Нажмите ?, чтобы открыть этот список в любой момент',
   'hotkeys.close': 'Закрыть',
   'hotkeys.gotIt': 'Понятно',
   'hotkeys.group.searchNavigation': 'Поиск и навигация',
@@ -181,6 +182,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Индикаторы',
   'objects.drawings': 'Рисунки',
   'objects.compare': 'Сравнение',
+  'objects.addCompare': 'Добавить инструмент для сравнения',
   'objects.noIndicators': 'Нет индикаторов',
   'objects.noDrawings': 'Нет рисунков',
   'objects.noComparisons': 'Нет сравнений',
@@ -286,6 +288,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'ladder.price': 'Цена',
   'ladder.ask': 'Продажа',
   'ladder.empty': 'Нет данных стакана',
+  'ladder.sellAt': 'Продать @ {price}',
+  'ladder.buyAt': 'Купить @ {price}',
   'dataWindow.title': 'Окно данных',
   'dataWindow.hover': 'Наведите курсор на график',
   'dataWindow.open': 'Открытие',
@@ -296,6 +300,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Объём',
 
   'bracket.place': 'Разместить',
+  'bracket.hint': 'перетащите линии для настройки',
   'bracket.longPlaced': 'Брекет-ордер на покупку размещён · {rr}R',
   'bracket.shortPlaced': 'Брекет-ордер на продажу размещён · {rr}R',
   'order.buyLimit': 'Лимитная покупка @ {price}',
@@ -303,6 +308,7 @@ export const RU_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Закреплено в избранном',
   'toast.unpinned': 'Откреплено',
+  'sidebar.unpinHint': '{tool} (правый клик — открепить)',
   'toast.imageCopied': 'Изображение графика скопировано',
   'toast.imageCopyFailed': 'Не удалось скопировать: буфер обмена изображений недоступен',
   'toast.linkCopied': 'Ссылка скопирована',

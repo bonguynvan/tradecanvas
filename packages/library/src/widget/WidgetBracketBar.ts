@@ -31,7 +31,7 @@ export class WidgetBracketBar {
 
     const hint = document.createElement('span');
     hint.className = 'tcw-bracket-hint';
-    hint.textContent = 'drag lines to adjust';
+    hint.textContent = this.t('bracket.hint');
     this.el.appendChild(hint);
 
     const cancel = document.createElement('button');

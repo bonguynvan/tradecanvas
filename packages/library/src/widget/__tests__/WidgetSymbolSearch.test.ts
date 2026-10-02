@@ -91,6 +91,27 @@ describe('WidgetSymbolSearch with a search function', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(picked).toEqual(['BTCEUR']);
   });
+
+  it('takes the top result for what was typed when Enter beats the search', async () => {
+    const fn = vi.fn(async (query: string) => (query === 'sol' ? [{ symbol: 'SOLUSDT' }] : results));
+    search.open(['ETHUSDT'], 'ETHUSDT', undefined, fn);
+    type('sol');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); // before the pause ends
+    expect(picked).toEqual([]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fn).toHaveBeenCalledWith('sol', expect.anything());
+    expect(picked).toEqual(['SOLUSDT']);
+  });
+
+  it('forgets an early Enter once typing goes on', async () => {
+    search.open(['ETHUSDT'], 'ETHUSDT', undefined, async () => results);
+    type('b');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(picked).toEqual([]);
+    expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
+  });
 });
 
 describe('WidgetSymbolSearch without one', () => {

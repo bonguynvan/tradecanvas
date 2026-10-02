@@ -45,6 +45,12 @@ export function settingToTimezone(value: string): TimeZoneSetting {
   return isValidTimeZone(value) ? value : null;
 }
 
+/** A display timezone as the settings' value: the inverse of `settingToTimezone`. */
+export function timezoneToSetting(tz: TimeZoneSetting): string {
+  if (tz === null) return 'local';
+  return String(tz);
+}
+
 export interface TimezoneOption {
   value: string;
   label: string;

@@ -5,13 +5,29 @@
 export type TimeZoneSetting = string | number | null;
 
 const MINUTE_MS = 60_000;
-const HALF_DAY_MS = 12 * 60 * MINUTE_MS;
+const DAY_MS = 24 * 60 * MINUTE_MS;
 /** Zones change their offset on quarter hours, so it holds for each 15 minutes. */
 const OFFSET_BUCKET_MS = 15 * MINUTE_MS;
 const OFFSET_CACHE_MAX = 8192;
+/**
+ * Clocks change months apart, so a week whose offset is the same at both
+ * ends holds it throughout: one lookup serves a week of bars.
+ */
+const WEEK_MS = 7 * DAY_MS;
+const WEEK_CACHE_MAX = 4096;
+/** Names of UTC itself: no lookup needed. */
+const UTC_ZONES = new Set(['UTC', 'Etc/UTC', 'GMT', 'Etc/GMT', 'UCT', 'Etc/UCT', 'Universal', 'Etc/Universal', 'Zulu', 'Etc/Zulu']);
 
 const zoneFormats = new Map<string, Intl.DateTimeFormat>();
 const offsetCache = new Map<string, number>();
+/** A week's offsets: `before` until the clocks change at `change`, then `after`. */
+interface WeekOffsets {
+  before: number;
+  change: number;
+  after: number;
+}
+/** Per zone, the offsets of each week looked at. */
+const weekOffsets = new Map<string, Map<number, WeekOffsets>>();
 
 function zoneFormat(zone: string): Intl.DateTimeFormat {
   let format = zoneFormats.get(zone);
@@ -47,6 +63,40 @@ export function isValidTimeZone(zone: string): boolean {
  * time included. Throws a RangeError for a zone the browser doesn't know.
  */
 export function zoneOffsetMinutes(zone: string, timeMs: number): number {
+  if (!Number.isFinite(timeMs) || UTC_ZONES.has(zone)) return 0;
+  let weeks = weekOffsets.get(zone);
+  if (!weeks) {
+    weeks = new Map();
+    weekOffsets.set(zone, weeks);
+  }
+  const week = Math.floor(timeMs / WEEK_MS);
+  let offsets = weeks.get(week);
+  if (!offsets) {
+    offsets = readWeek(zone, week * WEEK_MS);
+    if (weeks.size >= WEEK_CACHE_MAX) weeks.clear();
+    weeks.set(week, offsets);
+  }
+  return timeMs < offsets.change ? offsets.before : offsets.after;
+}
+
+/** The offsets of the week from `start`, and the quarter hour the clocks change in it, if they do. */
+function readWeek(zone: string, start: number): WeekOffsets {
+  const before = bucketOffset(zone, start);
+  let last = start + WEEK_MS - OFFSET_BUCKET_MS;
+  const after = bucketOffset(zone, last);
+  if (after === before) return { before, change: Infinity, after };
+  // Halve the week down to the first quarter hour on the new offset.
+  let first = start;
+  while (last - first > OFFSET_BUCKET_MS) {
+    const mid = first + Math.floor((last - first) / OFFSET_BUCKET_MS / 2) * OFFSET_BUCKET_MS;
+    if (bucketOffset(zone, mid) === before) first = mid;
+    else last = mid;
+  }
+  return { before, change: last, after };
+}
+
+/** The zone's offset over the quarter hour holding `timeMs`. */
+function bucketOffset(zone: string, timeMs: number): number {
   const bucket = Math.floor(timeMs / OFFSET_BUCKET_MS);
   const key = `${zone}|${bucket}`;
   const cached = offsetCache.get(key);
@@ -85,10 +135,11 @@ export function offsetAt(tz: TimeZoneSetting, timeMs: number): number {
  * spring-forward skips moves forward by the jump (02:30 → 03:30).
  */
 export function wallToUtc(wallMs: number, tz: TimeZoneSetting): number {
-  // The offsets in force half a day either side bracket any clock change.
-  const early = wallMs - offsetAt(tz, wallMs - HALF_DAY_MS) * MINUTE_MS;
+  // The instant is within 14 hours of `wallMs`, so the offsets a day either
+  // side bracket any clock change near it.
+  const early = wallMs - offsetAt(tz, wallMs - DAY_MS) * MINUTE_MS;
   if (early + offsetAt(tz, early) * MINUTE_MS === wallMs) return early;
-  const late = wallMs - offsetAt(tz, wallMs + HALF_DAY_MS) * MINUTE_MS;
+  const late = wallMs - offsetAt(tz, wallMs + DAY_MS) * MINUTE_MS;
   if (late + offsetAt(tz, late) * MINUTE_MS === wallMs) return late;
   return early; // skipped: read with the offset from before the jump
 }

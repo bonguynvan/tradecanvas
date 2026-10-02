@@ -45,6 +45,8 @@ export class WidgetSymbolSearch {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private searchAbort: AbortController | null = null;
   private status: 'idle' | 'searching' | 'failed' = 'idle';
+  /** Enter came before the results for what was typed: take the top one when they land. */
+  private pickOnResults = false;
 
   /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
   constructor(
@@ -118,6 +120,7 @@ export class WidgetSymbolSearch {
   close(): void {
     document.removeEventListener('keydown', this.boundKeydown);
     this.cancelSearch();
+    this.pickOnResults = false;
     this.searchFn = null;
     this.backdrop?.remove();
     this.modal?.remove();
@@ -138,6 +141,7 @@ export class WidgetSymbolSearch {
   }
 
   private filter(): void {
+    this.pickOnResults = false;
     const q = (this.input?.value ?? '').toUpperCase().trim();
     if (this.searchFn && q) {
       this.scheduleSearch(this.input?.value.trim() ?? '');
@@ -163,6 +167,13 @@ export class WidgetSymbolSearch {
       this.searchTimer = null;
       void this.runSearch(query);
     }, SYMBOL_SEARCH_DEBOUNCE_MS);
+  }
+
+  /** Run the search the pause would have started, now. */
+  private searchNow(): void {
+    if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+    this.searchTimer = null;
+    void this.runSearch(this.input?.value.trim() ?? '');
   }
 
   private async runSearch(query: string): Promise<void> {
@@ -191,6 +202,10 @@ export class WidgetSymbolSearch {
     }
     this.selectedIndex = 0;
     this.renderList();
+    if (this.pickOnResults) {
+      this.pickOnResults = false;
+      this.pick(0);
+    }
   }
 
   private cancelSearch(): void {
@@ -296,6 +311,12 @@ export class WidgetSymbolSearch {
         break;
       case 'Enter':
         e.preventDefault();
+        if (this.searchTimer !== null || this.status === 'searching') {
+          // The list on screen is for an older query.
+          this.pickOnResults = true;
+          if (this.searchTimer !== null) this.searchNow();
+          break;
+        }
         this.pick(this.selectedIndex);
         break;
     }

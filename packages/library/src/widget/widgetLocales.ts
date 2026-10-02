@@ -37,6 +37,13 @@ const TOOL_GROUP_KEYS: Readonly<Record<string, MessageKey>> = {
   Forecasting: 'toolGroup.forecasting',
 };
 
+/** A chart type's name in the widget's language (an unknown type keeps its own). */
+export function chartTypeLabel(ct: { value: string; label: string }, t: Translator): string {
+  const key = `chartType.${ct.value}` as MessageKey;
+  const translated = t(key);
+  return translated === key ? ct.label : translated;
+}
+
 /** The drawing-tool groups with names in the widget's language (unknown tools keep theirs). */
 export function localizeToolGroups(groups: readonly DrawingToolGroupDef[], t: Translator): DrawingToolGroupDef[] {
   return groups.map((group) => ({

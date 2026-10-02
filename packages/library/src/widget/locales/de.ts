@@ -97,6 +97,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Hintergrund',
 
   'hotkeys.title': 'Tastenkürzel',
+  'hotkeys.footer': 'Mit ? jederzeit diese Übersicht öffnen',
   'hotkeys.close': 'Schließen',
   'hotkeys.gotIt': 'Verstanden',
   'hotkeys.group.searchNavigation': 'Suche und Navigation',
@@ -181,6 +182,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Indikatoren',
   'objects.drawings': 'Zeichnungen',
   'objects.compare': 'Vergleichen',
+  'objects.addCompare': 'Symbol zum Vergleich hinzufügen',
   'objects.noIndicators': 'Keine Indikatoren',
   'objects.noDrawings': 'Keine Zeichnungen',
   'objects.noComparisons': 'Keine Vergleiche',
@@ -286,6 +288,8 @@ export const DE_MESSAGES: WidgetMessages = {
   'ladder.price': 'Preis',
   'ladder.ask': 'Brief',
   'ladder.empty': 'Keine Orderbuchdaten',
+  'ladder.sellAt': 'Verkaufen @ {price}',
+  'ladder.buyAt': 'Kaufen @ {price}',
   'dataWindow.title': 'Datenfenster',
   'dataWindow.hover': 'Bewegen Sie den Mauszeiger über den Chart',
   'dataWindow.open': 'Eröffnung',
@@ -296,6 +300,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Volumen',
 
   'bracket.place': 'Platzieren',
+  'bracket.hint': 'Linien ziehen zum Anpassen',
   'bracket.longPlaced': 'Long-Bracket-Order platziert · {rr}R',
   'bracket.shortPlaced': 'Short-Bracket-Order platziert · {rr}R',
   'order.buyLimit': 'Kauf-Limit @ {price}',
@@ -303,6 +308,7 @@ export const DE_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Zu den Favoriten angeheftet',
   'toast.unpinned': 'Losgelöst',
+  'sidebar.unpinHint': '{tool} (Rechtsklick zum Lösen)',
   'toast.imageCopied': 'Chartbild kopiert',
   'toast.imageCopyFailed': 'Kopieren fehlgeschlagen – Bild-Zwischenablage nicht verfügbar',
   'toast.linkCopied': 'Link kopiert',

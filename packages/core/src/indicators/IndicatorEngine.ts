@@ -320,7 +320,11 @@ export class IndicatorEngine {
     const instance = this.instances.get(instanceId);
     if (!instance || hostId === instanceId || (hostId !== null && !this.canHost(hostId))) return false;
     if (hostId === null) delete instance.config.pane;
-    else instance.config.pane = hostId;
+    else {
+      instance.config.pane = hostId;
+      // A pane has its own value scale: the left price scale is only for overlays.
+      delete instance.config.scale;
+    }
     if (isPalette(instance.style.colors)) {
       const placement = instance.plugin.descriptor.placement;
       const pane = instance.config.pane ?? null;

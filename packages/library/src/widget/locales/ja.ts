@@ -97,6 +97,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.section.background': '背景',
 
   'hotkeys.title': 'キーボードショートカット',
+  'hotkeys.footer': '? を押すといつでもこの一覧を表示できます',
   'hotkeys.close': '閉じる',
   'hotkeys.gotIt': 'OK',
   'hotkeys.group.searchNavigation': '検索と移動',
@@ -181,6 +182,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'objects.indicators': 'インジケーター',
   'objects.drawings': '描画',
   'objects.compare': '比較',
+  'objects.addCompare': '比較する銘柄を追加',
   'objects.noIndicators': 'インジケーターはありません',
   'objects.noDrawings': '描画はありません',
   'objects.noComparisons': '比較はありません',
@@ -286,6 +288,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'ladder.price': '価格',
   'ladder.ask': '売り',
   'ladder.empty': '板情報のデータがありません',
+  'ladder.sellAt': '売り @ {price}',
+  'ladder.buyAt': '買い @ {price}',
   'dataWindow.title': 'データウィンドウ',
   'dataWindow.hover': 'チャートにカーソルを合わせてください',
   'dataWindow.open': '始値',
@@ -296,6 +300,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'dataWindow.volume': '出来高',
 
   'bracket.place': '発注',
+  'bracket.hint': 'ラインをドラッグして調整',
   'bracket.longPlaced': 'ロングのブラケット注文を発注しました · {rr}R',
   'bracket.shortPlaced': 'ショートのブラケット注文を発注しました · {rr}R',
   'order.buyLimit': '指値買い @ {price}',
@@ -303,6 +308,7 @@ export const JA_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'お気に入りに固定しました',
   'toast.unpinned': '固定を解除しました',
+  'sidebar.unpinHint': '{tool}（右クリックで固定を解除）',
   'toast.imageCopied': 'チャート画像をコピーしました',
   'toast.imageCopyFailed': 'コピーできませんでした：画像のクリップボードを使用できません',
   'toast.linkCopied': '共有リンクをコピーしました',

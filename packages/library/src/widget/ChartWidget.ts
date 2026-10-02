@@ -1,5 +1,5 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { settingToTimezone } from './widgetTimezones.js';
+import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
@@ -43,7 +43,7 @@ import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
 import { resolveMessages, createTranslator, fill, type Translator } from './i18n.js';
-import { localizeToolGroups } from './widgetLocales.js';
+import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 
@@ -189,15 +189,18 @@ export class ChartWidget {
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
-    // `numberLocale` lives in two places: the headless Chart gets it via
-    // `chartOptions` (spread straight into `new Chart()` below) — but the
-    // widget's own chrome (watchlist, alerts, hotkey sheet, settings panel)
-    // reads `settingsState.numberLocale`, which otherwise stays on
-    // DEFAULT_SETTINGS' 'en-US' until the host touches the Settings UI.
-    // Seed it from the same option so both layers start in sync.
+    // `numberLocale`, `timeZone` and `leftPriceScale` live in two places:
+    // the headless Chart gets them via `chartOptions` (spread straight into
+    // `new Chart()` below) — but the widget's own chrome (watchlist, alerts,
+    // go-to-date, settings panel, Reset) reads `settingsState`, which
+    // otherwise stays on DEFAULT_SETTINGS until the host touches the Settings
+    // UI. Seed it from the same options so both layers start in sync.
+    const chartOptions = options.chartOptions;
     this.settingsState = {
       ...DEFAULT_SETTINGS,
-      ...(options.chartOptions?.numberLocale ? { numberLocale: options.chartOptions.numberLocale } : {}),
+      ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
+      ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
+      ...(chartOptions?.leftPriceScale !== undefined ? { leftPriceScale: chartOptions.leftPriceScale } : {}),
     };
     this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
@@ -1391,13 +1394,13 @@ export class ChartWidget {
     for (const ct of CHART_TYPES) {
       items.push({
         id: ct.value,
-        label: ct.label,
+        label: chartTypeLabel(ct, this.t),
         category: 'chartType',
         active: this.state.chartType === ct.value,
       });
     }
 
-    for (const group of DRAWING_TOOL_GROUPS) {
+    for (const group of localizeToolGroups(DRAWING_TOOL_GROUPS, this.t)) {
       for (const tool of group.tools) {
         items.push({
           id: tool.value,

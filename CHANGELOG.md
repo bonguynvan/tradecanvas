@@ -17,6 +17,7 @@ Collected on `main` for the next release, which ships as one version once the cu
   - ChartWidget's symbol search asks the feed as you type, with names and exchanges.
 - **ChartWidget in 14 languages**: English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian and Thai. Every string the widget shows now goes through its translations; settings, drawing tools, alerts, dialogs and toasts used to stay English. Translations live in `@tradecanvas/chart/widget/locales` so a page loads only what it imports. Number formats for each language are in the settings.
 - The replay bar sits above the time axis, so its dates stay readable.
+- Dragging inside an indicator pane pans the chart. It used to zoom time as if the time axis had been dragged, and the whole pane showed the time-axis cursor.
 
 ### Indicators in depth
 

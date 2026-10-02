@@ -70,7 +70,10 @@ export class WidgetObjectTree {
     this.indicatorsEl = this.makeSection(this.t('objects.indicators'));
     this.drawingsEl = this.makeSection(this.t('objects.drawings'));
     if (this.callbacks.onAddCompare) {
-      this.compareEl = this.makeSection(this.t('objects.compare'), () => this.callbacks.onAddCompare?.());
+      this.compareEl = this.makeSection(this.t('objects.compare'), {
+        label: this.t('objects.addCompare'),
+        run: () => this.callbacks.onAddCompare?.(),
+      });
     }
 
     host.appendChild(this.el);
@@ -109,7 +112,7 @@ export class WidgetObjectTree {
     this.renderCompares(compares);
   }
 
-  private makeSection(title: string, onAdd?: () => void): HTMLDivElement {
+  private makeSection(title: string, add?: { label: string; run: () => void }): HTMLDivElement {
     const wrap = document.createElement('div');
     wrap.className = 'tcw-tree-section';
     const head = document.createElement('div');
@@ -117,14 +120,14 @@ export class WidgetObjectTree {
     const label = document.createElement('span');
     label.textContent = title;
     head.appendChild(label);
-    if (onAdd) {
+    if (add) {
       const addBtn = document.createElement('button');
       addBtn.type = 'button';
       addBtn.className = 'tcw-tree-add';
-      addBtn.setAttribute('aria-label', `Add ${title.toLowerCase()}`);
-      addBtn.title = `Add ${title.toLowerCase()}`;
+      addBtn.setAttribute('aria-label', add.label);
+      addBtn.title = add.label;
       addBtn.innerHTML = createIcon('plus', 13);
-      addBtn.addEventListener('click', onAdd);
+      addBtn.addEventListener('click', add.run);
       head.appendChild(addBtn);
     }
     const list = document.createElement('div');

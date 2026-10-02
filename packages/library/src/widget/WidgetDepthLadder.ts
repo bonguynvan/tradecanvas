@@ -1,7 +1,7 @@
 import type { DepthData } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { buildLadderRows, type LadderModel } from './ladderRows.js';
-import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
 
 export interface DepthLadderCallbacks {
@@ -116,7 +116,7 @@ export class WidgetDepthLadder {
       if (row.bidVolume > 0) {
         bid.textContent = formatSize(row.bidVolume);
         bid.style.setProperty('--w', `${(row.bidVolume * inv * 100).toFixed(1)}%`);
-        bid.title = `Sell @ ${this.callbacks.formatPrice(row.price)}`;
+        bid.title = fill(this.t('ladder.sellAt'), { price: this.callbacks.formatPrice(row.price) });
         bid.addEventListener('click', () => this.callbacks.onTrade('sell', row.price));
       } else {
         bid.disabled = true;
@@ -133,7 +133,7 @@ export class WidgetDepthLadder {
       if (row.askVolume > 0) {
         ask.textContent = formatSize(row.askVolume);
         ask.style.setProperty('--w', `${(row.askVolume * inv * 100).toFixed(1)}%`);
-        ask.title = `Buy @ ${this.callbacks.formatPrice(row.price)}`;
+        ask.title = fill(this.t('ladder.buyAt'), { price: this.callbacks.formatPrice(row.price) });
         ask.addEventListener('click', () => this.callbacks.onTrade('buy', row.price));
       } else {
         ask.disabled = true;

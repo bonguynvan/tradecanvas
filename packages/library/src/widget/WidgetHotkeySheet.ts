@@ -125,7 +125,9 @@ export class WidgetHotkeySheet {
 
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
-    header.innerHTML = `<h3>${this.t('hotkeys.title')}</h3>`;
+    const title = document.createElement('h3');
+    title.textContent = this.t('hotkeys.title');
+    header.appendChild(title);
     const closeBtn = document.createElement('button');
     closeBtn.className = 'tcw-modal-close';
     closeBtn.setAttribute('aria-label', this.t('hotkeys.close'));
@@ -186,7 +188,10 @@ export class WidgetHotkeySheet {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-modal-footer';
-    footer.innerHTML = '<span style="font-size:11px;color:var(--tcw-text-muted)">Press ? anytime to show this sheet</span>';
+    const hint = document.createElement('span');
+    hint.style.cssText = 'font-size:11px;color:var(--tcw-text-muted)';
+    hint.textContent = this.t('hotkeys.footer');
+    footer.appendChild(hint);
     const ok = document.createElement('button');
     ok.className = 'tcw-done-btn';
     ok.textContent = this.t('hotkeys.gotIt');

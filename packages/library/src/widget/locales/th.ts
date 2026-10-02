@@ -97,6 +97,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.section.background': 'พื้นหลัง',
 
   'hotkeys.title': 'แป้นพิมพ์ลัด',
+  'hotkeys.footer': 'กด ? ได้ทุกเมื่อเพื่อเปิดรายการนี้',
   'hotkeys.close': 'ปิด',
   'hotkeys.gotIt': 'เข้าใจแล้ว',
   'hotkeys.group.searchNavigation': 'ค้นหาและนำทาง',
@@ -181,6 +182,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'objects.indicators': 'อินดิเคเตอร์',
   'objects.drawings': 'ภาพวาด',
   'objects.compare': 'เปรียบเทียบ',
+  'objects.addCompare': 'เพิ่มสัญลักษณ์เพื่อเปรียบเทียบ',
   'objects.noIndicators': 'ไม่มีอินดิเคเตอร์',
   'objects.noDrawings': 'ไม่มีภาพวาด',
   'objects.noComparisons': 'ไม่มีการเปรียบเทียบ',
@@ -286,6 +288,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'ladder.price': 'ราคา',
   'ladder.ask': 'เสนอขาย',
   'ladder.empty': 'ไม่มีข้อมูลสมุดคำสั่ง',
+  'ladder.sellAt': 'ขาย @ {price}',
+  'ladder.buyAt': 'ซื้อ @ {price}',
   'dataWindow.title': 'หน้าต่างข้อมูล',
   'dataWindow.hover': 'วางเมาส์บนกราฟ',
   'dataWindow.open': 'ราคาเปิด',
@@ -296,6 +300,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'วอลุ่ม',
 
   'bracket.place': 'ส่งคำสั่ง',
+  'bracket.hint': 'ลากเส้นเพื่อปรับ',
   'bracket.longPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งซื้อแล้ว · {rr}R',
   'bracket.shortPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งขายแล้ว · {rr}R',
   'order.buyLimit': 'ซื้อแบบลิมิต @ {price}',
@@ -303,6 +308,7 @@ export const TH_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'ปักหมุดในรายการโปรดแล้ว',
   'toast.unpinned': 'เลิกปักหมุดแล้ว',
+  'sidebar.unpinHint': '{tool} (คลิกขวาเพื่อเลิกปักหมุด)',
   'toast.imageCopied': 'คัดลอกภาพกราฟแล้ว',
   'toast.imageCopyFailed': 'คัดลอกไม่สำเร็จ: ใช้คลิปบอร์ดรูปภาพไม่ได้',
   'toast.linkCopied': 'คัดลอกลิงก์แล้ว',

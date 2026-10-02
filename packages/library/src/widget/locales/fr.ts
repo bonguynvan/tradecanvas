@@ -97,6 +97,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Arrière-plan',
 
   'hotkeys.title': 'Raccourcis clavier',
+  'hotkeys.footer': 'Appuyez sur ? à tout moment pour afficher cette liste',
   'hotkeys.close': 'Fermer',
   'hotkeys.gotIt': 'Compris',
   'hotkeys.group.searchNavigation': 'Recherche et navigation',
@@ -181,6 +182,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Indicateurs',
   'objects.drawings': 'Dessins',
   'objects.compare': 'Comparer',
+  'objects.addCompare': 'Ajouter un symbole à comparer',
   'objects.noIndicators': 'Aucun indicateur',
   'objects.noDrawings': 'Aucun dessin',
   'objects.noComparisons': 'Aucune comparaison',
@@ -286,6 +288,8 @@ export const FR_MESSAGES: WidgetMessages = {
   'ladder.price': 'Prix',
   'ladder.ask': 'Vente',
   'ladder.empty': 'Aucune donnée de carnet d’ordres',
+  'ladder.sellAt': 'Vendre @ {price}',
+  'ladder.buyAt': 'Acheter @ {price}',
   'dataWindow.title': 'Fenêtre de données',
   'dataWindow.hover': 'Survolez le graphique',
   'dataWindow.open': 'Ouverture',
@@ -296,6 +300,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Volume',
 
   'bracket.place': 'Envoyer',
+  'bracket.hint': 'faites glisser les lignes pour ajuster',
   'bracket.longPlaced': 'Ordre bracket à l’achat envoyé · {rr}R',
   'bracket.shortPlaced': 'Ordre bracket à la vente envoyé · {rr}R',
   'order.buyLimit': 'Achat à cours limité @ {price}',
@@ -303,6 +308,7 @@ export const FR_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Épinglé aux favoris',
   'toast.unpinned': 'Désépinglé',
+  'sidebar.unpinHint': '{tool} (clic droit pour désépingler)',
   'toast.imageCopied': 'Image du graphique copiée',
   'toast.imageCopyFailed': 'Copie impossible : presse-papiers d’images indisponible',
   'toast.linkCopied': 'Lien copié',

@@ -97,6 +97,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Nền',
 
   'hotkeys.title': 'Phím tắt',
+  'hotkeys.footer': 'Nhấn ? bất cứ lúc nào để mở bảng này',
   'hotkeys.close': 'Đóng',
   'hotkeys.gotIt': 'Đã hiểu',
   'hotkeys.group.searchNavigation': 'Tìm kiếm & điều hướng',
@@ -181,6 +182,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Chỉ báo',
   'objects.drawings': 'Hình vẽ',
   'objects.compare': 'So sánh',
+  'objects.addCompare': 'Thêm mã để so sánh',
   'objects.noIndicators': 'Chưa có chỉ báo',
   'objects.noDrawings': 'Chưa có hình vẽ',
   'objects.noComparisons': 'Chưa so sánh mã nào',
@@ -286,6 +288,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'ladder.price': 'Giá',
   'ladder.ask': 'Bán',
   'ladder.empty': 'Chưa có dữ liệu sổ lệnh',
+  'ladder.sellAt': 'Bán @ {price}',
+  'ladder.buyAt': 'Mua @ {price}',
   'dataWindow.title': 'Cửa sổ dữ liệu',
   'dataWindow.hover': 'Rê chuột lên biểu đồ',
   'dataWindow.open': 'Mở cửa',
@@ -296,6 +300,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Khối lượng',
 
   'bracket.place': 'Đặt lệnh',
+  'bracket.hint': 'kéo các đường để chỉnh',
   'bracket.longPlaced': 'Đã đặt lệnh Long kèm SL/TP · {rr}R',
   'bracket.shortPlaced': 'Đã đặt lệnh Short kèm SL/TP · {rr}R',
   'order.buyLimit': 'Mua giới hạn @ {price}',
@@ -303,6 +308,7 @@ export const VI_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Đã ghim vào mục yêu thích',
   'toast.unpinned': 'Đã bỏ ghim',
+  'sidebar.unpinHint': '{tool} (chuột phải để bỏ ghim)',
   'toast.imageCopied': 'Đã sao chép ảnh biểu đồ',
   'toast.imageCopyFailed': 'Không sao chép được — trình duyệt không cho chép ảnh',
   'toast.linkCopied': 'Đã sao chép liên kết',

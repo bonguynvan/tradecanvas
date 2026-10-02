@@ -35,6 +35,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+type Internals = {
+  sessionShading: { getConfig(): Record<string, unknown> };
+  tradingManager: { config: { pricePrecision?: number } };
+  alertManager: { pricePrecision: number };
+};
+const shading = () => (chart as unknown as Internals).sessionShading.getConfig();
+
 function deferred<T>() {
   let resolve!: (v: T) => void;
   const promise = new Promise<T>((r) => { resolve = r; });
@@ -81,8 +88,46 @@ describe('Chart.setSymbolInfo', () => {
 
   it('shades the symbol’s trading hours in its time zone', () => {
     chart.setSymbolInfo(nyse);
-    const config = (chart as unknown as { sessionShading: { getConfig(): Record<string, unknown> } }).sessionShading.getConfig();
-    expect(config).toMatchObject({ timeZone: 'America/New_York', windows: [{ startMinute: 570, endMinute: 960 }] });
+    expect(shading()).toMatchObject({ timeZone: 'America/New_York', windows: [{ startMinute: 570, endMinute: 960 }] });
+  });
+
+  it('drops the last symbol’s hours for a symbol without any', () => {
+    const before = shading();
+    chart.setSymbolInfo({ ...nyse, timezone: 'Asia/Bangkok', sessions: [{ start: '10:00', end: '12:30' }, { start: '14:30', end: '16:30' }] });
+    chart.setSymbolInfo({ symbol: 'BTCUSDT', timezone: 'UTC' });
+    expect(shading()).toEqual(before);
+  });
+
+  it('goes back to the host’s hours after a symbol without hours', () => {
+    chart.setSessionShadingConfig({ timeZone: 'Asia/Kolkata', startMinute: 555, endMinute: 930 });
+    chart.setSymbolInfo(nyse);
+    chart.setSymbolInfo({ symbol: 'X' });
+    expect(shading()).toMatchObject({ timeZone: 'Asia/Kolkata', startMinute: 555, endMinute: 930 });
+    expect(shading().windows).toBeUndefined();
+  });
+
+  it('lets hours the host sets later win over the symbol’s', () => {
+    chart.setSymbolInfo(nyse);
+    chart.setSessionShadingConfig({ tzOffsetMinutes: 330, startMinute: 600, endMinute: 900 });
+    expect(shading()).toMatchObject({ tzOffsetMinutes: 330, startMinute: 600, endMinute: 900 });
+    expect(shading().timeZone).toBeUndefined();
+    expect(shading().windows).toBeUndefined();
+  });
+
+  it('puts order and alert prices back on the default precision after a symbol without one', () => {
+    const internals = chart as unknown as Internals;
+    chart.setSymbolInfo({ symbol: 'A', pricePrecision: 8 });
+    expect(internals.alertManager.pricePrecision).toBe(8);
+    chart.setSymbolInfo({ symbol: 'B' });
+    expect(internals.tradingManager.config.pricePrecision).toBeUndefined();
+    expect(internals.alertManager.pricePrecision).toBe(2);
+  });
+
+  it('widens the price scale for the symbol’s decimals', () => {
+    chart.setData(hourly(100).map((bar) => ({ ...bar, open: 123_456, high: 123_460, low: 123_450, close: 123_456.5 })));
+    const width = chart.getPlotRect().width;
+    chart.setSymbolInfo({ symbol: 'X', pricePrecision: 6 });
+    expect(chart.getPlotRect().width).toBeLessThan(width);
   });
 
   it('announces the change', () => {
@@ -112,5 +157,46 @@ describe('Chart resolving the stream’s symbol', () => {
     slow.resolve(nyse);
     await Promise.resolve();
     expect(chart.getSymbolInfo()?.symbol).toBe('MSFT');
+  });
+
+  it('keeps info the host set when the adapter knows nothing of the symbol', async () => {
+    chart.setSymbolInfo({ symbol: 'AAPL', pricePrecision: 3 });
+    const resolveSymbol = vi.fn(async () => null);
+    await chart.connect({ adapter: adapterWith(resolveSymbol), symbol: 'AAPL', timeframe: '1h', historyLimit: 50 });
+    await vi.waitFor(() => expect(resolveSymbol).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    expect(chart.getSymbolInfo()?.pricePrecision).toBe(3);
+  });
+
+  it('does not report a failed lookup as a feed error', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errors: unknown[] = [];
+    chart.on('dataUpdate', (e) => {
+      if ((e.payload as { error?: string })?.error) errors.push(e.payload);
+    });
+    await chart.connect({ adapter: adapterWith(() => Promise.reject(new Error('exchangeInfo 451'))), symbol: 'AAPL', timeframe: '1h', historyLimit: 50 });
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+    expect(errors).toEqual([]);
+  });
+
+  it('copes with a lookup that throws or answers without a promise', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const throwing = adapterWith((() => { throw new Error('boom'); }) as never);
+    await expect(chart.connect({ adapter: throwing, symbol: 'AAPL', timeframe: '1h', historyLimit: 50 })).resolves.toBeUndefined();
+    const plain = adapterWith((() => nyse) as never);
+    chart.disconnectStream();
+    await expect(chart.connect({ adapter: plain, symbol: 'AAPL', timeframe: '1h', historyLimit: 50 })).resolves.toBeUndefined();
+    await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('AAPL'));
+  });
+
+  it('ignores an answer that lands after the chart is gone', async () => {
+    const slow = deferred<SymbolInfo | null>();
+    const other = new Chart(sizedHost(), { chartType: 'candlestick' });
+    await other.connect({ adapter: adapterWith(() => slow.promise), symbol: 'AAPL', timeframe: '1h', historyLimit: 50 });
+    const setInfo = vi.spyOn(other, 'setSymbolInfo');
+    other.destroy();
+    slow.resolve(nyse);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(setInfo).not.toHaveBeenCalled();
   });
 });

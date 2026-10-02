@@ -227,6 +227,25 @@ describe('Chart history paging, edge cases', () => {
     expect(centreTime()).toBe(shown);
   });
 
+  it('starts over when the reconnect’s bars leave a gap after the old ones', async () => {
+    const adapter = fakeAdapter(false);
+    await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 200 });
+    const emit = (bars: OHLCBar[]) =>
+      (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } }).streamManager.emit('snapshot', bars);
+    emit(hourly(1500, 200)); // the outage outlasted the snapshot: 300 hours missing
+    expect(chart.getData()).toHaveLength(200);
+    expect(chart.getData()[0].time).toBe(T0 + 1500 * HOUR);
+  });
+
+  it('does not merge a reconnect into data the host replaced', async () => {
+    const adapter = fakeAdapter(false);
+    await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 200 });
+    chart.setData(hourly(0, 1300)); // a file dropped onto the chart, say
+    (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } })
+      .streamManager.emit('snapshot', hourly(1100, 200));
+    expect(chart.getData()).toHaveLength(200);
+  });
+
   it('unpins a pinned tooltip when older bars arrive', () => {
     chart.setData(hourly(1000, 500));
     const pinned = (chart as unknown as { pinnedTooltip: { pin(bar: OHLCBar, i: number, theme: unknown): void; isPinned(): boolean } }).pinnedTooltip;

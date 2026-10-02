@@ -39,6 +39,10 @@ class FakeChart {
   setLegend(config: { visible?: boolean }): void { this.display.push(`legend:${config.visible}`); }
   setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
   setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
+  timezones: unknown[] = [];
+  setTimezone(tz: unknown): void { this.timezones.push(tz); }
+  leftScale: boolean[] = [];
+  setLeftPriceScaleVisible(on: boolean): void { this.leftScale.push(on); }
   getData(): { time: number }[] { return this.data; }
   setVisibleRangePreset(preset: string): void { this.presets.push(preset); }
   goToTime(time: number): number { this.goTos.push(time); return 0; }
@@ -267,6 +271,27 @@ describe('ChartWidget range bar', () => {
     time.value = '08:30';
     host.querySelector<HTMLFormElement>('form.tcw-goto')!.requestSubmit();
     expect(FakeChart.last.goTos).toEqual([Date.UTC(2026, 1, 10, 8, 30)]);
+  });
+
+  it('starts from the host’s time zone and left scale, and Reset keeps them', () => {
+    make({ chartOptions: { timeZone: 'America/New_York', leftPriceScale: true } });
+    const settings = () => (widget as unknown as { settingsState: { timezone: string; leftPriceScale: boolean } }).settingsState;
+    expect(settings().timezone).toBe('America/New_York');
+    expect(settings().leftPriceScale).toBe(true);
+    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: 'local', leftPriceScale: false });
+    FakeChart.last.timezones = [];
+    FakeChart.last.leftScale = [];
+    (widget as unknown as { resetSettings(): void }).resetSettings();
+    expect(FakeChart.last.timezones).toEqual(['America/New_York']);
+    expect(FakeChart.last.leftScale).toEqual([true]);
+  });
+
+  it('reads dates in the host’s time zone from the start', () => {
+    make({ chartOptions: { timeZone: 0 } });
+    FakeChart.last.data = [{ time: T_LAST }];
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    const [date, time] = [...host.querySelectorAll<HTMLInputElement>('.tcw-goto-input')];
+    expect([date.value, time.value]).toEqual(['2026-03-01', '12:00']);
   });
 
   it('opens with Alt+G', () => {

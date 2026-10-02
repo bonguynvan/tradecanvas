@@ -97,6 +97,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.section.background': '背景',
 
   'hotkeys.title': '快捷鍵',
+  'hotkeys.footer': '隨時按 ? 開啟此列表',
   'hotkeys.close': '關閉',
   'hotkeys.gotIt': '知道了',
   'hotkeys.group.searchNavigation': '搜尋與導覽',
@@ -181,6 +182,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'objects.indicators': '指標',
   'objects.drawings': '繪圖',
   'objects.compare': '比較',
+  'objects.addCompare': '新增比較商品',
   'objects.noIndicators': '尚無指標',
   'objects.noDrawings': '尚無繪圖',
   'objects.noComparisons': '尚無比較',
@@ -286,6 +288,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ladder.price': '價格',
   'ladder.ask': '賣價',
   'ladder.empty': '尚無委託簿資料',
+  'ladder.sellAt': '賣出 @ {price}',
+  'ladder.buyAt': '買進 @ {price}',
   'dataWindow.title': '資料視窗',
   'dataWindow.hover': '將滑鼠移到圖表上',
   'dataWindow.open': '開盤',
@@ -296,6 +300,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'dataWindow.volume': '成交量',
 
   'bracket.place': '下單',
+  'bracket.hint': '拖曳線條進行調整',
   'bracket.longPlaced': '已下做多括號單 · {rr}R',
   'bracket.shortPlaced': '已下做空括號單 · {rr}R',
   'order.buyLimit': '限價買進 @ {price}',
@@ -303,6 +308,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
 
   'toast.pinned': '已固定到我的最愛',
   'toast.unpinned': '已取消固定',
+  'sidebar.unpinHint': '{tool}（按右鍵取消固定）',
   'toast.imageCopied': '已複製圖表圖片',
   'toast.imageCopyFailed': '複製失敗：無法寫入圖片剪貼簿',
   'toast.linkCopied': '已複製分享連結',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { minuteOfDay, isRegularSession } from '../sessionHours.js';
+import { minuteOfDay, isRegularSession, mergeSessionHours } from '../sessionHours.js';
 
 // 2023-01-03 14:30 UTC = 09:30 EST (offset -300).
 const at = (h: number, m: number) => Date.UTC(2023, 0, 3, h, m, 0);
@@ -107,3 +107,17 @@ describe('isRegularSession in an IANA zone', () => {
   });
 });
 
+describe('mergeSessionHours', () => {
+  it('lets a fixed offset given alone replace the zone', () => {
+    const merged = mergeSessionHours({ startMinute: 570, endMinute: 960, timeZone: 'America/New_York', tzOffsetMinutes: -300 }, { tzOffsetMinutes: 330 });
+    expect(merged).toEqual({ startMinute: 570, endMinute: 960, tzOffsetMinutes: 330 });
+  });
+
+  it('keeps the zone when the patch names one, and copies the windows', () => {
+    const windows = [{ startMinute: 600, endMinute: 750 }];
+    const merged = mergeSessionHours({ startMinute: 0, endMinute: 0 }, { timeZone: 'Asia/Bangkok', tzOffsetMinutes: 420, windows });
+    expect(merged.timeZone).toBe('Asia/Bangkok');
+    windows[0].startMinute = 0;
+    expect(merged.windows).toEqual([{ startMinute: 600, endMinute: 750 }]);
+  });
+});

@@ -97,6 +97,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.section.background': 'Latar belakang',
 
   'hotkeys.title': 'Pintasan keyboard',
+  'hotkeys.footer': 'Tekan ? kapan saja untuk membuka daftar ini',
   'hotkeys.close': 'Tutup',
   'hotkeys.gotIt': 'Mengerti',
   'hotkeys.group.searchNavigation': 'Pencarian & navigasi',
@@ -181,6 +182,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'objects.indicators': 'Indikator',
   'objects.drawings': 'Gambar',
   'objects.compare': 'Bandingkan',
+  'objects.addCompare': 'Tambah simbol untuk dibandingkan',
   'objects.noIndicators': 'Belum ada indikator',
   'objects.noDrawings': 'Belum ada gambar',
   'objects.noComparisons': 'Belum ada perbandingan',
@@ -286,6 +288,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'ladder.price': 'Harga',
   'ladder.ask': 'Ask',
   'ladder.empty': 'Tidak ada data buku order',
+  'ladder.sellAt': 'Jual @ {price}',
+  'ladder.buyAt': 'Beli @ {price}',
   'dataWindow.title': 'Jendela data',
   'dataWindow.hover': 'Arahkan kursor ke grafik',
   'dataWindow.open': 'Pembukaan',
@@ -296,6 +300,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'dataWindow.volume': 'Volume',
 
   'bracket.place': 'Kirim',
+  'bracket.hint': 'seret garis untuk menyesuaikan',
   'bracket.longPlaced': 'Order bracket long terkirim · {rr}R',
   'bracket.shortPlaced': 'Order bracket short terkirim · {rr}R',
   'order.buyLimit': 'Beli limit @ {price}',
@@ -303,6 +308,7 @@ export const ID_MESSAGES: WidgetMessages = {
 
   'toast.pinned': 'Disematkan ke favorit',
   'toast.unpinned': 'Sematan dilepas',
+  'sidebar.unpinHint': '{tool} (klik kanan untuk melepas sematan)',
   'toast.imageCopied': 'Gambar grafik disalin',
   'toast.imageCopyFailed': 'Gagal menyalin: papan klip gambar tidak tersedia',
   'toast.linkCopied': 'Tautan disalin',
