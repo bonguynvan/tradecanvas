@@ -54,7 +54,7 @@
     {
       label: 'Widget',
       title: 'One call, full trading UI',
-      text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in English and Vietnamese.',
+      text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in 14 languages from English and Vietnamese to Chinese, Japanese and Korean.',
     },
     {
       label: 'Data',

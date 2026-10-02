@@ -1,5 +1,5 @@
 import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
-import type { ChartWidget, ChartWidgetOptions } from '@tradecanvas/chart/widget';
+import type { ChartWidget, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
 import { generateBars } from './sampleData';
 
 /** What the Feature Lab hands each scene. */
@@ -10,6 +10,8 @@ export interface SceneEnv {
   slowBinance: (latencyMs: number) => DataAdapter;
   /** Classes from `@tradecanvas/chart`, loaded on demand. */
   lib: typeof import('@tradecanvas/chart');
+  /** The language picked above the chart, for scenes with `languages`. */
+  language?: { code: string; numberLocale: string; messages: WidgetMessages };
 }
 
 export interface FeatureScene {
@@ -23,6 +25,8 @@ export interface FeatureScene {
   options: (env: SceneEnv) => ChartWidgetOptions;
   /** Static base series (no adapter); regenerated per symbol on switches. */
   data?: (symbol: string) => OHLCBar[];
+  /** Shows a language picker above the chart; the scene reads `env.language`. */
+  languages?: boolean;
   /** Runs once the first bars are on the chart. */
   setup?: (widget: ChartWidget, chart: Chart, env: SceneEnv) => void | Promise<void>;
 }
@@ -234,28 +238,34 @@ chart.replayStop()                // back to the live series`,
   },
   {
     id: 'subcent',
-    title: 'Sub-cent + Vietnamese',
+    title: '14 languages, sub-cent prices',
     stat: 'i18n',
     blurb:
-      'PEPE trades around 0.000004. Every label follows the price scale’s precision and the number locale, and the axis widens to fit — here with the Vietnamese UI.',
+      'The whole widget in 14 languages — menus, settings, drawing tools, dialogs — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
     tryThis: [
-      'Hover: the crosshair pill shows full precision with a decimal comma',
-      'Switch to SHIB or BONK in the watchlist on the right',
-      'Pin an exact precision with chart.setMarket({ pricePrecision: 9 })',
+      'Pick a language above the chart: 日本語, 한국어, 简体中文, Deutsch…',
+      'Open Settings or the drawing tools to see them translated',
+      'Hover: the crosshair pill keeps full precision in the language’s number format',
     ],
-    code: `new ChartWidget(host, {
+    code: `import { ChartWidget } from '@tradecanvas/chart/widget'
+import { ja } from '@tradecanvas/chart/widget/locales'
+
+new ChartWidget(host, {
   symbol: 'PEPEUSDT',
-  locale: 'vi',
-  chartOptions: { numberLocale: 'vi-VN' },
+  locale: 'ja',
+  messages: ja,                          // only the languages you import ship
+  chartOptions: { numberLocale: 'ja-JP' },
 })`,
+    languages: true,
     options: (env) => ({
       symbol: 'PEPEUSDT',
       symbols: ['PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'FLOKIUSDT'],
       timeframe: '5m',
       adapter: env.binance(),
-      locale: 'vi',
+      locale: env.language?.code ?? 'vi',
+      messages: env.language?.messages,
       watchlist: true,
-      chartOptions: { numberLocale: 'vi-VN' },
+      chartOptions: { numberLocale: env.language?.numberLocale ?? 'vi-VN' },
     }),
   },
   {

@@ -1,4 +1,5 @@
 import { escapeHtml } from './escapeHtml.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
 /**
  * Lightweight fuzzy symbol picker. Reuses the command-palette CSS for visual
  * consistency. Scoring is a cheap subsequence match — good enough for symbol
@@ -32,6 +33,7 @@ export class WidgetSymbolSearch {
   constructor(
     callbacks: SymbolSearchCallbacks,
     private readonly host: () => HTMLElement = () => document.body,
+    private readonly t: Translator = EN_TRANSLATOR,
   ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
@@ -63,7 +65,7 @@ export class WidgetSymbolSearch {
     this.input = document.createElement('input');
     this.input.className = 'tcw-cmd-input';
     this.input.type = 'text';
-    this.input.placeholder = 'Search symbol… (e.g. BTC, ETH, AAPL)';
+    this.input.placeholder = this.t('symbolSearch.placeholder');
     this.input.autocomplete = 'off';
     this.input.spellcheck = false;
     this.input.addEventListener('input', () => this.filter());
@@ -82,7 +84,9 @@ export class WidgetSymbolSearch {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-cmd-footer';
-    footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Open</span><span>Esc Close</span>';
+    footer.innerHTML = `<span>↑↓ ${escapeHtml(this.t('common.navigate'))}</span>`
+      + `<span>⏎ ${escapeHtml(this.t('common.open'))}</span>`
+      + `<span>Esc ${escapeHtml(this.t('common.close'))}</span>`;
     this.modal.appendChild(footer);
 
     this.host().append(this.backdrop, this.modal);
@@ -133,7 +137,7 @@ export class WidgetSymbolSearch {
     if (this.filtered.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-cmd-empty';
-      empty.textContent = 'No symbols match';
+      empty.textContent = this.t('symbolSearch.empty');
       this.list.appendChild(empty);
       return;
     }

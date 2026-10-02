@@ -1,4 +1,6 @@
 import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/commons';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { escapeHtml } from './escapeHtml.js';
 
 export interface CommandItem {
   id: string;
@@ -32,6 +34,7 @@ export class WidgetCommandPalette {
   constructor(
     callbacks: CommandPaletteCallbacks,
     private readonly host: () => HTMLElement = () => document.body,
+    private readonly t: Translator = EN_TRANSLATOR,
   ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
@@ -61,7 +64,7 @@ export class WidgetCommandPalette {
     this.input = document.createElement('input');
     this.input.className = 'tcw-cmd-input';
     this.input.type = 'text';
-    this.input.placeholder = 'Search indicators, chart types, tools...';
+    this.input.placeholder = this.t('palette.placeholder');
     this.input.addEventListener('input', () => this.filter());
     header.appendChild(this.input);
 
@@ -78,7 +81,9 @@ export class WidgetCommandPalette {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-cmd-footer';
-    footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Select</span><span>Esc Close</span>';
+    footer.innerHTML = `<span>↑↓ ${escapeHtml(this.t('common.navigate'))}</span>`
+      + `<span>⏎ ${escapeHtml(this.t('common.select'))}</span>`
+      + `<span>Esc ${escapeHtml(this.t('common.close'))}</span>`;
     this.modal.appendChild(footer);
 
     this.host().append(this.backdrop, this.modal);
@@ -125,7 +130,7 @@ export class WidgetCommandPalette {
     if (this.filtered.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-cmd-empty';
-      empty.textContent = 'No results found';
+      empty.textContent = this.t('palette.empty');
       this.list.appendChild(empty);
       return;
     }
@@ -239,11 +244,11 @@ export class WidgetCommandPalette {
 
   private categoryLabel(cat: string): string {
     switch (cat) {
-      case 'indicator': return 'Indicators';
-      case 'chartType': return 'Chart Types';
-      case 'drawing': return 'Drawing Tools';
-      case 'timeframe': return 'Timeframes';
-      case 'action': return 'Actions';
+      case 'indicator': return this.t('palette.group.indicator');
+      case 'chartType': return this.t('palette.group.chartType');
+      case 'drawing': return this.t('palette.group.drawing');
+      case 'timeframe': return this.t('palette.group.timeframe');
+      case 'action': return this.t('palette.group.action');
       default: return cat;
     }
   }

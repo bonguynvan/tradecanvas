@@ -1,248 +1,95 @@
 /**
- * i18n for ChartWidget's own chrome (toolbar, watchlist, indicator picker,
- * status bar, settings panel, hotkey sheet). This does NOT translate
- * data-driven labels sourced from `widgetConfig.ts` (the 69 indicator
- * display names, drawing-tool names, timezone/locale option labels) — those
- * stay in English for now; see README "Widget i18n" for the current
- * coverage and how to extend it via `messages`.
+ * i18n for ChartWidget's own chrome: toolbar, legend, settings, drawing tools,
+ * panels, dialogs, hotkey sheet and toasts. Indicator names stay as they are
+ * (mostly acronyms). English and Vietnamese are built in; other languages
+ * come from `@tradecanvas/chart/widget/locales` — pass one as `messages`, or
+ * register it once with `registerWidgetLocale`.
  */
+import { EN_MESSAGES, type MessageKey, type WidgetMessages } from './locales/en.js';
+import { VI_MESSAGES } from './locales/vi.js';
 
-export type MessageKey = typeof EN_MESSAGES extends Record<infer K, string> ? K : never;
+export { EN_MESSAGES, VI_MESSAGES };
+export type { MessageKey, WidgetMessages };
 
-export const EN_MESSAGES = {
-  // Toolbar
-  'toolbar.indicators': 'Indicators',
-  'toolbar.indicators.popular': 'Popular',
-  'toolbar.indicators.all': 'All',
-  'indicatorType.overlay': 'overlay',
-  'indicatorType.panel': 'panel',
-  'toolbar.replay': 'Bar replay',
-  'replay.selectHint': 'Click a bar to start the replay',
-  'replay.random': 'Random bar',
-  'replay.realtime': 'Back to realtime',
-  'replay.barsPerSecond': 'bars/s',
-  'replay.play': 'Play',
-  'replay.pause': 'Pause',
-  'replay.stepBack': 'Step back (Shift+←)',
-  'replay.stepForward': 'Step forward (Shift+→)',
-  'toolbar.longBracket': 'Long bracket',
-  'toolbar.shortBracket': 'Short bracket',
-  'toolbar.depthLadder': 'Depth ladder',
-  'toolbar.objects': 'Objects',
-  'toolbar.priceAlerts': 'Price alerts',
-  'toolbar.screenshot': 'Screenshot',
-  'toolbar.settings': 'Chart Settings',
-  'toolbar.toggleTheme': 'Toggle theme',
-  'toolbar.timeframes': 'Timeframes',
-  'toolbar.timeframes.pin': 'Pin to toolbar',
-  'toolbar.timeframes.custom': 'Custom interval, e.g. 7m, 90m, 2h, 3D',
-  'toolbar.timeframes.add': 'Add interval',
-  'toolbar.timeframes.remove': 'Remove interval',
-  'toolbar.timeframes.invalid': 'Type a number and a unit: 7m, 2h, 3D, 1W, 2M',
-  'toolbar.fullscreen': 'Fullscreen',
-  'legend.show': 'Show',
-  'legend.hide': 'Hide',
-  'legend.settings': 'Settings',
-  'legend.remove': 'Remove',
-  'legend.collapse': 'Collapse indicators',
-  'legend.expand': 'Show indicators',
-  'indicatorSettings.title': '{name} settings',
-  'indicatorSettings.tab.inputs': 'Inputs',
-  'indicatorSettings.tab.style': 'Style',
-  'indicatorSettings.tab.levels': 'Levels',
-  'indicatorSettings.noInputs': 'This indicator has no adjustable parameters.',
-  'indicatorSettings.source.prices': 'Price',
-  'indicatorSettings.source.indicators': 'Indicators',
-  'indicatorSettings.lineWidth': 'Line width',
-  'indicatorSettings.up': 'up',
-  'indicatorSettings.down': 'down',
-  'indicatorSettings.addLevel': 'Add level',
-  'indicatorSettings.removeLevel': 'Remove level',
-  'indicatorSettings.noLevels': 'No levels.',
-  'indicatorSettings.level': 'Level',
-  'indicatorSettings.close': 'Close',
-  'toolbar.exitFullscreen': 'Exit fullscreen',
-  'range.presets': 'Visible range',
-  'range.all': 'All',
-  'range.goTo': 'Go to date',
-  'range.goToSubmit': 'Go to',
-  'range.date': 'Date',
-  'range.time': 'Time',
-  'range.cancel': 'Cancel',
-  'range.beforeData': 'Showing the earliest loaded bar',
+const registry = new Map<string, Partial<WidgetMessages>>([
+  ['en', EN_MESSAGES],
+  ['vi', VI_MESSAGES],
+]);
 
-  // Chart types
-  'chartType.candlestick': 'Candlestick',
-  'chartType.line': 'Line',
-  'chartType.area': 'Area',
-  'chartType.bar': 'Bar',
-  'chartType.heikinAshi': 'Heikin-Ashi',
-  'chartType.hollowCandle': 'Hollow Candle',
-  'chartType.baseline': 'Baseline',
-  'chartType.volumeCandles': 'Volume Candles',
-  'chartType.equivolume': 'Equivolume',
-  'chartType.hlcArea': 'HLC Area',
-  'chartType.stepLine': 'Step Line',
-  'chartType.lineWithMarkers': 'Line + Markers',
+/** The locales registered so far: English, Vietnamese and any added with `registerWidgetLocale`. */
+export const BUILTIN_LOCALES: Readonly<Record<string, Partial<WidgetMessages>>> = new Proxy({}, {
+  get: (_t, key) => (typeof key === 'string' ? registry.get(key.toLowerCase()) : undefined),
+  has: (_t, key) => typeof key === 'string' && registry.has(key.toLowerCase()),
+  ownKeys: () => [...registry.keys()],
+  getOwnPropertyDescriptor: (_t, key) =>
+    typeof key === 'string' && registry.has(key.toLowerCase())
+      ? { enumerable: true, configurable: true, value: registry.get(key.toLowerCase()) }
+      : undefined,
+});
 
-  // Watchlist
-  'watchlist.title': 'Watchlist',
+/**
+ * Make a language available to `locale` on every ChartWidget, e.g.
+ * `registerWidgetLocale('ja', ja)` with `ja` from
+ * `@tradecanvas/chart/widget/locales`. Codes match case-insensitively.
+ */
+export function registerWidgetLocale(code: string, messages: Partial<WidgetMessages>): void {
+  registry.set(code.toLowerCase(), messages);
+}
 
-  // Status bar / connection
-  'status.connecting': 'Connecting...',
-  'status.live': 'Live',
-  'status.connectionFailed': 'Connection failed',
-  'status.loading': 'Loading chart...',
-  'history.loading': 'Loading history…',
-  'history.failed': 'Could not load older bars',
+/** Codes to try for `locale`, most specific first: `zh-TW` → `zh-tw`, `zh-hant`, `zh`. */
+function localeCandidates(locale: string): string[] {
+  const lower = locale.toLowerCase().replace('_', '-');
+  const out = [lower];
+  if (/^zh-(tw|hk|mo|hant)/.test(lower)) out.push('zh-hant');
+  const language = lower.split('-')[0];
+  if (language !== lower) out.push(language);
+  return out;
+}
 
-  // Settings panel
-  'settings.title': 'Chart Settings',
-  'settings.tab.style': 'style',
-  'settings.tab.display': 'display',
-  'settings.tab.scale': 'scale',
-  'settings.resetToDefaults': 'Reset to defaults',
-  'settings.done': 'Done',
-  'settings.section.candleColors': 'Candle Colors',
-  'settings.section.background': 'Background',
+/** The table for `locale`, if one is registered for it or its language. */
+export function findWidgetLocale(locale: string): Partial<WidgetMessages> | undefined {
+  for (const code of localeCandidates(locale)) {
+    const table = registry.get(code);
+    if (table) return table;
+  }
+  return undefined;
+}
 
-  // Hotkey sheet
-  'hotkeys.title': 'Keyboard shortcuts',
-  'hotkeys.close': 'Close',
-  'hotkeys.gotIt': 'Got it',
-  'hotkeys.group.searchNavigation': 'Search & navigation',
-  'hotkeys.group.chartManipulation': 'Chart manipulation',
-  'hotkeys.group.touch': 'Touch (mobile / tablet)',
-  'hotkeys.group.keyboard': 'Keyboard',
-  'hotkeys.group.drawing': 'Drawing',
-} as const;
-
-export const VI_MESSAGES: Partial<Record<MessageKey, string>> = {
-  'toolbar.indicators': 'Chỉ báo',
-  'toolbar.indicators.popular': 'Phổ biến',
-  'toolbar.indicators.all': 'Tất cả',
-  'indicatorType.overlay': 'phủ lên',
-  'indicatorType.panel': 'bảng riêng',
-  'toolbar.replay': 'Phát lại',
-  'replay.selectHint': 'Bấm vào một nến để bắt đầu phát lại',
-  'replay.random': 'Nến ngẫu nhiên',
-  'replay.realtime': 'Về thời gian thực',
-  'replay.barsPerSecond': 'nến/giây',
-  'replay.play': 'Phát',
-  'replay.pause': 'Tạm dừng',
-  'replay.stepBack': 'Lùi một nến (Shift+←)',
-  'replay.stepForward': 'Tiến một nến (Shift+→)',
-  'toolbar.longBracket': 'Lệnh Long',
-  'toolbar.shortBracket': 'Lệnh Short',
-  'toolbar.depthLadder': 'Sổ lệnh',
-  'toolbar.objects': 'Đối tượng',
-  'toolbar.priceAlerts': 'Cảnh báo giá',
-  'toolbar.screenshot': 'Chụp màn hình',
-  'toolbar.settings': 'Cài đặt biểu đồ',
-  'toolbar.toggleTheme': 'Đổi giao diện',
-  'toolbar.timeframes': 'Khung thời gian',
-  'toolbar.timeframes.pin': 'Ghim lên thanh công cụ',
-  'toolbar.timeframes.custom': 'Khung tuỳ chỉnh, ví dụ 7m, 90m, 2h, 3D',
-  'toolbar.timeframes.add': 'Thêm khung',
-  'toolbar.timeframes.remove': 'Xoá khung',
-  'toolbar.timeframes.invalid': 'Nhập số và đơn vị: 7m, 2h, 3D, 1W, 2M',
-  'toolbar.fullscreen': 'Toàn màn hình',
-  'legend.show': 'Hiện',
-  'legend.hide': 'Ẩn',
-  'legend.settings': 'Cài đặt',
-  'legend.remove': 'Xoá',
-  'legend.collapse': 'Thu gọn chỉ báo',
-  'legend.expand': 'Hiện chỉ báo',
-  'indicatorSettings.title': 'Cài đặt {name}',
-  'indicatorSettings.tab.inputs': 'Thông số',
-  'indicatorSettings.tab.style': 'Kiểu',
-  'indicatorSettings.tab.levels': 'Mức',
-  'indicatorSettings.noInputs': 'Chỉ báo này không có thông số để chỉnh.',
-  'indicatorSettings.source.prices': 'Giá',
-  'indicatorSettings.source.indicators': 'Chỉ báo',
-  'indicatorSettings.lineWidth': 'Độ dày nét',
-  'indicatorSettings.up': 'tăng',
-  'indicatorSettings.down': 'giảm',
-  'indicatorSettings.addLevel': 'Thêm mức',
-  'indicatorSettings.removeLevel': 'Xoá mức',
-  'indicatorSettings.noLevels': 'Chưa có mức nào.',
-  'indicatorSettings.level': 'Mức',
-  'indicatorSettings.close': 'Đóng',
-  'toolbar.exitFullscreen': 'Thoát toàn màn hình',
-  'range.presets': 'Khoảng hiển thị',
-  'range.all': 'Tất cả',
-  'range.goTo': 'Đi tới ngày',
-  'range.goToSubmit': 'Đi tới',
-  'range.date': 'Ngày',
-  'range.time': 'Giờ',
-  'range.cancel': 'Huỷ',
-  'range.beforeData': 'Đang hiện nến sớm nhất đã tải',
-
-  'chartType.candlestick': 'Nến',
-  'chartType.line': 'Đường',
-  'chartType.area': 'Vùng',
-  'chartType.bar': 'Thanh',
-  'chartType.heikinAshi': 'Heikin-Ashi',
-  'chartType.hollowCandle': 'Nến rỗng',
-  'chartType.baseline': 'Đường cơ sở',
-  'chartType.volumeCandles': 'Nến khối lượng',
-  'chartType.equivolume': 'Equivolume',
-  'chartType.hlcArea': 'Vùng HLC',
-  'chartType.stepLine': 'Đường bậc thang',
-  'chartType.lineWithMarkers': 'Đường + điểm đánh dấu',
-
-  'watchlist.title': 'Danh mục theo dõi',
-
-  'status.connecting': 'Đang kết nối...',
-  'status.live': 'Trực tiếp',
-  'status.connectionFailed': 'Kết nối thất bại',
-  'status.loading': 'Đang tải biểu đồ...',
-  'history.loading': 'Đang tải dữ liệu cũ…',
-  'history.failed': 'Không tải được dữ liệu cũ',
-
-  'settings.title': 'Cài đặt biểu đồ',
-  'settings.tab.style': 'Giao diện',
-  'settings.tab.display': 'Hiển thị',
-  'settings.tab.scale': 'Thang giá',
-  'settings.resetToDefaults': 'Khôi phục mặc định',
-  'settings.done': 'Xong',
-  'settings.section.candleColors': 'Màu nến',
-  'settings.section.background': 'Nền',
-
-  'hotkeys.title': 'Phím tắt',
-  'hotkeys.close': 'Đóng',
-  'hotkeys.gotIt': 'Đã hiểu',
-  'hotkeys.group.searchNavigation': 'Tìm kiếm & điều hướng',
-  'hotkeys.group.chartManipulation': 'Thao tác biểu đồ',
-  'hotkeys.group.touch': 'Cảm ứng (di động / máy tính bảng)',
-  'hotkeys.group.keyboard': 'Bàn phím',
-  'hotkeys.group.drawing': 'Vẽ',
-};
-
-export const BUILTIN_LOCALES: Record<string, Partial<Record<MessageKey, string>>> = {
-  en: EN_MESSAGES,
-  vi: VI_MESSAGES,
-};
+const warned = new Set<string>();
 
 /**
  * Resolve the widget's message table: built-in English as the base, the
- * requested built-in locale layered on top (falling back key-by-key to
- * English for anything that locale hasn't translated yet), then host
- * `messages` overrides layered last so they always win.
+ * table for `locale` (or its language) on top, falling back key by key to
+ * English, then the host's `messages` last so they always win.
  */
 export function resolveMessages(
   locale: string | undefined,
-  overrides: Partial<Record<MessageKey, string>> | undefined,
-): Record<MessageKey, string> {
-  const base = { ...EN_MESSAGES } as Record<MessageKey, string>;
-  const localeTable = locale ? BUILTIN_LOCALES[locale] : undefined;
-  if (localeTable) Object.assign(base, localeTable);
+  overrides: Partial<WidgetMessages> | undefined,
+): WidgetMessages {
+  const base: WidgetMessages = { ...EN_MESSAGES };
+  const table = locale ? findWidgetLocale(locale) : undefined;
+  if (table) Object.assign(base, table);
+  else if (locale && !overrides && !warned.has(locale)) {
+    warned.add(locale);
+    console.warn(
+      `[ChartWidget] No strings for locale "${locale}"; showing English. `
+      + "Import the language from '@tradecanvas/chart/widget/locales' and pass it as `messages`.",
+    );
+  }
   if (overrides) Object.assign(base, overrides);
   return base;
 }
 
 export type Translator = (key: MessageKey) => string;
 
-export function createTranslator(messages: Record<MessageKey, string>): Translator {
+export function createTranslator(messages: WidgetMessages): Translator {
   return (key: MessageKey) => messages[key] ?? EN_MESSAGES[key] ?? key;
+}
+
+/** English strings, for components used without a widget. */
+export const EN_TRANSLATOR: Translator = createTranslator(EN_MESSAGES);
+
+/** Fill `{name}` placeholders: `fill('Comparing {symbol}', { symbol: 'ETH' })`. */
+export function fill(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => (name in values ? String(values[name]) : match));
 }

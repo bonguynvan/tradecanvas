@@ -42,7 +42,8 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
-import { resolveMessages, createTranslator, type Translator } from './i18n.js';
+import { resolveMessages, createTranslator, fill, type Translator } from './i18n.js';
+import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 
@@ -336,7 +337,7 @@ export class ChartWidget {
       if (options.drawingFavorites) this.favoritesStore.seedDefaults(options.drawingFavorites);
       this.sidebar = new WidgetDrawingSidebar(
         body,
-        { drawingToolGroups: DRAWING_TOOL_GROUPS, favorites: this.favoritesStore.list() as DrawingToolType[] },
+        { drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t), favorites: this.favoritesStore.list() as DrawingToolType[] },
         {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
@@ -352,7 +353,8 @@ export class ChartWidget {
           onToggleStyle: () => this.drawingStyle?.toggle(),
           onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         },
-      );
+      this.t,
+    );
     }
 
     this.chartContainer = document.createElement('div');
@@ -407,7 +409,8 @@ export class ChartWidget {
       this.dragDrop = new DragDropImporter(this.chartContainer, {
         onData: (data, result, file) => {
           this.setData(data);
-          this.toast(`Loaded ${result.data.length} bars from ${file.name}` + (result.skipped > 0 ? ` (${result.skipped} skipped)` : ''));
+          const loaded = fill(this.t('toast.fileLoaded'), { count: result.data.length, file: file.name });
+          this.toast(result.skipped > 0 ? `${loaded} (${fill(this.t('toast.fileSkipped'), { count: result.skipped })})` : loaded);
         },
         onError: (err, file) => {
           this.toast(`${file.name}: ${err.message}`, 'error');
@@ -451,7 +454,7 @@ export class ChartWidget {
     this.symbolSearch = new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
-    }, this.overlayHost);
+    }, this.overlayHost, this.t);
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost);
 
     // The sidebar follows the chart's drawing tool: finished, cancelled with
@@ -523,7 +526,7 @@ export class ChartWidget {
     });
 
     // Data Window — precise OHLCV + indicator values at the hovered bar.
-    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) });
+    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) }, this.t);
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
@@ -542,7 +545,8 @@ export class ChartWidget {
           getStyle: () => this.chart.getDrawingStyle(),
         },
         new DrawingTemplateStore(),
-      );
+      this.t,
+    );
     }
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
@@ -553,11 +557,11 @@ export class ChartWidget {
           this.chart.cancelBracket();
           this.bracketBar?.hide();
         },
-      });
+      }, this.t);
       this.chart.on('bracketPlace', (e) => {
         const b = e.payload;
         this.bracketBar?.hide();
-        this.toast(`${b.side === 'buy' ? 'Long' : 'Short'} bracket placed · ${b.riskReward.toFixed(2)}R`);
+        this.toast(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
@@ -565,10 +569,10 @@ export class ChartWidget {
         this.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => {
             this.chart.placeOrderIntent({ side, type: 'limit', price });
-            this.toast(`${side === 'buy' ? 'Buy' : 'Sell'} limit @ ${this.formatAlertPrice(price)}`);
+            this.toast(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },
           formatPrice: (p) => this.formatAlertPrice(p),
-        });
+        }, undefined, this.t);
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
@@ -587,7 +591,7 @@ export class ChartWidget {
         onClear: () => this.chart.clearAlerts(),
         getChannelValue: (channel) => this.getAlertChannelValue(channel),
         formatPrice: (p) => this.formatAlertPrice(p),
-      });
+      }, this.t);
 
       // Keep the panel list and toasts in sync with the chart's AlertManager.
       this.chart.on('alertAdd', () => this.refreshAlerts());
@@ -598,8 +602,8 @@ export class ChartWidget {
       }
       this.chart.on('alertTriggered', (e) => {
         const p = e.payload;
-        const text = `Price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
-        this.toast(`🔔 Alert: ${text}`, 'info');
+        const text = `${this.t('alerts.source.price')} ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
+        this.toast(`🔔 ${fill(this.t('alerts.fired'), { text })}`, 'info');
         this.alertNotifier?.notify(text);
         this.refreshAlerts();
       });
@@ -638,7 +642,7 @@ export class ChartWidget {
         },
         onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onRemoveCompare: (id) => this.handleRemoveCompare(id),
-      });
+      }, this.t);
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
       this.chart.on('drawingCreate', refresh);
       this.chart.on('drawingRemove', refresh);
@@ -655,7 +659,7 @@ export class ChartWidget {
       onTimeframe: (tf) => this.handleTimeframe(tf),
       onAction: (id) => this.handleAction(id),
       onClose: () => {},
-    }, this.overlayHost);
+    }, this.overlayHost, this.t);
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
@@ -883,7 +887,7 @@ export class ChartWidget {
       return;
     }
     this.root.requestFullscreen().catch((err: unknown) => {
-      this.toast(err instanceof Error ? err.message : 'Fullscreen is not available', 'error');
+      this.toast(err instanceof Error ? err.message : this.t('toast.fullscreenUnavailable'), 'error');
     });
   }
 
@@ -1062,7 +1066,7 @@ export class ChartWidget {
   private handleToggleFavorite(tool: DrawingToolType): void {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
-    this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
+    this.toast(pinned ? this.t('toast.pinned') : this.t('toast.unpinned'));
   }
 
   /** Encode the current view (symbol, timeframe, chart type, scale, indicators, drawings). */
@@ -1105,7 +1109,7 @@ export class ChartWidget {
   /** Copy the chart image to the clipboard, with a toast on success/failure. */
   async copyChartImage(): Promise<void> {
     const ok = await this.chart.copyScreenshot();
-    this.toast(ok ? 'Chart image copied' : 'Copy failed — image clipboard unavailable', ok ? 'info' : 'error');
+    this.toast(ok ? this.t('toast.imageCopied') : this.t('toast.imageCopyFailed'), ok ? 'info' : 'error');
   }
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
@@ -1114,9 +1118,9 @@ export class ChartWidget {
     const url = buildShareUrl(base, this.exportState());
     try {
       await navigator.clipboard.writeText(url);
-      this.toast('Share link copied');
+      this.toast(this.t('toast.linkCopied'));
     } catch {
-      this.toast('Copy failed — clipboard unavailable', 'error');
+      this.toast(this.t('toast.copyFailed'), 'error');
     }
   }
 
@@ -1211,7 +1215,7 @@ export class ChartWidget {
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
       id: d.id,
-      label: drawingTypeLabel(d.type),
+      label: drawingTypeLabel(d.type, this.t),
       visible: d.visible,
       locked: d.locked,
     }));
@@ -1221,7 +1225,7 @@ export class ChartWidget {
 
   private async handleAddCompare(): Promise<void> {
     if (!this.adapter) {
-      this.toast('Comparison needs a live data adapter', 'error');
+      this.toast(this.t('toast.compareNeedsAdapter'), 'error');
       return;
     }
     const taken = new Set([this.state.symbol, ...this.compares.map((c) => c.symbol)]);
@@ -1244,9 +1248,9 @@ export class ChartWidget {
       this.chart.addCompareSymbol(id, symbol, bars, color);
       this.compares = [...this.compares, { id, symbol, color }];
       this.refreshObjects();
-      this.toast(`Comparing ${symbol}`);
+      this.toast(fill(this.t('toast.comparing'), { symbol }));
     } catch (err: unknown) {
-      this.toast(`${symbol}: ${err instanceof Error ? err.message : 'failed to load'}`, 'error');
+      this.toast(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
     }
   }
 
@@ -1289,7 +1293,7 @@ export class ChartWidget {
 
   /** Price + every active indicator line, as selectable alert sources. */
   private buildAlertSources(): { channel: string; label: string }[] {
-    const sources = [{ channel: 'price', label: 'Price' }];
+    const sources = [{ channel: 'price', label: this.t('alerts.source.price') }];
     for (const ind of this.chart.getActiveIndicators()) {
       // Use the latest point — multi-output indicators (MACD, Stochastic) only
       // have all their lines populated once warmed up; the first point may not.
@@ -1393,14 +1397,14 @@ export class ChartWidget {
     }
 
     items.push(
-      { id: 'screenshot', label: 'Screenshot', category: 'action', shortcut: '' },
-      { id: 'copyImage', label: 'Copy Chart Image', category: 'action' },
-      { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
-      { id: 'settings', label: 'Settings', category: 'action' },
-      { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
-      { id: 'autoFib', label: 'Auto Fibonacci (visible swing)', category: 'action' },
-      { id: 'dataWindow', label: 'Toggle Data Window', category: 'action' },
-      { id: 'clearDrawings', label: 'Clear All Drawings', category: 'action' },
+      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action', shortcut: '' },
+      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
+      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
+      { id: 'settings', label: this.t('action.settings'), category: 'action' },
+      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
+      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
+      { id: 'dataWindow', label: this.t('action.dataWindow'), category: 'action' },
+      { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
     );
 
     return items;
@@ -1425,7 +1429,7 @@ export class ChartWidget {
         break;
       case 'autoFib': {
         const id = this.chart.autoFib();
-        this.toast(id ? 'Auto Fibonacci added' : 'No clear swing in view');
+        this.toast(id ? this.t('toast.autoFibAdded') : this.t('toast.noSwing'));
         break;
       }
       case 'dataWindow':
@@ -1616,6 +1620,9 @@ export class ChartWidget {
         pause: t('replay.pause'),
         stepBack: t('replay.stepBack'),
         stepForward: t('replay.stepForward'),
+        replay: t('replay.label'),
+        position: t('replay.position'),
+        speed: t('replay.speed'),
       },
     );
     this.replayBar.mount(this.chartContainer, { total: this.replayTotal(), speed: this.replaySpeed, mode: 'select' });

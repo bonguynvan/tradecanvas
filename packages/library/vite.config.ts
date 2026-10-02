@@ -22,6 +22,7 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         'widget/index': resolve(__dirname, 'src/widget/index.ts'),
+        'widget/locales/index': resolve(__dirname, 'src/widget/locales/index.ts'),
       },
       formats: ['es', 'cjs'],
     },

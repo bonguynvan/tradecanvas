@@ -1,6 +1,7 @@
 import type { DrawingToolType } from '@tradecanvas/commons';
 import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon, createToolIcon } from './icons.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
 
 /** Drawing tool icons carry more detail than interface glyphs: a size up. */
 const TOOL_ICON_PX = 16;
@@ -36,7 +37,7 @@ export class WidgetDrawingSidebar {
   private favoritesDivider: HTMLDivElement | null = null;
   private favorites: string[] = [];
 
-  constructor(host: HTMLElement, config: SidebarConfig, callbacks: SidebarCallbacks) {
+  constructor(host: HTMLElement, config: SidebarConfig, callbacks: SidebarCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.config = config;
     this.callbacks = callbacks;
     this.el = document.createElement('div');
@@ -51,7 +52,7 @@ export class WidgetDrawingSidebar {
     // Cursor button
     this.cursorBtn = document.createElement('button');
     this.cursorBtn.className = 'tcw-sidebar-btn';
-    this.cursorBtn.title = 'Cursor';
+    this.cursorBtn.title = this.t('drawing.cursor');
     this.cursorBtn.innerHTML = createIcon('cursor', 14);
     this.cursorBtn.addEventListener('click', callbacks.onCancelDrawing);
     el.appendChild(this.cursorBtn);
@@ -122,7 +123,7 @@ export class WidgetDrawingSidebar {
     if (callbacks.onToggleStyle) {
       const styleBtn = document.createElement('button');
       styleBtn.className = 'tcw-sidebar-btn';
-      styleBtn.title = 'Drawing style & templates';
+      styleBtn.title = this.t('drawing.style');
       styleBtn.dataset.role = 'style';
       styleBtn.innerHTML = createIcon('palette', 14);
       styleBtn.addEventListener('click', callbacks.onToggleStyle);
@@ -132,7 +133,7 @@ export class WidgetDrawingSidebar {
     if (callbacks.onToggleMagnet) {
       this.magnetBtn = document.createElement('button');
       this.magnetBtn.className = 'tcw-sidebar-btn';
-      this.magnetBtn.title = 'Magnet';
+      this.magnetBtn.title = this.t('drawing.magnet');
       this.magnetBtn.innerHTML = createIcon('magnet', 14);
       this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
       el.appendChild(this.magnetBtn);
@@ -142,7 +143,7 @@ export class WidgetDrawingSidebar {
       this.stayBtn = document.createElement('button');
       this.stayBtn.className = 'tcw-sidebar-btn';
       this.stayBtn.dataset.role = 'stay';
-      this.stayBtn.title = 'Stay in drawing mode';
+      this.stayBtn.title = this.t('drawing.stay');
       this.stayBtn.setAttribute('aria-pressed', 'false');
       this.stayBtn.innerHTML = createIcon('repeat', 14);
       this.stayBtn.addEventListener('click', callbacks.onToggleStayInDrawing);
@@ -151,21 +152,21 @@ export class WidgetDrawingSidebar {
 
     const undoBtn = document.createElement('button');
     undoBtn.className = 'tcw-sidebar-btn';
-    undoBtn.title = 'Undo';
+    undoBtn.title = this.t('drawing.undo');
     undoBtn.innerHTML = createIcon('undo', 14);
     undoBtn.addEventListener('click', callbacks.onUndo);
     el.appendChild(undoBtn);
 
     const redoBtn = document.createElement('button');
     redoBtn.className = 'tcw-sidebar-btn';
-    redoBtn.title = 'Redo';
+    redoBtn.title = this.t('drawing.redo');
     redoBtn.innerHTML = createIcon('redo', 14);
     redoBtn.addEventListener('click', callbacks.onRedo);
     el.appendChild(redoBtn);
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
-    clearBtn.title = 'Clear all';
+    clearBtn.title = this.t('drawing.clearAll');
     clearBtn.innerHTML = createIcon('trash', 14);
     clearBtn.addEventListener('click', callbacks.onClearDrawings);
     el.appendChild(clearBtn);
@@ -243,7 +244,7 @@ export class WidgetDrawingSidebar {
       // Said once for the menu rather than as a tooltip on every row.
       const hint = document.createElement('div');
       hint.className = 'tcw-flyout-hint';
-      hint.textContent = 'Right-click a tool to pin it';
+      hint.textContent = this.t('drawing.pinHint');
       flyout.appendChild(hint);
     }
 
@@ -310,7 +311,7 @@ export class WidgetDrawingSidebar {
     // Magnet
     if (this.magnetBtn) {
       this.magnetBtn.classList.toggle('tcw-active', state.magnetEnabled);
-      this.magnetBtn.title = state.magnetEnabled ? 'Magnet ON' : 'Magnet OFF';
+      this.magnetBtn.title = state.magnetEnabled ? this.t('drawing.magnetOn') : this.t('drawing.magnetOff');
     }
 
     if (this.stayBtn) {

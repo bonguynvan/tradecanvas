@@ -57,4 +57,21 @@
   - ChartWidget's timezone setting lists 28 zones by city, each with the offset
     in force (older fixed-offset settings still apply).
   - YTD now starts on the bar at 1 January 00:00 instead of the one after it.
+- **ChartWidget in 14 languages.**
+  - Languages: English, Vietnamese, Simplified and Traditional Chinese,
+    Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish,
+    Indonesian and Thai.
+  - Every string the widget shows now goes through its translations: settings,
+    drawing tools and their groups, alerts, the object tree, the data window,
+    the depth ladder, the symbol search, the command palette, the hotkey sheet,
+    the replay bar and toasts. Several of these were English in Vietnamese
+    too.
+  - The new entry `@tradecanvas/chart/widget/locales` holds the translations,
+    so a page loads only what it imports: pass one as `messages`, or call
+    `registerWidgetLocales()`. English and Vietnamese stay built in.
+  - A locale falls back to its language (`ja-JP` → `ja`); Chinese regions fall
+    back to their script (`zh-TW` → `zh-Hant`).
+  - New `registerWidgetLocale`, `findWidgetLocale`, `WIDGET_LANGUAGES`, and the
+    `MessageKey` / `WidgetMessages` types.
+  - The settings offer number formats for these languages.
 - The widget's replay bar sits above the time axis.

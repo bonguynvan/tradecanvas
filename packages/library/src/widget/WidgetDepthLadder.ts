@@ -1,6 +1,8 @@
 import type { DepthData } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { buildLadderRows, type LadderModel } from './ladderRows.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { escapeHtml } from './escapeHtml.js';
 
 export interface DepthLadderCallbacks {
   /** Buy at `price` (clicked an ask cell) or sell at `price` (clicked a bid cell). */
@@ -21,7 +23,7 @@ export class WidgetDepthLadder {
   private open = false;
   private levels: number;
 
-  constructor(host: HTMLElement, callbacks: DepthLadderCallbacks, levels = 12) {
+  constructor(host: HTMLElement, callbacks: DepthLadderCallbacks, levels = 12, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
     this.levels = levels;
 
@@ -32,11 +34,11 @@ export class WidgetDepthLadder {
     const header = document.createElement('div');
     header.className = 'tcw-ladder-header';
     const title = document.createElement('span');
-    title.textContent = 'Depth Ladder';
+    title.textContent = this.t('ladder.title');
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-ladder-close';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(title);
@@ -45,7 +47,8 @@ export class WidgetDepthLadder {
 
     const cols = document.createElement('div');
     cols.className = 'tcw-ladder-cols';
-    cols.innerHTML = '<span>Bid</span><span>Price</span><span>Ask</span>';
+    cols.innerHTML = [this.t('ladder.bid'), this.t('ladder.price'), this.t('ladder.ask')]
+      .map((label) => `<span>${escapeHtml(label)}</span>`).join('');
     this.el.appendChild(cols);
 
     this.bodyEl = document.createElement('div');
@@ -89,7 +92,7 @@ export class WidgetDepthLadder {
     this.bodyEl.replaceChildren();
     const empty = document.createElement('div');
     empty.className = 'tcw-ladder-empty';
-    empty.textContent = 'No order-book data';
+    empty.textContent = this.t('ladder.empty');
     this.bodyEl.appendChild(empty);
   }
 

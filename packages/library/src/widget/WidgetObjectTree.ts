@@ -1,4 +1,5 @@
 import { createIcon } from './icons.js';
+import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 
 export interface ObjectTreeIndicator {
   instanceId: string;
@@ -45,7 +46,7 @@ export class WidgetObjectTree {
   private callbacks: ObjectTreeCallbacks;
   private open = false;
 
-  constructor(host: HTMLElement, callbacks: ObjectTreeCallbacks) {
+  constructor(host: HTMLElement, callbacks: ObjectTreeCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
 
     this.el = document.createElement('div');
@@ -55,21 +56,21 @@ export class WidgetObjectTree {
     const header = document.createElement('div');
     header.className = 'tcw-tree-header';
     const title = document.createElement('span');
-    title.textContent = 'Objects';
+    title.textContent = this.t('objects.title');
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-tree-close';
-    closeBtn.setAttribute('aria-label', 'Close objects');
+    closeBtn.setAttribute('aria-label', this.t('objects.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(title);
     header.appendChild(closeBtn);
     this.el.appendChild(header);
 
-    this.indicatorsEl = this.makeSection('Indicators');
-    this.drawingsEl = this.makeSection('Drawings');
+    this.indicatorsEl = this.makeSection(this.t('objects.indicators'));
+    this.drawingsEl = this.makeSection(this.t('objects.drawings'));
     if (this.callbacks.onAddCompare) {
-      this.compareEl = this.makeSection('Compare', () => this.callbacks.onAddCompare?.());
+      this.compareEl = this.makeSection(this.t('objects.compare'), () => this.callbacks.onAddCompare?.());
     }
 
     host.appendChild(this.el);
@@ -137,7 +138,7 @@ export class WidgetObjectTree {
   private renderIndicators(indicators: ObjectTreeIndicator[]): void {
     this.indicatorsEl.replaceChildren();
     if (indicators.length === 0) {
-      this.indicatorsEl.appendChild(this.emptyRow('No indicators'));
+      this.indicatorsEl.appendChild(this.emptyRow(this.t('objects.noIndicators')));
       return;
     }
     for (const ind of indicators) {
@@ -148,17 +149,17 @@ export class WidgetObjectTree {
       if (this.callbacks.onToggleIndicatorVisible) {
         actions.appendChild(this.iconButton(
           ind.visible ? 'eye' : 'eyeOff',
-          ind.visible ? 'Hide' : 'Show',
+          ind.visible ? this.t('common.hide') : this.t('common.show'),
           '',
           () => this.callbacks.onToggleIndicatorVisible?.(ind.instanceId, !ind.visible),
         ));
       }
       if (this.callbacks.onConfigureIndicator) {
-        actions.appendChild(this.iconButton('settings', 'Indicator settings', '', () =>
+        actions.appendChild(this.iconButton('settings', this.t('objects.indicatorSettings'), '', () =>
           this.callbacks.onConfigureIndicator?.(ind.instanceId),
         ));
       }
-      actions.appendChild(this.iconButton('trash', 'Remove indicator', 'tcw-tree-del', () =>
+      actions.appendChild(this.iconButton('trash', this.t('objects.removeIndicator'), 'tcw-tree-del', () =>
         this.callbacks.onRemoveIndicator(ind.instanceId),
       ));
       row.appendChild(actions);
@@ -169,7 +170,7 @@ export class WidgetObjectTree {
   private renderDrawings(drawings: ObjectTreeDrawing[]): void {
     this.drawingsEl.replaceChildren();
     if (drawings.length === 0) {
-      this.drawingsEl.appendChild(this.emptyRow('No drawings'));
+      this.drawingsEl.appendChild(this.emptyRow(this.t('objects.noDrawings')));
       return;
     }
     for (const d of drawings) {
@@ -180,17 +181,17 @@ export class WidgetObjectTree {
       actions.className = 'tcw-tree-actions';
       actions.appendChild(this.iconButton(
         d.visible ? 'eye' : 'eyeOff',
-        d.visible ? 'Hide' : 'Show',
+        d.visible ? this.t('common.hide') : this.t('common.show'),
         '',
         () => this.callbacks.onToggleDrawingVisible(d.id, !d.visible),
       ));
       actions.appendChild(this.iconButton(
         d.locked ? 'lock' : 'unlock',
-        d.locked ? 'Unlock' : 'Lock',
+        d.locked ? this.t('common.unlock') : this.t('common.lock'),
         d.locked ? 'tcw-tree-on' : '',
         () => this.callbacks.onToggleDrawingLocked(d.id, !d.locked),
       ));
-      actions.appendChild(this.iconButton('trash', 'Remove drawing', 'tcw-tree-del', () =>
+      actions.appendChild(this.iconButton('trash', this.t('objects.removeDrawing'), 'tcw-tree-del', () =>
         this.callbacks.onRemoveDrawing(d.id),
       ));
       row.appendChild(actions);
@@ -202,7 +203,7 @@ export class WidgetObjectTree {
     if (!this.compareEl) return;
     this.compareEl.replaceChildren();
     if (compares.length === 0) {
-      this.compareEl.appendChild(this.emptyRow('No comparisons'));
+      this.compareEl.appendChild(this.emptyRow(this.t('objects.noComparisons')));
       return;
     }
     for (const c of compares) {
@@ -212,7 +213,7 @@ export class WidgetObjectTree {
       dot.style.background = c.color;
       row.insertBefore(dot, row.firstChild);
       if (this.callbacks.onRemoveCompare) {
-        row.appendChild(this.iconButton('trash', 'Remove comparison', 'tcw-tree-del', () =>
+        row.appendChild(this.iconButton('trash', this.t('objects.removeComparison'), 'tcw-tree-del', () =>
           this.callbacks.onRemoveCompare?.(c.id),
         ));
       }
@@ -294,7 +295,9 @@ const DRAWING_TYPE_LABELS: Record<string, string> = {
   riskReward: 'Long/Short Position',
 };
 
-/** Human-readable label for a drawing type, falling back to the raw key. */
-export function drawingTypeLabel(type: string): string {
-  return DRAWING_TYPE_LABELS[type] ?? type;
+/** Label for a drawing type in the widget's language, falling back to English, then the raw key. */
+export function drawingTypeLabel(type: string, t?: Translator): string {
+  const key = `tool.${type}` as MessageKey;
+  const translated = t?.(key);
+  return translated && translated !== key ? translated : DRAWING_TYPE_LABELS[type] ?? type;
 }

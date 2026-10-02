@@ -37,54 +37,54 @@ const GROUPS: HotkeyGroup[] = [
   {
     title: 'Search & navigation',
     entries: [
-      { keys: [mod, 'K'], label: 'Command palette' },
-      { keys: [mod, 'P'], label: 'Symbol search' },
-      { keys: ['Alt', 'G'], label: 'Go to date' },
-      { keys: ['Alt', 'I'], label: 'Invert price scale' },
-      { keys: ['?'], label: 'Show this sheet' },
+      { keys: [mod, 'K'], label: 'hotkeys.commandPalette' },
+      { keys: [mod, 'P'], label: 'hotkeys.symbolSearch' },
+      { keys: ['Alt', 'G'], label: 'hotkeys.goToDate' },
+      { keys: ['Alt', 'I'], label: 'hotkeys.invertScale' },
+      { keys: ['?'], label: 'hotkeys.showSheet' },
     ],
   },
   {
     title: 'Chart manipulation',
     entries: [
-      { keys: ['Drag'], label: 'Pan — past the last bar into empty future space' },
-      { keys: [mod, 'Drag'], label: 'Select drawings in a box' },
-      { keys: [mod, 'Click'], label: 'Add / remove a drawing from the selection' },
-      { keys: ['Shift', 'Drag'], label: 'Measure tool (bars × price Δ)' },
-      { keys: ['Drag', 'Price axis'], label: 'Compress / expand vertical scale' },
-      { keys: ['Drag', 'Time axis'], label: 'Zoom time axis' },
-      { keys: ['Double-click', 'Price axis'], label: 'Re-enable auto-scale' },
-      { keys: ['Double-click', 'Time axis'], label: 'Fit content' },
-      { keys: ['Scroll'], label: 'Zoom around cursor' },
+      { keys: ['key.drag'], label: 'hotkeys.pan' },
+      { keys: [mod, 'key.drag'], label: 'hotkeys.boxSelect' },
+      { keys: [mod, 'key.click'], label: 'hotkeys.toggleSelect' },
+      { keys: ['Shift', 'key.drag'], label: 'hotkeys.measure' },
+      { keys: ['key.drag', 'key.priceAxis'], label: 'hotkeys.scalePrice' },
+      { keys: ['key.drag', 'key.timeAxis'], label: 'hotkeys.zoomTime' },
+      { keys: ['key.doubleClick', 'key.priceAxis'], label: 'hotkeys.autoScale' },
+      { keys: ['key.doubleClick', 'key.timeAxis'], label: 'hotkeys.fit' },
+      { keys: ['key.scroll'], label: 'hotkeys.zoomCursor' },
     ],
   },
   {
     title: 'Touch (mobile / tablet)',
     entries: [
-      { keys: ['1 finger', 'Drag'], label: 'Pan / move crosshair' },
-      { keys: ['2 fingers', 'Pinch'], label: 'Zoom around midpoint' },
-      { keys: ['Long-press'], label: 'Pin OHLC tooltip at bar' },
-      { keys: ['Drag', 'Axis strip'], label: 'Scale price / time axis' },
+      { keys: ['key.oneFinger', 'key.drag'], label: 'hotkeys.touchPan' },
+      { keys: ['key.twoFingers', 'key.pinch'], label: 'hotkeys.pinch' },
+      { keys: ['key.longPress'], label: 'hotkeys.longPress' },
+      { keys: ['key.drag', 'key.axisStrip'], label: 'hotkeys.touchAxis' },
     ],
   },
   {
     title: 'Keyboard',
     entries: [
-      { keys: ['←', '→'], label: 'Pan one bar' },
-      { keys: ['+', '−'], label: 'Zoom in / out' },
-      { keys: ['Home'], label: 'Scroll to start' },
-      { keys: ['End'], label: 'Scroll to end (live edge)' },
-      { keys: ['F'], label: 'Fit content' },
+      { keys: ['←', '→'], label: 'hotkeys.panBar' },
+      { keys: ['+', '−'], label: 'hotkeys.zoomInOut' },
+      { keys: ['Home'], label: 'hotkeys.toStart' },
+      { keys: ['End'], label: 'hotkeys.toEnd' },
+      { keys: ['F'], label: 'hotkeys.fit' },
     ],
   },
   {
     title: 'Drawing',
     entries: [
-      { keys: [mod, 'Z'], label: 'Undo' },
-      { keys: [mod, 'Shift', 'Z'], label: 'Redo' },
-      { keys: ['Esc'], label: 'Cancel active drawing' },
-      { keys: [mod, 'C'], label: 'Copy selected drawings' },
-      { keys: [mod, 'V'], label: 'Paste drawings (into any chart on the page)' },
+      { keys: [mod, 'Z'], label: 'hotkeys.undo' },
+      { keys: [mod, 'Shift', 'Z'], label: 'hotkeys.redo' },
+      { keys: ['Esc'], label: 'hotkeys.cancelDrawing' },
+      { keys: [mod, 'C'], label: 'hotkeys.copy' },
+      { keys: [mod, 'V'], label: 'hotkeys.paste' },
     ],
   },
 ];
@@ -164,14 +164,15 @@ export class WidgetHotkeySheet {
           }
           const kbd = document.createElement('kbd');
           kbd.className = 'tcw-cmd-kbd';
-          kbd.textContent = entry.keys[i];
+          const key = entry.keys[i];
+          kbd.textContent = key.startsWith('key.') ? this.t(key as MessageKey) : key;
           keys.appendChild(kbd);
         }
         row.appendChild(keys);
 
         const label = document.createElement('span');
         label.className = 'tcw-hotkey-label';
-        label.textContent = entry.label;
+        label.textContent = this.t(entry.label as MessageKey);
         row.appendChild(label);
 
         section.appendChild(row);

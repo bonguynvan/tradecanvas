@@ -4,6 +4,7 @@
   import { browser } from '$app/environment';
   import type { Chart, DataAdapter } from '@tradecanvas/chart';
   import type { ChartWidget } from '@tradecanvas/chart/widget';
+  import type { WidgetLanguage } from '@tradecanvas/chart/widget/locales';
   import { FEATURE_SCENES, type SceneEnv } from '$lib/featureScenes';
 
   let section: HTMLElement | undefined = $state();
@@ -11,6 +12,9 @@
   let active = $state(0);
   let metrics = $state<string[]>([]);
   let started = $state(false);
+  /** Languages for scenes with a picker, loaded with the first such scene. */
+  let languages = $state<readonly WidgetLanguage[]>([]);
+  let languageCode = $state('vi');
 
   let widget: ChartWidget | null = null;
   let mountToken = 0;
@@ -61,12 +65,18 @@
     ]);
     if (token !== mountToken || !host) return;
 
+    const current = FEATURE_SCENES[index];
+    if (current.languages && languages.length === 0) {
+      const { WIDGET_LANGUAGES } = await import('@tradecanvas/chart/widget/locales');
+      if (token !== mountToken || !host) return;
+      languages = WIDGET_LANGUAGES;
+    }
     const env: SceneEnv = {
       lib,
       binance: () => new lib.BinanceAdapter(),
       slowBinance: (ms) => delayed(new lib.BinanceAdapter(), ms),
+      language: current.languages ? languages.find((l) => l.code === languageCode) : undefined,
     };
-    const current = FEATURE_SCENES[index];
     const opts = current.options(env);
     let pending: { label: string; t: number } | null = null;
 
@@ -105,6 +115,12 @@
     await firstBars(chart);
     if (token !== mountToken) return;
     await current.setup?.(w, chart, env);
+  }
+
+  function pickLanguage(code: string) {
+    if (code === languageCode) return;
+    languageCode = code;
+    if (started) void mountScene(active);
   }
 
   function select(index: number) {
@@ -195,6 +211,20 @@
 
     <div class="lab-stage" id="lab-stage" role="tabpanel" aria-labelledby="lab-tab-{active}" tabindex="-1">
       <p class="stage-blurb">{scene.blurb}</p>
+      {#if scene.languages && languages.length > 0}
+        <div class="stage-langs" role="group" aria-label="Widget language">
+          {#each languages as language (language.code)}
+            <button
+              type="button"
+              class="lang"
+              class:active={language.code === languageCode}
+              aria-pressed={language.code === languageCode}
+              lang={language.code}
+              onclick={() => pickLanguage(language.code)}
+            >{language.name}</button>
+          {/each}
+        </div>
+      {/if}
       <div class="stage-frame">
         <div class="stage-host" bind:this={host}></div>
         {#if !started}
@@ -450,5 +480,41 @@
 
   @media (prefers-reduced-motion: reduce) {
     .rail-item { transition: none; }
+  }
+
+  .stage-langs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 12px;
+  }
+
+  .lang {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .lang:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+
+  .lang.active {
+    color: var(--accent-ink);
+    background: var(--accent-fill);
+    border-color: var(--accent-fill);
+  }
+
+  .lang:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 </style>

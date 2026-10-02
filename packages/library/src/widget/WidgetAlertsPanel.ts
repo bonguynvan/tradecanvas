@@ -1,5 +1,7 @@
 import type { AlertCondition } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
+import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
+import { escapeHtml } from './escapeHtml.js';
 
 export interface AlertListItem {
   id: string;
@@ -26,15 +28,15 @@ export interface AlertsPanelCallbacks {
   formatPrice: (price: number) => string;
 }
 
-const CONDITION_OPTIONS: { value: AlertCondition; label: string }[] = [
-  { value: 'crossing', label: 'Crossing' },
-  { value: 'crossingUp', label: 'Crossing up' },
-  { value: 'crossingDown', label: 'Crossing down' },
-  { value: 'greaterThan', label: 'Greater than' },
-  { value: 'lessThan', label: 'Less than' },
+const CONDITION_OPTIONS: { value: AlertCondition; key: MessageKey }[] = [
+  { value: 'crossing', key: 'alerts.condition.crossing' },
+  { value: 'crossingUp', key: 'alerts.condition.crossingUp' },
+  { value: 'crossingDown', key: 'alerts.condition.crossingDown' },
+  { value: 'greaterThan', key: 'alerts.condition.greaterThan' },
+  { value: 'lessThan', key: 'alerts.condition.lessThan' },
 ];
 
-const CONDITION_LABEL = new Map(CONDITION_OPTIONS.map((o) => [o.value, o.label]));
+const CONDITION_KEY = new Map(CONDITION_OPTIONS.map((o) => [o.value, o.key]));
 
 function roundForInput(v: number): number {
   return Math.round(v * 1e6) / 1e6;
@@ -62,10 +64,11 @@ export class WidgetAlertsPanel {
   private callbacks: AlertsPanelCallbacks;
   private open = false;
   private alerts: AlertListItem[] = [];
-  private sources: AlertSource[] = [{ channel: 'price', label: 'Price' }];
+  private sources: AlertSource[];
 
-  constructor(host: HTMLElement, callbacks: AlertsPanelCallbacks) {
+  constructor(host: HTMLElement, callbacks: AlertsPanelCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
+    this.sources = [{ channel: 'price', label: this.t('alerts.source.price') }];
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-alerts-panel';
@@ -75,11 +78,11 @@ export class WidgetAlertsPanel {
     const header = document.createElement('div');
     header.className = 'tcw-alerts-header';
     const title = document.createElement('span');
-    title.textContent = 'Price Alerts';
+    title.textContent = this.t('alerts.title');
     const closeBtn = document.createElement('button');
     closeBtn.className = 'tcw-alerts-close';
     closeBtn.type = 'button';
-    closeBtn.setAttribute('aria-label', 'Close alerts');
+    closeBtn.setAttribute('aria-label', this.t('alerts.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(title);
@@ -97,7 +100,7 @@ export class WidgetAlertsPanel {
     this.priceInput = document.createElement('input');
     this.priceInput.type = 'number';
     this.priceInput.step = 'any';
-    this.priceInput.placeholder = 'Value';
+    this.priceInput.placeholder = this.t('alerts.value');
     this.priceInput.className = 'tcw-alerts-price';
     this.priceInput.required = true;
 
@@ -106,19 +109,19 @@ export class WidgetAlertsPanel {
     for (const opt of CONDITION_OPTIONS) {
       const o = document.createElement('option');
       o.value = opt.value;
-      o.textContent = opt.label;
+      o.textContent = this.t(opt.key);
       this.conditionSelect.appendChild(o);
     }
 
     this.messageInput = document.createElement('input');
     this.messageInput.type = 'text';
-    this.messageInput.placeholder = 'Note (optional)';
+    this.messageInput.placeholder = this.t('alerts.note');
     this.messageInput.className = 'tcw-alerts-message';
 
     const addBtn = document.createElement('button');
     addBtn.type = 'submit';
     addBtn.className = 'tcw-alerts-add';
-    addBtn.innerHTML = `${createIcon('plus', 14)}<span>Add alert</span>`;
+    addBtn.innerHTML = `${createIcon('plus', 14)}<span>${escapeHtml(this.t('alerts.add'))}</span>`;
 
     form.appendChild(this.sourceSelect);
     form.appendChild(this.priceInput);
@@ -138,7 +141,7 @@ export class WidgetAlertsPanel {
 
     this.emptyEl = document.createElement('div');
     this.emptyEl.className = 'tcw-alerts-empty';
-    this.emptyEl.textContent = 'No alerts yet. Add one above, or right-click the chart.';
+    this.emptyEl.textContent = this.t('alerts.empty');
     this.listEl.appendChild(this.emptyEl);
 
     this.renderSources();
@@ -147,7 +150,7 @@ export class WidgetAlertsPanel {
 
   /** Replace the alert-source options (price + indicator lines). */
   setSources(sources: AlertSource[]): void {
-    this.sources = sources.length > 0 ? sources : [{ channel: 'price', label: 'Price' }];
+    this.sources = sources.length > 0 ? sources : [{ channel: 'price', label: this.t('alerts.source.price') }];
     this.renderSources();
   }
 
@@ -205,7 +208,7 @@ export class WidgetAlertsPanel {
     const condition = this.conditionSelect.value as AlertCondition;
     const message = this.messageInput.value.trim() || undefined;
     const channel = this.sourceSelect.value || 'price';
-    const label = this.sources.find((s) => s.channel === channel)?.label ?? 'Price';
+    const label = this.sources.find((s) => s.channel === channel)?.label ?? this.t('alerts.source.price');
     this.callbacks.onAdd(price, condition, message, channel, label);
     this.messageInput.value = '';
     this.prefillPrice();
@@ -229,7 +232,8 @@ export class WidgetAlertsPanel {
       info.className = 'tcw-alerts-info';
       const main = document.createElement('div');
       main.className = 'tcw-alerts-row-main';
-      const label = CONDITION_LABEL.get(alert.condition as AlertCondition) ?? alert.condition;
+      const conditionKey = CONDITION_KEY.get(alert.condition as AlertCondition);
+      const label = conditionKey ? this.t(conditionKey) : alert.condition;
       const isIndicator = alert.channel && alert.channel !== 'price';
       const valueStr = isIndicator ? formatPlain(alert.price) : this.callbacks.formatPrice(alert.price);
       const prefix = isIndicator && alert.label ? `${alert.label} ` : '';
@@ -244,14 +248,14 @@ export class WidgetAlertsPanel {
       if (alert.triggered) {
         const badge = document.createElement('span');
         badge.className = 'tcw-alerts-badge';
-        badge.textContent = 'triggered';
+        badge.textContent = this.t('alerts.triggered');
         main.appendChild(badge);
       }
 
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'tcw-alerts-del';
-      del.setAttribute('aria-label', 'Delete alert');
+      del.setAttribute('aria-label', this.t('alerts.delete'));
       del.innerHTML = createIcon('trash', 14);
       del.addEventListener('click', () => this.callbacks.onRemove(alert.id));
 
