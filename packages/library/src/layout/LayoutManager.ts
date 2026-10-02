@@ -9,6 +9,8 @@ export class LayoutManager {
   private containerWidth = 0;
   private containerHeight = 0;
   private priceAxisWidth = PRICE_AXIS_WIDTH;
+  /** Width of the left price scale; 0 while it is hidden. */
+  private leftAxisWidth = 0;
 
   resize(width: number, height: number): void {
     this.containerWidth = width;
@@ -63,6 +65,11 @@ export class LayoutManager {
     this.priceAxisWidth = width;
   }
 
+  /** Width reserved left of the plot for the left price scale (0 = none). */
+  setLeftAxisWidth(width: number): void {
+    this.leftAxisWidth = Math.max(0, width);
+  }
+
   getPanels(): PanelConfig[] {
     return this.panels;
   }
@@ -78,10 +85,11 @@ export class LayoutManager {
     const topHeight = topPanels.reduce((s, p) => s + p.size, 0);
     const bottomHeight = bottomPanels.reduce((s, p) => s + p.size, 0);
 
+    const plotX = leftWidth + this.leftAxisWidth;
     const mainChartRect: Rect = {
-      x: leftWidth,
+      x: plotX,
       y: topHeight,
-      width: Math.max(0, this.containerWidth - leftWidth - rightWidth - this.priceAxisWidth),
+      width: Math.max(0, this.containerWidth - plotX - rightWidth - this.priceAxisWidth),
       height: Math.max(0, this.containerHeight - topHeight - bottomHeight - TIME_AXIS_HEIGHT),
     };
 
@@ -108,11 +116,11 @@ export class LayoutManager {
     for (const panel of topPanels) {
       resolvedPanels.push({
         config: panel,
-        rect: { x: leftWidth, y, width: mainChartRect.width, height: panel.size },
+        rect: { x: plotX, y, width: mainChartRect.width, height: panel.size },
       });
       dividers.push({
         panelId: panel.id,
-        rect: { x: leftWidth, y: y + panel.size - 2, width: mainChartRect.width, height: 4 },
+        rect: { x: plotX, y: y + panel.size - 2, width: mainChartRect.width, height: 4 },
         orientation: 'horizontal',
       });
       y += panel.size;
@@ -123,18 +131,18 @@ export class LayoutManager {
     for (const panel of bottomPanels) {
       resolvedPanels.push({
         config: panel,
-        rect: { x: leftWidth, y, width: mainChartRect.width, height: panel.size },
+        rect: { x: plotX, y, width: mainChartRect.width, height: panel.size },
       });
       dividers.push({
         panelId: panel.id,
-        rect: { x: leftWidth, y: y - 2, width: mainChartRect.width, height: 4 },
+        rect: { x: plotX, y: y - 2, width: mainChartRect.width, height: 4 },
         orientation: 'horizontal',
       });
       y += panel.size;
     }
 
     // Right panels
-    x = leftWidth + mainChartRect.width + this.priceAxisWidth;
+    x = plotX + mainChartRect.width + this.priceAxisWidth;
     for (const panel of rightPanels) {
       resolvedPanels.push({
         config: panel,

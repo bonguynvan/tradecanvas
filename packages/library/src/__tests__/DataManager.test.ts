@@ -40,6 +40,7 @@ describe('DataManager.setData', () => {
       bar(2, NaN, 12, 9, 11, 1),
       bar(3, 10, 8, 9, 11, 1), // high < low
       bar(4, 10, 12, 9, 11, -1),
+      bar(NaN, 10, 12, 9, 11, 1),
       bar(5, 10, 12, 9, 11, 1),
     ]);
     expect(dm.getData().map((b) => b.time)).toEqual([1, 5]);
@@ -53,5 +54,52 @@ describe('DataManager.setData', () => {
     dm.updateLastBar(bar(2, 11, 14, 10, 13, 6));
     expect(input[1]).toEqual(bar(2, 11, 13, 10, 12, 5));
     expect(dm.getData()[1].close).toBe(13);
+  });
+});
+
+describe('DataManager.prependBars', () => {
+  it('adds the bars older than the first one, in time order, and counts them', () => {
+    const dm = new DataManager();
+    dm.setData([bar(10, 1, 1, 1, 1, 1), bar(11, 1, 1, 1, 1, 1)]);
+    const added = dm.prependBars([bar(8, 2, 2, 2, 2, 1), bar(7, 3, 3, 3, 3, 1), bar(9, 4, 4, 4, 4, 1)]);
+    expect(added).toBe(3);
+    expect(dm.getData().map((b) => b.time)).toEqual([7, 8, 9, 10, 11]);
+  });
+
+  it('skips bars at or after the first loaded bar, duplicates and invalid bars', () => {
+    const dm = new DataManager();
+    dm.setData([bar(10, 1, 1, 1, 1, 1), bar(11, 1, 1, 1, 1, 1)]);
+    const added = dm.prependBars([
+      bar(9, 1, 1, 1, 1, 1),
+      bar(9, 5, 5, 5, 5, 1),
+      bar(10, 9, 9, 9, 9, 1),
+      bar(12, 1, 1, 1, 1, 1),
+      bar(8, NaN, 1, 1, 1, 1),
+    ]);
+    expect(added).toBe(1);
+    expect(dm.getData().map((b) => b.time)).toEqual([9, 10, 11]);
+    expect(dm.getData()[1].open).toBe(1); // the loaded bar wins over the page's copy
+  });
+
+  it('repairs bars like setData does', () => {
+    const dm = new DataManager();
+    dm.setData([bar(10, 1, 1, 1, 1, 1)]);
+    dm.prependBars([bar(9, 10, 10.5, 9, 11)]);
+    expect(dm.getData()[0]).toMatchObject({ high: 11, low: 9, volume: 0 });
+  });
+
+  it('returns 0 and leaves the data alone when nothing is older', () => {
+    const dm = new DataManager();
+    dm.setData([bar(10, 1, 1, 1, 1, 1)]);
+    const before = dm.getData();
+    expect(dm.prependBars([bar(10, 1, 1, 1, 1, 1), bar(11, 1, 1, 1, 1, 1)])).toBe(0);
+    expect(dm.prependBars([])).toBe(0);
+    expect(dm.getData()).toBe(before);
+  });
+
+  it('takes every valid bar into an empty series', () => {
+    const dm = new DataManager();
+    expect(dm.prependBars([bar(2, 1, 1, 1, 1, 1), bar(1, 1, 1, 1, 1, 1)])).toBe(2);
+    expect(dm.getData().map((b) => b.time)).toEqual([1, 2]);
   });
 });

@@ -1,4 +1,5 @@
-import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
+import { timeParts, zonedDateFormatter } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 
 export interface SessionBreakConfig {
@@ -14,13 +15,22 @@ export interface SessionBreakConfig {
   lineWidth?: number;
 }
 
+/** A day, week, month or year boundary at bar `idx`. */
+interface SessionBreak {
+  idx: number;
+  kind: 'day' | 'week' | 'month' | 'year';
+  /** The bar's time, ms. */
+  time: number;
+  year: number;
+}
+
 /**
  * Renders vertical session break lines on the chart.
  * Detects day boundaries from bar timestamps and draws vertical separators.
  */
 export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
-  private cachedBreaksTyped: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
+  private cachedBreaksTyped: SessionBreak[] = [];
   private cachedMedianStep = 0;
   // Explicit validity flag: a series with no day boundaries legitimately
   // yields zero breaks, and keying the cache on `breaks.length > 0` made
@@ -28,6 +38,7 @@ export class SessionBreaks {
   private cacheValid = false;
   private lastDataLength = 0;
   private locale = 'en-US';
+  private tz: TimeZoneSetting = null;
 
   setConfig(config: Partial<SessionBreakConfig>): void {
     Object.assign(this.config, config);
@@ -35,6 +46,13 @@ export class SessionBreaks {
 
   setLocale(locale: string): void {
     this.locale = locale;
+  }
+
+  /** Days start at midnight in this timezone (default: the browser's). */
+  setTimezone(tz: TimeZoneSetting): void {
+    if (tz === this.tz) return;
+    this.tz = tz;
+    this.invalidateCache();
   }
 
   isVisible(): boolean {
@@ -50,7 +68,7 @@ export class SessionBreaks {
    * the strength of the break: 'day' < 'week' < 'month' < 'year'. Renderer
    * uses this to draw progressively heavier separators + labels.
    */
-  private computeBreaksTyped(data: DataSeries): { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] {
+  private computeBreaksTyped(data: DataSeries): SessionBreak[] {
     if (data.length < 2) return [];
 
     // Cache: only recompute when data changes
@@ -58,19 +76,20 @@ export class SessionBreaks {
       return this.cachedBreaksTyped;
     }
 
-    const out: { idx: number; kind: 'day' | 'week' | 'month' | 'year'; date: Date }[] = [];
-    let prev = new Date(this.toMs(data[0].time));
+    const out: SessionBreak[] = [];
+    let prev = timeParts(this.toMs(data[0].time), this.tz);
 
     for (let i = 1; i < data.length; i++) {
-      const d = new Date(this.toMs(data[i].time));
-      if (d.getFullYear() !== prev.getFullYear()) {
-        out.push({ idx: i, kind: 'year', date: d });
-      } else if (d.getMonth() !== prev.getMonth()) {
-        out.push({ idx: i, kind: 'month', date: d });
-      } else if (d.getDate() !== prev.getDate()) {
+      const time = this.toMs(data[i].time);
+      const d = timeParts(time, this.tz);
+      if (d.year !== prev.year) {
+        out.push({ idx: i, kind: 'year', time, year: d.year });
+      } else if (d.month !== prev.month) {
+        out.push({ idx: i, kind: 'month', time, year: d.year });
+      } else if (d.day !== prev.day) {
         // Monday (1) is the most common "week start" anchor.
-        const isWeekStart = d.getDay() === 1;
-        out.push({ idx: i, kind: isWeekStart ? 'week' : 'day', date: d });
+        const isWeekStart = new Date(Date.UTC(d.year, d.month - 1, d.day)).getUTCDay() === 1;
+        out.push({ idx: i, kind: isWeekStart ? 'week' : 'day', time, year: d.year });
       }
       prev = d;
     }
@@ -130,15 +149,15 @@ export class SessionBreaks {
         alpha = 0.22;
       } else if (brk.kind === 'week') {
         alpha = 0.34;
-        label = formatMonthDay(brk.date, this.locale);
+        label = zonedDateFormatter(this.locale, MONTH_DAY, this.tz)(brk.time);
       } else if (brk.kind === 'month') {
         alpha = 0.5;
         width = lineWidth + 0.5;
-        label = formatMonthYear(brk.date, this.locale);
+        label = zonedDateFormatter(this.locale, MONTH_YEAR, this.tz)(brk.time);
       } else {
         alpha = 0.7;
         width = lineWidth + 1;
-        label = String(brk.date.getFullYear());
+        label = String(brk.year);
       }
 
       ctx.globalAlpha = alpha;
@@ -168,36 +187,15 @@ export class SessionBreaks {
   }
 }
 
-// `toLocaleDateString(locale, opts)` builds a fresh Intl.DateTimeFormat per
-// call (~40µs in V8) and these labels re-render on every pan/zoom frame, so
-// the formatters are cached per locale. Output is identical by spec.
-const monthDayFormats = new Map<string, Intl.DateTimeFormat>();
-const monthYearFormats = new Map<string, Intl.DateTimeFormat>();
-
-function cachedDateFormat(
-  cache: Map<string, Intl.DateTimeFormat>,
-  locale: string,
-  options: Intl.DateTimeFormatOptions,
-): Intl.DateTimeFormat {
-  let f = cache.get(locale);
-  if (!f) {
-    f = new Intl.DateTimeFormat(locale, options);
-    cache.set(locale, f);
-  }
-  return f;
-}
-
 // Month-boundary labels use the FULL year ("Oct 2026"), not a 2-digit one
 // ("Oct 26") — a 2-digit year reads identically to a week-boundary's
 // "month day" label (e.g. "Oct 26" could mean October 26th), which misled
-// readers into thinking the chart had jumped to the wrong date.
-function formatMonthDay(d: Date, locale: string): string {
-  return cachedDateFormat(monthDayFormats, locale, { month: 'short', day: 'numeric' }).format(d);
-}
+// readers into thinking the chart had jumped to the wrong date. The
+// formatters are cached per locale and zone: these labels re-render on every
+// pan/zoom frame.
+const MONTH_DAY: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' };
 
-function formatMonthYear(d: Date, locale: string): string {
-  return cachedDateFormat(monthYearFormats, locale, { month: 'short', year: 'numeric' }).format(d);
-}
 
 /**
  * Median time between bars in ms. Used to gate the day-separator render so

@@ -1,4 +1,5 @@
 export { InteractionManager } from './InteractionManager.js';
+export type { AxisStrips } from './InteractionManager.js';
 export { PanHandler } from './PanHandler.js';
 export { ZoomHandler } from './ZoomHandler.js';
 export { AxisDragHandler } from './AxisDragHandler.js';

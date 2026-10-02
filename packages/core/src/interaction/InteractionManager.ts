@@ -1,4 +1,4 @@
-import type { Point, ViewportState } from '@tradecanvas/commons';
+import type { Point, Rect, ViewportState } from '@tradecanvas/commons';
 import type { PanHandler } from './PanHandler.js';
 import type { ZoomHandler } from './ZoomHandler.js';
 import type { CrosshairHandler } from './CrosshairHandler.js';
@@ -12,6 +12,21 @@ import type { PaneResizeHandler } from './PaneResizeHandler.js';
 const attachedCharts = new Set<HTMLElement>();
 let lastPressedChart: HTMLElement | null = null;
 
+/** Where the axis strips are around the plot. */
+export interface AxisStrips {
+  /** The price pane's plot; its axis strip is to the right of it. */
+  plot: Rect;
+  /** Top of the time axis: below the price pane and every pane under it. */
+  timeAxisTop: number;
+  /** The left price scale's strip, which ends at the plot's left edge. */
+  left: {
+    /** Its width; 0 while it is hidden. */
+    width: number;
+    /** Whether a drag there scales the price range (it mirrors the price scale). */
+    scales: boolean;
+  };
+}
+
 export class InteractionManager {
   private panHandler: PanHandler | null = null;
   private zoomHandler: ZoomHandler | null = null;
@@ -20,6 +35,8 @@ export class InteractionManager {
   private alertDragHandler: AlertDragHandler | null = null;
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
+  private axisStrips: (() => AxisStrips) | null = null;
+  private savedTouchAction = '';
   private measureHandlers: {
     begin: (pos: Point) => void;
     move: (pos: Point) => void;
@@ -154,6 +171,16 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /**
+   * The time axis below the panes, and the left price scale's strip. Presses
+   * on a strip that scales nothing (beside a pane, or a left scale carrying
+   * overlays) never draw or pan; a left scale that mirrors the price scale
+   * drags and resets like the price axis.
+   */
+  setAxisStrips(getter: () => AxisStrips): void {
+    this.axisStrips = getter;
+  }
+
   /** Enable dragging pane dividers to resize indicator panels. */
   setPaneResizeHandler(handler: PaneResizeHandler): void {
     this.paneResizeHandler = handler;
@@ -162,17 +189,32 @@ export class InteractionManager {
   attach(): void {
     const getVP = () => this.viewportGetter?.() ?? null;
     attachedCharts.add(this.element);
+    // The chart handles its own touch gestures: no page pinch-zoom or
+    // scrolling starts on it.
+    this.savedTouchAction = this.element.style.getPropertyValue('touch-action');
+    this.element.style.setProperty('touch-action', 'none');
 
-    // Axis hit-test: returns 'price' if pointer is in the right-side price
-    // axis strip, 'time' if in the bottom time-axis strip, null otherwise.
-    const hitAxis = (pos: Point): 'price' | 'time' | null => {
-      const vp = this.axisViewportGetter?.();
-      if (!vp) return null;
-      const r = vp.chartRect;
+    // Axis hit-test: returns 'price' if pointer is in the price pane's axis
+    // strip (right, or a left one that mirrors it), 'time' if in the bottom
+    // time-axis strip, 'inert' on a strip that scales nothing (beside a pane,
+    // or a left scale carrying overlays), null otherwise.
+    const hitAxis = (pos: Point): 'price' | 'time' | 'inert' | null => {
+      const strips = this.axisStrips?.() ?? null;
+      const r = strips?.plot ?? this.axisViewportGetter?.()?.chartRect;
+      if (!r) return null;
+      const scales = this.axisDragHandler !== null;
       // Bottom strip wins if we're in the corner — clicking the corner is
       // ambiguous, but bottom is the rarer / less-disruptive default.
-      if (pos.y > r.y + r.height) return 'time';
-      if (pos.x > r.x + r.width) return 'price';
+      if (pos.y > (strips?.timeAxisTop ?? r.y + r.height)) return scales ? 'time' : null;
+      const besidePricePane = pos.y >= r.y && pos.y <= r.y + r.height;
+      if (pos.x > r.x + r.width) {
+        if (!besidePricePane) return 'inert'; // a pane's own value axis
+        return scales ? 'price' : null;
+      }
+      const left = strips?.left;
+      if (left && left.width > 0 && pos.x < r.x && pos.x >= r.x - left.width) {
+        return besidePricePane && left.scales && scales ? 'price' : 'inert';
+      }
       return null;
     };
 
@@ -203,6 +245,7 @@ export class InteractionManager {
       const axis = hitAxis(pos);
       if (axis === 'price') return 'ns-resize';
       if (axis === 'time') return 'ew-resize';
+      if (axis === 'inert') return 'default';
       const paneCursor = this.paneResizeHandler?.cursorAt(pos);
       if (paneCursor) return paneCursor;
       if (this.alertDragHandler?.isOverAlert(pos)) return 'ns-resize';
@@ -268,6 +311,7 @@ export class InteractionManager {
       // Axis drag has priority — clicking the price/time strip should never
       // start drawing or open the trading menu.
       const axis = hitAxis(pos);
+      if (axis === 'inert') return;
       if (axis && this.axisDragHandler) {
         this.axisDragHandler.begin(axis, pos);
         return;
@@ -448,7 +492,7 @@ export class InteractionManager {
     const onDblClick = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
       const axis = hitAxis(pos);
-      if (axis && this.onAxisDoubleClick) {
+      if (axis && axis !== 'inert' && this.onAxisDoubleClick) {
         this.onAxisDoubleClick(axis);
       }
     };
@@ -525,6 +569,10 @@ export class InteractionManager {
         // Axis strip touch → start drag-scaling (single-finger drag inside the
         // axis is the mobile equivalent of mousedown on the axis).
         const axis = hitAxis(pos);
+        if (axis === 'inert') {
+          this.touchActive = true;
+          return;
+        }
         if (axis && this.axisDragHandler) {
           this.axisDragHandler.begin(axis, pos);
           this.touchActive = true;
@@ -611,11 +659,9 @@ export class InteractionManager {
         const dist = this.getTouchDistance(e.touches[0], e.touches[1]);
         const mid = this.getTouchMidpoint(e.touches[0], e.touches[1]);
 
-        // Pinch zoom
-        if (this.lastTouchDist > 0) {
-          const scale = dist / this.lastTouchDist;
-          const delta = (scale - 1) * 0.5; // Dampen
-          this.zoomHandler?.onWheel(-delta * 100, mid);
+        // Pinch zoom: the bars scale with the distance between the fingers.
+        if (this.lastTouchDist > 0 && dist > 0) {
+          this.zoomHandler?.onPinch(dist / this.lastTouchDist, mid);
         }
 
         // Two-finger pan — horizontal only, so a pinch doesn't also drag the
@@ -697,6 +743,8 @@ export class InteractionManager {
 
   detach(): void {
     attachedCharts.delete(this.element);
+    if (this.savedTouchAction) this.element.style.setProperty('touch-action', this.savedTouchAction);
+    else this.element.style.removeProperty('touch-action');
     if (lastPressedChart === this.element) lastPressedChart = null;
     for (const remove of this.boundHandlers) remove();
     this.boundHandlers = [];

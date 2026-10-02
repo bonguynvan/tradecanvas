@@ -237,6 +237,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   scaleMode: 'regular',
   autoScale: true,
   invertScale: false,
+  leftPriceScale: false,
   crosshairMode: 'magnet',
   numberLocale: 'en-US',
   timezone: 'local',

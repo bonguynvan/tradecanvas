@@ -38,8 +38,11 @@ export class BybitAdapter extends WebSocketAdapter {
       wsUrl: () => wsBase,
       subscribeMessage: (c) => ({ op: 'subscribe', args: [`kline.${bybitInterval(c.timeframe)}.${c.symbol}`] }),
       unsubscribeMessage: (c) => ({ op: 'unsubscribe', args: [`kline.${bybitInterval(c.timeframe)}.${c.symbol}`] }),
+      supportedTimeframes: Object.keys(INTERVAL) as TimeFrame[],
       parseMessage: parseBybitWsMessage,
       fetchHistory: (symbol, timeframe, limit) => fetchBybitKlines(restBase, category, symbol, timeframe, limit),
+      fetchHistoryBefore: (symbol, timeframe, before, limit) =>
+        fetchBybitKlines(restBase, category, symbol, timeframe, limit, Math.floor(before) - 1),
     });
   }
 }
@@ -76,10 +79,13 @@ export async function fetchBybitKlines(
   symbol: string,
   timeframe: TimeFrame,
   limit: number,
+  /** Latest start time to include (ms); the newest klines when omitted. */
+  end?: number,
 ): Promise<OHLCBar[]> {
   const interval = bybitInterval(timeframe);
   const capped = Math.min(Math.max(limit, 1), 1000);
-  const url = `${restBase}/v5/market/kline?category=${category}&symbol=${symbol}&interval=${interval}&limit=${capped}`;
+  const range = end === undefined ? '' : `&end=${end}`;
+  const url = `${restBase}/v5/market/kline?category=${category}&symbol=${symbol}&interval=${interval}&limit=${capped}${range}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Bybit REST error: ${res.status}`);
   const json: unknown = await res.json();

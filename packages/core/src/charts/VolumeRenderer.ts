@@ -1,4 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { forEachPixelColumn, isDense } from './denseBars.js';
 
 /**
  * Renders volume histogram bars at the bottom of the main chart area.
@@ -39,12 +40,20 @@ export class VolumeRenderer {
     const upPath = new Path2D();
     const downPath = new Path2D();
 
-    for (let i = from; i <= to && i < data.length; i++) {
-      const bar = data[i];
-      const x = i * barUnit + offsetX;
-      const barHeight = bar.volume * volScale;
-      const path = bar.close >= bar.open ? upPath : downPath;
-      path.rect(x - halfBar, volumeBottom - barHeight, barWidth, barHeight);
+    if (isDense(viewport)) {
+      // One pixel-wide bar per column: its largest volume, its direction.
+      forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
+        const barHeight = c.volume * volScale;
+        (c.close >= c.open ? upPath : downPath).rect(c.x, volumeBottom - barHeight, 1, barHeight);
+      });
+    } else {
+      for (let i = from; i <= to && i < data.length; i++) {
+        const bar = data[i];
+        const x = i * barUnit + offsetX;
+        const barHeight = bar.volume * volScale;
+        const path = bar.close >= bar.open ? upPath : downPath;
+        path.rect(x - halfBar, volumeBottom - barHeight, barWidth, barHeight);
+      }
     }
 
     ctx.globalAlpha = 0.35;

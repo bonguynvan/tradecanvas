@@ -30,6 +30,9 @@ export interface ReplayBarLabels {
   pause: string;
   stepBack: string;
   stepForward: string;
+  replay: string;
+  position: string;
+  speed: string;
 }
 
 export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
@@ -41,6 +44,9 @@ export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
   pause: 'Pause',
   stepBack: 'Step back (Shift+←)',
   stepForward: 'Step forward (Shift+→)',
+  replay: 'Replay',
+  position: 'Replay position',
+  speed: 'Speed',
 };
 
 export type ReplayBarState = 'playing' | 'paused' | 'stopped';
@@ -77,7 +83,7 @@ export class WidgetReplayBar {
     this.root = document.createElement('div');
     this.root.className = 'tcw-replay-bar';
     this.root.setAttribute('role', 'toolbar');
-    this.root.setAttribute('aria-label', 'Replay');
+    this.root.setAttribute('aria-label', this.labels.replay);
     this.root.innerHTML = this.markup();
 
     host.appendChild(this.root);
@@ -155,9 +161,9 @@ export class WidgetReplayBar {
         <button class="tcw-replay-btn" data-act="stepBack" title="${escapeHtml(l.stepBack)}" aria-label="${escapeHtml(l.stepBack)}">${svgStepBack()}</button>
         <button class="tcw-replay-btn tcw-replay-play" data-act="play" title="${escapeHtml(l.play)}" aria-label="${escapeHtml(l.play)}">${svgPlay()}</button>
         <button class="tcw-replay-btn" data-act="stepForward" title="${escapeHtml(l.stepForward)}" aria-label="${escapeHtml(l.stepForward)}">${svgStepForward()}</button>
-        <input type="range" class="tcw-replay-scrubber" data-act="seek" min="0" max="${Math.max(0, this.total - 1)}" value="0" step="1" aria-label="Replay position" />
+        <input type="range" class="tcw-replay-scrubber" data-act="seek" min="0" max="${Math.max(0, this.total - 1)}" value="0" step="1" aria-label="${escapeHtml(this.labels.position)}" />
         <span class="tcw-replay-progress" data-tcw="progress">1 / ${this.total}</span>
-        <select class="tcw-replay-speed" data-act="speed" aria-label="Speed">${speeds}</select>
+        <select class="tcw-replay-speed" data-act="speed" aria-label="${escapeHtml(this.labels.speed)}">${speeds}</select>
       </span>
       <button class="tcw-replay-text-btn tcw-replay-realtime" data-act="realtime">${escapeHtml(l.realtime)}</button>
     `;

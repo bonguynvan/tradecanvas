@@ -1,4 +1,6 @@
 import { createIcon } from './icons.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { escapeHtml } from './escapeHtml.js';
 
 export interface BracketBarCallbacks {
   onConfirm: () => void;
@@ -16,7 +18,7 @@ export class WidgetBracketBar {
   private callbacks: BracketBarCallbacks;
   private visible = false;
 
-  constructor(host: HTMLElement, callbacks: BracketBarCallbacks) {
+  constructor(host: HTMLElement, callbacks: BracketBarCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
 
     this.el = document.createElement('div');
@@ -29,19 +31,19 @@ export class WidgetBracketBar {
 
     const hint = document.createElement('span');
     hint.className = 'tcw-bracket-hint';
-    hint.textContent = 'drag lines to adjust';
+    hint.textContent = this.t('bracket.hint');
     this.el.appendChild(hint);
 
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'tcw-bracket-cancel';
-    cancel.innerHTML = `${createIcon('x', 14)}<span>Cancel</span>`;
+    cancel.innerHTML = `${createIcon('x', 14)}<span>${escapeHtml(this.t('common.cancel'))}</span>`;
     cancel.addEventListener('click', () => this.callbacks.onCancel());
 
     const confirm = document.createElement('button');
     confirm.type = 'button';
     confirm.className = 'tcw-bracket-confirm';
-    confirm.innerHTML = `${createIcon('check', 14)}<span>Place</span>`;
+    confirm.innerHTML = `${createIcon('check', 14)}<span>${escapeHtml(this.t('bracket.place'))}</span>`;
     confirm.addEventListener('click', () => this.callbacks.onConfirm());
 
     this.el.appendChild(cancel);
@@ -51,7 +53,7 @@ export class WidgetBracketBar {
 
   show(side: 'buy' | 'sell'): void {
     this.visible = true;
-    this.labelEl.textContent = side === 'buy' ? 'Long bracket' : 'Short bracket';
+    this.labelEl.textContent = side === 'buy' ? this.t('toolbar.longBracket') : this.t('toolbar.shortBracket');
     this.labelEl.dataset.side = side;
     this.el.hidden = false;
   }

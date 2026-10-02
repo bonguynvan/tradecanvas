@@ -1,17 +1,31 @@
+import type { SymbolInfo } from '@tradecanvas/commons';
 import { escapeHtml } from './escapeHtml.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
 /**
- * Lightweight fuzzy symbol picker. Reuses the command-palette CSS for visual
- * consistency. Scoring is a cheap subsequence match — good enough for symbol
- * lists in the low thousands without pulling in a fuzzy-search dependency.
+ * Symbol picker. Reuses the command-palette CSS for visual consistency.
+ *
+ * - Without a search function it filters the symbols it was given with a
+ *   cheap subsequence match, good enough for lists in the low thousands.
+ * - With one (a feed's `searchSymbols`) it asks once typing pauses, cancels a
+ *   query a newer one replaced, and lists names and exchanges.
  */
 export interface SymbolSearchCallbacks {
   onPick: (symbol: string) => void;
   onClose: () => void;
 }
 
+/** Symbols matching a query, best first; aborted when a newer query replaces it. */
+export type SymbolSearchFn = (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
+
+/** How long typing must pause before a search function is asked. */
+export const SYMBOL_SEARCH_DEBOUNCE_MS = 150;
+
 interface ScoredSymbol {
   symbol: string;
   score: number;
+  description?: string;
+  /** Exchange and type: "Binance · crypto". */
+  meta?: string;
 }
 
 export class WidgetSymbolSearch {
@@ -27,19 +41,28 @@ export class WidgetSymbolSearch {
   private boundKeydown: (e: KeyboardEvent) => void;
   /** One-shot pick override — when set, this open() routes picks here instead. */
   private pickOverride: ((symbol: string) => void) | null = null;
+  private searchFn: SymbolSearchFn | null = null;
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchAbort: AbortController | null = null;
+  private status: 'idle' | 'searching' | 'failed' = 'idle';
+  /** Enter came before the results for what was typed: take the top one when they land. */
+  private pickOnResults = false;
 
   /** Where the overlay mounts (the widget's portal: themed, and inside it when fullscreen). */
   constructor(
     callbacks: SymbolSearchCallbacks,
     private readonly host: () => HTMLElement = () => document.body,
+    private readonly t: Translator = EN_TRANSLATOR,
   ) {
     this.callbacks = callbacks;
     this.boundKeydown = this.handleKeydown.bind(this);
   }
 
-  open(symbols: string[], current: string, onPick?: (symbol: string) => void): void {
+  open(symbols: string[], current: string, onPick?: (symbol: string) => void, search?: SymbolSearchFn): void {
     if (this.backdrop) return;
     this.pickOverride = onPick ?? null;
+    this.searchFn = search ?? null;
+    this.status = 'idle';
     this.symbols = symbols;
     this.current = current;
     this.filtered = symbols.map(s => ({ symbol: s, score: 0 }));
@@ -63,7 +86,7 @@ export class WidgetSymbolSearch {
     this.input = document.createElement('input');
     this.input.className = 'tcw-cmd-input';
     this.input.type = 'text';
-    this.input.placeholder = 'Search symbol… (e.g. BTC, ETH, AAPL)';
+    this.input.placeholder = this.t('symbolSearch.placeholder');
     this.input.autocomplete = 'off';
     this.input.spellcheck = false;
     this.input.addEventListener('input', () => this.filter());
@@ -82,7 +105,9 @@ export class WidgetSymbolSearch {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-cmd-footer';
-    footer.innerHTML = '<span>↑↓ Navigate</span><span>⏎ Open</span><span>Esc Close</span>';
+    footer.innerHTML = `<span>↑↓ ${escapeHtml(this.t('common.navigate'))}</span>`
+      + `<span>⏎ ${escapeHtml(this.t('common.open'))}</span>`
+      + `<span>Esc ${escapeHtml(this.t('common.close'))}</span>`;
     this.modal.appendChild(footer);
 
     this.host().append(this.backdrop, this.modal);
@@ -94,6 +119,9 @@ export class WidgetSymbolSearch {
 
   close(): void {
     document.removeEventListener('keydown', this.boundKeydown);
+    this.cancelSearch();
+    this.pickOnResults = false;
+    this.searchFn = null;
     this.backdrop?.remove();
     this.modal?.remove();
     this.backdrop = null;
@@ -113,7 +141,14 @@ export class WidgetSymbolSearch {
   }
 
   private filter(): void {
+    this.pickOnResults = false;
     const q = (this.input?.value ?? '').toUpperCase().trim();
+    if (this.searchFn && q) {
+      this.scheduleSearch(this.input?.value.trim() ?? '');
+      return;
+    }
+    this.cancelSearch();
+    this.status = 'idle';
     if (!q) {
       this.filtered = this.symbols.map(s => ({ symbol: s, score: 0 }));
     } else {
@@ -126,6 +161,60 @@ export class WidgetSymbolSearch {
     this.renderList();
   }
 
+  private scheduleSearch(query: string): void {
+    if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      void this.runSearch(query);
+    }, SYMBOL_SEARCH_DEBOUNCE_MS);
+  }
+
+  /** Run the search the pause would have started, now. */
+  private searchNow(): void {
+    if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+    this.searchTimer = null;
+    void this.runSearch(this.input?.value.trim() ?? '');
+  }
+
+  private async runSearch(query: string): Promise<void> {
+    const search = this.searchFn;
+    if (!search) return;
+    this.searchAbort?.abort();
+    const controller = new AbortController();
+    this.searchAbort = controller;
+    this.status = 'searching';
+    this.filtered = [];
+    this.renderList();
+    try {
+      const results = await search(query, controller.signal);
+      if (controller.signal.aborted) return;
+      this.filtered = results.map((info) => ({
+        symbol: info.symbol,
+        score: 0,
+        description: info.description,
+        meta: [info.exchange, info.type].filter(Boolean).join(' · ') || undefined,
+      }));
+      this.status = 'idle';
+    } catch {
+      if (controller.signal.aborted) return;
+      this.filtered = [];
+      this.status = 'failed';
+    }
+    this.selectedIndex = 0;
+    this.renderList();
+    if (this.pickOnResults) {
+      this.pickOnResults = false;
+      this.pick(0);
+    }
+  }
+
+  private cancelSearch(): void {
+    if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+    this.searchTimer = null;
+    this.searchAbort?.abort();
+    this.searchAbort = null;
+  }
+
   private renderList(): void {
     if (!this.list) return;
     this.list.innerHTML = '';
@@ -133,14 +222,17 @@ export class WidgetSymbolSearch {
     if (this.filtered.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-cmd-empty';
-      empty.textContent = 'No symbols match';
+      empty.setAttribute('role', 'status');
+      empty.textContent = this.status === 'searching'
+        ? this.t('symbolSearch.searching')
+        : this.status === 'failed' ? this.t('symbolSearch.failed') : this.t('symbolSearch.empty');
       this.list.appendChild(empty);
       return;
     }
 
     const query = (this.input?.value ?? '').toUpperCase().trim();
     for (let i = 0; i < this.filtered.length; i++) {
-      const { symbol } = this.filtered[i];
+      const { symbol, description, meta } = this.filtered[i];
       const row = document.createElement('button');
       row.className = 'tcw-cmd-item';
       if (i === this.selectedIndex) row.classList.add('tcw-selected');
@@ -150,6 +242,19 @@ export class WidgetSymbolSearch {
       label.className = 'tcw-cmd-item-label';
       label.innerHTML = highlight(symbol, query);
       row.appendChild(label);
+
+      if (description && description !== symbol) {
+        const desc = document.createElement('span');
+        desc.className = 'tcw-cmd-item-desc';
+        desc.textContent = description;
+        row.appendChild(desc);
+      }
+      if (meta) {
+        const tag = document.createElement('span');
+        tag.className = 'tcw-cmd-item-meta';
+        tag.textContent = meta;
+        row.appendChild(tag);
+      }
 
       if (symbol === this.current) {
         const check = document.createElement('span');
@@ -172,7 +277,7 @@ export class WidgetSymbolSearch {
     if (!this.list) return;
     const items = this.list.querySelectorAll('.tcw-cmd-item');
     items.forEach((el, i) => el.classList.toggle('tcw-selected', i === this.selectedIndex));
-    items[this.selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    items[this.selectedIndex]?.scrollIntoView?.({ block: 'nearest' });
   }
 
   private pick(index: number): void {
@@ -206,6 +311,12 @@ export class WidgetSymbolSearch {
         break;
       case 'Enter':
         e.preventDefault();
+        if (this.searchTimer !== null || this.status === 'searching') {
+          // The list on screen is for an older query.
+          this.pickOnResults = true;
+          if (this.searchTimer !== null) this.searchNow();
+          break;
+        }
         this.pick(this.selectedIndex);
         break;
     }

@@ -1,4 +1,4 @@
-import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
 import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
@@ -8,11 +8,11 @@ const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 export const TZ_LABEL_GAP_PX = 8;
 
 export class TimeAxis {
-  /** null = browser-local timezone; a number = fixed UTC offset in minutes. */
-  private tzOffsetMinutes: number | null = null;
+  /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
+  private tz: TimeZoneSetting = null;
 
-  setTimezoneOffset(minutes: number | null): void {
-    this.tzOffsetMinutes = minutes;
+  setTimezoneOffset(tz: TimeZoneSetting): void {
+    this.tz = tz;
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
@@ -41,7 +41,9 @@ export class TimeAxis {
 
     // The timezone tag sits at the right end: measure it first so a tick
     // label never draws on top of it (they used to merge into "UTC10/2").
-    const tzText = tzLabel(this.tzOffsetMinutes);
+    // The offset in force at the right edge: it changes with daylight saving.
+    const rightTime = data.length > 0 ? barIndexToTime(Math.min(to, data.length - 1), data) : Date.now();
+    const tzText = tzLabel(this.tz, rightTime > 1e12 ? rightTime : rightTime * 1000);
     const tzFont = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
     const tzRight = chartRect.x + chartRect.width - 4;
     ctx.font = tzFont;
@@ -62,7 +64,7 @@ export class TimeAxis {
       // Handle both milliseconds and seconds timestamps
       const rawTime = barIndexToTime(i, data);
       const timeMs = rawTime > 1e12 ? rawTime : rawTime * 1000;
-      const parts = timeParts(timeMs, this.tzOffsetMinutes);
+      const parts = timeParts(timeMs, this.tz);
       const { year, day, month, hours, minutes } = parts;
 
       // Smart format: a daily/weekly/monthly/yearly bar has no time-of-day component at all —

@@ -42,6 +42,11 @@
       "types": "./dist/widget/index.d.ts",
       "import": "./dist/widget/index.js",
       "require": "./dist/widget/index.cjs"
+    },
+    "./widget/locales": {
+      "types": "./dist/widget/locales/index.d.ts",
+      "import": "./dist/widget/locales/index.js",
+      "require": "./dist/widget/locales/index.cjs"
     }
   },
   "files": [

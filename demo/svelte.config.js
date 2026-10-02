@@ -20,6 +20,7 @@ export default {
       handleHttpError: 'warn',
     },
     alias: {
+      '@tradecanvas/chart/widget/locales': '../packages/library/src/widget/locales/index.ts',
       '@tradecanvas/chart/widget': '../packages/library/src/widget/index.ts',
       '@tradecanvas/chart': '../packages/library/src/index.ts',
       '@tradecanvas/core': '../packages/core/src/index.ts',

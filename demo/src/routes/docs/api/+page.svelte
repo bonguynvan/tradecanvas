@@ -127,14 +127,16 @@ const structure = classifyPivots(pivots)     // adds label: 'HH'|'LH'|'HL'|'LL'`
 <h3>Session shading (regular trading hours)</h3>
 <p>
   Dim bars outside the regular session (pre/post-market or the overnight break)
-  so the cash session stands out. Defaults to US equity RTH (09:30–16:00 ET);
-  configure the window in minutes-of-day plus a timezone offset:
+  so the cash session stands out. Defaults to US equity RTH (09:30–16:00 New
+  York time, daylight saving included); configure the window in minutes-of-day
+  plus the market's time zone. A symbol whose feed reports its sessions sets
+  them by itself.
 </p>
 <pre><code>{`chart.setSessionShadingVisible(true)
 chart.setSessionShadingConfig({
-  startMinute: 9 * 60 + 30,  // 09:30
-  endMinute: 16 * 60,        // 16:00 (end-exclusive)
-  tzOffsetMinutes: -300,     // EST; handles overnight sessions when end < start
+  startMinute: 9 * 60 + 30,     // 09:30
+  endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
+  timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
 
 <h3>Prior-period levels (PDH / PDL / PDC)</h3>

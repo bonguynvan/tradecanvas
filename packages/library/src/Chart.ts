@@ -28,14 +28,21 @@ import type {
   ConnectionState,
   ConnectionInfo,
   TimeFrame,
+  DataAdapter,
+  TimeZoneSetting,
+  SymbolInfo,
+  OverlayScale,
+  ViewportState,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
+  withResampling,
+  servesTimeframe,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -84,16 +91,19 @@ import {
   DataExporter,
   SessionBreaks,
   SessionShading,
+  DEFAULT_SESSION_HOURS,
+  mergeSessionHours,
   CompareRenderer,
   CurrentPriceLine,
   xToBarIndex,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, RangePreset } from '@tradecanvas/core';
+import type { ChartRendererInterface, RangePreset, SessionHoursConfig } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
+import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
@@ -111,6 +121,22 @@ const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
 /** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
 const SECONDS_TIME_LIMIT = 1e12;
+/** `setTimezone(EXCHANGE_TIMEZONE)` shows the time zone of the symbol's exchange. */
+export const EXCHANGE_TIMEZONE = 'exchange';
+/** Throws a RangeError for a time zone the browser doesn't know or an offset that isn't a number. */
+function assertTimezone(tz: TimeZoneSetting): void {
+  if (typeof tz === 'string' && tz !== EXCHANGE_TIMEZONE && !isValidTimeZone(tz)) {
+    throw new RangeError(`Unknown time zone: ${tz}`);
+  }
+  if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
+}
+
+/** Decimals of order and alert prices when neither the market nor the symbol sets them. */
+const DEFAULT_ORDER_PRECISION = 2;
+/** Room above and below the left scale's overlays, as a share of their range. */
+const LEFT_SCALE_PADDING = 0.08;
+/** Fewest bars ahead of the view that trigger the next history page. */
+const HISTORY_AHEAD_MIN_BARS = 20;
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -157,9 +183,18 @@ export class Chart {
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
   /** Display timezone, minutes east of UTC; null = the browser's. */
-  private displayTzOffset: number | null = null;
+  /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
+  private displayTz: TimeZoneSetting = null;
+  /** What `setTimezone` was given; 'exchange' follows the symbol. */
+  private timezoneSetting: TimeZoneSetting = null;
+  /** What the feed (or host) said about the symbol on the chart. */
+  private symbolInfo: SymbolInfo | null = null;
+  /** Bumped per symbol asked about: an answer about a symbol the chart left is dropped. */
+  private symbolInfoSeq = 0;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
+  /** The session hours the host set (or the default); a symbol's own hours show over them. */
+  private hostSessionHours: SessionHoursConfig = { ...DEFAULT_SESSION_HOURS };
   private compareRenderer: CompareRenderer;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private volumeRenderer: VolumeRenderer;
@@ -193,6 +228,12 @@ export class Chart {
   private chartRenderer: ChartRendererInterface;
   private gridRenderer: GridRenderer;
   private priceAxis: PriceAxis;
+  /** The left price scale: overlays put on it, else a mirror of the price scale. */
+  private leftPriceAxis = new PriceAxis();
+  private leftScaleRequested = false;
+  private leftAxisWidth = PRICE_AXIS_WIDTH;
+  /** The left scale's viewport this frame; null while it is hidden. */
+  private leftViewport: ViewportState | null = null;
   private timeAxis: TimeAxis;
   private options: ChartOptions & { chartType: ChartType };
   private features: Required<FeaturesConfig>;
@@ -213,9 +254,23 @@ export class Chart {
   private keyboardHandler: KeyboardHandler | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
+  /** Timeframe and adapter of the connected stream, for paging its history. */
+  private streamTimeframe: TimeFrame | null = null;
+  private streamAdapter: DataAdapter | null = null;
+  /** Pages older bars in as the view nears the oldest one. */
+  private history: HistoryPager;
+  /** Whether the history loader is the connected stream's (and goes with it). */
+  private historyFromStream = false;
+  /** Whether the host set a loader of its own: the stream's never replaces it. */
+  private hostHistoryLoader = false;
+  /** Symbol and timeframe of the series the last stream snapshot loaded. */
+  private snapshotKey: string | null = null;
+  private historyCheckQueued = false;
 
 
   constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
+    // Checked before anything is built: a throw later would leave the DOM and listeners behind.
+    if (options.timeZone != null) assertTimezone(options.timeZone);
     this.container = container;
     this.options = { ...options, chartType: options.chartType ?? 'candlestick' };
     this.numberLocale = options.numberLocale ?? 'en-US';
@@ -266,6 +321,11 @@ export class Chart {
 
     // Initialize managers
     this.dataManager = new DataManager();
+    this.history = new HistoryPager({
+      oldestTime: () => this.dataManager.getData()[0]?.time ?? null,
+      prepend: (bars) => this.prependBars(bars),
+      emit: (payload) => this.eventBus.emit('historyLoad', payload),
+    });
     this.themeManager = new ThemeManager(options.theme);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
@@ -351,6 +411,7 @@ export class Chart {
     if (options.grid?.visible === false) this.gridRenderer.setVisible(false);
     this.priceAxis = new PriceAxis();
     this.priceAxis.setLocale(this.numberLocale);
+    this.leftPriceAxis.setLocale(this.numberLocale);
     this.timeAxis = new TimeAxis();
 
     // Crosshair
@@ -577,10 +638,21 @@ export class Chart {
         ),
       );
     }
+    // The time axis sits below the panes; the left scale's strip carries
+    // overlays' labels only, or mirrors the price scale and scales it.
+    this.interactionManager.setAxisStrips(() => ({
+      plot: this.viewport.getState().chartRect,
+      timeAxisTop: this.timeAxisTop(),
+      left: {
+        width: this.isLeftPriceScaleShown() ? this.leftAxisWidth : 0,
+        scales: !this.indicatorEngine.hasLeftScaleOverlays(),
+      },
+    }));
     if (this.features.zooming) {
       this.interactionManager.setZoomHandler(
         new ZoomHandler((delta, centerX) => {
-          this.viewport.zoom(delta, centerX);
+          // The pointer is in chart coordinates; zoom anchors in plot ones.
+          this.viewport.zoom(delta, centerX - this.viewport.getState().chartRect.x);
           this.updateViewportAndRender();
         }),
       );
@@ -748,6 +820,9 @@ export class Chart {
     });
     this.interactionManager.attach();
 
+    if (options.timeZone !== undefined && options.timeZone !== null) this.setTimezone(options.timeZone);
+    if (options.leftPriceScale) this.leftScaleRequested = true;
+
     // Set render context
     this.syncRenderContext();
     this.engine.start();
@@ -756,8 +831,11 @@ export class Chart {
   // --- Data ---
 
   setData(data: DataSeries): void {
-    // A full replace is a new series: any replay of the old one ends.
+    // A full replace is a new series: any replay of the old one ends, and a
+    // stream's reconnect no longer merges into it.
+    this.snapshotKey = null;
     this.endReplaySession();
+    this.history.reset();
     this.dataManager.setData(data);
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
@@ -778,6 +856,128 @@ export class Chart {
     }
     this.updateViewportAndRender(true);
     this.eventBus.emit('dataUpdate', { length: data.length });
+  }
+
+  /**
+   * Add older bars in front of the data — e.g. a page of history loaded as
+   * the user scrolls back. Bars at or after the first loaded bar are skipped.
+   * The same bars stay on screen. Ignored during a replay. Returns how many
+   * bars were added.
+   */
+  prependBars(bars: OHLCBar[]): number {
+    if (this.replaySession) return 0;
+    // The bar at the left edge, by time: Renko bricks and the like are rebuilt
+    // from the whole series, so counting what was added would not find it.
+    const shown = this.getDisplayData();
+    const leftIndex = Math.max(0, Math.min(shown.length - 1, Math.floor(this.viewport.getState().visibleRange.from)));
+    const leftTime = shown[leftIndex]?.time;
+    const added = this.dataManager.prependBars(bars);
+    if (added === 0) return 0;
+    const data = this.dataManager.getData();
+    this.crosshairHandler.setData(data);
+    this.displayDataCache = null;
+    this.sessionBreaks.invalidateCache();
+    // Both hold bar positions that just moved.
+    if (this.pinnedTooltip.isPinned()) this.pinnedTooltip.unpin();
+    this.measureOverlay.end();
+    this.recalcIndicators(data);
+    if (leftTime !== undefined) {
+      const now = Math.round(timestampToBarIndex(leftTime, this.getDisplayData()));
+      this.viewport.prependBars(now - leftIndex);
+    }
+    this.updateViewportAndRender();
+    return added;
+  }
+
+  /**
+   * A stream snapshot for the series already on the chart (a reconnect): keep
+   * the older bars paged in and the view, replace the rest.
+   */
+  private mergeSnapshot(bars: OHLCBar[]): void {
+    const data = this.dataManager.getData();
+    const first = bars[0]?.time;
+    let keep = 0;
+    while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
+    // Merge only when the snapshot reaches back over the old bars: after a
+    // longer outage it starts later, and joining them would hide a gap.
+    if (keep === 0 || keep === data.length) {
+      this.setData(bars);
+      return;
+    }
+    const follow = this.viewport.isAtEnd();
+    this.dataManager.setData(data.slice(0, keep).concat(bars));
+    const merged = this.dataManager.getData();
+    this.crosshairHandler.setData(merged);
+    this.displayDataCache = null;
+    this.sessionBreaks.invalidateCache();
+    this.alertManager.clearLastValues();
+    this.recalcIndicators(merged);
+    if (merged.length > 0) this.currentPriceLine.setPrice(merged[merged.length - 1].close);
+    this.updateViewportAndRender(follow);
+    this.eventBus.emit('dataUpdate', { length: merged.length });
+  }
+
+  /**
+   * Load older bars as the user scrolls back: `loader(before, limit)` gets the
+   * oldest loaded bar's time and returns up to `limit` older bars (an empty
+   * array once the history starts). A connected stream whose adapter has
+   * `fetchHistoryBefore` sets this up by itself. Pass null to stop.
+   */
+  setHistoryLoader(loader: HistoryLoader | null, options?: { pageSize?: number }): void {
+    this.historyFromStream = false;
+    this.hostHistoryLoader = loader !== null;
+    this.history.setLoader(loader, options?.pageSize);
+    this.checkHistory();
+  }
+
+  /** Load one page of older bars now. Resolves to the number of bars added. */
+  loadMoreHistory(): Promise<number> {
+    if (this.replaySession) return Promise.resolve(0);
+    return this.history.loadMore();
+  }
+
+  /** Whether older bars can still be loaded (a loader is set and the start wasn't reached). */
+  hasMoreHistory(): boolean {
+    return this.history.hasLoader() && this.history.hasMore();
+  }
+
+  isLoadingHistory(): boolean {
+    return this.history.isLoading();
+  }
+
+  /**
+   * Page older bars in when less than a screen of them is left of the view —
+   * after the current update, so a page that just landed reports itself
+   * before the next one starts. Not for chart types that reshape the bars
+   * (Renko, Kagi…): a handful of bricks can stand for a whole page.
+   */
+  private checkHistory(): void {
+    if (this.historyCheckQueued || !this.history.hasLoader()) return;
+    this.historyCheckQueued = true;
+    queueMicrotask(() => {
+      this.historyCheckQueued = false;
+      if (this.replaySession || !this.history.hasLoader() || isReshapedChartType(this.options.chartType)) return;
+      const { from, to } = this.viewport.getState().visibleRange;
+      this.history.maybeLoad(Math.max(0, Math.floor(from)), Math.max(HISTORY_AHEAD_MIN_BARS, to - from));
+    });
+  }
+
+  /** Page the connected stream's history through its adapter, if it can. */
+  private useStreamHistory(feed: DataAdapter, pageSize: number | undefined): void {
+    if (this.hostHistoryLoader) return;
+    // The same wrapper the stream uses: pages of a 7m chart are 7m bars.
+    const adapter = withResampling(feed);
+    const fetchBefore = adapter.fetchHistoryBefore;
+    const timeframe = this.streamTimeframe;
+    if (!fetchBefore || timeframe === null) {
+      if (this.historyFromStream) this.history.setLoader(null);
+      this.historyFromStream = false;
+      return;
+    }
+    const symbol = this.currentSymbol;
+    this.history.setLoader((before, limit) => fetchBefore.call(adapter, symbol, timeframe, before, limit), pageSize);
+    this.historyFromStream = true;
+    this.checkHistory();
   }
 
   appendBar(bar: OHLCBar): void {
@@ -883,13 +1083,16 @@ export class Chart {
     id: string,
     params: Record<string, number | string | boolean> = {},
     position: PanelPosition = 'bottom',
-    options: { pane?: string } = {},
+    options: { pane?: string; scale?: OverlayScale } = {},
   ): string | null {
     if (!this.features.indicators) return null;
     if (this.features.indicatorIds.length > 0 && !this.features.indicatorIds.includes(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), pane ? { pane } : {});
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), {
+      ...(pane ? { pane } : {}),
+      ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
+    });
     if (descriptor?.placement === 'panel' && !pane) this.layoutManager.addPanel(instanceId, position);
     // The layout (a new pane) or the price scale (a new overlay) may change.
     this.updateViewportAndRender();
@@ -955,6 +1158,60 @@ export class Chart {
   /** An indicator's reference levels (RSI 30 / 70): its own, else its indicator's defaults. */
   getIndicatorLevels(instanceId: string): number[] {
     return this.indicatorEngine.getLevels(instanceId);
+  }
+
+  /**
+   * Put a price-pane overlay on the left price scale (fit to its own values,
+   * the scale shows by itself) or back on the price scale. False when the
+   * indicator isn't a price-pane overlay.
+   */
+  setIndicatorScale(instanceId: string, scale: OverlayScale): boolean {
+    if (!this.indicatorEngine.setScale(instanceId, scale)) return false;
+    this.updateViewportAndRender();
+    this.scheduleAutoSave();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'scale' });
+    return true;
+  }
+
+  getIndicatorScale(instanceId: string): OverlayScale {
+    return this.indicatorEngine.getIndicatorConfig(instanceId)?.scale === 'left' ? 'left' : 'right';
+  }
+
+  /** Show the left price scale even without overlays on it (it then mirrors the price scale). */
+  setLeftPriceScaleVisible(visible: boolean): void {
+    this.leftScaleRequested = visible;
+    this.updateViewportAndRender();
+  }
+
+  /** Whether the left price scale is on screen: asked for, or carrying an overlay. */
+  isLeftPriceScaleShown(): boolean {
+    return this.features.priceAxis !== false && (this.leftScaleRequested || this.indicatorEngine.hasLeftScaleOverlays());
+  }
+
+  /** The left price scale's range on screen, or null while it is hidden. */
+  getLeftPriceRange(): { min: number; max: number } | null {
+    return this.leftViewport ? { ...this.leftViewport.priceRange } : null;
+  }
+
+  /**
+   * The left scale's viewport for this frame: fit to the overlays on it over
+   * the visible bars (on a plain linear scale), or the price scale's when
+   * none is.
+   */
+  private computeLeftViewport(): ViewportState | null {
+    if (!this.isLeftPriceScaleShown()) return null;
+    const vs = this.viewport.getState();
+    if (!this.indicatorEngine.hasLeftScaleOverlays()) return vs;
+    const range = this.indicatorEngine.getOverlayPriceRange(vs.visibleRange.from, vs.visibleRange.to, 'left');
+    if (!range) return vs;
+    const span = range.max - range.min || Math.abs(range.max) || 1;
+    return {
+      ...vs,
+      priceRange: { min: range.min - span * LEFT_SCALE_PADDING, max: range.max + span * LEFT_SCALE_PADDING },
+      logScale: false,
+      scaleMode: 'regular',
+      invertScale: false,
+    };
   }
 
   /** Set an indicator's reference levels; `null` restores its indicator's defaults. */
@@ -1492,6 +1749,10 @@ export class Chart {
    * });
    */
   async connect(config: StreamConfig): Promise<void> {
+    if (!servesTimeframe(config.adapter, config.timeframe)) {
+      throw new RangeError(`${config.adapter.name} cannot serve the ${config.timeframe} timeframe`);
+    }
+    this.snapshotKey = null;
     // Back to the live series first, so a failed history load can't leave
     // the replayed slice on screen.
     this.replayStop();
@@ -1500,11 +1761,16 @@ export class Chart {
     this.streamManager = new StreamManager();
 
     this.streamManager.on('snapshot', (bars) => {
+      const key = `${this.currentSymbol}|${this.streamTimeframe}`;
       if (this.replaySession) {
         this.replaySession.live.setData(bars);
-        return;
+      } else if (key === this.snapshotKey && this.dataManager.getLength() > 0) {
+        this.mergeSnapshot(bars); // a reconnect: keep the paged-in history and the view
+      } else {
+        this.setData(bars);
       }
-      this.setData(bars);
+      this.snapshotKey = key;
+      this.useStreamHistory(config.adapter, config.historyPageSize);
     });
 
     this.streamManager.on('barClose', (bar) => {
@@ -1558,8 +1824,11 @@ export class Chart {
 
     this.autoScrollOnNewBar = config.autoScroll !== false;
     this.currentSymbol = config.symbol;
+    this.streamTimeframe = config.timeframe;
+    this.streamAdapter = config.adapter;
 
     const manager = this.streamManager;
+    this.resolveStreamSymbol(config.adapter, config.symbol);
     await manager.connect(config);
     // Superseded by a newer connect() (fast symbol/timeframe switching) or a
     // disconnect while history was loading — leave the countdown to it.
@@ -1583,8 +1852,17 @@ export class Chart {
    */
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) return;
+    const adapter = this.streamAdapter;
+    if (adapter && !servesTimeframe(adapter, timeframe)) {
+      throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
+    }
     this.currentSymbol = symbol;
+    this.streamTimeframe = timeframe;
+    // Until the new series is in, a page would be the new symbol's bars in
+    // front of the old one's.
+    if (this.historyFromStream) this.history.setLoader(null);
     this.barCountdown.setTimeframeMs(timeframeToMs(timeframe));
+    if (adapter) this.resolveStreamSymbol(adapter, symbol);
     await this.streamManager.switchTo(symbol, timeframe);
   }
 
@@ -1609,10 +1887,16 @@ export class Chart {
    * Disconnect the real-time stream.
    */
   disconnectStream(): void {
+    this.symbolInfoSeq++; // a lookup still on its way no longer applies
     if (this.streamManager) {
       this.streamManager.dispose();
       this.streamManager = null;
     }
+    if (this.historyFromStream) {
+      this.history.setLoader(null);
+      this.historyFromStream = false;
+    }
+    this.streamAdapter = null;
   }
 
   /**
@@ -1797,14 +2081,16 @@ export class Chart {
     const last = data.length - 1;
     // Bars may carry seconds rather than milliseconds; the calendar works in ms.
     const unit = data[last].time > SECONDS_TIME_LIMIT ? 1 : 1000;
-    const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTzOffset);
+    const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTz);
     const start = startMs === null ? null : startMs / unit;
     if (start === null || start < data[0].time) {
       this.fitContent();
       return;
     }
-    // The first bar after `start`, so "1D" on 1-minute bars is 1440 bars, not 1441.
-    const first = Math.min(last, Math.floor(timestampToBarIndex(start, data)) + 1);
+    // The first bar after `start`, so "1D" on 1-minute bars is 1440 bars, not
+    // 1441; YTD starts on the year's first bar, the one at 1 January 00:00.
+    const at = timestampToBarIndex(start, data);
+    const first = Math.min(last, preset === 'YTD' ? Math.ceil(at) : Math.floor(at) + 1);
     this.viewport.zoomToBarRange(first, last + this.viewport.getRightMargin());
     this.viewport.scrollToEnd();
     this.updateViewportAndRender();
@@ -2067,16 +2353,95 @@ export class Chart {
   }
 
   /**
-   * Set the timezone for time-axis labels and the crosshair time pill.
-   * `null` = browser-local; a number = fixed UTC offset in minutes (e.g. -300
-   * for EST, 330 for IST).
+   * The timezone for the time axis, crosshair, tooltip, day breaks and range
+   * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
+   * fixed offset in minutes east of UTC (`-300`, `330`), or null for the
+   * browser's. Throws a RangeError for a zone the browser doesn't know.
    */
+  setTimezone(tz: TimeZoneSetting): void {
+    assertTimezone(tz);
+    this.timezoneSetting = tz;
+    this.applyTimezone();
+  }
+
+  /** What `setTimezone` was given — `'exchange'` included. */
+  getTimezone(): TimeZoneSetting {
+    return this.timezoneSetting;
+  }
+
+  /** The zone the chart shows: `'exchange'` resolved to the symbol's zone (UTC when unknown). */
+  getEffectiveTimezone(): TimeZoneSetting {
+    return this.displayTz;
+  }
+
+  private applyTimezone(): void {
+    const exchange = this.symbolInfo?.timezone;
+    const tz = this.timezoneSetting === EXCHANGE_TIMEZONE
+      ? (exchange && isValidTimeZone(exchange) ? exchange : 'UTC')
+      : this.timezoneSetting;
+    this.displayTz = tz;
+    this.timeAxis.setTimezoneOffset(tz);
+    this.crosshairHandler.setTimezoneOffset(tz);
+    this.crosshairTooltip.setTimezoneOffset(tz);
+    this.pinnedTooltip.setTimezone(tz);
+    this.sessionBreaks.setTimezone(tz);
+    this.engine.requestRender();
+  }
+
+  // --- Symbol info ---
+
+  /**
+   * What is known about the symbol on the chart — usually from the stream's
+   * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
+   * price precision applies unless `setMarket` set one; its zone backs
+   * `setTimezone('exchange')`; its hours feed the session shading.
+   */
+  setSymbolInfo(info: SymbolInfo | null): void {
+    this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    if (this.marketConfig?.pricePrecision === undefined) {
+      this.applyPricePrecision(this.symbolInfo?.pricePrecision ?? null);
+    }
+    const windows = (this.symbolInfo?.sessions ?? []).flatMap((session) => {
+      const startMinute = sessionMinute(session.start);
+      const endMinute = sessionMinute(session.end);
+      return startMinute === null || endMinute === null ? [] : [{ startMinute, endMinute }];
+    });
+    const zone = this.symbolInfo?.timezone;
+    // A symbol without hours of its own goes back to the host's.
+    this.sessionShading.replaceConfig(windows.length > 0 && zone && isValidTimeZone(zone)
+      ? { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute }
+      : this.hostSessionHours);
+    if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
+    this.updateViewportAndRender();
+    this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
+  }
+
+  getSymbolInfo(): SymbolInfo | null {
+    return this.symbolInfo;
+  }
+
+  /** Ask the stream's adapter about `symbol`, if it can tell; a late answer about another symbol is dropped. */
+  private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
+    const resolve = adapter.resolveSymbol?.bind(adapter);
+    if (!resolve) return;
+    const seq = ++this.symbolInfoSeq;
+    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
+    // Taken as a promise: an adapter may throw, or answer without one.
+    Promise.resolve().then(() => resolve(symbol)).then(
+      (info) => {
+        // No answer leaves what the host set for the symbol, if anything.
+        if (info && seq === this.symbolInfoSeq && this.currentSymbol === symbol) this.setSymbolInfo(info);
+      },
+      (err: unknown) => {
+        // Only the symbol's details are missing; the feed itself is fine.
+        if (seq === this.symbolInfoSeq) console.warn(`No symbol info for "${symbol}":`, err);
+      },
+    );
+  }
+
+  /** `setTimezone` with a fixed offset in minutes east of UTC, or null for the browser's zone. */
   setTimezoneOffset(minutes: number | null): void {
-    this.displayTzOffset = minutes;
-    this.timeAxis.setTimezoneOffset(minutes);
-    this.crosshairHandler.setTimezoneOffset(minutes);
-    this.crosshairTooltip.setTimezoneOffset(minutes);
-    this.engine.requestRender(LayerType.UI);
+    this.setTimezone(minutes);
   }
 
   // --- Pivot / swing markers ---
@@ -2115,8 +2480,10 @@ export class Chart {
    * `windows` for a split session — a market with a midday recess (e.g. SET's
    * 10:00–12:30 and 14:30–16:30) — so the lunch break dims like pre-/post-market.
    */
-  setSessionShadingConfig(config: Partial<import('@tradecanvas/core').SessionHoursConfig>): void {
-    this.sessionShading.setConfig(config);
+  setSessionShadingConfig(config: Partial<SessionHoursConfig>): void {
+    // The host's hours win over the symbol's, until the next symbol brings its own.
+    this.hostSessionHours = mergeSessionHours(this.hostSessionHours, config);
+    this.sessionShading.replaceConfig(this.hostSessionHours);
     this.engine.requestRender(LayerType.Background);
   }
 
@@ -2283,6 +2650,7 @@ export class Chart {
    */
   replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
+    this.history.reset();
     if (!this.replaySession) {
       if (this.dataManager.getLength() === 0) return; // nothing to replay
       const live = new DataManager();
@@ -2395,6 +2763,7 @@ export class Chart {
             visible: ind.visible,
             levels: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.levels?.slice(),
             pane: ind.pane,
+            scale: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.scale,
           })),
           ...this.unrestoredIndicators,
         ],
@@ -2442,7 +2811,10 @@ export class Chart {
         try {
           if (!known.has(ind.id)) throw new Error('no such indicator is registered');
           const pane = ind.pane ? instanceIds.get(ind.pane) : undefined;
-          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, pane ? { pane } : {});
+          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, {
+            ...(pane ? { pane } : {}),
+            ...(ind.scale === 'left' ? { scale: 'left' as const } : {}),
+          });
         } catch (err) {
           console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
         }
@@ -2515,6 +2887,7 @@ export class Chart {
   setNumberLocale(locale: string): void {
     this.numberLocale = locale;
     this.priceAxis.setLocale(locale);
+    this.leftPriceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
@@ -2549,19 +2922,22 @@ export class Chart {
     }
 
     // Apply price precision to trading, alerts, and price line
-    if (config.pricePrecision !== undefined) {
-      this.marketPricePrecision = config.pricePrecision;
-      this.tradingManager.setConfig({ pricePrecision: config.pricePrecision });
-      this.alertManager.setPricePrecision(config.pricePrecision);
-      this.streamManager?.priceLine.setPricePrecision(config.pricePrecision);
-      this.currentPriceLine.setPricePrecision(config.pricePrecision);
-      this.crosshairHandler.setPricePrecision(config.pricePrecision);
-      this.chartLegend.setPricePrecision(config.pricePrecision);
-      this.crosshairTooltip.setPricePrecision(config.pricePrecision);
-    }
+    if (config.pricePrecision !== undefined) this.applyPricePrecision(config.pricePrecision);
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();
+  }
+
+  /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */
+  private applyPricePrecision(precision: number | null): void {
+    this.marketPricePrecision = precision;
+    this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
+    this.alertManager.setPricePrecision(precision ?? DEFAULT_ORDER_PRECISION);
+    this.streamManager?.priceLine.setPricePrecision(precision);
+    this.currentPriceLine.setPricePrecision(precision);
+    this.crosshairHandler.setPricePrecision(precision);
+    this.chartLegend.setPricePrecision(precision);
+    this.crosshairTooltip.setPricePrecision(precision);
   }
 
   getMarket(): MarketConfig | null {
@@ -2636,6 +3012,8 @@ export class Chart {
 
   destroy(): void {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
+    // A loader of the host's own: no page lands in, or is asked for by, a destroyed chart.
+    this.history.setLoader(null);
     this.disableAutoSave();
     this.disconnectStream();
     this.disconnectExecution();
@@ -2710,8 +3088,7 @@ export class Chart {
       this.renderScheduled = false;
       // A tick moves indicator values: refit the panes' scales.
       this.panelInfoCache = null;
-      this.applyDataToViewport();
-      if (this.fitPriceAxisWidth()) this.applyDataToViewport();
+      this.fitDataAndAxes();
       this.syncRenderContext();
       this.engine.requestRender();
       this.emitViewportEvents();
@@ -2777,17 +3154,53 @@ export class Chart {
     this.resolvedLayoutCache = null;
     this.panelInfoCache = null;
 
+    this.layoutManager.setLeftAxisWidth(this.isLeftPriceScaleShown() ? this.leftAxisWidth : 0);
     const resolved = this.getResolvedLayout();
     this.viewport.setChartRect(resolved.mainChartRect);
 
-    this.applyDataToViewport(scrollToEnd);
-    // A wider/narrower axis changes the plot width, so fit the data again.
-    if (this.fitPriceAxisWidth()) this.applyDataToViewport(scrollToEnd);
+    this.fitDataAndAxes(scrollToEnd);
 
     this.syncRenderContext();
     this.engine.requestRender();
 
     this.emitViewportEvents();
+  }
+
+  /**
+   * Fit the data to the plot, then size both price scales to their labels. A
+   * scale that changes width changes the plot, so the data is fit again —
+   * before anything reads the layout for this frame.
+   */
+  private fitDataAndAxes(scrollToEnd = false): void {
+    this.applyDataToViewport(scrollToEnd);
+    const priceResized = this.fitPriceAxisWidth();
+    this.leftViewport = this.computeLeftViewport();
+    if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
+  }
+
+  /** Size the left scale to its widest label; true when the layout changed. */
+  private fitLeftAxisWidth(): boolean {
+    const left = this.leftViewport;
+    if (!left) return false;
+    const theme = this.themeManager.getTheme();
+    const required = requiredPriceAxisWidth({
+      min: left.priceRange.min,
+      max: left.priceRange.max,
+      lastPrice: null,
+      tagPrecision: null,
+      locale: this.numberLocale,
+      fontFamily: theme.font.family,
+      fontSizeSmall: theme.font.sizeSmall,
+      measure: (text, font) => this.measureText(text, font),
+    });
+    const next = nextPriceAxisWidth(this.leftAxisWidth, required);
+    if (next === this.leftAxisWidth) return false;
+    this.leftAxisWidth = next;
+    this.layoutManager.setLeftAxisWidth(next);
+    this.resolvedLayoutCache = null;
+    this.panelInfoCache = null;
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+    return true;
   }
 
   /**
@@ -2804,7 +3217,7 @@ export class Chart {
       min: priceRange.min,
       max: priceRange.max,
       lastPrice: this.currentPriceLine.getPrice(),
-      tagPrecision: this.marketConfig?.pricePrecision ?? null,
+      tagPrecision: this.marketPricePrecision,
       locale: this.numberLocale,
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
@@ -2869,6 +3282,8 @@ export class Chart {
       this.lastEmittedBarWidth = vs.barWidth;
       this.eventBus.emit('zoomChange', { barWidth: vs.barWidth });
     }
+
+    this.checkHistory();
   }
 
   private getResolvedLayout() {
@@ -2943,6 +3358,15 @@ export class Chart {
     return panels;
   }
 
+  /** Where the time axis starts: below the main chart and every pane under it. */
+  private timeAxisTop(): number {
+    const resolved = this.getResolvedLayout();
+    const bottomPanelHeight = resolved.panels
+      .filter(p => p.config.position === 'bottom')
+      .reduce((sum, p) => sum + p.rect.height, 0);
+    return resolved.mainChartRect.y + resolved.mainChartRect.height + bottomPanelHeight;
+  }
+
   private syncRenderContext(): void {
     // Keep the pinned tooltip anchored to its bar through pans / zooms.
     if (this.pinnedTooltip.isPinned()) {
@@ -2954,17 +3378,15 @@ export class Chart {
       );
     }
 
-    const resolved = this.getResolvedLayout();
     const panels = this.features.indicators ? this.buildPanelRenderInfos() : [];
-
-    // Compute where the time axis should render: below main chart + all bottom panels
-    const bottomPanelHeight = resolved.panels
-      .filter(p => p.config.position === 'bottom')
-      .reduce((sum, p) => sum + p.rect.height, 0);
-    const timeAxisY = resolved.mainChartRect.y + resolved.mainChartRect.height + bottomPanelHeight;
+    const timeAxisY = this.timeAxisTop();
 
     const displayData = this.getDisplayData();
+    this.leftViewport = this.computeLeftViewport();
     this.engine.setRenderContext({
+      leftViewport: this.leftViewport,
+      leftPriceAxis: this.leftPriceAxis,
+      leftAxisWidth: this.leftAxisWidth,
       chartRenderer: this.chartRenderer,
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,

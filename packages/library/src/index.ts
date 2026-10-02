@@ -1,5 +1,7 @@
 export { Chart } from './Chart.js';
 export { DataManager } from './DataManager.js';
+export { HISTORY_RETRY_MS, DEFAULT_HISTORY_PAGE_SIZE } from './HistoryPager.js';
+export type { HistoryLoader } from './HistoryPager.js';
 export { ThemeManager } from './ThemeManager.js';
 export { LayoutManager } from './layout/LayoutManager.js';
 export * from './plugins/index.js';
@@ -118,6 +120,18 @@ export {
 // Re-export data utilities
 export { normalizeBarTime, normalizeBar } from '@tradecanvas/commons';
 
+// Timeframes of any length, resampling, and display time zones
+export {
+  parseTimeframe, isTimeFrame, timeframeToMs, resampleBars, pickBaseTimeframe,
+  isValidTimeZone, zoneOffsetMinutes, offsetAt, wallToUtc,
+} from '@tradecanvas/commons';
+export type { KnownTimeFrame, TimeFrameUnit, TimeZoneSetting, HistoryLoadPayload, OverlayScale } from '@tradecanvas/commons';
+
+// Symbol search and what a feed knows about a symbol
+export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
+export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
+export { EXCHANGE_TIMEZONE } from './Chart.js';
+
 // Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)
 export { PRICE_SOURCES, isPriceSource, sourcePrice, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 export type {
@@ -142,7 +156,7 @@ export {
 export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 

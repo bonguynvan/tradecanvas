@@ -5,6 +5,8 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  SymbolInfo,
+  SymbolSearchOptions,
   RawTick,
   TimeFrame,
 } from '@tradecanvas/commons';
@@ -35,10 +37,18 @@ export interface WsParseResult {
 export interface WebSocketAdapterOptions {
   /** Adapter name, e.g. `'bybit'`. */
   name: string;
+  /** Timeframes the feed serves; charts build the others from these. Leave out if it serves all. */
+  supportedTimeframes?: readonly TimeFrame[];
   /** Build the WS URL for a connection. */
   wsUrl: (config: DataAdapterConfig) => string;
   /** Fetch historical bars (REST), ascending by time. */
   fetchHistory: (symbol: string, timeframe: TimeFrame, limit: number) => Promise<OHLCBar[]>;
+  /** Fetch bars older than `before`, ascending — enables scrolling back for more history. */
+  fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  /** Symbols matching a query, best first — for a symbol search box. */
+  searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  /** What the feed knows about a symbol, or null. */
+  resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
   /** Decode a raw frame into a bar/tick; return null/undefined to ignore. */
   parseMessage: (raw: unknown, config: DataAdapterConfig) => WsParseResult | null | undefined;
   /** Message(s) to send on open to subscribe (sent as JSON unless a string). */
@@ -68,6 +78,7 @@ export interface WebSocketAdapterOptions {
  */
 export class WebSocketAdapter implements DataAdapter {
   readonly name: string;
+  readonly supportedTimeframes?: readonly TimeFrame[];
 
   protected ws: WebSocketLike | null = null;
   protected state: ConnectionState = 'disconnected';
@@ -75,10 +86,19 @@ export class WebSocketAdapter implements DataAdapter {
 
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly opts: WebSocketAdapterOptions;
+  /** Present when the options give a way to fetch older bars. */
+  readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
 
   constructor(opts: WebSocketAdapterOptions) {
     this.opts = opts;
     this.name = opts.name;
+    this.supportedTimeframes = opts.supportedTimeframes;
+    const before = opts.fetchHistoryBefore;
+    if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
+    if (opts.searchSymbols) this.searchSymbols = opts.searchSymbols;
+    if (opts.resolveSymbol) this.resolveSymbol = opts.resolveSymbol;
   }
 
   connect(config: DataAdapterConfig): void {

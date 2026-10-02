@@ -7,6 +7,7 @@ import type {
   DataAdapter,
   ChartOptions,
   PriceScaleMode,
+  SymbolInfo,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
 
@@ -76,11 +77,21 @@ export interface ChartWidgetOptions {
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
+  /** Let users type their own intervals (7m, 90m, 2h…) in the timeframe menu. Default `true`. */
+  customTimeframes?: boolean;
   chartTypes?: ChartType[];
 
   // Data
   adapter?: DataAdapter;
+  /**
+   * Search symbols as the user types in the symbol search (names, exchanges).
+   * Defaults to the adapter's `searchSymbols`; without either, the search
+   * filters `symbols`.
+   */
+  searchSymbols?: (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
   historyLimit?: number;
+  /** Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500. */
+  historyPageSize?: number;
 
   // Chart pass-through
   chartOptions?: Partial<ChartOptions>;
@@ -163,7 +174,7 @@ export interface WidgetState {
 export interface ToolbarConfig {
   symbols: string[];
   /** Every timeframe on offer, shortest first; the menu lists them all. */
-  timeframes: { label: string; value: TimeFrame }[];
+  timeframes: { label: string; value: TimeFrame; custom?: boolean }[];
   /** The ones shown as buttons. Defaults to all of `timeframes`. */
   timeframeFavorites?: TimeFrame[];
   chartTypes: { label: string; value: ChartType }[];
@@ -176,6 +187,10 @@ export interface ToolbarCallbacks {
   onTimeframe: (tf: TimeFrame) => void;
   /** Pin or unpin a timeframe; enables the timeframe menu. */
   onToggleTimeframeFavorite?: (tf: TimeFrame) => void;
+  /** Add a typed interval ("7m", "90", "2h"); false when it isn't one. Shows the custom-interval field. */
+  onAddTimeframe?: (text: string) => boolean;
+  /** Remove a custom interval from the menu. */
+  onRemoveTimeframe?: (tf: TimeFrame) => void;
   onChartType: (type: ChartType) => void;
   onAddIndicator: (id: string) => void;
   onScreenshot: () => void;
@@ -247,9 +262,11 @@ export interface ChartSettingsState {
   autoScale: boolean;
   /** Price scale upside down. */
   invertScale: boolean;
+  /** A price scale on the left too (it carries overlays put on it, else mirrors the price scale). */
+  leftPriceScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;
-  /** 'local' = browser timezone, otherwise a fixed UTC offset in minutes (as a string). */
+  /** 'local' = browser timezone; an IANA zone ('America/New_York'); or a fixed UTC offset in minutes (as a string, from older settings). */
   timezone: string;
 }
 

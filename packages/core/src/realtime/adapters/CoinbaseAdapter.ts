@@ -35,6 +35,7 @@ export class CoinbaseAdapter extends PollingAdapter {
     const restBase = options.restBase ?? 'https://api.exchange.coinbase.com';
     super({
       name: 'coinbase',
+      supportedTimeframes: Object.keys(GRANULARITY) as TimeFrame[],
       intervalMs: options.intervalMs ?? 5000,
       pollLimit: 2,
       fetchBars: (symbol, timeframe) => fetchCoinbaseCandles(restBase, symbol, timeframe),

@@ -39,6 +39,10 @@ class FakeChart {
   setLegend(config: { visible?: boolean }): void { this.display.push(`legend:${config.visible}`); }
   setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
   setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
+  timezones: unknown[] = [];
+  setTimezone(tz: unknown): void { this.timezones.push(tz); }
+  leftScale: boolean[] = [];
+  setLeftPriceScaleVisible(on: boolean): void { this.leftScale.push(on); }
   getData(): { time: number }[] { return this.data; }
   setVisibleRangePreset(preset: string): void { this.presets.push(preset); }
   goToTime(time: number): number { this.goTos.push(time); return 0; }
@@ -143,6 +147,86 @@ describe('ChartWidget timeframes', () => {
   });
 });
 
+describe('ChartWidget custom timeframes', () => {
+  const input = () => host.querySelector<HTMLInputElement>('.tcw-tf-custom-input')!;
+  const submit = (text: string) => {
+    input().value = text;
+    input().form!.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  };
+
+  it('adds a typed interval, pins it and switches to it', () => {
+    make({ timeframe: '5m' });
+    submit('7');
+    expect(menuItems()).toEqual(['1m', '3m', '5m', '7m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M']);
+    expect(barButtons()).toContain('7m');
+    expect(FakeChart.last.connects.at(-1)?.timeframe).toBe('7m');
+    expect(input().value).toBe('');
+  });
+
+  it('remembers custom intervals, and lets them be removed', () => {
+    make({ timeframe: '5m' });
+    submit('90m');
+    widget!.destroy();
+    host.replaceChildren();
+
+    make({ timeframe: '5m' });
+    expect(menuItems()).toContain('90m');
+    host.querySelector<HTMLButtonElement>('[data-tf-remove="90m"]')!.click();
+    expect(menuItems()).not.toContain('90m');
+    expect(barButtons()).not.toContain('90m');
+  });
+
+  it('switches to an interval already on offer without adding it twice', () => {
+    make({ timeframe: '5m' });
+    submit('60');
+    expect(FakeChart.last.connects.at(-1)?.timeframe).toBe('1h');
+    expect(menuItems().filter((tf) => tf === '1h')).toHaveLength(1);
+    expect(host.querySelector('[data-tf-remove="1h"]')).toBeNull();
+  });
+
+  it('marks text that is not an interval and keeps it for fixing', () => {
+    make({ timeframe: '5m' });
+    submit('abc');
+    expect(input().getAttribute('aria-invalid')).toBe('true');
+    expect(input().value).toBe('abc');
+    const hint = host.querySelector<HTMLElement>('.tcw-tf-custom-hint')!;
+    expect(input().getAttribute('aria-describedby')).toBe(hint.id);
+    expect(hint.textContent).toMatch(/7m/);
+    input().value = 'abcd';
+    input().dispatchEvent(new Event('input'));
+    expect(hint.textContent).toBe('');
+    expect(FakeChart.last.connects).toHaveLength(1);
+  });
+
+  it('refuses an interval that features.timeframes leaves out', () => {
+    make({ timeframe: '1h', chartOptions: { features: { timeframes: ['1h', '4h'] } } });
+    submit('2h');
+    expect(input().getAttribute('aria-invalid')).toBe('true');
+    expect(menuItems()).toEqual(['1h', '4h']);
+  });
+});
+
+describe('ChartWidget symbol search through the adapter', () => {
+  it('searches the feed as the user types, with names', async () => {
+    vi.useFakeTimers();
+    try {
+      const searchSymbols = vi.fn(async () => [{ symbol: 'BTCUSDT', description: 'BTC / USDT', exchange: 'Binance' }]);
+      widget = new ChartWidget(host, {
+        adapter: { name: 'fake', searchSymbols } as unknown as DataAdapter, symbol: 'AAA', watchlist: false,
+      });
+      host.querySelector<HTMLButtonElement>('[data-role="symbol"]')!.click();
+      const input = document.querySelector<HTMLInputElement>('.tcw-cmd-input')!;
+      input.value = 'btc';
+      input.dispatchEvent(new Event('input'));
+      await vi.advanceTimersByTimeAsync(200);
+      expect(searchSymbols).toHaveBeenCalledWith('btc', expect.objectContaining({ limit: 50 }));
+      expect(document.querySelector('.tcw-cmd-item')?.textContent).toContain('BTC / USDT');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('ChartWidget leaves out switched-off features', () => {
   it('has no magnet button when the magnet is off', () => {
     make({ chartOptions: { features: { drawingMagnet: false } } });
@@ -187,6 +271,27 @@ describe('ChartWidget range bar', () => {
     time.value = '08:30';
     host.querySelector<HTMLFormElement>('form.tcw-goto')!.requestSubmit();
     expect(FakeChart.last.goTos).toEqual([Date.UTC(2026, 1, 10, 8, 30)]);
+  });
+
+  it('starts from the host’s time zone and left scale, and Reset keeps them', () => {
+    make({ chartOptions: { timeZone: 'America/New_York', leftPriceScale: true } });
+    const settings = () => (widget as unknown as { settingsState: { timezone: string; leftPriceScale: boolean } }).settingsState;
+    expect(settings().timezone).toBe('America/New_York');
+    expect(settings().leftPriceScale).toBe(true);
+    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: 'local', leftPriceScale: false });
+    FakeChart.last.timezones = [];
+    FakeChart.last.leftScale = [];
+    (widget as unknown as { resetSettings(): void }).resetSettings();
+    expect(FakeChart.last.timezones).toEqual(['America/New_York']);
+    expect(FakeChart.last.leftScale).toEqual([true]);
+  });
+
+  it('reads dates in the host’s time zone from the start', () => {
+    make({ chartOptions: { timeZone: 0 } });
+    FakeChart.last.data = [{ time: T_LAST }];
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    const [date, time] = [...host.querySelectorAll<HTMLInputElement>('.tcw-goto-input')];
+    expect([date.value, time.value]).toEqual(['2026-03-01', '12:00']);
   });
 
   it('opens with Alt+G', () => {

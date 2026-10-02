@@ -7,6 +7,7 @@ import type {
   DataSeries,
   OHLCBar,
   ViewportState,
+  OverlayScale,
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneValueRange, plotColor } from './plots.js';
@@ -77,7 +78,7 @@ export class IndicatorEngine {
     id: string,
     params: Record<string, number | string | boolean> = {},
     data?: DataSeries,
-    options: { pane?: string } = {},
+    options: { pane?: string; scale?: OverlayScale } = {},
   ): string {
     const plugin = this.registry.get(id);
     if (!plugin) throw new Error(`Unknown indicator: ${id}`);
@@ -90,6 +91,7 @@ export class IndicatorEngine {
       visible: true,
     };
     if (options.pane && this.canHost(options.pane)) config.pane = options.pane;
+    if (options.scale === 'left' && plugin.descriptor.placement === 'overlay' && !config.pane) config.scale = 'left';
 
     const style: ResolvedIndicatorStyle = {
       colors: config.style?.colors ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
@@ -318,7 +320,11 @@ export class IndicatorEngine {
     const instance = this.instances.get(instanceId);
     if (!instance || hostId === instanceId || (hostId !== null && !this.canHost(hostId))) return false;
     if (hostId === null) delete instance.config.pane;
-    else instance.config.pane = hostId;
+    else {
+      instance.config.pane = hostId;
+      // A pane has its own value scale: the left price scale is only for overlays.
+      delete instance.config.scale;
+    }
     if (isPalette(instance.style.colors)) {
       const placement = instance.plugin.descriptor.placement;
       const pane = instance.config.pane ?? null;
@@ -363,12 +369,34 @@ export class IndicatorEngine {
     return this.instances.get(instanceId)?.output ?? null;
   }
 
-  renderOverlays(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
+  /** Price-pane overlays; those on the left scale draw with `leftViewport` (its range). */
+  renderOverlays(ctx: CanvasRenderingContext2D, viewport: ViewportState, leftViewport?: ViewportState): void {
     for (const instance of this.instances.values()) {
       if (!instance.output || !instance.config.visible) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
-      instance.plugin.render(ctx, instance.output, viewport, instance.style);
+      const onLeft = instance.config.scale === 'left';
+      instance.plugin.render(ctx, instance.output, onLeft ? leftViewport ?? viewport : viewport, instance.style);
     }
+  }
+
+  /** Whether any visible overlay is drawn on the left scale. */
+  hasLeftScaleOverlays(): boolean {
+    for (const instance of this.instances.values()) {
+      if (instance.config.scale === 'left' && instance.config.visible) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Put an overlay on the left scale or back on the price scale. False for
+   * an unknown instance or one that isn't a price-pane overlay.
+   */
+  setScale(instanceId: string, scale: OverlayScale): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance || instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) return false;
+    if (scale === 'left') instance.config.scale = 'left';
+    else delete instance.config.scale;
+    return true;
   }
 
   renderPanel(
@@ -390,11 +418,13 @@ export class IndicatorEngine {
     return instance ? latestValues(instance) : [];
   }
 
-  /** `getLatestValues` of every visible price-pane indicator. */
-  getLatestOverlayValues(): { value: number; color: string }[] {
+  /** `getLatestValues` of every visible price-pane indicator on one scale. */
+  getLatestOverlayValues(scale: OverlayScale = 'right'): { value: number; color: string }[] {
     const out: { value: number; color: string }[] = [];
     for (const instance of this.instances.values()) {
-      if (instance.plugin.descriptor.placement === 'overlay' && !instance.config.pane) out.push(...latestValues(instance));
+      if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
+      if ((instance.config.scale === 'left') !== (scale === 'left')) continue;
+      out.push(...latestValues(instance));
     }
     return out;
   }
@@ -501,13 +531,15 @@ export class IndicatorEngine {
    * bar position) directly over `[from, to]` instead of iterating the full
    * `output.values` Map and discarding everything outside the range.
    */
-  getOverlayPriceRange(from: number, to: number): { min: number; max: number } | null {
+  getOverlayPriceRange(from: number, to: number, scale: OverlayScale = 'right'): { min: number; max: number } | null {
     let gMin = Infinity;
     let gMax = -Infinity;
 
     for (const instance of this.instances.values()) {
       if (!instance.output || !instance.config.visible) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
+      // Overlays on the left scale have a range of their own.
+      if ((instance.config.scale === 'left') !== (scale === 'left')) continue;
 
       const series = instance.output.series;
       if (!series) continue; // no array form published — nothing to scan safely in range

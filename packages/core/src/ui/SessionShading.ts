@@ -1,12 +1,13 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
-import { isRegularSession, type SessionHoursConfig, type SessionWindow } from './sessionHours.js';
+import { isRegularSession, mergeSessionHours, type SessionHoursConfig, type SessionWindow } from './sessionHours.js';
 
 /** US equity regular trading hours (09:30–16:00 ET) as a sensible default. */
 export const DEFAULT_SESSION_HOURS: SessionHoursConfig = {
   startMinute: 9 * 60 + 30,
   endMinute: 16 * 60,
   tzOffsetMinutes: -300,
+  timeZone: 'America/New_York',
 };
 
 /**
@@ -25,10 +26,12 @@ export class SessionShading {
     return this.visible;
   }
   setConfig(config: Partial<SessionHoursConfig>): void {
-    const next = { ...this.config, ...config };
-    // Own the windows array so later mutation by the caller can't leak in.
-    next.windows = next.windows ? next.windows.map((w) => ({ ...w })) : undefined;
-    this.config = next;
+    this.config = mergeSessionHours(this.config, config);
+  }
+
+  /** Replace the whole config, rather than merging into it. */
+  replaceConfig(config: SessionHoursConfig): void {
+    this.config = mergeSessionHours(config, {});
   }
   getConfig(): SessionHoursConfig {
     return {

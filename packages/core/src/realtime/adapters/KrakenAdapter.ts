@@ -40,6 +40,7 @@ export class KrakenAdapter extends WebSocketAdapter {
         method: 'unsubscribe',
         params: { channel: 'ohlc', symbol: [c.symbol], interval: krakenInterval(c.timeframe) },
       }),
+      supportedTimeframes: Object.keys(INTERVAL) as TimeFrame[],
       parseMessage: parseKrakenWsMessage,
       fetchHistory: (symbol, timeframe) => fetchKrakenOhlc(restBase, symbol, timeframe),
     });

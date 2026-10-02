@@ -1,6 +1,8 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { escapeHtml } from './escapeHtml.js';
 
 export interface DrawingStyleCallbacks {
   /** Apply a style change to the active (next) drawing and the selected one. */
@@ -26,7 +28,12 @@ export class WidgetDrawingStyle {
   private store: DrawingTemplateStore;
   private open = false;
 
-  constructor(host: HTMLElement, callbacks: DrawingStyleCallbacks, store: DrawingTemplateStore) {
+  constructor(
+    host: HTMLElement,
+    callbacks: DrawingStyleCallbacks,
+    store: DrawingTemplateStore,
+    private readonly t: Translator = EN_TRANSLATOR,
+  ) {
     this.callbacks = callbacks;
     this.store = store;
 
@@ -37,11 +44,11 @@ export class WidgetDrawingStyle {
     const header = document.createElement('div');
     header.className = 'tcw-style-header';
     const title = document.createElement('span');
-    title.textContent = 'Drawing Style';
+    title.textContent = this.t('drawingStyle.title');
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-style-close';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(title);
@@ -55,19 +62,19 @@ export class WidgetDrawingStyle {
     // Templates
     const tmplHead = document.createElement('div');
     tmplHead.className = 'tcw-style-subhead';
-    tmplHead.textContent = 'Templates';
+    tmplHead.textContent = this.t('drawingStyle.templates');
     this.el.appendChild(tmplHead);
 
     const saveRow = document.createElement('div');
     saveRow.className = 'tcw-style-save';
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
-    this.nameInput.placeholder = 'Template name';
+    this.nameInput.placeholder = this.t('drawingStyle.templateName');
     this.nameInput.className = 'tcw-style-name';
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'tcw-style-savebtn';
-    saveBtn.innerHTML = `${createIcon('plus', 13)}<span>Save</span>`;
+    saveBtn.innerHTML = `${createIcon('plus', 13)}<span>${escapeHtml(this.t('common.save'))}</span>`;
     saveBtn.addEventListener('click', () => this.saveTemplate());
     saveRow.appendChild(this.nameInput);
     saveRow.appendChild(saveBtn);
@@ -192,7 +199,7 @@ export class WidgetDrawingStyle {
     if (templates.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-style-empty';
-      empty.textContent = 'No saved templates';
+      empty.textContent = this.t('drawingStyle.noTemplates');
       this.templatesEl.appendChild(empty);
       return;
     }
@@ -218,7 +225,7 @@ export class WidgetDrawingStyle {
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'tcw-style-tdel';
-      del.setAttribute('aria-label', 'Delete template');
+      del.setAttribute('aria-label', this.t('drawingStyle.deleteTemplate'));
       del.innerHTML = createIcon('trash', 13);
       del.addEventListener('click', () => {
         this.store.remove(t.name);

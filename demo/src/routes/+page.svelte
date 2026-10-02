@@ -15,7 +15,7 @@
   // `value` is what counts up on scroll; `prefix` stays put.
   const SPECS = [
     { prefix: '', value: '17', unit: '', label: 'chart types' },
-    { prefix: '', value: '70', unit: '', label: 'indicators' },
+    { prefix: '', value: '85', unit: '', label: 'indicators' },
     { prefix: '', value: '40', unit: '', label: 'drawing tools' },
     { prefix: '', value: '0', unit: '', label: 'runtime dependencies' },
     { prefix: '≈', value: '100', unit: 'kB', label: 'gzip, headless core' },
@@ -54,12 +54,12 @@
     {
       label: 'Widget',
       title: 'One call, full trading UI',
-      text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in English and Vietnamese.',
+      text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in 14 languages from English and Vietnamese to Chinese, Japanese and Korean.',
     },
     {
       label: 'Data',
       title: 'Any market feed',
-      text: 'Binance, Coinbase, Bybit and Kraken adapters built in; WebSocketAdapter and PollingAdapter for everything else. Reconnects on its own and drops superseded symbol switches.',
+      text: 'Binance, Coinbase, Bybit and Kraken adapters built in; WebSocketAdapter and PollingAdapter for everything else. Older bars load as you scroll back; reconnects on its own and drops superseded symbol switches.',
     },
     {
       label: 'Trading',
@@ -86,6 +86,7 @@
   const GESTURES = [
     ['Drag', 'pan, also past the last bar'],
     ['Scroll', 'zoom around the pointer'],
+    ['Drag right', 'older bars load as you go'],
     ['Drag an axis', 'scale it'],
     ['Ctrl + drag', 'select drawings'],
     ['Shift + drag', 'measure'],

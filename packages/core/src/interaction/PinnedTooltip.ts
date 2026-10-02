@@ -1,4 +1,5 @@
-import type { OHLCBar, Theme, ViewportState } from '@tradecanvas/commons';
+import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
+import { timeParts } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /**
@@ -25,6 +26,12 @@ export class PinnedTooltip {
   private ohlcEl: HTMLElement | null = null;
   private pinnedBar: OHLCBar | null = null;
   private pinnedIndex = -1;
+  private tz: TimeZoneSetting = null;
+
+  /** The time zone the bar's time is shown in; null for the browser's. */
+  setTimezone(tz: TimeZoneSetting): void {
+    this.tz = tz;
+  }
 
   create(container: HTMLElement): void {
     if (this.el) return;
@@ -78,8 +85,8 @@ export class PinnedTooltip {
     const isUp = bar.close >= bar.open;
     const color = isUp ? theme.candleUp : theme.candleDown;
 
-    const d = new Date(bar.time > 1e12 ? bar.time : bar.time * 1000);
-    this.timeEl.textContent = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const d = timeParts(bar.time > 1e12 ? bar.time : bar.time * 1000, this.tz);
+    this.timeEl.textContent = `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 
     this.ohlcEl.innerHTML = `

@@ -1,5 +1,5 @@
-import type { OHLCBar, Theme, Point } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly } from '@tradecanvas/commons';
+import type { OHLCBar, Theme, Point, TimeZoneSetting } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter } from '@tradecanvas/commons';
 
 /** Gap between the pointer and the card. */
 const POINTER_GAP = 16;
@@ -19,31 +19,12 @@ export interface CrosshairTooltipContext {
   barStepMs?: number;
 }
 
-// Building an Intl.DateTimeFormat costs ~40µs: keep one per locale/shape.
-const dateFormats = new Map<string, Intl.DateTimeFormat>();
+const MONTH_DAY: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+const MONTH_DAY_YEAR: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
 
-/** "Mar 4" / "Mar 4, 2026" in `locale`, for the wall-clock date of `ms`. */
-function formatDate(ms: number, tzOffsetMinutes: number | null, locale: string, withYear: boolean): string {
-  // A fixed offset is applied by shifting the instant and reading it as UTC;
-  // browser-local time is Intl's default.
-  const fixed = tzOffsetMinutes !== null;
-  const key = `${locale}|${withYear ? 'y' : ''}|${fixed ? 'utc' : 'local'}`;
-  let format = dateFormats.get(key);
-  if (!format) {
-    const options: Intl.DateTimeFormatOptions = {
-      month: 'short',
-      day: 'numeric',
-      ...(withYear ? { year: 'numeric' } : {}),
-      ...(fixed ? { timeZone: 'UTC' } : {}),
-    };
-    try {
-      format = new Intl.DateTimeFormat(locale, options);
-    } catch {
-      format = new Intl.DateTimeFormat('en-US', options); // unknown locale tag
-    }
-    dateFormats.set(key, format);
-  }
-  return format.format(new Date(fixed ? ms + (tzOffsetMinutes as number) * 60_000 : ms));
+/** "Mar 4" / "Mar 4, 2026" in `locale`, for the wall-clock date of `ms` in `tz`. */
+function formatDate(ms: number, tz: TimeZoneSetting, locale: string, withYear: boolean): string {
+  return zonedDateFormatter(locale, withYear ? MONTH_DAY_YEAR : MONTH_DAY, tz)(ms);
 }
 
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -57,15 +38,15 @@ const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
  */
 export function formatTooltipTime(
   rawTime: number,
-  tzOffsetMinutes: number | null,
+  tz: TimeZoneSetting,
   barStepMs?: number,
   locale = 'en-US',
 ): string {
   const ms = normalizeBarTime(rawTime);
-  const parts = timeParts(ms, tzOffsetMinutes);
+  const parts = timeParts(ms, tz);
   const daily = barStepMs !== undefined && barStepMs > 0 ? barStepMs >= DAY_MS : isDateOnly(parts);
-  if (daily) return formatDate(ms, tzOffsetMinutes, locale, true);
-  const date = formatDate(ms, tzOffsetMinutes, locale, false);
+  if (daily) return formatDate(ms, tz, locale, true);
+  const date = formatDate(ms, tz, locale, false);
   const clock = `${pad2(parts.hours)}:${pad2(parts.minutes)}`;
   if (barStepMs !== undefined && barStepMs > 0 && barStepMs < 60_000) {
     // Timezone offsets are whole minutes: the seconds are the same everywhere.
@@ -96,7 +77,7 @@ export class CrosshairTooltip {
 
   private locale = 'en-US';
   private pricePrecision: number | null = null;
-  private tzOffsetMinutes: number | null = null;
+  private tz: TimeZoneSetting = null;
 
   // Pre-built nodes, updated through textContent.
   private dirEl!: HTMLElement;
@@ -179,9 +160,9 @@ export class CrosshairTooltip {
     this.pricePrecision = precision;
   }
 
-  /** Timezone for the time line: `null` = browser-local, a number = UTC offset in minutes. */
-  setTimezoneOffset(minutes: number | null): void {
-    this.tzOffsetMinutes = minutes;
+  /** Timezone for the time line: an IANA zone, a UTC offset in minutes, or `null` for the browser's. */
+  setTimezoneOffset(tz: TimeZoneSetting): void {
+    this.tz = tz;
   }
 
   show(
@@ -206,7 +187,7 @@ export class CrosshairTooltip {
     const tone = up ? theme.candleUp : theme.candleDown;
     const sign = up ? '+' : '−';
 
-    this.timeEl.textContent = formatTooltipTime(bar.time, this.tzOffsetMinutes, context.barStepMs, this.locale);
+    this.timeEl.textContent = formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);

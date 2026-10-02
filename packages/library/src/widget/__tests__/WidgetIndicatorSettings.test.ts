@@ -102,6 +102,31 @@ describe('WidgetIndicatorSettings', () => {
   });
 });
 
+describe('WidgetIndicatorSettings scale', () => {
+  it('moves an overlay to the left price scale from the Style tab', () => {
+    const onScale = vi.fn();
+    dialog.destroy();
+    dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onScale, onClose: () => {} });
+    const d = descriptor('ema');
+    dialog.open({
+      instanceId: 'e1', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
+      inputs: d.inputs, plots: d.plots, colors: ['#4c8dff'], lineWidth: 1.5, scale: 'right',
+    });
+    tab('style');
+    expect(labels()).toContain('Price scale');
+    const select = [...host.querySelectorAll<HTMLSelectElement>('select')].find((s) => s.querySelector('option[value="left"]'))!;
+    select.value = 'left';
+    select.dispatchEvent(new Event('change'));
+    expect(onScale).toHaveBeenCalledWith('e1', 'left');
+  });
+
+  it('offers no scale for a pane indicator', () => {
+    dialog.open(macdTarget());
+    tab('style');
+    expect(labels()).not.toContain('Price scale');
+  });
+});
+
 describe('WidgetIndicatorSettings keyboard and screen readers', () => {
   const key = (el: Element, k: string, init: KeyboardEventInit = {}) =>
     el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));

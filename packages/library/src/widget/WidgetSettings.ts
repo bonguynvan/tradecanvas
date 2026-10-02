@@ -1,5 +1,7 @@
 import type { ChartSettingsState, SettingsCallbacks } from './types.js';
 import { createIcon } from './icons.js';
+import { timezoneOptions } from './widgetTimezones.js';
+import { numberLocaleOptions } from './widgetLocales.js';
 import type { Translator } from './i18n.js';
 
 type Tab = 'style' | 'display' | 'scale';
@@ -22,7 +24,12 @@ export class WidgetSettings {
   constructor(
     callbacks: SettingsCallbacks,
     t: Translator,
-    private readonly available: { barCountdown?: boolean; logScale?: boolean } = {},
+    private readonly available: {
+      barCountdown?: boolean;
+      logScale?: boolean;
+      /** Offer the exchange's time zone; returns it (null while unknown). */
+      exchangeZone?: () => string | null;
+    } = {},
     /** Where the panel mounts (the widget's portal: themed, and inside it when fullscreen). */
     private readonly host: () => HTMLElement = () => document.body,
   ) {
@@ -155,16 +162,16 @@ export class WidgetSettings {
 
     // Candle Colors
     const candleSection = this.section(this.t('settings.section.candleColors'));
-    candleSection.appendChild(this.colorRow('Up Body', s.candleUpColor, (v) => this.patch({ candleUpColor: v })));
-    candleSection.appendChild(this.colorRow('Down Body', s.candleDownColor, (v) => this.patch({ candleDownColor: v })));
-    candleSection.appendChild(this.colorRow('Up Wick', s.candleUpWick, (v) => this.patch({ candleUpWick: v })));
-    candleSection.appendChild(this.colorRow('Down Wick', s.candleDownWick, (v) => this.patch({ candleDownWick: v })));
+    candleSection.appendChild(this.colorRow(this.t('settings.upBody'), s.candleUpColor, (v) => this.patch({ candleUpColor: v })));
+    candleSection.appendChild(this.colorRow(this.t('settings.downBody'), s.candleDownColor, (v) => this.patch({ candleDownColor: v })));
+    candleSection.appendChild(this.colorRow(this.t('settings.upWick'), s.candleUpWick, (v) => this.patch({ candleUpWick: v })));
+    candleSection.appendChild(this.colorRow(this.t('settings.downWick'), s.candleDownWick, (v) => this.patch({ candleDownWick: v })));
     this.bodyEl.appendChild(candleSection);
 
     // Background
     const bgSection = this.section(this.t('settings.section.background'));
-    bgSection.appendChild(this.colorRow('Background', s.backgroundColor, (v) => this.patch({ backgroundColor: v })));
-    bgSection.appendChild(this.colorRow('Grid', s.gridColor, (v) => this.patch({ gridColor: v })));
+    bgSection.appendChild(this.colorRow(this.t('settings.background'), s.backgroundColor, (v) => this.patch({ backgroundColor: v })));
+    bgSection.appendChild(this.colorRow(this.t('settings.grid'), s.gridColor, (v) => this.patch({ gridColor: v })));
     this.bodyEl.appendChild(bgSection);
   }
 
@@ -173,57 +180,47 @@ export class WidgetSettings {
     const s = this.currentSettings;
 
     const section = this.section();
-    section.appendChild(this.toggleRow('Grid Lines', s.gridVisible, (v) => this.patch({ gridVisible: v })));
-    section.appendChild(this.toggleRow('Volume', s.volumeVisible, (v) => this.patch({ volumeVisible: v })));
-    section.appendChild(this.toggleRow('Volume Profile', s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));
-    section.appendChild(this.toggleRow('Market Profile (TPO)', s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })));
-    section.appendChild(this.toggleRow('MP split by session', s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
-    section.appendChild(this.toggleRow('MP letters (TPO)', s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
-    section.appendChild(this.rangeRow('MP buckets', s.marketProfileBuckets, 8, 200, 1, (v) => this.patch({ marketProfileBuckets: v })));
-    section.appendChild(this.rangeRow('MP opacity', s.marketProfileOpacity, 0.05, 1, 0.05, (v) => this.patch({ marketProfileOpacity: v }), (v) => `${Math.round(v * 100)}%`));
-    section.appendChild(this.toggleRow('Liquidity heatmap', s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
-    section.appendChild(this.rangeRow('Heatmap opacity', s.depthHeatmapOpacity, 0.1, 1, 0.05, (v) => this.patch({ depthHeatmapOpacity: v }), (v) => `${Math.round(v * 100)}%`));
-    section.appendChild(this.toggleRow('Swing markers', s.pivotMarkersVisible, (v) => this.patch({ pivotMarkersVisible: v })));
-    section.appendChild(this.rangeRow('Swing strength', s.pivotStrength, 2, 20, 1, (v) => this.patch({ pivotStrength: v })));
-    section.appendChild(this.toggleRow('Swing structure (HH/HL)', s.pivotStructureLabels, (v) => this.patch({ pivotStructureLabels: v })));
-    section.appendChild(this.toggleRow('Session shading (RTH)', s.sessionShadingVisible, (v) => this.patch({ sessionShadingVisible: v })));
-    section.appendChild(this.toggleRow('Prior-period levels', s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
-    section.appendChild(this.selectRow('Period levels basis', s.periodLevelsPeriod, [
-      { value: 'day', label: 'Prior Day (PDH/PDL)' },
-      { value: 'week', label: 'Prior Week (PWH/PWL)' },
+    section.appendChild(this.toggleRow(this.t('settings.gridLines'), s.gridVisible, (v) => this.patch({ gridVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.volume'), s.volumeVisible, (v) => this.patch({ volumeVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.volumeProfile'), s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.marketProfile'), s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.marketProfileSplit'), s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
+    section.appendChild(this.toggleRow(this.t('settings.marketProfileLetters'), s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
+    section.appendChild(this.rangeRow(this.t('settings.marketProfileBuckets'), s.marketProfileBuckets, 8, 200, 1, (v) => this.patch({ marketProfileBuckets: v })));
+    section.appendChild(this.rangeRow(this.t('settings.marketProfileOpacity'), s.marketProfileOpacity, 0.05, 1, 0.05, (v) => this.patch({ marketProfileOpacity: v }), (v) => `${Math.round(v * 100)}%`));
+    section.appendChild(this.toggleRow(this.t('settings.depthHeatmap'), s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
+    section.appendChild(this.rangeRow(this.t('settings.depthHeatmapOpacity'), s.depthHeatmapOpacity, 0.1, 1, 0.05, (v) => this.patch({ depthHeatmapOpacity: v }), (v) => `${Math.round(v * 100)}%`));
+    section.appendChild(this.toggleRow(this.t('settings.swingMarkers'), s.pivotMarkersVisible, (v) => this.patch({ pivotMarkersVisible: v })));
+    section.appendChild(this.rangeRow(this.t('settings.swingStrength'), s.pivotStrength, 2, 20, 1, (v) => this.patch({ pivotStrength: v })));
+    section.appendChild(this.toggleRow(this.t('settings.swingStructure'), s.pivotStructureLabels, (v) => this.patch({ pivotStructureLabels: v })));
+    section.appendChild(this.toggleRow(this.t('settings.sessionShading'), s.sessionShadingVisible, (v) => this.patch({ sessionShadingVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.periodLevels'), s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
+    section.appendChild(this.selectRow(this.t('settings.periodLevelsBasis'), s.periodLevelsPeriod, [
+      { value: 'day', label: this.t('settings.priorDay') },
+      { value: 'week', label: this.t('settings.priorWeek') },
     ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })));
-    section.appendChild(this.toggleRow('OHLC Legend', s.legendVisible, (v) => this.patch({ legendVisible: v })));
-    section.appendChild(this.toggleRow('Indicator values on scale', s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })));
+    section.appendChild(this.toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.indicatorValues'), s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })));
     if (this.available.barCountdown !== false) {
-      section.appendChild(this.toggleRow('Bar Countdown', s.barCountdown, (v) => this.patch({ barCountdown: v })));
+      section.appendChild(this.toggleRow(this.t('settings.barCountdown'), s.barCountdown, (v) => this.patch({ barCountdown: v })));
     }
 
     // Crosshair mode
-    section.appendChild(this.selectRow('Crosshair Mode', s.crosshairMode, [
-      { label: 'Magnet', value: 'magnet' },
-      { label: 'Normal', value: 'normal' },
-      { label: 'Hidden', value: 'hidden' },
+    section.appendChild(this.selectRow(this.t('settings.crosshairMode'), s.crosshairMode, [
+      { label: this.t('settings.crosshair.magnet'), value: 'magnet' },
+      { label: this.t('settings.crosshair.normal'), value: 'normal' },
+      { label: this.t('settings.crosshair.hidden'), value: 'hidden' },
     ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] })));
 
-    // Number locale
-    section.appendChild(this.selectRow('Timezone', s.timezone, [
-      { value: 'local', label: 'Local' },
-      { value: '0', label: 'UTC / London' },
-      { value: '-300', label: 'New York (UTC-5)' },
-      { value: '-360', label: 'Chicago (UTC-6)' },
-      { value: '60', label: 'Frankfurt (UTC+1)' },
-      { value: '480', label: 'Singapore/HK (UTC+8)' },
-      { value: '540', label: 'Tokyo (UTC+9)' },
-      { value: '330', label: 'Mumbai (UTC+5:30)' },
-    ], (v) => this.patch({ timezone: v })));
-    section.appendChild(this.selectRow('Number Locale', s.numberLocale, [
-      { label: 'en-US (65,234.00)', value: 'en-US' },
-      { label: 'de-DE (65.234,00)', value: 'de-DE' },
-      { label: 'fr-FR (65 234,00)', value: 'fr-FR' },
-      { label: 'vi-VN (65.234,00)', value: 'vi-VN' },
-      { label: 'en-IN (65,234.00)', value: 'en-IN' },
-      { label: 'ja-JP (65,234.00)', value: 'ja-JP' },
-    ], (v) => this.patch({ numberLocale: v })));
+    section.appendChild(this.selectRow(this.t('settings.timezone'), s.timezone,
+      timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local'),
+        this.available.exchangeZone
+          ? { label: this.t('settings.timezone.exchange'), zone: this.available.exchangeZone() }
+          : undefined),
+      (v) => this.patch({ timezone: v })));
+    section.appendChild(this.selectRow(this.t('settings.numberLocale'), s.numberLocale,
+      numberLocaleOptions(s.numberLocale),
+      (v) => this.patch({ numberLocale: v })));
 
     this.bodyEl.appendChild(section);
   }
@@ -233,15 +230,16 @@ export class WidgetSettings {
     const s = this.currentSettings;
 
     const section = this.section();
-    section.appendChild(this.toggleRow('Auto Scale', s.autoScale, (v) => this.patch({ autoScale: v })));
-    section.appendChild(this.toggleRow('Invert Scale (Alt+I)', s.invertScale, (v) => this.patch({ invertScale: v })));
+    section.appendChild(this.toggleRow(this.t('settings.autoScale'), s.autoScale, (v) => this.patch({ autoScale: v })));
+    section.appendChild(this.toggleRow(this.t('settings.invertScale'), s.invertScale, (v) => this.patch({ invertScale: v })));
+    section.appendChild(this.toggleRow(this.t('settings.leftScale'), s.leftPriceScale, (v) => this.patch({ leftPriceScale: v })));
     const scales = [
-      { value: 'regular', label: 'Regular' },
-      { value: 'logarithmic', label: 'Logarithmic' },
-      { value: 'percentage', label: 'Percentage' },
-      { value: 'indexedTo100', label: 'Indexed to 100' },
+      { value: 'regular', label: this.t('settings.scale.regular') },
+      { value: 'logarithmic', label: this.t('settings.scale.logarithmic') },
+      { value: 'percentage', label: this.t('settings.scale.percentage') },
+      { value: 'indexedTo100', label: this.t('settings.scale.indexedTo100') },
     ].filter((o) => o.value !== 'logarithmic' || this.available.logScale !== false);
-    section.appendChild(this.selectRow('Price Scale', s.scaleMode, scales,
+    section.appendChild(this.selectRow(this.t('settings.priceScale'), s.scaleMode, scales,
       (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
     this.bodyEl.appendChild(section);
   }

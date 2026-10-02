@@ -21,9 +21,14 @@ export class PriceAxis {
     this.locale = locale;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+  /**
+   * Draw the scale beside the plot: on the right (the price scale), or on the
+   * left — labels right-aligned against the plot, no last-price tag to avoid.
+   */
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, side: 'right' | 'left' = 'right'): void {
     const { chartRect, priceRange } = viewport;
-    const axisX = chartRect.x + chartRect.width;
+    const left = side === 'left';
+    const axisX = left ? chartRect.x : chartRect.x + chartRect.width;
     if (priceRange.max - priceRange.min <= 0) return;
     const toY = priceToYMapper(viewport);
 
@@ -48,7 +53,7 @@ export class PriceAxis {
     const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
     const baseline = viewport.scaleBaseline;
     const labels: { y: number; text: string }[] = [];
-    const reserved = this.reservedPrice?.() ?? null;
+    const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = toY(price);
@@ -58,16 +63,17 @@ export class PriceAxis {
 
     ctx.font = font;
     ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
+    ctx.textAlign = left ? 'right' : 'left';
 
     // Tiny tick marks (3px notch) — gives the axis structure without the heavy
     // background rectangles that the previous implementation drew per label.
     ctx.strokeStyle = theme.axisLine;
     ctx.globalAlpha = 0.45;
     ctx.beginPath();
+    const tick = left ? -1 : 1;
     for (const { y } of labels) {
-      ctx.moveTo(axisX + 1, y + 0.5);
-      ctx.lineTo(axisX + 4, y + 0.5);
+      ctx.moveTo(axisX + tick, y + 0.5);
+      ctx.lineTo(axisX + 4 * tick, y + 0.5);
     }
     ctx.stroke();
     ctx.globalAlpha = 1;
@@ -75,7 +81,7 @@ export class PriceAxis {
     // Text labels — single fillStyle pass.
     ctx.fillStyle = theme.axisLabel;
     for (const { y, text } of labels) {
-      ctx.fillText(text, axisX + 8, y);
+      ctx.fillText(text, axisX + 8 * tick, y);
     }
   }
 }

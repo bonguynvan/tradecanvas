@@ -86,7 +86,15 @@ export interface IndicatorConfig {
    * to RSI). Unset: the price pane for overlays, a pane of its own for panels.
    */
   pane?: string;
+  /**
+   * `'left'`: an overlay drawn on a price scale of its own on the left, fit
+   * to its values (volume-like lines over price). Unset: the price scale.
+   */
+  scale?: 'left';
 }
+
+/** Which price scale an overlay is drawn on. */
+export type OverlayScale = 'right' | 'left';
 
 export interface IndicatorStyleConfig {
   colors?: string[];

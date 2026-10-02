@@ -5,14 +5,24 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  SymbolInfo,
+  SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 
 export interface PollingAdapterOptions {
   /** Adapter name, e.g. `'coinbase'`. */
   name: string;
+  /** Timeframes the feed serves; charts build the others from these. Leave out if it serves all. */
+  supportedTimeframes?: readonly TimeFrame[];
   /** Fetch recent bars (ascending by time). Drives both history and polling. */
   fetchBars: (symbol: string, timeframe: TimeFrame, limit: number) => Promise<OHLCBar[]>;
+  /** Fetch bars older than `before`, ascending — enables scrolling back for more history. */
+  fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  /** Symbols matching a query, best first — for a symbol search box. */
+  searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  /** What the feed knows about a symbol, or null. */
+  resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
   /** Poll interval in ms (default 5000). */
   intervalMs?: number;
   /** Bars to request each poll — ≥2 so a rollover's closing bar is included (default 2). */
@@ -37,6 +47,7 @@ export interface PollingAdapterOptions {
  */
 export class PollingAdapter implements DataAdapter {
   readonly name: string;
+  readonly supportedTimeframes?: readonly TimeFrame[];
 
   private state: ConnectionState = 'disconnected';
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
@@ -44,10 +55,19 @@ export class PollingAdapter implements DataAdapter {
   private timer: unknown = null;
   private lastBarTime = 0;
   private readonly opts: PollingAdapterOptions;
+  /** Present when the options give a way to fetch older bars. */
+  readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
 
   constructor(opts: PollingAdapterOptions) {
     this.opts = opts;
     this.name = opts.name;
+    this.supportedTimeframes = opts.supportedTimeframes;
+    const before = opts.fetchHistoryBefore;
+    if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
+    if (opts.searchSymbols) this.searchSymbols = opts.searchSymbols;
+    if (opts.resolveSymbol) this.resolveSymbol = opts.resolveSymbol;
   }
 
   connect(config: DataAdapterConfig): void {

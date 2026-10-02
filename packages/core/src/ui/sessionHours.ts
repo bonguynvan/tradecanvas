@@ -1,3 +1,5 @@
+import { zoneOffsetMinutes } from '@tradecanvas/commons';
+
 /** One in-session window, minutes-of-day in the session's timezone. */
 export interface SessionWindow {
   /** Window start, minutes from midnight (e.g. 570 = 09:30). */
@@ -11,8 +13,13 @@ export interface SessionHoursConfig {
   startMinute: number;
   /** Session end, minutes from midnight (e.g. 960 = 16:00). */
   endMinute: number;
-  /** Timezone offset applied to UTC before deriving minute-of-day (e.g. -300 for EST). */
-  tzOffsetMinutes: number;
+  /** Fixed offset applied to UTC before deriving minute-of-day (e.g. -300 for EST). */
+  tzOffsetMinutes?: number;
+  /**
+   * The session's IANA zone (e.g. `'America/New_York'`): follows daylight
+   * saving time, and wins over `tzOffsetMinutes`.
+   */
+  timeZone?: string;
   /**
    * Optional split session: a list of in-session windows within the day. When
    * present and non-empty, `startMinute`/`endMinute` are ignored and a
@@ -25,6 +32,19 @@ export interface SessionHoursConfig {
 }
 
 const DAY_MS = 86_400_000;
+
+/**
+ * `patch` over `base`. A fixed offset given without a zone replaces the zone,
+ * since the zone would otherwise win over it.
+ */
+export function mergeSessionHours(base: SessionHoursConfig, patch: Partial<SessionHoursConfig>): SessionHoursConfig {
+  const next: SessionHoursConfig = { ...base, ...patch };
+  if (patch.tzOffsetMinutes !== undefined && patch.timeZone === undefined) delete next.timeZone;
+  // Own the windows array so later mutation by the caller can't leak in.
+  if (next.windows) next.windows = next.windows.map((w) => ({ ...w }));
+  else delete next.windows;
+  return next;
+}
 
 /** Minute-of-day (0–1439) for a timestamp in the configured timezone. */
 export function minuteOfDay(timeMs: number, tzOffsetMinutes: number): number {
@@ -52,7 +72,8 @@ export function isInWindow(minute: number, startMinute: number, endMinute: numbe
  * window is used, which still handles overnight sessions that wrap midnight.
  */
 export function isRegularSession(timeMs: number, config: SessionHoursConfig): boolean {
-  const m = minuteOfDay(timeMs, config.tzOffsetMinutes);
+  const offset = config.timeZone ? zoneOffsetMinutes(config.timeZone, timeMs) : config.tzOffsetMinutes ?? 0;
+  const m = minuteOfDay(timeMs, offset);
   if (config.windows && config.windows.length > 0) {
     return config.windows.some((w) => isInWindow(m, w.startMinute, w.endMinute));
   }

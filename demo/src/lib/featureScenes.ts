@@ -1,5 +1,5 @@
 import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
-import type { ChartWidget, ChartWidgetOptions } from '@tradecanvas/chart/widget';
+import type { ChartWidget, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
 import { generateBars } from './sampleData';
 
 /** What the Feature Lab hands each scene. */
@@ -10,6 +10,8 @@ export interface SceneEnv {
   slowBinance: (latencyMs: number) => DataAdapter;
   /** Classes from `@tradecanvas/chart`, loaded on demand. */
   lib: typeof import('@tradecanvas/chart');
+  /** The language picked above the chart, for scenes with `languages`. */
+  language?: { code: string; numberLocale: string; messages: WidgetMessages };
 }
 
 export interface FeatureScene {
@@ -23,6 +25,8 @@ export interface FeatureScene {
   options: (env: SceneEnv) => ChartWidgetOptions;
   /** Static base series (no adapter); regenerated per symbol on switches. */
   data?: (symbol: string) => OHLCBar[];
+  /** Shows a language picker above the chart; the scene reads `env.language`. */
+  languages?: boolean;
   /** Runs once the first bars are on the chart. */
   setup?: (widget: ChartWidget, chart: Chart, env: SceneEnv) => void | Promise<void>;
 }
@@ -148,6 +152,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
     tryThis: [
       'Click 1M, 3M or 6M under the chart; Alt+G goes to a date',
       'Alt+I turns the price scale upside down; the log scale is in Settings',
+      'Settings → Timezone: pick New York or Tokyo — axis, day breaks and YTD follow it, daylight saving included',
+      'Settings → Scale → Left price scale; an EMA’s Style tab can move it onto that scale',
       'Star a timeframe in the ▾ menu next to the timeframe buttons',
       'Turn on the ↻ button in the left toolbar to draw several lines in a row; Ctrl+C / Ctrl+V copies them',
     ],
@@ -169,6 +175,40 @@ const layout = chart.saveState()             // indicators, styles, alerts, draw
     data: (symbol) => generateBars(1500, symbol, 24 * HOUR, 140),
     setup: (_widget, chart) => {
       chart.setVisibleRangePreset('6M');
+    },
+  },
+  {
+    id: 'history',
+    title: 'Scroll back in time',
+    stat: 'paged history',
+    blurb:
+      'Older bars load as you drag toward the oldest one, a page at a time, and what is on screen stays put. Zoom out until every loaded bar fits: below a pixel per bar the candles merge per pixel column, so thousands of bars stay readable.',
+    tryThis: [
+      'Drag the chart to the right: a pill on the left shows older bars loading',
+      'Scroll to zoom out, past a few hundred bars down to a quarter pixel per bar',
+      'Click All under the chart to fit everything loaded so far',
+      'Type 7 or 90 in the ▾ timeframe menu: Binance has neither, so the chart builds them from 1m and 30m bars',
+    ],
+    code: `// Adapters with fetchHistoryBefore page by themselves
+chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m', historyPageSize: 500 })
+
+// Or page your own source
+chart.setHistoryLoader((before, limit) => api.bars({ end: before, limit }))
+chart.on('historyLoad', (e) => console.log(e.payload.state, e.payload.count))
+
+// Any interval: the feed's closest timeframe is resampled
+await chart.setTimeframe('7m')`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      timeframe: '1m',
+      adapter: env.binance(),
+      historyLimit: 300,
+      historyPageSize: 500,
+    }),
+    setup: (_widget, chart) => {
+      // Everything loaded fits on screen, so the next page starts loading at once.
+      chart.fitContent();
     },
   },
   {
@@ -199,28 +239,35 @@ chart.replayStop()                // back to the live series`,
   },
   {
     id: 'subcent',
-    title: 'Sub-cent + Vietnamese',
+    title: '14 languages, sub-cent prices',
     stat: 'i18n',
     blurb:
-      'PEPE trades around 0.000004. Every label follows the price scale’s precision and the number locale, and the axis widens to fit — here with the Vietnamese UI.',
+      'The whole widget in 14 languages — menus, settings, drawing tools, dialogs — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
     tryThis: [
-      'Hover: the crosshair pill shows full precision with a decimal comma',
-      'Switch to SHIB or BONK in the watchlist on the right',
-      'Pin an exact precision with chart.setMarket({ pricePrecision: 9 })',
+      'Pick a language above the chart: 日本語, 한국어, 简体中文, Deutsch…',
+      'Ctrl+P searches every Binance symbol, with names, as you type',
+      'Open Settings or the drawing tools to see them translated',
+      'Hover: the crosshair pill keeps full precision in the language’s number format',
     ],
-    code: `new ChartWidget(host, {
+    code: `import { ChartWidget } from '@tradecanvas/chart/widget'
+import { ja } from '@tradecanvas/chart/widget/locales'
+
+new ChartWidget(host, {
   symbol: 'PEPEUSDT',
-  locale: 'vi',
-  chartOptions: { numberLocale: 'vi-VN' },
+  locale: 'ja',
+  messages: ja,                          // only the languages you import ship
+  chartOptions: { numberLocale: 'ja-JP' },
 })`,
+    languages: true,
     options: (env) => ({
       symbol: 'PEPEUSDT',
       symbols: ['PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'FLOKIUSDT'],
       timeframe: '5m',
       adapter: env.binance(),
-      locale: 'vi',
+      locale: env.language?.code ?? 'vi',
+      messages: env.language?.messages,
       watchlist: true,
-      chartOptions: { numberLocale: 'vi-VN' },
+      chartOptions: { numberLocale: env.language?.numberLocale ?? 'vi-VN' },
     }),
   },
   {

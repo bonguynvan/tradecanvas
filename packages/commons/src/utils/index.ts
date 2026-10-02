@@ -4,3 +4,6 @@ export * from './color.js';
 export * from './time.js';
 export * from './precision.js';
 export * from './priceSource.js';
+export * from './resample.js';
+export * from './timezone.js';
+export * from './symbols.js';

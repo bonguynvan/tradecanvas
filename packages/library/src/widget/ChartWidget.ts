@@ -1,4 +1,5 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, Theme, TimeFrame } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
@@ -9,7 +10,7 @@ import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
-import { WidgetSymbolSearch } from './WidgetSymbolSearch.js';
+import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
@@ -19,12 +20,18 @@ import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
-import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from './widgetTimeframes.js';
+import {
+  availableTimeframes,
+  initialTimeframeFavorites,
+  parseTimeframeInput,
+  timeframeLabel,
+  withExtraTimeframes,
+} from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS, sourceParam } from '@tradecanvas/core';
+import { RANGE_PRESETS, servesTimeframe, sourceParam, withResampling } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -35,8 +42,10 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
-import { resolveMessages, createTranslator, type Translator } from './i18n.js';
+import { resolveMessages, createTranslator, fill, type Translator } from './i18n.js';
+import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
+import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 
 /**
  * A local timeframe switch (resampling static data) that took at least this
@@ -133,6 +142,8 @@ export class ChartWidget {
   private favoritesStore = new DrawingFavoritesStore();
   /** Timeframes pinned to the toolbar (same store shape as drawing favourites). */
   private timeframeFavorites = new DrawingFavoritesStore('tcw:tf-favorites');
+  /** Intervals the user typed in the timeframe menu. */
+  private customTimeframes = new DrawingFavoritesStore('tcw:tf-custom');
   /** Timeframes on offer, shortest first. */
   private timeframes: TimeFrame[] = [];
   private watchlist: WidgetWatchlist | null = null;
@@ -152,6 +163,7 @@ export class ChartWidget {
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
   private loading: WidgetLoadingOverlay;
+  private historyPill: WidgetHistoryPill;
   /** Bumped per stream connect; a connect that is no longer the latest leaves the UI to the newer one. */
   private connectSeq = 0;
   /** Bumped per local resample and widget.setData; a deferred local switch that is no longer the latest is skipped. */
@@ -177,15 +189,18 @@ export class ChartWidget {
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
-    // `numberLocale` lives in two places: the headless Chart gets it via
-    // `chartOptions` (spread straight into `new Chart()` below) — but the
-    // widget's own chrome (watchlist, alerts, hotkey sheet, settings panel)
-    // reads `settingsState.numberLocale`, which otherwise stays on
-    // DEFAULT_SETTINGS' 'en-US' until the host touches the Settings UI.
-    // Seed it from the same option so both layers start in sync.
+    // `numberLocale`, `timeZone` and `leftPriceScale` live in two places:
+    // the headless Chart gets them via `chartOptions` (spread straight into
+    // `new Chart()` below) — but the widget's own chrome (watchlist, alerts,
+    // go-to-date, settings panel, Reset) reads `settingsState`, which
+    // otherwise stays on DEFAULT_SETTINGS until the host touches the Settings
+    // UI. Seed it from the same options so both layers start in sync.
+    const chartOptions = options.chartOptions;
     this.settingsState = {
       ...DEFAULT_SETTINGS,
-      ...(options.chartOptions?.numberLocale ? { numberLocale: options.chartOptions.numberLocale } : {}),
+      ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
+      ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
+      ...(chartOptions?.leftPriceScale !== undefined ? { leftPriceScale: chartOptions.leftPriceScale } : {}),
     };
     this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
@@ -236,7 +251,11 @@ export class ChartWidget {
     };
     this.settingsState = { ...this.settingsDefaults };
 
-    this.timeframes = availableTimeframes(options.timeframes, features.timeframes);
+    this.timeframes = withExtraTimeframes(
+      availableTimeframes(options.timeframes, features.timeframes),
+      this.customTimeframes.list() as TimeFrame[],
+      features.timeframes,
+    );
     // First run, or none of the saved pins is on offer here: start from the defaults.
     if (!this.timeframes.some((tf) => this.timeframeFavorites.has(tf))) {
       const initial = initialTimeframeFavorites(this.timeframes, features.defaultTimeframeFavorites, !!options.timeframes?.length);
@@ -281,7 +300,7 @@ export class ChartWidget {
         this.root,
         {
           symbols: this.symbols,
-          timeframes: this.timeframes.map((value) => ({ value, label: timeframeLabel(value) })),
+          timeframes: this.timeframeMenu(),
           timeframeFavorites: this.pinnedTimeframes(),
           chartTypes: options.chartTypes
             ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
@@ -293,6 +312,8 @@ export class ChartWidget {
           onSymbolClick: () => this.handleSymbolClick(),
           onTimeframe: (tf) => this.handleTimeframe(tf),
           onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
+          onAddTimeframe: options.customTimeframes === false ? undefined : (text) => this.handleAddTimeframe(text),
+          onRemoveTimeframe: (tf) => this.handleRemoveTimeframe(tf),
           onChartType: (type) => this.handleChartType(type),
           onAddIndicator: (id) => this.handleAddIndicator(id),
           onScreenshot: () => this.chart.screenshot(),
@@ -319,7 +340,7 @@ export class ChartWidget {
       if (options.drawingFavorites) this.favoritesStore.seedDefaults(options.drawingFavorites);
       this.sidebar = new WidgetDrawingSidebar(
         body,
-        { drawingToolGroups: DRAWING_TOOL_GROUPS, favorites: this.favoritesStore.list() as DrawingToolType[] },
+        { drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t), favorites: this.favoritesStore.list() as DrawingToolType[] },
         {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
@@ -335,7 +356,8 @@ export class ChartWidget {
           onToggleStyle: () => this.drawingStyle?.toggle(),
           onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         },
-      );
+      this.t,
+    );
     }
 
     this.chartContainer = document.createElement('div');
@@ -345,6 +367,10 @@ export class ChartWidget {
     // Loading state: covers the empty chart until the first
     // bars land, then veils the previous chart during slow switches.
     this.loading = new WidgetLoadingOverlay(this.chartContainer, this.t('status.loading'));
+    this.historyPill = new WidgetHistoryPill(this.chartContainer, {
+      loading: this.t('history.loading'),
+      failed: this.t('history.failed'),
+    });
 
     // Watchlist sidebar (right side). Appended AFTER the chart container so
     // it sits to the right of the canvas in the flexbox row.
@@ -376,6 +402,12 @@ export class ChartWidget {
     // widget.setData, or the host calling getChart().setData directly); stream
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
+    this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
+    this.chart.on('symbolInfoChange', (e) => {
+      const info = (e.payload as { info: SymbolInfo | null }).info;
+      const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
+      this.toolbar?.setSymbolDescription(text || null);
+    });
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
     // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
@@ -385,7 +417,8 @@ export class ChartWidget {
       this.dragDrop = new DragDropImporter(this.chartContainer, {
         onData: (data, result, file) => {
           this.setData(data);
-          this.toast(`Loaded ${result.data.length} bars from ${file.name}` + (result.skipped > 0 ? ` (${result.skipped} skipped)` : ''));
+          const loaded = fill(this.t('toast.fileLoaded'), { count: result.data.length, file: file.name });
+          this.toast(result.skipped > 0 ? `${loaded} (${fill(this.t('toast.fileSkipped'), { count: result.skipped })})` : loaded);
         },
         onError: (err, file) => {
           this.toast(`${file.name}: ${err.message}`, 'error');
@@ -422,14 +455,18 @@ export class ChartWidget {
         onChange: (patch) => this.applySettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
-      }, this.t, { barCountdown: features.barCountdown, logScale: features.logScale }, this.overlayHost);
+      }, this.t, {
+        barCountdown: features.barCountdown,
+        logScale: features.logScale,
+        exchangeZone: this.adapter?.resolveSymbol ? () => this.chart.getSymbolInfo()?.timezone ?? null : undefined,
+      }, this.overlayHost);
     }
 
     // 8a. Symbol search
     this.symbolSearch = new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
-    }, this.overlayHost);
+    }, this.overlayHost, this.t);
     this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost);
 
     // The sidebar follows the chart's drawing tool: finished, cancelled with
@@ -501,7 +538,7 @@ export class ChartWidget {
     });
 
     // Data Window — precise OHLCV + indicator values at the hovered bar.
-    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) });
+    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) }, this.t);
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
@@ -520,7 +557,8 @@ export class ChartWidget {
           getStyle: () => this.chart.getDrawingStyle(),
         },
         new DrawingTemplateStore(),
-      );
+      this.t,
+    );
     }
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
@@ -531,11 +569,11 @@ export class ChartWidget {
           this.chart.cancelBracket();
           this.bracketBar?.hide();
         },
-      });
+      }, this.t);
       this.chart.on('bracketPlace', (e) => {
         const b = e.payload;
         this.bracketBar?.hide();
-        this.toast(`${b.side === 'buy' ? 'Long' : 'Short'} bracket placed · ${b.riskReward.toFixed(2)}R`);
+        this.toast(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
@@ -543,10 +581,10 @@ export class ChartWidget {
         this.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => {
             this.chart.placeOrderIntent({ side, type: 'limit', price });
-            this.toast(`${side === 'buy' ? 'Buy' : 'Sell'} limit @ ${this.formatAlertPrice(price)}`);
+            this.toast(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },
           formatPrice: (p) => this.formatAlertPrice(p),
-        });
+        }, undefined, this.t);
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
@@ -565,7 +603,7 @@ export class ChartWidget {
         onClear: () => this.chart.clearAlerts(),
         getChannelValue: (channel) => this.getAlertChannelValue(channel),
         formatPrice: (p) => this.formatAlertPrice(p),
-      });
+      }, this.t);
 
       // Keep the panel list and toasts in sync with the chart's AlertManager.
       this.chart.on('alertAdd', () => this.refreshAlerts());
@@ -576,8 +614,8 @@ export class ChartWidget {
       }
       this.chart.on('alertTriggered', (e) => {
         const p = e.payload;
-        const text = `Price ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
-        this.toast(`🔔 Alert: ${text}`, 'info');
+        const text = `${this.t('alerts.source.price')} ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
+        this.toast(`🔔 ${fill(this.t('alerts.fired'), { text })}`, 'info');
         this.alertNotifier?.notify(text);
         this.refreshAlerts();
       });
@@ -592,6 +630,7 @@ export class ChartWidget {
         },
         onStyle: (instanceId, style) => this.chart.updateIndicatorStyle(instanceId, style),
         onLevels: (instanceId, levels) => this.chart.setIndicatorLevels(instanceId, levels),
+        onScale: (instanceId, scale) => this.chart.setIndicatorScale(instanceId, scale),
         onClose: () => {},
       }, this.t);
       this.objectTree = new WidgetObjectTree(this.root, {
@@ -616,7 +655,7 @@ export class ChartWidget {
         },
         onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onRemoveCompare: (id) => this.handleRemoveCompare(id),
-      });
+      }, this.t);
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
       this.chart.on('drawingCreate', refresh);
       this.chart.on('drawingRemove', refresh);
@@ -633,7 +672,7 @@ export class ChartWidget {
       onTimeframe: (tf) => this.handleTimeframe(tf),
       onAction: (id) => this.handleAction(id),
       onClose: () => {},
-    }, this.overlayHost);
+    }, this.overlayHost, this.t);
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
@@ -643,7 +682,7 @@ export class ChartWidget {
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         e.preventDefault();
-        this.symbolSearch?.open(this.symbols, this.state.symbol);
+        this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
@@ -835,6 +874,7 @@ export class ChartWidget {
     this.statusBar?.destroy();
     this.goToDate?.destroy();
     this.loading.destroy();
+    this.historyPill.destroy();
     this.chart.destroy();
     this.root.remove();
     removeWidgetStyles();
@@ -846,7 +886,15 @@ export class ChartWidget {
     // Opens the fuzzy search modal. The cycle-through behaviour the toolbar
     // used to do is gone — a real search scales past 3-4 symbols and matches
     // what users expect from professional trading terminals.
-    this.symbolSearch?.open(this.symbols, this.state.symbol);
+    this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+  }
+
+  /** The host's symbol search, else the adapter's; none filters `symbols`. */
+  private symbolSearchFn(): SymbolSearchFn | undefined {
+    if (this.options.searchSymbols) return this.options.searchSymbols;
+    const adapter = this.adapter;
+    if (!adapter?.searchSymbols) return undefined;
+    return (query, signal) => adapter.searchSymbols!(query, { signal, limit: 50 });
   }
 
   private handleTimeframe(tf: TimeFrame): void {
@@ -860,14 +908,14 @@ export class ChartWidget {
       return;
     }
     this.root.requestFullscreen().catch((err: unknown) => {
-      this.toast(err instanceof Error ? err.message : 'Fullscreen is not available', 'error');
+      this.toast(err instanceof Error ? err.message : this.t('toast.fullscreenUnavailable'), 'error');
     });
   }
 
-  /** The display timezone from the settings: minutes east of UTC, null = local. */
-  private displayTzOffset(): number | null {
-    const tz = this.settingsState.timezone;
-    return tz === 'local' || !Number.isFinite(Number(tz)) ? null : Number(tz);
+  /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
+  private displayTimezone(): TimeZoneSetting {
+    const tz = settingToTimezone(this.settingsState.timezone);
+    return tz === 'exchange' ? this.chart.getEffectiveTimezone() : tz;
   }
 
   private toggleGoToDate(): void {
@@ -879,13 +927,13 @@ export class ChartWidget {
     const data = this.chart.getData();
     if (data.length === 0) return;
     this.goToDate.open(
-      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTzOffset()),
+      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTimezone()),
       this.root.querySelector('[data-role="goto"]'),
     );
   }
 
   private goToWallTime(date: string, time: string): void {
-    const ms = wallTimeToUtc(date, time, this.displayTzOffset());
+    const ms = wallTimeToUtc(date, time, this.displayTimezone());
     const data = this.chart.getData();
     if (ms === null || data.length === 0) return;
     const ts = ms / barTimeUnit(data); // the bars' own unit
@@ -897,6 +945,35 @@ export class ChartWidget {
   private pinnedTimeframes(): TimeFrame[] {
     const pinned = this.timeframeFavorites.list();
     return this.timeframes.filter((tf) => pinned.includes(tf));
+  }
+
+  /** The timeframe menu's rows, typed intervals marked so they can be removed. */
+  private timeframeMenu(): { value: TimeFrame; label: string; custom: boolean }[] {
+    return this.timeframes.map((value) => ({ value, label: timeframeLabel(value), custom: this.customTimeframes.has(value) }));
+  }
+
+  /** A typed interval: switch to it, adding and pinning it when it is new. False when it isn't one. */
+  private handleAddTimeframe(text: string): boolean {
+    const tf = parseTimeframeInput(text);
+    if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
+    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
+    if (!this.timeframes.includes(tf)) {
+      this.customTimeframes.add(tf);
+      this.timeframeFavorites.add(tf);
+      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
+      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
+    }
+    this.handleTimeframe(tf);
+    return true;
+  }
+
+  private handleRemoveTimeframe(tf: TimeFrame): void {
+    if (!this.customTimeframes.has(tf)) return;
+    this.customTimeframes.remove(tf);
+    this.timeframeFavorites.remove(tf);
+    this.timeframes = this.timeframes.filter((t) => t !== tf);
+    this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
+    this.updateUI();
   }
 
   private handleToggleTimeframeFavorite(tf: TimeFrame): void {
@@ -1012,7 +1089,7 @@ export class ChartWidget {
   private handleToggleFavorite(tool: DrawingToolType): void {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
-    this.toast(pinned ? 'Pinned to favorites' : 'Unpinned');
+    this.toast(pinned ? this.t('toast.pinned') : this.t('toast.unpinned'));
   }
 
   /** Encode the current view (symbol, timeframe, chart type, scale, indicators, drawings). */
@@ -1055,7 +1132,7 @@ export class ChartWidget {
   /** Copy the chart image to the clipboard, with a toast on success/failure. */
   async copyChartImage(): Promise<void> {
     const ok = await this.chart.copyScreenshot();
-    this.toast(ok ? 'Chart image copied' : 'Copy failed — image clipboard unavailable', ok ? 'info' : 'error');
+    this.toast(ok ? this.t('toast.imageCopied') : this.t('toast.imageCopyFailed'), ok ? 'info' : 'error');
   }
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
@@ -1064,9 +1141,9 @@ export class ChartWidget {
     const url = buildShareUrl(base, this.exportState());
     try {
       await navigator.clipboard.writeText(url);
-      this.toast('Share link copied');
+      this.toast(this.t('toast.linkCopied'));
     } catch {
-      this.toast('Copy failed — clipboard unavailable', 'error');
+      this.toast(this.t('toast.copyFailed'), 'error');
     }
   }
 
@@ -1149,6 +1226,7 @@ export class ChartWidget {
       // Levels belong to pane indicators.
       levels: pane ? this.chart.getIndicatorLevels(instanceId) : undefined,
       defaultLevels: ind.descriptor.levels,
+      scale: pane ? undefined : this.chart.getIndicatorScale(instanceId),
     });
   }
 
@@ -1161,7 +1239,7 @@ export class ChartWidget {
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
       id: d.id,
-      label: drawingTypeLabel(d.type),
+      label: drawingTypeLabel(d.type, this.t),
       visible: d.visible,
       locked: d.locked,
     }));
@@ -1171,14 +1249,14 @@ export class ChartWidget {
 
   private async handleAddCompare(): Promise<void> {
     if (!this.adapter) {
-      this.toast('Comparison needs a live data adapter', 'error');
+      this.toast(this.t('toast.compareNeedsAdapter'), 'error');
       return;
     }
     const taken = new Set([this.state.symbol, ...this.compares.map((c) => c.symbol)]);
     const options = this.symbols.filter((s) => !taken.has(s));
     this.symbolSearch?.open(options.length ? options : this.symbols, this.state.symbol, (symbol) => {
       void this.addCompareSymbol(symbol);
-    });
+    }, this.symbolSearchFn());
   }
 
   /** Overlay another symbol's normalized series. Fetches history via the adapter. */
@@ -1187,16 +1265,16 @@ export class ChartWidget {
     const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
     const id = `cmp_${symbol}`;
     try {
-      const bars = await this.adapter.fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+      const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
       // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
       // a shared % axis — the right default for comparison.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
       this.chart.addCompareSymbol(id, symbol, bars, color);
       this.compares = [...this.compares, { id, symbol, color }];
       this.refreshObjects();
-      this.toast(`Comparing ${symbol}`);
+      this.toast(fill(this.t('toast.comparing'), { symbol }));
     } catch (err: unknown) {
-      this.toast(`${symbol}: ${err instanceof Error ? err.message : 'failed to load'}`, 'error');
+      this.toast(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
     }
   }
 
@@ -1215,7 +1293,7 @@ export class ChartWidget {
 
     for (const c of this.compares) {
       try {
-        const bars = await this.adapter.fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+        const bars = await withResampling(this.adapter).fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
         this.chart.updateCompareData(c.id, bars);
       } catch { /* leave the stale overlay in place if the refetch fails */ }
     }
@@ -1239,7 +1317,7 @@ export class ChartWidget {
 
   /** Price + every active indicator line, as selectable alert sources. */
   private buildAlertSources(): { channel: string; label: string }[] {
-    const sources = [{ channel: 'price', label: 'Price' }];
+    const sources = [{ channel: 'price', label: this.t('alerts.source.price') }];
     for (const ind of this.chart.getActiveIndicators()) {
       // Use the latest point — multi-output indicators (MACD, Stochastic) only
       // have all their lines populated once warmed up; the first point may not.
@@ -1316,13 +1394,13 @@ export class ChartWidget {
     for (const ct of CHART_TYPES) {
       items.push({
         id: ct.value,
-        label: ct.label,
+        label: chartTypeLabel(ct, this.t),
         category: 'chartType',
         active: this.state.chartType === ct.value,
       });
     }
 
-    for (const group of DRAWING_TOOL_GROUPS) {
+    for (const group of localizeToolGroups(DRAWING_TOOL_GROUPS, this.t)) {
       for (const tool of group.tools) {
         items.push({
           id: tool.value,
@@ -1343,14 +1421,14 @@ export class ChartWidget {
     }
 
     items.push(
-      { id: 'screenshot', label: 'Screenshot', category: 'action', shortcut: '' },
-      { id: 'copyImage', label: 'Copy Chart Image', category: 'action' },
-      { id: 'toggleTheme', label: 'Toggle Theme', category: 'action' },
-      { id: 'settings', label: 'Settings', category: 'action' },
-      { id: 'shareView', label: 'Share View (copy link)', category: 'action' },
-      { id: 'autoFib', label: 'Auto Fibonacci (visible swing)', category: 'action' },
-      { id: 'dataWindow', label: 'Toggle Data Window', category: 'action' },
-      { id: 'clearDrawings', label: 'Clear All Drawings', category: 'action' },
+      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action', shortcut: '' },
+      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
+      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
+      { id: 'settings', label: this.t('action.settings'), category: 'action' },
+      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
+      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
+      { id: 'dataWindow', label: this.t('action.dataWindow'), category: 'action' },
+      { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
     );
 
     return items;
@@ -1375,7 +1453,7 @@ export class ChartWidget {
         break;
       case 'autoFib': {
         const id = this.chart.autoFib();
-        this.toast(id ? 'Auto Fibonacci added' : 'No clear swing in view');
+        this.toast(id ? this.t('toast.autoFibAdded') : this.t('toast.noSwing'));
         break;
       }
       case 'dataWindow':
@@ -1566,6 +1644,9 @@ export class ChartWidget {
         pause: t('replay.pause'),
         stepBack: t('replay.stepBack'),
         stepForward: t('replay.stepForward'),
+        replay: t('replay.label'),
+        position: t('replay.position'),
+        speed: t('replay.speed'),
       },
     );
     this.replayBar.mount(this.chartContainer, { total: this.replayTotal(), speed: this.replaySpeed, mode: 'select' });
@@ -1717,6 +1798,7 @@ export class ChartWidget {
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
+    if (patch.leftPriceScale !== undefined) this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
     if (patch.scaleMode !== undefined) {
       this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
@@ -1730,7 +1812,7 @@ export class ChartWidget {
       this.watchlist?.setLocale(patch.numberLocale || undefined);
     }
     if (patch.timezone !== undefined) {
-      this.chart.setTimezoneOffset(patch.timezone === 'local' ? null : Number(patch.timezone));
+      this.chart.setTimezone(settingToTimezone(patch.timezone));
     }
 
     // Apply theme colors
@@ -1776,6 +1858,7 @@ export class ChartWidget {
         symbol: this.state.symbol,
         timeframe: this.state.timeframe,
         historyLimit: this.options.historyLimit ?? 500,
+        historyPageSize: this.options.historyPageSize,
       });
       // A newer switch started while this one was loading — it owns the UI now.
       if (seq !== this.connectSeq || this.destroyed) return;

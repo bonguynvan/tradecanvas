@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { minuteOfDay, isRegularSession } from '../sessionHours.js';
+import { minuteOfDay, isRegularSession, mergeSessionHours } from '../sessionHours.js';
 
 // 2023-01-03 14:30 UTC = 09:30 EST (offset -300).
 const at = (h: number, m: number) => Date.UTC(2023, 0, 3, h, m, 0);
@@ -92,5 +92,32 @@ describe('isRegularSession — split session (midday recess)', () => {
     expect(isRegularSession(at(1, 0), cfg)).toBe(true);   // still inside it, past midnight
     expect(isRegularSession(at(10, 0), cfg)).toBe(true);  // inside the plain window
     expect(isRegularSession(at(5, 0), cfg)).toBe(false);  // between windows
+  });
+});
+
+describe('isRegularSession in an IANA zone', () => {
+  // NYSE: 09:30–16:00 New York time, through daylight saving changes.
+  const nyse = { startMinute: 570, endMinute: 960, timeZone: 'America/New_York' };
+
+  it('opens at 09:30 local time in winter and in summer', () => {
+    expect(isRegularSession(Date.UTC(2026, 0, 15, 14, 30), nyse)).toBe(true);
+    expect(isRegularSession(Date.UTC(2026, 0, 15, 13, 30), nyse)).toBe(false);
+    expect(isRegularSession(Date.UTC(2026, 6, 15, 13, 30), nyse)).toBe(true);
+    expect(isRegularSession(Date.UTC(2026, 6, 15, 20, 0), nyse)).toBe(false);
+  });
+});
+
+describe('mergeSessionHours', () => {
+  it('lets a fixed offset given alone replace the zone', () => {
+    const merged = mergeSessionHours({ startMinute: 570, endMinute: 960, timeZone: 'America/New_York', tzOffsetMinutes: -300 }, { tzOffsetMinutes: 330 });
+    expect(merged).toEqual({ startMinute: 570, endMinute: 960, tzOffsetMinutes: 330 });
+  });
+
+  it('keeps the zone when the patch names one, and copies the windows', () => {
+    const windows = [{ startMinute: 600, endMinute: 750 }];
+    const merged = mergeSessionHours({ startMinute: 0, endMinute: 0 }, { timeZone: 'Asia/Bangkok', tzOffsetMinutes: 420, windows });
+    expect(merged.timeZone).toBe('Asia/Bangkok');
+    windows[0].startMinute = 0;
+    expect(merged.windows).toEqual([{ startMinute: 600, endMinute: 750 }]);
   });
 });

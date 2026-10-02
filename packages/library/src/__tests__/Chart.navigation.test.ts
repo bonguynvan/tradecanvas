@@ -178,3 +178,47 @@ describe('layout for on-chart labels', () => {
     expect(chart.formatPrice(101.23456)).toBe('101.2346');
   });
 });
+
+describe('Chart time zone', () => {
+  it('takes an IANA zone, a fixed offset or the browser’s zone', () => {
+    expect(chart.getTimezone()).toBeNull();
+    chart.setTimezone('America/New_York');
+    expect(chart.getTimezone()).toBe('America/New_York');
+    chart.setTimezoneOffset(-300);
+    expect(chart.getTimezone()).toBe(-300);
+    chart.setTimezone(null);
+    expect(chart.getTimezone()).toBeNull();
+  });
+
+  it('refuses a zone the browser does not know', () => {
+    expect(() => chart.setTimezone('Mars/Olympus')).toThrow(RangeError);
+    expect(chart.getTimezone()).toBeNull();
+  });
+
+  it('refuses an unknown ChartOptions.timeZone before building anything', () => {
+    const other = sizedHost();
+    expect(() => new Chart(other, { timeZone: 'Mars/Olympus' })).toThrow(RangeError);
+    expect(other.children).toHaveLength(0);
+    other.remove();
+  });
+
+  it('starts in ChartOptions.timeZone', () => {
+    const other = new Chart(sizedHost(), { timeZone: 'Asia/Tokyo' });
+    expect(other.getTimezone()).toBe('Asia/Tokyo');
+    other.destroy();
+  });
+
+  it('counts YTD from 1 January in the chart’s zone', () => {
+    // Daily bars through mid-2026; YTD in New York starts at 05:00 UTC on 1 January.
+    const DAY = 24 * HOUR;
+    const daily = Array.from({ length: 400 }, (_, i) => ({
+      time: Date.UTC(2025, 5, 1, 5) + i * DAY, open: 100, high: 101, low: 99, close: 100, volume: 1,
+    }));
+    chart.setData(daily);
+    chart.setTimezone('America/New_York');
+    chart.setVisibleRangePreset('YTD');
+    const first = daily.findIndex((b) => b.time >= Date.UTC(2026, 0, 1, 5));
+    expect(state().visibleRange.from).toBeLessThanOrEqual(first);
+    expect(state().visibleRange.from).toBeGreaterThanOrEqual(first - 1);
+  });
+});

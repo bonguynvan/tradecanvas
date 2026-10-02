@@ -1,41 +1,31 @@
-const MINUTE_MS = 60_000;
+import { timeParts, wallToUtc, type TimeZoneSetting } from '@tradecanvas/commons';
+
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_RE = /^(\d{2}):(\d{2})$/;
 
 /**
  * A wall-clock date ("2026-03-01") and time ("14:30", empty = midnight) in the
- * display timezone (`tzOffsetMinutes` east of UTC; null = the browser's) as a
- * UTC timestamp. Null when the date or time is not valid.
+ * display timezone (an IANA zone, minutes east of UTC, or null for the
+ * browser's) as a UTC timestamp. Null when the date or time is not valid.
  */
-export function wallTimeToUtc(date: string, time: string, tzOffsetMinutes: number | null): number | null {
+export function wallTimeToUtc(date: string, time: string, tz: TimeZoneSetting): number | null {
   const d = DATE_RE.exec(date);
   const t = time ? TIME_RE.exec(time) : ['', '00', '00'];
   if (!d || !t) return null;
   const [year, month, day, hours, minutes] = [+d[1], +d[2], +d[3], +t[1], +t[2]];
   if (month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null;
-  if (tzOffsetMinutes === null) {
-    const local = new Date(year, month - 1, day, hours, minutes);
-    return local.getDate() === day ? local.getTime() : null; // 31 February rolls over: reject
-  }
-  const utc = Date.UTC(year, month - 1, day, hours, minutes);
-  if (new Date(utc).getUTCDate() !== day) return null;
-  return utc - tzOffsetMinutes * MINUTE_MS;
+  const wall = Date.UTC(year, month - 1, day, hours, minutes);
+  if (new Date(wall).getUTCDate() !== day) return null; // 31 February rolls over: reject
+  return wallToUtc(wall, tz);
 }
 
 /** The date and time fields' values for `ts` in the display timezone. */
-export function utcToWallTime(ts: number, tzOffsetMinutes: number | null): { date: string; time: string } {
+export function utcToWallTime(ts: number, tz: TimeZoneSetting): { date: string; time: string } {
   const pad = (n: number) => String(n).padStart(2, '0');
-  if (tzOffsetMinutes === null) {
-    const d = new Date(ts);
-    return {
-      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-      time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    };
-  }
-  const d = new Date(ts + tzOffsetMinutes * MINUTE_MS);
+  const p = timeParts(ts, tz);
   return {
-    date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`,
-    time: `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`,
+    date: `${p.year}-${pad(p.month)}-${pad(p.day)}`,
+    time: `${pad(p.hours)}:${pad(p.minutes)}`,
   };
 }
 

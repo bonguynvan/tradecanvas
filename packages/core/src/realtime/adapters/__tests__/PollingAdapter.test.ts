@@ -112,4 +112,16 @@ describe('PollingAdapter', () => {
     const adapter = makeAdapter(async () => history);
     await expect(adapter.fetchHistory('BTC-USD', '1m', 2)).resolves.toEqual(history);
   });
+
+  it('pages older history only when given a fetcher for it', async () => {
+    expect(makeAdapter(async () => []).fetchHistoryBefore).toBeUndefined();
+
+    const older = [bar(0, 99)];
+    const fetchHistoryBefore = vi.fn().mockResolvedValue(older);
+    const adapter = new PollingAdapter({
+      name: 'poll', fetchBars: async () => [], fetchHistoryBefore, setInterval: () => 1, clearInterval: () => {},
+    });
+    await expect(adapter.fetchHistoryBefore?.('BTC-USD', '1m', 60, 10)).resolves.toEqual(older);
+    expect(fetchHistoryBefore).toHaveBeenCalledWith('BTC-USD', '1m', 60, 10);
+  });
 });

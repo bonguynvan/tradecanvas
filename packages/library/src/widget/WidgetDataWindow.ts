@@ -1,4 +1,5 @@
 import { createIcon } from './icons.js';
+import { EN_TRANSLATOR, type Translator } from './i18n.js';
 
 export interface DataWindowIndicator {
   name: string;
@@ -26,7 +27,7 @@ export class WidgetDataWindow {
   private callbacks: DataWindowCallbacks;
   private open = false;
 
-  constructor(host: HTMLElement, callbacks: DataWindowCallbacks) {
+  constructor(host: HTMLElement, callbacks: DataWindowCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
 
     this.el = document.createElement('div');
@@ -36,11 +37,11 @@ export class WidgetDataWindow {
     const header = document.createElement('div');
     header.className = 'tcw-datawin-header';
     const title = document.createElement('span');
-    title.textContent = 'Data Window';
+    title.textContent = this.t('dataWindow.title');
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-datawin-close';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(title);
@@ -83,21 +84,21 @@ export class WidgetDataWindow {
     if (!model.ohlc) {
       const empty = document.createElement('div');
       empty.className = 'tcw-datawin-empty';
-      empty.textContent = 'Hover the chart';
+      empty.textContent = this.t('dataWindow.hover');
       this.bodyEl.appendChild(empty);
       return;
     }
 
     const fp = this.callbacks.formatPrice;
     const o = model.ohlc;
-    this.bodyEl.appendChild(this.row('Open', fp(o.open)));
-    this.bodyEl.appendChild(this.row('High', fp(o.high)));
-    this.bodyEl.appendChild(this.row('Low', fp(o.low)));
-    this.bodyEl.appendChild(this.row('Close', fp(o.close)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.open'), fp(o.open)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.high'), fp(o.high)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.low'), fp(o.low)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.close'), fp(o.close)));
     const tone = model.change > 0 ? 'up' : model.change < 0 ? 'down' : '';
     const sign = model.change > 0 ? '+' : '';
-    this.bodyEl.appendChild(this.row('Change', `${sign}${fp(model.change)} (${sign}${model.changePct.toFixed(2)}%)`, tone));
-    this.bodyEl.appendChild(this.row('Volume', formatVolume(o.volume)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${fp(model.change)} (${sign}${model.changePct.toFixed(2)}%)`, tone));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.volume'), formatVolume(o.volume)));
 
     for (const ind of model.indicators) {
       const head = document.createElement('div');

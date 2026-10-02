@@ -1,4 +1,5 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
+import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
 
 // --- Connection ---
 
@@ -72,6 +73,13 @@ export type DataAdapterListener<T = unknown> = (event: DataAdapterEvent<T>) => v
 export interface DataAdapter {
   readonly name: string;
 
+  /**
+   * Optional: the timeframes the feed serves. Charts build any other
+   * timeframe (7m, 90m, 2d…) from the coarsest of these that divides it.
+   * Leave it out when the feed serves every timeframe.
+   */
+  readonly supportedTimeframes?: readonly TimeFrame[];
+
   connect(config: DataAdapterConfig): void;
   disconnect(): void;
   getConnectionState(): ConnectionState;
@@ -81,6 +89,24 @@ export interface DataAdapter {
    * Returns bars sorted by time ascending.
    */
   fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]>;
+
+  /**
+   * Optional: load up to `limit` bars older than `before` (the oldest loaded
+   * bar's time, in the bars' own unit), sorted by time ascending. Return an
+   * empty array when no older data exists. A chart connected to an adapter
+   * with this method loads older bars as the user scrolls back in time.
+   */
+  fetchHistoryBefore?(symbol: string, timeframe: TimeFrame, before: number, limit: number): Promise<OHLCBar[]>;
+
+  /** Optional: symbols matching `query`, best first — for a symbol search box. */
+  searchSymbols?(query: string, options?: SymbolSearchOptions): Promise<SymbolInfo[]>;
+
+  /**
+   * Optional: what the feed knows about `symbol` (name, price step, exchange
+   * timezone and hours), or null when it doesn't know it. A connected chart
+   * asks for it and applies it.
+   */
+  resolveSymbol?(symbol: string): Promise<SymbolInfo | null>;
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
@@ -95,6 +121,8 @@ export interface StreamConfig {
   symbol: string;
   timeframe: TimeFrame;
   historyLimit?: number;        // bars to load initially, default: 500
+  /** Bars per request when scrolling back for older bars (needs `adapter.fetchHistoryBefore`), default: 500. */
+  historyPageSize?: number;
   autoScroll?: boolean;         // scroll to end on new bar, default: true
   showCurrentPriceLine?: boolean; // default: true
   aggregateTicks?: boolean;     // build bars from ticks, default: false
