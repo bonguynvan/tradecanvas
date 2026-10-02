@@ -100,6 +100,8 @@ import {
   CurrentPriceLine,
   xToBarIndex,
   xToTime,
+  yToPrice,
+  PriceAxisAddButton,
   findDominantSwing,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
@@ -193,6 +195,8 @@ export class Chart {
   private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
   /** The zoom-area tool is waiting for its box. */
   private zoomAreaMode = false;
+  /** The "+" by the price axis. */
+  private priceAxisAddButton = new PriceAxisAddButton();
   /** Display timezone, minutes east of UTC; null = the browser's. */
   /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
@@ -298,6 +302,7 @@ export class Chart {
       // Off by default: right-click is the browser's, and a stray right-click
       // shouldn't be one step from an order. Opt in with features.tradingContextMenu.
       tradingContextMenu: f.tradingContextMenu ?? false,
+      priceAxisAddButton: f.priceAxisAddButton ?? false,
       indicators: f.indicators ?? true,
       indicatorIds: f.indicatorIds ?? [],
       panning: f.panning ?? true,
@@ -718,6 +723,17 @@ export class Chart {
       this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
       this.interactionManager.setDrawingContextMenu((id, pos) => {
         if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
+      });
+      // Off any drawing: the host's menu for where it was, when one listens.
+      this.interactionManager.setChartContextMenu((area, pos) => {
+        if (!this.eventBus.hasListeners('chartContextMenu')) return false;
+        this.eventBus.emit('chartContextMenu', this.contextAt(area, pos));
+        return true;
+      });
+      this.priceAxisAddButton.setEnabled(this.features.priceAxisAddButton);
+      this.interactionManager.setPriceAxisAddButton(this.priceAxisAddButton, (pos) => {
+        const price = yToPrice(pos.y, this.viewport.getState());
+        if (Number.isFinite(price)) this.eventBus.emit('priceAxisAdd', { price, x: pos.x, y: pos.y });
       });
     }
     if (this.features.trading) {
@@ -1607,6 +1623,24 @@ export class Chart {
     return mode === 'none' ? 'off' : mode === 'strong' ? 'strong' : 'weak';
   }
 
+  // --- Right-click and the "+" by the price axis ---
+
+  /** The price and bar time at a right-click, as far as its area has them. */
+  private contextAt(area: import('@tradecanvas/commons').ChartContextArea, pos: { x: number; y: number }): import('@tradecanvas/commons').ChartContextMenuPayload {
+    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    const payload: import('@tradecanvas/commons').ChartContextMenuPayload = { area, x: pos.x, y: pos.y };
+    if (area === 'plot' || area === 'priceAxis') payload.price = yToPrice(pos.y, vs);
+    if ((area === 'plot' || area === 'timeAxis') && vs.data.length > 0) payload.time = xToTime(pos.x, vs);
+    return payload;
+  }
+
+  /** Show or hide the "+" by the price axis (`features.priceAxisAddButton`). */
+  setPriceAxisAddButton(visible: boolean): void {
+    this.features.priceAxisAddButton = visible;
+    this.priceAxisAddButton.setEnabled(visible);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
   // --- Eraser and zoom area ---
 
   /**
@@ -1838,6 +1872,55 @@ export class Chart {
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setPositions(positions);
+  }
+
+  /** The working orders on the chart (`setOrders`, or the execution adapter's). */
+  getOrders(): TradingOrder[] {
+    return this.tradingManager.getOrders();
+  }
+
+  /** The open positions on the chart (`setPositions`, or the execution adapter's). */
+  getPositions(): TradingPosition[] {
+    return this.tradingManager.getPositions();
+  }
+
+  /** Fills marked on the chart, oldest first: the execution adapter's, or `addFill`'s. */
+  getFills(): import('@tradecanvas/commons').FillEvent[] {
+    return this.tradingManager.getFills();
+  }
+
+  /** Mark a fill on the chart (without an execution adapter, a host reports its own). */
+  addFill(fill: import('@tradecanvas/commons').FillEvent): void {
+    if (!this.features.trading) return;
+    this.tradingManager.addFill(fill);
+    this.eventBus.emit('executionFill', fill);
+  }
+
+  clearFills(): void {
+    this.tradingManager.setFills([]);
+  }
+
+  /**
+   * Ask for an order to be cancelled: emits `orderCancel`, which an execution
+   * adapter carries out (as the × on the order's line does).
+   */
+  cancelOrderIntent(orderId: string): void {
+    if (this.features.trading) this.eventBus.emit('orderCancel', { orderId });
+  }
+
+  /** Ask for a position to be closed: emits `positionClose`. */
+  closePositionIntent(positionId: string): void {
+    if (this.features.trading) this.eventBus.emit('positionClose', { positionId });
+  }
+
+  /** Ask for a position to be reversed (closed, then the same size the other way): emits `positionReverse`. */
+  reversePositionIntent(positionId: string): void {
+    if (this.features.trading) this.eventBus.emit('positionReverse', { positionId });
+  }
+
+  /** Ask for a position's stop-loss or take-profit to change (null removes it): emits `positionModify`. */
+  modifyPositionIntent(intent: import('@tradecanvas/commons').PositionModifyIntent): void {
+    if (this.features.trading) this.eventBus.emit('positionModify', intent);
   }
 
   setDepthData(depth: DepthData | null): void {
@@ -2084,6 +2167,10 @@ export class Chart {
       setOrders: (orders) => this.setOrders(orders),
       setPositions: (positions) => this.setPositions(positions),
       onError: (error) => this.eventBus.emit('executionError', error),
+      onFill: (fill) => {
+        this.tradingManager.addFill(fill);
+        this.eventBus.emit('executionFill', fill);
+      },
     });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
@@ -3684,6 +3771,7 @@ export class Chart {
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,
       selectionBoxOverlay: this.selectionBoxOverlay,
+      priceAxisAddButton: this.priceAxisAddButton,
       signalMarkerManager: this.signalMarkerManager,
       tradeZoneManager: this.tradeZoneManager,
       panels,

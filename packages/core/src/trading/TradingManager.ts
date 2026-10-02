@@ -6,6 +6,7 @@ import type {
   ViewportState,
   Theme,
   Point,
+  FillEvent,
 } from '@tradecanvas/commons';
 import { DEFAULT_TRADING_CONFIG } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
@@ -16,6 +17,11 @@ import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
+import { buttonAt, type LineButton, type LineButtonAction } from './lineButtons.js';
+import { renderFillMarks } from './fillMarks.js';
+
+/** Most fills kept for their marks; the oldest go first. */
+const MAX_FILLS = 1000;
 import type { OrderSide } from '@tradecanvas/commons';
 
 export class TradingManager {
@@ -32,6 +38,9 @@ export class TradingManager {
   private contextMenu = new TradingContextMenu();
   private bracket = new BracketTool();
   private orderDraft = new OrderDraftTool();
+  /** The buttons on the lines as last drawn, for clicks and the cursor. */
+  private buttons: LineButton[] = [];
+  private fills: FillEvent[] = [];
 
   private requestRender: (() => void) | null = null;
   private eventCallback: ((event: string, data: unknown) => void) | null = null;
@@ -70,6 +79,19 @@ export class TradingManager {
     this.requestRender?.();
   }
 
+  getOrders(): TradingOrder[] {
+    return [...this.orders];
+  }
+
+  getPositions(): TradingPosition[] {
+    return [...this.positions];
+  }
+
+  /** The latest price (`setCurrentPrice`), or null before the first. */
+  getCurrentPrice(): number | null {
+    return this.currentPrice;
+  }
+
   setDepthData(depth: DepthData | null): void {
     this.depthData = depth;
     this.requestRender?.();
@@ -83,6 +105,48 @@ export class TradingManager {
   setConfig(config: Partial<TradingConfig>): void {
     Object.assign(this.config, config);
     this.requestRender?.();
+  }
+
+  // --- Fills ---
+
+  /** Mark a fill on the chart (an execution adapter's `fill`). */
+  addFill(fill: FillEvent): void {
+    this.fills = [...this.fills.slice(-(MAX_FILLS - 1)), fill];
+    this.requestRender?.();
+  }
+
+  setFills(fills: readonly FillEvent[]): void {
+    this.fills = fills.slice(-MAX_FILLS);
+    this.requestRender?.();
+  }
+
+  getFills(): FillEvent[] {
+    return [...this.fills];
+  }
+
+  // --- Buttons on the lines ---
+
+  /** Whether `pos` is over a button on an order or position line. */
+  isOverButton(pos: Point): boolean {
+    return this.config.enabled && buttonAt(this.buttons, pos) !== null;
+  }
+
+  /** A button's intent: cancel an order, close or reverse a position, remove a stop. */
+  private runButton(action: LineButtonAction): void {
+    switch (action.type) {
+      case 'cancelOrder':
+        this.eventCallback?.('orderCancel', { orderId: action.orderId });
+        break;
+      case 'closePosition':
+        this.eventCallback?.('positionClose', { positionId: action.positionId });
+        break;
+      case 'reversePosition':
+        this.eventCallback?.('positionReverse', { positionId: action.positionId });
+        break;
+      case 'removeStop':
+        this.eventCallback?.('positionModify', { positionId: action.positionId, [action.which]: null });
+        break;
+    }
   }
 
   // --- Bracket placement ---
@@ -174,6 +238,12 @@ export class TradingManager {
       this.requestRender?.();
       return true;
     }
+    // A button on a line before the line itself (an SL line is draggable too).
+    const button = buttonAt(this.buttons, pos);
+    if (button) {
+      this.runButton(button.action);
+      return true;
+    }
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, 8);
   }
 
@@ -235,6 +305,7 @@ export class TradingManager {
   // --- Render ---
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    this.buttons = [];
     if (!this.config.enabled) return;
 
     // Depth overlay (back)
@@ -242,14 +313,16 @@ export class TradingManager {
       this.depthOverlay.render(ctx, this.depthData, viewport, this.config);
     }
 
+    if (this.config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, this.config);
+
     // Positions (middle)
     if (this.positions.length > 0) {
-      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, this.config);
+      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, this.config, this.buttons);
     }
 
     // Orders (front)
     if (this.orders.length > 0) {
-      this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState());
+      this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState(), this.buttons);
     }
 
     // Bracket placement preview (frontmost)

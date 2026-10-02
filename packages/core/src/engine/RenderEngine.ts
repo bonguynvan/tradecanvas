@@ -76,6 +76,8 @@ export interface RenderContext {
   signalMarkerManager: SignalMarkerManager | null;
   measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
   selectionBoxOverlay?: import('../features/SelectionBoxOverlay.js').SelectionBoxOverlay | null;
+  /** The "+" by the price axis, level with the crosshair. */
+  priceAxisAddButton?: import('../interaction/PriceAxisAddButton.js').PriceAxisAddButton | null;
   tradeZoneManager: TradeZoneManager | null;
   panels: PanelRenderInfo[];
   priceLimits?: { ceiling: number; floor: number; reference: number; colors?: { ceiling?: string; floor?: string; reference?: string } } | null;
@@ -257,6 +259,7 @@ export class RenderEngine {
     this.renderPanelCrosshair(c, ctx);
     // Crosshair axis hover pills sit on top of the static price/time labels.
     ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
+    ctx.priceAxisAddButton?.render(c, viewport, theme, ctx.crosshairHandler?.getPosition() ?? null);
     ctx.chartLegend?.render(c, viewport, theme, data);
     ctx.barCountdown?.render(c, viewport, theme, data);
     ctx.renderOverlayPlugins?.(c, 'ui');

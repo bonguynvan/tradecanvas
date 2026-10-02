@@ -33,6 +33,11 @@ export interface FeaturesConfig {
   trading?: boolean;
   /** Right-click menu for placing orders. Default `false` — opt in explicitly. */
   tradingContextMenu?: boolean;
+  /**
+   * A "+" by the price axis, level with the crosshair; a click on it emits
+   * `priceAxisAdd` with the price. Default `false` (ChartWidget turns it on).
+   */
+  priceAxisAddButton?: boolean;
 
   // --- Indicators ---
   /** Enable indicator overlays and panels */

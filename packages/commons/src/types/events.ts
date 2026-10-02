@@ -26,7 +26,9 @@ export type ChartEventType =
   | 'orderModify'
   | 'orderCancel'
   | 'positionClose'
+  | 'positionReverse'
   | 'positionModify'
+  | 'executionFill'
   | 'executionError'
   | 'bracketPlace'
   | 'drawingCreate'
@@ -34,6 +36,8 @@ export type ChartEventType =
   | 'drawingDoubleClick'
   | 'drawingContextMenu'
   | 'toolModeChange'
+  | 'chartContextMenu'
+  | 'priceAxisAdd'
   | 'drawingRemove'
   | 'drawingToolChange'
   | 'signalMarkerAdd'
@@ -165,6 +169,29 @@ export interface DrawingCreatePayload {
 
 export interface DrawingRemovePayload {
   id: string;
+}
+
+/** Where a right-click landed: the price pane, another pane, or an axis. */
+export type ChartContextArea = 'plot' | 'pane' | 'priceAxis' | 'timeAxis';
+
+/**
+ * Payload for `chartContextMenu`: a right-click off any drawing, where it was
+ * (`x`, `y` in the chart's pixels), and the price and bar time there when the
+ * area has them (the price pane: both; the price axis: price; the time axis: time).
+ */
+export interface ChartContextMenuPayload {
+  area: ChartContextArea;
+  x: number;
+  y: number;
+  price?: number;
+  time?: number;
+}
+
+/** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`. */
+export interface PriceAxisAddPayload {
+  price: number;
+  x: number;
+  y: number;
 }
 
 export interface SignalMarkerAddPayload {

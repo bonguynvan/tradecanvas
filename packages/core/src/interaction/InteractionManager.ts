@@ -7,6 +7,7 @@ import type { AlertDragHandler } from './AlertDragHandler.js';
 import type { DrawingManager } from '../drawings/DrawingManager.js';
 import type { TradingManager } from '../trading/TradingManager.js';
 import type { PaneResizeHandler } from './PaneResizeHandler.js';
+import type { PriceAxisAddButton } from './PriceAxisAddButton.js';
 
 /** Every attached chart, and the one pressed last: drawing shortcuts go to one chart. */
 const attachedCharts = new Set<HTMLElement>();
@@ -27,6 +28,9 @@ export interface AxisStrips {
   };
 }
 
+/** Where on the chart a point is, for a menu that depends on it. */
+export type ChartArea = 'plot' | 'pane' | 'priceAxis' | 'timeAxis';
+
 /** Whether focus is in a dialog or menu, whose keys are its own. */
 function focusInOverlay(): boolean {
   const active = typeof document !== 'undefined' ? document.activeElement : null;
@@ -45,6 +49,10 @@ export class InteractionManager {
   private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
   /** The zoom-area tool: a drag draws the box to zoom into. */
   private zoomArea = false;
+  /** The host's menu for a right-click off any drawing; true when it took it. */
+  private onChartContextMenu: ((area: ChartArea, pos: Point) => boolean) | null = null;
+  /** The "+" by the price axis, and what a click on it does. */
+  private priceAxisAdd: { button: PriceAxisAddButton; onClick: (pos: Point) => void } | null = null;
   private axisStrips: (() => AxisStrips) | null = null;
   private savedTouchAction = '';
   private measureHandlers: {
@@ -171,6 +179,19 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /**
+   * Called for a right-click that no drawing or trading menu took, with where
+   * it was; return true to keep the browser's own menu shut.
+   */
+  setChartContextMenu(cb: ((area: ChartArea, pos: Point) => boolean) | null): void {
+    this.onChartContextMenu = cb;
+  }
+
+  /** The "+" by the price axis: a click on it (not while placing something) calls `onClick`. */
+  setPriceAxisAddButton(button: PriceAxisAddButton, onClick: (pos: Point) => void): void {
+    this.priceAxisAdd = { button, onClick };
+  }
+
   /** While on, a plain drag draws a box (the box-select handlers get it) instead of panning. */
   setZoomAreaMode(on: boolean): void {
     this.zoomArea = on;
@@ -243,6 +264,19 @@ export class InteractionManager {
       return null;
     };
 
+    /** Where a point is: the price pane, another pane, the price axis or the time axis. */
+    const areaAt = (pos: Point): ChartArea => {
+      const strips = this.axisStrips?.() ?? null;
+      const r = strips?.plot ?? this.axisViewportGetter?.()?.chartRect;
+      if (!r) return 'plot';
+      if (pos.y > (strips?.timeAxisTop ?? r.y + r.height)) return 'timeAxis';
+      const besidePricePane = pos.y >= r.y && pos.y <= r.y + r.height;
+      const left = strips?.left;
+      const onLeftAxis = !!left && left.width > 0 && pos.x < r.x && pos.x >= r.x - left.width;
+      if (pos.x > r.x + r.width || onLeftAxis) return besidePricePane ? 'priceAxis' : 'pane';
+      return besidePricePane ? 'plot' : 'pane';
+    };
+
     // --- Mouse events ---
     // Price-based drags (trading lines, alerts, brackets) keep following the
     // pointer outside the chart, but the price they take is pinned to the
@@ -277,9 +311,11 @@ export class InteractionManager {
       if (paneCursor) return paneCursor;
       if (this.alertDragHandler?.isOverAlert(pos)) return 'ns-resize';
       const vp = getVP();
+      if (this.tradingManager?.isOverButton(pos)) return 'pointer';
       if (vp && this.tradingManager?.isOverDraggableLine(pos, vp)) return 'ns-resize';
       // The zoom tool keeps its cursor over drawings too.
       if (this.zoomArea) return 'zoom-in';
+      if (vp && this.priceAxisAdd?.button.hit(pos, vp)) return 'pointer';
       const drawingCursor = vp ? this.drawingManager?.hoverCursorAt(pos, vp) : null;
       return drawingCursor ?? idleCursor();
     };
@@ -378,6 +414,12 @@ export class InteractionManager {
       // discrete action, doesn't enter any drag state.
       if (e.altKey && this.onAltClick) {
         this.onAltClick(pos);
+        return;
+      }
+
+      // The "+" by the price axis offers what to do at that price.
+      if (this.priceAxisAdd && vp && !placing && this.priceAxisAdd.button.hit(pos, vp)) {
+        this.priceAxisAdd.onClick(pos);
         return;
       }
 
@@ -599,11 +641,13 @@ export class InteractionManager {
         this.onDrawingContextMenu?.(drawingId, pos);
         return;
       }
-      if (!this.tradingManager) return;
-      const shown = this.tradingManager.onContextMenu(pos, vp);
-      // Only suppress the native menu when the trading context menu actually
-      // opened — otherwise users with trading disabled lose right-click entirely.
-      if (shown) e.preventDefault();
+      // The trading menu (when it is on), else the host's menu for where it was.
+      // The browser's own menu stays only when neither took the click.
+      if (this.tradingManager?.onContextMenu(pos, vp)) {
+        e.preventDefault();
+        return;
+      }
+      if (this.onChartContextMenu?.(areaAt(pos), pos)) e.preventDefault();
     };
 
     // --- Touch events ---

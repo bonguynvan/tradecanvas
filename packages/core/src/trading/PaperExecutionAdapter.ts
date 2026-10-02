@@ -4,6 +4,7 @@ import type {
   ExecutionEventType,
   ExecutionListener,
   FillEvent,
+  FillReason,
   ConnectionState,
   TradingOrder,
   TradingPosition,
@@ -14,6 +15,7 @@ import type {
   OrderCancelIntent,
   PositionModifyIntent,
   PositionCloseIntent,
+  PositionReverseIntent,
 } from '@tradecanvas/commons';
 
 export interface PaperExecutionOptions {
@@ -25,6 +27,8 @@ export interface PaperExecutionOptions {
  * Reference in-memory `ExecutionAdapter`: virtual fills, hedging-style
  * positions (one position per filled order), and pending limit/stop orders
  * triggered via `setMarkPrice()`. SL/TP auto-close when the mark crosses them.
+ * Every fill is reported, closes included (with the profit or loss they
+ * realise), so a host can keep a trade history.
  *
  * The safe sandbox for demos and tests, and the shape real broker adapters
  * mirror. No network, no real money.
@@ -84,6 +88,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       quantity: intent.quantity ?? 1,
       label: intent.type === 'market' ? undefined : labelFor(intent.type),
       draggable: true,
+      stopLoss: intent.stopLoss,
+      takeProfit: intent.takeProfit,
+      timeInForce: intent.timeInForce,
     };
 
     if (intent.type === 'market') {
@@ -108,21 +115,33 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   async modifyPosition(intent: PositionModifyIntent): Promise<void> {
+    // Left out keeps a stop, null removes it.
+    const pick = (next: number | null | undefined, current: number | undefined) =>
+      next === undefined ? current : next ?? undefined;
     this.positions = this.positions.map((p) =>
       p.id === intent.positionId
-        ? {
-            ...p,
-            stopLoss: intent.stopLoss ?? p.stopLoss,
-            takeProfit: intent.takeProfit ?? p.takeProfit,
-          }
+        ? { ...p, stopLoss: pick(intent.stopLoss, p.stopLoss), takeProfit: pick(intent.takeProfit, p.takeProfit) }
         : p,
     );
     this.emit('positions', this.positions);
   }
 
   async closePosition(intent: PositionCloseIntent): Promise<void> {
-    this.positions = this.positions.filter((p) => p.id !== intent.positionId);
+    const position = this.positions.find((p) => p.id === intent.positionId);
+    if (!position) return;
+    this.close(position, this.markPrice || position.entryPrice, 'close');
     this.emit('positions', this.positions);
+  }
+
+  /** Close a position at the mark and open the same size the other way. */
+  async reversePosition(intent: PositionReverseIntent): Promise<void> {
+    const position = this.positions.find((p) => p.id === intent.positionId);
+    if (!position) return;
+    const price = this.markPrice || position.entryPrice;
+    this.close(position, price, 'reverse');
+    const quantity = position.quantity - (position.closedQuantity ?? 0);
+    const order: TradingOrder = { id: this.nextId('ord'), side: opposite(position.side), type: 'market', price, quantity };
+    this.fill(order, price);
   }
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void {
@@ -154,6 +173,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       side: order.side,
       entryPrice: price,
       quantity: order.quantity,
+      stopLoss: order.stopLoss,
+      takeProfit: order.takeProfit,
     };
     this.positions = [...this.positions, position];
 
@@ -163,10 +184,29 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       price,
       quantity: order.quantity,
       time: Date.now(),
+      positionId: position.id,
+      reason: 'order',
     };
     this.emit('fill', fill);
     this.emit('orders', this.orders);
     this.emit('positions', this.positions);
+  }
+
+  /** Take a position off the book at `price`, reporting the fill and what it realised. */
+  private close(position: TradingPosition, price: number, reason: FillReason): void {
+    this.positions = this.positions.filter((p) => p.id !== position.id);
+    const quantity = position.quantity - (position.closedQuantity ?? 0);
+    const direction = position.side === 'buy' ? 1 : -1;
+    this.emit('fill', {
+      orderId: this.nextId('ord'),
+      side: opposite(position.side),
+      price,
+      quantity,
+      time: Date.now(),
+      positionId: position.id,
+      reason,
+      pnl: (price - position.entryPrice) * quantity * direction,
+    } satisfies FillEvent);
   }
 
   private checkPendingOrders(): void {
@@ -188,25 +228,20 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   private checkStops(): void {
-    const survivors: TradingPosition[] = [];
     let changed = false;
-    for (const p of this.positions) {
+    for (const p of [...this.positions]) {
       const hitSL =
         p.stopLoss !== undefined &&
         (p.side === 'buy' ? this.markPrice <= p.stopLoss : this.markPrice >= p.stopLoss);
       const hitTP =
         p.takeProfit !== undefined &&
         (p.side === 'buy' ? this.markPrice >= p.takeProfit : this.markPrice <= p.takeProfit);
-      if (hitSL || hitTP) {
-        changed = true;
-        continue;
-      }
-      survivors.push(p);
+      if (!hitSL && !hitTP) continue;
+      // Filled at the stop's price, as a stop order would be.
+      this.close(p, hitSL ? p.stopLoss! : p.takeProfit!, hitSL ? 'stopLoss' : 'takeProfit');
+      changed = true;
     }
-    if (changed) {
-      this.positions = survivors;
-      this.emit('positions', this.positions);
-    }
+    if (changed) this.emit('positions', this.positions);
   }
 
   private nextId(prefix: string): string {
@@ -220,6 +255,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       for (const listener of set) listener(event);
     }
   }
+}
+
+function opposite(side: TradingOrder['side']): TradingOrder['side'] {
+  return side === 'buy' ? 'sell' : 'buy';
 }
 
 function labelFor(type: OrderType): OrderLabel {

@@ -29,6 +29,11 @@ export class EventBus {
     this.listeners.get(type)?.delete(listener);
   }
 
+  /** Whether anything listens for `type` (a menu only opens when a host shows it). */
+  hasListeners(type: ChartEventType): boolean {
+    return (this.listeners.get(type)?.size ?? 0) > 0;
+  }
+
   emit(type: ChartEventType, payload: unknown): void {
     const event: ChartEvent = {
       type,

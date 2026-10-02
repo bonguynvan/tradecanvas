@@ -6,6 +6,11 @@ import {
   pickPnLColor,
   resolvePositionLabel,
 } from './positionFormat.js';
+import { drawCloseButton, drawReverseButton, type LineButton } from './lineButtons.js';
+
+/** Side of the buttons on a position's label (px), and on its SL / TP labels. */
+const BUTTON = 20;
+const STOP_BUTTON = 16;
 
 export class PositionRenderer {
   render(
@@ -15,12 +20,14 @@ export class PositionRenderer {
     viewport: ViewportState,
     theme: Theme,
     config: TradingConfig,
+    buttons: LineButton[] = [],
   ): void {
     const { chartRect } = viewport;
     const profitColor = config.positionColors?.profit ?? '#1fa874';
     const lossColor = config.positionColors?.loss ?? '#e8505b';
     const entryColor = config.positionColors?.entry ?? '#4c8dff';
     const precision = config.pricePrecision ?? 2;
+    const show = config.lineButtons ?? {};
 
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
@@ -72,6 +79,9 @@ export class PositionRenderer {
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
         ctx.fillText(pnlText, lblX + 6, entryY);
+        this.renderButtons(ctx, pos.id, lblX + lblWidth + 2, entryY, zoneColor, show, buttons);
+      } else {
+        this.renderButtons(ctx, pos.id, chartRect.x + 8, entryY, entryColor, show, buttons);
       }
 
       // Entry badge on axis — rendered separately via renderAxisBadges()
@@ -95,6 +105,7 @@ export class PositionRenderer {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('SL', chartRect.x + 8, slY);
+        if (show.removeStops !== false) this.renderStopButton(ctx, pos.id, 'stopLoss', chartRect.x + 30, slY, lossColor, buttons);
       }
 
       // TP line
@@ -115,10 +126,51 @@ export class PositionRenderer {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('TP', chartRect.x + 8, tpY);
+        if (show.removeStops !== false) this.renderStopButton(ctx, pos.id, 'takeProfit', chartRect.x + 30, tpY, profitColor, buttons);
       }
 
       ctx.setLineDash([]);
     }
+  }
+
+  /** ⇅ reverses the position, × closes it; each one when switched on. */
+  private renderButtons(
+    ctx: CanvasRenderingContext2D,
+    positionId: string,
+    x: number,
+    y: number,
+    color: string,
+    show: NonNullable<TradingConfig['lineButtons']>,
+    buttons: LineButton[],
+  ): void {
+    const top = y - BUTTON / 2;
+    let at = x;
+    ctx.globalAlpha = 0.9;
+    if (show.reverse !== false) {
+      drawReverseButton(ctx, at, top, BUTTON, color);
+      buttons.push({ x: at, y: top, size: BUTTON, action: { type: 'reversePosition', positionId } });
+      at += BUTTON + 2;
+    }
+    if (show.close !== false) {
+      drawCloseButton(ctx, at, top, BUTTON, color);
+      buttons.push({ x: at, y: top, size: BUTTON, action: { type: 'closePosition', positionId } });
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** × beside an SL or TP label removes that stop. */
+  private renderStopButton(
+    ctx: CanvasRenderingContext2D,
+    positionId: string,
+    which: 'stopLoss' | 'takeProfit',
+    x: number,
+    y: number,
+    color: string,
+    buttons: LineButton[],
+  ): void {
+    const top = y - STOP_BUTTON / 2;
+    drawCloseButton(ctx, x, top, STOP_BUTTON, color);
+    buttons.push({ x, y: top, size: STOP_BUTTON, action: { type: 'removeStop', positionId, which } });
   }
 
   /**
