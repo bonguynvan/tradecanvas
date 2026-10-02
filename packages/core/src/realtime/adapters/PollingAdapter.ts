@@ -13,6 +13,8 @@ export interface PollingAdapterOptions {
   name: string;
   /** Fetch recent bars (ascending by time). Drives both history and polling. */
   fetchBars: (symbol: string, timeframe: TimeFrame, limit: number) => Promise<OHLCBar[]>;
+  /** Fetch bars older than `before`, ascending — enables scrolling back for more history. */
+  fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
   /** Poll interval in ms (default 5000). */
   intervalMs?: number;
   /** Bars to request each poll — ≥2 so a rollover's closing bar is included (default 2). */
@@ -44,10 +46,14 @@ export class PollingAdapter implements DataAdapter {
   private timer: unknown = null;
   private lastBarTime = 0;
   private readonly opts: PollingAdapterOptions;
+  /** Present when the options give a way to fetch older bars. */
+  readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
 
   constructor(opts: PollingAdapterOptions) {
     this.opts = opts;
     this.name = opts.name;
+    const before = opts.fetchHistoryBefore;
+    if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
   }
 
   connect(config: DataAdapterConfig): void {

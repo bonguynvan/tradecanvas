@@ -1,4 +1,4 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, Theme, TimeFrame } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Theme, TimeFrame } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
@@ -37,6 +37,7 @@ import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
 import { resolveMessages, createTranslator, type Translator } from './i18n.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
+import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 
 /**
  * A local timeframe switch (resampling static data) that took at least this
@@ -152,6 +153,7 @@ export class ChartWidget {
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
   private loading: WidgetLoadingOverlay;
+  private historyPill: WidgetHistoryPill;
   /** Bumped per stream connect; a connect that is no longer the latest leaves the UI to the newer one. */
   private connectSeq = 0;
   /** Bumped per local resample and widget.setData; a deferred local switch that is no longer the latest is skipped. */
@@ -345,6 +347,10 @@ export class ChartWidget {
     // Loading state: covers the empty chart until the first
     // bars land, then veils the previous chart during slow switches.
     this.loading = new WidgetLoadingOverlay(this.chartContainer, this.t('status.loading'));
+    this.historyPill = new WidgetHistoryPill(this.chartContainer, {
+      loading: this.t('history.loading'),
+      failed: this.t('history.failed'),
+    });
 
     // Watchlist sidebar (right side). Appended AFTER the chart container so
     // it sits to the right of the canvas in the flexbox row.
@@ -376,6 +382,7 @@ export class ChartWidget {
     // widget.setData, or the host calling getChart().setData directly); stream
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
+    this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
     // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
@@ -835,6 +842,7 @@ export class ChartWidget {
     this.statusBar?.destroy();
     this.goToDate?.destroy();
     this.loading.destroy();
+    this.historyPill.destroy();
     this.chart.destroy();
     this.root.remove();
     removeWidgetStyles();

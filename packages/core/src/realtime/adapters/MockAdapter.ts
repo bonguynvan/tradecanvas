@@ -40,6 +40,8 @@ export class MockAdapter implements DataAdapter {
   private options: MockAdapterOptions;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private currentPrice: number;
+  /** Open of the oldest bar handed out, where the next older page ends. */
+  private oldestOpen: number | null = null;
 
   constructor(options?: MockAdapterOptions) {
     this.options = {
@@ -70,10 +72,30 @@ export class MockAdapter implements DataAdapter {
   }
 
   async fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
-    if (this.options.historyGenerator) {
-      return this.options.historyGenerator(symbol, timeframe, limit ?? this.options.historySize!);
+    const bars = this.options.historyGenerator
+      ? this.options.historyGenerator(symbol, timeframe, limit ?? this.options.historySize!)
+      : this.generateHistory(timeframe, limit ?? this.options.historySize!);
+    this.oldestOpen = bars[0]?.open ?? null;
+    return bars;
+  }
+
+  /** Make up `limit` bars before `before` (ms) that lead into the oldest bar handed out. */
+  async fetchHistoryBefore(_symbol: string, timeframe: TimeFrame, before: number, limit: number): Promise<OHLCBar[]> {
+    const intervalMs = timeframeToMs(timeframe);
+    const vol = this.options.volatility! / 100;
+    const bars: OHLCBar[] = new Array(Math.max(0, limit));
+    let close = this.oldestOpen ?? this.options.basePrice!;
+    // Walk back in time: each bar's close is the next one's open.
+    for (let k = 0; k < limit; k++) {
+      const open = close / (1 + (Math.random() - 0.52) * vol);
+      const high = Math.max(open, close) + Math.random() * close * vol * 0.3;
+      const low = Math.max(0, Math.min(open, close) - Math.random() * close * vol * 0.3);
+      const volume = Math.floor(10000 + Math.random() * 100000);
+      bars[limit - 1 - k] = { time: before - (k + 1) * intervalMs, open, high, low, close, volume };
+      close = open;
     }
-    return this.generateHistory(timeframe, limit ?? this.options.historySize!);
+    this.oldestOpen = close;
+    return bars;
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {

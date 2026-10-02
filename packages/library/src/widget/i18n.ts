@@ -89,6 +89,8 @@ export const EN_MESSAGES = {
   'status.live': 'Live',
   'status.connectionFailed': 'Connection failed',
   'status.loading': 'Loading chart...',
+  'history.loading': 'Loading history…',
+  'history.failed': 'Could not load older bars',
 
   // Settings panel
   'settings.title': 'Chart Settings',
@@ -187,6 +189,8 @@ export const VI_MESSAGES: Partial<Record<MessageKey, string>> = {
   'status.live': 'Trực tiếp',
   'status.connectionFailed': 'Kết nối thất bại',
   'status.loading': 'Đang tải biểu đồ...',
+  'history.loading': 'Đang tải dữ liệu cũ…',
+  'history.failed': 'Không tải được dữ liệu cũ',
 
   'settings.title': 'Cài đặt biểu đồ',
   'settings.tab.style': 'Giao diện',

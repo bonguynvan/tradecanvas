@@ -55,6 +55,30 @@ export class DataManager {
     this.data = out;
   }
 
+  /**
+   * Add older bars in front: those before the first loaded bar, in time
+   * order, one per time, repaired like `setData`. Returns how many were added.
+   */
+  prependBars(bars: readonly OHLCBar[]): number {
+    const first = this.data.length > 0 ? this.data[0].time : Infinity;
+    const older: OHLCBar[] = [];
+    for (let i = 0; i < bars.length; i++) {
+      const bar = bars[i];
+      if (!isValidBar(bar) || bar.time >= first) continue;
+      older.push(isSanitized(bar) ? bar : sanitizeBar(bar));
+    }
+    if (older.length === 0) return 0;
+    older.sort((a, b) => a.time - b.time);
+    let kept = 0;
+    for (let i = 0; i < older.length; i++) {
+      if (kept > 0 && older[kept - 1].time === older[i].time) continue;
+      older[kept++] = older[i];
+    }
+    older.length = kept;
+    this.data = older.concat(this.data);
+    return kept;
+  }
+
   appendBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
     this.data.push(sanitizeBar(bar));

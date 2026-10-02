@@ -12,6 +12,7 @@ export type ChartEventType =
   | 'priceRangeChange'
   | 'zoomChange'
   | 'dataUpdate'
+  | 'historyLoad'
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
@@ -187,6 +188,17 @@ export interface AlertPayload {
   triggered: boolean;
 }
 
+/**
+ * Payload for `historyLoad`: paging older bars in. `loading` when a request
+ * starts, then `loaded` (`count` bars added), `end` (no older bars) or
+ * `error`.
+ */
+export interface HistoryLoadPayload {
+  state: 'loading' | 'loaded' | 'end' | 'error';
+  count: number;
+  error?: string;
+}
+
 /** What changed on an indicator (`indicatorChange`). */
 export interface IndicatorSettingsChangePayload {
   instanceId: string;
@@ -203,6 +215,8 @@ export interface ChartEventMap {
   priceRangeChange: PriceRangeChangePayload;
   zoomChange: ZoomChangePayload;
   dataUpdate: DataSeries;
+  /** Older bars are being paged in, or finished loading. */
+  historyLoad: HistoryLoadPayload;
   indicatorAdd: IndicatorChangePayload;
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */

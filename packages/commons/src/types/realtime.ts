@@ -82,6 +82,14 @@ export interface DataAdapter {
    */
   fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]>;
 
+  /**
+   * Optional: load up to `limit` bars older than `before` (the oldest loaded
+   * bar's time, in the bars' own unit), sorted by time ascending. Return an
+   * empty array when no older data exists. A chart connected to an adapter
+   * with this method loads older bars as the user scrolls back in time.
+   */
+  fetchHistoryBefore?(symbol: string, timeframe: TimeFrame, before: number, limit: number): Promise<OHLCBar[]>;
+
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
 
@@ -95,6 +103,8 @@ export interface StreamConfig {
   symbol: string;
   timeframe: TimeFrame;
   historyLimit?: number;        // bars to load initially, default: 500
+  /** Bars per request when scrolling back for older bars (needs `adapter.fetchHistoryBefore`), default: 500. */
+  historyPageSize?: number;
   autoScroll?: boolean;         // scroll to end on new bar, default: true
   showCurrentPriceLine?: boolean; // default: true
   aggregateTicks?: boolean;     // build bars from ticks, default: false

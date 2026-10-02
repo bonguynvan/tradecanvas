@@ -28,6 +28,7 @@ import type {
   ConnectionState,
   ConnectionInfo,
   TimeFrame,
+  DataAdapter,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
@@ -94,6 +95,7 @@ import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
+import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
@@ -111,6 +113,8 @@ const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
 /** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
 const SECONDS_TIME_LIMIT = 1e12;
+/** Fewest bars ahead of the view that trigger the next history page. */
+const HISTORY_AHEAD_MIN_BARS = 20;
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -213,6 +217,12 @@ export class Chart {
   private keyboardHandler: KeyboardHandler | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
+  /** Timeframe of the connected stream, for paging its history. */
+  private streamTimeframe: TimeFrame | null = null;
+  /** Pages older bars in as the view nears the oldest one. */
+  private history: HistoryPager;
+  /** Whether the history loader is the connected stream's (and goes with it). */
+  private historyFromStream = false;
 
 
   constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
@@ -266,6 +276,11 @@ export class Chart {
 
     // Initialize managers
     this.dataManager = new DataManager();
+    this.history = new HistoryPager({
+      oldestTime: () => this.dataManager.getData()[0]?.time ?? null,
+      prepend: (bars) => this.prependBars(bars),
+      emit: (payload) => this.eventBus.emit('historyLoad', payload),
+    });
     this.themeManager = new ThemeManager(options.theme);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
@@ -758,6 +773,7 @@ export class Chart {
   setData(data: DataSeries): void {
     // A full replace is a new series: any replay of the old one ends.
     this.endReplaySession();
+    this.history.reset();
     this.dataManager.setData(data);
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
@@ -778,6 +794,78 @@ export class Chart {
     }
     this.updateViewportAndRender(true);
     this.eventBus.emit('dataUpdate', { length: data.length });
+  }
+
+  /**
+   * Add older bars in front of the data — e.g. a page of history loaded as
+   * the user scrolls back. Bars at or after the first loaded bar are skipped.
+   * The same bars stay on screen. Ignored during a replay. Returns how many
+   * bars were added.
+   */
+  prependBars(bars: OHLCBar[]): number {
+    if (this.replaySession) return 0;
+    const shownBefore = this.getDisplayData().length;
+    const added = this.dataManager.prependBars(bars);
+    if (added === 0) return 0;
+    const data = this.dataManager.getData();
+    this.crosshairHandler.setData(data);
+    this.displayDataCache = null;
+    this.sessionBreaks.invalidateCache();
+    this.recalcIndicators(data);
+    // Renko bricks and the like may not grow bar for bar: shift by what the
+    // displayed series gained.
+    this.viewport.prependBars(this.getDisplayData().length - shownBefore);
+    this.updateViewportAndRender();
+    return added;
+  }
+
+  /**
+   * Load older bars as the user scrolls back: `loader(before, limit)` gets the
+   * oldest loaded bar's time and returns up to `limit` older bars (an empty
+   * array once the history starts). A connected stream whose adapter has
+   * `fetchHistoryBefore` sets this up by itself. Pass null to stop.
+   */
+  setHistoryLoader(loader: HistoryLoader | null, options?: { pageSize?: number }): void {
+    this.historyFromStream = false;
+    this.history.setLoader(loader, options?.pageSize);
+    this.checkHistory();
+  }
+
+  /** Load one page of older bars now. Resolves to the number of bars added. */
+  loadMoreHistory(): Promise<number> {
+    if (this.replaySession) return Promise.resolve(0);
+    return this.history.loadMore();
+  }
+
+  /** Whether older bars can still be loaded (a loader is set and the start wasn't reached). */
+  hasMoreHistory(): boolean {
+    return this.history.hasLoader() && this.history.hasMore();
+  }
+
+  isLoadingHistory(): boolean {
+    return this.history.isLoading();
+  }
+
+  /** Page older bars in when less than a screen of them is left of the view. */
+  private checkHistory(): void {
+    if (this.replaySession || !this.history.hasLoader()) return;
+    const { from, to } = this.viewport.getState().visibleRange;
+    this.history.maybeLoad(Math.max(0, Math.floor(from)), Math.max(HISTORY_AHEAD_MIN_BARS, to - from));
+  }
+
+  /** Page the connected stream's history through its adapter, if it can. */
+  private useStreamHistory(adapter: DataAdapter, pageSize: number | undefined): void {
+    const fetchBefore = adapter.fetchHistoryBefore;
+    const timeframe = this.streamTimeframe;
+    if (!fetchBefore || timeframe === null) {
+      if (this.historyFromStream) this.history.setLoader(null);
+      this.historyFromStream = false;
+      return;
+    }
+    const symbol = this.currentSymbol;
+    this.history.setLoader((before, limit) => fetchBefore.call(adapter, symbol, timeframe, before, limit), pageSize);
+    this.historyFromStream = true;
+    this.checkHistory();
   }
 
   appendBar(bar: OHLCBar): void {
@@ -1505,6 +1593,7 @@ export class Chart {
         return;
       }
       this.setData(bars);
+      this.useStreamHistory(config.adapter, config.historyPageSize);
     });
 
     this.streamManager.on('barClose', (bar) => {
@@ -1558,6 +1647,7 @@ export class Chart {
 
     this.autoScrollOnNewBar = config.autoScroll !== false;
     this.currentSymbol = config.symbol;
+    this.streamTimeframe = config.timeframe;
 
     const manager = this.streamManager;
     await manager.connect(config);
@@ -1584,6 +1674,10 @@ export class Chart {
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) return;
     this.currentSymbol = symbol;
+    this.streamTimeframe = timeframe;
+    // Until the new series is in, a page would be the new symbol's bars in
+    // front of the old one's.
+    if (this.historyFromStream) this.history.setLoader(null);
     this.barCountdown.setTimeframeMs(timeframeToMs(timeframe));
     await this.streamManager.switchTo(symbol, timeframe);
   }
@@ -1612,6 +1706,10 @@ export class Chart {
     if (this.streamManager) {
       this.streamManager.dispose();
       this.streamManager = null;
+    }
+    if (this.historyFromStream) {
+      this.history.setLoader(null);
+      this.historyFromStream = false;
     }
   }
 
@@ -2869,6 +2967,8 @@ export class Chart {
       this.lastEmittedBarWidth = vs.barWidth;
       this.eventBus.emit('zoomChange', { barWidth: vs.barWidth });
     }
+
+    this.checkHistory();
   }
 
   private getResolvedLayout() {

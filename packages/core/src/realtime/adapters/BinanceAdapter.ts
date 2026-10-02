@@ -15,6 +15,9 @@ const TF_MAP: Record<string, string> = {
   '1d': '1d', '3d': '3d', '1w': '1w', '1M': '1M',
 };
 
+/** Most klines one REST request returns. */
+const MAX_KLINES = 1000;
+
 /**
  * Binance public API adapter (no API key required).
  *
@@ -71,9 +74,18 @@ export class BinanceAdapter implements DataAdapter {
     return this.state;
   }
 
-  async fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
+  fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
+    return this.fetchKlines(symbol, timeframe, limit, '');
+  }
+
+  /** Up to `limit` klines (1000 at most) that open before `before` (ms). */
+  fetchHistoryBefore(symbol: string, timeframe: TimeFrame, before: number, limit = 500): Promise<OHLCBar[]> {
+    return this.fetchKlines(symbol, timeframe, Math.min(limit, MAX_KLINES), `&endTime=${Math.floor(before) - 1}`);
+  }
+
+  private async fetchKlines(symbol: string, timeframe: TimeFrame, limit: number, range: string): Promise<OHLCBar[]> {
     const interval = TF_MAP[timeframe] ?? '15m';
-    const url = `${this.restBase}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+    const url = `${this.restBase}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}${range}`;
     const res = await fetch(url);
 
     if (!res.ok) throw new Error(`Binance REST error: ${res.status}`);

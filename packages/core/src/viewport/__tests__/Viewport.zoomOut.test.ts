@@ -89,3 +89,26 @@ describe('Viewport — zooming out past the old 2px + 2px floor', () => {
     expect(vp.getState().barSpacing).toBe(2);
   });
 });
+
+describe('Viewport.prependBars', () => {
+  it('keeps the same bars on screen when older bars are added in front', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.scrollBy(-1500);
+    const before = vp.getState().visibleRange;
+    vp.prependBars(200);
+    vp.updateData(bars(700), false);
+    const after = vp.getState().visibleRange;
+    expect(after.from).toBe(before.from + 200);
+    expect(after.to).toBe(before.to + 200);
+  });
+
+  it('stays at the live edge', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(500), false);
+    vp.scrollToEnd();
+    vp.prependBars(100);
+    vp.updateData(bars(600), false);
+    expect(vp.isAtEnd()).toBe(true);
+  });
+});

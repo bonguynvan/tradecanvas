@@ -494,6 +494,58 @@
   position: relative;
 }
 
+/* === History pill (older bars loading at the left edge) === */
+
+.tcw-history-pill {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius-xl);
+  background: var(--tcw-bg-elevated);
+  box-shadow: var(--tcw-shadow-sm);
+  color: var(--tcw-text-muted);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  opacity: 1;
+  transition: opacity var(--tcw-dur-normal) var(--tcw-ease-out);
+  pointer-events: none;
+}
+
+.tcw-history-pill--hidden {
+  opacity: 0;
+}
+
+.tcw-history-pill--error {
+  border-color: color-mix(in srgb, var(--tcw-red) 45%, var(--tcw-border));
+  color: var(--tcw-red);
+}
+
+.tcw-history-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--tcw-accent-soft);
+  border-top-color: var(--tcw-accent);
+  border-radius: 50%;
+  animation: tcw-history-spin 0.8s linear infinite;
+}
+
+.tcw-history-pill--error .tcw-history-spinner {
+  border-color: currentColor;
+  animation: none;
+}
+
+@keyframes tcw-history-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* === Loading overlay (candle skeleton) === */
 
 .tcw-loading-overlay {

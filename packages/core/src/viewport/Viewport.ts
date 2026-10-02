@@ -254,6 +254,18 @@ export class Viewport {
     }
   }
 
+  /**
+   * `count` bars were added in front of the data: move the view by as many
+   * slots, so the same bars stay on screen.
+   */
+  prependBars(count: number): void {
+    if (count <= 0) return;
+    this.dataLength += count;
+    this.state.offset += count * (this.state.barWidth + this.state.barSpacing);
+    this.invalidate();
+    this.updateVisibleRange();
+  }
+
   setPriceRange(min: number, max: number): void {
     this.state.priceRange = { min, max };
     this.invalidate();

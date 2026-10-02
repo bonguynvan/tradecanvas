@@ -163,4 +163,22 @@ describe('WebSocketAdapter', () => {
     const { adapter, history } = makeAdapter(() => null);
     await expect(adapter.fetchHistory('BTCUSDT', '1m', 10)).resolves.toEqual(history);
   });
+
+  it('pages older history only when given a fetcher for it', async () => {
+    const { adapter } = makeAdapter(() => null);
+    expect(adapter.fetchHistoryBefore).toBeUndefined();
+
+    const older: OHLCBar[] = [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }];
+    const fetchHistoryBefore = vi.fn().mockResolvedValue(older);
+    const paging = new WebSocketAdapter({
+      name: 'paging',
+      wsUrl: () => 'wss://example',
+      fetchHistory: vi.fn().mockResolvedValue([]),
+      fetchHistoryBefore,
+      parseMessage: () => null,
+      socketFactory: () => new MockSocket(),
+    });
+    await expect(paging.fetchHistoryBefore?.('BTCUSDT', '1m', 60_000, 100)).resolves.toEqual(older);
+    expect(fetchHistoryBefore).toHaveBeenCalledWith('BTCUSDT', '1m', 60_000, 100);
+  });
 });

@@ -1,5 +1,7 @@
 export { Chart } from './Chart.js';
 export { DataManager } from './DataManager.js';
+export { HISTORY_RETRY_MS, DEFAULT_HISTORY_PAGE_SIZE } from './HistoryPager.js';
+export type { HistoryLoader } from './HistoryPager.js';
 export { ThemeManager } from './ThemeManager.js';
 export { LayoutManager } from './layout/LayoutManager.js';
 export * from './plugins/index.js';
