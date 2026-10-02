@@ -1,4 +1,4 @@
-import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import type { Point, ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
 
@@ -10,11 +10,11 @@ export class CrosshairHandler {
   private position: Point | null = null;
   private callback: CrosshairCallback | null = null;
   private data: DataSeries = [];
-  private tzOffsetMinutes: number | null = null;
+  private tz: TimeZoneSetting = null;
 
-  /** null = browser-local timezone; a number = fixed UTC offset in minutes. */
-  setTimezoneOffset(minutes: number | null): void {
-    this.tzOffsetMinutes = minutes;
+  /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
+  setTimezoneOffset(tz: TimeZoneSetting): void {
+    this.tz = tz;
   }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
@@ -240,7 +240,7 @@ export class CrosshairHandler {
   ): void {
     if (data.length === 0) return;
     // Past either end of the data the time is extrapolated.
-    const timeText = formatBarTime(barIndexToTime(slot, data), this.tzOffsetMinutes);
+    const timeText = formatBarTime(barIndexToTime(slot, data), this.tz);
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,
@@ -353,9 +353,9 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.restore();
 }
 
-function formatBarTime(rawTime: number, tzOffsetMinutes: number | null): string {
+function formatBarTime(rawTime: number, tz: TimeZoneSetting): string {
   const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
-  const parts = timeParts(ms, tzOffsetMinutes);
+  const parts = timeParts(ms, tz);
   const { year, month: m, day, hours: h, minutes: mm } = parts;
   // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the
   // year takes that space instead — `${m}/${day}` alone is ambiguous once bars span years apart.

@@ -94,3 +94,16 @@ describe('isRegularSession — split session (midday recess)', () => {
     expect(isRegularSession(at(5, 0), cfg)).toBe(false);  // between windows
   });
 });
+
+describe('isRegularSession in an IANA zone', () => {
+  // NYSE: 09:30–16:00 New York time, through daylight saving changes.
+  const nyse = { startMinute: 570, endMinute: 960, timeZone: 'America/New_York' };
+
+  it('opens at 09:30 local time in winter and in summer', () => {
+    expect(isRegularSession(Date.UTC(2026, 0, 15, 14, 30), nyse)).toBe(true);
+    expect(isRegularSession(Date.UTC(2026, 0, 15, 13, 30), nyse)).toBe(false);
+    expect(isRegularSession(Date.UTC(2026, 6, 15, 13, 30), nyse)).toBe(true);
+    expect(isRegularSession(Date.UTC(2026, 6, 15, 20, 0), nyse)).toBe(false);
+  });
+});
+

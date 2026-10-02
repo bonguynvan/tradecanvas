@@ -77,3 +77,23 @@ describe('SessionBreaks — month-boundary label', () => {
     expect(fillTextCalls.some((t) => t.includes('thg') || /\d{1,2}\/\d{4}/.test(t))).toBe(true);
   });
 });
+
+describe('SessionBreaks in the display timezone', () => {
+  it('breaks the day at midnight in the chart’s timezone, not the browser’s', () => {
+    // 1h bars from 2026-07-01 00:00 UTC: midnight in New York (EDT) is 04:00 UTC.
+    const start = Date.UTC(2026, 6, 1);
+    const data: DataSeries = Array.from({ length: 30 }, (_, i) => ({
+      time: start + i * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const breaks = new SessionBreaks();
+    breaks.setConfig({ visible: true });
+    breaks.setTimezone('America/New_York');
+    const found = (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number }[] }).computeBreaksTyped(data);
+    expect(found.map((b) => b.idx)).toEqual([4, 28]);
+
+    breaks.setTimezone(0);
+    const utcBreaks = (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number }[] }).computeBreaksTyped(data);
+    expect(utcBreaks.map((b) => b.idx)).toEqual([24]);
+  });
+});
+

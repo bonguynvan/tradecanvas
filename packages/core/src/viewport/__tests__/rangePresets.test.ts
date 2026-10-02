@@ -43,3 +43,18 @@ describe('rangePresetStart', () => {
     expect(rangePresetStart('All', end)).toBeNull();
   });
 });
+
+describe('rangePresetStart in an IANA zone', () => {
+  it('starts YTD at midnight on 1 January in the zone', () => {
+    // New York is on EST in January: midnight there is 05:00 UTC.
+    expect(rangePresetStart('YTD', utc(2026, 7, 1), 'America/New_York')).toBe(utc(2026, 1, 1, 5));
+  });
+
+  it('keeps the wall-clock time across a daylight-saving change', () => {
+    // 1M back from 10:00 EDT on 15 April is 10:00 EST on 15 March… which is EDT by then (DST began 8 March).
+    expect(rangePresetStart('1M', utc(2026, 4, 15, 14), 'America/New_York')).toBe(utc(2026, 3, 15, 14));
+    // 6M back from 10:00 EDT in July is 10:00 EST in January: 15:00 UTC.
+    expect(rangePresetStart('6M', utc(2026, 7, 15, 14), 'America/New_York')).toBe(utc(2026, 1, 15, 15));
+  });
+});
+

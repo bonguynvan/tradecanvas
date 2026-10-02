@@ -148,6 +148,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
     tryThis: [
       'Click 1M, 3M or 6M under the chart; Alt+G goes to a date',
       'Alt+I turns the price scale upside down; the log scale is in Settings',
+      'Settings → Timezone: pick New York or Tokyo — axis, day breaks and YTD follow it, daylight saving included',
       'Star a timeframe in the ▾ menu next to the timeframe buttons',
       'Turn on the ↻ button in the left toolbar to draw several lines in a row; Ctrl+C / Ctrl+V copies them',
     ],

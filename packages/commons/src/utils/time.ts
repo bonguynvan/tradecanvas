@@ -1,4 +1,5 @@
 import type { KnownTimeFrame, TimeFrame, TimeFrameUnit } from '../types/ohlc.js';
+import { offsetAt, type TimeZoneSetting } from './timezone.js';
 
 const TIMEFRAME_MS: Record<KnownTimeFrame, number> = {
   '1s': 1_000,
@@ -87,11 +88,12 @@ export interface TimeParts {
 }
 
 /**
- * Calendar parts of a timestamp in either the browser-local timezone
- * (`tzOffsetMinutes === null`) or a fixed UTC offset (e.g. -300 for EST).
+ * Calendar parts of a timestamp in a display timezone: an IANA zone
+ * (`'America/New_York'`, daylight saving time included), a fixed UTC offset in
+ * minutes (e.g. -300 for EST) or the browser's zone (`null`).
  */
-export function timeParts(timeMs: number, tzOffsetMinutes: number | null): TimeParts {
-  if (tzOffsetMinutes === null) {
+export function timeParts(timeMs: number, tz: TimeZoneSetting): TimeParts {
+  if (tz === null) {
     const d = new Date(timeMs);
     return {
       year: d.getFullYear(),
@@ -101,7 +103,7 @@ export function timeParts(timeMs: number, tzOffsetMinutes: number | null): TimeP
       minutes: d.getMinutes(),
     };
   }
-  const d = new Date(timeMs + tzOffsetMinutes * 60_000);
+  const d = new Date(timeMs + offsetAt(tz, timeMs) * 60_000);
   return {
     year: d.getUTCFullYear(),
     month: d.getUTCMonth() + 1,
@@ -123,9 +125,9 @@ export function isDateOnly(parts: Pick<TimeParts, 'hours' | 'minutes'>): boolean
   return parts.hours === 0 && parts.minutes === 0;
 }
 
-/** A short timezone label like `UTC-5` or `UTC+5:30` (browser-local when null). */
-export function tzLabel(tzOffsetMinutes: number | null): string {
-  const min = tzOffsetMinutes === null ? -new Date().getTimezoneOffset() : tzOffsetMinutes;
+/** A short label like `UTC-5` or `UTC+5:30` for the offset in force at `atMs` (default: now). */
+export function tzLabel(tz: TimeZoneSetting, atMs: number = Date.now()): string {
+  const min = offsetAt(tz, atMs);
   const sign = min >= 0 ? '+' : '-';
   const abs = Math.abs(min);
   const h = Math.floor(abs / 60);

@@ -120,6 +120,13 @@ export {
 // Re-export data utilities
 export { normalizeBarTime, normalizeBar } from '@tradecanvas/commons';
 
+// Timeframes of any length, resampling, and display time zones
+export {
+  parseTimeframe, isTimeFrame, timeframeToMs, resampleBars, pickBaseTimeframe,
+  isValidTimeZone, zoneOffsetMinutes, offsetAt, wallToUtc,
+} from '@tradecanvas/commons';
+export type { KnownTimeFrame, TimeFrameUnit, TimeZoneSetting, HistoryLoadPayload } from '@tradecanvas/commons';
+
 // Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)
 export { PRICE_SOURCES, isPriceSource, sourcePrice, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 export type {
@@ -144,7 +151,7 @@ export {
 export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 

@@ -5,3 +5,4 @@ export * from './time.js';
 export * from './precision.js';
 export * from './priceSource.js';
 export * from './resample.js';
+export * from './timezone.js';

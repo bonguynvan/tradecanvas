@@ -133,6 +133,12 @@ export interface ChartOptions {
    * resting position).
    */
   freePan?: boolean;
+  /**
+   * Timezone for the time axis, crosshair, tooltip, day breaks and range
+   * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
+   * fixed offset in minutes east of UTC, or null (default) for the browser's.
+   */
+  timeZone?: string | number | null;
   /** Bounds for free panning. */
   panLimits?: { minVisibleBars?: number };
 }

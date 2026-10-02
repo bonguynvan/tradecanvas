@@ -41,4 +41,20 @@
   - ChartWidget: the timeframe menu takes a typed interval (`7`, `90`, `2h`,
     `3D`, `1W`, `2M`). It is added, pinned, remembered and removable with an
     ×; `customTimeframes: false` hides the field. New `parseTimeframeInput`.
+- **Time zones with daylight saving time.**
+  - New `chart.setTimezone(tz)` / `getTimezone()` and `ChartOptions.timeZone`.
+    `tz` is an IANA zone (`'America/New_York'`), a fixed offset in minutes,
+    or null for the browser's zone. An unknown zone throws a RangeError.
+    `setTimezoneOffset` still works.
+  - The zone applies to the time axis and its `UTC-4` tag, the crosshair pill,
+    the tooltip, day/week/month breaks, the range presets and go-to-date.
+    Before, day breaks always followed the browser's zone.
+  - Session hours take `timeZone`, so NYSE's 09:30–16:00 holds through
+    daylight-saving changes.
+  - New commons helpers: `TimeZoneSetting`, `isValidTimeZone`,
+    `zoneOffsetMinutes`, `offsetAt`, `wallToUtc`, `zonedDateFormatter`.
+    `timeParts` and `tzLabel` accept a zone.
+  - ChartWidget's timezone setting lists 28 zones by city, each with the offset
+    in force (older fixed-offset settings still apply).
+  - YTD now starts on the bar at 1 January 00:00 instead of the one after it.
 - The widget's replay bar sits above the time axis.

@@ -29,11 +29,12 @@ import type {
   ConnectionInfo,
   TimeFrame,
   DataAdapter,
+  TimeZoneSetting,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
+import { isValidTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -162,7 +163,7 @@ export class Chart {
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
   /** Display timezone, minutes east of UTC; null = the browser's. */
-  private displayTzOffset: number | null = null;
+  private displayTz: TimeZoneSetting = null;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   private compareRenderer: CompareRenderer;
@@ -763,6 +764,8 @@ export class Chart {
       this.engine.requestRender(hoverOnly ? LayerType.Hover : LayerType.Overlay);
     });
     this.interactionManager.attach();
+
+    if (options.timeZone !== undefined && options.timeZone !== null) this.setTimezone(options.timeZone);
 
     // Set render context
     this.syncRenderContext();
@@ -1898,14 +1901,16 @@ export class Chart {
     const last = data.length - 1;
     // Bars may carry seconds rather than milliseconds; the calendar works in ms.
     const unit = data[last].time > SECONDS_TIME_LIMIT ? 1 : 1000;
-    const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTzOffset);
+    const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTz);
     const start = startMs === null ? null : startMs / unit;
     if (start === null || start < data[0].time) {
       this.fitContent();
       return;
     }
-    // The first bar after `start`, so "1D" on 1-minute bars is 1440 bars, not 1441.
-    const first = Math.min(last, Math.floor(timestampToBarIndex(start, data)) + 1);
+    // The first bar after `start`, so "1D" on 1-minute bars is 1440 bars, not
+    // 1441; YTD starts on the year's first bar, the one at 1 January 00:00.
+    const at = timestampToBarIndex(start, data);
+    const first = Math.min(last, preset === 'YTD' ? Math.ceil(at) : Math.floor(at) + 1);
     this.viewport.zoomToBarRange(first, last + this.viewport.getRightMargin());
     this.viewport.scrollToEnd();
     this.updateViewportAndRender();
@@ -2168,16 +2173,29 @@ export class Chart {
   }
 
   /**
-   * Set the timezone for time-axis labels and the crosshair time pill.
-   * `null` = browser-local; a number = fixed UTC offset in minutes (e.g. -300
-   * for EST, 330 for IST).
+   * The timezone for the time axis, crosshair, tooltip, day breaks and range
+   * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
+   * fixed offset in minutes east of UTC (`-300`, `330`), or null for the
+   * browser's. Throws a RangeError for a zone the browser doesn't know.
    */
+  setTimezone(tz: TimeZoneSetting): void {
+    if (typeof tz === 'string' && !isValidTimeZone(tz)) throw new RangeError(`Unknown time zone: ${tz}`);
+    if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
+    this.displayTz = tz;
+    this.timeAxis.setTimezoneOffset(tz);
+    this.crosshairHandler.setTimezoneOffset(tz);
+    this.crosshairTooltip.setTimezoneOffset(tz);
+    this.sessionBreaks.setTimezone(tz);
+    this.engine.requestRender();
+  }
+
+  getTimezone(): TimeZoneSetting {
+    return this.displayTz;
+  }
+
+  /** `setTimezone` with a fixed offset in minutes east of UTC, or null for the browser's zone. */
   setTimezoneOffset(minutes: number | null): void {
-    this.displayTzOffset = minutes;
-    this.timeAxis.setTimezoneOffset(minutes);
-    this.crosshairHandler.setTimezoneOffset(minutes);
-    this.crosshairTooltip.setTimezoneOffset(minutes);
-    this.engine.requestRender(LayerType.UI);
+    this.setTimezone(minutes);
   }
 
   // --- Pivot / swing markers ---

@@ -1,4 +1,5 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Theme, TimeFrame } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import { settingToTimezone } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
@@ -886,10 +887,9 @@ export class ChartWidget {
     });
   }
 
-  /** The display timezone from the settings: minutes east of UTC, null = local. */
-  private displayTzOffset(): number | null {
-    const tz = this.settingsState.timezone;
-    return tz === 'local' || !Number.isFinite(Number(tz)) ? null : Number(tz);
+  /** The display timezone from the settings. */
+  private displayTimezone(): TimeZoneSetting {
+    return settingToTimezone(this.settingsState.timezone);
   }
 
   private toggleGoToDate(): void {
@@ -901,13 +901,13 @@ export class ChartWidget {
     const data = this.chart.getData();
     if (data.length === 0) return;
     this.goToDate.open(
-      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTzOffset()),
+      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTimezone()),
       this.root.querySelector('[data-role="goto"]'),
     );
   }
 
   private goToWallTime(date: string, time: string): void {
-    const ms = wallTimeToUtc(date, time, this.displayTzOffset());
+    const ms = wallTimeToUtc(date, time, this.displayTimezone());
     const data = this.chart.getData();
     if (ms === null || data.length === 0) return;
     const ts = ms / barTimeUnit(data); // the bars' own unit
@@ -1780,7 +1780,7 @@ export class ChartWidget {
       this.watchlist?.setLocale(patch.numberLocale || undefined);
     }
     if (patch.timezone !== undefined) {
-      this.chart.setTimezoneOffset(patch.timezone === 'local' ? null : Number(patch.timezone));
+      this.chart.setTimezone(settingToTimezone(patch.timezone));
     }
 
     // Apply theme colors

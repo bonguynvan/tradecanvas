@@ -1,3 +1,5 @@
+import { offsetAt, wallToUtc, type TimeZoneSetting } from '@tradecanvas/commons';
+
 /** Spans that end at the last bar, as on a chart's range bar. */
 export type RangePreset = '1D' | '5D' | '1M' | '3M' | '6M' | 'YTD' | '1Y' | '5Y' | 'All';
 
@@ -19,35 +21,18 @@ function addMonthsUtc(t: number, months: number): number {
   );
 }
 
-/** The same, on the browser's own calendar (daylight saving included). */
-function addMonthsLocal(t: number, months: number): number {
-  const d = new Date(t);
-  const month = d.getMonth() + months;
-  const lastDay = new Date(d.getFullYear(), month + 1, 0).getDate();
-  return new Date(
-    d.getFullYear(), month, Math.min(d.getDate(), lastDay),
-    d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds(),
-  ).getTime();
-}
-
 /**
  * Where the preset's span starts when it ends at `end` (ms): days are counted
  * back from `end`, months and YTD in calendar terms in the display timezone
- * (`tzOffsetMinutes` east of UTC; null = the browser's). Null for 'All'.
+ * (an IANA zone, minutes east of UTC, or null for the browser's), keeping the
+ * wall-clock time across daylight-saving changes. Null for 'All'.
  */
-export function rangePresetStart(preset: RangePreset, end: number, tzOffsetMinutes: number | null = 0): number | null {
+export function rangePresetStart(preset: RangePreset, end: number, tz: TimeZoneSetting = 0): number | null {
   if (preset === 'All') return null;
   if (preset === '1D') return end - DAY_MS;
   if (preset === '5D') return end - 5 * DAY_MS;
 
-  const months = PRESET_MONTHS[preset] ?? 0;
-  if (tzOffsetMinutes === null) {
-    // The browser's zone: its own calendar knows when the clocks change.
-    if (preset === 'YTD') return new Date(new Date(end).getFullYear(), 0, 1).getTime();
-    return addMonthsLocal(end, -months);
-  }
-  const offset = tzOffsetMinutes * MINUTE_MS;
-  const wall = end + offset; // the display timezone's wall clock, as UTC
-  if (preset === 'YTD') return Date.UTC(new Date(wall).getUTCFullYear(), 0, 1) - offset;
-  return addMonthsUtc(wall, -months) - offset;
+  const wall = end + offsetAt(tz, end) * MINUTE_MS; // the zone's wall clock, as UTC
+  if (preset === 'YTD') return wallToUtc(Date.UTC(new Date(wall).getUTCFullYear(), 0, 1), tz);
+  return wallToUtc(addMonthsUtc(wall, -(PRESET_MONTHS[preset] ?? 0)), tz);
 }

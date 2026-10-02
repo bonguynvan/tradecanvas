@@ -257,7 +257,7 @@ export interface ChartSettingsState {
   invertScale: boolean;
   crosshairMode: 'normal' | 'magnet' | 'hidden';
   numberLocale: string;
-  /** 'local' = browser timezone, otherwise a fixed UTC offset in minutes (as a string). */
+  /** 'local' = browser timezone; an IANA zone ('America/New_York'); or a fixed UTC offset in minutes (as a string, from older settings). */
   timezone: string;
 }
 

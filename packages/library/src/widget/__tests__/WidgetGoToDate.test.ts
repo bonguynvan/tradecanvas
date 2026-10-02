@@ -88,3 +88,16 @@ describe('WidgetGoToDate', () => {
     expect(popover.isOpen()).toBe(false);
   });
 });
+
+describe('wallTimeToUtc / utcToWallTime in an IANA zone', () => {
+  it('reads and writes the wall clock in the zone, daylight saving included', () => {
+    expect(wallTimeToUtc('2026-01-15', '09:30', 'America/New_York')).toBe(Date.UTC(2026, 0, 15, 14, 30));
+    expect(wallTimeToUtc('2026-07-15', '09:30', 'America/New_York')).toBe(Date.UTC(2026, 6, 15, 13, 30));
+    expect(utcToWallTime(Date.UTC(2026, 6, 15, 13, 30), 'America/New_York')).toEqual({ date: '2026-07-15', time: '09:30' });
+  });
+
+  it('still rejects a date that does not exist', () => {
+    expect(wallTimeToUtc('2026-02-31', '10:00', 'America/New_York')).toBeNull();
+  });
+});
+
