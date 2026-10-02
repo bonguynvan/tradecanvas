@@ -1,33 +1,11 @@
 import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
-import { createIcon } from './icons.js';
+import { createIcon, createToolIcon } from './icons.js';
 
-const GROUP_ICONS = [
-  'trendingUp', 'minus', 'penLine', 'hash', 'square', 'gitBranch', 'zigzag', 'ruler', 'type', 'ladder',
-];
+/** Drawing tool icons carry more detail than interface glyphs: a size up. */
+const TOOL_ICON_PX = 16;
 
 /** How long a tool menu stays after the pointer leaves it. */
 const FLYOUT_CLOSE_DELAY_MS = 150;
-
-/** Icon for a drawing tool in the favorites strip — falls back to a pen. */
-const TOOL_ICONS: Record<string, string> = {
-  trendLine: 'trendingUp', ray: 'trendingUp', extendedLine: 'trendingUp',
-  infoLine: 'trendingUp', trendAngle: 'trendingUp',
-  horizontalLine: 'minus', horizontalRay: 'minus', verticalLine: 'penLine', crossLine: 'plus',
-  rectangle: 'square', circle: 'square', ellipse: 'square', triangle: 'square', arrow: 'trendingUp',
-  parallelChannel: 'gitBranch', regressionChannel: 'gitBranch',
-  pitchfork: 'gitBranch', schiffPitchfork: 'gitBranch', modifiedSchiffPitchfork: 'gitBranch',
-  fibRetracement: 'hash', fibExtension: 'hash', fibTimeZones: 'hash', fibChannel: 'hash', fibSpeedResistanceFan: 'hash',
-  gannBox: 'hash', gannFan: 'gitBranch', cyclicLines: 'barChart',
-  elliottWave: 'zigzag', xabcdPattern: 'zigzag', abcdPattern: 'zigzag', headAndShoulders: 'zigzag',
-  priceRange: 'ruler', dateRange: 'ruler', dateAndPriceRange: 'ruler', measure: 'ruler',
-  text: 'type', textAnnotation: 'type', priceLabel: 'type',
-  anchoredVWAP: 'trendingUp', volumeProfileRange: 'barChart',
-  riskReward: 'square',
-};
-
-function toolIcon(tool: string): string {
-  return TOOL_ICONS[tool] ?? 'penLine';
-}
 
 /** Human label for a tool id, sourced from the configured groups. */
 function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): string {
@@ -44,6 +22,9 @@ export class WidgetDrawingSidebar {
   private el: HTMLDivElement;
   private groupWraps: HTMLDivElement[] = [];
   private groupButtons: HTMLButtonElement[] = [];
+  /** Per group, the icon holder in its button and the tool it stands for (the last one used). */
+  private groupIcons: HTMLSpanElement[] = [];
+  private groupTools: string[] = [];
   private cursorBtn: HTMLButtonElement | null = null;
   private magnetBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
@@ -94,8 +75,17 @@ export class WidgetDrawingSidebar {
 
       const btn = document.createElement('button');
       btn.className = 'tcw-sidebar-btn';
-      btn.title = group.label;
-      btn.innerHTML = createIcon(GROUP_ICONS[idx] ?? 'square', 14);
+      // A group with a menu names itself in the menu's header: no tooltip on top of it.
+      if (group.tools.length > 1) btn.setAttribute('aria-label', group.label);
+      else btn.title = group.label;
+      // The group shows, and picks, its last used tool — the first until then.
+      const tool = group.tools[0]?.value ?? '';
+      const icon = document.createElement('span');
+      icon.className = 'tcw-sidebar-icon';
+      icon.innerHTML = createToolIcon(tool, TOOL_ICON_PX);
+      btn.appendChild(icon);
+      this.groupIcons.push(icon);
+      this.groupTools.push(tool);
 
       if (group.tools.length > 1) {
         const dot = document.createElement('span');
@@ -103,7 +93,7 @@ export class WidgetDrawingSidebar {
         btn.appendChild(dot);
       }
 
-      btn.addEventListener('click', () => callbacks.onDrawingTool(group.tools[0].value));
+      btn.addEventListener('click', () => callbacks.onDrawingTool(this.groupTools[idx] as never));
       wrap.appendChild(btn);
 
       // Flyout events via JS (not CSS hover)
@@ -193,7 +183,7 @@ export class WidgetDrawingSidebar {
       btn.className = 'tcw-sidebar-btn';
       btn.title = `${toolLabel(this.config.drawingToolGroups, tool)} (right-click to unpin)`;
       btn.dataset.toolValue = tool;
-      btn.innerHTML = createIcon(toolIcon(tool), 14);
+      btn.innerHTML = createToolIcon(tool, TOOL_ICON_PX);
       btn.addEventListener('click', () => this.callbacks.onDrawingTool(tool as never));
       btn.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -225,7 +215,10 @@ export class WidgetDrawingSidebar {
     for (const tool of group.tools) {
       const item = document.createElement('button');
       item.className = 'tcw-flyout-item';
-      item.textContent = tool.label;
+      item.innerHTML = createToolIcon(tool.value, TOOL_ICON_PX);
+      const name = document.createElement('span');
+      name.textContent = tool.label;
+      item.appendChild(name);
       item.dataset.toolValue = tool.value;
       item.addEventListener('click', () => {
         this.callbacks.onDrawingTool(tool.value);
@@ -233,13 +226,19 @@ export class WidgetDrawingSidebar {
       });
       if (this.callbacks.onToggleFavorite) {
         if (this.favorites.includes(tool.value)) item.classList.add('tcw-flyout-faved');
-        item.title = 'Right-click to pin/unpin';
         item.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           this.callbacks.onToggleFavorite?.(tool.value);
         });
       }
       flyout.appendChild(item);
+    }
+    if (this.callbacks.onToggleFavorite) {
+      // Said once for the menu rather than as a tooltip on every row.
+      const hint = document.createElement('div');
+      hint.className = 'tcw-flyout-hint';
+      hint.textContent = 'Right-click a tool to pin it';
+      flyout.appendChild(hint);
     }
 
     this.flyoutEl = flyout;
@@ -280,11 +279,15 @@ export class WidgetDrawingSidebar {
       this.cursorBtn.classList.toggle('tcw-active', state.activeTool === null);
     }
 
-    // Group buttons
+    // Group buttons: the active group lights up and takes on the picked tool's icon.
     const { drawingToolGroups } = this.config;
     for (let i = 0; i < drawingToolGroups.length; i++) {
       const isActive = drawingToolGroups[i].tools.some(t => t.value === state.activeTool);
       this.groupButtons[i].classList.toggle('tcw-active', isActive);
+      if (isActive && state.activeTool && state.activeTool !== this.groupTools[i]) {
+        this.groupTools[i] = state.activeTool;
+        this.groupIcons[i].innerHTML = createToolIcon(state.activeTool, TOOL_ICON_PX);
+      }
     }
 
     // Flyout items

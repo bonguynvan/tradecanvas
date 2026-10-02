@@ -12,6 +12,42 @@
   display: none !important;
 }
 
+/* Control tooltips (WidgetTooltip): quick to appear, slide in from the control. */
+.tcw-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  max-width: 240px;
+  padding: 5px 8px;
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-tooltip-bg);
+  color: var(--tcw-tooltip-fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(var(--tcw-tip-dx, 0), var(--tcw-tip-dy, 0));
+  transition:
+    opacity 110ms var(--tcw-ease-out),
+    transform 110ms var(--tcw-ease-out),
+    visibility 0s linear 110ms;
+}
+
+.tcw-tooltip--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 110ms var(--tcw-ease-out),
+    transform 110ms var(--tcw-ease-out),
+    visibility 0s;
+}
+
 /* The modal portal: carries the tokens and fonts, but no box of its own. */
 .tcw-root.tcw-portal {
   display: contents;
@@ -46,6 +82,8 @@
   --tcw-bg-overlay: rgba(20, 25, 34, 0.5);
   --tcw-border: #1f2630;
   --tcw-border-strong: #2a323e;
+  --tcw-tooltip-bg: #262e3a;
+  --tcw-tooltip-fg: #eef0f4;
   --tcw-text: #e7e9ee;
   --tcw-text-dim: #aab1bd;
   --tcw-text-muted: #758091;
@@ -102,6 +140,8 @@
   --tcw-bg-overlay: rgba(255, 255, 255, 0.75);
   --tcw-border: #e3e6eb;
   --tcw-border-strong: #d2d6dd;
+  --tcw-tooltip-bg: #1f2630;
+  --tcw-tooltip-fg: #f4f5f8;
   --tcw-text: #0c1016;
   --tcw-text-dim: #3f4754;
   --tcw-text-muted: #626a77;
@@ -381,6 +421,22 @@
 .tcw-dropdown-item:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
+}
+
+/* A menu row led by an icon (chart types): icon then label, not spread apart. */
+.tcw-dropdown-item--icon {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.tcw-dropdown-item svg,
+.tcw-flyout-item svg {
+  flex-shrink: 0;
+}
+
+/* The drawing-group button's icon holder: a plain box for the swapped SVG. */
+.tcw-sidebar-icon {
+  display: inline-flex;
 }
 
 .tcw-dropdown-item.tcw-active {
@@ -774,13 +830,23 @@
   font-weight: 600;
 }
 
+.tcw-flyout-hint {
+  padding: 6px 10px 2px;
+  border-top: 1px solid var(--tcw-border);
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--tcw-text-muted);
+}
+
 .tcw-flyout-item {
   padding: 7px 10px;
   font-size: 12.5px;
   color: var(--tcw-text-dim);
   cursor: pointer;
   width: 100%;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border: none;
   background: transparent;
   text-align: left;

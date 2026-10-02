@@ -1,6 +1,6 @@
 import type { ChartType, TimeFrame } from '@tradecanvas/commons';
 import type { ToolbarConfig, ToolbarCallbacks, WidgetState, ActiveIndicator } from './types.js';
-import { createIcon } from './icons.js';
+import { createChartTypeIcon, createIcon } from './icons.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import type { Translator } from './i18n.js';
 
@@ -174,7 +174,7 @@ export class WidgetToolbar {
   private buildChartTypeMenu(): void {
     if (!this.chartTypeDropdown) return;
     const items = this.config.chartTypes.map(ct =>
-      `<button class="tcw-dropdown-item" data-ct="${ct.value}">${this.chartTypeLabel(ct)}</button>`
+      `<button class="tcw-dropdown-item tcw-dropdown-item--icon" data-ct="${ct.value}">${createChartTypeIcon(ct.value, 16)}<span>${this.chartTypeLabel(ct)}</span></button>`
     ).join('');
     this.chartTypeDropdown.setContent(items);
 
@@ -287,7 +287,7 @@ export class WidgetToolbar {
     if (ctTrigger) {
       const ct = this.config.chartTypes.find(ct => ct.value === state.chartType);
       const label = ct ? this.chartTypeLabel(ct) : state.chartType;
-      ctTrigger.innerHTML = `${createIcon('barChart', 14)} ${label} ${createIcon('chevronDown', 12)}`;
+      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} ${label} ${createIcon('chevronDown', 12)}`;
     }
 
     // Indicator trigger + badge

@@ -21,6 +21,7 @@ import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
+import { WidgetTooltip } from './WidgetTooltip.js';
 import { RANGE_PRESETS } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
@@ -85,6 +86,7 @@ export class ChartWidget {
   private settings: WidgetSettings | null = null;
   private statusBar: WidgetStatusBar | null = null;
   private goToDate: WidgetGoToDate | null = null;
+  private readonly tooltip: WidgetTooltip;
   /**
    * Modals (settings, search, command palette, hotkeys) mount here: it carries
    * the theme tokens to `document.body`, and moves inside the widget while
@@ -245,6 +247,7 @@ export class ChartWidget {
     this.root.className = 'tcw-root';
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     container.appendChild(this.root);
+    this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
 
@@ -741,6 +744,7 @@ export class ChartWidget {
     }
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
     this.root.removeEventListener('pointerdown', this.onRootPointerDown, true);
+    this.tooltip.destroy();
     if (lastPressedWidget === this) lastPressedWidget = null;
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
