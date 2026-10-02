@@ -11,6 +11,8 @@ export interface AlertListItem {
   triggered: boolean;
   channel?: string;
   label?: string;
+  /** Set for an alert on a drawing: its price follows the drawing's line. */
+  drawingId?: string;
 }
 
 export interface AlertSource {
@@ -235,8 +237,9 @@ export class WidgetAlertsPanel {
       const conditionKey = CONDITION_KEY.get(alert.condition as AlertCondition);
       const label = conditionKey ? this.t(conditionKey) : alert.condition;
       const isIndicator = alert.channel && alert.channel !== 'price';
-      const valueStr = isIndicator ? formatPlain(alert.price) : this.callbacks.formatPrice(alert.price);
-      const prefix = isIndicator && alert.label ? `${alert.label} ` : '';
+      const valueStr = !Number.isFinite(alert.price) ? '—'
+        : isIndicator ? formatPlain(alert.price) : this.callbacks.formatPrice(alert.price);
+      const prefix = (isIndicator || alert.drawingId) && alert.label ? `${alert.label} ` : '';
       main.textContent = `${prefix}${label} ${valueStr}`;
       info.appendChild(main);
       if (alert.message) {

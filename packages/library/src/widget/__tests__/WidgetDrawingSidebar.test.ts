@@ -56,13 +56,62 @@ describe('drawing tool menu', () => {
     expect(flyout()).toBeNull();
   });
 
+  it('stays open on the menu itself, which sits beside the sidebar (so the sidebar can scroll)', () => {
+    const lines = wraps()[0];
+    enter(lines);
+    leave(lines);
+    const menu = flyout()!;
+    enter(menu);
+    vi.advanceTimersByTime(500);
+    expect(flyout()).toBe(menu);
+    expect(lines.contains(menu)).toBe(false);
+    leave(menu);
+    vi.advanceTimersByTime(200);
+    expect(flyout()).toBeNull();
+  });
+
   it('switches straight to another group', () => {
     const [lines, levels] = wraps();
     enter(lines);
     leave(lines);
     enter(levels);
     expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
-    expect(levels.querySelector('.tcw-flyout')).not.toBeNull();
+    expect(flyout()?.querySelector('.tcw-flyout-header')?.textContent).toBe('Horizontal/Vertical');
+  });
+});
+
+describe('drawing tool menu from the keyboard', () => {
+  const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+  const groupButton = (i: number) => wraps()[i].querySelector<HTMLButtonElement>('button')!;
+
+  it('opens with an arrow key, moves with the arrows, and goes back with Escape', () => {
+    const btn = groupButton(0);
+    expect(btn.getAttribute('aria-haspopup')).toBe('menu');
+    btn.focus();
+    key(btn, 'ArrowRight');
+    const menu = flyout()!;
+    expect(menu.getAttribute('role')).toBe('menu');
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    const items = [...menu.querySelectorAll<HTMLElement>('[role=menuitem]')];
+    expect(document.activeElement).toBe(items[0]);
+    key(items[0], 'ArrowDown');
+    expect(document.activeElement).toBe(items[1]);
+    key(items[1], 'ArrowUp');
+    key(items[0], 'ArrowUp'); // wraps to the last
+    expect(document.activeElement).toBe(items.at(-1));
+    key(items.at(-1)!, 'Escape');
+    expect(flyout()).toBeNull();
+    expect(document.activeElement).toBe(btn);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('picks a tool with Enter on its item', () => {
+    const btn = groupButton(0);
+    btn.focus();
+    key(btn, 'ArrowDown');
+    const second = flyout()!.querySelectorAll<HTMLButtonElement>('[role=menuitem]')[1];
+    second.click(); // Enter on a button clicks it
+    expect(picked).toEqual([DRAWING_TOOL_GROUPS[0].tools[1].value]);
   });
 });
 

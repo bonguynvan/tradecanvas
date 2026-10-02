@@ -1,4 +1,5 @@
 import type { ChartType, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import type { AlertCondition, PriceAlert } from './AlertManager.js';
 
 /**
@@ -82,7 +83,8 @@ function asNumber(v: unknown, fallback: number): number {
 function validateDrawing(raw: unknown): DrawingState | null {
   if (!isObject(raw)) return null;
   if (typeof raw.id !== 'string' || typeof raw.type !== 'string') return null;
-  if (!Array.isArray(raw.anchors) || raw.anchors.length === 0) return null;
+  // A freehand stroke has the most points; more is not a chart's drawing.
+  if (!Array.isArray(raw.anchors) || raw.anchors.length === 0 || raw.anchors.length > MAX_ANCHORS) return null;
   if (!isObject(raw.style)) return null;
 
   const anchors: DrawingState['anchors'] = [];
@@ -93,20 +95,33 @@ function validateDrawing(raw: unknown): DrawingState | null {
     anchors.push({ time: a.time, price: a.price });
   }
 
-  const style = raw.style;
-  if (typeof style.color !== 'string' || typeof style.lineWidth !== 'number') {
-    return null;
-  }
+  // Every field of the style is checked: the settings dialog and the
+  // renderers take them as they are.
+  const style = sanitizeDrawingStyle(raw.style);
+  if (style.color === undefined || style.lineWidth === undefined) return null;
 
   return {
     id: raw.id,
     type: raw.type as DrawingState['type'],
     anchors,
-    style: style as unknown as DrawingState['style'],
+    style: { lineStyle: 'solid', ...style, color: style.color, lineWidth: style.lineWidth },
     visible: typeof raw.visible === 'boolean' ? raw.visible : true,
     locked: typeof raw.locked === 'boolean' ? raw.locked : false,
+    // Checked against the tool when the drawings are set on a chart.
+    options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
+    group: validateGroup(raw.group),
     meta: isObject(raw.meta) ? raw.meta : undefined,
   };
+}
+
+const MAX_ANCHORS = 5000;
+const MAX_GROUP_ID = 64;
+const MAX_GROUP_NAME = 80;
+
+function validateGroup(raw: unknown): DrawingState['group'] {
+  if (!isObject(raw) || typeof raw.id !== 'string' || typeof raw.name !== 'string') return undefined;
+  if (raw.id === '' || raw.id.length > MAX_GROUP_ID) return undefined;
+  return { id: raw.id, name: raw.name.slice(0, MAX_GROUP_NAME) };
 }
 
 function validateOrder(raw: unknown): TradingOrder | null {
@@ -133,10 +148,14 @@ const ALERT_CONDITIONS: readonly AlertCondition[] = ['crossingUp', 'crossingDown
 
 function validateAlert(raw: unknown): PriceAlert | null {
   if (!isObject(raw) || typeof raw.id !== 'string') return null;
-  if (typeof raw.price !== 'number' || !Number.isFinite(raw.price)) return null;
+  // An alert on a drawing follows the drawing: its price is only the last level seen.
+  const drawingId = typeof raw.drawingId === 'string' ? raw.drawingId : undefined;
+  const price = typeof raw.price === 'number' && Number.isFinite(raw.price) ? raw.price : null;
+  if (price === null && !drawingId) return null;
   return {
     id: raw.id,
-    price: raw.price,
+    price: price ?? Number.NaN,
+    drawingId,
     condition: ALERT_CONDITIONS.find((c) => c === raw.condition) ?? 'crossing',
     message: typeof raw.message === 'string' ? raw.message : undefined,
     triggered: raw.triggered === true,

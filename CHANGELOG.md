@@ -4,6 +4,16 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Drawing toolkit
+
+- **Each tool has its own settings**: Fibonacci levels (edit, hide, add, colour), prices and percentages, labels left or right, extending lines either way, backgrounds, a wave degree, an icon. Double-clicking a drawing in ChartWidget opens its settings (style, the tool's settings, its points in the chart's time zone); changes show as you make them and Cancel takes them back. "Save as default" keeps a tool's settings for the next drawing, and templates keep settings as well as style. API: `getDrawingOptions` / `setDrawingOptions`, `updateDrawing`, `beginDrawingEdit` / `endDrawingEdit`, `setDrawingToolDefaults`.
+- **Long/Short Position works out the size** from the account and the risk (a percent or an amount): quantity, reward:risk, and each line's price, distance and profit or loss. The target's handle sets the ratio.
+- **Alerts on drawings**: `addDrawingAlert(id, …)` fires when the price crosses a trend line, ray, horizontal line or a channel's lines where they are by then, as drawn on the chart (log scale included). The alert goes with its drawing and comes back with it on undo.
+- **Order, groups and a right-click menu**: bring forward or send back (Ctrl+] / [), group drawings to select, hide and lock them together (Ctrl+G), and a menu on each drawing with settings, an alert, order, group, lock, hide, duplicate and delete. The object tree lists groups with their drawings.
+- **29 new tools (69 in all)**: note, callout, flag, arrow mark and icons; brush, highlighter, path and polyline (a point per click, a double-click or Enter ends them), curve and arc; Fibonacci circles, spiral, speed resistance arcs and wedge, pitchfan, Gann square; Elliott impulse, correction, triangle and combination waves; three drives and cypher patterns; time cycles and sine line; forecast, projection and bars pattern.
+- **An eraser, a zoom tool and a strong magnet**, in the API and the widget's sidebar. On a short screen the sidebar scrolls, and its menus open beside it and work from the keyboard.
+- Fixed on the way: Anchored VWAP and Fixed Range Volume Profile drew nothing (they were never handed the bars); Ctrl+Shift+Z undid instead of redoing; dragging a drawing on a log scale bent it; drawing shortcuts fired inside dialogs.
+
 ### Data and time
 
 - **Zoom out until every loaded bar fits.** Below the old 2 px bar + 2 px gap floor, the bar and its gap keep shrinking (down to a quarter pixel) as long as the loaded bars don't fit yet; a short series still stops at the old floor. Below a pixel per bar, candles, OHLC bars and volume merge per pixel column, so thousands of bars stay readable and cheap to draw. "All" and the 1Y / 5Y presets are no longer capped at about 200 bars.

@@ -81,6 +81,38 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>Herramienta de dibujo personalizada</h2>
+<p>
+  Extiende <code>DrawingBase</code> para usar sus utilidades (de anclas a píxeles,
+  estilos de línea, puntos de control), describe la herramienta y regístrala. La
+  configuración que enumeres en <code>descriptor.options</code> aparece en el
+  diálogo de configuración del widget y se guarda con el dibujo.
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* en this.anchorToPixel(state.anchors[0], viewport) */ }
+  hitTest(point, state, viewport, tolerance) { /* ¿está el puntero sobre él? */ return false }
+  // opcional: los precios de sus líneas, para que una alerta pueda seguirlas
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  El descriptor también puede indicar cómo se dibuja la herramienta
+  (<code>creation</code>: <code>'clicks'</code>, <code>'freehand'</code> o
+  <code>'path'</code>, con <code>maxAnchors</code>) y si el diálogo ofrece un
+  relleno (<code>fill</code>) o texto (<code>text</code>). Una herramienta puede
+  mover puntos de control que no son anclas con <code>moveHandle()</code> y
+  recibe las barras del gráfico mediante <code>setDataGetter()</code> cuando
+  dibuja a partir de ellas.
+</p>
+
 <h2>Tipo de gráfico personalizado</h2>
 <p>Un <code>ChartTypePlugin</code> aporta un renderizador y una transformación de datos opcional; cámbiate a él como a uno integrado:</p>
 <pre><code>{`registerPlugin({

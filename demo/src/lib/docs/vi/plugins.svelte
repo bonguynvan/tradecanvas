@@ -77,6 +77,38 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>Công cụ vẽ tuỳ chỉnh</h2>
+<p>
+  Kế thừa <code>DrawingBase</code> để có sẵn các hàm hỗ trợ (đổi điểm neo ra
+  pixel, kiểu nét, điểm kéo), mô tả công cụ rồi đăng ký nó. Các cài đặt liệt kê
+  trong <code>descriptor.options</code> sẽ hiện trong hộp thoại cài đặt của
+  widget và được lưu cùng hình vẽ.
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* tại this.anchorToPixel(state.anchors[0], viewport) */ }
+  hitTest(point, state, viewport, tolerance) { /* con trỏ có nằm trên nó không? */ return false }
+  // tuỳ chọn: giá của các đường, để cảnh báo có thể bám theo
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  Descriptor còn có thể cho biết công cụ được vẽ ra sao (<code>creation</code>:
+  <code>'clicks'</code>, <code>'freehand'</code> hoặc <code>'path'</code>, kèm
+  <code>maxAnchors</code>) và hộp thoại có cho chọn màu nền
+  (<code>fill</code>) hay chữ (<code>text</code>) hay không. Công cụ có thể
+  di chuyển các điểm kéo không phải điểm neo bằng <code>moveHandle()</code>, và
+  nhận các nến của biểu đồ qua <code>setDataGetter()</code> khi nó vẽ dựa trên
+  chúng.
+</p>
+
 <h2>Loại biểu đồ tuỳ chỉnh</h2>
 <p>Một <code>ChartTypePlugin</code> cung cấp bộ render và một phép biến đổi dữ liệu tuỳ chọn; chuyển sang nó như với một loại có sẵn:</p>
 <pre><code>{`registerPlugin({

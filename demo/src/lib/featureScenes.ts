@@ -57,21 +57,44 @@ export const FEATURE_SCENES: FeatureScene[] = [
   {
     id: 'drawings',
     code: `chart.addDrawing({
-  type: 'xabcdPattern',
-  anchors: [x, a, b, c, d], // { time, price } each
+  type: 'riskReward',               // Long/Short Position
+  anchors: [entry, stop],           // { time, price } each
+  options: { accountSize: 10_000, risk: 1, rewardRatio: 2 },
 })
-chart.setDrawingTool('headAndShoulders') // or let the user draw`,
+chart.addDrawingAlert(trendLine, { condition: 'crossing' })
+chart.groupDrawings([fib, note], 'Swing')`,
     options: () => ({ symbol: 'DEMO', symbols: ['DEMO', 'ALPHA', 'BETA'], timeframe: '1h' }),
     data: (symbol) => generateBars(600, symbol, HOUR, 240),
     setup: (_widget, chart) => {
       const data = chart.getData();
       if (data.length < 120) return;
-      const [x, a, b, c, d] = swings(data, 50, 58, 5, 'low');
-      chart.addDrawing({ type: 'xabcdPattern', anchors: [x, a, b, c, d] });
-      chart.addDrawing({ type: 'headAndShoulders', anchors: swings(data, 49, 4, 7, 'low') });
-      const last = data[data.length - 1];
-      chart.addDrawing({ type: 'priceLabel', anchors: [{ time: last.time, price: last.close }] });
-      chart.addDrawing({ type: 'infoLine', anchors: [x, d] });
+      const n = data.length;
+      // A retracement of a swing in the middle of the view, its high noted.
+      const [low, high] = swings(data, 22, 44, 2, 'low');
+      const fib = chart.addDrawing({
+        type: 'fibRetracement',
+        anchors: [low, high],
+        options: { extendLeft: false, extendRight: false, labelPosition: 'right' },
+      });
+      const note = chart.addDrawing({ type: 'note', anchors: [high], style: { text: 'Swing high: watch the 0.618' } });
+      if (fib && note) chart.groupDrawings([fib, note], 'Swing');
+      // A trend line under the lows, with an alert on it.
+      const line = chart.addDrawing({
+        type: 'trendLine',
+        anchors: [swing(data, n - 80, n - 55, 'low'), swing(data, n - 30, n - 8, 'low')],
+        options: { extendRight: true },
+      });
+      if (line) chart.addDrawingAlert(line, { condition: 'crossing', message: 'Trend line crossed' });
+      // A long position, sized for a 10 000 account risking 1%.
+      const entry = data[n - 22];
+      chart.addDrawing({
+        type: 'riskReward',
+        anchors: [
+          { time: entry.time, price: entry.close },
+          { time: data[n - 3].time, price: entry.close - (high.price - low.price) * 0.2 },
+        ],
+        options: { accountSize: 10_000, risk: 1, rewardRatio: 2 },
+      });
     },
   },
   {

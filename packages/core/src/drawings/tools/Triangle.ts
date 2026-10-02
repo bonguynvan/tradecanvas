@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
 export class TriangleTool extends DrawingBase {
-  descriptor = { type: 'triangle' as const, name: 'Triangle', requiredAnchors: 3 };
+  descriptor = { type: 'triangle' as const, name: 'Triangle', requiredAnchors: 3, fill: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 3) {

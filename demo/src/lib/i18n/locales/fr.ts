@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading en Canvas2D : 17 types de graphiques, 85 indicateurs, 40 outils de dessin, flux en direct des plateformes d’échange, ordres sur le graphique, relecture et backtesting. Zéro dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading en Canvas2D : 17 types de graphiques, 85 indicateurs, 69 outils de dessin, flux en direct des plateformes d’échange, ordres sur le graphique, relecture et backtesting. Zéro dépendance, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const fr: SiteMessages = {
     release: 'rendu sur deux canvas, défilement libre',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 85 indicateurs, 40 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas2D, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 85 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas2D, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -138,13 +138,13 @@ const fr: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Outils de dessin',
-      stat: '40 outils',
+      stat: '69 outils',
       blurb:
-        'Lignes de tendance, d’information et d’angle, canaux et éventails de Fibonacci, fourchettes d’Andrews et de Schiff, XABCD harmonique, tête-épaules, cycles, boîtes de mesure. Aimantation, annuler/rétablir, sauvegarde et restauration en JSON.',
+        'Outils de Fibonacci et de Gann avec vos propres niveaux, vagues d’Elliott, figures harmoniques, notes et pinceaux. Un double-clic sur un dessin ouvre ses paramètres, un clic droit son menu ; les alertes suivent les lignes de tendance, et l’outil de position acheteuse/vendeuse calcule la taille de la position.',
       tryThis: [
-        'Ouvrez le groupe zigzag (Figures) dans la barre d’outils de gauche et placez un ABCD',
-        'Cliquez sur un dessin, faites glisser ses poignées, puis Ctrl+Z',
-        'Les dessins sont ancrés dans le temps : ils survivent aux changements d’unité de temps',
+        'Double-cliquez sur le retracement de Fibonacci et modifiez ses niveaux',
+        'Faites un clic droit sur un dessin : avancez-le d’un plan, groupez-le ou ajoutez une alerte',
+        'Choisissez le pinceau ou l’outil Tracé ; Entrée termine un tracé',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const fr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 40 outils de dessin, liste de suivi, trading, relecture, en 14 langues.',
+        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 69 outils de dessin, liste de suivi, trading, relecture, en 14 langues.',
       },
       react: {
         title: 'React',

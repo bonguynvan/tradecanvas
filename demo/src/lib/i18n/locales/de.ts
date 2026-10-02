@@ -4,7 +4,7 @@ const de: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Canvas-Trading-Charts fürs Web',
     description:
-      'TradeCanvas ist eine Canvas2D-Bibliothek für Trading-Charts: 17 Charttypen, 85 Indikatoren, 40 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting. Keine Abhängigkeiten, MIT.',
+      'TradeCanvas ist eine Canvas2D-Bibliothek für Trading-Charts: 17 Charttypen, 85 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting. Keine Abhängigkeiten, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const de: SiteMessages = {
     release: 'Zwei-Canvas-Renderer, freies Verschieben',
     title: 'Die Chart-Engine für Trading-Apps.',
     ledeHtml:
-      'Von Kerzen bis Renko, 85 Indikatoren, 40 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet auf Canvas2D, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
+      'Von Kerzen bis Renko, 85 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet auf Canvas2D, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
     getStarted: 'Loslegen',
     browseExamples: 'Beispiele ansehen',
     specsLabel: 'Kennzahlen',
@@ -138,13 +138,13 @@ const de: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Zeichenwerkzeuge',
-      stat: '40 Werkzeuge',
+      stat: '69 Werkzeuge',
       blurb:
-        'Trend-, Info- und Winkellinien, Fibonacci-Kanäle und -Fächer, Andrews- und Schiff-Pitchforks, harmonische XABCD-Muster, Kopf-Schulter, Zyklen, Messrahmen. Magnetisches Einrasten, Rückgängig/Wiederholen, Speichern und Wiederherstellen als JSON.',
+        'Fibonacci- und Gann-Werkzeuge mit eigenen Niveaus, Elliott-Wellen, harmonische Muster, Notizen und Pinsel. Doppelklick auf eine Zeichnung öffnet ihre Einstellungen, Rechtsklick ihr Menü; Alarme folgen Trendlinien, und das Long-/Short-Werkzeug berechnet die Positionsgröße.',
       tryThis: [
-        'Öffnen Sie in der linken Leiste die Zickzack-Gruppe (Muster) und setzen Sie ein ABCD',
-        'Klicken Sie eine Zeichnung an, ziehen Sie ihre Griffe, dann Ctrl+Z',
-        'Zeichnungen sind an die Zeit verankert und überstehen so jeden Wechsel der Zeiteinheit',
+        'Doppelklicken Sie auf das Fibonacci-Retracement und bearbeiten Sie seine Niveaus',
+        'Klicken Sie eine Zeichnung mit der rechten Maustaste an: eine Ebene nach vorne holen, gruppieren oder einen Alarm hinzufügen',
+        'Wählen Sie den Pinsel oder das Pfad-Werkzeug; Enter beendet einen Pfad',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const de: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 40 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 14 Sprachen.',
+        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 69 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 14 Sprachen.',
       },
       react: {
         title: 'React',

@@ -15,7 +15,7 @@ export function resolveAnnotationText(state: DrawingState, fallback = 'Text'): s
 }
 
 export class TextAnnotationTool extends DrawingBase {
-  descriptor = { type: 'text' as const, name: 'Text', requiredAnchors: 1 };
+  descriptor = { type: 'text' as const, name: 'Text', requiredAnchors: 1, text: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;

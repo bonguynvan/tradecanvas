@@ -11,7 +11,7 @@ Biểu đồ giao dịch canvas hiệu năng cao, có sẵn chỉ báo, công c�
 Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đẹp nhưng không có tính năng giao dịch, hoặc có tính năng giao dịch nhưng API xấu xí. TradeCanvas cho bạn cả hai.
 
 - **85 chỉ báo có sẵn** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator và nhiều nữa. Mọi chỉ báo đều đọc được đường của một chỉ báo khác (SMA của RSI). Không cần thêm thư viện tính toán riêng.
-- **40 công cụ vẽ** — Đường xu hướng (đường thông tin, góc xu hướng, đường chữ thập), Fibonacci (thoái lui, mở rộng, kênh, vùng thời gian, quạt tốc độ), đường ngang/dọc, kênh, pitchfork (Andrews, Schiff, Schiff cải tiến), quạt / hộp Gann, đường chu kỳ, mô hình harmonic (XABCD, ABCD, vai đầu vai, sóng Elliott), khoảng giá và thời gian, vị thế Long/Short, hồ sơ khối lượng theo khoảng. Có hoàn tác/làm lại và tuần tự hoá đầy đủ.
+- **69 công cụ vẽ** — Đường xu hướng (đường thông tin, góc xu hướng, đường chữ thập), Fibonacci (thoái lui, mở rộng, kênh, vùng thời gian, quạt và cung tốc độ, vòng tròn, xoắn ốc, nêm), đường ngang/dọc, kênh, pitchfork và quạt pitchfork, quạt / hộp / hình vuông Gann, chu kỳ, mô hình harmonic (XABCD, cypher, ABCD, ba nhịp, vai đầu vai), sóng Elliott, ghi chú, chú thích và dấu đánh dấu, bút vẽ và đường nhiều điểm, dự báo và phóng chiếu, vị thế Long/Short có tính khối lượng, hồ sơ khối lượng theo khoảng. Mỗi công cụ có cài đặt riêng, cảnh báo theo đường xu hướng, nhóm và thứ tự lớp, hoàn tác/làm lại và tuần tự hoá đầy đủ.
 - **17 loại biểu đồ** — Nến, đường, vùng, thanh, nến rỗng, đường cơ sở, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, nến khối lượng, **Equivolume**, vùng HLC, đường bậc thang, đường + điểm đánh dấu.
 - **Tương tác chuyên nghiệp** — kéo tự do qua nến cuối cùng vào vùng tương lai còn trống (hình vẽ cũng đặt được ở đó), kéo trục giá/thời gian để co giãn, bấm đúp để tự vừa khít, `Ctrl/⌘+drag` để chọn nhiều hình vẽ (rồi di chuyển, đổi kiểu hoặc xoá cùng lúc), `Shift+drag` để đo (số nến × Δ giá × %), `Alt+click` để ghim chú thích so sánh, con trỏ theo ngữ cảnh (chữ thập, bàn tay nắm, mũi tên đổi kích thước), nhãn giá/thời gian bám theo trục dưới con trỏ, làm nổi nến khi rê chuột.
 - **Lớp phủ giao dịch** — Hiển thị vị thế đang mở với đường giá vào lệnh, vùng lãi/lỗ và điểm SL/TP. Lệnh hiện bằng đường nét đứt. Kéo SL/TP để sửa. Tắt gọn gàng bằng `features.trading: false` cho dự án không cần giao dịch.
@@ -59,7 +59,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Vậy là xong. Dữ liệu trực tiếp, đủ 85 chỉ báo, đủ 40 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
+Vậy là xong. Dữ liệu trực tiếp, đủ 85 chỉ báo, đủ 69 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
 
 ## Chart headless
 
@@ -727,7 +727,7 @@ mc.worstMaxDrawdownPct
 | Loại biểu đồ | 17 + 6 tài chính | 4 | 8 (phi tài chính) | 10+ |
 | Biểu đồ tài chính | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Không có | Không có | Một số |
 | Chỉ báo có sẵn | 85 | 0 | 0 | ~30 |
-| Công cụ vẽ | 40 | 0 | 0 | Một số |
+| Công cụ vẽ | 69 | 0 | 0 | Một số |
 | Lớp phủ giao dịch | Đầy đủ (vị thế + lệnh + kéo) | Không có | Không có | Không có |
 | Dữ liệu thời gian thực | Có sẵn (Binance) | Thủ công | Thủ công | Có sẵn |
 | Lưu/nạp trạng thái | Có | Không | Không | Có |

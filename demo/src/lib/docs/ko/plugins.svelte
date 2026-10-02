@@ -77,6 +77,36 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>사용자 지정 그리기 도구</h2>
+<p>
+  앵커를 픽셀로 바꾸기, 선 스타일, 핸들 같은 헬퍼를 쓰려면 <code>DrawingBase</code>를
+  상속하고, 도구를 기술한 다음 등록합니다. <code>descriptor.options</code>에 나열한 설정은
+  위젯의 설정 대화상자에 나타나며 그림과 함께 저장됩니다.
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* this.anchorToPixel(state.anchors[0], viewport) 위치에 */ }
+  hitTest(point, state, viewport, tolerance) { /* 포인터가 그 위에 있는가? */ return false }
+  // 선택 사항: 선의 가격. 알림이 선을 따라갈 수 있게 함
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  디스크립터에는 도구를 그리는 방식(<code>creation</code>:
+  <code>'clicks'</code>, <code>'freehand'</code> 또는 <code>'path'</code>,
+  <code>maxAnchors</code> 포함)과 대화상자에서 채우기(<code>fill</code>)나
+  텍스트(<code>text</code>)를 제공할지도 적을 수 있습니다. 도구는
+  <code>moveHandle()</code>로 앵커가 아닌 핸들을 옮길 수 있고, 봉을 바탕으로
+  그릴 때는 <code>setDataGetter()</code>를 통해 차트의 봉을 받습니다.
+</p>
+
 <h2>사용자 지정 차트 유형</h2>
 <p><code>ChartTypePlugin</code>은 렌더러와 선택적 데이터 변환을 제공합니다. 내장 유형처럼 전환해 사용합니다.</p>
 <pre><code>{`registerPlugin({

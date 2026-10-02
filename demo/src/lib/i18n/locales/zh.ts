@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个 Canvas2D 交易图表库：17 种图表类型、85 个指标、40 种画线工具、交易所实时行情、图表上下单、K线回放与回测。零依赖，MIT 许可。',
+      'TradeCanvas 是一个 Canvas2D 交易图表库：17 种图表类型、85 个指标、69 种画线工具、交易所实时行情、图表上下单、K线回放与回测。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -41,7 +41,7 @@ const zh: SiteMessages = {
     release: '双画布渲染器，自由平移',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，85 个指标、40 种画线工具、交易所实时行情，还能直接在图表上下单。基于 Canvas2D 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，85 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。基于 Canvas2D 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
@@ -139,13 +139,13 @@ const zh: SiteMessages = {
   scenes: {
     drawings: {
       title: '画线工具',
-      stat: '40 种工具',
+      stat: '69 种工具',
       blurb:
-        '趋势线、信息线与趋势角度，斐波那契通道与扇形，安德鲁音叉与希夫音叉，谐波 XABCD 形态，头肩形态，周期线，测量框。支持磁吸、撤销/重做，以及 JSON 保存/恢复。',
+        '斐波那契与江恩工具可自定义级别，另有艾略特波浪、谐波形态、笔记和画笔。双击画线打开设置，右击打开菜单；提醒会跟随趋势线，多/空仓位工具会算出仓位大小。',
       tryThis: [
-        '打开左侧工具栏中锯齿图标的“形态”分组，放置一个 ABCD 形态',
-        '点击一条画线，拖动它的控制点，然后按 Ctrl+Z',
-        '画线锚定在时间上，切换周期后依然保留',
+        '双击斐波那契回撤，编辑它的级别',
+        '右击一条画线：上移一层、分组或添加提醒',
+        '选择画笔或路径工具；按 Enter 结束一条路径',
       ],
     },
     indicators: {
@@ -333,7 +333,7 @@ const zh: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: '一次调用即得完整交易界面：工具栏、40 种画线工具、自选列表、交易、K线回放，支持 14 种语言。',
+        blurb: '一次调用即得完整交易界面：工具栏、69 种画线工具、自选列表、交易、K线回放，支持 14 种语言。',
       },
       react: {
         title: 'React',

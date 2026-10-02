@@ -590,6 +590,7 @@
 /* === Body === */
 
 .tcw-body {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -1010,8 +1011,17 @@
   flex-direction: column;
   align-items: center;
   padding: 6px 0;
-  overflow: visible;
+  /* On a short screen the tools scroll; the menus sit outside it. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   box-shadow: var(--tcw-shadow-sm);
+}
+.tcw-sidebar::-webkit-scrollbar {
+  display: none;
+}
+.tcw-sidebar > * {
+  flex-shrink: 0;
 }
 
 .tcw-tool-group-wrap {
@@ -1082,9 +1092,9 @@
 
 .tcw-flyout {
   position: absolute;
-  left: 100%;
-  top: 0;
   margin-left: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   min-width: 180px;
   background: var(--tcw-bg-elevated);
   border: 1px solid var(--tcw-border);
@@ -1149,6 +1159,12 @@
 .tcw-flyout-item:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
+}
+.tcw-flyout-item:focus-visible {
+  outline: none;
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+  box-shadow: inset 0 0 0 1px var(--tcw-accent);
 }
 
 .tcw-flyout-item.tcw-active {
@@ -3193,6 +3209,37 @@
   background: var(--tcw-red-soft);
   color: var(--tcw-red);
 }
+.tcw-tree-group .tcw-tree-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.tcw-tree-group .tcw-tree-name svg {
+  flex: none;
+  color: var(--tcw-text-muted);
+}
+.tcw-tree-member {
+  margin-left: 14px;
+  padding-left: 10px;
+  border-left: 1px solid var(--tcw-border-strong);
+  border-radius: 0 var(--tcw-radius-sm) var(--tcw-radius-sm) 0;
+}
+.tcw-tree-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--tcw-accent-line);
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: 12px;
+}
+.tcw-tree-rename:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--tcw-accent-soft);
+}
 .tcw-tree-empty {
   padding: 8px;
   font-size: 12px;
@@ -3237,3 +3284,80 @@
     animation-delay: var(--tcw-delay, 0ms) !important;
   }
 }
+
+/* --- Drawing settings dialog --- */
+.tcw-drawing-settings .tcw-modal-footer { gap: 12px; }
+.tcw-drawing-settings-tools {
+  display: flex;
+  gap: 14px;
+  margin-right: auto;
+}
+.tcw-drawing-text {
+  min-height: 56px;
+  resize: vertical;
+  font-family: inherit;
+}
+.tcw-levels-editor { display: grid; gap: 6px; margin-bottom: 10px; }
+.tcw-levels-grid {
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.tcw-level-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 32px 24px;
+  align-items: center;
+  gap: 8px;
+}
+.tcw-level-row input[type='checkbox'] { accent-color: var(--tcw-accent); }
+.tcw-level-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--tcw-radius-sm, 4px);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+.tcw-level-remove:hover { color: var(--tcw-text); background: var(--tcw-bg-elevated); }
+.tcw-level-remove:focus-visible { outline: 2px solid var(--tcw-accent); outline-offset: 1px; }
+.tcw-level-add { justify-self: start; }
+.tcw-drawing-templates { display: grid; gap: 2px; margin-bottom: 8px; }
+.tcw-drawing-alert { display: inline-flex; align-items: center; gap: 6px; }
+
+/* --- Context menu (right-click on a drawing) --- */
+.tcw-context-menu {
+  position: absolute;
+  z-index: 70;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--tcw-bg-elevated);
+  border: 1px solid var(--tcw-divider);
+  border-radius: var(--tcw-radius);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+}
+.tcw-context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.tcw-context-item svg, .tcw-context-icon { flex: none; width: 14px; height: 14px; color: var(--tcw-text-muted); }
+.tcw-context-item:hover, .tcw-context-item:focus-visible { background: var(--tcw-bg-surface); outline: none; }
+.tcw-context-item:focus-visible { box-shadow: inset 0 0 0 1px var(--tcw-accent); }
+.tcw-context-danger, .tcw-context-danger svg { color: var(--tcw-red); }
+.tcw-context-sep { height: 1px; margin: 4px 6px; background: var(--tcw-divider); }

@@ -27,6 +27,12 @@ export interface AxisStrips {
   };
 }
 
+/** Whether focus is in a dialog or menu, whose keys are its own. */
+function focusInOverlay(): boolean {
+  const active = typeof document !== 'undefined' ? document.activeElement : null;
+  return active instanceof Element && active.closest('[aria-modal="true"], [role="dialog"], [role="menu"]') !== null;
+}
+
 export class InteractionManager {
   private panHandler: PanHandler | null = null;
   private zoomHandler: ZoomHandler | null = null;
@@ -35,6 +41,10 @@ export class InteractionManager {
   private alertDragHandler: AlertDragHandler | null = null;
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
+  private onDrawingDoubleClick: ((id: string) => void) | null = null;
+  private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
+  /** The zoom-area tool: a drag draws the box to zoom into. */
+  private zoomArea = false;
   private axisStrips: (() => AxisStrips) | null = null;
   private savedTouchAction = '';
   private measureHandlers: {
@@ -161,6 +171,21 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /** While on, a plain drag draws a box (the box-select handlers get it) instead of panning. */
+  setZoomAreaMode(on: boolean): void {
+    this.zoomArea = on;
+  }
+
+  /** Called when a drawing is right-clicked (to open its menu); the browser's menu stays shut. */
+  setDrawingContextMenu(cb: (id: string, pos: Point) => void): void {
+    this.onDrawingContextMenu = cb;
+  }
+
+  /** Called with a drawing's id when it is double-clicked (to open its settings, say). */
+  setDrawingDoubleClick(cb: (id: string) => void): void {
+    this.onDrawingDoubleClick = cb;
+  }
+
   /** Enable dragging price-alert lines. Hit-tested after trading/drawing. */
   setAlertDragHandler(handler: AlertDragHandler): void {
     this.alertDragHandler = handler;
@@ -231,8 +256,10 @@ export class InteractionManager {
       };
     };
 
-    const idleCursor = (): string =>
-      this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? 'crosshair' : '';
+    const idleCursor = (): string => {
+      if (this.zoomArea) return 'zoom-in';
+      return this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? 'crosshair' : '';
+    };
 
     const setCursor = (cursor: string) => {
       if (this.element.style.cursor !== cursor) this.element.style.cursor = cursor;
@@ -251,6 +278,8 @@ export class InteractionManager {
       if (this.alertDragHandler?.isOverAlert(pos)) return 'ns-resize';
       const vp = getVP();
       if (vp && this.tradingManager?.isOverDraggableLine(pos, vp)) return 'ns-resize';
+      // The zoom tool keeps its cursor over drawings too.
+      if (this.zoomArea) return 'zoom-in';
       const drawingCursor = vp ? this.drawingManager?.hoverCursorAt(pos, vp) : null;
       return drawingCursor ?? idleCursor();
     };
@@ -326,7 +355,8 @@ export class InteractionManager {
       const placing = !!this.drawingManager?.getActiveTool()
         || !!this.tradingManager?.isBracketActive()
         || !!this.tradingManager?.isOrderDraftActive();
-      if ((e.ctrlKey || e.metaKey) && this.boxSelectHandlers && !placing) {
+      // The zoom-area tool takes a plain drag for its box (before anything being placed).
+      if (this.boxSelectHandlers && (this.zoomArea || ((e.ctrlKey || e.metaKey) && !placing))) {
         this.boxSelecting = true;
         this.boxSelectHandlers.begin(pos);
         setCursor(idleCursor());
@@ -492,9 +522,15 @@ export class InteractionManager {
     const onDblClick = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
       const axis = hitAxis(pos);
-      if (axis && axis !== 'inert' && this.onAxisDoubleClick) {
-        this.onAxisDoubleClick(axis);
+      if (axis) {
+        if (axis !== 'inert') this.onAxisDoubleClick?.(axis);
+        return;
       }
+      const vp = getVP();
+      // The double-click that finished a drawing (a path) doesn't open it.
+      if (!vp || this.drawingManager?.justFinished()) return;
+      const id = this.drawingManager?.drawingAt(pos, vp);
+      if (id) this.onDrawingDoubleClick?.(id);
     };
 
     const onMouseLeave = () => {
@@ -526,6 +562,8 @@ export class InteractionManager {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // Keys pressed in a dialog or menu (a drawing's settings, say) are its own.
+      if (focusInOverlay()) return;
       if (e.key === 'Escape' && this.boxSelecting && this.boxSelectHandlers) {
         this.boxSelecting = false;
         this.boxSelectHandlers.cancel();
@@ -542,13 +580,27 @@ export class InteractionManager {
       // never to a text field being typed in. Escape still cancels a tool
       // picked from outside the chart.
       if (e.key !== 'Escape' && !this.ownsShortcuts()) return;
-      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey)) e.preventDefault();
+      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey, e.shiftKey)) e.preventDefault();
     };
 
     const onContextMenu = (e: MouseEvent) => {
       const vp = getVP();
-      if (!this.tradingManager || !vp) return;
-      const shown = this.tradingManager.onContextMenu(this.getMousePos(e), vp);
+      if (!vp) return;
+      const pos = this.getMousePos(e);
+      // A drawing under the pointer has a menu of its own: in the price pane,
+      // not on an axis or another pane, and not while a tool is drawing.
+      const plot = vp.chartRect;
+      const inPlot = pos.x >= plot.x && pos.x <= plot.x + plot.width && pos.y >= plot.y && pos.y <= plot.y + plot.height;
+      const drawingId = this.onDrawingContextMenu && inPlot && !this.drawingManager?.getActiveTool()
+        ? this.drawingManager?.drawingAt(pos, vp)
+        : null;
+      if (drawingId) {
+        e.preventDefault();
+        this.onDrawingContextMenu?.(drawingId, pos);
+        return;
+      }
+      if (!this.tradingManager) return;
+      const shown = this.tradingManager.onContextMenu(pos, vp);
       // Only suppress the native menu when the trading context menu actually
       // opened — otherwise users with trading disabled lose right-click entirely.
       if (shown) e.preventDefault();

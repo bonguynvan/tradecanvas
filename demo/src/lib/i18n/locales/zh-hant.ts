@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是以 Canvas2D 繪製的交易圖表函式庫：17 種圖表類型、85 個指標、40 種繪圖工具、交易所即時行情、圖上下單、K線回放與回測。零相依套件，MIT 授權。',
+      'TradeCanvas 是以 Canvas2D 繪製的交易圖表函式庫：17 種圖表類型、85 個指標、69 種繪圖工具、交易所即時行情、圖上下單、K線回放與回測。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const zhHant: SiteMessages = {
     release: '雙層 Canvas 渲染，自由平移',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，85 個指標、40 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas2D 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，85 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas2D 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
@@ -138,13 +138,13 @@ const zhHant: SiteMessages = {
   scenes: {
     drawings: {
       title: '繪圖工具',
-      stat: '40 種工具',
+      stat: '69 種工具',
       blurb:
-        '趨勢線、資訊線與角度線、斐波那契通道與扇形、安德魯與希夫音叉、諧波 XABCD、頭肩型態、週期線、測量框。支援磁吸、復原/重做，以及 JSON 儲存與還原。',
+        '斐波那契與江恩工具可自訂級別，另有艾略特波浪、諧波型態、筆記與筆刷。雙擊繪圖開啟設定，右擊開啟選單；警示會跟隨趨勢線，多/空部位工具會算出部位大小。',
       tryThis: [
-        '在左側工具列開啟鋸齒（型態）群組，放置一個 ABCD',
-        '點擊一個繪圖，拖曳它的控制點，再按 Ctrl+Z',
-        '繪圖錨定在時間上，因此切換週期後依然保留',
+        '雙擊斐波那契回撤，編輯它的級別',
+        '右擊一個繪圖：上移一層、群組或新增警示',
+        '選擇筆刷或路徑工具；按 Enter 結束一條路徑',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const zhHant: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: '一次呼叫就有完整的交易介面：工具列、40 種繪圖工具、自選清單、交易、K線回放，支援 14 種語言。',
+        blurb: '一次呼叫就有完整的交易介面：工具列、69 種繪圖工具、自選清單、交易、K線回放，支援 14 種語言。',
       },
       react: {
         title: 'React',

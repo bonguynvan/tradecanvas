@@ -12,6 +12,8 @@ export interface ObjectTreeDrawing {
   label: string;
   visible: boolean;
   locked: boolean;
+  /** The group it belongs to; a group's drawings are listed under one row. */
+  group?: { id: string; name: string };
 }
 
 export interface ObjectTreeCompare {
@@ -27,6 +29,13 @@ export interface ObjectTreeCallbacks {
   onRemoveDrawing: (id: string) => void;
   onToggleDrawingVisible: (id: string, visible: boolean) => void;
   onToggleDrawingLocked: (id: string, locked: boolean) => void;
+  /** When provided, each drawing row gets a settings button. */
+  onConfigureDrawing?: (id: string) => void;
+  /** Group rows: hide, lock, rename (or double-click its name) and ungroup the group. */
+  onToggleGroupVisible?: (groupId: string, visible: boolean) => void;
+  onToggleGroupLocked?: (groupId: string, locked: boolean) => void;
+  onUngroup?: (groupId: string) => void;
+  onRenameGroup?: (groupId: string, name: string) => void;
   /** When provided, a Compare section with an "add" button is shown. */
   onAddCompare?: () => void;
   onRemoveCompare?: (id: string) => void;
@@ -176,30 +185,122 @@ export class WidgetObjectTree {
       this.drawingsEl.appendChild(this.emptyRow(this.t('objects.noDrawings')));
       return;
     }
+    const listed = new Set<string>();
     for (const d of drawings) {
-      const row = this.row(d.label);
-      if (!d.visible) row.classList.add('tcw-tree-hidden');
-
-      const actions = document.createElement('div');
-      actions.className = 'tcw-tree-actions';
-      actions.appendChild(this.iconButton(
-        d.visible ? 'eye' : 'eyeOff',
-        d.visible ? this.t('common.hide') : this.t('common.show'),
-        '',
-        () => this.callbacks.onToggleDrawingVisible(d.id, !d.visible),
-      ));
-      actions.appendChild(this.iconButton(
-        d.locked ? 'lock' : 'unlock',
-        d.locked ? this.t('common.unlock') : this.t('common.lock'),
-        d.locked ? 'tcw-tree-on' : '',
-        () => this.callbacks.onToggleDrawingLocked(d.id, !d.locked),
-      ));
-      actions.appendChild(this.iconButton('trash', this.t('objects.removeDrawing'), 'tcw-tree-del', () =>
-        this.callbacks.onRemoveDrawing(d.id),
-      ));
-      row.appendChild(actions);
-      this.drawingsEl.appendChild(row);
+      if (!d.group) {
+        this.drawingsEl.appendChild(this.drawingRow(d));
+        continue;
+      }
+      if (listed.has(d.group.id)) continue;
+      // A group is listed where its first drawing is, its drawings under it.
+      listed.add(d.group.id);
+      const groupId = d.group.id;
+      const members = drawings.filter((m) => m.group?.id === groupId);
+      this.drawingsEl.appendChild(this.groupRow(groupId, d.group.name, members));
+      for (const m of members) {
+        const row = this.drawingRow(m);
+        row.classList.add('tcw-tree-member');
+        this.drawingsEl.appendChild(row);
+      }
     }
+  }
+
+  private groupRow(groupId: string, name: string, members: readonly ObjectTreeDrawing[]): HTMLDivElement {
+    const row = this.row(name);
+    row.classList.add('tcw-tree-group');
+    const visible = members.some((m) => m.visible);
+    const locked = members.every((m) => m.locked);
+    if (!visible) row.classList.add('tcw-tree-hidden');
+    const nameEl = row.querySelector<HTMLSpanElement>('.tcw-tree-name')!;
+    nameEl.innerHTML = createIcon('layers', 13);
+    nameEl.append(` ${name}`);
+    const actions = document.createElement('div');
+    actions.className = 'tcw-tree-actions';
+    if (this.callbacks.onRenameGroup) {
+      nameEl.addEventListener('dblclick', () => this.renameGroup(nameEl, groupId, name));
+      actions.appendChild(this.iconButton('penLine', this.t('objects.renameGroup'), '', () => this.renameGroup(nameEl, groupId, name)));
+    }
+    if (this.callbacks.onToggleGroupVisible) {
+      actions.appendChild(this.iconButton(
+        visible ? 'eye' : 'eyeOff',
+        visible ? this.t('common.hide') : this.t('common.show'),
+        '',
+        () => this.callbacks.onToggleGroupVisible?.(groupId, !visible),
+      ));
+    }
+    if (this.callbacks.onToggleGroupLocked) {
+      actions.appendChild(this.iconButton(
+        locked ? 'lock' : 'unlock',
+        locked ? this.t('common.unlock') : this.t('common.lock'),
+        locked ? 'tcw-tree-on' : '',
+        () => this.callbacks.onToggleGroupLocked?.(groupId, !locked),
+      ));
+    }
+    if (this.callbacks.onUngroup) {
+      actions.appendChild(this.iconButton('x', this.t('drawingMenu.ungroup'), '', () => this.callbacks.onUngroup?.(groupId)));
+    }
+    row.appendChild(actions);
+    return row;
+  }
+
+  /** Swap a group's name for a text box: Enter or leaving it renames, Escape keeps the name. */
+  private renameGroup(nameEl: HTMLElement, groupId: string, name: string): void {
+    if (!nameEl.isConnected) return; // already being renamed
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tcw-tree-rename';
+    input.value = name;
+    input.maxLength = 80;
+    input.setAttribute('aria-label', this.t('objects.renameGroup'));
+    let done = false;
+    const finish = (save: boolean) => {
+      if (done) return;
+      done = true;
+      const next = input.value.trim();
+      if (input.isConnected) input.replaceWith(nameEl);
+      if (save && next && next !== name) this.callbacks.onRenameGroup?.(groupId, next);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') finish(true);
+      else if (e.key === 'Escape') {
+        e.stopPropagation();
+        finish(false);
+      }
+    });
+    input.addEventListener('blur', () => finish(true));
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+  }
+
+  private drawingRow(d: ObjectTreeDrawing): HTMLDivElement {
+    const row = this.row(d.label);
+    if (!d.visible) row.classList.add('tcw-tree-hidden');
+
+    const actions = document.createElement('div');
+    actions.className = 'tcw-tree-actions';
+    actions.appendChild(this.iconButton(
+      d.visible ? 'eye' : 'eyeOff',
+      d.visible ? this.t('common.hide') : this.t('common.show'),
+      '',
+      () => this.callbacks.onToggleDrawingVisible(d.id, !d.visible),
+    ));
+    actions.appendChild(this.iconButton(
+      d.locked ? 'lock' : 'unlock',
+      d.locked ? this.t('common.unlock') : this.t('common.lock'),
+      d.locked ? 'tcw-tree-on' : '',
+      () => this.callbacks.onToggleDrawingLocked(d.id, !d.locked),
+    ));
+    if (this.callbacks.onConfigureDrawing) {
+      actions.appendChild(this.iconButton('settings', this.t('objects.drawingSettings'), '', () =>
+        this.callbacks.onConfigureDrawing?.(d.id),
+      ));
+    }
+    actions.appendChild(this.iconButton('trash', this.t('objects.removeDrawing'), 'tcw-tree-del', () =>
+      this.callbacks.onRemoveDrawing(d.id),
+    ));
+    row.appendChild(actions);
+    return row;
   }
 
   private renderCompares(compares: ObjectTreeCompare[]): void {

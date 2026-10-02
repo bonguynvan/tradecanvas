@@ -4,7 +4,7 @@ const es: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading en Canvas para la web',
     description:
-      'TradeCanvas es una biblioteca de gráficos de trading en Canvas2D: 17 tipos de gráfico, 85 indicadores, 40 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, repetición y backtesting. Sin dependencias, MIT.',
+      'TradeCanvas es una biblioteca de gráficos de trading en Canvas2D: 17 tipos de gráfico, 85 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, repetición y backtesting. Sin dependencias, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const es: SiteMessages = {
     release: 'renderizador de dos canvas, desplazamiento libre',
     title: 'El motor de gráficos para apps de trading.',
     ledeHtml:
-      'De velas a Renko, 85 indicadores, 40 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado en Canvas2D sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
+      'De velas a Renko, 85 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado en Canvas2D sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
     getStarted: 'Empezar',
     browseExamples: 'Ver ejemplos',
     specsLabel: 'Cifras clave',
@@ -140,13 +140,13 @@ const es: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Herramientas de dibujo',
-      stat: '40 herramientas',
+      stat: '69 herramientas',
       blurb:
-        'Líneas de tendencia, de información y de ángulo, canales y abanicos de Fibonacci, horquillas de Andrews y de Schiff, XABCD armónico, hombro-cabeza-hombro, ciclos, cajas de medición. Ajuste magnético, deshacer/rehacer, guardado y restauración en JSON.',
+        'Herramientas de Fibonacci y Gann con tus propios niveles, ondas de Elliott, patrones armónicos, notas y pinceles. Doble clic en un dibujo abre su configuración y clic derecho, su menú; las alertas siguen las líneas de tendencia, y la herramienta de posición larga/corta calcula el tamaño de la posición.',
       tryThis: [
-        'Abre el grupo zigzag (Patrones) de la barra de herramientas izquierda y coloca un ABCD',
-        'Haz clic en un dibujo, arrastra sus controladores y después pulsa Ctrl+Z',
-        'Los dibujos quedan anclados al tiempo, así que sobreviven a los cambios de temporalidad',
+        'Haz doble clic en el retroceso de Fibonacci y edita sus niveles',
+        'Haz clic derecho en un dibujo: tráelo adelante, agrúpalo o añade una alerta',
+        'Elige el pincel o la herramienta de ruta; Enter termina una ruta',
       ],
     },
     indicators: {
@@ -337,7 +337,7 @@ const es: SiteMessages = {
       widget: {
         title: 'ChartWidget',
         blurb:
-          'Toda la interfaz de trading en una llamada: barra de herramientas, 40 herramientas de dibujo, lista de seguimiento, trading y repetición, en 14 idiomas.',
+          'Toda la interfaz de trading en una llamada: barra de herramientas, 69 herramientas de dibujo, lista de seguimiento, trading y repetición, en 14 idiomas.',
       },
       react: {
         title: 'React',

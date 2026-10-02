@@ -35,6 +35,9 @@ const TOOL_GROUP_KEYS: Readonly<Record<string, MessageKey>> = {
   Measure: 'toolGroup.measure',
   Annotation: 'toolGroup.annotation',
   Forecasting: 'toolGroup.forecasting',
+  Brushes: 'toolGroup.brushes',
+  Cycles: 'toolGroup.cycles',
+  'Elliott Waves': 'toolGroup.elliott',
 };
 
 /** A chart type's name in the widget's language (an unknown type keeps its own). */

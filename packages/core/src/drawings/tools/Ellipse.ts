@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
 export class EllipseTool extends DrawingBase {
-  descriptor = { type: 'ellipse' as const, name: 'Ellipse', requiredAnchors: 2 };
+  descriptor = { type: 'ellipse' as const, name: 'Ellipse', requiredAnchors: 2, fill: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;

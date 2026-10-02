@@ -11,7 +11,7 @@ Gráfico de trading en canvas de alto rendimiento, con indicadores, herramientas
 La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonitos sin funciones de trading, o funciones de trading con una API fea. TradeCanvas te da las dos cosas.
 
 - **85 indicadores integrados** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator y más. Cualquier indicador puede leer la línea de otro (una SMA del RSI). No hace falta una biblioteca de cálculo aparte.
-- **40 herramientas de dibujo** — Líneas de tendencia (línea de información, ángulo de tendencia, línea en cruz), Fibonacci (retroceso, extensión, canal, zonas temporales, abanico de velocidad), líneas horizontales/verticales, canales, horquillas (Andrews, Schiff, Schiff modificada), abanicos / cajas de Gann, líneas cíclicas, patrones armónicos (XABCD, ABCD, hombro-cabeza-hombro, ondas de Elliott), rango de fecha y precio, posición larga/corta, perfil de volumen de rango fijo. Con deshacer/rehacer y serialización completa.
+- **69 herramientas de dibujo** — Líneas de tendencia (línea de información, ángulo de tendencia, línea en cruz), Fibonacci (retroceso, extensión, canal, zonas temporales, abanico y arcos de velocidad, círculos, espiral, cuña), líneas horizontales/verticales, canales, horquillas y abanico de horquilla, abanico / caja / cuadrado de Gann, ciclos, patrones armónicos (XABCD, cypher, ABCD, tres impulsos, hombro-cabeza-hombro), ondas de Elliott, notas, globos de texto y marcas, pincel y trazado, previsión y proyección, posición larga/corta con cálculo del tamaño, perfil de volumen de rango fijo. Cada una con sus propios ajustes, alertas sobre líneas de tendencia, grupos y capas, deshacer/rehacer y serialización completa.
 - **17 tipos de gráfico** — Velas, línea, área, barras, velas huecas, línea base, Heikin-Ashi, Renko, Kagi, ruptura de líneas, punto y figura, barras de rango, velas de volumen, **Equivolumen**, área HLC, línea escalonada, línea con marcadores.
 - **Interacción de nivel profesional** — desplázate libremente más allá de la última barra, hacia el espacio futuro vacío (los dibujos también pueden ir allí), arrastra los ejes de precio/tiempo para escalarlos, haz doble clic para el ajuste automático, `Ctrl/⌘+drag` para seleccionar varios dibujos (y luego moverlos, cambiarles el estilo o borrarlos juntos), `Shift+drag` para medir (barras × Δ precio × %), `Alt+click` para fijar un tooltip de comparación, cursores contextuales (cruz, mano de agarre, flechas de redimensionado), etiquetas de precio/tiempo bajo el cursor que siguen a los ejes y resaltado de la barra al pasar el cursor.
 - **Capa de trading** — Muestra las posiciones abiertas con línea de entrada, zona de P&L y marcadores SL/TP. Las órdenes, como líneas discontinuas. Arrastra SL/TP para modificarlos. Se desactiva limpiamente con `features.trading: false` en proyectos sin trading.
@@ -59,7 +59,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Eso es todo. Datos en vivo, los 85 indicadores, las 40 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
+Eso es todo. Datos en vivo, los 85 indicadores, las 69 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
 
 ## Gráfico headless
 
@@ -727,7 +727,7 @@ mc.worstMaxDrawdownPct
 | Tipos de gráfico | 17 + 6 financieros | 4 | 8 (no financieros) | 10+ |
 | Gráficos financieros | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Ninguno | Ninguno | Algunos |
 | Indicadores integrados | 85 | 0 | 0 | ~30 |
-| Herramientas de dibujo | 40 | 0 | 0 | Algunas |
+| Herramientas de dibujo | 69 | 0 | 0 | Algunas |
 | Capa de trading | Completa (posiciones + órdenes + arrastre) | Ninguna | Ninguna | Ninguna |
 | Streaming en tiempo real | Integrado (Binance) | Manual | Manual | Integrado |
 | Guardar/cargar estado | Sí | No | No | Sí |

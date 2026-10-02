@@ -77,6 +77,37 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>Custom drawing tool</h2>
+<p>
+  Extend <code>DrawingBase</code> for its helpers (anchors to pixels, line
+  styles, handles), describe the tool, and register it. Settings listed in
+  <code>descriptor.options</code> show up in the widget's settings dialog and
+  are saved with the drawing.
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* at this.anchorToPixel(state.anchors[0], viewport) */ }
+  hitTest(point, state, viewport, tolerance) { /* is the pointer on it? */ return false }
+  // optional: the prices of its lines, so an alert can follow them
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  The descriptor can also say how the tool is drawn (<code>creation</code>:
+  <code>'clicks'</code>, <code>'freehand'</code> or <code>'path'</code>, with
+  <code>maxAnchors</code>) and whether the dialog offers a fill
+  (<code>fill</code>) or text (<code>text</code>). A tool can move handles that
+  are not anchors with <code>moveHandle()</code>, and receives the chart's bars
+  through <code>setDataGetter()</code> when it draws from them.
+</p>
+
 <h2>Custom chart type</h2>
 <p>A <code>ChartTypePlugin</code> supplies a renderer and an optional data transform; switch to it like a built-in:</p>
 <pre><code>{`registerPlugin({

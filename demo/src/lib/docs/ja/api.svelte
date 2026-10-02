@@ -362,16 +362,30 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <p>
   ツールバーのレイヤーボタンで、有効なインジケーターと描画をすべて一覧するオブジェクトツリーの
   パネルが開きます。インジケーターは削除でき、描画は項目ごとに表示 / 非表示、ロック / ロック解除、
-  削除ができます。既定で有効で、<code>objectTree: false</code> で無効にできます。
+  設定、削除ができ、グループはその下に所属する描画とともに一覧表示されます。
+  既定で有効で、<code>objectTree: false</code> で無効にできます。
   描画の操作は次のメソッドに対応します：
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
 chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
+chart.groupDrawings(ids, 'Weekly levels')  // まとめて非表示・ロック・選択される
+chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<h3>描画の設定とメニュー</h3>
+<p>
+  描画をダブルクリックするか、オブジェクトツリーの歯車ボタンを使うと、その描画の設定が開きます。
+  扱えるのはスタイル、ツール独自の設定（フィボナッチのレベル、延長、ラベルなど）、
+  そしてチャートのタイムゾーンで表した各点です。描画を右クリックするとメニューが開き、
+  設定、ラインへのアラート、順序、グループ化、ロック、非表示、複製、削除を選べます。
+  サイドバーには消しゴム、ズームツール、そしてオフ・弱・強を切り替えられるマグネットもあります。
+  土台となる API は
+  <a href={href('/docs/drawing-tools')}>描画ツール</a>を参照してください。
+</p>
+
 <p>
   各インジケーター行の歯車ボタンで<strong>設定ダイアログ</strong>が開きます。インジケーターの
   パラメーター（数値、切り替え、色）を自動で読み取り、変更を <code>updateIndicator</code> で

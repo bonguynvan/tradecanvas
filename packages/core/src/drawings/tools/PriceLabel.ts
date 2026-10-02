@@ -9,7 +9,7 @@ const HEIGHT = 20;
 
 /** Price Label: a callout pinned to a point showing its price (or custom text). */
 export class PriceLabelTool extends DrawingBase {
-  descriptor = { type: 'priceLabel' as const, name: 'Price Label', requiredAnchors: 1 };
+  descriptor = { type: 'priceLabel' as const, name: 'Price Label', requiredAnchors: 1, text: true };
 
   private text(state: DrawingState): string {
     return state.style.text || formatDrawingPrice(state.anchors[0].price);

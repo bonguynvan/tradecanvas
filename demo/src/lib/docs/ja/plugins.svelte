@@ -77,6 +77,37 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   return prev
 }`}</code></pre>
 
+<h2>カスタム描画ツール</h2>
+<p>
+  ヘルパー（アンカーからピクセルへの変換、線のスタイル、ハンドル）を使うために
+  <code>DrawingBase</code> を継承し、ツールを記述して登録します。
+  <code>descriptor.options</code> に挙げた設定は、ウィジェットの設定ダイアログに表示され、
+  描画と一緒に保存されます。
+</p>
+<pre><code>{`import { DrawingBase, registerPlugin } from '@tradecanvas/chart'
+
+class TargetLine extends DrawingBase {
+  descriptor = {
+    type: 'targetLine', name: 'Target Line', requiredAnchors: 1,
+    options: { label: { kind: 'text', label: 'Label', default: 'Target' } },
+  }
+  render(ctx, state, viewport, selected) { /* this.anchorToPixel(state.anchors[0], viewport) の位置に */ }
+  hitTest(point, state, viewport, tolerance) { /* ポインターが描画の上にあるか？ */ return false }
+  // 任意：ラインの価格。アラートがラインを追従できるようにする
+  priceAt(state) { return [state.anchors[0].price] }
+}
+
+registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
+chart.setDrawingTool('targetLine')`}</code></pre>
+<p>
+  ディスクリプターでは、ツールの描き方（<code>creation</code>：
+  <code>'clicks'</code>、<code>'freehand'</code>、<code>'path'</code>。
+  <code>maxAnchors</code> も指定できます）と、ダイアログで塗りつぶし
+  （<code>fill</code>）やテキスト（<code>text</code>）を設定できるかどうかも記述できます。
+  ツールは <code>moveHandle()</code> でアンカーではないハンドルを動かせ、バーをもとに描画する場合は
+  <code>setDataGetter()</code> でチャートのバーを受け取ります。
+</p>
+
 <h2>カスタムチャートタイプ</h2>
 <p><code>ChartTypePlugin</code> はレンダラーと、任意でデータの変換を提供します。組み込みのタイプと同じように切り替えられます：</p>
 <pre><code>{`registerPlugin({

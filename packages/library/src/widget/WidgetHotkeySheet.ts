@@ -85,6 +85,13 @@ const GROUPS: HotkeyGroup[] = [
       { keys: ['Esc'], label: 'hotkeys.cancelDrawing' },
       { keys: [mod, 'C'], label: 'hotkeys.copy' },
       { keys: [mod, 'V'], label: 'hotkeys.paste' },
+      { keys: ['key.rightClick'], label: 'hotkeys.drawingMenu' },
+      { keys: ['key.doubleClick'], label: 'hotkeys.drawingSettings' },
+      { keys: [mod, 'G'], label: 'hotkeys.group' },
+      { keys: [mod, 'Shift', 'G'], label: 'hotkeys.ungroup' },
+      { keys: [mod, ']', '['], label: 'hotkeys.orderStep' },
+      { keys: [mod, 'Shift', ']', '['], label: 'hotkeys.orderEnd' },
+      { keys: ['Enter'], label: 'hotkeys.finishPath' },
     ],
   },
 ];

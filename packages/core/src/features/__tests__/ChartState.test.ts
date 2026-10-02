@@ -143,6 +143,18 @@ describe('ChartStateManager serialize/deserialize round-trip', () => {
   });
 });
 
+describe('ChartStateManager drawing options', () => {
+  it('keeps a drawing’s own options through a save', () => {
+    const withOptions = {
+      id: 'fib', type: 'fibRetracement', anchors: [{ time: 1, price: 2 }, { time: 3, price: 4 }],
+      style: { color: '#fff', lineWidth: 1, lineStyle: 'solid' }, visible: true, locked: false,
+      options: { reverse: true, levels: [{ value: 0.5, visible: true }] },
+    };
+    const restored = ChartStateManager.deserialize(JSON.stringify({ version: SNAPSHOT_VERSION, drawings: [withOptions] }));
+    expect(restored.drawings[0].options).toEqual(withOptions.options);
+  });
+});
+
 describe('ChartStateManager.deserialize validation', () => {
   it('returns an empty snapshot when the JSON parses to a non-object', () => {
     const restored = ChartStateManager.deserialize('null');

@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 85 indikator, 40 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 85 indikator, 69 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const id: SiteMessages = {
     release: 'renderer dua kanvas, geser dengan bebas',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 85 indikator, 40 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 85 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
@@ -138,13 +138,13 @@ const id: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Alat gambar',
-      stat: '40 alat',
+      stat: '69 alat',
       blurb:
-        'Garis tren, garis info, dan garis sudut, kanal dan kipas Fibonacci, pitchfork Andrews dan Schiff, pola harmonik XABCD, kepala dan bahu, siklus, kotak pengukur. Snap magnet, urungkan/ulangi, simpan dan pulihkan lewat JSON.',
+        'Alat Fibonacci dan Gann dengan level buatan sendiri, gelombang Elliott, pola harmonik, catatan, dan kuas. Klik ganda pada gambar untuk membuka pengaturannya, klik kanan untuk menunya; peringatan mengikuti garis tren, dan alat posisi long/short menghitung ukuran posisi.',
       tryThis: [
-        'Buka grup zigzag (Pola) di bilah alat kiri dan pasang pola ABCD',
-        'Klik sebuah gambar, seret pegangannya, lalu tekan Ctrl+Z',
-        'Gambar terikat pada waktu, jadi tetap utuh saat kerangka waktu diganti',
+        'Klik ganda pada Fibonacci retracement lalu ubah levelnya',
+        'Klik kanan sebuah gambar: bawa maju, kelompokkan, atau tambahkan peringatan',
+        'Pilih kuas atau alat jalur; Enter mengakhiri sebuah jalur',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const id: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 40 alat gambar, daftar pantauan, trading, putar ulang, dalam 14 bahasa.',
+        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 69 alat gambar, daftar pantauan, trading, putar ulang, dalam 14 bahasa.',
       },
       react: {
         title: 'React',

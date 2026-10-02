@@ -165,6 +165,12 @@ export interface WidgetState {
   activeIndicators: Map<string, ActiveIndicatorInfo>; // instanceId -> indicator id + chip label
   activeTool: DrawingToolType | null;
   magnetEnabled: boolean;
+  /** The magnet snaps always, not only near a price (with `magnetEnabled`). */
+  magnetStrong: boolean;
+  /** The eraser is on: a click on a drawing removes it. */
+  eraser: boolean;
+  /** The zoom tool waits for a box to zoom into. */
+  zoomArea: boolean;
   /** Keep the drawing tool after each drawing. */
   stayInDrawing: boolean;
   connectionState: string;
@@ -214,8 +220,10 @@ export interface SidebarConfig {
 export interface SidebarCallbacks {
   onDrawingTool: (tool: DrawingToolType) => void;
   onCancelDrawing: () => void;
-  /** Omitted when the magnet is switched off (`features.drawingMagnet: false`). */
+  /** Omitted when the magnet is switched off (`features.drawingMagnet: false`). Cycles off, weak, strong. */
   onToggleMagnet?: () => void;
+  onToggleEraser?: () => void;
+  onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
   onUndo: () => void;
   onRedo: () => void;

@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch Canvas2D: 17 loại biểu đồ, 85 chỉ báo, 40 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch Canvas2D: 17 loại biểu đồ, 85 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ hai lớp canvas, kéo tự do',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 85 chỉ báo, 40 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 85 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -138,13 +138,13 @@ const vi: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Công cụ vẽ',
-      stat: '40 công cụ',
+      stat: '69 công cụ',
       blurb:
-        'Đường xu hướng, đường thông tin, góc xu hướng, kênh và quạt Fibonacci, pitchfork Andrews và Schiff, mô hình harmonic XABCD, vai đầu vai, đường chu kỳ, hộp đo. Hút vào giá, hoàn tác/làm lại, lưu và khôi phục bằng JSON.',
+        'Công cụ Fibonacci và Gann với mức tự chọn, sóng Elliott, mô hình harmonic, ghi chú và bút vẽ. Nhấp đúp vào hình vẽ để mở cài đặt, nhấp chuột phải để mở menu; cảnh báo bám theo đường xu hướng, và Long/Short tự tính khối lượng.',
       tryThis: [
-        'Mở nhóm biểu tượng zigzag (Mô hình) ở thanh công cụ bên trái và đặt một mô hình ABCD',
-        'Bấm vào một hình vẽ, kéo các điểm điều khiển, rồi nhấn Ctrl+Z',
-        'Hình vẽ neo theo thời gian nên vẫn giữ nguyên khi đổi khung thời gian',
+        'Nhấp đúp vào Fibonacci thoái lui và sửa các mức',
+        'Nhấp chuột phải vào hình vẽ: đưa lên trên, nhóm lại hoặc thêm cảnh báo',
+        'Chọn bút vẽ hoặc công cụ đường nhiều điểm; Enter để kết thúc',
       ],
     },
     indicators: {
@@ -332,7 +332,7 @@ const vi: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 40 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 14 ngôn ngữ.',
+        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 69 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 14 ngôn ngữ.',
       },
       react: {
         title: 'React',

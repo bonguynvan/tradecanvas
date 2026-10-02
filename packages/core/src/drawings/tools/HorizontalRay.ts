@@ -10,6 +10,11 @@ import { DrawingBase } from '../DrawingBase.js';
 export class HorizontalRayTool extends DrawingBase {
   descriptor = { type: 'horizontalRay' as const, name: 'Horizontal Ray', requiredAnchors: 1 };
 
+  priceAt(state: DrawingState, time: number): number[] | null {
+    if (state.anchors.length < 1 || time < state.anchors[0].time) return null;
+    return [state.anchors[0].price];
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const anchor = this.anchorToPixel(state.anchors[0], viewport);

@@ -16,6 +16,9 @@ import type {
   DrawingToolType,
   DrawingState,
   DrawingStyle,
+  DrawingOptions,
+  DrawingOptionDefs,
+  DrawingDescriptor,
   DrawingPlugin,
   PanelPosition,
   TradingOrder,
@@ -96,9 +99,10 @@ import {
   CompareRenderer,
   CurrentPriceLine,
   xToBarIndex,
+  xToTime,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, RangePreset, SessionHoursConfig } from '@tradecanvas/core';
+import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
@@ -137,6 +141,9 @@ const DEFAULT_ORDER_PRECISION = 2;
 const LEFT_SCALE_PADDING = 0.08;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
+
+/** Narrowest box (px) the zoom-area tool zooms into. */
+const MIN_ZOOM_BOX_PX = 8;
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -182,6 +189,10 @@ export class Chart {
    * the layout again doesn't drop them.
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
+  /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
+  private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
+  /** The zoom-area tool is waiting for its box. */
+  private zoomAreaMode = false;
   /** Display timezone, minutes east of UTC; null = the browser's. */
   /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
@@ -345,6 +356,7 @@ export class Chart {
       this.scheduleAutoSave();
     });
     this.drawingManager.setEventCallback((event, data) => {
+      this.followDrawingAlerts(event, (data as { id?: string } | null)?.id);
       this.eventBus.emit(event as ChartEventType, data);
     });
     // Pasted drawings obey the same switches as drawing tools.
@@ -568,6 +580,8 @@ export class Chart {
 
     // Alerts
     this.alertManager = new AlertManager();
+    // Alerts on drawings check the drawing's lines where they are at the latest bar.
+    this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.alertManager.on('triggered', (alert) => {
       const payload = { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered };
@@ -701,6 +715,10 @@ export class Chart {
         // timestamps (survives timeframe/symbol switches).
         () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
+      this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
+      this.interactionManager.setDrawingContextMenu((id, pos) => {
+        if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
+      });
     }
     if (this.features.trading) {
       this.interactionManager.setTradingManager(
@@ -755,6 +773,10 @@ export class Chart {
     });
 
     this.interactionManager.setEscapeHandler(() => {
+      if (this.zoomAreaMode) {
+        this.setZoomAreaMode(false);
+        return;
+      }
       if (this.features.trading && this.tradingManager.isBracketActive()) {
         this.tradingManager.cancelBracket();
         this.eventBus.emit('dataUpdate', { bracket: 'cancelled' });
@@ -803,6 +825,13 @@ export class Chart {
       move: (pos) => this.selectionBoxOverlay.update(inPlot(pos)),
       end: () => {
         const box = this.selectionBoxOverlay.end();
+        if (box && this.zoomAreaMode) {
+          // A click, or a box too narrow to hold a bar or two, keeps the tool waiting.
+          if (box.x1 - box.x0 < MIN_ZOOM_BOX_PX) return;
+          this.zoomToBox(box);
+          this.setZoomAreaMode(false);
+          return;
+        }
         if (!box || !this.features.drawings) return;
         // With the bar series, so anchors resolve as timestamps (as for drawing hit-tests).
         const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
@@ -810,7 +839,10 @@ export class Chart {
         else this.drawingManager.selectInRect(box, vs);
         this.engine.requestRender(LayerType.Overlay);
       },
-      cancel: () => this.selectionBoxOverlay.cancel(),
+      cancel: () => {
+        this.selectionBoxOverlay.cancel();
+        this.setZoomAreaMode(false);
+      },
     });
 
     // A plain hover only moves pointer-tied visuals (crosshair, its axis
@@ -1356,6 +1388,8 @@ export class Chart {
     if (!this.features.drawings) return;
     // If whitelist is set, check it
     if (type && this.features.drawingTools.length > 0 && !this.features.drawingTools.includes(type)) return;
+    // A tool picked puts the eraser and the zoom box away (the manager does the eraser).
+    if (type) this.setZoomAreaMode(false);
     this.drawingManager.setActiveTool(type);
   }
 
@@ -1409,6 +1443,7 @@ export class Chart {
 
   setDrawings(drawings: DrawingState[]): void {
     this.drawingManager.setDrawings(drawings);
+    this.dropOrphanDrawingAlerts();
   }
 
   /** Append a drawing (id auto-assigned, active style applied). Returns the id. */
@@ -1416,6 +1451,8 @@ export class Chart {
     type: import('@tradecanvas/commons').DrawingToolType;
     anchors: import('@tradecanvas/commons').AnchorPoint[];
     style?: Partial<DrawingStyle>;
+    /** The tool's own settings (see `getDrawingOptionDefs`); its defaults fill the rest. */
+    options?: DrawingOptions;
     visible?: boolean;
     locked?: boolean;
     meta?: Record<string, unknown>;
@@ -1443,6 +1480,63 @@ export class Chart {
     this.drawingManager.removeDrawing(id);
   }
 
+  /** Remove several drawings as one undo step; locked ones stay. Returns how many went. */
+  removeDrawings(ids: readonly string[]): number {
+    return this.drawingManager.removeDrawings(ids);
+  }
+
+  /** A drawing tool's name, anchors, options and style fields; null for an unknown tool. */
+  getDrawingToolDescriptor(type: DrawingToolType): DrawingDescriptor | null {
+    const descriptor = this.drawingManager.getDescriptor(type);
+    return descriptor ? structuredClone(descriptor) : null;
+  }
+
+  /** The settings a drawing tool offers beyond the shared style (levels, extend…), with defaults. */
+  getDrawingOptionDefs(type: DrawingToolType): DrawingOptionDefs {
+    return this.drawingManager.getOptionDefs(type);
+  }
+
+  /** Every option of a drawing, its tool's defaults filled in. */
+  getDrawingOptions(id: string): DrawingOptions {
+    return this.drawingManager.getDrawingOptions(id);
+  }
+
+  /** Change some of a drawing's options; invalid ones are dropped. False for an unknown drawing. */
+  setDrawingOptions(id: string, options: DrawingOptions): boolean {
+    return this.updateDrawing(id, { options });
+  }
+
+  /**
+   * Change a drawing's anchors (as many as it has), style or options, as one
+   * undo step — or as part of the edit begun with `beginDrawingEdit`.
+   * Applies to locked drawings too. False for an unknown drawing or wrong anchors.
+   */
+  updateDrawing(id: string, patch: DrawingPatch): boolean {
+    const changed = this.drawingManager.updateDrawing(id, patch);
+    if (changed) this.scheduleAutoSave();
+    return changed;
+  }
+
+  /** Start an edit (a settings dialog): the `updateDrawing` calls until `endDrawingEdit` are one undo step. */
+  beginDrawingEdit(id: string): boolean {
+    return this.drawingManager.beginEdit(id);
+  }
+
+  /** Keep the edit as one undo step, or with `cancel` put the drawing back as it was. */
+  endDrawingEdit(id: string, options: { cancel?: boolean } = {}): void {
+    this.drawingManager.endEdit(id, options);
+    this.scheduleAutoSave();
+  }
+
+  /** Options new drawings of `type` start with; null clears them. */
+  setDrawingToolDefaults(type: DrawingToolType, options: DrawingOptions | null): void {
+    this.drawingManager.setToolDefaults(type, options);
+  }
+
+  getDrawingToolDefaults(type: DrawingToolType): DrawingOptions {
+    return this.drawingManager.getToolDefaults(type);
+  }
+
   setDrawingVisible(id: string, visible: boolean): void {
     this.drawingManager.setDrawingVisible(id, visible);
   }
@@ -1451,8 +1545,19 @@ export class Chart {
     this.drawingManager.setDrawingLocked(id, locked);
   }
 
+  /** Show or hide several drawings (a selection, say) as one undo step. */
+  setDrawingsVisible(ids: readonly string[], visible: boolean): void {
+    this.drawingManager.setDrawingsVisible(ids, visible);
+  }
+
+  /** Lock or unlock several drawings as one undo step. */
+  setDrawingsLocked(ids: readonly string[], locked: boolean): void {
+    this.drawingManager.setDrawingsLocked(ids, locked);
+  }
+
   clearDrawings(): void {
     this.drawingManager.clearDrawings();
+    this.dropOrphanDrawingAlerts();
   }
 
   registerDrawingTool(plugin: DrawingPlugin): void {
@@ -1477,13 +1582,70 @@ export class Chart {
 
   // --- Drawing magnet ---
 
-  /** Ignored (stays off) when `features.drawingMagnet` is false. */
+  /** The weak magnet on or off. Ignored (stays off) when `features.drawingMagnet` is false. */
   setDrawingMagnet(enabled: boolean): void {
-    this.drawingManager.setMagnetMode(enabled && this.features.drawingMagnet ? 'magnet' : 'none');
+    this.setDrawingMagnetMode(enabled ? 'weak' : 'off');
   }
 
+  /** Whether a magnet (weak or strong) is on. */
   getDrawingMagnet(): boolean {
-    return this.drawingManager.getMagnetMode() === 'magnet';
+    return this.drawingManager.getMagnetMode() !== 'none';
+  }
+
+  /**
+   * Snap new anchors to the bar's open, high, low or close: 'weak' when the
+   * pointer is near one, 'strong' always. Stays off when
+   * `features.drawingMagnet` is false.
+   */
+  setDrawingMagnetMode(mode: 'off' | 'weak' | 'strong'): void {
+    const on = this.features.drawingMagnet && mode !== 'off';
+    this.drawingManager.setMagnetMode(!on ? 'none' : mode === 'strong' ? 'strong' : 'magnet');
+  }
+
+  getDrawingMagnetMode(): 'off' | 'weak' | 'strong' {
+    const mode = this.drawingManager.getMagnetMode();
+    return mode === 'none' ? 'off' : mode === 'strong' ? 'strong' : 'weak';
+  }
+
+  // --- Eraser and zoom area ---
+
+  /**
+   * The eraser: while on, clicking a drawing removes it (each one undoable).
+   * Picking a drawing tool or pressing Escape turns it off. `toolModeChange`
+   * reports `{ eraser }`.
+   */
+  setEraserMode(on: boolean): void {
+    if (on) this.setZoomAreaMode(false);
+    this.drawingManager.setEraser(on && this.features.drawings);
+  }
+
+  isEraserMode(): boolean {
+    return this.drawingManager.isEraser();
+  }
+
+  /**
+   * The zoom-area tool: the next drag draws a box and the chart zooms to its
+   * bars; then it turns itself off. `toolModeChange` reports `{ zoomArea }`.
+   */
+  setZoomAreaMode(on: boolean): void {
+    if (on === this.zoomAreaMode) return;
+    this.zoomAreaMode = on;
+    if (on) {
+      this.drawingManager.setEraser(false);
+      this.drawingManager.setActiveTool(null);
+    }
+    this.interactionManager?.setZoomAreaMode(on);
+    this.eventBus.emit('toolModeChange', { zoomArea: on });
+  }
+
+  isZoomAreaMode(): boolean {
+    return this.zoomAreaMode;
+  }
+
+  /** Zoom to the bars under a box dragged in zoom-area mode. */
+  private zoomToBox(box: { x0: number; x1: number }): void {
+    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    this.setVisibleRange(xToTime(box.x0, vs), xToTime(box.x1, vs));
   }
 
   // --- Bulk drawing operations ---
@@ -2565,6 +2727,109 @@ export class Chart {
     this.scheduleAutoSave();
   }
 
+  // --- Drawing order and groups ---
+
+  /** Ids of the selected drawings, the one clicked last first. */
+  getSelectedDrawingIds(): string[] {
+    return this.drawingManager.getSelectedDrawingIds();
+  }
+
+  /** Draw a drawing on top of the others, under them, or one step up or down. False when already there. */
+  moveDrawing(id: string, to: DrawingOrderMove): boolean {
+    const moved = this.drawingManager.moveDrawing(id, to);
+    if (moved) this.scheduleAutoSave();
+    return moved;
+  }
+
+  /** Group drawings (two or more): they are then selected, hidden and locked together. Returns the group id. */
+  groupDrawings(ids: readonly string[], name?: string): string | null {
+    const group = this.drawingManager.groupDrawings(ids, name);
+    if (group) this.scheduleAutoSave();
+    return group;
+  }
+
+  ungroupDrawings(groupId: string): boolean {
+    return this.afterDrawingChange(this.drawingManager.ungroup(groupId));
+  }
+
+  renameDrawingGroup(groupId: string, name: string): boolean {
+    return this.afterDrawingChange(this.drawingManager.renameGroup(groupId, name));
+  }
+
+  setDrawingGroupVisible(groupId: string, visible: boolean): boolean {
+    return this.afterDrawingChange(this.drawingManager.setGroupVisible(groupId, visible));
+  }
+
+  setDrawingGroupLocked(groupId: string, locked: boolean): boolean {
+    return this.afterDrawingChange(this.drawingManager.setGroupLocked(groupId, locked));
+  }
+
+  /** Every drawing group, its drawings bottom to top. */
+  getDrawingGroups(): { id: string; name: string; ids: string[] }[] {
+    return this.drawingManager.getGroups();
+  }
+
+  private afterDrawingChange(changed: boolean): boolean {
+    if (changed) this.scheduleAutoSave();
+    return changed;
+  }
+
+  /** Whether a drawing has lines an alert can cross (trend lines, rays, horizontals, channels). */
+  canAddDrawingAlert(drawingId: string): boolean {
+    return this.features.alerts && this.drawingLevelsNow(drawingId) !== null;
+  }
+
+  /**
+   * Where a drawing's lines are at the latest bar, as drawn on the chart's
+   * scale; null when it has none there (a trend line that ends before it).
+   */
+  private drawingLevelsNow(drawingId: string): number[] | null {
+    const data = this.getDisplayData();
+    if (data.length === 0) return null;
+    const viewport = { ...this.viewport.getState(), data };
+    return this.drawingManager.priceAt(drawingId, data[data.length - 1].time, viewport);
+  }
+
+  /**
+   * A drawing's alerts go with it, and come back with it when an undo
+   * brings the drawing back.
+   */
+  private followDrawingAlerts(event: string, drawingId: string | undefined): void {
+    if (!drawingId || !this.alertManager) return;
+    if (event === 'drawingRemove') {
+      const taken = this.alertManager.takeDrawingAlerts(drawingId);
+      if (taken.length > 0) this.removedDrawingAlerts.set(drawingId, taken);
+    } else if (event === 'drawingCreate') {
+      const back = this.removedDrawingAlerts.get(drawingId);
+      if (!back) return;
+      this.removedDrawingAlerts.delete(drawingId);
+      this.alertManager.restoreAlerts(back);
+    }
+  }
+
+  /** Remove alerts on drawings no longer on the chart (drawings replaced or cleared). */
+  private dropOrphanDrawingAlerts(): void {
+    this.removedDrawingAlerts.clear();
+    if (!this.alertManager) return;
+    const removed = this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
+    if (removed > 0) this.scheduleAutoSave();
+  }
+
+  /**
+   * Alert when the price crosses a drawing's line(s): a trend line where it
+   * is at the latest bar, any line of a channel. Removed with the drawing.
+   * Null when the drawing has no line to cross.
+   */
+  addDrawingAlert(
+    drawingId: string,
+    options: { condition?: 'crossing' | 'crossingUp' | 'crossingDown'; message?: string; repeating?: boolean; label?: string } = {},
+  ): string | null {
+    if (!this.canAddDrawingAlert(drawingId)) return null;
+    const id = this.alertManager.addDrawingAlert(drawingId, options.condition ?? 'crossing', options.message, options.repeating ?? false, options.label);
+    this.scheduleAutoSave();
+    return id;
+  }
+
   getAlerts(): import('@tradecanvas/core').PriceAlert[] {
     return this.alertManager.getAlerts();
   }
@@ -2578,8 +2843,10 @@ export class Chart {
     this.alertManager.saveToStorage(key);
   }
 
+  /** Load alerts saved with `saveAlerts`. Alerts on drawings that aren't on the chart are dropped. */
   loadAlerts(key: string): void {
     this.alertManager.loadFromStorage(key);
+    this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
     this.engine.requestRender(LayerType.Overlay);
   }
 
@@ -2847,6 +3114,12 @@ export class Chart {
         const sep = a.channel.indexOf(':');
         const renamed = sep > 0 ? instanceIds.get(a.channel.slice(0, sep)) : undefined;
         const channel = renamed ? renamed + a.channel.slice(sep) : a.channel;
+        if (a.drawingId) {
+          if (this.drawingManager.hasPriceLevels(a.drawingId) && (a.condition === 'crossing' || a.condition === 'crossingUp' || a.condition === 'crossingDown')) {
+            this.alertManager.addDrawingAlert(a.drawingId, a.condition, a.message, a.repeating, a.label);
+          }
+          continue;
+        }
         this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
       }
     }

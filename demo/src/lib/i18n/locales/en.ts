@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 85 indicators, 40 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.',
+      'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 85 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -46,7 +46,7 @@ const en = {
     release: 'two-canvas renderer, free panning',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 85 indicators, 40 drawing tools, live exchange feeds and orders on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 85 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -144,13 +144,13 @@ const en = {
   scenes: {
     drawings: {
       title: 'Drawing tools',
-      stat: '40 tools',
+      stat: '69 tools',
       blurb:
-        'Trend, info and angle lines, Fibonacci channels and fans, Andrews and Schiff pitchforks, harmonic XABCD, head-and-shoulders, cycles, measuring boxes. Magnet snapping, undo/redo, JSON save/restore.',
+        'Fibonacci and Gann tools with your own levels, Elliott waves, harmonic patterns, notes and brushes. Double-click a drawing for its settings, right-click for its menu; alerts follow trend lines, and Long/Short works out the position size.',
       tryThis: [
-        'Open the zigzag (Patterns) group in the left toolbar and place an ABCD',
-        'Click a drawing, drag its handles, then Ctrl+Z',
-        'Drawings stay anchored to time, so they survive timeframe switches',
+        'Double-click the Fibonacci retracement and edit its levels',
+        'Right-click a drawing: bring it forward, group it, or add an alert',
+        'Pick the brush or the path tool; Enter ends a path',
       ],
     },
     indicators: {
@@ -338,7 +338,7 @@ const en = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'The full trading UI in one call: toolbar, 40 drawing tools, watchlist, trading, replay, in 14 languages.',
+        blurb: 'The full trading UI in one call: toolbar, 69 drawing tools, watchlist, trading, replay, in 14 languages.',
       },
       react: {
         title: 'React',

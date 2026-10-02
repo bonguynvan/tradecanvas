@@ -18,7 +18,10 @@ import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
-import { DrawingTemplateStore } from './DrawingTemplateStore.js';
+import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
+import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
+import { WidgetContextMenu } from './WidgetContextMenu.js';
+import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import {
   availableTimeframes,
@@ -42,7 +45,7 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { DataSeries } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
 import type { CommandItem } from './WidgetCommandPalette.js';
-import { resolveMessages, createTranslator, fill, type Translator } from './i18n.js';
+import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
 import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
@@ -132,6 +135,8 @@ export class ChartWidget {
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettings: WidgetIndicatorSettings | null = null;
   private drawingStyle: WidgetDrawingStyle | null = null;
+  private drawingSettings: WidgetDrawingSettings | null = null;
+  private drawingMenu: WidgetContextMenu | null = null;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
   private depthLadder: WidgetDepthLadder | null = null;
@@ -275,6 +280,9 @@ export class ChartWidget {
       activeIndicators: new Map(),
       activeTool: null,
       magnetEnabled: features.drawingMagnet !== false,
+      magnetStrong: false,
+      eraser: false,
+      zoomArea: false,
       stayInDrawing: false,
       // Static data (no adapter) has no connection to report.
       connectionState: options.adapter ? 'connecting' : 'disconnected',
@@ -345,6 +353,8 @@ export class ChartWidget {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
           onToggleMagnet: features.drawingMagnet !== false ? () => this.handleToggleMagnet() : undefined,
+          onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
+          onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
           onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
           onUndo: () => this.chart.undo(),
           onRedo: () => this.chart.redo(),
@@ -477,6 +487,16 @@ export class ChartWidget {
       this.state = { ...this.state, activeTool: tool };
       this.updateUI();
     });
+    // The eraser and the zoom tool turn themselves off (Escape, a tool picked, a zoom done).
+    this.chart.on('toolModeChange', (e) => {
+      const { eraser, zoomArea } = e.payload as { eraser?: boolean; zoomArea?: boolean };
+      this.state = {
+        ...this.state,
+        eraser: eraser ?? this.state.eraser,
+        zoomArea: zoomArea ?? this.state.zoomArea,
+      };
+      this.updateUI();
+    });
 
     // The indicator list mirrors the chart's indicators, whoever adds or removes them.
     this.chart.on('indicatorAdd', () => this.syncIndicatorsFromChart());
@@ -547,6 +567,33 @@ export class ChartWidget {
 
     // Drawing style + templates popover (paired with the sidebar palette button)
     if (options.drawingTools !== false) {
+      const templates = new DrawingTemplateStore();
+      // Each tool's saved defaults ("Save as default" in a drawing's settings).
+      const defaults = new DrawingDefaultsStore();
+      for (const [type, toolOptions] of Object.entries(defaults.all())) {
+        this.chart.setDrawingToolDefaults(type as DrawingToolType, toolOptions ?? null);
+      }
+      this.drawingSettings = new WidgetDrawingSettings(this.root, {
+        onBegin: (id) => this.chart.beginDrawingEdit(id),
+        onChange: (id, patch) => this.chart.updateDrawing(id, patch),
+        onEnd: (id, cancel) => {
+          this.chart.endDrawingEdit(id, { cancel });
+          this.refreshObjects();
+        },
+        toWallTime: (time) => utcToWallTime(time * barTimeUnit(this.chart.getData()), this.displayTimezone()),
+        fromWallTime: (date, time) => {
+          const ms = wallTimeToUtc(date, time, this.displayTimezone());
+          return ms === null ? null : ms / barTimeUnit(this.chart.getData());
+        },
+        onAddAlert: (id) => this.addDrawingAlert(id),
+        onSaveDefault: (type, toolOptions) => {
+          this.chart.setDrawingToolDefaults(type, toolOptions);
+          defaults.set(type, this.chart.getDrawingToolDefaults(type));
+          this.toast(fill(this.t('drawingSettings.defaultSaved'), { name: this.drawingToolName(type) }));
+        },
+        templates,
+      }, this.t);
+      this.chart.on('drawingDoubleClick', (e) => this.openDrawingSettings((e.payload as { id: string }).id));
       this.drawingStyle = new WidgetDrawingStyle(
         this.root,
         {
@@ -556,10 +603,17 @@ export class ChartWidget {
           },
           getStyle: () => this.chart.getDrawingStyle(),
         },
-        new DrawingTemplateStore(),
+        templates,
       this.t,
     );
     }
+
+    // Right-click on a drawing: settings, alert, order, group, lock, hide, delete.
+    this.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
+    this.chart.on('drawingContextMenu', (e) => {
+      const { id, x, y } = e.payload as { id: string; x: number; y: number };
+      this.openDrawingMenu(id, x, y);
+    });
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
@@ -642,9 +696,11 @@ export class ChartWidget {
           this.scheduleLegend();
         },
         onRemoveDrawing: (id) => {
+          if (this.drawingSettings?.editing() === id) this.drawingSettings.close(true);
           this.chart.removeDrawing(id);
           this.refreshObjects();
         },
+        onConfigureDrawing: this.drawingSettings ? (id) => this.openDrawingSettings(id) : undefined,
         onToggleDrawingVisible: (id, visible) => {
           this.chart.setDrawingVisible(id, visible);
           this.refreshObjects();
@@ -653,12 +709,39 @@ export class ChartWidget {
           this.chart.setDrawingLocked(id, locked);
           this.refreshObjects();
         },
+        onToggleGroupVisible: (group, visible) => {
+          this.chart.setDrawingGroupVisible(group, visible);
+          this.refreshObjects();
+        },
+        onToggleGroupLocked: (group, locked) => {
+          this.chart.setDrawingGroupLocked(group, locked);
+          this.refreshObjects();
+        },
+        onUngroup: (group) => {
+          this.chart.ungroupDrawings(group);
+          this.refreshObjects();
+        },
+        onRenameGroup: (group, name) => {
+          this.chart.renameDrawingGroup(group, name);
+          this.refreshObjects();
+        },
         onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onRemoveCompare: (id) => this.handleRemoveCompare(id),
       }, this.t);
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
+      // A drawing changes many times a second while its settings are edited
+      // (a colour being picked): rebuild the list once a frame at most.
+      let refreshFrame = 0;
+      const refreshSoon = () => {
+        if (refreshFrame || !this.objectTree?.isOpen()) return;
+        refreshFrame = requestAnimationFrame(() => {
+          refreshFrame = 0;
+          if (!this.destroyed) refresh();
+        });
+      };
       this.chart.on('drawingCreate', refresh);
       this.chart.on('drawingRemove', refresh);
+      this.chart.on('drawingUpdate', refreshSoon);
       this.chart.on('indicatorAdd', refresh);
       this.chart.on('indicatorRemove', refresh);
       this.chart.on('indicatorChange', refresh);
@@ -862,6 +945,8 @@ export class ChartWidget {
     this.objectTree?.destroy();
     this.indicatorSettings?.destroy();
     this.drawingStyle?.destroy();
+    this.drawingSettings?.destroy();
+    this.drawingMenu?.destroy();
     this.bracketBar?.destroy();
     this.alertNotifier?.destroy();
     this.depthLadder?.destroy();
@@ -910,6 +995,104 @@ export class ChartWidget {
     this.root.requestFullscreen().catch((err: unknown) => {
       this.toast(err instanceof Error ? err.message : this.t('toast.fullscreenUnavailable'), 'error');
     });
+  }
+
+  /** A drawing tool's name in the widget's language. */
+  private drawingToolName(type: DrawingToolType): string {
+    const key = `tool.${type}` as MessageKey;
+    const name = this.t(key);
+    return name === key ? this.chart.getDrawingToolDescriptor(type)?.name ?? type : name;
+  }
+
+  /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
+  private openDrawingSettings(id: string): void {
+    const drawing = this.chart.getDrawings().find((d) => d.id === id);
+    const descriptor = drawing ? this.chart.getDrawingToolDescriptor(drawing.type) : null;
+    if (!drawing || !descriptor || !this.drawingSettings) return;
+    this.drawingSettings.open({
+      id,
+      type: drawing.type,
+      name: this.drawingToolName(drawing.type),
+      style: { ...drawing.style },
+      options: this.chart.getDrawingOptions(id),
+      defs: descriptor.options ?? {},
+      anchors: drawing.anchors.map((a) => ({ ...a })),
+      fill: descriptor.fill === true,
+      text: descriptor.text === true,
+      alertable: this.chart.canAddDrawingAlert(id),
+    });
+  }
+
+  /** Add a "price crosses this drawing" alert and say so. */
+  private addDrawingAlert(id: string): void {
+    const drawing = this.chart.getDrawings().find((d) => d.id === id);
+    const name = drawing ? this.drawingToolName(drawing.type) : '';
+    if (this.chart.addDrawingAlert(id, { label: name })) {
+      this.toast(fill(this.t('drawingSettings.alertAdded'), { name }));
+    }
+  }
+
+  /** The menu of a right-clicked drawing; the chart has selected it (and its group) by now. */
+  private openDrawingMenu(id: string, x: number, y: number): void {
+    if (!this.drawingMenu) return;
+    const drawings = new Map(this.chart.getDrawings().map((d) => [d.id, d]));
+    const selected = this.chart.getSelectedDrawingIds().flatMap((sid) => {
+      const d = drawings.get(sid);
+      return d ? [{ id: d.id, locked: d.locked, groupId: d.group?.id ?? null }] : [];
+    });
+    if (selected.length === 0) return;
+    const entries = drawingMenuEntries({
+      selected,
+      canConfigure: this.drawingSettings !== null,
+      canAlert: this.chart.canAddDrawingAlert(id),
+    }, this.t);
+    const chartRect = this.chartContainer.getBoundingClientRect();
+    const rootRect = this.root.getBoundingClientRect();
+    const ids = selected.map((d) => d.id);
+    this.drawingMenu.open(entries, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y,
+      (action) => this.runDrawingMenuAction(id, ids, action as DrawingMenuAction));
+  }
+
+  private runDrawingMenuAction(id: string, ids: readonly string[], action: DrawingMenuAction): void {
+    switch (action) {
+      case 'settings':
+        this.openDrawingSettings(id);
+        return;
+      case 'alert':
+        this.addDrawingAlert(id);
+        return;
+      case 'front':
+      case 'forward':
+      case 'backward':
+      case 'back':
+        this.chart.moveDrawing(id, action);
+        break;
+      case 'group':
+        this.chart.groupDrawings(ids);
+        break;
+      case 'ungroup': {
+        const groups = new Set(this.chart.getDrawings().filter((d) => ids.includes(d.id)).map((d) => d.group?.id));
+        for (const group of groups) if (group) this.chart.ungroupDrawings(group);
+        break;
+      }
+      case 'lock':
+      case 'unlock':
+        this.chart.setDrawingsLocked(ids, action === 'lock');
+        break;
+      case 'hide':
+        this.chart.setDrawingsVisible(ids, false);
+        break;
+      case 'duplicate':
+        this.chart.duplicateDrawing(id);
+        break;
+      case 'delete': {
+        const editing = this.drawingSettings?.editing();
+        if (editing && ids.includes(editing)) this.drawingSettings?.close(true);
+        this.chart.removeDrawings(ids);
+        break;
+      }
+    }
+    if (this.objectTree?.isOpen()) this.refreshObjects();
   }
 
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
@@ -1242,6 +1425,7 @@ export class ChartWidget {
       label: drawingTypeLabel(d.type, this.t),
       visible: d.visible,
       locked: d.locked,
+      group: d.group,
     }));
     const compares = this.compares.map((c) => ({ id: c.id, label: c.symbol, color: c.color }));
     this.objectTree.setObjects(indicators, drawings, compares);
@@ -1311,6 +1495,7 @@ export class ChartWidget {
         triggered: a.triggered,
         channel: a.channel,
         label: a.label,
+        drawingId: a.drawingId,
       })),
     );
   }
@@ -1473,9 +1658,12 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** The cursor button: no tool, no eraser, no zoom box. */
   private handleCancelDrawing(): void {
     this.state = { ...this.state, activeTool: null };
     this.chart.setDrawingTool(null);
+    this.chart.setEraserMode(false);
+    this.chart.setZoomAreaMode(false);
     this.updateUI();
   }
 
@@ -1486,10 +1674,11 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** The magnet button goes off → weak → strong → off. */
   private handleToggleMagnet(): void {
-    const magnetEnabled = !this.state.magnetEnabled;
-    this.state = { ...this.state, magnetEnabled };
-    this.chart.setDrawingMagnet(magnetEnabled);
+    const mode = !this.state.magnetEnabled ? 'weak' : this.state.magnetStrong ? 'off' : 'strong';
+    this.state = { ...this.state, magnetEnabled: mode !== 'off', magnetStrong: mode === 'strong' };
+    this.chart.setDrawingMagnetMode(mode);
     this.updateUI();
   }
 

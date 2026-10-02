@@ -373,16 +373,30 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <p>
   Nút lớp (layers) trên thanh công cụ mở bảng cây đối tượng liệt kê mọi chỉ báo
   và hình vẽ đang có. Chỉ báo có thể xoá; mỗi hình vẽ có nút
-  hiện / ẩn, khoá / mở khoá và xoá. Bật sẵn theo mặc định — tắt bằng
+  hiện / ẩn, khoá / mở khoá, cài đặt và xoá, còn các nhóm được liệt kê cùng
+  các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
   <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
 chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
+chart.groupDrawings(ids, 'Weekly levels')  // ẩn, khoá và chọn cùng nhau
+chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<h3>Cài đặt hình vẽ và menu</h3>
+<p>
+  Bấm đúp vào một hình vẽ, hoặc dùng nút bánh răng của nó trong cây đối tượng, để mở
+  cài đặt: kiểu, các cài đặt riêng của công cụ (mức Fibonacci, phần kéo dài,
+  nhãn…) và các điểm của nó theo múi giờ của biểu đồ. Bấm chuột phải vào một
+  hình vẽ để mở menu: cài đặt, cảnh báo trên đường của nó, thứ tự, nhóm, khoá,
+  ẩn, nhân bản và xoá. Thanh bên còn có tẩy, công cụ phóng to và nam châm với
+  các mức tắt, yếu và mạnh. Xem
+  <a href={href('/docs/drawing-tools')}>Công cụ vẽ</a> để biết API bên dưới.
+</p>
+
 <p>
   Nút bánh răng trên mỗi dòng chỉ báo mở <strong>hộp thoại cài đặt</strong>,
   tự đọc các tham số của chỉ báo (số, công tắc, màu) và

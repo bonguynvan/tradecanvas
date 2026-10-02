@@ -1,81 +1,86 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import type { DrawingOptions } from '@tradecanvas/commons';
 import { RiskRewardTool } from '../tools/RiskReward.js';
-import { drawing, unitViewport } from './fixtures.js';
+import { DrawingManager } from '../DrawingManager.js';
+import { UndoRedoManager } from '../../features/UndoRedoManager.js';
+import { drawing, recordingCtx, unitViewport } from './fixtures.js';
 
-function mockCtx() {
-  const fillTextCalls: string[] = [];
-  return {
-    ctx: {
-      fillText: vi.fn((text: string) => fillTextCalls.push(text)),
-      fillRect: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
-      set font(_v: string) {},
-      set fillStyle(_v: string) {},
-      set strokeStyle(_v: string) {},
-      set lineWidth(_v: number) {},
-      set textAlign(_v: string) {},
-      set textBaseline(_v: string) {},
-      setLineDash: vi.fn(),
-    } as unknown as CanvasRenderingContext2D,
-    fillTextCalls,
-  };
-}
+// unitViewport: bar N at x = N*10 + 5, price p at y = 100 - p.
+const LONG = [{ time: 0, price: 50 }, { time: 10, price: 40 }]; // entry 50, stop 40
+const SHORT = [{ time: 0, price: 50 }, { time: 10, price: 60 }];
+
+const tool = new RiskRewardTool();
+const texts = (anchors = LONG, options?: DrawingOptions) => {
+  const { ctx, texts: out } = recordingCtx();
+  tool.render(ctx, drawing('riskReward', anchors, { options }), unitViewport, false);
+  return out;
+};
 
 describe('RiskRewardTool', () => {
-  const tool = new RiskRewardTool();
-
-  it('infers "Long" when the stop sits below the entry', () => {
-    const state = drawing('riskReward', [
-      { time: 0, price: 50 },
-      { time: 10, price: 40 },
+  it('labels target, stop, side, quantity and R:R for a long', () => {
+    // 1% of 1,000 = 10 at risk, 10 per unit → qty 1; target 2R above → 70.
+    expect(texts()).toEqual([
+      'Target: 70.00 (40.00%) 20.00',
+      'Long · Qty: 1.00 · R:R 2',
+      'Stop: 40.00 (-20.00%) 10.00',
     ]);
-    const { ctx, fillTextCalls } = mockCtx();
-    tool.render(ctx, state, unitViewport, false);
-    expect(fillTextCalls).toContain('Long');
   });
 
-  it('infers "Short" when the stop sits above the entry', () => {
-    const state = drawing('riskReward', [
-      { time: 0, price: 50 },
-      { time: 10, price: 60 },
-    ]);
-    const { ctx, fillTextCalls } = mockCtx();
-    tool.render(ctx, state, unitViewport, false);
-    expect(fillTextCalls).toContain('Short');
+  it('puts the target below the entry for a short', () => {
+    expect(texts(SHORT)[0]).toBe('Target: 30.00 (-40.00%) 20.00');
+    expect(texts(SHORT)[1]).toBe('Short · Qty: 1.00 · R:R 2');
   });
 
-  it('sizes the reward zone at 2x the risk by default', () => {
-    const state = drawing('riskReward', [
-      { time: 0, price: 50 },
-      { time: 10, price: 40 },
-    ]);
-    const { ctx, fillTextCalls } = mockCtx();
-    tool.render(ctx, state, unitViewport, false);
-    // risk = 10, reward = 20 -> target = 70.
-    expect(fillTextCalls.some((t) => t.includes('Reward 20.00'))).toBe(true);
+  it('follows the R:R, the risk as a sum, and the quantity decimals', () => {
+    expect(texts(LONG, { rewardRatio: 3 })[0]).toBe('Target: 80.00 (60.00%) 30.00');
+    const bySum = texts(LONG, { riskMode: 'amount', risk: 55, qtyDecimals: 1 });
+    expect(bySum[1]).toBe('Long · Qty: 5.5 · R:R 2');
+    expect(bySum[0]).toBe('Target: 70.00 (40.00%) 110.00');
   });
 
-  it('hits inside the combined risk/reward bounding box', () => {
-    const state = drawing('riskReward', [
-      { time: 0, price: 50 },
-      { time: 10, price: 40 },
-    ]);
+  it('draws no labels when they are off', () => {
+    expect(texts(LONG, { showLabels: false })).toEqual([]);
+  });
+
+  it('offers a handle on the target, beside the stop', () => {
+    const state = drawing('riskReward', LONG);
+    // stop at x 105, target 70 at y 30
+    expect(tool.hitTestAnchor({ x: 105, y: 30 }, state, unitViewport, 4)).toBe(2);
+    expect(tool.hitTestAnchor({ x: 105, y: 60 }, state, unitViewport, 4)).toBe(1);
+    expect(tool.hitTestAnchor({ x: 5, y: 50 }, state, unitViewport, 4)).toBe(0);
+  });
+
+  it('turns a drag of the target into an R:R, never past the entry', () => {
+    const state = drawing('riskReward', LONG);
+    expect(tool.moveHandle(state, 2, { time: 10, price: 65 }).options).toEqual({ rewardRatio: 1.5 });
+    expect(tool.moveHandle(state, 2, { time: 10, price: 45 }).options).toEqual({ rewardRatio: 0.1 });
+    expect(tool.moveHandle(state, 1, { time: 12, price: 45 }).anchors).toEqual([LONG[0], { time: 12, price: 45 }]);
+  });
+
+  it('hits inside the zones and misses outside', () => {
+    const state = drawing('riskReward', LONG);
     expect(tool.hitTest({ x: 55, y: 45 }, state, unitViewport, 2)).toBe(true);
-  });
-
-  it('misses points well outside the bounding box', () => {
-    const state = drawing('riskReward', [
-      { time: 0, price: 50 },
-      { time: 10, price: 40 },
-    ]);
+    expect(tool.hitTest({ x: 55, y: 35 }, state, unitViewport, 2)).toBe(true); // reward zone
     expect(tool.hitTest({ x: 500, y: 5 }, state, unitViewport, 2)).toBe(false);
+    expect(tool.hitTest({ x: 5, y: 50 }, drawing('riskReward', [LONG[0]]), unitViewport, 2)).toBe(false);
   });
+});
 
-  it('returns false when the drawing has fewer than two anchors', () => {
-    const state = drawing('riskReward', [{ time: 0, price: 50 }]);
-    expect(tool.hitTest({ x: 5, y: 50 }, state, unitViewport, 2)).toBe(false);
+describe('dragging a handle a tool moves itself', () => {
+  it('lets the target handle change the R:R, as one undo step', () => {
+    const manager = new DrawingManager();
+    manager.register(new RiskRewardTool());
+    const undo = new UndoRedoManager();
+    manager.setUndoRedoManager(undo);
+    const id = manager.addDrawing({ type: 'riskReward', anchors: LONG });
+    manager.onPointerDown({ x: 55, y: 45 }, unitViewport); // select
+    manager.onPointerUp();
+    manager.onPointerDown({ x: 105, y: 30 }, unitViewport); // the target handle
+    manager.onPointerMove({ x: 105, y: 20 }, unitViewport); // price 80 → 3R
+    manager.onPointerUp();
+    expect(manager.getDrawingOptions(id).rewardRatio).toBe(3);
+    expect(manager.getDrawings()[0].anchors).toEqual(LONG);
+    manager.undo();
+    expect(manager.getDrawingOptions(id).rewardRatio).toBe(2);
   });
 });

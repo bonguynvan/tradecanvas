@@ -373,16 +373,30 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <p>
   The toolbar layers button opens an object-tree panel listing every active
   indicator and drawing. Indicators can be removed; drawings get per-item
-  show / hide, lock / unlock, and delete. Enabled by default — disable with
+  show / hide, lock / unlock, settings and delete, and groups are listed with
+  their drawings under them. Enabled by default — disable with
   <code>objectTree: false</code>. The drawing controls map to:
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
 chart.setDrawingVisible(id, false)  // hide a single drawing
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
+chart.groupDrawings(ids, 'Weekly levels')  // hidden, locked and selected together
+chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
+<h3>Drawing settings and menu</h3>
+<p>
+  Double-click a drawing, or use its gear in the object tree, to open its
+  settings: style, the tool's own settings (Fibonacci levels, extensions,
+  labels…) and its points in the chart's time zone. Right-click a drawing for
+  its menu: settings, an alert on its line, order, group, lock, hide,
+  duplicate and delete. The sidebar also has an eraser, a zoom tool and a
+  magnet that goes off, weak and strong. See
+  <a href={href('/docs/drawing-tools')}>Drawing tools</a> for the API underneath.
+</p>
+
 <p>
   The gear button on each indicator row opens a <strong>settings dialog</strong>
   that introspects the indicator's parameters (numbers, toggles, colors) and

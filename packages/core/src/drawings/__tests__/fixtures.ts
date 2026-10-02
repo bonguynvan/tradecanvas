@@ -38,6 +38,7 @@ export function drawing(
     style: { ...defaultStyle, ...overrides.style },
     visible: overrides.visible ?? true,
     locked: overrides.locked ?? false,
+    options: overrides.options,
     meta: overrides.meta,
   };
 }
