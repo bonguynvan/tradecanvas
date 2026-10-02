@@ -1,0 +1,29 @@
+# TradeCanvas
+
+> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): 17 chart types, 85 indicators, 40 drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+
+Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
+
+## Docs
+
+- [Getting started](https://bonguynvan.github.io/tradecanvas/docs/getting-started): install, the widget, the headless chart
+- [API reference](https://bonguynvan.github.io/tradecanvas/docs/api): Chart and ChartWidget methods, options and events
+- [Indicators](https://bonguynvan.github.io/tradecanvas/docs/indicators): every built-in indicator with its id, inputs and lines
+- [Chart types](https://bonguynvan.github.io/tradecanvas/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
+- [Drawing tools](https://bonguynvan.github.io/tradecanvas/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
+- [Realtime and replay](https://bonguynvan.github.io/tradecanvas/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
+- [Trading](https://bonguynvan.github.io/tradecanvas/docs/trading): orders, positions, brackets and execution adapters on the chart
+- [Frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks): React, Vue and Svelte components
+- [Plugins](https://bonguynvan.github.io/tradecanvas/docs/plugins): custom indicators, drawings and chart types
+- [Analytics](https://bonguynvan.github.io/tradecanvas/docs/analytics): strategy backtester and risk metrics
+
+## Agent skill
+
+- [SKILL.md](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md): how to build with TradeCanvas, the rules that avoid most bugs, worked examples
+- [Indicator reference](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/indicators.md): ids, default params, lines and levels
+- [Recipes](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md): live data, custom adapters, indicators on indicators, custom indicators, layouts
+
+## Optional
+
+- [Everything in one file](https://bonguynvan.github.io/tradecanvas/llms-full.txt): the library README, the skill and its references
+- [Source](https://github.com/bonguynvan/tradecanvas)

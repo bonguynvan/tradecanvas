@@ -1,134 +1,130 @@
+<script lang="ts">
+  // Generated from the indicator registry by `pnpm docs:gen`: always the real ids.
+  import catalog from '$lib/generated/indicators.json';
+
+  type Entry = (typeof catalog)[number];
+  const overlays = catalog.filter((i) => i.placement === 'overlay');
+  const panes = catalog.filter((i) => i.placement === 'panel');
+  const params = (i: Entry) =>
+    Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
+  const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
+  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+</script>
+
 <svelte:head>
   <title>Indicators — TradeCanvas docs</title>
-  <meta name="description" content="70 built-in technical indicators: SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, Anchored VWAP, and more." />
+  <meta name="description" content="{catalog.length} built-in technical indicators: moving averages, bands, oscillators, volume and volatility, with sources, indicators on indicators and editable levels." />
 </svelte:head>
 
 <h1>Indicators</h1>
-<p>66 built-in indicators. Add by id; each registry entry validates its own params.</p>
-
-<h2>Adding an indicator</h2>
-<pre><code>{`const instanceId = chart.addIndicator('rsi', { period: 14 }, 'bottom')
-chart.updateIndicator(instanceId, { period: 21 })
-chart.removeIndicator(instanceId)`}</code></pre>
-
-<h2>Overlay indicators</h2>
-<p>Drawn on the main price pane.</p>
-<table>
-  <thead><tr><th>id</th><th>Name</th></tr></thead>
-  <tbody>
-    <tr><td><code>sma</code></td><td>Simple Moving Average</td></tr>
-    <tr><td><code>ema</code></td><td>Exponential Moving Average</td></tr>
-    <tr><td><code>tema</code></td><td>Triple EMA (3×EMA1 − 3×EMA2 + EMA3, less lag than a plain EMA)</td></tr>
-    <tr><td><code>vwma</code></td><td>Volume Weighted Moving Average</td></tr>
-    <tr><td><code>wma</code></td><td>Weighted Moving Average (linear recency weighting)</td></tr>
-    <tr><td><code>hullMa</code></td><td>Hull Moving Average</td></tr>
-    <tr><td><code>mtfma</code></td><td>MTF Moving Average (higher-timeframe MA, non-repainting)</td></tr>
-    <tr><td><code>bollingerBands</code></td><td>Bollinger Bands</td></tr>
-    <tr><td><code>envelope</code></td><td>Moving Average Envelope (SMA ± a fixed % band)</td></tr>
-    <tr><td><code>keltnerChannels</code></td><td>Keltner Channels</td></tr>
-    <tr><td><code>donchianChannels</code></td><td>Donchian Channels</td></tr>
-    <tr><td><code>vwap</code></td><td>VWAP</td></tr>
-    <tr><td><code>anchoredVwap</code></td><td>Anchored VWAP</td></tr>
-    <tr><td><code>svwap</code></td><td>Session VWAP (resets each day; optional ±σ bands via <code>bands: 1–3</code>)</td></tr>
-    <tr><td><code>parabolicSar</code></td><td>Parabolic SAR</td></tr>
-    <tr><td><code>supertrend</code></td><td>Supertrend</td></tr>
-    <tr><td><code>ichimoku</code></td><td>Ichimoku Kinko Hyo</td></tr>
-    <tr><td><code>pivotPoints</code></td><td>Pivot Points (Classic)</td></tr>
-    <tr><td><code>zigzag</code></td><td>ZigZag</td></tr>
-    <tr><td><code>linearRegressionChannel</code></td><td>Linear Regression Channel</td></tr>
-    <tr><td><code>chandelier</code></td><td>Chandelier Exit (ATR trailing-stop levels, long &amp; short)</td></tr>
-    <tr><td><code>alligator</code></td><td>Williams Alligator (3 displaced smoothed MAs: jaw/teeth/lips)</td></tr>
-  </tbody>
-</table>
-
 <p>
-  <code>mtfma</code> plots a moving average from a higher timeframe on the
-  current chart — e.g. the daily 50-MA while viewing 1h bars. It averages only
-  <em>completed</em> higher-timeframe closes, so it steps at each boundary and
-  never repaints. Configure <code>period</code> and <code>timeframe</code> from
-  the indicator's gear dialog (or <code>addIndicator('mtfma', &#123; period: 50,
-  timeframe: '1d' &#125;)</code>).
+  {catalog.length} built-in indicators. Add one by its id; parameters you leave out take
+  their defaults, and invalid ones fall back to them.
 </p>
 
-<h2>Panel indicators</h2>
-<p>Rendered in their own pane beneath the chart.</p>
+<h2>Adding an indicator</h2>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })          // on the price pane
+const rsi = chart.addIndicator('rsi', { period: 14 }, 'bottom') // in a pane of its own
+chart.updateIndicator(rsi, { period: 21 })
+chart.removeIndicator(rsi)`}</code></pre>
+<p>
+  <code>addIndicator</code> returns an instance id: the same indicator can be added several
+  times, each instance with its own inputs, colours and levels.
+</p>
+
+<h2>Sources and indicators on indicators</h2>
+<p>
+  Indicators marked <em>source</em> below can run on another price than the close
+  (<code>open</code>, <code>high</code>, <code>low</code>, <code>hl2</code>, <code>hlc3</code>,
+  <code>ohlc4</code>, <code>hlcc4</code>) or on another indicator's line. A moving average of RSI
+  is drawn in RSI's pane, on its scale, and goes when RSI does.
+</p>
+<pre><code>{`import { indicatorSource } from '@tradecanvas/chart'
+
+chart.updateIndicator(ema, { source: 'hlc3' })
+const smoothed = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })`}</code></pre>
+<p>
+  Pane indicators can also share a pane:
+  <code>chart.addIndicator('stochastic', &#123;&#125;, 'bottom', &#123; pane: rsi &#125;)</code>.
+</p>
+
+<h2>Levels, colours and values</h2>
+<pre><code>{`chart.setIndicatorLevels(rsi, [20, 50, 80])   // null restores 30 / 70
+chart.updateIndicatorStyle(rsi, { colors: ['#f2a93b'], lineWidths: [2] })
+chart.setIndicatorVisible(rsi, false)
+
+const series = chart.getIndicatorOutput(rsi)?.series ?? []
+const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
+<p>
+  Each line's latest value is tagged on its axis in the line's colour; turn the tags off with
+  <code>features.indicatorValueLabels: false</code> or <code>setIndicatorValueLabelsVisible(false)</code>.
+  A pane's lines, levels, axis and crosshair share one scale.
+</p>
+
+<h2>On the price pane ({overlays.length})</h2>
 <table>
-  <thead><tr><th>id</th><th>Name</th></tr></thead>
+  <thead><tr><th>id</th><th>Name</th><th>Default params</th><th>Lines</th></tr></thead>
   <tbody>
-    <tr><td><code>rsi</code></td><td>Relative Strength Index</td></tr>
-    <tr><td><code>macd</code></td><td>MACD</td></tr>
-    <tr><td><code>stochastic</code></td><td>Stochastic</td></tr>
-    <tr><td><code>stochrsi</code></td><td>Stochastic RSI (stochastic of RSI; %K/%D, 20/80 bands)</td></tr>
-    <tr><td><code>atr</code></td><td>Average True Range</td></tr>
-    <tr><td><code>adx</code></td><td>Average Directional Index</td></tr>
-    <tr><td><code>cci</code></td><td>Commodity Channel Index</td></tr>
-    <tr><td><code>mfi</code></td><td>Money Flow Index</td></tr>
-    <tr><td><code>williamsR</code></td><td>Williams %R</td></tr>
-    <tr><td><code>obv</code></td><td>On-Balance Volume</td></tr>
-    <tr><td><code>chaikinOscillator</code></td><td>Chaikin Oscillator (exposes cumulative ADL)</td></tr>
-    <tr><td><code>voldelta</code></td><td>Volume Delta (directional volume; per-bar or cumulative)</td></tr>
-    <tr><td><code>vortex</code></td><td>Vortex Indicator (VI+ / VI−; trend direction &amp; strength)</td></tr>
-    <tr><td><code>chop</code></td><td>Choppiness Index (trend vs range, 0–100; &gt;61.8 choppy, &lt;38.2 trending)</td></tr>
-    <tr><td><code>uo</code></td><td>Ultimate Oscillator (3-timeframe momentum, 0–100; 30/70 bands)</td></tr>
-    <tr><td><code>fi</code></td><td>Force Index (price change × volume, EMA-smoothed; zero-centered)</td></tr>
-    <tr><td><code>crsi</code></td><td>Connors RSI (composite RSI + streak-RSI + percent-rank, 0–100; 10/90 bands)</td></tr>
-    <tr><td><code>coppock</code></td><td>Coppock Curve (long-term momentum; WMA of two ROCs; zero-centered)</td></tr>
-    <tr><td><code>kst</code></td><td>Know Sure Thing (4 smoothed ROCs weighted 1:2:3:4 + signal line)</td></tr>
-    <tr><td><code>elderray</code></td><td>Elder Ray (Bull Power / Bear Power vs an EMA of close)</td></tr>
-    <tr><td><code>stc</code></td><td>Schaff Trend Cycle (MACD via double stochastic, 0–100; 25/75 bands)</td></tr>
-    <tr><td><code>kvo</code></td><td>Klinger Oscillator (volume-force money-flow + signal line)</td></tr>
-    <tr><td><code>fisher</code></td><td>Fisher Transform (Gaussian-normalized price + trigger line)</td></tr>
-    <tr><td><code>dpo</code></td><td>Detrended Price Oscillator (isolates cycles by removing the trend)</td></tr>
-    <tr><td><code>bop</code></td><td>Balance of Power (buyers vs sellers per bar; SMA-smoothed)</td></tr>
-    <tr><td><code>massindex</code></td><td>Mass Index (range-bulge reversal detector; 26.5/27 bands)</td></tr>
-    <tr><td><code>cmo</code></td><td>Chande Momentum (−100…+100 net momentum; ±50 bands)</td></tr>
-    <tr><td><code>trix</code></td><td>TRIX (triple-smoothed EMA rate of change + signal line)</td></tr>
-    <tr><td><code>emv</code></td><td>Ease of Movement (midpoint move per unit volume; SMA-smoothed)</td></tr>
-    <tr><td><code>pvt</code></td><td>Price Volume Trend (cumulative volume weighted by % price change)</td></tr>
-    <tr><td><code>wad</code></td><td>Williams A/D (cumulative accumulation/distribution line)</td></tr>
-    <tr><td><code>chaikinvol</code></td><td>Chaikin Volatility (% rate of change of an EMA of the high-low range; zero-centered)</td></tr>
-    <tr><td><code>rvi</code></td><td>Relative Vigor Index (close-vs-open vigor, range-normalized + signal line)</td></tr>
-    <tr><td><code>ppo</code></td><td>Percentage Price Oscillator (MACD in % terms; line + signal + histogram)</td></tr>
-    <tr><td><code>ac</code></td><td>Accelerator Oscillator (Bill Williams; AO − SMA(AO,5) histogram)</td></tr>
-    <tr><td><code>rmi</code></td><td>Relative Momentum Index (RSI with a momentum lookback; 30/70 bands)</td></tr>
-    <tr><td><code>disparity</code></td><td>Disparity Index (% distance of close from its SMA; zero-centered)</td></tr>
-    <tr><td><code>qstick</code></td><td>Qstick (SMA of the close−open body; candlestick sentiment, zero-centered)</td></tr>
-    <tr><td><code>pgo</code></td><td>Pretty Good Oscillator (close−SMA in ATR units; ±3 breakout bands)</td></tr>
-    <tr><td><code>awesomeOscillator</code></td><td>Awesome Oscillator</td></tr>
-    <tr><td><code>momentum</code></td><td>Momentum</td></tr>
-    <tr><td><code>roc</code></td><td>Rate of Change</td></tr>
-    <tr><td><code>volume</code></td><td>Volume bars</td></tr>
-    <tr><td><code>volumeRoc</code></td><td>Volume Rate of Change</td></tr>
-    <tr><td><code>standardDeviation</code></td><td>Standard Deviation</td></tr>
-    <tr><td><code>trix</code></td><td>TRIX</td></tr>
+    {#each overlays as ind (ind.id)}
+      <tr>
+        <td><code>{ind.id}</code></td>
+        <td>{ind.name}{#if hasSource(ind)} <small>· source</small>{/if}</td>
+        <td><code>{params(ind) || '—'}</code></td>
+        <td>{lines(ind) || '—'}</td>
+      </tr>
+    {/each}
   </tbody>
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) approximates buy/sell pressure from
-  OHLCV — bars closing up add positive volume, down bars negative. Set
-  <code>mode: 0</code> for the per-bar delta histogram or <code>mode: 1</code>
-  for cumulative delta. (A true tick delta needs per-trade bid/ask data, which
-  an OHLCV series doesn't carry.)
+  <code>mtfma</code> plots a moving average from a higher timeframe on the current chart — the
+  daily 50-MA on 1h bars, say. It averages only <em>completed</em> higher-timeframe closes, so it
+  steps at each boundary and never repaints.
+</p>
+
+<h2>In a pane of their own ({panes.length})</h2>
+<table>
+  <thead><tr><th>id</th><th>Name</th><th>Default params</th><th>Lines</th><th>Levels</th></tr></thead>
+  <tbody>
+    {#each panes as ind (ind.id)}
+      <tr>
+        <td><code>{ind.id}</code></td>
+        <td>{ind.name}{#if hasSource(ind)} <small>· source</small>{/if}</td>
+        <td><code>{params(ind) || '—'}</code></td>
+        <td>{lines(ind) || '—'}</td>
+        <td>{'levels' in ind ? ind.levels?.join(', ') : '—'}</td>
+      </tr>
+    {/each}
+  </tbody>
+</table>
+
+<p>
+  <code>voldelta</code> (Volume Delta) approximates buy/sell pressure from OHLCV — bars closing up
+  add positive volume, down bars negative. <code>mode: 0</code> is the per-bar histogram,
+  <code>mode: 1</code> cumulative delta. (A true tick delta needs per-trade bid/ask data, which an
+  OHLCV series doesn't carry.)
+</p>
+
+<h2>Your own indicator</h2>
+<p>
+  Extend <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,
+  levels and inputs; the chart draws it, scales its pane, tags its values and lists it in the
+  widget's legend and settings without rendering code of yours. See the
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
 </p>
 
 <h2>Resizable panes</h2>
 <p>
-  Each panel indicator gets its own pane below the chart. <strong>Drag the divider</strong>
-  between the main chart and a pane (or between panes) to resize it — the cursor switches to
-  <code>ns-resize</code> on hover, and each pane keeps its own independent price scale. Resize
-  programmatically with <code>chart.setPanelSize</code>:
+  <strong>Drag the divider</strong> above a pane to resize it, or set its height:
 </p>
-<pre><code>{`const id = chart.addIndicator('rsi', { period: 14 }, 'bottom')
-chart.setPanelSize(id, 180)   // pane height in px (clamped to a minimum)`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
 
 <h2>Web Worker pipeline</h2>
-<p>For heavy indicator workloads, offload calculation off the render loop:</p>
-<pre><code>{`import { IndicatorWorkerHost } from '@tradecanvas/chart'
+<p>For heavy indicator workloads, compute off the main thread:</p>
+<pre><code>{`import { IndicatorWorkerHost } from '@tradecanvas/core'
 
-const host = new IndicatorWorkerHost()
-await host.ping()
-const result = await host.calculate('rsi', bars, { period: 14 })
+const worker = new Worker(new URL('@tradecanvas/core/dist/indicator.worker.js', import.meta.url), { type: 'module' })
+const host = new IndicatorWorkerHost(worker, { timeoutMs: 30_000 })
+const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
 host.terminate()`}</code></pre>
-
-<p>Pass <code>null</code> as the worker to use the synchronous fallback (SSR, tests).</p>
+<p>Pass <code>null</code> as the worker and register fallback plugins to compute synchronously (SSR, tests).</p>

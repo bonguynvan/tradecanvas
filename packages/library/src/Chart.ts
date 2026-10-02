@@ -194,7 +194,7 @@ export class Chart {
   private gridRenderer: GridRenderer;
   private priceAxis: PriceAxis;
   private timeAxis: TimeAxis;
-  private options: ChartOptions;
+  private options: ChartOptions & { chartType: ChartType };
   private features: Required<FeaturesConfig>;
   private marketConfig: MarketConfig | null = null;
   private container: HTMLElement;
@@ -217,7 +217,7 @@ export class Chart {
 
   constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
     this.container = container;
-    this.options = options;
+    this.options = { ...options, chartType: options.chartType ?? 'candlestick' };
     this.numberLocale = options.numberLocale ?? 'en-US';
     this.defaultAutoScale = options.autoScale !== false;
 
@@ -346,7 +346,7 @@ export class Chart {
     };
 
     // Chart renderer
-    this.chartRenderer = this.createChartRenderer(options.chartType);
+    this.chartRenderer = this.createChartRenderer(this.options.chartType);
     this.gridRenderer = new GridRenderer();
     if (options.grid?.visible === false) this.gridRenderer.setVisible(false);
     this.priceAxis = new PriceAxis();
@@ -407,7 +407,7 @@ export class Chart {
 
     // Chart legend (OHLCV overlay)
     this.chartLegend = new ChartLegend();
-    this.chartLegend.setChartType(options.chartType);
+    this.chartLegend.setChartType(this.options.chartType);
     this.chartLegend.setLocale(this.numberLocale);
 
     // Watermark + Volume

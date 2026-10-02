@@ -135,3 +135,13 @@ describe('indicators on indicators', () => {
     expect(panes()).toEqual([[newRsi.instanceId, newSma.instanceId]]);
   });
 });
+
+describe('chart options', () => {
+  it('draws candlesticks when no chart type is given', () => {
+    const plain = new Chart(sizedHost(), {});
+    plain.setData(bars(50));
+    expect(plain.isTimeAligned()).toBe(true);
+    expect(() => plain.updateLastBar({ ...bars(50)[49], close: 101 })).not.toThrow();
+    plain.destroy();
+  });
+});

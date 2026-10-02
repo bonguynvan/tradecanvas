@@ -106,7 +106,8 @@ export interface FeaturesConfig {
 export interface ChartOptions {
   width?: number;
   height?: number;
-  chartType: ChartType;
+  /** Default `'candlestick'`. */
+  chartType?: ChartType;
   theme?: ThemeName | Theme;
   autoScale?: boolean;
   rightMargin?: number;

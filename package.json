@@ -11,6 +11,8 @@
     "clean": "pnpm -r clean",
     "test": "pnpm --filter \"./packages/*\" run --if-present test",
     "typecheck": "pnpm --filter \"./packages/*\" exec tsc --noEmit",
+    "docs:gen": "node scripts/gen-ai-docs.mjs",
+    "docs:check": "node scripts/gen-ai-docs.mjs --check && node scripts/check-skill-examples.mjs",
     "bench": "pnpm --filter @tradecanvas/core exec vitest bench --run",
     "changeset": "changeset",
     "changeset:version": "changeset version",

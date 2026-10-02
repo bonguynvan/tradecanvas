@@ -1,3 +1,537 @@
+# TradeCanvas
+
+> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): 17 chart types, 85 indicators, 40 drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+
+Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
+
+## Docs
+
+- [Getting started](https://bonguynvan.github.io/tradecanvas/docs/getting-started): install, the widget, the headless chart
+- [API reference](https://bonguynvan.github.io/tradecanvas/docs/api): Chart and ChartWidget methods, options and events
+- [Indicators](https://bonguynvan.github.io/tradecanvas/docs/indicators): every built-in indicator with its id, inputs and lines
+- [Chart types](https://bonguynvan.github.io/tradecanvas/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
+- [Drawing tools](https://bonguynvan.github.io/tradecanvas/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
+- [Realtime and replay](https://bonguynvan.github.io/tradecanvas/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
+- [Trading](https://bonguynvan.github.io/tradecanvas/docs/trading): orders, positions, brackets and execution adapters on the chart
+- [Frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks): React, Vue and Svelte components
+- [Plugins](https://bonguynvan.github.io/tradecanvas/docs/plugins): custom indicators, drawings and chart types
+- [Analytics](https://bonguynvan.github.io/tradecanvas/docs/analytics): strategy backtester and risk metrics
+
+## Agent skill
+
+- [SKILL.md](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md): how to build with TradeCanvas, the rules that avoid most bugs, worked examples
+- [Indicator reference](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/indicators.md): ids, default params, lines and levels
+- [Recipes](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md): live data, custom adapters, indicators on indicators, custom indicators, layouts
+
+## Optional
+
+- [Everything in one file](https://bonguynvan.github.io/tradecanvas/llms-full.txt): the library README, the skill and its references
+- [Source](https://github.com/bonguynvan/tradecanvas)
+
+==============================================================================
+skills/tradecanvas/SKILL.md
+==============================================================================
+
+---
+name: tradecanvas
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 16 other chart types, 85 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+---
+
+# TradeCanvas
+
+TradeCanvas draws trading charts on two stacked Canvas2D layers, in TypeScript,
+with no runtime dependencies. One package, `@tradecanvas/chart`, holds both the
+chart engine and a complete trading UI around it.
+
+## Pick the entry point
+
+| You need | Use |
+|---|---|
+| A full trading UI: toolbar, drawing sidebar, indicator legend, settings, status bar | `ChartWidget` from `@tradecanvas/chart/widget` |
+| A chart inside your own UI | `Chart` from `@tradecanvas/chart` |
+| React, Vue or Svelte components | `@tradecanvas/react`, `@tradecanvas/vue`, `@tradecanvas/svelte` |
+| Strategy backtests and risk metrics | `@tradecanvas/analytics` |
+
+`widget.getChart()` returns the `Chart` inside a widget, so everything below
+also works on a widget.
+
+## Rules that avoid most bugs
+
+1. **Give the container a size** (width and height) before creating the chart.
+   The chart follows later size changes by itself.
+2. **Browser only.** In SSR frameworks (Next, Nuxt, SvelteKit) create the chart
+   in `useEffect` / `onMounted` / `onMount`, importing it there with
+   `await import('@tradecanvas/chart')` if the module is also loaded on the server.
+3. **Call `destroy()`** when the element goes away (component unmount).
+4. **Bars** are `{ time, open, high, low, close, volume }`, ascending by time.
+   `time` may be milliseconds or seconds (values up to 1e12 are read as seconds).
+   Keep one unit per series.
+5. **Indicator ids are short** — `'rsi'`, `'bb'`, `'psar'`, `'stochastic'` — see
+   [references/indicators.md](references/indicators.md). `addIndicator` returns
+   an instance id (`null` if the feature or id is turned off); later calls take
+   that instance id, not the indicator id.
+6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
+   one. Never `setData` on every tick: it resets the view and recomputes
+   everything.
+7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
+   keyed by the indicator's line keys), not by guessing from the drawing.
+
+## Quick start: the widget with live data
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(),
+  locale: 'en', // or 'vi'
+  onReady: (chart) => {
+    chart.addIndicator('ema', { period: 50 });
+    chart.addIndicator('rsi', { period: 14 });
+  },
+});
+
+// Later, when the page goes away:
+widget.destroy();
+```
+
+## Quick start: a chart with your own data
+
+```ts
+import { Chart, type OHLCBar } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  chartType: 'candlestick',
+  theme: 'dark',
+  features: { indicators: true, drawings: true, volume: true },
+});
+
+const bars: OHLCBar[] = await fetch('/api/bars?symbol=AAPL&tf=1d').then((r) => r.json());
+chart.setData(bars);
+
+// A new bar opens, then the forming bar ticks:
+const last = bars[bars.length - 1];
+chart.appendBar({ time: last.time + 86_400_000, open: last.close, high: last.close, low: last.close, close: last.close, volume: 0 });
+chart.updateLastBar({ ...chart.getData()[chart.getData().length - 1], close: last.close + 1.25 });
+```
+
+For a live feed, give the chart an adapter instead and it handles history,
+streaming and reconnects: `chart.connect({ adapter, symbol, timeframe })`.
+Built-in adapters: `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`,
+`KrakenAdapter`, `MockAdapter` (random data for demos), and two bases for your
+own feeds — `WebSocketAdapter` and `PollingAdapter` (see
+[references/recipes.md](references/recipes.md)).
+
+## Indicators
+
+```ts
+import { Chart, indicatorSource } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+
+const ema = chart.addIndicator('ema', { period: 21 })!;              // on the price pane
+const rsi = chart.addIndicator('rsi', { period: 14 }, 'bottom')!;    // a pane of its own
+
+chart.updateIndicator(ema, { period: 34 });          // change inputs
+chart.updateIndicator(ema, { source: 'hlc3' });      // compute from another price
+chart.setIndicatorLevels(rsi, [20, 50, 80]);         // RSI's reference lines (null = defaults)
+chart.updateIndicatorStyle(rsi, { colors: ['#f2a93b'], lineWidths: [2] });
+chart.setIndicatorVisible(ema, false);
+
+// An indicator on another indicator's line: an SMA of RSI is drawn in RSI's pane.
+const smoothed = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') });
+
+// Values at the latest bar, by line key:
+const series = chart.getIndicatorOutput(rsi)?.series ?? [];
+const latestRsi = series[series.length - 1]?.value;
+
+chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
+```
+
+- Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
+- Each line's latest value is tagged on its axis; turn that off with
+  `features.indicatorValueLabels: false`.
+- Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
+  `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
+
+## Drawings, alerts and orders
+
+```ts
+import type { Chart } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+
+chart.setDrawingTool('fibRetracement'); // the user clicks the points; null cancels
+chart.addAlert(65_000, 'crossingUp', 'BTC above 65k');
+chart.setPositions([{ id: 'p1', side: 'buy', entryPrice: 62_500, quantity: 0.5, stopLoss: 61_000, takeProfit: 66_000 }]);
+chart.on('positionModify', (e) => console.log('stop or target dragged', e.payload));
+```
+
+## Saving layouts
+
+```ts
+import type { Chart } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+
+const json = chart.saveState();           // chart type, theme, drawings, indicators, alerts
+if (json) localStorage.setItem('layout', json);
+chart.loadState(localStorage.getItem('layout') ?? '{}');
+chart.setAutoSave('layout', 1500);        // or keep it saved as it changes
+```
+
+Saved indicators keep their inputs, sources, panes, colours, visibility and levels.
+
+## Events
+
+`chart.on(event, (e) => …)` — the payload is `e.payload`.
+
+| Event | Payload |
+|---|---|
+| `crosshairMove` | `{ point, bar, barIndex }` (also over indicator panes) |
+| `crosshairLeave` | — |
+| `barClick` | `{ bar, barIndex, point }` |
+| `visibleRangeChange` | `{ from, to }` bar indices |
+| `dataUpdate` | the series |
+| `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
+| `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
+| `indicatorUpdate` | `{ from }`: values recomputed from that bar on (once per update) |
+| `drawingCreate`, `orderModify`, `positionModify` | the object |
+
+## Theming
+
+`theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
+`chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
+
+## When something looks wrong
+
+| Symptom | Check |
+|---|---|
+| Blank chart | The container has no height (check its computed size) |
+| Garbled candles, wrong dates on the axis | Bars not ascending by time: `setData` does not sort them |
+| Dates in 1970 | `time` in seconds treated as ms (or the reverse) mixed in one series |
+| `addIndicator` returns `null` | `features.indicators` is off, or `features.indicatorIds` leaves it out |
+| Indicator line missing at the start | Warm-up: no value until its period has enough bars |
+| Chart stutters on a fast feed | `setData` called per tick instead of `updateLastBar` / `appendBar` |
+
+## References
+
+- [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
+- [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, multi-chart layouts.
+- Docs site: https://bonguynvan.github.io/tradecanvas/ · API: https://bonguynvan.github.io/tradecanvas/docs/api
+
+==============================================================================
+skills/tradecanvas/references/recipes.md
+==============================================================================
+
+# TradeCanvas recipes
+
+Worked examples. Every `ts` block here is type-checked against the library in
+CI (`pnpm docs:check`), so the calls are real.
+
+## Your own data feed over REST
+
+`PollingAdapter` turns any "give me the last N bars" endpoint into a live feed:
+it loads history, polls, updates the forming bar and closes it on rollover.
+
+```ts
+import { Chart, PollingAdapter, type OHLCBar, type TimeFrame } from '@tradecanvas/chart';
+
+const feed = new PollingAdapter({
+  name: 'my-api',
+  intervalMs: 5_000,
+  fetchBars: async (symbol: string, timeframe: TimeFrame, limit: number): Promise<OHLCBar[]> => {
+    const res = await fetch(`/api/candles?symbol=${symbol}&tf=${timeframe}&limit=${limit}`);
+    const rows: [number, number, number, number, number, number][] = await res.json();
+    return rows.map(([time, open, high, low, close, volume]) => ({ time, open, high, low, close, volume }));
+  },
+});
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter: feed, symbol: 'AAPL', timeframe: '1h', historyLimit: 500 });
+```
+
+## Your own data feed over WebSocket
+
+`WebSocketAdapter` handles connecting, reconnecting and the history request;
+you describe the URL, the subscribe message and how to read a frame.
+
+```ts
+import { Chart, WebSocketAdapter, type OHLCBar } from '@tradecanvas/chart';
+
+interface KlineFrame { t: number; o: string; h: string; l: string; c: string; v: string; final: boolean }
+
+const feed = new WebSocketAdapter({
+  name: 'my-exchange',
+  wsUrl: () => 'wss://stream.example.com/ws',
+  subscribeMessage: ({ symbol, timeframe }) => ({ op: 'subscribe', channel: `kline.${timeframe}.${symbol}` }),
+  fetchHistory: async (symbol, timeframe, limit): Promise<OHLCBar[]> => {
+    const res = await fetch(`https://api.example.com/klines?symbol=${symbol}&interval=${timeframe}&limit=${limit}`);
+    return res.json();
+  },
+  parseMessage: (raw) => {
+    const k = (raw as { kline?: KlineFrame }).kline;
+    if (!k) return null;
+    const bar = { time: k.t, open: +k.o, high: +k.h, low: +k.l, close: +k.c, volume: +k.v };
+    return { bar, closed: k.final };
+  },
+});
+
+const chart = new Chart(document.getElementById('chart')!, {});
+await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
+```
+
+## React, Vue, Svelte
+
+The wrapper packages give a component with reactive props:
+
+```tsx
+import { TradeCanvas } from '@tradecanvas/react';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+
+export function PriceChart({ symbol }: { symbol: string }) {
+  return (
+    <TradeCanvas
+      symbol={symbol}
+      timeframe="15m"
+      adapter={adapter}
+      indicators={['ema', 'rsi']}
+      onReady={(chart) => chart.setIndicatorValueLabelsVisible(true)}
+      style={{ height: 480 }}
+    />
+  );
+}
+```
+
+`@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
+emits `ready` and `crosshairMove` instead of the callback props). To drive the
+widget or a bare `Chart` from a framework, create it in the mount hook on a
+sized element and call `destroy()` in the unmount hook.
+
+## A signal from an indicator on an indicator
+
+An SMA of RSI, drawn in RSI's pane, and a check on each update for RSI
+crossing above it:
+
+```ts
+import { Chart, BinanceAdapter, indicatorSource } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'ETHUSDT', timeframe: '15m' });
+
+const rsi = chart.addIndicator('rsi', { period: 14 })!;
+const signal = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })!;
+
+chart.on('indicatorUpdate', () => {
+  const r = chart.getIndicatorOutput(rsi)?.series ?? [];
+  const s = chart.getIndicatorOutput(signal)?.series ?? [];
+  const i = r.length - 1;
+  const crossedUp = (r[i - 1]?.value ?? 0) <= (s[i - 1]?.value ?? 0) && (r[i]?.value ?? 0) > (s[i]?.value ?? 0);
+  if (crossedUp) console.log('RSI crossed above its average');
+});
+```
+
+## A custom indicator
+
+Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and
+levels; the chart then draws it, scales its pane, labels its values and lists
+it in the widget legend and settings with no rendering code of yours.
+
+```ts
+import { Chart, IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart';
+import type { DataSeries, IndicatorConfig, IndicatorDescriptor, IndicatorOutput, IndicatorValue } from '@tradecanvas/chart';
+
+/** Where the close sits in the last `period` bars' range, 0–100. */
+class RangePosition extends IndicatorBase {
+  descriptor: IndicatorDescriptor = {
+    id: 'rangePosition',
+    name: 'Range Position',
+    shortName: 'RP',
+    placement: 'panel',
+    defaultConfig: { period: 20 },
+    inputs: { period: { min: 2, max: 500 } },
+    plots: [{ key: 'value', title: 'RP', color: 0 }],
+    scale: { min: 0, max: 100 },
+    levels: [20, 80],
+  };
+
+  calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
+    const period = Math.max(2, Number(config.params.period) || 20);
+    const values = new IndicatorValueMap();
+    const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
+    for (let i = period - 1; i < data.length; i++) {
+      let hi = -Infinity;
+      let lo = Infinity;
+      for (let j = i - period + 1; j <= i; j++) {
+        hi = Math.max(hi, data[j].high);
+        lo = Math.min(lo, data[j].low);
+      }
+      const point = { value: hi > lo ? ((data[i].close - lo) / (hi - lo)) * 100 : 50 };
+      values.set(data[i].time, point);
+      series[i] = point;
+    }
+    return { values, series };
+  }
+}
+
+const chart = new Chart(document.getElementById('chart')!, {});
+chart.registerIndicator(new RangePosition());
+chart.addIndicator('rangePosition', { period: 30 });
+```
+
+Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
+users run it on another price or another indicator's line.
+
+## Several charts in a grid
+
+```ts
+import { ChartGrid, BinanceAdapter } from '@tradecanvas/chart';
+
+const grid = new ChartGrid(document.getElementById('grid')!, {
+  layout: '2x2',
+  syncCrosshair: true,
+  syncTimeAxis: true,
+});
+await grid.connectAll(new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m');
+grid.getChart(0)?.addIndicator('ema', { period: 50 });
+```
+
+## The widget, saved per symbol and in Vietnamese
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+new ChartWidget(document.getElementById('chart')!, {
+  adapter: new BinanceAdapter(),
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  persistLayouts: true,            // indicators, drawings and chart type per symbol, in localStorage
+  locale: 'vi',
+  chartOptions: { numberLocale: 'vi-VN' },
+});
+```
+
+==============================================================================
+skills/tradecanvas/references/indicators.md
+==============================================================================
+
+<!-- Generated by scripts/gen-ai-docs.mjs from the indicator registry. Do not edit by hand. -->
+
+# Built-in indicators
+
+85 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
+"Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
+
+## On the price pane (32)
+
+Drawn over the candles, on the price scale.
+
+| id | Name | Default params | Lines (key: title) | Levels | Source |
+|---|---|---|---|---|---|
+| `sma` | Simple Moving Average | period: 20, source: "close" | value: SMA | — | ✓ |
+| `ema` | Exponential Moving Average | period: 20, source: "close" | value: EMA | — | ✓ |
+| `bb` | Bollinger Bands | period: 20, stdDev: 2, source: "close" | upper: Upper, middle: Basis, lower: Lower | — | ✓ |
+| `vwap` | Volume Weighted Average Price | — | value: VWAP | — | |
+| `ichimoku` | Ichimoku Cloud | tenkan: 9, kijun: 26, senkou: 52, displacement: 26 | tenkan: Conversion, kijun: Base, senkouA: Lead A, senkouB: Lead B | — | |
+| `psar` | Parabolic SAR | step: 0.02, max: 0.2 | value: SAR | — | |
+| `supertrend` | Supertrend | period: 10, multiplier: 3 | value: Supertrend | — | |
+| `keltner` | Keltner Channel | emaPeriod: 20, atrPeriod: 10, multiplier: 1.5 | upper: Upper, middle: Basis, lower: Lower | — | |
+| `donchian` | Donchian Channel | period: 20 | upper: Upper, middle: Basis, lower: Lower | — | |
+| `pivots` | Pivot Points (Classic) | lookback: 24 | r3: R3, r2: R2, r1: R1, pp: P, s1: S1, s2: S2, s3: S3 | — | |
+| `avwap` | Anchored VWAP | anchorTime: 0 | value: AVWAP | — | |
+| `zigzag` | ZigZag | deviation: 5 | pivot: Pivot | — | |
+| `lrc` | Linear Regression Channel | period: 100, stdDev: 2, source: "close" | upper: Upper, middle: Basis, lower: Lower | — | ✓ |
+| `hma` | Hull Moving Average | period: 21, source: "close" | value: HMA | — | ✓ |
+| `mtfma` | MTF Moving Average | period: 50, timeframe: "1d", source: "close" | value: MA | — | ✓ |
+| `svwap` | Session VWAP | bands: 1 | value: VWAP, u1: +1σ, l1: −1σ, u2: +2σ, l2: −2σ, u3: +3σ, l3: −3σ | — | |
+| `chandelier` | Chandelier Exit | period: 22, multiplier: 3 | long: Long, short: Short | — | |
+| `alligator` | Alligator | jaw: 13, teeth: 8, lips: 5, jawShift: 8, teethShift: 5, lipsShift: 3 | jaw: Jaw, teeth: Teeth, lips: Lips | — | |
+| `vwma` | Volume Weighted Moving Average | period: 20, source: "close" | value: VWMA | — | ✓ |
+| `wma` | Weighted Moving Average | period: 20, source: "close" | value: WMA | — | ✓ |
+| `envelope` | Moving Average Envelope | period: 20, percent: 2.5, source: "close" | upper: Upper, basis: Basis, lower: Lower | — | ✓ |
+| `tema` | Triple EMA | period: 20, source: "close" | value: TEMA | — | ✓ |
+| `volumeProfile` | Volume Profile | rows: 24 | — | — | |
+| `dema` | Double Exponential Moving Average | period: 20, source: "close" | value: DEMA | — | ✓ |
+| `smma` | Smoothed Moving Average | period: 14, source: "close" | value: SMMA | — | ✓ |
+| `alma` | Arnaud Legoux Moving Average | period: 9, offset: 0.85, sigma: 6, source: "close" | value: ALMA | — | ✓ |
+| `kama` | Kaufman Adaptive Moving Average | period: 10, fast: 2, slow: 30, source: "close" | value: KAMA | — | ✓ |
+| `lsma` | Least Squares Moving Average | period: 25, offset: 0, source: "close" | value: LSMA | — | ✓ |
+| `mcginley` | McGinley Dynamic | period: 14, source: "close" | value: McGinley | — | ✓ |
+| `macross` | MA Cross | fast: 9, slow: 21, type: "sma", source: "close" | fast: Fast, slow: Slow | — | ✓ |
+| `fractals` | Williams Fractals | period: 2 | up: Up, down: Down | — | |
+| `cks` | Chande Kroll Stop | p: 10, x: 1, q: 9 | long: Stop Long, short: Stop Short | — | |
+
+## In a pane of their own (53)
+
+Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
+
+| id | Name | Default params | Lines (key: title) | Levels | Source |
+|---|---|---|---|---|---|
+| `rsi` | Relative Strength Index | period: 14, source: "close" | value: RSI | 30, 70 | ✓ |
+| `macd` | MACD | fast: 12, slow: 26, signal: 9, source: "close" | histogram: Histogram, macd: MACD, signal: Signal | — | ✓ |
+| `stochastic` | Stochastic Oscillator | kPeriod: 14, dPeriod: 3, smooth: 3 | k: %K, d: %D | 20, 80 | |
+| `atr` | Average True Range | period: 14 | value: ATR | — | |
+| `adx` | Average Directional Index | period: 14 | adx: ADX, plusDI: +DI, minusDI: −DI | — | |
+| `obv` | On Balance Volume | — | value: OBV | — | |
+| `williamsR` | Williams %R | period: 14 | value: %R | -80, -20 | |
+| `cci` | Commodity Channel Index | period: 20 | value: CCI | -100, 0, 100 | |
+| `mfi` | Money Flow Index | period: 14 | value: MFI | 20, 80 | |
+| `aroon` | Aroon | period: 25 | up: Up, down: Down | — | |
+| `roc` | Rate of Change | period: 12, source: "close" | value: ROC | 0 | ✓ |
+| `tsi` | True Strength Index | longPeriod: 25, shortPeriod: 13, signalPeriod: 7, source: "close" | tsi: TSI, signal: Signal | 0 | ✓ |
+| `cmf` | Chaikin Money Flow | period: 20 | value: CMF | — | |
+| `stddev` | Standard Deviation | period: 20, source: "close" | value: StdDev | — | ✓ |
+| `ad` | Accumulation/Distribution | — | value: A/D | — | |
+| `vroc` | Volume Rate of Change | period: 14 | value: VROC | 0 | |
+| `ao` | Awesome Oscillator | fast: 5, slow: 34 | value: AO | — | |
+| `chaikinOsc` | Chaikin Oscillator | fast: 3, slow: 10 | value: Chaikin | — | |
+| `voldelta` | Volume Delta | mode: 0 | value: Delta | — | |
+| `vortex` | Vortex Indicator | period: 14 | viPlus: VI+, viMinus: VI− | 1 | |
+| `chop` | Choppiness Index | period: 14 | value: CHOP | 38.2, 61.8 | |
+| `uo` | Ultimate Oscillator | fast: 7, mid: 14, slow: 28 | value: UO | 30, 70 | |
+| `fi` | Force Index | period: 13 | value: EFI | 0 | |
+| `crsi` | Connors RSI | rsiPeriod: 3, streakPeriod: 2, rankPeriod: 100, source: "close" | value: CRSI | 10, 90 | ✓ |
+| `coppock` | Coppock Curve | longRoc: 14, shortRoc: 11, wma: 10, source: "close" | value: Coppock | 0 | ✓ |
+| `kst` | Know Sure Thing | roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9, source: "close" | value: KST, signal: Signal | 0 | ✓ |
+| `elderray` | Elder Ray | period: 13 | bull: Bull, bear: Bear | — | |
+| `stc` | Schaff Trend Cycle | fast: 23, slow: 50, cycle: 10, source: "close" | value: STC | 25, 75 | ✓ |
+| `kvo` | Klinger Oscillator | fast: 34, slow: 55, signal: 13 | value: KVO, signal: Signal | 0 | |
+| `fisher` | Fisher Transform | period: 9 | value: Fisher, trigger: Trigger | 0 | |
+| `dpo` | Detrended Price Oscillator | period: 20, source: "close" | value: DPO | — | ✓ |
+| `bop` | Balance of Power | smooth: 14 | value: BOP | 0 | |
+| `massindex` | Mass Index | ema: 9, sum: 25 | value: Mass | 26.5, 27 | |
+| `cmo` | Chande Momentum | period: 9, source: "close" | value: CMO | -50, 0, 50 | ✓ |
+| `trix` | TRIX | period: 15, signal: 9, source: "close" | value: TRIX, signal: Signal | 0 | ✓ |
+| `emv` | Ease of Movement | period: 14 | value: EOM | 0 | |
+| `pvt` | Price Volume Trend | — | value: PVT | — | |
+| `wad` | Williams A/D | — | value: WAD | — | |
+| `chaikinvol` | Chaikin Volatility | ema: 10, roc: 10 | value: CV | 0 | |
+| `rvi` | Relative Vigor Index | period: 10 | value: RVGI, signal: Signal | 0 | |
+| `stochrsi` | Stochastic RSI | rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: "close" | k: %K, d: %D | 20, 80 | ✓ |
+| `ppo` | Percentage Price Oscillator | fast: 12, slow: 26, signal: 9, source: "close" | hist: Histogram, value: PPO, signal: Signal | 0 | ✓ |
+| `ac` | Accelerator Oscillator | — | value: AC | — | |
+| `rmi` | Relative Momentum Index | period: 20, momentum: 5, source: "close" | value: RMI | 30, 70 | ✓ |
+| `disparity` | Disparity Index | period: 14, source: "close" | value: DI | 0 | ✓ |
+| `qstick` | Qstick | period: 8 | value: Qstick | 0 | |
+| `pgo` | Pretty Good Oscillator | period: 14 | value: PGO | -3, 0, 3 | |
+| `bbpb` | Bollinger Bands %B | period: 20, stdDev: 2, source: "close" | value: %B | 0, 0.5, 1 | ✓ |
+| `bbw` | Bollinger BandWidth | period: 20, stdDev: 2, source: "close" | value: BBW | — | ✓ |
+| `mom` | Momentum | period: 10, source: "close" | value: MOM | 0 | ✓ |
+| `hv` | Historical Volatility | period: 10, annual: 365, source: "close" | value: HV | — | ✓ |
+| `vo` | Volume Oscillator | short: 5, long: 10 | value: Vol Osc | 0 | |
+| `ulcer` | Ulcer Index | period: 14, source: "close" | value: Ulcer | — | ✓ |
+
+==============================================================================
+packages/library/README.md
+==============================================================================
+
 # @tradecanvas/chart
 
 High-performance canvas trading chart with built-in indicators, drawing tools, and real-time streaming. Zero external dependencies.

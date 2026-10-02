@@ -25,3 +25,5 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
       - run: pnpm typecheck
+      # Generated docs (indicator catalog, llms.txt) are current; agent-skill examples type-check.
+      - run: pnpm docs:check

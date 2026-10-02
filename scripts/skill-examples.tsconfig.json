@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": [],
+    "baseUrl": "..",
+    "paths": {
+      "@tradecanvas/chart": ["packages/library/dist/index.d.ts"],
+      "@tradecanvas/chart/widget": ["packages/library/dist/widget/index.d.ts"],
+      "@tradecanvas/core": ["packages/core/dist/index.d.ts"],
+      "@tradecanvas/commons": ["packages/commons/dist/index.d.ts"],
+      "@tradecanvas/analytics": ["packages/analytics/dist/index.d.ts"]
+    }
+  },
+  "include": ["../skills/tradecanvas/.check/*.ts"]
+}
