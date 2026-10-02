@@ -455,7 +455,7 @@
 .tcw-tf-remove {
   display: inline-grid;
   place-items: center;
-  width: 22px;
+  width: 24px;
   height: 26px;
   flex-shrink: 0;
   border: none;
@@ -470,6 +470,11 @@
 .tcw-tf-row:hover .tcw-tf-remove,
 .tcw-tf-remove:focus-visible {
   opacity: 1;
+}
+
+/* No hover on touch screens: keep it visible rather than a hidden tap target. */
+@media (hover: none) {
+  .tcw-tf-remove { opacity: 1; }
 }
 
 .tcw-tf-remove:hover {
@@ -493,6 +498,10 @@
   padding: 6px 10px 8px;
   border-top: 1px solid var(--tcw-divider);
   background: var(--tcw-bg-elevated);
+}
+
+.tcw-tf-custom-hint:empty {
+  display: none;
 }
 
 .tcw-tf-custom-hint {

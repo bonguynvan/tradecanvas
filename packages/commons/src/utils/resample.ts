@@ -34,6 +34,8 @@ function buildsInto(base: TimeFrame, target: TimeFrame): boolean {
   const t = parseTimeframe(target);
   if (!b || !t) return false;
   const baseMs = timeframeToMs(base);
+  // Feeds disagree on where a 3-day bar starts: only build from whole days.
+  if (b.unit === 'd' && b.count > 1) return false;
   if (isFixedLength(t.unit)) {
     return isFixedLength(b.unit) && timeframeToMs(target) % baseMs === 0;
   }

@@ -31,7 +31,7 @@ import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.j
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS, sourceParam, withResampling } from '@tradecanvas/core';
+import { RANGE_PRESETS, servesTimeframe, sourceParam, withResampling } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -934,6 +934,7 @@ export class ChartWidget {
   private handleAddTimeframe(text: string): boolean {
     const tf = parseTimeframeInput(text);
     if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
+    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
     if (!this.timeframes.includes(tf)) {
       this.customTimeframes.add(tf);
       this.timeframeFavorites.add(tf);

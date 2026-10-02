@@ -108,7 +108,7 @@ describe('Chart history paging', () => {
     expect(loader).not.toHaveBeenCalled(); // the view rests at the newest bars
 
     chart.scrollTo(T0 + 1000 * HOUR);
-    expect(loader).toHaveBeenCalledWith(T0 + 1000 * HOUR, 300);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledWith(T0 + 1000 * HOUR, 300));
     await vi.waitFor(() => expect(chart.getData()).toHaveLength(800));
     expect(events.map((e) => e.state)).toEqual(['loading', 'loaded']);
     expect(events[1].count).toBe(300);
@@ -132,7 +132,7 @@ describe('Chart history paging', () => {
     expect(chart.getData()).toHaveLength(200);
 
     chart.scrollTo(T0 + 1000 * HOUR);
-    expect(adapter.fetchHistoryBefore).toHaveBeenCalledWith('BTCUSDT', '1h', T0 + 1000 * HOUR, 150);
+    await vi.waitFor(() => expect(adapter.fetchHistoryBefore).toHaveBeenCalledWith('BTCUSDT', '1h', T0 + 1000 * HOUR, 150));
     await vi.waitFor(() => expect(chart.getData()).toHaveLength(350));
   });
 
@@ -178,5 +178,65 @@ describe('Chart history paging on a timeframe the feed lacks', () => {
     expect(data).toHaveLength(450);
     expect(data.every((b, i) => i === 0 || b.time - data[i - 1].time === 7 * MIN)).toBe(true);
     expect(adapter.fetchHistoryBefore.mock.calls.every((c) => c[1] === '1m')).toBe(true);
+  });
+});
+
+describe('Chart history paging, edge cases', () => {
+  it('does not page on its own for chart types that reshape the bars', () => {
+    chart.setData(hourly(1000, 500));
+    chart.setChartType('kagi');
+    const loader = vi.fn(async (before: number, limit: number) => pageBefore(before, limit));
+    chart.setHistoryLoader(loader);
+    chart.scrollTo(T0 + 1000 * HOUR);
+    chart.fitContent();
+    expect(loader).not.toHaveBeenCalled();
+  });
+
+  it('stops a loader of its own when destroyed', async () => {
+    chart.setData(hourly(10, 50)); // short: pages right away
+    const loader = vi.fn(async (before: number, limit: number) => pageBefore(before, Math.min(limit, 5)));
+    chart.setHistoryLoader(loader);
+    chart.destroy();
+    await new Promise((r) => setTimeout(r, 20));
+    const calls = loader.mock.calls.length;
+    await new Promise((r) => setTimeout(r, 20));
+    expect(loader.mock.calls.length).toBe(calls);
+    expect(calls).toBeLessThanOrEqual(1);
+    chart = new Chart(host, { chartType: 'candlestick' }); // for afterEach
+  });
+
+  it('keeps a loader of the host over the stream’s', async () => {
+    const own = vi.fn(async () => [] as OHLCBar[]);
+    chart.setHistoryLoader(own);
+    const adapter = fakeAdapter(true);
+    await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 30 });
+    await vi.waitFor(() => expect(own).toHaveBeenCalled());
+    expect(adapter.fetchHistoryBefore).not.toHaveBeenCalled();
+  });
+
+  it('keeps paged history and the view when the stream reconnects', async () => {
+    const adapter = fakeAdapter(true);
+    await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 200, historyPageSize: 150 });
+    chart.scrollTo(T0 + 1000 * HOUR);
+    await vi.waitFor(() => expect(chart.getData()).toHaveLength(350));
+    const shown = centreTime();
+    // A reconnect re-sends the newest bars.
+    (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } })
+      .streamManager.emit('snapshot', hourly(1000, 200));
+    expect(chart.getData()).toHaveLength(350);
+    expect(centreTime()).toBe(shown);
+  });
+
+  it('unpins a pinned tooltip when older bars arrive', () => {
+    chart.setData(hourly(1000, 500));
+    const pinned = (chart as unknown as { pinnedTooltip: { pin(bar: OHLCBar, i: number, theme: unknown): void; isPinned(): boolean } }).pinnedTooltip;
+    pinned.pin(chart.getData()[250], 250, chart.getTheme());
+    chart.prependBars(hourly(900, 100));
+    expect(pinned.isPinned()).toBe(false);
+  });
+
+  it('refuses a timeframe the feed cannot build', async () => {
+    const adapter = { ...fakeAdapter(false), supportedTimeframes: ['1m', '1h'] as TimeFrame[] };
+    await expect(chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '30s' })).rejects.toThrow(/30s/);
   });
 });

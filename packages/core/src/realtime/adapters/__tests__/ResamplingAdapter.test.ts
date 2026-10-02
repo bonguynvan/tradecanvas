@@ -8,7 +8,7 @@ import type {
   TimeFrame,
 } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { ResamplingAdapter, withResampling } from '../ResamplingAdapter.js';
+import { ResamplingAdapter, withResampling, servesTimeframe, MAX_BASE_REQUESTS } from '../ResamplingAdapter.js';
 
 const MIN = 60_000;
 
@@ -195,3 +195,106 @@ describe('ResamplingAdapter live bars', () => {
     expect(bars.at(-1)).toEqual({ bar: bar(7 * MIN, 50, 51, 49, 50, 1), closed: false });
   });
 });
+
+describe('ResamplingAdapter live bars, robustly', () => {
+  it('keeps every base bar of the bucket when the feed never flags one closed', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(7 * MIN, 10, 12, 9, 11, 5), closed: false });
+    feed.emit('bar', { bar: bar(8 * MIN, 11, 11.5, 10.5, 11.2, 1), closed: false });
+    expect(bars.at(-1)).toEqual({ bar: bar(7 * MIN, 10, 12, 9, 11.2, 6), closed: false });
+  });
+
+  it('counts a repeated frame once', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(7 * MIN, 10, 11, 9, 10, 2), closed: true });
+    feed.emit('bar', { bar: bar(7 * MIN, 10, 11, 9, 10, 2), closed: true });
+    expect(bars.at(-1)?.bar.volume).toBe(2);
+  });
+
+  it('ignores a late frame of a bucket that already closed', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(14 * MIN, 20, 21, 19, 20, 1), closed: false });
+    const before = bars.length;
+    feed.emit('bar', { bar: bar(13 * MIN, 1, 1, 1, 1, 1), closed: true });
+    expect(bars).toHaveLength(before);
+  });
+
+  it('starts from the history it served, so the first live tick keeps the bucket whole', async () => {
+    const { feed, adapter, bars } = setup();
+    const history = await adapter.fetchHistory('X', '7m', 10);
+    const last = history.at(-1)!; // minutes 9996–9999, still forming
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(9999 * MIN, 9999, 10_000, 9998, 9999.5, 2), closed: false });
+    expect(bars.at(-1)?.bar).toMatchObject({ time: last.time, open: last.open, low: last.low, high: 10_000, close: 9999.5 });
+    // Minute 9999 replaced, the three before it kept: 3 + 2.
+    expect(bars.at(-1)?.bar.volume).toBe(5);
+  });
+
+  it('closes a month bucket on its last base month, 31-day months included', () => {
+    const feed = new FakeFeed();
+    (feed as { supportedTimeframes: TimeFrame[] }).supportedTimeframes = ['1d', '1M'];
+    const adapter = new ResamplingAdapter(feed, feed.supportedTimeframes);
+    const seen: { bar: OHLCBar; closed: boolean }[] = [];
+    adapter.on<{ bar: OHLCBar; closed: boolean }>('bar', (e) => seen.push(e.data));
+    adapter.connect({ symbol: 'X', timeframe: '2M' });
+    // 2-month buckets: July–August. August is the last month of it.
+    feed.emit('bar', { bar: bar(Date.UTC(2026, 6, 1), 1, 2, 1, 2, 1), closed: true });
+    feed.emit('bar', { bar: bar(Date.UTC(2026, 7, 1), 2, 3, 2, 3, 1), closed: true });
+    expect(seen.at(-1)).toEqual({ bar: bar(Date.UTC(2026, 6, 1), 1, 3, 1, 3, 2), closed: true });
+  });
+});
+
+describe('ResamplingAdapter limits', () => {
+  it('stops paging the feed after a fixed number of requests', async () => {
+    const { feed, adapter } = setup();
+    await adapter.fetchHistory('X', '999m', 500);
+    const calls = feed.fetchHistory.mock.calls.length + feed.fetchHistoryBefore.mock.calls.length;
+    expect(calls).toBeLessThanOrEqual(MAX_BASE_REQUESTS);
+  });
+
+  it('stops paging when the adapter disconnects', async () => {
+    const { feed, adapter } = setup();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    feed.fetchHistoryBefore.mockImplementation(async (_s, tf, before, limit) => {
+      await gate;
+      return barsBefore(tf, before, limit);
+    });
+    const pending = adapter.fetchHistory('X', '7m', 400);
+    await Promise.resolve();
+    adapter.disconnect();
+    release();
+    await pending;
+    expect(feed.fetchHistoryBefore).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a timeframe the feed cannot build instead of serving another', async () => {
+    const { adapter } = setup();
+    await expect(adapter.fetchHistory('X', '30s', 10)).rejects.toThrow(/30s/);
+    expect(() => adapter.connect({ symbol: 'X', timeframe: '30s' })).toThrow(/30s/);
+  });
+});
+
+describe('servesTimeframe', () => {
+  const feed = new FakeFeed();
+
+  it('accepts what the feed has or can build at a sane ratio', () => {
+    expect(servesTimeframe(feed, '5m')).toBe(true);
+    expect(servesTimeframe(feed, '7m')).toBe(true);
+    expect(servesTimeframe(feed, '90m')).toBe(true);
+  });
+
+  it('refuses what it cannot build, or only from too many base bars', () => {
+    expect(servesTimeframe(feed, '30s')).toBe(false);
+    expect(servesTimeframe(feed, '9999m')).toBe(false);
+  });
+
+  it('accepts anything from a feed that serves every timeframe', () => {
+    const open = { ...feed, supportedTimeframes: undefined } as unknown as DataAdapter;
+    expect(servesTimeframe(open, '9999m')).toBe(true);
+  });
+});
+

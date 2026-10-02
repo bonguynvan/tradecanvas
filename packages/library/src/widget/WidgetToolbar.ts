@@ -5,6 +5,8 @@ import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import type { Translator } from './i18n.js';
 
+let toolbarCount = 0;
+
 export class WidgetToolbar {
   private config: ToolbarConfig;
   private callbacks: ToolbarCallbacks;
@@ -15,6 +17,8 @@ export class WidgetToolbar {
   private tfGroup: HTMLDivElement | null = null;
   private tfDropdown: WidgetDropdown | null = null;
   private tfFavorites: TimeFrame[] = [];
+  /** Tells this toolbar's element ids apart from another widget's on the page. */
+  private readonly uid = (toolbarCount++).toString(36);
   private tfRendered = '';
   private themeBtn: HTMLButtonElement | null = null;
   private fullscreenBtn: HTMLButtonElement | null = null;
@@ -220,9 +224,9 @@ export class WidgetToolbar {
       const add = esc(this.t('toolbar.timeframes.add'));
       html += `<form class="tcw-tf-custom" novalidate>`
         + `<input class="tcw-tf-custom-input" type="text" autocomplete="off" spellcheck="false" maxlength="6"`
-        + ` placeholder="7m, 90m, 2h…" aria-label="${custom}">`
+        + ` placeholder="7m, 90m, 2h…" aria-label="${custom}" aria-describedby="tcw-tf-hint-${this.uid}">`
         + `<button type="submit" class="tcw-tf-custom-add" title="${add}" aria-label="${add}">${createIcon('plus', 12)}</button>`
-        + `<div class="tcw-tf-custom-hint" role="status" hidden></div>`
+        + `<div class="tcw-tf-custom-hint" id="tcw-tf-hint-${this.uid}" role="status"></div>`
         + `</form>`;
     }
     this.tfDropdown.setContent(html);
@@ -255,19 +259,20 @@ export class WidgetToolbar {
     form.addEventListener('click', (e) => e.stopPropagation());
     input.addEventListener('input', () => {
       input.removeAttribute('aria-invalid');
-      hint.hidden = true;
+      hint.textContent = '';
     });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (this.callbacks.onAddTimeframe?.(input.value)) {
         input.value = '';
-        hint.hidden = true;
+        hint.textContent = '';
         this.tfDropdown?.close();
+        // The field just went away: put focus back where the menu opened.
+        this.el.querySelector<HTMLButtonElement>('[data-role="timeframes"]')?.focus();
       } else {
         input.setAttribute('aria-invalid', 'true');
         hint.textContent = this.t('toolbar.timeframes.invalid');
-        hint.hidden = false;
       }
     });
   }

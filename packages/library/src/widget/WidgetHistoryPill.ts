@@ -15,6 +15,7 @@ export class WidgetHistoryPill {
   constructor(parent: HTMLElement, private readonly texts: { loading: string; failed: string }) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-history-pill tcw-history-pill--hidden';
+    this.el.setAttribute('aria-hidden', 'true');
     this.el.setAttribute('role', 'status');
     this.el.setAttribute('aria-live', 'polite');
     const spinner = document.createElement('span');
@@ -46,11 +47,14 @@ export class WidgetHistoryPill {
     this.text.textContent = text;
     this.el.classList.toggle('tcw-history-pill--error', failed);
     this.el.classList.remove('tcw-history-pill--hidden');
+    this.el.removeAttribute('aria-hidden');
   }
 
   private hide(): void {
     this.hideTimer = null;
     this.el.classList.add('tcw-history-pill--hidden');
+    this.el.setAttribute('aria-hidden', 'true');
+    this.text.textContent = '';
   }
 
   private clearTimer(): void {

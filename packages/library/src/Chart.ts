@@ -39,6 +39,7 @@ import {
   RenderEngine,
   Viewport,
   withResampling,
+  servesTimeframe,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -219,12 +220,18 @@ export class Chart {
   private keyboardHandler: KeyboardHandler | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
-  /** Timeframe of the connected stream, for paging its history. */
+  /** Timeframe and adapter of the connected stream, for paging its history. */
   private streamTimeframe: TimeFrame | null = null;
+  private streamAdapter: DataAdapter | null = null;
   /** Pages older bars in as the view nears the oldest one. */
   private history: HistoryPager;
   /** Whether the history loader is the connected stream's (and goes with it). */
   private historyFromStream = false;
+  /** Whether the host set a loader of its own: the stream's never replaces it. */
+  private hostHistoryLoader = false;
+  /** Symbol and timeframe of the series the last stream snapshot loaded. */
+  private snapshotKey: string | null = null;
+  private historyCheckQueued = false;
 
 
   constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
@@ -808,19 +815,53 @@ export class Chart {
    */
   prependBars(bars: OHLCBar[]): number {
     if (this.replaySession) return 0;
-    const shownBefore = this.getDisplayData().length;
+    // The bar at the left edge, by time: Renko bricks and the like are rebuilt
+    // from the whole series, so counting what was added would not find it.
+    const shown = this.getDisplayData();
+    const leftIndex = Math.max(0, Math.min(shown.length - 1, Math.floor(this.viewport.getState().visibleRange.from)));
+    const leftTime = shown[leftIndex]?.time;
     const added = this.dataManager.prependBars(bars);
     if (added === 0) return 0;
     const data = this.dataManager.getData();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
+    // Both hold bar positions that just moved.
+    if (this.pinnedTooltip.isPinned()) this.pinnedTooltip.unpin();
+    this.measureOverlay.end();
     this.recalcIndicators(data);
-    // Renko bricks and the like may not grow bar for bar: shift by what the
-    // displayed series gained.
-    this.viewport.prependBars(this.getDisplayData().length - shownBefore);
+    if (leftTime !== undefined) {
+      const now = Math.round(timestampToBarIndex(leftTime, this.getDisplayData()));
+      this.viewport.prependBars(now - leftIndex);
+    }
     this.updateViewportAndRender();
     return added;
+  }
+
+  /**
+   * A stream snapshot for the series already on the chart (a reconnect): keep
+   * the older bars paged in and the view, replace the rest.
+   */
+  private mergeSnapshot(bars: OHLCBar[]): void {
+    const data = this.dataManager.getData();
+    const first = bars[0]?.time;
+    let keep = 0;
+    while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
+    if (keep === 0) {
+      this.setData(bars);
+      return;
+    }
+    const follow = this.viewport.isAtEnd();
+    this.dataManager.setData(data.slice(0, keep).concat(bars));
+    const merged = this.dataManager.getData();
+    this.crosshairHandler.setData(merged);
+    this.displayDataCache = null;
+    this.sessionBreaks.invalidateCache();
+    this.alertManager.clearLastValues();
+    this.recalcIndicators(merged);
+    if (merged.length > 0) this.currentPriceLine.setPrice(merged[merged.length - 1].close);
+    this.updateViewportAndRender(follow);
+    this.eventBus.emit('dataUpdate', { length: merged.length });
   }
 
   /**
@@ -831,6 +872,7 @@ export class Chart {
    */
   setHistoryLoader(loader: HistoryLoader | null, options?: { pageSize?: number }): void {
     this.historyFromStream = false;
+    this.hostHistoryLoader = loader !== null;
     this.history.setLoader(loader, options?.pageSize);
     this.checkHistory();
   }
@@ -850,15 +892,26 @@ export class Chart {
     return this.history.isLoading();
   }
 
-  /** Page older bars in when less than a screen of them is left of the view. */
+  /**
+   * Page older bars in when less than a screen of them is left of the view —
+   * after the current update, so a page that just landed reports itself
+   * before the next one starts. Not for chart types that reshape the bars
+   * (Renko, Kagi…): a handful of bricks can stand for a whole page.
+   */
   private checkHistory(): void {
-    if (this.replaySession || !this.history.hasLoader()) return;
-    const { from, to } = this.viewport.getState().visibleRange;
-    this.history.maybeLoad(Math.max(0, Math.floor(from)), Math.max(HISTORY_AHEAD_MIN_BARS, to - from));
+    if (this.historyCheckQueued || !this.history.hasLoader()) return;
+    this.historyCheckQueued = true;
+    queueMicrotask(() => {
+      this.historyCheckQueued = false;
+      if (this.replaySession || !this.history.hasLoader() || isReshapedChartType(this.options.chartType)) return;
+      const { from, to } = this.viewport.getState().visibleRange;
+      this.history.maybeLoad(Math.max(0, Math.floor(from)), Math.max(HISTORY_AHEAD_MIN_BARS, to - from));
+    });
   }
 
   /** Page the connected stream's history through its adapter, if it can. */
   private useStreamHistory(feed: DataAdapter, pageSize: number | undefined): void {
+    if (this.hostHistoryLoader) return;
     // The same wrapper the stream uses: pages of a 7m chart are 7m bars.
     const adapter = withResampling(feed);
     const fetchBefore = adapter.fetchHistoryBefore;
@@ -1586,6 +1639,10 @@ export class Chart {
    * });
    */
   async connect(config: StreamConfig): Promise<void> {
+    if (!servesTimeframe(config.adapter, config.timeframe)) {
+      throw new RangeError(`${config.adapter.name} cannot serve the ${config.timeframe} timeframe`);
+    }
+    this.snapshotKey = null;
     // Back to the live series first, so a failed history load can't leave
     // the replayed slice on screen.
     this.replayStop();
@@ -1594,11 +1651,15 @@ export class Chart {
     this.streamManager = new StreamManager();
 
     this.streamManager.on('snapshot', (bars) => {
+      const key = `${this.currentSymbol}|${this.streamTimeframe}`;
       if (this.replaySession) {
         this.replaySession.live.setData(bars);
-        return;
+      } else if (key === this.snapshotKey && this.dataManager.getLength() > 0) {
+        this.mergeSnapshot(bars); // a reconnect: keep the paged-in history and the view
+      } else {
+        this.setData(bars);
       }
-      this.setData(bars);
+      this.snapshotKey = key;
       this.useStreamHistory(config.adapter, config.historyPageSize);
     });
 
@@ -1654,6 +1715,7 @@ export class Chart {
     this.autoScrollOnNewBar = config.autoScroll !== false;
     this.currentSymbol = config.symbol;
     this.streamTimeframe = config.timeframe;
+    this.streamAdapter = config.adapter;
 
     const manager = this.streamManager;
     await manager.connect(config);
@@ -1679,6 +1741,10 @@ export class Chart {
    */
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
     if (!this.streamManager) return;
+    const adapter = this.streamAdapter;
+    if (adapter && !servesTimeframe(adapter, timeframe)) {
+      throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
+    }
     this.currentSymbol = symbol;
     this.streamTimeframe = timeframe;
     // Until the new series is in, a page would be the new symbol's bars in
@@ -1717,6 +1783,7 @@ export class Chart {
       this.history.setLoader(null);
       this.historyFromStream = false;
     }
+    this.streamAdapter = null;
   }
 
   /**
@@ -2402,6 +2469,7 @@ export class Chart {
    */
   replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
+    this.history.reset();
     if (!this.replaySession) {
       if (this.dataManager.getLength() === 0) return; // nothing to replay
       const live = new DataManager();
@@ -2755,6 +2823,8 @@ export class Chart {
 
   destroy(): void {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
+    // A loader of the host's own: no page lands in, or is asked for by, a destroyed chart.
+    this.history.setLoader(null);
     this.disableAutoSave();
     this.disconnectStream();
     this.disconnectExecution();

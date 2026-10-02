@@ -86,7 +86,7 @@ describe('pickBaseTimeframe', () => {
     ['90m', '30m'],
     ['3h', '1h'],
     ['2d', '1d'],
-    ['6d', '3d'],
+    ['6d', '1d'],
     ['2w', '1w'],
     ['3M', '1M'],
     ['12M', '1M'],
@@ -97,6 +97,10 @@ describe('pickBaseTimeframe', () => {
   it('builds weeks and months from days when that is the closest', () => {
     expect(pickBaseTimeframe('1w', ['1m', '1h', '1d'])).toBe('1d');
     expect(pickBaseTimeframe('2M', ['1h', '1d'])).toBe('1d');
+  });
+
+  it('never builds from bars of several days, which feeds start on different days', () => {
+    expect(pickBaseTimeframe('6d', ['3d'])).toBeNull();
   });
 
   it('never builds a month from bars that can straddle a month boundary', () => {

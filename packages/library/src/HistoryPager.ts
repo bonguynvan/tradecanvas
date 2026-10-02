@@ -9,8 +9,14 @@ export type { HistoryLoadPayload };
  */
 export type HistoryLoader = (before: number, limit: number) => Promise<OHLCBar[]>;
 
-/** How long to wait after a failed page before asking again. */
+/** How long to wait after a failed page before the view asks again; doubles with each failure. */
 export const HISTORY_RETRY_MS = 5_000;
+
+/** Longest wait between automatic retries. */
+export const HISTORY_RETRY_MAX_MS = 60_000;
+
+/** Failures in a row after which only an explicit `loadMore` tries again. */
+export const HISTORY_MAX_AUTO_FAILURES = 5;
 
 export const DEFAULT_HISTORY_PAGE_SIZE = 500;
 
@@ -27,13 +33,15 @@ export interface HistoryPagerHost {
  * Pages older bars in as the view nears the start of the loaded data. One
  * request at a time; a page that arrives after the series changed (`reset`)
  * or the loader was replaced is dropped. An empty page ends the paging until
- * the next series.
+ * the next series. After a failure the view waits before asking again,
+ * longer each time, and gives up asking after a few failures in a row.
  */
 export class HistoryPager {
   private loader: HistoryLoader | null = null;
   private pageSize = DEFAULT_HISTORY_PAGE_SIZE;
   private loading = false;
   private exhausted = false;
+  private failures = 0;
   private retryAt = 0;
   /** Bumped whenever an in-flight page must be dropped. */
   private seq = 0;
@@ -55,6 +63,7 @@ export class HistoryPager {
     this.seq++;
     this.loading = false;
     this.exhausted = false;
+    this.failures = 0;
     this.retryAt = 0;
   }
 
@@ -70,10 +79,11 @@ export class HistoryPager {
   /** Load a page when fewer than `ahead` bars are left of the first visible one. */
   maybeLoad(firstVisible: number, ahead: number): void {
     if (firstVisible >= ahead || !this.canLoad()) return;
+    if (this.failures >= HISTORY_MAX_AUTO_FAILURES || this.now() < this.retryAt) return;
     void this.loadMore();
   }
 
-  /** Load one page now. Resolves to the number of bars added. */
+  /** Load one page now, whatever the wait after a failure. Resolves to the number of bars added. */
   async loadMore(): Promise<number> {
     const loader = this.loader;
     const before = this.host.oldestTime();
@@ -81,30 +91,43 @@ export class HistoryPager {
 
     const seq = this.seq;
     this.loading = true;
-    this.host.emit({ state: 'loading', count: 0 });
+    this.emit({ state: 'loading', count: 0 });
+    let page: OHLCBar[];
     try {
-      const page = await loader(before, this.pageSize);
-      if (seq !== this.seq) return 0;
-      this.loading = false;
-      const added = this.host.prepend(page);
-      if (added === 0) {
-        this.exhausted = true;
-        this.host.emit({ state: 'end', count: 0 });
-      } else {
-        this.host.emit({ state: 'loaded', count: added });
-      }
-      return added;
+      page = await loader(before, this.pageSize);
     } catch (err: unknown) {
       if (seq !== this.seq) return 0;
       this.loading = false;
-      this.retryAt = this.now() + HISTORY_RETRY_MS;
-      this.host.emit({ state: 'error', count: 0, error: err instanceof Error ? err.message : String(err) });
+      this.failures++;
+      this.retryAt = this.now() + Math.min(HISTORY_RETRY_MAX_MS, HISTORY_RETRY_MS * 2 ** (this.failures - 1));
+      this.emit({ state: 'error', count: 0, error: err instanceof Error ? err.message : String(err) });
       return 0;
     }
+    if (seq !== this.seq) return 0;
+    this.loading = false;
+    this.failures = 0;
+    this.retryAt = 0;
+    const added = this.host.prepend(page);
+    if (added === 0) {
+      this.exhausted = true;
+      this.emit({ state: 'end', count: 0 });
+    } else {
+      this.emit({ state: 'loaded', count: added });
+    }
+    return added;
   }
 
   private canLoad(): boolean {
-    return this.loader !== null && !this.loading && !this.exhausted && this.now() >= this.retryAt;
+    return this.loader !== null && !this.loading && !this.exhausted;
+  }
+
+  /** A listener that throws must not stall the paging: report it and go on. */
+  private emit(payload: HistoryLoadPayload): void {
+    try {
+      this.host.emit(payload);
+    } catch (err: unknown) {
+      console.error('[TradeCanvas] A historyLoad listener threw:', err);
+    }
   }
 
   private now(): number {

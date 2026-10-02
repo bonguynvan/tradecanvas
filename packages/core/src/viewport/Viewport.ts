@@ -255,11 +255,12 @@ export class Viewport {
   }
 
   /**
-   * `count` bars were added in front of the data: move the view by as many
-   * slots, so the same bars stay on screen.
+   * The bars on screen moved `count` slots right (bars added in front of the
+   * data; negative when a reshaped series lost some): move the view with
+   * them, so the same bars stay on screen.
    */
   prependBars(count: number): void {
-    if (count <= 0) return;
+    if (count === 0 || !Number.isFinite(count)) return;
     this.dataLength += count;
     this.state.offset += count * (this.state.barWidth + this.state.barSpacing);
     this.invalidate();

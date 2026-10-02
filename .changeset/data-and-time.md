@@ -18,9 +18,15 @@
     limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
     `PollingAdapter` take it as an option.
   - A connected chart loads a page (`StreamConfig.historyPageSize`, default
-    500) when less than a screen of bars is left of the view. It runs one
-    request at a time and keeps the same bars on screen. It stops at the start
-    of the history and waits 5 seconds after a failed request.
+    500) when less than a screen of bars is left of the view.
+    - It runs one request at a time and keeps the same bars on screen.
+    - It stops at the start of the history.
+    - After a failed request it waits 5 s before asking again, doubling each
+      time; after 5 failures in a row only `loadMore()` retries.
+    - Chart types that reshape the bars (Renko, Kagi…) only page on
+      `loadMore()`.
+    - A loader set with `setHistoryLoader` wins over the stream's.
+    - A reconnect keeps the paged-in bars and the view.
   - New `chart.prependBars()`, `setHistoryLoader()`, `loadMoreHistory()`,
     `hasMoreHistory()`, `isLoadingHistory()` and the `historyLoad` event.
   - ChartWidget shows a small pill while older bars load (`historyPageSize`
@@ -38,6 +44,18 @@
     bars and older pages: `ResamplingAdapter`, `withResampling`,
     `resampleBars`, `pickBaseTimeframe`.
   - Before, Binance quietly sent 15m bars for intervals it lacks (45m, 2d, 3M…).
+  - A timeframe the feed cannot build (30s from minutes, or more than 1440 of
+    its bars per bar) is refused: `connect` and `setTimeframe` throw a
+    RangeError, and the widget rejects it in the menu. New `servesTimeframe`.
+  - One history call makes at most 10 requests to the feed, and stops when the
+    adapter disconnects.
+  - Live bars of a built timeframe hold up when a feed never flags a bar
+    closed or repeats a frame. The forming bar starts from the bars history
+    served, so a reconnect no longer leaves a partial candle.
+  - **Type change.** `TimeFrame` now also accepts any `` `${number}${unit}` ``.
+    Code that switches exhaustively over `TimeFrame`, or reads a
+    `Record<TimeFrame, X>` as if every key were present, should use
+    `KnownTimeFrame` or a fallback.
   - ChartWidget: the timeframe menu takes a typed interval (`7`, `90`, `2h`,
     `3D`, `1W`, `2M`). It is added, pinned, remembered and removable with an
     ×; `customTimeframes: false` hides the field. New `parseTimeframeInput`.

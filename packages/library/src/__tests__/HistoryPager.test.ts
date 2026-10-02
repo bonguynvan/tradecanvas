@@ -93,7 +93,7 @@ describe('HistoryPager', () => {
     expect(pager.isLoading()).toBe(false);
   });
 
-  it('waits before retrying after a failed request', async () => {
+  it('waits before the view retries after a failed request', async () => {
     const { pager, events, advance } = setup();
     const loader = vi.fn()
       .mockRejectedValueOnce(new Error('rate limited'))
@@ -102,12 +102,13 @@ describe('HistoryPager', () => {
     expect(await pager.loadMore()).toBe(0);
     expect(events.at(-1)).toEqual({ state: 'error', count: 0, error: 'rate limited' });
 
-    expect(await pager.loadMore()).toBe(0);
+    pager.maybeLoad(0, 20);
+    await Promise.resolve();
     expect(loader).toHaveBeenCalledTimes(1);
 
     advance(HISTORY_RETRY_MS);
-    expect(await pager.loadMore()).toBe(5);
-    expect(loader).toHaveBeenCalledTimes(2);
+    pager.maybeLoad(0, 20);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
   });
 
   it('does nothing without a loader or without data', async () => {
@@ -131,5 +132,57 @@ describe('HistoryPager', () => {
     page.resolve(bars(0, 10));
     expect(await pending).toBe(0);
     expect(data()).toHaveLength(50);
+  });
+});
+
+describe('HistoryPager after failures', () => {
+  it('waits longer after each failure and stops trying on its own after five', async () => {
+    const { pager, advance } = setup();
+    const loader = vi.fn().mockRejectedValue(new Error('429'));
+    pager.setLoader(loader);
+    for (let i = 0; i < 5; i++) {
+      await pager.loadMore(); // a request the user made
+      advance(HISTORY_RETRY_MS * 2 ** i);
+    }
+    expect(loader).toHaveBeenCalledTimes(5);
+    pager.maybeLoad(0, 20); // the view alone no longer retries
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(5);
+    await pager.loadMore(); // a request the user made still does
+    expect(loader).toHaveBeenCalledTimes(6);
+  });
+
+  it('backs off after a failure when the view asks again', async () => {
+    const { pager, advance } = setup();
+    const loader = vi.fn().mockRejectedValueOnce(new Error('429')).mockRejectedValueOnce(new Error('429')).mockResolvedValue([]);
+    pager.setLoader(loader);
+    pager.maybeLoad(0, 20);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(1));
+    advance(HISTORY_RETRY_MS);
+    pager.maybeLoad(0, 20);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
+    advance(HISTORY_RETRY_MS); // not yet: the second wait is twice as long
+    pager.maybeLoad(0, 20);
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(2);
+    advance(HISTORY_RETRY_MS);
+    pager.maybeLoad(0, 20);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(3));
+  });
+
+  it('keeps paging when a listener throws, and reports the error', async () => {
+    let first = bars(100, 50);
+    const pager = new HistoryPager({
+      oldestTime: () => first[0].time,
+      prepend: (page) => { first = [...page, ...first]; return page.length; },
+      emit: () => { throw new Error('listener bug'); },
+    });
+    const report = vi.spyOn(console, 'error').mockImplementation(() => {});
+    pager.setLoader(async (before, limit) => bars(before - limit, limit), 10);
+    expect(await pager.loadMore()).toBe(10);
+    expect(pager.isLoading()).toBe(false);
+    expect(await pager.loadMore()).toBe(10);
+    expect(report).toHaveBeenCalled();
+    report.mockRestore();
   });
 });

@@ -186,11 +186,11 @@ describe('ChartWidget custom timeframes', () => {
     expect(input().getAttribute('aria-invalid')).toBe('true');
     expect(input().value).toBe('abc');
     const hint = host.querySelector<HTMLElement>('.tcw-tf-custom-hint')!;
-    expect(hint.hidden).toBe(false);
+    expect(input().getAttribute('aria-describedby')).toBe(hint.id);
     expect(hint.textContent).toMatch(/7m/);
     input().value = 'abcd';
     input().dispatchEvent(new Event('input'));
-    expect(hint.hidden).toBe(true);
+    expect(hint.textContent).toBe('');
     expect(FakeChart.last.connects).toHaveLength(1);
   });
 
