@@ -11,8 +11,9 @@ export class EnvelopeIndicator extends IndicatorBase {
     id: 'envelope',
     name: 'Moving Average Envelope',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20, percent: 2.5 },
+    defaultConfig: { period: 20, percent: 2.5, source: 'close' },
     shortName: 'Env',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'basis', title: 'Basis', color: 1 },

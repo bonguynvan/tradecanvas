@@ -13,8 +13,9 @@ export class StochasticRSIIndicator extends IndicatorBase {
     id: 'stochrsi',
     name: 'Stochastic RSI',
     placement: 'panel' as const,
-    defaultConfig: { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3 },
+    defaultConfig: { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: 'close' },
     shortName: 'Stoch RSI',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'k', title: '%K', color: 0 },
       { key: 'd', title: '%D', color: 1 },

@@ -3,6 +3,7 @@ import type { Size, ViewportState, Theme, DataSeries, Rect } from '@tradecanvas/
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, computeTickStep, formatPrice } from '@tradecanvas/commons';
 import { LayerManager } from './LayerManager.js';
+import { renderAxisValueLabels, indicatorValuePrecision, type AxisValueLabel } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
@@ -36,6 +37,8 @@ function panelPrecision(step: number): number {
 
 export interface PanelRenderInfo {
   instanceId: string;
+  /** Other instances drawn in this pane, on its scale. */
+  members?: string[];
   rect: Rect;
   viewport: ViewportState;
 }
@@ -74,6 +77,10 @@ export interface RenderContext {
   theme: Theme;
   data: DataSeries;
   /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
+  /** Tag each indicator line's latest value on its value axis (default on). */
+  indicatorValueLabels?: boolean;
+  /** Price text as the price axis writes it (precision, locale). */
+  formatPrice?: (price: number) => string;
   numberLocale?: string;
   /** Write each indicator pane's name, and the values under the cursor, in its header (default). Off when the host labels panes itself. */
   paneTitles?: boolean;
@@ -211,6 +218,7 @@ export class RenderEngine {
 
     // --- Axes and price tags ---
     ctx.priceAxis?.render(c, viewport, theme);
+    if (ctx.indicatorValueLabels !== false) this.renderOverlayValueLabels(c, ctx);
     // Trading axis badges paint ON TOP of the regular price axis labels
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
@@ -285,12 +293,25 @@ export class RenderEngine {
       c.beginPath();
       c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
       c.clip();
-      this.renderLevels(c, indicatorEngine.getLevels(panel.instanceId), panel.viewport, theme);
-      indicatorEngine.renderPanel(c, panel.instanceId, panel.viewport);
+      const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
+      for (const id of ids) this.renderLevels(c, indicatorEngine.getLevels(id), panel.viewport, theme);
+      for (const id of ids) indicatorEngine.renderPanel(c, id, panel.viewport);
       c.restore();
 
       c.restore();
     }
+  }
+
+  /** Price-pane indicators' latest values as tags on the price axis, under the last-price tag. */
+  private renderOverlayValueLabels(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const values = ctx.indicatorEngine?.getLatestOverlayValues();
+    if (!values?.length) return;
+    const { viewport, theme } = ctx;
+    const { chartRect } = viewport;
+    const format = ctx.formatPrice ?? ((v: number) => formatPrice(v, 2, ctx.numberLocale ?? 'en-US'));
+    const labels: AxisValueLabel[] = values.map((v) => ({ y: priceToY(v.value, viewport), text: format(v.value), color: v.color }));
+    renderAxisValueLabels(c, labels, chartRect.x + chartRect.width, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
+      { top: chartRect.y, bottom: chartRect.y + chartRect.height }, theme);
   }
 
   /** An indicator's reference levels (RSI 30 / 70): faint dashed lines across its pane, under the plots. */
@@ -354,6 +375,20 @@ export class RenderEngine {
         c.stroke();
         c.fillStyle = theme.axisLabel;
         c.fillText(formatPrice(val, precision, locale), axisX + 6, y);
+      }
+
+      // The pane indicator's latest values, tagged on its axis.
+      const latest = ctx.indicatorValueLabels !== false
+        ? [panel.instanceId, ...(panel.members ?? [])].flatMap((id) => ctx.indicatorEngine?.getLatestValues(id) ?? [])
+        : null;
+      if (latest?.length) {
+        const labels = latest.map((v) => ({
+          y: priceToY(v.value, pv),
+          text: formatPrice(v.value, indicatorValuePrecision(v.value), locale),
+          color: v.color,
+        }));
+        renderAxisValueLabels(c, labels, axisX, ctx.viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
+          { top: insetRect.y, bottom: insetRect.y + insetRect.height }, theme);
       }
     }
   }

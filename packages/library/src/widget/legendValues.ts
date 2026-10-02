@@ -1,6 +1,6 @@
 import type { IndicatorDescriptor, IndicatorValue } from '@tradecanvas/commons';
 import { formatPrice } from '@tradecanvas/commons';
-import { plotColor } from '@tradecanvas/core';
+import { plotColor, indicatorValuePrecision } from '@tradecanvas/core';
 
 /** One value in an indicator's legend row; `color` null = the neutral text colour. */
 export interface LegendValue {
@@ -57,8 +57,6 @@ function compactFormat(locale: string): Intl.NumberFormat {
  * follow its size, and big ones are shortened.
  */
 export function formatIndicatorValue(value: number, locale = 'en-US'): string {
-  const size = Math.abs(value);
-  if (size >= 1e6) return compactFormat(locale).format(value);
-  const digits = size >= 1000 ? 1 : size >= 1 ? 2 : size >= 0.01 ? 4 : 6;
-  return formatPrice(value, digits, locale);
+  if (Math.abs(value) >= 1e6) return compactFormat(locale).format(value);
+  return formatPrice(value, indicatorValuePrecision(value), locale);
 }

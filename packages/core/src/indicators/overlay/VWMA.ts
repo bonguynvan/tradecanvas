@@ -10,8 +10,9 @@ export class VWMAIndicator extends IndicatorBase {
     id: 'vwma',
     name: 'Volume Weighted Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'VWMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'VWMA', color: 0 }],
   };
 

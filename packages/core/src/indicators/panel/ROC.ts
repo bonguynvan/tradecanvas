@@ -8,8 +8,9 @@ export class ROCIndicator extends IndicatorBase {
     id: 'roc',
     name: 'Rate of Change',
     placement: 'panel' as const,
-    defaultConfig: { period: 12 },
+    defaultConfig: { period: 12, source: 'close' },
     shortName: 'ROC',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'ROC', color: 0 }],
     levels: [0],
   };

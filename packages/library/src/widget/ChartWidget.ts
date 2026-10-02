@@ -72,6 +72,8 @@ const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '
 const LEGEND_INSET = 4;
 /** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
 const PANE_ROW_TOP = 7;
+/** Rows of the indicators sharing a pane, one under the other (px). */
+const PANE_ROW_STEP = 17;
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 let lastPressedWidget: ChartWidget | null = null;
@@ -1807,7 +1809,11 @@ export class ChartWidget {
     // data bar, so their values stay on the latest one.
     const hover = this.chart.isTimeAligned() ? this.legendHoverIndex : null;
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
-    const panes = new Map(this.chart.getIndicatorPanes().map((p) => [p.instanceId, p.rect]));
+    // Each pane's indicators, its own first, stacked down from its top.
+    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
+    for (const pane of this.chart.getIndicatorPanes()) {
+      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
+    }
     const locale = this.settingsState.numberLocale || 'en-US';
     const rows: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
@@ -1822,7 +1828,9 @@ export class ChartWidget {
           text: pane ? formatIndicatorValue(v.value, locale) : this.chart.formatPrice(v.value),
           color: v.color,
         })),
-        pane: pane ? { x: pane.x + LEGEND_INSET, y: pane.y + PANE_ROW_TOP, width: pane.width - 2 * LEGEND_INSET } : null,
+        pane: pane
+          ? { x: pane.x + LEGEND_INSET, y: pane.y + PANE_ROW_TOP + pane.row * PANE_ROW_STEP, width: pane.width - 2 * LEGEND_INSET }
+          : null,
       };
     });
     const plot = this.chart.getPlotRect();

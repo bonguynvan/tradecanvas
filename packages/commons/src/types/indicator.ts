@@ -81,6 +81,11 @@ export interface IndicatorConfig {
   visible?: boolean;
   /** Reference levels for this instance; unset uses the descriptor's `levels`. */
   levels?: number[];
+  /**
+   * Draw in another instance's pane, on its scale (a moving average applied
+   * to RSI). Unset: the price pane for overlays, a pane of its own for panels.
+   */
+  pane?: string;
 }
 
 export interface IndicatorStyleConfig {

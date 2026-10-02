@@ -26,6 +26,14 @@ export class LayoutManager {
     });
   }
 
+  /** Hand a pane to another indicator, keeping its place and size. */
+  renamePanel(fromId: string, toId: string): void {
+    const panel = this.panels.find((p) => p.id === fromId);
+    if (!panel) return;
+    panel.id = toId;
+    panel.content = { ...panel.content, indicatorInstanceId: toId };
+  }
+
   removePanel(instanceId: string): void {
     this.panels = this.panels.filter((p) => p.id !== instanceId);
   }

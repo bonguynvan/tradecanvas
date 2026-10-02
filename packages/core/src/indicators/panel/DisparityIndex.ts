@@ -15,8 +15,9 @@ export class DisparityIndexIndicator extends IndicatorBase {
     id: 'disparity',
     name: 'Disparity Index',
     placement: 'panel' as const,
-    defaultConfig: { period: 14 },
+    defaultConfig: { period: 14, source: 'close' },
     shortName: 'DI',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'DI', color: 0 }],
     levels: [0],
   };

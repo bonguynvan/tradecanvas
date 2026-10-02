@@ -9,8 +9,9 @@ export class SMAIndicator extends IndicatorBase {
     id: 'sma',
     name: 'Simple Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'SMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'SMA', color: 0 }],
   };
 

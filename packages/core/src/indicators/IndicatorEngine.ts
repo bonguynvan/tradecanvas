@@ -5,23 +5,40 @@ import type {
   IndicatorDescriptor,
   ResolvedIndicatorStyle,
   DataSeries,
+  OHLCBar,
   ViewportState,
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
-import { drawnKeys, hasHistogram, paneValueRange } from './plots.js';
+import { drawnKeys, hasHistogram, paneValueRange, plotColor } from './plots.js';
+import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars } from './sources.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
   config: IndicatorConfig;
   output: IndicatorOutput | null;
   style: ResolvedIndicatorStyle;
+  /** Bars with `close` replaced by the price source, kept for incremental updates. */
+  sourceBars?: OHLCBar[];
 }
 
 let nextId = 1;
 
+/** An active indicator instance as listed by `getActiveIndicators`. */
+export interface ActiveIndicatorInfo {
+  instanceId: string;
+  id: string;
+  params: Record<string, unknown>;
+  descriptor: IndicatorDescriptor;
+  visible: boolean;
+  /** The instance whose pane it is drawn in, when not its own. */
+  pane?: string;
+}
+
 export class IndicatorEngine {
   private registry = new Map<string, IndicatorPlugin>();
   private instances = new Map<string, IndicatorInstance>();
+  /** Instances in computing order (each after the indicators it reads); null = recompute. */
+  private order: IndicatorInstance[] | null = null;
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -31,10 +48,15 @@ export class IndicatorEngine {
     return Array.from(this.registry.values()).map((p) => p.descriptor);
   }
 
+  /**
+   * Add an instance of indicator `id`. `options.pane` draws it in another
+   * instance's pane, on that pane's scale.
+   */
   addIndicator(
     id: string,
     params: Record<string, number | string | boolean> = {},
     data?: DataSeries,
+    options: { pane?: string } = {},
   ): string {
     const plugin = this.registry.get(id);
     if (!plugin) throw new Error(`Unknown indicator: ${id}`);
@@ -46,6 +68,7 @@ export class IndicatorEngine {
       params: { ...plugin.descriptor.defaultConfig, ...params } as Record<string, number | string | boolean>,
       visible: true,
     };
+    if (options.pane && this.instances.has(options.pane)) config.pane = options.pane;
 
     // A second EMA must not look like the first: each further instance of an
     // indicator starts one step along the palette.
@@ -60,32 +83,33 @@ export class IndicatorEngine {
     };
 
     const instance: IndicatorInstance = { plugin, config, output: null, style };
-
-    if (data) {
-      instance.output = plugin.calculate(data, config);
-    }
-
     this.instances.set(instanceId, instance);
+    this.order = null;
+    if (data) this.compute(instance, data);
     return instanceId;
   }
 
   removeIndicator(instanceId: string): void {
     this.instances.delete(instanceId);
+    this.order = null;
   }
 
+  /** Change an instance's parameters; it and the indicators that read it are recomputed. */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>, data?: DataSeries): void {
     const instance = this.instances.get(instanceId);
     if (!instance) return;
     Object.assign(instance.config.params, params);
-    if (data) {
-      instance.output = instance.plugin.calculate(data, instance.config);
+    delete instance.sourceBars;
+    this.order = null;
+    if (!data) return;
+    const affected = new Set([instanceId, ...this.getDependents(instanceId)]);
+    for (const each of this.ordered()) {
+      if (affected.has(each.config.instanceId)) this.compute(each, data);
     }
   }
 
   recalculateAll(data: DataSeries): void {
-    for (const instance of this.instances.values()) {
-      instance.output = instance.plugin.calculate(data, instance.config);
-    }
+    for (const instance of this.ordered()) this.compute(instance, data);
   }
 
   /**
@@ -99,14 +123,96 @@ export class IndicatorEngine {
    * without `update`, or whose `update` declines, are fully recalculated.
    */
   recalculateFrom(data: DataSeries, from: number): void {
-    for (const instance of this.instances.values()) {
-      const prev = instance.output;
-      let next: IndicatorOutput | null = null;
-      if (prev && instance.plugin.update && from > 0) {
-        next = instance.plugin.update(data, instance.config, prev, from);
-      }
-      instance.output = next ?? instance.plugin.calculate(data, instance.config);
+    for (const instance of this.ordered()) this.compute(instance, data, from);
+  }
+
+  /**
+   * Compute one instance from its source: the bars, a price source in
+   * `close`, or another indicator's line. With `from`, bars before it are
+   * unchanged and an incremental `update` is tried first; an indicator read
+   * from another indicator's line is always recomputed in full (the line it
+   * reads may have changed anywhere it was still settling).
+   */
+  private compute(instance: IndicatorInstance, data: DataSeries, from?: number): void {
+    const { plugin, config } = instance;
+    const source = inputSource(plugin.descriptor, config.params);
+    if (source.kind === 'line') {
+      const line = this.instances.get(source.instanceId)?.output?.series;
+      const input = lineSourceBars(data, line, source.key);
+      instance.output = input
+        ? alignOutput(plugin.calculate(input.bars, config), input.start, data.length)
+        : emptyOutput(data.length);
+      return;
     }
+    let bars: DataSeries = data;
+    if (source.kind === 'price') {
+      instance.sourceBars = priceSourceBars(data, source.source, instance.sourceBars ?? null, from ?? 0);
+      bars = instance.sourceBars;
+    } else {
+      delete instance.sourceBars;
+    }
+    const prev = instance.output;
+    let next: IndicatorOutput | null = null;
+    if (from !== undefined && from > 0 && prev && plugin.update) next = plugin.update(bars, config, prev, from);
+    instance.output = next ?? plugin.calculate(bars, config);
+  }
+
+  /** Instances ordered so each comes after the indicators it reads (insertion order otherwise). */
+  private ordered(): IndicatorInstance[] {
+    if (this.order) return this.order;
+    const out: IndicatorInstance[] = [];
+    const state = new Map<string, 'visiting' | 'done'>();
+    const visit = (instance: IndicatorInstance): void => {
+      const id = instance.config.instanceId;
+      if (state.get(id)) return; // done, or a cycle: leave it where it is
+      state.set(id, 'visiting');
+      const source = inputSource(instance.plugin.descriptor, instance.config.params);
+      const dep = source.kind === 'line' ? this.instances.get(source.instanceId) : undefined;
+      if (dep) visit(dep);
+      state.set(id, 'done');
+      out.push(instance);
+    };
+    for (const instance of this.instances.values()) visit(instance);
+    this.order = out;
+    return out;
+  }
+
+  /** The instances that read `instanceId`'s lines, directly or through others. */
+  getDependents(instanceId: string): string[] {
+    const out: string[] = [];
+    const seen = new Set([instanceId]);
+    const queue = [instanceId];
+    while (queue.length) {
+      const id = queue.shift()!;
+      for (const instance of this.instances.values()) {
+        const source = inputSource(instance.plugin.descriptor, instance.config.params);
+        const other = instance.config.instanceId;
+        if (source.kind === 'line' && source.instanceId === id && !seen.has(other)) {
+          seen.add(other);
+          out.push(other);
+          queue.push(other);
+        }
+      }
+    }
+    return out;
+  }
+
+  /** The instances drawn in `hostId`'s pane besides it, in order. */
+  getPaneMembers(hostId: string): string[] {
+    const out: string[] = [];
+    for (const instance of this.instances.values()) {
+      if (instance.config.pane === hostId) out.push(instance.config.instanceId);
+    }
+    return out;
+  }
+
+  /** Move an instance into another instance's pane (`null`: back to its own place). */
+  setPane(instanceId: string, hostId: string | null): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance || hostId === instanceId || (hostId !== null && !this.instances.has(hostId))) return false;
+    if (hostId === null) delete instance.config.pane;
+    else instance.config.pane = hostId;
+    return true;
   }
 
   getOutput(instanceId: string): IndicatorOutput | null {
@@ -116,7 +222,7 @@ export class IndicatorEngine {
   renderOverlays(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
     for (const instance of this.instances.values()) {
       if (!instance.output || !instance.config.visible) continue;
-      if (instance.plugin.descriptor.placement !== 'overlay') continue;
+      if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
       instance.plugin.render(ctx, instance.output, viewport, instance.style);
     }
   }
@@ -129,6 +235,24 @@ export class IndicatorEngine {
     const instance = this.instances.get(instanceId);
     if (!instance?.output || !instance.config.visible) return;
     instance.plugin.render(ctx, instance.output, viewport, instance.style);
+  }
+
+  /**
+   * Each drawn line's value at the latest bar, in the colour it has there:
+   * the tags on the value axis. Empty while hidden or still warming up.
+   */
+  getLatestValues(instanceId: string): { value: number; color: string }[] {
+    const instance = this.instances.get(instanceId);
+    return instance ? latestValues(instance) : [];
+  }
+
+  /** `getLatestValues` of every visible price-pane indicator. */
+  getLatestOverlayValues(): { value: number; color: string }[] {
+    const out: { value: number; color: string }[] = [];
+    for (const instance of this.instances.values()) {
+      if (instance.plugin.descriptor.placement === 'overlay' && !instance.config.pane) out.push(...latestValues(instance));
+    }
+    return out;
   }
 
   /** Get config for an active indicator instance */
@@ -173,15 +297,21 @@ export class IndicatorEngine {
    * there is nothing to fit.
    */
   getPaneValueRange(instanceId: string, from: number, to: number): { min: number; max: number } | null {
-    const instance = this.instances.get(instanceId);
-    if (!instance) return null;
-    const descriptor = instance.plugin.descriptor;
-    return paneValueRange(instance.output, from, to, {
-      keys: drawnKeys(descriptor),
-      scale: descriptor.scale,
-      levels: instance.config.levels ?? descriptor.levels,
-      zero: hasHistogram(descriptor.plots),
-    });
+    let range: { min: number; max: number } | null = null;
+    // The pane's own indicator and those drawn in it share one scale.
+    for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
+      const instance = this.instances.get(id);
+      if (!instance || (id !== instanceId && instance.config.visible === false)) continue;
+      const descriptor = instance.plugin.descriptor;
+      const own = paneValueRange(instance.output, from, to, {
+        keys: drawnKeys(descriptor),
+        scale: descriptor.scale,
+        levels: instance.config.levels ?? descriptor.levels,
+        zero: hasHistogram(descriptor.plots),
+      });
+      if (own) range = range ? { min: Math.min(range.min, own.min), max: Math.max(range.max, own.max) } : own;
+    }
+    return range;
   }
 
   /** Get descriptor for an active indicator instance */
@@ -190,8 +320,8 @@ export class IndicatorEngine {
   }
 
   /** List all active indicator instances with their current config */
-  getActiveIndicators(): { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] {
-    const result: { instanceId: string; id: string; params: Record<string, unknown>; descriptor: IndicatorDescriptor; visible: boolean }[] = [];
+  getActiveIndicators(): ActiveIndicatorInfo[] {
+    const result: ActiveIndicatorInfo[] = [];
     for (const [instanceId, instance] of this.instances) {
       result.push({
         instanceId,
@@ -199,6 +329,7 @@ export class IndicatorEngine {
         params: { ...instance.config.params },
         descriptor: instance.plugin.descriptor,
         visible: instance.config.visible ?? true,
+        ...(instance.config.pane ? { pane: instance.config.pane } : {}),
       });
     }
     return result;
@@ -232,7 +363,7 @@ export class IndicatorEngine {
 
     for (const instance of this.instances.values()) {
       if (!instance.output || !instance.config.visible) continue;
-      if (instance.plugin.descriptor.placement !== 'overlay') continue;
+      if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
 
       const series = instance.output.series;
       if (!series) continue; // no array form published — nothing to scan safely in range
@@ -277,4 +408,18 @@ export class IndicatorEngine {
     }
     return result;
   }
+}
+
+function latestValues(instance: IndicatorInstance): { value: number; color: string }[] {
+  const series = instance.output?.series;
+  const plots = instance.plugin.descriptor.plots;
+  if (!series || !plots || instance.config.visible === false) return [];
+  const point = series[series.length - 1];
+  if (!point) return [];
+  const out: { value: number; color: string }[] = [];
+  for (const plot of plots) {
+    const v = point[plot.key];
+    if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
+  }
+  return out;
 }

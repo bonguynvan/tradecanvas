@@ -14,8 +14,9 @@ export class KSTIndicator extends IndicatorBase {
     id: 'kst',
     name: 'Know Sure Thing',
     placement: 'panel' as const,
-    defaultConfig: { roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9 },
+    defaultConfig: { roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9, source: 'close' },
     shortName: 'KST',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'value', title: 'KST', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar } from '@tradecanvas/commons';
+import { indicatorSource } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -80,5 +81,57 @@ describe('indicatorChange', () => {
     chart.updateIndicator(rsi, { period: 21 });
     chart.setPanelPosition(rsi, 'top');
     expect(changes).toEqual(['rsi:visible', 'rsi:style', 'rsi:levels', 'rsi:params', 'rsi:pane']);
+  });
+});
+
+describe('indicators on indicators', () => {
+  const panes = () => chart.getIndicatorPanes().map((p) => p.instanceIds);
+
+  it('draws a moving average of RSI in RSI’s pane', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const sma = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })!;
+    expect(panes()).toEqual([[rsi, sma]]);
+    const series = chart.getIndicatorOutput(sma)!.series!;
+    expect(series[series.length - 1]!.value).toBeGreaterThan(0);
+    expect(series[series.length - 1]!.value).toBeLessThan(100);
+  });
+
+  it('moves with its source into a pane and back to the price pane', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const sma = chart.addIndicator('sma', { period: 9 })!;
+    expect(panes()).toEqual([[rsi]]);
+    chart.updateIndicator(sma, { source: indicatorSource(rsi, 'value') });
+    expect(panes()).toEqual([[rsi, sma]]);
+    chart.updateIndicator(sma, { source: 'hl2' });
+    expect(panes()).toEqual([[rsi]]);
+  });
+
+  it('removes the indicators computed from one with it', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') });
+    const ema = chart.addIndicator('ema', { period: 20 })!;
+    const removed: string[] = [];
+    chart.on('indicatorRemove', (e) => removed.push((e.payload as { instanceId: string }).instanceId));
+    chart.removeIndicator(rsi);
+    expect(chart.getActiveIndicators().map((i) => i.instanceId)).toEqual([ema]);
+    expect(removed).toHaveLength(2);
+    expect(panes()).toEqual([]);
+  });
+
+  it('hands a shared pane to the next pane indicator in it', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const stoch = chart.addIndicator('stochastic', {}, 'bottom', { pane: rsi })!;
+    expect(panes()).toEqual([[rsi, stoch]]);
+    chart.removeIndicator(rsi);
+    expect(panes()).toEqual([[stoch]]);
+  });
+
+  it('keeps sources and shared panes in a saved layout', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') });
+    chart.loadState(chart.saveState()!);
+    const [newRsi, newSma] = chart.getActiveIndicators();
+    expect(newSma.params.source).toBe(indicatorSource(newRsi.instanceId, 'value'));
+    expect(panes()).toEqual([[newRsi.instanceId, newSma.instanceId]]);
   });
 });

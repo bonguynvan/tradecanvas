@@ -13,8 +13,9 @@ export class HullMAIndicator extends IndicatorBase {
     id: 'hma',
     name: 'Hull Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 21 },
+    defaultConfig: { period: 21, source: 'close' },
     shortName: 'HMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'HMA', color: 0 }],
   };
 

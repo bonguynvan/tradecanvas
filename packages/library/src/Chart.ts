@@ -32,7 +32,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
+import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -48,6 +48,7 @@ import {
   CrosshairHandler,
   IndicatorEngine,
   registerBuiltInIndicators,
+  sourceParam,
   EventBus,
   DrawingManager,
   DrawingRenderer,
@@ -242,6 +243,7 @@ export class Chart {
       timeAxis: f.timeAxis ?? true,
       grid: f.grid ?? (options.grid?.visible ?? true),
       legend: f.legend ?? true,
+      indicatorValueLabels: f.indicatorValueLabels ?? true,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,
@@ -871,18 +873,26 @@ export class Chart {
 
   // --- Indicators ---
 
-  addIndicator(id: string, params: Record<string, number | string | boolean> = {}, position: PanelPosition = 'bottom'): string | null {
+  /**
+   * Add an indicator. Panel indicators get a pane of their own at `position`.
+   * `options.pane` draws it in another indicator's pane instead, on that
+   * pane's scale; a price-pane indicator computed from a pane indicator's
+   * line (`source: 'ind:<instanceId>:<key>'`) goes there by itself.
+   */
+  addIndicator(
+    id: string,
+    params: Record<string, number | string | boolean> = {},
+    position: PanelPosition = 'bottom',
+    options: { pane?: string } = {},
+  ): string | null {
     if (!this.features.indicators) return null;
     if (this.features.indicatorIds.length > 0 && !this.features.indicatorIds.includes(id)) return null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData());
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
-    if (descriptor?.placement === 'panel') {
-      this.layoutManager.addPanel(instanceId, position);
-      // Panel layout changed — must re-resolve layout, update viewport, and sync render context
-      this.updateViewportAndRender();
-    } else {
-      this.engine.requestRender();
-    }
+    const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), pane ? { pane } : {});
+    if (descriptor?.placement === 'panel' && !pane) this.layoutManager.addPanel(instanceId, position);
+    // The layout (a new pane) or the price scale (a new overlay) may change.
+    this.updateViewportAndRender();
     this.eventBus.emit('indicatorAdd', { instanceId, id });
     this.scheduleAutoSave();
     return instanceId;
@@ -891,9 +901,46 @@ export class Chart {
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>): void {
     this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
     this.announceIndicatorUpdate(0);
-    this.engine.requestRender();
     this.scheduleAutoSave();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
+    // A price-pane indicator follows its source into a pane, or back out of it.
+    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
+    const config = this.indicatorEngine.getIndicatorConfig(instanceId);
+    if (descriptor?.placement === 'overlay' && config) {
+      const pane = this.paneFor(descriptor, config.params, undefined, instanceId);
+      if ((pane ?? undefined) !== config.pane) {
+        this.indicatorEngine.setPane(instanceId, pane);
+        this.eventBus.emit('indicatorChange', { instanceId, change: 'pane' });
+      }
+    }
+    this.updateViewportAndRender();
+  }
+
+  /**
+   * The pane an indicator is drawn in, other than its own: the pane of the
+   * instance `requested`, or, for a price-pane indicator computed from a pane
+   * indicator's line, that indicator's pane. Null = the price pane (overlays)
+   * or a pane of its own (panels).
+   */
+  private paneFor(
+    descriptor: IndicatorDescriptor,
+    params: Readonly<Record<string, unknown>>,
+    requested?: string,
+    self?: string,
+  ): string | null {
+    if (requested) return this.paneHostOf(requested, self);
+    if (descriptor.placement !== 'overlay') return null;
+    const name = sourceParam(descriptor);
+    const line = name ? parseIndicatorSource(params[name]) : null;
+    return line ? this.paneHostOf(line.instanceId, self) : null;
+  }
+
+  /** The instance owning the pane `instanceId` is drawn in; null for the price pane. */
+  private paneHostOf(instanceId: string, self?: string): string | null {
+    if (instanceId === self) return null;
+    if (this.layoutManager.getPanels().some((p) => p.id === instanceId)) return instanceId;
+    const pane = this.indicatorEngine.getIndicatorConfig(instanceId)?.pane;
+    return pane && pane !== self ? pane : null;
   }
 
   /** An indicator's reference levels (RSI 30 / 70): its own, else its indicator's defaults. */
@@ -909,17 +956,38 @@ export class Chart {
     this.eventBus.emit('indicatorChange', { instanceId, change: 'levels' });
   }
 
+  /**
+   * Remove an indicator, and the indicators computed from its lines with it.
+   * Others drawn in its pane keep the pane (a pane indicator takes it over)
+   * or go back to the price pane.
+   */
   removeIndicator(instanceId: string): void {
-    const hadPanel = this.layoutManager.getPanels().some(p => p.id === instanceId);
+    if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
+    for (const reader of this.indicatorEngine.getDependents(instanceId).reverse()) {
+      if (this.indicatorEngine.getIndicatorConfig(reader)) this.removeIndicator(reader);
+    }
+    const panel = this.layoutManager.getPanels().find((p) => p.id === instanceId);
+    const members = this.indicatorEngine.getPaneMembers(instanceId);
     this.indicatorEngine.removeIndicator(instanceId);
-    this.layoutManager.removePanel(instanceId);
+    let heir: string | null = null;
+    for (const member of members) {
+      const isPanel = this.indicatorEngine.getIndicatorDescriptor(member)?.placement === 'panel';
+      if (isPanel && panel && !heir) {
+        heir = member;
+        this.indicatorEngine.setPane(member, null);
+        this.layoutManager.renamePanel(instanceId, member);
+      } else if (heir) {
+        this.indicatorEngine.setPane(member, heir);
+      } else {
+        this.indicatorEngine.setPane(member, null);
+        if (isPanel) this.layoutManager.addPanel(member, panel?.position ?? 'bottom');
+      }
+      this.eventBus.emit('indicatorChange', { instanceId: member, change: 'pane' });
+    }
+    if (!heir) this.layoutManager.removePanel(instanceId);
     this.eventBus.emit('indicatorRemove', { instanceId });
     this.scheduleAutoSave();
-    if (hadPanel) {
-      this.updateViewportAndRender();
-    } else {
-      this.engine.requestRender();
-    }
+    this.updateViewportAndRender();
   }
 
   /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
@@ -964,8 +1032,19 @@ export class Chart {
    * Indicator panes, in CSS pixels relative to the container: the whole pane,
    * its 20 px header (where the name is written) included.
    */
-  getIndicatorPanes(): { instanceId: string; rect: { x: number; y: number; width: number; height: number } }[] {
-    return this.buildPanelRenderInfos().map((p) => ({ instanceId: p.instanceId, rect: { ...p.rect } }));
+  getIndicatorPanes(): { instanceId: string; instanceIds: string[]; rect: { x: number; y: number; width: number; height: number } }[] {
+    return this.buildPanelRenderInfos().map((p) => ({
+      instanceId: p.instanceId,
+      instanceIds: [p.instanceId, ...(p.members ?? [])],
+      rect: { ...p.rect },
+    }));
+  }
+
+  /** Tag each indicator line's latest value on its value axis (default on). */
+  setIndicatorValueLabelsVisible(visible: boolean): void {
+    this.features.indicatorValueLabels = visible;
+    this.syncRenderContext();
+    this.engine.requestRender();
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -2300,6 +2379,7 @@ export class Chart {
             style: this.indicatorEngine.getIndicatorStyle(ind.instanceId) ?? undefined,
             visible: ind.visible,
             levels: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.levels?.slice(),
+            pane: ind.pane,
           })),
           ...this.unrestoredIndicators,
         ],
@@ -2330,12 +2410,24 @@ export class Chart {
       this.unrestoredIndicators = [];
       const known = new Set(this.indicatorEngine.getAvailableIndicators().map((d) => d.id));
       for (const active of this.indicatorEngine.getActiveIndicators()) this.removeIndicator(active.instanceId);
+      // Lines read from other indicators and shared panes refer to old ids: follow them.
+      const renamed = (params: Record<string, unknown>): Record<string, number | string | boolean> => {
+        const out = { ...params } as Record<string, number | string | boolean>;
+        for (const [name, value] of Object.entries(out)) {
+          const line = parseIndicatorSource(value);
+          const to = line && instanceIds.get(line.instanceId);
+          if (to) out[name] = indicatorSource(to, line.key);
+        }
+        return out;
+      };
+      const restored: [import('@tradecanvas/core').SnapshotIndicator, string][] = [];
       for (const ind of snapshot.indicators) {
         const position = (['top', 'bottom', 'left', 'right'] as const).find((p) => p === ind.position) ?? 'bottom';
         let instanceId: string | null = null;
         try {
           if (!known.has(ind.id)) throw new Error('no such indicator is registered');
-          instanceId = this.addIndicator(ind.id, ind.params as Record<string, number | string | boolean>, position);
+          const pane = ind.pane ? instanceIds.get(ind.pane) : undefined;
+          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, pane ? { pane } : {});
         } catch (err) {
           console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
         }
@@ -2344,9 +2436,18 @@ export class Chart {
           continue;
         }
         instanceIds.set(ind.instanceId, instanceId);
+        restored.push([ind, instanceId]);
         if (ind.style) this.updateIndicatorStyle(instanceId, ind.style);
         if (ind.visible === false) this.setIndicatorVisible(instanceId, false);
         if (ind.levels) this.setIndicatorLevels(instanceId, ind.levels);
+      }
+      // A line read from an indicator restored after its reader: point it there now.
+      for (const [ind, instanceId] of restored) {
+        const changed: Record<string, number | string | boolean> = {};
+        for (const [name, value] of Object.entries(renamed(ind.params))) {
+          if (value !== ind.params[name] && this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] !== value) changed[name] = value;
+        }
+        if (Object.keys(changed).length) this.updateIndicator(instanceId, changed);
       }
     }
 
@@ -2806,6 +2907,7 @@ export class Chart {
 
       return {
         instanceId: panel.config.id,
+        members: this.indicatorEngine.getPaneMembers(panel.config.id),
         rect: panel.rect,
         viewport: {
           ...mainVP,
@@ -2882,6 +2984,8 @@ export class Chart {
       data: displayData,
       numberLocale: this.numberLocale,
       paneTitles: this.paneTitles,
+      indicatorValueLabels: this.features.indicatorValueLabels,
+      formatPrice: (price) => this.formatPrice(price),
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });
   }

@@ -10,8 +10,9 @@ export class BollingerBandsIndicator extends IndicatorBase {
     id: 'bb',
     name: 'Bollinger Bands',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20, stdDev: 2 },
+    defaultConfig: { period: 20, stdDev: 2, source: 'close' },
     shortName: 'BB',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'middle', title: 'Basis', color: 1 },

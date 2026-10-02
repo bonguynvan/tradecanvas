@@ -14,8 +14,9 @@ export class LinearRegressionChannelIndicator extends IndicatorBase {
     id: 'lrc',
     name: 'Linear Regression Channel',
     placement: 'overlay' as const,
-    defaultConfig: { period: 100, stdDev: 2 },
+    defaultConfig: { period: 100, stdDev: 2, source: 'close' },
     shortName: 'LRC',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'middle', title: 'Basis', color: 1 },

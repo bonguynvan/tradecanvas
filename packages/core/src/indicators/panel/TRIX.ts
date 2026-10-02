@@ -14,8 +14,9 @@ export class TRIXIndicator extends IndicatorBase {
     id: 'trix',
     name: 'TRIX',
     placement: 'panel' as const,
-    defaultConfig: { period: 15, signal: 9 },
+    defaultConfig: { period: 15, signal: 9, source: 'close' },
     shortName: 'TRIX',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'value', title: 'TRIX', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

@@ -8,8 +8,9 @@ export class TSIIndicator extends IndicatorBase {
     id: 'tsi',
     name: 'True Strength Index',
     placement: 'panel' as const,
-    defaultConfig: { longPeriod: 25, shortPeriod: 13, signalPeriod: 7 },
+    defaultConfig: { longPeriod: 25, shortPeriod: 13, signalPeriod: 7, source: 'close' },
     shortName: 'TSI',
+    inputs: { source: { source: true } },
     plots: [
       { key: 'tsi', title: 'TSI', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

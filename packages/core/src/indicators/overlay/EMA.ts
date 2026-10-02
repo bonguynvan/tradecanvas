@@ -9,8 +9,9 @@ export class EMAIndicator extends IndicatorBase {
     id: 'ema',
     name: 'Exponential Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'EMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'EMA', color: 0 }],
   };
 

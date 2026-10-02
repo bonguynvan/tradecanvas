@@ -58,8 +58,9 @@ export class TEMAIndicator extends IndicatorBase {
     id: 'tema',
     name: 'Triple EMA',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'TEMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'TEMA', color: 0 }],
   };
 

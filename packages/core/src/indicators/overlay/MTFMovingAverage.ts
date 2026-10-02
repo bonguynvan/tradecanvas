@@ -17,8 +17,9 @@ export class MTFMovingAverageIndicator extends IndicatorBase {
     id: 'mtfma',
     name: 'MTF Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 50, timeframe: '1d' },
+    defaultConfig: { period: 50, timeframe: '1d', source: 'close' },
     shortName: 'MTF MA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'MA', color: 0 }],
   };
 

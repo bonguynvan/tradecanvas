@@ -1,9 +1,12 @@
 export { IndicatorBase } from './IndicatorBase.js';
 export { IndicatorEngine } from './IndicatorEngine.js';
+export type { ActiveIndicatorInfo } from './IndicatorEngine.js';
 export { IndicatorValueMap } from './IndicatorValueMap.js';
 export { registerBuiltInIndicators } from './registry.js';
 export { renderPlots, paneValueRange, drawnKeys, plotColor, isUpTone, hasHistogram } from './plots.js';
 export type { PaneRangeOptions } from './plots.js';
+export { inputSource, sourceParam, priceSourceBars, lineSourceBars, alignOutput } from './sources.js';
+export type { InputSource } from './sources.js';
 // Overlays
 export { SMAIndicator } from './overlay/SMA.js';
 export { EMAIndicator } from './overlay/EMA.js';

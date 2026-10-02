@@ -14,8 +14,9 @@ export class DetrendedPriceOscillatorIndicator extends IndicatorBase {
     id: 'dpo',
     name: 'Detrended Price Oscillator',
     placement: 'panel' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'DPO',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'DPO', color: 0, kind: 'histogram', tone: 'sign', downColor: 1 }],
   };
 

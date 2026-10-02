@@ -16,8 +16,9 @@ export class WMAIndicator extends IndicatorBase {
     id: 'wma',
     name: 'Weighted Moving Average',
     placement: 'overlay' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'WMA',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'WMA', color: 0 }],
   };
 

@@ -8,8 +8,9 @@ export class StdDevIndicator extends IndicatorBase {
     id: 'stddev',
     name: 'Standard Deviation',
     placement: 'panel' as const,
-    defaultConfig: { period: 20 },
+    defaultConfig: { period: 20, source: 'close' },
     shortName: 'StdDev',
+    inputs: { source: { source: true } },
     plots: [{ key: 'value', title: 'StdDev', color: 0 }],
   };
 
