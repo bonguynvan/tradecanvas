@@ -1,4 +1,4 @@
-export { Viewport } from './Viewport.js';
+export { Viewport, MIN_BAR_UNIT } from './Viewport.js';
 export {
   barIndexToX,
   priceToY,

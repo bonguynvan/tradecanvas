@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
+import { isDense, renderDenseBars } from './denseBars.js';
 
 export class VolumeCandleRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -8,6 +9,10 @@ export class VolumeCandleRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0 || from > to || data.length === 0) return;
+    if (isDense(viewport)) {
+      renderDenseBars(ctx, data, viewport, theme.candleUp, theme.candleDown);
+      return;
+    }
 
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;

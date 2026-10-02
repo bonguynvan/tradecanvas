@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
+import { isDense, renderDenseBars } from './denseBars.js';
 
 /**
  * Hollow Candle: filled body when close < open (bearish), hollow when close >= open (bullish).
@@ -18,6 +19,10 @@ export class HollowCandleRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
+    if (isDense(viewport)) {
+      renderDenseBars(ctx, data, viewport, theme.candleUp, theme.candleDown);
+      return;
+    }
     const toX = (i: number) => i * barUnit + offsetX;
     const toY = priceToYMapper(viewport);
 

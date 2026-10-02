@@ -2,6 +2,13 @@ import type { ViewportState, Rect, DataSeries, PriceScaleMode } from '@tradecanv
 import { clamp, computePriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
+/**
+ * Narrowest bar slot (bar + gap) in CSS pixels. Below the usual floor
+ * (`minBarWidth` + the 2px gap) the chart only zooms out as far as it takes to
+ * fit every loaded bar, and never past this.
+ */
+export const MIN_BAR_UNIT = 0.25;
+
 export class Viewport {
   private state: ViewportState;
   // A field rather than state: computeChartRect runs while state is being built.
@@ -156,6 +163,7 @@ export class Viewport {
   resize(width: number, height: number): void {
     this.state.chartRect = this.computeChartRect(width, height);
     this.invalidate();
+    this.clampUnit();
     this.clampOffset();
   }
 
@@ -167,14 +175,67 @@ export class Viewport {
       height: Math.max(0, rect.height),
     };
     this.invalidate();
+    this.clampUnit();
     this.clampOffset();
     this.updateVisibleRange();
+  }
+
+  /** The usual narrowest slot: `minBarWidth` plus the 2px gap. */
+  private floorUnit(): number {
+    return this.minBarWidth + DEFAULT_BAR_SPACING;
+  }
+
+  /**
+   * The narrowest slot right now: the usual floor, or less when the loaded
+   * bars only fit below it — down to `MIN_BAR_UNIT`.
+   */
+  private minUnit(): number {
+    const floor = this.floorUnit();
+    const width = this.state.chartRect.width;
+    const slots = this.dataLength + this.rightMarginBars;
+    if (width <= 0 || slots <= 0) return floor;
+    return Math.max(MIN_BAR_UNIT, Math.min(floor, width / slots));
+  }
+
+  private maxUnit(): number {
+    return this.maxBarWidth + DEFAULT_BAR_SPACING;
+  }
+
+  /**
+   * Split a slot into bar and gap: above the floor the gap stays 2px, below it
+   * both shrink in the floor's proportions, so the bars never turn into gaps.
+   */
+  private applyUnit(unit: number): void {
+    const floor = this.floorUnit();
+    if (unit >= floor) {
+      this.state.barWidth = unit - DEFAULT_BAR_SPACING;
+      this.state.barSpacing = DEFAULT_BAR_SPACING;
+    } else {
+      const share = this.minBarWidth / floor;
+      this.state.barWidth = unit * share;
+      this.state.barSpacing = unit - this.state.barWidth;
+    }
+    this.invalidate();
+  }
+
+  /**
+   * Keep the slot within the current limits — a dense zoom of a long series
+   * grows back to the floor when a shorter one replaces it. Keeps the bar at
+   * the left edge in place.
+   */
+  private clampUnit(): void {
+    const unit = this.state.barWidth + this.state.barSpacing;
+    const next = clamp(unit, this.minUnit(), this.maxUnit());
+    if (next === unit || unit <= 0) return;
+    this.state.offset = (this.state.offset / unit) * next;
+    this.applyUnit(next);
   }
 
   updateData(data: DataSeries, autoScale: boolean): void {
     const wasEmpty = this.dataLength === 0;
     this.dataLength = data.length;
     if (this.dataLength === 0) return;
+    this.clampUnit();
     // A chart that gets its first bars (e.g. only via appendBar) rests at the
     // live edge, so following new bars works from the start.
     if (wasEmpty) this.state.offset = this.endOffset();
@@ -273,20 +334,20 @@ export class Viewport {
   }
 
   zoom(delta: number, centerX: number): void {
-    const oldBarWidth = this.state.barWidth;
-    const newBarWidth = clamp(
-      oldBarWidth * (1 + delta),
-      this.minBarWidth,
-      this.maxBarWidth,
-    );
-    if (newBarWidth === oldBarWidth) return;
+    const barUnit = this.state.barWidth + this.state.barSpacing;
+    // Above the floor the bar grows or shrinks and the gap stays, as it always
+    // has; below it the whole slot scales.
+    const grownBar = this.state.barWidth * (1 + delta);
+    const wanted = barUnit >= this.floorUnit() && grownBar >= this.minBarWidth
+      ? grownBar + DEFAULT_BAR_SPACING
+      : barUnit * (1 + delta);
+    const newBarUnit = clamp(wanted, this.minUnit(), this.maxUnit());
+    if (newBarUnit === barUnit) return;
 
     const atEnd = this.isAtEnd();
-    const barUnit = this.state.barWidth + this.state.barSpacing;
     const centerBarIndex = (this.state.offset + centerX) / barUnit;
 
-    this.state.barWidth = newBarWidth;
-    const newBarUnit = newBarWidth + this.state.barSpacing;
+    this.applyUnit(newBarUnit);
     // Zooming at the live edge keeps the newest bar pinned there, instead of
     // drifting off it and silently stopping the follow of new bars.
     this.state.offset = atEnd ? this.endOffset() : centerBarIndex * newBarUnit - centerX;
@@ -298,15 +359,15 @@ export class Viewport {
 
   /**
    * Fit bar slots `from`..`to` (inclusive, fractional allowed, may extend past
-   * the data) across the chart width. If the bar width hits its min/max the
-   * range is centred instead.
+   * the data) across the chart width. If the slot hits its min/max the range
+   * is centred instead.
    */
   zoomToBarRange(from: number, to: number): void {
     const width = this.state.chartRect.width;
     if (width <= 0 || !Number.isFinite(from) || !Number.isFinite(to) || to < from) return;
     const slots = to - from + 1;
-    this.state.barWidth = clamp(width / slots - this.state.barSpacing, this.minBarWidth, this.maxBarWidth);
-    const unit = this.state.barWidth + this.state.barSpacing;
+    const unit = clamp(width / slots, this.minUnit(), this.maxUnit());
+    this.applyUnit(unit);
     this.state.offset = ((from + to + 1) / 2) * unit - width / 2;
     this.invalidate();
     this.clampOffset();

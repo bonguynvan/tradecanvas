@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const css = readFileSync(fileURLToPath(new URL('../WidgetStyles.css', import.meta.url)), 'utf8');
+// A Windows checkout may turn the file's line endings into CRLF.
+const css = readFileSync(fileURLToPath(new URL('../WidgetStyles.css', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
 
 /** `--tcw-*` custom properties declared in the first block matching `selector`. */
 function tokens(selector: string): Record<string, string> {

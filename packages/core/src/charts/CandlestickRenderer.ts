@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
+import { isDense, renderDenseBars } from './denseBars.js';
 
 export class CandlestickRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -14,6 +15,10 @@ export class CandlestickRenderer implements ChartRendererInterface {
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
+    if (isDense(viewport)) {
+      renderDenseBars(ctx, data, viewport, theme.candleUp, theme.candleDown);
+      return;
+    }
 
     // Inline coordinate conversions
     const toX = (i: number) => i * barUnit + offsetX;
