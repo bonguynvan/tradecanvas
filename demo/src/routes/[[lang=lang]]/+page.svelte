@@ -140,7 +140,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   <meta property="og:description" content={m.meta.description} />
   <meta property="og:image" content="{SITE_URL}/og.svg" />
   <meta property="og:url" content="{SITE_URL}{i18n.href('/').slice(base.length)}" />
-  <meta property="og:locale" content={i18n.language.tag.replace('-', '_')} />
+  <meta property="og:locale" content={i18n.language.og} />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="TradeCanvas" />
   <meta name="twitter:description" content={m.meta.description} />
@@ -560,7 +560,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   }
 
   /* --- Quick start --- */
-  .qs { display: grid; gap: 0; max-width: 900px; }
+  .qs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 900px; }
 
   .qs-tabs {
     display: flex;

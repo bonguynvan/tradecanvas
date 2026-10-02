@@ -943,7 +943,7 @@ onUnmounted(() => chart?.destroy())
 
 ## Performance
 
-A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Three things keep large data fast:
+A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Four things keep large data fast:
 
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
 - **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.

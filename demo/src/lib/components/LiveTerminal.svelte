@@ -170,8 +170,9 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .seg { display: inline-flex; gap: 2px; }
-  .seg--type { margin-left: auto; }
+  .seg { display: inline-flex; gap: 2px; min-width: 0; }
+  /* Longer chart-type names (Russian, German…) scroll rather than spill out on a phone. */
+  .seg--type { margin-left: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 
   .chip {
     font-family: var(--font-mono);

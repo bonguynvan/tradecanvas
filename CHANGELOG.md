@@ -29,6 +29,11 @@ Collected on `main` for the next release, which ships as one version once the cu
 - **15 new indicators (85 in all)**: DEMA, SMMA, ALMA, KAMA, LSMA, McGinley Dynamic, MA Cross, Williams Fractals, Chande Kroll Stop, Bollinger %B, Bollinger BandWidth, Momentum, Historical Volatility, Volume Oscillator, Ulcer Index.
 - ChartWidget: an indicator settings dialog with Inputs, Style and Levels tabs; the legend colours each value as its line.
 
+### Site and docs
+
+- The site speaks 14 languages: the home page, menus and the Feature Lab, whose live charts switch to the same language. The docs and the README are in English, Vietnamese, Simplified Chinese, Japanese, Korean and Spanish; the other languages show the English docs with a note.
+- Each language has its own address (`/ja/docs/api/`), with `hreflang` links and a sitemap covering every language.
+
 ### For AI coding tools
 
 - `skills/tradecanvas`: an agent skill with entry points, rules, recipes and a generated indicator reference.

@@ -135,16 +135,21 @@
     await current.setup?.(w, chart, env);
   }
 
+  /** Mount a scene; one that fails to load (offline, a missing chunk) leaves the stage as it was. */
+  function showScene(index: number) {
+    mountScene(index).catch((err: unknown) => console.error('Feature Lab scene failed to load:', err));
+  }
+
   function pickLanguage(code: string) {
     if (code === languageCode) return;
     languageCode = code;
-    if (started) void mountScene(active);
+    if (started) showScene(active);
   }
 
   function select(index: number) {
     if (index === active && widget) return;
     active = index;
-    if (started) void mountScene(index);
+    if (started) showScene(index);
   }
 
   /** Arrow keys move between scenes (roving tabindex). */
@@ -172,7 +177,7 @@
       if (entries.some((e) => e.isIntersecting) && !started) {
         started = true;
         io.disconnect();
-        void mountScene(active);
+        showScene(active);
       }
     }, { rootMargin: '200px' });
     io.observe(section);
@@ -250,8 +255,8 @@
         {#if metrics.length === 0}
           <span class="metric metric--muted">{m.lab.metricHint}</span>
         {:else}
-          {#each metrics as m, i}
-            <span class="metric" class:metric--latest={i === 0}>{m}</span>
+          {#each metrics as metric, i}
+            <span class="metric" class:metric--latest={i === 0}>{metric}</span>
           {/each}
         {/if}
       </div>
@@ -490,7 +495,7 @@
     .rail-item.active { border-color: var(--accent); }
     .rail-num, .rail-blurb { display: none; }
     .stage-blurb { display: block; }
-    .stage-notes { grid-template-columns: 1fr; }
+    .stage-notes { grid-template-columns: minmax(0, 1fr); }
   }
 
   @media (prefers-reduced-motion: reduce) {

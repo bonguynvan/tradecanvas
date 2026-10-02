@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { base } from '$app/paths';
   import { DOC_GROUPS } from '$lib/docs';
   import { useI18n } from '$lib/i18n/context.svelte';
@@ -15,7 +15,7 @@
     })),
   );
 
-  const sitePath = $derived(splitLang($page.url.pathname.slice(base.length)).path.replace(/\/$/, ''));
+  const sitePath = $derived(splitLang(page.url.pathname.slice(base.length)).path.replace(/\/$/, ''));
 </script>
 
 <div class="docs-shell">

@@ -16,7 +16,7 @@
 </svelte:head>
 
 {#if !data.translated}
-  <aside class="docs-untranslated">{fill(i18n.m.docs.notTranslated, { language: i18n.language.name })}</aside>
+  <p class="docs-untranslated" role="note">{fill(i18n.m.docs.notTranslated, { language: i18n.language.name })}</p>
 {/if}
 
 <div class="docs-page" lang={data.translated ? undefined : 'en'}>

@@ -1,5 +1,4 @@
 import type en from './locales/en';
-import { DEFAULT_LANG } from './languages';
 
 /** The site's strings: every language has the shape of the English ones. */
 export type SiteMessages = typeof en;
@@ -8,7 +7,8 @@ export type SiteMessages = typeof en;
 const loaders = import.meta.glob<{ default: SiteMessages }>('./locales/*.ts');
 
 export async function loadMessages(lang: string): Promise<SiteMessages> {
-  const load = loaders[`./locales/${lang}.ts`] ?? loaders[`./locales/${DEFAULT_LANG}.ts`];
+  const load = loaders[`./locales/${lang}.ts`];
+  if (!load) throw new Error(`No site strings for "${lang}": add src/lib/i18n/locales/${lang}.ts`);
   return (await load()).default;
 }
 

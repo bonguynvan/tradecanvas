@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { afterNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import Logo from '$lib/components/Logo.svelte';
@@ -25,7 +25,7 @@
   const m = $derived(i18n.m);
 
   /** The page's path from the site root, without the base path or the language. */
-  const sitePath = $derived(splitLang($page.url.pathname.slice(base.length) || '/').path);
+  const sitePath = $derived(splitLang(page.url.pathname.slice(base.length) || '/').path);
   /** Docs pages exist translated in some languages only; the others show English. */
   const alternates = $derived(
     SITE_LANGUAGES.filter((language) => language.docs || !sitePath.startsWith('/docs/')).map((language) => ({

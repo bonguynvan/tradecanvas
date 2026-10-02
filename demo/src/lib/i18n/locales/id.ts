@@ -1,0 +1,428 @@
+import type { SiteMessages } from '../messages';
+
+const id: SiteMessages = {
+  meta: {
+    title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
+    description:
+      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 85 indikator, 40 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
+  },
+
+  nav: {
+    main: 'Menu utama',
+    docs: 'Dokumentasi',
+    examples: 'Contoh',
+    playground: 'Playground',
+    changelog: 'Catatan perubahan',
+    toLight: 'Beralih ke tema terang',
+    toDark: 'Beralih ke tema gelap',
+    github: 'TradeCanvas di GitHub',
+    openMenu: 'Buka menu',
+    closeMenu: 'Tutup menu',
+    menu: 'Menu',
+    language: 'Bahasa',
+  },
+
+  footer: {
+    tagline: 'Grafik trading Canvas2D untuk web. Tanpa dependensi, berlisensi MIT.',
+    library: 'Pustaka',
+    packages: 'Paket',
+    project: 'Proyek',
+    gettingStarted: 'Memulai',
+    apiReference: 'Referensi API',
+    examples: 'Contoh',
+    changelog: 'Catatan perubahan',
+    issues: 'Laporan masalah',
+    boGrid: 'bo-grid (tabel data)',
+    builtWith: 'Dibuat dengan TradeCanvas',
+  },
+
+  home: {
+    release: 'renderer dua kanvas, geser dengan bebas',
+    title: 'Mesin grafik untuk aplikasi trading.',
+    ledeHtml:
+      'Dari candlestick hingga Renko, 85 indikator, 40 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+    getStarted: 'Mulai',
+    browseExamples: 'Lihat contoh',
+    specsLabel: 'Angka kunci',
+    specs: [
+      'jenis grafik',
+      'indikator',
+      'alat gambar',
+      'dependensi runtime',
+      'gzip, inti headless',
+      'frame hover pada 100k bar',
+    ],
+    hood: {
+      eyebrow: 'Di balik layar',
+      title: 'Terukur, terdokumentasi, siap Anda kembangkan',
+      subtitleHtml: 'Mesin di balik Lab Fitur. Setiap angka di bawah dapat direproduksi dengan <code>pnpm bench</code>.',
+      frameBudget: 'Anggaran frame',
+      perf: [
+        'tick langsung dengan 4 indikator pada 100k bar',
+        'hitung ulang penuh setelah ganti simbol, 100k bar',
+        'downsample LTTB, 100k → 1600 titik',
+        'frame hover, tetap datar dari 500 hingga 100k bar',
+      ],
+      perfFoot: 'Dua kanvas bertumpuk: hover hanya menggambar ulang lapisan tipis di atas. Setiap renderer hanya menelusuri bar yang ada di layar.',
+      gestures: 'Gestur',
+      gestureList: [
+        ['Seret', 'geser, juga melewati bar terakhir'],
+        ['Gulir', 'perbesar/perkecil di sekitar kursor'],
+        ['Cubit', 'perbesar/perkecil di layar sentuh'],
+        ['Seret ke kanan', 'bar lama dimuat seiring Anda menggeser'],
+        ['Seret sumbu', 'skalakan sumbu'],
+        ['Ctrl + seret', 'pilih gambar'],
+        ['Shift + seret', 'ukur'],
+        ['Alt + klik', 'sematkan tooltip'],
+      ],
+    },
+    capabilities: [
+      {
+        label: 'Widget',
+        title: 'Satu panggilan, UI trading lengkap',
+        text: 'ChartWidget menghadirkan bilah alat, panel samping menggambar, daftar pantauan, peringatan, pohon objek, jendela data, putar ulang, dan palet perintah (Ctrl+K), dalam 14 bahasa, dari bahasa Inggris dan Vietnam hingga Tionghoa, Jepang, dan Korea.',
+      },
+      {
+        label: 'Data',
+        title: 'Feed pasar apa pun',
+        text: 'Adaptor Binance, Coinbase, Bybit, dan Kraken sudah tersedia; WebSocketAdapter dan PollingAdapter untuk sumber lainnya. Bar lama dimuat saat Anda menggulir mundur; koneksi tersambung ulang dengan sendirinya, dan pergantian simbol yang sudah usang dibuang.',
+      },
+      {
+        label: 'Trading',
+        title: 'Order di grafik',
+        text: 'ExecutionAdapter dengan broker simulasi, pembuatan order dengan menyeret, order bracket, garis stop-loss dan take-profit yang bisa diseret, peringatan ke webhook, dan notifikasi desktop.',
+      },
+      {
+        label: 'Framework',
+        title: 'React, Vue, dan Svelte',
+        text: '@tradecanvas/react, /vue, dan /svelte membungkus mesin yang sama dengan props reaktif dan bertipe. Instans Chart yang lengkap tetap bisa dijangkau lewat satu ref.',
+      },
+      {
+        label: 'Plugin',
+        title: 'Perluas setiap lapisan',
+        text: 'Daftarkan indikator kustom dengan update() inkremental, alat gambar, jenis grafik, dan overlay, secara global atau per grafik.',
+      },
+      {
+        label: 'Analitik',
+        title: 'Backtest di samping grafik',
+        text: 'Backtester bar demi bar dengan pita Monte Carlo dan pipeline indikator di Web Worker yang menjaga thread utama tetap lega.',
+      },
+    ],
+    quickstart: {
+      eyebrow: 'Mulai cepat',
+      title: 'Grafik yang sama, lima cara memulai',
+      subtitle: 'Widget lengkap, komponen framework, atau mesin headless. Semuanya memakai renderer yang sama.',
+      tabs: 'Varian mulai cepat',
+    },
+    closing: {
+      title: 'Pasang grafik langsung di aplikasi Anda hari ini.',
+      readDocs: 'Baca dokumentasi',
+      star: 'Beri bintang di GitHub',
+    },
+  },
+
+  lab: {
+    eyebrow: 'Lab Fitur',
+    title: 'Setiap fitur, di grafik langsung.',
+    subtitleHtml:
+      'Pilih sebuah skenario. Masing-masing menjalankan <code>ChartWidget</code> lengkap dalam kondisi yang menampilkan satu area sedang bekerja — setelah itu, silakan seret, gambar, dan ganti sesuka Anda.',
+    scenes: 'Skenario fitur',
+    widgetLanguage: 'Bahasa widget',
+    idle: 'Gulir hingga terlihat untuk memulai grafik langsung',
+    metricHint: 'Ganti simbol atau kerangka waktu untuk mengukur waktunya',
+    metricSwitch: '→ {label}: {ms} · {bars} bar',
+    metricSetData: 'setData({bars} bar): {ms}',
+    tryThis: 'Coba ini',
+  },
+
+  scenes: {
+    drawings: {
+      title: 'Alat gambar',
+      stat: '40 alat',
+      blurb:
+        'Garis tren, garis info, dan garis sudut, kanal dan kipas Fibonacci, pitchfork Andrews dan Schiff, pola harmonik XABCD, kepala dan bahu, siklus, kotak pengukur. Snap magnet, urungkan/ulangi, simpan dan pulihkan lewat JSON.',
+      tryThis: [
+        'Buka grup zigzag (Pola) di bilah alat kiri dan pasang pola ABCD',
+        'Klik sebuah gambar, seret pegangannya, lalu tekan Ctrl+Z',
+        'Gambar terikat pada waktu, jadi tetap utuh saat kerangka waktu diganti',
+      ],
+    },
+    indicators: {
+      title: 'Indikator',
+      stat: '85 bawaan',
+      blurb:
+        'Overlay dan panel dihitung sendiri oleh pustaka, tanpa dependensi matematika. Tick langsung hanya menghitung ulang bar yang sedang terbentuk — 0.001 ms per tick dengan empat indikator pada 100k bar.',
+      tryThis: [
+        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 85 indikator',
+        'Klik nama indikator di legenda: parameter, warna, dan level',
+        'Atur Sumber sebuah moving average ke garis indikator lain',
+        'Seret garis di antara panel untuk mengubah ukurannya',
+      ],
+    },
+    trading: {
+      title: 'Trading',
+      stat: 'broker simulasi',
+      blurb:
+        'Posisi dengan stop-loss dan take-profit yang bisa diseret, order tertunda, bracket, dan alat posisi long/short, semuanya diteruskan lewat ExecutionAdapter — di sini memakai broker simulasi bawaan.',
+      tryThis: [
+        'Seret garis SL / TP pada posisi long yang terbuka — broker akan memperbaruinya',
+        'Seret order tertunda ke harga baru',
+        'Gunakan tombol bracket Beli/Jual di bilah alat atas',
+      ],
+    },
+    navigation: {
+      title: 'Rentang & tata letak',
+      stat: '1D … Semua',
+      blurb:
+        'Lompat ke suatu rentang atau tanggal, balik skala harga, sematkan kerangka waktu yang Anda pakai, jalankan indikator yang sama beberapa kali — lalu pulihkan semuanya dari tata letak yang tersimpan.',
+      tryThis: [
+        'Klik 1M, 3M, atau 6M di bawah grafik; Alt+G untuk ke tanggal tertentu',
+        'Alt+I membalik skala harga; skala logaritmik ada di Pengaturan',
+        'Pengaturan → Zona waktu: pilih New York atau Tokyo — sumbu, pemisah hari, dan YTD ikut menyesuaikan, termasuk waktu musim panas',
+        'Pengaturan → Skala → Skala harga kiri; tab Gaya pada EMA bisa memindahkannya ke skala itu',
+        'Beri bintang pada kerangka waktu di menu ▾ di samping tombol kerangka waktu',
+        'Aktifkan tombol ↻ di bilah alat kiri untuk menggambar beberapa garis berturut-turut; Ctrl+C / Ctrl+V menyalinnya',
+      ],
+    },
+    history: {
+      title: 'Gulir ke masa lalu',
+      stat: 'riwayat per halaman',
+      blurb:
+        'Bar lama dimuat halaman demi halaman saat Anda menyeret ke arah bar terlama, dan apa yang ada di layar tidak bergeser. Perkecil sampai semua bar yang dimuat muat di layar: di bawah satu piksel per bar, candle digabung per kolom piksel, sehingga ribuan bar tetap terbaca.',
+      tryThis: [
+        'Seret grafik ke kanan: label di kiri menunjukkan bar lama sedang dimuat',
+        'Gulir untuk memperkecil, melewati beberapa ratus bar hingga seperempat piksel per bar',
+        'Klik Semua di bawah grafik untuk menampilkan semua yang sudah dimuat',
+        'Ketik 7 atau 90 di menu kerangka waktu ▾: Binance tidak menyediakan keduanya, jadi grafik menyusunnya dari bar 1m dan 30m',
+      ],
+    },
+    replay: {
+      title: 'Putar ulang bar',
+      stat: 'penggeser',
+      blurb:
+        'Telusuri riwayat bar demi bar untuk berlatih membaca grafik tanpa tahu kelanjutannya. Data langsung ditahan selama putar ulang; skala harga menyesuaikan setiap langkah.',
+      tryThis: [
+        'Tekan putar, atau maju satu bar demi satu bar dengan Shift+→ / Shift+←',
+        'Klik bar mana pun yang sudah terbuka untuk memindahkan kursor ke sana',
+        '“Kembali ke waktu nyata” mengembalikan ke seri langsung',
+      ],
+    },
+    subcent: {
+      title: '14 bahasa, harga di bawah satu sen',
+      stat: 'i18n',
+      blurb:
+        'Seluruh widget dalam 14 bahasa — menu, pengaturan, alat gambar, dialog — dengan angka dalam format masing-masing bahasa. PEPE diperdagangkan di sekitar 0.000004: setiap label mengikuti presisi skala harga, dan sumbu melebar agar semuanya muat.',
+      tryThis: [
+        'Pilih bahasa di atas grafik: 日本語, 한국어, 简体中文, Deutsch…',
+        'Ctrl+P mencari semua simbol Binance, lengkap dengan nama, saat Anda mengetik',
+        'Buka Pengaturan atau alat gambar untuk melihat terjemahannya',
+        'Arahkan kursor: label crosshair mempertahankan presisi penuh dalam format angka bahasa tersebut',
+      ],
+    },
+    bigdata: {
+      title: '200 ribu bar',
+      stat: 'performa',
+      blurb:
+        'Dua ratus ribu bar 1 menit dengan empat indikator. Rendering hanya menyentuh bar yang terlihat; kerangka waktu yang lebih besar di-resample secara lokal, di balik selubung pemuatan jika butuh lebih dari beberapa frame.',
+      tryThis: [
+        'Ganti ke 1H, 4H, lalu kembali ke 1m — waktunya muncul di bawah grafik',
+        'Perkecil sepenuhnya lalu geser: biaya per frame tetap datar',
+        'Tambahkan satu indikator lagi dan perhatikan waktu pergantiannya',
+      ],
+    },
+    switching: {
+      title: 'Ganti di jaringan lambat',
+      stat: '+1.2 s latensi',
+      blurb:
+        'Setiap permintaan riwayat di sini ditunda 1.2 s. Grafik sebelumnya tetap di layar dan baru diselubungi jika pergantian butuh lebih dari 200 ms; klik cepat tidak akan pernah membuat respons usang menang.',
+      tryThis: [
+        'Klik beberapa simbol dengan cepat — hanya yang terakhir yang tampil',
+        'Ganti kerangka waktu dan lihat selubungnya muncul lalu menghilang',
+        'Bandingkan dengan skenario Indikator: pergantian cepat tidak pernah berkedip',
+      ],
+    },
+  },
+
+  gallery: {
+    eyebrow: 'Jenis grafik',
+    title: 'Setiap jenis grafik, langsung di halaman',
+    subtitleHtml:
+      'Setiap petak adalah instans <code>Chart</code> sungguhan, bukan gambar. Seret untuk menggeser, gulir untuk zoom, dan arahkan kursor untuk crosshair; setiap petak merespons sendiri-sendiri.',
+    tiles: {
+      candlestick: { name: 'Candlestick', tag: 'OHLC' },
+      heikinAshi: { name: 'Heikin-Ashi', tag: 'Tren' },
+      area: { name: 'Area', tag: 'Penutupan' },
+      baseline: { name: 'Garis dasar', tag: 'Di atas / di bawah' },
+      bar: { name: 'Bar OHLC', tag: 'Klasik' },
+      stepLine: { name: 'Garis bertingkat', tag: 'Diskret' },
+    },
+  },
+
+  finance: {
+    eyebrow: 'Grafik keuangan',
+    title: 'Lebih dari sekadar candlestick',
+    subtitle: 'Sparkline, kurva ekuitas, kedalaman buku order, peta panas sektor, grafik air terjun, dan meteran untuk portofolio dan KPI.',
+    portfolio: 'Kinerja portofolio',
+    depth: 'Kedalaman buku order',
+    heatmap: 'Peta panas pasar kripto',
+    pnl: 'Atribusi laba/rugi',
+    fearGreed: 'Indeks Ketakutan & Keserakahan',
+    waterfall: {
+      start: 'Awal',
+      btcLong: 'BTC long',
+      ethShort: 'ETH short',
+      solLong: 'SOL long',
+      fees: 'Biaya',
+      end: 'Akhir',
+    },
+    zones: {
+      extremeFear: 'Takut ekstrem',
+      fear: 'Takut',
+      neutral: 'Netral',
+      greed: 'Serakah',
+      extremeGreed: 'Serakah ekstrem',
+    },
+  },
+
+  terminal: {
+    symbol: 'Simbol',
+    timeframe: 'Kerangka waktu',
+    chartType: 'Jenis grafik',
+    types: {
+      candlestick: 'Candle',
+      heikinAshi: 'Heikin-Ashi',
+      area: 'Area',
+      bar: 'Bar',
+      baseline: 'Garis dasar',
+    },
+    unavailable: 'Feed langsung tidak tersedia: {error}',
+    live: 'LANGSUNG',
+    offline: 'TERPUTUS',
+    connecting: 'MENYAMBUNG',
+    hints: [
+      ['Seret', 'geser'],
+      ['Gulir', 'zoom'],
+      ['Seret sumbu', 'skala'],
+    ],
+  },
+
+  copy: {
+    copy: 'SALIN',
+    copied: 'TERSALIN',
+    copiedAnnouncement: 'Disalin ke papan klip',
+    copyLabel: 'Salin {label}',
+    copyCode: 'Salin kode',
+    codeSample: 'Contoh kode',
+    packageManager: 'Manajer paket',
+    copyInstall: 'Salin perintah instalasi',
+  },
+
+  examples: {
+    metaTitle: 'Contoh · TradeCanvas',
+    description: 'Contoh StackBlitz langsung untuk vanilla JS, React, Vue, Svelte, ChartWidget, dan dasbor keuangan.',
+    eyebrow: 'Contoh · StackBlitz',
+    title: 'Contoh',
+    subtitleHtml:
+      'Sandbox langsung yang bisa Anda fork dalam satu klik. Masing-masing terbuka di StackBlitz dengan paket 1.x terbaru yang sudah terpasang. Untuk mencoba fitur tanpa persiapan apa pun, gunakan <a href="{lab}">Lab Fitur</a> di beranda.',
+    open: 'Buka {title} di StackBlitz',
+    items: {
+      vanilla: {
+        title: 'Vanilla JS',
+        blurb: 'Chart headless: stream Binance langsung, Bollinger + RSI, dan alat gambar di UI Anda sendiri.',
+      },
+      widget: {
+        title: 'ChartWidget',
+        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 40 alat gambar, daftar pantauan, trading, putar ulang, dalam 14 bahasa.',
+      },
+      react: {
+        title: 'React',
+        blurb: '@tradecanvas/react — props reaktif dan bertipe, Chart di baliknya lewat ref.',
+      },
+      vue: {
+        title: 'Vue 3',
+        blurb: '@tradecanvas/vue — script setup, props reaktif, Chart dari @ready.',
+      },
+      svelte: {
+        title: 'Svelte 5',
+        blurb: '@tradecanvas/svelte — rune, props reaktif, bind:chart.',
+      },
+      finance: {
+        title: 'Dasbor keuangan',
+        blurb: 'Renderer sparkline, meteran, peta panas, kedalaman, dan kurva ekuitas dalam satu tata letak.',
+      },
+    },
+  },
+
+  playground: {
+    metaTitle: 'Playground · TradeCanvas',
+    description: 'Fork sandbox TradeCanvas yang interaktif di StackBlitz dan mulai bereksperimen.',
+    eyebrow: 'Playground · StackBlitz',
+    title: 'Playground',
+    subtitle: 'Sandbox yang bisa diedit di StackBlitz, dengan ChartWidget yang sudah terhubung ke data Binance langsung.',
+    launch: 'Buka playground',
+    more: 'Contoh lainnya',
+    insideTitle: 'Apa isinya',
+    insideHtml:
+      'Proyek Vite + TypeScript minimal dengan satu file, <code>src/main.ts</code>, yang memasang <code>ChartWidget</code> dan menghubungkan <code>BinanceAdapter</code>.',
+  },
+
+  changelog: {
+    metaTitle: 'Catatan perubahan — TradeCanvas',
+    description: 'Catatan rilis untuk setiap versi TradeCanvas.',
+    englishOnly: 'Catatan rilis ditulis dalam bahasa Inggris.',
+  },
+
+  backtest: {
+    title: 'Backtest langsung — persilangan SMA(10/30)',
+    subtitle: '365 hari data harga sintetis, modal awal $10k, komisi 0,05%, slippage 0,03%.',
+    play: 'Putar',
+    pause: 'Jeda',
+    replay: 'Putar ulang',
+    end: 'Akhir',
+    running: 'Menjalankan backtest…',
+    failed: 'Gagal: {error}',
+    bar: 'Bar {index}/{total}',
+    totalReturn: 'Total imbal hasil',
+    maxDrawdown: 'DD maks.',
+    winRate: 'Rasio menang',
+    profitFactor: 'Faktor profit',
+    trades: 'Transaksi',
+  },
+
+  error: {
+    notFound: 'Halaman tidak ditemukan',
+    notFoundText: 'Halaman ini tidak ada atau sudah dipindahkan.',
+    other: 'Terjadi kesalahan',
+    otherText: 'Halaman tidak dapat ditampilkan. Coba lagi, atau mulai dari beranda.',
+    home: 'Kembali ke beranda',
+    docs: 'Buka dokumentasi',
+  },
+
+  docs: {
+    titleSuffix: 'Dokumentasi TradeCanvas',
+    navLabel: 'Navigasi dokumentasi',
+    groups: {
+      start: 'Memulai',
+      chart: 'Grafik',
+      trading: 'Trading',
+    },
+    pages: {
+      'getting-started': 'Memulai',
+      frameworks: 'Framework',
+      embed: 'Widget Tertanam',
+      api: 'Referensi API',
+      'chart-types': 'Jenis Grafik',
+      indicators: 'Indikator',
+      'drawing-tools': 'Alat Gambar',
+      plugins: 'Plugin',
+      performance: 'Performa',
+      trading: 'Overlay Trading',
+      finance: 'Grafik Keuangan',
+      realtime: 'Realtime & Putar Ulang',
+      analytics: 'Analitik',
+    },
+    notTranslated: 'Halaman ini belum diterjemahkan, jadi ditampilkan dalam bahasa Inggris.',
+  },
+};
+
+export default id;

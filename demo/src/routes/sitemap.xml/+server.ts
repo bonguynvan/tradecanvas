@@ -12,8 +12,11 @@ function urls(): { loc: string; alternates: { tag: string; href: string }[] }[] 
   const docs = DOC_SLUGS.map((slug) => `/docs/${slug}/`);
   return [...PAGES, ...docs].flatMap((path) => {
     const languages = SITE_LANGUAGES.filter((language) => language.docs || !path.startsWith('/docs/'));
-    const alternates = languages.map((language) => ({ tag: language.tag, href: SITE_URL + localizePath(language.code, path) }));
-    return alternates.map((alternate) => ({ loc: alternate.href, alternates }));
+    const alternates = [
+      ...languages.map((language) => ({ tag: language.tag, href: SITE_URL + localizePath(language.code, path) })),
+      { tag: 'x-default', href: SITE_URL + path },
+    ];
+    return languages.map((language) => ({ loc: SITE_URL + localizePath(language.code, path), alternates }));
   });
 }
 

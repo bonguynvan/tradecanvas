@@ -23,6 +23,8 @@ export default {
       handleHttpError: 'warn',
     },
     alias: {
+      // The widget's languages one file each, so a page loads only its own (see lib/i18n/widget.ts).
+      '$widget-locales': '../packages/library/src/widget/locales',
       '@tradecanvas/chart/widget/locales': '../packages/library/src/widget/locales/index.ts',
       '@tradecanvas/chart/widget': '../packages/library/src/widget/index.ts',
       '@tradecanvas/chart': '../packages/library/src/index.ts',

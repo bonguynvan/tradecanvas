@@ -19,7 +19,7 @@ export class SiteI18n {
   }
 
   /** A link to `path` (from the site root, e.g. `/docs/api`) in the page's language, base path included. */
-  href = (path: string): string => base + localizePath(this.lang, path);
+  href = (path: string): string => base + localizePath(this.lang, path.endsWith('/') ? path : `${path}/`);
 }
 
 const KEY = Symbol('site-i18n');

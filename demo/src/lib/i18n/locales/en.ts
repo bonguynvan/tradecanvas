@@ -378,6 +378,32 @@ const en = {
     englishOnly: 'Release notes are written in English.',
   },
 
+  backtest: {
+    title: 'Live backtest — SMA(10/30) cross',
+    subtitle: '365 days of synthetic price data, $10k initial cash, 0.05% commission, 0.03% slippage.',
+    play: 'Play',
+    pause: 'Pause',
+    replay: 'Replay',
+    end: 'End',
+    running: 'Running backtest…',
+    failed: 'Failed: {error}',
+    bar: 'Bar {index}/{total}',
+    totalReturn: 'Total return',
+    maxDrawdown: 'Max DD',
+    winRate: 'Win rate',
+    profitFactor: 'Profit factor',
+    trades: 'Trades',
+  },
+
+  error: {
+    notFound: 'Page not found',
+    notFoundText: 'This page does not exist, or it has moved.',
+    other: 'Something went wrong',
+    otherText: 'The page could not be shown. Try again, or start from the home page.',
+    home: 'Back to the home page',
+    docs: 'Open the docs',
+  },
+
   docs: {
     titleSuffix: 'TradeCanvas docs',
     navLabel: 'Documentation navigation',
@@ -401,7 +427,7 @@ const en = {
       realtime: 'Realtime & Replay',
       analytics: 'Analytics',
     },
-    notTranslated: 'This page is not translated into {language} yet, so it is shown in English.',
+    notTranslated: 'This page is not translated yet, so it is shown in English.',
   },
 };
 

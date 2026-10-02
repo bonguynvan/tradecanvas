@@ -1,0 +1,431 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
+<svelte:head>
+  <title>API 参考 — TradeCanvas 文档</title>
+  <meta name="description" content="Chart、ChartWidget、ChartGrid 以及 TradeCanvas 核心接口的 API 参考。" />
+</svelte:head>
+
+<h1>API 参考</h1>
+<p>三个顶层类的公开接口：<code>Chart</code>、<code>ChartWidget</code> 和 <code>ChartGrid</code>。</p>
+
+<h2>Chart</h2>
+<p>无界面渲染器。界面由你自己实现；订阅事件；以命令式方式修改状态。</p>
+
+<h3>构造</h3>
+<pre><code>{`new Chart(host: HTMLElement, options?: ChartOptions)`}</code></pre>
+
+<h3>数据</h3>
+<table>
+  <thead><tr><th>方法</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>setData(data)</code></td><td>替换整个序列。</td></tr>
+    <tr><td><code>appendBar(bar)</code></td><td>追加一根新K线；如已启用则自动滚动。</td></tr>
+    <tr><td><code>appendBars(bars)</code></td><td>批量追加；指标只重新计算一次。</td></tr>
+    <tr><td><code>updateLastBar(bar)</code></td><td>修改当前正在形成的K线。</td></tr>
+    <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
+    <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
+  </tbody>
+</table>
+
+<h3>图表类型与主题</h3>
+<table>
+  <thead><tr><th>方法</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>setChartType(type)</code></td><td>17 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
+    <tr><td><code>setTheme(name)</code></td><td>在内置主题之间切换。</td></tr>
+    <tr><td><code>setTimeframe(tf)</code></td><td>切换当前周期；重新连接实时数据流。</td></tr>
+  </tbody>
+</table>
+
+<h3>指标</h3>
+<table>
+  <thead><tr><th>方法</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>添加叠加指标或副图指标。返回实例 id。</td></tr>
+    <tr><td><code>updateIndicator(instanceId, params)</code></td><td>修改一个运行中的指标。</td></tr>
+    <tr><td><code>removeIndicator(instanceId)</code></td><td>删除并销毁。</td></tr>
+  </tbody>
+</table>
+
+<h3>坐标轴与缩放</h3>
+<p>
+  价格轴（右侧区域）和时间轴（底部区域）可直接用指针操作，
+  手势与交易员熟悉的一致：
+</p>
+<table>
+  <thead><tr><th>手势</th><th>效果</th></tr></thead>
+  <tbody>
+    <tr><td>上下拖动价格轴</td><td>压缩 / 拉伸纵向价格范围（会关闭自动缩放）。</td></tr>
+    <tr><td>左右拖动时间轴</td><td>放大 / 缩小时间轴。</td></tr>
+    <tr><td>双击价格轴</td><td>重新启用自动缩放。</td></tr>
+    <tr><td>双击时间轴</td><td>让全部数据适应视口。</td></tr>
+  </tbody>
+</table>
+<p>
+  <strong>时区。</strong>时间轴标签和十字光标的时间标签默认跟随浏览器本地时区；
+  可以在设置面板中切换为固定的 UTC 偏移（或切回本地），也可以直接调用：
+</p>
+<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
+chart.setTimezoneOffset(330)   // IST (UTC+5:30)
+chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+
+<p>同样的效果也可以通过代码实现：</p>
+<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+chart.setLogScale(true)    // switch to logarithmic price scale
+chart.setInvertScale(true) // upside down (Alt+I in the widget)
+chart.fitContent()         // zoom out to all data
+chart.scrollToEnd()
+chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+
+<p>
+  <strong>价格坐标模式。</strong>除常规和对数外，坐标轴还可以以第一根可见K线为基准
+  重新计算标签——<code>percentage</code> 显示百分比涨跌，<code>indexedTo100</code>
+  把基准设为 100。常规、百分比和以 100 为基准三种模式共用同一套线性几何，只有标签不同。
+  可在图表设置面板中设置，也可以直接调用：
+</p>
+<pre><code>{`chart.setScaleMode('percentage')   // axis labels: +12.34% from first visible bar
+chart.setScaleMode('indexedTo100') // first visible bar reads as 100
+chart.setScaleMode('logarithmic')
+chart.getScaleMode()`}</code></pre>
+
+<h3>成交量分布（Volume Profile）</h3>
+<p>
+  在可见范围内按价格分组统计成交量的水平直方图。默认关闭——
+  可通过代码或组件的设置面板开启：
+</p>
+<pre><code>{`chart.setVolumeProfileVisible(true)
+chart.setVolumeProfileConfig({
+  buckets: 48,        // resolution of the histogram
+  widthRatio: 0.18,   // % of chart width
+  opacity: 0.32,
+  highlightPoC: true, // mark the highest-volume bucket
+})`}</code></pre>
+
+<h3>波段标记（枢轴点）</h3>
+<p>
+  用小三角形标出分形波段高点 / 低点（▼ 位于已确认的枢轴高点上方，▲ 位于枢轴低点下方）。
+  强度参数决定两侧各需要有多少根更低的K线。可在设置面板中切换，或者：
+</p>
+<pre><code>{`chart.setPivotMarkersVisible(true)
+chart.setPivotMarkersConfig({ left: 5, right: 5, showLabels: true })
+
+// market-structure labels (HH / HL / LH / LL) instead of price
+chart.setPivotMarkersConfig({ structureLabels: true })
+
+// pure detection + classification are exported
+import { findPivots, classifyPivots } from '@tradecanvas/core'
+const pivots = findPivots(bars, 5, 5)        // [{ index, price, type }]
+const structure = classifyPivots(pivots)     // adds label: 'HH'|'LH'|'HL'|'LL'`}</code></pre>
+
+<h3>交易时段着色（常规交易时段）</h3>
+<p>
+  把常规交易时段以外的K线（盘前 / 盘后或隔夜休市）调暗，让常规交易时段更加醒目。
+  默认使用美股常规交易时段（纽约时间 09:30–16:00，已考虑夏令时）；
+  可以用“一天中的分钟数”加上市场时区来配置时间窗口。
+  如果某个品种的数据源提供了交易时段信息，会自动设置。
+</p>
+<pre><code>{`chart.setSessionShadingVisible(true)
+chart.setSessionShadingConfig({
+  startMinute: 9 * 60 + 30,     // 09:30
+  endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
+  timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
+})`}</code></pre>
+
+<h3>前一周期高低点（PDH / PDL / PDC）</h3>
+<p>
+  将前一日（或前一周）的最高价、最低价、收盘价以及当前周期的开盘价绘制为带标签的水平线——
+  这正是日内交易者关注的支撑 / 阻力位。可在设置面板中切换，也可以直接调用：
+</p>
+<pre><code>{`chart.setPeriodLevelsVisible(true)
+chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
+
+// pure computation is exported
+import { computePeriodLevels } from '@tradecanvas/core'
+const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+
+<h3>市场轮廓（TPO）</h3>
+<p>
+  一种“价格停留时间”直方图：每根K线会为其价格范围触及的每个价格档位贡献一个 TPO，
+  由此显示控制点（Point of Control，成交最密集的价格）和价值区（约 70% 的 TPO）。
+  它与成交量分布不同——按时间而非成交量加权——并固定在左侧，因此两者可以同时显示。
+  默认关闭；可在设置面板中切换，也可以直接调用：
+</p>
+<pre><code>{`chart.setMarketProfileVisible(true)
+chart.setMarketProfileConfig({
+  buckets: 48,
+  widthRatio: 0.18,
+  opacity: 0.32,
+  valueAreaPct: 0.7,  // fraction of TPOs in the value area
+  highlightPoC: true, // dashed line at the point of control
+})
+
+// split into one mini-profile per calendar-day session
+chart.setMarketProfileConfig({ splitBySession: true })
+
+// classic TPO letters per session (when zoomed in enough to be legible)
+chart.setMarketProfileConfig({ splitBySession: true, letters: true })
+
+// pure computation is exported too
+import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
+const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
+const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+
+<h3>触控与移动端</h3>
+<table>
+  <thead><tr><th>手势</th><th>操作</th></tr></thead>
+  <tbody>
+    <tr><td>单指拖动（图表区域）</td><td>平移并移动十字光标</td></tr>
+    <tr><td>双指捏合</td><td>以中点为中心缩放</td></tr>
+    <tr><td>长按（约 500 ms）</td><td>在K线上固定 OHLC 提示（相当于移动端的 Alt+点击）</td></tr>
+    <tr><td>在价格轴 / 时间轴区域内单指拖动</td><td>缩放对应的坐标轴</td></tr>
+  </tbody>
+</table>
+<p>
+  当视口宽度小于 640 px 时，弹窗（设置、快捷键列表、命令面板、代码搜索）
+  会自动切换为底部抽屉样式，带拖动手柄，并适配安全区域的内边距。
+</p>
+
+<h3>测量工具</h3>
+<p>
+  按住 <kbd>Shift</kbd> 在图表上拖动，即可测量两点之间的K线数 × 价差——
+  浮层会显示价格 Δ（绝对值 + 百分比）、K线数量和时间跨度。
+  松开鼠标后浮层立即消失，不会保存到状态中。
+</p>
+
+<h3>事件</h3>
+<p>所有事件都通过 <code>ChartEventMap</code> 提供类型：</p>
+<pre><code>{`chart.on('orderPlace', e => /* OrderPlacePayload */)
+chart.on('orderModify', e => /* OrderModifyPayload */)
+chart.on('signalMarkerAdd', e => /* { marker } */)
+chart.on('tradeZoneAdd', e => /* { zone } */)
+chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+
+<h2>ChartWidget</h2>
+<p>为 <code>Chart</code> 包上一套完整界面。同一个实例可通过 <code>widget.chart</code> 访问。</p>
+
+<pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
+
+const widget = new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(),
+  historyLimit: 500,
+  trading: true,
+  features: { drawings: true, indicators: true },
+  onReady: (chart) => { /* ... */ },
+})
+
+widget.chart.setData(...)
+widget.destroy()`}</code></pre>
+
+<h3>组件快捷键</h3>
+<table>
+  <thead><tr><th>快捷键</th><th>操作</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板（指标、图表类型、画线……）</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索——在已配置的品种列表中模糊查找</td></tr>
+    <tr><td><kbd>?</kbd></td><td>显示快捷键列表</td></tr>
+    <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
+    <tr><td>点击工具栏中的品种</td><td>打开代码搜索弹窗</td></tr>
+    <tr><td>点击工具栏中的播放按钮</td><td>打开K线回放进度条（播放 / 单步 / 跳转 / 速度）</td></tr>
+  </tbody>
+</table>
+<p>运行时可用 <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> 更新可搜索的品种列表。</p>
+
+<h3>数据窗口</h3>
+<p>
+  一个浮动的读数面板，显示鼠标所在K线的精确 O/H/L/C/V、K线涨跌，以及每个已添加指标的数值——
+  移动十字光标时实时更新。可从命令面板中切换（<kbd>Ctrl/⌘ K</kbd> →
+  “显示/隐藏数据窗口”）。
+</p>
+
+<h3>可分享视图（深层链接）</h3>
+<p>
+  把整个视图——品种、周期、图表类型、价格坐标、指标（含参数）和画线——编码为一个紧凑的、
+  可安全放入 URL 的字符串，用于深层链接。设置 <code>shareUrl: true</code> 后，
+  组件会在加载时恢复 <code>#tcw=…</code> 哈希，命令面板中的“分享视图”操作
+  会把链接复制到剪贴板。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, { shareUrl: true })
+
+const token = widget.exportState()      // portable string
+await widget.importState(token)         // restore a view
+await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
+
+<h3>保存布局</h3>
+<p>
+  自动把每个品种的指标组合、画线、提醒和图表类型
+  持久化到 <code>localStorage</code>：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  persistLayouts: true,  // or { keyPrefix: 'myapp:', debounceMs: 2000 }
+})
+
+// Reset a single symbol's layout
+widget.clearSavedLayout('BTCUSDT')`}</code></pre>
+<p>
+  切换品种和销毁组件时都会立即写入布局，因此用户离开页面时不会丢失任何内容。
+</p>
+
+<h3>拖放导入数据</h3>
+<p>
+  把 CSV 或 JSON 文件拖到图表上即可立即载入。默认启用——
+  设置 <code>dragDropImport: false</code> 可关闭。解析器支持常见的列布局
+  （<code>time, open, high, low, close, volume</code>）、
+  ISO 8601 时间戳以及 Unix 秒 / 毫秒。
+</p>
+<pre><code>{`// Programmatic use
+import { parseOHLCV } from '@tradecanvas/chart'
+
+const { data, rowCount, skipped } = parseOHLCV(csvText)
+chart.setData(data)`}</code></pre>
+
+<h3>周期重采样</h3>
+<p>
+  用 <code>widget.setData()</code> 传入你最细粒度的序列，工具栏的周期按钮会在客户端
+  进行聚合——一份数据驱动所有周期，无需重新请求。只要没有连接实时适配器就会生效；
+  设置 <code>resampleTimeframes: false</code> 可关闭。周线默认以周一为起点
+  （<code>weekStartsOn: 0</code> 表示周日）。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  timeframe: '1h',
+  timeframes: ['5m', '15m', '1h', '4h', '1d', '1w'],
+})
+widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
+
+// Or use the pure function directly
+import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+
+const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+<p>
+  分组遵循日历规则：日内和日线周期对齐 UTC 纪元边界，周线对齐所配置的一周起始日，
+  月 / 季度 / 年对齐日历边界。输入的K线永远不会被修改。
+</p>
+
+<h3>自选列表侧边栏</h3>
+<p>
+  可选开启的右侧面板，列出所有已配置的品种，显示最新价、
+  涨跌幅和迷你走势图：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  watchlist: true,
+})
+
+// Feed non-active rows from your own data source
+widget.setWatchlistEntry('ETHUSDT', {
+  lastPrice: 3245.12,
+  refPrice: 3180.50,
+  sparkline: [3180, 3195, 3210, ...],
+})`}</code></pre>
+
+<h3>收藏的画线工具</h3>
+<p>
+  把常用的画线工具固定到侧边栏顶部的收藏栏。
+  右键点击任意工具（在分组弹出菜单或收藏栏中）即可固定或取消固定；
+  该设置会持久化到 localStorage。可用 <code>drawingFavorites</code>
+  预设初始收藏：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
+})`}</code></pre>
+
+<h3>画线样式与模板</h3>
+<p>
+  画线侧边栏上的调色板按钮会打开样式浮层——为下一条画线（以及当前选中的画线）选择颜色、
+  线宽和线型，还可以保存带名称的<strong>模板</strong>到 localStorage，一键复用。
+  对应的代码调用：
+</p>
+<pre><code>{`chart.setDrawingStyle({ color: '#e8505b', lineWidth: 2, lineStyle: 'dashed' })
+chart.getDrawingStyle()
+chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected drawing`}</code></pre>
+
+<h3>对象树</h3>
+<p>
+  工具栏中的图层按钮会打开对象树面板，列出所有已添加的指标和画线。
+  指标可以删除；每条画线都可以单独显示 / 隐藏、锁定 / 解锁和删除。
+  默认启用——设置 <code>objectTree: false</code> 可关闭。画线控制对应以下调用：
+</p>
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.setDrawingLocked(id, true)    // lock it from edits
+chart.removeDrawing(id)
+chart.getActiveIndicators()         // active indicator instances
+chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
+chart.removeIndicator(instanceId)`}</code></pre>
+<p>
+  每行指标上的齿轮按钮会打开<strong>设置对话框</strong>，它会读取指标的参数
+  （数值、开关、颜色），并通过 <code>updateIndicator</code> 实时应用修改——
+  修改周期或颜色时无需先删除再重新添加。
+</p>
+<p>
+  对象树中的<strong>对比</strong>区域可以把其他品种叠加为归一化的折线。
+  连接实时适配器时，点击 + 按钮会打开品种选择器，通过 <code>adapter.fetchHistory</code>
+  获取该品种的历史数据，并以百分比模式添加（这样价格量级不同的品种可以共用一个坐标轴）。
+  切换周期时，对比数据会自动重新获取。对应的代码调用：
+</p>
+<pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+
+// or drive the chart directly with your own data
+chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
+chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
+
+<h3>价格提醒</h3>
+<p>
+  工具栏中的铃铛按钮会打开浮动面板，用于添加、查看和删除价格提醒；
+  提醒触发时会弹出通知。提醒线也可以<strong>拖动</strong>——
+  在图表上抓住它并滑动即可修改价格（移动提醒会重新激活它）。默认启用——
+  设置 <code>alerts: false</code> 可关闭。也可以通过 <code>Chart</code> API
+  和带类型的提醒事件以代码方式控制：
+</p>
+<pre><code>{`// Add from code (condition: 'crossing' | 'crossingUp' | 'crossingDown'
+//                          | 'greaterThan' | 'lessThan')
+const id = chart.addAlert(64200, 'crossingUp', 'breakout')
+chart.removeAlert(id)
+chart.getAlerts()      // PriceAlert[]
+chart.saveAlerts('tcw:alerts:BTCUSDT')   // localStorage persistence
+chart.loadAlerts('tcw:alerts:BTCUSDT')
+
+// React to triggers
+chart.on('alertTriggered', (e) => {
+  console.log('hit', e.payload.price, e.payload.message)
+})
+// also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)
+
+// Indicator alerts: bind to an indicator line via channel '<instanceId>:<key>'.
+// In the widget, the alerts panel's source dropdown lists every active line.
+const ema = chart.addIndicator('rsi')
+chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</code></pre>
+<p>
+  提醒触发时可选择播放声音和 / 或发送桌面通知（两者默认都关闭）。
+  <code>sound: true</code> 播放内置提示音；也可以传入 URL 使用自定义声音。
+  <code>desktop: true</code> 使用 Notification API，首次使用时会请求权限。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  alertNotifications: { sound: true, desktop: true },
+})`}</code></pre>
+
+<h2>ChartGrid</h2>
+<p>同步联动的多图表布局。</p>
+<pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
+
+const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
+await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+grid.setLayout('1x2')`}</code></pre>
+
+<p>布局：<code>'1x2'</code>、<code>'2x2'</code>、<code>'2x3'</code>、<code>'3x3'</code>。</p>

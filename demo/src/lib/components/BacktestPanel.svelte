@@ -1,7 +1,12 @@
 <script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+  import { fill } from '$lib/i18n/messages';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { onSiteThemeChange } from '$lib/site';
+
+  const i18n = useI18n();
+  const m = $derived(i18n.m.backtest);
 
   type AnalyticsResult = {
     metrics: {
@@ -304,25 +309,23 @@
 <div class="backtest-panel">
   <div class="backtest-header">
     <div>
-      <h3>Live backtest — SMA(10/30) cross</h3>
-      <p class="backtest-sub">
-        365 days of synthetic price data, $10k initial cash, 0.05% commission, 0.03% slippage.
-      </p>
+      <h3>{m.title}</h3>
+      <p class="backtest-sub">{m.subtitle}</p>
     </div>
     {#if status === 'ready'}
       <div class="backtest-controls">
         <button type="button" class="bt-btn" onclick={togglePlay}>
-          {isPlaying ? 'Pause' : scrubIndex >= curveLength ? 'Replay' : 'Play'}
+          {isPlaying ? m.pause : scrubIndex >= curveLength ? m.replay : m.play}
         </button>
-        <button type="button" class="bt-btn bt-btn-ghost" onclick={reset}>End</button>
+        <button type="button" class="bt-btn bt-btn-ghost" onclick={reset}>{m.end}</button>
       </div>
     {/if}
   </div>
 
   {#if status === 'loading'}
-    <div class="backtest-state">Running backtest…</div>
+    <div class="backtest-state">{m.running}</div>
   {:else if status === 'error'}
-    <div class="backtest-state backtest-error">Failed: {errorMessage}</div>
+    <div class="backtest-state backtest-error">{fill(m.failed, { error: errorMessage })}</div>
   {:else if result}
     <div class="backtest-body">
       <div class="backtest-canvas-wrap">
@@ -343,19 +346,19 @@
           }}
         />
         <span class="backtest-scrubber-label">
-          Bar {scrubIndex}/{curveLength}
+          {fill(m.bar, { index: scrubIndex, total: curveLength })}
         </span>
       </div>
 
       <div class="backtest-metrics">
-        <div><span>Total return</span><strong style:color={result.metrics.totalReturnPct >= 0 ? 'var(--green)' : 'var(--red)'}>{fmtPct(result.metrics.totalReturnPct)}</strong></div>
+        <div><span>{m.totalReturn}</span><strong style:color={result.metrics.totalReturnPct >= 0 ? 'var(--green)' : 'var(--red)'}>{fmtPct(result.metrics.totalReturnPct)}</strong></div>
         <div><span>CAGR</span><strong>{fmtPct(result.metrics.cagr)}</strong></div>
         <div><span>Sharpe</span><strong>{fmtNum(result.metrics.sharpe)}</strong></div>
         <div><span>Sortino</span><strong>{fmtNum(result.metrics.sortino)}</strong></div>
-        <div><span>Max DD</span><strong style:color="var(--red)">{fmtPct(result.metrics.maxDrawdownPct)}</strong></div>
-        <div><span>Win rate</span><strong>{fmtPct(result.metrics.winRate)}</strong></div>
-        <div><span>Profit factor</span><strong>{fmtNum(result.metrics.profitFactor)}</strong></div>
-        <div><span>Trades</span><strong>{result.metrics.trades}</strong></div>
+        <div><span>{m.maxDrawdown}</span><strong style:color="var(--red)">{fmtPct(result.metrics.maxDrawdownPct)}</strong></div>
+        <div><span>{m.winRate}</span><strong>{fmtPct(result.metrics.winRate)}</strong></div>
+        <div><span>{m.profitFactor}</span><strong>{fmtNum(result.metrics.profitFactor)}</strong></div>
+        <div><span>{m.trades}</span><strong>{result.metrics.trades}</strong></div>
       </div>
     </div>
   {/if}

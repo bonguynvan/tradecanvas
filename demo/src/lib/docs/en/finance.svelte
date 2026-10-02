@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Finance charts — TradeCanvas docs</title>
   <meta name="description" content="Specialized finance renderers: gauges, heatmaps, market depth, sparklines, equity curve, and waterfall." />
@@ -21,7 +27,7 @@
 </table>
 
 <h2>Equity curve example</h2>
-<p>Pair with the <a href="/tradecanvas/docs/analytics">analytics</a> backtester:</p>
+<p>Pair with the <a href={href('/docs/analytics')}>analytics</a> backtester:</p>
 
 <pre><code>{`import { Backtester } from '@tradecanvas/analytics'
 import { EquityCurveRenderer } from '@tradecanvas/chart'
