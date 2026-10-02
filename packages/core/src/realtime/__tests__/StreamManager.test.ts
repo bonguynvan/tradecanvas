@@ -136,3 +136,23 @@ describe('StreamManager — superseded history requests', () => {
     sm.dispose();
   });
 });
+
+describe('StreamManager — timeframes the feed lacks', () => {
+  it('builds them from one the feed has, for history and the live subscription', async () => {
+    const { adapter, pending, connects } = controlledAdapter();
+    const feed = { ...adapter, supportedTimeframes: ['1m', '5m'] as TimeFrame[] };
+    const sm = new StreamManager();
+    const snapshots: OHLCBar[][] = [];
+    sm.on('snapshot', (b) => snapshots.push(b));
+
+    const done = sm.connect({ adapter: feed, symbol: 'AAA', timeframe: '10m', historyLimit: 2 });
+    expect(pending[0].timeframe).toBe('5m');
+    const five = (i: number): OHLCBar => ({ time: i * 300_000, open: i, high: i, low: i, close: i, volume: 1 });
+    pending[0].resolve([five(0), five(1), five(2), five(3)]);
+    await done;
+
+    expect(snapshots[0].map((b) => b.time)).toEqual([0, 600_000]);
+    expect(snapshots[0][1]).toMatchObject({ open: 2, close: 3, volume: 2 });
+    expect(connects.at(-1)?.timeframe).toBe('5m');
+  });
+});

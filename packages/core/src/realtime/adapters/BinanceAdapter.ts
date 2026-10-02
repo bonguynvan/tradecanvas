@@ -33,6 +33,8 @@ const MAX_KLINES = 1000;
  */
 export class BinanceAdapter implements DataAdapter {
   readonly name = 'binance';
+  /** Binance's kline intervals; other timeframes are built from these. */
+  readonly supportedTimeframes = Object.keys(TF_MAP) as TimeFrame[];
 
   private ws: WebSocket | null = null;
   private state: ConnectionState = 'disconnected';

@@ -76,6 +76,8 @@ export interface ChartWidgetOptions {
   // Config
   symbols?: string[];
   timeframes?: TimeFrame[];
+  /** Let users type their own intervals (7m, 90m, 2h…) in the timeframe menu. Default `true`. */
+  customTimeframes?: boolean;
   chartTypes?: ChartType[];
 
   // Data
@@ -165,7 +167,7 @@ export interface WidgetState {
 export interface ToolbarConfig {
   symbols: string[];
   /** Every timeframe on offer, shortest first; the menu lists them all. */
-  timeframes: { label: string; value: TimeFrame }[];
+  timeframes: { label: string; value: TimeFrame; custom?: boolean }[];
   /** The ones shown as buttons. Defaults to all of `timeframes`. */
   timeframeFavorites?: TimeFrame[];
   chartTypes: { label: string; value: ChartType }[];
@@ -178,6 +180,10 @@ export interface ToolbarCallbacks {
   onTimeframe: (tf: TimeFrame) => void;
   /** Pin or unpin a timeframe; enables the timeframe menu. */
   onToggleTimeframeFavorite?: (tf: TimeFrame) => void;
+  /** Add a typed interval ("7m", "90", "2h"); false when it isn't one. Shows the custom-interval field. */
+  onAddTimeframe?: (text: string) => boolean;
+  /** Remove a custom interval from the menu. */
+  onRemoveTimeframe?: (tf: TimeFrame) => void;
   onChartType: (type: ChartType) => void;
   onAddIndicator: (id: string) => void;
   onScreenshot: () => void;

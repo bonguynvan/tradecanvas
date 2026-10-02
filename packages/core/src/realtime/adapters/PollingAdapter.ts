@@ -11,6 +11,8 @@ import type {
 export interface PollingAdapterOptions {
   /** Adapter name, e.g. `'coinbase'`. */
   name: string;
+  /** Timeframes the feed serves; charts build the others from these. Leave out if it serves all. */
+  supportedTimeframes?: readonly TimeFrame[];
   /** Fetch recent bars (ascending by time). Drives both history and polling. */
   fetchBars: (symbol: string, timeframe: TimeFrame, limit: number) => Promise<OHLCBar[]>;
   /** Fetch bars older than `before`, ascending — enables scrolling back for more history. */
@@ -39,6 +41,7 @@ export interface PollingAdapterOptions {
  */
 export class PollingAdapter implements DataAdapter {
   readonly name: string;
+  readonly supportedTimeframes?: readonly TimeFrame[];
 
   private state: ConnectionState = 'disconnected';
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
@@ -52,6 +55,7 @@ export class PollingAdapter implements DataAdapter {
   constructor(opts: PollingAdapterOptions) {
     this.opts = opts;
     this.name = opts.name;
+    this.supportedTimeframes = opts.supportedTimeframes;
     const before = opts.fetchHistoryBefore;
     if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
   }

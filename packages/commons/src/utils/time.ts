@@ -1,6 +1,6 @@
-import type { TimeFrame } from '../types/ohlc.js';
+import type { KnownTimeFrame, TimeFrame, TimeFrameUnit } from '../types/ohlc.js';
 
-const TIMEFRAME_MS: Record<TimeFrame, number> = {
+const TIMEFRAME_MS: Record<KnownTimeFrame, number> = {
   '1s': 1_000,
   '5s': 5_000,
   '15s': 15_000,
@@ -29,13 +29,41 @@ const TIMEFRAME_MS: Record<TimeFrame, number> = {
   '12M': 31_536_000_000,
 };
 
+/** Milliseconds per unit; a month counts 30 days (a 12-month frame, 365). */
+const UNIT_MS: Record<TimeFrameUnit, number> = {
+  s: 1_000,
+  m: 60_000,
+  h: 3_600_000,
+  d: 86_400_000,
+  w: 604_800_000,
+  M: 2_592_000_000,
+};
+
+const TIMEFRAME_PATTERN = /^([1-9]\d*)([smhdwM])$/;
+
+/** A timeframe's count and unit, or null when `value` isn't one (`'7m'` → 7 minutes). */
+export function parseTimeframe(value: string): { count: number; unit: TimeFrameUnit } | null {
+  const match = TIMEFRAME_PATTERN.exec(value);
+  if (!match) return null;
+  const count = Number(match[1]);
+  return Number.isSafeInteger(count) ? { count, unit: match[2] as TimeFrameUnit } : null;
+}
+
+export function isTimeFrame(value: string): value is TimeFrame {
+  return parseTimeframe(value) !== null;
+}
+
+/** Length of a timeframe in milliseconds (approximate for months); NaN for a non-timeframe. */
 export function timeframeToMs(tf: TimeFrame): number {
-  return TIMEFRAME_MS[tf];
+  const known = TIMEFRAME_MS[tf as KnownTimeFrame];
+  if (known !== undefined) return known;
+  const parsed = parseTimeframe(tf);
+  return parsed ? parsed.count * UNIT_MS[parsed.unit] : Number.NaN;
 }
 
 export function formatTimestamp(timestamp: number, tf: TimeFrame): string {
   const d = new Date(timestamp);
-  const ms = TIMEFRAME_MS[tf];
+  const ms = timeframeToMs(tf);
   if (ms >= 86_400_000) {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
@@ -46,7 +74,7 @@ export function formatTimestamp(timestamp: number, tf: TimeFrame): string {
 }
 
 export function alignToTimeframe(timestamp: number, tf: TimeFrame): number {
-  const ms = TIMEFRAME_MS[tf];
+  const ms = timeframeToMs(tf);
   return Math.floor(timestamp / ms) * ms;
 }
 
@@ -108,12 +136,6 @@ export function tzLabel(tzOffsetMinutes: number | null): string {
 /** Day-of-week for a Monday-anchored reference week (1970-01-05 was a Monday, UTC). */
 const WEEK_ANCHOR_MS = Date.UTC(1970, 0, 5);
 
-function parseTimeframe(tf: TimeFrame): { count: number; unit: 's' | 'm' | 'h' | 'd' | 'w' | 'M' } {
-  const match = /^(\d+)([smhdwM])$/.exec(tf);
-  if (!match) return { count: 1, unit: 'm' };
-  return { count: parseInt(match[1], 10), unit: match[2] as 's' | 'm' | 'h' | 'd' | 'w' | 'M' };
-}
-
 /**
  * Start of the bucket a timestamp falls into for a given timeframe.
  *
@@ -127,17 +149,17 @@ export function timeframeBucketStart(
   tf: TimeFrame,
   weekStartsOn: 0 | 1 = 1,
 ): number {
-  const { count, unit } = parseTimeframe(tf);
+  const { count, unit } = parseTimeframe(tf) ?? { count: 1, unit: 'm' as const };
 
   if (unit === 's' || unit === 'm' || unit === 'h' || unit === 'd') {
-    const ms = TIMEFRAME_MS[tf];
+    const ms = count * UNIT_MS[unit];
     return Math.floor(timestamp / ms) * ms;
   }
 
   const d = new Date(timestamp);
 
   if (unit === 'w') {
-    const dayMs = TIMEFRAME_MS['1d'];
+    const dayMs = UNIT_MS.d;
     const dow = d.getUTCDay();
     const shift = (dow - weekStartsOn + 7) % 7;
     const weekStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - shift);

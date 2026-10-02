@@ -143,6 +143,65 @@ describe('ChartWidget timeframes', () => {
   });
 });
 
+describe('ChartWidget custom timeframes', () => {
+  const input = () => host.querySelector<HTMLInputElement>('.tcw-tf-custom-input')!;
+  const submit = (text: string) => {
+    input().value = text;
+    input().form!.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  };
+
+  it('adds a typed interval, pins it and switches to it', () => {
+    make({ timeframe: '5m' });
+    submit('7');
+    expect(menuItems()).toEqual(['1m', '3m', '5m', '7m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M']);
+    expect(barButtons()).toContain('7m');
+    expect(FakeChart.last.connects.at(-1)?.timeframe).toBe('7m');
+    expect(input().value).toBe('');
+  });
+
+  it('remembers custom intervals, and lets them be removed', () => {
+    make({ timeframe: '5m' });
+    submit('90m');
+    widget!.destroy();
+    host.replaceChildren();
+
+    make({ timeframe: '5m' });
+    expect(menuItems()).toContain('90m');
+    host.querySelector<HTMLButtonElement>('[data-tf-remove="90m"]')!.click();
+    expect(menuItems()).not.toContain('90m');
+    expect(barButtons()).not.toContain('90m');
+  });
+
+  it('switches to an interval already on offer without adding it twice', () => {
+    make({ timeframe: '5m' });
+    submit('60');
+    expect(FakeChart.last.connects.at(-1)?.timeframe).toBe('1h');
+    expect(menuItems().filter((tf) => tf === '1h')).toHaveLength(1);
+    expect(host.querySelector('[data-tf-remove="1h"]')).toBeNull();
+  });
+
+  it('marks text that is not an interval and keeps it for fixing', () => {
+    make({ timeframe: '5m' });
+    submit('abc');
+    expect(input().getAttribute('aria-invalid')).toBe('true');
+    expect(input().value).toBe('abc');
+    const hint = host.querySelector<HTMLElement>('.tcw-tf-custom-hint')!;
+    expect(hint.hidden).toBe(false);
+    expect(hint.textContent).toMatch(/7m/);
+    input().value = 'abcd';
+    input().dispatchEvent(new Event('input'));
+    expect(hint.hidden).toBe(true);
+    expect(FakeChart.last.connects).toHaveLength(1);
+  });
+
+  it('refuses an interval that features.timeframes leaves out', () => {
+    make({ timeframe: '1h', chartOptions: { features: { timeframes: ['1h', '4h'] } } });
+    submit('2h');
+    expect(input().getAttribute('aria-invalid')).toBe('true');
+    expect(menuItems()).toEqual(['1h', '4h']);
+  });
+});
+
 describe('ChartWidget leaves out switched-off features', () => {
   it('has no magnet button when the magnet is off', () => {
     make({ chartOptions: { features: { drawingMagnet: false } } });

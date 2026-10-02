@@ -16,3 +16,4 @@ export { BybitAdapter } from './BybitAdapter.js';
 export type { BybitAdapterOptions } from './BybitAdapter.js';
 export { KrakenAdapter } from './KrakenAdapter.js';
 export type { KrakenAdapterOptions } from './KrakenAdapter.js';
+export { ResamplingAdapter, withResampling } from './ResamplingAdapter.js';

@@ -185,6 +185,12 @@ export class WidgetToolbar {
     });
   }
 
+  /** A new list of timeframes (a custom one added or removed), with its pins. */
+  setTimeframes(timeframes: ToolbarConfig['timeframes'], favorites: TimeFrame[]): void {
+    this.config = { ...this.config, timeframes };
+    this.setTimeframeFavorites(favorites);
+  }
+
   /** Re-pin after the user starred or unstarred a timeframe. */
   setTimeframeFavorites(favorites: TimeFrame[]): void {
     this.tfFavorites = [...favorites];
@@ -195,15 +201,29 @@ export class WidgetToolbar {
   private buildTimeframeMenu(): void {
     if (!this.tfDropdown) return;
     const pin = esc(this.t('toolbar.timeframes.pin'));
+    const remove = esc(this.t('toolbar.timeframes.remove'));
     let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.timeframes'))}</div>`;
     for (const tf of this.config.timeframes) {
       const pinned = this.tfFavorites.includes(tf.value);
       const [value, label] = [esc(tf.value), esc(tf.label)];
       html += `<div class="tcw-tf-row">`
         + `<button class="tcw-dropdown-item" data-tf-pick="${value}">${label}</button>`
+        + (tf.custom && this.callbacks.onRemoveTimeframe
+          ? `<button class="tcw-tf-remove" data-tf-remove="${value}" title="${remove}" aria-label="${remove}: ${label}">${createIcon('x', 12)}</button>`
+          : '')
         + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${value}" aria-pressed="${pinned}"`
         + ` title="${pin}" aria-label="${pin}: ${label}">${createIcon('star', 12)}</button>`
         + `</div>`;
+    }
+    if (this.callbacks.onAddTimeframe) {
+      const custom = esc(this.t('toolbar.timeframes.custom'));
+      const add = esc(this.t('toolbar.timeframes.add'));
+      html += `<form class="tcw-tf-custom" novalidate>`
+        + `<input class="tcw-tf-custom-input" type="text" autocomplete="off" spellcheck="false" maxlength="6"`
+        + ` placeholder="7m, 90m, 2h…" aria-label="${custom}">`
+        + `<button type="submit" class="tcw-tf-custom-add" title="${add}" aria-label="${add}">${createIcon('plus', 12)}</button>`
+        + `<div class="tcw-tf-custom-hint" role="status" hidden></div>`
+        + `</form>`;
     }
     this.tfDropdown.setContent(html);
 
@@ -216,6 +236,39 @@ export class WidgetToolbar {
         e.stopPropagation(); // pinning keeps the menu open
         this.callbacks.onToggleTimeframeFavorite?.(btn.dataset.tfStar as TimeFrame);
       });
+    });
+    panel.querySelectorAll<HTMLButtonElement>('[data-tf-remove]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.callbacks.onRemoveTimeframe?.(btn.dataset.tfRemove as TimeFrame);
+      });
+    });
+    const form = panel.querySelector<HTMLFormElement>('.tcw-tf-custom');
+    if (form) this.wireCustomTimeframe(form);
+  }
+
+  /** The custom-interval field: Enter or + adds it; text that isn't an interval is marked and kept. */
+  private wireCustomTimeframe(form: HTMLFormElement): void {
+    const input = form.querySelector<HTMLInputElement>('.tcw-tf-custom-input')!;
+    const hint = form.querySelector<HTMLDivElement>('.tcw-tf-custom-hint')!;
+    // Typing and clicking here must not toggle the menu shut.
+    form.addEventListener('click', (e) => e.stopPropagation());
+    input.addEventListener('input', () => {
+      input.removeAttribute('aria-invalid');
+      hint.hidden = true;
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (this.callbacks.onAddTimeframe?.(input.value)) {
+        input.value = '';
+        hint.hidden = true;
+        this.tfDropdown?.close();
+      } else {
+        input.setAttribute('aria-invalid', 'true');
+        hint.textContent = this.t('toolbar.timeframes.invalid');
+        hint.hidden = false;
+      }
     });
   }
 

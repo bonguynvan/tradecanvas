@@ -72,6 +72,13 @@ export type DataAdapterListener<T = unknown> = (event: DataAdapterEvent<T>) => v
 export interface DataAdapter {
   readonly name: string;
 
+  /**
+   * Optional: the timeframes the feed serves. Charts build any other
+   * timeframe (7m, 90m, 2d…) from the coarsest of these that divides it.
+   * Leave it out when the feed serves every timeframe.
+   */
+  readonly supportedTimeframes?: readonly TimeFrame[];
+
   connect(config: DataAdapterConfig): void;
   disconnect(): void;
   getConnectionState(): ConnectionState;

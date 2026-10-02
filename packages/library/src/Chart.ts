@@ -37,6 +37,7 @@ import { LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS
 import {
   RenderEngine,
   Viewport,
+  withResampling,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -854,7 +855,9 @@ export class Chart {
   }
 
   /** Page the connected stream's history through its adapter, if it can. */
-  private useStreamHistory(adapter: DataAdapter, pageSize: number | undefined): void {
+  private useStreamHistory(feed: DataAdapter, pageSize: number | undefined): void {
+    // The same wrapper the stream uses: pages of a 7m chart are 7m bars.
+    const adapter = withResampling(feed);
     const fetchBefore = adapter.fetchHistoryBefore;
     const timeframe = this.streamTimeframe;
     if (!fetchBefore || timeframe === null) {

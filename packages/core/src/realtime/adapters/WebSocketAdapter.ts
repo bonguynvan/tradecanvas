@@ -35,6 +35,8 @@ export interface WsParseResult {
 export interface WebSocketAdapterOptions {
   /** Adapter name, e.g. `'bybit'`. */
   name: string;
+  /** Timeframes the feed serves; charts build the others from these. Leave out if it serves all. */
+  supportedTimeframes?: readonly TimeFrame[];
   /** Build the WS URL for a connection. */
   wsUrl: (config: DataAdapterConfig) => string;
   /** Fetch historical bars (REST), ascending by time. */
@@ -70,6 +72,7 @@ export interface WebSocketAdapterOptions {
  */
 export class WebSocketAdapter implements DataAdapter {
   readonly name: string;
+  readonly supportedTimeframes?: readonly TimeFrame[];
 
   protected ws: WebSocketLike | null = null;
   protected state: ConnectionState = 'disconnected';
@@ -83,6 +86,7 @@ export class WebSocketAdapter implements DataAdapter {
   constructor(opts: WebSocketAdapterOptions) {
     this.opts = opts;
     this.name = opts.name;
+    this.supportedTimeframes = opts.supportedTimeframes;
     const before = opts.fetchHistoryBefore;
     if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
   }

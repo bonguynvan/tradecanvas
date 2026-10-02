@@ -25,4 +25,20 @@
     `hasMoreHistory()`, `isLoadingHistory()` and the `historyLoad` event.
   - ChartWidget shows a small pill while older bars load (`historyPageSize`
     widget option).
+- **Any interval.**
+  - `TimeFrame` accepts any whole count of a unit (`'7m'`, `'90m'`, `'2d'`,
+    `'5w'`) besides the listed ones; `parseTimeframe` and `isTimeFrame` check a
+    string. `timeframeToMs` and `timeframeBucketStart` handle them all.
+  - New optional `DataAdapter.supportedTimeframes`. Binance, Bybit, Kraken and
+    Coinbase list theirs; `WebSocketAdapter` and `PollingAdapter` take them as
+    an option.
+  - The stream builds a timeframe the feed lacks from the coarsest one it has
+    that divides it (7m from 1m, 90m from 30m, a quarter from months). This
+    covers history (paging back when one request holds too few bars), live
+    bars and older pages: `ResamplingAdapter`, `withResampling`,
+    `resampleBars`, `pickBaseTimeframe`.
+  - Before, Binance quietly sent 15m bars for intervals it lacks (45m, 2d, 3M…).
+  - ChartWidget: the timeframe menu takes a typed interval (`7`, `90`, `2h`,
+    `3D`, `1W`, `2M`). It is added, pinned, remembered and removable with an
+    ×; `customTimeframes: false` hides the field. New `parseTimeframeInput`.
 - The widget's replay bar sits above the time axis.

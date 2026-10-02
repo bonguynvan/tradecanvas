@@ -19,12 +19,18 @@ import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
-import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from './widgetTimeframes.js';
+import {
+  availableTimeframes,
+  initialTimeframeFavorites,
+  parseTimeframeInput,
+  timeframeLabel,
+  withExtraTimeframes,
+} from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS, sourceParam } from '@tradecanvas/core';
+import { RANGE_PRESETS, sourceParam, withResampling } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -134,6 +140,8 @@ export class ChartWidget {
   private favoritesStore = new DrawingFavoritesStore();
   /** Timeframes pinned to the toolbar (same store shape as drawing favourites). */
   private timeframeFavorites = new DrawingFavoritesStore('tcw:tf-favorites');
+  /** Intervals the user typed in the timeframe menu. */
+  private customTimeframes = new DrawingFavoritesStore('tcw:tf-custom');
   /** Timeframes on offer, shortest first. */
   private timeframes: TimeFrame[] = [];
   private watchlist: WidgetWatchlist | null = null;
@@ -238,7 +246,11 @@ export class ChartWidget {
     };
     this.settingsState = { ...this.settingsDefaults };
 
-    this.timeframes = availableTimeframes(options.timeframes, features.timeframes);
+    this.timeframes = withExtraTimeframes(
+      availableTimeframes(options.timeframes, features.timeframes),
+      this.customTimeframes.list() as TimeFrame[],
+      features.timeframes,
+    );
     // First run, or none of the saved pins is on offer here: start from the defaults.
     if (!this.timeframes.some((tf) => this.timeframeFavorites.has(tf))) {
       const initial = initialTimeframeFavorites(this.timeframes, features.defaultTimeframeFavorites, !!options.timeframes?.length);
@@ -283,7 +295,7 @@ export class ChartWidget {
         this.root,
         {
           symbols: this.symbols,
-          timeframes: this.timeframes.map((value) => ({ value, label: timeframeLabel(value) })),
+          timeframes: this.timeframeMenu(),
           timeframeFavorites: this.pinnedTimeframes(),
           chartTypes: options.chartTypes
             ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
@@ -295,6 +307,8 @@ export class ChartWidget {
           onSymbolClick: () => this.handleSymbolClick(),
           onTimeframe: (tf) => this.handleTimeframe(tf),
           onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
+          onAddTimeframe: options.customTimeframes === false ? undefined : (text) => this.handleAddTimeframe(text),
+          onRemoveTimeframe: (tf) => this.handleRemoveTimeframe(tf),
           onChartType: (type) => this.handleChartType(type),
           onAddIndicator: (id) => this.handleAddIndicator(id),
           onScreenshot: () => this.chart.screenshot(),
@@ -907,6 +921,34 @@ export class ChartWidget {
     return this.timeframes.filter((tf) => pinned.includes(tf));
   }
 
+  /** The timeframe menu's rows, typed intervals marked so they can be removed. */
+  private timeframeMenu(): { value: TimeFrame; label: string; custom: boolean }[] {
+    return this.timeframes.map((value) => ({ value, label: timeframeLabel(value), custom: this.customTimeframes.has(value) }));
+  }
+
+  /** A typed interval: switch to it, adding and pinning it when it is new. False when it isn't one. */
+  private handleAddTimeframe(text: string): boolean {
+    const tf = parseTimeframeInput(text);
+    if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
+    if (!this.timeframes.includes(tf)) {
+      this.customTimeframes.add(tf);
+      this.timeframeFavorites.add(tf);
+      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
+      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
+    }
+    this.handleTimeframe(tf);
+    return true;
+  }
+
+  private handleRemoveTimeframe(tf: TimeFrame): void {
+    if (!this.customTimeframes.has(tf)) return;
+    this.customTimeframes.remove(tf);
+    this.timeframeFavorites.remove(tf);
+    this.timeframes = this.timeframes.filter((t) => t !== tf);
+    this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
+    this.updateUI();
+  }
+
   private handleToggleTimeframeFavorite(tf: TimeFrame): void {
     this.timeframeFavorites.toggle(tf);
     this.toolbar?.setTimeframeFavorites(this.pinnedTimeframes());
@@ -1195,7 +1237,7 @@ export class ChartWidget {
     const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
     const id = `cmp_${symbol}`;
     try {
-      const bars = await this.adapter.fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+      const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
       // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
       // a shared % axis — the right default for comparison.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
@@ -1223,7 +1265,7 @@ export class ChartWidget {
 
     for (const c of this.compares) {
       try {
-        const bars = await this.adapter.fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+        const bars = await withResampling(this.adapter).fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
         this.chart.updateCompareData(c.id, bars);
       } catch { /* leave the stale overlay in place if the refetch fails */ }
     }

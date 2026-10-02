@@ -151,3 +151,32 @@ describe('Chart history paging', () => {
     expect(adapter.fetchHistoryBefore).not.toHaveBeenCalled();
   });
 });
+
+describe('Chart history paging on a timeframe the feed lacks', () => {
+  it('pages bars of the chart’s timeframe, built from the feed’s', async () => {
+    const MIN = 60_000;
+    const end = T0 + 10_000 * MIN;
+    const minutes = (before: number, limit: number): OHLCBar[] => {
+      const out: OHLCBar[] = [];
+      for (let t = before - MIN; t >= T0 && out.length < limit; t -= MIN) {
+        out.push({ time: t, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+      }
+      return out.reverse();
+    };
+    const adapter = {
+      ...fakeAdapter(false),
+      supportedTimeframes: ['1m'] as TimeFrame[],
+      fetchHistory: vi.fn(async (_s: string, _tf: TimeFrame, limit?: number) => minutes(end, limit ?? 500)),
+      fetchHistoryBefore: vi.fn(async (_s: string, _tf: TimeFrame, before: number, limit: number) => minutes(before, limit)),
+    };
+    await chart.connect({ adapter, symbol: 'X', timeframe: '7m', historyLimit: 400, historyPageSize: 50 });
+    expect(adapter.fetchHistory.mock.calls[0][1]).toBe('1m');
+    expect(chart.getData()).toHaveLength(400);
+
+    expect(await chart.loadMoreHistory()).toBe(50);
+    const data = chart.getData();
+    expect(data).toHaveLength(450);
+    expect(data.every((b, i) => i === 0 || b.time - data[i - 1].time === 7 * MIN)).toBe(true);
+    expect(adapter.fetchHistoryBefore.mock.calls.every((c) => c[1] === '1m')).toBe(true);
+  });
+});

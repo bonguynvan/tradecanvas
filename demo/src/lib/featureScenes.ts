@@ -181,13 +181,17 @@ const layout = chart.saveState()             // indicators, styles, alerts, draw
       'Drag the chart to the right: a pill on the left shows older bars loading',
       'Scroll to zoom out, past a few hundred bars down to a quarter pixel per bar',
       'Click All under the chart to fit everything loaded so far',
+      'Type 7 or 90 in the ▾ timeframe menu: Binance has neither, so the chart builds them from 1m and 30m bars',
     ],
     code: `// Adapters with fetchHistoryBefore page by themselves
 chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m', historyPageSize: 500 })
 
 // Or page your own source
 chart.setHistoryLoader((before, limit) => api.bars({ end: before, limit }))
-chart.on('historyLoad', (e) => console.log(e.payload.state, e.payload.count))`,
+chart.on('historyLoad', (e) => console.log(e.payload.state, e.payload.count))
+
+// Any interval: the feed's closest timeframe is resampled
+await chart.setTimeframe('7m')`,
     options: (env) => ({
       symbol: 'BTCUSDT',
       symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],

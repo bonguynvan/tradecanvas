@@ -38,6 +38,7 @@ export class BybitAdapter extends WebSocketAdapter {
       wsUrl: () => wsBase,
       subscribeMessage: (c) => ({ op: 'subscribe', args: [`kline.${bybitInterval(c.timeframe)}.${c.symbol}`] }),
       unsubscribeMessage: (c) => ({ op: 'unsubscribe', args: [`kline.${bybitInterval(c.timeframe)}.${c.symbol}`] }),
+      supportedTimeframes: Object.keys(INTERVAL) as TimeFrame[],
       parseMessage: parseBybitWsMessage,
       fetchHistory: (symbol, timeframe, limit) => fetchBybitKlines(restBase, category, symbol, timeframe, limit),
       fetchHistoryBefore: (symbol, timeframe, before, limit) =>
