@@ -1,5 +1,151 @@
 # @tradecanvas/chart
 
+## 1.4.0
+
+### Minor Changes
+
+- 173787a: **The TradeCanvas icon set, and quicker tooltips.**
+
+  - **Every drawing tool has its own icon** (40, where they used to share about
+    ten): filled dots mark the points you click to draw. They show in the
+    sidebar, the tool menus (now icon + name) and the pinned strip; a group's
+    button shows, and picks, the tool last used in it.
+  - **Chart types have icons** in the chart-type menu and on its button.
+  - **Interface icons redrawn** on the same grid: 24 px, 1.75 px strokes with
+    round caps — same names, so `createIcon(name)` keeps working.
+  - **New exports** from `@tradecanvas/chart/widget`: `createIcon`,
+    `createToolIcon`, `createChartTypeIcon`, `iconSvg` and the icon maps
+    (`UI_ICONS`, `DRAWING_TOOL_ICONS`, `CHART_TYPE_ICONS`), to use the set in
+    your own UI.
+  - **Tooltips** on the widget's controls replace the browser's: the first after
+    300 ms, the next at once while you move along a toolbar, sliding in beside
+    the control, and gone when you click, press a key, or the control goes away.
+    Keyboard focus shows them too. A control's `title` is lifted only while the
+    pointer is on it (so the browser's tooltip can't double up) and put back
+    when it leaves.
+
+- 0149807: **Layouts that come back whole, ranges and dates, scale options, faster drawing.**
+
+  - **Saved layouts restore indicators and alerts.** `saveState` / `loadState`
+    (and `downloadState`, `setAutoSave`) now keep every indicator's inputs, pane,
+    colours and visibility, and alerts keep their channel, repeat and label —
+    alerts on indicator lines follow the indicator to its new id. Indicator
+    changes trigger the auto-save. Snapshots are version 2; loading a version-1
+    save (or one without an indicator list) leaves the chart's current
+    indicators alone. An indicator the chart cannot add — say, from a plugin not
+    registered yet — is skipped with a warning and kept in the layout when it is
+    saved again; one-shot alerts that already fired stay fired.
+  - **Several instances of one indicator in ChartWidget**: picking EMA twice
+    gives two EMAs, each with its own chip ("EMA 20", "EMA 50"); the chips
+    follow indicators added or removed through the chart API too.
+  - **ChartGrid links the crosshair by time**, so charts on different symbols or
+    timeframes show a vertical line on the matching bar, and it clears when the
+    pointer leaves. Cells added by `setLayout` are linked too. New
+    `chart.setCrosshairTime(time | null)` and a `crosshairLeave` event;
+    `setCrosshairPosition(null)` now clears the crosshair.
+  - **Feature flags that did nothing now apply**: `drawingMagnet`,
+    `barCountdown`, `compareSymbols`, `dataExport`, `logScale` and `timeframes`
+    (a whitelist for `setTimeframe`; `chart.isTimeframeAllowed`).
+    ChartWidget leaves out the controls of switched-off features.
+  - **Timeframe favourites in ChartWidget**: the toolbar shows pinned timeframes
+    (plus the current one); a menu lists them all with a star to pin or unpin,
+    remembered across visits. `features.defaultTimeframeFavorites` sets the
+    starting set; the menu offers 1m–1M unless `timeframes` narrows it.
+  - **Ranges and dates**: `chart.setVisibleRangePreset('1D' | '5D' | '1M' | '3M'
+| '6M' | 'YTD' | '1Y' | '5Y' | 'All')` and `chart.goToTime(time)`. ChartWidget
+    shows the presets under the chart with a "go to date" button (Alt+G);
+    `rangeBar: false` hides them.
+  - **Inverted price scale**: `chart.setInvertScale(true)`, in the widget's
+    settings or Alt+I. Everything on the price pane follows it — candles, lines,
+    axis, grid, profiles, drawings, alerts, orders; indicator panes stay upright.
+    Indicator panes no longer pick up the log scale either.
+  - **Log scale fix**: candles, bars, lines, areas, the price axis and grid were
+    still drawn on a linear scale with the log scale on, while drawings and
+    indicators used the log one. They now share one mapping.
+  - **Drawing**: stay-in-drawing mode keeps the tool after each drawing
+    (`chart.setStayInDrawingMode`, a sidebar toggle in the widget; Esc ends it),
+    and Ctrl/⌘+C / Ctrl/⌘+V copy and paste the selected drawings, also into
+    another chart on the page (`chart.copyDrawings()` / `chart.pasteDrawings()`).
+    New `drawingToolChange` event. With several charts on a page, drawing
+    shortcuts (copy/paste, undo/redo, delete) act on the chart used last, and
+    never while typing in a text field; undo/redo keeps a picked tool ready.
+  - **Fullscreen button** in the widget toolbar (`fullscreen: false` hides it).
+  - **Widget dialogs** (settings, symbol search, command palette, shortcuts) now
+    carry the widget's theme — the settings panel had lost its background — and
+    open inside the widget while it is fullscreen.
+
+- debf905: **Indicators listed on the chart, not in the toolbar.**
+
+  - ChartWidget shows each indicator on the chart: price-pane ones stacked under
+    the OHLCV legend, pane ones (RSI, MACD…) at the top of their pane. A row
+    reads "EMA 50 135.29": the value at the hovered bar, also over a pane (the
+    latest one off the chart, and always on Renko, Kagi, point & figure, line
+    break and range bars), in the colour its line is drawn in there (several
+    lines share a neutral colour). On hover or focus it offers show/hide,
+    settings and remove; clicking the name opens the settings. Values follow
+    live ticks and replay. A stack of two or more can be collapsed; it opens
+    again when an indicator joins it. The toolbar keeps only the Indicators
+    button with its count, so it no longer overflows. `indicatorLegend: false`
+    turns the list off.
+  - Breaking for custom CSS: the toolbar chip classes `.tcw-indicator-chips`,
+    `.tcw-indicator-chip` and `.tcw-chip-remove` are gone; the rows use
+    `.tcw-ind-legend*`.
+  - Each further instance of an indicator takes a palette colour no other
+    instance of it uses, so a second EMA no longer looks like the first.
+  - `crosshairMove` now also fires over indicator panes above and below the
+    price pane (with the bar under the pointer); the crosshair and the OHLC
+    tooltip stay on the price pane. Mouse moves and taps on HTML controls
+    inside the chart no longer move the crosshair.
+  - New Chart API for labels of your own: `getLegendBottom()`,
+    `getIndicatorPanes()`, `getIndicatorStyle(id)`, `formatPrice(price)`,
+    `isTimeAligned()`, `setPaneTitlesVisible(false)` (the pane's own name and
+    hovered values), and the `paneResize` and `indicatorUpdate` events.
+
+- 378e945: **Bar replay reworked.**
+
+  - **Live data stays out of the replay.** While a replay runs, stream ticks and
+    `appendBar` / `appendBars` / `updateLastBar` / `updateLastBarFromTick` /
+    `setCurrentPrice` calls are kept aside instead of landing in the replayed
+    slice (orders and price alerts keep tracking the live price). The price
+    line and its tag show the replayed close, auto-scale is switched on when the
+    replay starts so every step refits, and `replayStop()` now brings back the
+    live series with everything that arrived meanwhile (it used to leave the
+    replayed slice). `setData()` ends the replay; `connect()` first returns to
+    the live series. New `chart.isReplayActive()` and `chart.getPlotRect()`.
+  - **The replay ends on its last bar**, paused, instead of jumping back to the
+    first bar; `getReplayProgress().current` is the bar on screen (`percent`
+    counts it), so stepping
+    moves exactly one bar. Calling play while playing no longer starts a second
+    clock. New `ReplayConfig.paused`: show the start bar at once and wait.
+  - **ChartWidget**: opening replay asks for a start bar — the bars right of the
+    pointer are shaded and a click cuts the chart there, paused; "Random bar"
+    picks one, Play starts 100 bars back. The bar shows speeds in bars per
+    second (1–50), "Back to realtime" (highlighted at the end), Shift+← / Shift+→
+    step one bar and Escape cancels picking a start bar; the bar closes itself if a symbol or
+    timeframe switch ends the session. New `widget.replayFrom(index, play?)`.
+    English and Vietnamese labels.
+
+### Patch Changes
+
+- 75a9d23: **ChartWidget polish.**
+
+  - **Drawing tool menus no longer close on the way to them.** The gap between
+    a sidebar button and its menu now counts as part of the menu, and a menu
+    waits a moment before closing, so a diagonal move to an item doesn't lose it.
+  - **The loader never shows "Loading chart…"** and keeps moving with reduced
+    motion: the candles glow in turn (opacity only, nothing slides). Page-wide
+    reduced-motion resets that zero animation delays no longer flatten it.
+
+- 7d0a743: - **Crosshair tooltip date follows the chart locale**: the month name is formatted with the chart's number locale (e.g. `vi-VN` shows "1 thg 10 · 05:00" instead of "Oct 1 · 05:00"), the same locale the session-break labels use. `formatTooltipTime` takes the locale as an optional fourth argument; an unknown locale tag falls back to English.
+  - **No seconds on minute-or-longer bars with second timestamps**: the bar spacing passed to the tooltip was in the series' own unit, so a 1h series with timestamps in seconds looked like sub-minute bars and showed `05:00:00`. New `barTimeStepMs()` reports the spacing in milliseconds for either unit.
+  - **Time axis**: the last tick label no longer draws over the timezone tag at the bottom-right (they read as "UTC10/2"); a label that would reach the tag is left out, as on the price axis.
+- Updated dependencies [0149807]
+- Updated dependencies [debf905]
+- Updated dependencies [378e945]
+- Updated dependencies [7d0a743]
+  - @tradecanvas/commons@1.4.0
+  - @tradecanvas/core@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes
