@@ -6,6 +6,8 @@ import type {
   DataAdapterEventType,
   DataAdapterListener,
   OHLCBar,
+  SymbolInfo,
+  SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 import {
@@ -111,6 +113,8 @@ interface ServedTail {
 export class ResamplingAdapter implements DataAdapter {
   readonly name: string;
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
 
   private readonly listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly unsubscribe: (() => void)[] = [];
@@ -128,6 +132,8 @@ export class ResamplingAdapter implements DataAdapter {
     if (inner.fetchHistoryBefore) {
       this.fetchHistoryBefore = (symbol, timeframe, before, limit) => this.historyBefore(symbol, timeframe, before, limit);
     }
+    if (inner.searchSymbols) this.searchSymbols = inner.searchSymbols.bind(inner);
+    if (inner.resolveSymbol) this.resolveSymbol = inner.resolveSymbol.bind(inner);
     this.listen('bar', (e) => this.onBar(e));
     for (const type of FORWARDED) this.listen(type, (e) => this.emit(type, e.data));
   }

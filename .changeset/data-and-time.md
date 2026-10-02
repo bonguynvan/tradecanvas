@@ -75,6 +75,26 @@
   - ChartWidget's timezone setting lists 28 zones by city, each with the offset
     in force (older fixed-offset settings still apply).
   - YTD now starts on the bar at 1 January 00:00 instead of the one after it.
+- **Symbol search and symbol info.**
+  - New optional `DataAdapter.searchSymbols(query, { limit, signal })` and
+    `resolveSymbol(symbol)` that return `SymbolInfo`: description, exchange,
+    type, price precision and step, exchange time zone, trading sessions and
+    currency.
+  - Binance implements both. Its symbol list loads once, on the first search,
+    and loads again after a failure. Mock (a `symbols` option) and the
+    WebSocket/Polling adapters (options) implement them too.
+  - A connected chart asks `resolveSymbol` about its symbol and drops a late
+    answer about a symbol it left.
+  - New `chart.setSymbolInfo` / `getSymbolInfo` and the `symbolInfoChange`
+    event. The symbol's precision applies unless `setMarket` set one, and its
+    sessions feed the session shading.
+  - `setTimezone('exchange')` (`EXCHANGE_TIMEZONE`) follows the symbol's zone;
+    `getEffectiveTimezone()` returns the resolved zone.
+  - ChartWidget's symbol search asks the feed (or a `searchSymbols` option) as
+    you type. It debounces, cancels a superseded query, and shows names and
+    exchanges.
+  - The symbol button shows the name; the settings offer the exchange's zone.
+  - New `rankSymbols` and `stepDecimals`.
 - **ChartWidget in 14 languages.**
   - Languages: English, Vietnamese, Simplified and Traditional Chinese,
     Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish,

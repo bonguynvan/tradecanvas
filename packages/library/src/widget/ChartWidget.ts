@@ -1,4 +1,4 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { settingToTimezone } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -10,7 +10,7 @@ import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
-import { WidgetSymbolSearch } from './WidgetSymbolSearch.js';
+import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
@@ -400,6 +400,11 @@ export class ChartWidget {
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
     this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
+    this.chart.on('symbolInfoChange', (e) => {
+      const info = (e.payload as { info: SymbolInfo | null }).info;
+      const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
+      this.toolbar?.setSymbolDescription(text || null);
+    });
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
     // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
@@ -447,7 +452,11 @@ export class ChartWidget {
         onChange: (patch) => this.applySettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
-      }, this.t, { barCountdown: features.barCountdown, logScale: features.logScale }, this.overlayHost);
+      }, this.t, {
+        barCountdown: features.barCountdown,
+        logScale: features.logScale,
+        exchangeZone: this.adapter?.resolveSymbol ? () => this.chart.getSymbolInfo()?.timezone ?? null : undefined,
+      }, this.overlayHost);
     }
 
     // 8a. Symbol search
@@ -669,7 +678,7 @@ export class ChartWidget {
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         e.preventDefault();
-        this.symbolSearch?.open(this.symbols, this.state.symbol);
+        this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
@@ -873,7 +882,15 @@ export class ChartWidget {
     // Opens the fuzzy search modal. The cycle-through behaviour the toolbar
     // used to do is gone — a real search scales past 3-4 symbols and matches
     // what users expect from professional trading terminals.
-    this.symbolSearch?.open(this.symbols, this.state.symbol);
+    this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+  }
+
+  /** The host's symbol search, else the adapter's; none filters `symbols`. */
+  private symbolSearchFn(): SymbolSearchFn | undefined {
+    if (this.options.searchSymbols) return this.options.searchSymbols;
+    const adapter = this.adapter;
+    if (!adapter?.searchSymbols) return undefined;
+    return (query, signal) => adapter.searchSymbols!(query, { signal, limit: 50 });
   }
 
   private handleTimeframe(tf: TimeFrame): void {
@@ -891,9 +908,10 @@ export class ChartWidget {
     });
   }
 
-  /** The display timezone from the settings. */
+  /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
   private displayTimezone(): TimeZoneSetting {
-    return settingToTimezone(this.settingsState.timezone);
+    const tz = settingToTimezone(this.settingsState.timezone);
+    return tz === 'exchange' ? this.chart.getEffectiveTimezone() : tz;
   }
 
   private toggleGoToDate(): void {
@@ -1233,7 +1251,7 @@ export class ChartWidget {
     const options = this.symbols.filter((s) => !taken.has(s));
     this.symbolSearch?.open(options.length ? options : this.symbols, this.state.symbol, (symbol) => {
       void this.addCompareSymbol(symbol);
-    });
+    }, this.symbolSearchFn());
   }
 
   /** Overlay another symbol's normalized series. Fetches history via the adapter. */

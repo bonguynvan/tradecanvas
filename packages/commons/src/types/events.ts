@@ -2,6 +2,7 @@ import type { OHLCBar, DataSeries } from './ohlc.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
+import type { SymbolInfo } from './symbol.js';
 
 export type ChartEventType =
   | 'crosshairMove'
@@ -13,6 +14,7 @@ export type ChartEventType =
   | 'zoomChange'
   | 'dataUpdate'
   | 'historyLoad'
+  | 'symbolInfoChange'
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
@@ -217,6 +219,8 @@ export interface ChartEventMap {
   dataUpdate: DataSeries;
   /** Older bars are being paged in, or finished loading. */
   historyLoad: HistoryLoadPayload;
+  /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */
+  symbolInfoChange: { info: SymbolInfo | null };
   indicatorAdd: IndicatorChangePayload;
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */

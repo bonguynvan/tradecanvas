@@ -146,6 +146,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'Скрыто',
   'settings.timezone': 'Часовой пояс',
   'settings.timezone.local': 'Местное',
+  'settings.timezone.exchange': 'Биржа',
   'settings.numberLocale': 'Формат чисел',
   'settings.autoScale': 'Автомасштаб',
   'settings.invertScale': 'Перевернуть шкалу (Alt+I)',
@@ -258,6 +259,8 @@ export const RU_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'Поиск символа… (например, BTC, ETH, AAPL)',
   'symbolSearch.empty': 'Нет подходящих символов',
+  'symbolSearch.searching': 'Поиск…',
+  'symbolSearch.failed': 'Не удалось выполнить поиск',
   'palette.placeholder': 'Поиск индикаторов, типов графиков, инструментов…',
   'palette.empty': 'Ничего не найдено',
   'palette.group.indicator': 'Индикаторы',

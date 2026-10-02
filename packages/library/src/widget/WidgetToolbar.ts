@@ -189,6 +189,14 @@ export class WidgetToolbar {
     });
   }
 
+  /** The symbol's name on its button, as a tooltip ("Apple Inc. · NASDAQ"). */
+  setSymbolDescription(text: string | null): void {
+    const btn = this.el.querySelector<HTMLButtonElement>('[data-role="symbol"]');
+    if (!btn) return;
+    if (text) btn.title = text;
+    else btn.removeAttribute('title');
+  }
+
   /** A new list of timeframes (a custom one added or removed), with its pins. */
   setTimeframes(timeframes: ToolbarConfig['timeframes'], favorites: TimeFrame[]): void {
     this.config = { ...this.config, timeframes };

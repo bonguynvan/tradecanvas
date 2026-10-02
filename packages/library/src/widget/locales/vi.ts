@@ -146,6 +146,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'Ẩn',
   'settings.timezone': 'Múi giờ',
   'settings.timezone.local': 'Giờ máy',
+  'settings.timezone.exchange': 'Theo sàn',
   'settings.numberLocale': 'Định dạng số',
   'settings.autoScale': 'Tự co giãn thang',
   'settings.invertScale': 'Đảo ngược thang (Alt+I)',
@@ -258,6 +259,8 @@ export const VI_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'Tìm mã… (ví dụ BTC, ETH, AAPL)',
   'symbolSearch.empty': 'Không có mã nào khớp',
+  'symbolSearch.searching': 'Đang tìm…',
+  'symbolSearch.failed': 'Không tìm được',
   'palette.placeholder': 'Tìm chỉ báo, loại biểu đồ, công cụ…',
   'palette.empty': 'Không tìm thấy kết quả',
   'palette.group.indicator': 'Chỉ báo',

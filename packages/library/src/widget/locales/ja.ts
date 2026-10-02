@@ -146,6 +146,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': '非表示',
   'settings.timezone': 'タイムゾーン',
   'settings.timezone.local': 'ローカル',
+  'settings.timezone.exchange': '取引所',
   'settings.numberLocale': '数値の書式',
   'settings.autoScale': '自動スケール',
   'settings.invertScale': 'スケールを反転 (Alt+I)',
@@ -258,6 +259,8 @@ export const JA_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'シンボルを検索…（例：BTC、ETH、AAPL）',
   'symbolSearch.empty': '一致するシンボルはありません',
+  'symbolSearch.searching': '検索中…',
+  'symbolSearch.failed': '検索に失敗しました',
   'palette.placeholder': 'インジケーター、チャートタイプ、ツールを検索…',
   'palette.empty': '結果が見つかりません',
   'palette.group.indicator': 'インジケーター',

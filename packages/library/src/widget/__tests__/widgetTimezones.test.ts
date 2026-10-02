@@ -38,3 +38,17 @@ describe('timezoneOptions', () => {
     expect(options.find((o) => o.value === '-300')?.label).toBe('UTC-5');
   });
 });
+
+describe('the exchange time zone option', () => {
+  it('is offered with the zone in force, and read back as exchange', () => {
+    const options = timezoneOptions('exchange', Date.UTC(2026, 6, 15), 'Local', { label: 'Exchange', zone: 'America/New_York' });
+    expect(options[1]).toMatchObject({ value: 'exchange', label: 'Exchange (UTC-4)' });
+    expect(settingToTimezone('exchange')).toBe('exchange');
+  });
+
+  it('shows UTC while the exchange is unknown', () => {
+    const options = timezoneOptions('local', Date.UTC(2026, 6, 15), 'Local', { label: 'Exchange', zone: null });
+    expect(options[1]).toMatchObject({ value: 'exchange', label: 'Exchange (UTC+0)' });
+  });
+});
+

@@ -202,6 +202,27 @@ describe('ChartWidget custom timeframes', () => {
   });
 });
 
+describe('ChartWidget symbol search through the adapter', () => {
+  it('searches the feed as the user types, with names', async () => {
+    vi.useFakeTimers();
+    try {
+      const searchSymbols = vi.fn(async () => [{ symbol: 'BTCUSDT', description: 'BTC / USDT', exchange: 'Binance' }]);
+      widget = new ChartWidget(host, {
+        adapter: { name: 'fake', searchSymbols } as unknown as DataAdapter, symbol: 'AAA', watchlist: false,
+      });
+      host.querySelector<HTMLButtonElement>('[data-role="symbol"]')!.click();
+      const input = document.querySelector<HTMLInputElement>('.tcw-cmd-input')!;
+      input.value = 'btc';
+      input.dispatchEvent(new Event('input'));
+      await vi.advanceTimersByTimeAsync(200);
+      expect(searchSymbols).toHaveBeenCalledWith('btc', expect.objectContaining({ limit: 50 }));
+      expect(document.querySelector('.tcw-cmd-item')?.textContent).toContain('BTC / USDT');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('ChartWidget leaves out switched-off features', () => {
   it('has no magnet button when the magnet is off', () => {
     make({ chartOptions: { features: { drawingMagnet: false } } });

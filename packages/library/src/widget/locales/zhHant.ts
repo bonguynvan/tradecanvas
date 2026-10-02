@@ -146,6 +146,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': '隱藏',
   'settings.timezone': '時區',
   'settings.timezone.local': '本地',
+  'settings.timezone.exchange': '交易所',
   'settings.numberLocale': '數字格式',
   'settings.autoScale': '自動縮放',
   'settings.invertScale': '反轉座標 (Alt+I)',
@@ -258,6 +259,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': '搜尋代碼…（例如 BTC、ETH、AAPL）',
   'symbolSearch.empty': '沒有符合的代碼',
+  'symbolSearch.searching': '搜尋中…',
+  'symbolSearch.failed': '搜尋失敗',
   'palette.placeholder': '搜尋指標、圖表類型、工具…',
   'palette.empty': '找不到結果',
   'palette.group.indicator': '指標',

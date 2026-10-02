@@ -146,6 +146,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'ซ่อน',
   'settings.timezone': 'เขตเวลา',
   'settings.timezone.local': 'เวลาท้องถิ่น',
+  'settings.timezone.exchange': 'ตามตลาด',
   'settings.numberLocale': 'รูปแบบตัวเลข',
   'settings.autoScale': 'ปรับสเกลอัตโนมัติ',
   'settings.invertScale': 'กลับสเกล (Alt+I)',
@@ -258,6 +259,8 @@ export const TH_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'ค้นหาสัญลักษณ์… (เช่น BTC, ETH, AAPL)',
   'symbolSearch.empty': 'ไม่พบสัญลักษณ์ที่ตรงกัน',
+  'symbolSearch.searching': 'กำลังค้นหา…',
+  'symbolSearch.failed': 'ค้นหาไม่สำเร็จ',
   'palette.placeholder': 'ค้นหาอินดิเคเตอร์ ประเภทกราฟ เครื่องมือ…',
   'palette.empty': 'ไม่พบผลลัพธ์',
   'palette.group.indicator': 'อินดิเคเตอร์',

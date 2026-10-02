@@ -7,6 +7,7 @@ import type {
   DataAdapter,
   ChartOptions,
   PriceScaleMode,
+  SymbolInfo,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
 
@@ -82,6 +83,12 @@ export interface ChartWidgetOptions {
 
   // Data
   adapter?: DataAdapter;
+  /**
+   * Search symbols as the user types in the symbol search (names, exchanges).
+   * Defaults to the adapter's `searchSymbols`; without either, the search
+   * filters `symbols`.
+   */
+  searchSymbols?: (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
   historyLimit?: number;
   /** Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500. */
   historyPageSize?: number;

@@ -146,6 +146,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': '隐藏',
   'settings.timezone': '时区',
   'settings.timezone.local': '本地',
+  'settings.timezone.exchange': '交易所',
   'settings.numberLocale': '数字格式',
   'settings.autoScale': '自动缩放',
   'settings.invertScale': '反转坐标 (Alt+I)',
@@ -258,6 +259,8 @@ export const ZH_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': '搜索代码…（例如 BTC、ETH、AAPL）',
   'symbolSearch.empty': '没有匹配的代码',
+  'symbolSearch.searching': '搜索中…',
+  'symbolSearch.failed': '搜索失败',
   'palette.placeholder': '搜索指标、图表类型、工具…',
   'palette.empty': '未找到结果',
   'palette.group.indicator': '指标',

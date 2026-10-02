@@ -155,6 +155,7 @@ export const EN_MESSAGES = {
   'settings.crosshair.hidden': 'Hidden',
   'settings.timezone': 'Timezone',
   'settings.timezone.local': 'Local',
+  'settings.timezone.exchange': 'Exchange',
   'settings.numberLocale': 'Number format',
   'settings.autoScale': 'Auto scale',
   'settings.invertScale': 'Invert scale (Alt+I)',
@@ -274,6 +275,8 @@ export const EN_MESSAGES = {
   // Symbol search and command palette
   'symbolSearch.placeholder': 'Search symbol… (e.g. BTC, ETH, AAPL)',
   'symbolSearch.empty': 'No symbols match',
+  'symbolSearch.searching': 'Searching…',
+  'symbolSearch.failed': 'Search failed',
   'palette.placeholder': 'Search indicators, chart types, tools…',
   'palette.empty': 'No results found',
   'palette.group.indicator': 'Indicators',

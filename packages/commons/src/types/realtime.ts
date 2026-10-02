@@ -1,4 +1,5 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
+import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
 
 // --- Connection ---
 
@@ -96,6 +97,16 @@ export interface DataAdapter {
    * with this method loads older bars as the user scrolls back in time.
    */
   fetchHistoryBefore?(symbol: string, timeframe: TimeFrame, before: number, limit: number): Promise<OHLCBar[]>;
+
+  /** Optional: symbols matching `query`, best first — for a symbol search box. */
+  searchSymbols?(query: string, options?: SymbolSearchOptions): Promise<SymbolInfo[]>;
+
+  /**
+   * Optional: what the feed knows about `symbol` (name, price step, exchange
+   * timezone and hours), or null when it doesn't know it. A connected chart
+   * asks for it and applies it.
+   */
+  resolveSymbol?(symbol: string): Promise<SymbolInfo | null>;
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;

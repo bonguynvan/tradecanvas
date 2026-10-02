@@ -30,11 +30,12 @@ import type {
   TimeFrame,
   DataAdapter,
   TimeZoneSetting,
+  SymbolInfo,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -116,6 +117,8 @@ const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
 /** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
 const SECONDS_TIME_LIMIT = 1e12;
+/** `setTimezone(EXCHANGE_TIMEZONE)` shows the time zone of the symbol's exchange. */
+export const EXCHANGE_TIMEZONE = 'exchange';
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -164,7 +167,14 @@ export class Chart {
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
   /** Display timezone, minutes east of UTC; null = the browser's. */
+  /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
+  /** What `setTimezone` was given; 'exchange' follows the symbol. */
+  private timezoneSetting: TimeZoneSetting = null;
+  /** What the feed (or host) said about the symbol on the chart. */
+  private symbolInfo: SymbolInfo | null = null;
+  /** Bumped per symbol asked about: an answer about a symbol the chart left is dropped. */
+  private symbolInfoSeq = 0;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   private compareRenderer: CompareRenderer;
@@ -1718,6 +1728,7 @@ export class Chart {
     this.streamAdapter = config.adapter;
 
     const manager = this.streamManager;
+    this.resolveStreamSymbol(config.adapter, config.symbol);
     await manager.connect(config);
     // Superseded by a newer connect() (fast symbol/timeframe switching) or a
     // disconnect while history was loading — leave the countdown to it.
@@ -1751,6 +1762,7 @@ export class Chart {
     // front of the old one's.
     if (this.historyFromStream) this.history.setLoader(null);
     this.barCountdown.setTimeframeMs(timeframeToMs(timeframe));
+    if (adapter) this.resolveStreamSymbol(adapter, symbol);
     await this.streamManager.switchTo(symbol, timeframe);
   }
 
@@ -2246,8 +2258,29 @@ export class Chart {
    * browser's. Throws a RangeError for a zone the browser doesn't know.
    */
   setTimezone(tz: TimeZoneSetting): void {
-    if (typeof tz === 'string' && !isValidTimeZone(tz)) throw new RangeError(`Unknown time zone: ${tz}`);
+    if (typeof tz === 'string' && tz !== EXCHANGE_TIMEZONE && !isValidTimeZone(tz)) {
+      throw new RangeError(`Unknown time zone: ${tz}`);
+    }
     if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
+    this.timezoneSetting = tz;
+    this.applyTimezone();
+  }
+
+  /** What `setTimezone` was given — `'exchange'` included. */
+  getTimezone(): TimeZoneSetting {
+    return this.timezoneSetting;
+  }
+
+  /** The zone the chart shows: `'exchange'` resolved to the symbol's zone (UTC when unknown). */
+  getEffectiveTimezone(): TimeZoneSetting {
+    return this.displayTz;
+  }
+
+  private applyTimezone(): void {
+    const exchange = this.symbolInfo?.timezone;
+    const tz = this.timezoneSetting === EXCHANGE_TIMEZONE
+      ? (exchange && isValidTimeZone(exchange) ? exchange : 'UTC')
+      : this.timezoneSetting;
     this.displayTz = tz;
     this.timeAxis.setTimezoneOffset(tz);
     this.crosshairHandler.setTimezoneOffset(tz);
@@ -2256,8 +2289,56 @@ export class Chart {
     this.engine.requestRender();
   }
 
-  getTimezone(): TimeZoneSetting {
-    return this.displayTz;
+  // --- Symbol info ---
+
+  /**
+   * What is known about the symbol on the chart — usually from the stream's
+   * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
+   * price precision applies unless `setMarket` set one; its zone backs
+   * `setTimezone('exchange')`; its hours feed the session shading.
+   */
+  setSymbolInfo(info: SymbolInfo | null): void {
+    this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    if (this.marketConfig?.pricePrecision === undefined) {
+      this.applyPricePrecision(this.symbolInfo?.pricePrecision ?? null);
+    }
+    const windows = (this.symbolInfo?.sessions ?? []).flatMap((session) => {
+      const startMinute = sessionMinute(session.start);
+      const endMinute = sessionMinute(session.end);
+      return startMinute === null || endMinute === null ? [] : [{ startMinute, endMinute }];
+    });
+    const zone = this.symbolInfo?.timezone;
+    if (windows.length > 0 && zone && isValidTimeZone(zone)) {
+      this.sessionShading.setConfig({
+        timeZone: zone,
+        windows,
+        startMinute: windows[0].startMinute,
+        endMinute: windows[windows.length - 1].endMinute,
+      });
+    }
+    if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
+    this.updateViewportAndRender();
+    this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
+  }
+
+  getSymbolInfo(): SymbolInfo | null {
+    return this.symbolInfo;
+  }
+
+  /** Ask the stream's adapter about `symbol`, if it can tell; a late answer about another symbol is dropped. */
+  private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
+    if (!adapter.resolveSymbol) return;
+    const seq = ++this.symbolInfoSeq;
+    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
+    adapter.resolveSymbol(symbol).then(
+      (info) => {
+        if (seq === this.symbolInfoSeq && this.currentSymbol === symbol) this.setSymbolInfo(info);
+      },
+      (err: unknown) => {
+        if (seq !== this.symbolInfoSeq) return;
+        this.eventBus.emit('dataUpdate', { error: err instanceof Error ? err.message : String(err) });
+      },
+    );
   }
 
   /** `setTimezone` with a fixed offset in minutes east of UTC, or null for the browser's zone. */
@@ -2736,19 +2817,24 @@ export class Chart {
     }
 
     // Apply price precision to trading, alerts, and price line
-    if (config.pricePrecision !== undefined) {
-      this.marketPricePrecision = config.pricePrecision;
-      this.tradingManager.setConfig({ pricePrecision: config.pricePrecision });
-      this.alertManager.setPricePrecision(config.pricePrecision);
-      this.streamManager?.priceLine.setPricePrecision(config.pricePrecision);
-      this.currentPriceLine.setPricePrecision(config.pricePrecision);
-      this.crosshairHandler.setPricePrecision(config.pricePrecision);
-      this.chartLegend.setPricePrecision(config.pricePrecision);
-      this.crosshairTooltip.setPricePrecision(config.pricePrecision);
-    }
+    if (config.pricePrecision !== undefined) this.applyPricePrecision(config.pricePrecision);
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();
+  }
+
+  /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */
+  private applyPricePrecision(precision: number | null): void {
+    this.marketPricePrecision = precision;
+    if (precision !== null) {
+      this.tradingManager.setConfig({ pricePrecision: precision });
+      this.alertManager.setPricePrecision(precision);
+    }
+    this.streamManager?.priceLine.setPricePrecision(precision);
+    this.currentPriceLine.setPricePrecision(precision);
+    this.crosshairHandler.setPricePrecision(precision);
+    this.chartLegend.setPricePrecision(precision);
+    this.crosshairTooltip.setPricePrecision(precision);
   }
 
   getMarket(): MarketConfig | null {

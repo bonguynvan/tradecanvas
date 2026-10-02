@@ -146,6 +146,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'Oculta',
   'settings.timezone': 'Zona horaria',
   'settings.timezone.local': 'Local',
+  'settings.timezone.exchange': 'Bolsa',
   'settings.numberLocale': 'Formato de números',
   'settings.autoScale': 'Escala automática',
   'settings.invertScale': 'Invertir escala (Alt+I)',
@@ -258,6 +259,8 @@ export const ES_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'Buscar símbolo… (p. ej. BTC, ETH, AAPL)',
   'symbolSearch.empty': 'Ningún símbolo coincide',
+  'symbolSearch.searching': 'Buscando…',
+  'symbolSearch.failed': 'La búsqueda falló',
   'palette.placeholder': 'Buscar indicadores, tipos de gráfico, herramientas…',
   'palette.empty': 'No se encontraron resultados',
   'palette.group.indicator': 'Indicadores',

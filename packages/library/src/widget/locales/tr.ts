@@ -146,6 +146,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'Gizli',
   'settings.timezone': 'Saat dilimi',
   'settings.timezone.local': 'Yerel',
+  'settings.timezone.exchange': 'Borsa',
   'settings.numberLocale': 'Sayı biçimi',
   'settings.autoScale': 'Otomatik ölçek',
   'settings.invertScale': 'Ölçeği ters çevir (Alt+I)',
@@ -258,6 +259,8 @@ export const TR_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'Sembol ara… (ör. BTC, ETH, AAPL)',
   'symbolSearch.empty': 'Eşleşen sembol yok',
+  'symbolSearch.searching': 'Aranıyor…',
+  'symbolSearch.failed': 'Arama başarısız',
   'palette.placeholder': 'Gösterge, grafik türü, araç ara…',
   'palette.empty': 'Sonuç bulunamadı',
   'palette.group.indicator': 'Göstergeler',

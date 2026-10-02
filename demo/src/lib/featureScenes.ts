@@ -244,6 +244,7 @@ chart.replayStop()                // back to the live series`,
       'The whole widget in 14 languages — menus, settings, drawing tools, dialogs — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
     tryThis: [
       'Pick a language above the chart: 日本語, 한국어, 简体中文, Deutsch…',
+      'Ctrl+P searches every Binance symbol, with names, as you type',
       'Open Settings or the drawing tools to see them translated',
       'Hover: the crosshair pill keeps full precision in the language’s number format',
     ],

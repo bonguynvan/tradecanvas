@@ -605,6 +605,25 @@
   position: relative;
 }
 
+/* === Symbol search results: name and exchange === */
+
+.tcw-cmd-item-desc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-cmd-item-meta {
+  flex-shrink: 0;
+  color: var(--tcw-text-dim);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
 /* === History pill (older bars loading at the left edge) === */
 
 .tcw-history-pill {

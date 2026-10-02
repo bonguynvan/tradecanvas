@@ -5,9 +5,11 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  SymbolInfo,
+  SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { timeframeToMs } from '@tradecanvas/commons';
+import { rankSymbols, timeframeToMs } from '@tradecanvas/commons';
 
 export interface MockAdapterOptions {
   /** Base price to generate data around */
@@ -20,6 +22,8 @@ export interface MockAdapterOptions {
   historySize?: number;
   /** Custom history generator */
   historyGenerator?: (symbol: string, timeframe: TimeFrame, limit: number) => OHLCBar[];
+  /** Symbols `searchSymbols` and `resolveSymbol` know. */
+  symbols?: SymbolInfo[];
 }
 
 /**
@@ -96,6 +100,14 @@ export class MockAdapter implements DataAdapter {
     }
     this.oldestOpen.set(symbol, close);
     return bars;
+  }
+
+  async searchSymbols(query: string, options?: SymbolSearchOptions): Promise<SymbolInfo[]> {
+    return rankSymbols(this.options.symbols ?? [], query, options?.limit ?? 50);
+  }
+
+  async resolveSymbol(symbol: string): Promise<SymbolInfo | null> {
+    return this.options.symbols?.find((s) => s.symbol === symbol) ?? null;
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {

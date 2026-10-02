@@ -40,6 +40,7 @@ export const WIDGET_TIMEZONES: readonly { zone: string; city: string }[] = [
  */
 export function settingToTimezone(value: string): TimeZoneSetting {
   if (!value || value === 'local') return null;
+  if (value === 'exchange') return 'exchange';
   if (/^-?\d+$/.test(value)) return Number(value);
   return isValidTimeZone(value) ? value : null;
 }
@@ -56,7 +57,13 @@ export interface TimezoneOption {
  * the offset in force then ("(UTC-4) New York"). An older fixed-offset
  * setting that isn't one of them stays on the list.
  */
-export function timezoneOptions(current: string, atMs: number, localLabel: string): TimezoneOption[] {
+export function timezoneOptions(
+  current: string,
+  atMs: number,
+  localLabel: string,
+  /** Offer the symbol's exchange zone ('exchange'); `zone` is null while unknown (UTC). */
+  exchange?: { label: string; zone: string | null },
+): TimezoneOption[] {
   const local = offsetAt(null, atMs);
   const zones = WIDGET_TIMEZONES
     .filter(({ zone }) => isValidTimeZone(zone))
@@ -67,5 +74,11 @@ export function timezoneOptions(current: string, atMs: number, localLabel: strin
   const fixed = settingToTimezone(current);
   if (typeof fixed === 'number') zones.push({ value: current, label: tzLabel(fixed), offset: fixed });
   zones.sort((a, b) => a.offset - b.offset);
-  return [{ value: 'local', label: `${localLabel} (${tzLabel(local)})`, offset: local }, ...zones];
+  const first: TimezoneOption[] = [{ value: 'local', label: `${localLabel} (${tzLabel(local)})`, offset: local }];
+  if (exchange) {
+    const zone = exchange.zone && isValidTimeZone(exchange.zone) ? exchange.zone : 'UTC';
+    const offset = offsetAt(zone, atMs);
+    first.push({ value: 'exchange', label: `${exchange.label} (${tzLabel(offset)})`, offset });
+  }
+  return [...first, ...zones];
 }

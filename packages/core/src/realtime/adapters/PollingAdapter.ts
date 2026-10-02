@@ -5,6 +5,8 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  SymbolInfo,
+  SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 
@@ -17,6 +19,10 @@ export interface PollingAdapterOptions {
   fetchBars: (symbol: string, timeframe: TimeFrame, limit: number) => Promise<OHLCBar[]>;
   /** Fetch bars older than `before`, ascending — enables scrolling back for more history. */
   fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  /** Symbols matching a query, best first — for a symbol search box. */
+  searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  /** What the feed knows about a symbol, or null. */
+  resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
   /** Poll interval in ms (default 5000). */
   intervalMs?: number;
   /** Bars to request each poll — ≥2 so a rollover's closing bar is included (default 2). */
@@ -51,6 +57,8 @@ export class PollingAdapter implements DataAdapter {
   private readonly opts: PollingAdapterOptions;
   /** Present when the options give a way to fetch older bars. */
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
+  readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
+  readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
 
   constructor(opts: PollingAdapterOptions) {
     this.opts = opts;
@@ -58,6 +66,8 @@ export class PollingAdapter implements DataAdapter {
     this.supportedTimeframes = opts.supportedTimeframes;
     const before = opts.fetchHistoryBefore;
     if (before) this.fetchHistoryBefore = (symbol, timeframe, time, limit) => before(symbol, timeframe, time, limit);
+    if (opts.searchSymbols) this.searchSymbols = opts.searchSymbols;
+    if (opts.resolveSymbol) this.resolveSymbol = opts.resolveSymbol;
   }
 
   connect(config: DataAdapterConfig): void {

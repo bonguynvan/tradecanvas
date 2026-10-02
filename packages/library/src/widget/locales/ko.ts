@@ -146,6 +146,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': '숨김',
   'settings.timezone': '시간대',
   'settings.timezone.local': '로컬',
+  'settings.timezone.exchange': '거래소',
   'settings.numberLocale': '숫자 형식',
   'settings.autoScale': '자동 눈금',
   'settings.invertScale': '눈금 반전 (Alt+I)',
@@ -258,6 +259,8 @@ export const KO_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': '종목 검색… (예: BTC, ETH, AAPL)',
   'symbolSearch.empty': '일치하는 종목이 없습니다',
+  'symbolSearch.searching': '검색 중…',
+  'symbolSearch.failed': '검색 실패',
   'palette.placeholder': '지표, 차트 유형, 도구 검색…',
   'palette.empty': '결과가 없습니다',
   'palette.group.indicator': '지표',

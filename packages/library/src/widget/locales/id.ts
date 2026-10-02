@@ -146,6 +146,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.crosshair.hidden': 'Tersembunyi',
   'settings.timezone': 'Zona waktu',
   'settings.timezone.local': 'Lokal',
+  'settings.timezone.exchange': 'Bursa',
   'settings.numberLocale': 'Format angka',
   'settings.autoScale': 'Skala otomatis',
   'settings.invertScale': 'Balik skala (Alt+I)',
@@ -258,6 +259,8 @@ export const ID_MESSAGES: WidgetMessages = {
 
   'symbolSearch.placeholder': 'Cari simbol… (mis. BTC, ETH, AAPL)',
   'symbolSearch.empty': 'Tidak ada simbol yang cocok',
+  'symbolSearch.searching': 'Mencari…',
+  'symbolSearch.failed': 'Pencarian gagal',
   'palette.placeholder': 'Cari indikator, jenis grafik, alat…',
   'palette.empty': 'Tidak ada hasil',
   'palette.group.indicator': 'Indikator',

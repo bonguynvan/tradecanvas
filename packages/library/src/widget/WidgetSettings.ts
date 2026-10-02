@@ -24,7 +24,12 @@ export class WidgetSettings {
   constructor(
     callbacks: SettingsCallbacks,
     t: Translator,
-    private readonly available: { barCountdown?: boolean; logScale?: boolean } = {},
+    private readonly available: {
+      barCountdown?: boolean;
+      logScale?: boolean;
+      /** Offer the exchange's time zone; returns it (null while unknown). */
+      exchangeZone?: () => string | null;
+    } = {},
     /** Where the panel mounts (the widget's portal: themed, and inside it when fullscreen). */
     private readonly host: () => HTMLElement = () => document.body,
   ) {
@@ -208,7 +213,10 @@ export class WidgetSettings {
     ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] })));
 
     section.appendChild(this.selectRow(this.t('settings.timezone'), s.timezone,
-      timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local')),
+      timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local'),
+        this.available.exchangeZone
+          ? { label: this.t('settings.timezone.exchange'), zone: this.available.exchangeZone() }
+          : undefined),
       (v) => this.patch({ timezone: v })));
     section.appendChild(this.selectRow(this.t('settings.numberLocale'), s.numberLocale,
       numberLocaleOptions(s.numberLocale),

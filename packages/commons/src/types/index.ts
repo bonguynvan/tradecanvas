@@ -12,3 +12,4 @@ export * from './execution.js';
 export * from './signal.js';
 export * from './realtime.js';
 export * from './finance.js';
+export * from './symbol.js';
