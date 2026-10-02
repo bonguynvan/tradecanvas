@@ -1,11 +1,4 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -15,11 +8,21 @@ const LEVEL_KEYS = ['s3', 's2', 's1', 'pp', 'r1', 'r2', 'r3'] as const;
 type LevelKey = (typeof LEVEL_KEYS)[number];
 
 export class PivotPointsIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'pivots',
     name: 'Pivot Points (Classic)',
     placement: 'overlay' as const,
     defaultConfig: { lookback: 24 },
+    shortName: 'Pivots',
+    plots: [
+      { key: 'r3', title: 'R3', color: 1 },
+      { key: 'r2', title: 'R2', color: 1 },
+      { key: 'r1', title: 'R1', color: 1 },
+      { key: 'pp', title: 'P', color: 0 },
+      { key: 's1', title: 'S1', color: 2 },
+      { key: 's2', title: 'S2', color: 2 },
+      { key: 's3', title: 'S3', color: 2 },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

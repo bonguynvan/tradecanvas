@@ -1,6 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { DataAdapter } from '@tradecanvas/commons';
+import type { DataAdapter, IndicatorDescriptor } from '@tradecanvas/commons';
+import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
+
+/** The real descriptors: their plots and short names drive the legend. */
+const builtIns = new IndicatorEngine();
+registerBuiltInIndicators(builtIns);
+const DESCRIPTORS = new Map<string, IndicatorDescriptor>(builtIns.getAvailableIndicators().map((d) => [d.id, d]));
+const PALETTE = ['#4c8dff', '#ff9f43', '#2ecc71', '#e74c3c'];
+const BLUE = 'rgb(76, 141, 255)';
+const ORANGE = 'rgb(255, 159, 67)';
 
 const DEFAULTS: Record<string, Record<string, unknown>> = {
   ema: { period: 9, source: 'close' },
@@ -63,7 +72,7 @@ class FakeChart {
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   getLegendBottom(): number { return 40; }
   isTimeAligned(): boolean { return this.timeAligned; }
-  getIndicatorStyle() { return { colors: ['#4c8dff'], lineWidths: [1.5], opacity: 1 }; }
+  getIndicatorStyle() { return { colors: [...PALETTE], lineWidths: [1.5], opacity: 1 }; }
   formatPrice(v: number): string { return v.toFixed(2); }
   getIndicatorPanes() {
     return this.indicators.filter((i) => i.id === 'rsi').map((i, n) => ({ instanceId: i.instanceId, rect: { x: 0, y: 300 + n * 100, width: 600, height: 100 } }));
@@ -95,7 +104,7 @@ class FakeChart {
   }
 
   getActiveIndicators() {
-    return this.indicators.map((i) => ({ ...i, descriptor: { id: i.id, name: i.id.toUpperCase(), defaultConfig: DEFAULTS[i.id] ?? {} } }));
+    return this.indicators.map((i) => ({ ...i, descriptor: { ...DESCRIPTORS.get(i.id)!, defaultConfig: DEFAULTS[i.id] ?? {} } }));
   }
 }
 
@@ -170,9 +179,9 @@ describe('on-chart indicator legend', () => {
     expect(stack.style.top).toBe('41px'); // just under the OHLCV rows
     const [ema, bb] = rows();
     expect(values(ema).map((v) => v.textContent)).toEqual(['101.50']);
-    expect(values(ema)[0].style.color).toBe('rgb(76, 141, 255)'); // the line's colour
+    expect(values(ema)[0].style.color).toBe(BLUE); // the line's colour
     expect(values(bb).map((v) => v.textContent)).toEqual(['105.00', '101.00', '97.00']);
-    expect(values(bb)[0].style.color).toBe(''); // several lines: neutral, not a guess
+    expect(values(bb).map((v) => v.style.color)).toEqual([BLUE, ORANGE, BLUE]); // bands, basis, bands
   });
 
   it('puts a pane indicator at the top of its pane', async () => {
@@ -180,7 +189,7 @@ describe('on-chart indicator legend', () => {
     await frame();
     const [rsi] = rows();
     expect(rsi.classList.contains('tcw-ind-legend-row--pane')).toBe(true);
-    expect([rsi.style.left, rsi.style.top]).toEqual(['4px', '301px']);
+    expect([rsi.style.left, rsi.style.top]).toEqual(['4px', '307px']); // below the divider's grab zone
     expect(rsi.style.maxWidth).toBe('592px'); // stays inside its pane
     expect(values(rsi).map((v) => v.textContent)).toEqual(['54.32']);
   });
@@ -218,17 +227,30 @@ describe('on-chart indicator legend', () => {
     FakeChart.last.addIndicator('psar');
     await frame();
     const [psar] = rows();
+    expect(psar.querySelector('.tcw-ind-legend-name')!.textContent).toBe('SAR 0.02 0.2');
     expect(values(psar).map((v) => v.textContent)).toEqual(['99.50']);
-    expect(values(psar)[0].style.color).toBe('rgb(76, 141, 255)');
+    expect(values(psar)[0].style.color).toBe(BLUE); // trend up: the up colour
   });
 
-  it('judges one line or several on the latest bar, not a warm-up bar', async () => {
+  it('colours each value as its own line, also on a warm-up bar', async () => {
     FakeChart.last.addIndicator('macd');
     FakeChart.last.emit('crosshairMove', { barIndex: 2, point: { x: 10, y: 10 } });
     await frame();
     const [macd] = rows();
     expect(values(macd).map((v) => v.textContent)).toEqual(['0.50']);
-    expect(values(macd)[0].style.color).toBe(''); // MACD has two lines: no single colour
+    expect(values(macd)[0].style.color).toBe(BLUE); // the MACD line, before the signal exists
+    FakeChart.last.emit('crosshairLeave', {});
+    await frame();
+    expect(values(macd).map((v) => v.style.color)).toEqual([BLUE, ORANGE]); // MACD, signal
+  });
+
+  it('follows changes made on the chart directly', async () => {
+    const id = FakeChart.last.addIndicator('ema');
+    await frame();
+    FakeChart.last.setIndicatorVisible(id, false); // not through the widget
+    FakeChart.last.emit('indicatorChange', { instanceId: id, change: 'visible' });
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
   });
 
   it('names its icon buttons for assistive tech', async () => {

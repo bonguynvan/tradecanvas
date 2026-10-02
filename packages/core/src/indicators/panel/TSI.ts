@@ -1,15 +1,20 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class TSIIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'tsi',
     name: 'True Strength Index',
     placement: 'panel' as const,
     defaultConfig: { longPeriod: 25, shortPeriod: 13, signalPeriod: 7 },
+    shortName: 'TSI',
+    plots: [
+      { key: 'tsi', title: 'TSI', color: 0 },
+      { key: 'signal', title: 'Signal', color: 1 },
+    ],
+    levels: [0],
   };
 
   private emaSmooth(values: number[], period: number): number[] {
@@ -59,57 +64,5 @@ export class TSIIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let minVal = Infinity, maxVal = -Infinity;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val) continue;
-      if (val.tsi !== undefined) { minVal = Math.min(minVal, val.tsi); maxVal = Math.max(maxVal, val.tsi); }
-      if (val.signal !== undefined) { minVal = Math.min(minVal, val.signal); maxVal = Math.max(maxVal, val.signal); }
-    }
-    if (minVal === Infinity) return;
-    const range = maxVal - minVal || 1;
-    const pad = range * 0.1;
-    const adjMin = minVal - pad, adjMax = maxVal + pad, adjRange = adjMax - adjMin;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v - adjMin) / adjRange);
-
-    // Zero line
-    if (0 >= adjMin && 0 <= adjMax) {
-      ctx.strokeStyle = '#7d8696';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, toY(0));
-      ctx.lineTo(chartRect.x + chartRect.width, toY(0));
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    const drawLine = (key: string, color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) continue;
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('tsi', style.colors[0]);
-    drawLine('signal', style.colors[1] ?? '#f2a93b');
   }
 }

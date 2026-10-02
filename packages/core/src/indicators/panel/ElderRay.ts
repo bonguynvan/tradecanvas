@@ -1,8 +1,8 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
+import { barIndexToX, priceToYMapper } from '../../viewport/ScaleMapping.js';
 
 /**
  * Elder Ray Index (Alexander Elder) — Bull Power and Bear Power measure how far
@@ -12,11 +12,16 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * uptrend, and vice-versa. Drawn as two zero-centered histograms.
  */
 export class ElderRayIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'elderray',
     name: 'Elder Ray',
     placement: 'panel' as const,
     defaultConfig: { period: 13 },
+    shortName: 'Elder Ray',
+    plots: [
+      { key: 'bull', title: 'Bull', color: 0, kind: 'histogram' },
+      { key: 'bear', title: 'Bear', color: 1, kind: 'histogram' },
+    ],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -39,55 +44,27 @@ export class ElderRayIndicator extends IndicatorBase {
     return { values, series };
   }
 
+  /** Bull and bear power side by side in each bar's slot, from zero, on the pane's scale. */
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-
-    let absMax = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v) continue;
-      for (const k of ['bull', 'bear'] as const) {
-        const x = v[k];
-        if (x !== undefined && Math.abs(x) > absMax) absMax = Math.abs(x);
-      }
-    }
-    if (absMax === 0) return;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
+    const from = Math.max(0, viewport.visibleRange.from);
+    const to = Math.min(viewport.visibleRange.to, series.length - 1);
+    const toY = priceToYMapper(viewport);
     const zeroY = toY(0);
-    const halfBar = viewport.barWidth / 2;
-
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, zeroY);
-    ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const bull = style.colors[0] ?? '#1fa874';
-    const bear = style.colors[1] ?? '#e8505b';
-    // Bull power as thin bars from zero; bear power overlaid (usually opposite sign).
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val) continue;
-      const x = barIndexToX(i, viewport);
-      if (val.bull !== undefined) {
-        const y = toY(val.bull);
-        ctx.fillStyle = bull;
-        ctx.globalAlpha = 0.8;
-        ctx.fillRect(x - halfBar, Math.min(y, zeroY), Math.max(1, halfBar), Math.abs(y - zeroY));
+    const half = Math.max(1, viewport.barWidth / 2);
+    const sides = [['bull', style.colors[0], -half], ['bear', style.colors[1] ?? style.colors[0], 0]] as const;
+    for (const [key, color, offset] of sides) {
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      for (let i = from; i <= to; i++) {
+        const v = series[i]?.[key];
+        if (v === undefined || !Number.isFinite(v)) continue;
+        const y = toY(v);
+        ctx.rect(barIndexToX(i, viewport) + offset, Math.min(y, zeroY), half, Math.max(1, Math.abs(y - zeroY)));
       }
-      if (val.bear !== undefined) {
-        const y = toY(val.bear);
-        ctx.fillStyle = bear;
-        ctx.globalAlpha = 0.8;
-        ctx.fillRect(x, Math.min(y, zeroY), Math.max(1, halfBar), Math.abs(y - zeroY));
-      }
+      ctx.fill();
     }
-    ctx.globalAlpha = 1;
   }
+
 }

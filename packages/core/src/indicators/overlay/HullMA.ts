@@ -1,11 +1,4 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
@@ -16,11 +9,13 @@ import { getIntParam } from '../params.js';
  * Designed to reduce lag while preserving smoothness.
  */
 export class HullMAIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'hma',
     name: 'Hull Moving Average',
     placement: 'overlay' as const,
     defaultConfig: { period: 21 },
+    shortName: 'HMA',
+    plots: [{ key: 'value', title: 'HMA', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

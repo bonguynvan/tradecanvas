@@ -91,7 +91,6 @@ import {
 import type { ChartRendererInterface, RangePreset } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
-import { computeIndicatorPriceRange } from './charts/IndicatorPriceRange.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { ThemeManager } from './ThemeManager.js';
@@ -105,6 +104,9 @@ import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
 declare const __TC_VERSION__: string;
+
+/** The scale of an indicator pane with nothing to fit yet. */
+const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
 /** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
 const SECONDS_TIME_LIMIT = 1e12;
@@ -891,6 +893,20 @@ export class Chart {
     this.announceIndicatorUpdate(0);
     this.engine.requestRender();
     this.scheduleAutoSave();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
+  }
+
+  /** An indicator's reference levels (RSI 30 / 70): its own, else its indicator's defaults. */
+  getIndicatorLevels(instanceId: string): number[] {
+    return this.indicatorEngine.getLevels(instanceId);
+  }
+
+  /** Set an indicator's reference levels; `null` restores its indicator's defaults. */
+  setIndicatorLevels(instanceId: string, levels: readonly number[] | null): void {
+    if (!this.indicatorEngine.setLevels(instanceId, levels)) return;
+    this.updateViewportAndRender();
+    this.scheduleAutoSave();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'levels' });
   }
 
   removeIndicator(instanceId: string): void {
@@ -934,7 +950,8 @@ export class Chart {
 
   setPanelPosition(instanceId: string, position: PanelPosition): void {
     this.layoutManager.setPanelPosition(instanceId, position);
-    this.engine.requestRender();
+    this.updateViewportAndRender();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'pane' });
   }
 
   setPanelSize(instanceId: string, size: number): void {
@@ -1214,6 +1231,7 @@ export class Chart {
     if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
       this.updateViewportAndRender();
       this.scheduleAutoSave();
+      this.eventBus.emit('indicatorChange', { instanceId, change: 'visible' });
     }
   }
 
@@ -1229,6 +1247,7 @@ export class Chart {
     this.indicatorEngine.updateIndicatorStyle(instanceId, style);
     this.engine.requestRender();
     this.scheduleAutoSave();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'style' });
   }
 
   // --- Trading ---
@@ -2280,6 +2299,7 @@ export class Chart {
             position: panels.find((p) => p.id === ind.instanceId)?.position,
             style: this.indicatorEngine.getIndicatorStyle(ind.instanceId) ?? undefined,
             visible: ind.visible,
+            levels: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.levels?.slice(),
           })),
           ...this.unrestoredIndicators,
         ],
@@ -2326,6 +2346,7 @@ export class Chart {
         instanceIds.set(ind.instanceId, instanceId);
         if (ind.style) this.updateIndicatorStyle(instanceId, ind.style);
         if (ind.visible === false) this.setIndicatorVisible(instanceId, false);
+        if (ind.levels) this.setIndicatorLevels(instanceId, ind.levels);
       }
     }
 
@@ -2771,8 +2792,8 @@ export class Chart {
 
     const { from, to } = mainVP.visibleRange;
     const panels = resolved.panels.map((panel) => {
-      const output = this.indicatorEngine.getOutput(panel.config.id);
-      const priceRange = computeIndicatorPriceRange(output, from, to);
+      // The pane's one value scale: plots, axis, crosshair and levels all use it.
+      const priceRange = this.indicatorEngine.getPaneValueRange(panel.config.id, from, to) ?? { ...DEFAULT_PANE_RANGE };
 
       // Inset the indicator drawing area below the panel header (title + divider)
       const PANEL_HEADER_HEIGHT = 20;

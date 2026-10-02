@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { drawZeroCenteredLine } from './EaseOfMovement.js';
 
 /**
  * Qstick (Tushar Chande) — a moving average of the (close − open) body,
@@ -13,11 +12,14 @@ import { drawZeroCenteredLine } from './EaseOfMovement.js';
  * Qstick = SMA(close − open, n)
  */
 export class QstickIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'qstick',
     name: 'Qstick',
     placement: 'panel' as const,
     defaultConfig: { period: 8 },
+    shortName: 'Qstick',
+    plots: [{ key: 'value', title: 'Qstick', color: 0 }],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -39,9 +41,5 @@ export class QstickIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    drawZeroCenteredLine(ctx, output, viewport, style);
   }
 }

@@ -16,6 +16,7 @@ export type ChartEventType =
   | 'indicatorRemove'
   | 'paneResize'
   | 'indicatorUpdate'
+  | 'indicatorChange'
   | 'themeChange'
   | 'resize'
   | 'orderPlace'
@@ -186,6 +187,12 @@ export interface AlertPayload {
   triggered: boolean;
 }
 
+/** What changed on an indicator (`indicatorChange`). */
+export interface IndicatorSettingsChangePayload {
+  instanceId: string;
+  change: 'visible' | 'style' | 'levels' | 'params' | 'pane';
+}
+
 export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
   /** The pointer left the plot; the crosshair is gone. */
@@ -202,6 +209,8 @@ export interface ChartEventMap {
   paneResize: { instanceId: string; size: number };
   /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */
   indicatorUpdate: { from: number };
+  /** One indicator's settings changed: shown or hidden, restyled, new levels or inputs, moved to another pane. */
+  indicatorChange: IndicatorSettingsChangePayload;
   themeChange: ThemeChangePayload;
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;

@@ -1,15 +1,21 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class StochasticIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'stochastic',
     name: 'Stochastic Oscillator',
     placement: 'panel' as const,
     defaultConfig: { kPeriod: 14, dPeriod: 3, smooth: 3 },
+    shortName: 'Stoch',
+    plots: [
+      { key: 'k', title: '%K', color: 0 },
+      { key: 'd', title: '%D', color: 1 },
+    ],
+    scale: { min: 0, max: 100 },
+    levels: [20, 80],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -94,47 +100,5 @@ export class StochasticIndicator extends IndicatorBase {
       this.writePoint(prev, data, i, val);
     }
     return prev;
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    const toY = (val: number) => chartRect.y + chartRect.height * (1 - val / 100);
-
-    // Levels
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    for (const level of [20, 80]) {
-      const y = toY(level);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    // %K line
-    const drawLine = (key: string, color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) continue;
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('k', style.colors[0]);
-    drawLine('d', style.colors[1] ?? '#f2a93b');
   }
 }

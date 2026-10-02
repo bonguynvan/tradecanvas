@@ -1,8 +1,8 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
+
 
 /**
  * Ease of Movement (Richard Arms) — relates the day's midpoint move to its
@@ -13,11 +13,14 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * EMV = SMA( midpointMove · (high − low) / volume , period ).
  */
 export class EaseOfMovementIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'emv',
     name: 'Ease of Movement',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    shortName: 'EOM',
+    plots: [{ key: 'value', title: 'EOM', color: 0 }],
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -48,54 +51,4 @@ export class EaseOfMovementIndicator extends IndicatorBase {
     }
     return { values, series };
   }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    drawZeroCenteredLine(ctx, output, viewport, style);
-  }
-}
-
-/** Shared: a single zero-centered, auto-scaled line with a dashed zero axis. */
-export function drawZeroCenteredLine(
-  ctx: CanvasRenderingContext2D,
-  output: IndicatorOutput,
-  viewport: ViewportState,
-  style: ResolvedIndicatorStyle,
-): void {
-  const series = output.series;
-  if (!series) return;
-  const { chartRect } = viewport;
-  const { from, to } = viewport.visibleRange;
-
-  let absMax = 0;
-  for (let i = from; i <= to && i < series.length; i++) {
-    const v = series[i]?.value;
-    if (v !== undefined && Math.abs(v) > absMax) absMax = Math.abs(v);
-  }
-  if (absMax === 0) return;
-  const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + absMax) / (2 * absMax));
-
-  const zeroY = toY(0);
-  ctx.strokeStyle = style.colors[1] ?? '#7d8696';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(chartRect.x, zeroY);
-  ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.beginPath();
-  ctx.strokeStyle = style.colors[0];
-  ctx.lineWidth = style.lineWidths[0];
-  ctx.lineJoin = 'round';
-  let started = false;
-  for (let i = from; i <= to && i < series.length; i++) {
-    const val = series[i];
-    if (!val || val.value === undefined) continue;
-    const x = barIndexToX(i, viewport);
-    const y = toY(val.value);
-    if (!started) { ctx.moveTo(x, y); started = true; }
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
 }

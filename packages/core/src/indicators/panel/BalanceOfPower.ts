@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Balance of Power (Igor Livshin) — measures the strength of buyers vs sellers
@@ -10,11 +9,15 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * Above zero = buyers dominate, below = sellers. Bounded roughly to [−1, 1].
  */
 export class BalanceOfPowerIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'bop',
     name: 'Balance of Power',
     placement: 'panel' as const,
     defaultConfig: { smooth: 14 },
+    shortName: 'BOP',
+    plots: [{ key: 'value', title: 'BOP', color: 0 }],
+    scale: { min: -1, max: 1 },
+    levels: [0],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -41,39 +44,5 @@ export class BalanceOfPowerIndicator extends IndicatorBase {
       }
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    // Fixed −1..1 scale (BOP is naturally bounded).
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - (v + 1) / 2);
-    const zeroY = toY(0);
-
-    ctx.strokeStyle = style.colors[2] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, zeroY);
-    ctx.lineTo(chartRect.x + chartRect.width, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-    let started = false;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = toY(Math.max(-1, Math.min(1, val.value)));
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
   }
 }

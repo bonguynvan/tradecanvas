@@ -1,14 +1,16 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class VWAPIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'vwap',
     name: 'Volume Weighted Average Price',
     placement: 'overlay' as const,
     defaultConfig: {},
+    shortName: 'VWAP',
+    plots: [{ key: 'value', title: 'VWAP', color: 0 }],
   };
 
   calculate(data: DataSeries, _config: IndicatorConfig): IndicatorOutput {

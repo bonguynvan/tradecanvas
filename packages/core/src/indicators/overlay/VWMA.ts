@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -6,11 +6,13 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 /** Volume Weighted Moving Average — close price weighted by volume over the period. */
 export class VWMAIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'vwma',
     name: 'Volume Weighted Moving Average',
     placement: 'overlay' as const,
     defaultConfig: { period: 20 },
+    shortName: 'VWMA',
+    plots: [{ key: 'value', title: 'VWMA', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

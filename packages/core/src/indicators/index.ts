@@ -2,6 +2,8 @@ export { IndicatorBase } from './IndicatorBase.js';
 export { IndicatorEngine } from './IndicatorEngine.js';
 export { IndicatorValueMap } from './IndicatorValueMap.js';
 export { registerBuiltInIndicators } from './registry.js';
+export { renderPlots, paneValueRange, drawnKeys, plotColor, isUpTone, hasHistogram } from './plots.js';
+export type { PaneRangeOptions } from './plots.js';
 // Overlays
 export { SMAIndicator } from './overlay/SMA.js';
 export { EMAIndicator } from './overlay/EMA.js';

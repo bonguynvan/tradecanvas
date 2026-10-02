@@ -698,10 +698,12 @@
   overflow: hidden;
 }
 
-/* A pane's indicator: at the top of its pane, where the canvas title was. */
+/* A pane's indicator: at the top of its pane, where the canvas title was,
+   short enough to sit in the pane's header below the divider's grab zone. */
 .tcw-ind-legend-row--pane {
   position: absolute;
   z-index: 3;
+  line-height: 15px;
 }
 
 .tcw-ind-legend-row:hover,

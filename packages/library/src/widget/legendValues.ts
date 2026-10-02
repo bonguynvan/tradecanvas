@@ -1,66 +1,43 @@
-import type { IndicatorValue } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, IndicatorValue } from '@tradecanvas/commons';
 import { formatPrice } from '@tradecanvas/commons';
+import { plotColor } from '@tradecanvas/core';
 
-/**
- * Output fields that are not drawn — flags (trend direction, session key, bar
- * colour) and intermediate or running values — so the legend leaves them out.
- * Keep in step with the indicators' `render` in core.
- */
-const SKIP_KEYS: Readonly<Record<string, readonly string[]>> = {
-  psar: ['trend'],
-  supertrend: ['trend'],
-  svwap: ['session'],
-  ao: ['up'],
-  voldelta: ['up'],
-  chaikinOsc: ['adl'],
-  adx: ['dx'],
-  lrc: ['slope'],
-  ichimoku: ['chikou'],
-};
-
-/**
- * One-line indicators drawn in an up colour (`colors[0]`) or a down colour
- * (`colors[1]`) bar by bar: whether a point is drawn in the up colour.
- */
-const TWO_TONE: Readonly<Record<string, (point: IndicatorValue) => boolean>> = {
-  psar: (p) => p.trend === 1,
-  supertrend: (p) => p.trend === 1,
-  ao: (p) => p.up === 1,
-  voldelta: (p) => p.up === 1,
-  chaikinOsc: (p) => (p.value ?? 0) >= 0,
-  cmf: (p) => (p.value ?? 0) >= 0,
-  dpo: (p) => (p.value ?? 0) >= 0,
-};
-
-/** Indicators that draw in fixed colours of their own, not their style's. */
-const OWN_COLOURS: ReadonlySet<string> = new Set(['ac']);
-
-/** The finite line values of one indicator output point, in output order. */
-export function legendNumbers(id: string, point: IndicatorValue | null | undefined): number[] {
-  if (!point) return [];
-  const skip = SKIP_KEYS[id];
-  const numbers: number[] = [];
-  for (const key in point) {
-    const v = point[key];
-    if (typeof v === 'number' && Number.isFinite(v) && !skip?.includes(key)) numbers.push(v);
-  }
-  return numbers;
+/** One value in an indicator's legend row; `color` null = the neutral text colour. */
+export interface LegendValue {
+  value: number;
+  color: string | null;
 }
 
 /**
- * The colour a one-line indicator is drawn in at `point`, so its value reads
- * as part of the line; null = the neutral text colour.
+ * An indicator's values at one bar, as its legend shows them: one per plot it
+ * draws, in drawing order, each in the colour its line has at that bar (the
+ * up or down colour of a two-tone plot). An indicator that declares no plots
+ * shows every finite field, in its colour only when there is just one.
  */
-export function legendLineColor(
-  id: string,
-  colors: readonly string[],
+export function legendValues(
+  descriptor: Pick<IndicatorDescriptor, 'plots'>,
   point: IndicatorValue | null | undefined,
-): string | null {
-  if (OWN_COLOURS.has(id)) return null;
-  const isUp = TWO_TONE[id];
-  if (!isUp) return colors[0] ?? null;
-  if (!point) return null;
-  return (isUp(point) ? colors[0] : colors[1]) ?? null;
+  colors: readonly string[],
+): LegendValue[] {
+  if (!point) return [];
+  const plots = descriptor.plots;
+  if (!plots) {
+    const numbers: number[] = [];
+    for (const key in point) {
+      const v = point[key];
+      if (typeof v === 'number' && Number.isFinite(v)) numbers.push(v);
+    }
+    const color = numbers.length === 1 ? colors[0] ?? null : null;
+    return numbers.map((value) => ({ value, color }));
+  }
+  const style = { colors: [...colors], lineWidths: [], opacity: 1 };
+  const out: LegendValue[] = [];
+  for (const plot of plots) {
+    const v = point[plot.key];
+    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+    out.push({ value: v, color: colors.length ? plotColor(plot, style, point) : null });
+  }
+  return out;
 }
 
 /** Compact formats ("1.23M") by locale; the legend formats every frame. */

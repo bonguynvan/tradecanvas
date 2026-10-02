@@ -1,15 +1,21 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 export class ADXIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'adx',
     name: 'Average Directional Index',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    shortName: 'ADX',
+    plots: [
+      { key: 'adx', title: 'ADX', color: 0 },
+      { key: 'plusDI', title: '+DI', color: 1 },
+      { key: 'minusDI', title: '−DI', color: 2 },
+    ],
+    scale: { min: 0 },
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -94,34 +100,5 @@ export class ADXIndicator extends IndicatorBase {
     }
 
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    const toY = (val: number) => chartRect.y + chartRect.height * (1 - val / 100);
-
-    const drawLine = (key: string, color: string) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) continue;
-        const x = barIndexToX(i, viewport);
-        const y = toY(val[key]!);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    };
-
-    drawLine('adx', style.colors[0]);
-    drawLine('plusDI', style.colors[1] ?? '#1fa874');
-    drawLine('minusDI', style.colors[2] ?? '#e8505b');
   }
 }

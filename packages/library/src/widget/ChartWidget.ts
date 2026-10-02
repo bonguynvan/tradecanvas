@@ -23,7 +23,7 @@ import { availableTimeframes, initialTimeframeFavorites, timeframeLabel } from '
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
-import { formatIndicatorValue, legendLineColor, legendNumbers } from './legendValues.js';
+import { formatIndicatorValue, legendValues } from './legendValues.js';
 import { RANGE_PRESETS } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
@@ -70,6 +70,8 @@ const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '
 
 /** Gap between the on-chart indicator rows and the plot or pane edge, px. */
 const LEGEND_INSET = 4;
+/** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
+const PANE_ROW_TOP = 7;
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 let lastPressedWidget: ChartWidget | null = null;
@@ -459,7 +461,7 @@ export class ChartWidget {
         this.legendHoverIndex = null;
         this.scheduleLegend();
       });
-      for (const event of ['indicatorUpdate', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
+      for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
         this.chart.on(event, () => this.scheduleLegend());
       }
     }
@@ -605,6 +607,7 @@ export class ChartWidget {
       this.chart.on('drawingRemove', refresh);
       this.chart.on('indicatorAdd', refresh);
       this.chart.on('indicatorRemove', refresh);
+      this.chart.on('indicatorChange', refresh);
     }
 
     // 8b. Command palette
@@ -1080,10 +1083,13 @@ export class ChartWidget {
     const indicators = this.chart.getActiveIndicators().map((ind) => {
       const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
       const point = series?.[idx] ?? null;
+      // The drawn lines by their titles ("Signal"), else every field by its key.
+      const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
+        ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
       const values = point
-        ? Object.entries(point)
-            .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
-            .map(([key, v]) => ({ key, value: v as number }))
+        ? fields
+            .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
+            .map(([key, title]) => ({ key: title, value: point[key] as number }))
         : [];
       return { name: ind.descriptor.name, values };
     }).filter((i) => i.values.length > 0);
@@ -1465,7 +1471,7 @@ export class ChartWidget {
   private syncIndicatorsFromChart(): void {
     const next = new Map<string, ActiveIndicatorInfo>();
     for (const a of this.chart.getActiveIndicators()) {
-      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig) });
+      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig, a.descriptor.shortName) });
     }
     this.state = { ...this.state, activeIndicators: next };
     this.updateUI();
@@ -1805,20 +1811,18 @@ export class ChartWidget {
     const locale = this.settingsState.numberLocale || 'en-US';
     const rows: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = idx >= 0 ? series?.[idx] : null;
-      const numbers = legendNumbers(ind.id, point);
-      // One line (judged at the latest bar, past any warm-up): the line's
-      // colour there. Several: which value is which line isn't known here,
-      // so they share the neutral colour rather than guess.
-      const lines = idx === last ? numbers.length : legendNumbers(ind.id, last >= 0 ? series?.[last] : null).length;
-      const color = lines === 1 ? legendLineColor(ind.id, this.chart.getIndicatorStyle(ind.instanceId)?.colors ?? [], point) : null;
+      const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
+      const colors = this.chart.getIndicatorStyle(ind.instanceId)?.colors ?? [];
+      const values = legendValues(ind.descriptor, point, colors);
       return {
         instanceId: ind.instanceId,
-        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig),
+        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName),
         visible: ind.visible,
-        values: numbers.map((v) => ({ text: pane ? formatIndicatorValue(v, locale) : this.chart.formatPrice(v), color })),
-        pane: pane ? { x: pane.x + LEGEND_INSET, y: pane.y + 1, width: pane.width - 2 * LEGEND_INSET } : null,
+        values: values.map((v) => ({
+          text: pane ? formatIndicatorValue(v.value, locale) : this.chart.formatPrice(v.value),
+          color: v.color,
+        })),
+        pane: pane ? { x: pane.x + LEGEND_INSET, y: pane.y + PANE_ROW_TOP, width: pane.width - 2 * LEGEND_INSET } : null,
       };
     });
     const plot = this.chart.getPlotRect();
@@ -1867,14 +1871,15 @@ export class ChartWidget {
 }
 
 /**
- * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name plus up to three
- * numeric parameters, in the indicator's own order, so two instances of the
- * same indicator can be told apart.
+ * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name (`shortName`, else the
+ * id in capitals) plus up to three numeric parameters, in the indicator's own
+ * order, so two instances of the same indicator can be told apart.
  */
 export function indicatorChipLabel(
   id: string,
   params: Record<string, unknown>,
   defaults?: Record<string, unknown>,
+  shortName?: string,
 ): string {
   const order = defaults ? Object.keys(defaults) : Object.keys(params);
   const numbers = order
@@ -1882,5 +1887,5 @@ export function indicatorChipLabel(
     .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
     .slice(0, 3)
     .map((v) => String(Number(v.toFixed(4))));
-  return [id.toUpperCase(), ...numbers].join(' ');
+  return [shortName ?? id.toUpperCase(), ...numbers].join(' ');
 }

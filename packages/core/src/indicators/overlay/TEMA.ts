@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -54,11 +54,13 @@ function compact(values: (number | null)[]): { values: number[]; indices: number
  * cancels most of the lag a naive EMA-of-EMA-of-EMA would add).
  */
 export class TEMAIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'tema',
     name: 'Triple EMA',
     placement: 'overlay' as const,
     defaultConfig: { period: 20 },
+    shortName: 'TEMA',
+    plots: [{ key: 'value', title: 'TEMA', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

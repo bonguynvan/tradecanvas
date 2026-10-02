@@ -1,4 +1,4 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -12,11 +12,13 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * weighted sum and total, nudging both forward one bar at a time.
  */
 export class WMAIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'wma',
     name: 'Weighted Moving Average',
     placement: 'overlay' as const,
     defaultConfig: { period: 20 },
+    shortName: 'WMA',
+    plots: [{ key: 'value', title: 'WMA', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

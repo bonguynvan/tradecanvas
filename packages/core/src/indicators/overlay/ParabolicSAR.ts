@@ -1,15 +1,17 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class ParabolicSARIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'psar',
     name: 'Parabolic SAR',
     placement: 'overlay' as const,
     defaultConfig: { step: 0.02, max: 0.2 },
+    shortName: 'SAR',
+    plots: [{ key: 'value', title: 'SAR', color: 0, kind: 'dots', tone: { field: 'trend' }, downColor: 1 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {

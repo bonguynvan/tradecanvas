@@ -8,6 +8,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
+import { drawnKeys, hasHistogram, paneValueRange } from './plots.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -147,6 +148,42 @@ export class IndicatorEngine {
     return this.instances.get(instanceId)?.config.visible ?? false;
   }
 
+  /** The instance's reference levels: its own, else its indicator's defaults. */
+  getLevels(instanceId: string): number[] {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return [];
+    return [...(instance.config.levels ?? instance.plugin.descriptor.levels ?? [])];
+  }
+
+  /**
+   * Set the instance's reference levels; `null` goes back to the indicator's
+   * defaults. Non-finite values are dropped. Returns false if not found.
+   */
+  setLevels(instanceId: string, levels: readonly number[] | null): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return false;
+    if (levels === null) delete instance.config.levels;
+    else instance.config.levels = levels.filter((v) => Number.isFinite(v));
+    return true;
+  }
+
+  /**
+   * The value range of a pane indicator over bars `[from, to]`: its drawn
+   * values, its levels, zero for histograms and its fixed bounds. Null when
+   * there is nothing to fit.
+   */
+  getPaneValueRange(instanceId: string, from: number, to: number): { min: number; max: number } | null {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return null;
+    const descriptor = instance.plugin.descriptor;
+    return paneValueRange(instance.output, from, to, {
+      keys: drawnKeys(descriptor),
+      scale: descriptor.scale,
+      levels: instance.config.levels ?? descriptor.levels,
+      zero: hasHistogram(descriptor.plots),
+    });
+  }
+
   /** Get descriptor for an active indicator instance */
   getIndicatorDescriptor(instanceId: string): IndicatorDescriptor | null {
     return this.instances.get(instanceId)?.plugin.descriptor ?? null;
@@ -200,10 +237,23 @@ export class IndicatorEngine {
       const series = instance.output.series;
       if (!series) continue; // no array form published — nothing to scan safely in range
 
+      // Only what is drawn: a trend flag (±1) or a session key must not
+      // stretch the price scale.
+      const keys = drawnKeys(instance.plugin.descriptor);
       const end = Math.min(to, series.length - 1);
       for (let idx = Math.max(0, from); idx <= end; idx++) {
         const val = series[idx];
         if (!val) continue;
+        if (keys) {
+          for (let k = 0; k < keys.length; k++) {
+            const v = val[keys[k]];
+            if (v !== undefined && isFinite(v)) {
+              if (v < gMin) gMin = v;
+              if (v > gMax) gMax = v;
+            }
+          }
+          continue;
+        }
         for (const key in val) {
           const v = val[key];
           if (v !== undefined && isFinite(v)) {

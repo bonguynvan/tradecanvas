@@ -285,11 +285,31 @@ export class RenderEngine {
       c.beginPath();
       c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
       c.clip();
+      this.renderLevels(c, indicatorEngine.getLevels(panel.instanceId), panel.viewport, theme);
       indicatorEngine.renderPanel(c, panel.instanceId, panel.viewport);
       c.restore();
 
       c.restore();
     }
+  }
+
+  /** An indicator's reference levels (RSI 30 / 70): faint dashed lines across its pane, under the plots. */
+  private renderLevels(c: CanvasRenderingContext2D, levels: readonly number[], viewport: ViewportState, theme: Theme): void {
+    if (levels.length === 0) return;
+    const { chartRect } = viewport;
+    c.save();
+    c.strokeStyle = theme.axisLabel;
+    c.globalAlpha = 0.45;
+    c.lineWidth = 1;
+    c.setLineDash([4, 4]);
+    c.beginPath();
+    for (const level of levels) {
+      const y = Math.round(priceToY(level, viewport)) + 0.5;
+      c.moveTo(chartRect.x, y);
+      c.lineTo(chartRect.x + chartRect.width, y);
+    }
+    c.stroke();
+    c.restore();
   }
 
   /** Panel Y-axes: axis line, ticks and value labels. */
@@ -322,7 +342,9 @@ export class RenderEngine {
       c.textBaseline = 'middle';
       c.textAlign = 'left';
 
-      for (let val = firstVal; val <= max; val += step) {
+      for (let tick = firstVal; tick <= max; tick += step) {
+        // Accumulated steps leave -1e-17 where zero is meant: "-0.0".
+        const val = Math.abs(tick) < step * 1e-6 ? 0 : tick;
         const y = priceToY(val, pv);
         if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
         c.strokeStyle = theme.axisLine;
@@ -410,13 +432,21 @@ export class RenderEngine {
       const output = indicatorEngine.getOutput(panel.instanceId);
       const val = output?.series && snappedIdx < output.series.length ? output.series[snappedIdx] : null;
       if (!val) continue;
+      const desc = descMap?.get(panel.instanceId);
+      const plots = desc?.descriptor.plots;
       const parts: string[] = [];
-      for (const key in val) {
-        const v = val[key];
-        if (v !== undefined) parts.push(`${key}: ${v.toFixed(precision)}`);
+      if (plots) {
+        for (const plot of plots) {
+          const v = val[plot.key];
+          if (v !== undefined && Number.isFinite(v)) parts.push(`${plot.title} ${formatPrice(v, precision, locale)}`);
+        }
+      } else {
+        for (const key in val) {
+          const v = val[key];
+          if (v !== undefined) parts.push(`${key}: ${v.toFixed(precision)}`);
+        }
       }
       if (parts.length === 0) continue;
-      const desc = descMap?.get(panel.instanceId);
       c.font = panelFont;
       const nameWidth = desc ? c.measureText(desc.descriptor.name).width + 14 : 10;
       c.fillStyle = theme.textSecondary;

@@ -1,8 +1,7 @@
-import type { DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { barIndexToX } from '../../viewport/ScaleMapping.js';
 
 /**
  * Relative Momentum Index (Roger Altman) — a generalisation of RSI that
@@ -11,11 +10,15 @@ import { barIndexToX } from '../../viewport/ScaleMapping.js';
  * yields a smoother, less twitchy 0–100 oscillator. 30 / 70 reference bands.
  */
 export class RelativeMomentumIndexIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'rmi',
     name: 'Relative Momentum Index',
     placement: 'panel' as const,
     defaultConfig: { period: 20, momentum: 5 },
+    shortName: 'RMI',
+    plots: [{ key: 'value', title: 'RMI', color: 0 }],
+    scale: { min: 0, max: 100 },
+    levels: [30, 70],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
@@ -58,40 +61,5 @@ export class RelativeMomentumIndexIndicator extends IndicatorBase {
       emit(i);
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { chartRect } = viewport;
-    const { from, to } = viewport.visibleRange;
-    const toY = (v: number) => chartRect.y + chartRect.height * (1 - v / 100);
-
-    ctx.strokeStyle = style.colors[1] ?? '#7d8696';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    for (const level of [30, 70]) {
-      const y = toY(level);
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0] ?? '#4c8dff';
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-    let started = false;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v || v.value === undefined) { started = false; continue; }
-      const x = barIndexToX(i, viewport);
-      const y = toY(v.value);
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
   }
 }

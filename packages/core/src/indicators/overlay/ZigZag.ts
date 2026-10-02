@@ -1,11 +1,4 @@
-import type {
-  DataSeries,
-  IndicatorConfig,
-  IndicatorOutput,
-  IndicatorValue,
-  ResolvedIndicatorStyle,
-  ViewportState,
-} from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
@@ -17,11 +10,13 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
  * meta.pivots holds the ordered list of pivot bar indices for fast rendering.
  */
 export class ZigZagIndicator extends IndicatorBase {
-  descriptor = {
+  descriptor: IndicatorDescriptor = {
     id: 'zigzag',
     name: 'ZigZag',
     placement: 'overlay' as const,
     defaultConfig: { deviation: 5 },
+    shortName: 'ZigZag',
+    plots: [{ key: 'pivot', title: 'Pivot', color: 0 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
