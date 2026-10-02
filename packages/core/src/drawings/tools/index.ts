@@ -35,6 +35,16 @@ export { CircleTool } from './Circle.js';
 export { DateAndPriceRangeTool } from './DateAndPriceRange.js';
 export { CyclicLinesTool } from './CyclicLines.js';
 export { PriceLabelTool } from './PriceLabel.js';
+export { NoteTool, CalloutTool, FlagTool, ArrowMarkTool, IconTool, ICON_GLYPHS, type IconGlyph } from './annotations.js';
+export { BrushTool, HighlighterTool, PathTool, PolylineTool, CurveTool, ArcTool, curvePoints, arcPoints } from './freehand.js';
+export { FibCirclesTool, FibArcsTool, FibWedgeTool, FibSpiralTool, PitchfanTool, GannSquareTool } from './fibGeometry.js';
+export {
+  ElliottImpulseTool, ElliottCorrectionTool, ElliottTriangleTool, ElliottDoubleComboTool, ElliottTripleComboTool,
+  waveLabel, type WaveDegree,
+} from './ElliottWave.js';
+export { ThreeDrivesTool, CypherPatternTool } from './patterns.js';
+export { TimeCyclesTool, SineLineTool } from './cycles.js';
+export { ForecastTool, ProjectionTool, BarsPatternTool, forecastOutcome, type ForecastOutcome } from './forecast.js';
 
 import type { DrawingManager } from '../DrawingManager.js';
 import { TrendLineTool } from './TrendLine.js';
@@ -73,6 +83,15 @@ import { CircleTool } from './Circle.js';
 import { DateAndPriceRangeTool } from './DateAndPriceRange.js';
 import { CyclicLinesTool } from './CyclicLines.js';
 import { PriceLabelTool } from './PriceLabel.js';
+import { NoteTool, CalloutTool, FlagTool, ArrowMarkTool, IconTool } from './annotations.js';
+import { BrushTool, HighlighterTool, PathTool, PolylineTool, CurveTool, ArcTool } from './freehand.js';
+import { FibCirclesTool, FibArcsTool, FibWedgeTool, FibSpiralTool, PitchfanTool, GannSquareTool } from './fibGeometry.js';
+import {
+  ElliottImpulseTool, ElliottCorrectionTool, ElliottTriangleTool, ElliottDoubleComboTool, ElliottTripleComboTool,
+} from './ElliottWave.js';
+import { ThreeDrivesTool, CypherPatternTool } from './patterns.js';
+import { TimeCyclesTool, SineLineTool } from './cycles.js';
+import { ForecastTool, ProjectionTool, BarsPatternTool } from './forecast.js';
 
 export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new TrendLineTool());
@@ -115,4 +134,33 @@ export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new DateAndPriceRangeTool());
   manager.register(new CyclicLinesTool());
   manager.register(new PriceLabelTool());
+  manager.register(new NoteTool());
+  manager.register(new CalloutTool());
+  manager.register(new FlagTool());
+  manager.register(new ArrowMarkTool());
+  manager.register(new IconTool());
+  manager.register(new BrushTool());
+  manager.register(new HighlighterTool());
+  manager.register(new PathTool());
+  manager.register(new PolylineTool());
+  manager.register(new CurveTool());
+  manager.register(new ArcTool());
+  manager.register(new FibCirclesTool());
+  manager.register(new FibSpiralTool());
+  manager.register(new FibArcsTool());
+  manager.register(new FibWedgeTool());
+  manager.register(new PitchfanTool());
+  manager.register(new GannSquareTool());
+  manager.register(new ElliottImpulseTool());
+  manager.register(new ElliottCorrectionTool());
+  manager.register(new ElliottTriangleTool());
+  manager.register(new ElliottDoubleComboTool());
+  manager.register(new ElliottTripleComboTool());
+  manager.register(new ThreeDrivesTool());
+  manager.register(new CypherPatternTool());
+  manager.register(new TimeCyclesTool());
+  manager.register(new SineLineTool());
+  manager.register(new ForecastTool());
+  manager.register(new ProjectionTool());
+  manager.register(new BarsPatternTool());
 }

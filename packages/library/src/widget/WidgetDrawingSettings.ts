@@ -61,6 +61,9 @@ export interface DrawingSettingsCallbacks {
 
 type Tab = 'style' | 'options' | 'coordinates';
 
+/** Most points the Coordinates tab lists. */
+const MAX_COORDINATE_ROWS = 12;
+
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const LINE_WIDTHS = [1, 2, 3, 4];
 const LINE_STYLES: DrawingStyle['lineStyle'][] = ['solid', 'dashed', 'dotted'];
@@ -220,7 +223,8 @@ export class WidgetDrawingSettings {
   private tabs(): Tab[] {
     const out: Tab[] = ['style'];
     if (this.target && Object.keys(this.target.defs).length > 0) out.push('options');
-    out.push('coordinates');
+    // A freehand stroke has hundreds of points: no table of them.
+    if (this.target && this.target.anchors.length <= MAX_COORDINATE_ROWS) out.push('coordinates');
     return out;
   }
 

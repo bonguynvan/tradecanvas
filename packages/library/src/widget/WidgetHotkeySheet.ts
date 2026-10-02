@@ -91,6 +91,7 @@ const GROUPS: HotkeyGroup[] = [
       { keys: [mod, 'Shift', 'G'], label: 'hotkeys.ungroup' },
       { keys: [mod, ']', '['], label: 'hotkeys.orderStep' },
       { keys: [mod, 'Shift', ']', '['], label: 'hotkeys.orderEnd' },
+      { keys: ['Enter'], label: 'hotkeys.finishPath' },
     ],
   },
 ];

@@ -280,6 +280,9 @@ export class ChartWidget {
       activeIndicators: new Map(),
       activeTool: null,
       magnetEnabled: features.drawingMagnet !== false,
+      magnetStrong: false,
+      eraser: false,
+      zoomArea: false,
       stayInDrawing: false,
       // Static data (no adapter) has no connection to report.
       connectionState: options.adapter ? 'connecting' : 'disconnected',
@@ -350,6 +353,8 @@ export class ChartWidget {
           onDrawingTool: (tool) => this.handleDrawingTool(tool),
           onCancelDrawing: () => this.handleCancelDrawing(),
           onToggleMagnet: features.drawingMagnet !== false ? () => this.handleToggleMagnet() : undefined,
+          onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
+          onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
           onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
           onUndo: () => this.chart.undo(),
           onRedo: () => this.chart.redo(),
@@ -480,6 +485,16 @@ export class ChartWidget {
       const tool = (e.payload as { tool: DrawingToolType | null }).tool;
       if (tool === this.state.activeTool) return;
       this.state = { ...this.state, activeTool: tool };
+      this.updateUI();
+    });
+    // The eraser and the zoom tool turn themselves off (Escape, a tool picked, a zoom done).
+    this.chart.on('toolModeChange', (e) => {
+      const { eraser, zoomArea } = e.payload as { eraser?: boolean; zoomArea?: boolean };
+      this.state = {
+        ...this.state,
+        eraser: eraser ?? this.state.eraser,
+        zoomArea: zoomArea ?? this.state.zoomArea,
+      };
       this.updateUI();
     });
 
@@ -1643,9 +1658,12 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** The cursor button: no tool, no eraser, no zoom box. */
   private handleCancelDrawing(): void {
     this.state = { ...this.state, activeTool: null };
     this.chart.setDrawingTool(null);
+    this.chart.setEraserMode(false);
+    this.chart.setZoomAreaMode(false);
     this.updateUI();
   }
 
@@ -1656,10 +1674,11 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** The magnet button goes off → weak → strong → off. */
   private handleToggleMagnet(): void {
-    const magnetEnabled = !this.state.magnetEnabled;
-    this.state = { ...this.state, magnetEnabled };
-    this.chart.setDrawingMagnet(magnetEnabled);
+    const mode = !this.state.magnetEnabled ? 'weak' : this.state.magnetStrong ? 'off' : 'strong';
+    this.state = { ...this.state, magnetEnabled: mode !== 'off', magnetStrong: mode === 'strong' };
+    this.chart.setDrawingMagnetMode(mode);
     this.updateUI();
   }
 

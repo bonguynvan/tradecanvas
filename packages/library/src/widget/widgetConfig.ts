@@ -52,6 +52,10 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Fib Channel', value: 'fibChannel' as DrawingToolType },
       { label: 'Fib Time Zones', value: 'fibTimeZones' as DrawingToolType },
       { label: 'Fib Speed Resistance Fan', value: 'fibSpeedResistanceFan' as DrawingToolType },
+      { label: 'Fib Speed Resistance Arcs', value: 'fibArcs' as DrawingToolType },
+      { label: 'Fib Circles', value: 'fibCircles' as DrawingToolType },
+      { label: 'Fib Spiral', value: 'fibSpiral' as DrawingToolType },
+      { label: 'Fib Wedge', value: 'fibWedge' as DrawingToolType },
     ],
   },
   {
@@ -61,6 +65,17 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Circle', value: 'circle' as DrawingToolType },
       { label: 'Ellipse', value: 'ellipse' as DrawingToolType },
       { label: 'Triangle', value: 'triangle' as DrawingToolType },
+      { label: 'Polyline', value: 'polyline' as DrawingToolType },
+      { label: 'Curve', value: 'curve' as DrawingToolType },
+      { label: 'Arc', value: 'arc' as DrawingToolType },
+    ],
+  },
+  {
+    label: 'Brushes',
+    tools: [
+      { label: 'Brush', value: 'brush' as DrawingToolType },
+      { label: 'Highlighter', value: 'highlighter' as DrawingToolType },
+      { label: 'Path', value: 'path' as DrawingToolType },
     ],
   },
   {
@@ -71,7 +86,16 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Modified Schiff Pitchfork', value: 'modifiedSchiffPitchfork' as DrawingToolType },
       { label: 'Gann Fan', value: 'gannFan' as DrawingToolType },
       { label: 'Gann Box', value: 'gannBox' as DrawingToolType },
+      { label: 'Gann Square', value: 'gannSquare' as DrawingToolType },
+      { label: 'Pitchfan', value: 'pitchfan' as DrawingToolType },
+    ],
+  },
+  {
+    label: 'Cycles',
+    tools: [
       { label: 'Cyclic Lines', value: 'cyclicLines' as DrawingToolType },
+      { label: 'Time Cycles', value: 'timeCycles' as DrawingToolType },
+      { label: 'Sine Line', value: 'sineLine' as DrawingToolType },
     ],
   },
   {
@@ -80,7 +104,19 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'XABCD Pattern', value: 'xabcdPattern' as DrawingToolType },
       { label: 'ABCD Pattern', value: 'abcdPattern' as DrawingToolType },
       { label: 'Head and Shoulders', value: 'headAndShoulders' as DrawingToolType },
+      { label: 'Cypher Pattern', value: 'cypherPattern' as DrawingToolType },
+      { label: 'Three Drives Pattern', value: 'threeDrives' as DrawingToolType },
+    ],
+  },
+  {
+    label: 'Elliott Waves',
+    tools: [
       { label: 'Elliott Wave', value: 'elliottWave' as DrawingToolType },
+      { label: 'Elliott Impulse Wave', value: 'elliottImpulse' as DrawingToolType },
+      { label: 'Elliott Correction Wave', value: 'elliottCorrection' as DrawingToolType },
+      { label: 'Elliott Triangle Wave', value: 'elliottTriangle' as DrawingToolType },
+      { label: 'Elliott Double Combo Wave', value: 'elliottDoubleCombo' as DrawingToolType },
+      { label: 'Elliott Triple Combo Wave', value: 'elliottTripleCombo' as DrawingToolType },
     ],
   },
   {
@@ -98,6 +134,11 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Text', value: 'text' as DrawingToolType },
       { label: 'Price Label', value: 'priceLabel' as DrawingToolType },
       { label: 'Arrow', value: 'arrow' as DrawingToolType },
+      { label: 'Note', value: 'note' as DrawingToolType },
+      { label: 'Callout', value: 'callout' as DrawingToolType },
+      { label: 'Flag Mark', value: 'flag' as DrawingToolType },
+      { label: 'Arrow Mark', value: 'arrowMark' as DrawingToolType },
+      { label: 'Icon', value: 'icon' as DrawingToolType },
     ],
   },
   {
@@ -106,6 +147,9 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Long/Short Position', value: 'riskReward' as DrawingToolType },
       { label: 'Anchored VWAP', value: 'anchoredVWAP' as DrawingToolType },
       { label: 'Fixed Range Volume Profile', value: 'volumeProfileRange' as DrawingToolType },
+      { label: 'Forecast', value: 'forecast' as DrawingToolType },
+      { label: 'Projection', value: 'projection' as DrawingToolType },
+      { label: 'Bars Pattern', value: 'barsPattern' as DrawingToolType },
     ],
   },
 ];

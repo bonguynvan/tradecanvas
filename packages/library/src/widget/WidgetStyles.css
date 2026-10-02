@@ -590,6 +590,7 @@
 /* === Body === */
 
 .tcw-body {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -1010,8 +1011,17 @@
   flex-direction: column;
   align-items: center;
   padding: 6px 0;
-  overflow: visible;
+  /* On a short screen the tools scroll; the menus sit outside it. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   box-shadow: var(--tcw-shadow-sm);
+}
+.tcw-sidebar::-webkit-scrollbar {
+  display: none;
+}
+.tcw-sidebar > * {
+  flex-shrink: 0;
 }
 
 .tcw-tool-group-wrap {
@@ -1082,8 +1092,6 @@
 
 .tcw-flyout {
   position: absolute;
-  left: 100%;
-  top: 0;
   margin-left: 6px;
   min-width: 180px;
   background: var(--tcw-bg-elevated);

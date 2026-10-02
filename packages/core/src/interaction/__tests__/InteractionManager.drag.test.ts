@@ -357,7 +357,7 @@ describe('InteractionManager — double-click on a drawing', () => {
   it('reports the drawing under the pointer', () => {
     const opened: string[] = [];
     im.setDrawingManager(
-      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null) } as unknown as DrawingManager,
+      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null), justFinished: () => false } as unknown as DrawingManager,
       () => ({ chartRect: { x: 0, y: 0, width: 400, height: 300 } }) as ViewportState,
     );
     im.setDrawingDoubleClick((id) => opened.push(id));

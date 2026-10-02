@@ -33,6 +33,7 @@ export type ChartEventType =
   | 'drawingUpdate'
   | 'drawingDoubleClick'
   | 'drawingContextMenu'
+  | 'toolModeChange'
   | 'drawingRemove'
   | 'drawingToolChange'
   | 'signalMarkerAdd'

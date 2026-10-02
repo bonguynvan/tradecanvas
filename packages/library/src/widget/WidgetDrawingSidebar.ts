@@ -8,6 +8,8 @@ const TOOL_ICON_PX = 16;
 
 /** How long a tool menu stays after the pointer leaves it. */
 const FLYOUT_CLOSE_DELAY_MS = 150;
+/** Room kept between a tool menu and the bottom of the chart (px). */
+const FLYOUT_MARGIN = 4;
 
 /** Human label for a tool id, sourced from the configured groups. */
 function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): string {
@@ -29,6 +31,8 @@ export class WidgetDrawingSidebar {
   private groupTools: DrawingToolType[] = [];
   private cursorBtn: HTMLButtonElement | null = null;
   private magnetBtn: HTMLButtonElement | null = null;
+  private eraserBtn: HTMLButtonElement | null = null;
+  private zoomBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
   private flyoutEl: HTMLDivElement | null = null;
   private flyoutIdx = -1;
@@ -37,12 +41,19 @@ export class WidgetDrawingSidebar {
   private favoritesDivider: HTMLDivElement | null = null;
   private favorites: string[] = [];
 
-  constructor(host: HTMLElement, config: SidebarConfig, callbacks: SidebarCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
+  constructor(
+    private readonly host: HTMLElement,
+    config: SidebarConfig,
+    callbacks: SidebarCallbacks,
+    private readonly t: Translator = EN_TRANSLATOR,
+  ) {
     this.config = config;
     this.callbacks = callbacks;
     this.el = document.createElement('div');
     this.el.className = 'tcw-sidebar';
     this.build();
+    // On a short screen the sidebar scrolls; a menu left open would point at the wrong button.
+    this.el.addEventListener('scroll', () => this.hideFlyout(), { passive: true });
     host.appendChild(this.el);
   }
 
@@ -104,7 +115,8 @@ export class WidgetDrawingSidebar {
       wrap.addEventListener('mouseleave', () => this.scheduleHideFlyout());
       btn.addEventListener('focus', () => { if (btn.matches(':focus-visible')) this.showFlyout(idx); });
       wrap.addEventListener('focusout', (e) => {
-        if (!wrap.contains(e.relatedTarget as Node | null)) this.scheduleHideFlyout();
+        const to = e.relatedTarget as Node | null;
+        if (!wrap.contains(to) && !this.flyoutEl?.contains(to)) this.scheduleHideFlyout();
       });
 
       el.appendChild(wrap);
@@ -137,6 +149,16 @@ export class WidgetDrawingSidebar {
       this.magnetBtn.innerHTML = createIcon('magnet', 14);
       this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
       el.appendChild(this.magnetBtn);
+    }
+
+    if (callbacks.onToggleEraser) {
+      this.eraserBtn = this.toggleButton('eraser', this.t('drawing.eraser'), callbacks.onToggleEraser);
+      el.appendChild(this.eraserBtn);
+    }
+
+    if (callbacks.onToggleZoomArea) {
+      this.zoomBtn = this.toggleButton('zoomIn', this.t('drawing.zoomArea'), callbacks.onToggleZoomArea);
+      el.appendChild(this.zoomBtn);
     }
 
     if (callbacks.onToggleStayInDrawing) {
@@ -248,9 +270,27 @@ export class WidgetDrawingSidebar {
       flyout.appendChild(hint);
     }
 
+    // The menu sits beside the sidebar, not in it, so the sidebar can scroll
+    // without cutting it off.
+    flyout.addEventListener('mouseenter', () => this.cancelHideFlyout());
+    flyout.addEventListener('mouseleave', () => this.scheduleHideFlyout());
+    flyout.addEventListener('focusout', (e) => {
+      const to = e.relatedTarget as Node | null;
+      if (!flyout.contains(to) && !this.groupWraps[idx].contains(to)) this.scheduleHideFlyout();
+    });
     this.flyoutEl = flyout;
     this.flyoutIdx = idx;
-    this.groupWraps[idx].appendChild(flyout);
+    this.host.appendChild(flyout);
+    this.placeFlyout(flyout, this.groupButtons[idx]);
+  }
+
+  /** Beside `button`, kept inside the host when it is taller than the room below. */
+  private placeFlyout(flyout: HTMLElement, button: HTMLElement): void {
+    const host = this.host.getBoundingClientRect();
+    const at = button.getBoundingClientRect();
+    const room = this.host.clientHeight - flyout.offsetHeight - FLYOUT_MARGIN;
+    flyout.style.left = `${at.right - host.left}px`;
+    flyout.style.top = `${Math.max(0, Math.min(at.top - host.top, room))}px`;
   }
 
   /**
@@ -308,16 +348,37 @@ export class WidgetDrawingSidebar {
       });
     }
 
-    // Magnet
+    // Magnet: off, weak or strong.
     if (this.magnetBtn) {
+      const strong = state.magnetEnabled && state.magnetStrong;
       this.magnetBtn.classList.toggle('tcw-active', state.magnetEnabled);
-      this.magnetBtn.title = state.magnetEnabled ? this.t('drawing.magnetOn') : this.t('drawing.magnetOff');
+      this.magnetBtn.innerHTML = createIcon(strong ? 'magnetStrong' : 'magnet', 14);
+      this.magnetBtn.title = strong ? this.t('drawing.magnetStrong') : state.magnetEnabled ? this.t('drawing.magnetOn') : this.t('drawing.magnetOff');
+      this.magnetBtn.setAttribute('aria-label', this.magnetBtn.title);
+    }
+
+    for (const [btn, on] of [[this.eraserBtn, state.eraser], [this.zoomBtn, state.zoomArea]] as const) {
+      if (!btn) continue;
+      btn.classList.toggle('tcw-active', on);
+      btn.setAttribute('aria-pressed', String(on));
     }
 
     if (this.stayBtn) {
       this.stayBtn.classList.toggle('tcw-active', state.stayInDrawing);
       this.stayBtn.setAttribute('aria-pressed', String(state.stayInDrawing));
     }
+  }
+
+  /** A sidebar button that is on or off (aria-pressed). */
+  private toggleButton(icon: string, label: string, onClick: () => void): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'tcw-sidebar-btn';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.innerHTML = createIcon(icon, 14);
+    btn.addEventListener('click', onClick);
+    return btn;
   }
 
   private divider(): HTMLDivElement {

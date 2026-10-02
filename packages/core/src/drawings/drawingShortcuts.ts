@@ -6,7 +6,7 @@ export type DrawingShortcut =
   | 'group' | 'ungroup'
   | DrawingOrderMove
   | 'undo' | 'redo'
-  | 'escape' | 'delete';
+  | 'escape' | 'delete' | 'finish';
 
 const ORDER_KEYS: Readonly<Record<string, readonly [DrawingOrderMove, DrawingOrderMove]>> = {
   // [without Shift, with Shift]; Shift+] types } on most layouts.
@@ -19,11 +19,12 @@ const ORDER_KEYS: Readonly<Record<string, readonly [DrawingOrderMove, DrawingOrd
 /**
  * The drawing shortcut for a key: Ctrl/⌘ with C, V, D, G (Shift: ungroup),
  * ] and [ (Shift: all the way), Z (Shift: redo) and Y; Escape; Delete and
- * Backspace. Pass `shift` so Caps Lock doesn't count as Shift; without it an
- * upper-case letter does.
+ * Backspace; Enter (ends a path being drawn). Pass `shift` so Caps Lock
+ * doesn't count as Shift; without it an upper-case letter does.
  */
 export function drawingShortcut(key: string, ctrl: boolean, shift?: boolean): DrawingShortcut | null {
   if (key === 'Escape') return 'escape';
+  if (key === 'Enter' && !ctrl) return 'finish';
   if (key === 'Delete' || key === 'Backspace') return 'delete';
   if (!ctrl) return null;
   const shifted = shift ?? (key.length === 1 && key !== key.toLowerCase());

@@ -83,7 +83,8 @@ function asNumber(v: unknown, fallback: number): number {
 function validateDrawing(raw: unknown): DrawingState | null {
   if (!isObject(raw)) return null;
   if (typeof raw.id !== 'string' || typeof raw.type !== 'string') return null;
-  if (!Array.isArray(raw.anchors) || raw.anchors.length === 0) return null;
+  // A freehand stroke has the most points; more is not a chart's drawing.
+  if (!Array.isArray(raw.anchors) || raw.anchors.length === 0 || raw.anchors.length > MAX_ANCHORS) return null;
   if (!isObject(raw.style)) return null;
 
   const anchors: DrawingState['anchors'] = [];
@@ -113,6 +114,7 @@ function validateDrawing(raw: unknown): DrawingState | null {
   };
 }
 
+const MAX_ANCHORS = 5000;
 const MAX_GROUP_ID = 64;
 const MAX_GROUP_NAME = 80;
 

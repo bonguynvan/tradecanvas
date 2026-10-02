@@ -35,6 +35,24 @@ export function lineSpace(viewport?: ViewportState): LineSpace {
   };
 }
 
+/** How far `point` is from the segment `p1`–`p2` (px). */
+export function distanceToSegment(point: Point, p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(point.x - p1.x, point.y - p1.y);
+  const t = Math.max(0, Math.min(1, ((point.x - p1.x) * dx + (point.y - p1.y) * dy) / lenSq));
+  return Math.hypot(point.x - (p1.x + t * dx), point.y - (p1.y + t * dy));
+}
+
+/** Whether `point` is within `tolerance` of the line through `pts` (and back to the start, with `close`). */
+export function nearPolyline(point: Point, pts: readonly Point[], tolerance: number, close = false): boolean {
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (distanceToSegment(point, pts[i], pts[i + 1]) <= tolerance) return true;
+  }
+  return close && pts.length > 2 && distanceToSegment(point, pts[pts.length - 1], pts[0]) <= tolerance;
+}
+
 /** Whether a stored option value is of the kind its definition takes. */
 function optionKindMatches(def: NonNullable<DrawingDescriptor['options']>[string], value: unknown): boolean {
   switch (def.kind) {
@@ -181,15 +199,7 @@ export abstract class DrawingBase implements DrawingPlugin {
   }
 
   protected distanceToLine(point: Point, p1: Point, p2: Point): number {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq === 0) return Math.hypot(point.x - p1.x, point.y - p1.y);
-    let t = ((point.x - p1.x) * dx + (point.y - p1.y) * dy) / lenSq;
-    t = Math.max(0, Math.min(1, t));
-    const projX = p1.x + t * dx;
-    const projY = p1.y + t * dy;
-    return Math.hypot(point.x - projX, point.y - projY);
+    return distanceToSegment(point, p1, p2);
   }
 
   protected distanceToInfiniteLine(point: Point, p1: Point, p2: Point): number {

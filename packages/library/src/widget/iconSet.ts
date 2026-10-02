@@ -31,6 +31,9 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   ruler: { d: 'M3.5 16.5L16.5 3.5L20.5 7.5L7.5 20.5zM6.5 13.5L8 15M9.5 10.5L11.5 12.5M12.5 7.5L14 9' }, // Measure
   type: { d: 'M6 6V4.5H18V6M12 4.5V19.5M9.5 19.5H14.5' }, // Text
   magnet: { d: 'M6 4V11a6 6 0 0 0 12 0V4M6 4h3.5v7a2.5 2.5 0 0 0 5 0V4H18M6 8h3.5M14.5 8H18' }, // Magnet
+  magnetStrong: { d: 'M6 4V11a6 6 0 0 0 12 0V4M6 4h3.5v7a2.5 2.5 0 0 0 5 0V4H18', fills: ['M6 4h3.5v4H6z', 'M14.5 4H18v4h-3.5z'] }, // Strong magnet
+  eraser: { d: 'M8.5 19.5L3.9 14.9a1.5 1.5 0 0 1 0-2.1l8.5-8.5a1.5 1.5 0 0 1 2.1 0l5.2 5.2a1.5 1.5 0 0 1 0 2.1L12 19.5zM8 9l7 7M12 19.5H20' }, // Eraser
+  zoomIn: { d: 'M16.5 10.5a6 6 0 1 1-12 0 6 6 0 0 1 12 0zM15 15L20.5 20.5M10.5 7.5V13.5M7.5 10.5H13.5' }, // Zoom area
   undo: { d: 'M9 14L4 9L9 4M4 9H14.5a5.5 5.5 0 0 1 0 11H11' }, // Undo
   redo: { d: 'M15 14L20 9L15 4M20 9H9.5a5.5 5.5 0 0 0 0 11H13' }, // Redo
   trash: { d: 'M4 7H20M9.5 7V4.5h5V7M6.5 7l.8 12.2A1.5 1.5 0 0 0 8.8 20.6h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7M10 11v6M14 11v6' }, // Delete
@@ -104,6 +107,35 @@ export const DRAWING_TOOL_ICONS: Readonly<Record<string, IconDef>> = {
   riskReward: { d: 'M5 12V4H19V12M3 12H21', dash: 'M5 12V18H19V12', dots: [[5, 12]] }, // Long/Short Position
   anchoredVWAP: { d: 'M4 18C9 17 12 10 20 7M4 20.5V18', dots: [[4, 18]] }, // Anchored VWAP
   volumeProfileRange: { d: 'M6 7H12M6 10.5H17M6 14H15M6 17.5H10', dash: 'M3.5 4V20M20.5 4V20', dots: [[3.5, 20], [20.5, 20]] }, // Fixed Range Volume Profile
+  note: { d: 'M5.5 4.5h13v9l-5 5h-8zM13.5 18.5v-5h5M8.5 8.5h7M8.5 11.5h4' }, // Note
+  callout: { d: 'M10.5 4h9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM12 12L5 19M12.5 8h5', dots: [[5, 19]] }, // Callout
+  flag: { d: 'M6 21V4M6 4.5h11l-2.5 3.75L17 12H6', soft: 'M6 4.5h11l-2.5 3.75L17 12H6z', dots: [[6, 21]] }, // Flag Mark
+  arrowMark: { d: 'M12 4L18 11H14.5V20H9.5V11H6z' }, // Arrow Mark
+  icon: { d: 'M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z' }, // Icon
+  brush: { d: 'M3.5 17c2.5 0 3-5 6-5s2.5 5 5.5 5 3.5-6 5.5-9' }, // Brush
+  highlighter: { d: 'M14.5 4.5l5 5L11 18H6v-5zM12 7l5 5M4 21h8' }, // Highlighter
+  path: { d: 'M4 18L9 10L14 14L20 6M16.2 6.6L20 6L19.6 9.8', dots: [[4, 18], [9, 10], [14, 14]] }, // Path
+  polyline: { d: 'M5 17L8 6L16 4L20 14L12 20z', soft: 'M5 17L8 6L16 4L20 14L12 20z', dots: [[5, 17], [8, 6], [16, 4], [20, 14], [12, 20]] }, // Polyline
+  curve: { d: 'M4 18C8 4 16 4 20 18', dots: [[4, 18], [20, 18], [12, 7.5]] }, // Curve
+  arc: { d: 'M4 17a8 8 0 0 1 16 0', dots: [[4, 17], [20, 17], [12, 9]] }, // Arc
+  fibCircles: { d: 'M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0zM20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0z', dots: [[12, 12], [20, 12]] }, // Fib Circles
+  fibSpiral: { d: 'M12 12a1.5 1.5 0 0 1 1.5 1.5 3 3 0 0 1-3 3A4.5 4.5 0 0 1 6 12a6 6 0 0 1 6-6 8 8 0 0 1 8 8', dots: [[12, 12]] }, // Fib Spiral
+  fibArcs: { d: 'M10 20a6 6 0 0 0-6-6M14 20a10 10 0 0 0-10-10M18 20a14 14 0 0 0-14-14', dash: 'M4 20L18 6', dots: [[4, 20], [18, 6]] }, // Fib Speed Resistance Arcs
+  fibWedge: { d: 'M4 19L20 7M4 19L20 16M10.4 14.2A8 8 0 0 1 11.86 17.53M14.4 11.2A13 13 0 0 1 16.78 16.6', dots: [[4, 19], [20, 7], [20, 16]] }, // Fib Wedge
+  pitchfan: { d: 'M4 20L14 4M4 20L20 14M4 20L17 9', dash: 'M14 4L20 14', dots: [[4, 20], [14, 4], [20, 14]] }, // Pitchfan
+  gannSquare: { d: 'M4 4H20V20H4zM4 20L20 4M4 12H20M12 4V20M4 12a8 8 0 0 1 8 8', dots: [[4, 20], [20, 4]] }, // Gann Square
+  elliottImpulse: { d: 'M3 19L7 12L10 15L15 5L17.5 9L21 3', dots: [[3, 19], [21, 3]] }, // Elliott Impulse Wave
+  elliottCorrection: { d: 'M4 5L10 17L14 11L20 20', dots: [[4, 5], [20, 20]] }, // Elliott Correction Wave
+  elliottTriangle: { d: 'M3 6L7 17L11 9L15 15L18 11L21 13', dots: [[3, 6], [21, 13]] }, // Elliott Triangle Wave
+  elliottDoubleCombo: { d: 'M4 5L9 14L13 9L20 19', dots: [[4, 5], [9, 14], [13, 9], [20, 19]] }, // Elliott Double Combo Wave
+  elliottTripleCombo: { d: 'M3 5L7 13L10 9L14 16L17 12L21 20', dots: [[3, 5], [21, 20]] }, // Elliott Triple Combo Wave
+  threeDrives: { d: 'M3 20L7 12L9.5 15L14 7L16.5 10L21 3', dash: 'M7 12L14 7L21 3', dots: [[7, 12], [14, 7], [21, 3]] }, // Three Drives Pattern
+  cypherPattern: { d: 'M3 19L7 9L10 14L15 5L20 16', dash: 'M3 19L10 14L20 16', dots: [[3, 19], [7, 9], [10, 14], [15, 5], [20, 16]] }, // Cypher Pattern
+  timeCycles: { d: 'M3 18a4.5 4.5 0 0 1 9 0a4.5 4.5 0 0 1 9 0', dots: [[3, 18], [12, 18]] }, // Time Cycles
+  sineLine: { d: 'M3 12C5 5 7.5 5 9 12S13 19 15 12 19.5 5 21 12', dots: [[6, 6.75], [12, 17.25]] }, // Sine Line
+  forecast: { d: 'M4 18L15.2 7.8M19.5 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z', dots: [[4, 18]] }, // Forecast
+  projection: { d: 'M12 19L18 11M15.2 11.3L18 11L17.8 13.8', dash: 'M3 17L9 9', dots: [[3, 17], [9, 9], [12, 19]] }, // Projection
+  barsPattern: { d: 'M5 6V14M9 9V18M15 4V12M19 7V16', fills: ['M4 8h2v4H4z', 'M8 11h2v5H8z', 'M14 6h2v4h-2z', 'M18 9h2v5h-2z'], dash: 'M12 3V21' }, // Bars Pattern
 };
 
 /** One per chart type, keyed by chart type. */

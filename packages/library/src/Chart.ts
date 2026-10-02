@@ -99,6 +99,7 @@ import {
   CompareRenderer,
   CurrentPriceLine,
   xToBarIndex,
+  xToTime,
   findDominantSwing,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
@@ -187,6 +188,8 @@ export class Chart {
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
   /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
   private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
+  /** The zoom-area tool is waiting for its box. */
+  private zoomAreaMode = false;
   /** Display timezone, minutes east of UTC; null = the browser's. */
   /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
@@ -767,6 +770,10 @@ export class Chart {
     });
 
     this.interactionManager.setEscapeHandler(() => {
+      if (this.zoomAreaMode) {
+        this.setZoomAreaMode(false);
+        return;
+      }
       if (this.features.trading && this.tradingManager.isBracketActive()) {
         this.tradingManager.cancelBracket();
         this.eventBus.emit('dataUpdate', { bracket: 'cancelled' });
@@ -815,6 +822,13 @@ export class Chart {
       move: (pos) => this.selectionBoxOverlay.update(inPlot(pos)),
       end: () => {
         const box = this.selectionBoxOverlay.end();
+        if (box && this.zoomAreaMode) {
+          // A click instead of a box keeps the tool waiting.
+          if (box.isClick) return;
+          this.zoomToBox(box);
+          this.setZoomAreaMode(false);
+          return;
+        }
         if (!box || !this.features.drawings) return;
         // With the bar series, so anchors resolve as timestamps (as for drawing hit-tests).
         const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
@@ -822,7 +836,10 @@ export class Chart {
         else this.drawingManager.selectInRect(box, vs);
         this.engine.requestRender(LayerType.Overlay);
       },
-      cancel: () => this.selectionBoxOverlay.cancel(),
+      cancel: () => {
+        this.selectionBoxOverlay.cancel();
+        this.setZoomAreaMode(false);
+      },
     });
 
     // A plain hover only moves pointer-tied visuals (crosshair, its axis
@@ -1368,6 +1385,8 @@ export class Chart {
     if (!this.features.drawings) return;
     // If whitelist is set, check it
     if (type && this.features.drawingTools.length > 0 && !this.features.drawingTools.includes(type)) return;
+    // A tool picked puts the eraser and the zoom box away (the manager does the eraser).
+    if (type) this.setZoomAreaMode(false);
     this.drawingManager.setActiveTool(type);
   }
 
@@ -1560,13 +1579,70 @@ export class Chart {
 
   // --- Drawing magnet ---
 
-  /** Ignored (stays off) when `features.drawingMagnet` is false. */
+  /** The weak magnet on or off. Ignored (stays off) when `features.drawingMagnet` is false. */
   setDrawingMagnet(enabled: boolean): void {
-    this.drawingManager.setMagnetMode(enabled && this.features.drawingMagnet ? 'magnet' : 'none');
+    this.setDrawingMagnetMode(enabled ? 'weak' : 'off');
   }
 
+  /** Whether a magnet (weak or strong) is on. */
   getDrawingMagnet(): boolean {
-    return this.drawingManager.getMagnetMode() === 'magnet';
+    return this.drawingManager.getMagnetMode() !== 'none';
+  }
+
+  /**
+   * Snap new anchors to the bar's open, high, low or close: 'weak' when the
+   * pointer is near one, 'strong' always. Stays off when
+   * `features.drawingMagnet` is false.
+   */
+  setDrawingMagnetMode(mode: 'off' | 'weak' | 'strong'): void {
+    const on = this.features.drawingMagnet && mode !== 'off';
+    this.drawingManager.setMagnetMode(!on ? 'none' : mode === 'strong' ? 'strong' : 'magnet');
+  }
+
+  getDrawingMagnetMode(): 'off' | 'weak' | 'strong' {
+    const mode = this.drawingManager.getMagnetMode();
+    return mode === 'none' ? 'off' : mode === 'strong' ? 'strong' : 'weak';
+  }
+
+  // --- Eraser and zoom area ---
+
+  /**
+   * The eraser: while on, clicking a drawing removes it (each one undoable).
+   * Picking a drawing tool or pressing Escape turns it off. `toolModeChange`
+   * reports `{ eraser }`.
+   */
+  setEraserMode(on: boolean): void {
+    if (on) this.setZoomAreaMode(false);
+    this.drawingManager.setEraser(on && this.features.drawings);
+  }
+
+  isEraserMode(): boolean {
+    return this.drawingManager.isEraser();
+  }
+
+  /**
+   * The zoom-area tool: the next drag draws a box and the chart zooms to its
+   * bars; then it turns itself off. `toolModeChange` reports `{ zoomArea }`.
+   */
+  setZoomAreaMode(on: boolean): void {
+    if (on === this.zoomAreaMode) return;
+    this.zoomAreaMode = on;
+    if (on) {
+      this.drawingManager.setEraser(false);
+      this.drawingManager.setActiveTool(null);
+    }
+    this.interactionManager?.setZoomAreaMode(on);
+    this.eventBus.emit('toolModeChange', { zoomArea: on });
+  }
+
+  isZoomAreaMode(): boolean {
+    return this.zoomAreaMode;
+  }
+
+  /** Zoom to the bars under a box dragged in zoom-area mode. */
+  private zoomToBox(box: { x0: number; x1: number }): void {
+    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    this.setVisibleRange(xToTime(box.x0, vs), xToTime(box.x1, vs));
   }
 
   // --- Bulk drawing operations ---

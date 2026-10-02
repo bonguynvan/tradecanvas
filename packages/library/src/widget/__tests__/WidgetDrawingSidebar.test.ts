@@ -56,13 +56,27 @@ describe('drawing tool menu', () => {
     expect(flyout()).toBeNull();
   });
 
+  it('stays open on the menu itself, which sits beside the sidebar (so the sidebar can scroll)', () => {
+    const lines = wraps()[0];
+    enter(lines);
+    leave(lines);
+    const menu = flyout()!;
+    enter(menu);
+    vi.advanceTimersByTime(500);
+    expect(flyout()).toBe(menu);
+    expect(lines.contains(menu)).toBe(false);
+    leave(menu);
+    vi.advanceTimersByTime(200);
+    expect(flyout()).toBeNull();
+  });
+
   it('switches straight to another group', () => {
     const [lines, levels] = wraps();
     enter(lines);
     leave(lines);
     enter(levels);
     expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
-    expect(levels.querySelector('.tcw-flyout')).not.toBeNull();
+    expect(flyout()?.querySelector('.tcw-flyout-header')?.textContent).toBe('Horizontal/Vertical');
   });
 });
 

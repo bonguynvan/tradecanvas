@@ -27,13 +27,15 @@ import {
 } from './drawingState.js';
 import { orderTarget, redoAction, undoAction } from './drawingHistory.js';
 import { drawingShortcut } from './drawingShortcuts.js';
+import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
 type DrawingEventCallback = (event: string, data: unknown) => void;
 
 export type DrawingInteractionState = 'idle' | 'creating' | 'selected' | 'moving' | 'resizing';
-export type MagnetMode = 'none' | 'magnet';
+/** 'magnet' snaps an anchor to the nearest open, high, low or close within reach; 'strong' always does. */
+export type MagnetMode = 'none' | 'magnet' | 'strong';
 
 /**
  * Copied drawings, shared by every chart on the page so a copy can be pasted
@@ -57,9 +59,12 @@ export class DrawingManager {
     fillOpacity: 0.1,
     fontSize: 12,
   };
-  private creatingDrawing: DrawingState | null = null;
-  private committedAnchors = 0; // how many anchors have been clicked (not preview)
-  private previewAnchor: { time: number; price: number } | null = null;
+  /** The drawing being made with the pointer. */
+  private creator = new DrawingCreator();
+  /** When the last drawing was finished (ms): the double-click that ends one isn't a double-click on it. */
+  private finishedAt = -Infinity;
+  /** The eraser: a click on a drawing removes it. */
+  private eraser = false;
   private selectedDrawingId: string | null = null;
   /** Drawings selected together with `selectedDrawingId` (Ctrl/⌘-drag or Ctrl/⌘-click). */
   private groupIds = new Set<string>();
@@ -88,6 +93,7 @@ export class DrawingManager {
 
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
+    if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter);
   }
 
   setEventCallback(cb: DrawingEventCallback): void {
@@ -110,8 +116,10 @@ export class DrawingManager {
     return this.magnetMode;
   }
 
+  /** The chart's bars, for legacy anchors and the tools drawn from bars. */
   setDataGetter(getter: () => OHLCBar[]): void {
     this.dataGetter = getter;
+    for (const plugin of this.registry.values()) plugin.setDataGetter?.(getter);
   }
 
   /** Set a separate getter for display data (e.g. Heikin Ashi transformed). Used by magnet snap. */
@@ -152,8 +160,8 @@ export class DrawingManager {
       if (d < minDist) { minDist = d; closest = candidates[i]; }
     }
 
-    // Only snap if within a reasonable pixel distance (magnet radius)
-    if (viewport) {
+    // The weak magnet only snaps within reach; the strong one always does.
+    if (viewport && this.magnetMode === 'magnet') {
       const pxPerPrice = viewport.chartRect.height / (viewport.priceRange.max - viewport.priceRange.min || 1);
       const distPx = minDist * pxPerPrice;
       if (distPx > 30) {
@@ -220,9 +228,7 @@ export class DrawingManager {
    */
   private settleAfterHistory(): void {
     this.clearSelection();
-    this.creatingDrawing = null;
-    this.committedAnchors = 0;
-    this.previewAnchor = null;
+    this.creator.reset();
     this.state = this.activeTool ? 'creating' : 'idle';
     this.requestRender?.();
   }
@@ -450,12 +456,11 @@ export class DrawingManager {
   // --- Tool selection ---
 
   setActiveTool(type: DrawingToolType | null): void {
+    if (type) this.setEraser(false);
     const changed = type !== this.activeTool;
     this.activeTool = type;
     this.state = type ? 'creating' : 'idle';
-    this.creatingDrawing = null;
-    this.committedAnchors = 0;
-    this.previewAnchor = null;
+    this.creator.reset();
     if (changed) this.eventCallback?.('drawingToolChange', { tool: type });
   }
 
@@ -553,6 +558,7 @@ export class DrawingManager {
   // --- Pointer events (returns true if consumed) ---
 
   onPointerDown(pos: Point, viewport: ViewportState): boolean {
+    if (this.eraser) return this.erase(pos, viewport);
     if (this.state === 'creating' && this.activeTool) {
       return this.handleCreationClick(pos, viewport);
     }
@@ -565,15 +571,10 @@ export class DrawingManager {
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
-    if (this.state === 'creating' && this.creatingDrawing) {
-      const plugin = this.registry.get(this.creatingDrawing.type);
-      if (plugin && this.committedAnchors < plugin.descriptor.requiredAnchors) {
-        const rawTime = xToTime(pos.x, viewport);
-        const rawPrice = yToPrice(pos.y, viewport);
-        this.previewAnchor = this.snapToOHLC(rawTime, rawPrice, viewport);
-        this.requestRender?.();
-        return true;
-      }
+    const making = this.state === 'creating' ? this.creator.current : null;
+    if (making && this.creator.move(this.creationAnchor(making.type, pos, viewport), pos)) {
+      this.requestRender?.();
+      return true;
     }
 
     if (this.state === 'moving' && this.selectedDrawingId && this.dragStartPoint) {
@@ -588,6 +589,12 @@ export class DrawingManager {
   }
 
   onPointerUp(): boolean {
+    // A freehand stroke ends with the press.
+    const released = this.state === 'creating' ? this.creator.release() : null;
+    if (released) {
+      this.afterCreationStep(released);
+      return true;
+    }
     if (this.state === 'moving' || this.state === 'resizing') {
       // Record undo for the completed move/resize — not for a press that
       // only selected the drawing without moving it.
@@ -650,11 +657,22 @@ export class DrawingManager {
       case 'delete':
         // Every selected drawing that isn't locked goes, as one undo step.
         return primary !== null && this.removeDrawings(this.getSelectedDrawingIds()) > 0;
+      case 'finish': {
+        if (this.state !== 'creating' || !this.creator.current) return false;
+        const step = this.creator.finish();
+        if (step !== 'done') return false;
+        this.afterCreationStep(step);
+        return true;
+      }
     }
   }
 
-  /** Escape: drop the tool being drawn with, else the selection. */
+  /** Escape: put the eraser away, drop the tool being drawn with, else the selection. */
   private escape(): boolean {
+    if (this.eraser) {
+      this.setEraser(false);
+      return true;
+    }
     if (this.state === 'creating') {
       this.setActiveTool(null);
       this.requestRender?.();
@@ -1056,20 +1074,9 @@ export class DrawingManager {
       plugin.render(ctx, drawing, viewport, isSelected);
     }
 
-    // Render drawing being created (with preview anchor)
-    if (this.creatingDrawing && this.committedAnchors > 0) {
-      const plugin = this.registry.get(this.creatingDrawing.type);
-      if (plugin) {
-        // Build preview state: committed anchors + optional preview anchor
-        const previewState: DrawingState = {
-          ...this.creatingDrawing,
-          anchors: this.previewAnchor
-            ? [...this.creatingDrawing.anchors, this.previewAnchor]
-            : [...this.creatingDrawing.anchors],
-        };
-        plugin.render(ctx, previewState, viewport, false);
-      }
-    }
+    // The drawing being made, with the anchor under the pointer.
+    const preview = this.creator.previewState();
+    if (preview) this.registry.get(preview.type)?.render(ctx, preview, viewport, false);
 
     ctx.restore();
   }
@@ -1097,63 +1104,78 @@ export class DrawingManager {
     return n * median;
   }
 
+  /** Where a press or move puts an anchor: magnet-snapped, except for a freehand stroke. */
+  private creationAnchor(type: DrawingToolType, pos: Point, viewport: ViewportState): AnchorPoint {
+    const time = xToTime(pos.x, viewport);
+    const price = yToPrice(pos.y, viewport);
+    return this.registry.get(type)?.descriptor.creation === 'freehand' ? { time, price } : this.snapToOHLC(time, price, viewport);
+  }
+
   private handleCreationClick(pos: Point, viewport: ViewportState): boolean {
-    if (!this.activeTool) return false;
-    const plugin = this.registry.get(this.activeTool);
-    if (!plugin) return false;
-
-    const rawTime = xToTime(pos.x, viewport);
-    const rawPrice = yToPrice(pos.y, viewport);
-    const anchor = this.snapToOHLC(rawTime, rawPrice, viewport);
-
-    if (!this.creatingDrawing) {
-      // First click: start creation
-      this.creatingDrawing = {
-        id: newDrawingId(),
-        type: this.activeTool,
-        anchors: [anchor],
-        style: { ...this.activeStyle },
-        visible: true,
-        locked: false,
-        options: this.initialOptions(this.activeTool),
-      };
-      this.committedAnchors = 1;
-      this.previewAnchor = null;
-
-      if (plugin.descriptor.requiredAnchors === 1) {
-        this.finalizeCreation();
-      }
-      this.requestRender?.();
-      return true;
-    }
-
-    // Subsequent click: commit the anchor
-    this.creatingDrawing.anchors.push(anchor);
-    this.committedAnchors++;
-    this.previewAnchor = null;
-
-    if (this.committedAnchors >= plugin.descriptor.requiredAnchors) {
-      this.finalizeCreation();
-    }
-
-    this.requestRender?.();
+    const type = this.activeTool;
+    const plugin = type ? this.registry.get(type) : undefined;
+    if (!type || !plugin) return false;
+    const start = (): DrawingState => ({
+      id: newDrawingId(),
+      type,
+      anchors: [],
+      style: { ...this.activeStyle },
+      visible: true,
+      locked: false,
+      options: this.initialOptions(type),
+    });
+    this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, viewport), pos));
     return true;
   }
 
+  private afterCreationStep(step: CreationStep): void {
+    if (step === 'done') this.finalizeCreation();
+    else if (step === 'cancel') this.creator.reset();
+    this.requestRender?.();
+  }
+
+  /**
+   * Turn the eraser on or off: while on, a click on a drawing (not a locked
+   * one) removes it, one undo step each. Picking a tool or Escape turns it off.
+   */
+  setEraser(on: boolean): void {
+    if (on === this.eraser) return;
+    this.eraser = on;
+    if (on) {
+      this.setActiveTool(null);
+      this.clearSelection();
+      this.state = 'idle';
+    }
+    this.eventCallback?.('toolModeChange', { eraser: on });
+    this.requestRender?.();
+  }
+
+  isEraser(): boolean {
+    return this.eraser;
+  }
+
+  /** The eraser at `pos`: remove the drawing there. A press off any drawing is left to the chart (a pan). */
+  private erase(pos: Point, viewport: ViewportState): boolean {
+    const id = this.drawingAt(pos, viewport);
+    const drawing = id ? this.drawings.find((d) => d.id === id) : undefined;
+    if (!drawing || drawing.locked) return false;
+    this.removeDrawing(drawing.id);
+    return true;
+  }
+
+  /** Whether a drawing was just finished: the double-click that ended a path, say. */
+  justFinished(withinMs = 500): boolean {
+    return Date.now() - this.finishedAt < withinMs;
+  }
+
   private finalizeCreation(): void {
-    if (!this.creatingDrawing) return;
-    this.drawings.push(this.creatingDrawing);
-    this.selectedDrawingId = this.creatingDrawing.id;
-    // Record undo action
-    this.record({
-      type: 'drawingCreate',
-      before: null,
-      after: structuredClone(this.creatingDrawing),
-    });
-    this.eventCallback?.('drawingCreate', { id: this.creatingDrawing.id, type: this.creatingDrawing.type, drawing: this.creatingDrawing });
-    this.creatingDrawing = null;
-    this.committedAnchors = 0;
-    this.previewAnchor = null;
+    const drawing = this.creator.take();
+    if (!drawing) return;
+    this.finishedAt = Date.now();
+    this.drawings.push(drawing);
+    this.selectedDrawingId = drawing.id;
+    this.record({ type: 'drawingCreate', before: null, after: structuredClone(drawing) });
+    this.eventCallback?.('drawingCreate', { id: drawing.id, type: drawing.type, drawing });
     if (this.stayInDrawingMode && this.activeTool) {
       // Ready for the next one; selecting the finished drawing would get in the way.
       this.clearSelection();
@@ -1186,6 +1208,7 @@ export class DrawingManager {
   }
 
   hoverCursorAt(pos: Point, viewport: ViewportState): 'move' | 'pointer' | null {
+    if (this.eraser) return this.drawingAt(pos, viewport) ? 'pointer' : null;
     if (this.activeTool || this.state === 'creating') return null;
     const tolerance = 8;
     if (this.selectedDrawingId) {

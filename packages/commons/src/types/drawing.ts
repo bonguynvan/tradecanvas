@@ -1,4 +1,5 @@
 import type { Point, ViewportState } from './rendering.js';
+import type { OHLCBar } from './ohlc.js';
 
 export type DrawingToolType =
   | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
@@ -13,7 +14,14 @@ export type DrawingToolType =
   | 'gannFan' | 'gannBox' | 'cyclicLines'
   | 'anchoredVWAP'
   | 'volumeProfileRange'
-  | 'riskReward';
+  | 'riskReward'
+  | 'note' | 'callout' | 'flag' | 'arrowMark' | 'icon'
+  | 'brush' | 'highlighter' | 'path' | 'polyline' | 'curve' | 'arc'
+  | 'fibCircles' | 'fibSpiral' | 'fibArcs' | 'fibWedge' | 'pitchfan' | 'gannSquare'
+  | 'elliottImpulse' | 'elliottCorrection' | 'elliottTriangle' | 'elliottDoubleCombo' | 'elliottTripleCombo'
+  | 'threeDrives' | 'cypherPattern'
+  | 'timeCycles' | 'sineLine'
+  | 'forecast' | 'projection' | 'barsPattern';
 
 export interface AnchorPoint {
   time: number;
@@ -78,6 +86,16 @@ export interface DrawingDescriptor {
   fill?: boolean;
   /** It draws `style.text` (a settings dialog offers the text and its size). */
   text?: boolean;
+  /**
+   * How it is drawn with the pointer. 'clicks' (the default): a click per
+   * anchor up to `requiredAnchors`. 'freehand': press and drag, a point every
+   * few pixels, release to finish. 'path': a click per point, at least
+   * `requiredAnchors` and at most `maxAnchors`; a double-click, Enter or a
+   * click on the last point finishes it.
+   */
+  creation?: 'clicks' | 'freehand' | 'path';
+  /** Most points a 'path' takes (100 when left out). */
+  maxAnchors?: number;
 }
 
 export interface DrawingPlugin {
@@ -115,6 +133,11 @@ export interface DrawingPlugin {
    * straight in log price.
    */
   priceAt?(state: DrawingState, time: number, viewport?: ViewportState): number[] | null;
+  /**
+   * For a tool drawn from the chart's bars (an anchored VWAP, a volume
+   * profile): the chart hands it a getter for them when it is registered.
+   */
+  setDataGetter?(getter: () => readonly OHLCBar[]): void;
 }
 
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {

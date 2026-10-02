@@ -159,3 +159,32 @@ export class HeadAndShouldersTool extends PatternTool {
     ctx.setLineDash([]);
   }
 }
+
+/**
+ * Three Drives: three pushes in one direction, each a Fibonacci extension of
+ * the pullback before it (six points: start, drive 1, pullback A, drive 2,
+ * pullback B, drive 3).
+ */
+export class ThreeDrivesTool extends PatternTool {
+  descriptor = { type: 'threeDrives' as const, name: 'Three Drives Pattern', requiredAnchors: 6 };
+  protected readonly pointLabels = ['', '1', 'A', '2', 'B', '3'];
+  protected override readonly ratioLinks: RatioLink[] = [
+    { from: 1, to: 3, num: [2, 3], den: [1, 2] }, // drive 2 / pullback A
+    { from: 3, to: 5, num: [4, 5], den: [3, 4] }, // drive 3 / pullback B
+  ];
+}
+
+/**
+ * Cypher: a harmonic pattern (X, A, B, C, D) whose C overshoots A, and whose
+ * D retraces X to C.
+ */
+export class CypherPatternTool extends PatternTool {
+  descriptor = { type: 'cypherPattern' as const, name: 'Cypher Pattern', requiredAnchors: 5, fill: true };
+  protected readonly pointLabels = ['X', 'A', 'B', 'C', 'D'];
+  protected override readonly ratioLinks: RatioLink[] = [
+    { from: 0, to: 2, num: [1, 2], den: [0, 1] }, // AB / XA
+    { from: 0, to: 3, num: [2, 3], den: [0, 1] }, // BC / XA
+    { from: 0, to: 4, num: [3, 4], den: [0, 3] }, // CD / XC
+  ];
+  protected override readonly triangles: [number, number, number][] = [[0, 1, 2], [2, 3, 4]];
+}

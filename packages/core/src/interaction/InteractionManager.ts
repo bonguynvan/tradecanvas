@@ -43,6 +43,8 @@ export class InteractionManager {
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
   private onDrawingDoubleClick: ((id: string) => void) | null = null;
   private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
+  /** The zoom-area tool: a drag draws the box to zoom into. */
+  private zoomArea = false;
   private axisStrips: (() => AxisStrips) | null = null;
   private savedTouchAction = '';
   private measureHandlers: {
@@ -169,6 +171,11 @@ export class InteractionManager {
     this.viewportGetter = viewportGetter;
   }
 
+  /** While on, a plain drag draws a box (the box-select handlers get it) instead of panning. */
+  setZoomAreaMode(on: boolean): void {
+    this.zoomArea = on;
+  }
+
   /** Called when a drawing is right-clicked (to open its menu); the browser's menu stays shut. */
   setDrawingContextMenu(cb: (id: string, pos: Point) => void): void {
     this.onDrawingContextMenu = cb;
@@ -249,8 +256,10 @@ export class InteractionManager {
       };
     };
 
-    const idleCursor = (): string =>
-      this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? 'crosshair' : '';
+    const idleCursor = (): string => {
+      if (this.zoomArea) return 'zoom-in';
+      return this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? 'crosshair' : '';
+    };
 
     const setCursor = (cursor: string) => {
       if (this.element.style.cursor !== cursor) this.element.style.cursor = cursor;
@@ -344,7 +353,8 @@ export class InteractionManager {
       const placing = !!this.drawingManager?.getActiveTool()
         || !!this.tradingManager?.isBracketActive()
         || !!this.tradingManager?.isOrderDraftActive();
-      if ((e.ctrlKey || e.metaKey) && this.boxSelectHandlers && !placing) {
+      // The zoom-area tool takes a plain drag for its box.
+      if ((e.ctrlKey || e.metaKey || this.zoomArea) && this.boxSelectHandlers && !placing) {
         this.boxSelecting = true;
         this.boxSelectHandlers.begin(pos);
         setCursor(idleCursor());
@@ -515,7 +525,9 @@ export class InteractionManager {
         return;
       }
       const vp = getVP();
-      const id = vp ? this.drawingManager?.drawingAt(pos, vp) : null;
+      // The double-click that finished a drawing (a path) doesn't open it.
+      if (!vp || this.drawingManager?.justFinished()) return;
+      const id = this.drawingManager?.drawingAt(pos, vp);
       if (id) this.onDrawingDoubleClick?.(id);
     };
 
