@@ -1,6 +1,7 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { MAX_LAYOUT_NAME, cleanLayoutName } from '../state/LayoutSession.js';
+import { keepTabInside } from './focusTrap.js';
 
 export interface NamePromptRequest {
   title: string;
@@ -45,7 +46,9 @@ export class WidgetNamePrompt {
       if (e.key === 'Escape') {
         e.stopPropagation();
         this.close();
+        return;
       }
+      keepTabInside(e, modal);
     });
     modal.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -99,7 +102,7 @@ export class WidgetNamePrompt {
   }
 
   open(request: NamePromptRequest): void {
-    this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!this.isOpen()) this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.request = request;
     this.busy = false;
     this.titleEl.textContent = request.title;

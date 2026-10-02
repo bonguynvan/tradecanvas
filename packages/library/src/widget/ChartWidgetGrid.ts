@@ -1,4 +1,4 @@
-import type { Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
+import type { DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import type { GridLayout } from '../grid/ChartGrid.js';
@@ -11,6 +11,7 @@ import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './widgetLayout.js';
 import { utcToWallTime } from './WidgetGoToDate.js';
+import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
 
 /** What the charts of a grid follow from each other. */
 export interface WidgetGridSync {
@@ -47,8 +48,14 @@ export interface ChartWidgetGridOptions {
   layout?: GridLayout;
   /** The arrangements the bar offers. Default all of them. */
   layoutChoices?: readonly GridLayout[];
-  /** Options for every chart. */
+  /**
+   * Options for every chart. Leave `adapter` out of these when there is more
+   * than one chart: an adapter keeps one stream, so each chart needs its own
+   * (see `adapter`).
+   */
   widget?: ChartWidgetOptions;
+  /** Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart. */
+  adapter?: (index: number) => DataAdapter;
   /** Each chart's own options, by position (its symbol and interval, say), over `widget`. */
   cells?: readonly ChartWidgetOptions[];
   /** What the charts follow from each other; see {@link DEFAULT_GRID_SYNC}. */
@@ -59,6 +66,8 @@ export interface ChartWidgetGridOptions {
   bar?: boolean;
   /** The chart in use changed (pressed, or the grid shrank). */
   onActiveChange?: (index: number, widget: ChartWidget) => void;
+  /** A chart was made: at the start, and when the grid grows. Feed it data, add indicators… */
+  onChartAdd?: (widget: ChartWidget, index: number) => void;
 }
 
 /** What a grid's named layout holds. */
@@ -76,7 +85,15 @@ interface Cell {
   widget: ChartWidget;
 }
 
-let lastPressedGrid: ChartWidgetGrid | null = null;
+/** An arrangement the grid knows (own keys only: a stored `"constructor"` is not one). */
+export function isGridLayout(value: unknown): value is GridLayout {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(GRID_SHAPES, value);
+}
+
+/** A detached copy of plain data (drawings): charts must not share objects they change in place. */
+function copyOf<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
 
 /** A small picture of an arrangement: `cols` × `rows` boxes. */
 function shapeIcon(cols: number, rows: number, size = 16): string {
@@ -96,14 +113,14 @@ function shapeIcon(cols: number, rows: number, size = 16): string {
 export function readGridLayout(value: unknown): WidgetGridLayoutContent | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Record<string, unknown>;
-  if (v.v !== 1 || v.kind !== 'grid' || typeof v.layout !== 'string' || !(v.layout in GRID_SHAPES) || !Array.isArray(v.cells)) return null;
+  if (v.v !== 1 || v.kind !== 'grid' || !isGridLayout(v.layout) || !Array.isArray(v.cells)) return null;
   const cells = v.cells.map(readWidgetLayout);
   if (cells.some((c) => c === null)) return null;
   const rawSync = (typeof v.sync === 'object' && v.sync !== null ? v.sync : {}) as Record<string, unknown>;
   const sync = { ...DEFAULT_GRID_SYNC };
   for (const key of SYNC_KEYS) if (typeof rawSync[key] === 'boolean') sync[key] = rawSync[key] as boolean;
   const active = typeof v.active === 'number' && Number.isInteger(v.active) ? v.active : 0;
-  return { v: 1, kind: 'grid', layout: v.layout as GridLayout, sync, active, cells: cells as WidgetLayoutContent[] };
+  return { v: 1, kind: 'grid', layout: v.layout, sync, active, cells: cells as WidgetLayoutContent[] };
 }
 
 /**
@@ -121,8 +138,10 @@ export class ChartWidgetGrid {
   private active = 0;
   /** The chart under the pointer: scrolling there moves the others. */
   private hovered: Cell | null = null;
-  /** Set while the grid itself passes a change on, so the charts it changes don't pass it back. */
-  private relaying = false;
+  /** Above 0 while the grid itself changes charts (a relay, a restore), so they don't pass it back. */
+  private relayDepth = 0;
+  /** Charts the grid shrank away from, by position: growing again brings them back as they were. */
+  private parked = new Map<number, WidgetLayoutContent>();
   private drawingFrame = 0;
   private drawingSource: Cell | null = null;
   private layoutButtons = new Map<GridLayout, HTMLButtonElement>();
@@ -132,16 +151,17 @@ export class ChartWidgetGrid {
   private layoutsUI: WidgetLayoutsUI | null = null;
   private readonly t: Translator;
   private destroyed = false;
+  private unregisterKeys: () => void = () => {};
   private readonly onKeyDown = (e: KeyboardEvent) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || (e.key !== 's' && e.key !== 'S')) return;
-    if (!this.layoutsUI || (lastPressedGrid !== null && lastPressedGrid !== this)) return;
+    // Ctrl/Cmd+S saves the grid once it was used (else the page keeps its own Ctrl+S).
+    if (!this.layoutsUI || isTyping() || !isKeyTarget(this.root, true)) return;
     e.preventDefault();
     void this.layoutsUI.save();
   };
-  private readonly onPointerDown = () => { lastPressedGrid = this; };
 
   constructor(container: HTMLElement, private readonly options: ChartWidgetGridOptions = {}) {
-    this.layout = options.layout && options.layout in GRID_SHAPES ? options.layout : '1x2';
+    this.layout = isGridLayout(options.layout) ? options.layout : '1x2';
     this.sync = { ...DEFAULT_GRID_SYNC, ...options.sync };
     this.t = createTranslator(resolveMessages(options.widget?.locale, options.widget?.messages));
     injectWidgetStyles();
@@ -149,7 +169,6 @@ export class ChartWidgetGrid {
     this.root = document.createElement('div');
     this.root.className = 'tcw-root tcw-grid';
     this.root.dataset.tcwTheme = options.widget?.theme === 'light' ? 'light' : 'dark';
-    this.root.addEventListener('pointerdown', this.onPointerDown, true);
     if (options.bar !== false) this.root.appendChild(this.buildBar());
     this.cellsEl = document.createElement('div');
     this.cellsEl.className = 'tcw-grid-cells';
@@ -159,9 +178,28 @@ export class ChartWidgetGrid {
     this.applyShape();
     for (let i = 0; i < this.shapeCount(); i++) this.cells.push(this.createCell(i));
     this.markActive();
+    // The bar takes the charts' theme (a Theme object can be dark or light).
+    const theme = this.cells[0]?.el.querySelector<HTMLElement>('.tcw-root')?.dataset.tcwTheme;
+    if (theme) this.root.dataset.tcwTheme = theme;
 
     if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
+    // After the charts: the first of them takes the shortcuts until one is pressed.
+    this.unregisterKeys = registerKeyRoot(this.root);
     document.addEventListener('keydown', this.onKeyDown);
+  }
+
+  private get relaying(): boolean {
+    return this.relayDepth > 0;
+  }
+
+  /** Run `change` as the grid's own (the charts it changes don't pass it on). */
+  private quietly<T>(change: () => T): T {
+    this.relayDepth++;
+    try {
+      return change();
+    } finally {
+      this.relayDepth--;
+    }
   }
 
   // --- Public API ---
@@ -187,20 +225,35 @@ export class ChartWidgetGrid {
     this.active = index;
     this.markActive();
     this.options.onActiveChange?.(index, this.cells[index].widget);
+    this.session?.changed();
   }
 
   getLayout(): GridLayout {
     return this.layout;
   }
 
-  /** Arrange the charts: extra ones go, new ones open on the active chart's symbol and interval when those are synced. */
+  /**
+   * Arrange the charts. Charts that no longer fit are put away (kept in the
+   * saved layout too) and come back as they were when the grid grows again;
+   * brand-new ones open on the active chart's symbol and interval when those
+   * are synced.
+   */
   setLayout(layout: GridLayout): void {
-    if (layout === this.layout || !(layout in GRID_SHAPES)) return;
+    if (layout === this.layout || !isGridLayout(layout)) return;
     this.layout = layout;
     const count = this.shapeCount();
-    while (this.cells.length > count) this.destroyCell(this.cells.pop()!);
+    while (this.cells.length > count) {
+      const index = this.cells.length - 1;
+      const cell = this.cells.pop()!;
+      this.parked.set(index, cell.widget.captureLayout());
+      this.destroyCell(cell);
+    }
     this.applyShape();
-    for (let i = this.cells.length; i < count; i++) this.cells.push(this.createCell(i));
+    for (let i = this.cells.length; i < count; i++) {
+      const cell = this.createCell(i);
+      this.cells.push(cell);
+      this.unpark(i, cell);
+    }
     if (this.active >= count) {
       this.active = 0;
       this.options.onActiveChange?.(0, this.cells[0].widget);
@@ -221,10 +274,11 @@ export class ChartWidgetGrid {
     // Switched on: line the others up with the active chart now.
     const source = this.cells[this.active];
     if (source && !this.relaying) {
-      const state = source.widget.captureLayout();
-      if (!before.symbol && this.sync.symbol) this.relay(source, (w) => void w.setSymbol(state.symbol));
-      if (!before.interval && this.sync.interval) this.relay(source, (w) => void w.setTimeframe(state.timeframe));
-      if (!before.drawings && this.sync.drawings) this.copyDrawings(source);
+      const symbol = source.widget.getSymbol();
+      const timeframe = source.widget.getTimeframe();
+      if (!before.symbol && this.sync.symbol) this.relay(source, (w) => void w.setSymbol(symbol));
+      if (!before.interval && this.sync.interval) this.relay(source, (w) => void w.setTimeframe(timeframe));
+      if (!before.drawings && this.sync.drawings) this.mergeDrawings();
     }
     this.renderBar();
     this.session?.changed();
@@ -241,30 +295,42 @@ export class ChartWidgetGrid {
     return this.session;
   }
 
-  /** The grid as a layout: arrangement, sync and every chart. */
+  /** The grid as a layout: arrangement, sync and every chart, those put away included. */
   captureLayout(): WidgetGridLayoutContent {
+    const parked = [...this.parked.entries()].sort(([a], [b]) => a - b).map(([, content]) => content);
     return {
       v: 1,
       kind: 'grid',
       layout: this.layout,
       sync: { ...this.sync },
       active: this.active,
-      cells: this.cells.map((c) => c.widget.captureLayout()),
+      cells: [...this.cells.map((c) => c.widget.captureLayout()), ...parked],
     };
   }
 
+  /**
+   * Show a layout from `captureLayout()`. Rejects when a chart could not take
+   * its part (the others still finish). For a saved layout, open it through
+   * `getLayoutSession()`, so an auto-save can't catch it half shown.
+   */
   async restoreLayout(content: WidgetGridLayoutContent): Promise<void> {
-    this.relaying = true;
+    this.relayDepth++;
+    let results: PromiseSettledResult<void>[];
     try {
+      this.parked.clear();
       this.setLayout(content.layout);
       this.sync = { ...content.sync };
       this.renderBar();
-      await Promise.all(this.cells.map((c, i) => (content.cells[i] ? c.widget.restoreLayout(content.cells[i]) : undefined)));
+      const count = this.cells.length;
+      content.cells.slice(count).forEach((cell, i) => this.parked.set(count + i, cell));
+      results = await Promise.allSettled(this.cells.map((c, i) => (content.cells[i] ? c.widget.restoreLayout(content.cells[i]) : Promise.resolve())));
     } finally {
-      this.relaying = false;
+      this.relayDepth--;
     }
     if (this.destroyed) return;
     this.setActive(Math.min(Math.max(0, content.active), this.cells.length - 1));
+    const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failed) throw failed.reason;
   }
 
   getLayoutContent(): string {
@@ -283,8 +349,7 @@ export class ChartWidgetGrid {
     if (this.destroyed) return;
     this.destroyed = true;
     document.removeEventListener('keydown', this.onKeyDown);
-    this.root.removeEventListener('pointerdown', this.onPointerDown, true);
-    if (lastPressedGrid === this) lastPressedGrid = null;
+    this.unregisterKeys();
     if (this.drawingFrame) cancelAnimationFrame(this.drawingFrame);
     this.session?.destroy();
     this.layoutsUI?.destroy();
@@ -317,13 +382,14 @@ export class ChartWidgetGrid {
     const shared = this.options.widget ?? {};
     const own = this.options.cells?.[index] ?? {};
     // A new chart joins the synced symbol and interval.
-    const lead = this.cells[this.active]?.widget.captureLayout();
+    const lead = this.cells[this.active]?.widget;
     const cell = {} as Cell;
     const widget = new ChartWidget(el, {
       ...shared,
       ...own,
-      ...(lead && this.sync.symbol ? { symbol: lead.symbol } : {}),
-      ...(lead && this.sync.interval ? { timeframe: lead.timeframe } : {}),
+      ...(lead && this.sync.symbol ? { symbol: lead.getSymbol() } : {}),
+      ...(lead && this.sync.interval ? { timeframe: lead.getTimeframe() } : {}),
+      ...(this.options.adapter && !own.adapter ? { adapter: this.options.adapter(index) } : {}),
       // The grid keeps the layouts, of all its charts at once.
       layouts: false,
       onSymbolChange: (symbol) => {
@@ -345,6 +411,7 @@ export class ChartWidgetGrid {
     el.addEventListener('pointerdown', () => this.setActive(this.cells.indexOf(cell)), true);
     el.addEventListener('pointerenter', () => { this.hovered = cell; });
     el.addEventListener('pointerleave', () => { if (this.hovered === cell) this.hovered = null; });
+    this.options.onChartAdd?.(widget, index);
     return cell;
   }
 
@@ -392,12 +459,26 @@ export class ChartWidgetGrid {
   /** Pass a change from `source` on to the other charts, without it coming back. */
   private relay(source: Cell, apply: (widget: ChartWidget) => void): void {
     if (this.relaying) return;
-    this.relaying = true;
-    try {
+    this.quietly(() => {
       for (const c of this.cells) if (c !== source) apply(c.widget);
-    } finally {
-      this.relaying = false;
-    }
+    });
+  }
+
+  /** A chart that was put away comes back at `index`, as it was (on the synced symbol and interval). */
+  private unpark(index: number, cell: Cell): void {
+    const content = this.parked.get(index);
+    if (!content) return;
+    this.parked.delete(index);
+    const lead = this.cells[this.active]?.widget;
+    const restored: WidgetLayoutContent = {
+      ...content,
+      ...(lead && this.sync.symbol ? { symbol: lead.getSymbol() } : {}),
+      ...(lead && this.sync.interval ? { timeframe: lead.getTimeframe() } : {}),
+    };
+    this.relayDepth++;
+    cell.widget.restoreLayout(restored)
+      .catch(() => cell.widget.toast(this.t('layouts.openFailed'), 'error'))
+      .finally(() => { this.relayDepth--; });
   }
 
   /** Drawings move in bursts (a drag): copy them once a frame. */
@@ -408,22 +489,35 @@ export class ChartWidgetGrid {
       this.drawingFrame = 0;
       const from = this.drawingSource;
       this.drawingSource = null;
-      if (from && !this.destroyed) this.copyDrawings(from);
+      // A restore under way sets every chart's drawings itself.
+      if (from && !this.destroyed && !this.relaying) this.copyDrawings(from);
     });
   }
 
-  /** `source`'s drawings onto the charts showing its symbol. */
+  /** `source`'s drawings onto the charts showing its symbol (copies: charts change drawings in place). */
   private copyDrawings(source: Cell): void {
-    const symbol = source.widget.captureLayout().symbol;
+    const symbol = source.widget.getSymbol();
     const drawings = source.widget.getChart().getDrawings();
-    this.relaying = true;
-    try {
+    this.quietly(() => {
       for (const c of this.cells) {
-        if (c !== source && c.widget.captureLayout().symbol === symbol) c.widget.getChart().setDrawings(drawings);
+        if (c !== source && c.widget.getSymbol() === symbol) c.widget.getChart().setDrawings(copyOf(drawings));
       }
-    } finally {
-      this.relaying = false;
-    }
+    });
+  }
+
+  /** Drawings sync switched on: each symbol's charts get all their drawings put together (none lost). */
+  private mergeDrawings(): void {
+    const bySymbol = new Map<string, Cell[]>();
+    for (const c of this.cells) bySymbol.set(c.widget.getSymbol(), [...(bySymbol.get(c.widget.getSymbol()) ?? []), c]);
+    this.quietly(() => {
+      for (const cells of bySymbol.values()) {
+        if (cells.length < 2) continue;
+        const merged = new Map<string, DrawingState>();
+        for (const c of cells) for (const d of c.widget.getChart().getDrawings()) if (!merged.has(d.id)) merged.set(d.id, d);
+        const all = [...merged.values()];
+        for (const c of cells) c.widget.getChart().setDrawings(copyOf(all));
+      }
+    });
   }
 
   /** Dark or light, as `source` (or the active chart) now is, for the bar and every chart. */
@@ -431,14 +525,11 @@ export class ChartWidgetGrid {
     const theme = source?.el.querySelector<HTMLElement>('.tcw-root')?.dataset.tcwTheme;
     if (!theme) return;
     this.root.dataset.tcwTheme = theme;
-    this.relaying = true;
-    try {
+    this.quietly(() => {
       for (const c of this.cells) {
         if (c !== source && c.el.querySelector<HTMLElement>('.tcw-root')?.dataset.tcwTheme !== theme) c.widget.setTheme(theme as ThemeName);
       }
-    } finally {
-      this.relaying = false;
-    }
+    });
   }
 
   private markActive(): void {
@@ -457,7 +548,7 @@ export class ChartWidgetGrid {
     shapes.className = 'tcw-grid-group';
     shapes.setAttribute('role', 'group');
     shapes.setAttribute('aria-label', this.t('grid.layout'));
-    const choices = this.options.layoutChoices?.filter((l) => l in GRID_SHAPES) ?? (Object.keys(GRID_SHAPES) as GridLayout[]);
+    const choices = this.options.layoutChoices?.filter(isGridLayout) ?? (Object.keys(GRID_SHAPES) as GridLayout[]);
     for (const layout of choices) {
       const { cols, rows } = GRID_SHAPES[layout];
       const label = cols * rows === 1
@@ -548,8 +639,8 @@ export class ChartWidgetGrid {
   private setupLayouts(cfg: WidgetLayoutsOptions): void {
     const session = new LayoutSession(cfg.storage ?? localStorageLayouts('tcw:grid-layouts:'), {
       capture: () => {
-        const lead = this.cells[this.active].widget.captureLayout();
-        return { content: this.getLayoutContent(), symbol: lead.symbol, timeframe: lead.timeframe };
+        const lead = this.cells[this.active].widget;
+        return { content: this.getLayoutContent(), symbol: lead.getSymbol(), timeframe: lead.getTimeframe() };
       },
       apply: async (layout: SavedLayout) => {
         if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a grid layout');
@@ -557,6 +648,7 @@ export class ChartWidgetGrid {
     }, {
       autoSave: cfg.autoSave,
       debounceMs: cfg.debounceMs,
+      kind: 'grid',
       onChange: () => this.renderLayoutsButton(),
       onError: () => this.toast(this.t('layouts.saveFailed'), 'error'),
     });

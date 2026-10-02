@@ -325,6 +325,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.sent': 'Ордер отправлен: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Введите количество больше 0.',
   'ticket.problem.price': 'Введите цену больше 0.',
+  'ticket.problem.market': 'Рыночной цены пока нет.',
   'ticket.problem.stopLoss': 'Введите цену стоп-лосса больше 0.',
   'ticket.problem.takeProfit': 'Введите цену тейк-профита больше 0.',
   'ticket.problem.stopLossSide': 'Стоп-лосс ставится ниже цены входа при покупке и выше при продаже.',

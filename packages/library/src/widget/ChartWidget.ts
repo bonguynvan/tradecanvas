@@ -5,7 +5,7 @@ import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
 import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
-import { WidgetToolbar } from './WidgetToolbar.js';
+import { WidgetToolbar, setHostButtonName } from './WidgetToolbar.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
@@ -26,7 +26,8 @@ import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuCon
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
-import { readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
+import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
+import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
 import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
@@ -95,16 +96,11 @@ const PANE_ROW_TOP = 7;
 const PANE_ROW_STEP = 17;
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
-let lastPressedWidget: ChartWidget | null = null;
 
 /** 1 when bar times are milliseconds, 1000 when they are seconds. */
 const barTimeUnit = (data: ReadonlyArray<{ time: number }>): number =>
   (data[data.length - 1]?.time ?? 0) > 1e12 ? 1 : 1000;
 
-const isTyping = (): boolean => {
-  const active = document.activeElement as HTMLElement | null;
-  return !!active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable);
-};
 
 export class ChartWidget {
   private chart: Chart;
@@ -128,7 +124,8 @@ export class ChartWidget {
     if (this.portal.parentElement !== host) host.appendChild(this.portal);
     return this.portal;
   };
-  private readonly onRootPointerDown = () => { lastPressedWidget = this; };
+  /** Stops following presses for the page's shortcuts (see keyTarget). */
+  private unregisterKeys: () => void = () => {};
   private readonly onFullscreenChange = () => {
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
@@ -679,7 +676,8 @@ export class ChartWidget {
           this.refreshAccount();
         },
       }, this.t);
-      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate'] as const) {
+      // indicatorUpdate comes once per tick, so open P&L follows the price.
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
         this.chart.on(event, () => this.refreshAccountSoon());
       }
     }
@@ -829,7 +827,7 @@ export class ChartWidget {
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
       // With several widgets on the page, the shortcuts go to the one used last.
-      const mine = lastPressedWidget === null || lastPressedWidget === this;
+      const mine = isKeyTarget(this.root);
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         if (!mine) return;
         e.preventDefault();
@@ -840,13 +838,13 @@ export class ChartWidget {
         e.preventDefault();
         this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
       } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
-        // Ctrl/Cmd+S → save the layout (rather than the page).
-        if (!mine || !this.layoutSession) return;
+        // Ctrl/Cmd+S → save the layout (rather than the page), once this widget was used.
+        if (!this.layoutSession || isTyping() || !isKeyTarget(this.root, true)) return;
         e.preventDefault();
         void this.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
-        if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
+        if (isTyping() || !mine) return;
         if (e.code === 'KeyI') {
           // Alt+I → invert the price scale.
           e.preventDefault();
@@ -858,15 +856,14 @@ export class ChartWidget {
         }
       } else if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Only fire when the user isn't typing into an input.
-        const active = document.activeElement as HTMLElement | null;
-        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        if (isTyping() || !mine) return;
         e.preventDefault();
         this.hotkeySheet?.open();
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
-    this.root.addEventListener('pointerdown', this.onRootPointerDown, true);
+    this.unregisterKeys = registerKeyRoot(this.root);
 
     // 9. Connect stream
     if (options.adapter) {
@@ -906,6 +903,8 @@ export class ChartWidget {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
     this.flushActiveLayout();
+    // Fill marks sit on this symbol's bars; the next symbol starts with none.
+    if (symbol !== this.state.symbol) this.chart.clearFills();
     this.state = { ...this.state, symbol };
     this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
@@ -1006,11 +1005,10 @@ export class ChartWidget {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
     }
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
-    this.root.removeEventListener('pointerdown', this.onRootPointerDown, true);
+    this.unregisterKeys();
     this.tooltip.destroy();
     if (this.legendFrame) cancelAnimationFrame(this.legendFrame);
     this.indicatorLegend?.destroy();
-    if (lastPressedWidget === this) lastPressedWidget = null;
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
     this.flushActiveLayout();
@@ -1249,7 +1247,10 @@ export class ChartWidget {
         element.classList.toggle('tcw-active', on);
         if (spec.toggle) element.setAttribute('aria-pressed', String(on));
       },
-      setText: (text) => { textSpan().textContent = text; },
+      setText: (text) => {
+        textSpan().textContent = text;
+        setHostButtonName(element, spec.label);
+      },
       remove: () => element.remove(),
     };
   }
@@ -1311,6 +1312,13 @@ export class ChartWidget {
     if (this.objectTree?.isOpen()) this.refreshObjects();
   }
 
+  /** Open or close the account panel (no argument: the other way from now). */
+  toggleAccountPanel(open?: boolean): void {
+    const panel = this.accountPanel;
+    if (!panel || open === panel.isOpen()) return;
+    panel.toggle();
+  }
+
   /** The order ticket, at a price from the chart (or the market). */
   private openOrderTicket(price?: number): void {
     const data = this.chart.getData();
@@ -1329,12 +1337,15 @@ export class ChartWidget {
   private refreshAccount(): void {
     if (!this.accountPanel) return;
     const data = this.chart.getData();
+    const price = data.length > 0 ? data[data.length - 1].close : null;
     this.accountPanel.update({
       positions: this.chart.getPositions(),
       orders: this.chart.getOrders(),
       fills: this.chart.getFills(),
-      price: data.length > 0 ? data[data.length - 1].close : null,
+      price,
+      realisedPnl: this.chart.getRealisedPnl(),
     });
+    this.orderTicket?.setLastPrice(price);
   }
 
   /** Ask for a limit or stop order at `price` (one unit), and say so. */
@@ -1978,15 +1989,22 @@ export class ChartWidget {
     return this.layoutSession;
   }
 
-  /** This chart as a layout: symbol, interval, scale and the chart's state (no theme). */
+  /** The symbol showing. */
+  getSymbol(): string {
+    return this.state.symbol;
+  }
+
+  /** The interval showing. */
+  getTimeframe(): TimeFrame {
+    return this.state.timeframe;
+  }
+
+  /** This chart as a layout: symbol, interval, scale and the chart's state (no theme). A copy, free to keep. */
   captureLayout(): WidgetLayoutContent {
     const json = this.chart.saveState();
-    const chart = json ? parseLayoutJson(json) as Record<string, unknown> | null : null;
-    if (chart) {
-      // The theme stays the viewer's; the time of the capture would make every capture differ.
-      delete chart.theme;
-      delete chart.timestamp;
-    }
+    const state = json ? parseLayoutJson(json) : null;
+    // The theme stays the viewer's; the time of the capture would make every capture differ.
+    const chart = state && typeof state === 'object' ? layoutChartState(state as Record<string, unknown>) : null;
     return {
       v: 1,
       symbol: this.state.symbol,
@@ -2003,7 +2021,7 @@ export class ChartWidget {
     if (content.timeframe !== this.state.timeframe) await this.setTimeframe(content.timeframe);
     if (this.destroyed) return;
     if (content.chart) {
-      this.chart.loadState(JSON.stringify(content.chart));
+      this.chart.loadState(JSON.stringify(layoutChartState(content.chart)));
       const type = content.chart.chartType;
       if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
     }

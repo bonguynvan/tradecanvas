@@ -325,6 +325,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.sent': 'Emir gönderildi: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Sıfırdan büyük bir miktar girin.',
   'ticket.problem.price': 'Sıfırdan büyük bir fiyat girin.',
+  'ticket.problem.market': 'Henüz piyasa fiyatı yok.',
   'ticket.problem.stopLoss': 'Sıfırdan büyük bir zarar kes fiyatı girin.',
   'ticket.problem.takeProfit': 'Sıfırdan büyük bir kâr al fiyatı girin.',
   'ticket.problem.stopLossSide': 'Zarar kes, alışta girişin altında, satışta üstünde olmalıdır.',

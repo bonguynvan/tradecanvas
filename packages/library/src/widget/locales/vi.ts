@@ -325,6 +325,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.sent': 'Đã gửi lệnh: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Nhập khối lượng lớn hơn 0.',
   'ticket.problem.price': 'Nhập giá lớn hơn 0.',
+  'ticket.problem.market': 'Chưa có giá thị trường.',
   'ticket.problem.stopLoss': 'Nhập giá cắt lỗ lớn hơn 0.',
   'ticket.problem.takeProfit': 'Nhập giá chốt lời lớn hơn 0.',
   'ticket.problem.stopLossSide': 'Cắt lỗ phải dưới giá vào với lệnh mua, trên giá vào với lệnh bán.',

@@ -50,7 +50,7 @@ describe('cleanLayoutName', () => {
 describe('LayoutSession', () => {
   it('saves under a new name and makes it the current layout', async () => {
     const saved = await session.saveAs('  Swing ');
-    expect(saved).toEqual({ id: 'id1', name: 'Swing', symbol: 'BTCUSDT', timeframe: '1h', updatedAt: 1000 });
+    expect(saved).toEqual({ id: 'id1', name: 'Swing', symbol: 'BTCUSDT', timeframe: '1h', updatedAt: 1000, kind: 'chart' });
     expect(session.current()).toEqual(saved);
     expect(await storage.load('id1')).toMatchObject({ content: '{"v":1}' });
     expect(changes).toBeGreaterThan(0);
@@ -170,13 +170,87 @@ describe('LayoutSession', () => {
     s.destroy();
   });
 
-  it('stops after destroy', async () => {
-    await session.saveAs('A');
+  it('saves a change still waiting when it stops, then nothing more', async () => {
+    const saved = await session.saveAs('A');
     content = '{"v":3}';
     session.changed();
     session.destroy();
+    await vi.advanceTimersByTimeAsync(150);
+    expect((await storage.load(saved.id))?.content).toBe('{"v":3}');
     const save = vi.spyOn(storage, 'save');
+    content = '{"v":4}';
+    session.changed();
     await vi.advanceTimersByTimeAsync(150);
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('saves into the layout open when its turn comes, not one opened after', async () => {
+    let release!: () => void;
+    const slow: LayoutStorage = {
+      ...storage,
+      save: async (layout) => {
+        await new Promise<void>((r) => { release = r; });
+        return storage.save(layout);
+      },
+    };
+    await storage.save({ id: 'x', name: 'X', updatedAt: 1, content: '{"x":1}', kind: 'chart' });
+    await storage.save({ id: 'y', name: 'Y', updatedAt: 2, content: '{"y":1}', kind: 'chart' });
+    const s = new LayoutSession(slow, host, { debounceMs: 10 });
+    expect(await s.open('x')).toBe(true);
+    content = '{"x":2}';
+    const saving = s.save();
+    const opening = s.open('y');
+    await vi.advanceTimersByTimeAsync(0);
+    release();
+    await saving;
+    await opening;
+    expect(s.current()?.id).toBe('y');
+    expect((await storage.load('x'))?.content).toBe('{"x":2}');
+    expect((await storage.load('y'))?.content).toBe('{"y":1}');
+    s.destroy();
+  });
+
+  it('forgets the current layout when one fails to open', async () => {
+    await storage.save({ id: 'bad', name: 'Bad', updatedAt: 1, content: '{}' });
+    const failing = new LayoutSession(storage, { capture: host.capture, apply: () => { throw new Error('not a layout'); } });
+    await failing.saveAs('A');
+    await expect(failing.open('bad')).rejects.toThrow('not a layout');
+    expect(failing.current()).toBeNull();
+    failing.destroy();
+  });
+
+  it('marks the layout changed when an auto-save fails', async () => {
+    let full = false;
+    const inner = memoryLayouts();
+    const flaky: LayoutStorage = { ...inner, save: (l) => { if (full) throw new Error('full'); return inner.save(l); } };
+    const s = new LayoutSession(flaky, host, { debounceMs: 10, onError: () => {} });
+    await s.saveAs('A');
+    full = true;
+    content = '{"v":5}';
+    s.changed();
+    await vi.advanceTimersByTimeAsync(20);
+    expect(s.isDirty()).toBe(true);
+    s.destroy();
+  });
+
+  it('lists and opens only its own kind, and skips what is not a layout', async () => {
+    const shared: LayoutStorage = {
+      list: () => [
+        { id: 'c', name: 'Chart', updatedAt: 3 },
+        { id: 'g', name: 'Grid', updatedAt: 2, kind: 'grid' },
+        { id: 7, name: 'junk' } as never,
+      ],
+      load: (id) => (id === 'g' ? { id: 'g', name: 'Grid', updatedAt: 2, kind: 'grid', content: '{}' } : { id: 'other', name: 'x', updatedAt: 1, content: '{}' }),
+      save: () => {},
+      remove: () => {},
+    };
+    const charts = new LayoutSession(shared, host);
+    const grids = new LayoutSession(shared, host, { kind: 'grid' });
+    expect((await charts.list()).map((l) => l.id)).toEqual(['c']);
+    expect((await grids.list()).map((l) => l.id)).toEqual(['g']);
+    expect(await charts.open('g')).toBe(false); // a grid's layout
+    expect(await charts.open('c')).toBe(false); // storage answered with another id
+    charts.destroy();
+    grids.destroy();
   });
 });

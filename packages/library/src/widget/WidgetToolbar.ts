@@ -8,6 +8,13 @@ import { chartTypeLabel } from './widgetLocales.js';
 
 let toolbarCount = 0;
 
+/** A host button's name: its label, with the text it shows when that says more ("News: 3"). */
+export function setHostButtonName(btn: HTMLButtonElement, label: string): void {
+  const text = btn.querySelector('.tcw-host-btn-text')?.textContent ?? '';
+  if (text === label) btn.removeAttribute('aria-label');
+  else btn.setAttribute('aria-label', text ? `${label}: ${text}` : label);
+}
+
 export class WidgetToolbar {
   private config: ToolbarConfig;
   private callbacks: ToolbarCallbacks;
@@ -191,7 +198,6 @@ export class WidgetToolbar {
     btn.className = spec.text || !spec.icon ? 'tcw-btn tcw-host-btn' : 'tcw-btn-icon tcw-host-btn';
     btn.dataset.hostButton = spec.id;
     btn.title = spec.label;
-    btn.setAttribute('aria-label', spec.label);
     if (spec.toggle) btn.setAttribute('aria-pressed', 'false');
     if (typeof spec.icon === 'string') btn.innerHTML = createIcon(spec.icon, 14);
     else if (spec.icon) btn.appendChild(spec.icon);
@@ -202,6 +208,7 @@ export class WidgetToolbar {
       span.textContent = text;
       btn.appendChild(span);
     }
+    setHostButtonName(btn, spec.label);
     btn.addEventListener('click', () => spec.onClick(btn));
     (spec.side === 'left' ? this.hostLeft : this.hostRight)?.appendChild(btn);
     return btn;

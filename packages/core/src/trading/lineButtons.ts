@@ -18,6 +18,14 @@ export interface LineButton {
 /** Room around a button that still counts as on it (px). */
 const SLOP = 2;
 
+/** Whether two buttons do the same thing (to the same order or position). */
+export function sameLineAction(a: LineButtonAction, b: LineButtonAction): boolean {
+  if (a.type !== b.type) return false;
+  if (a.type === 'cancelOrder') return a.orderId === (b as typeof a).orderId;
+  if (a.type === 'removeStop') return a.positionId === (b as typeof a).positionId && a.which === (b as typeof a).which;
+  return a.positionId === (b as typeof a).positionId;
+}
+
 export function buttonAt(buttons: readonly LineButton[], pos: Point): LineButton | null {
   // The last drawn is on top.
   for (let i = buttons.length - 1; i >= 0; i--) {

@@ -325,6 +325,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.sent': 'Order terkirim: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Masukkan jumlah di atas 0.',
   'ticket.problem.price': 'Masukkan harga di atas 0.',
+  'ticket.problem.market': 'Belum ada harga pasar.',
   'ticket.problem.stopLoss': 'Masukkan harga stop loss di atas 0.',
   'ticket.problem.takeProfit': 'Masukkan harga take profit di atas 0.',
   'ticket.problem.stopLossSide': 'Stop loss berada di bawah harga entry untuk order beli, dan di atasnya untuk order jual.',

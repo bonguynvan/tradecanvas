@@ -74,9 +74,9 @@ const typeName = (name: string) => {
 };
 const submitName = () => prompt().dispatchEvent(new Event('submit', { cancelable: true }));
 const settle = (ms = 30) => new Promise((r) => setTimeout(r, ms));
-const flush = async () => {
-  for (let i = 0; i < 5; i++) await Promise.resolve();
-};
+const flush = () => settle(0);
+/** Use the widget (the page's Ctrl+S is its own until then). */
+const press = () => host.querySelector('.tcw-root')!.dispatchEvent(new Event('pointerdown'));
 
 beforeEach(() => {
   localStorage.clear();
@@ -102,6 +102,10 @@ describe('ChartWidget named layouts', () => {
   it('asks for a name on the first save, then saves the chart under it', async () => {
     make();
     FakeChart.last.drawings = ['line'];
+    const unused = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(unused);
+    expect(unused.defaultPrevented).toBe(false);
+    press();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true }));
     expect(prompt().closest('.tcw-modal-backdrop')!.hasAttribute('hidden')).toBe(false);
     typeName('Swing');
@@ -174,6 +178,7 @@ describe('ChartWidget named layouts', () => {
 
   it('can be switched off', () => {
     make({ layouts: false });
+    press();
     expect(layoutsButton()).toBeNull();
     const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
     document.dispatchEvent(event);

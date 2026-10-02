@@ -105,6 +105,35 @@ describe('ChartWidgetGrid', () => {
     expect(changes).toEqual([3, 0]);
   });
 
+  it('puts away the charts it shrinks from, and brings them back as they were', async () => {
+    make({ layout: '1x3', cells: [{ symbol: 'AAA' }, { symbol: 'BBB' }, { symbol: 'CCC' }] });
+    charts()[2].drawings = ['kept'];
+    grid.setLayout('1x1');
+    expect(symbols()).toEqual(['AAA']);
+    // Saved with the grid, too.
+    expect(grid.captureLayout().cells.map((c) => c.symbol)).toEqual(['AAA', 'BBB', 'CCC']);
+    grid.setLayout('1x3');
+    await nextFrame();
+    expect(symbols()).toEqual(['AAA', 'BBB', 'CCC']);
+    expect(charts()[2].drawings).toEqual(['kept']);
+  });
+
+  it('puts the drawings of the same symbol together when drawings sync is switched on', () => {
+    make({ cells: [{ symbol: 'AAA' }, { symbol: 'AAA' }] });
+    const [a, b] = charts();
+    a.drawings = [{ id: 'd1' }];
+    b.drawings = [{ id: 'd2' }];
+    grid.setSync({ drawings: true });
+    expect(a.drawings).toEqual([{ id: 'd1' }, { id: 'd2' }]);
+    expect(b.drawings).toEqual([{ id: 'd1' }, { id: 'd2' }]);
+    expect(a.drawings[0]).not.toBe(b.drawings[0]); // copies, not shared objects
+  });
+
+  it('refuses a stored arrangement that is only a property name', async () => {
+    make();
+    await expect(grid.applyLayoutContent(JSON.stringify({ v: 1, kind: 'grid', layout: 'constructor', cells: [] }))).resolves.toBe(false);
+  });
+
   it('makes the chart pressed the active one', () => {
     make();
     host.querySelectorAll('.tcw-grid-cell')[1].dispatchEvent(new Event('pointerdown'));
@@ -183,8 +212,22 @@ describe('ChartWidgetGrid', () => {
     expect(await grid.applyLayoutContent('nope')).toBe(false);
   });
 
-  it('saves with Ctrl+S, asking for a name first', () => {
+  it('says when it makes a chart, at the start and as it grows', () => {
+    const added: string[] = [];
+    make({ onChartAdd: (w, i) => added.push(`${i}:${w.captureLayout().symbol}`) });
+    grid.setLayout('1x3');
+    expect(added).toEqual(['0:AAA', '1:BBB', '2:CCC']);
+  });
+
+  it('makes each chart its own data adapter', () => {
+    const made: number[] = [];
+    make({ adapter: (i) => { made.push(i); return { name: `feed${i}` } as never; } });
+    expect(made).toEqual([0, 1]);
+  });
+
+  it('saves with Ctrl+S once used, asking for a name first', () => {
     make();
+    host.querySelector('.tcw-grid-cell')!.dispatchEvent(new Event('pointerdown'));
     const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
     document.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);

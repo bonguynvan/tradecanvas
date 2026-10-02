@@ -325,6 +325,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.sent': 'ส่งคำสั่งแล้ว: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'กรอกจำนวนที่มากกว่า 0',
   'ticket.problem.price': 'กรอกราคาที่มากกว่า 0',
+  'ticket.problem.market': 'ยังไม่มีราคาตลาด',
   'ticket.problem.stopLoss': 'กรอกราคาตัดขาดทุนที่มากกว่า 0',
   'ticket.problem.takeProfit': 'กรอกราคาทำกำไรที่มากกว่า 0',
   'ticket.problem.stopLossSide': 'ราคาตัดขาดทุนต้องต่ำกว่าราคาเข้าเมื่อซื้อ และสูงกว่าเมื่อขาย',

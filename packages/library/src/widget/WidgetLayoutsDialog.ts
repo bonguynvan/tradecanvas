@@ -1,6 +1,7 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import type { SavedLayoutSummary } from '../state/layoutStorage.js';
+import { keepTabInside } from './focusTrap.js';
 
 export interface LayoutsDialogCallbacks {
   list: () => Promise<SavedLayoutSummary[]>;
@@ -42,7 +43,10 @@ export class WidgetLayoutsDialog {
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-labelledby', `tcw-layouts-title-${this.uid}`);
     modal.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape') {
+        keepTabInside(e, modal);
+        return;
+      }
       e.stopPropagation();
       if (this.confirming) this.setConfirming(null);
       else this.close();
@@ -81,7 +85,7 @@ export class WidgetLayoutsDialog {
   }
 
   async open(): Promise<void> {
-    this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!this.isOpen()) this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.search.value = '';
     this.confirming = null;
     this.backdrop.hidden = false;

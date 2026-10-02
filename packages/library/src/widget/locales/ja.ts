@@ -325,6 +325,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.sent': '注文を送信しました：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '数量は0より大きい値を入力してください。',
   'ticket.problem.price': '価格は0より大きい値を入力してください。',
+  'ticket.problem.market': 'まだ市場価格がありません。',
   'ticket.problem.stopLoss': '損切り価格は0より大きい値を入力してください。',
   'ticket.problem.takeProfit': '利確価格は0より大きい値を入力してください。',
   'ticket.problem.stopLossSide': '損切りは、買いなら建値より下、売りなら建値より上に置きます。',

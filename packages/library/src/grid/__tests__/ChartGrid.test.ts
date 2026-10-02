@@ -86,3 +86,17 @@ describe('ChartGrid crosshair link', () => {
     expect(probe(a).crosshairHandler.getSyncedSlot()).toBe(7);
   });
 });
+
+describe('ChartGrid connectAll', () => {
+  it('gives each chart an adapter of its own when given a function', async () => {
+    grid = new ChartGrid(host, { layout: '1x2' });
+    const connects = grid.getCharts().map((chart) => vi.spyOn(chart, 'connect').mockResolvedValue());
+    const made: string[] = [];
+    await grid.connectAll((symbol, index) => {
+      made.push(`${index}:${symbol}`);
+      return { name: symbol } as never;
+    }, ['AAA', 'BBB'], '5m');
+    expect(made).toEqual(['0:AAA', '1:BBB']);
+    expect(connects.map((c) => (c.mock.calls[0][0].adapter as unknown as { name: string }).name)).toEqual(['AAA', 'BBB']);
+  });
+});

@@ -16,6 +16,8 @@ export interface OrderTicketDraft {
 export type OrderTicketProblem =
   | 'quantity'
   | 'price'
+  /** A market order with no market price to fill at (no bars yet). */
+  | 'market'
   | 'stopLoss'
   | 'takeProfit'
   | 'stopLossSide'
@@ -40,6 +42,7 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
   const problems: OrderTicketProblem[] = [];
   if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity)) problems.push('quantity');
   if (draft.type !== 'market' && (!(draft.price > 0) || !Number.isFinite(draft.price))) problems.push('price');
+  if (draft.type === 'market' && !((lastPrice ?? draft.price) > 0)) problems.push('market');
   const buy = draft.side === 'buy';
   if (lastPrice !== null && draft.type !== 'market' && draft.price > 0) {
     // A buy limit waits below the market, a buy stop above it; a sell the other way.

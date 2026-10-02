@@ -13,6 +13,11 @@ describe('order ticket rules', () => {
     expect(orderTicketProblems(draft({ stopLoss: 90, takeProfit: 105 }), 100)).toEqual([]);
   });
 
+  it('wants a market price for a market order', () => {
+    expect(orderTicketProblems(draft({ type: 'market', price: 0 }), null)).toEqual(['market']);
+    expect(orderTicketProblems(draft({ type: 'market', price: 0 }), 100)).toEqual([]);
+  });
+
   it('wants a positive quantity and price, and stops and targets above 0', () => {
     expect(orderTicketProblems(draft({ quantity: 0, price: NaN, stopLoss: NaN, takeProfit: -1 }), 100))
       .toEqual(expect.arrayContaining(['quantity', 'price', 'stopLoss', 'takeProfit']));

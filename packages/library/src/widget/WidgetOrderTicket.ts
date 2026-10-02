@@ -2,6 +2,7 @@ import type { OrderPlaceIntent, OrderSide, TimeInForce } from '@tradecanvas/comm
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { selectInput, settingsRow, toggleSwitch } from './settingsControls.js';
+import { keepTabInside } from './focusTrap.js';
 import {
   orderTicketIntent,
   orderTicketProblems,
@@ -59,7 +60,9 @@ export class WidgetOrderTicket {
       if (e.key === 'Escape') {
         e.stopPropagation();
         this.close();
+        return;
       }
+      keepTabInside(e, this.modal);
     });
 
     const header = document.createElement('div');
@@ -127,6 +130,13 @@ export class WidgetOrderTicket {
     return !this.backdrop.hidden;
   }
 
+  /** The latest price, while the ticket is open (a market order's price, the checks). */
+  setLastPrice(price: number | null): void {
+    if (!this.draft || price === this.lastPrice) return;
+    this.lastPrice = price;
+    this.check();
+  }
+
   destroy(): void {
     this.close();
     this.backdrop.remove();
@@ -149,23 +159,26 @@ export class WidgetOrderTicket {
   private render(): void {
     const draft = this.draft;
     if (!draft) return;
+    // The control in use keeps focus through the rebuild.
+    const active = document.activeElement;
+    const focused = active instanceof HTMLElement && this.body.contains(active) ? active.dataset.ticketField : undefined;
     this.body.replaceChildren(
       this.sideToggle(draft.side),
-      settingsRow(this.t('ticket.type'), selectInput(
+      settingsRow(this.t('ticket.type'), field('type', selectInput(
         (['market', 'limit', 'stop'] as const).map((value) => ({ value, label: this.t(`ticket.type.${value}` as MessageKey) })),
         draft.type,
         (value) => this.set({ type: value as OrderTicketDraft['type'] }, true),
-      )),
-      settingsRow(this.t('ticket.quantity'), this.number(draft.quantity, (quantity) => this.set({ quantity }))),
+      ))),
+      settingsRow(this.t('ticket.quantity'), field('quantity', this.number(draft.quantity, (quantity) => this.set({ quantity })))),
     );
     if (draft.type !== 'market') {
       this.body.append(
-        settingsRow(this.t('ticket.price'), this.number(draft.price, (price) => this.set({ price }))),
-        settingsRow(this.t('ticket.timeInForce'), selectInput(
+        settingsRow(this.t('ticket.price'), field('price', this.number(draft.price, (price) => this.set({ price })))),
+        settingsRow(this.t('ticket.timeInForce'), field('timeInForce', selectInput(
           (['gtc', 'day'] as const).map((value) => ({ value, label: this.t(`ticket.tif.${value}` as MessageKey) })),
           draft.timeInForce,
           (value) => this.set({ timeInForce: value as TimeInForce }),
-        )),
+        ))),
       );
     }
     // Switched on, a stop starts 1% the losing way and a target 2% the winning way.
@@ -175,6 +188,7 @@ export class WidgetOrderTicket {
       this.optionalPrice('ticket.stopLoss', draft.stopLoss, away(-1), (stopLoss) => this.set({ stopLoss }, stopLoss === null || draft.stopLoss === null)),
       this.optionalPrice('ticket.takeProfit', draft.takeProfit, away(2), (takeProfit) => this.set({ takeProfit }, takeProfit === null || draft.takeProfit === null)),
     );
+    if (focused) this.body.querySelector<HTMLElement>(`[data-ticket-field="${focused}"]`)?.focus();
     this.check();
   }
 
@@ -189,6 +203,7 @@ export class WidgetOrderTicket {
       btn.className = `tcw-ticket-side-btn tcw-ticket-${value}`;
       btn.textContent = this.t(`ticket.${value}`);
       btn.setAttribute('aria-pressed', String(side === value));
+      btn.dataset.ticketField = `side-${value}`;
       btn.addEventListener('click', () => this.set({ side: value }, true));
       group.appendChild(btn);
     }
@@ -215,10 +230,12 @@ export class WidgetOrderTicket {
     label.textContent = this.t(key);
     const toggle = toggleSwitch(value !== null, (on) => onChange(on ? start : null));
     toggle.setAttribute('aria-label', this.t(key));
+    toggle.dataset.ticketField = `${key}-switch`;
     row.append(label, toggle);
     if (value !== null) {
       const input = this.number(value, (n) => onChange(Number.isFinite(n) ? n : NaN));
       input.setAttribute('aria-label', this.t(key));
+      input.dataset.ticketField = key;
       row.appendChild(input);
     }
     return row;
@@ -242,6 +259,12 @@ export class WidgetOrderTicket {
     this.submit.classList.toggle('tcw-ticket-sell', draft.side === 'sell');
     this.submit.textContent = this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
   }
+}
+
+/** Name a control, so focus can find it again after a rebuild. */
+function field<T extends HTMLElement>(name: string, el: T): T {
+  el.dataset.ticketField = name;
+  return el;
 }
 
 /** `value` with as many decimals as a price like `ref` needs (2, or more below 10). */

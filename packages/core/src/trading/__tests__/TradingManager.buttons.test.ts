@@ -26,17 +26,35 @@ function buttonCentre(type: string, extra: Record<string, unknown> = {}): { x: n
   return { x: b.x + b.size / 2, y: b.y + b.size / 2 };
 }
 
+/** Press and release over the same point. */
+function click(at: { x: number; y: number }): void {
+  manager.onPointerDown(at, unitViewport);
+  manager.onPointerUp(at);
+}
+
 describe('TradingManager buttons on the lines', () => {
-  it('cancels an order with the × on its line', () => {
+  it('cancels an order with the × on its line, on release', () => {
     const at = buttonCentre('cancelOrder');
     expect(manager.isOverButton(at)).toBe(true);
     expect(manager.onPointerDown(at, unitViewport)).toBe(true);
+    expect(events).toEqual([]);
+    expect(manager.onPointerUp(at)).toBe(true);
     expect(events).toEqual([{ event: 'orderCancel', data: { orderId: 'o1' } }]);
   });
 
+  it('does nothing when the press slides off the button or leaves the chart', () => {
+    const at = buttonCentre('closePosition');
+    manager.onPointerDown(at, unitViewport);
+    expect(manager.onPointerMove({ x: at.x, y: at.y + 40 }, unitViewport)).toBe(true); // no pan meanwhile
+    manager.onPointerUp({ x: at.x, y: at.y + 40 });
+    manager.onPointerDown(at, unitViewport);
+    manager.onPointerUp();
+    expect(events).toEqual([]);
+  });
+
   it('closes and reverses a position', () => {
-    manager.onPointerDown(buttonCentre('closePosition'), unitViewport);
-    manager.onPointerDown(buttonCentre('reversePosition'), unitViewport);
+    click(buttonCentre('closePosition'));
+    click(buttonCentre('reversePosition'));
     expect(events).toEqual([
       { event: 'positionClose', data: { positionId: 'p1' } },
       { event: 'positionReverse', data: { positionId: 'p1' } },
@@ -44,8 +62,15 @@ describe('TradingManager buttons on the lines', () => {
   });
 
   it('removes a stop-loss or a take-profit, before the line would be dragged', () => {
-    manager.onPointerDown(buttonCentre('removeStop', { which: 'stopLoss' }), unitViewport);
+    click(buttonCentre('removeStop', { which: 'stopLoss' }));
     expect(events).toEqual([{ event: 'positionModify', data: { positionId: 'p1', stopLoss: null } }]);
+  });
+
+  it('offers no buttons on a position line scrolled out of the plot', () => {
+    manager.setPositions([{ id: 'p2', side: 'buy', entryPrice: 500, quantity: 1, stopLoss: -50 }]);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    const buttons = (manager as unknown as { buttons: { action: { type: string; positionId?: string } }[] }).buttons;
+    expect(buttons.filter((b) => b.action.positionId === 'p2')).toEqual([]);
   });
 
   it('draws no buttons that are switched off', () => {

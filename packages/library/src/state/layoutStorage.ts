@@ -8,6 +8,8 @@ export interface SavedLayoutSummary {
   timeframe?: string;
   /** When it was last saved, in ms since the epoch. */
   updatedAt: number;
+  /** What saved it: `'chart'` (a widget, the default) or `'grid'` (a grid of charts). */
+  kind?: string;
 }
 
 /** A saved layout: its summary and what it holds, as the widget wrote it (JSON). */
@@ -36,23 +38,32 @@ function summary(layout: SavedLayoutSummary): SavedLayoutSummary {
   const out: SavedLayoutSummary = { id: layout.id, name: layout.name, updatedAt: layout.updatedAt };
   if (layout.symbol !== undefined) out.symbol = layout.symbol;
   if (layout.timeframe !== undefined) out.timeframe = layout.timeframe;
+  if (layout.kind !== undefined) out.kind = layout.kind;
   return out;
 }
 
 const newestFirst = (a: SavedLayoutSummary, b: SavedLayoutSummary): number => b.updatedAt - a.updatedAt;
 
-/** A summary read back from storage, or null when it is not one. */
-function readSummary(value: unknown): SavedLayoutSummary | null {
+/** A summary read back from storage (or a host's server), or null when it is not one. */
+export function readLayoutSummary(value: unknown): SavedLayoutSummary | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Record<string, unknown>;
-  if (typeof v.id !== 'string' || typeof v.name !== 'string' || typeof v.updatedAt !== 'number' || !Number.isFinite(v.updatedAt)) return null;
+  if (typeof v.id !== 'string' || !v.id || typeof v.name !== 'string' || typeof v.updatedAt !== 'number' || !Number.isFinite(v.updatedAt)) return null;
   return summary({
     id: v.id,
     name: v.name,
     updatedAt: v.updatedAt,
     symbol: typeof v.symbol === 'string' ? v.symbol : undefined,
     timeframe: typeof v.timeframe === 'string' ? v.timeframe : undefined,
+    kind: typeof v.kind === 'string' ? v.kind : undefined,
   });
+}
+
+/** A whole layout read back from storage, or null when it is not one. */
+export function readSavedLayout(value: unknown): SavedLayout | null {
+  const found = readLayoutSummary(value);
+  const content = found ? (value as Record<string, unknown>).content : undefined;
+  return found && typeof content === 'string' ? { ...found, content } : null;
 }
 
 /** Layouts kept in memory: for tests, or a page that does not keep them. */
@@ -90,7 +101,7 @@ export function localStorageLayouts(prefix = 'tcw:layouts:'): LayoutStorage {
       return [];
     }
     if (!Array.isArray(raw)) return [];
-    return raw.map(readSummary).filter((s): s is SavedLayoutSummary => s !== null);
+    return raw.map(readLayoutSummary).filter((s): s is SavedLayoutSummary => s !== null);
   };
   const writeIndex = (index: readonly SavedLayoutSummary[]) => localStorage.setItem(indexKey, JSON.stringify(index));
 

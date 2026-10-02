@@ -337,6 +337,7 @@ export const EN_MESSAGES = {
   'ticket.sent': 'Order sent: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Enter a quantity above 0.',
   'ticket.problem.price': 'Enter a price above 0.',
+  'ticket.problem.market': 'There is no market price yet.',
   'ticket.problem.stopLoss': 'Enter a stop-loss price above 0.',
   'ticket.problem.takeProfit': 'Enter a take-profit price above 0.',
   'ticket.problem.stopLossSide': 'The stop-loss goes below the entry for a buy, above it for a sell.',

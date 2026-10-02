@@ -12,6 +12,12 @@ import { drawCloseButton, drawReverseButton, type LineButton } from './lineButto
 const BUTTON = 20;
 const STOP_BUTTON = 16;
 
+/** A button `size` high centred on `y` lies wholly inside the plot (not over a pane below it). */
+function fitsPlot(y: number, size: number, viewport: ViewportState): boolean {
+  const { chartRect } = viewport;
+  return y - size / 2 >= chartRect.y && y + size / 2 <= chartRect.y + chartRect.height;
+}
+
 export class PositionRenderer {
   render(
     ctx: CanvasRenderingContext2D,
@@ -79,8 +85,8 @@ export class PositionRenderer {
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
         ctx.fillText(pnlText, lblX + 6, entryY);
-        this.renderButtons(ctx, pos.id, lblX + lblWidth + 2, entryY, zoneColor, show, buttons);
-      } else {
+        if (fitsPlot(entryY, BUTTON, viewport)) this.renderButtons(ctx, pos.id, lblX + lblWidth + 2, entryY, zoneColor, show, buttons);
+      } else if (fitsPlot(entryY, BUTTON, viewport)) {
         this.renderButtons(ctx, pos.id, chartRect.x + 8, entryY, entryColor, show, buttons);
       }
 
@@ -105,7 +111,9 @@ export class PositionRenderer {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('SL', chartRect.x + 8, slY);
-        if (show.removeStops !== false) this.renderStopButton(ctx, pos.id, 'stopLoss', chartRect.x + 30, slY, lossColor, buttons);
+        if (show.removeStops !== false && fitsPlot(slY, STOP_BUTTON, viewport)) {
+          this.renderStopButton(ctx, pos.id, 'stopLoss', chartRect.x + 30, slY, lossColor, buttons);
+        }
       }
 
       // TP line
@@ -126,7 +134,9 @@ export class PositionRenderer {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('TP', chartRect.x + 8, tpY);
-        if (show.removeStops !== false) this.renderStopButton(ctx, pos.id, 'takeProfit', chartRect.x + 30, tpY, profitColor, buttons);
+        if (show.removeStops !== false && fitsPlot(tpY, STOP_BUTTON, viewport)) {
+          this.renderStopButton(ctx, pos.id, 'takeProfit', chartRect.x + 30, tpY, profitColor, buttons);
+        }
       }
 
       ctx.setLineDash([]);

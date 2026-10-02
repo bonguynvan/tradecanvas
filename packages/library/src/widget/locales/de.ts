@@ -325,6 +325,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'ticket.sent': 'Order gesendet: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Geben Sie eine Menge größer als 0 ein.',
   'ticket.problem.price': 'Geben Sie einen Preis größer als 0 ein.',
+  'ticket.problem.market': 'Es gibt noch keinen Marktpreis.',
   'ticket.problem.stopLoss': 'Geben Sie einen Stop-Loss-Preis größer als 0 ein.',
   'ticket.problem.takeProfit': 'Geben Sie einen Take-Profit-Preis größer als 0 ein.',
   'ticket.problem.stopLossSide': 'Der Stop-Loss liegt beim Kauf unter dem Einstieg, beim Verkauf darüber.',

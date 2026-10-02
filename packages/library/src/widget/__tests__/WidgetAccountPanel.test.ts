@@ -19,7 +19,7 @@ beforeEach(() => {
     onToggle: vi.fn(),
   };
   panel = new WidgetAccountPanel(host, callbacks as unknown as AccountPanelCallbacks);
-  panel.update({
+  current = {
     positions: [{ id: 'p1', side: 'buy', entryPrice: 100, quantity: 2, stopLoss: 95 }],
     orders: [{ id: 'o1', side: 'sell', type: 'limit', price: 110, quantity: 1, timeInForce: 'day' }],
     fills: [
@@ -27,8 +27,12 @@ beforeEach(() => {
       { orderId: 'b', side: 'sell', price: 104, quantity: 1, time: 2, reason: 'close', pnl: 4 },
     ],
     price: 103,
-  });
+  };
+  panel.update(current);
 });
+
+let current: Parameters<WidgetAccountPanel['update']>[0];
+const snapshotOf = () => current;
 
 afterEach(() => {
   panel.destroy();
@@ -54,10 +58,11 @@ describe('WidgetAccountPanel', () => {
 
   it('closes, reverses and cancels from the rows', () => {
     panel.openPanel();
-    host.querySelector<HTMLButtonElement>('[aria-label="Reverse position"]')!.click();
-    host.querySelector<HTMLButtonElement>('[aria-label="Close position"]')!.click();
+    // Each row's buttons say which position or order they act on.
+    host.querySelector<HTMLButtonElement>('[aria-label="Reverse position: Long 2 @ 100.00"]')!.click();
+    host.querySelector<HTMLButtonElement>('[aria-label="Close position: Long 2 @ 100.00"]')!.click();
     tab(/Orders/).click();
-    host.querySelector<HTMLButtonElement>('[aria-label="Cancel order"]')!.click();
+    host.querySelector<HTMLButtonElement>('[aria-label="Cancel order: Sell 1 @ 110.00"]')!.click();
     expect(callbacks.onReversePosition).toHaveBeenCalledWith('p1');
     expect(callbacks.onClosePosition).toHaveBeenCalledWith('p1');
     expect(callbacks.onCancelOrder).toHaveBeenCalledWith('o1');
@@ -67,6 +72,8 @@ describe('WidgetAccountPanel', () => {
     panel.openPanel();
     tab(/History/).click();
     expect(cells().map((row) => row[4])).toEqual(['Closed', 'Order']);
+    // A fill is a buy or a sell (closing a long sells), not a long or a short.
+    expect(cells().map((row) => row[1])).toEqual(['Sell', 'Buy']);
     expect(host.querySelector('.tcw-account-summary')!.textContent).toBe('Realised P&L: +4.00');
   });
 
@@ -76,6 +83,24 @@ describe('WidgetAccountPanel', () => {
     expect(tab(/Orders/).getAttribute('aria-selected')).toBe('true');
     host.querySelector<HTMLButtonElement>('.tcw-account-new')!.click();
     expect(callbacks.onNewOrder).toHaveBeenCalled();
+  });
+
+  it('rewrites only the price and P&L on a tick, keeping the focused button', () => {
+    panel.openPanel();
+    const close = host.querySelector<HTMLButtonElement>('[aria-label^="Close position"]')!;
+    close.focus();
+    panel.update({ ...snapshotOf(), price: 104 });
+    expect(host.querySelector('[aria-label^="Close position"]')).toBe(close);
+    expect(document.activeElement).toBe(close);
+    expect(cells()[0].slice(3, 5)).toEqual(['104.00', '+8.00 (+4.00%)']);
+  });
+
+  it('keeps focus on the same button when the rows change', () => {
+    panel.openPanel();
+    host.querySelector<HTMLButtonElement>('[aria-label^="Close position"]')!.focus();
+    const s = snapshotOf();
+    panel.update({ ...s, positions: [{ ...s.positions[0] }] });
+    expect((document.activeElement as HTMLElement).getAttribute('aria-label')).toMatch(/^Close position/);
   });
 
   it('says when there is nothing to show', () => {

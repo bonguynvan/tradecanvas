@@ -315,9 +315,10 @@ export class InteractionManager {
       if (vp && this.tradingManager?.isOverDraggableLine(pos, vp)) return 'ns-resize';
       // The zoom tool keeps its cursor over drawings too.
       if (this.zoomArea) return 'zoom-in';
-      if (vp && this.priceAxisAdd?.button.hit(pos, vp)) return 'pointer';
       const drawingCursor = vp ? this.drawingManager?.hoverCursorAt(pos, vp) : null;
-      return drawingCursor ?? idleCursor();
+      if (drawingCursor) return drawingCursor;
+      if (vp && this.priceAxisAdd?.button.hit(pos, vp)) return 'pointer';
+      return idleCursor();
     };
 
     // While a left button is held, moves are followed on `document`, so a
@@ -417,14 +418,23 @@ export class InteractionManager {
         return;
       }
 
-      // The "+" by the price axis offers what to do at that price.
-      if (this.priceAxisAdd && vp && !placing && this.priceAxisAdd.button.hit(pos, vp)) {
+      // The "+" by the price axis offers what to do at that price, unless a
+      // line, an alert or a drawing is under the pointer (as the cursor says).
+      if (
+        this.priceAxisAdd && vp && !placing && this.priceAxisAdd.button.hit(pos, vp)
+        && !this.alertDragHandler?.isOverAlert(pos)
+        && !this.tradingManager?.isOverButton(pos)
+        && !this.tradingManager?.isOverDraggableLine(pos, vp)
+        && !this.drawingManager?.hoverCursorAt(pos, vp)
+      ) {
+        // Keep focus where the menu puts it.
+        e.preventDefault();
         this.priceAxisAdd.onClick(pos);
         return;
       }
 
       if (this.tradingManager && vp && this.tradingManager.onPointerDown(pos, vp)) {
-        setCursor('ns-resize');
+        setCursor(this.tradingManager.isOverButton(pos) ? 'pointer' : 'ns-resize');
         return;
       }
       if (this.drawingManager && vp && this.drawingManager.onPointerDown(pos, vp)) {
@@ -548,7 +558,7 @@ export class InteractionManager {
         this.onOverlayDirty?.(true);
         return;
       }
-      if (this.tradingManager?.onPointerUp()) return;
+      if (this.tradingManager?.onPointerUp(this.getMousePos(e))) return;
       if (this.drawingManager?.onPointerUp()) return;
       this.panHandler?.onPointerUp();
 
@@ -782,7 +792,8 @@ export class InteractionManager {
           this.axisDragHandler.end();
         }
         this.paneResizeHandler?.end();
-        this.tradingManager?.onPointerUp();
+        const lifted = e.changedTouches[0];
+        this.tradingManager?.onPointerUp(lifted ? this.getTouchPos(lifted) : undefined);
         this.panHandler?.onPointerUp();
         this.crosshairHandler?.onPointerLeave();
         this.touchActive = false;

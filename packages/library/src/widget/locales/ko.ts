@@ -325,6 +325,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.sent': '주문 전송 완료: {side} {quantity} @ {price}',
   'ticket.problem.quantity': '수량을 0보다 크게 입력하세요.',
   'ticket.problem.price': '가격을 0보다 크게 입력하세요.',
+  'ticket.problem.market': '아직 시장 가격이 없습니다.',
   'ticket.problem.stopLoss': '손절 가격을 0보다 크게 입력하세요.',
   'ticket.problem.takeProfit': '익절 가격을 0보다 크게 입력하세요.',
   'ticket.problem.stopLossSide': '손절가는 매수일 때 진입가보다 아래, 매도일 때 위에 둡니다.',

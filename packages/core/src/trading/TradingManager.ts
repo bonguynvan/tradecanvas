@@ -17,7 +17,7 @@ import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
-import { buttonAt, type LineButton, type LineButtonAction } from './lineButtons.js';
+import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
 
 /** Most fills kept for their marks; the oldest go first. */
@@ -41,6 +41,7 @@ export class TradingManager {
   /** The buttons on the lines as last drawn, for clicks and the cursor. */
   private buttons: LineButton[] = [];
   private fills: FillEvent[] = [];
+  private realisedPnl = 0;
 
   private requestRender: (() => void) | null = null;
   private eventCallback: ((event: string, data: unknown) => void) | null = null;
@@ -112,12 +113,19 @@ export class TradingManager {
   /** Mark a fill on the chart (an execution adapter's `fill`). */
   addFill(fill: FillEvent): void {
     this.fills = [...this.fills.slice(-(MAX_FILLS - 1)), fill];
+    this.realisedPnl += fill.pnl ?? 0;
     this.requestRender?.();
   }
 
   setFills(fills: readonly FillEvent[]): void {
     this.fills = fills.slice(-MAX_FILLS);
+    this.realisedPnl = fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0);
     this.requestRender?.();
+  }
+
+  /** The P&L the fills realised, all of them (the marks keep only the latest). */
+  getRealisedPnl(): number {
+    return this.realisedPnl;
   }
 
   getFills(): FillEvent[] {
@@ -125,6 +133,9 @@ export class TradingManager {
   }
 
   // --- Buttons on the lines ---
+
+  /** The button pressed: it acts when released over it (dragging off cancels). */
+  private armed: LineButtonAction | null = null;
 
   /** Whether `pos` is over a button on an order or position line. */
   isOverButton(pos: Point): boolean {
@@ -241,13 +252,14 @@ export class TradingManager {
     // A button on a line before the line itself (an SL line is draggable too).
     const button = buttonAt(this.buttons, pos);
     if (button) {
-      this.runButton(button.action);
+      this.armed = button.action;
       return true;
     }
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, 8);
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
+    if (this.armed) return true;
     if (this.bracket.isDragging()) {
       const consumed = this.bracket.drag(pos, viewport);
       if (consumed) this.requestRender?.();
@@ -264,7 +276,15 @@ export class TradingManager {
     return consumed;
   }
 
-  onPointerUp(): boolean {
+  /** End a press; `pos` is where it ended (none when the pointer left: a pressed button does nothing). */
+  onPointerUp(pos?: Point): boolean {
+    if (this.armed) {
+      const action = this.armed;
+      this.armed = null;
+      const over = pos ? buttonAt(this.buttons, pos) : null;
+      if (over && sameLineAction(over.action, action)) this.runButton(action);
+      return true;
+    }
     if (this.bracket.isDragging()) {
       this.bracket.endDrag();
       this.requestRender?.();

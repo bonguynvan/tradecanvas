@@ -325,6 +325,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.sent': '委託已送出：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '請輸入大於 0 的數量。',
   'ticket.problem.price': '請輸入大於 0 的價格。',
+  'ticket.problem.market': '尚無市場價格。',
   'ticket.problem.stopLoss': '請輸入大於 0 的停損價。',
   'ticket.problem.takeProfit': '請輸入大於 0 的停利價。',
   'ticket.problem.stopLossSide': '買進時停損價應低於進場價，賣出時應高於進場價。',

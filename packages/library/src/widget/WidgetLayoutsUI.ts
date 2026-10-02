@@ -50,6 +50,8 @@ export class WidgetLayoutsUI {
 
   /** Save into the open layout, or ask for a name when there is none. */
   async save(): Promise<void> {
+    // Already asking for a name: that save is under way.
+    if (this.prompt.isOpen()) return;
     if (!this.session.current()) {
       this.promptSaveAs();
       return;

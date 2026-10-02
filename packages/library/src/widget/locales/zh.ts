@@ -325,6 +325,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.sent': '委托已提交：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '请输入大于 0 的数量。',
   'ticket.problem.price': '请输入大于 0 的价格。',
+  'ticket.problem.market': '暂无市场价格。',
   'ticket.problem.stopLoss': '请输入大于 0 的止损价。',
   'ticket.problem.takeProfit': '请输入大于 0 的止盈价。',
   'ticket.problem.stopLossSide': '买入时止损价应低于入场价，卖出时应高于入场价。',

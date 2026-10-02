@@ -75,6 +75,7 @@ describe('ChartWidget toolbar buttons of the host', () => {
     expect(btn.getAttribute('aria-pressed')).toBe('true');
     handle.setText('3');
     expect(btn.textContent).toBe('3');
+    expect(btn.getAttribute('aria-label')).toBe('News: 3');
     handle.remove();
     expect(host.querySelector('[data-host-button="news"]')).toBeNull();
   });
@@ -84,6 +85,7 @@ describe('ChartWidget toolbar buttons of the host', () => {
     widget.addToolbarButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
     const btn = host.querySelector<HTMLButtonElement>('[data-host-button="scan"]')!;
     expect(btn.textContent).toBe('Scanner');
+    expect(btn.hasAttribute('aria-label')).toBe(false); // its text names it
     // Before the spacer that pushes the panel buttons right.
     const spacer = host.querySelector('.tcw-toolbar-spacer')!;
     expect(btn.compareDocumentPosition(spacer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
