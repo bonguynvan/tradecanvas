@@ -185,6 +185,8 @@ export class Chart {
    * the layout again doesn't drop them.
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
+  /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
+  private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
   /** Display timezone, minutes east of UTC; null = the browser's. */
   /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
@@ -348,8 +350,7 @@ export class Chart {
       this.scheduleAutoSave();
     });
     this.drawingManager.setEventCallback((event, data) => {
-      // A drawing's alerts go with it.
-      if (event === 'drawingRemove') this.alertManager?.removeDrawingAlerts((data as { id: string }).id);
+      this.followDrawingAlerts(event, (data as { id?: string } | null)?.id);
       this.eventBus.emit(event as ChartEventType, data);
     });
     // Pasted drawings obey the same switches as drawing tools.
@@ -574,10 +575,7 @@ export class Chart {
     // Alerts
     this.alertManager = new AlertManager();
     // Alerts on drawings check the drawing's lines where they are at the latest bar.
-    this.alertManager.setDrawingLevels((id) => {
-      const data = this.dataManager.getData();
-      return data.length > 0 ? this.drawingManager.priceAt(id, data[data.length - 1].time) : null;
-    });
+    this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.alertManager.on('triggered', (alert) => {
       const payload = { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered };
@@ -713,8 +711,7 @@ export class Chart {
       );
       this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
       this.interactionManager.setDrawingContextMenu((id, pos) => {
-        this.drawingManager.select(id);
-        this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
+        if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
       });
     }
     if (this.features.trading) {
@@ -1424,6 +1421,7 @@ export class Chart {
 
   setDrawings(drawings: DrawingState[]): void {
     this.drawingManager.setDrawings(drawings);
+    this.dropOrphanDrawingAlerts();
   }
 
   /** Append a drawing (id auto-assigned, active style applied). Returns the id. */
@@ -1525,9 +1523,19 @@ export class Chart {
     this.drawingManager.setDrawingLocked(id, locked);
   }
 
+  /** Show or hide several drawings (a selection, say) as one undo step. */
+  setDrawingsVisible(ids: readonly string[], visible: boolean): void {
+    this.drawingManager.setDrawingsVisible(ids, visible);
+  }
+
+  /** Lock or unlock several drawings as one undo step. */
+  setDrawingsLocked(ids: readonly string[], locked: boolean): void {
+    this.drawingManager.setDrawingsLocked(ids, locked);
+  }
+
   clearDrawings(): void {
-    for (const d of this.drawingManager.getDrawings()) this.alertManager.removeDrawingAlerts(d.id);
     this.drawingManager.clearDrawings();
+    this.dropOrphanDrawingAlerts();
   }
 
   registerDrawingTool(plugin: DrawingPlugin): void {
@@ -2689,7 +2697,43 @@ export class Chart {
 
   /** Whether a drawing has lines an alert can cross (trend lines, rays, horizontals, channels). */
   canAddDrawingAlert(drawingId: string): boolean {
-    return this.features.alerts && this.drawingManager.hasPriceLevels(drawingId);
+    return this.features.alerts && this.drawingLevelsNow(drawingId) !== null;
+  }
+
+  /**
+   * Where a drawing's lines are at the latest bar, as drawn on the chart's
+   * scale; null when it has none there (a trend line that ends before it).
+   */
+  private drawingLevelsNow(drawingId: string): number[] | null {
+    const data = this.getDisplayData();
+    if (data.length === 0) return null;
+    const viewport = { ...this.viewport.getState(), data };
+    return this.drawingManager.priceAt(drawingId, data[data.length - 1].time, viewport);
+  }
+
+  /**
+   * A drawing's alerts go with it, and come back with it when an undo
+   * brings the drawing back.
+   */
+  private followDrawingAlerts(event: string, drawingId: string | undefined): void {
+    if (!drawingId || !this.alertManager) return;
+    if (event === 'drawingRemove') {
+      const taken = this.alertManager.takeDrawingAlerts(drawingId);
+      if (taken.length > 0) this.removedDrawingAlerts.set(drawingId, taken);
+    } else if (event === 'drawingCreate') {
+      const back = this.removedDrawingAlerts.get(drawingId);
+      if (!back) return;
+      this.removedDrawingAlerts.delete(drawingId);
+      this.alertManager.restoreAlerts(back);
+    }
+  }
+
+  /** Remove alerts on drawings no longer on the chart (drawings replaced or cleared). */
+  private dropOrphanDrawingAlerts(): void {
+    this.removedDrawingAlerts.clear();
+    if (!this.alertManager) return;
+    const removed = this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
+    if (removed > 0) this.scheduleAutoSave();
   }
 
   /**
@@ -2720,8 +2764,10 @@ export class Chart {
     this.alertManager.saveToStorage(key);
   }
 
+  /** Load alerts saved with `saveAlerts`. Alerts on drawings that aren't on the chart are dropped. */
   loadAlerts(key: string): void {
     this.alertManager.loadFromStorage(key);
+    this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
     this.engine.requestRender(LayerType.Overlay);
   }
 

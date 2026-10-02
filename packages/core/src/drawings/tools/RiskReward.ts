@@ -8,6 +8,8 @@ const MIN_WIDTH_PX = 40;
 const TARGET_HANDLE = 2;
 const MIN_RATIO = 0.1;
 const MAX_RATIO = 100;
+/** Largest account size or risk amount taken: big enough for any account, small enough to stay finite. */
+const MAX_MONEY = 1e15;
 
 /**
  * "Long/Short Position": drag from the entry to the stop; the target sits the
@@ -23,14 +25,14 @@ export class RiskRewardTool extends DrawingBase {
     requiredAnchors: 2,
     options: {
       rewardRatio: { kind: 'number' as const, label: 'Reward:risk', default: 2, min: MIN_RATIO, max: MAX_RATIO, step: 0.1 },
-      accountSize: { kind: 'number' as const, label: 'Account size', default: 1000, min: 0 },
+      accountSize: { kind: 'number' as const, label: 'Account size', default: 1000, min: 0, max: MAX_MONEY },
       riskMode: {
         kind: 'choice' as const,
         label: 'Risk as',
         default: 'percent',
         choices: [{ value: 'percent', label: 'Percent of account' }, { value: 'amount', label: 'Amount' }],
       },
-      risk: { kind: 'number' as const, label: 'Risk', default: 1, min: 0 },
+      risk: { kind: 'number' as const, label: 'Risk', default: 1, min: 0, max: MAX_MONEY },
       qtyDecimals: { kind: 'number' as const, label: 'Quantity decimals', default: 2, min: 0, max: 8, step: 1 },
       showLabels: { kind: 'boolean' as const, label: 'Show labels', default: true },
     },

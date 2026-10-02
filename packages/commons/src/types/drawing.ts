@@ -110,8 +110,11 @@ export interface DrawingPlugin {
   /**
    * The prices of the drawing's lines at `time` (what an alert on it
    * crosses), or null where it doesn't reach. Tools without it take no alerts.
+   * With `viewport` the lines follow the chart as drawn: straight across bars
+   * (not clock time, so a weekend gap doesn't bend them) and on a log scale
+   * straight in log price.
    */
-  priceAt?(state: DrawingState, time: number): number[] | null;
+  priceAt?(state: DrawingState, time: number, viewport?: ViewportState): number[] | null;
 }
 
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {

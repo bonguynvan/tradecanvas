@@ -714,9 +714,19 @@ export class ChartWidget {
         onRemoveCompare: (id) => this.handleRemoveCompare(id),
       }, this.t);
       const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
+      // A drawing changes many times a second while its settings are edited
+      // (a colour being picked): rebuild the list once a frame at most.
+      let refreshFrame = 0;
+      const refreshSoon = () => {
+        if (refreshFrame || !this.objectTree?.isOpen()) return;
+        refreshFrame = requestAnimationFrame(() => {
+          refreshFrame = 0;
+          if (!this.destroyed) refresh();
+        });
+      };
       this.chart.on('drawingCreate', refresh);
       this.chart.on('drawingRemove', refresh);
-      this.chart.on('drawingUpdate', refresh);
+      this.chart.on('drawingUpdate', refreshSoon);
       this.chart.on('indicatorAdd', refresh);
       this.chart.on('indicatorRemove', refresh);
       this.chart.on('indicatorChange', refresh);
@@ -1052,10 +1062,10 @@ export class ChartWidget {
       }
       case 'lock':
       case 'unlock':
-        for (const sid of ids) this.chart.setDrawingLocked(sid, action === 'lock');
+        this.chart.setDrawingsLocked(ids, action === 'lock');
         break;
       case 'hide':
-        for (const sid of ids) this.chart.setDrawingVisible(sid, false);
+        this.chart.setDrawingsVisible(ids, false);
         break;
       case 'duplicate':
         this.chart.duplicateDrawing(id);

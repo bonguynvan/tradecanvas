@@ -1,5 +1,5 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
-import { DrawingBase } from '../DrawingBase.js';
+import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
 
 export class ParallelChannelTool extends DrawingBase {
@@ -78,16 +78,18 @@ export class ParallelChannelTool extends DrawingBase {
   }
 
   /** The base line, the parallel, and the middle line when drawn. */
-  priceAt(state: DrawingState, time: number): number[] | null {
+  priceAt(state: DrawingState, time: number, viewport?: ViewportState): number[] | null {
     if (state.anchors.length < 3) return null;
     const [a, b, c] = state.anchors;
-    const base = this.linePriceAt(a, b, time, this.option(state, 'extendLeft'), this.option(state, 'extendRight'));
-    const throughC = this.linePriceAt(a, b, c.time, true, true);
+    const space = lineSpace(viewport);
+    const base = this.lineValueAt(a, b, time, this.option(state, 'extendLeft'), this.option(state, 'extendRight'), space);
+    const throughC = this.lineValueAt(a, b, c.time, true, true, space);
     if (base === null || throughC === null) return null;
-    const offset = c.price - throughC;
-    const prices = [base, base + offset];
-    if (this.option<boolean>(state, 'middleLine')) prices.push(base + offset / 2);
-    return prices;
+    // The parallel is the base line moved to C on screen, so the offset is in `space`.
+    const offset = space.value(c.price) - throughC;
+    const values = [base, base + offset];
+    if (this.option<boolean>(state, 'middleLine')) values.push(base + offset / 2);
+    return values.map(space.price);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

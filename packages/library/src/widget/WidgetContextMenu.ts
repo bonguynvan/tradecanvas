@@ -25,6 +25,8 @@ export class WidgetContextMenu {
   private readonly onDocPointer = (e: Event) => {
     if (!this.el.contains(e.target as Node)) this.close();
   };
+  /** Scrolling, resizing or leaving the window moves the chart from under the menu. */
+  private readonly onAway = () => this.close();
 
   constructor(private readonly host: HTMLElement, label: string) {
     this.el = document.createElement('div');
@@ -52,6 +54,9 @@ export class WidgetContextMenu {
     this.el.style.left = `${place(x, this.el.offsetWidth, right)}px`;
     this.el.style.top = `${place(y, this.el.offsetHeight, bottom)}px`;
     document.addEventListener('pointerdown', this.onDocPointer, true);
+    document.addEventListener('wheel', this.onAway, { capture: true, passive: true });
+    window.addEventListener('resize', this.onAway);
+    window.addEventListener('blur', this.onAway);
     this.items()[0]?.focus({ preventScroll: true });
   }
 
@@ -60,6 +65,9 @@ export class WidgetContextMenu {
     this.el.hidden = true;
     this.onPick = null;
     document.removeEventListener('pointerdown', this.onDocPointer, true);
+    document.removeEventListener('wheel', this.onAway, { capture: true });
+    window.removeEventListener('resize', this.onAway);
+    window.removeEventListener('blur', this.onAway);
     if (this.returnFocus?.isConnected) this.returnFocus.focus({ preventScroll: true });
     this.returnFocus = null;
   }

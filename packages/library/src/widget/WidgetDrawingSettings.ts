@@ -7,6 +7,7 @@ import type {
   DrawingStyle,
   DrawingToolType,
 } from '@tradecanvas/commons';
+import { sanitizeDrawingOptions } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { colorAlpha, colorInput, numberInput, selectInput, settingsRow, toHex, toggleSwitch, withAlpha } from './settingsControls.js';
@@ -99,8 +100,15 @@ export class WidgetDrawingSettings {
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'tcw-modal-backdrop';
     this.backdrop.hidden = true;
+    // A press that starts in the dialog (selecting text, say) and ends on the
+    // backdrop doesn't close it.
+    let pressedBackdrop = false;
+    this.backdrop.addEventListener('pointerdown', (e) => {
+      pressedBackdrop = e.target === this.backdrop;
+    });
     this.backdrop.addEventListener('click', (e) => {
-      if (e.target === this.backdrop) this.close(true);
+      if (e.target === this.backdrop && pressedBackdrop) this.close(true);
+      pressedBackdrop = false;
     });
 
     this.modal = document.createElement('div');
@@ -164,8 +172,15 @@ export class WidgetDrawingSettings {
     this.titleEl.textContent = target.name;
     this.tab = 'style';
     this.callbacks.onBegin(target.id);
-    this.renderTabs();
-    this.renderBody();
+    try {
+      this.renderTabs();
+      this.renderBody();
+    } catch (err) {
+      // A drawing the dialog can't show: end the edit it began.
+      this.target = null;
+      this.callbacks.onEnd(target.id, true);
+      throw err;
+    }
     this.backdrop.hidden = false;
     (this.tabButtons[0] ?? this.modal).focus();
   }
@@ -388,7 +403,8 @@ export class WidgetDrawingSettings {
       apply.textContent = template.name;
       apply.addEventListener('click', () => {
         this.setStyle(template.style);
-        if (template.options) this.setOptions(template.options);
+        // Templates come from storage: only options the tool takes apply.
+        if (template.options) this.setOptions(sanitizeDrawingOptions(target.defs, template.options));
         this.renderBody();
       });
       const remove = document.createElement('button');
@@ -495,7 +511,10 @@ export class WidgetDrawingSettings {
     head.textContent = this.label(key, def.label);
     wrap.appendChild(head);
 
-    const levels = () => (this.options[key] as DrawingLevel[] | undefined) ?? [];
+    const levels = (): DrawingLevel[] => {
+      const value = this.options[key];
+      return Array.isArray(value) ? (value as DrawingLevel[]) : [];
+    };
     const commit = (next: DrawingLevel[]) => this.setOptions({ [key]: next });
     const grid = document.createElement('div');
     grid.className = 'tcw-levels-grid';
@@ -505,16 +524,17 @@ export class WidgetDrawingSettings {
       const visible = document.createElement('input');
       visible.type = 'checkbox';
       visible.checked = level.visible;
-      visible.setAttribute('aria-label', this.t('drawingSettings.levelVisible'));
+      const nth = ` ${index + 1}`; // rows share labels; the number tells them apart
+      visible.setAttribute('aria-label', this.t('drawingSettings.levelVisible') + nth);
       visible.addEventListener('change', () => commit(levels().map((l, i) => (i === index ? { ...l, visible: visible.checked } : l))));
       const value = numberInput(level.value, { step: 0.001 }, (v) => commit(levels().map((l, i) => (i === index ? { ...l, value: v } : l))));
-      value.setAttribute('aria-label', this.t('drawingSettings.levelValue'));
+      value.setAttribute('aria-label', this.t('drawingSettings.levelValue') + nth);
       const color = colorInput(level.color ?? this.style.color, (v) => commit(levels().map((l, i) => (i === index ? { ...l, color: v } : l))));
-      color.setAttribute('aria-label', this.t('drawingSettings.levelColor'));
+      color.setAttribute('aria-label', this.t('drawingSettings.levelColor') + nth);
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'tcw-level-remove';
-      remove.setAttribute('aria-label', this.t('drawingSettings.removeLevel'));
+      remove.setAttribute('aria-label', this.t('drawingSettings.removeLevel') + nth);
       remove.innerHTML = createIcon('x', 12);
       remove.addEventListener('click', () => {
         commit(levels().filter((_, i) => i !== index));

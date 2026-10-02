@@ -27,6 +27,12 @@ export interface AxisStrips {
   };
 }
 
+/** Whether focus is in a dialog or menu, whose keys are its own. */
+function focusInOverlay(): boolean {
+  const active = typeof document !== 'undefined' ? document.activeElement : null;
+  return active instanceof Element && active.closest('[aria-modal="true"], [role="dialog"], [role="menu"]') !== null;
+}
+
 export class InteractionManager {
   private panHandler: PanHandler | null = null;
   private zoomHandler: ZoomHandler | null = null;
@@ -542,6 +548,8 @@ export class InteractionManager {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // Keys pressed in a dialog or menu (a drawing's settings, say) are its own.
+      if (focusInOverlay()) return;
       if (e.key === 'Escape' && this.boxSelecting && this.boxSelectHandlers) {
         this.boxSelecting = false;
         this.boxSelectHandlers.cancel();
@@ -558,15 +566,20 @@ export class InteractionManager {
       // never to a text field being typed in. Escape still cancels a tool
       // picked from outside the chart.
       if (e.key !== 'Escape' && !this.ownsShortcuts()) return;
-      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey)) e.preventDefault();
+      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey, e.shiftKey)) e.preventDefault();
     };
 
     const onContextMenu = (e: MouseEvent) => {
       const vp = getVP();
       if (!vp) return;
       const pos = this.getMousePos(e);
-      // A drawing under the pointer has a menu of its own.
-      const drawingId = this.onDrawingContextMenu ? this.drawingManager?.drawingAt(pos, vp) : null;
+      // A drawing under the pointer has a menu of its own: in the price pane,
+      // not on an axis or another pane, and not while a tool is drawing.
+      const plot = vp.chartRect;
+      const inPlot = pos.x >= plot.x && pos.x <= plot.x + plot.width && pos.y >= plot.y && pos.y <= plot.y + plot.height;
+      const drawingId = this.onDrawingContextMenu && inPlot && !this.drawingManager?.getActiveTool()
+        ? this.drawingManager?.drawingAt(pos, vp)
+        : null;
       if (drawingId) {
         e.preventDefault();
         this.onDrawingContextMenu?.(drawingId, pos);

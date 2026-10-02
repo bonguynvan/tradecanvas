@@ -1,5 +1,5 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
-import { DrawingBase } from '../DrawingBase.js';
+import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
 
 export class TrendLineTool extends DrawingBase {
@@ -23,9 +23,9 @@ export class TrendLineTool extends DrawingBase {
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
-  priceAt(state: DrawingState, time: number): number[] | null {
+  priceAt(state: DrawingState, time: number, viewport?: ViewportState): number[] | null {
     if (state.anchors.length < 2) return null;
-    const price = this.linePriceAt(state.anchors[0], state.anchors[1], time, this.option(state, 'extendLeft'), this.option(state, 'extendRight'));
+    const price = this.linePriceAt(state.anchors[0], state.anchors[1], time, this.option(state, 'extendLeft'), this.option(state, 'extendRight'), lineSpace(viewport));
     return price === null ? null : [price];
   }
 

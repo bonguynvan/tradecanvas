@@ -371,7 +371,7 @@ describe('InteractionManager — right-click on a drawing', () => {
   it('opens the drawing’s menu instead of the browser’s', () => {
     const opened: [string, number][] = [];
     im.setDrawingManager(
-      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null) } as unknown as DrawingManager,
+      { drawingAt: (pos: { x: number }) => (pos.x === 120 ? 'd1' : null), getActiveTool: () => null } as unknown as DrawingManager,
       () => ({ chartRect: { x: 0, y: 0, width: 400, height: 300 } }) as ViewportState,
     );
     im.setDrawingContextMenu((id, pos) => opened.push([id, pos.x]));

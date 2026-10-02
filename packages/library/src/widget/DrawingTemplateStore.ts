@@ -1,4 +1,5 @@
 import type { DrawingOptions, DrawingStyle, DrawingToolType } from '@tradecanvas/commons';
+import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 
 export interface DrawingStyleTemplate {
   name: string;
@@ -22,19 +23,13 @@ function defaultStorage(): KeyValueStorage | null {
   }
 }
 
-const STYLE_KEYS: (keyof DrawingStyle)[] = [
-  'color', 'lineWidth', 'lineStyle', 'fillColor', 'fillOpacity', 'fontSize',
-];
+/** Longest template name kept. */
+const MAX_TEMPLATE_NAME = 80;
 
-/** Keep only known style keys — guards against junk persisted by older builds. */
+/** A template's style: the valid fields of `raw`, without text (a template styles, it doesn't write). */
 function sanitizeStyle(raw: unknown): Partial<DrawingStyle> {
-  if (!raw || typeof raw !== 'object') return {};
-  const out: Partial<DrawingStyle> = {};
-  const obj = raw as Record<string, unknown>;
-  for (const key of STYLE_KEYS) {
-    if (obj[key] !== undefined) (out as Record<string, unknown>)[key] = obj[key];
-  }
-  return out;
+  const { text: _text, ...style } = sanitizeDrawingStyle(raw);
+  return style;
 }
 
 function copyTemplate(t: DrawingStyleTemplate): DrawingStyleTemplate {
@@ -71,7 +66,7 @@ export class DrawingTemplateStore {
 
   /** Insert or replace a template by name (and tool, when it is saved with one). */
   save(name: string, style: Partial<DrawingStyle>, tool?: { type: DrawingToolType; options: DrawingOptions }): void {
-    const trimmed = name.trim();
+    const trimmed = name.trim().slice(0, MAX_TEMPLATE_NAME);
     if (!trimmed) return;
     const template: DrawingStyleTemplate = { name: trimmed, style: sanitizeStyle(style) };
     if (tool) {
@@ -101,9 +96,9 @@ export class DrawingTemplateStore {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
       this.templates = parsed
-        .filter((t) => t && typeof t.name === 'string')
+        .filter((t) => t && typeof t.name === 'string' && t.name.trim() !== '')
         .map((t) => {
-          const template: DrawingStyleTemplate = { name: t.name, style: sanitizeStyle(t.style) };
+          const template: DrawingStyleTemplate = { name: t.name.trim().slice(0, MAX_TEMPLATE_NAME), style: sanitizeStyle(t.style) };
           // Options are checked against the tool when they are applied.
           if (typeof t.type === 'string') template.type = t.type as DrawingToolType;
           if (t.options && typeof t.options === 'object' && !Array.isArray(t.options)) template.options = t.options;

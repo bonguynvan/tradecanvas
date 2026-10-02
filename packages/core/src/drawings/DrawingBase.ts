@@ -9,8 +9,41 @@ import type {
   ViewportState,
   AnchorPoint,
 } from '@tradecanvas/commons';
-import { drawingOption } from '@tradecanvas/commons';
-import { priceToY, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
+import { priceToY, resolveBarIndex, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
+
+/**
+ * How a line is straight on the chart: along `at` (a time's bar position, or
+ * the time itself) and `value` (log price on a log scale, else price).
+ */
+export interface LineSpace {
+  at(time: number): number;
+  value(price: number): number;
+  price(value: number): number;
+}
+
+const PLAIN_SPACE: LineSpace = { at: (time) => time, value: (price) => price, price: (value) => value };
+
+/** The space lines are straight in on this chart; plain time and price without a viewport. */
+export function lineSpace(viewport?: ViewportState): LineSpace {
+  if (!viewport) return PLAIN_SPACE;
+  const { min, max } = viewport.priceRange;
+  const log = viewport.logScale === true && min > 0 && max > 0;
+  return {
+    at: (time) => resolveBarIndex(time, viewport),
+    value: log ? (price) => Math.log(Math.max(price, Number.EPSILON)) : (price) => price,
+    price: log ? Math.exp : (value) => value,
+  };
+}
+
+/** Whether a stored option value is of the kind its definition takes. */
+function optionKindMatches(def: NonNullable<DrawingDescriptor['options']>[string], value: unknown): boolean {
+  switch (def.kind) {
+    case 'boolean': return typeof value === 'boolean';
+    case 'number': return typeof value === 'number' && Number.isFinite(value);
+    case 'levels': return Array.isArray(value);
+    default: return typeof value === 'string';
+  }
+}
 
 export abstract class DrawingBase implements DrawingPlugin {
   abstract descriptor: DrawingDescriptor;
@@ -45,12 +78,18 @@ export abstract class DrawingBase implements DrawingPlugin {
 
   /** One of the drawing's options (see `descriptor.options`), its default when unset. */
   protected option<T extends DrawingOptionValue>(state: DrawingState, key: string): T {
-    return drawingOption<T>(this.descriptor.options, state.options, key);
+    // Options are cleaned on the way in (added, loaded, updated), so a read
+    // runs every frame without copying; a value of the wrong kind still
+    // falls back to the default. Callers must not change what they get.
+    const def = this.descriptor.options?.[key];
+    const own = state.options?.[key];
+    if (!def) return own as T;
+    return (own !== undefined && optionKindMatches(def, own) ? own : def.default) as T;
   }
 
   /** The levels turned on, in order. */
   protected visibleLevels(state: DrawingState, key = 'levels'): DrawingLevel[] {
-    return this.option<DrawingLevel[]>(state, key).filter((level) => level.visible);
+    return this.option<DrawingLevel[]>(state, key).filter((level) => level.visible && Number.isFinite(level.value));
   }
 
   /** The line from `p1` to `p2`, carried to the edge of the chart past either end when asked. */
@@ -71,13 +110,36 @@ export abstract class DrawingBase implements DrawingPlugin {
   /**
    * The price on the line through `a` and `b` at `time`: between the anchors,
    * or past `a` / past `b` when the line is extended that way. Null elsewhere,
-   * or for a vertical line.
+   * or for a vertical line. `space` is the one the line is straight in.
    */
-  protected linePriceAt(a: AnchorPoint, b: AnchorPoint, time: number, pastA: boolean, pastB: boolean): number | null {
-    if (a.time === b.time) return null;
-    const t = (time - a.time) / (b.time - a.time); // 0 at a, 1 at b
-    if ((t < 0 && !pastA) || (t > 1 && !pastB)) return null;
-    return a.price + (b.price - a.price) * t;
+  protected linePriceAt(
+    a: AnchorPoint,
+    b: AnchorPoint,
+    time: number,
+    pastA: boolean,
+    pastB: boolean,
+    space: LineSpace = PLAIN_SPACE,
+  ): number | null {
+    const value = this.lineValueAt(a, b, time, pastA, pastB, space);
+    return value === null ? null : space.price(value);
+  }
+
+  /** `linePriceAt` in `space`'s values (log price on a log scale). */
+  protected lineValueAt(
+    a: AnchorPoint,
+    b: AnchorPoint,
+    time: number,
+    pastA: boolean,
+    pastB: boolean,
+    space: LineSpace,
+  ): number | null {
+    const atA = space.at(a.time);
+    const atB = space.at(b.time);
+    if (atA === atB) return null;
+    const t = (space.at(time) - atA) / (atB - atA); // 0 at a, 1 at b
+    if (!Number.isFinite(t) || (t < 0 && !pastA) || (t > 1 && !pastB)) return null;
+    const valueA = space.value(a.price);
+    return valueA + (space.value(b.price) - valueA) * t;
   }
 
   protected anchorToPixel(anchor: AnchorPoint, viewport: ViewportState): Point {

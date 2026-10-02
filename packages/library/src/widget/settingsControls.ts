@@ -81,7 +81,8 @@ export function selectInput(
 }
 
 /** A colour as `#rrggbb` (what a colour input takes); black if unreadable. */
-export function toHex(color: string): string {
+export function toHex(color: unknown): string {
+  if (typeof color !== 'string') return '#000000';
   const c = color.trim();
   if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase();
   if (/^#[0-9a-f]{3}$/i.test(c)) return `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`.toLowerCase();
@@ -91,7 +92,8 @@ export function toHex(color: string): string {
 }
 
 /** The alpha of a colour (1 for `#rgb` / `#rrggbb`). */
-export function colorAlpha(color: string): number {
+export function colorAlpha(color: unknown): number {
+  if (typeof color !== 'string') return 1;
   const m = /^rgba\([^)]*,\s*([\d.]+)\s*\)$/i.exec(color.trim());
   return m ? Math.max(0, Math.min(1, Number(m[1]))) : 1;
 }

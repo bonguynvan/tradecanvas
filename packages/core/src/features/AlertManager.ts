@@ -111,6 +111,34 @@ export class AlertManager extends Emitter<AlertEvents> {
     for (const alert of this.alerts.filter((a) => a.drawingId === drawingId)) this.removeAlert(alert.id);
   }
 
+  /**
+   * Remove a drawing's alerts and hand them over, to put back with
+   * `restoreAlerts` if the drawing comes back (an undo).
+   */
+  takeDrawingAlerts(drawingId: string): PriceAlert[] {
+    const taken = this.alerts.filter((a) => a.drawingId === drawingId);
+    for (const alert of taken) this.removeAlert(alert.id);
+    return taken.map((a) => ({ ...a }));
+  }
+
+  /** Put alerts back (from `takeDrawingAlerts`); ones already here are skipped. */
+  restoreAlerts(alerts: readonly PriceAlert[]): void {
+    for (const alert of alerts) {
+      if (this.alerts.some((a) => a.id === alert.id)) continue;
+      const restored = { ...alert };
+      this.alerts.push(restored);
+      this.emit('added', restored);
+    }
+    this.requestRender?.();
+  }
+
+  /** Remove alerts on drawings that aren't in `drawingIds`. Returns how many went. */
+  pruneDrawingAlerts(drawingIds: ReadonlySet<string>): number {
+    const orphans = this.alerts.filter((a) => a.drawingId !== undefined && !drawingIds.has(a.drawingId));
+    for (const alert of orphans) this.removeAlert(alert.id);
+    return orphans.length;
+  }
+
   removeAlert(id: string): void {
     this.drawingSides.delete(id);
     this.alerts = this.alerts.filter((a) => a.id !== id);

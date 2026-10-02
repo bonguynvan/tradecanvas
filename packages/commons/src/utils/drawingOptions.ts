@@ -3,6 +3,8 @@ import type { DrawingLevel, DrawingOptionDef, DrawingOptionDefs, DrawingOptionVa
 /** Most levels a drawing keeps; more is a pasted or hand-edited state, not a chart. */
 const MAX_LEVELS = 48;
 const MAX_TEXT = 2000;
+/** Largest level ratio kept (a Fibonacci level of 4.236, a time zone of 89 bars). */
+const MAX_LEVEL_VALUE = 10_000;
 
 function sanitizeLevels(raw: unknown): DrawingLevel[] | undefined {
   if (!Array.isArray(raw)) return undefined;
@@ -11,7 +13,7 @@ function sanitizeLevels(raw: unknown): DrawingLevel[] | undefined {
     if (levels.length >= MAX_LEVELS) break;
     if (typeof item !== 'object' || item === null) continue;
     const { value, visible, color } = item as Record<string, unknown>;
-    if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > MAX_LEVEL_VALUE) continue;
     if (visible !== undefined && typeof visible !== 'boolean') continue;
     const level: DrawingLevel = { value, visible: visible ?? true };
     if (typeof color === 'string' && color) level.color = color;

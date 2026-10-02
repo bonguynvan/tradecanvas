@@ -1,4 +1,5 @@
 import type { ChartType, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import type { AlertCondition, PriceAlert } from './AlertManager.js';
 
 /**
@@ -93,25 +94,32 @@ function validateDrawing(raw: unknown): DrawingState | null {
     anchors.push({ time: a.time, price: a.price });
   }
 
-  const style = raw.style;
-  if (typeof style.color !== 'string' || typeof style.lineWidth !== 'number') {
-    return null;
-  }
+  // Every field of the style is checked: the settings dialog and the
+  // renderers take them as they are.
+  const style = sanitizeDrawingStyle(raw.style);
+  if (style.color === undefined || style.lineWidth === undefined) return null;
 
   return {
     id: raw.id,
     type: raw.type as DrawingState['type'],
     anchors,
-    style: style as unknown as DrawingState['style'],
+    style: { lineStyle: 'solid', ...style, color: style.color, lineWidth: style.lineWidth },
     visible: typeof raw.visible === 'boolean' ? raw.visible : true,
     locked: typeof raw.locked === 'boolean' ? raw.locked : false,
     // Checked against the tool when the drawings are set on a chart.
     options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
-    group: isObject(raw.group) && typeof raw.group.id === 'string' && typeof raw.group.name === 'string'
-      ? { id: raw.group.id, name: raw.group.name }
-      : undefined,
+    group: validateGroup(raw.group),
     meta: isObject(raw.meta) ? raw.meta : undefined,
   };
+}
+
+const MAX_GROUP_ID = 64;
+const MAX_GROUP_NAME = 80;
+
+function validateGroup(raw: unknown): DrawingState['group'] {
+  if (!isObject(raw) || typeof raw.id !== 'string' || typeof raw.name !== 'string') return undefined;
+  if (raw.id === '' || raw.id.length > MAX_GROUP_ID) return undefined;
+  return { id: raw.id, name: raw.name.slice(0, MAX_GROUP_NAME) };
 }
 
 function validateOrder(raw: unknown): TradingOrder | null {
