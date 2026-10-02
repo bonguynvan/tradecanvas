@@ -1,0 +1,437 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
+<svelte:head>
+  <title>API リファレンス — TradeCanvas ドキュメント</title>
+  <meta name="description" content="Chart、ChartWidget、ChartGrid と TradeCanvas のコア API のリファレンス。" />
+</svelte:head>
+
+<h1>API リファレンス</h1>
+<p>3 つのトップレベルクラス <code>Chart</code>、<code>ChartWidget</code>、<code>ChartGrid</code> の公開 API です。</p>
+
+<h2>Chart</h2>
+<p>ヘッドレスなレンダラーです。UI は自前で用意し、イベントを購読し、メソッド呼び出しで状態を変更します。</p>
+
+<h3>コンストラクター</h3>
+<pre><code>{`new Chart(host: HTMLElement, options?: ChartOptions)`}</code></pre>
+
+<h3>データ</h3>
+<table>
+  <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>setData(data)</code></td><td>系列全体を置き換えます。</td></tr>
+    <tr><td><code>appendBar(bar)</code></td><td>新しいバーを追加します。有効な場合は自動スクロールします。</td></tr>
+    <tr><td><code>appendBars(bars)</code></td><td>まとめて追加します。インジケーターの再計算は 1 回だけです。</td></tr>
+    <tr><td><code>updateLastBar(bar)</code></td><td>形成中の現在のバーを更新します。</td></tr>
+    <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
+    <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>
+  </tbody>
+</table>
+
+<h3>チャートタイプとテーマ</h3>
+<table>
+  <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>setChartType(type)</code></td><td>17 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
+    <tr><td><code>setTheme(name)</code></td><td>組み込みテーマを切り替えます。</td></tr>
+    <tr><td><code>setTimeframe(tf)</code></td><td>表示中の時間足を切り替え、ライブストリームを接続し直します。</td></tr>
+  </tbody>
+</table>
+
+<h3>インジケーター</h3>
+<table>
+  <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>オーバーレイ型またはパネル型のインジケーターを追加し、インスタンス id を返します。</td></tr>
+    <tr><td><code>updateIndicator(instanceId, params)</code></td><td>表示中のインジケーターを変更します。</td></tr>
+    <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
+  </tbody>
+</table>
+
+<h3>軸とスケール</h3>
+<p>
+  価格軸（右側の帯）と時間軸（下側の帯）は、トレーダーが使い慣れたジェスチャーで
+  直接ポインター操作できます：
+</p>
+<table>
+  <thead><tr><th>ジェスチャー</th><th>効果</th></tr></thead>
+  <tbody>
+    <tr><td>価格軸を上下にドラッグ</td><td>縦方向の価格範囲を縮める / 広げる（自動スケールは無効になります）。</td></tr>
+    <tr><td>時間軸を左右にドラッグ</td><td>時間軸を拡大 / 縮小します。</td></tr>
+    <tr><td>価格軸をダブルクリック</td><td>自動スケールを再び有効にします。</td></tr>
+    <tr><td>時間軸をダブルクリック</td><td>すべてのデータを表示領域に収めます。</td></tr>
+  </tbody>
+</table>
+<p>
+  <strong>タイムゾーン。</strong> 時間軸のラベルとクロスヘアの時刻表示は、既定ではブラウザーの
+  ローカルタイムゾーンに従います。設定シートから、または直接、固定の UTC オフセットに
+  切り替えられます（ローカルに戻すこともできます）：
+</p>
+<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
+chart.setTimezoneOffset(330)   // IST (UTC+5:30)
+chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+
+<p>同じ操作はプログラムからも行えます：</p>
+<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+chart.setLogScale(true)    // switch to logarithmic price scale
+chart.setInvertScale(true) // upside down (Alt+I in the widget)
+chart.fitContent()         // zoom out to all data
+chart.scrollToEnd()
+chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+
+<p>
+  <strong>価格スケールのモード。</strong> 標準と対数のほかに、表示中の最初のバーを基準に
+  軸のラベルを付け直すこともできます。<code>percentage</code> は変化率（%）を表示し、
+  <code>indexedTo100</code> は基準を 100 にそろえます。標準、パーセント、100 基準は同じ線形の配置を
+  共有し、異なるのはラベルだけです。チャート設定パネルから、または直接設定できます：
+</p>
+<pre><code>{`chart.setScaleMode('percentage')   // axis labels: +12.34% from first visible bar
+chart.setScaleMode('indexedTo100') // first visible bar reads as 100
+chart.setScaleMode('logarithmic')
+chart.getScaleMode()`}</code></pre>
+
+<h3>価格帯別出来高</h3>
+<p>
+  表示範囲の出来高を価格帯ごとに集計した横向きのヒストグラムです。既定ではオフで、
+  プログラムから、またはウィジェットの設定シートで切り替えます：
+</p>
+<pre><code>{`chart.setVolumeProfileVisible(true)
+chart.setVolumeProfileConfig({
+  buckets: 48,        // resolution of the histogram
+  widthRatio: 0.18,   // % of chart width
+  opacity: 0.32,
+  highlightPoC: true, // mark the highest-volume bucket
+})`}</code></pre>
+
+<h3>スイングマーカー（ピボット）</h3>
+<p>
+  フラクタルなスイング高値・安値を小さな三角形で示します（確定したピボット高値の上に ▼、
+  ピボット安値の下に ▲）。強さの値で、左右それぞれ何本のバーがより低くなければならないかを
+  指定します。設定シートから切り替えるか、次のようにします：
+</p>
+<pre><code>{`chart.setPivotMarkersVisible(true)
+chart.setPivotMarkersConfig({ left: 5, right: 5, showLabels: true })
+
+// market-structure labels (HH / HL / LH / LL) instead of price
+chart.setPivotMarkersConfig({ structureLabels: true })
+
+// pure detection + classification are exported
+import { findPivots, classifyPivots } from '@tradecanvas/core'
+const pivots = findPivots(bars, 5, 5)        // [{ index, price, type }]
+const structure = classifyPivots(pivots)     // adds label: 'HH'|'LH'|'HL'|'LL'`}</code></pre>
+
+<h3>セッションの塗りつぶし（通常取引時間）</h3>
+<p>
+  通常セッション外のバー（プレマーケット / ポストマーケットや夜間の休止時間）を暗くして、
+  レギュラーセッションを際立たせます。既定は米国株式の RTH（ニューヨーク時間 09:30–16:00、
+  夏時間を考慮）です。時間帯は 1 日の中の分数と、市場のタイムゾーンで設定します。
+  フィードがセッション情報を提供するシンボルでは、自動的に設定されます。
+</p>
+<pre><code>{`chart.setSessionShadingVisible(true)
+chart.setSessionShadingConfig({
+  startMinute: 9 * 60 + 30,     // 09:30
+  endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
+  timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
+})`}</code></pre>
+
+<h3>前期間のレベル (PDH / PDL / PDC)</h3>
+<p>
+  前日（または前週）の高値・安値・終値と、当期間の始値を、ラベル付きの水平線で表示します。
+  デイトレーダーが注目するサポート / レジスタンスの水準です。設定シートから切り替えるか、
+  直接指定します：
+</p>
+<pre><code>{`chart.setPeriodLevelsVisible(true)
+chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
+
+// pure computation is exported
+import { computePeriodLevels } from '@tradecanvas/core'
+const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+
+<h3>マーケットプロファイル (TPO)</h3>
+<p>
+  価格ごとの滞在時間を示すヒストグラムです。各バーは、その値幅が触れたすべての価格帯に
+  TPO を 1 つずつ加え、POC（Point of Control、最も活発な価格）とバリューエリア
+  （TPO の約 70%）を浮かび上がらせます。出来高ではなく時間で重み付けする点で価格帯別出来高とは
+  異なり、左端に固定されるため両方を同時に表示できます。既定ではオフで、設定シートから、
+  または直接切り替えます：
+</p>
+<pre><code>{`chart.setMarketProfileVisible(true)
+chart.setMarketProfileConfig({
+  buckets: 48,
+  widthRatio: 0.18,
+  opacity: 0.32,
+  valueAreaPct: 0.7,  // fraction of TPOs in the value area
+  highlightPoC: true, // dashed line at the point of control
+})
+
+// split into one mini-profile per calendar-day session
+chart.setMarketProfileConfig({ splitBySession: true })
+
+// classic TPO letters per session (when zoomed in enough to be legible)
+chart.setMarketProfileConfig({ splitBySession: true, letters: true })
+
+// pure computation is exported too
+import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
+const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
+const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+
+<h3>タッチとモバイル</h3>
+<table>
+  <thead><tr><th>ジェスチャー</th><th>操作</th></tr></thead>
+  <tbody>
+    <tr><td>1 本指でドラッグ（チャート領域）</td><td>スクロール + クロスヘアを移動</td></tr>
+    <tr><td>2 本指でピンチ</td><td>中心点を基準に拡大縮小</td></tr>
+    <tr><td>長押し（約 500 ms）</td><td>バーに OHLC ツールチップを固定（Alt+クリックのモバイル版）</td></tr>
+    <tr><td>価格軸 / 時間軸の帯の中を 1 本指でドラッグ</td><td>対応する軸を拡大縮小</td></tr>
+  </tbody>
+</table>
+<p>
+  画面幅が 640 px 未満では、モーダル（設定、ショートカット一覧、コマンドパレット、シンボル検索）が
+  自動的にボトムシート形式に切り替わり、つまみ（グラブハンドル）とセーフエリアを考慮した余白が付きます。
+</p>
+
+<h3>計測ツール</h3>
+<p>
+  <kbd>Shift</kbd> を押しながらチャート上をドラッグすると、2 点間のバー数 × 価格差を計測できます。
+  オーバーレイには価格の Δ（絶対値と %）、バー数、時間幅が表示されます。マウスを離すとすぐに消え、
+  保存される状態には含まれません。
+</p>
+
+<h3>イベント</h3>
+<p>すべてのイベントは <code>ChartEventMap</code> で型付けされています：</p>
+<pre><code>{`chart.on('orderPlace', e => /* OrderPlacePayload */)
+chart.on('orderModify', e => /* OrderModifyPayload */)
+chart.on('signalMarkerAdd', e => /* { marker } */)
+chart.on('tradeZoneAdd', e => /* { zone } */)
+chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+
+<h2>ChartWidget</h2>
+<p><code>Chart</code> を完全な UI で包みます。同じインスタンスに <code>widget.chart</code> でアクセスできます。</p>
+
+<pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
+
+const widget = new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(),
+  historyLimit: 500,
+  trading: true,
+  features: { drawings: true, indicators: true },
+  onReady: (chart) => { /* ... */ },
+})
+
+widget.chart.setData(...)
+widget.destroy()`}</code></pre>
+
+<h3>ウィジェットのキーボードショートカット</h3>
+<table>
+  <thead><tr><th>ショートカット</th><th>操作</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット（インジケーター、チャートタイプ、描画など）</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索 — 設定したシンボル一覧からのあいまい検索</td></tr>
+    <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧を表示</td></tr>
+    <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
+    <tr><td>ツールバーのシンボルをクリック</td><td>シンボル検索のモーダルを開きます</td></tr>
+    <tr><td>ツールバーの再生ボタンをクリック</td><td>バーリプレイのスクラバーを開きます（再生 / ステップ / シーク / 速度）</td></tr>
+  </tbody>
+</table>
+<p>検索対象の一覧は、実行時に <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> で更新できます。</p>
+
+<h3>データウィンドウ</h3>
+<p>
+  カーソル位置のバーの正確な O/H/L/C/V、バーの変化、すべての有効なインジケーターの値を表示する
+  フローティングパネルです。クロスヘアを動かすとリアルタイムに更新されます。コマンドパレット
+  （<kbd>Ctrl/⌘ K</kbd> →「データウィンドウの表示切り替え」）から表示を切り替えます。
+</p>
+
+<h3>共有できる表示（ディープリンク）</h3>
+<p>
+  シンボル、時間足、チャートタイプ、価格スケール、インジケーター（パラメーター込み）、描画を含む
+  表示全体を、ディープリンク用のコンパクトで URL セーフな文字列にエンコードします。
+  <code>shareUrl: true</code> を指定すると、ウィジェットは読み込み時に <code>#tcw=…</code>
+  ハッシュから表示を復元し、コマンドパレットの「表示を共有」アクションでリンクをクリップボードにコピーできます。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, { shareUrl: true })
+
+const token = widget.exportState()      // portable string
+await widget.importState(token)         // restore a view
+await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
+
+<h3>レイアウトの保存</h3>
+<p>
+  シンボルごとのインジケーター構成、描画、アラート、チャートタイプを
+  <code>localStorage</code> に自動で保存します：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  persistLayouts: true,  // or { keyPrefix: 'myapp:', debounceMs: 2000 }
+})
+
+// Reset a single symbol's layout
+widget.clearSavedLayout('BTCUSDT')`}</code></pre>
+<p>
+  レイアウトはシンボルの切り替え時とウィジェットの破棄時に書き出されるため、
+  ユーザーがページを離れても何も失われません。
+</p>
+
+<h3>ドラッグ＆ドロップでのデータ読み込み</h3>
+<p>
+  CSV または JSON ファイルをチャートにドロップすると、すぐに読み込まれます。既定で有効で、
+  <code>dragDropImport: false</code> で無効にできます。パーサーは一般的な列構成
+  （<code>time, open, high, low, close, volume</code>）、ISO 8601 形式のタイムスタンプ、
+  UNIX 時間の秒 / ミリ秒に対応しています。
+</p>
+<pre><code>{`// Programmatic use
+import { parseOHLCV } from '@tradecanvas/chart'
+
+const { data, rowCount, skipped } = parseOHLCV(csvText)
+chart.setData(data)`}</code></pre>
+
+<h3>時間足のリサンプリング</h3>
+<p>
+  最も細かい解像度の系列を <code>widget.setData()</code> で渡すと、ツールバーの時間足ボタンが
+  クライアント側で集計します。1 つのデータセットですべての解像度をまかなうため、再取得は不要です。
+  ライブアダプターが接続されていないときに有効で、<code>resampleTimeframes: false</code> で
+  無効にできます。週足の区切りは既定で月曜日起点です（日曜日にするには <code>weekStartsOn: 0</code>）。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  timeframe: '1h',
+  timeframes: ['5m', '15m', '1h', '4h', '1d', '1w'],
+})
+widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
+
+// Or use the pure function directly
+import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+
+const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+<p>
+  区切りはカレンダーを考慮します。日中足と日足は UTC エポックの境界に、週足は設定した週の開始日に、
+  月足 / 四半期足 / 年足はカレンダーの境界にそろえます。入力のバーが変更されることはありません。
+</p>
+
+<h3>ウォッチリストのサイドバー</h3>
+<p>
+  設定したすべてのシンボルを、最新価格、変化率（%）、小さなスパークラインとともに表示する
+  右側のパネルです（オプトイン）：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT',
+  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+  adapter: new BinanceAdapter(),
+  watchlist: true,
+})
+
+// Feed non-active rows from your own data source
+widget.setWatchlistEntry('ETHUSDT', {
+  lastPrice: 3245.12,
+  refPrice: 3180.50,
+  sparkline: [3180, 3195, 3210, ...],
+})`}</code></pre>
+
+<h3>お気に入りの描画ツール</h3>
+<p>
+  よく使う描画ツールを、サイドバー上部の帯に固定できます。ツール（グループのフライアウト内でも、
+  帯の中でも）を右クリックすると固定 / 固定解除でき、その設定は localStorage に保存されます。
+  最初に固定するツールは <code>drawingFavorites</code> で指定します：
+</p>
+<pre><code>{`new ChartWidget(host, {
+  drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
+})`}</code></pre>
+
+<h3>描画スタイルとテンプレート</h3>
+<p>
+  描画サイドバーのパレットボタンで、スタイルのポップオーバーが開きます。次に描く描画（と選択中の描画）の
+  色、線の太さ、線のスタイルを選び、名前付きの<strong>テンプレート</strong>として localStorage に
+  保存すれば、ワンクリックで再利用できます。プログラムでは次のようにします：
+</p>
+<pre><code>{`chart.setDrawingStyle({ color: '#e8505b', lineWidth: 2, lineStyle: 'dashed' })
+chart.getDrawingStyle()
+chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected drawing`}</code></pre>
+
+<h3>オブジェクトツリー</h3>
+<p>
+  ツールバーのレイヤーボタンで、有効なインジケーターと描画をすべて一覧するオブジェクトツリーの
+  パネルが開きます。インジケーターは削除でき、描画は項目ごとに表示 / 非表示、ロック / ロック解除、
+  削除ができます。既定で有効で、<code>objectTree: false</code> で無効にできます。
+  描画の操作は次のメソッドに対応します：
+</p>
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.setDrawingLocked(id, true)    // lock it from edits
+chart.removeDrawing(id)
+chart.getActiveIndicators()         // active indicator instances
+chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
+chart.removeIndicator(instanceId)`}</code></pre>
+<p>
+  各インジケーター行の歯車ボタンで<strong>設定ダイアログ</strong>が開きます。インジケーターの
+  パラメーター（数値、切り替え、色）を自動で読み取り、変更を <code>updateIndicator</code> で
+  即座に適用します。期間や色を変えるために、削除して追加し直す必要はありません。
+</p>
+<p>
+  オブジェクトツリーの<strong>比較</strong>セクションでは、他のシンボルを正規化したラインとして
+  重ねて表示します。ライブアダプターがある場合、+ ボタンでシンボルの選択画面が開き、
+  <code>adapter.fetchHistory</code> でそのシンボルの履歴を取得して、パーセントモードで追加します
+  （価格帯の異なるシンボルでも 1 本の軸を共有できます）。比較は時間足を変えると自動で再取得されます。
+  プログラムでは次のようにします：
+</p>
+<pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+
+// or drive the chart directly with your own data
+chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
+chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
+
+<h3>価格アラート</h3>
+<p>
+  ツールバーのベルでフローティングパネルが開き、価格アラートの追加、一覧、削除ができます。
+  アラートが発動するとトースト通知が表示されます。アラートのラインは<strong>ドラッグ</strong>もでき、
+  チャート上でつかんでスライドさせると価格を変更できます（移動したアラートは再び有効になります）。
+  既定で有効で、<code>alerts: false</code> で無効にできます。プログラムからは
+  <code>Chart</code> の API と型付きのアラートイベントで操作します：
+</p>
+<pre><code>{`// Add from code (condition: 'crossing' | 'crossingUp' | 'crossingDown'
+//                          | 'greaterThan' | 'lessThan')
+const id = chart.addAlert(64200, 'crossingUp', 'breakout')
+chart.removeAlert(id)
+chart.getAlerts()      // PriceAlert[]
+chart.saveAlerts('tcw:alerts:BTCUSDT')   // localStorage persistence
+chart.loadAlerts('tcw:alerts:BTCUSDT')
+
+// React to triggers
+chart.on('alertTriggered', (e) => {
+  console.log('hit', e.payload.price, e.payload.message)
+})
+// also: 'alertAdd' / 'alertRemove' / 'alertUpdate' (fired on drag)
+
+// Indicator alerts: bind to an indicator line via channel '<instanceId>:<key>'.
+// In the widget, the alerts panel's source dropdown lists every active line.
+const ema = chart.addIndicator('rsi')
+chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</code></pre>
+<p>
+  アラートの発動時に、音やデスクトップ通知を出すこともできます（どちらも既定ではオフ）。
+  <code>sound: true</code> で組み込みのビープ音が鳴り、URL を渡せば独自の音を使えます。
+  <code>desktop: true</code> は Notification API を使い、初回の使用時に許可を求めます。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  alertNotifications: { sound: true, desktop: true },
+})`}</code></pre>
+
+<h2>ChartGrid</h2>
+<p>同期したマルチチャートレイアウトです。</p>
+<pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
+
+const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
+await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+grid.setLayout('1x2')`}</code></pre>
+
+<p>レイアウト：<code>'1x2'</code>、<code>'2x2'</code>、<code>'2x3'</code>、<code>'3x3'</code>。</p>

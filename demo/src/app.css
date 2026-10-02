@@ -443,7 +443,7 @@ kbd {
   text-wrap: balance;
 }
 
-.docs-content > p:first-of-type {
+.docs-page > p:first-of-type {
   color: var(--text-dim);
   font-size: 17px;
   margin-bottom: 32px;

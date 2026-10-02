@@ -1,0 +1,428 @@
+import type { SiteMessages } from '../messages';
+
+const ja: SiteMessages = {
+  meta: {
+    title: 'TradeCanvas · Web 向け Canvas トレーディングチャート',
+    description:
+      'TradeCanvas は Canvas2D のトレーディングチャートライブラリです。17 種類のチャートタイプ、85 種類のインジケーター、40 種類の描画ツール、取引所のライブフィード、チャート上での注文、リプレイ、バックテストを備えています。依存関係ゼロ、MIT ライセンス。',
+  },
+
+  nav: {
+    main: 'メイン',
+    docs: 'ドキュメント',
+    examples: 'サンプル',
+    playground: 'プレイグラウンド',
+    changelog: '変更履歴',
+    toLight: 'ライトテーマに切り替え',
+    toDark: 'ダークテーマに切り替え',
+    github: 'GitHub の TradeCanvas',
+    openMenu: 'メニューを開く',
+    closeMenu: 'メニューを閉じる',
+    menu: 'メニュー',
+    language: '言語',
+  },
+
+  footer: {
+    tagline: 'Web 向けの Canvas2D トレーディングチャート。依存関係ゼロ、MIT ライセンス。',
+    library: 'ライブラリ',
+    packages: 'パッケージ',
+    project: 'プロジェクト',
+    gettingStarted: 'はじめに',
+    apiReference: 'API リファレンス',
+    examples: 'サンプル',
+    changelog: '変更履歴',
+    issues: 'Issue',
+    boGrid: 'bo-grid（データグリッド）',
+    builtWith: 'TradeCanvas で構築',
+  },
+
+  home: {
+    release: '2 層キャンバスのレンダラー、自由なパン操作',
+    title: 'トレーディングアプリのためのチャートエンジン。',
+    ledeHtml:
+      'ローソク足から練行足（Renko）まで、85 種類のインジケーター、40 種類の描画ツール、取引所のライブフィード、チャート上での注文。依存関係ゼロの Canvas2D で描画します。完成された <code>ChartWidget</code> をそのまま組み込むことも、ヘッドレスの <code>Chart</code> の上に独自の UI を作ることもできます。',
+    getStarted: 'はじめる',
+    browseExamples: 'サンプルを見る',
+    specsLabel: '主な数値',
+    specs: [
+      'チャートタイプ',
+      'インジケーター',
+      '描画ツール',
+      'ランタイム依存関係',
+      'gzip 時、ヘッドレスコア',
+      '10 万本でのホバー 1 フレーム',
+    ],
+    hood: {
+      eyebrow: '内部の仕組み',
+      title: '計測済み、文書化済み、自由に拡張可能',
+      subtitleHtml: '機能ラボを支えるエンジンです。以下の数値はすべて <code>pnpm bench</code> で再現できます。',
+      frameBudget: 'フレーム予算',
+      perf: [
+        '10 万本・インジケーター 4 つでのライブティック',
+        'シンボル切り替え後の全再計算（10 万本）',
+        'LTTB ダウンサンプリング（10 万 → 1,600 点）',
+        'ホバー時のフレーム。500 本から 10 万本まで一定',
+      ],
+      perfFoot: '2 枚のキャンバスを重ねており、ホバー時は上の薄いキャンバスだけを再描画します。どのレンダラーも画面上のバーだけを処理します。',
+      gestures: 'ジェスチャー',
+      gestureList: [
+        ['ドラッグ', 'パン（最後のバーより先にも移動可）'],
+        ['スクロール', 'カーソル位置を中心に拡大縮小'],
+        ['ピンチ', 'タッチ画面で拡大縮小'],
+        ['右へドラッグ', '進むにつれて過去のバーを読み込み'],
+        ['軸をドラッグ', 'その軸を拡大縮小'],
+        ['Ctrl + ドラッグ', '描画を選択'],
+        ['Shift + ドラッグ', '計測'],
+        ['Alt + クリック', 'ツールチップを固定'],
+      ],
+    },
+    capabilities: [
+      {
+        label: 'ウィジェット',
+        title: '1 回の呼び出しで完全なトレーディング UI',
+        text: 'ChartWidget には、ツールバー、描画サイドバー、ウォッチリスト、アラート、オブジェクトツリー、データウィンドウ、リプレイ、コマンドパレット（Ctrl+K）が揃っています。英語やベトナム語から中国語、日本語、韓国語まで 14 言語に対応しています。',
+      },
+      {
+        label: 'データ',
+        title: 'あらゆる相場フィードに対応',
+        text: 'Binance、Coinbase、Bybit、Kraken のアダプターを内蔵し、それ以外には WebSocketAdapter と PollingAdapter を使えます。過去へスクロールすると古いバーを読み込み、自動で再接続し、後の操作で不要になったシンボル切り替えは破棄します。',
+      },
+      {
+        label: 'トレード',
+        title: 'チャート上で注文',
+        text: 'ペーパー取引ブローカー付きの ExecutionAdapter、ドラッグでの注文作成、ブラケット注文、ドラッグできる損切り・利確ライン、Webhook やデスクトップ通知へのアラート。',
+      },
+      {
+        label: 'フレームワーク',
+        title: 'React、Vue、Svelte',
+        text: '@tradecanvas/react、/vue、/svelte は同じエンジンを、リアクティブで型付きの props でラップします。Chart インスタンス全体にも ref ひとつでアクセスできます。',
+      },
+      {
+        label: 'プラグイン',
+        title: 'すべてのレイヤーを拡張',
+        text: 'インクリメンタルな update() を持つカスタムインジケーター、描画ツール、チャートタイプ、オーバーレイを、グローバルまたはチャートごとに登録できます。',
+      },
+      {
+        label: '分析',
+        title: 'チャートの隣でバックテスト',
+        text: 'モンテカルロのバンドを備えたバー単位の Backtester と、メインスレッドを空けておく Web Worker のインジケーターパイプライン。',
+      },
+    ],
+    quickstart: {
+      eyebrow: 'クイックスタート',
+      title: '同じチャートに、5 通りの導入方法',
+      subtitle: '完全なウィジェット、フレームワークのコンポーネント、またはヘッドレスエンジン。どれも同じレンダラーを共有しています。',
+      tabs: 'クイックスタートの種類',
+    },
+    closing: {
+      title: '今日から、あなたのアプリにライブチャートを。',
+      readDocs: 'ドキュメントを読む',
+      star: 'GitHub でスター',
+    },
+  },
+
+  lab: {
+    eyebrow: '機能ラボ',
+    title: 'すべての機能を、ライブチャートで。',
+    subtitleHtml:
+      'シーンを選んでください。各シーンは完全な <code>ChartWidget</code> を、ひとつの機能が動いている状態で起動します。あとはドラッグ、描画、切り替えを自由に試せます。',
+    scenes: '機能シーン',
+    widgetLanguage: 'ウィジェットの言語',
+    idle: 'スクロールして表示するとライブチャートが始まります',
+    metricHint: 'シンボルか時間足を切り替えると所要時間を計測します',
+    metricSwitch: '→ {label}: {ms} · {bars} 本',
+    metricSetData: 'setData({bars} 本): {ms}',
+    tryThis: '試してみる',
+  },
+
+  scenes: {
+    drawings: {
+      title: '描画ツール',
+      stat: '40 種類',
+      blurb:
+        'トレンドライン、情報ライン、アングルライン、フィボナッチのチャネルとファン、アンドリューズとシフのピッチフォーク、ハーモニックの XABCD、ヘッド・アンド・ショルダーズ、サイクル、計測ボックス。マグネットでの吸着、元に戻す / やり直す、JSON での保存と復元に対応。',
+      tryThis: [
+        '左ツールバーのジグザグ（パターン）グループを開き、ABCD を配置する',
+        '描画をクリックしてハンドルをドラッグし、Ctrl+Z を押す',
+        '描画は時間に固定されているので、時間足を切り替えても残ります',
+      ],
+    },
+    indicators: {
+      title: 'インジケーター',
+      stat: '85 種類を内蔵',
+      blurb:
+        'オーバーレイもサブチャートもすべて自前で計算し、数学ライブラリには依存しません。ライブティックでは形成中のバーだけを再計算します。10 万本・インジケーター 4 つで 1 ティックあたり 0.001 ms です。',
+      tryThis: [
+        '「インジケーター」ボタン（または Ctrl+K）を押し、85 種類から検索する',
+        '凡例のインジケーター名をクリック：パラメーター、色、レベルを設定できます',
+        '移動平均の Source を別のインジケーターのラインに設定する',
+        'ペイン間の境界線をドラッグしてサイズを変える',
+      ],
+    },
+    trading: {
+      title: 'トレード',
+      stat: 'ペーパー取引',
+      blurb:
+        'ドラッグできる損切り・利確付きのポジション、未約定の注文、ブラケット注文、ロング / ショートツールを ExecutionAdapter 経由で処理します。ここでは同梱のペーパー取引ブローカーを使っています。',
+      tryThis: [
+        '保有中のロングの SL / TP ラインをドラッグする。ブローカーが値を更新します',
+        '未約定の注文を新しい価格へドラッグする',
+        '上部ツールバーの買い / 売りのブラケット注文ボタンを使う',
+      ],
+    },
+    navigation: {
+      title: '表示期間とレイアウト',
+      stat: '1D … すべて',
+      blurb:
+        '期間や日付へジャンプし、価格スケールを反転し、よく使う時間足を固定し、同じインジケーターを複数追加できます。そのすべてを保存したレイアウトから復元できます。',
+      tryThis: [
+        'チャート下の 1M、3M、6M をクリック。Alt+G で日付へ移動します',
+        'Alt+I で価格スケールが上下反転します。対数スケールは「設定」にあります',
+        '設定 → タイムゾーン：ニューヨークや東京を選ぶと、軸、日の区切り、YTD がそれに従います（夏時間にも対応）',
+        '設定 → スケール → 左側の価格スケール。EMA の「スタイル」タブで、そのスケールへ移せます',
+        '時間足ボタンの横にある ▾ メニューで、時間足にスターを付ける',
+        '左ツールバーの ↻ ボタンをオンにすると、ラインを続けて何本も引けます。Ctrl+C / Ctrl+V でコピーできます',
+      ],
+    },
+    history: {
+      title: '過去へさかのぼる',
+      stat: 'ページ単位の履歴',
+      blurb:
+        '最も古いバーの方へドラッグすると、古いバーを 1 ページずつ読み込み、画面上の表示はそのまま保たれます。読み込んだバーがすべて収まるまで縮小できます。1 本あたり 1 ピクセルを下回るとローソク足はピクセル列ごとにまとめられるため、数千本のバーでも読みやすさを保ちます。',
+      tryThis: [
+        'チャートを右へドラッグ：左側のピルで古いバーの読み込み中がわかります',
+        'スクロールで縮小し、数百本を超えて 1 本あたり 1/4 ピクセルまで',
+        'チャート下の「すべて」をクリックすると、読み込み済みのバー全体が収まります',
+        '▾ 時間足メニューに 7 や 90 と入力：Binance にはどちらもないため、チャートが 1m と 30m のバーから作ります',
+      ],
+    },
+    replay: {
+      title: 'バーリプレイ',
+      stat: 'シークバー',
+      blurb:
+        '過去を 1 本ずつ進めて、後知恵なしでチャートを読む練習ができます。リプレイ中はライブデータを脇に取り置き、価格スケールは各ステップに合わせて調整されます。',
+      tryThis: [
+        '再生を押すか、Shift+→ / Shift+← で 1 本ずつ進める',
+        '表示済みのバーをクリックすると、カーソルがそこへジャンプします',
+        '「リアルタイムに戻る」でライブの系列に戻ります',
+      ],
+    },
+    subcent: {
+      title: '14 言語、1 セント未満の価格',
+      stat: 'i18n',
+      blurb:
+        'メニュー、設定、描画ツール、ダイアログまで、ウィジェット全体が 14 言語に対応し、数値はそれぞれの言語の書式で表示されます。PEPE は 0.000004 前後で取引されていますが、すべてのラベルが価格スケールの精度に従い、軸は収まるように幅を広げます。',
+      tryThis: [
+        'チャート上で言語を選ぶ：日本語、한국어、简体中文、Deutsch…',
+        'Ctrl+P で Binance の全シンボルを、名前付きで入力しながら検索できます',
+        '「設定」や描画ツールを開くと、翻訳されているのがわかります',
+        'ホバー：クロスヘアのピルは、その言語の数値書式で完全な精度を保ちます',
+      ],
+    },
+    bigdata: {
+      title: '20 万本のバー',
+      stat: 'パフォーマンス',
+      blurb:
+        '1 分足 20 万本にインジケーター 4 つ。描画するのは表示中のバーだけです。より長い時間足はローカルでリサンプリングし、数フレーム以上かかるときは読み込み表示でチャートを覆います。',
+      tryThis: [
+        '1H、4H に切り替えてから 1m に戻す。所要時間がチャートの下に表示されます',
+        '最大まで縮小してパンしても、フレームのコストは一定のままです',
+        'インジケーターをもう 1 つ追加して、切り替え時間の変化を見る',
+      ],
+    },
+    switching: {
+      title: '低速回線での切り替え',
+      stat: '+1.2 s の遅延',
+      blurb:
+        'ここでは履歴リクエストごとに 1.2 s の遅延を入れています。前のチャートは表示されたままで、切り替えが 200 ms を超えたときだけ覆い表示になります。素早く何度クリックしても、古い応答が後から反映されることはありません。',
+      tryThis: [
+        '複数のシンボルを素早くクリック。反映されるのは最後の 1 つだけです',
+        '時間足を切り替えて、覆い表示がフェードイン・フェードアウトするのを見る',
+        '「インジケーター」シーンと比べてみる：速い切り替えではちらつきません',
+      ],
+    },
+  },
+
+  gallery: {
+    eyebrow: 'チャートタイプ',
+    title: 'すべてのチャートタイプを、このページでライブに',
+    subtitleHtml:
+      '各タイルは画像ではなく、本物の <code>Chart</code> インスタンスです。ドラッグでパン、スクロールでズーム、ホバーでクロスヘアを表示。どのタイルも個別に反応します。',
+    tiles: {
+      candlestick: { name: 'ローソク足', tag: 'OHLC' },
+      heikinAshi: { name: '平均足', tag: 'トレンド' },
+      area: { name: 'エリア', tag: '終値' },
+      baseline: { name: 'ベースライン', tag: '上 / 下' },
+      bar: { name: 'OHLC バー', tag: 'クラシック' },
+      stepLine: { name: 'ステップライン', tag: '離散' },
+    },
+  },
+
+  finance: {
+    eyebrow: '金融チャート',
+    title: 'ローソク足の、その先へ',
+    subtitle: 'ポートフォリオや KPI のための、スパークライン、エクイティカーブ、板の厚み、セクターヒートマップ、ウォーターフォール、ゲージ。',
+    portfolio: 'ポートフォリオの成績',
+    depth: '板の厚み',
+    heatmap: '暗号資産市場のヒートマップ',
+    pnl: '損益の内訳',
+    fearGreed: '恐怖・強欲指数',
+    waterfall: {
+      start: '開始',
+      btcLong: 'BTC ロング',
+      ethShort: 'ETH ショート',
+      solLong: 'SOL ロング',
+      fees: '手数料',
+      end: '終了',
+    },
+    zones: {
+      extremeFear: '極度の恐怖',
+      fear: '恐怖',
+      neutral: '中立',
+      greed: '強欲',
+      extremeGreed: '極度の強欲',
+    },
+  },
+
+  terminal: {
+    symbol: 'シンボル',
+    timeframe: '時間足',
+    chartType: 'チャートタイプ',
+    types: {
+      candlestick: 'ローソク足',
+      heikinAshi: '平均足',
+      area: 'エリア',
+      bar: 'バー',
+      baseline: 'ベースライン',
+    },
+    unavailable: 'ライブフィードを利用できません：{error}',
+    live: 'ライブ',
+    offline: 'オフライン',
+    connecting: '接続中',
+    hints: [
+      ['ドラッグ', 'パン'],
+      ['スクロール', 'ズーム'],
+      ['軸をドラッグ', '伸縮'],
+    ],
+  },
+
+  copy: {
+    copy: 'コピー',
+    copied: 'コピー済',
+    copiedAnnouncement: 'クリップボードにコピーしました',
+    copyLabel: '{label} をコピー',
+    copyCode: 'コードをコピー',
+    codeSample: 'コードサンプル',
+    packageManager: 'パッケージマネージャー',
+    copyInstall: 'インストールコマンドをコピー',
+  },
+
+  examples: {
+    metaTitle: 'サンプル · TradeCanvas',
+    description: 'Vanilla JS、React、Vue、Svelte、ChartWidget、金融ダッシュボードのライブ StackBlitz サンプル。',
+    eyebrow: 'サンプル · StackBlitz',
+    title: 'サンプル',
+    subtitleHtml:
+      'ワンクリックでフォークできるライブサンドボックスです。どれも最新の 1.x パッケージを組み込んだ状態で StackBlitz で開きます。セットアップなしで機能を試すなら、ホームページの <a href="{lab}">機能ラボ</a> をどうぞ。',
+    open: '{title} を StackBlitz で開く',
+    items: {
+      vanilla: {
+        title: 'Vanilla JS',
+        blurb: 'ヘッドレスの Chart：Binance のライブストリーム、ボリンジャーバンド + RSI、そして独自 UI での描画ツール。',
+      },
+      widget: {
+        title: 'ChartWidget',
+        blurb: '1 回の呼び出しで完全なトレーディング UI：ツールバー、40 種類の描画ツール、ウォッチリスト、トレード、リプレイ、14 言語対応。',
+      },
+      react: {
+        title: 'React',
+        blurb: '@tradecanvas/react — リアクティブで型付きの props、ref 経由で内部の Chart にアクセス。',
+      },
+      vue: {
+        title: 'Vue 3',
+        blurb: '@tradecanvas/vue — script setup、リアクティブな props、@ready で Chart を取得。',
+      },
+      svelte: {
+        title: 'Svelte 5',
+        blurb: '@tradecanvas/svelte — runes、リアクティブな props、bind:chart。',
+      },
+      finance: {
+        title: '金融ダッシュボード',
+        blurb: 'スパークライン、ゲージ、ヒートマップ、板の厚み、エクイティカーブのレンダラーを 1 つのレイアウトに。',
+      },
+    },
+  },
+
+  playground: {
+    metaTitle: 'プレイグラウンド · TradeCanvas',
+    description: 'インタラクティブな TradeCanvas サンドボックスを StackBlitz でフォークして、すぐにコードを書き始めましょう。',
+    eyebrow: 'プレイグラウンド · StackBlitz',
+    title: 'プレイグラウンド',
+    subtitle: 'Binance のライブデータに接続済みの ChartWidget が入った、StackBlitz の編集可能なサンドボックスです。',
+    launch: 'プレイグラウンドを起動',
+    more: 'その他のサンプル',
+    insideTitle: '中身',
+    insideHtml:
+      '<code>ChartWidget</code> をマウントして <code>BinanceAdapter</code> を接続する <code>src/main.ts</code> の 1 ファイルだけの、最小構成の Vite + TypeScript プロジェクトです。',
+  },
+
+  changelog: {
+    metaTitle: '変更履歴 — TradeCanvas',
+    description: 'TradeCanvas の全バージョンのリリースノート。',
+    englishOnly: 'リリースノートは英語で書かれています。',
+  },
+
+  backtest: {
+    title: 'ライブバックテスト — SMA(10/30) クロス',
+    subtitle: '365 日分の合成価格データ、初期資金 $10k、手数料 0.05%、スリッページ 0.03%。',
+    play: '再生',
+    pause: '一時停止',
+    replay: 'もう一度',
+    end: '最後へ',
+    running: 'バックテストを実行中…',
+    failed: '失敗: {error}',
+    bar: 'バー {index}/{total}',
+    totalReturn: '総リターン',
+    maxDrawdown: '最大 DD',
+    winRate: '勝率',
+    profitFactor: 'プロフィットファクター',
+    trades: '取引数',
+  },
+
+  error: {
+    notFound: 'ページが見つかりません',
+    notFoundText: 'このページは存在しないか、移動しました。',
+    other: 'エラーが発生しました',
+    otherText: 'ページを表示できませんでした。もう一度お試しいただくか、ホームからお探しください。',
+    home: 'ホームに戻る',
+    docs: 'ドキュメントを開く',
+  },
+
+  docs: {
+    titleSuffix: 'TradeCanvas ドキュメント',
+    navLabel: 'ドキュメントのナビゲーション',
+    groups: {
+      start: 'はじめに',
+      chart: 'チャート',
+      trading: 'トレード',
+    },
+    pages: {
+      'getting-started': 'スタートガイド',
+      frameworks: 'フレームワーク',
+      embed: '埋め込みウィジェット',
+      api: 'API リファレンス',
+      'chart-types': 'チャートタイプ',
+      indicators: 'インジケーター',
+      'drawing-tools': '描画ツール',
+      plugins: 'プラグイン',
+      performance: 'パフォーマンス',
+      trading: 'トレーディングオーバーレイ',
+      finance: '金融チャート',
+      realtime: 'リアルタイムとリプレイ',
+      analytics: '分析',
+    },
+    notTranslated: 'このページはまだ{language}に翻訳されていないため、英語で表示しています。',
+  },
+};
+
+export default ja;

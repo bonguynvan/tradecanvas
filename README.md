@@ -1,5 +1,7 @@
 # @tradecanvas/chart
 
+**English** · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+
 High-performance canvas trading chart with built-in indicators, drawing tools, and real-time streaming. Zero external dependencies.
 
 **[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
@@ -8,12 +10,14 @@ High-performance canvas trading chart with built-in indicators, drawing tools, a
 
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
-- **70 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. No separate calculation library needed.
+- **85 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
 - **40 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan), horizontal/vertical lines, channels, pitchforks (Andrews, Schiff, modified Schiff), Gann fans / boxes, cyclic lines, harmonic patterns (XABCD, ABCD, head and shoulders, Elliott waves), date & price range, Long/Short Position, Volume Profile range. With undo/redo and full serialization.
 - **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
 - **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify. Cleanly opt-out via `features.trading: false` for non-trading projects.
-- **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines.
+- **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines. Older bars load as you scroll back, any interval (`7m`, `90m`, `2d`) is built from the feed's own, and symbol search comes from the feed.
+- **Time zones** — any IANA zone with daylight saving time (`'America/New_York'`), a fixed offset, or the exchange's own zone, for the axis, crosshair, day breaks and session hours.
+- **14 languages** — `ChartWidget` in English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian and Thai.
 - **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
 - **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
@@ -105,7 +109,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `onSymbolChange` | `(symbol) => void` | — | Symbol change callback |
 | `onTimeframeChange` | `(tf) => void` | — | Timeframe change callback |
 | `onReady` | `(chart) => void` | — | Fired when chart is ready |
-| `locale` | `string` | `'en'` | UI chrome language — built-in `'en'` / `'vi'`, see **Widget i18n** below |
+| `locale` | `string` | `'en'` | UI language — `'en'` and `'vi'` built in, 12 more from the locales entry, see **Widget i18n** below |
 | `messages` | `Partial<Record<MessageKey, string>>` | — | Override or add individual UI strings on top of `locale` |
 
 ### Icons
@@ -121,25 +125,25 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### Widget i18n
 
-`locale` and `messages` translate `ChartWidget`'s own chrome — toolbar, watchlist, indicator-picker section headers (Popular/All, overlay/panel tags), status bar, settings panel (titles/tabs/section headers), and hotkey sheet (title/group headers). Set at construction; not currently hot-swappable at runtime.
+`ChartWidget` speaks 14 languages: English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian and Thai. Every string it shows is translated: toolbar, settings, drawing tools, alerts, dialogs, the command palette, the hotkey sheet and notices. Indicator names (SMA, RSI…) stay as they are. Set at construction.
+
+English and Vietnamese are built in. The others load from `@tradecanvas/chart/widget/locales`, so a page ships only the languages it imports:
 
 ```ts
+import { ja } from '@tradecanvas/chart/widget/locales'
+
 new ChartWidget(el, {
-  locale: 'vi',                              // built-in Vietnamese table
-  messages: { 'watchlist.title': 'Theo dõi' }, // override/add individual keys — always wins
-  chartOptions: { numberLocale: 'vi-VN' },    // separate: number/date formatting (see below)
+  locale: 'ja',
+  messages: ja,                               // or registerWidgetLocales() for all of them
+  chartOptions: { numberLocale: 'ja-JP' },    // separate: number/date formatting (see below)
 });
 ```
 
-`locale`/`messages` only cover chrome **text**; they're independent of `chartOptions.numberLocale`, which controls number/date **formatting** (price axis, legend, watchlist prices, current-price tag, session-break dates) via `Intl`/`toLocaleString`.
+`messages` also overrides single keys on top of `locale` (`{ 'watchlist.title': 'Theo dõi' }`). A locale with a region falls back to its language (`ja-JP` → `ja`; `zh-TW` → Traditional Chinese).
 
-Not yet covered by `locale` (still English; PRs welcome, or override via `messages`/your own CSS):
-- Indicator and drawing-tool **names** (SMA, Bollinger Bands, Trend Line, …) — these come from `widgetConfig.ts`'s data tables, not the message catalog.
-- Individual settings rows beyond the tab/section level (e.g. "Up Body", "Grid Lines").
-- Individual hotkey-sheet shortcut labels and key-cap text (group titles are translated).
-- Alerts panel, symbol search, command palette, data window, depth ladder, bracket bar, replay bar, drawing-style panel, object tree.
+`locale`/`messages` cover the **text**; `chartOptions.numberLocale` controls number and date **formatting** (price axis, legend, watchlist prices, current-price tag, session-break dates) via `Intl`.
 
-See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) and the English/Vietnamese tables.
+See `packages/library/src/widget/locales/en.ts` for the full key list (`MessageKey`).
 
 ### Widget vs Headless
 
@@ -722,15 +726,15 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | Chart types | 17 + 6 finance | 4 | 8 (non-financial) | 10+ |
 | Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
-| Built-in indicators | 33 | 0 | 0 | ~30 |
-| Drawing tools | 24 | 0 | 0 | Some |
+| Built-in indicators | 85 | 0 | 0 | ~30 |
+| Drawing tools | 40 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |
 | Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |
 | Save/load state | Yes | No | No | Yes |
 | Replay mode | Yes (`ReplayController`) | No | No | No |
 | Backtester | Yes (`@tradecanvas/analytics`) | No | No | No |
 | Multi-chart grid | Yes (`ChartGrid`) | No | No | Yes |
-| Bundle (gzip) | ~56 KB core | ~45 KB | ~70 KB | ~200 KB |
+| Bundle (gzip) | ~100 KB core | ~45 KB | ~70 KB | ~200 KB |
 | Dependencies | 0 | 1 | 0 | 0 |
 | Widget (complete UI) | Yes (`ChartWidget`) | No | No | No |
 | License | MIT | Apache 2.0 | MIT | Commercial |
@@ -807,7 +811,7 @@ interface OHLCBar {
 
 | Example | Description |
 |---|---|
-| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, replay, sub-cent prices + Vietnamese UI, 200k bars, slow-network switching — each on a live chart |
+| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, ranges, paged history, replay, 14 languages with sub-cent prices, 200k bars, slow-network switching — each on a live chart. The site and docs are also in Vietnamese, Chinese, Japanese, Korean and Spanish |
 | [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | Framework components — reactive props, typed, zero boilerplate |
 
@@ -939,7 +943,7 @@ onUnmounted(() => chart?.destroy())
 
 ## Performance
 
-A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Three things keep large data fast:
+A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Four things keep large data fast:
 
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
 - **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.

@@ -3,6 +3,12 @@
   import { browser } from '$app/environment';
   import type { ChartType, TimeFrame } from '@tradecanvas/chart';
   import { siteTheme, onSiteThemeChange } from '$lib/site';
+  import { useI18n } from '$lib/i18n/context.svelte';
+  import { fill } from '$lib/i18n/messages';
+  import { widgetLanguage } from '$lib/i18n/widget';
+
+  const i18n = useI18n();
+  const m = $derived(i18n.m);
 
   let host: HTMLDivElement | undefined = $state();
   let status = $state<'loading' | 'ready' | 'error'>('loading');
@@ -26,12 +32,13 @@
 
   const TIMEFRAMES: TimeFrame[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
 
-  const TYPES: { id: ChartType; label: string }[] = [
-    { id: 'candlestick', label: 'Candles' },
-    { id: 'heikinAshi', label: 'Heikin-Ashi' },
-    { id: 'area', label: 'Area' },
-    { id: 'bar', label: 'Bars' },
-    { id: 'baseline', label: 'Baseline' },
+  /** Labels are `m.terminal.types[id]`. */
+  const TYPES: { id: keyof typeof i18n.m.terminal.types & ChartType }[] = [
+    { id: 'candlestick' },
+    { id: 'heikinAshi' },
+    { id: 'area' },
+    { id: 'bar' },
+    { id: 'baseline' },
   ];
 
   // No local busy state: the widget drops superseded switches itself and
@@ -63,9 +70,11 @@
       try {
         const { ChartWidget } = await import('@tradecanvas/chart/widget');
         const { BinanceAdapter } = await import('@tradecanvas/chart');
+        const language = await widgetLanguage(i18n.lang);
         if (cancelled || !host) return;
 
         widget = new ChartWidget(host, {
+          ...language,
           symbol: activeSymbol,
           timeframe: activeTf,
           theme: siteTheme(),
@@ -102,19 +111,19 @@
 
 <div class="terminal">
   <div class="terminal-bar">
-    <div class="seg seg--symbol" role="group" aria-label="Symbol">
+    <div class="seg seg--symbol" role="group" aria-label={m.terminal.symbol}>
       {#each SYMBOLS as s}
         <button class="chip" class:active={activeSymbol === s.id} aria-pressed={activeSymbol === s.id} onclick={() => pickSymbol(s.id)} type="button">{s.label}</button>
       {/each}
     </div>
-    <div class="seg seg--tf" role="group" aria-label="Timeframe">
+    <div class="seg seg--tf" role="group" aria-label={m.terminal.timeframe}>
       {#each TIMEFRAMES as tf}
         <button class="chip chip--sm" class:active={activeTf === tf} aria-pressed={activeTf === tf} onclick={() => pickTf(tf)} type="button">{tf}</button>
       {/each}
     </div>
-    <div class="seg seg--type" role="group" aria-label="Chart type">
+    <div class="seg seg--type" role="group" aria-label={m.terminal.chartType}>
       {#each TYPES as t}
-        <button class="chip chip--ghost" class:active={activeType === t.id} aria-pressed={activeType === t.id} onclick={() => pickType(t.id)} type="button">{t.label}</button>
+        <button class="chip chip--ghost" class:active={activeType === t.id} aria-pressed={activeType === t.id} onclick={() => pickType(t.id)} type="button">{m.terminal.types[t.id]}</button>
       {/each}
     </div>
   </div>
@@ -123,19 +132,19 @@
   <div class="terminal-frame">
     <div class="terminal-host" bind:this={host}></div>
     {#if status === 'error'}
-      <div class="terminal-overlay terminal-overlay--error">Live feed unavailable: {errorMessage}</div>
+      <div class="terminal-overlay terminal-overlay--error">{fill(m.terminal.unavailable, { error: errorMessage })}</div>
     {/if}
   </div>
 
   <div class="terminal-status">
     <span class="status-feed">
       <span class="live-dot" class:on={status === 'ready'}></span>
-      {status === 'ready' ? 'LIVE' : status === 'error' ? 'OFFLINE' : 'CONNECTING'} · BINANCE · {activeSymbol} · {activeTf}
+      {status === 'ready' ? m.terminal.live : status === 'error' ? m.terminal.offline : m.terminal.connecting} · BINANCE · {activeSymbol} · {activeTf}
     </span>
     <span class="status-hints">
-      <span><kbd>Drag</kbd> pan</span>
-      <span><kbd>Scroll</kbd> zoom</span>
-      <span><kbd>Drag axis</kbd> scale</span>
+      {#each m.terminal.hints as [key, what]}
+        <span><kbd>{key}</kbd> {what}</span>
+      {/each}
     </span>
   </div>
 </div>
@@ -161,8 +170,9 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .seg { display: inline-flex; gap: 2px; }
-  .seg--type { margin-left: auto; }
+  .seg { display: inline-flex; gap: 2px; min-width: 0; }
+  /* Longer chart-type names (Russian, German…) scroll rather than spill out on a phone. */
+  .seg--type { margin-left: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 
   .chip {
     font-family: var(--font-mono);

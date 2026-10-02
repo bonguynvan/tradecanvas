@@ -2,6 +2,7 @@
   import { siteTheme, onSiteThemeChange } from '$lib/site';
   import type { Theme } from '@tradecanvas/chart';
   import { onMount, onDestroy, tick } from 'svelte';
+  import { useI18n } from '$lib/i18n/context.svelte';
   import {
     SparklineChart,
     DepthChart,
@@ -25,6 +26,9 @@
     WaterfallOptions,
     GaugeOptions,
   } from '@tradecanvas/chart';
+
+  const i18n = useI18n();
+  const m = $derived(i18n.m);
 
   // --- Seeded random for deterministic data ---
   function seededRandom(seed: number): () => number {
@@ -126,12 +130,13 @@
 
   // --- Waterfall data ---
   const waterfallData: WaterfallBar[] = [
-    { label: 'Start', value: 10000, type: 'total' },
-    { label: 'BTC Long', value: 1850 },
-    { label: 'ETH Short', value: -620 },
-    { label: 'SOL Long', value: 420 },
-    { label: 'Fees', value: -85 },
-    { label: 'End', value: 11565, type: 'total' },
+    // The page remounts for another language, so its strings at mount time are the ones to draw.
+    { label: i18n.m.finance.waterfall.start, value: 10000, type: 'total' },
+    { label: i18n.m.finance.waterfall.btcLong, value: 1850 },
+    { label: i18n.m.finance.waterfall.ethShort, value: -620 },
+    { label: i18n.m.finance.waterfall.solLong, value: 420 },
+    { label: i18n.m.finance.waterfall.fees, value: -85 },
+    { label: i18n.m.finance.waterfall.end, value: 11565, type: 'total' },
   ];
 
   // --- Gauge data ---
@@ -139,13 +144,13 @@
     value: 72,
     min: 0,
     max: 100,
-    label: 'Fear & Greed index',
+    label: i18n.m.finance.fearGreed,
     zones: [
-      { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
-      { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
-      { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
-      { from: 55, to: 75, color: '#62c895', label: 'Greed' },
-      { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
+      { from: 0, to: 25, color: '#e8505b', label: i18n.m.finance.zones.extremeFear },
+      { from: 25, to: 45, color: '#f2a93b', label: i18n.m.finance.zones.fear },
+      { from: 45, to: 55, color: '#8a93a3', label: i18n.m.finance.zones.neutral },
+      { from: 55, to: 75, color: '#62c895', label: i18n.m.finance.zones.greed },
+      { from: 75, to: 100, color: '#1fa874', label: i18n.m.finance.zones.extremeGreed },
     ],
   };
 
@@ -306,9 +311,9 @@
 
 <section class="finance-section">
   <header class="section-head" data-reveal data-reveal-stagger>
-    <span class="eyebrow">Finance charts</span>
-    <h2 class="section-title">Beyond candlesticks</h2>
-    <p class="section-subtitle">Sparklines, equity curves, order-book depth, sector heatmaps, waterfalls and gauges for portfolios and KPIs.</p>
+    <span class="eyebrow">{m.finance.eyebrow}</span>
+    <h2 class="section-title">{m.finance.title}</h2>
+    <p class="section-subtitle">{m.finance.subtitle}</p>
   </header>
 
   <!-- Sparklines Row -->
@@ -336,29 +341,29 @@
   <!-- Equity + Depth Row -->
   <div class="mid-grid" data-reveal data-reveal-stagger>
     <div class="chart-card">
-      <div class="card-label">Portfolio Performance</div>
+      <div class="card-label">{m.finance.portfolio}</div>
       <div class="card-chart card-chart--300" bind:this={equityContainer}></div>
     </div>
     <div class="chart-card">
-      <div class="card-label">Order Book Depth</div>
+      <div class="card-label">{m.finance.depth}</div>
       <div class="card-chart card-chart--300" bind:this={depthContainer}></div>
     </div>
   </div>
 
   <!-- Heatmap -->
   <div class="chart-card chart-card--spaced" data-reveal>
-    <div class="card-label">Crypto Market Heatmap</div>
+    <div class="card-label">{m.finance.heatmap}</div>
     <div class="card-chart card-chart--350" bind:this={heatmapContainer}></div>
   </div>
 
   <!-- Waterfall + Gauge Row -->
   <div class="mid-grid" data-reveal data-reveal-stagger>
     <div class="chart-card">
-      <div class="card-label">P&amp;L Attribution</div>
+      <div class="card-label">{m.finance.pnl}</div>
       <div class="card-chart card-chart--300" bind:this={waterfallContainer}></div>
     </div>
     <div class="chart-card">
-      <div class="card-label">Fear &amp; Greed Index</div>
+      <div class="card-label">{m.finance.fearGreed}</div>
       <div class="card-chart card-chart--300" bind:this={gaugeContainer}></div>
     </div>
   </div>

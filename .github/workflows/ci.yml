@@ -27,3 +27,6 @@ jobs:
       - run: pnpm typecheck
       # Generated docs (indicator catalog, llms.txt) are current; agent-skill examples type-check.
       - run: pnpm docs:check
+      # The site: types (every language's strings match the English shape) and its i18n tests.
+      - run: pnpm --filter @tradecanvas/demo check
+      - run: pnpm --filter @tradecanvas/demo test
