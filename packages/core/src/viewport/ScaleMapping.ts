@@ -105,6 +105,16 @@ export function barTimeStep(data: TimedSeries): number {
 }
 
 /**
+ * `barTimeStep` in milliseconds whatever unit the series uses: bar times
+ * below 1e12 are seconds (the same rule as `normalizeBarTime`).
+ */
+export function barTimeStepMs(data: TimedSeries): number {
+  const step = barTimeStep(data);
+  const last = data.length > 0 ? data[data.length - 1].time : 0;
+  return last > 1e12 ? step : step * 1000;
+}
+
+/**
  * Time at bar index `index`, extrapolated by `barTimeStep` past either end of
  * the data — e.g. the future area right of the newest bar.
  */

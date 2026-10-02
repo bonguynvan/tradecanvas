@@ -71,7 +71,7 @@ import {
   MeasureOverlay,
   SelectionBoxOverlay,
   timestampToBarIndex,
-  barTimeStep,
+  barTimeStepMs,
   rangePresetStart,
   ReplayManager,
   ChartStateManager,
@@ -375,7 +375,7 @@ export class Chart {
             prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
             priceRange: vs.priceRange,
             plot: vs.chartRect,
-            barStepMs: barTimeStep(data),
+            barStepMs: barTimeStepMs(data),
           });
         } else {
           this.crosshairTooltip.hide();

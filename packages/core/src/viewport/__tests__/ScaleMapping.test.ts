@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { ViewportState } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
 import {
-  barTimeStep, barIndexToTime, timestampToBarIndex, xToTime, timeToX,
+  barTimeStep, barTimeStepMs, barIndexToTime, timestampToBarIndex, xToTime, timeToX,
   priceToY, priceToYMapper, yToPrice, priceBucketRow,
 } from '../ScaleMapping.js';
 import { TimeAxis } from '../../axis/TimeAxis.js';
@@ -55,7 +55,11 @@ describe('TimeAxis', () => {
   it('labels slots in the empty future, not only loaded bars', () => {
     const texts: string[] = [];
     const ctx = new Proxy({} as Record<string, unknown>, {
-      get: (_t, key) => (key === 'fillText' ? (t: string) => texts.push(t) : vi.fn()),
+      get: (_t, key) => {
+        if (key === 'fillText') return (t: string) => texts.push(t);
+        if (key === 'measureText') return (t: string) => ({ width: t.length * 6 });
+        return vi.fn();
+      },
       set: () => true,
     }) as unknown as CanvasRenderingContext2D;
     const vp: ViewportState = {
@@ -111,5 +115,14 @@ describe('price ↔ y on every scale', () => {
     expect(priceBucketRow(0, 4, base, toY)).toEqual({ top: 160, height: 50, mid: 185 });
     const inv = { ...base, invertScale: true };
     expect(priceBucketRow(0, 4, inv, priceToYMapper(inv))).toEqual({ top: 10, height: 50, mid: 35 });
+  });
+});
+
+describe('barTimeStepMs', () => {
+  it('reports the bar spacing in ms for ms and for second timestamps', () => {
+    const ms = Array.from({ length: 10 }, (_, i) => ({ time: 1_790_000_000_000 + i * 3_600_000 }));
+    const sec = ms.map((b) => ({ time: b.time / 1000 }));
+    expect(barTimeStepMs(ms)).toBe(3_600_000);
+    expect(barTimeStepMs(sec)).toBe(3_600_000);
   });
 });

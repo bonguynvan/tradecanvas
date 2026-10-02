@@ -79,10 +79,11 @@ describe('CrosshairTooltip', () => {
     expect(card().style.background).not.toBe('red');
   });
 
-  it('formats numbers in the chart locale', () => {
+  it('formats numbers and the date in the chart locale', () => {
     tip.setLocale('de-DE');
     tip.show({ x: 100, y: 100 }, bar(), DARK_THEME, box, { priceRange: { min: 90, max: 110 } });
     expect(text()).toContain('103,00');
+    expect(text()).toContain('März');
   });
 
   it('stays inside the plot rect', () => {
@@ -132,6 +133,16 @@ describe('formatTooltipTime', () => {
 
   it('adds seconds for sub-minute bars', () => {
     expect(formatTooltipTime(Date.UTC(2026, 2, 4, 14, 5, 30), 0, 5_000)).toBe('Mar 4 · 14:05:30');
+  });
+
+  it('formats the date in the chart locale', () => {
+    const t = Date.UTC(2026, 9, 1, 5, 0);
+    expect(formatTooltipTime(t, 0, 3_600_000, 'vi-VN')).toBe(`${new Intl.DateTimeFormat('vi-VN', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(t)} · 05:00`);
+    expect(formatTooltipTime(t, 0, 3_600_000, 'vi-VN')).not.toContain('Oct');
+  });
+
+  it('falls back to English for an unknown locale tag', () => {
+    expect(formatTooltipTime(Date.UTC(2026, 2, 4, 14, 5), 0, 3_600_000, 'not a locale')).toBe('Mar 4 · 14:05');
   });
 
   it('accepts timestamps in seconds', () => {

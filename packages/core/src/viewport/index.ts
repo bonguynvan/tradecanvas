@@ -9,6 +9,7 @@ export {
   timestampToBarIndex,
   resolveBarIndex,
   barTimeStep,
+  barTimeStepMs,
   barIndexToTime,
   timeToX,
   xToTime,
