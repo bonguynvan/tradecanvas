@@ -100,6 +100,8 @@ import {
   CurrentPriceLine,
   xToBarIndex,
   xToTime,
+  yToPrice,
+  PriceAxisAddButton,
   findDominantSwing,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
@@ -193,6 +195,8 @@ export class Chart {
   private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
   /** The zoom-area tool is waiting for its box. */
   private zoomAreaMode = false;
+  /** The "+" by the price axis. */
+  private priceAxisAddButton = new PriceAxisAddButton();
   /** Display timezone, minutes east of UTC; null = the browser's. */
   /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
   private displayTz: TimeZoneSetting = null;
@@ -298,6 +302,7 @@ export class Chart {
       // Off by default: right-click is the browser's, and a stray right-click
       // shouldn't be one step from an order. Opt in with features.tradingContextMenu.
       tradingContextMenu: f.tradingContextMenu ?? false,
+      priceAxisAddButton: f.priceAxisAddButton ?? false,
       indicators: f.indicators ?? true,
       indicatorIds: f.indicatorIds ?? [],
       panning: f.panning ?? true,
@@ -358,6 +363,7 @@ export class Chart {
     this.drawingManager.setEventCallback((event, data) => {
       this.followDrawingAlerts(event, (data as { id?: string } | null)?.id);
       this.eventBus.emit(event as ChartEventType, data);
+      if (event === 'drawingCreate' || event === 'drawingUpdate' || event === 'drawingRemove') this.announceStateChange();
     });
     // Pasted drawings obey the same switches as drawing tools.
     this.drawingManager.setToolFilter((type) =>
@@ -720,6 +726,18 @@ export class Chart {
         if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
       });
     }
+    // Off any drawing: the host's menu for where it was, when one listens.
+    this.interactionManager.setChartContextMenu((area, pos) => {
+      if (!this.eventBus.hasListeners('chartContextMenu')) return false;
+      this.eventBus.emit('chartContextMenu', this.contextAt(area, pos));
+      return true;
+    });
+    // The "+" rides on the crosshair: without one it is neither drawn nor pressed.
+    this.priceAxisAddButton.setEnabled(this.features.priceAxisAddButton && this.features.crosshair);
+    this.interactionManager.setPriceAxisAddButton(this.priceAxisAddButton, (pos) => {
+      const price = yToPrice(pos.y, this.viewport.getState());
+      if (Number.isFinite(price)) this.eventBus.emit('priceAxisAdd', { price, x: pos.x, y: pos.y });
+    });
     if (this.features.trading) {
       this.interactionManager.setTradingManager(
         this.tradingManager,
@@ -1101,6 +1119,7 @@ export class Chart {
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    this.markStateChanged();
   }
 
   // --- Indicators ---
@@ -1129,7 +1148,7 @@ export class Chart {
     // The layout (a new pane) or the price scale (a new overlay) may change.
     this.updateViewportAndRender();
     this.eventBus.emit('indicatorAdd', { instanceId, id });
-    this.scheduleAutoSave();
+    this.markStateChanged();
     return instanceId;
   }
 
@@ -1143,7 +1162,7 @@ export class Chart {
     const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
     this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
     this.announceIndicatorUpdate(0);
-    this.scheduleAutoSave();
+    this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
     // A price-pane indicator follows a new source into its pane, and leaves
     // it when it no longer reads from it; otherwise it stays where it is.
@@ -1200,7 +1219,7 @@ export class Chart {
   setIndicatorScale(instanceId: string, scale: OverlayScale): boolean {
     if (!this.indicatorEngine.setScale(instanceId, scale)) return false;
     this.updateViewportAndRender();
-    this.scheduleAutoSave();
+    this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'scale' });
     return true;
   }
@@ -1250,7 +1269,7 @@ export class Chart {
   setIndicatorLevels(instanceId: string, levels: readonly number[] | null): void {
     if (!this.indicatorEngine.setLevels(instanceId, levels)) return;
     this.updateViewportAndRender();
-    this.scheduleAutoSave();
+    this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'levels' });
   }
 
@@ -1264,7 +1283,7 @@ export class Chart {
     // It and everything computed from its lines, the last readers first.
     const doomed = [instanceId, ...this.indicatorEngine.getDependents(instanceId)];
     for (const id of doomed.reverse()) this.detachIndicator(id);
-    this.scheduleAutoSave();
+    this.markStateChanged();
     this.updateViewportAndRender();
   }
 
@@ -1444,6 +1463,7 @@ export class Chart {
   setDrawings(drawings: DrawingState[]): void {
     this.drawingManager.setDrawings(drawings);
     this.dropOrphanDrawingAlerts();
+    this.announceStateChange();
   }
 
   /** Append a drawing (id auto-assigned, active style applied). Returns the id. */
@@ -1459,7 +1479,7 @@ export class Chart {
   }): string | null {
     if (!this.features.drawings) return null;
     const id = this.drawingManager.addDrawing(state);
-    this.scheduleAutoSave();
+    this.markStateChanged();
     return id;
   }
 
@@ -1513,7 +1533,7 @@ export class Chart {
    */
   updateDrawing(id: string, patch: DrawingPatch): boolean {
     const changed = this.drawingManager.updateDrawing(id, patch);
-    if (changed) this.scheduleAutoSave();
+    if (changed) this.markStateChanged();
     return changed;
   }
 
@@ -1525,7 +1545,7 @@ export class Chart {
   /** Keep the edit as one undo step, or with `cancel` put the drawing back as it was. */
   endDrawingEdit(id: string, options: { cancel?: boolean } = {}): void {
     this.drawingManager.endEdit(id, options);
-    this.scheduleAutoSave();
+    this.markStateChanged();
   }
 
   /** Options new drawings of `type` start with; null clears them. */
@@ -1605,6 +1625,24 @@ export class Chart {
   getDrawingMagnetMode(): 'off' | 'weak' | 'strong' {
     const mode = this.drawingManager.getMagnetMode();
     return mode === 'none' ? 'off' : mode === 'strong' ? 'strong' : 'weak';
+  }
+
+  // --- Right-click and the "+" by the price axis ---
+
+  /** The price and bar time at a right-click, as far as its area has them. */
+  private contextAt(area: import('@tradecanvas/commons').ChartContextArea, pos: { x: number; y: number }): import('@tradecanvas/commons').ChartContextMenuPayload {
+    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    const payload: import('@tradecanvas/commons').ChartContextMenuPayload = { area, x: pos.x, y: pos.y };
+    if (area === 'plot' || area === 'priceAxis') payload.price = yToPrice(pos.y, vs);
+    if ((area === 'plot' || area === 'timeAxis') && vs.data.length > 0) payload.time = xToTime(pos.x, vs);
+    return payload;
+  }
+
+  /** Show or hide the "+" by the price axis (`features.priceAxisAddButton`). */
+  setPriceAxisAddButton(visible: boolean): void {
+    this.features.priceAxisAddButton = visible;
+    this.priceAxisAddButton.setEnabled(visible && this.features.crosshair);
+    this.engine.requestRender(LayerType.Overlay);
   }
 
   // --- Eraser and zoom area ---
@@ -1721,6 +1759,16 @@ export class Chart {
     this.autoSaveScheduler.schedule();
   }
 
+  /** Something a saved layout holds changed: auto-save it, and say so. */
+  private markStateChanged(): void {
+    this.scheduleAutoSave();
+    this.announceStateChange();
+  }
+
+  private announceStateChange(): void {
+    if (this.eventBus.hasListeners('stateChange')) this.eventBus.emit('stateChange', {});
+  }
+
   // --- Indicator introspection ---
 
   getAvailableIndicators(): IndicatorDescriptor[] {
@@ -1743,7 +1791,7 @@ export class Chart {
   setIndicatorVisible(instanceId: string, visible: boolean): void {
     if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
       this.updateViewportAndRender();
-      this.scheduleAutoSave();
+      this.markStateChanged();
       this.eventBus.emit('indicatorChange', { instanceId, change: 'visible' });
     }
   }
@@ -1759,7 +1807,7 @@ export class Chart {
   updateIndicatorStyle(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
     this.indicatorEngine.updateIndicatorStyle(instanceId, style);
     this.engine.requestRender();
-    this.scheduleAutoSave();
+    this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'style' });
   }
 
@@ -1768,6 +1816,7 @@ export class Chart {
   setOrders(orders: TradingOrder[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setOrders(orders);
+    this.eventBus.emit('ordersChange', { orders });
   }
 
   /**
@@ -1838,6 +1887,61 @@ export class Chart {
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
     this.tradingManager.setPositions(positions);
+    this.eventBus.emit('positionsChange', { positions });
+  }
+
+  /** The working orders on the chart (`setOrders`, or the execution adapter's). */
+  getOrders(): TradingOrder[] {
+    return this.tradingManager.getOrders();
+  }
+
+  /** The open positions on the chart (`setPositions`, or the execution adapter's). */
+  getPositions(): TradingPosition[] {
+    return this.tradingManager.getPositions();
+  }
+
+  /** Fills marked on the chart, oldest first: the execution adapter's, or `addFill`'s. */
+  getFills(): import('@tradecanvas/commons').FillEvent[] {
+    return this.tradingManager.getFills();
+  }
+
+  /** The P&L the fills realised since the last `clearFills`, all of them (the marks keep the latest 1000). */
+  getRealisedPnl(): number {
+    return this.tradingManager.getRealisedPnl();
+  }
+
+  /** Mark a fill on the chart (without an execution adapter, a host reports its own). */
+  addFill(fill: import('@tradecanvas/commons').FillEvent): void {
+    if (!this.features.trading) return;
+    this.tradingManager.addFill(fill);
+    this.eventBus.emit('executionFill', fill);
+  }
+
+  clearFills(): void {
+    this.tradingManager.setFills([]);
+  }
+
+  /**
+   * Ask for an order to be cancelled: emits `orderCancel`, which an execution
+   * adapter carries out (as the × on the order's line does).
+   */
+  cancelOrderIntent(orderId: string): void {
+    if (this.features.trading) this.eventBus.emit('orderCancel', { orderId });
+  }
+
+  /** Ask for a position to be closed: emits `positionClose`. */
+  closePositionIntent(positionId: string): void {
+    if (this.features.trading) this.eventBus.emit('positionClose', { positionId });
+  }
+
+  /** Ask for a position to be reversed (closed, then the same size the other way): emits `positionReverse`. */
+  reversePositionIntent(positionId: string): void {
+    if (this.features.trading) this.eventBus.emit('positionReverse', { positionId });
+  }
+
+  /** Ask for a position's stop-loss or take-profit to change (null removes it): emits `positionModify`. */
+  modifyPositionIntent(intent: import('@tradecanvas/commons').PositionModifyIntent): void {
+    if (this.features.trading) this.eventBus.emit('positionModify', intent);
   }
 
   setDepthData(depth: DepthData | null): void {
@@ -2084,6 +2188,11 @@ export class Chart {
       setOrders: (orders) => this.setOrders(orders),
       setPositions: (positions) => this.setPositions(positions),
       onError: (error) => this.eventBus.emit('executionError', error),
+      onFill: (fill) => {
+        this.tradingManager.addFill(fill);
+        this.eventBus.emit('executionFill', fill);
+      },
+      getPositions: () => this.tradingManager.getPositions(),
     });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
@@ -2335,6 +2444,7 @@ export class Chart {
     this.container.style.backgroundColor = this.themeManager.getTheme().background;
     this.engine.requestRender();
     this.eventBus.emit('themeChange', { theme: themeOrName });
+    this.markStateChanged();
   }
 
   getTheme(): Theme {
@@ -2718,13 +2828,13 @@ export class Chart {
   ): string | null {
     if (!this.features.alerts) return null;
     const id = this.alertManager.addAlert(price, condition, message, false, channel, label);
-    this.scheduleAutoSave();
+    this.markStateChanged();
     return id;
   }
 
   removeAlert(id: string): void {
     this.alertManager.removeAlert(id);
-    this.scheduleAutoSave();
+    this.markStateChanged();
   }
 
   // --- Drawing order and groups ---
@@ -2737,14 +2847,14 @@ export class Chart {
   /** Draw a drawing on top of the others, under them, or one step up or down. False when already there. */
   moveDrawing(id: string, to: DrawingOrderMove): boolean {
     const moved = this.drawingManager.moveDrawing(id, to);
-    if (moved) this.scheduleAutoSave();
+    if (moved) this.markStateChanged();
     return moved;
   }
 
   /** Group drawings (two or more): they are then selected, hidden and locked together. Returns the group id. */
   groupDrawings(ids: readonly string[], name?: string): string | null {
     const group = this.drawingManager.groupDrawings(ids, name);
-    if (group) this.scheduleAutoSave();
+    if (group) this.markStateChanged();
     return group;
   }
 
@@ -2770,7 +2880,7 @@ export class Chart {
   }
 
   private afterDrawingChange(changed: boolean): boolean {
-    if (changed) this.scheduleAutoSave();
+    if (changed) this.markStateChanged();
     return changed;
   }
 
@@ -2812,7 +2922,7 @@ export class Chart {
     this.removedDrawingAlerts.clear();
     if (!this.alertManager) return;
     const removed = this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
-    if (removed > 0) this.scheduleAutoSave();
+    if (removed > 0) this.markStateChanged();
   }
 
   /**
@@ -2826,7 +2936,7 @@ export class Chart {
   ): string | null {
     if (!this.canAddDrawingAlert(drawingId)) return null;
     const id = this.alertManager.addDrawingAlert(drawingId, options.condition ?? 'crossing', options.message, options.repeating ?? false, options.label);
-    this.scheduleAutoSave();
+    this.markStateChanged();
     return id;
   }
 
@@ -2836,7 +2946,7 @@ export class Chart {
 
   clearAlerts(): void {
     this.alertManager.clearAlerts();
-    this.scheduleAutoSave();
+    this.markStateChanged();
   }
 
   saveAlerts(key: string): void {
@@ -3123,7 +3233,7 @@ export class Chart {
         this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
       }
     }
-    this.scheduleAutoSave();
+    this.markStateChanged();
   }
 
   loadStateFromStorage(key: string): boolean {
@@ -3684,6 +3794,7 @@ export class Chart {
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,
       selectionBoxOverlay: this.selectionBoxOverlay,
+      priceAxisAddButton: this.priceAxisAddButton,
       signalMarkerManager: this.signalMarkerManager,
       tradeZoneManager: this.tradeZoneManager,
       panels,

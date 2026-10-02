@@ -14,7 +14,7 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 - **69 công cụ vẽ** — Đường xu hướng (đường thông tin, góc xu hướng, đường chữ thập), Fibonacci (thoái lui, mở rộng, kênh, vùng thời gian, quạt và cung tốc độ, vòng tròn, xoắn ốc, nêm), đường ngang/dọc, kênh, pitchfork và quạt pitchfork, quạt / hộp / hình vuông Gann, chu kỳ, mô hình harmonic (XABCD, cypher, ABCD, ba nhịp, vai đầu vai), sóng Elliott, ghi chú, chú thích và dấu đánh dấu, bút vẽ và đường nhiều điểm, dự báo và phóng chiếu, vị thế Long/Short có tính khối lượng, hồ sơ khối lượng theo khoảng. Mỗi công cụ có cài đặt riêng, cảnh báo theo đường xu hướng, nhóm và thứ tự lớp, hoàn tác/làm lại và tuần tự hoá đầy đủ.
 - **17 loại biểu đồ** — Nến, đường, vùng, thanh, nến rỗng, đường cơ sở, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, nến khối lượng, **Equivolume**, vùng HLC, đường bậc thang, đường + điểm đánh dấu.
 - **Tương tác chuyên nghiệp** — kéo tự do qua nến cuối cùng vào vùng tương lai còn trống (hình vẽ cũng đặt được ở đó), kéo trục giá/thời gian để co giãn, bấm đúp để tự vừa khít, `Ctrl/⌘+drag` để chọn nhiều hình vẽ (rồi di chuyển, đổi kiểu hoặc xoá cùng lúc), `Shift+drag` để đo (số nến × Δ giá × %), `Alt+click` để ghim chú thích so sánh, con trỏ theo ngữ cảnh (chữ thập, bàn tay nắm, mũi tên đổi kích thước), nhãn giá/thời gian bám theo trục dưới con trỏ, làm nổi nến khi rê chuột.
-- **Lớp phủ giao dịch** — Hiển thị vị thế đang mở với đường giá vào lệnh, vùng lãi/lỗ và điểm SL/TP. Lệnh hiện bằng đường nét đứt. Kéo SL/TP để sửa. Tắt gọn gàng bằng `features.trading: false` cho dự án không cần giao dịch.
+- **Lớp phủ giao dịch** — Hiển thị vị thế đang mở với đường giá vào lệnh, vùng lãi/lỗ và điểm SL/TP. Lệnh hiện bằng đường nét đứt. Kéo SL/TP để sửa, huỷ / đóng / đảo chiều bằng các nút trên từng đường, và xem mỗi lần khớp lệnh được đánh dấu trên nến của nó. ChartWidget có thêm phiếu đặt lệnh kiểm tra lệnh ngay khi bạn điền, cùng bảng tài khoản với vị thế, lệnh chờ và lịch sử. Tắt gọn gàng bằng `features.trading: false` cho dự án không cần giao dịch.
 - **Dữ liệu thời gian thực** — Có sẵn adapter Binance, Coinbase, Bybit và Kraken, cùng các lớp cơ sở chung `WebSocketAdapter` / `PollingAdapter` để cắm bất kỳ nguồn dữ liệu nào chỉ với khoảng 20 dòng code. Nến cũ hơn tải dần khi bạn cuộn về quá khứ, mọi khung thời gian (`7m`, `90m`, `2d`) đều dựng được từ các khung mà nguồn có sẵn, và tìm mã lấy trực tiếp từ nguồn.
 - **Múi giờ** — mọi múi giờ IANA, kể cả giờ mùa hè (`'America/New_York'`), một độ lệch cố định, hoặc múi giờ riêng của sàn, áp dụng cho trục, con trỏ chữ thập, đường ngắt ngày và giờ phiên.
 - **14 ngôn ngữ** — `ChartWidget` bằng tiếng Anh, tiếng Việt, tiếng Trung giản thể và phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Pháp, tiếng Đức, tiếng Nga, tiếng Thổ Nhĩ Kỳ, tiếng Indonesia và tiếng Thái.
@@ -25,10 +25,11 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 - **Hồ sơ khối lượng (Volume Profile)** — biểu đồ cột ngang tuỳ chọn, thể hiện khối lượng giao dịch gom theo mức giá trong khoảng đang hiện, có làm nổi điểm kiểm soát (point of control).
 - **Danh mục theo dõi** — bảng dọc tuỳ chọn liệt kê các mã với giá gần nhất, % thay đổi và sparkline nhỏ. Bấm vào một dòng để chuyển biểu đồ.
 - **Kéo-thả CSV / JSON** — thả một tệp vào biểu đồ, tệp được đọc và nạp ngay. Tự nhận dạng bố cục dòng tiêu đề, dấu thời gian ISO/unix-s/unix-ms, và JSON dạng mảng hay đối tượng.
-- **Bố cục đã lưu** — tuỳ chọn lưu theo từng mã vào localStorage: loại biểu đồ + bộ chỉ báo + hình vẽ + cảnh báo. Đổi mã rồi quay lại, thiết lập của bạn vẫn còn nguyên.
-- **Lưới nhiều biểu đồ** — `ChartGrid` cho bố cục 2×2 / 2×3 đồng bộ, với con trỏ chữ thập liên kết và trục thời gian dùng chung.
+- **Bố cục có tên** — lưu biểu đồ dưới một cái tên (mã, khung thời gian, thang giá, chỉ báo, hình vẽ, cảnh báo), mở, đổi tên, xoá, tự động lưu bố cục đang mở, `Ctrl/⌘+S`. Lưu trong trình duyệt, hoặc trên máy chủ của bạn qua một `LayoutStorage` chỉ gồm bốn hàm. Vẫn có tự động lưu theo từng mã (`persistLayouts`).
+- **Nhiều biểu đồ** — `ChartWidgetGrid` đặt tối đa sáu widget đầy đủ cạnh nhau, liên kết theo mã, khung thời gian, con trỏ chữ thập, thời gian hoặc hình vẽ tuỳ bạn chọn, và lưu tất cả thành một bố cục. `ChartGrid` làm điều tương tự cho biểu đồ không có widget.
 - **Điểm tín hiệu & vùng giao dịch** — hiển thị kết quả từ bot/thuật toán (mũi tên theo hướng, hình chữ nhật vào→ra lệnh) như một lớp chính thức của biểu đồ.
 - **Bảng phím tắt** — nhấn `?` trong widget để mở bảng tra cứu phím tắt theo nhóm.
+- **Widget mở rộng được** — thêm nút riêng vào thanh công cụ và mục riêng vào menu chuột phải (`addToolbarButton`, `chartMenuItems`).
 - **Lưu/nạp trạng thái biểu đồ** — Lưu hình vẽ, chỉ báo, giao diện và loại biểu đồ ra JSON. Khôi phục bằng một lệnh gọi.
 - **Không phụ thuộc** — Toàn bộ thư viện tự chứa. Không `d3`, không `chart.js`, không `fancy-canvas`.
 
@@ -239,8 +240,22 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncTimeAxis: true,
 })
 
-const adapter = new BinanceAdapter()
-grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+// An adapter keeps one stream: give each chart its own
+grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+```
+
+Với widget đầy đủ trên mỗi biểu đồ, một thanh để chọn cách sắp xếp và đồng bộ, và cả lưới được lưu thành một bố cục có tên:
+
+```typescript
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
+})
+workspace.setSync({ time: true })
 ```
 
 Các bố cục được hỗ trợ: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
@@ -386,6 +401,11 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+
+// The × and ⇅ buttons on the lines raise these; so can your own UI
+chart.cancelOrderIntent('order-1')
+chart.reversePositionIntent('pos-1')
+chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
 ```
 
 ### Điểm tín hiệu

@@ -163,11 +163,25 @@ const fr: SiteMessages = {
       title: 'Trading',
       stat: 'courtier simulé',
       blurb:
-        'Positions avec stop-loss et take-profit déplaçables, ordres en attente, ordres bracket et outils de position acheteuse/vendeuse, transmis via un ExecutionAdapter — ici le courtier simulé fourni.',
+        'Des ordres et des positions que vous pilotez depuis le graphique : déplacez stops et objectifs, annulez, clôturez ou inversez depuis la ligne, et voyez chaque exécution marquée sur sa barre. Un ticket d’ordre et le panneau du compte se trouvent sous le graphique ; tout passe par un ExecutionAdapter — ici le courtier simulé fourni.',
       tryThis: [
+        'Cliquez sur ⇅ de la position acheteuse ouverte pour l’inverser, ou sur × pour la clôturer — l’exécution s’affiche comme une marque sur sa barre',
+        'Faites un clic droit sous le prix : achat à cours limité, vente stop ou nouvel ordre à ce prix',
+        'Le panneau du compte, sous le graphique, liste les positions avec leur P&L, les ordres et l’historique',
         'Faites glisser les lignes SL / TP de la position acheteuse ouverte — le courtier les met à jour',
-        'Faites glisser un ordre en attente vers un nouveau prix',
-        'Utilisez les boutons bracket Achat/Vente de la barre d’outils supérieure',
+        'Le + près de l’axe des prix propose une alerte, un ordre ou une ligne à ce prix',
+      ],
+    },
+    workspace: {
+      title: 'Espace de travail',
+      stat: 'multi-graphique',
+      blurb:
+        'Deux graphiques côte à côte, liés par le réticule — ou, à votre choix, par le symbole, l’unité de temps, le temps et les dessins. Enregistrez tout l’espace de travail comme disposition nommée et revenez-y plus tard.',
+      tryThis: [
+        'Survolez un graphique : l’autre affiche le même moment',
+        'Activez « Unité » dans la barre Synchro, puis changez l’unité de temps d’un graphique',
+        'Choisissez quatre graphiques dans la barre ; avec « Symbole » synchronisé, les nouveaux s’ouvrent sur le symbole du graphique actif',
+        'Disposition ▾ → Enregistrer sous…, modifiez quelque chose, puis rouvrez la disposition (Ctrl+S enregistre)',
       ],
     },
     navigation: {

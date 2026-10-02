@@ -14,7 +14,7 @@
 - **69 种画线工具**——趋势线（信息线、趋势角度、十字线）、斐波那契（回撤、扩展、通道、时间周期、速度阻力扇与弧、圆、螺旋、楔形）、水平/垂直线、通道、音叉与音叉扇、江恩扇 / 江恩箱 / 江恩正方、周期、谐波形态（XABCD、Cypher、ABCD、三驱动、头肩形态）、艾略特波浪、注释、标注与标记、画笔与路径、预测与投影、带仓位计算的多/空仓位、成交量分布区间。每种工具都有自己的设置，支持趋势线警报、分组与图层、撤销/重做和完整序列化。
 - **17 种图表类型**——蜡烛图、折线、面积图、美国线、空心蜡烛图、基准线、平均K线（Heikin-Ashi）、Renko、Kagi、Line Break、Point & Figure、Range Bars、成交量蜡烛图、**等量图（Equivolume）**、HLC 面积图、阶梯线、带标记的折线。
 - **专业级交互**——可自由平移，越过最后一根K线进入右侧空白的未来区域（画线也能放在那里）；拖动价格/时间轴进行缩放；双击自动适配；`Ctrl/⌘+drag` 选择多个画线（之后可一起移动、修改样式或删除）；`Shift+drag` 测量（K线数 × 价差 × %）；`Alt+click` 固定对比提示；上下文光标（十字光标、抓手、调整大小箭头）；光标下随坐标轴移动的价格/时间胶囊标签；K线悬停高亮。
-- **交易叠加层**——渲染持仓的开仓价线、盈亏区域以及 SL/TP 标记。订单显示为虚线。拖动 SL/TP 即可修改。非交易类项目可通过 `features.trading: false` 干净地关闭。
+- **交易叠加层**——渲染持仓的开仓价线、盈亏区域以及 SL/TP 标记。订单显示为虚线。拖动 SL/TP 即可修改，通过每条线上的按钮撤单 / 平仓 / 反手，每笔成交都会标记在所在的K线上。ChartWidget 还提供边填写边校验订单的下单面板，以及包含持仓、挂单和历史记录的账户面板。非交易类项目可通过 `features.trading: false` 干净地关闭。
 - **实时数据流**——内置 Binance、Coinbase、Bybit 和 Kraken 适配器，另有通用的 `WebSocketAdapter` / `PollingAdapter` 基类，约 20 行代码即可接入任意数据源。回看历史时自动加载更早的K线，任意周期（`7m`、`90m`、`2d`）都能由数据源自带的周期合成，代码搜索也直接来自数据源。
 - **时区**——支持任意带夏令时的 IANA 时区（`'America/New_York'`）、固定偏移量或交易所自身的时区，作用于坐标轴、十字光标、日分隔线和交易时段。
 - **14 种语言**——`ChartWidget` 支持英语、越南语、简体中文和繁体中文、日语、韩语、西班牙语、葡萄牙语、法语、德语、俄语、土耳其语、印尼语和泰语。
@@ -25,10 +25,11 @@
 - **成交量分布**——可选的水平成交量直方图，按价格对可见范围内的成交量分桶，并高亮控制点（POC）。
 - **自选列表侧边栏**——可选启用的垂直面板，列出各代码的最新价、涨跌幅 % 和迷你走势图。点击一行即可切换图表。
 - **CSV / JSON 拖放导入**——把文件拖到图表上，立即解析并加载。可识别表头布局、ISO/unix 秒/unix 毫秒时间戳，以及数组与对象两种 JSON 结构。
-- **保存布局**——可选启用，按代码将图表类型 + 指标组合 + 画线 + 提醒持久化到 localStorage。切换代码再切回来，你的设置原封不动。
-- **多图表网格**——`ChartGrid` 提供同步的 2×2 / 2×3 布局，十字光标联动，时间轴共享。
+- **命名布局**——以名称保存图表（代码、周期、价格坐标、指标、画线、提醒），可打开、重命名、删除、自动保存当前打开的布局，支持 `Ctrl/⌘+S`。可保存在浏览器中，也可通过只需四个方法的 `LayoutStorage` 保存到你自己的服务器。按代码自动持久化（`persistLayouts`）也依然可用。
+- **多图表**——`ChartWidgetGrid` 可并排放置最多六个完整组件，按需通过代码、周期、十字光标、时间或画线联动，并作为一个布局整体保存。`ChartGrid` 为不带组件的纯图表提供同样的能力。
 - **信号标记与交易区域**——将机器人/算法的输出（方向箭头、入场→出场矩形）作为一等图表图层渲染。
 - **快捷键列表**——在组件中按 `?` 打开分类的键盘快捷键参考。
+- **可扩展的组件**——添加你自己的工具栏按钮和右键菜单项（`addToolbarButton`、`chartMenuItems`）。
 - **保存/加载图表状态**——将画线、指标、主题和图表类型持久化为 JSON。一次调用即可恢复。
 - **零依赖**——整个库完全自包含。没有 `d3`，没有 `chart.js`，也没有 `fancy-canvas`。
 
@@ -239,8 +240,22 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncTimeAxis: true,
 })
 
-const adapter = new BinanceAdapter()
-grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+// An adapter keeps one stream: give each chart its own
+grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+```
+
+如果希望每个图表都带完整组件、用一个工具条选择排列方式和同步项，并把整个网格保存为命名布局：
+
+```typescript
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
+})
+workspace.setSync({ time: true })
 ```
 
 支持的布局：`'1x1'`、`'1x2'`、`'2x1'`、`'2x2'`、`'1x3'`、`'3x1'`、`'2x3'`、`'3x2'`。
@@ -386,6 +401,11 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+
+// The × and ⇅ buttons on the lines raise these; so can your own UI
+chart.cancelOrderIntent('order-1')
+chart.reversePositionIntent('pos-1')
+chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
 ```
 
 ### 信号标记

@@ -101,3 +101,44 @@ describe('wireExecution', () => {
     expect(h.positions).toHaveLength(0);
   });
 });
+
+describe('wireExecution: reverse and fills', () => {
+  it('reverses through the adapter’s own reversePosition', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const h = makeHost();
+    const fills: unknown[] = [];
+    h.host.onFill = (f) => fills.push(f);
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('orderPlace', { side: 'buy', type: 'market', price: 100, quantity: 2 });
+    await flush();
+    h.emit('positionReverse', { positionId: h.positions[0].id });
+    await flush();
+    expect(h.positions).toEqual([expect.objectContaining({ side: 'sell', quantity: 2 })]);
+    expect(fills).toHaveLength(3); // open, close by the reverse, open the other way
+  });
+
+  it('closes and places a market order when the adapter can’t reverse', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    (adapter as { reversePosition?: unknown }).reversePosition = undefined;
+    const h = makeHost();
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('orderPlace', { side: 'sell', type: 'market', price: 100, quantity: 1 });
+    await flush();
+    h.emit('positionReverse', { positionId: h.positions[0].id });
+    await flush();
+    expect(h.positions).toEqual([expect.objectContaining({ side: 'buy', quantity: 1 })]);
+  });
+
+  it('reports an error for a position it doesn’t know', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    (adapter as { reversePosition?: unknown }).reversePosition = undefined;
+    const h = makeHost();
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('positionReverse', { positionId: 'nope' });
+    await flush();
+    expect(h.errors).toHaveLength(1);
+  });
+});

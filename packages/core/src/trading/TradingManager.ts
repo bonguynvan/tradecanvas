@@ -6,6 +6,7 @@ import type {
   ViewportState,
   Theme,
   Point,
+  FillEvent,
 } from '@tradecanvas/commons';
 import { DEFAULT_TRADING_CONFIG } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
@@ -16,6 +17,11 @@ import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
+import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
+import { renderFillMarks } from './fillMarks.js';
+
+/** Most fills kept for their marks; the oldest go first. */
+const MAX_FILLS = 1000;
 import type { OrderSide } from '@tradecanvas/commons';
 
 export class TradingManager {
@@ -32,6 +38,10 @@ export class TradingManager {
   private contextMenu = new TradingContextMenu();
   private bracket = new BracketTool();
   private orderDraft = new OrderDraftTool();
+  /** The buttons on the lines as last drawn, for clicks and the cursor. */
+  private buttons: LineButton[] = [];
+  private fills: FillEvent[] = [];
+  private realisedPnl = 0;
 
   private requestRender: (() => void) | null = null;
   private eventCallback: ((event: string, data: unknown) => void) | null = null;
@@ -70,6 +80,19 @@ export class TradingManager {
     this.requestRender?.();
   }
 
+  getOrders(): TradingOrder[] {
+    return [...this.orders];
+  }
+
+  getPositions(): TradingPosition[] {
+    return [...this.positions];
+  }
+
+  /** The latest price (`setCurrentPrice`), or null before the first. */
+  getCurrentPrice(): number | null {
+    return this.currentPrice;
+  }
+
   setDepthData(depth: DepthData | null): void {
     this.depthData = depth;
     this.requestRender?.();
@@ -83,6 +106,58 @@ export class TradingManager {
   setConfig(config: Partial<TradingConfig>): void {
     Object.assign(this.config, config);
     this.requestRender?.();
+  }
+
+  // --- Fills ---
+
+  /** Mark a fill on the chart (an execution adapter's `fill`). */
+  addFill(fill: FillEvent): void {
+    this.fills = [...this.fills.slice(-(MAX_FILLS - 1)), fill];
+    this.realisedPnl += fill.pnl ?? 0;
+    this.requestRender?.();
+  }
+
+  setFills(fills: readonly FillEvent[]): void {
+    this.fills = fills.slice(-MAX_FILLS);
+    this.realisedPnl = fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0);
+    this.requestRender?.();
+  }
+
+  /** The P&L the fills realised, all of them (the marks keep only the latest). */
+  getRealisedPnl(): number {
+    return this.realisedPnl;
+  }
+
+  getFills(): FillEvent[] {
+    return [...this.fills];
+  }
+
+  // --- Buttons on the lines ---
+
+  /** The button pressed: it acts when released over it (dragging off cancels). */
+  private armed: LineButtonAction | null = null;
+
+  /** Whether `pos` is over a button on an order or position line. */
+  isOverButton(pos: Point): boolean {
+    return this.config.enabled && buttonAt(this.buttons, pos) !== null;
+  }
+
+  /** A button's intent: cancel an order, close or reverse a position, remove a stop. */
+  private runButton(action: LineButtonAction): void {
+    switch (action.type) {
+      case 'cancelOrder':
+        this.eventCallback?.('orderCancel', { orderId: action.orderId });
+        break;
+      case 'closePosition':
+        this.eventCallback?.('positionClose', { positionId: action.positionId });
+        break;
+      case 'reversePosition':
+        this.eventCallback?.('positionReverse', { positionId: action.positionId });
+        break;
+      case 'removeStop':
+        this.eventCallback?.('positionModify', { positionId: action.positionId, [action.which]: null });
+        break;
+    }
   }
 
   // --- Bracket placement ---
@@ -174,10 +249,17 @@ export class TradingManager {
       this.requestRender?.();
       return true;
     }
+    // A button on a line before the line itself (an SL line is draggable too).
+    const button = buttonAt(this.buttons, pos);
+    if (button) {
+      this.armed = button.action;
+      return true;
+    }
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, 8);
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
+    if (this.armed) return true;
     if (this.bracket.isDragging()) {
       const consumed = this.bracket.drag(pos, viewport);
       if (consumed) this.requestRender?.();
@@ -194,7 +276,15 @@ export class TradingManager {
     return consumed;
   }
 
-  onPointerUp(): boolean {
+  /** End a press; `pos` is where it ended (none when the pointer left: a pressed button does nothing). */
+  onPointerUp(pos?: Point): boolean {
+    if (this.armed) {
+      const action = this.armed;
+      this.armed = null;
+      const over = pos ? buttonAt(this.buttons, pos) : null;
+      if (over && sameLineAction(over.action, action)) this.runButton(action);
+      return true;
+    }
     if (this.bracket.isDragging()) {
       this.bracket.endDrag();
       this.requestRender?.();
@@ -235,6 +325,7 @@ export class TradingManager {
   // --- Render ---
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    this.buttons = [];
     if (!this.config.enabled) return;
 
     // Depth overlay (back)
@@ -242,14 +333,16 @@ export class TradingManager {
       this.depthOverlay.render(ctx, this.depthData, viewport, this.config);
     }
 
+    if (this.config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, this.config);
+
     // Positions (middle)
     if (this.positions.length > 0) {
-      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, this.config);
+      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, this.config, this.buttons);
     }
 
     // Orders (front)
     if (this.orders.length > 0) {
-      this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState());
+      this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState(), this.buttons);
     }
 
     // Bracket placement preview (frontmost)

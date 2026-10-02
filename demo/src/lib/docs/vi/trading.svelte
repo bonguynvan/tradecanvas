@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Lớp phủ giao dịch — Tài liệu TradeCanvas</title>
   <meta name="description" content="Hiển thị vị thế, lệnh, điểm đánh dấu tín hiệu và vùng giao dịch ngay trên biểu đồ với lớp phủ giao dịch của TradeCanvas." />
@@ -67,6 +73,101 @@ chart.on('executionError', (e) => toast(e.payload.message))
   <code>modifyPosition</code>, <code>closePosition</code>, cùng các sự kiện <code>orders</code> /
   <code>positions</code> / <code>fill</code> / <code>error</code>.
   <code>PaperExecutionAdapter</code> là môi trường khớp lệnh ảo dùng cho demo và test.
+</p>
+
+<h2>Thao tác với lệnh và vị thế ngay trên biểu đồ</h2>
+<p>
+  Đường lệnh và đường vị thế có các nút nhỏ ở đầu bên phải: <strong>×</strong>
+  huỷ lệnh hoặc đóng vị thế, <strong>⇅</strong> đảo chiều vị thế, còn dấu
+  × trên đường dừng lỗ hoặc chốt lời sẽ gỡ mức đó. Các nút này phát ra cùng những ý định như
+  API (<code>orderCancel</code>, <code>positionClose</code>, <code>positionReverse</code>,
+  <code>positionModify</code> với <code>null</code>), nên adapter đã kết nối sẽ xử lý chúng,
+  còn ứng dụng không kết nối adapter thì nhận các sự kiện. Nút chỉ thực hiện khi bạn
+  nhả ra ngay trên nút: nhấn rồi trượt ra ngoài thì không có tác dụng gì. Tắt bất kỳ nút nào bằng
+  <code>lineButtons</code> trong <code>setTradingConfig</code>.
+</p>
+<pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
+
+chart.cancelOrderIntent('ord-1')
+chart.closePositionIntent('pos-1')
+chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
+chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+<p>
+  Adapter nào đảo chiều được trong một bước thì cài đặt <code>reversePosition</code>;
+  nếu không có, biểu đồ sẽ đóng vị thế rồi gửi một lệnh thị trường theo chiều ngược lại.
+  Lệnh nhận <code>stopLoss</code>, <code>takeProfit</code> và
+  <code>timeInForce</code> (<code>'gtc'</code> hoặc <code>'day'</code>); các giá trị này được chuyển sang
+  vị thế mà lệnh mở ra.
+</p>
+<p>
+  <strong>Dành cho người viết adapter:</strong> trong <code>PositionModifyIntent</code>,
+  <code>stopLoss: null</code> (hoặc <code>takeProfit: null</code>) nghĩa là gỡ mức đó, còn
+  khi thiếu trường thì giữ nguyên. Code viết kiểu
+  <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại mức dừng lỗ mà người dùng đã gỡ.
+</p>
+
+<h2>Lệnh khớp trên biểu đồ</h2>
+<p>
+  Mỗi lần khớp hiện thành một dấu nhỏ trên nến của nó: tô đặc khi mở vị thế,
+  để rỗng khi đóng vị thế. Biểu đồ ghi lại các lần khớp mà adapter báo về và
+  phát ra <code>executionFill</code> kèm lý do khớp (<code>'order'</code>,
+  <code>'close'</code>, <code>'reverse'</code>, <code>'stopLoss'</code>,
+  <code>'takeProfit'</code>) cùng khoản lãi/lỗ đã chốt.
+</p>
+<pre><code>{`chart.on('executionFill', (e) => {
+  const { side, price, quantity, reason, pnl } = e.payload
+})
+
+chart.addFill({ orderId: 'o-7', side: 'buy', price: 64_150, quantity: 1, time: Date.now() })
+chart.getFills()        // the latest 1000
+chart.getRealisedPnl()  // every fill's P&L since the last clearFills
+chart.clearFills()
+chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
+
+<h2>Menu chuột phải và nút “+” cạnh trục giá</h2>
+<p>
+  Bấm chuột phải trên biểu đồ sẽ phát ra <code>chartContextMenu</code> kèm vùng được
+  bấm (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> hoặc
+  <code>'timeAxis'</code>) cùng giá và thời gian tại đó. Với
+  <code>features.priceAxisAddButton</code>, một nút “+” chạy theo con trỏ chữ thập dọc trục
+  giá; bấm vào nó sẽ phát ra <code>priceAxisAdd</code> kèm mức giá đó.
+</p>
+<pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
+
+chart.on('chartContextMenu', (e) => {
+  const { area, x, y, price, time } = e.payload
+  openMyMenu(x, y)
+})
+chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
+<p>
+  ChartWidget dựng các menu của nó trên những sự kiện này. Bấm chuột phải vào vùng biểu đồ để
+  đặt cảnh báo, mua và bán tại mức giá đó (lệnh giới hạn khi mức giá nằm ở phía lệnh phải chờ
+  so với giá thị trường, lệnh dừng khi nằm ở phía còn lại), mở phiếu đặt lệnh, vẽ đường ngang,
+  đặt lại khung nhìn và thao tác với hình vẽ; vào trục giá để chuyển chế độ thang; vào trục thời
+  gian để đặt lại khung nhìn và đi tới một ngày. Thêm mục của riêng bạn bằng
+  <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>Tham chiếu API</a>).
+</p>
+
+<h2>Phiếu đặt lệnh và bảng tài khoản (ChartWidget)</h2>
+<p>
+  Nút biên lai của widget mở bảng tài khoản bên dưới biểu đồ: các vị thế đang mở
+  kèm lãi/lỗ, các lệnh đang chờ, và các lần khớp từ trước đến giờ kèm lãi/lỗ (P&amp;L)
+  đã chốt. Mỗi dòng có thể đóng, đảo chiều hoặc huỷ. <strong>Lệnh mới</strong> mở
+  phiếu đặt lệnh: mua hoặc bán, lệnh thị trường, giới hạn hoặc dừng, khối lượng, giá, mức
+  dừng lỗ và chốt lời (tuỳ chọn), và hiệu lực của lệnh. Phiếu kiểm tra lệnh ngay khi bạn nhập
+  (mua giới hạn phải nằm dưới giá thị trường, dừng lỗ phải nằm ở phía lỗ so với điểm vào…)
+  và hiện tỷ lệ lời:lỗ. Đặt lệnh sẽ gửi đi một ý định <code>orderPlace</code>.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  trading: true,         // default
+  accountPanel: true,    // default when trading is on
+})
+widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+widget.toggleAccountPanel(true)
+// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+<p>
+  Các dấu khớp lệnh gắn với mã đang hiện trên biểu đồ: đổi mã trong widget thì mã
+  tiếp theo bắt đầu mà không có dấu nào.
 </p>
 
 <h2>Kéo để tạo lệnh</h2>

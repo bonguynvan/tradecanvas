@@ -163,11 +163,25 @@ const id: SiteMessages = {
       title: 'Trading',
       stat: 'broker simulasi',
       blurb:
-        'Posisi dengan stop-loss dan take-profit yang bisa diseret, order tertunda, bracket, dan alat posisi long/short, semuanya diteruskan lewat ExecutionAdapter — di sini memakai broker simulasi bawaan.',
+        'Order dan posisi yang Anda kelola langsung dari grafik: seret stop dan target; batalkan, tutup, atau balik posisi dari garisnya; dan lihat setiap eksekusi ditandai pada bar-nya. Tiket order dan panel akun ada di bawah grafik; semuanya diteruskan lewat ExecutionAdapter — di sini memakai broker simulasi bawaan.',
       tryThis: [
+        'Tekan ⇅ pada posisi long yang terbuka untuk membaliknya, atau × untuk menutupnya — eksekusinya tampil sebagai tanda pada bar-nya',
+        'Klik kanan di bawah harga: beli limit, jual stop, atau order baru di harga itu',
+        'Panel akun di bawah grafik menampilkan posisi beserta P&L-nya, order, dan riwayat',
         'Seret garis SL / TP pada posisi long yang terbuka — broker akan memperbaruinya',
-        'Seret order tertunda ke harga baru',
-        'Gunakan tombol bracket Beli/Jual di bilah alat atas',
+        'Tanda + di samping sumbu harga menawarkan peringatan, order, atau garis di harga tersebut',
+      ],
+    },
+    workspace: {
+      title: 'Ruang kerja',
+      stat: 'multi-grafik',
+      blurb:
+        'Dua grafik berdampingan, terhubung lewat crosshair — atau lewat simbol, kerangka waktu, waktu, dan gambar sesuai pilihan Anda. Simpan seluruh ruang kerja sebagai tata letak bernama dan buka lagi kapan saja.',
+      tryThis: [
+        'Arahkan kursor ke satu grafik: grafik lainnya menunjukkan waktu yang sama',
+        'Aktifkan Kerangka waktu di bilah Sinkronkan, lalu ubah kerangka waktu salah satu grafik',
+        'Pilih empat grafik di bilah; saat Simbol disinkronkan, grafik baru terbuka dengan simbol grafik yang aktif',
+        'Tata letak ▾ → Simpan sebagai…, ubah sesuatu, lalu buka lagi tata letaknya (Ctrl+S untuk menyimpan)',
       ],
     },
     navigation: {

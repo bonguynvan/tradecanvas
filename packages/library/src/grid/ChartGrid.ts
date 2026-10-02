@@ -197,11 +197,21 @@ export class ChartGrid {
     await cell.chart.connect(config);
   }
 
-  async connectAll(adapter: DataAdapter, symbols: string[], timeframe: TimeFrame, historyLimit = 500): Promise<void> {
+  /**
+   * Connect each chart to a symbol. An adapter keeps one stream, so pass a
+   * function that makes one per chart (`() => new BinanceAdapter()`); a single
+   * adapter object serves one chart only.
+   */
+  async connectAll(
+    adapter: DataAdapter | ((symbol: string, index: number) => DataAdapter),
+    symbols: string[],
+    timeframe: TimeFrame,
+    historyLimit = 500,
+  ): Promise<void> {
     const promises: Promise<void>[] = [];
     for (let i = 0; i < this.cells.length && i < symbols.length; i++) {
       promises.push(this.connectCell(i, {
-        adapter,
+        adapter: typeof adapter === 'function' ? adapter(symbols[i], i) : adapter,
         symbol: symbols[i],
         timeframe,
         historyLimit,

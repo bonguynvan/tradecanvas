@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { Chart, DataAdapter } from '@tradecanvas/chart';
-  import type { ChartWidget } from '@tradecanvas/chart/widget';
+  import type { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
   import type { WidgetLanguage } from '@tradecanvas/chart/widget/locales';
   import { FEATURE_SCENES, type SceneEnv } from '$lib/featureScenes';
   import { useI18n } from '$lib/i18n/context.svelte';
@@ -24,7 +24,7 @@
   // svelte-ignore state_referenced_locally
   let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
 
-  let widget: ChartWidget | null = null;
+  let widget: ChartWidget | ChartWidgetGrid | null = null;
   let mountToken = 0;
 
   const scene = $derived(FEATURE_SCENES[active]);
@@ -68,7 +68,7 @@
     metrics = [];
     if (!host) return;
 
-    const [{ ChartWidget }, lib, siteWidgetLanguage] = await Promise.all([
+    const [{ ChartWidget, ChartWidgetGrid }, lib, siteWidgetLanguage] = await Promise.all([
       import('@tradecanvas/chart/widget'),
       import('@tradecanvas/chart'),
       widgetLanguage(i18n.lang),
@@ -91,6 +91,35 @@
     };
     const opts = current.options(env);
     let pending: { label: string; t: number } | null = null;
+
+    // Several charts: each one gets the scene's bars for its symbol.
+    if (current.grid) {
+      const gridOpts = current.grid(env);
+      const feed = (w: ChartWidget, symbol: string) => {
+        if (current.data) w.setData(current.data(symbol));
+      };
+      const charts: ChartWidget[] = [];
+      const g: ChartWidgetGrid = new ChartWidgetGrid(host, {
+        ...gridOpts,
+        widget: { theme: siteTheme(), historyLimit: 500, ...siteWidgetLanguage, ...opts },
+        cells: gridOpts.cells?.map((cell, i) => ({
+          ...cell,
+          onSymbolChange: (sym: string) => {
+            cell.onSymbolChange?.(sym);
+            if (charts[i]) feed(charts[i], sym);
+          },
+        })),
+        onChartAdd: (w, i) => {
+          charts[i] = w;
+          feed(w, w.captureLayout().symbol);
+        },
+      });
+      widget = g;
+      await Promise.all(g.getWidgets().map((w) => firstBars(w.getChart())));
+      if (token !== mountToken) return;
+      await current.gridSetup?.(g, env);
+      return;
+    }
 
     const w: ChartWidget = new ChartWidget(host, {
       theme: siteTheme(),

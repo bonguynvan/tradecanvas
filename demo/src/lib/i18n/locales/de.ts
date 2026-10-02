@@ -163,11 +163,25 @@ const de: SiteMessages = {
       title: 'Trading',
       stat: 'Paper-Broker',
       blurb:
-        'Positionen mit verschiebbarem Stop-Loss und Take-Profit, offene Orders, Bracket-Orders und Long-/Short-Werkzeuge, abgewickelt über einen ExecutionAdapter – hier den mitgelieferten Paper-Broker.',
+        'Orders und Positionen, die Sie direkt im Chart steuern: Stops und Ziele verschieben, über die Linie stornieren, schließen oder umkehren – und jede Ausführung ist an ihrer Kerze markiert. Eine Ordermaske und ein Kontopanel liegen unter dem Chart; alles läuft über einen ExecutionAdapter – hier den mitgelieferten Paper-Broker.',
       tryThis: [
-        'Ziehen Sie die SL-/TP-Linien der offenen Long-Position – der Broker aktualisiert sie',
-        'Ziehen Sie eine offene Order auf einen neuen Preis',
-        'Nutzen Sie die Bracket-Buttons für Kauf und Verkauf in der oberen Symbolleiste',
+        'Klicken Sie an der offenen Long-Position auf ⇅, um sie umzukehren, oder auf ×, um sie zu schließen – die Ausführung erscheint als Markierung an ihrer Kerze',
+        'Klicken Sie unterhalb des Kurses mit der rechten Maustaste: Kauf-Limit, Verkauf-Stop oder neue Order zu diesem Preis',
+        'Das Kontopanel unter dem Chart listet Positionen mit G&V, Orders und Historie auf',
+        'Ziehen Sie die Linien SL / TP der offenen Long-Position – der Broker aktualisiert sie',
+        'Das + an der Preisachse bietet einen Alarm, eine Order oder eine Linie zu diesem Preis an',
+      ],
+    },
+    workspace: {
+      title: 'Arbeitsbereich',
+      stat: 'Multi-Chart',
+      blurb:
+        'Zwei Charts nebeneinander, verbunden über das Fadenkreuz – oder nach Wahl über Symbol, Zeiteinheit, Zeit und Zeichnungen. Speichern Sie den ganzen Arbeitsbereich als benanntes Layout und kehren Sie jederzeit dorthin zurück.',
+      tryThis: [
+        'Fahren Sie über einen Chart: Der andere zeigt dieselbe Zeit',
+        'Aktivieren Sie „Zeiteinheit“ in der Sync-Leiste und ändern Sie dann die Zeiteinheit eines Charts',
+        'Wählen Sie in der Leiste vier Charts; ist „Symbol“ synchronisiert, öffnen sich die neuen mit dem Symbol des aktiven Charts',
+        'Layout ▾ → Speichern unter…, etwas ändern, dann das Layout wieder öffnen (Ctrl+S speichert)',
       ],
     },
     navigation: {

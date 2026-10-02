@@ -1,4 +1,5 @@
 import type { IndicatorInputSpec, IndicatorPlot } from '@tradecanvas/commons';
+import { FOCUSABLE, keepTabInside } from './focusTrap.js';
 import { PRICE_SOURCES } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_MESSAGES, type Translator } from './i18n.js';
@@ -42,7 +43,6 @@ type Tab = 'inputs' | 'style' | 'levels';
 /** Ids for the dialog's labelling (several widgets may share a page). */
 let nextDialogId = 1;
 
-const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const LINE_WIDTHS = [1, 1.5, 2, 3, 4];
@@ -246,18 +246,7 @@ export class WidgetIndicatorSettings {
       this.close();
       return;
     }
-    if (e.key !== 'Tab') return;
-    const items = [...this.modal.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0 || el === document.activeElement);
-    if (items.length === 0) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
+    keepTabInside(e, this.modal);
   }
 
   private renderBody(): void {

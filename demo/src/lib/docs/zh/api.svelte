@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>API 参考</h1>
-<p>三个顶层类的公开接口：<code>Chart</code>、<code>ChartWidget</code> 和 <code>ChartGrid</code>。</p>
+<p>顶层类的公开接口：<code>Chart</code>、<code>ChartWidget</code>、<code>ChartWidgetGrid</code> 和 <code>ChartGrid</code>。</p>
 
 <h2>Chart</h2>
 <p>无界面渲染器。界面由你自己实现；订阅事件；以命令式方式修改状态。</p>
@@ -203,7 +203,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p>为 <code>Chart</code> 包上一套完整界面。同一个实例可通过 <code>widget.chart</code> 访问。</p>
@@ -230,6 +235,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板（指标、图表类型、画线……）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索——在已配置的品种列表中模糊查找</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>保存布局（首次保存时会询问名称）</td></tr>
     <tr><td><kbd>?</kbd></td><td>显示快捷键列表</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
@@ -259,9 +265,47 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>保存布局</h3>
+<h3>命名布局</h3>
 <p>
-  自动把每个品种的指标组合、画线、提醒和图表类型
+  工具栏上的布局按钮会以一个名称保存图表：品种、周期、价格坐标、图表类型、指标、画线和提醒
+  （不包括主题，主题由查看者自己决定）。可从该按钮的菜单中打开、重命名和删除布局；
+  当前打开的布局会在变化时自动保存，按 <kbd>Ctrl/⌘ S</kbd> 也可以保存。
+  除非你提供一个 <code>storage</code>，布局都保存在当前浏览器的 <code>localStorage</code> 中。
+  <code>storage</code> 由四个方法组成，每个方法都可以返回 promise。
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } 或 null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // 设为 false 则不启用
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } 或 null
+layouts.setAutoSave(false)
+
+// 只取内容本身，可以存放在任何地方
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  内置两种存储：<code>localStorageLayouts(prefix)</code> 和 <code>memoryLayouts()</code>。
+  读取已保存的内容时会做防御性校验：无法解析的布局会被拒绝，而不会只应用一半。
+  每个布局都会记录自己的 <code>kind</code>（<code>'chart'</code> 或 <code>'grid'</code>），
+  因此图表组件和网格可以共用一个存储，各自只列出自己的布局。保存、打开和自动保存会逐个依次执行，
+  因此保存绝不会写入在它之后打开的布局。
+</p>
+
+<h3>按品种保存的布局</h3>
+<p>
+  另外，还可以自动把每个品种的指标组合、画线、提醒和图表类型
   持久化到 <code>localStorage</code>：
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -432,12 +476,66 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>自定义按钮和菜单项</h3>
+<p>
+  向工具栏添加按钮（内置图标或你自己的元素、文字、开关），并向图表的右键菜单添加菜单项，
+  它们会排在组件自带的项目之后。
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // 或一个 <svg> 元素；或 text: 'News'
+  side: 'right',           // 'left' 会与图表控件放在一起
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  多个图表组件并排显示，每个都有自己的品种、周期、指标和画线。上方的工具条用于选择排列方式、
+  联动各个图表，并把整个网格保存为一个命名布局。最后点击的图表就是当前图表（带边框）。
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // 作用于每个图表
+  adapter: () => new BinanceAdapter(),            // 每个图表一个：一个适配器只维持一条数据流
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // 让其他图表与当前图表保持一致
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// 每个图表创建时（初始时，以及网格变大时）
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  十字光标同步会在每个图表上显示指针所在的时间；时间同步会让其他图表随正在操作的图表一起滚动和缩放；
+  画线会复制到显示同一品种的图表上（开启时会把这些图表的画线合并到一起，不会丢失任何画线）。
+  网格缩小时被移除的图表会被收起并保留在已保存的布局中，网格再次变大时会原样恢复；
+  全新的图表在品种和周期处于同步状态时，会使用当前图表的品种和周期打开。
+</p>
+
 <h2>ChartGrid</h2>
-<p>同步联动的多图表布局。</p>
+<p>由无界面图表（不带工具栏）组成的同步联动多图表布局；如需完整界面，请参见 <code>ChartWidgetGrid</code>。</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// 每个图表一个适配器：一个适配器只维持一条数据流
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>布局：<code>'1x2'</code>、<code>'2x2'</code>、<code>'2x3'</code>、<code>'3x3'</code>。</p>
+<p>布局：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'2x2'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>。</p>

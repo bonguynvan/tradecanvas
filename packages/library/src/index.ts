@@ -43,6 +43,9 @@ export type {
   DrawingCreatePayload,
   DrawingRemovePayload,
   SignalMarkerAddPayload,
+  ChartContextArea,
+  ChartContextMenuPayload,
+  PriceAxisAddPayload,
   SignalMarkerRemovePayload,
   TradeZoneAddPayload,
   TradeZoneRemovePayload,
@@ -73,6 +76,9 @@ export type {
   OrderCancelIntent,
   PositionModifyIntent,
   PositionCloseIntent,
+  PositionReverseIntent,
+  TimeInForce,
+  FillReason,
   ExecutionAdapter,
   ExecutionConfig,
   ExecutionEvent,
@@ -189,6 +195,10 @@ export type { CrosshairTooltipContext } from '@tradecanvas/core';
 
 // Multi-chart grid
 export { ChartGrid } from './grid/ChartGrid.js';
+export { LayoutSession, cleanLayoutName, MAX_LAYOUT_NAME } from './state/LayoutSession.js';
+export type { LayoutSessionHost, LayoutSessionOptions } from './state/LayoutSession.js';
+export { localStorageLayouts, memoryLayouts } from './state/layoutStorage.js';
+export type { LayoutStorage, SavedLayout, SavedLayoutSummary } from './state/layoutStorage.js';
 export type { GridLayout, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts

@@ -14,7 +14,7 @@ La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonit
 - **69 herramientas de dibujo** — Líneas de tendencia (línea de información, ángulo de tendencia, línea en cruz), Fibonacci (retroceso, extensión, canal, zonas temporales, abanico y arcos de velocidad, círculos, espiral, cuña), líneas horizontales/verticales, canales, horquillas y abanico de horquilla, abanico / caja / cuadrado de Gann, ciclos, patrones armónicos (XABCD, cypher, ABCD, tres impulsos, hombro-cabeza-hombro), ondas de Elliott, notas, globos de texto y marcas, pincel y trazado, previsión y proyección, posición larga/corta con cálculo del tamaño, perfil de volumen de rango fijo. Cada una con sus propios ajustes, alertas sobre líneas de tendencia, grupos y capas, deshacer/rehacer y serialización completa.
 - **17 tipos de gráfico** — Velas, línea, área, barras, velas huecas, línea base, Heikin-Ashi, Renko, Kagi, ruptura de líneas, punto y figura, barras de rango, velas de volumen, **Equivolumen**, área HLC, línea escalonada, línea con marcadores.
 - **Interacción de nivel profesional** — desplázate libremente más allá de la última barra, hacia el espacio futuro vacío (los dibujos también pueden ir allí), arrastra los ejes de precio/tiempo para escalarlos, haz doble clic para el ajuste automático, `Ctrl/⌘+drag` para seleccionar varios dibujos (y luego moverlos, cambiarles el estilo o borrarlos juntos), `Shift+drag` para medir (barras × Δ precio × %), `Alt+click` para fijar un tooltip de comparación, cursores contextuales (cruz, mano de agarre, flechas de redimensionado), etiquetas de precio/tiempo bajo el cursor que siguen a los ejes y resaltado de la barra al pasar el cursor.
-- **Capa de trading** — Muestra las posiciones abiertas con línea de entrada, zona de P&L y marcadores SL/TP. Las órdenes, como líneas discontinuas. Arrastra SL/TP para modificarlos. Se desactiva limpiamente con `features.trading: false` en proyectos sin trading.
+- **Capa de trading** — Muestra las posiciones abiertas con línea de entrada, zona de P&L y marcadores SL/TP. Las órdenes, como líneas discontinuas. Arrastra SL/TP para modificarlos, cancela / cierra / invierte con los botones de cada línea y ve cada ejecución marcada en su barra. ChartWidget añade un ticket de orden que valida la orden mientras la rellenas y un panel de cuenta con posiciones, órdenes pendientes e historial. Se desactiva limpiamente con `features.trading: false` en proyectos sin trading.
 - **Streaming en tiempo real** — Adaptadores integrados para Binance, Coinbase, Bybit y Kraken, además de las bases genéricas `WebSocketAdapter` / `PollingAdapter`, para conectar cualquier fuente en ~20 líneas. Las barras antiguas se cargan al desplazarte hacia atrás, cualquier intervalo (`7m`, `90m`, `2d`) se construye a partir de los de la propia fuente, y la búsqueda de símbolos viene de la fuente.
 - **Zonas horarias** — cualquier zona IANA con horario de verano (`'America/New_York'`), un desfase fijo o la zona propia de la bolsa, para el eje, la cruz, los cortes de día y el horario de sesión.
 - **14 idiomas** — `ChartWidget` en inglés, vietnamita, chino simplificado y tradicional, japonés, coreano, español, portugués, francés, alemán, ruso, turco, indonesio y tailandés.
@@ -25,10 +25,11 @@ La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonit
 - **Perfil de volumen** — histograma horizontal opcional del volumen negociado, agrupado por precio en el rango visible, con el punto de control (POC) resaltado.
 - **Lista de seguimiento lateral** — panel vertical opcional que lista símbolos con último precio, % de cambio y un mini sparkline. Haz clic en una fila para cambiar de gráfico.
 - **Arrastrar y soltar CSV / JSON** — suelta un archivo sobre el gráfico y se analiza y carga al instante. Detecta distintas disposiciones de encabezado, marcas de tiempo ISO/unix-s/unix-ms y JSON en forma de array o de objeto.
-- **Diseños guardados** — persistencia opcional, por símbolo, del tipo de gráfico + pila de indicadores + dibujos + alertas en localStorage. Cambia de símbolo, vuelve, y tu configuración sigue intacta.
-- **Cuadrícula de varios gráficos** — `ChartGrid` para diseños sincronizados de 2×2 / 2×3 con cruces enlazadas y eje de tiempo compartido.
+- **Diseños con nombre** — guarda el gráfico con un nombre (símbolo, temporalidad, escala, indicadores, dibujos, alertas); ábrelo, renómbralo, bórralo, guarda automáticamente el que está abierto, `Ctrl/⌘+S`. Se guarda en el navegador o en tu servidor mediante un `LayoutStorage` de cuatro llamadas. También sigue disponible la persistencia automática por símbolo (`persistLayouts`).
+- **Varios gráficos** — `ChartWidgetGrid` coloca hasta seis widgets completos uno junto a otro, enlazados por símbolo, temporalidad, cruz, tiempo o dibujos según elijas, y los guarda como un solo diseño. `ChartGrid` hace lo mismo con gráficos sin widget.
 - **Marcadores de señales y zonas de operación** — muestra la salida de bots/algoritmos (flechas direccionales, rectángulos de entrada→salida) como una capa de primera clase del gráfico.
 - **Hoja de atajos** — pulsa `?` en el widget para abrir una referencia de atajos de teclado organizada por categorías.
+- **Widget extensible** — añade tus propios botones a la barra de herramientas y entradas al menú del clic derecho (`addToolbarButton`, `chartMenuItems`).
 - **Guardar/cargar el estado del gráfico** — guarda dibujos, indicadores, tema y tipo de gráfico en JSON. Restáuralos con una sola llamada.
 - **Sin dependencias** — toda la biblioteca es autónoma. Sin `d3`, sin `chart.js`, sin `fancy-canvas`.
 
@@ -239,8 +240,22 @@ const grid = new ChartGrid(document.getElementById('grid')!, {
   syncTimeAxis: true,
 })
 
-const adapter = new BinanceAdapter()
-grid.connectAll(adapter, ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+// An adapter keeps one stream: give each chart its own
+grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
+```
+
+Con el widget completo en cada gráfico, una barra para elegir la disposición y la sincronización, y toda la cuadrícula guardada como un diseño con nombre:
+
+```typescript
+import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
+  layout: '1x2',
+  adapter: () => new BinanceAdapter(),
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
+})
+workspace.setSync({ time: true })
 ```
 
 Diseños admitidos: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
@@ -386,6 +401,11 @@ chart.setTradingConfig({
 // Listen for user drag-to-modify
 chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
 chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
+
+// The × and ⇅ buttons on the lines raise these; so can your own UI
+chart.cancelOrderIntent('order-1')
+chart.reversePositionIntent('pos-1')
+chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
 ```
 
 ### Marcadores de señales

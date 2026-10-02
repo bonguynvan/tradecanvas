@@ -71,6 +71,9 @@ class FakeChart {
   getIndicators(): unknown[] { return []; }
   getDrawings(): unknown[] { return []; }
   getAlerts(): unknown[] { return []; }
+  getOrders(): unknown[] { return []; }
+  getPositions(): unknown[] { return []; }
+  getFills(): unknown[] { return []; }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));

@@ -10,7 +10,7 @@
 </svelte:head>
 
 <h1>API 레퍼런스</h1>
-<p>세 가지 최상위 클래스 <code>Chart</code>, <code>ChartWidget</code>, <code>ChartGrid</code>의 공개 API입니다.</p>
+<p>최상위 클래스 <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code>, <code>ChartGrid</code>의 공개 API입니다.</p>
 
 <h2>Chart</h2>
 <p>헤드리스 렌더러입니다. UI는 직접 만들고, 이벤트를 구독하며, 상태는 명령형으로 변경합니다.</p>
@@ -212,7 +212,12 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)`}</code></pre>
+chart.on('dataUpdate', e => /* { length } */)
+chart.on('ordersChange', e => /* { orders } */)
+chart.on('positionsChange', e => /* { positions } */)
+chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
+chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)`}</code></pre>
 
 <h2>ChartWidget</h2>
 <p><code>Chart</code>를 완전한 UI로 감쌉니다. 같은 인스턴스를 <code>widget.chart</code>로 사용할 수 있습니다.</p>
@@ -239,6 +244,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>명령 팔레트(지표, 차트 유형, 그리기 도구…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>종목 검색 — 설정된 종목 목록에서 퍼지 검색</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>레이아웃 저장(처음에는 이름을 묻습니다)</td></tr>
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록 표시</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
@@ -270,10 +276,49 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>저장된 레이아웃</h3>
+<h3>이름 있는 레이아웃</h3>
 <p>
-  종목별 지표 구성, 그림, 알림, 차트 유형을
-  <code>localStorage</code>에 자동으로 저장합니다.
+  도구 모음의 레이아웃 버튼은 차트를 이름을 붙여 저장합니다. 종목, 시간 단위, 가격 눈금,
+  차트 유형, 지표, 그림, 알림이 저장되며, 테마는 보는 사람의 설정이므로 저장하지 않습니다.
+  레이아웃 열기, 이름 바꾸기, 삭제는 이 버튼의 메뉴에서 합니다. 열려 있는 레이아웃은
+  바뀔 때마다 자동 저장되며, <kbd>Ctrl/⌘ S</kbd>로도 저장할 수 있습니다. <code>storage</code>를
+  넘기지 않으면 레이아웃은 이 브라우저의 <code>localStorage</code>에 저장됩니다.
+  <code>storage</code>는 네 가지 호출로 이루어지며, 각각 프로미스를 반환해도 됩니다.
+</p>
+<pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
+
+const server: LayoutStorage = {
+  list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } 또는 null
+  save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
+  remove: (id) => api.delete(\`/layouts/\${id}\`),
+}
+
+const widget = new ChartWidget(host, {
+  layouts: { storage: server, autoSave: true, openLast: true },  // 끄려면 false
+})
+
+const layouts = widget.getLayoutSession()!
+await layouts.saveAs('Swing BTC')
+await layouts.open(id)
+layouts.current()          // { id, name, … } 또는 null
+layouts.setAutoSave(false)
+
+// 내용만 꺼내서 원하는 곳에 보관
+const json = widget.getLayoutContent()
+await widget.applyLayoutContent(json)`}</code></pre>
+<p>
+  기본 제공 저장소는 <code>localStorageLayouts(prefix)</code>와 <code>memoryLayouts()</code> 두
+  가지입니다. 저장된 내용은 방어적으로 읽기 때문에, 해석할 수 없는 레이아웃은 절반만 적용되지 않고
+  거부됩니다. 각 레이아웃은 자신의 <code>kind</code>(<code>'chart'</code> 또는 <code>'grid'</code>)를
+  기록하므로, 위젯과 그리드가 저장소 하나를 함께 써도 각자 자신의 레이아웃만 나열합니다. 저장, 열기,
+  자동 저장은 한 번에 하나씩 실행되므로, 저장이 그 뒤에 연 레이아웃에 기록되는 일은 없습니다.
+</p>
+
+<h3>종목별 레이아웃</h3>
+<p>
+  이와 별도로, 종목별 지표 구성, 그림, 알림, 차트 유형을
+  <code>localStorage</code>에 자동으로 저장할 수 있습니다.
 </p>
 <pre><code>{`new ChartWidget(host, {
   symbol: 'BTCUSDT',
@@ -453,12 +498,68 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>직접 추가하는 버튼과 메뉴 항목</h3>
+<p>
+  도구 모음에 버튼(내장 아이콘 또는 직접 만든 요소, 텍스트, 스위치)을, 차트의 오른쪽 클릭 메뉴에
+  항목을 추가합니다. 추가한 버튼과 항목은 위젯 기본 항목 뒤에 놓입니다.
+</p>
+<pre><code>{`const news = widget.addToolbarButton({
+  id: 'news',
+  label: 'News',
+  icon: 'bell',            // 또는 <svg> 요소, 혹은 text: 'News'
+  side: 'right',           // 'left'는 차트 컨트롤 옆에 놓임
+  toggle: true,
+  onClick: () => news?.setActive(togglePanel()),
+})
+news?.setText('3')
+news?.remove()
+
+new ChartWidget(host, {
+  chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
+    ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
+    : [],
+})`}</code></pre>
+
+<h2>ChartWidgetGrid</h2>
+<p>
+  여러 차트 위젯을 나란히 배치하며, 각 차트는 자신만의 종목, 시간 단위, 지표, 그림을 가집니다.
+  위쪽 막대에서 배치를 고르고, 차트를 연동하고, 그리드 전체를 이름 있는 레이아웃으로 저장합니다.
+  마지막으로 누른 차트가 활성 차트(테두리 표시)입니다.
+</p>
+<pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
+
+const grid = new ChartWidgetGrid(host, {
+  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  widget: { timeframe: '1h' },                    // 모든 차트에 적용
+  adapter: () => new BinanceAdapter(),            // 차트마다 하나: 어댑터 하나는 스트림 하나를 유지
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+})
+
+grid.setLayout('1x2')
+grid.setSync({ interval: true })   // 나머지 차트를 활성 차트에 맞춤
+grid.getActiveWidget().getChart()
+grid.getLayoutSession()?.saveAs('Majors')
+
+// 각 차트가 만들어질 때마다 (처음, 그리고 그리드가 커질 때)
+new ChartWidgetGrid(host, {
+  onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
+})`}</code></pre>
+<p>
+  십자선 동기화는 포인터 아래의 시간을 모든 차트에 표시하고, 시간 축 동기화는 사용 중인 차트에 맞춰
+  나머지 차트를 스크롤하고 확대/축소하며, 그림은 같은 종목을 보여 주는 차트로 복사됩니다(이 동기화를 켜면
+  그 차트들의 그림이 하나로 합쳐지며, 사라지는 그림은 없습니다). 그리드가 작아질 때 빠진 차트는 치워 두며
+  저장된 레이아웃에도 남고, 그리드가 다시 커지면 이전 모습 그대로 돌아옵니다. 완전히 새로운 차트는 종목과
+  시간 단위가 동기화되어 있으면 활성 차트의 종목과 시간 단위로 열립니다.
+</p>
+
 <h2>ChartGrid</h2>
-<p>동기화된 다중 차트 레이아웃입니다.</p>
+<p>헤드리스 차트(도구 모음 없음)로 이루어진 동기화된 다중 차트 레이아웃입니다. 전체 UI가 필요하면 <code>ChartWidgetGrid</code>를 참고하세요.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-await grid.connectAll(new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
+// 차트마다 어댑터 하나: 어댑터 하나는 스트림 하나를 유지
+await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>레이아웃: <code>'1x2'</code>, <code>'2x2'</code>, <code>'2x3'</code>, <code>'3x3'</code>.</p>
+<p>레이아웃: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>

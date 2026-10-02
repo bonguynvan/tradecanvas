@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Capa de trading — Documentación de TradeCanvas</title>
   <meta name="description" content="Muestra posiciones, órdenes, marcadores de señales y zonas de operación directamente en el gráfico con la capa de trading de TradeCanvas." />
@@ -70,6 +76,106 @@ chart.on('executionError', (e) => toast(e.payload.message))
   <code>orders</code> / <code>positions</code> / <code>fill</code> /
   <code>error</code>. <code>PaperExecutionAdapter</code> es un entorno de pruebas
   con ejecuciones virtuales para demos y tests.
+</p>
+
+<h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
+<p>
+  Las líneas de órdenes y de posiciones llevan pequeños botones en su extremo
+  derecho: <strong>×</strong> cancela una orden o cierra una posición,
+  <strong>⇅</strong> invierte una posición, y una × en una línea de stop-loss o
+  take-profit la quita. Generan las mismas intenciones que la API
+  (<code>orderCancel</code>, <code>positionClose</code>, <code>positionReverse</code>,
+  <code>positionModify</code> con <code>null</code>), así que un adaptador conectado
+  actúa sobre ellas y una aplicación sin adaptador recibe los eventos. Un botón actúa
+  cuando se suelta sobre él: una pulsación que se desliza fuera no hace nada. Desactiva
+  cualquiera de ellos con <code>lineButtons</code> en <code>setTradingConfig</code>.
+</p>
+<pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
+
+chart.cancelOrderIntent('ord-1')
+chart.closePositionIntent('pos-1')
+chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
+chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+<p>
+  Un adaptador que pueda invertir en un solo paso implementa
+  <code>reversePosition</code>; si no lo hace, el gráfico cierra la posición y envía
+  una orden de mercado en sentido contrario. Las órdenes aceptan un
+  <code>stopLoss</code>, un <code>takeProfit</code> y un <code>timeInForce</code>
+  (<code>'gtc'</code> o <code>'day'</code>) que se trasladan a la posición que abren.
+</p>
+<p>
+  <strong>Para autores de adaptadores:</strong> en <code>PositionModifyIntent</code>,
+  <code>stopLoss: null</code> (o <code>takeProfit: null</code>) significa quitarlo,
+  mientras que un campo ausente significa dejarlo como está. Un código escrito como
+  <code>intent.stopLoss ?? position.stopLoss</code> mantendría un stop que el usuario
+  ha quitado.
+</p>
+
+<h2>Ejecuciones en el gráfico</h2>
+<p>
+  Cada ejecución aparece como una pequeña marca en su barra: rellena donde abrió una
+  posición y hueca donde la cerró. El gráfico registra las ejecuciones que informa el
+  adaptador y emite <code>executionFill</code> con el motivo (<code>'order'</code>,
+  <code>'close'</code>, <code>'reverse'</code>, <code>'stopLoss'</code>,
+  <code>'takeProfit'</code>) y la ganancia o pérdida realizada.
+</p>
+<pre><code>{`chart.on('executionFill', (e) => {
+  const { side, price, quantity, reason, pnl } = e.payload
+})
+
+chart.addFill({ orderId: 'o-7', side: 'buy', price: 64_150, quantity: 1, time: Date.now() })
+chart.getFills()        // the latest 1000
+chart.getRealisedPnl()  // every fill's P&L since the last clearFills
+chart.clearFills()
+chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
+
+<h2>Menús del clic derecho y el “+” junto al eje de precio</h2>
+<p>
+  Un clic derecho en el gráfico emite <code>chartContextMenu</code> con la parte en la
+  que se hizo clic (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code>
+  o <code>'timeAxis'</code>) y el precio y la hora en ese punto. Con
+  <code>features.priceAxisAddButton</code>, un “+” sigue a la cruz a lo largo del eje
+  de precio; al pulsarlo se emite <code>priceAxisAdd</code> con su precio.
+</p>
+<pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
+
+chart.on('chartContextMenu', (e) => {
+  const { area, x, y, price, time } = e.payload
+  openMyMenu(x, y)
+})
+chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
+<p>
+  ChartWidget construye sus menús sobre estos eventos. Haz clic derecho en el área del
+  gráfico para una alerta, una compra y una venta a ese precio (una orden límite en el
+  lado del mercado donde quedaría a la espera, una stop en el otro), un ticket de
+  orden, una línea horizontal, restablecer la vista y los dibujos; en el eje de precio,
+  para cambiar la escala; en el eje de tiempo, para restablecer la vista e ir a una
+  fecha. Añade tus propias entradas con <code>chartMenuItems</code> (consulta la
+  <a href={href('/docs/api')}>referencia de la API</a>).
+</p>
+
+<h2>Ticket de orden y panel de cuenta (ChartWidget)</h2>
+<p>
+  El botón de recibo del widget abre un panel de cuenta bajo el gráfico: las
+  posiciones abiertas con su ganancia o pérdida, las órdenes pendientes y las
+  ejecuciones hasta el momento con el P&amp;L realizado. Cada fila permite cerrar,
+  invertir o cancelar. <strong>Nueva orden</strong> abre un ticket de orden: compra o
+  venta, a mercado, límite o stop, cantidad, precio, un stop-loss y un take-profit
+  opcionales, y la vigencia. Revisa la orden mientras la rellenas (una compra límite
+  va por debajo del mercado, un stop-loss en el lado perdedor de la entrada…) y
+  muestra la relación beneficio:riesgo. Al enviarla se emite una intención
+  <code>orderPlace</code>.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  trading: true,         // default
+  accountPanel: true,    // default when trading is on
+})
+widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+widget.toggleAccountPanel(true)
+// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+<p>
+  Las marcas de ejecución pertenecen al símbolo del gráfico: al cambiar de símbolo en
+  el widget, el siguiente empieza sin ninguna.
 </p>
 
 <h2>Crear órdenes arrastrando</h2>

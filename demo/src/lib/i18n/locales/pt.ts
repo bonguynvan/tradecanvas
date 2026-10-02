@@ -163,11 +163,25 @@ const pt: SiteMessages = {
       title: 'Trading',
       stat: 'corretora simulada',
       blurb:
-        'Posições com stop-loss e take-profit arrastáveis, ordens pendentes, ordens bracket e ferramentas de posição comprada/vendida, roteadas por um ExecutionAdapter — aqui, a corretora simulada que vem junto.',
+        'Ordens e posições que você opera direto do gráfico: arraste stops e alvos, cancele, feche ou inverta pela própria linha e veja cada execução marcada na sua barra. Uma boleta e o painel da conta ficam abaixo do gráfico; tudo passa por um ExecutionAdapter — aqui, a corretora simulada que vem junto.',
       tryThis: [
+        'Clique em ⇅ na posição comprada aberta para invertê-la, ou em × para fechá-la — a execução aparece como uma marca na sua barra',
+        'Clique com o botão direito abaixo do preço: compra limitada, venda stop ou nova ordem nesse preço',
+        'O painel da conta, abaixo do gráfico, lista as posições com seu P&L, as ordens e o histórico',
         'Arraste as linhas de SL / TP da posição comprada aberta — a corretora as atualiza',
-        'Arraste uma ordem pendente para um novo preço',
-        'Use os botões de bracket de compra/venda na barra de ferramentas superior',
+        'O + ao lado do eixo de preço oferece um alerta, uma ordem ou uma linha nesse preço',
+      ],
+    },
+    workspace: {
+      title: 'Área de trabalho',
+      stat: 'vários gráficos',
+      blurb:
+        'Dois gráficos lado a lado, ligados pela mira — ou por ativo, tempo gráfico, tempo e desenhos, como você preferir. Salve toda a área de trabalho como um layout com nome e volte a ela quando quiser.',
+      tryThis: [
+        'Passe o mouse sobre um gráfico: o outro mostra o mesmo momento',
+        'Ative “Tempo gráfico” na barra Sincronizar e depois mude o tempo gráfico de um dos gráficos',
+        'Escolha quatro gráficos na barra; com “Ativo” sincronizado, os novos abrem com o ativo do gráfico selecionado',
+        'Layout ▾ → Salvar como…, mude algo e abra o layout de novo (Ctrl+S salva)',
       ],
     },
     navigation: {

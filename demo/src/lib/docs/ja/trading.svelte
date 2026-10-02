@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>トレーディングオーバーレイ — TradeCanvas ドキュメント</title>
   <meta name="description" content="TradeCanvas のトレーディングオーバーレイで、ポジション、注文、シグナルマーカー、トレードゾーンをチャート上に直接表示します。" />
@@ -66,6 +72,95 @@ chart.on('executionError', (e) => toast(e.payload.message))
   <code>modifyPosition</code>、<code>closePosition</code> に加え、<code>orders</code> /
   <code>positions</code> / <code>fill</code> / <code>error</code> イベントです。
   <code>PaperExecutionAdapter</code> は、デモやテスト用に仮想的に約定させるサンドボックスです。
+</p>
+
+<h2>チャート上で注文とポジションを操作する</h2>
+<p>
+  注文とポジションのラインの右端には小さなボタンがあります。<strong>×</strong> は注文をキャンセルするか
+  ポジションを決済し、<strong>⇅</strong> はポジションをドテンします。損切りや利確のライン上の × は、
+  そのラインを削除します。これらは API と同じ意図（<code>orderCancel</code>、<code>positionClose</code>、
+  <code>positionReverse</code>、<code>null</code> を指定した <code>positionModify</code>）を発行するため、
+  接続済みのアダプターがそれを処理し、アダプターのないホストアプリにはイベントが届きます。
+  ボタンは、その上で離したときに動作します。押したまま外へずらした場合は何も起こりません。
+  どのボタンも <code>setTradingConfig</code> の <code>lineButtons</code> でオフにできます。
+</p>
+<pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
+
+chart.cancelOrderIntent('ord-1')
+chart.closePositionIntent('pos-1')
+chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
+chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+<p>
+  1 回の操作でドテンできるアダプターは <code>reversePosition</code> を実装します。
+  実装がなければ、チャートはポジションを決済してから、反対方向に成行注文を出します。
+  注文には <code>stopLoss</code>、<code>takeProfit</code>、<code>timeInForce</code>
+  （<code>'gtc'</code> または <code>'day'</code>）を指定でき、これらはその注文で建てたポジションに引き継がれます。
+</p>
+<p>
+  <strong>アダプターの作者へ：</strong><code>PositionModifyIntent</code> では、
+  <code>stopLoss: null</code>（または <code>takeProfit: null</code>）は削除を意味し、
+  フィールドがない場合はそのまま維持することを意味します。
+  <code>intent.stopLoss ?? position.stopLoss</code> のように書いたコードでは、ユーザーが削除した損切りが残ってしまいます。
+</p>
+
+<h2>チャート上の約定</h2>
+<p>
+  約定はそれぞれのバーに小さなマークで表示されます。ポジションを建てた約定は塗りつぶし、
+  決済した約定は中抜きです。チャートはアダプターが報告した約定を記録し、約定の理由
+  （<code>'order'</code>、<code>'close'</code>、<code>'reverse'</code>、<code>'stopLoss'</code>、
+  <code>'takeProfit'</code>）と確定した損益を付けて <code>executionFill</code> を発行します。
+</p>
+<pre><code>{`chart.on('executionFill', (e) => {
+  const { side, price, quantity, reason, pnl } = e.payload
+})
+
+chart.addFill({ orderId: 'o-7', side: 'buy', price: 64_150, quantity: 1, time: Date.now() })
+chart.getFills()        // the latest 1000
+chart.getRealisedPnl()  // every fill's P&L since the last clearFills
+chart.clearFills()
+chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
+
+<h2>右クリックメニューと価格軸の「+」</h2>
+<p>
+  チャートを右クリックすると、クリックされた部分（<code>'plot'</code>、<code>'pane'</code>、
+  <code>'priceAxis'</code>、<code>'timeAxis'</code> のいずれか）と、その位置の価格と時刻を含む
+  <code>chartContextMenu</code> が発行されます。<code>features.priceAxisAddButton</code> を有効にすると、
+  価格軸上にクロスヘアを追って動く「+」が表示され、押すとその価格を含む <code>priceAxisAdd</code> が発行されます。
+</p>
+<pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
+
+chart.on('chartContextMenu', (e) => {
+  const { area, x, y, price, time } = e.payload
+  openMyMenu(x, y)
+})
+chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
+<p>
+  ChartWidget のメニューは、これらのイベントの上に作られています。プロット領域を右クリックすると、
+  その価格でのアラート、買いと売り（約定を待つ側なら指値、反対側なら逆指値）、注文チケット、水平線、
+  表示のリセット、描画の操作が並びます。価格軸ではスケールの切り替え、時間軸では表示のリセットと
+  日付への移動が並びます。独自の項目は <code>chartMenuItems</code> で追加できます
+  （<a href={href('/docs/api')}>API リファレンス</a>を参照）。
+</p>
+
+<h2>注文チケットと口座パネル（ChartWidget）</h2>
+<p>
+  ウィジェットのレシートボタンで、チャートの下に口座パネルが開きます。保有ポジションとその損益、
+  未約定の注文、これまでの約定と確定損益が表示され、各行から決済、ドテン、キャンセルができます。
+  <strong>新規注文</strong>では注文チケットが開きます。買いか売り、成行・指値・逆指値、数量、価格、
+  任意の損切りと利確、有効期限を指定します。入力中に注文をチェックし（買いの指値は市場価格より下、
+  損切りはエントリーに対して損失側に置く…）、リスクリワード比を表示します。発注すると
+  <code>orderPlace</code> の意図が送られます。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  trading: true,         // default
+  accountPanel: true,    // default when trading is on
+})
+widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+widget.toggleAccountPanel(true)
+// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+<p>
+  約定マークはチャートに表示中のシンボルに属します。ウィジェットでシンボルを切り替えると、
+  次のシンボルはマークのない状態から始まります。
 </p>
 
 <h2>ドラッグで注文を作成</h2>

@@ -1,5 +1,5 @@
 import type { ChartType, TimeFrame } from '@tradecanvas/commons';
-import type { ToolbarConfig, ToolbarCallbacks, WidgetState } from './types.js';
+import type { ToolbarButtonSpec, ToolbarConfig, ToolbarCallbacks, WidgetState } from './types.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
@@ -7,6 +7,13 @@ import type { Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
 
 let toolbarCount = 0;
+
+/** A host button's name: its label, with the text it shows when that says more ("News: 3"). */
+export function setHostButtonName(btn: HTMLButtonElement, label: string): void {
+  const text = btn.querySelector('.tcw-host-btn-text')?.textContent ?? '';
+  if (text === label) btn.removeAttribute('aria-label');
+  else btn.setAttribute('aria-label', text ? `${label}: ${text}` : label);
+}
 
 export class WidgetToolbar {
   private config: ToolbarConfig;
@@ -23,6 +30,9 @@ export class WidgetToolbar {
   private tfRendered = '';
   private themeBtn: HTMLButtonElement | null = null;
   private fullscreenBtn: HTMLButtonElement | null = null;
+  /** Where hosts' own buttons go: after the chart controls, and before the panel buttons. */
+  private hostLeft: HTMLDivElement | null = null;
+  private hostRight: HTMLDivElement | null = null;
 
   constructor(host: HTMLElement, config: ToolbarConfig, callbacks: ToolbarCallbacks, t: Translator) {
     this.config = config;
@@ -98,11 +108,28 @@ export class WidgetToolbar {
     this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px' });
     this.buildIndicatorMenu();
 
+    this.hostLeft = this.hostGroup();
+    el.appendChild(this.hostLeft);
 
     // Spacer
     el.appendChild(this.spacer());
 
     // Right side buttons
+    if (callbacks.onLayouts) {
+      const onLayouts = callbacks.onLayouts;
+      const layoutsBtn = document.createElement('button');
+      layoutsBtn.type = 'button';
+      layoutsBtn.className = 'tcw-dropdown-trigger tcw-layouts-btn';
+      layoutsBtn.dataset.role = 'layouts';
+      layoutsBtn.setAttribute('aria-haspopup', 'menu');
+      layoutsBtn.addEventListener('click', () => onLayouts(layoutsBtn));
+      el.appendChild(layoutsBtn);
+      this.setLayout(null, false);
+    }
+
+    this.hostRight = this.hostGroup();
+    el.appendChild(this.hostRight);
+
     if (callbacks.onToggleReplay) {
       const replayBtn = this.iconBtn('play', this.t('toolbar.replay'), callbacks.onToggleReplay);
       replayBtn.dataset.role = 'replay';
@@ -125,6 +152,13 @@ export class WidgetToolbar {
       const ladderBtn = this.iconBtn('ladder', this.t('toolbar.depthLadder'), callbacks.onToggleLadder);
       ladderBtn.dataset.role = 'ladder';
       el.appendChild(ladderBtn);
+    }
+
+    if (callbacks.onToggleAccount) {
+      const accountBtn = this.iconBtn('receipt', this.t('toolbar.account'), callbacks.onToggleAccount);
+      accountBtn.dataset.role = 'account';
+      accountBtn.setAttribute('aria-pressed', 'false');
+      el.appendChild(accountBtn);
     }
 
     if (callbacks.onToggleObjects) {
@@ -155,6 +189,56 @@ export class WidgetToolbar {
       this.fullscreenBtn.setAttribute('aria-pressed', 'false');
       el.appendChild(this.fullscreenBtn);
     }
+  }
+
+  /** A host's own button, on the left or the right of the toolbar. */
+  addHostButton(spec: ToolbarButtonSpec): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = spec.text || !spec.icon ? 'tcw-btn tcw-host-btn' : 'tcw-btn-icon tcw-host-btn';
+    btn.dataset.hostButton = spec.id;
+    btn.title = spec.label;
+    if (spec.toggle) btn.setAttribute('aria-pressed', 'false');
+    if (typeof spec.icon === 'string') btn.innerHTML = createIcon(spec.icon, 14);
+    else if (spec.icon) btn.appendChild(spec.icon);
+    const text = spec.text ?? (spec.icon ? '' : spec.label);
+    if (text) {
+      const span = document.createElement('span');
+      span.className = 'tcw-host-btn-text';
+      span.textContent = text;
+      btn.appendChild(span);
+    }
+    setHostButtonName(btn, spec.label);
+    btn.addEventListener('click', () => spec.onClick(btn));
+    (spec.side === 'left' ? this.hostLeft : this.hostRight)?.appendChild(btn);
+    return btn;
+  }
+
+  private hostGroup(): HTMLDivElement {
+    const group = document.createElement('div');
+    group.className = 'tcw-toolbar-host';
+    return group;
+  }
+
+  /** Show a panel button (by its role: 'account', 'objects'…) as on or off. */
+  setActive(role: string, on: boolean): void {
+    const btn = this.el.querySelector<HTMLButtonElement>(`[data-role="${role}"]`);
+    if (!btn) return;
+    btn.classList.toggle('tcw-active', on);
+    btn.setAttribute('aria-pressed', String(on));
+  }
+
+  /** The layout open now on its button (`null`: none saved yet), with a dot while it has unsaved changes. */
+  setLayout(name: string | null, dirty: boolean): void {
+    const btn = this.el.querySelector<HTMLButtonElement>('[data-role="layouts"]');
+    if (!btn) return;
+    const shown = name ?? this.t('layouts.unnamed');
+    const label = `${this.t('toolbar.layouts')}: ${shown}${dirty ? ` (${this.t('layouts.unsavedChanges')})` : ''}`;
+    btn.innerHTML = `${createIcon('save', 14)}<span class="tcw-layouts-label">${esc(shown)}</span>`
+      + (dirty ? '<span class="tcw-layouts-dirty" aria-hidden="true"></span>' : '')
+      + createIcon('chevronDown', 12);
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
   }
 
   /** Swap the fullscreen button between enter and exit. */

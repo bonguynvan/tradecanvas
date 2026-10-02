@@ -163,11 +163,25 @@ const vi: SiteMessages = {
       title: 'Giao dịch',
       stat: 'sàn giả lập',
       blurb:
-        'Vị thế với dừng lỗ và chốt lời kéo được, lệnh chờ, lệnh kèm SL/TP và công cụ Long/Short, đi qua một ExecutionAdapter — ở đây là sàn giả lập đi kèm.',
+        'Lệnh và vị thế thao tác ngay trên biểu đồ: kéo dừng lỗ và chốt lời, huỷ, đóng hoặc đảo chiều từ chính đường lệnh, mỗi lần khớp được đánh dấu trên nến của nó. Phiếu đặt lệnh và bảng tài khoản nằm dưới biểu đồ; mọi thứ đi qua một ExecutionAdapter — ở đây là sàn giả lập đi kèm.',
       tryThis: [
+        'Bấm ⇅ trên vị thế Long đang mở để đảo chiều, hoặc × để đóng — lần khớp hiện thành dấu trên nến',
+        'Chuột phải dưới giá hiện tại: mua giới hạn, bán dừng hoặc phiếu đặt lệnh tại mức giá đó',
+        'Bảng tài khoản dưới biểu đồ liệt kê vị thế kèm lãi/lỗ, lệnh chờ và lịch sử',
         'Kéo đường SL / TP của vị thế Long đang mở — sàn giả lập cập nhật theo',
-        'Kéo một lệnh chờ tới mức giá mới',
-        'Dùng các nút lệnh Mua/Bán kèm SL/TP trên thanh công cụ phía trên',
+        'Dấu + cạnh trục giá cho đặt cảnh báo, lệnh hoặc đường ngang tại mức giá đó',
+      ],
+    },
+    workspace: {
+      title: 'Không gian làm việc',
+      stat: 'nhiều biểu đồ',
+      blurb:
+        'Hai biểu đồ cạnh nhau, liên kết theo con trỏ — hoặc theo mã, khung, thời gian và hình vẽ tuỳ bạn chọn. Lưu cả không gian làm việc thành một bố cục có tên và mở lại khi cần.',
+      tryThis: [
+        'Rê chuột trên một biểu đồ: biểu đồ kia hiện cùng thời điểm',
+        'Bật Khung trên thanh Đồng bộ, rồi đổi khung thời gian của một biểu đồ',
+        'Chọn bốn biểu đồ trên thanh; khi đồng bộ Mã, biểu đồ mới mở theo mã của biểu đồ đang chọn',
+        'Bố cục ▾ → Lưu thành…, thay đổi gì đó, rồi mở lại bố cục (Ctrl+S để lưu)',
       ],
     },
     navigation: {

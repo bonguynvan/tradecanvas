@@ -165,11 +165,25 @@ const es: SiteMessages = {
       title: 'Trading',
       stat: 'bróker simulado',
       blurb:
-        'Posiciones con stop-loss y take-profit arrastrables, órdenes pendientes, órdenes bracket y herramientas de posición larga/corta, enrutadas a través de un ExecutionAdapter; aquí, el bróker simulado incluido.',
+        'Órdenes y posiciones que manejas desde el gráfico: arrastra stops y objetivos, cancela, cierra o invierte desde la línea, y ve cada ejecución marcada en su barra. Bajo el gráfico hay un ticket de orden y un panel de cuenta, y todo pasa por un ExecutionAdapter; aquí, el bróker simulado incluido.',
       tryThis: [
+        'Pulsa ⇅ en la posición larga abierta para invertirla, o × para cerrarla: la ejecución aparece como una marca en su barra',
+        'Haz clic derecho por debajo del precio: compra límite, venta stop o una nueva orden a ese precio',
+        'El panel de cuenta bajo el gráfico muestra las posiciones con su P&L, las órdenes y el historial',
         'Arrastra las líneas SL / TP de la posición larga abierta: el bróker las actualiza',
-        'Arrastra una orden pendiente a un nuevo precio',
-        'Usa los botones de orden bracket de compra/venta de la barra superior',
+        'El + junto al eje de precio ofrece una alerta, una orden o una línea a ese precio',
+      ],
+    },
+    workspace: {
+      title: 'Espacio de trabajo',
+      stat: 'varios gráficos',
+      blurb:
+        'Dos gráficos uno junto a otro, enlazados por la cruz o, si lo eliges, por símbolo, temporalidad, tiempo y dibujos. Guarda todo el espacio de trabajo como un diseño con nombre y vuelve a él cuando quieras.',
+      tryThis: [
+        'Pasa el cursor por un gráfico: el otro muestra el mismo momento',
+        'Activa Temporalidad en la barra Sincronizar y luego cambia la temporalidad de un gráfico',
+        'Elige cuatro gráficos en la barra; con Símbolo sincronizado, los nuevos se abren con el símbolo del gráfico activo',
+        'Diseño ▾ → Guardar como…, cambia algo y vuelve a abrir el diseño (Ctrl+S guarda)',
       ],
     },
     navigation: {

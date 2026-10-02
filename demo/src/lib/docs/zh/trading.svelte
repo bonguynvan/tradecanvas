@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>交易叠加层 — TradeCanvas 文档</title>
   <meta name="description" content="借助 TradeCanvas 的交易叠加层，直接在图表上渲染持仓、订单、信号标记和交易区域。" />
@@ -66,6 +72,95 @@ chart.on('executionError', (e) => toast(e.payload.message))
   <code>modifyPosition</code>、<code>closePosition</code>，以及 <code>orders</code> /
   <code>positions</code> / <code>fill</code> / <code>error</code> 事件。
   <code>PaperExecutionAdapter</code> 是一个虚拟成交的沙盒，适用于演示和测试。
+</p>
+
+<h2>在图表上操作订单和持仓</h2>
+<p>
+  订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，
+  <strong>⇅</strong> 反手持仓，止损线或止盈线上的 × 则移除该止损或止盈。
+  它们发出的意图与 API 相同（<code>orderCancel</code>、<code>positionClose</code>、
+  <code>positionReverse</code>、带 <code>null</code> 的 <code>positionModify</code>），
+  因此已连接的适配器会执行这些操作，未连接适配器的宿主应用则会收到相应事件。
+  按钮只有在其上方松开时才会生效：按下后滑出按钮则不会执行任何操作。
+  可在 <code>setTradingConfig</code> 中通过 <code>lineButtons</code> 关闭其中任意按钮。
+</p>
+<pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
+
+chart.cancelOrderIntent('ord-1')
+chart.closePositionIntent('pos-1')
+chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
+chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+<p>
+  能一步完成反手的适配器可实现 <code>reversePosition</code>；
+  若未实现，图表会先平仓，再按相反方向发送一笔市价单。
+  订单可以带 <code>stopLoss</code>、<code>takeProfit</code> 和
+  <code>timeInForce</code>（<code>'gtc'</code> 或 <code>'day'</code>），这些设置会延续到
+  该订单开出的持仓上。
+</p>
+<p>
+  <strong>适配器作者请注意：</strong>在 <code>PositionModifyIntent</code> 中，
+  <code>stopLoss: null</code>（或 <code>takeProfit: null</code>）表示移除，
+  而缺少该字段表示保持不变。写成 <code>intent.stopLoss ?? position.stopLoss</code>
+  的代码会保留用户已经移除的止损。
+</p>
+
+<h2>图表上的成交</h2>
+<p>
+  每笔成交都会在其所在K线上显示一个小标记：开仓的成交为实心，平仓的成交为空心。
+  图表会记录适配器回报的成交，并发出 <code>executionFill</code> 事件，附带成交原因
+  （<code>'order'</code>、<code>'close'</code>、<code>'reverse'</code>、
+  <code>'stopLoss'</code>、<code>'takeProfit'</code>）以及已实现的盈亏。
+</p>
+<pre><code>{`chart.on('executionFill', (e) => {
+  const { side, price, quantity, reason, pnl } = e.payload
+})
+
+chart.addFill({ orderId: 'o-7', side: 'buy', price: 64_150, quantity: 1, time: Date.now() })
+chart.getFills()        // the latest 1000
+chart.getRealisedPnl()  // every fill's P&L since the last clearFills
+chart.clearFills()
+chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
+
+<h2>右键菜单与价格轴旁的“+”</h2>
+<p>
+  在图表上右键会发出 <code>chartContextMenu</code> 事件，其中包含被点击的区域
+  （<code>'plot'</code>、<code>'pane'</code>、<code>'priceAxis'</code> 或
+  <code>'timeAxis'</code>）以及该处的价格和时间。启用
+  <code>features.priceAxisAddButton</code> 后，价格轴上会有一个“+”跟随十字光标移动；
+  点击它会发出带有该价格的 <code>priceAxisAdd</code> 事件。
+</p>
+<pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
+
+chart.on('chartContextMenu', (e) => {
+  const { area, x, y, price, time } = e.payload
+  openMyMenu(x, y)
+})
+chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
+<p>
+  ChartWidget 的菜单就是基于这些事件构建的。在绘图区右键，可在该价格添加提醒、买入和卖出
+  （价格位于订单需要挂单等待的一侧时为限价单，位于另一侧时为止损单），还可打开下单窗口、
+  添加水平线、重置视图以及操作画线；在价格轴上右键可切换坐标模式；在时间轴上右键可重置视图
+  和跳转到日期。可用 <code>chartMenuItems</code> 添加自己的菜单项（参见
+  <a href={href('/docs/api')}>API 参考</a>）。
+</p>
+
+<h2>下单窗口和账户面板（ChartWidget）</h2>
+<p>
+  组件的收据按钮会在图表下方打开账户面板：显示当前持仓及其盈亏、挂单，以及迄今为止的成交
+  和已实现盈亏。每一行都可以平仓、反手或撤单。<strong>新建委托</strong>会打开下单窗口：
+  买入或卖出，市价、限价或止损，数量、价格、可选的止损和止盈，以及有效期。填写时它会实时检查订单
+  （限价买单应低于市价，止损应位于入场价亏损的一侧……），并显示盈亏比。
+  下单时会发出 <code>orderPlace</code> 意图。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  trading: true,         // default
+  accountPanel: true,    // default when trading is on
+})
+widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
+widget.toggleAccountPanel(true)
+// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+<p>
+  成交标记属于图表上当前的品种：在组件中切换品种后，新的品种从没有任何标记开始。
 </p>
 
 <h2>拖动创建订单</h2>

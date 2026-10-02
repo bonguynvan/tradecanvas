@@ -7,6 +7,7 @@ import type {
   OrderCancelIntent,
   PositionModifyIntent,
   PositionCloseIntent,
+  PositionReverseIntent,
 } from './trading.js';
 
 // --- Execution Adapter (Strategy Pattern, mirrors DataAdapter) ---
@@ -33,12 +34,21 @@ export type ExecutionEventType =
   | 'connectionChange'// data: ConnectionState
   | 'error';          // data: ExecutionError
 
+/** Why a fill happened: an order, a position closed by hand or reversed, or its stop-loss or take-profit. */
+export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit';
+
 export interface FillEvent {
   orderId: string;
   side: OrderSide;
   price: number;
   quantity: number;
+  /** When it filled (ms since the epoch). */
   time: number;
+  /** The position it opened or closed. */
+  positionId?: string;
+  reason?: FillReason;
+  /** Profit or loss it realised, for a fill that closes a position. */
+  pnl?: number;
 }
 
 export interface ExecutionError {
@@ -82,6 +92,11 @@ export interface ExecutionAdapter {
   modifyPosition(intent: PositionModifyIntent): Promise<void>;
   /** Close a position (full close). */
   closePosition(intent: PositionCloseIntent): Promise<void>;
+  /**
+   * Close a position and open the same size the other way. Optional: without
+   * it, the chart closes the position and places a market order instead.
+   */
+  reversePosition?(intent: PositionReverseIntent): Promise<void>;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;

@@ -169,11 +169,25 @@ const en = {
       title: 'Trading',
       stat: 'paper broker',
       blurb:
-        'Positions with draggable stop-loss and take-profit, working orders, brackets and Long/Short tools, routed through an ExecutionAdapter — here the bundled paper broker.',
+        'Orders and positions you act on from the chart: drag stops and targets, cancel, close or reverse from the line, and see each fill marked on its bar. An order ticket and an account panel sit under the chart; it all goes through an ExecutionAdapter — here the bundled paper broker.',
       tryThis: [
+        'Press ⇅ on the open long to reverse it, or × to close it — the fill shows as a mark on its bar',
+        'Right-click below the price: a buy limit, a sell stop or an order ticket at that price',
+        'The account panel under the chart lists positions with their P&L, orders and history',
         'Drag the SL / TP lines of the open long — the broker updates them',
-        'Drag a working order to a new price',
-        'Use the Buy/Sell bracket buttons in the top toolbar',
+        'The + by the price axis offers an alert, an order or a line at its price',
+      ],
+    },
+    workspace: {
+      title: 'Workspace',
+      stat: 'multi-chart',
+      blurb:
+        'Two charts side by side, linked by the crosshair — or by symbol, interval, time and drawings as you choose. Save the whole workspace as a named layout and come back to it.',
+      tryThis: [
+        'Move over one chart: the other shows the same time',
+        'Turn on Interval in the Sync bar, then change one chart’s timeframe',
+        'Pick four charts in the bar; with Symbol synced the new ones open on the active chart’s symbol',
+        'Layout ▾ → Save as…, change something, then open the layout again (Ctrl+S saves)',
       ],
     },
     navigation: {

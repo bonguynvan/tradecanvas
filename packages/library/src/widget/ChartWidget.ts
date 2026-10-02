@@ -5,7 +5,7 @@ import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
 import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
-import { WidgetToolbar } from './WidgetToolbar.js';
+import { WidgetToolbar, setHostButtonName } from './WidgetToolbar.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
@@ -22,6 +22,14 @@ import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateSto
 import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
+import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
+import { WidgetAccountPanel } from './WidgetAccountPanel.js';
+import { WidgetOrderTicket } from './WidgetOrderTicket.js';
+import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
+import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
+import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
+import { LayoutSession } from '../state/LayoutSession.js';
+import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import {
   availableTimeframes,
@@ -88,16 +96,11 @@ const PANE_ROW_TOP = 7;
 const PANE_ROW_STEP = 17;
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
-let lastPressedWidget: ChartWidget | null = null;
 
 /** 1 when bar times are milliseconds, 1000 when they are seconds. */
 const barTimeUnit = (data: ReadonlyArray<{ time: number }>): number =>
   (data[data.length - 1]?.time ?? 0) > 1e12 ? 1 : 1000;
 
-const isTyping = (): boolean => {
-  const active = document.activeElement as HTMLElement | null;
-  return !!active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable);
-};
 
 export class ChartWidget {
   private chart: Chart;
@@ -121,7 +124,8 @@ export class ChartWidget {
     if (this.portal.parentElement !== host) host.appendChild(this.portal);
     return this.portal;
   };
-  private readonly onRootPointerDown = () => { lastPressedWidget = this; };
+  /** Stops following presses for the page's shortcuts (see keyTarget). */
+  private unregisterKeys: () => void = () => {};
   private readonly onFullscreenChange = () => {
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
@@ -137,6 +141,12 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
+  private chartMenu: WidgetContextMenu | null = null;
+  private accountPanel: WidgetAccountPanel | null = null;
+  private orderTicket: WidgetOrderTicket | null = null;
+  private accountFrame = 0;
+  private layoutSession: LayoutSession | null = null;
+  private layoutsUI: WidgetLayoutsUI | null = null;
   private bracketBar: WidgetBracketBar | null = null;
   private alertNotifier: AlertNotifier | null = null;
   private depthLadder: WidgetDepthLadder | null = null;
@@ -230,6 +240,8 @@ export class ChartWidget {
       indicators: true,
       trading: options.trading !== false,
       tradingContextMenu: false,
+      // The "+" by the price axis offers an alert, an order or a line at a price.
+      priceAxisAddButton: options.alerts !== false || options.trading !== false || options.drawingTools !== false,
       volume: true,
       legend: true,
       crosshair: true,
@@ -330,6 +342,8 @@ export class ChartWidget {
           onToggleReplay: () => this.toggleReplay(),
           onToggleAlerts: options.alerts !== false ? () => this.toggleAlerts() : undefined,
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
+          onToggleAccount: options.trading !== false && options.accountPanel !== false ? () => this.accountPanel?.toggle() : undefined,
+          onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
           onToggleFullscreen: options.fullscreen !== false && typeof document !== 'undefined' && document.fullscreenEnabled
@@ -393,6 +407,10 @@ export class ChartWidget {
     }
 
     this.root.appendChild(body);
+    // The account panel docks under the chart, above the status bar.
+    const accountHost = document.createElement('div');
+    accountHost.className = 'tcw-account-dock';
+    this.root.appendChild(accountHost);
 
     // 5. Create chart
     this.chart = new Chart(this.chartContainer, {
@@ -615,6 +633,55 @@ export class ChartWidget {
       this.openDrawingMenu(id, x, y);
     });
 
+    // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
+    // by the price axis: what to do at its price.
+    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
+    this.chart.on('chartContextMenu', (e) => {
+      const { area, x, y, price, time } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, { area, price, time });
+    });
+    this.chart.on('priceAxisAdd', (e) => {
+      const { price, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
+      this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, { area: 'priceAxisAdd', price });
+    });
+
+    // Named layouts: save, open, rename, delete, auto-save.
+    if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
+
+    // Account panel and order ticket.
+    if (options.trading !== false && options.accountPanel !== false) {
+      this.orderTicket = new WidgetOrderTicket(this.root, {
+        onSubmit: (intent) => {
+          this.chart.placeOrderIntent(intent);
+          this.toast(fill(this.t('ticket.sent'), {
+            side: this.t(intent.side === 'buy' ? 'ticket.buy' : 'ticket.sell'),
+            quantity: intent.quantity ?? 1,
+            price: this.formatAlertPrice(intent.price),
+          }));
+        },
+        formatPrice: (p) => this.formatAlertPrice(p),
+      }, this.t);
+      this.accountPanel = new WidgetAccountPanel(accountHost, {
+        onClosePosition: (id) => this.chart.closePositionIntent(id),
+        onReversePosition: (id) => this.chart.reversePositionIntent(id),
+        onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
+        onNewOrder: () => this.openOrderTicket(),
+        formatPrice: (p) => this.formatAlertPrice(p),
+        formatTime: (ms) => {
+          const { date, time } = utcToWallTime(ms, this.displayTimezone());
+          return `${date} ${time}`;
+        },
+        onToggle: (open) => {
+          this.toolbar?.setActive('account', open);
+          this.refreshAccount();
+        },
+      }, this.t);
+      // indicatorUpdate comes once per tick, so open P&L follows the price.
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
+        this.chart.on(event, () => this.refreshAccountSoon());
+      }
+    }
+
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
       this.bracketBar = new WidgetBracketBar(this.root, {
@@ -759,16 +826,25 @@ export class ChartWidget {
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
+      // With several widgets on the page, the shortcuts go to the one used last.
+      const mine = isKeyTarget(this.root);
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        if (!mine) return;
         e.preventDefault();
         this.toggleCommandPalette();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
+        if (!mine) return;
         e.preventDefault();
         this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+      } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        // Ctrl/Cmd+S → save the layout (rather than the page), once this widget was used.
+        if (!this.layoutSession || isTyping() || !isKeyTarget(this.root, true)) return;
+        e.preventDefault();
+        void this.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
-        if (isTyping() || (lastPressedWidget !== null && lastPressedWidget !== this)) return;
+        if (isTyping() || !mine) return;
         if (e.code === 'KeyI') {
           // Alt+I → invert the price scale.
           e.preventDefault();
@@ -780,15 +856,14 @@ export class ChartWidget {
         }
       } else if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Only fire when the user isn't typing into an input.
-        const active = document.activeElement as HTMLElement | null;
-        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        if (isTyping() || !mine) return;
         e.preventDefault();
         this.hotkeySheet?.open();
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
-    this.root.addEventListener('pointerdown', this.onRootPointerDown, true);
+    this.unregisterKeys = registerKeyRoot(this.root);
 
     // 9. Connect stream
     if (options.adapter) {
@@ -828,11 +903,14 @@ export class ChartWidget {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
     this.flushActiveLayout();
+    // Fill marks sit on this symbol's bars; the next symbol starts with none.
+    if (symbol !== this.state.symbol) this.chart.clearFills();
     this.state = { ...this.state, symbol };
     this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
     this.watchlist?.setActive(symbol);
+    this.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
     }
@@ -886,6 +964,7 @@ export class ChartWidget {
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
+    this.layoutSession?.changed();
     if (this.adapter) {
       // Live adapter owns the data — refetch at the native resolution.
       await this.connectStream();
@@ -926,11 +1005,10 @@ export class ChartWidget {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
     }
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
-    this.root.removeEventListener('pointerdown', this.onRootPointerDown, true);
+    this.unregisterKeys();
     this.tooltip.destroy();
     if (this.legendFrame) cancelAnimationFrame(this.legendFrame);
     this.indicatorLegend?.destroy();
-    if (lastPressedWidget === this) lastPressedWidget = null;
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
     this.flushActiveLayout();
@@ -947,6 +1025,12 @@ export class ChartWidget {
     this.drawingStyle?.destroy();
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
+    this.chartMenu?.destroy();
+    this.layoutSession?.destroy();
+    this.layoutsUI?.destroy();
+    this.accountPanel?.destroy();
+    this.orderTicket?.destroy();
+    if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
     this.bracketBar?.destroy();
     this.alertNotifier?.destroy();
     this.depthLadder?.destroy();
@@ -1093,6 +1177,183 @@ export class ChartWidget {
       }
     }
     if (this.objectTree?.isOpen()) this.refreshObjects();
+  }
+
+  /** What the chart's menus can offer here, and how the chart is set now. */
+  private chartMenuContext(price: number | undefined): ChartMenuContext {
+    const drawings = this.chart.getDrawings();
+    const data = this.chart.getData();
+    return {
+      price,
+      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      formatPrice: (p) => this.formatAlertPrice(p),
+      canAlert: this.alertsPanel !== null,
+      canTrade: this.options.trading !== false,
+      canOrderTicket: this.orderTicket !== null,
+      canDraw: this.options.drawingTools !== false,
+      hasDrawings: drawings.length > 0,
+      drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
+      canGoToDate: this.goToDate !== null,
+      autoScale: this.chart.isAutoScale(),
+      scaleMode: this.settingsState.scaleMode,
+      inverted: this.chart.isInvertScale(),
+    };
+  }
+
+  /**
+   * Open a chart menu at (x, y) in the chart's pixels, the host's own entries
+   * last; nothing when it has no entries.
+   */
+  private openChartMenu(
+    entries: import('./WidgetContextMenu.js').ContextMenuEntry[],
+    x: number,
+    y: number,
+    context: import('./types.js').ChartMenuItemsContext,
+  ): void {
+    if (!this.chartMenu) return;
+    const extra = this.options.chartMenuItems?.(context) ?? [];
+    const all: import('./WidgetContextMenu.js').ContextMenuEntry[] = [
+      ...entries,
+      ...(entries.length > 0 && extra.length > 0 ? ['separator' as const] : []),
+      ...extra.map((item, i) => ({ id: `host:${i}`, label: item.label, icon: item.icon, danger: item.danger, checked: item.checked })),
+    ];
+    if (all.length === 0) return;
+    const chartRect = this.chartContainer.getBoundingClientRect();
+    const rootRect = this.root.getBoundingClientRect();
+    this.chartMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
+      if (action.startsWith('host:')) extra[Number(action.slice('host:'.length))]?.onSelect();
+      else this.runChartMenuAction(action as ChartMenuAction, context.price);
+    });
+  }
+
+  /**
+   * A button of your own on the toolbar: an icon (built-in or yours), text,
+   * a switch. `null` without a toolbar.
+   */
+  addToolbarButton(spec: import('./types.js').ToolbarButtonSpec): import('./types.js').ToolbarButtonHandle | null {
+    if (!this.toolbar) return null;
+    const element = this.toolbar.addHostButton(spec);
+    const textSpan = (): HTMLSpanElement => {
+      const found = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
+      if (found) return found;
+      const added = document.createElement('span');
+      added.className = 'tcw-host-btn-text';
+      element.appendChild(added);
+      return added;
+    };
+    return {
+      element,
+      setActive: (on) => {
+        element.classList.toggle('tcw-active', on);
+        if (spec.toggle) element.setAttribute('aria-pressed', String(on));
+      },
+      setText: (text) => {
+        textSpan().textContent = text;
+        setHostButtonName(element, spec.label);
+      },
+      remove: () => element.remove(),
+    };
+  }
+
+  private runChartMenuAction(action: ChartMenuAction, price: number | undefined): void {
+    const at = price ?? NaN;
+    switch (action) {
+      case 'alert':
+        this.chart.addAlert(at, 'crossing');
+        this.toast(fill(this.t('chartMenu.alertAdded'), { price: this.formatAlertPrice(at) }));
+        break;
+      case 'buyLimit':
+      case 'sellLimit':
+      case 'buyStop':
+      case 'sellStop':
+        this.placeOrderAt(action, at);
+        break;
+      case 'orderTicket':
+        this.openOrderTicket(price);
+        break;
+      case 'horizontalLine': {
+        const data = this.chart.getData();
+        if (data.length > 0) this.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[data.length - 1].time, price: at }] });
+        break;
+      }
+      case 'resetView':
+        this.chart.fitContent();
+        this.applySettings({ autoScale: true });
+        break;
+      case 'hideDrawings':
+        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
+        break;
+      case 'showDrawings':
+        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), true);
+        break;
+      case 'removeDrawings':
+        // One undo step; locked drawings stay.
+        this.chart.removeDrawings(this.chart.getDrawings().map((d) => d.id));
+        break;
+      case 'settings':
+        this.openSettings();
+        break;
+      case 'autoScale':
+        this.applySettings({ autoScale: !this.chart.isAutoScale() });
+        break;
+      case 'logScale':
+        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' });
+        break;
+      case 'percentScale':
+        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' });
+        break;
+      case 'invertScale':
+        this.applySettings({ invertScale: !this.chart.isInvertScale() });
+        break;
+      case 'goToDate':
+        this.toggleGoToDate();
+        break;
+    }
+    if (this.objectTree?.isOpen()) this.refreshObjects();
+  }
+
+  /** Open or close the account panel (no argument: the other way from now). */
+  toggleAccountPanel(open?: boolean): void {
+    const panel = this.accountPanel;
+    if (!panel || open === panel.isOpen()) return;
+    panel.toggle();
+  }
+
+  /** The order ticket, at a price from the chart (or the market). */
+  private openOrderTicket(price?: number): void {
+    const data = this.chart.getData();
+    this.orderTicket?.open({ price, lastPrice: data.length > 0 ? data[data.length - 1].close : null });
+  }
+
+  /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
+  private refreshAccountSoon(): void {
+    if (this.accountFrame || !this.accountPanel) return;
+    this.accountFrame = requestAnimationFrame(() => {
+      this.accountFrame = 0;
+      if (!this.destroyed) this.refreshAccount();
+    });
+  }
+
+  private refreshAccount(): void {
+    if (!this.accountPanel) return;
+    const data = this.chart.getData();
+    const price = data.length > 0 ? data[data.length - 1].close : null;
+    this.accountPanel.update({
+      positions: this.chart.getPositions(),
+      orders: this.chart.getOrders(),
+      fills: this.chart.getFills(),
+      price,
+      realisedPnl: this.chart.getRealisedPnl(),
+    });
+    this.orderTicket?.setLastPrice(price);
+  }
+
+  /** Ask for a limit or stop order at `price` (one unit), and say so. */
+  private placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
+    const side = kind.startsWith('buy') ? 'buy' : 'sell';
+    const stop = kind.endsWith('Stop');
+    this.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
+    this.toast(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
   }
 
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
@@ -1721,6 +1982,105 @@ export class ChartWidget {
     }, 3500);
   }
 
+  // --- Named layouts ---
+
+  /** Named layouts: save, open, rename, delete, auto-save. `null` with `layouts: false`. */
+  getLayoutSession(): LayoutSession | null {
+    return this.layoutSession;
+  }
+
+  /** The symbol showing. */
+  getSymbol(): string {
+    return this.state.symbol;
+  }
+
+  /** The interval showing. */
+  getTimeframe(): TimeFrame {
+    return this.state.timeframe;
+  }
+
+  /** This chart as a layout: symbol, interval, scale and the chart's state (no theme). A copy, free to keep. */
+  captureLayout(): WidgetLayoutContent {
+    const json = this.chart.saveState();
+    const state = json ? parseLayoutJson(json) : null;
+    // The theme stays the viewer's; the time of the capture would make every capture differ.
+    const chart = state && typeof state === 'object' ? layoutChartState(state as Record<string, unknown>) : null;
+    return {
+      v: 1,
+      symbol: this.state.symbol,
+      timeframe: this.state.timeframe,
+      scaleMode: this.settingsState.scaleMode,
+      invertScale: this.settingsState.invertScale,
+      chart,
+    };
+  }
+
+  /** Show a layout from `captureLayout()`. */
+  async restoreLayout(content: WidgetLayoutContent): Promise<void> {
+    if (content.symbol !== this.state.symbol) await this.setSymbol(content.symbol);
+    if (content.timeframe !== this.state.timeframe) await this.setTimeframe(content.timeframe);
+    if (this.destroyed) return;
+    if (content.chart) {
+      this.chart.loadState(JSON.stringify(layoutChartState(content.chart)));
+      const type = content.chart.chartType;
+      if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
+    }
+    this.applySettings({ scaleMode: content.scaleMode, invertScale: content.invertScale });
+    this.syncIndicatorsFromChart();
+    this.updateUI();
+  }
+
+  /** `captureLayout()` as JSON. */
+  getLayoutContent(): string {
+    return JSON.stringify(this.captureLayout());
+  }
+
+  /** Show a layout from `getLayoutContent()`; `false` when it is not one. */
+  async applyLayoutContent(content: string): Promise<boolean> {
+    const layout = readWidgetLayout(parseLayoutJson(content));
+    if (!layout) return false;
+    await this.restoreLayout(layout);
+    return true;
+  }
+
+  private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
+    const session = new LayoutSession(cfg.storage ?? localStorageLayouts(), {
+      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.state.timeframe }),
+      apply: async (layout: SavedLayout) => {
+        if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a widget layout');
+      },
+    }, {
+      autoSave: cfg.autoSave,
+      debounceMs: cfg.debounceMs,
+      onChange: () => this.toolbar?.setLayout(session.current()?.name ?? null, session.isDirty()),
+      onError: () => this.toast(this.t('layouts.saveFailed'), 'error'),
+    });
+    this.layoutSession = session;
+    this.layoutsUI = new WidgetLayoutsUI(session, {
+      root: this.root,
+      t: this.t,
+      toast: (message, kind) => this.toast(message, kind),
+      formatTime: (ms) => {
+        const { date, time } = utcToWallTime(ms, this.displayTimezone());
+        return `${date} ${time}`;
+      },
+    });
+    this.chart.on('stateChange', () => session.changed());
+    if (cfg.openLast) {
+      void session.list().then(([last]) => (last && !this.destroyed ? this.openLayout(last.id) : undefined), () => undefined);
+    }
+  }
+
+  /** Save into the open layout, or ask for a name when there is none. */
+  async saveLayout(): Promise<void> {
+    await this.layoutsUI?.save();
+  }
+
+  /** Open a saved layout by id; `false` when it could not be. */
+  async openLayout(id: string): Promise<boolean> {
+    return (await this.layoutsUI?.open(id)) ?? false;
+  }
+
   // --- Layout persistence ---
 
   /**
@@ -1963,6 +2323,7 @@ export class ChartWidget {
 
   private applySettings(patch: Partial<ChartSettingsState>): void {
     this.settingsState = { ...this.settingsState, ...patch };
+    if (patch.scaleMode !== undefined || patch.logScale !== undefined || patch.invertScale !== undefined) this.layoutSession?.changed();
     this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);

@@ -3,6 +3,9 @@ export type OrderType = 'market' | 'limit' | 'stop' | 'stopLimit';
 export type OrderStatus = 'pending' | 'filled' | 'cancelled' | 'rejected';
 export type OrderLabel = 'LIMIT' | 'STOP' | 'SL' | 'TP' | 'STOP LIMIT';
 
+/** How long an order works: good till cancelled, or for the day. */
+export type TimeInForce = 'gtc' | 'day';
+
 export interface TradingOrder {
   id: string;
   side: OrderSide;
@@ -12,6 +15,10 @@ export interface TradingOrder {
   quantity: number;
   label?: OrderLabel;
   draggable?: boolean;
+  /** Stop-loss and take-profit the position gets when the order fills. */
+  stopLoss?: number;
+  takeProfit?: number;
+  timeInForce?: TimeInForce;
   meta?: Record<string, unknown>;
 }
 
@@ -80,6 +87,14 @@ export interface TradingConfig {
     maxWidth?: number;
   };
   contextMenu?: { enabled?: boolean };
+  /**
+   * Buttons on the lines: × on an order cancels it, × on a position closes it
+   * and ⇅ reverses it, × on a stop-loss or take-profit removes it. All on by
+   * default.
+   */
+  lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean };
+  /** Marks where orders filled (from the execution adapter's fills). On by default. */
+  fillMarks?: boolean;
   pricePrecision?: number;
   dragThreshold?: number;
 }
@@ -90,6 +105,10 @@ export interface OrderPlaceIntent {
   price: number;
   stopPrice?: number;
   quantity?: number;
+  /** Stop-loss and take-profit for the position the order opens. */
+  stopLoss?: number;
+  takeProfit?: number;
+  timeInForce?: TimeInForce;
 }
 
 export interface OrderModifyIntent {
@@ -106,11 +125,18 @@ export interface OrderCancelIntent {
 
 export interface PositionModifyIntent {
   positionId: string;
-  stopLoss?: number;
-  takeProfit?: number;
+  /** A new stop-loss; null removes it, left out keeps it. */
+  stopLoss?: number | null;
+  /** A new take-profit; null removes it, left out keeps it. */
+  takeProfit?: number | null;
 }
 
 export interface PositionCloseIntent {
+  positionId: string;
+}
+
+/** Close a position and open the same size the other way. */
+export interface PositionReverseIntent {
   positionId: string;
 }
 
@@ -120,6 +146,8 @@ export const DEFAULT_TRADING_CONFIG: TradingConfig = {
   positionColors: { profit: '#1fa874', loss: '#e8505b', entry: '#4c8dff' },
   depthOverlay: { enabled: false, bidColor: 'rgba(31, 168, 116,0.15)', askColor: 'rgba(232, 80, 91,0.15)', maxWidth: 100 },
   contextMenu: { enabled: true },
+  lineButtons: { cancel: true, close: true, reverse: true, removeStops: true },
+  fillMarks: true,
   pricePrecision: 2,
   dragThreshold: 3,
 };

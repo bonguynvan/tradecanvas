@@ -1,6 +1,10 @@
 import type { TradingOrder, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { drawCloseButton, type LineButton } from './lineButtons.js';
+
+/** Side of the × button on an order's label (px). */
+const BUTTON = 16;
 
 export interface DragState {
   orderId: string;
@@ -17,10 +21,12 @@ export class OrderRenderer {
     theme: Theme,
     config: TradingConfig,
     dragState: DragState | null,
+    buttons: LineButton[] = [],
   ): void {
     const buyColor = config.orderColors?.buy ?? '#1fa874';
     const sellColor = config.orderColors?.sell ?? '#e8505b';
     const { chartRect } = viewport;
+    const cancelButton = config.lineButtons?.cancel !== false;
 
     for (const order of orders) {
       const isDragging = dragState?.orderId === order.id && dragState.sourceType === 'order';
@@ -69,6 +75,13 @@ export class OrderRenderer {
         ctx.lineTo(triX + 10, y - 4);
       }
       ctx.fill();
+
+      // × cancels the order.
+      if (cancelButton && !isDragging) {
+        const bx = triX + 16;
+        drawCloseButton(ctx, bx, y - BUTTON / 2, BUTTON, color);
+        buttons.push({ x: bx, y: y - BUTTON / 2, size: BUTTON, action: { type: 'cancelOrder', orderId: order.id } });
+      }
 
       // Ghost line at original price if dragging
       if (isDragging) {

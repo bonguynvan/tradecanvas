@@ -9,6 +9,7 @@ import type {
 } from '@tradecanvas/commons';
 import { sanitizeDrawingOptions } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
+import { keepTabInside } from './focusTrap.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { colorAlpha, colorInput, numberInput, selectInput, settingsRow, toHex, toggleSwitch, withAlpha } from './settingsControls.js';
 import type { DrawingStyleTemplate } from './DrawingTemplateStore.js';
@@ -64,7 +65,6 @@ type Tab = 'style' | 'options' | 'coordinates';
 /** Most points the Coordinates tab lists. */
 const MAX_COORDINATE_ROWS = 12;
 
-const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const LINE_WIDTHS = [1, 2, 3, 4];
 const LINE_STYLES: DrawingStyle['lineStyle'][] = ['solid', 'dashed', 'dotted'];
 const FONT_SIZES = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32];
@@ -283,18 +283,7 @@ export class WidgetDrawingSettings {
       this.close(true);
       return;
     }
-    if (e.key !== 'Tab') return;
-    const items = [...this.modal.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0 || el === document.activeElement);
-    if (items.length === 0) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
+    keepTabInside(e, this.modal);
   }
 
   private renderBody(): void {

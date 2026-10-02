@@ -68,3 +68,57 @@ describe('PaperExecutionAdapter', () => {
     expect(adapter.getConnectionState()).toBe('disconnected');
   });
 });
+
+describe('PaperExecutionAdapter: closes, stops and reverses', () => {
+  let adapter: PaperExecutionAdapter;
+  let fills: FillEvent[];
+
+  beforeEach(() => {
+    adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    adapter.connect({});
+    fills = [];
+    adapter.on<FillEvent>('fill', (e) => fills.push(e.data));
+  });
+
+  it('opens a position with the stop-loss and take-profit of its order', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1, stopLoss: 95, takeProfit: 110 });
+    expect(adapter.getPositions()[0]).toMatchObject({ stopLoss: 95, takeProfit: 110 });
+    expect(fills[0]).toMatchObject({ reason: 'order', positionId: adapter.getPositions()[0].id });
+  });
+
+  it('reports a close with the profit it realised', async () => {
+    await adapter.placeOrder({ side: 'sell', type: 'market', price: 100, quantity: 2 });
+    const [position] = adapter.getPositions();
+    adapter.setMarkPrice(97);
+    await adapter.closePosition({ positionId: position.id });
+    expect(adapter.getPositions()).toEqual([]);
+    expect(fills.at(-1)).toMatchObject({ side: 'buy', price: 97, quantity: 2, reason: 'close', pnl: 6, positionId: position.id });
+  });
+
+  it('reports a stop-loss and a take-profit hit at their prices', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1, stopLoss: 95 });
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1, takeProfit: 104 });
+    adapter.setMarkPrice(105);
+    expect(fills.at(-1)).toMatchObject({ reason: 'takeProfit', price: 104, pnl: 4 });
+    adapter.setMarkPrice(94);
+    expect(fills.at(-1)).toMatchObject({ reason: 'stopLoss', price: 95, pnl: -5 });
+    expect(adapter.getPositions()).toEqual([]);
+  });
+
+  it('removes a stop with null and keeps one left out', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1, stopLoss: 95, takeProfit: 110 });
+    const [position] = adapter.getPositions();
+    await adapter.modifyPosition({ positionId: position.id, stopLoss: null });
+    expect(adapter.getPositions()[0]).toMatchObject({ stopLoss: undefined, takeProfit: 110 });
+  });
+
+  it('reverses a position: closes it and opens the same size the other way', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 3 });
+    const [position] = adapter.getPositions();
+    adapter.setMarkPrice(102);
+    await adapter.reversePosition({ positionId: position.id });
+    const [reversed] = adapter.getPositions();
+    expect(reversed).toMatchObject({ side: 'sell', quantity: 3, entryPrice: 102 });
+    expect(fills.slice(-2).map((f) => f.reason)).toEqual(['reverse', 'order']);
+  });
+});
