@@ -1,8 +1,12 @@
 <script lang="ts">
   import { copyText } from '$lib/clipboard';
+  import { useI18n } from '$lib/i18n/context.svelte';
+  import { fill } from '$lib/i18n/messages';
 
   let { code, label }: { code: string; label?: string } = $props();
 
+  const i18n = useI18n();
+  const m = $derived(i18n.m.copy);
   let copied = $state(false);
   let codeEl: HTMLElement | undefined = $state();
 
@@ -13,12 +17,12 @@
 </script>
 
 <div class="code-block">
-  <button class="code-copy" type="button" onclick={copy} aria-label={label ? `Copy ${label}` : 'Copy code'}>
-    {copied ? 'COPIED' : 'COPY'}
+  <button class="code-copy" type="button" onclick={copy} aria-label={label ? fill(m.copyLabel, { label }) : m.copyCode}>
+    {copied ? m.copied : m.copy}
   </button>
-  <span class="sr-only" aria-live="polite">{copied ? 'Copied to clipboard' : ''}</span>
+  <span class="sr-only" aria-live="polite">{copied ? m.copiedAnnouncement : ''}</span>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <pre tabindex="0" aria-label={label ?? 'Code sample'}><code bind:this={codeEl}>{code}</code></pre>
+  <pre tabindex="0" aria-label={label ?? m.codeSample}><code bind:this={codeEl}>{code}</code></pre>
 </div>
 
 <style>

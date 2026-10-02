@@ -3,6 +3,10 @@
   import { Chart } from '@tradecanvas/chart';
   import { siteTheme, onSiteThemeChange } from '$lib/site';
   import type { ChartType, DataSeries } from '@tradecanvas/chart';
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const i18n = useI18n();
+  const m = $derived(i18n.m);
 
   // --- Deterministic synthetic OHLC ---
   function seededRandom(seed: number): () => number {
@@ -29,15 +33,16 @@
     return out;
   }
 
-  type Tile = { type: ChartType; name: string; tag: string; seed: number; start: number; vol: number; drift: number };
+  /** Each tile's name and tag are `m.gallery.tiles[type]`. */
+  type Tile = { type: keyof typeof i18n.m.gallery.tiles & ChartType; seed: number; start: number; vol: number; drift: number };
 
   const tiles: Tile[] = [
-    { type: 'candlestick', name: 'Candlestick', tag: 'OHLC', seed: 1207, start: 100, vol: 4, drift: 0.25 },
-    { type: 'heikinAshi', name: 'Heikin-Ashi', tag: 'Trend', seed: 4413, start: 80, vol: 3, drift: 0.18 },
-    { type: 'area', name: 'Area', tag: 'Close', seed: 9931, start: 60, vol: 2.4, drift: 0.12 },
-    { type: 'baseline', name: 'Baseline', tag: 'Above / below', seed: 2208, start: 50, vol: 2.2, drift: 0.02 },
-    { type: 'bar', name: 'OHLC Bars', tag: 'Classic', seed: 7755, start: 120, vol: 5, drift: -0.15 },
-    { type: 'stepLine', name: 'Step Line', tag: 'Discrete', seed: 3361, start: 40, vol: 1.8, drift: 0.08 },
+    { type: 'candlestick', seed: 1207, start: 100, vol: 4, drift: 0.25 },
+    { type: 'heikinAshi', seed: 4413, start: 80, vol: 3, drift: 0.18 },
+    { type: 'area', seed: 9931, start: 60, vol: 2.4, drift: 0.12 },
+    { type: 'baseline', seed: 2208, start: 50, vol: 2.2, drift: 0.02 },
+    { type: 'bar', seed: 7755, start: 120, vol: 5, drift: -0.15 },
+    { type: 'stepLine', seed: 3361, start: 40, vol: 1.8, drift: 0.08 },
   ];
 
   let gridEl: HTMLDivElement | undefined = $state();
@@ -97,20 +102,17 @@
 
 <section class="gallery">
   <header class="section-head" data-reveal data-reveal-stagger>
-    <span class="eyebrow">Chart types</span>
-    <h2 class="section-title">Every chart type, live in the page</h2>
-    <p class="section-subtitle">
-      Each tile is a real <code>Chart</code> instance, not an image. Drag to pan, scroll to zoom
-      and hover for the crosshair; every tile responds on its own.
-    </p>
+    <span class="eyebrow">{m.gallery.eyebrow}</span>
+    <h2 class="section-title">{m.gallery.title}</h2>
+    <p class="section-subtitle">{@html m.gallery.subtitleHtml}</p>
   </header>
 
   <div class="bento" bind:this={gridEl} data-reveal data-reveal-stagger>
     {#each tiles as t, i}
       <article class="tile" class:tile--wide={i === 0}>
         <header class="tile-head">
-          <span class="tile-name">{t.name}</span>
-          <span class="tile-tag">{t.tag}</span>
+          <span class="tile-name">{m.gallery.tiles[t.type].name}</span>
+          <span class="tile-tag">{m.gallery.tiles[t.type].tag}</span>
         </header>
         <div class="tile-chart"></div>
       </article>

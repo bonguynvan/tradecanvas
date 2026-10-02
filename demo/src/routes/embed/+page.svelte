@@ -104,11 +104,6 @@
     background: var(--bg);
   }
 
-  :global(.site-nav),
-  :global(.footer) {
-    display: none;
-  }
-
   .embed-host {
     width: 100vw;
     height: 100vh;

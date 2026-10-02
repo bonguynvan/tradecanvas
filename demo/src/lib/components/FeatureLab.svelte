@@ -6,6 +6,12 @@
   import type { ChartWidget } from '@tradecanvas/chart/widget';
   import type { WidgetLanguage } from '@tradecanvas/chart/widget/locales';
   import { FEATURE_SCENES, type SceneEnv } from '$lib/featureScenes';
+  import { useI18n } from '$lib/i18n/context.svelte';
+  import { fill } from '$lib/i18n/messages';
+  import { widgetLanguage } from '$lib/i18n/widget';
+
+  const i18n = useI18n();
+  const m = $derived(i18n.m);
 
   let section: HTMLElement | undefined = $state();
   let host: HTMLDivElement | undefined = $state();
@@ -14,12 +20,15 @@
   let started = $state(false);
   /** Languages for scenes with a picker, loaded with the first such scene. */
   let languages = $state<readonly WidgetLanguage[]>([]);
-  let languageCode = $state('vi');
+  // The picker starts on the page's language (Vietnamese on the English site).
+  // svelte-ignore state_referenced_locally
+  let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
 
   let widget: ChartWidget | null = null;
   let mountToken = 0;
 
   const scene = $derived(FEATURE_SCENES[active]);
+  const text = $derived(m.scenes[scene.id]);
 
   function fmtMs(ms: number): string {
     return ms < 10 ? `${ms.toFixed(1)} ms` : `${Math.round(ms)} ms`;
@@ -59,9 +68,10 @@
     metrics = [];
     if (!host) return;
 
-    const [{ ChartWidget }, lib] = await Promise.all([
+    const [{ ChartWidget }, lib, siteWidgetLanguage] = await Promise.all([
       import('@tradecanvas/chart/widget'),
       import('@tradecanvas/chart'),
+      widgetLanguage(i18n.lang),
     ]);
     if (token !== mountToken || !host) return;
 
@@ -70,6 +80,8 @@
       const { WIDGET_LANGUAGES } = await import('@tradecanvas/chart/widget/locales');
       if (token !== mountToken || !host) return;
       languages = WIDGET_LANGUAGES;
+      const preferred = languageCode.toLowerCase();
+      languageCode = languages.find((l) => l.code.toLowerCase() === preferred)?.code ?? 'vi';
     }
     const env: SceneEnv = {
       lib,
@@ -83,6 +95,8 @@
     const w: ChartWidget = new ChartWidget(host, {
       theme: siteTheme(),
       historyLimit: 500,
+      // The page's language; the languages scene picks its own.
+      ...siteWidgetLanguage,
       ...opts,
       onSymbolChange: (sym) => {
         pending = { label: sym, t: performance.now() };
@@ -101,7 +115,11 @@
     chart.on('dataUpdate', (e) => {
       const length = (e.payload as { length?: number })?.length;
       if (!pending || typeof length !== 'number' || length === 0) return;
-      pushMetric(`→ ${pending.label}: ${fmtMs(performance.now() - pending.t)} · ${length.toLocaleString('en-US')} bars`);
+      pushMetric(fill(m.lab.metricSwitch, {
+        label: pending.label,
+        ms: fmtMs(performance.now() - pending.t),
+        bars: length.toLocaleString(i18n.language.tag),
+      }));
       pending = null;
     });
 
@@ -109,7 +127,7 @@
       const bars = current.data(opts.symbol ?? 'DEMO');
       const t0 = performance.now();
       w.setData(bars);
-      pushMetric(`setData(${bars.length.toLocaleString('en-US')} bars): ${fmtMs(performance.now() - t0)}`);
+      pushMetric(fill(m.lab.metricSetData, { bars: bars.length.toLocaleString(i18n.language.tag), ms: fmtMs(performance.now() - t0) }));
     }
 
     await firstBars(chart);
@@ -174,16 +192,13 @@
 
 <section class="lab" bind:this={section} aria-labelledby="lab-title">
   <header class="lab-head" data-reveal data-reveal-stagger>
-    <span class="eyebrow">Feature lab</span>
-    <h2 id="lab-title" class="lab-title">Every feature, on a live chart.</h2>
-    <p class="lab-sub">
-      Pick a scene. Each one boots the full <code>ChartWidget</code> into a state that shows
-      one area at work — then it is yours to drag, draw and switch.
-    </p>
+    <span class="eyebrow">{m.lab.eyebrow}</span>
+    <h2 id="lab-title" class="lab-title">{m.lab.title}</h2>
+    <p class="lab-sub">{@html m.lab.subtitleHtml}</p>
   </header>
 
   <div class="lab-body" data-reveal>
-    <ol class="lab-rail" role="tablist" aria-label="Feature scenes">
+    <ol class="lab-rail" role="tablist" aria-label={m.lab.scenes}>
       {#each FEATURE_SCENES as s, i}
         <li role="presentation">
           <button
@@ -199,20 +214,20 @@
             onkeydown={onRailKey}
           >
             <span class="rail-num">{String(i + 1).padStart(2, '0')}</span>
-            <span class="rail-title">{s.title}</span>
-            <span class="rail-stat">{s.stat}</span>
+            <span class="rail-title">{m.scenes[s.id].title}</span>
+            <span class="rail-stat">{m.scenes[s.id].stat}</span>
           </button>
           {#if i === active}
-            <p class="rail-blurb">{s.blurb}</p>
+            <p class="rail-blurb">{m.scenes[s.id].blurb}</p>
           {/if}
         </li>
       {/each}
     </ol>
 
     <div class="lab-stage" id="lab-stage" role="tabpanel" aria-labelledby="lab-tab-{active}" tabindex="-1">
-      <p class="stage-blurb">{scene.blurb}</p>
+      <p class="stage-blurb">{text.blurb}</p>
       {#if scene.languages && languages.length > 0}
-        <div class="stage-langs" role="group" aria-label="Widget language">
+        <div class="stage-langs" role="group" aria-label={m.lab.widgetLanguage}>
           {#each languages as language (language.code)}
             <button
               type="button"
@@ -228,12 +243,12 @@
       <div class="stage-frame">
         <div class="stage-host" bind:this={host}></div>
         {#if !started}
-          <div class="stage-idle">Scroll into view to start the live chart</div>
+          <div class="stage-idle">{m.lab.idle}</div>
         {/if}
       </div>
       <div class="stage-metrics" aria-live="polite">
         {#if metrics.length === 0}
-          <span class="metric metric--muted">Switch a symbol or timeframe to time it</span>
+          <span class="metric metric--muted">{m.lab.metricHint}</span>
         {:else}
           {#each metrics as m, i}
             <span class="metric" class:metric--latest={i === 0}>{m}</span>
@@ -243,9 +258,9 @@
 
       <div class="stage-notes">
         <div class="notes-try">
-          <h3>Try this</h3>
+          <h3>{m.lab.tryThis}</h3>
           <ul>
-            {#each scene.tryThis as tip}
+            {#each text.tryThis as tip}
               <li>{tip}</li>
             {/each}
           </ul>
@@ -283,7 +298,7 @@
     margin: 0;
   }
 
-  .lab-sub code {
+  .lab-sub :global(code) {
     font-family: var(--font-mono);
     font-size: 0.88em;
     color: var(--text);

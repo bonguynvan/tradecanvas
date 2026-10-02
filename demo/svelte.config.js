@@ -15,6 +15,9 @@ export default {
     }),
     paths: {
       base: dev ? '' : '/tradecanvas',
+      // Root-relative links: the language switcher and hreflang strip `base`
+      // from the URL, which a relative base ('../..') would not match.
+      relative: false,
     },
     prerender: {
       handleHttpError: 'warn',

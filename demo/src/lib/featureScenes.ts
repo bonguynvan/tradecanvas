@@ -1,5 +1,6 @@
 import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
 import type { ChartWidget, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
+import type { SiteMessages } from './i18n/messages';
 import { generateBars } from './sampleData';
 
 /** What the Feature Lab hands each scene. */
@@ -14,13 +15,11 @@ export interface SceneEnv {
   language?: { code: string; numberLocale: string; messages: WidgetMessages };
 }
 
+/** A scene's title, figure ("40 tools"), blurb and tips live in the site's strings under this id. */
+export type SceneId = keyof SiteMessages['scenes'];
+
 export interface FeatureScene {
-  id: string;
-  title: string;
-  /** Short figure shown next to the title, e.g. "40 tools". */
-  stat: string;
-  blurb: string;
-  tryThis: string[];
+  id: SceneId;
   code: string;
   options: (env: SceneEnv) => ChartWidgetOptions;
   /** Static base series (no adapter); regenerated per symbol on switches. */
@@ -57,15 +56,6 @@ function swings(data: OHLCBar[], span: number, endOffset: number, count: number,
 export const FEATURE_SCENES: FeatureScene[] = [
   {
     id: 'drawings',
-    title: 'Drawing tools',
-    stat: '40 tools',
-    blurb:
-      'Trend, info and angle lines, Fibonacci channels and fans, Andrews and Schiff pitchforks, harmonic XABCD, head-and-shoulders, cycles, measuring boxes. Magnet snapping, undo/redo, JSON save/restore.',
-    tryThis: [
-      'Open the zigzag (Patterns) group in the left toolbar and place an ABCD',
-      'Click a drawing, drag its handles, then Ctrl+Z',
-      'Drawings stay anchored to time, so they survive timeframe switches',
-    ],
     code: `chart.addDrawing({
   type: 'xabcdPattern',
   anchors: [x, a, b, c, d], // { time, price } each
@@ -86,16 +76,6 @@ chart.setDrawingTool('headAndShoulders') // or let the user draw`,
   },
   {
     id: 'indicators',
-    title: 'Indicators',
-    stat: '85 built-in',
-    blurb:
-      'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
-    tryThis: [
-      'Press the Indicators button (or Ctrl+K) and search any of the 85',
-      'Click an indicator name in the legend: inputs, colours and levels',
-      'Set a moving average’s Source to another indicator’s line',
-      'Drag the line between panes to resize them',
-    ],
     code: `chart.addIndicator('bb', { period: 20, stdDev: 2 })
 const rsi = chart.addIndicator('rsi')
 chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })
@@ -116,15 +96,6 @@ chart.addIndicator('macd')`,
   },
   {
     id: 'trading',
-    title: 'Trading',
-    stat: 'paper broker',
-    blurb:
-      'Positions with draggable stop-loss and take-profit, working orders, brackets and Long/Short tools, routed through an ExecutionAdapter — here the bundled paper broker.',
-    tryThis: [
-      'Drag the SL / TP lines of the open long — the broker updates them',
-      'Drag a working order to a new price',
-      'Use the Buy/Sell bracket buttons in the top toolbar',
-    ],
     code: `const broker = new PaperExecutionAdapter({ markPrice })
 chart.connectExecution(broker)
 chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
@@ -145,18 +116,6 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price, quantity: 1 })`,
   },
   {
     id: 'navigation',
-    title: 'Ranges & layouts',
-    stat: '1D … All',
-    blurb:
-      'Jump to a span or a date, flip the price scale, pin the timeframes you use, run the same indicator several times — and get it all back from a saved layout.',
-    tryThis: [
-      'Click 1M, 3M or 6M under the chart; Alt+G goes to a date',
-      'Alt+I turns the price scale upside down; the log scale is in Settings',
-      'Settings → Timezone: pick New York or Tokyo — axis, day breaks and YTD follow it, daylight saving included',
-      'Settings → Scale → Left price scale; an EMA’s Style tab can move it onto that scale',
-      'Star a timeframe in the ▾ menu next to the timeframe buttons',
-      'Turn on the ↻ button in the left toolbar to draw several lines in a row; Ctrl+C / Ctrl+V copies them',
-    ],
     code: `chart.setVisibleRangePreset('6M')    // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.goToTime(Date.UTC(2025, 0, 1))
 chart.setInvertScale(true)
@@ -179,16 +138,6 @@ const layout = chart.saveState()             // indicators, styles, alerts, draw
   },
   {
     id: 'history',
-    title: 'Scroll back in time',
-    stat: 'paged history',
-    blurb:
-      'Older bars load as you drag toward the oldest one, a page at a time, and what is on screen stays put. Zoom out until every loaded bar fits: below a pixel per bar the candles merge per pixel column, so thousands of bars stay readable.',
-    tryThis: [
-      'Drag the chart to the right: a pill on the left shows older bars loading',
-      'Scroll to zoom out, past a few hundred bars down to a quarter pixel per bar',
-      'Click All under the chart to fit everything loaded so far',
-      'Type 7 or 90 in the ▾ timeframe menu: Binance has neither, so the chart builds them from 1m and 30m bars',
-    ],
     code: `// Adapters with fetchHistoryBefore page by themselves
 chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m', historyPageSize: 500 })
 
@@ -213,15 +162,6 @@ await chart.setTimeframe('7m')`,
   },
   {
     id: 'replay',
-    title: 'Bar replay',
-    stat: 'scrubber',
-    blurb:
-      'Step through history bar by bar to practice reads without hindsight. Live data is held aside while you replay; the price scale fits every step.',
-    tryThis: [
-      'Press play, or step one bar at a time with Shift+→ / Shift+←',
-      'Click any revealed bar to jump the cursor there',
-      '“Back to realtime” returns to the live series',
-    ],
     code: `widget.toggleReplay()             // pick a start bar on the chart
 widget.replayFrom(220)            // or start at a bar directly
 chart.replayStart({ startIndex: 220, paused: true, interval: 1000, speed: 5 })
@@ -239,16 +179,6 @@ chart.replayStop()                // back to the live series`,
   },
   {
     id: 'subcent',
-    title: '14 languages, sub-cent prices',
-    stat: 'i18n',
-    blurb:
-      'The whole widget in 14 languages — menus, settings, drawing tools, dialogs — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
-    tryThis: [
-      'Pick a language above the chart: 日本語, 한국어, 简体中文, Deutsch…',
-      'Ctrl+P searches every Binance symbol, with names, as you type',
-      'Open Settings or the drawing tools to see them translated',
-      'Hover: the crosshair pill keeps full precision in the language’s number format',
-    ],
     code: `import { ChartWidget } from '@tradecanvas/chart/widget'
 import { ja } from '@tradecanvas/chart/widget/locales'
 
@@ -272,15 +202,6 @@ new ChartWidget(host, {
   },
   {
     id: 'bigdata',
-    title: '200,000 bars',
-    stat: 'performance',
-    blurb:
-      'Two hundred thousand 1-minute bars with four indicators. Rendering touches only the visible bars; coarser timeframes are resampled locally, behind a loading veil when that takes more than a few frames.',
-    tryThis: [
-      'Switch to 1H, 4H and back to 1m — timings appear under the chart',
-      'Zoom all the way out and pan: frame cost stays flat',
-      'Add another indicator and watch the switch time',
-    ],
     code: `widget.setData(bars)          // the finest series you have
 widget.setTimeframe('1h')     // resampled locally, no refetch`,
     options: () => ({
@@ -295,15 +216,6 @@ widget.setTimeframe('1h')     // resampled locally, no refetch`,
   },
   {
     id: 'switching',
-    title: 'Slow-network switching',
-    stat: '+1.2 s latency',
-    blurb:
-      'Each history request here is delayed by 1.2 s. The previous chart stays on screen and is veiled only once a switch takes longer than 200 ms; rapid clicks never let a stale response win.',
-    tryThis: [
-      'Click several symbols quickly — only the last one lands',
-      'Switch timeframe and watch the veil fade in, then out',
-      'Compare with the Indicators scene: fast switches never flash',
-    ],
     code: `// built in: a 200 ms grace period before the loading veil,
 // superseded requests dropped, stale sockets detached
 await widget.setSymbol('ETHUSDT')`,
