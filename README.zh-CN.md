@@ -1,10 +1,88 @@
-# @tradecanvas/chart
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/banner.png" alt="TradeCanvas，为交易应用打造的图表引擎" width="100%"></a>
+</p>
 
-[English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
+  <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+</p>
 
-高性能 Canvas 交易图表，内置指标、画线工具和实时数据流。零外部依赖。
+<p align="center">
+  <b><a href="https://bonguynvan.github.io/tradecanvas/zh/">在线演示</a></b> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/docs/getting-started/">文档</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/examples/">示例</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/playground/">Playground</a> ·
+  <a href="./CHANGELOG.md">更新日志</a>
+</p>
 
-**[在线演示](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
+</p>
+
+**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），95 个指标、69 种画线工具、交易所实时行情和图上下单，全部基于 Canvas2D 绘制，零依赖。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的 UI，支持原生 TypeScript、React、Vue 和 Svelte。
+
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
+</p>
+
+## 快速开始
+
+```bash
+npm install @tradecanvas/chart     # 或：pnpm add / yarn add
+```
+
+`ChartWidget` 把完整的交易界面装进一个组件：工具栏、画线侧边栏、设置对话框和状态栏。
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(), // 实时数据，无需 API key
+  trading: true,
+})
+```
+
+就这么简单。实时数据、全部 95 个指标、全部 69 种画线工具、命令面板（`Ctrl+K`）、代码搜索（`Ctrl+P`）、快捷键列表（`?`）、Shift 拖动测量、Alt 点击固定提示，以及拖放加载 CSV/JSON。
+
+使用框架？[`@tradecanvas/react`](./packages/react/)、[`@tradecanvas/vue`](./packages/vue/) 和 [`@tradecanvas/svelte`](./packages/svelte/) 把无界面的 `Chart` 封装成组件，上面的 widget 在任何框架里也能用同样的方式挂载，参见[框架集成](#框架集成)。也可以 fork 一个 [StackBlitz 沙盒](https://bonguynvan.github.io/tradecanvas/zh/examples/)直接上手。
+
+## 功能一览
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="画线工具：带注释的斐波那契回撤、一条趋势线、艾略特推动浪和一个多头仓位"></a>
+      <br><b>69 种画线工具</b><br>
+      斐波那契、江恩、音叉、艾略特波浪、谐波形态、注释和画笔，以及能自动计算仓位大小的多空仓位工具。趋势线警报、分组、撤销与重做。
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="图上交易：带止损和止盈的多头仓位、一张买入止损单和一张卖出限价单，以及账户面板"></a>
+      <br><b>在图表上交易</b><br>
+      实时盈亏的持仓、可拖动改价的订单、止损和止盈、反手和平仓按钮、下单面板和账户面板。内置模拟交易经纪商，也可以接入你自己的。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="2×2 工作区：多种周期的 BTC、ETH、SOL 和 BNB 图表"></a>
+      <br><b>多图表工作区</b><br>
+      最多六个完整图表并排显示，可按代码、周期、十字光标、时间或画线联动，并保存为一个布局。
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="同一图表的三种外观：studio、terminal，以及浅色主题下的 capsule"></a>
+      <br><b>自定义外观</b><br>
+      三种预设（studio、terminal、capsule），或自定义圆角、密度、字体、工具栏和价格标签，深色和浅色主题皆可。
+    </td>
+  </tr>
+</table>
 
 ## 为什么选择 TradeCanvas？
 
@@ -36,35 +114,6 @@
 - **可扩展的组件**——添加你自己的工具栏按钮和右键菜单项（`addToolbarButton`、`chartMenuItems`）。
 - **保存/加载图表状态**——将画线、指标、主题和图表类型持久化为 JSON。一次调用即可恢复。
 - **零依赖**——整个库完全自包含。没有 `d3`，没有 `chart.js`，也没有 `fancy-canvas`。
-
-## 安装
-
-```bash
-npm install @tradecanvas/chart
-# or
-pnpm add @tradecanvas/chart
-# or
-yarn add @tradecanvas/chart
-```
-
-## 快速开始
-
-最快的方式是 `ChartWidget`——开箱即用的组件，带完整的交易界面（工具栏、画线侧边栏、设置对话框、状态栏）。不依赖任何框架。
-
-```typescript
-import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  trading: true,
-})
-```
-
-就这么简单。实时数据、全部 95 个指标、全部 69 种画线工具、命令面板（`Ctrl+K`）、代码搜索（`Ctrl+P`）、快捷键列表（`?`）、Shift 拖动测量、Alt 点击固定提示，以及拖放加载 CSV/JSON。
 
 ## 无界面 Chart
 
@@ -1022,6 +1071,12 @@ BB + EMA + RSI + MACD（`pnpm bench`，单核）：
 ## 相关项目
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)**——面向金融科技界面的小巧、快速的 **Svelte 5** 数据表格：canvas 迷你走势图、批量实时单元格更新、虚拟滚动、分组 / 透视 / 树形数据，以及 Excel 导出，核心 gzip 后约 32 KB。它是同一套工具包中的表格部分——与 TradeCanvas 搭配即可组成完整的交易台。**[在线演示](https://bonguynvan.github.io/bo-grid/)**
+
+## 参与贡献
+
+欢迎提交 bug 报告、想法和 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）、仓库结构以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 私下报告，不要公开提 issue。
+
+如果 TradeCanvas 帮你节省了时间，在 GitHub 上点个 star，能让更多开发者发现它。
 
 ## 许可证
 

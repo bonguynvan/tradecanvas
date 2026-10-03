@@ -138,13 +138,16 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   <meta property="og:type" content="website" />
   <meta property="og:title" content={m.meta.title} />
   <meta property="og:description" content={m.meta.description} />
-  <meta property="og:image" content="{SITE_URL}/og.svg" />
+  <meta property="og:image" content="{SITE_URL}/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content={m.meta.title} />
   <meta property="og:url" content="{SITE_URL}{i18n.href('/').slice(base.length)}" />
   <meta property="og:locale" content={i18n.language.og} />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="TradeCanvas" />
   <meta name="twitter:description" content={m.meta.description} />
-  <meta name="twitter:image" content="{SITE_URL}/og.svg" />
+  <meta name="twitter:image" content="{SITE_URL}/og.png" />
 </svelte:head>
 
 <div class="home" bind:this={page}>

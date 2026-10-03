@@ -9,6 +9,7 @@ import type {
   FillEvent,
 } from '@tradecanvas/commons';
 import { DEFAULT_TRADING_CONFIG } from '@tradecanvas/commons';
+import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { OrderRenderer } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
@@ -225,8 +226,11 @@ export class TradingManager {
   /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
   isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
     if (!this.config.enabled) return false;
-    const near = (price: number | undefined) =>
-      price !== undefined && Math.abs(pos.y - priceToY(price, viewport)) <= tolerance;
+    const near = (price: number | undefined) => {
+      if (price === undefined) return false;
+      const y = priceToY(price, viewport);
+      return inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance;
+    };
     for (const o of this.orders) {
       if (o.draggable !== false && near(o.price)) return true;
     }
@@ -327,7 +331,21 @@ export class TradingManager {
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     this.buttons = [];
     if (!this.config.enabled) return;
+    // Lines priced off the plot would otherwise paint over the time axis and
+    // the panes below; restored even if a host callback (a label) throws.
+    const { chartRect } = viewport;
+    ctx.save();
+    try {
+      ctx.beginPath();
+      ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
+      ctx.clip();
+      this.renderInPlot(ctx, viewport, theme);
+    } finally {
+      ctx.restore();
+    }
+  }
 
+  private renderInPlot(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     // Depth overlay (back)
     if (this.depthData) {
       this.depthOverlay.render(ctx, this.depthData, viewport, this.config);

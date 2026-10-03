@@ -4,6 +4,8 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+- A position's stop-loss or take-profit priced outside the visible range no longer draws over the time axis or the panes below the chart, and can't be grabbed there by accident (nor can an order line off the plot); an entry scrolled out of view no longer leaves its price tag on the axis.
+- The npm page shows the full README again (it had fallen behind the repository's), with screenshots; the demo's link previews now carry an image on every network.
 ### Sharper, calmer charts
 
 - **Sharp at any screen scale**: candles, bars, volume and the drawings' horizontal and vertical lines land on whole device pixels. A one-pixel wick is one sharp pixel at 100%, 125% or 200% scaling; it used to spread over two at half strength.

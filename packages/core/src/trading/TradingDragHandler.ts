@@ -1,6 +1,7 @@
 import type { TradingOrder, TradingPosition, ViewportState, Point } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import type { DragState } from './OrderRenderer.js';
+import { inPlot } from './plot.js';
 
 export interface DragResult {
   sourceType: 'order' | 'stopLoss' | 'takeProfit';
@@ -27,7 +28,7 @@ export class TradingDragHandler {
     for (const order of orders) {
       if (order.draggable === false) continue;
       const y = priceToY(order.price, viewport);
-      if (Math.abs(pos.y - y) <= tolerance) {
+      if (inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance) {
         this.dragState = {
           orderId: order.id,
           sourceType: 'order',
@@ -44,7 +45,7 @@ export class TradingDragHandler {
     for (const pos2 of positions) {
       if (pos2.stopLoss !== undefined) {
         const slY = priceToY(pos2.stopLoss, viewport);
-        if (Math.abs(pos.y - slY) <= tolerance) {
+        if (inPlot(slY, viewport) && Math.abs(pos.y - slY) <= tolerance) {
           this.dragState = {
             orderId: pos2.id,
             sourceType: 'stopLoss',
@@ -58,7 +59,7 @@ export class TradingDragHandler {
       }
       if (pos2.takeProfit !== undefined) {
         const tpY = priceToY(pos2.takeProfit, viewport);
-        if (Math.abs(pos.y - tpY) <= tolerance) {
+        if (inPlot(tpY, viewport) && Math.abs(pos.y - tpY) <= tolerance) {
           this.dragState = {
             orderId: pos2.id,
             sourceType: 'takeProfit',

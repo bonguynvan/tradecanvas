@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in the chart or the widget doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The smaller the setup that shows the bug, the faster it gets fixed.
+        A fork of a [StackBlitz sandbox](https://bonguynvan.github.io/tradecanvas/examples/) is the easiest way to share one.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead. Screenshots help for anything visual.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The options you passed and the steps, or a link to a sandbox.
+      placeholder: |
+        const widget = new ChartWidget(host, { symbol: 'BTCUSDT', timeframe: '1h', ... })
+        1. Add the RSI
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      multiple: true
+      options:
+        - "@tradecanvas/chart (Chart)"
+        - "@tradecanvas/chart/widget (ChartWidget)"
+        - "@tradecanvas/core"
+        - "@tradecanvas/analytics"
+        - "@tradecanvas/react"
+        - "@tradecanvas/vue"
+        - "@tradecanvas/svelte"
+        - The demo site or docs
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "1.7.0"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 140 on Windows 11
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Console errors, the data feed you use, a workaround you found.
