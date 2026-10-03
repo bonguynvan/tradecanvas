@@ -40,6 +40,7 @@ class FakeChart {
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
+  getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
   chartTypeOptions: unknown = {};
   getChartTypeOptions(): unknown { return this.chartTypeOptions; }
   required: string[] = [];
@@ -353,7 +354,7 @@ describe('ChartWidget round 8 review', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: failing as never });
     FakeChart.last.emit('symbolSeriesRequest', { symbol: 'BBB' });
     await new Promise((r) => setTimeout(r, 0));
-    expect(FakeChart.last.series.get('BBB')).toBeNull();
+    expect(FakeChart.last.series.get('BBB')).toBeNull(); // what it had: nothing
   });
 
   it('starts its settings where the chart options put them', () => {
@@ -363,5 +364,24 @@ describe('ChartWidget round 8 review', () => {
     });
     const settings = (widget as unknown as { settingsState: Record<string, unknown> }).settingsState;
     expect(settings).toMatchObject({ highLowLines: true, extendedHours: false, chartTypeOptions: { renko: { boxSize: 5 } } });
+  });
+});
+
+describe('ChartWidget symbol fetches out of order', () => {
+  it('lets only the latest fetch of a symbol answer', async () => {
+    const bars = [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }];
+    let failFirst: (e: Error) => void = () => {};
+    const fetchHistory = vi.fn()
+      .mockImplementationOnce(() => new Promise((_, reject) => { failFirst = reject; }))
+      .mockImplementationOnce(async () => bars);
+    const adapter = { name: 'fake', connect: () => {}, disconnect: () => {}, getConnectionState: () => 'connected', fetchHistory, on: () => {}, off: () => {}, dispose: () => {} };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    fake.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    fake.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    await new Promise((r) => setTimeout(r, 0));
+    failFirst(new Error('late'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBe(bars);
   });
 });

@@ -171,6 +171,8 @@ export class ChartWidget {
   private menuPane: string | null = null;
   /** Whether the chart menu offers a download of the data. */
   private canExport = true;
+  /** The latest fetch of each symbol the chart's indicators read. */
+  private symbolLoads = new Map<string, number>();
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -1980,14 +1982,19 @@ export class ChartWidget {
       return;
     }
     const timeframe = this.state.timeframe;
+    const seq = (this.symbolLoads.get(symbol) ?? 0) + 1;
+    this.symbolLoads.set(symbol, seq);
+    // Only the latest fetch of a symbol, at the interval on screen, answers.
+    const stale = () => this.destroyed || timeframe !== this.state.timeframe || this.symbolLoads.get(symbol) !== seq;
     try {
       const limit = Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
       const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, limit);
-      if (this.destroyed || timeframe !== this.state.timeframe) return;
+      if (stale()) return;
       this.chart.setSymbolSeries(symbol, bars);
     } catch (err: unknown) {
-      // Nothing to show: the next indicator on it asks again.
-      if (!this.destroyed) this.chart.setSymbolSeries(symbol, null);
+      if (stale()) return;
+      // Keep what the chart had; an indicator on the symbol may ask again.
+      this.chart.setSymbolSeries(symbol, this.chart.getSymbolSeries(symbol));
       this.toast(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
     }
   }

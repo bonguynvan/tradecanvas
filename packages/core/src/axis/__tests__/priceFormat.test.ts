@@ -53,6 +53,7 @@ describe('priceFormatterFor', () => {
     expect(priceFormatterFor((p) => `$${p}`)?.(3)).toBe('$3');
     expect(priceFormatterFor({ denominator: 32 })?.(1.5)).toBe("1'16");
     expect(priceFormatterFor(null)).toBeNull();
+    expect(priceFormatterFor({ denominator: 0 })).toBeNull(); // decimals, not raw digits
     expect(priceFormatterFor(undefined)).toBeNull();
   });
 });

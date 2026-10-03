@@ -139,3 +139,56 @@ describe('price format edge cases and export', () => {
     expect(names).toEqual(['SMA 20', 'SMA 20 (2)']);
   });
 });
+
+describe('second review', () => {
+  it('asks again only for the indicator that reads the symbol', () => {
+    const asked: string[] = [];
+    chart.on('symbolSeriesRequest', (e) => asked.push(e.payload.symbol));
+    const cmp = chart.addIndicator('compareSymbol', { symbol: 'B' })!;
+    chart.setSymbolSeries('B', null); // the fetch failed: nothing more to wait for
+    const sma = chart.addIndicator('sma', { period: 10 })!;
+    chart.updateIndicator(sma, { period: 12 });
+    expect(asked).toEqual(['B']);
+    chart.updateIndicator(cmp, { symbol: 'B' });
+    expect(asked).toEqual(['B', 'B']);
+  });
+
+  it('finds bars given under a symbol with spaces around it', () => {
+    const cmp = chart.addIndicator('compareSymbol', { symbol: 'B' })!;
+    chart.setSymbolSeries(' B ', bars);
+    expect(chart.getIndicatorOutput(cmp)?.series?.[5]?.value).toBe(bars[5].close);
+  });
+
+  it('starts hiding extended hours once live bars tell the interval', () => {
+    const half = 30 * 60_000;
+    const nyMidnight = Date.UTC(2026, 0, 6, 5);
+    const at = (i: number): OHLCBar => ({ time: nyMidnight + i * half, open: 100, high: 101, low: 99, close: 100, volume: 1 });
+    chart.setSymbolInfo({ symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
+    chart.setData([]);
+    chart.setExtendedHours(false);
+    chart.appendBar(at(14)); // 07:00
+    chart.appendBar(at(15)); // 07:30
+    chart.appendBar(at(19)); // 09:30
+    expect(chart.getData().map((b) => b.time)).toEqual([at(19).time]);
+    chart.setExtendedHours(true);
+    expect(chart.getData()).toHaveLength(3);
+  });
+
+  it('takes older pages into the whole series sorted and once each', () => {
+    const half = 30 * 60_000;
+    const nyMidnight = Date.UTC(2026, 0, 6, 5);
+    const at = (i: number): OHLCBar => ({ time: nyMidnight + i * half, open: 100, high: 101, low: 99, close: 100, volume: 1 });
+    chart.setSymbolInfo({ symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
+    chart.setData([at(20), at(21), at(22)]);
+    chart.setExtendedHours(false);
+    chart.prependBars([at(19), at(15), at(19), at(18)]);
+    chart.setExtendedHours(true);
+    expect(chart.getData().map((b) => b.time)).toEqual([at(15), at(18), at(19), at(20), at(21), at(22)].map((b) => b.time));
+  });
+
+  it('prints its high/low tags in the chart’s precision from the start', () => {
+    chart.setHighLowLines(true);
+    const lines = (chart as unknown as { priceLines: { priceText: ((p: number) => string) | null } }).priceLines;
+    expect(lines.priceText?.(1.23456)).toBe(chart.formatPrice(1.23456));
+  });
+});

@@ -107,6 +107,8 @@ export function fractionTick(fraction: PriceFraction): number | null {
 export function priceFormatterFor(format: PriceFormatter | PriceFraction | null | undefined): PriceFormatter | null {
   if (!format) return null;
   if (typeof format === 'function') return format;
+  // A denominator it can't print leaves the chart's decimals.
+  if (fractionTick(format) === null) return null;
   return (price) => formatFraction(price, format.denominator, format.subDenominator);
 }
 

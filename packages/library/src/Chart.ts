@@ -578,6 +578,8 @@ export class Chart {
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
+    // Their tags in the chart's precision, locale and format.
+    this.priceLines.setPriceText((p) => this.formatPrice(p));
     if (options.extendedHours === false) this.extendedHours = false;
     if (options.timeFormatter) this.applyTimeFormatter(options.timeFormatter);
 
@@ -1285,7 +1287,9 @@ export class Chart {
     // Hidden hours with no whole series yet (too few bars to tell the interval): start one now if it can.
     if (!this.fullSeries && !this.extendedHours && !this.replaySession) {
       const data = this.dataManager.getData();
-      const all = how === 'append' || data.length === 0 ? [...data, bar] : [...data.slice(0, -1), bar];
+      // The interval is told by the last bars: no need to copy the rest.
+      const tail = data.slice(-12);
+      const all = how === 'append' || tail.length === 0 ? [...tail, bar] : [...tail.slice(0, -1), bar];
       if (this.sessionKeep(all)) {
         this.fullSeries = data.slice();
         const keep = this.sessionKeep(this.fullSeries.length > 1 ? this.fullSeries : all);
@@ -1395,7 +1399,7 @@ export class Chart {
     this.updateViewportAndRender();
     this.eventBus.emit('indicatorAdd', { instanceId, id });
     this.markStateChanged();
-    this.requestMissingSymbols();
+    this.requestMissingSymbols(instanceId);
     return instanceId;
   }
 
@@ -1407,6 +1411,7 @@ export class Chart {
    * again after a timeframe change; null forgets them.
    */
   setSymbolSeries(symbol: string, bars: DataSeries | null): void {
+    symbol = symbol.trim();
     this.symbolSeries.set(symbol, bars);
     this.requestedSymbols.delete(symbol);
     const data = this.dataManager.getData();
@@ -1442,14 +1447,18 @@ export class Chart {
     return [...out];
   }
 
-  /** Ask once for each symbol an indicator reads and the chart hasn't got. */
-  private requestMissingSymbols(): void {
+  /**
+   * Ask once for the symbol an indicator just added or changed reads, when
+   * the chart hasn't got it (not for symbols other indicators read: one
+   * whose fetch failed is asked for again only by an indicator on it).
+   */
+  private requestMissingSymbols(instanceId: string): void {
     this.forgetUnreadSymbols();
-    for (const symbol of this.getRequiredSymbols()) {
-      if (this.symbolSeries.has(symbol) || this.requestedSymbols.has(symbol)) continue;
-      this.requestedSymbols.add(symbol);
-      this.eventBus.emit('symbolSeriesRequest', { symbol });
-    }
+    const config = this.indicatorEngine.getIndicatorConfig(instanceId);
+    const symbol = config && SYMBOL_INDICATORS.has(config.id) && typeof config.params.symbol === 'string' ? config.params.symbol.trim() : '';
+    if (!symbol || this.symbolSeries.has(symbol) || this.requestedSymbols.has(symbol)) return;
+    this.requestedSymbols.add(symbol);
+    this.eventBus.emit('symbolSeriesRequest', { symbol });
   }
 
   /**
@@ -1468,7 +1477,7 @@ export class Chart {
     this.announceIndicatorUpdate(0);
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
-    this.requestMissingSymbols();
+    this.requestMissingSymbols(instanceId);
     // A price-pane indicator follows a new source into its pane, and leaves
     // it when it no longer reads from it; otherwise it stays where it is.
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
@@ -1906,7 +1915,6 @@ export class Chart {
   private applyPriceFormat(format: PriceFormatter | PriceFraction | null): void {
     this.priceFormatter = priceFormatterFor(format);
     this.priceUnit = format && typeof format !== 'function' ? fractionTick(format) : null;
-    this.priceLines.setPriceText((p) => this.formatPrice(p));
     this.viewport.setPriceFormat(this.priceFormatter, this.priceUnit);
     this.crosshairTooltip.setPriceFormatter(this.priceFormatter);
     this.pinnedTooltip.setPriceFormatter(this.priceFormatter);
