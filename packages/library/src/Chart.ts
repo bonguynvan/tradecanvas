@@ -43,7 +43,8 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator } from '@tradecanvas/core';
+import { regularHoursFilter } from './regularHours.js';
 import {
   RenderEngine,
   Viewport,
@@ -262,6 +263,14 @@ export class Chart {
   private mainSeriesVisible = true;
   /** The visible high and low, the bid and the ask. */
   private priceLines = new PriceLines();
+  /** Other symbols' bars, for the indicators that compare with them. */
+  private symbolSeries = new SymbolSeriesStore();
+  /** Bars outside the symbol's regular hours shown. */
+  private extendedHours = true;
+  /** While they are hidden: the whole series, theirs included (the data manager has the rest). */
+  private fullSeries: OHLCBar[] | null = null;
+  /** Symbols asked for (`symbolSeriesRequest`) and not given yet. */
+  private requestedSymbols = new Set<string>();
   private gridRenderer: GridRenderer;
   private priceAxis: PriceAxis;
   /** The left price scale: overlays put on it, else a mirror of the price scale. */
@@ -374,6 +383,9 @@ export class Chart {
     this.eventBus = new EventBus();
 
     registerBuiltInIndicators(this.indicatorEngine);
+    // Indicators on other symbols' bars, kept by this chart.
+    this.indicatorEngine.register(new CompareSymbolIndicator(this.symbolSeries));
+    this.indicatorEngine.register(new SpreadIndicator(this.symbolSeries));
 
     // Drawing tools
     this.drawingManager = new DrawingManager();
@@ -562,6 +574,7 @@ export class Chart {
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
+    if (options.extendedHours === false) this.extendedHours = false;
     if (options.timeFormatter) this.applyTimeFormatter(options.timeFormatter);
 
     // Keyboard navigation
@@ -940,7 +953,7 @@ export class Chart {
     this.snapshotKey = null;
     this.endReplaySession();
     this.history.reset();
-    this.dataManager.setData(data);
+    this.dataManager.setData(this.regularOnly(data));
     this.crosshairHandler.setData(this.dataManager.getData());
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
@@ -970,13 +983,24 @@ export class Chart {
    */
   prependBars(bars: OHLCBar[]): number {
     if (this.replaySession) return 0;
+    // Hidden extended hours: the older bars all go to the whole series, the
+    // regular ones on the chart too; the page counts as loaded either way.
+    let taken: number | null = null;
+    if (this.fullSeries) {
+      const first = this.fullSeries[0]?.time;
+      const older = bars.filter((b) => first === undefined || b.time < first);
+      this.fullSeries = [...older, ...this.fullSeries];
+      const keep = this.sessionKeep(this.fullSeries);
+      taken = older.length;
+      bars = keep ? older.filter((b) => keep(b.time)) : older;
+    }
     // The bar at the left edge, by time: Renko bricks and the like are rebuilt
     // from the whole series, so counting what was added would not find it.
     const shown = this.getDisplayData();
     const leftIndex = Math.max(0, Math.min(shown.length - 1, Math.floor(this.viewport.getState().visibleRange.from)));
     const leftTime = shown[leftIndex]?.time;
     const added = this.dataManager.prependBars(bars);
-    if (added === 0) return 0;
+    if (added === 0) return taken ?? 0;
     const data = this.dataManager.getData();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
@@ -990,7 +1014,7 @@ export class Chart {
       this.viewport.prependBars(now - leftIndex);
     }
     this.updateViewportAndRender();
-    return added;
+    return taken ?? added;
   }
 
   /**
@@ -998,7 +1022,7 @@ export class Chart {
    * the older bars paged in and the view, replace the rest.
    */
   private mergeSnapshot(bars: OHLCBar[]): void {
-    const data = this.dataManager.getData();
+    const data = this.fullSeries ?? this.dataManager.getData();
     const first = bars[0]?.time;
     let keep = 0;
     while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
@@ -1009,7 +1033,7 @@ export class Chart {
       return;
     }
     const follow = this.viewport.isAtEnd();
-    this.dataManager.setData(data.slice(0, keep).concat(bars));
+    this.dataManager.setData(this.regularOnly(data.slice(0, keep).concat(bars)));
     const merged = this.dataManager.getData();
     this.crosshairHandler.setData(merged);
     this.displayDataCache = null;
@@ -1089,6 +1113,7 @@ export class Chart {
       this.replaySession.live.appendBar(bar);
       return;
     }
+    if (!this.takeBar(bar, 'append')) return;
     // Follow the live edge only if the view is already there — browsing
     // history shouldn't be yanked back to the end on every new bar.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
@@ -1113,6 +1138,8 @@ export class Chart {
       for (const bar of bars) this.replaySession.live.appendBar(bar);
       return;
     }
+    bars = bars.filter((bar) => this.takeBar(bar, 'append'));
+    if (bars.length === 0) return;
     const follow = this.viewport.isAtEnd();
     const firstChanged = this.dataManager.getLength() - 1;
     for (const bar of bars) {
@@ -1127,6 +1154,10 @@ export class Chart {
   updateLastBar(bar: OHLCBar): void {
     if (this.replaySession) {
       this.replaySession.live.updateLastBar(bar);
+      return;
+    }
+    if (!this.takeBar(bar, 'update')) {
+      this.currentPriceLine.setPrice(bar.close);
       return;
     }
     this.dataManager.updateLastBar(bar);
@@ -1151,6 +1182,13 @@ export class Chart {
     if (this.replaySession) {
       this.replaySession.live.updateLastBarFromTick(tick);
       if (Number.isFinite(tick.price)) this.replaySession.price = { price: tick.price };
+      return;
+    }
+    // A tick outside regular hours, while they are hidden, moves only the price line.
+    const keep = this.fullSeries ? this.sessionKeep(this.fullSeries) : null;
+    if (keep && !keep(tick.time)) {
+      this.currentPriceLine.setPrice(tick.price);
+      this.scheduleRender();
       return;
     }
     this.dataManager.updateLastBarFromTick(tick);
@@ -1190,6 +1228,66 @@ export class Chart {
 
   getChartTypeOptions(): ChartTypeOptions {
     return readChartTypeOptions(this.chartTypeOptions);
+  }
+
+  /**
+   * Show or hide the bars outside the symbol's regular hours
+   * (`SymbolInfo.sessions`, in its `timezone`): pre- and post-market. Hidden,
+   * they are kept aside and come back when shown again. Bars a day or longer,
+   * and symbols without hours, are left as they are.
+   */
+  setExtendedHours(show: boolean): void {
+    if (show === this.extendedHours) return;
+    this.extendedHours = show;
+    this.reapplyExtendedHours();
+    this.markStateChanged();
+  }
+
+  isExtendedHoursVisible(): boolean {
+    return this.extendedHours;
+  }
+
+  /** Which bar times to show, for bars like `data`'s; null: all of them. */
+  private sessionKeep(data: readonly { time: number }[]): ((time: number) => boolean) | null {
+    return this.extendedHours ? null : regularHoursFilter(this.symbolInfo, data);
+  }
+
+  /** The bars of `all` the chart shows (no state kept). */
+  private shownBars(all: OHLCBar[]): OHLCBar[] {
+    const keep = this.sessionKeep(all);
+    return keep ? all.filter((b) => keep(b.time)) : all.slice();
+  }
+
+  /** The bars of `all` the chart shows; while some are hidden, `all` is kept as the whole series. */
+  private regularOnly(all: OHLCBar[]): OHLCBar[] {
+    const keep = this.sessionKeep(all);
+    this.fullSeries = keep ? all.slice() : null;
+    return keep ? all.filter((b) => keep(b.time)) : all;
+  }
+
+  /** A new or updated bar into the whole series (while one is kept): whether the chart shows it. */
+  private takeBar(bar: OHLCBar, how: 'append' | 'update'): boolean {
+    const full = this.fullSeries;
+    if (!full) return true;
+    if (how === 'append' || full.length === 0) full.push(bar);
+    else full[full.length - 1] = bar;
+    const keep = this.sessionKeep(full);
+    return !keep || keep(bar.time);
+  }
+
+  /** The bars shown again after the extended hours or the symbol's hours changed. */
+  private reapplyExtendedHours(): void {
+    if (this.replaySession) return; // the replay's end brings the series back through the filter
+    const all = this.fullSeries ?? this.dataManager.getData().slice();
+    if (!this.fullSeries && !this.sessionKeep(all)) return; // nothing hidden before or now
+    this.dataManager.setData(this.regularOnly(all));
+    const data = this.dataManager.getData();
+    this.crosshairHandler.setData(data);
+    this.displayDataCache = null;
+    this.sessionBreaks.invalidateCache();
+    this.recalcIndicators(data);
+    this.updateViewportAndRender(true);
+    this.eventBus.emit('dataUpdate', { length: data.length });
   }
 
   /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
@@ -1262,7 +1360,54 @@ export class Chart {
     this.updateViewportAndRender();
     this.eventBus.emit('indicatorAdd', { instanceId, id });
     this.markStateChanged();
+    this.requestMissingSymbols();
     return instanceId;
+  }
+
+  // --- Other symbols' bars ---
+
+  /**
+   * Another symbol's bars, for the indicators that read it ('compareSymbol',
+   * 'spread'): they line them up with the chart's bars by time. Give them
+   * again after a timeframe change; null forgets them.
+   */
+  setSymbolSeries(symbol: string, bars: DataSeries | null): void {
+    this.symbolSeries.set(symbol, bars);
+    this.requestedSymbols.delete(symbol);
+    const data = this.dataManager.getData();
+    let changed = false;
+    for (const ind of this.indicatorEngine.getActiveIndicators()) {
+      if (!SYMBOL_INDICATORS.has(ind.id) || ind.params.symbol !== symbol) continue;
+      this.indicatorEngine.updateIndicator(ind.instanceId, {}, data);
+      changed = true;
+    }
+    if (!changed) return;
+    this.announceIndicatorUpdate(0);
+    this.updateViewportAndRender();
+  }
+
+  /** The bars given for `symbol`, or null. */
+  getSymbolSeries(symbol: string): DataSeries | null {
+    return this.symbolSeries.get(symbol) ?? null;
+  }
+
+  /** The symbols the chart's indicators read, whether their bars are here or not. */
+  getRequiredSymbols(): string[] {
+    const out = new Set<string>();
+    for (const ind of this.indicatorEngine.getActiveIndicators()) {
+      const symbol = ind.params.symbol;
+      if (SYMBOL_INDICATORS.has(ind.id) && typeof symbol === 'string' && symbol.trim()) out.add(symbol.trim());
+    }
+    return [...out];
+  }
+
+  /** Ask once for each symbol an indicator reads and the chart hasn't got. */
+  private requestMissingSymbols(): void {
+    for (const symbol of this.getRequiredSymbols()) {
+      if (this.symbolSeries.has(symbol) || this.requestedSymbols.has(symbol)) continue;
+      this.requestedSymbols.add(symbol);
+      this.eventBus.emit('symbolSeriesRequest', { symbol });
+    }
   }
 
   /**
@@ -1281,6 +1426,7 @@ export class Chart {
     this.announceIndicatorUpdate(0);
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
+    this.requestMissingSymbols();
     // A price-pane indicator follows a new source into its pane, and leaves
     // it when it no longer reads from it; otherwise it stays where it is.
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
@@ -1592,15 +1738,30 @@ export class Chart {
    * A pane's value scale: logarithmic (used while all its values are above 0;
    * linear otherwise), upside down. The pane `instanceId` is drawn in.
    */
-  setPaneScale(instanceId: string, scale: { log?: boolean; invert?: boolean }): boolean {
+  setPaneScale(instanceId: string, scale: { log?: boolean; invert?: boolean; percent?: boolean }): boolean {
     const pane = this.paneOf(instanceId);
     return this.recordIndicators(pane, () => this.paneChange(pane, 'scale', () => this.layoutManager.setPanelScale(pane, scale)));
   }
 
   /** The pane's value scale as set (see `setPaneScale`). */
-  getPaneScale(instanceId: string): { log: boolean; invert: boolean } {
+  getPaneScale(instanceId: string): { log: boolean; invert: boolean; percent: boolean } {
     const panel = this.layoutManager.getPanels().find((p) => p.id === this.paneOf(instanceId));
-    return { log: !!panel?.logScale, invert: !!panel?.invertScale };
+    return { log: !!panel?.logScale, invert: !!panel?.invertScale, percent: !!panel?.percentScale };
+  }
+
+  /** A pane's first value on screen (its own indicator's first line), the 0% of a percent scale. */
+  private paneBaseline(instanceId: string, from: number, to: number): number | undefined {
+    const series = this.indicatorEngine.getOutput(instanceId)?.series;
+    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
+    if (!series || !descriptor) return undefined;
+    const key = descriptor.plots?.[0]?.key;
+    for (let i = Math.max(0, from); i <= to && i < series.length; i++) {
+      const point = series[i];
+      if (!point) continue;
+      const value = key !== undefined ? point[key] : Object.values(point).find((v) => typeof v === 'number' && Number.isFinite(v));
+      if (typeof value === 'number' && Number.isFinite(value) && value !== 0) return value;
+    }
+    return undefined;
   }
 
   /** Move a pane one place up (`-1`) or down (`1`) among the panes on its side. */
@@ -2403,6 +2564,7 @@ export class Chart {
         this.replaySession.live.appendBar(bar);
         return;
       }
+      if (!this.takeBar(bar, 'append')) return;
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
       this.dataManager.appendBar(bar);
       const data = this.dataManager.getData();
@@ -2417,8 +2579,12 @@ export class Chart {
         this.replaySession.live.updateLastBar(bar);
         return;
       }
-      this.dataManager.updateLastBar(bar);
       this.currentPriceLine.setPrice(bar.close);
+      if (!this.takeBar(bar, 'update')) {
+        this.scheduleRender();
+        return;
+      }
+      this.dataManager.updateLastBar(bar);
       // Recalculate indicators so panel/overlay series track the forming bar
       // instead of freezing until bar close — incrementally, since only the
       // last bar changed.
@@ -3046,6 +3212,7 @@ export class Chart {
       ? { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute }
       : this.hostSessionHours);
     if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
+    this.reapplyExtendedHours();
     this.updateViewportAndRender();
     this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
   }
@@ -3406,12 +3573,12 @@ export class Chart {
     if (!this.replaySession) {
       if (this.dataManager.getLength() === 0) return; // nothing to replay
       const live = new DataManager();
-      live.setData(this.dataManager.getData());
+      live.setData(this.fullSeries ?? this.dataManager.getData());
       this.replaySession = { live, price: null, fedTime: null };
     }
     // Replay the live series as it stands now (a restart includes bars that
     // arrived during the previous run).
-    const coarse = this.replaySession.live.getData().slice();
+    const coarse = this.shownBars(this.replaySession.live.getData());
     const { steps: rawSteps, ...playConfig } = config ?? {};
     const steps = rawSteps ? replaySteps(rawSteps, coarse) : null;
     this.replayStepsSeries = steps;
@@ -3690,7 +3857,7 @@ export class Chart {
     for (const [ind, instanceId] of restored) {
       if (ind.paneSize !== undefined) this.layoutManager.setPanelSize(instanceId, ind.paneSize);
       if (ind.paneSize !== undefined || ind.paneCollapsed) this.layoutManager.setPanelCollapsed(instanceId, !!ind.paneCollapsed);
-      if (ind.paneSize !== undefined) this.layoutManager.setPanelScale(instanceId, { log: !!ind.paneLog, invert: !!ind.paneInvert });
+      if (ind.paneSize !== undefined) this.layoutManager.setPanelScale(instanceId, { log: !!ind.paneLog, invert: !!ind.paneInvert, percent: !!ind.panePercent });
     }
     const ordered = restored
       .filter(([ind]) => ind.paneOrder !== undefined)
@@ -3730,6 +3897,7 @@ export class Chart {
                 ...(maximized === ind.instanceId ? { paneMaximized: true } : {}),
                 ...(panel.logScale ? { paneLog: true } : {}),
                 ...(panel.invertScale ? { paneInvert: true } : {}),
+                ...(panel.percentScale ? { panePercent: true } : {}),
               }
             : {}),
         };
@@ -4161,10 +4329,11 @@ export class Chart {
     }
 
     // Expand the fitted range to include overlay indicator values (BB, Ichimoku, etc.)
+    // and the compare lines on the price scale.
     if (autoScale) {
-      const overlayRange = this.indicatorEngine.getOverlayPriceRange(
-        vs.visibleRange.from,
-        Math.min(vs.visibleRange.to, displayData.length - 1),
+      const overlayRange = joinRanges(
+        this.indicatorEngine.getOverlayPriceRange(vs.visibleRange.from, Math.min(vs.visibleRange.to, displayData.length - 1)),
+        this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
       );
       if (overlayRange) {
         const current = vs.priceRange;
@@ -4385,7 +4554,9 @@ export class Chart {
           // Each pane has its own value scale: linear unless set to log (and
           // all its values are above 0), upright unless set upside down.
           logScale: logRange !== null,
-          scaleMode: 'regular' as const,
+          // In percent: labels only, of its first value on screen.
+          scaleMode: panel.config.percentScale ? 'percentage' as const : 'regular' as const,
+          scaleBaseline: panel.config.percentScale ? this.paneBaseline(panel.config.id, from, to) : undefined,
           // A pane's values are its own, not prices.
           formatPrice: undefined,
           priceUnit: undefined,
@@ -4536,6 +4707,19 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.pane ?? null) === (b.pane ?? null)
     && (a.scale ?? null) === (b.scale ?? null)
     && (a.position === undefined) === (b.position === undefined);
+}
+
+/** The indicators that read another symbol's bars (`params.symbol`). */
+const SYMBOL_INDICATORS: ReadonlySet<string> = new Set(['compareSymbol', 'spread']);
+
+/** Both ranges in one (either may be null). */
+function joinRanges(
+  a: { min: number; max: number } | null,
+  b: { min: number; max: number } | null,
+): { min: number; max: number } | null {
+  if (!a) return b;
+  if (!b) return a;
+  return { min: Math.min(a.min, b.min), max: Math.max(a.max, b.max) };
 }
 
 /** An alert as its events carry it. */

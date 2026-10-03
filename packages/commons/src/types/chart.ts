@@ -182,6 +182,11 @@ export interface ChartOptions {
   chartTypeOptions?: ChartTypeOptions;
   /** Mark the highest high and lowest low on screen with a line and a price tag. */
   highLowLines?: boolean;
+  /**
+   * Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`):
+   * pre- and post-market. Default true; bars a day or longer are never left out.
+   */
+  extendedHours?: boolean;
 }
 
 /** A price in your words, e.g. `(p) => '$' + p.toFixed(2)`. */

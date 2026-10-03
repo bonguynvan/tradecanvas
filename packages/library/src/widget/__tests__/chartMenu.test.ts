@@ -50,9 +50,9 @@ describe('chart menus', () => {
   });
 
   it('gives a pane its scale switches', () => {
-    const entries = chartMenuEntries('pane', ctx({ pane: { log: true, invert: false } }), EN_TRANSLATOR);
-    expect(ids(entries)).toEqual(['resetView', '|', 'paneLog', 'paneInvert', '|', 'settings']);
-    expect(entries.filter((e) => e !== 'separator').map((e) => (e as { checked?: boolean }).checked)).toEqual([undefined, true, false, undefined]);
+    const entries = chartMenuEntries('pane', ctx({ pane: { log: true, invert: false, percent: true } }), EN_TRANSLATOR);
+    expect(ids(entries)).toEqual(['resetView', '|', 'paneLog', 'paneInvert', 'panePercent', '|', 'settings']);
+    expect(entries.filter((e) => e !== 'separator').map((e) => (e as { checked?: boolean }).checked)).toEqual([undefined, true, false, true, undefined]);
   });
 
   it('offers the time axis a reset and go-to-date', () => {

@@ -78,8 +78,8 @@ export class LayoutManager {
     return this.maximized !== null ? this.maximized !== instanceId : !!panel.collapsed;
   }
 
-  /** A pane's value scale: logarithmic, upside down. False when nothing changed. */
-  setPanelScale(instanceId: string, scale: { log?: boolean; invert?: boolean }): boolean {
+  /** A pane's value scale: logarithmic, upside down, in percent. False when nothing changed. */
+  setPanelScale(instanceId: string, scale: { log?: boolean; invert?: boolean; percent?: boolean }): boolean {
     const panel = this.panels.find((p) => p.id === instanceId);
     if (!panel) return false;
     let changed = false;
@@ -89,6 +89,10 @@ export class LayoutManager {
     }
     if (scale.invert !== undefined && !!panel.invertScale !== scale.invert) {
       panel.invertScale = scale.invert || undefined;
+      changed = true;
+    }
+    if (scale.percent !== undefined && !!panel.percentScale !== scale.percent) {
+      panel.percentScale = scale.percent || undefined;
       changed = true;
     }
     return changed;

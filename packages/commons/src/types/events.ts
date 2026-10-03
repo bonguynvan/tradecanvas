@@ -57,6 +57,7 @@ export type ChartEventType =
   | 'alertTriggered'
   /** An alert reached its `expiresAt` without firing. */
   | 'alertExpired'
+  | 'symbolSeriesRequest'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -313,6 +314,8 @@ export interface ChartEventMap {
   alertRemove: AlertRemovePayload;
   alertTriggered: AlertPayload;
   alertExpired: AlertPayload;
+  /** An indicator reads a symbol the chart has no bars of: give them with `setSymbolSeries`. */
+  symbolSeriesRequest: { symbol: string };
   alertUpdate: AlertPayload;
 }
 

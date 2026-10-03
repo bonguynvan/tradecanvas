@@ -31,6 +31,17 @@ class FakeChart {
   getActiveIndicators(): unknown[] { return this.indicatorsShown; }
   indicatorsShown: unknown[] = [];
   roundPrice(p: number): number { return Math.round(p); }
+  added: [string, Record<string, unknown>, string?, Record<string, unknown>?][] = [];
+  addIndicator(id: string, params: Record<string, unknown>, position?: string, options?: Record<string, unknown>): string {
+    this.added.push([id, params, position, options]);
+    return `tc_${id}_${this.added.length}`;
+  }
+  moved: [string, string][] = [];
+  moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
+  series = new Map<string, unknown>();
+  setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
+  required: string[] = [];
+  getRequiredSymbols(): string[] { return this.required; }
   replays: Record<string, unknown>[] = [];
   replayStart(config: Record<string, unknown>): void { this.replays.push(config); this.replaying = true; }
   replaying = false;
@@ -290,5 +301,43 @@ describe('ChartWidget signal marker note', () => {
     expect(tip.textContent).toContain('Long · 101.00 · confidence 82%');
     FakeChart.last.emit('signalMarkerHover', { marker: null, x: 0, y: 0 });
     expect(tip.hidden).toBe(true);
+  });
+});
+
+describe('ChartWidget comparing with another symbol', () => {
+  const HOUR = 3_600_000;
+  const bars = Array.from({ length: 5 }, (_, i) => ({ time: i * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  const adapter = {
+    name: 'fake',
+    connect: () => {},
+    disconnect: () => {},
+    getConnectionState: () => 'connected',
+    fetchHistory: vi.fn(async () => bars),
+    on: () => {},
+    off: () => {},
+    dispose: () => {},
+  };
+
+  it('puts the other symbol on its own scale, in its own pane, or as a spread or ratio', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    await widget.addCompareSymbol('BBB', 'scale');
+    await widget.addCompareSymbol('BBB', 'pane');
+    await widget.addCompareSymbol('BBB', 'ratio');
+    expect(fake.added).toEqual([
+      ['compareSymbol', { symbol: 'BBB' }, 'bottom', { scale: 'left' }],
+      ['compareSymbol', { symbol: 'BBB' }, undefined, undefined],
+      ['spread', { symbol: 'BBB', mode: 'ratio' }, undefined, undefined],
+    ]);
+    expect(fake.moved).toEqual([['tc_compareSymbol_2', 'new']]);
+  });
+
+  it('fetches the bars a chart’s indicator asks for, and again on a new interval', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never, timeframe: '1h' });
+    const fake = FakeChart.last;
+    fake.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBe(bars);
+    expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', expect.any(Number));
   });
 });

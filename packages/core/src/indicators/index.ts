@@ -99,3 +99,5 @@ export { MomentumIndicator } from './panel/Momentum.js';
 export { HistoricalVolatilityIndicator } from './panel/HistoricalVolatility.js';
 export { VolumeOscillatorIndicator } from './panel/VolumeOscillator.js';
 export { UlcerIndexIndicator } from './panel/UlcerIndex.js';
+export { SymbolSeriesStore } from './symbols/SymbolSeriesStore.js';
+export { CompareSymbolIndicator, SpreadIndicator } from './symbols/symbolIndicators.js';

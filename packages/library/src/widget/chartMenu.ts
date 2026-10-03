@@ -9,7 +9,8 @@ export type ChartMenuAction =
   | 'autoScale' | 'logScale' | 'percentScale' | 'invertScale'
   | 'goToDate'
   | 'paneLog'
-  | 'paneInvert';
+  | 'paneInvert'
+  | 'panePercent';
 
 /** What the widget can do here, and how the chart is set now. */
 export interface ChartMenuContext {
@@ -30,7 +31,7 @@ export interface ChartMenuContext {
   scaleMode: PriceScaleMode;
   inverted: boolean;
   /** For a pane's menu: its scale switches. */
-  pane?: { log: boolean; invert: boolean };
+  pane?: { log: boolean; invert: boolean; percent: boolean };
 }
 
 /**
@@ -89,7 +90,8 @@ export function chartMenuEntries(area: ChartContextArea, ctx: ChartMenuContext, 
         ...(ctx.pane
           ? ['separator' as const,
             { id: 'paneLog', label: t('chartMenu.paneLog'), checked: ctx.pane.log },
-            { id: 'paneInvert', label: t('chartMenu.paneInvert'), checked: ctx.pane.invert }]
+            { id: 'paneInvert', label: t('chartMenu.paneInvert'), checked: ctx.pane.invert },
+            { id: 'panePercent', label: t('chartMenu.panePercent'), checked: ctx.pane.percent }]
           : []),
         'separator',
         settings,

@@ -67,6 +67,7 @@ export interface SnapshotIndicator {
   /** The pane's value scale: logarithmic, upside down. */
   paneLog?: boolean;
   paneInvert?: boolean;
+  panePercent?: boolean;
 }
 
 /**
@@ -227,6 +228,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       paneMaximized: ind.paneMaximized === true ? true : undefined,
       paneLog: ind.paneLog === true ? true : undefined,
       paneInvert: ind.paneInvert === true ? true : undefined,
+      panePercent: ind.panePercent === true ? true : undefined,
     });
   }
 
