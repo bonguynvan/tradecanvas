@@ -251,3 +251,28 @@ describe('alerts across a replay', () => {
     expect(fired).toEqual(['up']);
   });
 });
+
+describe('replay events and seeking by time', () => {
+  it('tells each step: the bar forming, when it opened, and up to when the replay has shown', () => {
+    const steps15: unknown[] = [];
+    const states: string[] = [];
+    chart.on('replayStep', (e) => steps15.push(e.payload));
+    chart.on('replayState', (e) => states.push((e.payload as { state: string }).state));
+    chart.replayStart({ steps, startIndex: 2, paused: true });
+    expect(steps15.at(-1)).toEqual({ barIndex: 2, time: hours[2].time, until: hours[3].time });
+    chart.replaySeek(chart.getReplayProgress().current + 1);
+    expect(steps15.at(-1)).toEqual({ barIndex: 3, time: hours[3].time, until: hours[3].time + STEP });
+    chart.replayStop();
+    expect(states).toContain('paused');
+    expect(states.at(-1)).toBe('stopped');
+  });
+
+  it('jumps to the bars that opened before a time', () => {
+    chart.replayStart({ startIndex: 1, paused: true });
+    chart.replaySeekToTime(hours[6].time + 1);
+    expect(chart.getData()).toHaveLength(7);
+    chart.replaySeekToTime(hours[3].time);
+    expect(chart.getData()).toHaveLength(3);
+  });
+});
+

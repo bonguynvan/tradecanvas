@@ -45,6 +45,8 @@ import type { ChartTypeOptions, PriceFormatter, PriceFraction, TimeFormatter } f
 import { readChartTypeOptions } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
+import { indicatorChipLabel } from './indicatorLabel.js';
+import type { ExportColumn } from '@tradecanvas/core';
 import {
   RenderEngine,
   Viewport,
@@ -674,6 +676,7 @@ export class Chart {
 
     // Replay
     this.replayManager = new ReplayManager();
+    this.replayManager.on('stateChange', (state) => this.eventBus.emit('replayState', { state }));
 
     // Measure overlay (shift-drag ruler)
     this.measureOverlay = new MeasureOverlay();
@@ -2210,34 +2213,62 @@ export class Chart {
   // --- Data export ---
 
   /** Does nothing when `features.dataExport` is false. */
-  exportVisibleData(format: 'csv' | 'json' = 'csv', filename?: string): void {
+  /**
+   * Download the bars on screen as CSV or JSON, each indicator line in a
+   * column of its own (`indicators: false` leaves them out). Does nothing
+   * when `features.dataExport` is false.
+   */
+  exportVisibleData(format: 'csv' | 'json' = 'csv', filename?: string, options: { indicators?: boolean } = {}): void {
     if (!this.features.dataExport) return;
-    const vp = this.viewport.getState();
-    const data = this.dataManager.getData();
-    const from = Math.max(0, vp.visibleRange.from);
-    const to = Math.min(data.length - 1, vp.visibleRange.to);
-    const slice = data.slice(from, to + 1);
-
-    if (format === 'json') {
-      const content = DataExporter.toJSON(slice);
-      DataExporter.download(content, filename ?? 'chart-data.json', 'application/json');
-    } else {
-      const content = DataExporter.toCSV(slice);
-      DataExporter.download(content, filename ?? 'chart-data.csv', 'text/csv');
-    }
+    this.download(format, filename, { ...options, range: 'visible' });
   }
 
-  /** Does nothing when `features.dataExport` is false. */
-  exportAllData(format: 'csv' | 'json' = 'csv', filename?: string): void {
+  /** `exportVisibleData` for every bar loaded. Does nothing when `features.dataExport` is false. */
+  exportAllData(format: 'csv' | 'json' = 'csv', filename?: string, options: { indicators?: boolean } = {}): void {
     if (!this.features.dataExport) return;
+    this.download(format, filename, { ...options, range: 'all' });
+  }
+
+  /**
+   * The bars and their indicator lines, one column per line named as the
+   * legend names it ("SMA 20", "MACD 12 26 9 Signal"): every bar loaded, or
+   * those on screen (`range: 'visible'`).
+   */
+  getExportData(options: { range?: 'all' | 'visible'; indicators?: boolean } = {}): { bars: OHLCBar[]; columns: ExportColumn[] } {
     const data = this.dataManager.getData();
-    if (format === 'json') {
-      const content = DataExporter.toJSON(data);
-      DataExporter.download(content, filename ?? 'chart-data.json', 'application/json');
-    } else {
-      const content = DataExporter.toCSV(data);
-      DataExporter.download(content, filename ?? 'chart-data.csv', 'text/csv');
+    let from = 0;
+    let to = data.length - 1;
+    if (options.range === 'visible') {
+      const { visibleRange } = this.viewport.getState();
+      from = Math.max(0, visibleRange.from);
+      to = Math.min(data.length - 1, visibleRange.to);
     }
+    const bars = data.slice(from, to + 1);
+    if (options.indicators === false) return { bars, columns: [] };
+    const columns: ExportColumn[] = [];
+    for (const ind of this.indicatorEngine.getActiveIndicators()) {
+      const series = this.indicatorEngine.getOutput(ind.instanceId)?.series;
+      if (!series) continue;
+      const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+      const plots = ind.descriptor.plots ?? Object.keys(series.find((p) => p) ?? {}).map((key) => ({ key, title: key }));
+      for (const plot of plots) {
+        const title = plots.length > 1 ? ` ${plot.title ?? plot.key}` : '';
+        columns.push({ name: `${name}${title}`, values: bars.map((_, i) => series[from + i]?.[plot.key] ?? null) });
+      }
+    }
+    return { bars, columns };
+  }
+
+  /** `getExportData` as CSV or JSON text. */
+  getExportText(format: 'csv' | 'json' = 'csv', options: { range?: 'all' | 'visible'; indicators?: boolean } = {}): string {
+    const { bars, columns } = this.getExportData(options);
+    return format === 'json' ? DataExporter.toJSON(bars, columns) : DataExporter.toCSV(bars, columns);
+  }
+
+  private download(format: 'csv' | 'json', filename: string | undefined, options: { range: 'all' | 'visible'; indicators?: boolean }): void {
+    const text = this.getExportText(format, options);
+    if (format === 'json') DataExporter.download(text, filename ?? 'chart-data.json', 'application/json');
+    else DataExporter.download(text, filename ?? 'chart-data.csv', 'text/csv');
   }
 
   // --- Auto-save ---
@@ -3637,8 +3668,26 @@ export class Chart {
       this.displayDataCache = null;
       this.updateViewportAndRender(follow);
       this.feedReplaySteps(series, index);
+      // Up to when it has shown: the next step's time (past the last one, its spacing on).
+      const next = series[index + 1]?.time;
+      const until = next ?? series[index].time + (index > 0 ? series[index].time - series[index - 1].time : 0);
+      this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until });
     });
     this.replayManager.play(playConfig);
+  }
+
+  /** Jump the replay to show the bars (or finer steps) that opened before `time`. */
+  replaySeekToTime(time: number): void {
+    if (!this.replaySession || !this.replayCoarse) return;
+    const series = this.replayStepsSeries ?? this.replayCoarse;
+    let lo = 0;
+    let hi = series.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (series[mid].time < time) lo = mid;
+      else hi = mid - 1;
+    }
+    this.replaySeek(lo);
   }
 
   /** A replay step's price to an adapter that takes a mark (a paper account), and to the orders on the chart. */

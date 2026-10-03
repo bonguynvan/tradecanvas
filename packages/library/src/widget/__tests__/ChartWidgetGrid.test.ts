@@ -44,6 +44,12 @@ class FakeChart {
   getFills(): unknown[] { return []; }
   getIndicatorOutput(): null { return null; }
   formatPrice(v: number): string { return v.toFixed(2); }
+  replay: (string | number)[] = [];
+  replaying = false;
+  isReplayActive(): boolean { return this.replaying; }
+  replayStart(config: { startIndex: number }): void { this.replaying = true; this.replay.push(`start ${config.startIndex}`); }
+  replaySeekToTime(time: number): void { this.replay.push(`seek ${time}`); }
+  replayStop(): void { this.replaying = false; this.replay.push('stop'); }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -234,3 +240,26 @@ describe('ChartWidgetGrid', () => {
     expect(host.querySelector('.tcw-name-prompt')!.closest('.tcw-modal-backdrop')!.hasAttribute('hidden')).toBe(false);
   });
 });
+
+describe('ChartWidgetGrid replay', () => {
+  it('replays the other charts to the same time, when asked to', () => {
+    make({ layout: '1x2', sync: { replay: true } });
+    const [a, b] = charts();
+    a.emit('replayStep', { barIndex: 1, time: 200, until: 300 });
+    expect(b.replay).toEqual(['start 1']);
+    a.emit('replayStep', { barIndex: 2, time: 300, until: 400 });
+    expect(b.replay).toEqual(['start 1', 'seek 400']);
+    a.emit('replayState', { state: 'stopped' });
+    expect(b.replay.at(-1)).toBe('stop');
+    expect(a.replay).toEqual([]);
+  });
+
+  it('leaves the others alone without replay in sync', () => {
+    make({ layout: '1x2' });
+    const [a, b] = charts();
+    a.emit('replayStep', { barIndex: 1, time: 200, until: 300 });
+    expect(b.replay).toEqual([]);
+    expect(syncButton('Replay')).toBeTruthy();
+  });
+});
+

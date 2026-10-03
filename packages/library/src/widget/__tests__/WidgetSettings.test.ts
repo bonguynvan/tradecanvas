@@ -75,6 +75,7 @@ describe('the display tab', () => {
     const toggle = (label: string) => rows.find((r) => r.textContent === label)!.querySelector('button')!;
     toggle('Main series').click();
     toggle('High and low lines').click();
-    expect(changes).toEqual([{ mainSeriesVisible: false }, { highLowLines: true }]);
+    toggle('Extended hours').click();
+    expect(changes).toEqual([{ mainSeriesVisible: false }, { highLowLines: true }, { extendedHours: false }]);
   });
 });

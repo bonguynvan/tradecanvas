@@ -58,6 +58,10 @@ export type ChartEventType =
   /** An alert reached its `expiresAt` without firing. */
   | 'alertExpired'
   | 'symbolSeriesRequest'
+  /** A replay step: the bar forming, when it opened, and up to when the replay has shown. */
+  | 'replayStep'
+  /** A replay started playing, paused or ended. */
+  | 'replayState'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -316,7 +320,19 @@ export interface ChartEventMap {
   alertExpired: AlertPayload;
   /** An indicator reads a symbol the chart has no bars of: give them with `setSymbolSeries`. */
   symbolSeriesRequest: { symbol: string };
+  replayStep: ReplayStepPayload;
+  replayState: { state: 'playing' | 'paused' | 'stopped' };
   alertUpdate: AlertPayload;
+}
+
+/** Payload for `replayStep`. */
+export interface ReplayStepPayload {
+  /** The chart's bar forming now. */
+  barIndex: number;
+  /** When it opened. */
+  time: number;
+  /** The replay has shown everything before this time (the next step's). */
+  until: number;
 }
 
 export interface AlertRemovePayload {

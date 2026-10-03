@@ -15,6 +15,7 @@ import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
+import { indicatorChipLabel } from '../indicatorLabel.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -167,6 +168,8 @@ export class ChartWidget {
   private chartMenu: WidgetContextMenu | null = null;
   /** The pane a chart menu was opened on (its scale switches act on it). */
   private menuPane: string | null = null;
+  /** Whether the chart menu offers a download of the data. */
+  private canExport = true;
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -296,6 +299,7 @@ export class ChartWidget {
       ...options.chartOptions?.features,
     };
 
+    this.canExport = features.dataExport !== false;
     // The display toggles start where the host's features put them, and Reset goes back there.
     this.settingsDefaults = {
       ...this.settingsState,
@@ -1304,6 +1308,7 @@ export class ChartWidget {
       hasDrawings: drawings.length > 0,
       drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
       canGoToDate: this.goToDate !== null,
+      canExport: this.canExport,
       autoScale: this.chart.isAutoScale(),
       scaleMode: this.settingsState.scaleMode,
       inverted: this.chart.isInvertScale(),
@@ -1380,6 +1385,10 @@ export class ChartWidget {
         break;
       case 'orderTicket':
         this.openOrderTicket(price);
+        break;
+      case 'exportData':
+        // Every bar loaded, with the indicator lines, named after the symbol and interval.
+        this.chart.exportAllData('csv', `${this.state.symbol}-${this.state.timeframe}.csv`.replace(/[^\w.-]+/g, '_'));
         break;
       case 'paneLog':
       case 'paneInvert':
@@ -2694,6 +2703,7 @@ export class ChartWidget {
       this.chart.setTimezone(settingToTimezone(patch.timezone));
     }
     if (patch.highLowLines !== undefined) this.chart.setHighLowLines(patch.highLowLines);
+    if (patch.extendedHours !== undefined) this.chart.setExtendedHours(patch.extendedHours);
     if (patch.mainSeriesVisible !== undefined) this.chart.setMainSeriesVisible(patch.mainSeriesVisible);
     if (patch.chartTypeOptions !== undefined) {
       // Every type: one left out goes back to its defaults (a reset).
@@ -2937,28 +2947,7 @@ export class ChartWidget {
   }
 }
 
-/**
- * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name (`shortName`, else the
- * id in capitals) plus up to three numeric parameters, in the indicator's own
- * order, so two instances of the same indicator can be told apart.
- */
-export function indicatorChipLabel(
-  id: string,
-  params: Record<string, unknown>,
-  defaults?: Record<string, unknown>,
-  shortName?: string,
-): string {
-  const order = defaults ? Object.keys(defaults) : Object.keys(params);
-  const numbers = order
-    .map((k) => params[k])
-    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
-    .slice(0, 3)
-    .map((v) => String(Number(v.toFixed(4))));
-  // An indicator on another symbol is named after it ("Compare ETHUSDT", "Ratio ETHUSDT").
-  const symbol = typeof params.symbol === 'string' && params.symbol ? [params.symbol] : [];
-  const name = id === 'spread' && params.mode === 'ratio' ? 'Ratio' : shortName ?? id.toUpperCase();
-  return [name, ...symbol, ...numbers].join(' ');
-}
+export { indicatorChipLabel };
 
 type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
 

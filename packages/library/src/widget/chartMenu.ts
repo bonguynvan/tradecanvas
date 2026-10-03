@@ -5,7 +5,7 @@ import { fill, type Translator } from './i18n.js';
 /** What a menu on the chart (a right-click, or the "+" by the price axis) can do. */
 export type ChartMenuAction =
   | 'alert' | 'buyLimit' | 'buyStop' | 'sellLimit' | 'sellStop' | 'orderTicket' | 'horizontalLine'
-  | 'resetView' | 'hideDrawings' | 'showDrawings' | 'removeDrawings' | 'settings'
+  | 'resetView' | 'hideDrawings' | 'showDrawings' | 'removeDrawings' | 'settings' | 'exportData'
   | 'autoScale' | 'logScale' | 'percentScale' | 'invertScale'
   | 'goToDate'
   | 'paneLog'
@@ -27,6 +27,8 @@ export interface ChartMenuContext {
   hasDrawings: boolean;
   drawingsHidden: boolean;
   canGoToDate: boolean;
+  /** A download of the bars and indicator lines (`features.dataExport`). */
+  canExport?: boolean;
   autoScale: boolean;
   scaleMode: PriceScaleMode;
   inverted: boolean;
@@ -105,7 +107,8 @@ export function chartMenuEntries(area: ChartContextArea, ctx: ChartMenuContext, 
           { id: 'removeDrawings', label: t('chartMenu.removeDrawings'), icon: 'trash', danger: true },
         ]
         : [];
-      return withPrice([{ id: 'resetView', label: t('chartMenu.resetView') }, ...drawings, 'separator', settings]);
+      const exportData: ContextMenuEntry[] = ctx.canExport ? [{ id: 'exportData', label: t('chartMenu.exportData'), icon: 'save' }] : [];
+      return withPrice([{ id: 'resetView', label: t('chartMenu.resetView') }, ...drawings, ...exportData, 'separator', settings]);
     }
   }
 }

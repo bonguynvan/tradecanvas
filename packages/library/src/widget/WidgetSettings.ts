@@ -190,6 +190,7 @@ export class WidgetSettings {
     const section = this.section();
     section.appendChild(this.toggleRow(this.t('settings.mainSeries'), s.mainSeriesVisible, (v) => this.patch({ mainSeriesVisible: v })));
     section.appendChild(this.toggleRow(this.t('settings.highLowLines'), s.highLowLines, (v) => this.patch({ highLowLines: v })));
+    section.appendChild(this.toggleRow(this.t('settings.extendedHours'), s.extendedHours, (v) => this.patch({ extendedHours: v })));
     section.appendChild(this.toggleRow(this.t('settings.gridLines'), s.gridVisible, (v) => this.patch({ gridVisible: v })));
     section.appendChild(this.toggleRow(this.t('settings.volume'), s.volumeVisible, (v) => this.patch({ volumeVisible: v })));
     section.appendChild(this.toggleRow(this.t('settings.volumeProfile'), s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));

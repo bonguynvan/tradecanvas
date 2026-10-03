@@ -293,5 +293,6 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   timezone: 'local',
   highLowLines: false,
   mainSeriesVisible: true,
+  extendedHours: true,
   chartTypeOptions: {},
 };

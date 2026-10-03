@@ -59,4 +59,9 @@ describe('chart menus', () => {
     expect(ids(chartMenuEntries('timeAxis', ctx(), EN_TRANSLATOR))).toEqual(['resetView', 'goToDate']);
     expect(ids(chartMenuEntries('timeAxis', ctx({ canGoToDate: false }), EN_TRANSLATOR))).toEqual(['resetView']);
   });
+
+  it('offers a download of the data where the chart allows it', () => {
+    expect(ids(chartMenuEntries('plot', ctx({ canExport: true }), EN_TRANSLATOR))).toContain('exportData');
+    expect(ids(chartMenuEntries('plot', ctx({ canExport: false }), EN_TRANSLATOR))).not.toContain('exportData');
+  });
 });

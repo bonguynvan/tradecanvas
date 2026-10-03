@@ -382,6 +382,8 @@ export interface ChartSettingsState {
   highLowLines: boolean;
   /** The main series (bars, candles, line) shown. */
   mainSeriesVisible: boolean;
+  /** Bars outside the symbol's regular hours shown (pre- and post-market). */
+  extendedHours: boolean;
   /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
   chartTypeOptions: ChartTypeOptions;
 }
