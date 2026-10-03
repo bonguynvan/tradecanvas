@@ -28,6 +28,8 @@ import type { TradeZoneManager } from '../features/TradeZoneManager.js';
 
 /** Height of an indicator pane's title strip; the indicator draws below it. */
 const PANEL_HEADER_HEIGHT = 20;
+/** Below this a pane (folded to its header) draws no scale. */
+const MIN_PANE_PLOT_HEIGHT = 8;
 
 /** Decimals for a pane's axis labels and header values, from its tick step. */
 function panelPrecision(step: number): number {
@@ -375,7 +377,8 @@ export class RenderEngine {
       const pv = panel.viewport;
       const pr = panel.rect;
       const { min, max } = pv.priceRange;
-      if (max - min <= 0 || pr.height <= 0) continue;
+      // A pane folded to its header has no room for a scale.
+      if (max - min <= 0 || pr.height <= 0 || pv.chartRect.height < MIN_PANE_PLOT_HEIGHT) continue;
 
       const axisX = pr.x + pr.width;
       const insetRect = pv.chartRect; // already inset by header

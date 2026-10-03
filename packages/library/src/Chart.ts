@@ -141,6 +141,8 @@ function assertTimezone(tz: TimeZoneSetting): void {
 const DEFAULT_ORDER_PRECISION = 2;
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
+/** Changes to one indicator closer together than this are one undo step (a colour dragged, a period typed). */
+const INDICATOR_EDIT_MERGE_MS = 800;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -191,6 +193,8 @@ export class Chart {
    * the layout again doesn't drop them.
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
+  /** Above 0 while indicators change as a whole (a layout, an undo): no undo steps are recorded. */
+  private indicatorHistoryDepth = 0;
   /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
   private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
   /** The zoom-area tool is waiting for its box. */
@@ -371,6 +375,7 @@ export class Chart {
     // Undo/redo
     this.undoRedoManager = new UndoRedoManager();
     this.drawingManager.setUndoRedoManager(this.undoRedoManager);
+    this.drawingManager.setForeignHistory((action, direction) => this.applyIndicatorStep(action, direction));
     this.drawingManager.setDataGetter(() => this.dataManager.getData());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
@@ -1136,6 +1141,15 @@ export class Chart {
     position: PanelPosition = 'bottom',
     options: { pane?: string; scale?: OverlayScale } = {},
   ): string | null {
+    return this.recordIndicators(undefined, () => this.addIndicatorNow(id, params, position, options));
+  }
+
+  private addIndicatorNow(
+    id: string,
+    params: Record<string, number | string | boolean>,
+    position: PanelPosition,
+    options: { pane?: string; scale?: OverlayScale; instanceId?: string },
+  ): string | null {
     if (!this.features.indicators) return null;
     if (this.features.indicatorIds.length > 0 && !this.features.indicatorIds.includes(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
@@ -1143,6 +1157,7 @@ export class Chart {
     const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), {
       ...(pane ? { pane } : {}),
       ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
+      ...(options.instanceId ? { instanceId: options.instanceId } : {}),
     });
     if (descriptor?.placement === 'panel' && !pane) this.layoutManager.addPanel(instanceId, position);
     // The layout (a new pane) or the price scale (a new overlay) may change.
@@ -1157,6 +1172,10 @@ export class Chart {
    * own lines (through other indicators) is ignored.
    */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>): void {
+    this.recordIndicators(instanceId, () => this.updateIndicatorNow(instanceId, params));
+  }
+
+  private updateIndicatorNow(instanceId: string, params: Record<string, number | string | boolean>): void {
     const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
     const name = descriptor ? sourceParam(descriptor) : null;
     const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
@@ -1217,6 +1236,10 @@ export class Chart {
    * indicator isn't a price-pane overlay.
    */
   setIndicatorScale(instanceId: string, scale: OverlayScale): boolean {
+    return this.recordIndicators(instanceId, () => this.setIndicatorScaleNow(instanceId, scale));
+  }
+
+  private setIndicatorScaleNow(instanceId: string, scale: OverlayScale): boolean {
     if (!this.indicatorEngine.setScale(instanceId, scale)) return false;
     this.updateViewportAndRender();
     this.markStateChanged();
@@ -1267,6 +1290,10 @@ export class Chart {
 
   /** Set an indicator's reference levels; `null` restores its indicator's defaults. */
   setIndicatorLevels(instanceId: string, levels: readonly number[] | null): void {
+    this.recordIndicators(instanceId, () => this.setIndicatorLevelsNow(instanceId, levels));
+  }
+
+  private setIndicatorLevelsNow(instanceId: string, levels: readonly number[] | null): void {
     if (!this.indicatorEngine.setLevels(instanceId, levels)) return;
     this.updateViewportAndRender();
     this.markStateChanged();
@@ -1279,6 +1306,10 @@ export class Chart {
    * or go back to the price pane.
    */
   removeIndicator(instanceId: string): void {
+    this.recordIndicators(undefined, () => this.removeIndicatorNow(instanceId));
+  }
+
+  private removeIndicatorNow(instanceId: string): void {
     if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
     // It and everything computed from its lines, the last readers first.
     const doomed = [instanceId, ...this.indicatorEngine.getDependents(instanceId)];
@@ -1349,6 +1380,109 @@ export class Chart {
     this.layoutManager.setPanelSize(instanceId, size);
     this.updateViewportAndRender();
     this.eventBus.emit('paneResize', { instanceId, size });
+    this.markStateChanged();
+  }
+
+  /**
+   * Move an indicator to another pane: `target` is an indicator drawn there
+   * (it joins that pane, on its scale), `'new'` a pane of its own (indicators
+   * that draw in a pane), or `'price'` the price pane (overlays). Indicators
+   * drawn in its own pane stay there (one of them takes the pane over) or
+   * follow it when they read its lines. False when it can't go there.
+   */
+  moveIndicatorToPane(instanceId: string, target: string): boolean {
+    return this.recordIndicators(instanceId, () => this.moveIndicatorToPaneNow(instanceId, target));
+  }
+
+  private moveIndicatorToPaneNow(instanceId: string, target: string): boolean {
+    const config = this.indicatorEngine.getIndicatorConfig(instanceId);
+    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
+    if (!config || !descriptor) return false;
+    const ownsPane = this.layoutManager.getPanels().some((p) => p.id === instanceId);
+    // An overlay computed from another indicator's line stays with that line.
+    const name = sourceParam(descriptor);
+    if (descriptor.placement === 'overlay' && name && parseIndicatorSource(config.params[name])) return false;
+
+    let host: string | null;
+    if (target === 'price') {
+      if (descriptor.placement !== 'overlay' || !config.pane) return false;
+      host = null;
+    } else if (target === 'new') {
+      if (descriptor.placement !== 'panel' || ownsPane) return false;
+      host = null;
+    } else {
+      host = this.paneHostOf(target, instanceId);
+      if (!host || host === config.pane || host === instanceId) return false;
+    }
+
+    const changed = new Set<string>([instanceId]);
+    if (ownsPane) {
+      // Its pane's other indicators: those reading its lines go with it; of
+      // the rest, the first that draws in a pane takes the pane over.
+      const members = this.indicatorEngine.getPaneMembers(instanceId);
+      const readers = new Set(this.indicatorEngine.getDependents(instanceId));
+      const staying = members.filter((m) => !readers.has(m));
+      const heir = staying.find((m) => this.indicatorEngine.getIndicatorDescriptor(m)?.placement === 'panel') ?? null;
+      if (heir) {
+        this.indicatorEngine.setPane(heir, null);
+        this.layoutManager.renamePanel(instanceId, heir);
+        for (const m of staying) if (m !== heir) this.indicatorEngine.setPane(m, heir);
+      } else {
+        this.layoutManager.removePanel(instanceId);
+        for (const m of staying) this.indicatorEngine.setPane(m, null);
+      }
+      for (const m of members) {
+        if (readers.has(m)) this.indicatorEngine.setPane(m, host ?? instanceId);
+        changed.add(m);
+      }
+    }
+    this.indicatorEngine.setPane(instanceId, host);
+    if (target === 'new') {
+      this.layoutManager.addPanel(instanceId, 'bottom');
+      // Those reading its lines come along into its new pane.
+      for (const m of this.indicatorEngine.getDependents(instanceId)) {
+        if (this.indicatorEngine.getIndicatorConfig(m)?.pane === config.pane) {
+          this.indicatorEngine.setPane(m, instanceId);
+          changed.add(m);
+        }
+      }
+    }
+    for (const id of changed) this.eventBus.emit('indicatorChange', { instanceId: id, change: 'pane' });
+    this.updateViewportAndRender();
+    this.markStateChanged();
+    return true;
+  }
+
+  /** Fold a pane to its header, or open it again (the pane of indicator `instanceId`). */
+  setPaneCollapsed(instanceId: string, collapsed: boolean): boolean {
+    return this.recordIndicators(instanceId, () => this.paneChange(instanceId, 'collapsed', () => this.layoutManager.setPanelCollapsed(instanceId, collapsed)));
+  }
+
+  isPaneCollapsed(instanceId: string): boolean {
+    return this.layoutManager.isPanelCollapsed(instanceId);
+  }
+
+  /** Let one pane take the room (the others fold, the price pane keeps a strip); `null` puts them back. */
+  setMaximizedPane(instanceId: string | null): boolean {
+    const subject = instanceId ?? this.layoutManager.getMaximizedPanel() ?? '';
+    return this.recordIndicators(subject, () => this.paneChange(subject, 'maximized', () => this.layoutManager.setMaximizedPanel(instanceId)));
+  }
+
+  getMaximizedPane(): string | null {
+    return this.layoutManager.getMaximizedPanel();
+  }
+
+  /** Move a pane one place up (`-1`) or down (`1`). */
+  movePane(instanceId: string, delta: -1 | 1): boolean {
+    return this.recordIndicators(instanceId, () => this.paneChange(instanceId, 'order', () => this.layoutManager.movePanel(instanceId, delta)));
+  }
+
+  private paneChange(instanceId: string, change: 'collapsed' | 'maximized' | 'order', apply: () => boolean): boolean {
+    if (!apply()) return false;
+    this.updateViewportAndRender();
+    this.eventBus.emit('paneChange', { instanceId, change });
+    this.markStateChanged();
+    return true;
   }
 
   /**
@@ -1789,6 +1923,10 @@ export class Chart {
 
   /** Show or hide an indicator without removing it. */
   setIndicatorVisible(instanceId: string, visible: boolean): void {
+    this.recordIndicators(instanceId, () => this.setIndicatorVisibleNow(instanceId, visible));
+  }
+
+  private setIndicatorVisibleNow(instanceId: string, visible: boolean): void {
     if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
       this.updateViewportAndRender();
       this.markStateChanged();
@@ -1805,6 +1943,10 @@ export class Chart {
 
   /** Update indicator colors/line widths at runtime */
   updateIndicatorStyle(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
+    this.recordIndicators(instanceId, () => this.updateIndicatorStyleNow(instanceId, style));
+  }
+
+  private updateIndicatorStyleNow(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
     this.indicatorEngine.updateIndicatorStyle(instanceId, style);
     this.engine.requestRender();
     this.markStateChanged();
@@ -3124,29 +3266,176 @@ export class Chart {
 
   /** Everything `loadState` restores: chart type, theme, drawings, indicators, alerts. */
   private captureSnapshot(): import('@tradecanvas/core').ChartSnapshot {
-    const panels = this.layoutManager.getPanels();
     return ChartStateManager.capture(
       {
         getDrawings: () => this.getDrawings(),
         getTheme: () => this.getTheme(),
         getAlerts: () => this.getAlerts(),
-        getIndicators: () => [
-          ...this.indicatorEngine.getActiveIndicators().map((ind) => ({
-            id: ind.id,
-            instanceId: ind.instanceId,
-            params: ind.params,
-            position: panels.find((p) => p.id === ind.instanceId)?.position,
-            style: this.indicatorEngine.getIndicatorStyle(ind.instanceId) ?? undefined,
-            visible: ind.visible,
-            levels: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.levels?.slice(),
-            pane: ind.pane,
-            scale: this.indicatorEngine.getIndicatorConfig(ind.instanceId)?.scale,
-          })),
-          ...this.unrestoredIndicators,
-        ],
+        getIndicators: () => this.getIndicatorSetup(),
       },
       { chartType: this.options.chartType, symbol: this.currentSymbol || undefined },
     );
+  }
+
+  /**
+   * Put `list` in place of the chart's indicators (a layout, a template, an
+   * undo), with their panes as they were: size, order, fold, maximise.
+   * `keepIds` keeps each instance's id (an undo); otherwise they are new and
+   * the map says old → new.
+   */
+  private restoreIndicators(list: readonly import('@tradecanvas/core').SnapshotIndicator[], keepIds: boolean): Map<string, string> {
+    const instanceIds = new Map<string, string>();
+    this.unrestoredIndicators = [];
+    const known = new Set(this.indicatorEngine.getAvailableIndicators().map((d) => d.id));
+    for (const active of this.indicatorEngine.getActiveIndicators()) this.removeIndicator(active.instanceId);
+
+    // Lines read from other indicators and shared panes refer to old ids: follow them.
+    const renamed = (params: Record<string, unknown>): Record<string, number | string | boolean> => {
+      const out = { ...params } as Record<string, number | string | boolean>;
+      for (const [name, value] of Object.entries(out)) {
+        const line = parseIndicatorSource(value);
+        const to = line && instanceIds.get(line.instanceId);
+        if (to) out[name] = indicatorSource(to, line.key);
+      }
+      return out;
+    };
+    const restored: [import('@tradecanvas/core').SnapshotIndicator, string][] = [];
+    for (const ind of list) {
+      const position = (['top', 'bottom', 'left', 'right'] as const).find((p) => p === ind.position) ?? 'bottom';
+      let instanceId: string | null = null;
+      try {
+        if (!known.has(ind.id)) throw new Error('no such indicator is registered');
+        const pane = ind.pane ? instanceIds.get(ind.pane) : undefined;
+        instanceId = this.addIndicatorNow(ind.id, renamed(ind.params), position, {
+          ...(pane ? { pane } : {}),
+          ...(ind.scale === 'left' ? { scale: 'left' as const } : {}),
+          ...(keepIds ? { instanceId: ind.instanceId } : {}),
+        });
+      } catch (err) {
+        console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
+      }
+      if (!instanceId) {
+        this.unrestoredIndicators.push(ind);
+        continue;
+      }
+      instanceIds.set(ind.instanceId, instanceId);
+      restored.push([ind, instanceId]);
+      if (ind.style) this.updateIndicatorStyle(instanceId, ind.style);
+      if (ind.visible === false) this.setIndicatorVisible(instanceId, false);
+      if (ind.levels) this.setIndicatorLevels(instanceId, ind.levels);
+    }
+    // A line read from an indicator restored after its reader: point it there now.
+    for (const [ind, instanceId] of restored) {
+      const changed: Record<string, number | string | boolean> = {};
+      for (const [name, value] of Object.entries(renamed(ind.params))) {
+        if (value !== ind.params[name] && this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] !== value) changed[name] = value;
+      }
+      if (Object.keys(changed).length) this.updateIndicator(instanceId, changed);
+    }
+    // The panes as they were: size first (it opens a fold), then fold, order, maximise.
+    for (const [ind, instanceId] of restored) {
+      if (ind.paneSize !== undefined) this.layoutManager.setPanelSize(instanceId, ind.paneSize);
+      if (ind.paneCollapsed) this.layoutManager.setPanelCollapsed(instanceId, true);
+    }
+    const ordered = restored
+      .filter(([ind]) => ind.paneOrder !== undefined)
+      .sort(([a], [b]) => (a.paneOrder ?? 0) - (b.paneOrder ?? 0))
+      .map(([, instanceId]) => instanceId);
+    if (ordered.length > 1) this.layoutManager.orderPanels(ordered);
+    const maximized = restored.find(([ind]) => ind.paneMaximized);
+    this.layoutManager.setMaximizedPanel(maximized ? maximized[1] : null);
+    this.updateViewportAndRender();
+    return instanceIds;
+  }
+
+  /**
+   * The chart's indicators as a layout or a template keeps them: inputs,
+   * style, levels, scale and panes (shared, size, order, fold, maximise).
+   */
+  getIndicatorSetup(): import('@tradecanvas/core').SnapshotIndicator[] {
+    const panels = this.layoutManager.getPanels();
+    const maximized = this.layoutManager.getMaximizedPanel();
+    return [
+      ...this.indicatorEngine.getActiveIndicators().map((ind) => {
+        const panel = panels.find((p) => p.id === ind.instanceId);
+        const config = this.indicatorEngine.getIndicatorConfig(ind.instanceId);
+        return {
+          id: ind.id,
+          instanceId: ind.instanceId,
+          params: { ...ind.params },
+          position: panel?.position,
+          style: this.indicatorEngine.getIndicatorStyle(ind.instanceId) ?? undefined,
+          visible: ind.visible,
+          levels: config?.levels?.slice(),
+          pane: ind.pane,
+          scale: config?.scale,
+          ...(panel
+            ? {
+                paneSize: panel.size,
+                paneOrder: panels.indexOf(panel),
+                ...(panel.collapsed ? { paneCollapsed: true } : {}),
+                ...(maximized === ind.instanceId ? { paneMaximized: true } : {}),
+              }
+            : {}),
+        };
+      }),
+      ...this.unrestoredIndicators,
+    ];
+  }
+
+  /**
+   * Put a set of indicators (from `getIndicatorSetup`, a template) in place
+   * of the chart's, as one undo step.
+   */
+  applyIndicatorSetup(list: readonly import('@tradecanvas/core').SnapshotIndicator[]): void {
+    if (!this.features.indicators) return;
+    this.recordIndicators(undefined, () => {
+      this.withoutIndicatorHistory(() => this.restoreIndicators(list, false));
+      this.markStateChanged();
+    });
+  }
+
+  /** Run `change` without recording undo steps for the indicators it changes. */
+  private withoutIndicatorHistory<T>(change: () => T): T {
+    this.indicatorHistoryDepth++;
+    try {
+      return change();
+    } finally {
+      this.indicatorHistoryDepth--;
+    }
+  }
+
+  /**
+   * Run an indicator change as one undo step (the indicators before and
+   * after). Quick changes to the same indicator (a colour dragged, a period
+   * typed) merge into one step.
+   */
+  private recordIndicators<T>(subject: string | undefined, change: () => T): T {
+    if (this.indicatorHistoryDepth > 0 || !this.features.drawingUndoRedo) return change();
+    const before = this.getIndicatorSetup();
+    const result = this.withoutIndicatorHistory(change);
+    const after = this.getIndicatorSetup();
+    if (JSON.stringify(before) === JSON.stringify(after)) return result;
+    const now = Date.now();
+    const last = this.undoRedoManager.last();
+    const merge = subject !== undefined && last?.type === 'indicators' && last.indicators?.subject === subject
+      && now - (last.indicators.at ?? 0) < INDICATOR_EDIT_MERGE_MS
+      && JSON.stringify(last.indicators.after) === JSON.stringify(before);
+    const step = { type: 'indicators' as const, before: null, after: null };
+    if (merge && last?.indicators) {
+      this.undoRedoManager.replaceLast({ ...step, indicators: { ...last.indicators, after, at: now } });
+    } else {
+      this.undoRedoManager.push({ ...step, indicators: { before, after, subject, at: now } });
+    }
+    return result;
+  }
+
+  /** Undo or redo an indicator step: the indicators as they were, under their own ids. */
+  private applyIndicatorStep(action: import('@tradecanvas/core').UndoableAction, direction: 'undo' | 'redo'): void {
+    const step = action.indicators;
+    if (!step) return;
+    this.withoutIndicatorHistory(() => this.restoreIndicators(direction === 'undo' ? step.before : step.after, true));
+    this.markStateChanged();
   }
 
   saveState(key?: string): string | null {
@@ -3166,54 +3455,11 @@ export class Chart {
 
     // Indicators get new instance ids: remember old → new for alert channels.
     // Version-1 saves never captured indicators, so they leave them alone.
-    const instanceIds = new Map<string, string>();
-    if (snapshot.version >= 2 && this.features.indicators) {
-      this.unrestoredIndicators = [];
-      const known = new Set(this.indicatorEngine.getAvailableIndicators().map((d) => d.id));
-      for (const active of this.indicatorEngine.getActiveIndicators()) this.removeIndicator(active.instanceId);
-      // Lines read from other indicators and shared panes refer to old ids: follow them.
-      const renamed = (params: Record<string, unknown>): Record<string, number | string | boolean> => {
-        const out = { ...params } as Record<string, number | string | boolean>;
-        for (const [name, value] of Object.entries(out)) {
-          const line = parseIndicatorSource(value);
-          const to = line && instanceIds.get(line.instanceId);
-          if (to) out[name] = indicatorSource(to, line.key);
-        }
-        return out;
-      };
-      const restored: [import('@tradecanvas/core').SnapshotIndicator, string][] = [];
-      for (const ind of snapshot.indicators) {
-        const position = (['top', 'bottom', 'left', 'right'] as const).find((p) => p === ind.position) ?? 'bottom';
-        let instanceId: string | null = null;
-        try {
-          if (!known.has(ind.id)) throw new Error('no such indicator is registered');
-          const pane = ind.pane ? instanceIds.get(ind.pane) : undefined;
-          instanceId = this.addIndicator(ind.id, renamed(ind.params), position, {
-            ...(pane ? { pane } : {}),
-            ...(ind.scale === 'left' ? { scale: 'left' as const } : {}),
-          });
-        } catch (err) {
-          console.warn(`Layout indicator "${ind.id}" kept but not shown:`, err);
-        }
-        if (!instanceId) {
-          this.unrestoredIndicators.push(ind);
-          continue;
-        }
-        instanceIds.set(ind.instanceId, instanceId);
-        restored.push([ind, instanceId]);
-        if (ind.style) this.updateIndicatorStyle(instanceId, ind.style);
-        if (ind.visible === false) this.setIndicatorVisible(instanceId, false);
-        if (ind.levels) this.setIndicatorLevels(instanceId, ind.levels);
-      }
-      // A line read from an indicator restored after its reader: point it there now.
-      for (const [ind, instanceId] of restored) {
-        const changed: Record<string, number | string | boolean> = {};
-        for (const [name, value] of Object.entries(renamed(ind.params))) {
-          if (value !== ind.params[name] && this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] !== value) changed[name] = value;
-        }
-        if (Object.keys(changed).length) this.updateIndicator(instanceId, changed);
-      }
-    }
+    const instanceIds = snapshot.version >= 2 && this.features.indicators
+      ? this.withoutIndicatorHistory(() => this.restoreIndicators(snapshot.indicators, false))
+      : new Map<string, string>();
+    // Another layout: the old steps no longer apply to it.
+    this.undoRedoManager.clear();
 
     if (snapshot.alerts && this.features.alerts) {
       this.alertManager.clearAlerts();

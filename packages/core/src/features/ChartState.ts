@@ -55,6 +55,11 @@ export interface SnapshotIndicator {
   pane?: string;
   /** `'left'`: an overlay on the left price scale. */
   scale?: 'left';
+  /** For an indicator with a pane of its own: the pane's height, place among the panes, fold and maximise. */
+  paneSize?: number;
+  paneOrder?: number;
+  paneCollapsed?: boolean;
+  paneMaximized?: boolean;
 }
 
 /**
@@ -200,6 +205,10 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
         : undefined,
       pane: typeof ind.pane === 'string' ? ind.pane : undefined,
       scale: ind.scale === 'left' ? 'left' : undefined,
+      paneSize: typeof ind.paneSize === 'number' && Number.isFinite(ind.paneSize) && ind.paneSize > 0 ? ind.paneSize : undefined,
+      paneOrder: typeof ind.paneOrder === 'number' && Number.isInteger(ind.paneOrder) && ind.paneOrder >= 0 ? ind.paneOrder : undefined,
+      paneCollapsed: ind.paneCollapsed === true ? true : undefined,
+      paneMaximized: ind.paneMaximized === true ? true : undefined,
     });
   }
 

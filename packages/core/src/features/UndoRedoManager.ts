@@ -1,7 +1,9 @@
 import type { DrawingState } from '@tradecanvas/commons';
+import type { SnapshotIndicator } from './ChartState.js';
 
 export interface UndoableAction {
-  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch' | 'drawingOrder';
+  /** `'indicators'`: the chart's indicators changed (added, removed, edited, moved between panes). */
+  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch' | 'drawingOrder' | 'indicators';
   /** State before the action (null for create) */
   before: DrawingState | null;
   /** State after the action (null for remove) */
@@ -12,6 +14,8 @@ export interface UndoableAction {
   index?: number;
   /** For 'drawingOrder': the drawings' ids, bottom to top, before and after. */
   order?: { before: string[]; after: string[] };
+  /** For 'indicators': the indicators before and after, and what changed (to merge a burst of edits). */
+  indicators?: { before: SnapshotIndicator[]; after: SnapshotIndicator[]; subject?: string; at?: number };
 }
 
 export class UndoRedoManager {
@@ -61,6 +65,23 @@ export class UndoRedoManager {
   clear(): void {
     this.undoStack.length = 0;
     this.redoStack.length = 0;
+    this.onChange?.();
+  }
+
+  /** The step an undo would take back, or null. */
+  last(): UndoableAction | null {
+    return this.undoStack[this.undoStack.length - 1] ?? null;
+  }
+
+  /** Put `action` in place of the last step (a burst of edits as one step); nothing to redo after it. */
+  replaceLast(action: UndoableAction): void {
+    if (this.undoStack.length === 0) {
+      this.push(action);
+      return;
+    }
+    this.undoStack[this.undoStack.length - 1] = action;
+    this.redoStack.length = 0;
+    this.onChange?.();
   }
 
   getState(): { canUndo: boolean; canRedo: boolean; undoCount: number; redoCount: number } {

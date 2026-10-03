@@ -149,11 +149,27 @@ export class DrawingManager {
     return true;
   }
 
+  /** Steps in the shared history that aren't about drawings (the chart's indicators). */
+  private foreignHistory: ((action: UndoableAction, direction: 'undo' | 'redo') => void) | null = null;
+
+  /** Who undoes and redoes the history's steps that aren't about drawings. */
+  setForeignHistory(handler: ((action: UndoableAction, direction: 'undo' | 'redo') => void) | null): void {
+    this.foreignHistory = handler;
+  }
+
   private applyUndoAction(action: UndoableAction): void {
+    if (action.type === 'indicators') {
+      this.foreignHistory?.(action, 'undo');
+      return;
+    }
     this.applyHistory(undoAction(this.drawings, action));
   }
 
   private applyRedoAction(action: UndoableAction): void {
+    if (action.type === 'indicators') {
+      this.foreignHistory?.(action, 'redo');
+      return;
+    }
     this.applyHistory(redoAction(this.drawings, action));
   }
 

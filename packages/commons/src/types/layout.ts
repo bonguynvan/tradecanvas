@@ -8,6 +8,8 @@ export interface PanelConfig {
   size: number;
   minSize: number;
   content: PanelContentConfig;
+  /** Folded to its header (a top or bottom pane); `size` is kept for when it opens again. */
+  collapsed?: boolean;
 }
 
 export interface PanelContentConfig {
