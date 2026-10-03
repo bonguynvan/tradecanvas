@@ -1,5 +1,14 @@
 # @tradecanvas/chart
 
+## 1.8.1
+
+### Patch Changes
+
+- 6b396e7: Panning by dragging no longer stops halfway with a "no drop" cursor: quick presses could leave text on the chart selected, and the next press then started the browser's own drag of it. The chart's text can't be selected now, and a native drag that starts on the chart, or while a press on it is held, is cancelled.
+- Updated dependencies [6b396e7]
+  - @tradecanvas/core@1.8.1
+  - @tradecanvas/commons@1.8.1
+
 ## 1.8.0
 
 ### Minor Changes
