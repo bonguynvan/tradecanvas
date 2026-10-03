@@ -113,11 +113,47 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>를 참고하세요.
 </p>
 
-<h2>크기 조절 가능한 패널</h2>
+<h2>패널: 크기 조절, 접기, 최대화, 순서 바꾸기</h2>
 <p>
-  패널 위쪽의 <strong>구분선을 드래그</strong>해 크기를 조절하거나, 높이를 직접 설정합니다.
+  패널 위쪽의 <strong>구분선을 드래그</strong>해 크기를 조절합니다. ChartWidget에서는 패널마다 오른쪽 위에
+  버튼이 있어 패널을 위나 아래로 옮기거나, 머리글만 남게 접거나, 최대화할 수 있습니다(다른 패널은 접히고
+  가격 패널은 좁은 띠로 남습니다). 저장된 레이아웃에는 패널마다 크기, 순서, 접기와 최대화 상태가 유지됩니다.
+  코드로는 다음과 같습니다.
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>지표를 다른 패널로 옮기기</h2>
+<p>
+  지표는 다른 지표의 패널에 합류하거나(그러면 그 패널의 눈금을 함께 씁니다), 자기만의 패널을 갖거나,
+  가격 패널로 돌아갈 수 있습니다. 자신이 주인인 패널을 떠나도 그 패널의 다른 지표는 남고(다음 패널 지표가
+  패널을 이어받습니다), 그 지표의 선을 읽는 지표는 함께 따라갑니다. ChartWidget에서는 범례 행의
+  <strong>⋯</strong> 버튼으로 위 패널, 아래 패널, 새 패널, 가격 패널 중에서 고를 수 있습니다.
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>실행 취소와 템플릿</h2>
+<p>
+  지표 추가, 삭제, 편집, 이동은 그림과 같은 기록에 쌓이는 실행 취소 단계입니다
+  (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>). 실행 취소로 되살아난 지표는 원래 id 그대로 돌아오므로
+  그 선에 건 알림도 계속 연결됩니다. 한 지표에 잇따라 한 편집(색상 드래그, 기간 입력)은 한 단계로 묶입니다.
+  레이아웃을 불러오면 기록이 새로 시작됩니다.
+</p>
+<p>
+  지표 전체를 한꺼번에 꺼냈다가 다시 넣을 수 있으며, ChartWidget의 지표 템플릿이 바로 이 방식입니다.
+  지표 메뉴의 <strong>지표를 템플릿으로 저장…</strong>은 지표(입력값, 스타일, 레벨, 패널)를 이름을 붙여
+  저장하고, 템플릿을 고르면 차트의 지표가 그것으로 바뀝니다. 이 교체는 실행 취소 한 단계입니다.
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>차트 밖에서 계산하기</h2>
 <p>

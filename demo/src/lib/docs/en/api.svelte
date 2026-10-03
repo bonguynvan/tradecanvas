@@ -217,7 +217,13 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)`}</code></pre>
+chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  Prices from the pointer can be put on the market's grid with
+  <code>chart.roundPrice(price)</code>: a multiple of the symbol's <code>minTick</code>, else
+  its precision. ChartWidget's menus and order ticket do this.
+</p>
 
 <h2>ChartWidget</h2>
 <p>Wraps <code>Chart</code> in a complete UI. Same instance is available via <code>widget.chart</code>.</p>
@@ -245,6 +251,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette (indicators, chart types, drawings…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search — fuzzy picker over the configured symbol list</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Save the layout (asks for a name the first time)</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Type an interval (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) and press Enter (<code>intervalTyping: false</code> turns it off)</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Trend line, horizontal line, horizontal ray, vertical line, cross line, Fibonacci retracement</td></tr>
     <tr><td><kbd>?</kbd></td><td>Show the keyboard shortcuts sheet</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>

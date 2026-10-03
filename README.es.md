@@ -341,7 +341,8 @@ chart.setIndicatorLevels(rsi, [20, 50, 80])
 ```
 
 - **Fuentes**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, o la línea de otro indicador.
-- **Paneles**: una escala de valores por panel para líneas, niveles, eje y cruz; los indicadores pueden compartir panel.
+- **Paneles**: una escala de valores por panel para líneas, niveles, eje y cruz; mueve un indicador a otro panel, a uno nuevo o de vuelta al panel de precio; contrae, maximiza y reordena paneles (`moveIndicatorToPane`, `setPaneCollapsed`, `setMaximizedPane`, `movePane`).
+- **Deshacer y plantillas**: Ctrl/Cmd+Z deshace los cambios en los indicadores, en el mismo historial que los dibujos; ChartWidget guarda los indicadores como plantillas con nombre (`getIndicatorSetup` / `applyIndicatorSetup`).
 - **Niveles**: editables por instancia (RSI 30/70, CCI ±100 …) y conservados en los diseños guardados.
 - **Etiquetas de valor**: el último valor de cada línea sobre su eje, en su color.
 - **Los indicadores personalizados** declaran sus líneas (`plots`), su escala, sus niveles y sus parámetros; el gráfico los dibuja y los etiqueta.

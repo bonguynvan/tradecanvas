@@ -341,7 +341,8 @@ chart.setIndicatorLevels(rsi, [20, 50, 80])
 ```
 
 - **소스**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, 또는 다른 지표의 선.
-- **패널**: 패널마다 선, 레벨, 축, 십자선이 쓰는 값 눈금이 하나씩 있으며, 여러 지표가 한 패널을 함께 쓸 수 있습니다.
+- **패널**: 패널마다 선, 레벨, 축, 십자선이 쓰는 값 눈금이 하나씩 있습니다. 지표를 다른 패널이나 새 패널로 옮기거나 가격 패널로 되돌릴 수 있고, 패널을 접고 최대화하고 순서를 바꿀 수 있습니다(`moveIndicatorToPane`, `setPaneCollapsed`, `setMaximizedPane`, `movePane`).
+- **실행 취소와 템플릿**: Ctrl/Cmd+Z로 지표 변경을 실행 취소하며, 그림과 같은 기록을 씁니다. ChartWidget은 지표를 이름 붙인 템플릿으로 저장합니다(`getIndicatorSetup` / `applyIndicatorSetup`).
 - **레벨**: 인스턴스마다 편집할 수 있고(RSI 30/70, CCI ±100 …), 저장된 레이아웃에 유지됩니다.
 - **값 태그**: 각 선의 최신 값이 그 선의 색으로 축에 표시됩니다.
 - **사용자 지정 지표**는 선(`plots`), 눈금, 레벨, 입력값을 선언하기만 하면 차트가 그리고 라벨을 붙입니다.

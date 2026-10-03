@@ -223,7 +223,13 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)`}</code></pre>
+chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  Los precios que vienen del puntero se pueden ajustar a la cuadrícula del mercado con
+  <code>chart.roundPrice(price)</code>: a un múltiplo del <code>minTick</code> del símbolo o,
+  si no lo tiene, a su precisión. Los menús y el ticket de orden de ChartWidget lo hacen.
+</p>
 
 <h2>ChartWidget</h2>
 <p>Envuelve <code>Chart</code> en una interfaz completa. La misma instancia está disponible en <code>widget.chart</code>.</p>
@@ -251,6 +257,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Paleta de comandos (indicadores, tipos de gráfico, dibujos…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Búsqueda de símbolos: selector difuso sobre la lista de símbolos configurada</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Guarda el diseño (pide un nombre la primera vez)</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Escribe una temporalidad (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) y pulsa Enter (<code>intervalTyping: false</code> lo desactiva)</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Línea de tendencia, línea horizontal, rayo horizontal, línea vertical, línea en cruz, retroceso de Fibonacci</td></tr>
     <tr><td><kbd>?</kbd></td><td>Muestra la hoja de atajos de teclado</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>

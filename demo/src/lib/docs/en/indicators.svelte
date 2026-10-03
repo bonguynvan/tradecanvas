@@ -113,11 +113,50 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
 </p>
 
-<h2>Resizable panes</h2>
+<h2>Panes: resize, fold, maximise, reorder</h2>
 <p>
-  <strong>Drag the divider</strong> above a pane to resize it, or set its height:
+  <strong>Drag the divider</strong> above a pane to resize it. In ChartWidget each pane
+  has buttons at its top right: move it up or down, fold it to its header, maximise it
+  (the other panes fold and the price pane keeps a strip). Saved layouts keep each
+  pane's size, order, fold and maximise. The same from code:
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>Moving an indicator to another pane</h2>
+<p>
+  An indicator can join another indicator's pane (it then shares that pane's scale),
+  take a pane of its own, or go back to the price pane. When it leaves a pane it owned,
+  the others in it stay (the next pane indicator takes the pane over), and those reading
+  its lines follow it. In ChartWidget, the <strong>⋯</strong> button on a legend row
+  offers the pane above, the pane below, a new pane and the price pane.
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>Undo, and templates</h2>
+<p>
+  Adding, removing, editing and moving indicators are undo steps in the same history
+  as drawings (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>); an undone indicator
+  comes back under its own id, so alerts on its lines still match. A burst of edits to
+  one indicator (a colour dragged, a period typed) is one step. A loaded layout starts a
+  fresh history.
+</p>
+<p>
+  The indicators can be taken and put back as a whole, which is what ChartWidget's
+  indicator templates do: <strong>Save indicators as template…</strong> in the indicators
+  menu keeps them (inputs, style, levels, panes) under a name, and picking a template
+  puts them in place of the chart's, as one undo step.
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>Computing outside the chart</h2>
 <p>

@@ -217,7 +217,13 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)`}</code></pre>
+chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  Giá lấy từ con trỏ chuột có thể được làm tròn theo bước giá của thị trường bằng
+  <code>chart.roundPrice(price)</code>: về bội số của <code>minTick</code> của mã, nếu không có thì theo
+  độ chính xác của mã. Các menu và phiếu đặt lệnh của ChartWidget đều làm như vậy.
+</p>
 
 <h2>ChartWidget</h2>
 <p>Bọc <code>Chart</code> trong một giao diện hoàn chỉnh. Có thể truy cập chính instance đó qua <code>widget.chart</code>.</p>
@@ -245,6 +251,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh (chỉ báo, loại biểu đồ, công cụ vẽ…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã — tìm gần đúng trong danh sách mã đã cấu hình</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Gõ một khung thời gian (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) rồi nhấn Enter (<code>intervalTyping: false</code> để tắt)</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Đường xu hướng, đường ngang, tia ngang, đường dọc, đường chữ thập, Fibonacci thoái lui</td></tr>
     <tr><td><kbd>?</kbd></td><td>Hiện bảng phím tắt</td></tr>
     <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí con trỏ chữ thập hiện tại)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>

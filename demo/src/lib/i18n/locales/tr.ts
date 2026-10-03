@@ -156,7 +156,10 @@ const tr: SiteMessages = {
         'Göstergeler düğmesine (ya da Ctrl+K) basın ve 85 göstergeden herhangi birini arayın',
         'Açıklamadaki bir gösterge adına tıklayın: parametreler, renkler ve seviyeler',
         'Bir hareketli ortalamanın kaynağını başka bir göstergenin çizgisi yapın',
-        'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin',
+        'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin; bir panelin sağ üstündeki düğmeler onu taşır, daraltır veya büyütür',
+        'Açıklama satırındaki ⋯, göstergeyi üstteki ya da alttaki panele veya kendine ait bir panele taşır',
+        'Göstergeler menüsü → Göstergeleri şablon olarak kaydet…; Ctrl+Z gösterge değişikliklerini de geri alır',
+        'Zaman dilimini değiştirmek için grafikte bir sayı yazın (4, sonra h, Enter); Alt+T trend çizgisini seçer',
       ],
     },
     trading: {

@@ -341,7 +341,8 @@ chart.setIndicatorLevels(rsi, [20, 50, 80])
 ```
 
 - **Nguồn**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, hoặc đường của một chỉ báo khác.
-- **Bảng**: mỗi bảng có một thang giá trị cho đường, mức, trục và con trỏ chữ thập; nhiều chỉ báo có thể dùng chung một bảng.
+- **Bảng**: mỗi bảng có một thang giá trị cho đường, mức, trục và con trỏ chữ thập; chuyển một chỉ báo sang bảng khác, sang bảng mới hoặc về lại bảng giá; thu gọn, phóng to và sắp xếp lại các bảng (`moveIndicatorToPane`, `setPaneCollapsed`, `setMaximizedPane`, `movePane`).
+- **Hoàn tác và mẫu**: Ctrl/Cmd+Z hoàn tác thay đổi chỉ báo, trong cùng lịch sử với hình vẽ; ChartWidget lưu các chỉ báo thành mẫu có tên (`getIndicatorSetup` / `applyIndicatorSetup`).
 - **Mức**: chỉnh được theo từng chỉ báo đã thêm (RSI 30/70, CCI ±100 …), được giữ trong bố cục đã lưu.
 - **Nhãn giá trị**: giá trị mới nhất của mỗi đường trên trục của nó, theo màu của đường.
 - **Chỉ báo tuỳ chỉnh** khai báo các đường (`plots`), thang, mức và thông số của chúng; biểu đồ tự vẽ và gắn nhãn.

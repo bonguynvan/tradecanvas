@@ -113,11 +113,47 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>を参照してください。
 </p>
 
-<h2>サイズ変更できるペイン</h2>
+<h2>ペイン：サイズ変更、折りたたみ、最大化、並べ替え</h2>
 <p>
-  ペインの上の<strong>区切り線をドラッグ</strong>してサイズを変えるか、高さを指定します：
+  ペインの上の<strong>区切り線をドラッグ</strong>してサイズを変えます。
+  ChartWidget では各ペインの右上にボタンがあり、上下への移動、ヘッダーだけへの折りたたみ、
+  最大化（ほかのペインは折りたたまれ、価格ペインは細い帯として残ります）ができます。
+  保存したレイアウトには、各ペインのサイズ、順序、折りたたみ、最大化の状態が残ります。コードからも同じことができます：
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>インジケーターを別のペインへ移動する</h2>
+<p>
+  インジケーターは、別のインジケーターのペインに加わる（そのペインのスケールを共有します）、独自のペインを持つ、
+  価格ペインに戻る、のいずれもできます。自分が持ち主だったペインを離れても、そのペインのほかのインジケーターは残り
+  （次のペインインジケーターがペインを引き継ぎます）、そのラインを使っているインジケーターは一緒に移動します。
+  ChartWidget では、凡例の行にある <strong>⋯</strong> ボタンから、上のペイン、下のペイン、新しいペイン、価格ペインを選べます。
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>元に戻す操作とテンプレート</h2>
+<p>
+  インジケーターの追加、削除、編集、移動は、描画と同じ履歴に入る元に戻す操作の 1 ステップです
+  （<kbd>Ctrl/⌘ Z</kbd>、<kbd>Ctrl/⌘ Shift Z</kbd>）。元に戻す操作で復活したインジケーターは元の id のまま戻るので、
+  そのラインに設定したアラートも引き続き対応します。1 つのインジケーターへの連続した編集（色のドラッグ、期間の入力）は
+  1 ステップにまとまります。レイアウトを読み込むと、履歴は新しく始まります。
+</p>
+<p>
+  インジケーターは丸ごと取り出して戻すことができ、ChartWidget のインジケーターテンプレートはこの仕組みを使っています。
+  インジケーターメニューの <strong>インジケーターをテンプレートとして保存…</strong> で、それら（入力、スタイル、レベル、ペイン）を
+  名前を付けて保存し、テンプレートを選ぶとチャートのインジケーターがそれに置き換わります。これは 1 回の元に戻す操作にまとまります。
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>チャートの外での計算</h2>
 <p>

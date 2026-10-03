@@ -341,7 +341,8 @@ chart.setIndicatorLevels(rsi, [20, 50, 80])
 ```
 
 - **数据源**：close、open、high、low、hl2、hlc3、ohlc4、hlcc4，或另一个指标的线。
-- **副图**：每个副图一个数值坐标，供线、水平线、坐标轴和十字光标使用；多个指标可共用一个副图。
+- **副图**：每个副图一个数值坐标，供线、水平线、坐标轴和十字光标使用；可把指标移到另一个副图、新副图或移回主图；可收起、最大化副图并调整其顺序（`moveIndicatorToPane`、`setPaneCollapsed`、`setMaximizedPane`、`movePane`）。
+- **撤销与模板**：Ctrl/Cmd+Z 可撤销对指标的修改，与画线共用同一份历史记录；ChartWidget 可把指标保存为命名模板（`getIndicatorSetup` / `applyIndicatorSetup`）。
 - **水平线**：每个实例可单独编辑（RSI 30/70、CCI ±100 …），并保存在布局中。
 - **数值标签**：每条线的最新值以该线的颜色显示在其坐标轴上。
 - **自定义指标**声明自己的线（`plots`）、坐标、水平线和参数；图表负责绘制和标注。

@@ -158,7 +158,10 @@ const es: SiteMessages = {
         'Pulsa el botón Indicadores (o Ctrl+K) y busca cualquiera de los 85',
         'Haz clic en el nombre de un indicador en la leyenda: parámetros, colores y niveles',
         'Pon como fuente de una media móvil la línea de otro indicador',
-        'Arrastra la línea entre paneles para cambiar su tamaño',
+        'Arrastra la línea entre paneles para cambiar su tamaño; los botones de arriba a la derecha de un panel lo mueven, lo contraen o lo maximizan',
+        'El ⋯ de una fila de la leyenda mueve el indicador al panel de arriba o de abajo, o a un panel propio',
+        'Menú Indicadores → Guardar indicadores como plantilla…; Ctrl+Z también deshace los cambios en los indicadores',
+        'Escribe un número en el gráfico (4, luego h, Enter) para cambiar la temporalidad; Alt+T elige la línea de tendencia',
       ],
     },
     trading: {

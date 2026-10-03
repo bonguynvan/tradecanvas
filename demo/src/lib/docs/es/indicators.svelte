@@ -119,11 +119,52 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">receta de indicador personalizado</a>.
 </p>
 
-<h2>Paneles redimensionables</h2>
+<h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>
 <p>
-  <strong>Arrastra el divisor</strong> que hay sobre un panel para cambiar su tamaño, o fija su altura:
+  <strong>Arrastra el divisor</strong> que hay sobre un panel para cambiar su tamaño. En
+  ChartWidget cada panel tiene botones arriba a la derecha: subirlo o bajarlo, contraerlo
+  hasta su cabecera y maximizarlo (los demás paneles se contraen y el panel de precio
+  conserva una franja). Los diseños guardados conservan el tamaño, el orden y el estado
+  contraído o maximizado de cada panel. Lo mismo desde código:
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>Mover un indicador a otro panel</h2>
+<p>
+  Un indicador puede unirse al panel de otro indicador (y entonces comparte la escala de
+  ese panel), tener un panel propio o volver al panel de precio. Cuando deja un panel que
+  era suyo, los demás indicadores se quedan en él (el siguiente indicador en panel pasa a
+  ser su dueño), y los que leen sus líneas lo siguen. En ChartWidget, el botón
+  <strong>⋯</strong> de una fila de la leyenda ofrece el panel de arriba, el de abajo, un
+  panel nuevo y el panel de precio.
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>Deshacer y plantillas</h2>
+<p>
+  Añadir, quitar, editar y mover indicadores son pasos que se pueden deshacer, en el mismo
+  historial que los dibujos (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>); un indicador
+  que vuelve al deshacer conserva su propio id, así que las alertas sobre sus líneas siguen
+  coincidiendo. Una ráfaga de cambios en un mismo indicador (un color arrastrado, un
+  periodo escrito) es un solo paso. Al cargar un diseño, el historial empieza de cero.
+</p>
+<p>
+  Los indicadores se pueden tomar y volver a poner en bloque, que es lo que hacen las
+  plantillas de indicadores de ChartWidget: <strong>Guardar indicadores como plantilla…</strong>
+  en el menú Indicadores los guarda (parámetros, estilo, niveles, paneles) con un nombre, y
+  elegir una plantilla los pone en lugar de los del gráfico, como un solo paso de deshacer.
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>Cálculo fuera del gráfico</h2>
 <p>
