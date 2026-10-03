@@ -407,6 +407,25 @@ describe('ChartWidget look', () => {
     expect(portal.dataset.tcwToolbar).toBe('floating');
   });
 
+  it('keeps the look across a theme switch, on the root and the dialogs alike', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget.setTheme('light');
+    widget.setUI('terminal');
+    const portal = (widget as unknown as { portal: HTMLElement }).portal;
+    expect(portal.dataset.tcwTheme).toBe('light');
+    expect(portal.style.getPropertyValue('--tcw-control-h')).toBe('26px');
+    widget.setTheme('dark');
+    expect(host.querySelector<HTMLElement>('.tcw-root')!.dataset.tcwUi).toBe('terminal');
+    expect(widget.getUI().preset).toBe('terminal');
+  });
+
+  it('leaves the chart the tag shape its options give, until a look is set', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { shapes: { tagRadius: 0 } } });
+    expect(FakeChart.last.shapes).toEqual([]);
+    widget.setUI('capsule');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
+  });
+
   it('takes the look from its options', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'terminal' });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;

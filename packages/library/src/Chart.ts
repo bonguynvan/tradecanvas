@@ -1335,7 +1335,9 @@ export class Chart {
    * changes.
    */
   setShapes(shapes: ShapeConfig): void {
-    this.themeManager.setShape(readShapes(shapes));
+    const read = readShapes(shapes);
+    if (read.tagRadius === undefined) return;
+    this.themeManager.setShape({ ...this.themeManager.getTheme().shape, ...read });
     this.syncRenderContext();
     this.engine.requestRender();
   }

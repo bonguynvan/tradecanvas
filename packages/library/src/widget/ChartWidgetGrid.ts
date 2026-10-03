@@ -12,7 +12,7 @@ import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js
 import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './widgetLayout.js';
 import { utcToWallTime } from './WidgetGoToDate.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
-import { applyWidgetUI, resolveWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
+import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 
 /** What the charts of a grid follow from each other. */
 export interface WidgetGridSync {
@@ -275,9 +275,15 @@ export class ChartWidgetGrid {
 
   /** Every chart's look, and the bar's (see `ChartWidget.setUI`). */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
-    applyWidgetUI(this.root, resolveWidgetUI(theme));
-    for (const cell of this.cells) cell.widget.setUI(theme);
-    this.uiTheme = theme;
+    const ui = resolveWidgetUI(theme);
+    applyWidgetUI(this.root, ui);
+    for (const cell of this.cells) cell.widget.setUI(ui);
+    this.uiTheme = ui;
+  }
+
+  /** The grid's look, every token set. */
+  getUI(): ResolvedWidgetUI {
+    return resolveWidgetUI(this.uiTheme ?? this.options.widget?.ui);
   }
 
   setSync(patch: Partial<WidgetGridSync>): void {

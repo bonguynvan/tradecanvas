@@ -7,8 +7,9 @@ import type { Theme } from '@tradecanvas/commons';
  * current fill.
  */
 export function fillTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme): void {
-  const r = Math.max(0, Math.min(theme.shape?.tagRadius ?? 0, h / 2, w / 2));
-  if (r <= 0) {
+  const radius = theme.shape?.tagRadius;
+  const r = typeof radius === 'number' && Number.isFinite(radius) ? Math.max(0, Math.min(radius, h / 2, w / 2)) : 0;
+  if (!(r > 0)) {
     ctx.fillRect(x, y, w, h);
     return;
   }

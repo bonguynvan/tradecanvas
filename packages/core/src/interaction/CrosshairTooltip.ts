@@ -104,7 +104,7 @@ export class CrosshairTooltip {
       display: 'none',
       minWidth: '168px',
       padding: '8px 10px 9px',
-      borderRadius: 'var(--tcw-panel-radius, 8px)',
+      borderRadius: 'var(--tcw-tooltip-radius, 8px)',
       fontSize: '11.5px',
       lineHeight: '1.45',
       fontVariantNumeric: 'tabular-nums',

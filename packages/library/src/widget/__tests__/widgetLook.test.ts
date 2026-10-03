@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolveWidgetUI, widgetUIVariables } from '../widgetUI.js';
 
@@ -73,6 +73,42 @@ describe('the stylesheet’s look', () => {
   it('sets type by the tokens: no type size or weight of its own', () => {
     const own = [...css.matchAll(/(?<![\w-])(?:font-size:\s*\d[\d.]*px|font-weight:\s*[5-7]\d\d\b)/g)].map((m) => m[0]);
     expect(own).toEqual([]);
+  });
+
+  it('reads only variables something declares', () => {
+    const declaredAnywhere = new Set([...css.matchAll(/(--tcw-[\w-]+)\s*:/g)].map((m) => m[1]));
+    // The look's tokens, and the few the widget's code sets on an element itself.
+    const dir = fileURLToPath(new URL('..', import.meta.url));
+    const code = readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => readFileSync(`${dir}/${f}`, 'utf8')).join('\n');
+    const set = new Set([
+      ...Object.keys(widgetUIVariables(resolveWidgetUI())),
+      ...[...code.matchAll(/setProperty\('(--tcw-[\w-]+)'/g)].map((m) => m[1]),
+    ]);
+    // Read without a fallback, so a missing one would drop the declaration.
+    const read = new Set([...css.matchAll(/var\((--tcw-[\w-]+)\)/g)].map((m) => m[1]));
+    expect([...read].filter((name) => !declaredAnywhere.has(name) && !set.has(name))).toEqual([]);
+  });
+
+  it('uses every token the look sets', () => {
+    const unused = Object.keys(widgetUIVariables(resolveWidgetUI())).filter(
+      (name) => !css.includes(`var(${name})`) && !css.includes(`var(${name},`),
+    );
+    expect(unused).toEqual([]);
+  });
+
+  it('places its panels below the toolbar and beside the drawing tools, as the look sizes them', () => {
+    for (const panel of ['.tcw-alerts-panel', '.tcw-datawin', '.tcw-ladder', '.tcw-tree-panel']) {
+      expect(ruleBody(panel), panel).toContain('top: var(--tcw-panel-top)');
+    }
+    expect(ruleBody('.tcw-style-panel')).toContain('left: var(--tcw-panel-left)');
+  });
+
+  it('keeps tap targets on phones: the variants’ sizes give way under 768 px', () => {
+    const variants = css.slice(css.indexOf('/* === The look:'));
+    const phone = variants.slice(variants.indexOf('@media (max-width: 768px)'));
+    expect(phone.length).toBeLessThan(variants.length);
+    expect(phone).toContain(".tcw-root[data-tcw-intervals='segmented'] > .tcw-toolbar > .tcw-tf-group .tcw-btn");
+    expect(phone).toContain(".tcw-root[data-tcw-toolbar='floating'] > .tcw-toolbar");
   });
 
   it('shows a chosen button by the look’s tokens', () => {

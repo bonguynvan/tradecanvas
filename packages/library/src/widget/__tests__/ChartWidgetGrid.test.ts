@@ -286,4 +286,19 @@ describe('ChartWidgetGrid look', () => {
     grid.setLayout('2x2');
     expect(roots().map((r) => r.dataset.tcwUi)).toEqual(['terminal', 'terminal', 'terminal', 'terminal']);
   });
+
+  it('takes the look from its widget options, and keeps its own copy of a look', () => {
+    make({ layout: '1x2', widget: { watchlist: false, ui: 'capsule' } });
+    const roots = () => [...host.querySelectorAll<HTMLElement>('.tcw-grid-cell .tcw-root')];
+    expect(host.querySelector<HTMLElement>('.tcw-grid')!.dataset.tcwUi).toBe('capsule');
+    expect(roots().map((r) => r.dataset.tcwUi)).toEqual(['capsule', 'capsule']);
+    expect(grid.getUI().preset).toBe('capsule');
+
+    const theme: { preset: 'terminal' | 'studio' } = { preset: 'terminal' };
+    grid.setUI(theme);
+    theme.preset = 'studio';
+    grid.setLayout('2x2');
+    expect(roots().map((r) => r.dataset.tcwUi)).toEqual(['terminal', 'terminal', 'terminal', 'terminal']);
+    expect(grid.getUI().preset).toBe('terminal');
+  });
 });

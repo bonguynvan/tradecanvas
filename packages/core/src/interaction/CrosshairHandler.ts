@@ -333,8 +333,9 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
     // The notch pointing at the crosshair line.
     ctx.beginPath();
     ctx.moveTo(opts.anchorX, opts.anchorY);
-    ctx.lineTo(x + 1, opts.anchorY - notch);
-    ctx.lineTo(x + 1, opts.anchorY + notch);
+    // Its base inside the body, clear of a rounded corner.
+    ctx.lineTo(x + 2, opts.anchorY - notch);
+    ctx.lineTo(x + 2, opts.anchorY + notch);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = opts.fg;

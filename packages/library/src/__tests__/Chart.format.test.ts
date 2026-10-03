@@ -92,5 +92,7 @@ describe('the chart’s shapes', () => {
     expect(chart.getTheme().shape).toEqual({ tagRadius: 999 });
     chart.setShapes({ tagRadius: -3 });
     expect(chart.getShapes()).toEqual({ tagRadius: 999 }); // not a radius: nothing changes
+    chart.setTheme('dark');
+    expect(chart.getShapes()).toEqual({ tagRadius: 999 }); // and the shape still outlasts a theme switch
   });
 });

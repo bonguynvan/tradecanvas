@@ -52,7 +52,7 @@ export class PinnedTooltip {
       position: 'absolute',
       display: 'none',
       padding: '6px 10px',
-      borderRadius: 'var(--tcw-panel-radius, 4px)',
+      borderRadius: 'var(--tcw-tooltip-radius, 4px)',
       fontSize: '11px',
       fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
       lineHeight: '1.5',

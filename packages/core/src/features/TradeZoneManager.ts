@@ -2,6 +2,7 @@ import type { ViewportState, Theme, DataSeries, TradeZone, TradeZoneStyle } from
 import { DEFAULT_TRADE_ZONE_STYLE } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
+import { fillTag } from '../ui/shapes.js';
 
 interface TradeZoneEvents {
   added: TradeZone;
@@ -188,7 +189,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
       const bgY = top + 2;
       ctx.globalAlpha = 0.85;
       ctx.fillStyle = theme.background;
-      ctx.fillRect(bgX, bgY, bgWidth, 14);
+      fillTag(ctx, bgX, bgY, bgWidth, 14, theme);
       ctx.globalAlpha = 1;
       ctx.fillStyle = fillColor;
       ctx.fillText(pnlText, right - 4, bgY + 1);

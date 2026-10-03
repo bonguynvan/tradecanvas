@@ -492,7 +492,8 @@ export class ChartWidget {
       // would silently drop every other default.
       features,
     });
-    this.applyChartShapes();
+    // A shape the chart's options give stays until a look is set.
+    if (!options.chartOptions?.shapes) this.applyChartShapes();
 
     // New bars end the loading state, whoever supplied them (stream snapshot,
     // widget.setData, or the host calling getChart().setData directly); stream
@@ -1142,7 +1143,7 @@ export class ChartWidget {
 
   /** The chart's own tags and pills take the look's corners. */
   private applyChartShapes(): void {
-    this.chart.setShapes?.({ tagRadius: this.ui.tagRadius });
+    this.chart.setShapes({ tagRadius: this.ui.tagRadius });
   }
 
   destroy(): void {

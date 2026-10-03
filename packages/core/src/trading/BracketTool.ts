@@ -1,5 +1,6 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
+import { fillTag } from '../ui/shapes.js';
 
 export type BracketHandle = 'entry' | 'sl' | 'tp';
 
@@ -152,9 +153,9 @@ export class BracketTool {
     const rr = bracketRiskReward(d);
     const sideLabel = d.side === 'buy' ? 'LONG' : 'SHORT';
     const fmt = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(pricePrecision);
-    label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${fmt(d.entry)}`, theme.text, theme.background);
-    label(ctx, x0 + 6, yTp, `TP ${fmt(d.takeProfit)}  ·  ${rr.toFixed(2)}R`, profit, theme.background);
-    label(ctx, x0 + 6, ySl, `SL ${fmt(d.stopLoss)}`, loss, theme.background);
+    label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${fmt(d.entry)}`, theme.text, theme);
+    label(ctx, x0 + 6, yTp, `TP ${fmt(d.takeProfit)}  ·  ${rr.toFixed(2)}R`, profit, theme);
+    label(ctx, x0 + 6, ySl, `SL ${fmt(d.stopLoss)}`, loss, theme);
 
     // Drag handles (small knobs at the right edge).
     for (const [price, color] of [[d.entry, theme.text], [d.takeProfit, profit], [d.stopLoss, loss]] as const) {
@@ -201,14 +202,14 @@ function drawLine(ctx: CanvasRenderingContext2D, x0: number, x1: number, y: numb
   ctx.setLineDash([]);
 }
 
-function label(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, color: string, bg: string): void {
+function label(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, color: string, theme: Theme): void {
   ctx.font = '600 10px system-ui, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   const w = ctx.measureText(text).width;
   ctx.globalAlpha = 0.85;
-  ctx.fillStyle = bg;
-  ctx.fillRect(x - 3, y - 8, w + 6, 16);
+  ctx.fillStyle = theme.background;
+  fillTag(ctx, x - 3, y - 8, w + 6, 16, theme);
   ctx.globalAlpha = 1;
   ctx.fillStyle = color;
   ctx.fillText(text, x, y + 0.5);

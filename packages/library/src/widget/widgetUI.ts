@@ -118,7 +118,7 @@ type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset'> & { components
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   studio: {
     radius: { xs: 3, sm: 5, md: 7, lg: 11, xl: 16 },
-    components: { tag: 4, toolbar: 0, sidebar: 0 },
+    components: { toolbar: 0, sidebar: 0 },
     sizes: { toolbar: 46, control: 30, controlSmall: 24, icon: 18, sidebar: 48, menuItem: 30 },
     font: { family: `'Manrope', 'Inter', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
@@ -221,8 +221,26 @@ function deepFreeze<T extends object>(value: T): T {
 
 const isPreset = (v: unknown): v is WidgetUIPreset => v === 'studio' || v === 'terminal' || v === 'capsule';
 const px = (v: unknown, lo: number, hi: number): v is number => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
-/** CSS text that stays a value: no way out of the declaration, no URLs. */
-const cssValue = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0 && v.length <= 300 && !/[;{}<>\\]|url\s*\(|expression\s*\(/i.test(v);
+/**
+ * CSS text that stays a value: no way out of the declaration, no URLs, and
+ * nothing the browser would drop (an open quote or bracket, a comment).
+ */
+const cssValue = (v: unknown): v is string =>
+  typeof v === 'string' && v.trim().length > 0 && v.length <= 300 && !/[;{}<>\\]|url\s*\(|expression\s*\(|\/\*/i.test(v) && balanced(v);
+
+/** Quotes closed and brackets matched. */
+function balanced(v: string): boolean {
+  let depth = 0;
+  let quote = '';
+  for (const ch of v) {
+    if (quote) {
+      if (ch === quote) quote = '';
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '(') depth++;
+    else if (ch === ')' && --depth < 0) return false;
+  }
+  return depth === 0 && !quote;
+}
 const oneOf = <T extends string>(v: unknown, options: readonly T[]): v is T => typeof v === 'string' && (options as readonly string[]).includes(v);
 
 function pick<T extends object>(base: T, over: Partial<Record<keyof T, unknown>> | undefined, ok: (key: keyof T, v: unknown) => boolean): T {
@@ -249,7 +267,7 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const sizes = pick(density, t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
   const font = pick(base.font, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
-    if (key === 'size') return px(v, 9, 20);
+    if (key === 'size') return px(v, 11, 20);
     if (key === 'weight' || key === 'strongWeight') return px(v, 100, 900);
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);

@@ -7,6 +7,7 @@ import type {
   Theme,
 } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
+import { fillTag } from '../ui/shapes.js';
 
 export interface OrderDraft {
   side: OrderSide;
@@ -126,7 +127,7 @@ export class OrderDraftTool {
       y,
       `${sideLabel} ${type.toUpperCase()} ${viewport.formatPrice?.(d.price) ?? d.price.toFixed(pricePrecision)}`,
       color,
-      theme.background,
+      theme,
     );
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -160,15 +161,15 @@ function priceTag(
   y: number,
   text: string,
   color: string,
-  bg: string,
+  theme: Theme,
 ): void {
   ctx.font = '600 10px system-ui, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   const w = ctx.measureText(text).width;
   ctx.globalAlpha = 0.85;
-  ctx.fillStyle = bg;
-  ctx.fillRect(x - 3, y - 8, w + 6, 16);
+  ctx.fillStyle = theme.background;
+  fillTag(ctx, x - 3, y - 8, w + 6, 16, theme);
   ctx.globalAlpha = 1;
   ctx.fillStyle = color;
   ctx.fillText(text, x, y + 0.5);

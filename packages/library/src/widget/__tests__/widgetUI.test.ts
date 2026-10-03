@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { applyWidgetUI, resolveWidgetUI, widgetUIVariables, WIDGET_UI_PRESETS } from '../widgetUI.js';
+import { applyWidgetUI, resolveWidgetUI, widgetUIVariables, WIDGET_UI_PRESETS, type WidgetUITheme } from '../widgetUI.js';
+import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
 describe('resolveWidgetUI', () => {
   it('is the Studio look by default', () => {
@@ -59,10 +60,50 @@ describe('resolveWidgetUI', () => {
     expect(ui.active).toBe('tint');
   });
 
+  it('leaves out every kind of value it can’t use', () => {
+    const studio = resolveWidgetUI();
+    const bad = {
+      font: { mono: 'expression(alert(1))', labelCase: 'shout', labelTracking: 2, size: 10, weight: 50 },
+      borders: { width: 9, separators: 'yes' },
+      components: { menu: -1, dialog: Number.POSITIVE_INFINITY },
+      shadows: { dialog: '<b>', tooltip: 'a\\b' },
+      blur: 100,
+      tagRadius: Number.NaN,
+      toolbar: 'top',
+      sidebar: 1,
+      intervals: 'x',
+    } as unknown as WidgetUITheme;
+    expect(resolveWidgetUI(bad)).toEqual(studio);
+    // CSS the browser would drop: an open quote, an open bracket, a comment, too long.
+    for (const family of ["'Inter", 'a) b', 'Inter /* x', 'x'.repeat(301), 5]) {
+      expect(resolveWidgetUI({ font: { family } } as unknown as WidgetUITheme).font.family, String(family)).toBe(studio.font.family);
+    }
+    expect(resolveWidgetUI({ font: { family: "'Inter', var(--brand-font), sans-serif" } }).font.family).toBe("'Inter', var(--brand-font), sans-serif");
+  });
+
+  it('is Studio for anything that isn’t a look', () => {
+    for (const theme of [null, 5, [], 'nope']) {
+      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('studio'));
+    }
+  });
+
+  it('takes a resolved look back unchanged', () => {
+    for (const name of ['studio', 'terminal', 'capsule'] as const) {
+      const ui = resolveWidgetUI({ preset: name, density: 'spacious', radius: { md: 3 } });
+      expect(resolveWidgetUI(ui)).toEqual(ui);
+    }
+  });
+
   it('hands out copies of the presets', () => {
     const ui = resolveWidgetUI('capsule');
     ui.radius.md = 1;
     expect(resolveWidgetUI('capsule').radius.md).toBe(WIDGET_UI_PRESETS.capsule.radius.md);
+    ui.components.menu = 1;
+    ui.font.size = 1;
+    ui.shadows.menu = 'none';
+    expect(resolveWidgetUI('capsule')).toEqual(WIDGET_UI_PRESETS.capsule);
+    expect(Object.isFrozen(WIDGET_UI_PRESETS.capsule.components)).toBe(true);
+    expect(Object.isFrozen(WIDGET_UI_PRESETS.terminal.font)).toBe(true);
   });
 });
 
@@ -94,6 +135,27 @@ describe('the look on the page', () => {
     expect(el.dataset.tcwToolbar).toBe('docked');
     expect(el.style.getPropertyValue('--tcw-control-radius')).toBe('');
     expect(el.style.length).toBe(0);
+  });
+
+  it('emits a value for every token, in every preset and density', () => {
+    for (const preset of ['studio', 'terminal', 'capsule'] as const) {
+      for (const density of ['compact', 'comfortable', 'spacious'] as const) {
+        for (const [name, value] of Object.entries(widgetUIVariables(resolveWidgetUI({ preset, density })))) {
+          expect(value, `${preset} ${density} ${name}`).not.toMatch(/NaN|undefined|^$/);
+        }
+      }
+    }
+  });
+
+  it('puts the widget stylesheet first in the page head, so the page’s own CSS wins a tie', () => {
+    document.head.innerHTML = '<style id="host-css"></style>';
+    injectWidgetStyles();
+    try {
+      expect(document.head.firstElementChild?.id).toBe('tcw-styles');
+    } finally {
+      removeWidgetStyles();
+    }
+    expect(document.getElementById('tcw-styles')).toBeNull();
   });
 
   it('frosts floating surfaces only when they blur', () => {
