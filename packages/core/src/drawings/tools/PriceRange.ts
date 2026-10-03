@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { formatPriceChange } from './labels.js';
+import { formatPriceChange, drawingFont } from './labels.js';
 
 export class PriceRangeTool extends DrawingBase {
   descriptor = { type: 'priceRange' as const, name: 'Price Range', requiredAnchors: 2 };
@@ -24,7 +24,7 @@ export class PriceRangeTool extends DrawingBase {
     // Label
     const label = formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport);
 
-    ctx.font = '12px sans-serif';
+    ctx.font = drawingFont(12);
     ctx.fillStyle = isUp ? '#1fa874' : '#e8505b';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

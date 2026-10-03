@@ -11,12 +11,10 @@ export class CrossLineTool extends DrawingBase {
     const { chartRect } = viewport;
 
     this.applyLineStyle(ctx, state.style);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, p.y);
-    ctx.lineTo(chartRect.x + chartRect.width, p.y);
-    ctx.moveTo(p.x, chartRect.y);
-    ctx.lineTo(p.x, chartRect.y + chartRect.height);
-    ctx.stroke();
+    const width = ctx.lineWidth;
+    this.strokeHorizontal(ctx, chartRect.x, chartRect.x + chartRect.width, p.y);
+    ctx.lineWidth = width;
+    this.strokeVertical(ctx, p.x, chartRect.y, chartRect.y + chartRect.height);
     this.resetLineStyle(ctx);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

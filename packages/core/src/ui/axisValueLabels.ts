@@ -63,6 +63,72 @@ function parseColor(color: string): [number, number, number] | null {
   return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
 }
 
+/** A tag already on the axis that value tags keep clear of: its centre and half its height. */
+export interface FixedAxisTag {
+  y: number;
+  half: number;
+}
+
+/**
+ * Where `labels` go on an axis within `bounds`, kept clear of `fixed` tags
+ * (the last price, high/low, orders): each tag stays on its value's side of
+ * a fixed tag and is spread among its neighbours there. Tags off the axis,
+ * or without room left between fixed tags, are left out.
+ */
+export function layoutAxisValueLabels(
+  labels: readonly AxisValueLabel[],
+  bounds: { top: number; bottom: number },
+  fixed: readonly FixedAxisTag[] = [],
+  height = AXIS_LABEL_HEIGHT,
+): AxisValueLabel[] {
+  const half = height / 2;
+  const walls = fixed.filter((w) => w.y + w.half > bounds.top && w.y - w.half < bounds.bottom).sort((a, b) => a.y - b.y);
+  const shown = labels.filter((l) => l.y >= bounds.top && l.y <= bounds.bottom).sort((a, b) => a.y - b.y);
+  const out: AxisValueLabel[] = [];
+  let next = 0;
+  // The lowest bottom edge of the walls so far: a tall wall can reach past a later one.
+  let reach = bounds.top;
+  for (let k = 0; k <= walls.length; k++) {
+    if (k > 0) reach = Math.max(reach, walls[k - 1].y + walls[k - 1].half);
+    const top = reach;
+    const bottom = k === walls.length ? bounds.bottom : walls[k].y - walls[k].half;
+    const limit = k === walls.length ? Infinity : walls[k].y;
+    const first = next;
+    while (next < shown.length && shown[next].y < limit) next++;
+    const group = shown.slice(first, next);
+    if (group.length === 0 || bottom - top < height) continue;
+    const ys = spreadLabels(group.map((l) => l.y), top, bottom, height);
+    group.forEach((label, i) => {
+      if (ys[i] - half >= top - 0.5 && ys[i] + half <= bottom + 0.5) out.push({ ...label, y: ys[i] });
+    });
+  }
+  return out;
+}
+
+/** Draw tags already laid out (`layoutAxisValueLabels`) on the axis whose left edge is `axisX`. */
+export function drawAxisValueLabels(
+  ctx: CanvasRenderingContext2D,
+  labels: readonly AxisValueLabel[],
+  axisX: number,
+  axisWidth: number,
+  theme: Theme,
+): void {
+  if (labels.length === 0) return;
+  ctx.save();
+  ctx.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  const half = AXIS_LABEL_HEIGHT / 2;
+  for (const label of labels) {
+    const width = Math.min(ctx.measureText(label.text).width + 10, axisWidth - 2);
+    ctx.fillStyle = label.color;
+    fillTag(ctx, axisX + 1, Math.round(label.y - half), width, AXIS_LABEL_HEIGHT, theme);
+    ctx.fillStyle = labelTextColor(label.color);
+    ctx.fillText(label.text, axisX + 5, Math.round(label.y));
+  }
+  ctx.restore();
+}
+
 /**
  * Draw `labels` on the value axis whose left edge is `axisX`, within the
  * vertical `bounds`. Tags off the axis are dropped; the rest are spread so
@@ -76,23 +142,5 @@ export function renderAxisValueLabels(
   bounds: { top: number; bottom: number },
   theme: Theme,
 ): void {
-  const shown = labels.filter((l) => l.y >= bounds.top && l.y <= bounds.bottom).sort((a, b) => a.y - b.y);
-  if (shown.length === 0) return;
-  const ys = spreadLabels(shown.map((l) => l.y), bounds.top, bounds.bottom);
-  ctx.save();
-  ctx.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  const half = AXIS_LABEL_HEIGHT / 2;
-  for (let i = 0; i < shown.length; i++) {
-    const label = shown[i];
-    const y = ys[i];
-    if (y + half > bounds.bottom + 0.5) break; // no room left on this axis
-    const width = Math.min(ctx.measureText(label.text).width + 10, axisWidth - 2);
-    ctx.fillStyle = label.color;
-    fillTag(ctx, axisX + 1, Math.round(y - half), width, AXIS_LABEL_HEIGHT, theme);
-    ctx.fillStyle = labelTextColor(label.color);
-    ctx.fillText(label.text, axisX + 5, Math.round(y));
-  }
-  ctx.restore();
+  drawAxisValueLabels(ctx, layoutAxisValueLabels(labels, bounds), axisX, axisWidth, theme);
 }

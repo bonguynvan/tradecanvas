@@ -1,14 +1,17 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { resolveVolumeColors } from '@tradecanvas/commons';
 import { forEachPixelColumn, isDense } from './denseBars.js';
+import { barColumns, inDevicePixels } from './pixelGrid.js';
 
 /**
- * Renders volume histogram bars at the bottom of the main chart area.
- * Semi-transparent, colored by candle direction.
- * Height proportional to volume, occupying bottom 15-25% of chart.
+ * Volume histogram along the bottom of the main chart: the theme's volume
+ * colours by bar direction (`resolveVolumeColors`), on whole device pixels and lined up with the
+ * candle bodies above. It keeps to the bottom 15% by default, so the bars stay
+ * a backdrop and the candles above stay clear of them.
  */
 export class VolumeRenderer {
   private visible = true;
-  private heightRatio = 0.2; // 20% of chart height
+  private heightRatio = 0.15;
 
   setVisible(v: boolean): void { this.visible = v; }
   setHeightRatio(r: number): void { this.heightRatio = Math.max(0.05, Math.min(0.5, r)); }
@@ -19,48 +22,49 @@ export class VolumeRenderer {
     const { from, to } = viewport.visibleRange;
     const { chartRect } = viewport;
     const barWidth = viewport.barWidth;
-    const halfBar = barWidth / 2;
-
-    // Pre-compute constants
     const barUnit = barWidth + viewport.barSpacing;
-    const offsetX = -viewport.offset + chartRect.x + halfBar;
+    const offsetX = -viewport.offset + chartRect.x + barWidth / 2;
 
-    // Find max volume in visible range
     let maxVol = 0;
     for (let i = from; i <= to && i < data.length; i++) {
       if (data[i].volume > maxVol) maxVol = data[i].volume;
     }
     if (maxVol === 0) return;
 
-    const volumeAreaHeight = chartRect.height * this.heightRatio;
     const volumeBottom = chartRect.y + chartRect.height;
-    const volScale = volumeAreaHeight / maxVol;
+    const volScale = (chartRect.height * this.heightRatio) / maxVol;
 
-    // Batch by color
-    const upPath = new Path2D();
-    const downPath = new Path2D();
+    inDevicePixels(ctx, (px) => {
+      const up = new Path2D();
+      const down = new Path2D();
+      const bottom = px.y(volumeBottom);
+      const column = (path: Path2D, left: number, width: number, volume: number) => {
+        const top = px.y(volumeBottom - volume * volScale);
+        if (bottom - top >= 1) path.rect(left, top, width, bottom - top);
+      };
 
-    if (isDense(viewport)) {
-      // One pixel-wide bar per column: its largest volume, its direction.
-      forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
-        const barHeight = c.volume * volScale;
-        (c.close >= c.open ? upPath : downPath).rect(c.x, volumeBottom - barHeight, 1, barHeight);
-      });
-    } else {
-      for (let i = from; i <= to && i < data.length; i++) {
-        const bar = data[i];
-        const x = i * barUnit + offsetX;
-        const barHeight = bar.volume * volScale;
-        const path = bar.close >= bar.open ? upPath : downPath;
-        path.rect(x - halfBar, volumeBottom - barHeight, barWidth, barHeight);
+      if (isDense(viewport)) {
+        // One bar per CSS-pixel column, reaching the next column with no gap
+        // (at 125% a column is 1 or 2 device pixels): its largest volume, its direction.
+        forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
+          const left = px.x(c.x);
+          column(c.close >= c.open ? up : down, left, Math.max(1, px.x(c.x + 1) - left), c.volume);
+        });
+      } else {
+        // Lined up with the candle bodies above.
+        const { body, wick } = barColumns(barWidth, px.ratio);
+        const inset = (body - wick) / 2;
+        for (let i = from; i <= to && i < data.length; i++) {
+          const bar = data[i];
+          column(bar.close >= bar.open ? up : down, px.left(i * barUnit + offsetX, wick) - inset, body, bar.volume);
+        }
       }
-    }
 
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = theme.candleUp;
-    ctx.fill(upPath);
-    ctx.fillStyle = theme.candleDown;
-    ctx.fill(downPath);
-    ctx.globalAlpha = 1;
+      const colors = resolveVolumeColors(theme);
+      ctx.fillStyle = colors.up;
+      ctx.fill(up);
+      ctx.fillStyle = colors.down;
+      ctx.fill(down);
+    });
   }
 }

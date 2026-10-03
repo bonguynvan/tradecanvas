@@ -1,9 +1,9 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { LEVEL_LABEL_OPTIONS, extendOptions, levelList } from './options.js';
+import { LEVEL_LABEL_OPTIONS, extendOptions, fibLevelList } from './options.js';
 import { hitPriceLevels, renderPriceLevels, type PriceLevel } from './priceLevels.js';
 
-export const EXTENSION_LEVELS = levelList([0, 0.618, 1, 1.618, 2, 2.618, 3.618, 4.236], [0.382, 0.5, 0.786, 1.272, 1.414]);
+export const EXTENSION_LEVELS = fibLevelList([0, 0.618, 1, 1.618, 2, 2.618, 3.618, 4.236], [0.382, 0.5, 0.786, 1.272, 1.414]);
 
 /**
  * Trend-based Fibonacci extension: the A→B move, measured from C in the

@@ -129,11 +129,33 @@ export function timeParts(timeMs: number, tz: TimeZoneSetting): TimeParts {
  * to a calendar-day boundary, so hours/minutes read 00:00) needs the YEAR in its label instead: a
  * bare `month/day` is ambiguous across years, and `00:00` tells a trader nothing. Detected from the
  * parts themselves rather than a separate timeframe parameter, so every caller that formats a bar's
- * time gets the same rule for free. The one false positive this accepts — a genuine intraday bar
- * landing exactly on midnight — is acceptable: real trade-driven timestamps essentially never do.
+ * time gets the same rule for free. It can't tell an hourly bar at midnight from a daily one:
+ * callers that have the series ask `barsAreDaily` first and fall back to this.
  */
 export function isDateOnly(parts: Pick<TimeParts, 'hours' | 'minutes'>): boolean {
   return parts.hours === 0 && parts.minutes === 0;
+}
+
+/** Gaps this long or longer (a day with a daylight-saving change is 23 h) mean daily-or-larger bars. */
+const DAILY_GAP_MS = 20 * 3_600_000;
+
+/**
+ * Whether bars are a day apart or more (daily, weekly, monthly): their labels
+ * then carry a date and no time of day, while an hourly bar at midnight keeps
+ * its time. Read from the smallest gap among the first bars, so a weekend or
+ * a missing session doesn't make an intraday series look daily. Undefined for
+ * fewer than two bars.
+ */
+export function barsAreDaily(data: ArrayLike<{ time: number }>): boolean | undefined {
+  const n = Math.min(data.length, 64);
+  if (n < 2) return undefined;
+  const ms = (t: number) => (t > 1e12 ? t : t * 1000);
+  let gap = Infinity;
+  for (let i = 1; i < n; i++) {
+    const d = Math.abs(ms(data[i].time) - ms(data[i - 1].time));
+    if (d > 0 && d < gap) gap = d;
+  }
+  return gap === Infinity ? undefined : gap >= DAILY_GAP_MS;
 }
 
 /** A short label like `UTC-5` or `UTC+5:30` for the offset in force at `atMs` (default: now). */

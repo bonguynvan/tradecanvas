@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
+import { timeParts, tzLabel, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
 
 // 2023-03-15 18:30 UTC.
 const t = Date.UTC(2023, 2, 15, 18, 30, 0);
@@ -51,5 +51,25 @@ describe('tzLabel', () => {
   it('formats fractional offsets', () => {
     expect(tzLabel(330)).toBe('UTC+5:30');
     expect(tzLabel(-210)).toBe('UTC-3:30');
+  });
+});
+
+describe('barsAreDaily', () => {
+  const H = 3_600_000;
+  const t0 = Date.UTC(2026, 0, 2);
+  it('reads the smallest gap among the first bars', () => {
+    expect(barsAreDaily([{ time: t0 }, { time: t0 + 24 * H }, { time: t0 + 48 * H }])).toBe(true);
+    expect(barsAreDaily([{ time: t0 }, { time: t0 + H }])).toBe(false);
+    // A weekend between two hourly bars doesn't make the series daily.
+    expect(barsAreDaily([{ time: t0 }, { time: t0 + 65 * H }, { time: t0 + 66 * H }])).toBe(false);
+    // A day with a daylight-saving change is 23 hours.
+    expect(barsAreDaily([{ time: t0 }, { time: t0 + 23 * H }])).toBe(true);
+    // Seconds work as well as milliseconds.
+    expect(barsAreDaily([{ time: 1_700_000_000 }, { time: 1_700_086_400 }])).toBe(true);
+  });
+
+  it("can't tell from fewer than two bars", () => {
+    expect(barsAreDaily([])).toBeUndefined();
+    expect(barsAreDaily([{ time: 0 }])).toBeUndefined();
   });
 });

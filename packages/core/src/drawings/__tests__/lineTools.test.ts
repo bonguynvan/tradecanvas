@@ -48,12 +48,13 @@ describe('CrossLineTool', () => {
     expect(tool.hitTest({ x: 300, y: 10 }, state, unitViewport, 3)).toBe(false);
   });
 
-  it('draws the full-width and full-height lines', () => {
+  it('draws the full-width and full-height lines, each on a whole pixel row or column', () => {
     const { ctx, calls } = recordingCtx();
     tool.render(ctx, state, unitViewport, false);
     const moves = calls.filter((c) => c.name === 'moveTo').map((c) => c.args);
-    expect(moves).toContainEqual([0, 50]);
-    expect(moves).toContainEqual([105, 0]);
+    // A 1 px line through y = 50 covers the row 50..51: its centre is 50.5.
+    expect(moves).toContainEqual([0, 50.5]);
+    expect(moves).toContainEqual([105.5, 0]);
   });
 });
 

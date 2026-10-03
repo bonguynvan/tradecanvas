@@ -16,4 +16,9 @@ export class TradingRenderer {
   renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     this.manager.renderAxisBadges(ctx, viewport, theme);
   }
+
+  /** Where the axis badges sit, for the scale and other tags to keep clear of. */
+  axisTagYs(viewport: ViewportState): number[] {
+    return this.manager.axisTagYs(viewport);
+  }
 }

@@ -49,14 +49,16 @@ describe.each([
   ['log', { ...base, logScale: true }],
   ['log inverted', { ...base, logScale: true, invertScale: true }],
 ] as [string, ViewportState][])('price scale: %s', (_name, vp) => {
-  it('draws candle bodies between open and close, where overlays put those prices', () => {
+  it('draws candle bodies between open and close, where overlays put those prices (to the pixel)', () => {
     new CandlestickRenderer().render(ctx, bars, vp, DARK_THEME);
-    expect(rects).toHaveLength(2);
-    rects.forEach(([, top, , height], i) => {
+    // A wick (one pixel wide) and a body per bar; bodies are the wide ones.
+    const bodies = rects.filter(([, , w]) => w > 1);
+    expect(bodies).toHaveLength(2);
+    bodies.forEach(([, top, , height], i) => {
       const a = priceToY(bars[i].open, vp);
       const b = priceToY(bars[i].close, vp);
-      expect(top).toBeCloseTo(Math.min(a, b), 9);
-      expect(height).toBeCloseTo(Math.abs(a - b), 9);
+      expect(Math.abs(top - Math.min(a, b))).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(height - Math.abs(a - b))).toBeLessThanOrEqual(1);
     });
   });
 

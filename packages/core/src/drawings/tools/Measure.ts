@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatPriceChange } from './labels.js';
+import { formatPriceChange, drawingFont } from './labels.js';
 
 export class MeasureTool extends DrawingBase {
   descriptor = { type: 'measure' as const, name: 'Measure', requiredAnchors: 2 };
@@ -34,7 +34,7 @@ export class MeasureTool extends DrawingBase {
     const midX = (p1.x + p2.x) / 2;
     const midY = (p1.y + p2.y) / 2;
 
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 

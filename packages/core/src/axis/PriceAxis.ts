@@ -24,6 +24,8 @@ import { priceToY, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /** Tick labels this close (px) to the last-price tag's centre are hidden under it. */
 const TAG_CLEARANCE_PX = 12;
+/** Tick labels this close (px) to any other tag on the axis give way to it. */
+const AVOID_CLEARANCE_PX = 14;
 
 export class PriceAxis {
   private locale = 'en-US';
@@ -45,7 +47,14 @@ export class PriceAxis {
    * Draw the scale beside the plot: on the right (the price scale), or on the
    * left — labels right-aligned against the plot, no last-price tag to avoid.
    */
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, side: 'right' | 'left' = 'right'): void {
+  render(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    side: 'right' | 'left' = 'right',
+    /** Centres of tags on this axis (value tags, high/low, orders): labels under them are skipped. */
+    avoid: readonly number[] = [],
+  ): void {
     const { chartRect, priceRange } = viewport;
     const left = side === 'left';
     const axisX = left ? chartRect.x : chartRect.x + chartRect.width;
@@ -76,6 +85,7 @@ export class PriceAxis {
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = toY(price);
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
+      if (avoid.some((a) => Math.abs(y - a) < AVOID_CLEARANCE_PX)) continue;
       labels.push({ y, text: priceScaleText(price, viewport, precision, this.locale) });
     }
 

@@ -153,3 +153,17 @@ grid.getUI()`}</code></pre>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
+
+<h2>出来高の色</h2>
+<p>
+  出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> を使います。<code>volumeColor(candleColor)</code> はローソク足の色を出来高用の透明度にした色を返すので、独自のテーマでもバーはローソク足の背景にとどまります。widget の設定でローソク足の色を変えたときは、widget が自動でこれを行います。プリセットを元に <code>candleUp</code> / <code>candleDown</code> だけを変えたテーマでも、出来高はその色になります。
+</p>
+<pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
+
+chart.setTheme({
+  ...DARK_THEME,
+  candleUp: '#26a17b',
+  candleDown: '#e0525f',
+  volumeUp: volumeColor('#26a17b'),
+  volumeDown: volumeColor('#e0525f'),
+})`}</code></pre>

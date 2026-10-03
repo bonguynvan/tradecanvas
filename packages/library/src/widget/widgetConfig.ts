@@ -23,9 +23,14 @@ export const CHART_TYPES: { label: string; value: ChartType }[] = [
   { label: 'Range Bars', value: 'rangeBars' },
 ];
 
+/**
+ * The drawing tools, grouped, in sections: lines, Fibonacci and Gann, patterns,
+ * forecasting and measuring, shapes and notes.
+ */
 export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   {
     label: 'Lines',
+    section: 'lines',
     tools: [
       { label: 'Trend Line', value: 'trendLine' as DrawingToolType },
       { label: 'Ray', value: 'ray' as DrawingToolType },
@@ -36,6 +41,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Horizontal/Vertical',
+    section: 'lines',
     tools: [
       { label: 'Horizontal Line', value: 'horizontalLine' as DrawingToolType },
       { label: 'Horizontal Ray', value: 'horizontalRay' as DrawingToolType },
@@ -45,6 +51,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Channels',
+    section: 'lines',
     tools: [
       { label: 'Parallel Channel', value: 'parallelChannel' as DrawingToolType },
       { label: 'Regression Channel', value: 'regressionChannel' as DrawingToolType },
@@ -52,6 +59,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Fibonacci',
+    section: 'fibonacci',
     tools: [
       { label: 'Fib Retracement', value: 'fibRetracement' as DrawingToolType },
       { label: 'Fib Extension', value: 'fibExtension' as DrawingToolType },
@@ -65,27 +73,8 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     ],
   },
   {
-    label: 'Shapes',
-    tools: [
-      { label: 'Rectangle', value: 'rectangle' as DrawingToolType },
-      { label: 'Circle', value: 'circle' as DrawingToolType },
-      { label: 'Ellipse', value: 'ellipse' as DrawingToolType },
-      { label: 'Triangle', value: 'triangle' as DrawingToolType },
-      { label: 'Polyline', value: 'polyline' as DrawingToolType },
-      { label: 'Curve', value: 'curve' as DrawingToolType },
-      { label: 'Arc', value: 'arc' as DrawingToolType },
-    ],
-  },
-  {
-    label: 'Brushes',
-    tools: [
-      { label: 'Brush', value: 'brush' as DrawingToolType },
-      { label: 'Highlighter', value: 'highlighter' as DrawingToolType },
-      { label: 'Path', value: 'path' as DrawingToolType },
-    ],
-  },
-  {
     label: 'Gann & Pitchforks',
+    section: 'fibonacci',
     tools: [
       { label: 'Pitchfork', value: 'pitchfork' as DrawingToolType },
       { label: 'Schiff Pitchfork', value: 'schiffPitchfork' as DrawingToolType },
@@ -98,6 +87,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Cycles',
+    section: 'fibonacci',
     tools: [
       { label: 'Cyclic Lines', value: 'cyclicLines' as DrawingToolType },
       { label: 'Time Cycles', value: 'timeCycles' as DrawingToolType },
@@ -106,6 +96,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Patterns',
+    section: 'patterns',
     tools: [
       { label: 'XABCD Pattern', value: 'xabcdPattern' as DrawingToolType },
       { label: 'ABCD Pattern', value: 'abcdPattern' as DrawingToolType },
@@ -116,6 +107,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
   },
   {
     label: 'Elliott Waves',
+    section: 'patterns',
     tools: [
       { label: 'Elliott Wave', value: 'elliottWave' as DrawingToolType },
       { label: 'Elliott Impulse Wave', value: 'elliottImpulse' as DrawingToolType },
@@ -126,7 +118,20 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     ],
   },
   {
+    label: 'Forecasting',
+    section: 'forecasting',
+    tools: [
+      { label: 'Long/Short Position', value: 'riskReward' as DrawingToolType },
+      { label: 'Anchored VWAP', value: 'anchoredVWAP' as DrawingToolType },
+      { label: 'Fixed Range Volume Profile', value: 'volumeProfileRange' as DrawingToolType },
+      { label: 'Forecast', value: 'forecast' as DrawingToolType },
+      { label: 'Projection', value: 'projection' as DrawingToolType },
+      { label: 'Bars Pattern', value: 'barsPattern' as DrawingToolType },
+    ],
+  },
+  {
     label: 'Measure',
+    section: 'forecasting',
     tools: [
       { label: 'Price Range', value: 'priceRange' as DrawingToolType },
       { label: 'Date Range', value: 'dateRange' as DrawingToolType },
@@ -135,7 +140,30 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     ],
   },
   {
+    label: 'Shapes',
+    section: 'annotation',
+    tools: [
+      { label: 'Rectangle', value: 'rectangle' as DrawingToolType },
+      { label: 'Circle', value: 'circle' as DrawingToolType },
+      { label: 'Ellipse', value: 'ellipse' as DrawingToolType },
+      { label: 'Triangle', value: 'triangle' as DrawingToolType },
+      { label: 'Polyline', value: 'polyline' as DrawingToolType },
+      { label: 'Curve', value: 'curve' as DrawingToolType },
+      { label: 'Arc', value: 'arc' as DrawingToolType },
+    ],
+  },
+  {
+    label: 'Brushes',
+    section: 'annotation',
+    tools: [
+      { label: 'Brush', value: 'brush' as DrawingToolType },
+      { label: 'Highlighter', value: 'highlighter' as DrawingToolType },
+      { label: 'Path', value: 'path' as DrawingToolType },
+    ],
+  },
+  {
     label: 'Annotation',
+    section: 'annotation',
     tools: [
       { label: 'Text', value: 'text' as DrawingToolType },
       { label: 'Price Label', value: 'priceLabel' as DrawingToolType },
@@ -145,17 +173,6 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Flag Mark', value: 'flag' as DrawingToolType },
       { label: 'Arrow Mark', value: 'arrowMark' as DrawingToolType },
       { label: 'Icon', value: 'icon' as DrawingToolType },
-    ],
-  },
-  {
-    label: 'Forecasting',
-    tools: [
-      { label: 'Long/Short Position', value: 'riskReward' as DrawingToolType },
-      { label: 'Anchored VWAP', value: 'anchoredVWAP' as DrawingToolType },
-      { label: 'Fixed Range Volume Profile', value: 'volumeProfileRange' as DrawingToolType },
-      { label: 'Forecast', value: 'forecast' as DrawingToolType },
-      { label: 'Projection', value: 'projection' as DrawingToolType },
-      { label: 'Bars Pattern', value: 'barsPattern' as DrawingToolType },
     ],
   },
 ];
