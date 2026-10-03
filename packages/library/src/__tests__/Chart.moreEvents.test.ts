@@ -95,3 +95,69 @@ describe('tick timeframes', () => {
     await expect(chart.connect({ adapter, symbol: 'AAA', timeframe: '10T' })).rejects.toThrow(RangeError);
   });
 });
+
+describe('stream bars by their time', () => {
+  /** A feed whose bars the test sends. */
+  function feed() {
+    const listeners = new Map<string, ((e: { data: unknown }) => void)[]>();
+    return {
+      adapter: {
+        name: 'fake',
+        connect() {},
+        disconnect() {},
+        dispose() {},
+        getConnectionState: () => 'connected',
+        fetchHistory: async () => [{ time: T0, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+        on: (type: string, l: (e: { data: unknown }) => void) => listeners.set(type, [...(listeners.get(type) ?? []), l]),
+        off: () => {},
+      },
+      bar: (time: number, close: number, closed: boolean) => {
+        for (const l of listeners.get('bar') ?? []) l({ data: { bar: { time, open: close, high: close, low: close, close, volume: 1 }, closed } });
+      },
+    };
+  }
+
+  it('keeps a closed bar’s last values, and starts the next one after it', async () => {
+    const f = feed();
+    await chart.connect({ adapter: f.adapter as never, symbol: 'X', timeframe: '1m' });
+    const t1 = T0 + 60_000;
+    f.bar(t1, 2, false);
+    f.bar(t1, 3, true); // closes with a new last value
+    expect(chart.getData().map((b) => [b.time, b.close])).toEqual([[T0, 1], [t1, 3]]);
+    f.bar(t1 + 60_000, 4, false);
+    expect(chart.getData().map((b) => [b.time, b.close])).toEqual([[T0, 1], [t1, 3], [t1 + 60_000, 4]]);
+    f.bar(T0 - 60_000, 9, false); // older than the last: left out
+    expect(chart.getData()).toHaveLength(3);
+  });
+});
+
+describe('keys and history, after review', () => {
+  it('tells historyChange only when what can be undone or redone changes', () => {
+    const seen = vi.fn();
+    chart.on('historyChange', seen);
+    chart.addIndicator('rsi');
+    chart.addIndicator('cci');
+    expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves comma and period alone when the chart takes no keys', () => {
+    chart.destroy();
+    host.remove();
+    host = sizedHost();
+    chart = new Chart(host, { features: { keyboard: false } });
+    chart.setData(bars);
+    host.focus();
+    const e = new KeyboardEvent('keydown', { key: '.', bubbles: true, cancelable: true });
+    window.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(false);
+  });
+
+  it('leaves Space to a button inside the chart', () => {
+    const button = document.createElement('button');
+    host.appendChild(button);
+    button.focus();
+    const e = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    button.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(false);
+  });
+});

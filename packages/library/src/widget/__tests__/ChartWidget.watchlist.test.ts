@@ -151,3 +151,23 @@ describe('ChartWidget watchlists', () => {
     expect(widget.getQuote('ZZZ')).toBeNull();
   });
 });
+
+describe('ChartWidget watchlist quotes, after review', () => {
+  it('keeps one subscription through a reorder, and keeps what a later quote leaves out', () => {
+    const source = quoteSource();
+    widget = new ChartWidget(host, {
+      symbol: 'AAA',
+      symbols: ['AAA', 'BBB'],
+      watchlist: { lists: [{ id: 'a', name: 'A', symbols: ['AAA', 'BBB'] }], quotes: source as never },
+    });
+    expect(source.asked).toHaveLength(1);
+    widget.setWatchlists([{ id: 'a', name: 'A', symbols: ['BBB', 'AAA'] }]);
+    expect(source.asked).toHaveLength(1);
+
+    source.send([{ symbol: 'BBB', last: 10, bid: 9.9, ask: 10.1, prevClose: 9 }]);
+    source.send([{ symbol: 'BBB', last: 11 }]);
+    expect(widget.getQuote('BBB')).toMatchObject({ last: 11, bid: 9.9, prevClose: 9 });
+    source.send([{ symbol: 'BBB', last: Number.NaN } as Quote, null as never]);
+    expect(widget.getQuote('BBB')?.last).toBe(11);
+  });
+});

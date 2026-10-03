@@ -172,7 +172,6 @@ export class BinanceAdapter implements DataAdapter {
     return this.symbolList;
   }
 
-  /** Up to `limit` klines (1000 at most) that open before `before` (ms). */
   /**
    * Live quotes for up to 200 symbols: last price and the 24 h change, high,
    * low and volume. A snapshot first, then the exchange's mini-ticker stream
@@ -193,8 +192,17 @@ export class BinanceAdapter implements DataAdapter {
     const streamed = new Set<string>();
     const controller = new AbortController();
 
-    fetch(`${this.restBase}/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(wanted))}`, { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : []))
+    const snapshot = async (): Promise<unknown> => {
+      const res = await fetch(`${this.restBase}/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(wanted))}`, { signal: controller.signal });
+      if (res.ok) return res.json();
+      // One symbol the exchange doesn't know refuses the whole list: take every ticker, keep ours.
+      const all = await fetch(`${this.restBase}/ticker/24hr`, { signal: controller.signal });
+      if (!all.ok) return [];
+      const rows: unknown = await all.json();
+      const keep = new Set(wanted);
+      return Array.isArray(rows) ? rows.filter((r) => keep.has((r as { symbol?: unknown })?.symbol as string)) : [];
+    };
+    snapshot()
       .then((rows: unknown) => {
         if (stopped || !Array.isArray(rows)) return;
         const quotes = rows.map(parseRestTicker).filter((q): q is Quote => q !== null && !streamed.has(q.symbol));
@@ -308,6 +316,7 @@ export class BinanceAdapter implements DataAdapter {
     };
   }
 
+  /** Up to `limit` klines (1000 at most) that open before `before` (ms). */
   fetchHistoryBefore(symbol: string, timeframe: TimeFrame, before: number, limit = 500): Promise<OHLCBar[]> {
     return this.fetchKlines(symbol, timeframe, Math.min(limit, MAX_KLINES), `&endTime=${Math.floor(before) - 1}`);
   }

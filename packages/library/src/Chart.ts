@@ -42,7 +42,7 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, normalizeBarTime } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -417,8 +417,12 @@ export class Chart {
       this.features.drawings && (this.features.drawingTools.length === 0 || this.features.drawingTools.includes(type)));
     // Undo/redo
     this.undoRedoManager = new UndoRedoManager();
+    let history = '';
     this.undoRedoManager.setOnChange(() => {
       const { canUndo, canRedo } = this.undoRedoManager.getState();
+      const now = `${canUndo}|${canRedo}`;
+      if (now === history) return;
+      history = now;
       this.eventBus.emit('historyChange', { canUndo, canRedo });
     });
     this.drawingManager.setUndoRedoManager(this.undoRedoManager);
@@ -655,8 +659,10 @@ export class Chart {
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
         return;
       }
+      // A control inside the chart (a button over it) takes its own keys: Space presses it.
+      if (active && active !== this.container && active.matches('button, a[href], select, [role="button"], [role="menuitem"]')) return;
       // Comma and period read the bars one at a time.
-      if (this.a11y && (e.key === ',' || e.key === '.') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (this.a11y && this.features.keyboard && (e.key === ',' || e.key === '.') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         this.a11y.readBar(e.key === '.' ? 1 : -1);
         return;
@@ -1327,6 +1333,15 @@ export class Chart {
   }
 
   /** A new or updated bar into the whole series (while one is kept): whether the chart shows it. */
+  /** A stream bar onto the bars shown: the last one again or a new one after it; false for an older one. */
+  private placeStreamBar(bar: OHLCBar): boolean {
+    const how = barPlacement(this.dataManager.getData(), bar);
+    if (how === 'stale') return false;
+    if (how === 'append') this.dataManager.appendBar(bar);
+    else this.dataManager.updateLastBar(bar);
+    return true;
+  }
+
   private takeBar(bar: OHLCBar, how: 'append' | 'update'): boolean {
     // Hidden hours with no whole series yet (too few bars to tell the interval): start one now if it can.
     if (!this.fullSeries && !this.extendedHours && !this.replaySession) {
@@ -2732,14 +2747,17 @@ export class Chart {
       this.useStreamHistory(config.adapter, config.historyPageSize);
     });
 
+    // Each bar lands by its time: the last bar again (its latest values, a
+    // close included), a new one after it, or none when it is older.
     this.streamManager.on('barClose', (bar) => {
       if (this.replaySession) {
         this.replaySession.live.appendBar(bar);
         return;
       }
-      if (!this.takeBar(bar, 'append')) return;
+      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
+      if (how === 'stale' || !this.takeBar(bar, how)) return;
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
-      this.dataManager.appendBar(bar);
+      if (!this.placeStreamBar(bar)) return;
       const data = this.dataManager.getData();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
@@ -2753,11 +2771,11 @@ export class Chart {
         return;
       }
       this.currentPriceLine.setPrice(bar.close);
-      if (!this.takeBar(bar, 'update')) {
+      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
+      if (how === 'stale' || !this.takeBar(bar, how) || !this.placeStreamBar(bar)) {
         this.scheduleRender();
         return;
       }
-      this.dataManager.updateLastBar(bar);
       // Recalculate indicators so panel/overlay series track the forming bar
       // instead of freezing until bar close — incrementally, since only the
       // last bar changed.
@@ -5084,4 +5102,13 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
+}
+
+/** How a stream bar lands on `series`: after its last bar, as its last bar again, or before it (stale). */
+function barPlacement(series: readonly OHLCBar[], bar: OHLCBar): 'append' | 'update' | 'stale' {
+  const last = series[series.length - 1];
+  if (!last) return 'append';
+  const at = normalizeBarTime(bar.time);
+  const lastAt = normalizeBarTime(last.time);
+  return at > lastAt ? 'append' : at === lastAt ? 'update' : 'stale';
 }

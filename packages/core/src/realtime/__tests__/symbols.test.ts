@@ -42,7 +42,8 @@ describe('sessionMinute', () => {
   it('reads a time of day', () => {
     expect(sessionMinute('09:30')).toBe(570);
     expect(sessionMinute('9:30')).toBe(570);
-    expect(sessionMinute('24:00')).toBeNull();
+    expect(sessionMinute('24:00')).toBe(1440); // a day's end
+    expect(sessionMinute('24:30')).toBeNull();
     expect(sessionMinute('noon')).toBeNull();
   });
 });

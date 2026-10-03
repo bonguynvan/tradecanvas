@@ -17,6 +17,8 @@ import { tickBarCount } from '@tradecanvas/commons';
 
 /** Trades a tick chart's history is built from. */
 const HISTORY_TRADES = 1000;
+/** How often a tick stream says it is still there, under the stream's 60 s heartbeat. */
+const KEEP_ALIVE_MS = 15_000;
 const EVENT_TYPES: readonly DataAdapterEventType[] = ['tick', 'bar', 'barClose', 'snapshot', 'connectionChange', 'error'];
 
 /**
@@ -26,6 +28,8 @@ const EVENT_TYPES: readonly DataAdapterEventType[] = ['tick', 'bar', 'barClose',
 export class TickBarBuilder {
   private bar: OHLCBar | null = null;
   private count = 0;
+  /** The last bar's time: a bar never shares one (trades in the same millisecond). */
+  private lastTime = -Infinity;
 
   constructor(private readonly tradesPerBar: number) {}
 
@@ -35,7 +39,9 @@ export class TickBarBuilder {
     let touched = false;
     for (const t of trades) {
       if (!this.bar) {
-        this.bar = { time: t.time, open: t.price, high: t.price, low: t.price, close: t.price, volume: t.volume };
+        const time = Math.max(t.time, this.lastTime + 1);
+        this.lastTime = time;
+        this.bar = { time, open: t.price, high: t.price, low: t.price, close: t.price, volume: t.volume };
         this.count = 0;
       } else {
         this.bar = {
@@ -62,6 +68,7 @@ export class TickBarBuilder {
   build(trades: readonly Trade[]): OHLCBar[] {
     this.bar = null;
     this.count = 0;
+    this.lastTime = -Infinity;
     return this.push(trades).map((b) => b.bar);
   }
 }
@@ -85,6 +92,7 @@ export class TickBarAdapter implements DataAdapter {
   /** The tick chart being served: its builder, and the last trade its history had. */
   private tick: { symbol: string; builder: TickBarBuilder; after: number } | null = null;
   private stopTrades: (() => void) | null = null;
+  private keepAlive: ReturnType<typeof setInterval> | null = null;
   private tickMode = false;
   private state: ConnectionState = 'disconnected';
 
@@ -142,12 +150,16 @@ export class TickBarAdapter implements DataAdapter {
     });
     this.state = 'connected';
     this.emit('connectionChange', 'connected');
+    // A quiet market sends no trades for a while: still connected, not timed out.
+    this.keepAlive = setInterval(() => this.emit('connectionChange', 'connected'), KEEP_ALIVE_MS);
   }
 
   disconnect(): void {
     if (this.tickMode) {
       this.stopTrades?.();
       this.stopTrades = null;
+      if (this.keepAlive) clearInterval(this.keepAlive);
+      this.keepAlive = null;
       this.state = 'disconnected';
     } else {
       this.inner.disconnect();
@@ -161,6 +173,8 @@ export class TickBarAdapter implements DataAdapter {
   dispose(): void {
     this.stopTrades?.();
     this.stopTrades = null;
+    if (this.keepAlive) clearInterval(this.keepAlive);
+    this.keepAlive = null;
     this.listeners.clear();
     this.inner.dispose();
   }

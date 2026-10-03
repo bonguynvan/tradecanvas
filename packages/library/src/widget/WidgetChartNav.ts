@@ -65,6 +65,8 @@ export class WidgetChartNav {
         btn.addEventListener('pointerdown', (e) => {
           if (e.button !== 0) return;
           e.preventDefault();
+          // A release elsewhere (or a lost window) still ends the hold.
+          try { btn.setPointerCapture(e.pointerId); } catch { /* an unknown pointer */ }
           this.startHold(direction);
         });
         for (const end of ['pointerup', 'pointercancel', 'pointerleave'] as const) btn.addEventListener(end, () => this.stopHold());
@@ -80,6 +82,11 @@ export class WidgetChartNav {
         });
       }
       this.el.appendChild(btn);
+    }
+
+    // A double-click or a right-click on the buttons isn't the chart's (a drawing under them).
+    for (const type of ['dblclick', 'contextmenu', 'pointerdown', 'mousedown'] as const) {
+      this.el.addEventListener(type, (e) => e.stopPropagation());
     }
 
     // Shown with the keyboard too, while a button has focus.

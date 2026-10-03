@@ -46,11 +46,12 @@ export function stepDecimals(step: number | string): number {
   return 12;
 }
 
-/** `'09:30'` → 570, or null for anything that isn't a time of day. */
+/** `'09:30'` → 570 (`'24:00'`, a day's end, → 1440), or null for anything that isn't a time of day. */
 export function sessionMinute(time: string): number | null {
   const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
+  if (hours === 24 && minutes === 0) return 1440;
   return hours < 24 && minutes < 60 ? hours * 60 + minutes : null;
 }

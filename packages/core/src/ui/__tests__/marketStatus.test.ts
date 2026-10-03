@@ -69,3 +69,10 @@ describe('readNews', () => {
     expect(readNews(Array.from({ length: 50 }, (_, i) => ({ title: `T${i}`, time: i })), 5)).toHaveLength(5);
   });
 });
+
+describe('marketStatus, after review', () => {
+  it('takes a session that ends at 24:00', () => {
+    const evening: SymbolInfo = { symbol: 'E', timezone: 'UTC', sessions: [{ start: '18:00', end: '24:00' }] };
+    expect(marketStatus(evening, utc('2026-10-05T20:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-06T00:00:00Z') });
+  });
+});

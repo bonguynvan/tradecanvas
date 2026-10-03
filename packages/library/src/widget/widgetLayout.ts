@@ -1,5 +1,5 @@
 import type { PriceScaleMode, TimeFrame } from '@tradecanvas/commons';
-import { isTimeFrame } from '@tradecanvas/commons';
+import { isTimeFrame, tickBarCount } from '@tradecanvas/commons';
 
 /** What a widget's named layout holds. */
 export interface WidgetLayoutContent {
@@ -29,11 +29,11 @@ export function layoutChartState(state: Record<string, unknown>): Record<string,
  */
 export function readWidgetLayout(value: unknown): WidgetLayoutContent | null {
   if (!isRecord(value) || value.v !== 1) return null;
-  if (typeof value.symbol !== 'string' || !value.symbol || typeof value.timeframe !== 'string' || !isTimeFrame(value.timeframe)) return null;
+  if (typeof value.symbol !== 'string' || !value.symbol || typeof value.timeframe !== 'string' || !(isTimeFrame(value.timeframe) || tickBarCount(value.timeframe) !== null)) return null;
   return {
     v: 1,
     symbol: value.symbol,
-    timeframe: value.timeframe,
+    timeframe: value.timeframe as TimeFrame,
     scaleMode: SCALE_MODES.find((m) => m === value.scaleMode) ?? 'regular',
     invertScale: value.invertScale === true,
     chart: isRecord(value.chart) ? layoutChartState(value.chart) : null,

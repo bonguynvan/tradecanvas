@@ -27,6 +27,8 @@ export interface ChartA11ySource {
 const fill = (template: string, values: Record<string, string | number>): string =>
   template.replace(/\{(\w+)\}/g, (m, name: string) => (name in values ? String(values[name]) : m));
 
+const A11Y_ATTRIBUTES = ['role', 'aria-roledescription', 'aria-label', 'aria-describedby'] as const;
+
 /** Wait after the last key before saying what is on screen. */
 const VIEW_ANNOUNCE_MS = 400;
 /** The summary follows live data at most this often. */
@@ -44,6 +46,8 @@ export class ChartA11y {
   private labels: ChartA11yLabels;
   private cursor: number | null = null;
   private viewTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The container's own attributes before, put back on destroy. */
+  private readonly before = new Map<string, string | null>();
   private summaryAt = 0;
   private summaryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly onBlur = () => {
@@ -57,6 +61,7 @@ export class ChartA11y {
     labels: Partial<ChartA11yLabels> = {},
   ) {
     this.labels = { ...DEFAULT_A11Y_LABELS, ...labels };
+    for (const attr of A11Y_ATTRIBUTES) this.before.set(attr, container.getAttribute(attr));
     container.setAttribute('role', 'application');
 
     this.help = hidden('div', 'tc-sr-only');
@@ -131,7 +136,10 @@ export class ChartA11y {
     if (this.viewTimer) clearTimeout(this.viewTimer);
     if (this.summaryTimer) clearTimeout(this.summaryTimer);
     this.container.removeEventListener('blur', this.onBlur);
-    for (const attr of ['role', 'aria-roledescription', 'aria-label', 'aria-describedby']) this.container.removeAttribute(attr);
+    for (const [attr, value] of this.before) {
+      if (value === null) this.container.removeAttribute(attr);
+      else this.container.setAttribute(attr, value);
+    }
     this.help.remove();
     this.live.remove();
   }

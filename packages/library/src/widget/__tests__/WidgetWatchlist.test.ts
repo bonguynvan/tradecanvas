@@ -157,3 +157,14 @@ describe('WidgetWatchlist', () => {
     expect(rows()[2].getAttribute('aria-current')).toBe('true');
   });
 });
+
+describe('WidgetWatchlist keys, after review', () => {
+  it('keeps the keys it handles to itself', () => {
+    const outside = vi.fn();
+    document.addEventListener('keydown', outside);
+    key(rows()[0], 'Delete');
+    key(rows()[0], 'ArrowDown', { altKey: true });
+    document.removeEventListener('keydown', outside);
+    expect(outside).not.toHaveBeenCalled();
+  });
+});

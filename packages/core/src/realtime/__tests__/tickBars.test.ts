@@ -128,3 +128,53 @@ describe('Binance trades', () => {
     stop();
   });
 });
+
+describe('tick bars, after review', () => {
+  it('gives every bar a time of its own, even from trades in the same millisecond', () => {
+    const builder = new TickBarBuilder(1);
+    const times = builder.build([trade(5, 1), trade(5, 2), trade(5, 3), trade(9, 4)]).map((b) => b.time);
+    expect(times).toEqual([5, 6, 7, 9]);
+    expect(builder.push([trade(9, 5)]).map((b) => b.bar.time)).toEqual([10]);
+  });
+
+  it('keeps a quiet trade feed alive, while subscribed', async () => {
+    vi.useFakeTimers();
+    const { inner } = tradesAdapter();
+    const adapter = withTickBars(inner);
+    const states: unknown[] = [];
+    adapter.on('connectionChange', (e) => states.push(e.data));
+    adapter.connect({ symbol: 'X', timeframe: '5T' });
+    vi.advanceTimersByTime(45_000);
+    expect(states.length).toBeGreaterThanOrEqual(3);
+    adapter.disconnect();
+    const after = states.length;
+    vi.advanceTimersByTime(60_000);
+    expect(states.length).toBe(after);
+  });
+
+  it('a time aggregator given a tick timeframe stamps ticks with their own time', async () => {
+    const { TickAggregator } = await import('../TickAggregator.js');
+    const agg = new TickAggregator('10T');
+    const bars: { time: number }[] = [];
+    agg.on('bar', (b) => bars.push(b as { time: number }));
+    agg.processTick({ time: 1234, price: 1, volume: 1 });
+    expect(bars[0].time).toBe(1234);
+  });
+});
+
+describe('Binance quotes snapshot, after review', () => {
+  it('falls back to every ticker when one symbol is unknown', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('WebSocket', class { onmessage = null; onclose = null; close() {} });
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      calls.push(url);
+      if (url.includes('symbols=')) return { ok: false, status: 400, json: async () => ({}) };
+      return { ok: true, json: async () => [{ symbol: 'BTCUSDT', lastPrice: '100' }, { symbol: 'XRPUSDT', lastPrice: '1' }] };
+    }));
+    const got: string[] = [];
+    const stop = new BinanceAdapter({ restBase: 'https://rest', wsBase: 'wss://ws/ws' }).subscribeQuotes(['BTCUSDT', 'AAPL'], (q) => got.push(...q.map((x) => x.symbol)));
+    await vi.waitFor(() => expect(got).toEqual(['BTCUSDT']));
+    expect(calls[1]).toBe('https://rest/ticker/24hr');
+    stop();
+  });
+});

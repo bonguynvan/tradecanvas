@@ -256,6 +256,8 @@ export class WidgetWatchlist {
   private onRowKey(e: KeyboardEvent, symbol: string): void {
     const order = this.shownList()?.symbols ?? [];
     const index = order.indexOf(symbol);
+    // Keys handled here stay here (Delete would also remove a selected drawing).
+    if (['Enter', ' ', 'Delete', 'Backspace', 'ArrowDown', 'ArrowUp'].includes(e.key)) e.stopPropagation();
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       this.callbacks.onSelect(symbol);
@@ -397,6 +399,7 @@ export class WidgetWatchlist {
       this.nameBtn.focus();
     };
     input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
       if (e.key === 'Enter') {
         e.preventDefault();
         finish(true);

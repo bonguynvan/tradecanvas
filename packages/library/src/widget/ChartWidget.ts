@@ -1328,9 +1328,10 @@ export class ChartWidget {
 
   /** Quotes for the shown list's symbols: a new subscription when they change. */
   private followQuotes(): void {
-    if (!this.quoteSource || !this.watchlistStore) return;
+    if (!this.quoteSource || !this.watchlistStore || this.destroyed) return;
     const symbols = this.watchlistStore.getActive().symbols;
-    const key = symbols.join('\u0000');
+    // The same symbols in another order (a row moved) keep their subscription.
+    const key = [...symbols].sort().join('\u0000');
     if (key === this.quotedKey) return;
     this.quotedKey = key;
     this.stopQuotes?.();
@@ -1338,7 +1339,10 @@ export class ChartWidget {
     if (symbols.length === 0) return;
     try {
       this.stopQuotes = this.quoteSource.subscribeQuotes(symbols, (quotes) => {
-        if (!this.destroyed) this.takeQuotes(quotes);
+        if (this.destroyed || !Array.isArray(quotes)) return;
+        // A source of the host's is untrusted: what isn't a quote is left out.
+        const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
+        if (read.length > 0) this.takeQuotes(read);
       });
     } catch {
       this.stopQuotes = null;
@@ -1346,7 +1350,9 @@ export class ChartWidget {
   }
 
   private takeQuotes(quotes: readonly Quote[]): void {
-    for (const quote of quotes) {
+    for (const update of quotes) {
+      // A stream frame carries less than a snapshot: what it leaves out stays.
+      const quote = { ...this.quotes.get(update.symbol), ...update };
       this.quotes.set(quote.symbol, quote);
       const buf = this.watchlistSparkBuffer.get(quote.symbol) ?? [];
       buf.push(quote.last);

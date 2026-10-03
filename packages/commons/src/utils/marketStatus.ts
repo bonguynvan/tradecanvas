@@ -35,8 +35,12 @@ export function marketStatus(info: SymbolInfo | null | undefined, now: number): 
 
   const offset = zoneOffsetMinutes(zone, now) * MINUTE_MS;
   const today = Math.floor((now + offset) / DAY_MS) * DAY_MS;
-  // A wall-clock time in the zone, back to UTC with the offset that holds then.
-  const toUtc = (local: number) => local - zoneOffsetMinutes(zone, local - offset) * MINUTE_MS;
+  // A wall-clock time in the zone, back to UTC with the offset that holds then
+  // (asked twice, so a time beside a clock change settles on its side).
+  const toUtc = (local: number) => {
+    const guess = local - zoneOffsetMinutes(zone, local - offset) * MINUTE_MS;
+    return local - zoneOffsetMinutes(zone, guess) * MINUTE_MS;
+  };
 
   const spans: [number, number][] = [];
   for (let d = -1; d <= LOOK_AHEAD_DAYS; d++) {
