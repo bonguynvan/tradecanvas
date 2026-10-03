@@ -1,3 +1,4 @@
+import { drawingFont } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
@@ -31,7 +32,7 @@ export class DateRangeTool extends DrawingBase {
     const idx0 = resolveBarIndex(state.anchors[0].time, viewport);
     const idx1 = resolveBarIndex(state.anchors[1].time, viewport);
     const bars = Math.max(0, Math.round(Math.abs(idx1 - idx0)));
-    ctx.font = '12px sans-serif';
+    ctx.font = drawingFont(12);
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';

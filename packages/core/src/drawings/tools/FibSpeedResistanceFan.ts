@@ -1,6 +1,7 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { levelList } from './options.js';
+import { fibLevelList } from './options.js';
 
 export const SPEED_FAN_LEVELS = [0.25, 0.382, 0.5, 0.618, 0.75];
 
@@ -42,7 +43,7 @@ export class FibSpeedResistanceFanTool extends DrawingBase {
     type: 'fibSpeedResistanceFan' as const,
     name: 'Fib Speed Resistance Fan',
     requiredAnchors: 2,
-    options: { levels: { kind: 'levels' as const, label: 'Levels', default: levelList(SPEED_FAN_LEVELS, [0.236, 0.786]) } },
+    options: { levels: { kind: 'levels' as const, label: 'Levels', default: fibLevelList(SPEED_FAN_LEVELS, [0.236, 0.786]) } },
   };
 
   private targets(state: DrawingState, a: Point, b: Point) {
@@ -61,7 +62,7 @@ export class FibSpeedResistanceFanTool extends DrawingBase {
     ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
     ctx.globalAlpha = 1;
 
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textBaseline = 'middle';
     for (const target of this.targets(state, a, b)) {
       const end = rayEnd(a, target.point, viewport);
@@ -75,7 +76,7 @@ export class FibSpeedResistanceFanTool extends DrawingBase {
       if (target.kind === 'price') {
         ctx.fillStyle = state.style.color;
         ctx.textAlign = b.x >= a.x ? 'left' : 'right';
-        ctx.fillText(String(target.level), target.point.x + (b.x >= a.x ? 4 : -4), target.point.y);
+        fillTextWithHalo(ctx, String(target.level), target.point.x + (b.x >= a.x ? 4 : -4), target.point.y);
       }
     }
     ctx.globalAlpha = 1;

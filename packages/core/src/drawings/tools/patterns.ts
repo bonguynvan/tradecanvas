@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { legRatio } from './labels.js';
+import { legRatio, drawingFont, fillTextWithHalo } from './labels.js';
 
 /** A dashed connector between two pattern points labelled with a leg ratio. */
 interface RatioLink {
@@ -62,7 +62,7 @@ abstract class PatternTool extends DrawingBase {
   }
 
   private renderRatioLinks(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const link of this.ratioLinks) {
@@ -81,12 +81,12 @@ abstract class PatternTool extends DrawingBase {
       ctx.setLineDash([]);
       ctx.globalAlpha = 1;
       ctx.fillStyle = state.style.color;
-      ctx.fillText(legRatio(state, link.num, link.den), (p.x + q.x) / 2, (p.y + q.y) / 2);
+      fillTextWithHalo(ctx, legRatio(state, link.num, link.den), (p.x + q.x) / 2, (p.y + q.y) / 2);
     }
   }
 
   private renderPointLabels(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = drawingFont(12, 'bold');
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     for (let i = 0; i < pts.length && i < this.pointLabels.length; i++) {
@@ -95,7 +95,7 @@ abstract class PatternTool extends DrawingBase {
       const next = pts[i + 1] ?? pts[i - 1];
       const isHigh = !prev || !next ? true : pts[i].y <= Math.min(prev.y, next.y);
       ctx.textBaseline = isHigh ? 'bottom' : 'top';
-      ctx.fillText(this.pointLabels[i], pts[i].x, pts[i].y + (isHigh ? -6 : 6));
+      fillTextWithHalo(ctx, this.pointLabels[i], pts[i].x, pts[i].y + (isHigh ? -6 : 6));
     }
   }
 

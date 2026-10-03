@@ -147,3 +147,17 @@ grid.getUI()`}</code></pre>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
+
+<h2>成交量颜色</h2>
+<p>
+  成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code>。<code>volumeColor(candleColor)</code> 返回带成交量透明度的K线颜色，这样在你自己的主题里，成交量柱依然只是K线背后的衬底。在 widget 的设置里修改K线颜色时，它会自动这样处理；基于预设、只改了 <code>candleUp</code> / <code>candleDown</code> 的主题，成交量也会跟随这些颜色。
+</p>
+<pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
+
+chart.setTheme({
+  ...DARK_THEME,
+  candleUp: '#26a17b',
+  candleDown: '#e0525f',
+  volumeUp: volumeColor('#26a17b'),
+  volumeDown: volumeColor('#e0525f'),
+})`}</code></pre>

@@ -652,7 +652,7 @@ màu sắc, trạng thái hiện/ẩn) và cảnh báo, kể cả cảnh báo tr
 ### Giao diện
 
 ```typescript
-import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL } from '@tradecanvas/chart'
+import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL, volumeColor } from '@tradecanvas/chart'
 
 // Built-in presets: DARK_THEME, LIGHT_THEME, DARK_TERMINAL
 chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace
@@ -662,6 +662,8 @@ chart.setTheme({
   ...DARK_THEME,
   candleUp: '#1fa874',
   candleDown: '#e8505b',
+  volumeUp: volumeColor('#1fa874'),    // thanh volume: màu nến, trong suốt
+  volumeDown: volumeColor('#e8505b'),
   background: '#0a0a0f',
 })
 ```

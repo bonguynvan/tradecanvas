@@ -1,9 +1,83 @@
 import type { DrawingState, ViewportState } from '@tradecanvas/commons';
+import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 
 /** Shared label helpers for the measuring / pattern drawing tools. */
 
-const LABEL_FONT = '11px sans-serif';
+const DEFAULT_HALO = 'rgba(12, 16, 22, 0.85)';
+
+/** The chart's background, around drawing text so it stays legible over bars and grid. */
+let labelHalo = DEFAULT_HALO;
+/** The chart's type family, for drawing text. */
+let fontFamily = DEFAULT_FONT_FAMILY;
+
+/**
+ * The theme the next drawing pass renders in: its background for the text
+ * halo, its font family for the text. Set by the drawing renderer right
+ * before each (synchronous) pass; none puts the defaults back.
+ */
+export function setDrawingTheme(theme: { background: string; font?: { family?: string } } | null): void {
+  labelHalo = theme?.background ?? DEFAULT_HALO;
+  fontFamily = theme?.font?.family || DEFAULT_FONT_FAMILY;
+}
+
+/** The family drawing text is set in: the theme's. */
+export function drawingFontFamily(): string {
+  return fontFamily;
+}
+
+/** Text in drawings: the theme's type at `size` px (not the browser's default sans). */
+export function drawingFont(size: number, weight?: 'bold'): string {
+  return `${weight ? `${weight} ` : ''}${size}px ${fontFamily}`;
+}
+
+/** `fillText` with a halo of the chart's background behind the glyphs. */
+export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = labelHalo;
+  ctx.globalAlpha *= 0.85;
+  ctx.setLineDash([]);
+  ctx.strokeText(text, x, y);
+  ctx.restore();
+  ctx.fillText(text, x, y);
+}
+
+
+/** Height of a label pill (CSS px). */
+export const PILL_HEIGHT = 18;
+
+/** Width of a pill for `text` in the current font. */
+export function pillWidth(ctx: CanvasRenderingContext2D, text: string): number {
+  return Math.ceil(ctx.measureText(text).width) + 12;
+}
+
+/**
+ * Text on a small rounded tag of `background`, left edge at `x`, centred on
+ * `centerY`, in the current font. Returns its width.
+ */
+export function drawPill(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  centerY: number,
+  background: string,
+  color = '#ffffff',
+): number {
+  const width = pillWidth(ctx, text);
+  const top = Math.round(centerY - PILL_HEIGHT / 2);
+  ctx.fillStyle = background;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, top, width, PILL_HEIGHT, 4);
+  else ctx.rect(x, top, width, PILL_HEIGHT);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + 6, top + PILL_HEIGHT / 2 + 0.5);
+  return width;
+}
 const LABEL_LINE_HEIGHT = 14;
 const LABEL_PAD_X = 6;
 const LABEL_PAD_Y = 4;
@@ -92,7 +166,7 @@ export function drawLabelBox(
   align: 'left' | 'center' | 'right' = 'center',
   above = true,
 ): { x: number; y: number; width: number; height: number } {
-  ctx.font = LABEL_FONT;
+  ctx.font = drawingFont(11);
   let textW = 0;
   for (const line of lines) textW = Math.max(textW, ctx.measureText(line).width);
   const width = textW + LABEL_PAD_X * 2;

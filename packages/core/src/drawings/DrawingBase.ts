@@ -9,6 +9,7 @@ import type {
   ViewportState,
   AnchorPoint,
 } from '@tradecanvas/commons';
+import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceToY, resolveBarIndex, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 
 /**
@@ -175,6 +176,11 @@ export abstract class DrawingBase implements DrawingPlugin {
   protected applyLineStyle(ctx: CanvasRenderingContext2D, style: DrawingStyle): void {
     ctx.strokeStyle = style.color;
     ctx.lineWidth = style.lineWidth;
+    // Corners turn round, which reads softer than mitred points. Ends stay
+    // square: tools dash lines of their own, and round caps would eat into
+    // every gap.
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'round';
     switch (style.lineStyle) {
       case 'dashed': ctx.setLineDash([6, 4]); break;
       case 'dotted': ctx.setLineDash([2, 2]); break;
@@ -182,8 +188,30 @@ export abstract class DrawingBase implements DrawingPlugin {
     }
   }
 
+  /** A horizontal line from `x0` to `x1` at `y`, on whole device pixels (sharp, not smeared). */
+  protected strokeHorizontal(ctx: CanvasRenderingContext2D, x0: number, x1: number, y: number): void {
+    const line = crispY(ctx, y, Number(ctx.lineWidth) || 1);
+    ctx.lineWidth = line.width;
+    ctx.beginPath();
+    ctx.moveTo(x0, line.y);
+    ctx.lineTo(x1, line.y);
+    ctx.stroke();
+  }
+
+  /** A vertical line from `y0` to `y1` at `x`, on whole device pixels. */
+  protected strokeVertical(ctx: CanvasRenderingContext2D, x: number, y0: number, y1: number): void {
+    const line = crispX(ctx, x, Number(ctx.lineWidth) || 1);
+    ctx.lineWidth = line.width;
+    ctx.beginPath();
+    ctx.moveTo(line.x, y0);
+    ctx.lineTo(line.x, y1);
+    ctx.stroke();
+  }
+
   protected resetLineStyle(ctx: CanvasRenderingContext2D): void {
     ctx.setLineDash([]);
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
   }
 
   protected renderAnchorHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {

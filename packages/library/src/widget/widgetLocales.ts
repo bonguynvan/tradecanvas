@@ -50,6 +50,7 @@ export function chartTypeLabel(ct: { value: string; label: string }, t: Translat
 /** The drawing-tool groups with names in the widget's language (unknown tools keep theirs). */
 export function localizeToolGroups(groups: readonly DrawingToolGroupDef[], t: Translator): DrawingToolGroupDef[] {
   return groups.map((group) => ({
+    ...group,
     label: TOOL_GROUP_KEYS[group.label] ? t(TOOL_GROUP_KEYS[group.label]) : group.label,
     tools: group.tools.map((tool) => {
       const key = `tool.${tool.value}` as MessageKey;

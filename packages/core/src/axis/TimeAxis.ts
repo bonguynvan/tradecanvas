@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeFormatContext, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
+import { timeParts, tzLabel, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
@@ -60,7 +60,9 @@ export class TimeAxis {
     ctx.textAlign = 'center';
     ctx.fillStyle = theme.axisLabel;
 
-    // Detect timeframe from bar spacing (approximate)
+    // Daily-or-larger bars carry dates (with the year); intraday ones show the
+    // day where it changes and the time elsewhere, a midnight bar included.
+    const daily = barsAreDaily(data);
     let prevDay = -1;
 
     for (let i = from; i <= to && data.length > 0; i++) {
@@ -76,9 +78,9 @@ export class TimeAxis {
       // Smart format: a daily/weekly/monthly/yearly bar has no time-of-day component at all —
       // `month/day` alone is ambiguous across years (a Year chart's handful of bars can span
       // decades), so it carries the year instead. Otherwise show date on day change, time
-      // otherwise, same as before.
+      // otherwise.
       let kind: TimeFormatContext['kind'];
-      if (isDateOnly(parts)) {
+      if (daily ?? isDateOnly(parts)) {
         kind = 'date';
       } else if (day !== prevDay) {
         kind = 'day';

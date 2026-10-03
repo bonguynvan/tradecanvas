@@ -388,6 +388,19 @@ export class TradingManager {
     }
   }
 
+  /** Where the axis badges sit (entries and orders on the plot), for the scale to keep clear of. */
+  axisTagYs(viewport: ViewportState): number[] {
+    if (!this.config.enabled) return [];
+    const drag = this.dragHandler.getDragState();
+    const ys = this.positions.map((p) => priceToY(p.entryPrice, viewport));
+    for (const o of this.orders) {
+      const price = drag?.orderId === o.id && drag.sourceType === 'order' ? drag.currentPrice : o.price;
+      ys.push(priceToY(price, viewport));
+    }
+    const { chartRect } = viewport;
+    return ys.filter((y) => y >= chartRect.y && y <= chartRect.y + chartRect.height);
+  }
+
   destroy(): void {
     this.contextMenu.destroy();
   }

@@ -1,6 +1,7 @@
 import type { DrawingLevel, DrawingState, ViewportState } from '@tradecanvas/commons';
 import { priceToY } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice } from './labels.js';
+import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
+import { crispY } from '../../charts/pixelGrid.js';
 
 /** A Fibonacci level at its price. */
 export interface PriceLevel {
@@ -55,29 +56,33 @@ export function renderPriceLevels(
       const fill = own ?? state.style.fillColor;
       if (!fill) continue;
       ctx.fillStyle = fill;
-      ctx.globalAlpha = own ? 0.12 : 0.05 + i * 0.02;
+      ctx.globalAlpha = own ? 0.07 : 0.05 + i * 0.02;
       ctx.fillRect(look.x0, Math.min(yA, yB), width, Math.abs(yB - yA));
     }
     ctx.globalAlpha = 1;
   }
 
-  ctx.font = '11px sans-serif';
-  ctx.textBaseline = 'middle';
+  ctx.font = drawingFont(11);
+  ctx.textBaseline = 'bottom';
   ctx.textAlign = look.labelPosition === 'right' ? 'right' : 'left';
   const labelX = look.labelPosition === 'right' ? look.x1 - 4 : look.x0 + 4;
   for (const { level, price } of levels) {
     const y = priceToY(price, viewport);
     const color = level.color ?? state.style.color;
     applyLineStyle(color);
-    ctx.globalAlpha = level.value === 0 || level.value === 1 ? 1 : 0.7;
+    ctx.globalAlpha = level.value === 0 || level.value === 1 ? 1 : 0.8;
+    // On whole device pixels: one sharp row per level, not a soft smear.
+    const line = crispY(ctx, y, Number(ctx.lineWidth) || 1);
+    ctx.lineWidth = line.width;
     ctx.beginPath();
-    ctx.moveTo(look.x0, y);
-    ctx.lineTo(look.x1, y);
+    ctx.moveTo(look.x0, line.y);
+    ctx.lineTo(look.x1, line.y);
     ctx.stroke();
     const text = levelLabel(level.value, price, look.showLevels, look.showPrices, (p) => formatDrawingPrice(p, p, viewport));
     if (text) {
+      ctx.globalAlpha = 1;
       ctx.fillStyle = color;
-      ctx.fillText(text, labelX, y - 2);
+      fillTextWithHalo(ctx, text, labelX, y - 3);
     }
   }
   ctx.globalAlpha = 1;

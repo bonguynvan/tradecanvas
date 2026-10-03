@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { formatDrawingPrice } from './labels.js';
+import { formatDrawingPrice, drawingFontFamily } from './labels.js';
 
 const OFFSET_X = 14;
 const OFFSET_Y = 18;
@@ -26,7 +26,7 @@ export class PriceLabelTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    ctx.font = `${state.style.fontSize ?? 12}px sans-serif`;
+    ctx.font = `${state.style.fontSize ?? 12}px ${drawingFontFamily()}`;
     const b = this.box(ctx, state, p, viewport);
 
     // Leader from the point to the callout.

@@ -1,17 +1,17 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingLevel, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, distanceToSegment, nearPolyline } from '../DrawingBase.js';
-import { levelList } from './options.js';
+import { fibLevelList } from './options.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const ARC_STEPS = 64;
-const LABEL_FONT = '11px sans-serif';
 /** How close two level labels may be before the second is left out (px). */
 const LABEL_GAP_X = 34;
 const LABEL_GAP_Y = 12;
 
 function levelOptions(shown: readonly number[], hidden: readonly number[] = []) {
   return {
-    levels: { kind: 'levels' as const, label: 'Levels', default: levelList(shown, hidden) },
+    levels: { kind: 'levels' as const, label: 'Levels', default: fibLevelList(shown, hidden) },
     showLevels: { kind: 'boolean' as const, label: 'Show levels', default: true },
   };
 }
@@ -70,7 +70,7 @@ abstract class LevelShapesTool extends DrawingBase {
     ctx.globalAlpha = 1;
     this.applyLineStyle(ctx, state.style);
     const showLevels = this.option<boolean>(state, 'showLevels');
-    ctx.font = LABEL_FONT;
+    ctx.font = drawingFont(11);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
     const shapes = this.shapes(pts, this.visibleLevels(state), viewport, state);
@@ -94,7 +94,7 @@ abstract class LevelShapesTool extends DrawingBase {
       if (placed.some((p) => Math.abs(p.x - label.x) < LABEL_GAP_X && Math.abs(p.y - label.y) < LABEL_GAP_Y)) continue;
       placed.push(label);
       ctx.fillStyle = level.color ?? state.style.color;
-      ctx.fillText(levelText(level.value), label.x + 3, label.y - 2);
+      fillTextWithHalo(ctx, levelText(level.value), label.x + 3, label.y - 2);
     }
   }
 

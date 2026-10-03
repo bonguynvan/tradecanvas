@@ -2,7 +2,7 @@ import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Qu
 import { marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource, volumeColor } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
 import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -3124,8 +3124,17 @@ export class ChartWidget {
     const themeUpdate = { ...currentTheme } as Record<string, unknown>;
     let themeChanged = false;
 
-    if (patch.candleUpColor !== undefined) { themeUpdate.candleUp = patch.candleUpColor; themeChanged = true; }
-    if (patch.candleDownColor !== undefined) { themeUpdate.candleDown = patch.candleDownColor; themeChanged = true; }
+    // Volume bars follow the candle bodies' colours.
+    if (patch.candleUpColor !== undefined) {
+      themeUpdate.candleUp = patch.candleUpColor;
+      themeUpdate.volumeUp = volumeColor(patch.candleUpColor);
+      themeChanged = true;
+    }
+    if (patch.candleDownColor !== undefined) {
+      themeUpdate.candleDown = patch.candleDownColor;
+      themeUpdate.volumeDown = volumeColor(patch.candleDownColor);
+      themeChanged = true;
+    }
     if (patch.candleUpWick !== undefined) { themeUpdate.candleUpWick = patch.candleUpWick; themeChanged = true; }
     if (patch.candleDownWick !== undefined) { themeUpdate.candleDownWick = patch.candleDownWick; themeChanged = true; }
     if (patch.backgroundColor !== undefined) { themeUpdate.background = patch.backgroundColor; themeChanged = true; }

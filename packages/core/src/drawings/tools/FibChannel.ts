@@ -1,6 +1,7 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { levelList } from './options.js';
+import { fibLevelList } from './options.js';
 
 export const FIB_CHANNEL_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
 
@@ -35,7 +36,7 @@ export class FibChannelTool extends DrawingBase {
     type: 'fibChannel' as const,
     name: 'Fibonacci Channel',
     requiredAnchors: 3,
-    options: { levels: { kind: 'levels' as const, label: 'Levels', default: levelList(FIB_CHANNEL_LEVELS, [2.618, 3.618, 4.236]) } },
+    options: { levels: { kind: 'levels' as const, label: 'Levels', default: fibLevelList(FIB_CHANNEL_LEVELS, [2.618, 3.618, 4.236]) } },
   };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
@@ -54,7 +55,7 @@ export class FibChannelTool extends DrawingBase {
     }
 
     const c = this.anchorToPixel(state.anchors[2], viewport);
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     for (const { value: level, color } of this.visibleLevels(state)) {
@@ -67,7 +68,7 @@ export class FibChannelTool extends DrawingBase {
       ctx.stroke();
       ctx.fillStyle = color ?? state.style.color;
       const left = p.x <= q.x ? p : q;
-      ctx.fillText(String(level), left.x - 4, left.y);
+      fillTextWithHalo(ctx, String(level), left.x - 4, left.y);
     }
     ctx.globalAlpha = 1;
     this.resetLineStyle(ctx);

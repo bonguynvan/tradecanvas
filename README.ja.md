@@ -651,7 +651,7 @@ chart.setAutoSave('my-chart', 1500)
 ### テーマ
 
 ```typescript
-import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL } from '@tradecanvas/chart'
+import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL, volumeColor } from '@tradecanvas/chart'
 
 // Built-in presets: DARK_THEME, LIGHT_THEME, DARK_TERMINAL
 chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace
@@ -661,6 +661,8 @@ chart.setTheme({
   ...DARK_THEME,
   candleUp: '#1fa874',
   candleDown: '#e8505b',
+  volumeUp: volumeColor('#1fa874'),    // 出来高バー：ローソク足の色を半透明に
+  volumeDown: volumeColor('#e8505b'),
   background: '#0a0a0f',
 })
 ```

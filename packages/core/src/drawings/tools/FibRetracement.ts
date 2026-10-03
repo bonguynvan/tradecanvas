@@ -1,10 +1,10 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { LEVEL_LABEL_OPTIONS, extendOptions, levelList } from './options.js';
+import { LEVEL_LABEL_OPTIONS, extendOptions, fibLevelList } from './options.js';
 import { hitPriceLevels, renderPriceLevels, type PriceLevel } from './priceLevels.js';
 
 /** The classic retracement ratios, plus extensions the user can turn on. */
-export const RETRACEMENT_LEVELS = levelList([0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], [1.272, 1.414, 1.618, 2.618, 3.618, 4.236]);
+export const RETRACEMENT_LEVELS = fibLevelList([0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], [1.272, 1.414, 1.618, 2.618, 3.618, 4.236]);
 
 /**
  * Fibonacci retracement: level 0 at the first anchor, 1 at the second (the

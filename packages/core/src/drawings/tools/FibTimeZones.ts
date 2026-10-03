@@ -1,3 +1,4 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { timeToX } from '../../viewport/ScaleMapping.js';
@@ -34,7 +35,7 @@ export class FibTimeZonesTool extends DrawingBase {
     if (unit === 0) return;
 
     const { chartRect } = viewport;
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
 
@@ -51,7 +52,7 @@ export class FibTimeZonesTool extends DrawingBase {
       ctx.stroke();
 
       ctx.fillStyle = color ?? state.style.color;
-      ctx.fillText(String(mult), x, chartRect.y + 2);
+      fillTextWithHalo(ctx, String(mult), x, chartRect.y + 2);
     }
     ctx.globalAlpha = 1;
     this.resetLineStyle(ctx);

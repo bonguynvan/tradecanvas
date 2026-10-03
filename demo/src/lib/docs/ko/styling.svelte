@@ -152,3 +152,17 @@ grid.getUI()`}</code></pre>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
+
+<h2>거래량 색</h2>
+<p>
+  거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code>을 씁니다. <code>volumeColor(candleColor)</code>는 캔들 색을 거래량의 투명도로 돌려주므로, 직접 만든 테마에서도 막대가 캔들 뒤의 배경으로 남습니다. widget의 설정에서 캔들 색을 바꾸면 widget이 알아서 이렇게 하고, 프리셋을 바탕으로 <code>candleUp</code> / <code>candleDown</code>만 바꾼 테마도 거래량이 그 색을 따릅니다.
+</p>
+<pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
+
+chart.setTheme({
+  ...DARK_THEME,
+  candleUp: '#26a17b',
+  candleDown: '#e0525f',
+  volumeUp: volumeColor('#26a17b'),
+  volumeDown: volumeColor('#e0525f'),
+})`}</code></pre>

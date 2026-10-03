@@ -58,3 +58,27 @@ describe('TimeAxis', () => {
     expect(drawn.filter((d) => d.align === 'center').length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('TimeAxis date labels', () => {
+  const DAY = 24 * HOUR;
+  const series = (step: number, n = 100) => Array.from({ length: n }, (_, i) => ({
+    time: Date.UTC(2026, 8, 25) + i * step, open: 1, high: 1, low: 1, close: 1, volume: 1,
+  }));
+  const ticks = (bars: ReturnType<typeof series>) => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    axis.render(ctx, viewport(0), DARK_THEME, bars);
+    return drawn.filter((d) => d.align === 'center').map((d) => d.text);
+  };
+
+  it('labels an hourly bar at midnight with its day, not its year', () => {
+    const labels = ticks(series(HOUR));
+    expect(labels.some((t) => /^\d+\/\d+$/.test(t))).toBe(true);
+    expect(labels.filter((t) => /\/\d{4}$/.test(t))).toEqual([]);
+  });
+
+  it('gives daily bars their year', () => {
+    expect(ticks(series(DAY)).every((t) => /^\d+\/\d+\/\d{4}$/.test(t))).toBe(true);
+  });
+});

@@ -40,3 +40,17 @@ describe('PriceAxis — last-price tag clearance', () => {
     expect(labels(axis)).toContain('84,000.00');
   });
 });
+
+describe('PriceAxis — other tags on the axis', () => {
+  it('skips the tick labels any tag would cover, and only those', () => {
+    const texts: string[] = [];
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (_t, key) => (key === 'fillText' ? (t: string) => texts.push(t) : vi.fn()),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    // 84,000 sits at y 200 on this 83,000..85,000 scale over 400 px.
+    new PriceAxis().render(ctx, viewport, DARK_THEME, 'right', [205]);
+    expect(texts).not.toContain('84,000.00');
+    expect(texts).toContain('84,600.00');
+  });
+});
