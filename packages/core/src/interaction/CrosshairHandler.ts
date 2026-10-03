@@ -1,5 +1,6 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
+import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
@@ -155,9 +156,12 @@ export class CrosshairHandler {
     drawVerticalLine(ctx, x, chartRect, theme);
 
     ctx.setLineDash([4, 4]);
+    // On the same device-pixel row a 1 px drawing line at this y takes.
+    const row = crispY(ctx, y, 1);
+    ctx.lineWidth = row.width;
     ctx.beginPath();
-    ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-    ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+    ctx.moveTo(chartRect.x, row.y);
+    ctx.lineTo(chartRect.x + chartRect.width, row.y);
     ctx.stroke();
 
     ctx.setLineDash([]);
@@ -291,10 +295,12 @@ function drawBarTint(ctx: CanvasRenderingContext2D, x: number, viewport: Viewpor
 function drawVerticalLine(ctx: CanvasRenderingContext2D, x: number, chartRect: ViewportState['chartRect'], theme: Theme): void {
   ctx.setLineDash([4, 4]);
   ctx.strokeStyle = theme.crosshair;
-  ctx.lineWidth = 1;
+  // The wick's own device-pixel column: the line runs through it, not beside it.
+  const column = crispX(ctx, x, 1);
+  ctx.lineWidth = column.width;
   ctx.beginPath();
-  ctx.moveTo(Math.round(x) + 0.5, chartRect.y);
-  ctx.lineTo(Math.round(x) + 0.5, chartRect.y + chartRect.height);
+  ctx.moveTo(column.x, chartRect.y);
+  ctx.lineTo(column.x, chartRect.y + chartRect.height);
   ctx.stroke();
   ctx.setLineDash([]);
 }

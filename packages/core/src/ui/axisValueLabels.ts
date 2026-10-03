@@ -86,8 +86,11 @@ export function layoutAxisValueLabels(
   const shown = labels.filter((l) => l.y >= bounds.top && l.y <= bounds.bottom).sort((a, b) => a.y - b.y);
   const out: AxisValueLabel[] = [];
   let next = 0;
+  // The lowest bottom edge of the walls so far: a tall wall can reach past a later one.
+  let reach = bounds.top;
   for (let k = 0; k <= walls.length; k++) {
-    const top = k === 0 ? bounds.top : walls[k - 1].y + walls[k - 1].half;
+    if (k > 0) reach = Math.max(reach, walls[k - 1].y + walls[k - 1].half);
+    const top = reach;
     const bottom = k === walls.length ? bounds.bottom : walls[k].y - walls[k].half;
     const limit = k === walls.length ? Infinity : walls[k].y;
     const first = next;

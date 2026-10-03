@@ -132,3 +132,21 @@ export const DARK_TERMINAL: Theme = {
     sizeLarge: 14,
   },
 };
+
+/** The built-in themes' volume colours, to tell a preset's from a theme's own. */
+const PRESET_VOLUME = new Set([DARK_THEME.volumeUp, DARK_THEME.volumeDown, LIGHT_THEME.volumeUp, LIGHT_THEME.volumeDown, DARK_TERMINAL.volumeUp, DARK_TERMINAL.volumeDown]);
+
+/**
+ * The volume bars' colours for `theme`: its own `volumeUp` / `volumeDown`,
+ * except that a theme spread from a preset with new candle colours (and the
+ * preset's volume left in place) gets volume in its candles' colours, as the
+ * bars have always followed the candles.
+ */
+export function resolveVolumeColors(theme: Pick<Theme, 'candleUp' | 'candleDown' | 'volumeUp' | 'volumeDown'>): { up: string; down: string } {
+  const pick = (volume: string, candle: string): string => {
+    if (!PRESET_VOLUME.has(volume)) return volume;
+    const derived = volumeColor(candle);
+    return derived === candle ? volume : derived;
+  };
+  return { up: pick(theme.volumeUp, theme.candleUp), down: pick(theme.volumeDown, theme.candleDown) };
+}

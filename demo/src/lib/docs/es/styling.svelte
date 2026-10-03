@@ -158,7 +158,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Colores del volumen</h2>
 <p>
-  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas.
+  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas, y un tema basado en un preajuste que solo cambia <code>candleUp</code> / <code>candleDown</code> también tiene el volumen en esos colores.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

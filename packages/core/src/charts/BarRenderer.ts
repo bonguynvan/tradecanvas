@@ -25,18 +25,17 @@ export class BarRenderer implements ChartRendererInterface {
     inDevicePixels(ctx, (px) => {
       const { body, wick } = barColumns(barWidth, px.ratio);
       const tick = Math.max((body - wick) / 2, wick);
-      const half = Math.floor(wick / 2);
       const up = new Path2D();
       const down = new Path2D();
       for (let i = from; i <= to && i < data.length; i++) {
         const bar = data[i];
         const path = bar.close >= bar.open ? up : down;
-        const stem = px.x(i * barUnit + offsetX) - half;
+        const stem = px.left(i * barUnit + offsetX, wick);
         const high = px.y(toY(bar.high));
         const low = px.y(toY(bar.low));
         path.rect(stem, Math.min(high, low), wick, Math.max(Math.abs(low - high), wick));
-        path.rect(stem - tick, px.y(toY(bar.open)) - half, tick, wick);
-        path.rect(stem + wick, px.y(toY(bar.close)) - half, tick, wick);
+        path.rect(stem - tick, px.y(toY(bar.open)) - Math.floor(wick / 2), tick, wick);
+        path.rect(stem + wick, px.y(toY(bar.close)) - Math.floor(wick / 2), tick, wick);
       }
       ctx.fillStyle = theme.candleUp;
       ctx.fill(up);

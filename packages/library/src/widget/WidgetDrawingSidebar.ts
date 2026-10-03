@@ -82,19 +82,20 @@ export class WidgetDrawingSidebar {
     }
 
     // Tool groups, a divider between one section and the next.
+    let lastSection: string | undefined;
     config.drawingToolGroups.forEach((group, idx) => {
-      const previous = config.drawingToolGroups[idx - 1];
-      if (previous && group.section !== undefined && group.section !== previous.section) {
-        el.appendChild(this.divider());
+      if (!group.tools[0]) return;
+      if (group.section !== undefined && lastSection !== undefined && group.section !== lastSection) {
+        this.appendDivider();
       }
+      lastSection = group.section;
       const wrap = document.createElement('div');
       wrap.className = 'tcw-tool-group-wrap';
 
       const btn = document.createElement('button');
       btn.className = 'tcw-sidebar-btn';
       // The group shows, and picks, its last used tool — the first until then.
-      const tool = group.tools[0]?.value;
-      if (!tool) return;
+      const tool = group.tools[0].value;
       // A group with a menu names itself in the menu's header: no tooltip on top of it.
       if (group.tools.length > 1) btn.setAttribute('aria-label', `${group.label}: ${group.tools[0].label}`);
       else btn.title = group.label;
@@ -191,7 +192,7 @@ export class WidgetDrawingSidebar {
     }
 
     // History, then the one that clears everything, each apart.
-    el.appendChild(this.divider());
+    this.appendDivider();
     const undoBtn = document.createElement('button');
     undoBtn.className = 'tcw-sidebar-btn';
     undoBtn.title = this.t('drawing.undo');
@@ -206,7 +207,7 @@ export class WidgetDrawingSidebar {
     redoBtn.addEventListener('click', callbacks.onRedo);
     el.appendChild(redoBtn);
 
-    el.appendChild(this.divider());
+    this.appendDivider();
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
     clearBtn.title = this.t('drawing.clearAll');
@@ -451,6 +452,12 @@ export class WidgetDrawingSidebar {
     btn.innerHTML = createIcon(icon, 14);
     btn.addEventListener('click', onClick);
     return btn;
+  }
+
+  /** A divider, unless the sidebar already ends in one: never two in a row. */
+  private appendDivider(): void {
+    if (this.el.lastElementChild?.classList.contains('tcw-sidebar-divider')) return;
+    this.el.appendChild(this.divider());
   }
 
   private divider(): HTMLDivElement {

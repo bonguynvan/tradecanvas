@@ -330,7 +330,6 @@ export class RenderEngine {
     }
   }
 
-  /** Price-pane indicators' latest values as tags on the price axis, under the last-price tag. */
   /** Tags fixed on the price axis: the last price, the high/low and bid/ask lines, positions and orders. */
   private fixedAxisTags(ctx: RenderContext): FixedAxisTag[] {
     const { viewport, data } = ctx;

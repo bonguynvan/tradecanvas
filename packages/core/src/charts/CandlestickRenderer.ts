@@ -33,7 +33,7 @@ export class CandlestickRenderer implements ChartRendererInterface {
       for (let i = from; i <= to && i < data.length; i++) {
         const bar = data[i];
         const isUp = bar.close >= bar.open;
-        const wickLeft = px.x(i * barUnit + offsetX) - Math.floor(wick / 2);
+        const wickLeft = px.left(i * barUnit + offsetX, wick);
         const high = px.y(toY(bar.high));
         const low = px.y(toY(bar.low));
         (isUp ? upWick : downWick).rect(wickLeft, Math.min(high, low), wick, Math.max(Math.abs(low - high), 1));

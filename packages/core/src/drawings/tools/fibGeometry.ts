@@ -5,7 +5,6 @@ import { fibLevelList } from './options.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const ARC_STEPS = 64;
-const LABEL_FONT = drawingFont(11);
 /** How close two level labels may be before the second is left out (px). */
 const LABEL_GAP_X = 34;
 const LABEL_GAP_Y = 12;
@@ -71,7 +70,7 @@ abstract class LevelShapesTool extends DrawingBase {
     ctx.globalAlpha = 1;
     this.applyLineStyle(ctx, state.style);
     const showLevels = this.option<boolean>(state, 'showLevels');
-    ctx.font = LABEL_FONT;
+    ctx.font = drawingFont(11);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
     const shapes = this.shapes(pts, this.visibleLevels(state), viewport, state);

@@ -36,7 +36,7 @@ export class HollowCandleRenderer implements ChartRendererInterface {
       for (let i = from; i <= to && i < data.length; i++) {
         const bar = data[i];
         const side = i === 0 || bar.close >= data[i - 1].close ? 'up' : 'down';
-        const wickLeft = px.x(i * barUnit + offsetX) - Math.floor(wick / 2);
+        const wickLeft = px.left(i * barUnit + offsetX, wick);
         const left = wickLeft - bodyInset;
         const high = px.y(toY(bar.high));
         const low = px.y(toY(bar.low));

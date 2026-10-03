@@ -180,3 +180,14 @@ describe('sections', () => {
     expect(kids.slice(firstGroup, lastGroup + 1).some((el) => el.classList.contains('tcw-sidebar-divider'))).toBe(false);
   });
 });
+
+describe('dividers', () => {
+  it('never puts two dividers in a row, even without the optional tools', () => {
+    const kids = [...host.querySelector('.tcw-sidebar')!.children];
+    kids.forEach((el, i) => {
+      if (i === 0) return;
+      const both = el.classList.contains('tcw-sidebar-divider') && kids[i - 1].classList.contains('tcw-sidebar-divider');
+      expect(both, `children ${i - 1} and ${i}`).toBe(false);
+    });
+  });
+});

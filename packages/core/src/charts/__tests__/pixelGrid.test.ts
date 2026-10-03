@@ -115,3 +115,43 @@ describe('crispY / crispX', () => {
     expect(crispY(ctx(2), 10, 0.2).width).toBe(0.5);
   });
 });
+
+describe('one column rule for bars and lines', () => {
+  it('puts a wick on the device column a 1 px vertical line at the same x strokes', () => {
+    for (const ratio of [1, 1.25, 1.5, 2, 3]) {
+      for (const x of [10, 10.2, 10.5, 10.7, 33.33]) {
+        const wick = barColumns(7, ratio).wick;
+        const left = inDevicePixels(ctxWithRatio(ratio), (g) => g.left(x, wick));
+        const line = crispX(ctxWithRatio(ratio), x, wick / ratio);
+        const lineLeft = line.x * ratio - (line.width * ratio) / 2;
+        expect(lineLeft, `ratio ${ratio}, x ${x}`).toBeCloseTo(left, 9);
+      }
+    }
+  });
+});
+
+describe('dense columns', () => {
+  let rects: number[][];
+  class RecordingPath {
+    rect(x: number, y: number, w: number, h: number) { rects.push([x, y, w, h]); }
+    moveTo() {}
+    lineTo() {}
+  }
+  beforeEach(() => {
+    rects = [];
+    vi.stubGlobal('Path2D', RecordingPath);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('leaves no gap between neighbouring columns at 125%', async () => {
+    const { renderDenseBars } = await import('../denseBars.js');
+    const bars: OHLCBar[] = Array.from({ length: 400 }, (_, i) => ({ time: i, open: 100, high: 110 + (i % 5), low: 90, close: 100 + (i % 2), volume: 1 }));
+    const vp = {
+      visibleRange: { from: 0, to: 399 }, priceRange: { min: 80, max: 120 },
+      barWidth: 0.3, barSpacing: 0.2, offset: 0, chartRect: { x: 0, y: 0, width: 200, height: 100 },
+    } as ViewportState;
+    renderDenseBars(ctxWithRatio(1.25), bars, vp, '#0f0', '#f00');
+    const spans = rects.map(([x, , w]) => [x, x + w]).sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < spans.length; i++) expect(spans[i][0]).toBe(spans[i - 1][1]);
+  });
+});

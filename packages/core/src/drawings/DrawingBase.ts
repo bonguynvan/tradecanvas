@@ -176,11 +176,11 @@ export abstract class DrawingBase implements DrawingPlugin {
   protected applyLineStyle(ctx: CanvasRenderingContext2D, style: DrawingStyle): void {
     ctx.strokeStyle = style.color;
     ctx.lineWidth = style.lineWidth;
-    // Solid lines end and turn round, which reads softer than square ends;
-    // dashes keep square ends so the gaps stay the gaps they are set to.
-    const solid = style.lineStyle !== 'dashed' && style.lineStyle !== 'dotted';
-    ctx.lineCap = solid ? 'round' : 'butt';
-    ctx.lineJoin = solid ? 'round' : 'miter';
+    // Corners turn round, which reads softer than mitred points. Ends stay
+    // square: tools dash lines of their own, and round caps would eat into
+    // every gap.
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'round';
     switch (style.lineStyle) {
       case 'dashed': ctx.setLineDash([6, 4]); break;
       case 'dotted': ctx.setLineDash([2, 2]); break;

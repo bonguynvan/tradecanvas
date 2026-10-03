@@ -1,6 +1,5 @@
 import type { DrawingLevel, DrawingOptionDefs } from '@tradecanvas/commons';
 
-/** Levels from ratios: `shown` visible, `hidden` listed but off until the user turns them on. */
 /**
  * Each Fibonacci ratio's colour: the ends neutral, the ratios between in the
  * chart's palette (shades that keep their contrast on dark and on white), so
@@ -9,9 +8,11 @@ import type { DrawingLevel, DrawingOptionDefs } from '@tradecanvas/commons';
 export const FIB_LEVEL_COLORS: Readonly<Record<number, string>> = {
   0: '#7d8696',
   0.236: '#e8505b',
+  0.25: '#e8505b',
   0.382: '#c98316',
   0.5: '#1fa874',
   0.618: '#1398a8',
+  0.75: '#1398a8',
   0.786: '#4c8dff',
   1: '#7d8696',
   1.272: '#a57cff',
@@ -31,6 +32,7 @@ export function fibLevelList(shown: readonly number[], hidden: readonly number[]
   });
 }
 
+/** Levels from ratios: `shown` visible, `hidden` listed but off until the user turns them on. */
 export function levelList(shown: readonly number[], hidden: readonly number[] = []): DrawingLevel[] {
   return [
     ...shown.map((value) => ({ value, visible: true })),

@@ -78,14 +78,16 @@ export function renderDenseBars(
   const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
   const toY = priceToYMapper(viewport);
   inDevicePixels(ctx, (px) => {
-    const width = Math.max(1, Math.round(px.ratio));
     const up = new Path2D();
     const down = new Path2D();
     forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
       const top = px.y(toY(c.high));
       const bottom = px.y(toY(c.low));
       // A flat column still gets a pixel, like a doji's body.
-      (c.close >= c.open ? up : down).rect(px.x(c.x), Math.min(top, bottom), width, Math.max(Math.abs(bottom - top), width));
+      // Each column reaches the next with no gap: at 125% a CSS pixel is 1 or 2 device pixels.
+      const left = px.x(c.x);
+      const width = Math.max(1, px.x(c.x + 1) - left);
+      (c.close >= c.open ? up : down).rect(left, Math.min(top, bottom), width, Math.max(Math.abs(bottom - top), 1));
     });
     ctx.fillStyle = upColor;
     ctx.fill(up);

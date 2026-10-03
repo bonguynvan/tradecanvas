@@ -154,7 +154,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Volume colours</h2>
 <p>
-  Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code>. <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours.
+  Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code>. <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours, and a theme spread from a preset that only changes <code>candleUp</code> / <code>candleDown</code> gets volume in those colours too.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

@@ -24,6 +24,11 @@ export interface PixelGrid {
   x(cssX: number): number;
   /** The device pixel a CSS y falls on. */
   y(cssY: number): number;
+  /**
+   * Left edge (device px) of a column `width` device pixels wide centred on
+   * CSS x `cssCenter`: the same column `crispX` strokes for a line there.
+   */
+  left(cssCenter: number, width: number): number;
 }
 
 /**
@@ -39,6 +44,7 @@ export function inDevicePixels<T>(ctx: CanvasRenderingContext2D, draw: (grid: Pi
       ratio: a,
       x: (v) => Math.round(v * a + e),
       y: (v) => Math.round(v * d + f),
+      left: (v, width) => Math.round(v * a + e - width / 2),
     });
   } finally {
     ctx.restore();

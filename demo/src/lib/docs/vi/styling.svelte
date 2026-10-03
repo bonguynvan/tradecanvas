@@ -156,7 +156,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Màu volume</h2>
 <p>
-  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến.
+  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến, và một theme dựa trên preset chỉ đổi <code>candleUp</code> / <code>candleDown</code> cũng có volume theo màu đó.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 
