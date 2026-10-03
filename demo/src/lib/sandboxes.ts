@@ -1,8 +1,8 @@
 import sdk from '@stackblitz/sdk';
 
-// Caret ranges: each sandbox installs the latest published 1.x.
-const CHART_VERSION = '^1.1.0';
-const WRAPPER_VERSION = '^1.0.4';
+// Caret ranges from the release the sandboxes' code needs: each installs the latest published 1.x.
+const CHART_VERSION = '^1.7.0';
+const WRAPPER_VERSION = '^1.0.10';
 const VITE_VERSION = '^6.0.0';
 const TS_VERSION = '~5.7.0';
 
@@ -103,6 +103,7 @@ void chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe
 
 chart.addIndicator('bb', { period: 20, stdDev: 2 });
 chart.addIndicator('rsi');
+chart.setShapes({ tagRadius: 4 }); // rounded price tags
 
 // Let the user draw: try 'fibRetracement', 'infoLine', 'xabcdPattern', …
 chart.setDrawingTool('trendLine');
@@ -110,6 +111,10 @@ chart.setDrawingTool('trendLine');
 chart.on('crosshairMove', (e) => {
   // e.payload.bar has the hovered OHLCV
 });
+chart.on('chartTypeChange', (e) => console.log('type', e.payload.type));
+
+// Bars of 100 trades instead of 15 minutes:
+// await chart.setTimeframe('100T');
 `,
     },
   });
@@ -136,8 +141,14 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   timeframe: '5m',
   adapter: new BinanceAdapter(),
   theme: 'dark',
-  locale: 'en', // 'vi' for the Vietnamese UI
-  watchlist: true,
+  ui: 'studio', // the look: 'studio' · 'terminal' · 'capsule', or a theme of yours
+  locale: 'en', // 'vi', 'ja', 'ar' (right to left)… with messages from '@tradecanvas/chart/widget/locales'
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'] },
+      { id: 'memes', name: 'Memes', symbols: ['PEPEUSDT', 'DOGEUSDT'] },
+    ],
+  },
   trading: true,
   onReady: (chart) => {
     chart.addIndicator('ema', { period: 21 });
@@ -145,8 +156,11 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   },
 });
 
-// widget.toggleReplay()  — bar replay with a scrubber
-// widget.setSymbol('ETHUSDT') / widget.setTimeframe('1h')
+widget.toggleSymbolInfo(true); // price, market status, the day's numbers
+
+// widget.setUI('capsule')     — pills and floating bars
+// widget.setTimeframe('100T') — a bar per 100 trades
+// widget.toggleReplay()       — bar replay with a scrubber
 `,
     },
   });
