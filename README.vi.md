@@ -1,10 +1,88 @@
-# @tradecanvas/chart
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/"><img src=".github/assets/banner.png" alt="TradeCanvas, bộ máy biểu đồ cho ứng dụng giao dịch" width="100%"></a>
+</p>
 
-[English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
+  <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+</p>
 
-Biểu đồ giao dịch canvas hiệu năng cao, có sẵn chỉ báo, công cụ vẽ và dữ liệu thời gian thực. Không phụ thuộc thư viện ngoài nào.
+<p align="center">
+  <b><a href="https://bonguynvan.github.io/tradecanvas/vi/">Demo trực tiếp</a></b> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/docs/getting-started/">Tài liệu</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/examples/">Ví dụ</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/playground/">Playground</a> ·
+  <a href="./CHANGELOG.md">Nhật ký thay đổi</a>
+</p>
 
-**[Demo trực tiếp](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
+<p align="center">
+  <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
+</p>
+
+**Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 95 chỉ báo, 69 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript thuần, React, Vue hay Svelte.
+
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/"><img src=".github/assets/hero.png" alt="ChartWidget với BTCUSDT trực tiếp từ Binance: EMA 21 và 55, RSI, một đường xu hướng, một vị thế mua và danh mục theo dõi có giá trực tiếp" width="100%"></a>
+</p>
+
+## Bắt đầu nhanh
+
+```bash
+npm install @tradecanvas/chart     # hoặc: pnpm add / yarn add
+```
+
+`ChartWidget` là trọn bộ giao diện giao dịch trong một component: thanh công cụ, thanh công cụ vẽ, hộp thoại cài đặt và thanh trạng thái.
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(), // dữ liệu trực tiếp, không cần API key
+  trading: true,
+})
+```
+
+Vậy là xong. Dữ liệu trực tiếp, đủ 95 chỉ báo, đủ 69 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
+
+Dùng framework? [`@tradecanvas/react`](./packages/react/), [`@tradecanvas/vue`](./packages/vue/) và [`@tradecanvas/svelte`](./packages/svelte/) bọc `Chart` headless thành component, còn widget ở trên gắn theo cùng một cách trong framework nào cũng được; xem [Tích hợp framework](#tích-hợp-framework). Hoặc fork một [sandbox StackBlitz](https://bonguynvan.github.io/tradecanvas/vi/examples/) và bắt đầu từ đó.
+
+## Một vòng tham quan
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="Công cụ vẽ: Fibonacci thoái lui kèm ghi chú, một đường xu hướng, sóng đẩy Elliott và một vị thế mua"></a>
+      <br><b>69 công cụ vẽ</b><br>
+      Fibonacci, Gann, pitchfork, sóng Elliott, mô hình harmonic, ghi chú và bút vẽ, cùng vị thế Long/Short tự tính khối lượng lệnh. Cảnh báo trên đường xu hướng, nhóm, hoàn tác và làm lại.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="Giao dịch trên biểu đồ: vị thế mua có cắt lỗ và chốt lời, lệnh buy stop và sell limit, cùng bảng tài khoản"></a>
+      <br><b>Giao dịch ngay trên biểu đồ</b><br>
+      Vị thế với lãi/lỗ trực tiếp, lệnh kéo được sang giá mới, SL và TP, nút đảo chiều và đóng, phiếu đặt lệnh và bảng tài khoản. Có sẵn broker giả lập, hoặc kết nối broker của riêng bạn.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="Không gian làm việc 2×2 với biểu đồ BTC, ETH, SOL và BNB ở nhiều khung thời gian"></a>
+      <br><b>Nhiều biểu đồ cùng lúc</b><br>
+      Tối đa sáu biểu đồ đầy đủ cạnh nhau, liên kết theo mã, khung thời gian, con trỏ chữ thập, thời gian hoặc hình vẽ, và lưu thành một bố cục.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="Một biểu đồ, ba giao diện: studio, terminal và capsule trên nền sáng"></a>
+      <br><b>Giao diện của riêng bạn</b><br>
+      Ba preset có sẵn (studio, terminal, capsule) hoặc tự chỉnh góc bo, mật độ, phông chữ, thanh công cụ và nhãn giá, trên cả nền sáng và tối.
+    </td>
+  </tr>
+</table>
 
 ## Vì sao chọn TradeCanvas?
 
@@ -36,35 +114,6 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 - **Widget mở rộng được** — thêm nút riêng vào thanh công cụ và mục riêng vào menu chuột phải (`addToolbarButton`, `chartMenuItems`).
 - **Lưu/nạp trạng thái biểu đồ** — Lưu hình vẽ, chỉ báo, giao diện và loại biểu đồ ra JSON. Khôi phục bằng một lệnh gọi.
 - **Không phụ thuộc** — Toàn bộ thư viện tự chứa. Không `d3`, không `chart.js`, không `fancy-canvas`.
-
-## Cài đặt
-
-```bash
-npm install @tradecanvas/chart
-# or
-pnpm add @tradecanvas/chart
-# or
-yarn add @tradecanvas/chart
-```
-
-## Bắt đầu nhanh
-
-Cách nhanh nhất là `ChartWidget` — component gắn vào là chạy, với giao diện giao dịch đầy đủ (thanh công cụ, thanh công cụ vẽ bên trái, hộp thoại cài đặt, thanh trạng thái). Không phụ thuộc framework nào.
-
-```typescript
-import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  trading: true,
-})
-```
-
-Vậy là xong. Dữ liệu trực tiếp, đủ 95 chỉ báo, đủ 69 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
 
 ## Chart headless
 
@@ -1022,6 +1071,12 @@ Hai lớp canvas chồng lên nhau — rê chuột chỉ vẽ lại lớp mỏng
 ## Dự án liên quan
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)** — bảng dữ liệu **Svelte 5** nhỏ gọn, nhanh cho giao diện fintech: sparkline trên canvas, cập nhật ô thời gian thực theo lô, cuộn ảo, nhóm / pivot / dữ liệu dạng cây, và xuất Excel, với phần lõi gzip còn ~32 KB. Nửa bảng biểu của cùng bộ công cụ — kết hợp với TradeCanvas để có một bàn giao dịch hoàn chỉnh. **[Demo trực tiếp](https://bonguynvan.github.io/bo-grid/)**
+
+## Đóng góp
+
+Mọi báo lỗi, ý tưởng và pull request đều được chào đón. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`), cấu trúc repo và những gì một pull request cần có. Phát hiện lỗ hổng bảo mật? Vui lòng làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.
+
+Nếu TradeCanvas giúp bạn tiết kiệm thời gian, một ngôi sao trên GitHub sẽ giúp nhiều lập trình viên khác tìm thấy nó.
 
 ## Giấy phép
 

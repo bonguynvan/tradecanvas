@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Collected on `main` for the next release. Not on npm yet.
+
+- A position's stop-loss or take-profit priced outside the visible range no longer draws over the time axis or the panes below the chart, and can't be grabbed there by accident (nor can an order line off the plot); an entry scrolled out of view no longer leaves its price tag on the axis.
+- The npm page shows the full README again (it had fallen behind the repository's), with screenshots; the demo's link previews now carry an image on every network.
+
 ## 1.7.0 (2026-10-03)
 
 Everything since 1.4.0 in one release (1.5.0 and 1.6.0 were never published): the drawing toolkit, trading and workspace, panes and undo, alerts and replay, scales and comparisons, the widget's look, and watchlists, symbol info, tick charts and access. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.10 pick up the new core.

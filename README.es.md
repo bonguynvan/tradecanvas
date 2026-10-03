@@ -1,10 +1,88 @@
-# @tradecanvas/chart
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/es/"><img src=".github/assets/banner.png" alt="TradeCanvas, el motor de gráficos para apps de trading" width="100%"></a>
+</p>
 
-[English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español**
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
+  <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+</p>
 
-Gráfico de trading en canvas de alto rendimiento, con indicadores, herramientas de dibujo y streaming en tiempo real integrados. Sin dependencias externas.
+<p align="center">
+  <b><a href="https://bonguynvan.github.io/tradecanvas/es/">Demo en vivo</a></b> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/es/docs/getting-started/">Documentación</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/es/examples/">Ejemplos</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/es/playground/">Playground</a> ·
+  <a href="./CHANGELOG.md">Registro de cambios</a>
+</p>
 
-**[Demo en vivo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
+</p>
+
+**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 95 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado en Canvas2D sin dependencias. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript puro, React, Vue o Svelte.
+
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/es/"><img src=".github/assets/hero.png" alt="ChartWidget con BTCUSDT en vivo desde Binance: EMA 21 y 55, RSI, una línea de tendencia, una posición larga y una lista de seguimiento con cotizaciones en vivo" width="100%"></a>
+</p>
+
+## Inicio rápido
+
+```bash
+npm install @tradecanvas/chart     # o: pnpm add / yarn add
+```
+
+`ChartWidget` es toda la interfaz de trading en un componente: barra de herramientas, barra lateral de dibujo, diálogo de configuración y barra de estado.
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(), // datos en vivo, sin API key
+  trading: true,
+})
+```
+
+Eso es todo. Datos en vivo, los 95 indicadores, las 69 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
+
+¿Usas un framework? [`@tradecanvas/react`](./packages/react/), [`@tradecanvas/vue`](./packages/vue/) y [`@tradecanvas/svelte`](./packages/svelte/) envuelven el `Chart` headless como componente, y el widget de arriba se monta igual en cualquier framework; consulta [Integración con frameworks](#integración-con-frameworks). O haz un fork de un [sandbox de StackBlitz](https://bonguynvan.github.io/tradecanvas/es/examples/) y empieza desde ahí.
+
+## Un vistazo
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="Herramientas de dibujo: un retroceso de Fibonacci con una nota, una línea de tendencia, una onda de impulso de Elliott y una posición larga"></a>
+      <br><b>69 herramientas de dibujo</b><br>
+      Fibonacci, Gann, horquillas, ondas de Elliott, patrones armónicos, notas y pinceles, y una posición larga/corta que calcula el tamaño de la operación. Alertas en líneas de tendencia, grupos, deshacer y rehacer.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="Trading sobre el gráfico: una posición larga con stop-loss y take-profit, un buy stop y un sell limit, y el panel de cuenta"></a>
+      <br><b>Trading sobre el gráfico</b><br>
+      Posiciones con P&amp;L en vivo, órdenes que arrastras a otro precio, SL y TP, botones para invertir y cerrar, un ticket de orden y un panel de cuenta. Incluye un bróker de simulación, o conecta el tuyo.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="Un espacio de trabajo de dos por dos con gráficos de BTC, ETH, SOL y BNB en varias temporalidades"></a>
+      <br><b>Espacio de trabajo multigráfico</b><br>
+      Hasta seis gráficos completos lado a lado, enlazados por símbolo, temporalidad, cruz, tiempo o dibujos, y guardados como un solo diseño.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="Un gráfico con tres estilos: studio, terminal y capsule en el tema claro"></a>
+      <br><b>Tu propio estilo</b><br>
+      Tres preajustes (studio, terminal, capsule) o ajusta tú el radio de las esquinas, la densidad, las fuentes, la barra de herramientas y las etiquetas de precio, en temas claro y oscuro.
+    </td>
+  </tr>
+</table>
 
 ## ¿Por qué TradeCanvas?
 
@@ -36,35 +114,6 @@ La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonit
 - **Widget extensible** — añade tus propios botones a la barra de herramientas y entradas al menú del clic derecho (`addToolbarButton`, `chartMenuItems`).
 - **Guardar/cargar el estado del gráfico** — guarda dibujos, indicadores, tema y tipo de gráfico en JSON. Restáuralos con una sola llamada.
 - **Sin dependencias** — toda la biblioteca es autónoma. Sin `d3`, sin `chart.js`, sin `fancy-canvas`.
-
-## Instalación
-
-```bash
-npm install @tradecanvas/chart
-# or
-pnpm add @tradecanvas/chart
-# or
-yarn add @tradecanvas/chart
-```
-
-## Inicio rápido
-
-El camino más rápido es `ChartWidget`: un componente listo para usar con una interfaz de trading completa (barra de herramientas, barra lateral de dibujo, diálogo de configuración, barra de estado). No depende de ningún framework.
-
-```typescript
-import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  trading: true,
-})
-```
-
-Eso es todo. Datos en vivo, los 95 indicadores, las 69 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
 
 ## Gráfico headless
 
@@ -1022,6 +1071,12 @@ Dos canvas superpuestos: al pasar el cursor solo se repinta el fino canvas super
 ## Proyectos relacionados
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)** — tabla de datos **Svelte 5** pequeña y rápida para interfaces fintech: sparklines en canvas, actualizaciones de celdas en tiempo real por lotes, desplazamiento virtual, agrupación / pivot / datos en árbol y exportación a Excel, con un núcleo que ocupa ~32 KB con gzip. Es la mitad de tablas del mismo kit: combínala con TradeCanvas para un puesto de trading completo. **[Demo en vivo](https://bonguynvan.github.io/bo-grid/)**
+
+## Contribuir
+
+Los reportes de errores, las ideas y los pull requests son bienvenidos. [CONTRIBUTING.md](./CONTRIBUTING.md) explica la configuración (`pnpm install && pnpm build && pnpm test`), la estructura del repositorio y lo que necesita un pull request. ¿Encontraste un problema de seguridad? Sigue [SECURITY.md](./SECURITY.md) en lugar de abrir un issue.
+
+Si TradeCanvas te ahorra tiempo, una estrella en GitHub ayuda a que otros desarrolladores lo encuentren.
 
 ## Licencia
 

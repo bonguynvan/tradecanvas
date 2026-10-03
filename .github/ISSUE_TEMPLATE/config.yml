@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Docs
+    url: https://bonguynvan.github.io/tradecanvas/docs/getting-started/
+    about: Guides and the full API, in six languages.
+  - name: Live demo and Feature Lab
+    url: https://bonguynvan.github.io/tradecanvas/
+    about: Try a feature on a live chart before you report it.
+  - name: Security issue
+    url: https://github.com/bonguynvan/tradecanvas/security/advisories/new
+    about: Report a vulnerability privately, not in a public issue.

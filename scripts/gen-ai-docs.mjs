@@ -3,6 +3,7 @@
 //   demo/src/lib/generated/indicators.json        the docs site's indicator catalog
 //   skills/tradecanvas/references/indicators.md   the agent skill's indicator reference
 //   demo/static/llms.txt, demo/static/llms-full.txt
+//   packages/library/README.md                    the npm page: the root README, links made absolute
 //
 //   node scripts/gen-ai-docs.mjs           write them (after `pnpm build`)
 //   node scripts/gen-ai-docs.mjs --check   fail if any is out of date
@@ -104,7 +105,38 @@ function llmsTxt() {
   ].join('\n');
 }
 
-function llmsFullTxt(indicatorsMd) {
+/**
+ * The README npm shows: the root one, with its relative links and images made
+ * absolute, since npm has no repository to resolve them against.
+ */
+function npmReadme() {
+  const RAW = 'https://raw.githubusercontent.com/bonguynvan/tradecanvas/main';
+  const ABSOLUTE = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
+  const absolute = (url) => {
+    if (ABSOLUTE.test(url)) return url;
+    const path = url.replace(/^\.?\//, '');
+    if (/\.(png|jpe?g|gif|svg|webp)$/i.test(path.split(/[?#]/)[0])) return `${RAW}/${path}`;
+    return `${REPO}/${path.endsWith('/') ? 'tree' : 'blob'}/main/${path}`;
+  };
+  // Link targets `](url)` (with an optional <> and title) and src/href attributes.
+  const LINK = /\]\((<?)([^)\s>]+)(>?)(\s+"[^"]*")?\)/g;
+  const ATTR = /(?<![\w-])(src|href)="([^"]+)"/g;
+  const rewrite = (text) => text
+    .replace(LINK, (_, lt, url, gt, title = '') => `](${lt}${absolute(url)}${gt}${title})`)
+    .replace(ATTR, (_, attr, url) => `${attr}="${absolute(url)}"`);
+  // Code (fenced blocks, inline spans) is left as written: `handlers[type](event)` isn't a link.
+  const CODE = /(```[\s\S]*?```|`[^`\n]*`)/;
+  const prose = (md) => md.split(CODE).filter((_, i) => i % 2 === 0).join('\n');
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
+  const out = readme.split(CODE).map((part, i) => (i % 2 ? part : rewrite(part))).join('');
+  const left = [...prose(out).matchAll(LINK)].map((m) => m[2])
+    .concat([...prose(out).matchAll(ATTR)].map((m) => m[2]))
+    .filter((url) => !ABSOLUTE.test(url));
+  if (left.length) throw new Error(`relative links left in the npm README: ${left.join(', ')}`);
+  return out;
+}
+
+function llmsFullTxt(indicatorsMd, readmeMd) {
   const read = (rel) => readFileSync(join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n').trim();
   const part = (title, body) => `\n\n${'='.repeat(78)}\n${title}\n${'='.repeat(78)}\n\n${body}`;
   return [
@@ -112,16 +144,18 @@ function llmsFullTxt(indicatorsMd) {
     part('skills/tradecanvas/SKILL.md', read('skills/tradecanvas/SKILL.md')),
     part('skills/tradecanvas/references/recipes.md', read('skills/tradecanvas/references/recipes.md')),
     part('skills/tradecanvas/references/indicators.md', indicatorsMd.trim()),
-    part('packages/library/README.md', read('packages/library/README.md')),
+    part('packages/library/README.md', readmeMd.trim()),
   ].join('') + '\n';
 }
 
 const indicatorsMd = indicatorsMarkdown();
+const readmeMd = npmReadme();
 const outputs = [
   ['demo/src/lib/generated/indicators.json', JSON.stringify(catalog, null, 2) + '\n'],
   ['skills/tradecanvas/references/indicators.md', indicatorsMd],
   ['demo/static/llms.txt', llmsTxt()],
-  ['demo/static/llms-full.txt', llmsFullTxt(indicatorsMd)],
+  ['demo/static/llms-full.txt', llmsFullTxt(indicatorsMd, readmeMd)],
+  ['packages/library/README.md', readmeMd],
 ];
 
 let stale = 0;

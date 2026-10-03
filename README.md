@@ -1,10 +1,88 @@
-# @tradecanvas/chart
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/"><img src=".github/assets/banner.png" alt="TradeCanvas, the chart engine for trading apps" width="100%"></a>
+</p>
 
-**English** · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
+  <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+</p>
 
-High-performance canvas trading chart with built-in indicators, drawing tools, and real-time streaming. Zero external dependencies.
+<p align="center">
+  <b><a href="https://bonguynvan.github.io/tradecanvas/">Live demo</a></b> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/docs/getting-started/">Docs</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/examples/">Examples</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/playground/">Playground</a> ·
+  <a href="./CHANGELOG.md">Changelog</a>
+</p>
 
-**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
+<p align="center">
+  <b>English</b> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
+</p>
+
+**A complete trading chart for the web.** Candlesticks to Renko, 95 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn on Canvas2D with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
+
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/"><img src=".github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
+</p>
+
+## Quick Start
+
+```bash
+npm install @tradecanvas/chart     # or: pnpm add / yarn add
+```
+
+`ChartWidget` is the whole trading UI in one component: toolbar, drawing sidebar, settings dialog and status bar.
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(), // live data, no API key
+  trading: true,
+})
+```
+
+That's it. Live data, all 95 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+
+Using a framework? [`@tradecanvas/react`](./packages/react/), [`@tradecanvas/vue`](./packages/vue/) and [`@tradecanvas/svelte`](./packages/svelte/) wrap the headless `Chart` as a component, and the widget above mounts the same way in any framework; see [Framework Integration](#framework-integration). Or fork a [StackBlitz sandbox](https://bonguynvan.github.io/tradecanvas/examples/) and start from there.
+
+## A Look Around
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="Drawing tools: a Fibonacci retracement with a note, a trend line, an Elliott impulse wave and a long position"></a>
+      <br><b>69 drawing tools</b><br>
+      Fibonacci, Gann, pitchforks, Elliott waves, harmonic patterns, notes and brushes, and a Long/Short position that sizes the trade. Alerts on trend lines, groups, undo and redo.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="Trading on the chart: a long position with stop-loss and take-profit, a buy stop and a sell limit, and the account panel"></a>
+      <br><b>Trading on the chart</b><br>
+      Positions with live P&amp;L, orders you drag to a new price, SL and TP, reverse and close buttons, an order ticket and an account panel. A paper broker is built in; connect your own.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="A two-by-two workspace of BTC, ETH, SOL and BNB charts on mixed intervals"></a>
+      <br><b>Multi-chart workspace</b><br>
+      Up to six full charts side by side, linked by symbol, interval, crosshair, time or drawings, and saved as one layout.
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="One chart in three looks: studio, terminal, and capsule on the light theme"></a>
+      <br><b>Your own look</b><br>
+      Three presets (studio, terminal, capsule) or your own corner radius, density, fonts, toolbar and price tags, on light and dark themes.
+    </td>
+  </tr>
+</table>
 
 ## Why TradeCanvas?
 
@@ -36,35 +114,6 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **Extensible widget** — add your own toolbar buttons and right-click menu entries (`addToolbarButton`, `chartMenuItems`).
 - **Save/load chart state** — Persist drawings, indicators, theme, and chart type to JSON. Restore with one call.
 - **Zero dependencies** — The entire library is self-contained. No `d3`, no `chart.js`, no `fancy-canvas`.
-
-## Install
-
-```bash
-npm install @tradecanvas/chart
-# or
-pnpm add @tradecanvas/chart
-# or
-yarn add @tradecanvas/chart
-```
-
-## Quick Start
-
-The fastest path is `ChartWidget` — drop-in component with a full trading UI (toolbar, drawing sidebar, settings dialog, status bar). Zero framework dependency.
-
-```typescript
-import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  trading: true,
-})
-```
-
-That's it. Live data, all 95 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -1022,6 +1071,12 @@ Two stacked canvases — a hover repaints only the thin top one:
 ## Related projects
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)** — tiny, fast **Svelte 5** data grid for fintech UIs: canvas sparklines, batched realtime cell updates, virtual scrolling, grouping / pivot / tree data, and Excel export, with a core that gzips to ~32 KB. The table half of the same toolkit — pair it with TradeCanvas for a full trading desk. **[Live demo](https://bonguynvan.github.io/bo-grid/)**
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`), how the repo is laid out and what a pull request needs. Found a security issue? Please follow [SECURITY.md](./SECURITY.md) instead of opening an issue.
+
+If TradeCanvas saves you time, a star on GitHub helps other developers find it.
 
 ## License
 

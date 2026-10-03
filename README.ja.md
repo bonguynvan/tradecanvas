@@ -1,10 +1,88 @@
-# @tradecanvas/chart
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/banner.png" alt="TradeCanvas：トレーディングアプリのためのチャートエンジン" width="100%"></a>
+</p>
 
-[English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
+  <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
+  <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+</p>
 
-インジケーター、描画ツール、リアルタイムストリーミングを内蔵した、高性能な Canvas トレーディングチャートです。外部依存関係はゼロです。
+<p align="center">
+  <b><a href="https://bonguynvan.github.io/tradecanvas/ja/">ライブデモ</a></b> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/docs/getting-started/">ドキュメント</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/examples/">サンプル</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/playground/">Playground</a> ·
+  <a href="./CHANGELOG.md">変更履歴</a>
+</p>
 
-**[ライブデモ](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[npm](https://www.npmjs.com/package/@tradecanvas/chart)**
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
+</p>
+
+**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、95 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas2D で描画し、依存関係はゼロです。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、素の TypeScript、React、Vue、Svelte に対応しています。
+
+<p align="center">
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>
+</p>
+
+## クイックスタート
+
+```bash
+npm install @tradecanvas/chart     # または: pnpm add / yarn add
+```
+
+`ChartWidget` は、ツールバー、描画サイドバー、設定ダイアログ、ステータスバーを備えたトレーディング UI 一式をひとつのコンポーネントにまとめたものです。
+
+```typescript
+import { ChartWidget } from '@tradecanvas/chart/widget'
+import { BinanceAdapter } from '@tradecanvas/chart'
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '5m',
+  theme: 'dark',
+  adapter: new BinanceAdapter(), // ライブデータ、API キー不要
+  trading: true,
+})
+```
+
+これだけです。ライブデータ、95 種類すべてのインジケーター、69 種類すべての描画ツール、コマンドパレット（`Ctrl+K`）、シンボル検索（`Ctrl+P`）、ショートカット一覧（`?`）、Shift+ドラッグでの計測、Alt+クリックでのツールチップ固定、CSV/JSON のドラッグ＆ドロップ読み込みが使えます。
+
+フレームワークを使っていますか？[`@tradecanvas/react`](./packages/react/)、[`@tradecanvas/vue`](./packages/vue/)、[`@tradecanvas/svelte`](./packages/svelte/) はヘッドレスな `Chart` をコンポーネントとしてラップしています。上の widget も、どのフレームワークでも同じ方法で組み込めます。[フレームワークとの統合](#フレームワークとの統合)を参照してください。[StackBlitz サンドボックス](https://bonguynvan.github.io/tradecanvas/ja/examples/)をフォークして始めることもできます。
+
+## 機能ツアー
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="描画ツール：ノート付きのフィボナッチ・リトレースメント、トレンドライン、エリオット推進波、ロングポジション"></a>
+      <br><b>69 種類の描画ツール</b><br>
+      フィボナッチ、ギャン、ピッチフォーク、エリオット波動、ハーモニックパターン、ノートやブラシ、そして取引サイズを計算するロング／ショートポジション。トレンドラインのアラート、グループ化、元に戻す・やり直しにも対応。
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="チャート上の取引：損切りと利確付きのロングポジション、買いの逆指値と売りの指値、口座パネル"></a>
+      <br><b>チャート上で取引</b><br>
+      損益がリアルタイムに動くポジション、ドラッグで価格を変えられる注文、SL と TP、ドテンと決済のボタン、注文チケットと口座パネル。ペーパートレードのブローカーを内蔵し、独自のブローカーも接続できます。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="BTC、ETH、SOL、BNB を複数の時間足で並べた 2×2 のワークスペース"></a>
+      <br><b>マルチチャートのワークスペース</b><br>
+      最大 6 つのフル機能のチャートを並べ、シンボル、時間足、クロスヘア、時間、描画で連動させ、ひとつのレイアウトとして保存できます。
+    </td>
+    <td width="50%" valign="top">
+      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="ひとつのチャートを 3 つの見た目で：studio、terminal、ライトテーマの capsule"></a>
+      <br><b>自分だけの見た目</b><br>
+      3 つのプリセット（studio、terminal、capsule）、または角の丸み、密度、フォント、ツールバー、価格タグを自由に設定。ライトとダークの両テーマで使えます。
+    </td>
+  </tr>
+</table>
 
 ## なぜ TradeCanvas なのか？
 
@@ -36,35 +114,6 @@
 - **拡張できるウィジェット** — 独自のツールバーボタンや右クリックメニューの項目を追加できます（`addToolbarButton`、`chartMenuItems`）。
 - **チャート状態の保存 / 読み込み** — 描画、インジケーター、テーマ、チャートタイプを JSON に保存し、1 回の呼び出しで復元できます。
 - **依存関係ゼロ** — ライブラリ全体が自己完結しています。`d3` も `chart.js` も `fancy-canvas` も不要です。
-
-## インストール
-
-```bash
-npm install @tradecanvas/chart
-# or
-pnpm add @tradecanvas/chart
-# or
-yarn add @tradecanvas/chart
-```
-
-## クイックスタート
-
-最も手早い方法は `ChartWidget` です。完全なトレーディング UI（ツールバー、描画サイドバー、設定ダイアログ、ステータスバー）を備えた、そのまま組み込めるコンポーネントで、フレームワークへの依存はありません。
-
-```typescript
-import { ChartWidget } from '@tradecanvas/chart/widget'
-import { BinanceAdapter } from '@tradecanvas/chart'
-
-const widget = new ChartWidget(document.getElementById('chart')!, {
-  symbol: 'BTCUSDT',
-  timeframe: '5m',
-  theme: 'dark',
-  adapter: new BinanceAdapter(),
-  trading: true,
-})
-```
-
-これだけです。ライブデータ、95 種類すべてのインジケーター、69 種類すべての描画ツール、コマンドパレット（`Ctrl+K`）、シンボル検索（`Ctrl+P`）、ショートカット一覧（`?`）、Shift+ドラッグでの計測、Alt+クリックでのツールチップ固定、CSV/JSON のドラッグ＆ドロップ読み込みが使えます。
 
 ## ヘッドレスチャート
 
@@ -1021,6 +1070,12 @@ BB + EMA + RSI + MACD（`pnpm bench`、シングルコア）：
 ## 関連プロジェクト
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)** — フィンテック UI 向けの小さく高速な **Svelte 5** データグリッド。キャンバスのスパークライン、まとめて反映するリアルタイムのセル更新、仮想スクロール、グループ化 / ピボット / ツリーデータ、Excel エクスポートを備え、コアは gzip で約 32 KB です。同じツールキットのテーブル担当で、TradeCanvas と組み合わせれば本格的なトレーディングデスクになります。**[ライブデモ](https://bonguynvan.github.io/bo-grid/)**
+
+## コントリビュート
+
+バグ報告、アイデア、プルリクエストを歓迎します。[CONTRIBUTING.md](./CONTRIBUTING.md) にセットアップ（`pnpm install && pnpm build && pnpm test`）、リポジトリの構成、プルリクエストに必要なことをまとめています。セキュリティ上の問題を見つけた場合は、issue を開かずに [SECURITY.md](./SECURITY.md) の手順に従ってください。
+
+TradeCanvas が時間の節約に役立ったら、GitHub でスターを付けていただけると、ほかの開発者が見つけやすくなります。
 
 ## ライセンス
 
