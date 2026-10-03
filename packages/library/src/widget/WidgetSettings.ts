@@ -49,6 +49,17 @@ export class WidgetSettings {
     this.buildModal();
   }
 
+  isOpen(): boolean {
+    return this.modal !== null;
+  }
+
+  /** The settings as they are now (after an undo), on the tab that's open. */
+  refresh(settings: ChartSettingsState): void {
+    if (!this.modal) return;
+    this.currentSettings = { ...settings };
+    this.renderTabContent();
+  }
+
   close(): void {
     this.backdrop?.remove();
     this.modal?.remove();

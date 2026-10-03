@@ -4,6 +4,19 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Workspace, markets and access
+
+- **Watchlists**: several lists of symbols to switch between, create, rename and delete; add symbols from the search, remove them, drag them into order. Rows fill with live quotes from the feed (Binance sends them), from a quote source of yours, or from what you push.
+- **Symbol info**: a panel with the symbol's price and move, whether its market is open and when that changes, the day's open, range and volume, its trading hours and news. The status bar shows when the market is closed.
+- **Tick charts**: type `100T` for a bar per 100 trades, built from the feed's trades (Binance streams them).
+- **Undo for settings**: Ctrl/Cmd+Z takes back settings and chart type changes too, with drawings and indicators; `recordUndo` adds changes of your own.
+- **Zoom and scroll buttons** over the chart, shown while the mouse is on it.
+- **For screen readers**: the chart says what it shows, what is on screen after the keys move it, and reads the bars one at a time (comma and period).
+- **Arabic and Hebrew**, right to left: the widget in 16 languages.
+- **Ten more indicators** (95 in all): Stochastic Momentum Index, Relative Volatility Index, Trend Strength Index, Linear Regression Slope, Standard Error and its bands, Guppy Multiple Moving Average, Moving Average Ribbon, Average Day Range and Net Volume.
+- New events: the chart type, symbol or timeframe changed, the undo history changed, drawings were selected.
+- A live bar that closes keeps its final values (it used to keep the ones before its last update).
+
 ### The widget's look
 
 - **Three looks, and yours**: the widget's corners, sizes, type, borders, shadows and bars are a look apart from its colours. **Studio** is the new default (rounded controls, spaced groups, the interval buttons in a segmented track), **Terminal** is dense and square with capital labels, **Capsule** is all pills with the toolbar and drawing tools floating as islands. Start from one and change what you like with the `ui` option or `setUI`, on one chart or a whole grid.

@@ -26,6 +26,8 @@ import { RU_MESSAGES } from './ru.js';
 import { TR_MESSAGES } from './tr.js';
 import { ID_MESSAGES } from './id.js';
 import { TH_MESSAGES } from './th.js';
+import { AR_MESSAGES } from './ar.js';
+import { HE_MESSAGES } from './he.js';
 
 export {
   EN_MESSAGES as en,
@@ -42,6 +44,8 @@ export {
   TR_MESSAGES as tr,
   ID_MESSAGES as id,
   TH_MESSAGES as th,
+  AR_MESSAGES as ar,
+  HE_MESSAGES as he,
 };
 export type { WidgetMessages };
 
@@ -71,6 +75,9 @@ export const WIDGET_LANGUAGES: readonly WidgetLanguage[] = [
   { code: 'tr', name: 'Türkçe', numberLocale: 'tr-TR', messages: TR_MESSAGES },
   { code: 'id', name: 'Bahasa Indonesia', numberLocale: 'id-ID', messages: ID_MESSAGES },
   { code: 'th', name: 'ไทย', numberLocale: 'th-TH', messages: TH_MESSAGES },
+  // Right to left; numbers in Latin digits, as the strings write them.
+  { code: 'ar', name: 'العربية', numberLocale: 'ar-u-nu-latn', messages: AR_MESSAGES },
+  { code: 'he', name: 'עברית', numberLocale: 'he-IL', messages: HE_MESSAGES },
 ];
 
 /** Make every built-in language available to ChartWidget's `locale` option. */

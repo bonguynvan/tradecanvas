@@ -42,9 +42,11 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import { readChartTypeOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, normalizeBarTime } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
+import { ChartA11y } from './chartA11y.js';
+import { zonedDateFormatter } from '@tradecanvas/commons';
 import { indicatorChipLabel } from './indicatorLabel.js';
 import type { ExportColumn } from '@tradecanvas/core';
 import {
@@ -305,10 +307,14 @@ export class Chart {
    */
   private defaultAutoScale: boolean;
   private keyboardHandler: KeyboardHandler | null = null;
+  private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
   /** Timeframe and adapter of the connected stream, for paging its history. */
   private streamTimeframe: TimeFrame | null = null;
+  /** The symbol and timeframe last told (symbolChange, timeframeChange). */
+  private announcedSymbol: string | null = null;
+  private announcedTimeframe: TimeFrame | null = null;
   private streamAdapter: DataAdapter | null = null;
   /** Pages older bars in as the view nears the oldest one. */
   private history: HistoryPager;
@@ -411,8 +417,20 @@ export class Chart {
       this.features.drawings && (this.features.drawingTools.length === 0 || this.features.drawingTools.includes(type)));
     // Undo/redo
     this.undoRedoManager = new UndoRedoManager();
+    let history = '';
+    this.undoRedoManager.setOnChange(() => {
+      const { canUndo, canRedo } = this.undoRedoManager.getState();
+      const now = `${canUndo}|${canRedo}`;
+      if (now === history) return;
+      history = now;
+      this.eventBus.emit('historyChange', { canUndo, canRedo });
+    });
     this.drawingManager.setUndoRedoManager(this.undoRedoManager);
-    this.drawingManager.setForeignHistory((action, direction) => this.applyIndicatorStep(action, direction));
+    this.drawingManager.setSelectionListener((ids) => this.eventBus.emit('drawingSelect', { ids, primary: ids[0] ?? null }));
+    this.drawingManager.setForeignHistory((action, direction) => {
+      if (action.type === 'custom') action.custom?.[direction]();
+      else this.applyIndicatorStep(action, direction);
+    });
     this.drawingManager.setDataGetter(() => this.dataManager.getData());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
@@ -608,6 +626,25 @@ export class Chart {
     });
     this.keyboardHandler.setEnabled(this.features.keyboard);
 
+    // Screen readers: a summary, the view after a key moves it, the bars one by one.
+    if (options.a11y !== false) {
+      this.a11y = new ChartA11y(container, {
+        symbol: () => this.currentSymbol || this.symbolInfo?.symbol || '',
+        timeframe: () => this.streamTimeframe ?? '',
+        chartType: () => this.options.chartType ?? 'candlestick',
+        bars: () => this.getDisplayData(),
+        visibleRange: () => this.viewport.getState().visibleRange,
+        formatPrice: (price) => this.formatPrice(price),
+        formatTime: (time) => zonedDateFormatter(this.numberLocale || 'en-US', { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(
+          time > SECONDS_TIME_LIMIT ? time : time * 1000,
+        ),
+        showBar: (time) => this.setCrosshairTime(time),
+      }, options.a11y?.labels);
+      for (const event of ['dataUpdate', 'chartTypeChange', 'symbolChange', 'timeframeChange'] as const) {
+        this.eventBus.on(event, () => this.a11y?.refresh(event !== 'dataUpdate'));
+      }
+    }
+
     // Attach keyboard listener to window. Only consume the event when the
     // chart actually handles the key AND the container is the focused element
     // (or an ancestor) — this prevents the chart from swallowing keystrokes
@@ -622,8 +659,17 @@ export class Chart {
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
         return;
       }
+      // A control inside the chart (a button over it) takes its own keys: Space presses it.
+      if (active && active !== this.container && active.matches('button, a[href], select, [role="button"], [role="menuitem"]')) return;
+      // Comma and period read the bars one at a time.
+      if (this.a11y && this.features.keyboard && (e.key === ',' || e.key === '.') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        this.a11y.readBar(e.key === '.' ? 1 : -1);
+        return;
+      }
       if (this.keyboardHandler.handleKey(e)) {
         e.preventDefault();
+        this.a11y?.viewMoved();
       }
     };
     window.addEventListener('keydown', this.onWindowKeyDown);
@@ -1110,7 +1156,8 @@ export class Chart {
     const adapter = withResampling(feed);
     const fetchBefore = adapter.fetchHistoryBefore;
     const timeframe = this.streamTimeframe;
-    if (!fetchBefore || timeframe === null) {
+    // Tick bars come from recent trades: a feed keeps no older ones to page in.
+    if (!fetchBefore || timeframe === null || tickBarCount(timeframe) !== null) {
       if (this.historyFromStream) this.history.setLoader(null);
       this.historyFromStream = false;
       return;
@@ -1224,12 +1271,14 @@ export class Chart {
   // --- Chart type ---
 
   setChartType(type: ChartType | (string & {})): void {
+    const previous = this.options.chartType ?? 'candlestick';
     this.options.chartType = type as ChartType;
     this.chartRenderer = this.createChartRenderer(type);
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
     this.markStateChanged();
+    if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
   }
 
   /**
@@ -1284,6 +1333,15 @@ export class Chart {
   }
 
   /** A new or updated bar into the whole series (while one is kept): whether the chart shows it. */
+  /** A stream bar onto the bars shown: the last one again or a new one after it; false for an older one. */
+  private placeStreamBar(bar: OHLCBar): boolean {
+    const how = barPlacement(this.dataManager.getData(), bar);
+    if (how === 'stale') return false;
+    if (how === 'append') this.dataManager.appendBar(bar);
+    else this.dataManager.updateLastBar(bar);
+    return true;
+  }
+
   private takeBar(bar: OHLCBar, how: 'append' | 'update'): boolean {
     // Hidden hours with no whole series yet (too few bars to tell the interval): start one now if it can.
     if (!this.fullSeries && !this.extendedHours && !this.replaySession) {
@@ -2156,8 +2214,34 @@ export class Chart {
     return this.drawingManager.redo();
   }
 
+  /** Select a drawing (and the rest of its group); false for one it can't (unknown, hidden). */
+  selectDrawing(id: string): boolean {
+    const ok = this.drawingManager.select(id);
+    if (ok) this.engine.requestRender();
+    return ok;
+  }
+
   getUndoRedoState(): { canUndo: boolean; canRedo: boolean } {
     return this.undoRedoManager.getState();
+  }
+
+  /**
+   * Put a change of yours in the chart's undo history, with its drawings and
+   * indicators: undo (Ctrl/Cmd+Z) calls `undo`, redo calls `redo`. Call it
+   * after making the change. Changes about the same `subject` close together
+   * merge into one step (a colour dragged across a picker). Ignored when
+   * `features.drawingUndoRedo` is off.
+   */
+  recordUndo(step: { undo: () => void; redo: () => void; subject?: string }): void {
+    if (!this.features.drawingUndoRedo || typeof step?.undo !== 'function' || typeof step.redo !== 'function') return;
+    const at = performance.now();
+    const last = this.undoRedoManager.last();
+    if (step.subject !== undefined && last?.type === 'custom' && last.custom?.subject === step.subject && at - last.custom.at < INDICATOR_EDIT_MERGE_MS) {
+      // Undo goes back to before the burst; redo to its end.
+      this.undoRedoManager.replaceLast({ ...last, custom: { undo: last.custom.undo, redo: step.redo, subject: step.subject, at } });
+      return;
+    }
+    this.undoRedoManager.push({ type: 'custom', before: null, after: null, custom: { undo: step.undo, redo: step.redo, subject: step.subject, at } });
   }
 
   // --- Drawing magnet ---
@@ -2663,14 +2747,17 @@ export class Chart {
       this.useStreamHistory(config.adapter, config.historyPageSize);
     });
 
+    // Each bar lands by its time: the last bar again (its latest values, a
+    // close included), a new one after it, or none when it is older.
     this.streamManager.on('barClose', (bar) => {
       if (this.replaySession) {
         this.replaySession.live.appendBar(bar);
         return;
       }
-      if (!this.takeBar(bar, 'append')) return;
+      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
+      if (how === 'stale' || !this.takeBar(bar, how)) return;
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
-      this.dataManager.appendBar(bar);
+      if (!this.placeStreamBar(bar)) return;
       const data = this.dataManager.getData();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
@@ -2684,11 +2771,11 @@ export class Chart {
         return;
       }
       this.currentPriceLine.setPrice(bar.close);
-      if (!this.takeBar(bar, 'update')) {
+      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
+      if (how === 'stale' || !this.takeBar(bar, how) || !this.placeStreamBar(bar)) {
         this.scheduleRender();
         return;
       }
-      this.dataManager.updateLastBar(bar);
       // Recalculate indicators so panel/overlay series track the forming bar
       // instead of freezing until bar close — incrementally, since only the
       // last bar changed.
@@ -2725,8 +2812,7 @@ export class Chart {
     });
 
     this.autoScrollOnNewBar = config.autoScroll !== false;
-    this.currentSymbol = config.symbol;
-    this.streamTimeframe = config.timeframe;
+    this.setStreamTarget(config.symbol, config.timeframe);
     this.streamAdapter = config.adapter;
 
     const manager = this.streamManager;
@@ -2749,6 +2835,22 @@ export class Chart {
     }, 1000);
   }
 
+  /** The stream's symbol and timeframe, told when they change. */
+  private setStreamTarget(symbol: string, timeframe: TimeFrame): void {
+    const previousSymbol = this.announcedSymbol;
+    const previousTimeframe = this.announcedTimeframe;
+    this.currentSymbol = symbol;
+    this.streamTimeframe = timeframe;
+    if (symbol !== previousSymbol) {
+      this.announcedSymbol = symbol;
+      this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
+    }
+    if (timeframe !== previousTimeframe) {
+      this.announcedTimeframe = timeframe;
+      this.eventBus.emit('timeframeChange', { timeframe, previous: previousTimeframe });
+    }
+  }
+
   /**
    * Switch symbol or timeframe on an active stream without full reconnect.
    */
@@ -2758,8 +2860,7 @@ export class Chart {
     if (adapter && !servesTimeframe(adapter, timeframe)) {
       throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
     }
-    this.currentSymbol = symbol;
-    this.streamTimeframe = timeframe;
+    this.setStreamTarget(symbol, timeframe);
     // Until the new series is in, a page would be the new symbol's bars in
     // front of the old one's.
     if (this.historyFromStream) this.history.setLoader(null);
@@ -3008,6 +3109,14 @@ export class Chart {
 
   scrollToEnd(): void {
     this.viewport.scrollToEnd();
+    this.updateViewportAndRender();
+  }
+
+  /** Scroll by `bars` bars: later for a positive count, earlier for a negative one. */
+  scrollBars(bars: number): void {
+    if (!Number.isFinite(bars) || bars === 0) return;
+    const { barWidth, barSpacing } = this.viewport.getState();
+    this.viewport.scrollBy(bars * (barWidth + barSpacing));
     this.updateViewportAndRender();
   }
 
@@ -4358,6 +4467,8 @@ export class Chart {
       this.onWindowKeyDown = null;
     }
     this.keyboardHandler = null;
+    this.a11y?.destroy();
+    this.a11y = null;
     this.interactionManager.detach();
     this.tradingManager.destroy();
     this.animator.dispose();
@@ -4991,4 +5102,13 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
+}
+
+/** How a stream bar lands on `series`: after its last bar, as its last bar again, or before it (stale). */
+function barPlacement(series: readonly OHLCBar[], bar: OHLCBar): 'append' | 'update' | 'stale' {
+  const last = series[series.length - 1];
+  if (!last) return 'append';
+  const at = normalizeBarTime(bar.time);
+  const lastAt = normalizeBarTime(last.time);
+  return at > lastAt ? 'append' : at === lastAt ? 'update' : 'stale';
 }

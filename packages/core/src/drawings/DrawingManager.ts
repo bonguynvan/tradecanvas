@@ -149,7 +149,7 @@ export class DrawingManager {
     return true;
   }
 
-  /** Steps in the shared history that aren't about drawings (the chart's indicators). */
+  /** Steps in the shared history that aren't about drawings (the chart's indicators, steps of its owner). */
   private foreignHistory: ((action: UndoableAction, direction: 'undo' | 'redo') => void) | null = null;
 
   /** Who undoes and redoes the history's steps that aren't about drawings. */
@@ -158,7 +158,7 @@ export class DrawingManager {
   }
 
   private applyUndoAction(action: UndoableAction): void {
-    if (action.type === 'indicators') {
+    if (action.type === 'indicators' || action.type === 'custom') {
       this.foreignHistory?.(action, 'undo');
       return;
     }
@@ -166,7 +166,7 @@ export class DrawingManager {
   }
 
   private applyRedoAction(action: UndoableAction): void {
-    if (action.type === 'indicators') {
+    if (action.type === 'indicators' || action.type === 'custom') {
       this.foreignHistory?.(action, 'redo');
       return;
     }
@@ -265,6 +265,11 @@ export class DrawingManager {
     this.state = 'selected';
     this.requestRender?.();
     return true;
+  }
+
+  /** Told the selected drawings' ids (the primary first) each time the selection changes. */
+  setSelectionListener(listener: ((ids: string[]) => void) | null): void {
+    this.selection.setListener(listener);
   }
 
   /** Ids of every selected drawing, the primary one first. */

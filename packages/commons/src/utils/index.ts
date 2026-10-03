@@ -7,6 +7,7 @@ export * from './priceSource.js';
 export * from './resample.js';
 export * from './timezone.js';
 export * from './symbols.js';
+export * from './marketStatus.js';
 export * from './drawingOptions.js';
 export * from './drawingStyle.js';
 export * from './chartTypeOptions.js';

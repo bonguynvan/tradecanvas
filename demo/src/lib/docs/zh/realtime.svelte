@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>约 20 行代码接入任意数据源</h2>
@@ -57,6 +66,45 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>多个品种的报价</h2>
+<p>
+  带有 <code>subscribeQuotes</code> 的数据源会同时推送多个品种的报价（最新价、当日涨跌、最高价、最低价、
+  成交量、买价和卖价），直到你停止订阅。<code>BinanceAdapter</code> 先发送 24 小时快照，再接上它的 mini-ticker 流；
+  <code>MockAdapter</code> 会生成模拟报价。组件的自选列表就用它来填充各行。
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>Tick 图</h2>
+<p>
+  Tick 周期——<code>'100T'</code>——每 100 笔成交画一根K线。它由数据源的成交构建：历史部分用最近的成交
+  （<code>fetchTrades</code>），之后接入实时成交（<code>subscribeTrades</code>）。<code>BinanceAdapter</code> 推送归集成交
+  （aggregate trades）。Tick 图没有倒计时，也不会向前分页加载更早的历史；不提供成交的数据源会拒绝 tick 周期。
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>市场状态与新闻</h2>
+<p>
+  <code>marketStatus(info, now)</code> 根据品种在其交易所时区内的交易时段（包括夏令时切换），判断某一时刻市场是否开放，
+  以及何时会发生变化。交易时段可以指定一周中开放的日子。数据源的 <code>fetchNews</code> 为组件的品种信息面板提供新闻标题；
+  <code>readNews</code> 只保留带标题和时间的条目，并且只保留指向网页的链接。
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>断线重连</h2>
 <p><code>ReconnectManager</code> 负责带上限的指数退避，并在最终失败时放弃重连。</p>

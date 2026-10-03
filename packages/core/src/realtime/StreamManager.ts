@@ -14,6 +14,7 @@ import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
 import { CurrentPriceLine } from './CurrentPriceLine.js';
 import { withResampling } from './adapters/ResamplingAdapter.js';
+import { withTickBars } from './TickBars.js';
 
 export interface StreamEvents {
   /** Historical data loaded */
@@ -81,7 +82,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.disconnect();
 
     // Timeframes the feed lacks (7m, 90m…) are built from one it has.
-    const adapter = withResampling(config.adapter);
+    // Tick timeframes (100T) are built from the feed's trades.
+    const adapter = withTickBars(withResampling(config.adapter));
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);

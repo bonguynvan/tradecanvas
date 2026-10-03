@@ -274,7 +274,32 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>직접 만든 변경의 실행 취소</h3>
+<p>
+  <code>recordUndo</code>는 여러분의 변경을 그림, 지표와 함께 차트의 실행 취소 기록에 넣습니다. Ctrl/Cmd+Z는
+  <code>undo</code>를, 다시 실행은 <code>redo</code>를 호출합니다. 같은 <code>subject</code>에 대해 잇달아 일어난 변경은
+  한 단계로 묶입니다. ChartWidget도 설정과 차트 유형을 이렇게 기록합니다.
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>키보드와 스크린 리더</h3>
+<p>
+  포커스를 받은 차트는 화살표 키로 스크롤하고(Shift를 누르면 봉 열 개씩), ↑/↓ 또는 +/−로 확대/축소하며, Home과 End로
+  처음과 끝으로 이동합니다. 스크린 리더에게는 요약(종목, 유형, 시간 단위, 현재가)이 있는 애플리케이션입니다. 키로 보기를
+  움직이면 화면에 보이는 내용을 알려 주고, 쉼표와 마침표로 봉을 하나씩 읽습니다. <code>a11y.labels</code>로 원하는 언어로
+  바꾸고, <code>a11y: false</code>로 뺄 수 있습니다. <code>scrollBars(n)</code>와 <code>selectDrawing(id)</code>는 키와
+  클릭이 하는 일을 코드에서 합니다.
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   포인터 위치에서 얻은 가격은 <code>chart.roundPrice(price)</code>로 시장의 가격 단위에 맞출 수 있습니다.
   종목의 <code>minTick</code> 배수로, 그 값이 없으면 종목의 정밀도에 맞춥니다. ChartWidget의 메뉴와 주문 티켓도
@@ -437,24 +462,53 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   입력 봉은 절대 변경되지 않습니다.
 </p>
 
-<h3>관심 종목 사이드바</h3>
+<h3>관심 종목</h3>
 <p>
-  설정된 모든 종목의 최근 가격, % 변화, 미니 스파크라인을 보여 주는
-  오른쪽 패널로, 필요할 때 켜서 사용합니다.
+  종목 목록을 담은 오른쪽 패널로, 각 행에 현재가, % 변화, 스파크라인을 보여 줍니다. 목록은 메뉴에서 전환, 생성,
+  이름 바꾸기, 삭제하고, 종목은 종목 검색(+)으로 추가하고 삭제하며 드래그나 Alt+↑/↓로 순서를 바꿉니다. 각 행의
+  시세는 어댑터의 <code>subscribeQuotes</code>, 직접 만든 시세 소스, 또는 직접 넣은 값에서 가져옵니다.
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code>는 예전처럼 <code>symbols</code> 목록 하나를 보여 주고, <code>setWatchlistEntry</code>로
+  여전히 행의 가격, 변동, 스파크라인을 넣을 수 있습니다.
+</p>
+
+<h3>종목 정보</h3>
+<p>
+  도구 모음의 ⓘ 버튼(또는 명령 팔레트)으로 여는 패널입니다. 종목의 이름, 현재가와 변동, 다음 개장이나 마감까지
+  카운트다운하는 시장 상태, 당일 시가, 범위, 거래량, 전일 종가, 매수호가와 매도호가, 호가 단위, 통화, 시간대와
+  거래 시간, 뉴스를 보여 줍니다. 시장이 닫혀 있으면 상태 표시줄에도 표시됩니다.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>탐색, 실행 취소, 방향</h3>
+<p>
+  차트 위의 버튼 — 축소와 확대, 이전과 이후로 스크롤(누르고 있으면 계속 이동), 재설정 — 은 마우스가 차트 위에 있을 때
+  나타납니다(<code>navigation: false</code>로 뺄 수 있습니다). 설정 변경과 차트 유형 변경은 그림, 지표와 함께
+  Ctrl/Cmd+Z로 되돌립니다. 아랍어, 히브리어, 페르시아어, 우르두어에서는 위젯이 좌우 반전됩니다(<code>dir: 'auto'</code>,
+  또는 <code>'rtl'</code> / <code>'ltr'</code>). 차트의 시간은 그대로 왼쪽에서 오른쪽으로 흐릅니다.
+</p>
 
 <h3>그리기 도구 즐겨찾기</h3>
 <p>

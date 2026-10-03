@@ -346,7 +346,14 @@ export class WidgetDrawingSidebar {
     // Taller than the chart, the menu scrolls.
     flyout.style.maxHeight = `${Math.max(0, this.host.clientHeight - FLYOUT_MARGIN * 2)}px`;
     const room = this.host.clientHeight - flyout.offsetHeight - FLYOUT_MARGIN;
-    flyout.style.left = `${at.right - host.left}px`;
+    // Beside the button, toward the chart: its right, or its left in a right-to-left widget.
+    if (this.host.closest('[dir]')?.getAttribute('dir') === 'rtl') {
+      flyout.style.left = '';
+      flyout.style.right = `${host.right - at.left}px`;
+    } else {
+      flyout.style.right = '';
+      flyout.style.left = `${at.right - host.left}px`;
+    }
     flyout.style.top = `${Math.max(0, Math.min(at.top - host.top, room))}px`;
   }
 

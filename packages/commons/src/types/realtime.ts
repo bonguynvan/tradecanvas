@@ -1,5 +1,14 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
 import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
+import type { Quote } from './quote.js';
+import type { NewsItem } from './news.js';
+
+/** One trade: when (ms), at what price, how much. */
+export interface Trade {
+  time: number;
+  price: number;
+  volume: number;
+}
 
 // --- Connection ---
 
@@ -110,6 +119,25 @@ export interface DataAdapter {
    * asks for it and applies it.
    */
   resolveSymbol?(symbol: string): Promise<SymbolInfo | null>;
+
+  /**
+   * Optional: live quotes (last price, the day's change, high, low, volume)
+   * for many symbols at once, until the function it returns is called. A
+   * widget's watchlist fills its rows from it.
+   */
+  subscribeQuotes?(symbols: readonly string[], onQuotes: (quotes: Quote[]) => void): () => void;
+
+  /** Optional: recent headlines about `symbol`, newest first. */
+  fetchNews?(symbol: string, limit?: number): Promise<NewsItem[]>;
+
+  /**
+   * Optional, with `subscribeTrades`: up to `limit` recent trades, oldest
+   * first. A chart builds tick timeframes (`'100T'`) from a feed's trades.
+   */
+  fetchTrades?(symbol: string, limit?: number): Promise<Trade[]>;
+
+  /** Optional, with `fetchTrades`: live trades of `symbol` until the function it returns is called. */
+  subscribeTrades?(symbol: string, onTrades: (trades: Trade[]) => void): () => void;
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;

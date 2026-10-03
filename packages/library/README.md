@@ -57,7 +57,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 85 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 95 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -336,7 +336,7 @@ gauge.setValue(85) // animates smoothly
 
 ### Indicators (built-in)
 
-85 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+95 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
 LSMA, McGinley, SMMA, MA Cross, MTF MA), bands and channels (Bollinger,
 Keltner, Donchian, Envelope, Linear Regression), trend and stops (Ichimoku,
 Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,

@@ -246,6 +246,16 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'hv', name: 'Historical Volatility', type: 'panel' },
   { id: 'vo', name: 'Volume Oscillator', type: 'panel' },
   { id: 'ulcer', name: 'Ulcer Index', type: 'panel' },
+  { id: 'seb', name: 'Standard Error Bands', type: 'overlay' },
+  { id: 'gmma', name: 'Guppy Multiple MA', type: 'overlay' },
+  { id: 'maribbon', name: 'Moving Average Ribbon', type: 'overlay' },
+  { id: 'smi', name: 'Stochastic Momentum Index', type: 'panel' },
+  { id: 'rvix', name: 'Relative Volatility Index', type: 'panel' },
+  { id: 'trendstrength', name: 'Trend Strength Index', type: 'panel' },
+  { id: 'lrslope', name: 'Linear Regression Slope', type: 'panel' },
+  { id: 'stderror', name: 'Standard Error', type: 'panel' },
+  { id: 'adr', name: 'Average Day Range', type: 'panel' },
+  { id: 'netvolume', name: 'Net Volume', type: 'panel' },
 ];
 
 export const POPULAR_INDICATORS = [

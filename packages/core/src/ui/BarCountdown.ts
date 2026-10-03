@@ -11,7 +11,8 @@ export class BarCountdown {
   setTimeframeMs(ms: number): void { this.timeframeMs = ms; }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
-    if (!this.visible || this.timeframeMs <= 0 || data.length === 0) return;
+    // Tick bars close on a count, not a clock: no countdown.
+    if (!this.visible || !(this.timeframeMs > 0) || data.length === 0) return;
 
     const lastBar = data[data.length - 1];
     // Handle both ms and s timestamps

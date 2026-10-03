@@ -13,10 +13,11 @@ export class WidgetDropdown {
     this.panel.className = 'tcw-dropdown';
     // At least this wide; wider when a label in the look's font or a longer language needs it.
     this.panel.style.minWidth = config.width ?? '200px';
+    // From the trigger's start edge (its left, or its right in a right-to-left widget).
     if (config.align === 'right') {
-      this.panel.style.right = '0';
+      this.panel.style.insetInlineEnd = '0px';
     } else {
-      this.panel.style.left = '0';
+      this.panel.style.insetInlineStart = '0px';
     }
     this.panel.style.display = 'none';
 

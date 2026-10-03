@@ -5,12 +5,14 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  Quote,
+  Trade,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 import { rankSymbols, stepDecimals } from '@tradecanvas/commons';
-import { parseRestKline, parseWsKline } from './binanceTypes.js';
+import { parseAggTrade, parseMiniTicker, parseRestKline, parseRestTicker, parseWsKline } from './binanceTypes.js';
 
 const TF_MAP: Record<string, string> = {
   '1s': '1s', '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
@@ -20,6 +22,8 @@ const TF_MAP: Record<string, string> = {
 
 /** Most klines one REST request returns. */
 const MAX_KLINES = 1000;
+/** Most symbols one quote subscription streams (one socket, one URL). */
+const MAX_QUOTE_SYMBOLS = 200;
 
 /** Quote currencies most traded against, first: their pairs rank higher in a search. */
 const QUOTE_RANK = ['USDT', 'USDC', 'FDUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'TRY', 'BRL', 'JPY'];
@@ -166,6 +170,150 @@ export class BinanceAdapter implements DataAdapter {
       this.symbolList.catch(() => { this.symbolList = null; });
     }
     return this.symbolList;
+  }
+
+  /**
+   * Live quotes for up to 200 symbols: last price and the 24 h change, high,
+   * low and volume. A snapshot first, then the exchange's mini-ticker stream
+   * (reconnected while subscribed). Symbols that can't be Binance tickers are
+   * left out.
+   */
+  subscribeQuotes(symbols: readonly string[], onQuotes: (quotes: Quote[]) => void): () => void {
+    const wanted = [...new Set(symbols.map((s) => s.trim().toUpperCase()))]
+      .filter((s) => /^[A-Z0-9]{2,30}$/.test(s))
+      .slice(0, MAX_QUOTE_SYMBOLS);
+    if (wanted.length === 0) return () => {};
+
+    let stopped = false;
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    /** Symbols the stream has quoted: an older snapshot never overwrites them. */
+    const streamed = new Set<string>();
+    const controller = new AbortController();
+
+    const snapshot = async (): Promise<unknown> => {
+      const res = await fetch(`${this.restBase}/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(wanted))}`, { signal: controller.signal });
+      if (res.ok) return res.json();
+      // One symbol the exchange doesn't know refuses the whole list: take every ticker, keep ours.
+      const all = await fetch(`${this.restBase}/ticker/24hr`, { signal: controller.signal });
+      if (!all.ok) return [];
+      const rows: unknown = await all.json();
+      const keep = new Set(wanted);
+      return Array.isArray(rows) ? rows.filter((r) => keep.has((r as { symbol?: unknown })?.symbol as string)) : [];
+    };
+    snapshot()
+      .then((rows: unknown) => {
+        if (stopped || !Array.isArray(rows)) return;
+        const quotes = rows.map(parseRestTicker).filter((q): q is Quote => q !== null && !streamed.has(q.symbol));
+        if (quotes.length > 0) onQuotes(quotes);
+      })
+      .catch(() => { /* the stream still comes */ });
+
+    const streamBase = this.wsBase.replace(/\/ws\/?$/, '');
+    const open = (): void => {
+      if (stopped) return;
+      try {
+        ws = new WebSocket(`${streamBase}/stream?streams=${wanted.map((s) => `${s.toLowerCase()}@miniTicker`).join('/')}`);
+      } catch {
+        reconnect();
+        return;
+      }
+      ws.onopen = () => { attempts = 0; };
+      ws.onmessage = (event) => {
+        let frame: unknown;
+        try {
+          frame = JSON.parse(typeof event.data === 'string' ? event.data : '');
+        } catch {
+          return;
+        }
+        const quote = parseMiniTicker(frame);
+        if (!quote || stopped) return;
+        streamed.add(quote.symbol);
+        onQuotes([quote]);
+      };
+      ws.onclose = () => {
+        ws = null;
+        reconnect();
+      };
+    };
+    const reconnect = (): void => {
+      if (stopped) return;
+      retry = setTimeout(open, Math.min(30_000, 1000 * 2 ** attempts++));
+    };
+    open();
+
+    return () => {
+      stopped = true;
+      controller.abort();
+      if (retry) clearTimeout(retry);
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.close();
+        ws = null;
+      }
+    };
+  }
+
+  /** Up to 1000 recent trades, oldest first (aggregate trades: one per taker order and price). */
+  async fetchTrades(symbol: string, limit = 1000): Promise<Trade[]> {
+    const capped = Math.max(1, Math.min(1000, Math.floor(limit)));
+    const res = await fetch(`${this.restBase}/aggTrades?symbol=${encodeURIComponent(symbol.toUpperCase())}&limit=${capped}`);
+    if (!res.ok) throw new Error(`Binance aggTrades ${res.status}`);
+    const rows: unknown = await res.json();
+    return Array.isArray(rows) ? rows.map(parseAggTrade).filter((t): t is Trade => t !== null) : [];
+  }
+
+  /** Live trades of `symbol` (the aggregate trade stream), reconnected while subscribed. */
+  subscribeTrades(symbol: string, onTrades: (trades: Trade[]) => void): () => void {
+    const stream = `${symbol.trim().toLowerCase()}@aggTrade`;
+    if (!/^[a-z0-9]{2,30}@aggTrade$/.test(stream)) return () => {};
+    let stopped = false;
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    const open = (): void => {
+      if (stopped) return;
+      try {
+        ws = new WebSocket(`${this.wsBase}/${stream}`);
+      } catch {
+        reconnect();
+        return;
+      }
+      ws.onopen = () => { attempts = 0; };
+      ws.onmessage = (event) => {
+        let frame: unknown;
+        try {
+          frame = JSON.parse(typeof event.data === 'string' ? event.data : '');
+        } catch {
+          return;
+        }
+        const trade = parseAggTrade(frame);
+        if (trade && !stopped) onTrades([trade]);
+      };
+      ws.onclose = () => {
+        ws = null;
+        reconnect();
+      };
+    };
+    const reconnect = (): void => {
+      if (stopped) return;
+      retry = setTimeout(open, Math.min(30_000, 1000 * 2 ** attempts++));
+    };
+    open();
+    return () => {
+      stopped = true;
+      if (retry) clearTimeout(retry);
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.close();
+        ws = null;
+      }
+    };
   }
 
   /** Up to `limit` klines (1000 at most) that open before `before` (ms). */

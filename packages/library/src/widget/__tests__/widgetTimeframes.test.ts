@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { availableTimeframes, initialTimeframeFavorites, timeframeLabel, WIDGET_TIMEFRAMES, WIDGET_TIMEFRAME_FAVORITES, parseTimeframeInput } from '../widgetTimeframes.js';
+import { availableTimeframes, initialTimeframeFavorites, timeframeLabel, WIDGET_TIMEFRAMES, WIDGET_TIMEFRAME_FAVORITES, parseTimeframeInput, withExtraTimeframes } from '../widgetTimeframes.js';
 
 describe('timeframeLabel', () => {
   it('upper-cases hours, days and weeks, and keeps minutes apart from months', () => {
@@ -63,6 +63,8 @@ describe('parseTimeframeInput', () => {
     ['2M', '2M'],
     ['30s', '30s'],
     ['90S', '90s'],
+    ['100T', '100T'],
+    ['100t', '100T'],
   ])('reads %j as %s', (text, tf) => {
     expect(parseTimeframeInput(text)).toBe(tf);
   });
@@ -77,7 +79,13 @@ describe('parseTimeframeInput', () => {
     expect(parseTimeframeInput(text)).toBe(tf);
   });
 
-  it.each(['', 'abc', '0', '0m', '1.5h', '-5m', '7x', 'm', '10000m'])('rejects %j', (text) => {
+  it.each(['', 'abc', '0', '0m', '1.5h', '-5m', '7x', 'm', '10000m', '0T', '10000T'])('rejects %j', (text) => {
     expect(parseTimeframeInput(text)).toBeNull();
+  });
+});
+
+describe('withExtraTimeframes', () => {
+  it('takes tick timeframes, before the time ones, fewest trades first', () => {
+    expect(withExtraTimeframes(['1m', '1h'], ['100T', '10T', '5m'])).toEqual(['10T', '100T', '1m', '5m', '1h']);
   });
 });

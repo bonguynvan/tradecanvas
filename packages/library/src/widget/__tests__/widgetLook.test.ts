@@ -100,7 +100,7 @@ describe('the stylesheet’s look', () => {
     for (const panel of ['.tcw-alerts-panel', '.tcw-datawin', '.tcw-ladder', '.tcw-tree-panel']) {
       expect(ruleBody(panel), panel).toContain('top: var(--tcw-panel-top)');
     }
-    expect(ruleBody('.tcw-style-panel')).toContain('left: var(--tcw-panel-left)');
+    expect(ruleBody('.tcw-style-panel')).toContain('inset-inline-start: var(--tcw-panel-left)');
   });
 
   it('keeps tap targets on phones: the variants’ sizes give way under 768 px', () => {
@@ -109,6 +109,11 @@ describe('the stylesheet’s look', () => {
     expect(phone.length).toBeLessThan(variants.length);
     expect(phone).toContain(".tcw-root[data-tcw-intervals='segmented'] > .tcw-toolbar > .tcw-tf-group .tcw-btn");
     expect(phone).toContain(".tcw-root[data-tcw-toolbar='floating'] > .tcw-toolbar");
+  });
+
+  it('writes directions logically, so a right-to-left widget mirrors', () => {
+    const physical = [...css.matchAll(/(?<![\w-])(?:text-align:\s*(?:left|right)|border-(?:left|right)(?:-color)?:|margin-(?:left|right):\s*auto)/g)].map((m) => m[0]);
+    expect(physical).toEqual([]);
   });
 
   it('shows a chosen button by the look’s tokens', () => {

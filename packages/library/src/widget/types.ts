@@ -7,10 +7,33 @@ import type {
   DrawingToolType,
   DataAdapter,
   ChartOptions,
+  NewsItem,
   PriceScaleMode,
+  QuoteSource,
   SymbolInfo,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
+import type { WatchlistList } from './WatchlistStore.js';
+
+/** The watchlist's lists and where its rows' quotes come from. */
+export interface WatchlistOptions {
+  /** The lists to start with; default one list of `symbols`. */
+  lists?: WatchlistList[];
+  /** The list shown first, by id. */
+  activeList?: string;
+  /** Keep the lists in this browser (localStorage) between visits. Default `false`. */
+  persist?: boolean;
+  /** The localStorage key when `persist` is on. Default `'tcw:watchlists'`. */
+  storageKey?: string;
+  /**
+   * Where the rows' quotes come from: default the adapter's `subscribeQuotes`
+   * when it has one (Binance does); `false` for only what you push with
+   * `setQuotes` / `setWatchlistEntry`.
+   */
+  quotes?: QuoteSource | false;
+  /** After every change to the lists (to keep them yourself). */
+  onChange?: (lists: WatchlistList[], activeList: string) => void;
+}
 
 export interface ChartWidgetOptions {
   symbol?: string;
@@ -140,10 +163,36 @@ export interface ChartWidgetOptions {
   chartOptions?: Partial<ChartOptions>;
 
   /**
-   * Render a watchlist sidebar on the right showing all configured symbols
-   * with last price, % change, and a mini sparkline. Default `false`.
+   * A watchlist sidebar on the right: lists of symbols with last price,
+   * % change and a mini sparkline; lists can be added, renamed, deleted and
+   * reordered. `true` starts with one list of `symbols`. Default `false`.
    */
-  watchlist?: boolean;
+  watchlist?: boolean | WatchlistOptions;
+
+  /**
+   * The symbol info panel (names, price and move, market status, the day's
+   * numbers, hours, news) and its toolbar button. Default `true`.
+   */
+  symbolInfo?: boolean;
+
+  /**
+   * Buttons over the chart, shown while the pointer is on it: zoom out and
+   * in, scroll earlier and later, reset the view. Default `true`.
+   */
+  navigation?: boolean;
+
+  /**
+   * Writing direction of the widget's chrome: `'rtl'` mirrors the toolbar,
+   * drawing tools, menus and dialogs (the chart keeps time running left to
+   * right). Default `'auto'`: right to left for Arabic, Hebrew, Persian, Urdu.
+   */
+  dir?: 'ltr' | 'rtl' | 'auto';
+
+  /**
+   * Headlines for the symbol info panel, newest first; default the adapter's
+   * `fetchNews` when it has one. Links that aren't web pages are dropped.
+   */
+  news?: (symbol: string, limit: number) => Promise<NewsItem[]>;
 
   /**
    * Drag-and-drop CSV / JSON file import onto the chart. Default `true`.
@@ -291,6 +340,8 @@ export interface ToolbarConfig {
 
 export interface ToolbarCallbacks {
   onSymbolClick: () => void;
+  /** The symbol info button: shown only when given. */
+  onSymbolInfo?: () => void;
   onTimeframe: (tf: TimeFrame) => void;
   /** Pin or unpin a timeframe; enables the timeframe menu. */
   onToggleTimeframeFavorite?: (tf: TimeFrame) => void;

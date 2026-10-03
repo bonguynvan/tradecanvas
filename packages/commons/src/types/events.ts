@@ -67,7 +67,17 @@ export type ChartEventType =
    * Something a saved layout holds may have changed: drawings, indicators,
    * alerts, the chart type or the theme. Fires often; debounce it.
    */
-  | 'stateChange';
+  | 'stateChange'
+  /** The chart type changed (`setChartType`). */
+  | 'chartTypeChange'
+  /** The stream moved to another symbol (`connect`, `switchStream`). */
+  | 'symbolChange'
+  /** The stream moved to another timeframe (`connect`, `setTimeframe`, `switchStream`). */
+  | 'timeframeChange'
+  /** The undo history changed: whether there is something to undo or redo. */
+  | 'historyChange'
+  /** The drawings selected changed. */
+  | 'drawingSelect';
 
 export interface ChartEvent<T = unknown> {
   type: ChartEventType;
@@ -285,6 +295,12 @@ export interface ChartEventMap {
   historyLoad: HistoryLoadPayload;
   /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */
   symbolInfoChange: { info: SymbolInfo | null };
+  chartTypeChange: { type: string; previous: string };
+  symbolChange: { symbol: string; previous: string | null };
+  timeframeChange: { timeframe: string; previous: string | null };
+  historyChange: { canUndo: boolean; canRedo: boolean };
+  /** The selected drawings' ids, the primary (its handles show) first; none: nothing selected. */
+  drawingSelect: { ids: string[]; primary: string | null };
   indicatorAdd: IndicatorChangePayload;
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */

@@ -4,6 +4,12 @@ export interface SymbolSession {
   start: string;
   /** Closing time, `'16:00'`; earlier than `start` wraps past midnight. */
   end: string;
+  /**
+   * Weekdays it opens on, 0 Sunday … 6 Saturday (a session past midnight
+   * belongs to the day it starts); every day when left out. The market
+   * status reads them.
+   */
+  days?: number[];
 }
 
 /** What a feed knows about a symbol: names, price steps and trading hours. */

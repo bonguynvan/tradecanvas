@@ -278,7 +278,33 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>Undo for your own changes</h3>
+<p>
+  <code>recordUndo</code> puts a change of yours in the chart's undo history, with its drawings and
+  indicators: Ctrl/Cmd+Z calls <code>undo</code>, redo calls <code>redo</code>. Changes about the same
+  <code>subject</code> close together are one step. ChartWidget records its settings and chart type this way.
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>Keyboard and screen readers</h3>
+<p>
+  A focused chart scrolls with the arrow keys (Shift for ten bars), zooms with ↑/↓ or +/−, and goes to
+  the start and end with Home and End. For screen readers it is an application with a summary
+  (symbol, type, timeframe, last price); after the keys move the view it says what is on screen, and
+  comma and period read the bars one at a time. <code>a11y.labels</code> puts it in your language;
+  <code>a11y: false</code> leaves it out. <code>scrollBars(n)</code> and <code>selectDrawing(id)</code>
+  do from code what the keys and a click do.
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   Prices from the pointer can be put on the market's grid with
   <code>chart.roundPrice(price)</code>: a multiple of the symbol's <code>minTick</code>, else
@@ -442,24 +468,56 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   to calendar boundaries. Input bars are never mutated.
 </p>
 
-<h3>Watchlist sidebar</h3>
+<h3>Watchlists</h3>
 <p>
-  Opt-in right-side panel showing all configured symbols with last price, %
-  change, and a mini sparkline:
+  A right-side panel of lists of symbols, each row with last price, % change and a sparkline. Lists
+  are switched, created, renamed and deleted from its menu; symbols are added from the symbol search
+  (+), removed, and reordered by dragging or Alt+↑/↓. Rows take quotes from the adapter's
+  <code>subscribeQuotes</code>, a quote source of yours, or what you push.
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code> shows one list of <code>symbols</code>, as before; <code>setWatchlistEntry</code>
+  still pushes a row's price, move and sparkline.
+</p>
+
+<h3>Symbol info</h3>
+<p>
+  A panel from the toolbar's ⓘ button (or the command palette): the symbol's names, last price and
+  move, the market's status counting down to the next open or close, the day's open, range, volume,
+  prior close, bid and ask, tick size, currency, zone and trading hours, and news. The status bar shows
+  when the market is closed.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>Navigation, undo and direction</h3>
+<p>
+  Buttons over the chart — zoom out and in, scroll earlier and later (held, they keep going), reset —
+  show while the mouse is on it (<code>navigation: false</code> leaves them out). Settings changes and
+  chart type changes are undone with Ctrl/Cmd+Z, with drawings and indicators. In Arabic, Hebrew,
+  Persian or Urdu the widget mirrors (<code>dir: 'auto'</code>; or <code>'rtl'</code> / <code>'ltr'</code>);
+  the chart keeps time running left to right.
+</p>
 
 <h3>Drawing favorites</h3>
 <p>

@@ -31,6 +31,7 @@ export type KnownTimeFrame =
  * `'2d'`. Any count works; `parseTimeframe` / `isTimeFrame` check a string at
  * runtime.
  */
-export type TimeFrame = KnownTimeFrame | (`${number}${TimeFrameUnit}` & {});
+/** A time timeframe, or a tick one (`'100T'`: bars of 100 trades, from a feed with trades). */
+export type TimeFrame = KnownTimeFrame | (`${number}${TimeFrameUnit}` & {}) | (`${number}T` & {});
 
 export type DataSeries = OHLCBar[];

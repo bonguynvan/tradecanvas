@@ -132,6 +132,8 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   }
 
   private alignToTimeframe(timestamp: number): number {
+    // A timeframe without a length (ticks): each tick keeps its own time.
+    if (!(this.timeframeMs > 0)) return timestamp;
     return Math.floor(timestamp / this.timeframeMs) * this.timeframeMs;
   }
 }

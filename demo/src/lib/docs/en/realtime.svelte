@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>Any feed in ~20 lines</h2>
@@ -57,6 +66,48 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>Quotes for many symbols</h2>
+<p>
+  A feed with <code>subscribeQuotes</code> sends quotes (last price, the day's change, high, low,
+  volume, bid and ask) for many symbols at once until you stop it. <code>BinanceAdapter</code> sends
+  a 24 h snapshot, then its mini-ticker stream; <code>MockAdapter</code> makes quotes up. A widget's
+  watchlist fills its rows from it.
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>Tick charts</h2>
+<p>
+  A tick timeframe — <code>'100T'</code> — draws a bar per 100 trades. It is built from a feed's
+  trades: its recent ones for the history (<code>fetchTrades</code>), then its live ones
+  (<code>subscribeTrades</code>). <code>BinanceAdapter</code> streams aggregate trades. A tick chart
+  has no countdown and pages in no older history; a feed without trades refuses tick timeframes.
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>Market status and news</h2>
+<p>
+  <code>marketStatus(info, now)</code> tells whether a symbol's market is open at a moment, from its
+  hours in its exchange's zone (clock changes included), and when that changes. Sessions can name the
+  weekdays they open on. A feed's <code>fetchNews</code> gives headlines for the widget's symbol info
+  panel; <code>readNews</code> keeps only items with a title and a time, and links to web pages.
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>Reconnect</h2>
 <p><code>ReconnectManager</code> handles exponential backoff with a cap and a final give-up.</p>

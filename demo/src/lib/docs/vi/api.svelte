@@ -278,7 +278,33 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>Hoàn tác cho thay đổi của riêng bạn</h3>
+<p>
+  <code>recordUndo</code> đưa một thay đổi của bạn vào lịch sử hoàn tác của biểu đồ, cùng với hình vẽ và
+  chỉ báo: Ctrl/Cmd+Z gọi <code>undo</code>, làm lại thì gọi <code>redo</code>. Các thay đổi về cùng một
+  <code>subject</code> diễn ra sát nhau được tính là một bước. ChartWidget ghi lại cài đặt và loại biểu đồ của nó theo cách này.
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>Bàn phím và trình đọc màn hình</h3>
+<p>
+  Khi đang có focus, biểu đồ cuộn bằng các phím mũi tên (giữ Shift để cuộn mười nến), phóng to thu nhỏ bằng ↑/↓
+  hoặc +/−, và về đầu, về cuối bằng Home và End. Với trình đọc màn hình, biểu đồ là một ứng dụng có phần tóm tắt
+  (mã, loại biểu đồ, khung thời gian, giá cuối); sau khi các phím di chuyển khung nhìn, nó đọc những gì đang hiện trên
+  màn hình, và dấu phẩy, dấu chấm đọc từng nến một. <code>a11y.labels</code> chuyển các câu đó sang ngôn ngữ của bạn;
+  <code>a11y: false</code> bỏ hẳn phần này. <code>scrollBars(n)</code> và <code>selectDrawing(id)</code>
+  làm bằng code những gì các phím và một cú bấm chuột làm.
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   Giá lấy từ con trỏ chuột có thể được làm tròn theo bước giá của thị trường bằng
   <code>chart.roundPrice(price)</code>: về bội số của <code>minTick</code> của mã, nếu không có thì theo
@@ -443,24 +469,56 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   theo ranh giới lịch. Nến đầu vào không bao giờ bị sửa đổi.
 </p>
 
-<h3>Thanh bên danh mục theo dõi</h3>
+<h3>Danh mục theo dõi</h3>
 <p>
-  Bảng bên phải (bật khi cần) liệt kê mọi mã đã cấu hình kèm giá cuối, %
-  thay đổi và một sparkline nhỏ:
+  Bảng bên phải gồm các danh sách mã, mỗi dòng có giá cuối, % thay đổi và một sparkline. Chuyển, tạo,
+  đổi tên và xoá danh sách từ menu của bảng; thêm mã từ ô tìm mã (+), bỏ mã, và sắp xếp lại bằng cách kéo
+  hoặc Alt+↑/↓. Các dòng lấy giá từ <code>subscribeQuotes</code> của adapter, từ một nguồn giá của riêng bạn,
+  hoặc từ những gì bạn đẩy vào.
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code> vẫn hiện một danh sách gồm các <code>symbols</code> như trước; <code>setWatchlistEntry</code>
+  vẫn đẩy giá, mức thay đổi và sparkline của một dòng.
+</p>
+
+<h3>Thông tin mã</h3>
+<p>
+  Một bảng mở từ nút ⓘ trên thanh công cụ (hoặc từ bảng lệnh): tên của mã, giá cuối và mức thay đổi, trạng thái
+  thị trường kèm đếm ngược tới lần mở hoặc đóng cửa kế tiếp, giá mở cửa, biên độ và khối lượng trong ngày, giá đóng cửa
+  phiên trước, giá mua và giá bán, bước giá, tiền tệ, múi giờ và giờ giao dịch, cùng tin tức. Thanh trạng thái báo
+  khi thị trường đóng cửa.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>Điều hướng, hoàn tác và hướng chữ</h3>
+<p>
+  Các nút trên biểu đồ — thu nhỏ và phóng to, cuộn về trước và về sau (giữ nút thì cuộn tiếp), đặt lại —
+  hiện ra khi chuột nằm trên biểu đồ (<code>navigation: false</code> để bỏ chúng). Thay đổi cài đặt và đổi loại
+  biểu đồ được hoàn tác bằng Ctrl/Cmd+Z, cùng với hình vẽ và chỉ báo. Với tiếng Ả Rập, tiếng Do Thái, tiếng Ba Tư
+  hoặc tiếng Urdu, widget đảo chiều (<code>dir: 'auto'</code>; hoặc <code>'rtl'</code> / <code>'ltr'</code>);
+  biểu đồ vẫn giữ thời gian chạy từ trái sang phải.
+</p>
 
 <h3>Công cụ vẽ yêu thích</h3>
 <p>

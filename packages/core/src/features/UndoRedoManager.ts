@@ -3,7 +3,7 @@ import type { SnapshotIndicator } from './ChartState.js';
 
 export interface UndoableAction {
   /** `'indicators'`: the chart's indicators changed (added, removed, edited, moved between panes). */
-  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch' | 'drawingOrder' | 'indicators';
+  type: 'drawingCreate' | 'drawingRemove' | 'drawingModify' | 'drawingBatch' | 'drawingOrder' | 'indicators' | 'custom';
   /** State before the action (null for create) */
   before: DrawingState | null;
   /** State after the action (null for remove) */
@@ -16,6 +16,8 @@ export interface UndoableAction {
   order?: { before: string[]; after: string[] };
   /** For 'indicators': the indicators before and after, and what changed (to merge a burst of edits). */
   indicators?: { before: SnapshotIndicator[]; after: SnapshotIndicator[]; subject?: string; at?: number };
+  /** For 'custom': a change recorded by its owner (`Chart.recordUndo`), and what it was about (to merge a burst). */
+  custom?: { undo: () => void; redo: () => void; subject?: string; at: number };
 }
 
 export class UndoRedoManager {

@@ -262,7 +262,30 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>为你自己的改动提供撤销</h3>
+<p>
+  <code>recordUndo</code> 把你的一次改动放进图表的撤销历史，和画线、指标放在一起：Ctrl/Cmd+Z 调用 <code>undo</code>，
+  重做调用 <code>redo</code>。针对同一 <code>subject</code>、时间上相近的改动算作一步。ChartWidget 就是这样记录它的设置和图表类型的。
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>键盘与屏幕阅读器</h3>
+<p>
+  获得焦点的图表可以用方向键滚动（按住 Shift 一次十根K线），用 ↑/↓ 或 +/− 缩放，用 Home 和 End 跳到开头和末尾。
+  对屏幕阅读器而言，它是一个带摘要（品种、类型、周期、最新价）的应用程序；按键移动视图后，它会说出屏幕上显示的内容，
+  逗号和句号键则逐根朗读K线。<code>a11y.labels</code> 把这些文字换成你的语言；<code>a11y: false</code> 则不加这部分。
+  <code>scrollBars(n)</code> 和 <code>selectDrawing(id)</code> 用代码完成按键和点击所做的事。
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   来自指针的价格可以用 <code>chart.roundPrice(price)</code> 对齐到市场的价格刻度：
   取品种 <code>minTick</code> 的整数倍，未设置时按品种的价格精度取整。ChartWidget 的菜单和下单窗口都会这样做。
@@ -418,24 +441,52 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   月 / 季度 / 年对齐日历边界。输入的K线永远不会被修改。
 </p>
 
-<h3>自选列表侧边栏</h3>
+<h3>自选列表</h3>
 <p>
-  可选开启的右侧面板，列出所有已配置的品种，显示最新价、
-  涨跌幅和迷你走势图：
+  右侧面板中有多个品种列表，每一行显示最新价、涨跌幅 % 和走势图。列表可在面板菜单中切换、新建、重命名和删除；
+  品种可从代码搜索（+）添加，可移除，也可通过拖动或 Alt+↑/↓ 重新排序。各行的报价来自适配器的
+  <code>subscribeQuotes</code>、你自己的报价源，或你推送的数据。
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code> 仍和以前一样显示一个由 <code>symbols</code> 组成的列表；<code>setWatchlistEntry</code>
+  仍可推送某一行的价格、涨跌和走势图。
+</p>
+
+<h3>品种信息</h3>
+<p>
+  从工具栏的 ⓘ 按钮（或命令面板）打开的面板：品种的名称、最新价和涨跌、市场状态及距下次开盘或收盘的倒计时、
+  当日开盘价、波动区间、成交量、昨收、买价和卖价、最小变动价位、货币、时区和交易时段，以及新闻。市场休市时，状态栏会显示出来。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>导航、撤销与文字方向</h3>
+<p>
+  图表上的按钮——缩小和放大、向前和向后滚动（按住会持续滚动）、重置——在鼠标位于图表上时显示
+  （<code>navigation: false</code> 可去掉它们）。设置的改动和图表类型的切换可以用 Ctrl/Cmd+Z 撤销，与画线和指标一样。
+  在阿拉伯语、希伯来语、波斯语或乌尔都语下，组件会左右镜像（<code>dir: 'auto'</code>；或 <code>'rtl'</code> / <code>'ltr'</code>）；
+  图表中的时间仍从左向右推进。
+</p>
 
 <h3>收藏的画线工具</h3>
 <p>

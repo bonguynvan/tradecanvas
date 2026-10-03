@@ -414,7 +414,7 @@
   border: none;
   background: transparent;
   font-family: inherit;
-  text-align: left;
+  text-align: start;
   border-radius: var(--tcw-radius-sm);
   gap: 12px;
 }
@@ -1054,7 +1054,7 @@
   width: var(--tcw-sidebar-w);
   flex-shrink: 0;
   background: linear-gradient(180deg, var(--tcw-bg-elevated) 0%, var(--tcw-bg-surface) 100%);
-  border-right: var(--tcw-border-w) solid var(--tcw-border);
+  border-inline-end: var(--tcw-border-w) solid var(--tcw-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1145,7 +1145,7 @@
 
 .tcw-flyout {
   position: absolute;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-width: 180px;
@@ -1204,7 +1204,7 @@
   gap: 10px;
   border: none;
   background: transparent;
-  text-align: left;
+  text-align: start;
   font-family: inherit;
   border-radius: var(--tcw-radius-sm);
   transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
@@ -1595,7 +1595,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-left: auto;
+  margin-inline-start: auto;
   min-width: 0;
   white-space: nowrap;
 }
@@ -1658,7 +1658,7 @@
 .tcw-range-goto {
   display: inline-grid;
   place-items: center;
-  margin-left: 6px;
+  margin-inline-start: 6px;
   padding: 4px 6px;
 }
 
@@ -1872,7 +1872,7 @@
   border: none;
   background: transparent;
   font-family: inherit;
-  text-align: left;
+  text-align: start;
   transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
   gap: 10px;
   border-radius: var(--tcw-radius);
@@ -1939,7 +1939,7 @@
   width: 220px;
   flex-shrink: 0;
   background: var(--tcw-bg-surface);
-  border-left: 1px solid var(--tcw-border);
+  border-inline-start: 1px solid var(--tcw-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1947,13 +1947,143 @@
 }
 
 .tcw-watchlist-header {
-  padding: 10px 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 8px;
+  border-bottom: 1px solid var(--tcw-divider);
+}
+
+/* The shown list's name: opens the lists menu. */
+.tcw-watchlist-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--tcw-control-h-sm);
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   text-transform: var(--tcw-label-case);
   letter-spacing: var(--tcw-label-tracking);
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.tcw-watchlist-name::after {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-inline-start: auto;
+  border: 4px solid transparent;
+  border-top-color: currentColor;
+  border-bottom-width: 0;
+  opacity: 0.7;
+}
+
+.tcw-watchlist-add {
+  flex: none;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
   color: var(--tcw-text-muted);
-  border-bottom: 1px solid var(--tcw-divider);
+  font: inherit;
+  font-size: var(--tcw-font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tcw-watchlist-name:hover,
+.tcw-watchlist-add:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+.tcw-watchlist-name:focus-visible,
+.tcw-watchlist-add:focus-visible,
+.tcw-watchlist-input:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* The lists menu, under the header. */
+.tcw-watchlist-menu {
+  top: calc(100% - 2px);
+  left: 6px;
+  right: 6px;
+  margin-top: 0;
+}
+.tcw-watchlist-count {
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+}
+.tcw-watchlist-menu .tcw-danger {
+  color: var(--tcw-red);
+}
+
+/* Naming a list in place. */
+.tcw-watchlist-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--tcw-control-h-sm);
+  padding: 0 8px;
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-input-radius);
+  background: var(--tcw-bg);
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+}
+
+.tcw-watchlist-empty {
+  padding: 16px 14px;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.5;
+}
+
+/* A row's remove button shows on hover or focus, over its numbers. */
+.tcw-watchlist-remove {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-bg-elevated);
+  color: var(--tcw-text-muted);
+  font: inherit;
+  font-size: var(--tcw-font-size);
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-watchlist-row:hover .tcw-watchlist-remove,
+.tcw-watchlist-row:focus-within .tcw-watchlist-remove {
+  opacity: 1;
+}
+.tcw-watchlist-remove:hover {
+  color: var(--tcw-red);
+}
+.tcw-watchlist-row.tcw-watchlist-dragging {
+  opacity: 0.45;
 }
 
 .tcw-watchlist-list {
@@ -1963,6 +2093,7 @@
 }
 
 .tcw-watchlist-row {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
@@ -1970,7 +2101,7 @@
   padding: 8px 12px;
   cursor: pointer;
   transition: background var(--tcw-dur-fast) var(--tcw-ease);
-  border-left: 2px solid transparent;
+  border-inline-start: 2px solid transparent;
   outline: none;
 }
 
@@ -1980,12 +2111,12 @@
 
 .tcw-watchlist-row:focus-visible {
   background: var(--tcw-hover-bg);
-  border-left-color: var(--tcw-accent);
+  border-inline-start-color: var(--tcw-accent);
 }
 
 .tcw-watchlist-row.tcw-watchlist-active {
   background: var(--tcw-accent-soft);
-  border-left-color: var(--tcw-accent);
+  border-inline-start-color: var(--tcw-accent);
 }
 
 .tcw-watchlist-symbol {
@@ -2081,7 +2212,7 @@
   z-index: 4;
   pointer-events: none;
   background: color-mix(in srgb, var(--tcw-bg) 62%, transparent);
-  border-left: 1.5px dashed var(--tcw-accent);
+  border-inline-start: 1.5px dashed var(--tcw-accent);
 }
 
 .tcw-replay-group {
@@ -2297,7 +2428,7 @@
 .tcw-hotkey-label {
   font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text-dim);
-  text-align: right;
+  text-align: end;
   letter-spacing: -0.005em;
 }
 
@@ -2465,7 +2596,7 @@
 .tcw-alerts-panel {
   position: absolute;
   top: var(--tcw-panel-top);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 40;
   width: 300px;
   max-width: calc(100vw - 24px);
@@ -2662,7 +2793,7 @@
 .tcw-datawin {
   position: absolute;
   top: var(--tcw-panel-top);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 38;
   width: 200px;
   display: flex;
@@ -2731,7 +2862,7 @@
 .tcw-ladder {
   position: absolute;
   top: var(--tcw-panel-top);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 41;
   width: 240px;
   display: flex;
@@ -2820,8 +2951,8 @@
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-text-dim);
-  border-left: 1px solid var(--tcw-border);
-  border-right: 1px solid var(--tcw-border);
+  border-inline-start: 1px solid var(--tcw-border);
+  border-inline-end: 1px solid var(--tcw-border);
 }
 .tcw-ladder-price.tcw-ask { color: var(--tcw-red); }
 .tcw-ladder-price.tcw-bid { color: var(--tcw-green); }
@@ -2895,7 +3026,7 @@
 .tcw-style-panel {
   position: absolute;
   bottom: 12px;
-  left: var(--tcw-panel-left);
+  inset-inline-start: var(--tcw-panel-left);
   z-index: 40;
   width: 220px;
   display: flex;
@@ -3023,7 +3154,7 @@
   border: none;
   border-radius: var(--tcw-control-radius);
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 .tcw-style-apply:hover { background: var(--tcw-bg-surface); }
 .tcw-style-tdot { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; }
@@ -3055,7 +3186,7 @@
 }
 .tcw-settings-range-val {
   min-width: 38px;
-  text-align: right;
+  text-align: end;
   font-size: var(--tcw-font-size-sm);
   font-variant-numeric: tabular-nums;
   color: var(--tcw-text-dim);
@@ -3131,7 +3262,7 @@
 .tcw-tree-panel {
   position: absolute;
   top: var(--tcw-panel-top);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 39;
   width: 280px;
   max-width: calc(100vw - 24px);
@@ -3281,7 +3412,7 @@
 .tcw-tree-member {
   margin-left: 14px;
   padding-left: 10px;
-  border-left: 1px solid var(--tcw-border-strong);
+  border-inline-start: 1px solid var(--tcw-border-strong);
   border-radius: 0 var(--tcw-radius-sm) var(--tcw-radius-sm) 0;
 }
 .tcw-tree-rename {
@@ -3349,7 +3480,7 @@
 .tcw-drawing-settings-tools {
   display: flex;
   gap: 14px;
-  margin-right: auto;
+  margin-inline-end: auto;
 }
 .tcw-drawing-text {
   min-height: 56px;
@@ -3413,7 +3544,7 @@
   color: var(--tcw-text);
   font: inherit;
   font-size: var(--tcw-font-size);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .tcw-context-item svg, .tcw-context-icon { flex: none; width: 14px; height: 14px; color: var(--tcw-text-muted); }
@@ -3493,7 +3624,7 @@
   background: var(--tcw-bg-surface);
   color: var(--tcw-text-muted);
   font-weight: var(--tcw-weight);
-  text-align: left;
+  text-align: start;
   border-bottom: 1px solid var(--tcw-divider);
 }
 .tcw-account-table td {
@@ -3596,7 +3727,7 @@
   background: transparent;
   color: var(--tcw-text);
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   border-radius: var(--tcw-radius);
 }
@@ -3793,6 +3924,252 @@
   max-width: 240px;
 }
 .tcw-marker-tip strong { display: block; font-size: var(--tcw-font-size-sm); }
+
+/* === Navigation over the chart ===
+ * Centred on the plot's bottom edge, shown while a mouse is over the chart. */
+.tcw-nav {
+  position: absolute;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: calc(var(--tcw-control-radius) + 3px);
+  background: var(--tcw-bg-elevated);
+  box-shadow: var(--tcw-menu-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-nav.tcw-nav-shown {
+  opacity: 1;
+  pointer-events: auto;
+}
+.tcw-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tcw-control-h);
+  height: var(--tcw-control-h);
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+  touch-action: none;
+}
+.tcw-nav-btn:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+.tcw-nav-btn:active {
+  background: var(--tcw-active-bg);
+}
+.tcw-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+.tcw-nav-btn svg {
+  width: var(--tcw-icon);
+  height: var(--tcw-icon);
+}
+@media (hover: none) {
+  .tcw-nav { display: none; }
+}
+
+/* === Symbol info ===
+ * Top left, beside the drawing tools: the panels on the right stay clear. */
+.tcw-syminfo {
+  position: absolute;
+  top: var(--tcw-panel-top);
+  inset-inline-start: var(--tcw-panel-left);
+  z-index: 38;
+  width: 288px;
+  max-height: calc(100% - var(--tcw-panel-top) - 12px);
+  display: flex;
+  flex-direction: column;
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-panel-radius);
+  box-shadow: var(--tcw-menu-shadow);
+  overflow: hidden;
+  animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
+}
+.tcw-syminfo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+  border-bottom: 1px solid var(--tcw-border);
+}
+.tcw-syminfo-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+.tcw-syminfo-close:hover { background: var(--tcw-bg-surface); color: var(--tcw-text); }
+.tcw-syminfo-body,
+.tcw-syminfo-news {
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+.tcw-syminfo-body {
+  display: grid;
+  gap: 10px;
+}
+.tcw-syminfo-symbol {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+}
+.tcw-syminfo-desc {
+  font-size: var(--tcw-font-size-sm);
+  color: var(--tcw-text-dim);
+}
+.tcw-syminfo-meta {
+  margin-top: 2px;
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+}
+.tcw-syminfo-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.tcw-syminfo-price {
+  font-size: calc(var(--tcw-font-size) + 7px);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+}
+.tcw-syminfo-change { font-size: var(--tcw-font-size-sm); }
+.tcw-syminfo-change.tcw-up { color: var(--tcw-green); }
+.tcw-syminfo-change.tcw-down { color: var(--tcw-red); }
+.tcw-syminfo-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--tcw-font-size-sm);
+  color: var(--tcw-text-dim);
+}
+.tcw-syminfo-status::before,
+.tcw-status-market::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tcw-text-muted);
+}
+.tcw-syminfo-status[data-state='open']::before,
+.tcw-syminfo-status[data-state='always']::before,
+.tcw-status-market[data-state='open']::before {
+  background: var(--tcw-green);
+}
+.tcw-syminfo-stats {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--tcw-divider);
+}
+.tcw-syminfo-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--tcw-font-size-sm);
+}
+.tcw-syminfo-stat dt { color: var(--tcw-text-muted); }
+.tcw-syminfo-stat dd {
+  margin: 0;
+  color: var(--tcw-text);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.tcw-syminfo-news {
+  border-top: 1px solid var(--tcw-divider);
+}
+.tcw-syminfo-news-title {
+  margin-bottom: 8px;
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text-muted);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+.tcw-syminfo-news-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tcw-syminfo-news-item {
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.4;
+  color: var(--tcw-text);
+}
+.tcw-syminfo-news-item a {
+  color: var(--tcw-text);
+  text-decoration: none;
+}
+.tcw-syminfo-news-item a:hover { color: var(--tcw-accent); text-decoration: underline; }
+.tcw-syminfo-news-item a:focus-visible { outline: none; box-shadow: var(--tcw-ring); border-radius: var(--tcw-radius-xs); }
+.tcw-syminfo-news-meta,
+.tcw-syminfo-news-note {
+  margin-top: 2px;
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+}
+
+/* Numbers keep their sign on the left, and mixed text its own order, in a right-to-left widget too. */
+.tcw-watchlist-price,
+.tcw-watchlist-change,
+.tcw-syminfo-price,
+.tcw-syminfo-change {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+.tcw-syminfo-desc,
+.tcw-syminfo-meta,
+.tcw-syminfo-status,
+.tcw-syminfo-stat dd,
+.tcw-syminfo-news-meta {
+  unicode-bidi: plaintext;
+}
+
+/* The market's status in the status bar. */
+.tcw-status-market {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--tcw-text-muted);
+}
+
+@media (max-width: 640px) {
+  .tcw-syminfo {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-height: 70%;
+    border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
+  }
+}
 
 /* === The look: how chosen controls show, floating bars, segmented intervals ===
  * Each switch sets variables on its own root, which its parts read: a grid's

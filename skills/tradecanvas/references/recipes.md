@@ -352,3 +352,33 @@ The look changes shapes and sizes only; colours stay with `theme`. The
 widget loads no fonts, so load the families a look names. Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
+
+## Watchlists with live quotes, and a tick chart
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import { BinanceAdapter, marketStatus } from '@tradecanvas/chart';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  adapter: new BinanceAdapter(),      // its subscribeQuotes fills the rows
+  symbol: 'BTCUSDT',
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,
+  },
+});
+widget.addToWatchlist('BNBUSDT', 'alts');
+widget.toggleSymbolInfo(true);         // price, market status, the day, hours, news
+await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's trades
+
+// Your own feed's quotes instead
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }]);
+console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }] }, Date.now()).state);
+```
+
+Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
+`setQuotes`); tick timeframes need a feed with `fetchTrades` and
+`subscribeTrades`.
