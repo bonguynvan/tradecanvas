@@ -416,3 +416,31 @@ describe('InteractionManager — a marker under HTML laid over the chart', () =>
     expect(hovers).toEqual(['m1', null]);
   });
 });
+
+describe("InteractionManager — the browser's own drag", () => {
+  const nativeDrag = (from: Element) => {
+    const drag = new Event('dragstart', { bubbles: true, cancelable: true });
+    from.dispatchEvent(drag);
+    return drag;
+  };
+
+  it('cancels a native drag that starts on the chart, so the pan keeps its moves', () => {
+    const canvas = document.createElement('canvas');
+    el.appendChild(canvas);
+    expect(nativeDrag(canvas).defaultPrevented).toBe(true);
+  });
+
+  it('cancels one that starts anywhere while a press on the chart is held', () => {
+    el.dispatchEvent(at('mousedown', 200, { button: 0, buttons: 1 }));
+    const label = document.createElement('span');
+    document.body.appendChild(label);
+    expect(nativeDrag(label).defaultPrevented).toBe(true);
+    label.remove();
+  });
+
+  it("leaves the drags of HTML controls inside the chart alone", () => {
+    const control = document.createElement('div');
+    el.appendChild(control);
+    expect(nativeDrag(control).defaultPrevented).toBe(false);
+  });
+});

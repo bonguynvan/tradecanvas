@@ -378,6 +378,11 @@ export class Chart {
     container.style.overflow = 'hidden';
     container.tabIndex = 0; // Allow keyboard events
     container.style.outline = 'none';
+    // Nothing on the chart is text to select: a double-click would otherwise
+    // select its hidden screen-reader text, and the next press inside that
+    // selection would start the browser's own drag instead of a pan.
+    container.style.userSelect = 'none';
+    container.style.webkitUserSelect = 'none';
 
     // Initialize managers
     this.dataManager = new DataManager();

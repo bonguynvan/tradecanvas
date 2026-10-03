@@ -30,6 +30,11 @@ const live = () => host.querySelector<HTMLElement>('.tc-sr-live')!;
 const key = (k: string, init: KeyboardEventInit = {}) => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...init }));
 
 describe('chart accessibility', () => {
+  it('keeps its screen-reader text out of mouse selection, so a press stays a pan', () => {
+    chart = new Chart(host, { chartType: 'candlestick' });
+    expect(host.style.userSelect).toBe('none');
+  });
+
   it('is a focusable chart with a summary a screen reader reads', () => {
     chart = new Chart(host, { chartType: 'candlestick' });
     chart.setData(bars);
