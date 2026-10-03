@@ -87,6 +87,16 @@ import { MomentumIndicator } from './panel/Momentum.js';
 import { HistoricalVolatilityIndicator } from './panel/HistoricalVolatility.js';
 import { VolumeOscillatorIndicator } from './panel/VolumeOscillator.js';
 import { UlcerIndexIndicator } from './panel/UlcerIndex.js';
+import { StochasticMomentumIndexIndicator } from './panel/StochasticMomentumIndex.js';
+import { RelativeVolatilityIndexIndicator } from './panel/RelativeVolatilityIndex.js';
+import { TrendStrengthIndexIndicator } from './panel/TrendStrengthIndex.js';
+import { LinearRegressionSlopeIndicator } from './panel/LinearRegressionSlope.js';
+import { StandardErrorIndicator } from './panel/StandardError.js';
+import { AverageDayRangeIndicator } from './panel/AverageDayRange.js';
+import { NetVolumeIndicator } from './panel/NetVolume.js';
+import { StandardErrorBandsIndicator } from './overlay/StandardErrorBands.js';
+import { GuppyMMAIndicator } from './overlay/GuppyMMA.js';
+import { MARibbonIndicator } from './overlay/MARibbon.js';
 
 export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   // Overlays
@@ -176,4 +186,14 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new HistoricalVolatilityIndicator());
   engine.register(new VolumeOscillatorIndicator());
   engine.register(new UlcerIndexIndicator());
+  engine.register(new StochasticMomentumIndexIndicator());
+  engine.register(new RelativeVolatilityIndexIndicator());
+  engine.register(new TrendStrengthIndexIndicator());
+  engine.register(new LinearRegressionSlopeIndicator());
+  engine.register(new StandardErrorIndicator());
+  engine.register(new AverageDayRangeIndicator());
+  engine.register(new NetVolumeIndicator());
+  engine.register(new StandardErrorBandsIndicator());
+  engine.register(new GuppyMMAIndicator());
+  engine.register(new MARibbonIndicator());
 }

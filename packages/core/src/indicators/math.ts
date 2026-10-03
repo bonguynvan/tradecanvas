@@ -165,3 +165,45 @@ export function closeMeanAt(data: DataSeries, i: number, period: number): number
   for (let j = i - period + 1; j <= i; j++) sum += data[j].close;
   return sum / period;
 }
+
+/**
+ * The least-squares line through the `period` closes ending at bar `i`
+ * (x the bar's place in the window, 0 to period − 1): its slope, its value
+ * at the last bar, the standard error of the closes about it, and their
+ * correlation with time. Undefined before the window fills.
+ */
+export function regressionAt(
+  data: DataSeries,
+  i: number,
+  period: number,
+): { slope: number; end: number; stdErr: number; r: number } | undefined {
+  if (period < 2 || i < period - 1) return undefined;
+  const n = period;
+  const meanX = (n - 1) / 2;
+  let meanY = 0;
+  for (let k = 0; k < n; k++) meanY += data[i - n + 1 + k].close;
+  meanY /= n;
+  let sxy = 0;
+  let sxx = 0;
+  let syy = 0;
+  for (let k = 0; k < n; k++) {
+    const dx = k - meanX;
+    const dy = data[i - n + 1 + k].close - meanY;
+    sxy += dx * dy;
+    sxx += dx * dx;
+    syy += dy * dy;
+  }
+  const slope = sxy / sxx;
+  const intercept = meanY - slope * meanX;
+  let sse = 0;
+  for (let k = 0; k < n; k++) {
+    const e = data[i - n + 1 + k].close - (intercept + slope * k);
+    sse += e * e;
+  }
+  return {
+    slope,
+    end: intercept + slope * (n - 1),
+    stdErr: n > 2 ? Math.sqrt(sse / (n - 2)) : 0,
+    r: syy === 0 ? 0 : sxy / Math.sqrt(sxx * syy),
+  };
+}
