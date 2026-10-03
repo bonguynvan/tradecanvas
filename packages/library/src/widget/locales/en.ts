@@ -99,6 +99,26 @@ export const EN_MESSAGES = {
   'watchlist.empty': 'No symbols yet. Add one with +.',
   'watchlist.listName': 'List name',
 
+  // Symbol info
+  'symbolInfo.title': 'Symbol info',
+  'symbolInfo.open': 'Market open',
+  'symbolInfo.closed': 'Market closed',
+  'symbolInfo.always': 'Trades around the clock',
+  'symbolInfo.closesIn': 'closes {when}',
+  'symbolInfo.opensIn': 'opens {when}',
+  'symbolInfo.prevClose': 'Prev. close',
+  'symbolInfo.bid': 'Bid',
+  'symbolInfo.ask': 'Ask',
+  'symbolInfo.tick': 'Tick size',
+  'symbolInfo.currency': 'Currency',
+  'symbolInfo.timezone': 'Time zone',
+  'symbolInfo.hours': 'Trading hours',
+  'symbolInfo.news': 'News',
+  'symbolInfo.noNews': 'No news for this symbol.',
+  'symbolInfo.newsFailed': 'News could not be loaded.',
+  'symbolInfo.loading': 'Loading…',
+  'action.symbolInfo': 'Symbol info',
+
   // Status bar / connection
   'status.connecting': 'Connecting...',
   'status.live': 'Live',

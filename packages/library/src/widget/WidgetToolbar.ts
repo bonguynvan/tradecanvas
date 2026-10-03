@@ -55,6 +55,11 @@ export class WidgetToolbar {
     symbolBtn.dataset.role = 'symbol';
     symbolBtn.addEventListener('click', callbacks.onSymbolClick);
     el.appendChild(symbolBtn);
+    if (callbacks.onSymbolInfo) {
+      const infoBtn = this.iconBtn('info', this.t('symbolInfo.title'), callbacks.onSymbolInfo);
+      infoBtn.dataset.role = 'symbolInfo';
+      el.appendChild(infoBtn);
+    }
     el.appendChild(this.sep());
 
     // Timeframes: the favourites as buttons (plus the current one if it isn't

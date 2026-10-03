@@ -3925,6 +3925,183 @@
 }
 .tcw-marker-tip strong { display: block; font-size: var(--tcw-font-size-sm); }
 
+/* === Symbol info ===
+ * Top left, beside the drawing tools: the panels on the right stay clear. */
+.tcw-syminfo {
+  position: absolute;
+  top: var(--tcw-panel-top);
+  left: var(--tcw-panel-left);
+  z-index: 38;
+  width: 288px;
+  max-height: calc(100% - var(--tcw-panel-top) - 12px);
+  display: flex;
+  flex-direction: column;
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-panel-radius);
+  box-shadow: var(--tcw-menu-shadow);
+  overflow: hidden;
+  animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
+}
+.tcw-syminfo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+  border-bottom: 1px solid var(--tcw-border);
+}
+.tcw-syminfo-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+.tcw-syminfo-close:hover { background: var(--tcw-bg-surface); color: var(--tcw-text); }
+.tcw-syminfo-body,
+.tcw-syminfo-news {
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+.tcw-syminfo-body {
+  display: grid;
+  gap: 10px;
+}
+.tcw-syminfo-symbol {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+}
+.tcw-syminfo-desc {
+  font-size: var(--tcw-font-size-sm);
+  color: var(--tcw-text-dim);
+}
+.tcw-syminfo-meta {
+  margin-top: 2px;
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+}
+.tcw-syminfo-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.tcw-syminfo-price {
+  font-size: calc(var(--tcw-font-size) + 7px);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text);
+}
+.tcw-syminfo-change { font-size: var(--tcw-font-size-sm); }
+.tcw-syminfo-change.tcw-up { color: var(--tcw-green); }
+.tcw-syminfo-change.tcw-down { color: var(--tcw-red); }
+.tcw-syminfo-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--tcw-font-size-sm);
+  color: var(--tcw-text-dim);
+}
+.tcw-syminfo-status::before,
+.tcw-status-market::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tcw-text-muted);
+}
+.tcw-syminfo-status[data-state='open']::before,
+.tcw-syminfo-status[data-state='always']::before,
+.tcw-status-market[data-state='open']::before {
+  background: var(--tcw-green);
+}
+.tcw-syminfo-stats {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--tcw-divider);
+}
+.tcw-syminfo-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--tcw-font-size-sm);
+}
+.tcw-syminfo-stat dt { color: var(--tcw-text-muted); }
+.tcw-syminfo-stat dd {
+  margin: 0;
+  color: var(--tcw-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.tcw-syminfo-news {
+  border-top: 1px solid var(--tcw-divider);
+}
+.tcw-syminfo-news-title {
+  margin-bottom: 8px;
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text-muted);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+.tcw-syminfo-news-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tcw-syminfo-news-item {
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.4;
+  color: var(--tcw-text);
+}
+.tcw-syminfo-news-item a {
+  color: var(--tcw-text);
+  text-decoration: none;
+}
+.tcw-syminfo-news-item a:hover { color: var(--tcw-accent); text-decoration: underline; }
+.tcw-syminfo-news-item a:focus-visible { outline: none; box-shadow: var(--tcw-ring); border-radius: var(--tcw-radius-xs); }
+.tcw-syminfo-news-meta,
+.tcw-syminfo-news-note {
+  margin-top: 2px;
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+}
+
+/* The market's status in the status bar. */
+.tcw-status-market {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--tcw-text-muted);
+}
+
+@media (max-width: 640px) {
+  .tcw-syminfo {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-height: 70%;
+    border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
+  }
+}
+
 /* === The look: how chosen controls show, floating bars, segmented intervals ===
  * Each switch sets variables on its own root, which its parts read: a grid's
  * look never reaches into a chart that has one of its own. */

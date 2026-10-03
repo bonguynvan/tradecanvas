@@ -7,6 +7,7 @@ import type {
   DrawingToolType,
   DataAdapter,
   ChartOptions,
+  NewsItem,
   PriceScaleMode,
   QuoteSource,
   SymbolInfo,
@@ -169,6 +170,18 @@ export interface ChartWidgetOptions {
   watchlist?: boolean | WatchlistOptions;
 
   /**
+   * The symbol info panel (names, price and move, market status, the day's
+   * numbers, hours, news) and its toolbar button. Default `true`.
+   */
+  symbolInfo?: boolean;
+
+  /**
+   * Headlines for the symbol info panel, newest first; default the adapter's
+   * `fetchNews` when it has one. Links that aren't web pages are dropped.
+   */
+  news?: (symbol: string, limit: number) => Promise<NewsItem[]>;
+
+  /**
    * Drag-and-drop CSV / JSON file import onto the chart. Default `true`.
    * Set to `false` to disable (e.g. if the chart sits inside a larger
    * surface that already handles drops).
@@ -314,6 +327,8 @@ export interface ToolbarConfig {
 
 export interface ToolbarCallbacks {
   onSymbolClick: () => void;
+  /** The symbol info button: shown only when given. */
+  onSymbolInfo?: () => void;
   onTimeframe: (tf: TimeFrame) => void;
   /** Pin or unpin a timeframe; enables the timeframe menu. */
   onToggleTimeframeFavorite?: (tf: TimeFrame) => void;

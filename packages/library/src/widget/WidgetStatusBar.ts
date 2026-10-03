@@ -20,6 +20,7 @@ export class WidgetStatusBar {
   private dotEl: HTMLSpanElement;
   private messageEl: HTMLSpanElement;
   private infoEl: HTMLSpanElement;
+  private marketEl: HTMLSpanElement;
 
   constructor(host: HTMLElement, range?: StatusBarRange) {
     this.el = document.createElement('div');
@@ -39,6 +40,11 @@ export class WidgetStatusBar {
 
     this.messageEl = document.createElement('span');
     indicator.appendChild(this.messageEl);
+
+    this.marketEl = document.createElement('span');
+    this.marketEl.className = 'tcw-status-market';
+    this.marketEl.hidden = true;
+    right.appendChild(this.marketEl);
 
     right.appendChild(indicator);
 
@@ -60,6 +66,13 @@ export class WidgetStatusBar {
 
     this.messageEl.textContent = state.message;
     this.infoEl.textContent = `${state.symbol} ${state.timeframe}`;
+  }
+
+  /** The market's status (open or closed); hidden for a market around the clock. */
+  setMarket(state: 'open' | 'closed' | 'always', text: string): void {
+    this.marketEl.hidden = state === 'always';
+    this.marketEl.dataset.state = state;
+    this.marketEl.textContent = state === 'always' ? '' : text;
   }
 
   destroy(): void {
