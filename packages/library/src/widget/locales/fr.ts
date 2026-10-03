@@ -115,6 +115,22 @@ export const FR_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Chargement…',
   'action.symbolInfo': 'Infos sur le symbole',
 
+  // Navigation over the chart
+  'nav.label': 'Navigation dans le graphique',
+  'nav.zoomIn': 'Zoom avant',
+  'nav.zoomOut': 'Zoom arrière',
+  'nav.scrollLeft': 'Défiler vers la gauche',
+  'nav.scrollRight': 'Défiler vers la droite',
+  'nav.reset': 'Réinitialiser la vue du graphique',
+
+  // Screen readers
+  'a11y.role': 'graphique',
+  'a11y.summary': '{what}. Dernier cours {close}.',
+  'a11y.empty': 'Graphique, aucune donnée.',
+  'a11y.view': '{count} barres affichées, du {from} au {to}. Plus haut {high}, plus bas {low}.',
+  'a11y.bar': '{time} : ouverture {open}, plus haut {high}, plus bas {low}, clôture {close}, volume {volume}.',
+  'a11y.keys': 'Les touches fléchées font défiler et zoomer, Origine et Fin mènent au début et à la fin. La virgule et le point lisent les barres une à une.',
+
   'status.connecting': 'Connexion…',
   'status.live': 'En direct',
   'status.connectionFailed': 'Échec de la connexion',

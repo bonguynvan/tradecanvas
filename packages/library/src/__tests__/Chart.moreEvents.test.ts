@@ -53,6 +53,16 @@ describe('chart events', () => {
     expect(seen).toHaveBeenLastCalledWith({ ids: [id], primary: id });
   });
 
+  it('scrollBars: the view moves by bars, later for a positive count', () => {
+    const seen: { from: number; to: number }[] = [];
+    chart.on('visibleRangeChange', (e) => seen.push(e.payload as { from: number; to: number }));
+    chart.scrollBars(-20);
+    const back = seen.at(-1)!;
+    chart.scrollBars(10);
+    const forward = seen.at(-1)!;
+    expect(forward.from - back.from).toBeCloseTo(10, 0);
+  });
+
   it('symbolChange and timeframeChange when the stream moves', async () => {
     const events: [string, unknown][] = [];
     chart.on('symbolChange', (e) => events.push(['symbol', e.payload]));

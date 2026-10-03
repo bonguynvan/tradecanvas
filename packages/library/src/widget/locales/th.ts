@@ -115,6 +115,22 @@ export const TH_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'กำลังโหลด…',
   'action.symbolInfo': 'ข้อมูลสัญลักษณ์',
 
+  // Navigation over the chart
+  'nav.label': 'การนำทางกราฟ',
+  'nav.zoomIn': 'ซูมเข้า',
+  'nav.zoomOut': 'ซูมออก',
+  'nav.scrollLeft': 'เลื่อนไปทางซ้าย',
+  'nav.scrollRight': 'เลื่อนไปทางขวา',
+  'nav.reset': 'รีเซ็ตมุมมองกราฟ',
+
+  // Screen readers
+  'a11y.role': 'กราฟ',
+  'a11y.summary': '{what} ราคาล่าสุด {close}',
+  'a11y.empty': 'กราฟ ไม่มีข้อมูล',
+  'a11y.view': 'แสดง {count} แท่ง ตั้งแต่ {from} ถึง {to} สูงสุด {high} ต่ำสุด {low}',
+  'a11y.bar': '{time}: เปิด {open} สูงสุด {high} ต่ำสุด {low} ปิด {close} วอลุ่ม {volume}',
+  'a11y.keys': 'ใช้ปุ่มลูกศรเพื่อเลื่อนและซูม ปุ่ม Home และ End เพื่อไปที่จุดเริ่มต้นและจุดสิ้นสุด ปุ่มคอมมาและปุ่มจุดเพื่ออ่านทีละแท่ง',
+
   'status.connecting': 'กำลังเชื่อมต่อ…',
   'status.live': 'สด',
   'status.connectionFailed': 'เชื่อมต่อไม่สำเร็จ',

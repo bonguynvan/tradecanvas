@@ -185,6 +185,12 @@ export interface ChartOptions {
   /** The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills. */
   shapes?: import('./theme.js').ShapeConfig;
   /**
+   * The chart for screen readers: a summary, what is on screen after the keys
+   * move it, comma and period to read the bars. On by default; labels in your
+   * language here; `false` leaves it out.
+   */
+  a11y?: false | { labels?: Partial<import('./a11y.js').ChartA11yLabels> };
+  /**
    * Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`):
    * pre- and post-market. Default true; bars a day or longer are never left out.
    */

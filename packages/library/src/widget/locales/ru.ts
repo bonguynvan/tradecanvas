@@ -115,6 +115,22 @@ export const RU_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Загрузка…',
   'action.symbolInfo': 'Информация о символе',
 
+  // Navigation over the chart
+  'nav.label': 'Навигация по графику',
+  'nav.zoomIn': 'Приблизить',
+  'nav.zoomOut': 'Отдалить',
+  'nav.scrollLeft': 'Прокрутить влево',
+  'nav.scrollRight': 'Прокрутить вправо',
+  'nav.reset': 'Сбросить вид графика',
+
+  // Screen readers
+  'a11y.role': 'график',
+  'a11y.summary': '{what}. Последняя цена {close}.',
+  'a11y.empty': 'График, данных нет.',
+  'a11y.view': 'Показано баров: {count}, с {from} по {to}. Максимум {high}, минимум {low}.',
+  'a11y.bar': '{time}: открытие {open}, максимум {high}, минимум {low}, закрытие {close}, объём {volume}.',
+  'a11y.keys': 'Клавиши со стрелками прокручивают и масштабируют график, Home и End переходят к началу и к концу. Запятая и точка зачитывают бары по одному.',
+
   'status.connecting': 'Подключение…',
   'status.live': 'В реальном времени',
   'status.connectionFailed': 'Не удалось подключиться',

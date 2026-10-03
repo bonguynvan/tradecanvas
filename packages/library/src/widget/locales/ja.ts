@@ -115,6 +115,22 @@ export const JA_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': '読み込み中…',
   'action.symbolInfo': 'シンボル情報',
 
+  // Navigation over the chart
+  'nav.label': 'チャート操作',
+  'nav.zoomIn': '拡大',
+  'nav.zoomOut': '縮小',
+  'nav.scrollLeft': '左へスクロール',
+  'nav.scrollRight': '右へスクロール',
+  'nav.reset': 'チャートの表示をリセット',
+
+  // Screen readers
+  'a11y.role': 'チャート',
+  'a11y.summary': '{what}。現在値 {close}。',
+  'a11y.empty': 'チャート、データなし。',
+  'a11y.view': '{from}から{to}までの{count}本のバーを表示中。高値 {high}、安値 {low}。',
+  'a11y.bar': '{time}：始値 {open}、高値 {high}、安値 {low}、終値 {close}、出来高 {volume}。',
+  'a11y.keys': '矢印キーでスクロールとズーム、Home キーと End キーで先頭と末尾へ移動します。カンマとピリオドでバーを1本ずつ読み上げます。',
+
   'status.connecting': '接続中…',
   'status.live': 'ライブ',
   'status.connectionFailed': '接続に失敗しました',

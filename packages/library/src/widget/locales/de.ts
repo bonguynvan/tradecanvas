@@ -115,6 +115,22 @@ export const DE_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Wird geladen…',
   'action.symbolInfo': 'Symbolinfo',
 
+  // Navigation over the chart
+  'nav.label': 'Chart-Navigation',
+  'nav.zoomIn': 'Vergrößern',
+  'nav.zoomOut': 'Verkleinern',
+  'nav.scrollLeft': 'Nach links scrollen',
+  'nav.scrollRight': 'Nach rechts scrollen',
+  'nav.reset': 'Chart-Ansicht zurücksetzen',
+
+  // Screen readers
+  'a11y.role': 'Chart',
+  'a11y.summary': '{what}. Letzter Kurs {close}.',
+  'a11y.empty': 'Chart, keine Daten.',
+  'a11y.view': 'Angezeigt werden {count} Kerzen von {from} bis {to}. Hoch {high}, Tief {low}.',
+  'a11y.bar': '{time}: Eröffnung {open}, Hoch {high}, Tief {low}, Schluss {close}, Volumen {volume}.',
+  'a11y.keys': 'Die Pfeiltasten scrollen und zoomen, Pos1 und Ende springen zum Anfang und zum Ende. Komma und Punkt lesen die Kerzen einzeln vor.',
+
   'status.connecting': 'Verbinde…',
   'status.live': 'Live',
   'status.connectionFailed': 'Verbindung fehlgeschlagen',

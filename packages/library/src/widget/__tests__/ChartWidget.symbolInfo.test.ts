@@ -23,6 +23,10 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   getSymbolInfo(): SymbolInfo | null { return FakeChart.info; }
+  zoomIns = 0;
+  zoomIn(): void { this.zoomIns++; }
+  scrolled: number[] = [];
+  scrollBars(n: number): void { this.scrolled.push(n); }
   /** Hourly bars: Friday's last at 99, then Monday's session. */
   getData() {
     const mon = Date.UTC(2026, 9, 5, 14);
@@ -152,6 +156,19 @@ describe('ChartWidget symbol info', () => {
     widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'], news: async () => { throw new Error('down'); } });
     widget.toggleSymbolInfo(true);
     await vi.waitFor(() => expect(panel().querySelector('.tcw-syminfo-news')!.textContent).toBe('News could not be loaded.'));
+  });
+
+  it('puts navigation over the chart, unless asked not to', () => {
+    widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'] });
+    host.querySelector<HTMLButtonElement>('.tcw-nav [data-nav="zoomIn"]')!.click();
+    expect(FakeChart.last.zoomIns).toBe(1);
+    FakeChart.last.emit('visibleRangeChange', { from: 0, to: 120 });
+    const scroll = host.querySelector<HTMLButtonElement>('.tcw-nav [data-nav="scrollLeft"]')!;
+    scroll.dispatchEvent(new MouseEvent('click', { detail: 0 })); // a keyboard press
+    expect(FakeChart.last.scrolled).toEqual([-12]);
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'], navigation: false });
+    expect(host.querySelector('.tcw-nav')).toBeNull();
   });
 
   it('leaves the button out when asked', () => {

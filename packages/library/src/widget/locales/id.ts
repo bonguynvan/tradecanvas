@@ -115,6 +115,22 @@ export const ID_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Memuat…',
   'action.symbolInfo': 'Info simbol',
 
+  // Navigation over the chart
+  'nav.label': 'Navigasi grafik',
+  'nav.zoomIn': 'Perbesar',
+  'nav.zoomOut': 'Perkecil',
+  'nav.scrollLeft': 'Gulir ke kiri',
+  'nav.scrollRight': 'Gulir ke kanan',
+  'nav.reset': 'Atur ulang tampilan grafik',
+
+  // Screen readers
+  'a11y.role': 'grafik',
+  'a11y.summary': '{what}. Harga terakhir {close}.',
+  'a11y.empty': 'Grafik, tidak ada data.',
+  'a11y.view': 'Menampilkan {count} bar, dari {from} sampai {to}. Tertinggi {high}, terendah {low}.',
+  'a11y.bar': '{time}: pembukaan {open}, tertinggi {high}, terendah {low}, penutupan {close}, volume {volume}.',
+  'a11y.keys': 'Tombol panah untuk menggulir dan memperbesar, Home dan End untuk ke awal dan ke akhir. Koma dan titik membacakan bar satu per satu.',
+
   'status.connecting': 'Menghubungkan…',
   'status.live': 'Langsung',
   'status.connectionFailed': 'Koneksi gagal',

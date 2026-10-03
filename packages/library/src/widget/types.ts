@@ -176,6 +176,12 @@ export interface ChartWidgetOptions {
   symbolInfo?: boolean;
 
   /**
+   * Buttons over the chart, shown while the pointer is on it: zoom out and
+   * in, scroll earlier and later, reset the view. Default `true`.
+   */
+  navigation?: boolean;
+
+  /**
    * Headlines for the symbol info panel, newest first; default the adapter's
    * `fetchNews` when it has one. Links that aren't web pages are dropped.
    */

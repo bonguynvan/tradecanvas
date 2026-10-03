@@ -115,6 +115,22 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': '載入中…',
   'action.symbolInfo': '商品資訊',
 
+  // Navigation over the chart
+  'nav.label': '圖表導覽',
+  'nav.zoomIn': '放大',
+  'nav.zoomOut': '縮小',
+  'nav.scrollLeft': '向左捲動',
+  'nav.scrollRight': '向右捲動',
+  'nav.reset': '重設圖表檢視',
+
+  // Screen readers
+  'a11y.role': '圖表',
+  'a11y.summary': '{what}。最新價 {close}。',
+  'a11y.empty': '圖表，尚無資料。',
+  'a11y.view': '顯示 {count} 根K線，從 {from} 到 {to}。最高 {high}，最低 {low}。',
+  'a11y.bar': '{time}：開盤 {open}，最高 {high}，最低 {low}，收盤 {close}，成交量 {volume}。',
+  'a11y.keys': '方向鍵可捲動和縮放，Home 鍵和 End 鍵可跳到開頭和結尾。逗號鍵和句號鍵逐根朗讀K線。',
+
   'status.connecting': '連線中…',
   'status.live': '即時',
   'status.connectionFailed': '連線失敗',

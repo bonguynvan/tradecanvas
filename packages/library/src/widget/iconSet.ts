@@ -61,6 +61,9 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   minimize: { d: 'M4 8h3a1 1 0 0 0 1-1V4M16 4v3a1 1 0 0 0 1 1h3M20 16h-3a1 1 0 0 0-1 1v3M8 20v-3a1 1 0 0 0-1-1H4' }, // Exit fullscreen
   repeat: { d: 'M17 3.5L20.5 7L17 10.5M3.5 11.5V10a3 3 0 0 1 3-3h14M7 20.5L3.5 17L7 13.5M20.5 12.5V14a3 3 0 0 1-3 3h-14' }, // Stay in drawing mode
   info: { d: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM12 11V16.5', dots: [[12, 7.75, 1.25]] }, // Symbol info
+  chevronLeft: { d: 'M15 5L8 12L15 19' }, // Scroll left
+  chevronRight: { d: 'M9 5L16 12L9 19' }, // Scroll right
+  reset: { d: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9' }, // Reset the view
   calendar: { d: 'M5.5 5h13a2 2 0 0 1 2 2v11.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3.5 10H20.5M8 3V7M16 3V7' }, // Go to date
   star: { d: 'M12 3.5L14.6 9L20.5 9.6L16 13.6L17.3 19.5L12 16.5L6.7 19.5L8 13.6L3.5 9.6L9.4 9z' }, // Favourite
   ladder: { d: 'M4 6H11M13 6H17M6 10H11M13 10H20M8 14H11M13 14H15M5 18H11M13 18H19' }, // Depth ladder

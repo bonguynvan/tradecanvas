@@ -115,6 +115,22 @@ export const TR_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Yükleniyor…',
   'action.symbolInfo': 'Sembol bilgisi',
 
+  // Navigation over the chart
+  'nav.label': 'Grafikte gezinme',
+  'nav.zoomIn': 'Yakınlaştır',
+  'nav.zoomOut': 'Uzaklaştır',
+  'nav.scrollLeft': 'Sola kaydır',
+  'nav.scrollRight': 'Sağa kaydır',
+  'nav.reset': 'Grafik görünümünü sıfırla',
+
+  // Screen readers
+  'a11y.role': 'grafik',
+  'a11y.summary': '{what}. Son fiyat {close}.',
+  'a11y.empty': 'Grafik, veri yok.',
+  'a11y.view': '{from} ile {to} arasında {count} bar gösteriliyor. En yüksek {high}, en düşük {low}.',
+  'a11y.bar': '{time}: açılış {open}, en yüksek {high}, en düşük {low}, kapanış {close}, hacim {volume}.',
+  'a11y.keys': 'Ok tuşları kaydırır ve yakınlaştırır, Home ve End başa ve sona gider. Virgül ve nokta barları tek tek okur.',
+
   'status.connecting': 'Bağlanıyor…',
   'status.live': 'Canlı',
   'status.connectionFailed': 'Bağlantı başarısız',

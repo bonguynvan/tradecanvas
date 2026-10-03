@@ -45,6 +45,8 @@ import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, Time
 import { readChartTypeOptions } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
+import { ChartA11y } from './chartA11y.js';
+import { zonedDateFormatter } from '@tradecanvas/commons';
 import { indicatorChipLabel } from './indicatorLabel.js';
 import type { ExportColumn } from '@tradecanvas/core';
 import {
@@ -305,6 +307,7 @@ export class Chart {
    */
   private defaultAutoScale: boolean;
   private keyboardHandler: KeyboardHandler | null = null;
+  private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private currentSymbol: string = '';
   /** Timeframe and adapter of the connected stream, for paging its history. */
@@ -619,6 +622,25 @@ export class Chart {
     });
     this.keyboardHandler.setEnabled(this.features.keyboard);
 
+    // Screen readers: a summary, the view after a key moves it, the bars one by one.
+    if (options.a11y !== false) {
+      this.a11y = new ChartA11y(container, {
+        symbol: () => this.currentSymbol || this.symbolInfo?.symbol || '',
+        timeframe: () => this.streamTimeframe ?? '',
+        chartType: () => this.options.chartType ?? 'candlestick',
+        bars: () => this.getDisplayData(),
+        visibleRange: () => this.viewport.getState().visibleRange,
+        formatPrice: (price) => this.formatPrice(price),
+        formatTime: (time) => zonedDateFormatter(this.numberLocale || 'en-US', { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(
+          time > SECONDS_TIME_LIMIT ? time : time * 1000,
+        ),
+        showBar: (time) => this.setCrosshairTime(time),
+      }, options.a11y?.labels);
+      for (const event of ['dataUpdate', 'chartTypeChange', 'symbolChange', 'timeframeChange'] as const) {
+        this.eventBus.on(event, () => this.a11y?.refresh(event !== 'dataUpdate'));
+      }
+    }
+
     // Attach keyboard listener to window. Only consume the event when the
     // chart actually handles the key AND the container is the focused element
     // (or an ancestor) — this prevents the chart from swallowing keystrokes
@@ -633,8 +655,15 @@ export class Chart {
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
         return;
       }
+      // Comma and period read the bars one at a time.
+      if (this.a11y && (e.key === ',' || e.key === '.') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        this.a11y.readBar(e.key === '.' ? 1 : -1);
+        return;
+      }
       if (this.keyboardHandler.handleKey(e)) {
         e.preventDefault();
+        this.a11y?.viewMoved();
       }
     };
     window.addEventListener('keydown', this.onWindowKeyDown);
@@ -3064,6 +3093,14 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Scroll by `bars` bars: later for a positive count, earlier for a negative one. */
+  scrollBars(bars: number): void {
+    if (!Number.isFinite(bars) || bars === 0) return;
+    const { barWidth, barSpacing } = this.viewport.getState();
+    this.viewport.scrollBy(bars * (barWidth + barSpacing));
+    this.updateViewportAndRender();
+  }
+
   /**
    * Show the bars between two timestamps edge to edge. Times past either end
    * of the data are allowed (they map into the empty future / past).
@@ -4411,6 +4448,8 @@ export class Chart {
       this.onWindowKeyDown = null;
     }
     this.keyboardHandler = null;
+    this.a11y?.destroy();
+    this.a11y = null;
     this.interactionManager.detach();
     this.tradingManager.destroy();
     this.animator.dispose();

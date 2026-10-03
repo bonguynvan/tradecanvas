@@ -115,6 +115,22 @@ export const KO_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': '불러오는 중…',
   'action.symbolInfo': '종목 정보',
 
+  // Navigation over the chart
+  'nav.label': '차트 탐색',
+  'nav.zoomIn': '확대',
+  'nav.zoomOut': '축소',
+  'nav.scrollLeft': '왼쪽으로 스크롤',
+  'nav.scrollRight': '오른쪽으로 스크롤',
+  'nav.reset': '차트 보기 재설정',
+
+  // Screen readers
+  'a11y.role': '차트',
+  'a11y.summary': '{what}. 현재가 {close}.',
+  'a11y.empty': '차트, 데이터 없음.',
+  'a11y.view': '{from}부터 {to}까지 봉 {count}개 표시 중. 고가 {high}, 저가 {low}.',
+  'a11y.bar': '{time}: 시가 {open}, 고가 {high}, 저가 {low}, 종가 {close}, 거래량 {volume}.',
+  'a11y.keys': '화살표 키로 스크롤하고 확대/축소하며, Home 키와 End 키로 처음과 끝으로 이동합니다. 쉼표와 마침표 키로 봉을 하나씩 읽습니다.',
+
   'status.connecting': '연결 중…',
   'status.live': '실시간',
   'status.connectionFailed': '연결 실패',

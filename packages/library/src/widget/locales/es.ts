@@ -115,6 +115,22 @@ export const ES_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Cargando…',
   'action.symbolInfo': 'Información del símbolo',
 
+  // Navigation over the chart
+  'nav.label': 'Navegación del gráfico',
+  'nav.zoomIn': 'Acercar',
+  'nav.zoomOut': 'Alejar',
+  'nav.scrollLeft': 'Desplazar a la izquierda',
+  'nav.scrollRight': 'Desplazar a la derecha',
+  'nav.reset': 'Restablecer vista del gráfico',
+
+  // Screen readers
+  'a11y.role': 'gráfico',
+  'a11y.summary': '{what}. Último precio {close}.',
+  'a11y.empty': 'Gráfico, sin datos.',
+  'a11y.view': 'Se muestran {count} barras, desde {from} hasta {to}. Máximo {high}, mínimo {low}.',
+  'a11y.bar': '{time}: apertura {open}, máximo {high}, mínimo {low}, cierre {close}, volumen {volume}.',
+  'a11y.keys': 'Las flechas desplazan y hacen zoom; Inicio y Fin van al principio y al final. La coma y el punto leen las barras una a una.',
+
   'status.connecting': 'Conectando…',
   'status.live': 'En vivo',
   'status.connectionFailed': 'Error de conexión',

@@ -17,6 +17,7 @@ import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
+import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { readChartTypeOptions } from '@tradecanvas/commons';
@@ -226,6 +227,9 @@ export class ChartWidget {
   /** Headlines per symbol, kept a few minutes. */
   private newsCache = new Map<string, { at: number; items: NewsItem[] }>();
   private marketTimer: ReturnType<typeof setInterval> | null = null;
+  private chartNav: WidgetChartNav | null = null;
+  /** Bars on screen, for the navigation's scroll step. */
+  private visibleBarCount = 50;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
   /** Bars revealed per second. */
   private replaySpeed = DEFAULT_REPLAY_SPEED;
@@ -498,6 +502,22 @@ export class ChartWidget {
       theme: resolvedTheme,
       autoScale: true,
       crosshair: { mode: 'magnet' },
+      // Screen readers hear the chart in the widget's language.
+      a11y: {
+        labels: {
+          role: this.t('a11y.role'),
+          summary: this.t('a11y.summary'),
+          empty: this.t('a11y.empty'),
+          view: this.t('a11y.view'),
+          bar: this.t('a11y.bar'),
+          keys: this.t('a11y.keys'),
+          typeName: (type) => {
+            const key = `chartType.${type}` as MessageKey;
+            const name = this.t(key);
+            return name === key ? type : name;
+          },
+        },
+      },
       ...options.chartOptions,
       // `features` is merged explicitly (host overrides win per-key) rather
       // than inherited wholesale from the `...options.chartOptions` spread
@@ -507,6 +527,24 @@ export class ChartWidget {
     });
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
+
+    // Navigation over the chart; a scroll step is a tenth of the bars on screen.
+    this.chart.on('visibleRangeChange', (e) => {
+      const { from, to } = e.payload as { from: number; to: number };
+      if (Number.isFinite(from) && Number.isFinite(to)) this.visibleBarCount = Math.max(1, to - from);
+    });
+    if (options.navigation !== false) {
+      this.chartNav = new WidgetChartNav(this.chartContainer, {
+        zoomIn: () => this.chart.zoomIn(),
+        zoomOut: () => this.chart.zoomOut(),
+        scroll: (direction) => this.chart.scrollBars(direction * Math.max(1, Math.round(this.visibleBarCount / 10))),
+        reset: () => {
+          this.chart.fitContent();
+          this.changeSettings({ autoScale: true });
+        },
+        plotRect: () => this.chart.getPlotRect(),
+      }, this.t);
+    }
 
     // New bars end the loading state, whoever supplied them (stream snapshot,
     // widget.setData, or the host calling getChart().setData directly); stream
@@ -1480,6 +1518,7 @@ export class ChartWidget {
     this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
+    this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
     this.stopQuotes?.();
     this.stopQuotes = null;

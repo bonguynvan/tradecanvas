@@ -119,6 +119,22 @@ export const EN_MESSAGES = {
   'symbolInfo.loading': 'Loading…',
   'action.symbolInfo': 'Symbol info',
 
+  // Navigation over the chart
+  'nav.label': 'Chart navigation',
+  'nav.zoomIn': 'Zoom in',
+  'nav.zoomOut': 'Zoom out',
+  'nav.scrollLeft': 'Scroll left',
+  'nav.scrollRight': 'Scroll right',
+  'nav.reset': 'Reset chart view',
+
+  // Screen readers
+  'a11y.role': 'chart',
+  'a11y.summary': '{what}. Last price {close}.',
+  'a11y.empty': 'Chart, no data.',
+  'a11y.view': 'Showing {count} bars, {from} to {to}. High {high}, low {low}.',
+  'a11y.bar': '{time}: open {open}, high {high}, low {low}, close {close}, volume {volume}.',
+  'a11y.keys': 'Arrow keys scroll and zoom, Home and End go to the start and the end. Comma and period read the bars one at a time.',
+
   // Status bar / connection
   'status.connecting': 'Connecting...',
   'status.live': 'Live',

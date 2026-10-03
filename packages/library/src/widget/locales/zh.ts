@@ -115,6 +115,22 @@ export const ZH_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': '加载中…',
   'action.symbolInfo': '品种信息',
 
+  // Navigation over the chart
+  'nav.label': '图表导航',
+  'nav.zoomIn': '放大',
+  'nav.zoomOut': '缩小',
+  'nav.scrollLeft': '向左滚动',
+  'nav.scrollRight': '向右滚动',
+  'nav.reset': '重置图表视图',
+
+  // Screen readers
+  'a11y.role': '图表',
+  'a11y.summary': '{what}。最新价 {close}。',
+  'a11y.empty': '图表，暂无数据。',
+  'a11y.view': '显示 {count} 根K线，从 {from} 到 {to}。最高 {high}，最低 {low}。',
+  'a11y.bar': '{time}：开盘 {open}，最高 {high}，最低 {low}，收盘 {close}，成交量 {volume}。',
+  'a11y.keys': '方向键用于滚动和缩放，Home 键和 End 键跳到开头和末尾。逗号键和句号键逐根朗读K线。',
+
   'status.connecting': '连接中…',
   'status.live': '实时',
   'status.connectionFailed': '连接失败',

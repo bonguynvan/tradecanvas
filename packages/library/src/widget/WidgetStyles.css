@@ -3925,6 +3925,59 @@
 }
 .tcw-marker-tip strong { display: block; font-size: var(--tcw-font-size-sm); }
 
+/* === Navigation over the chart ===
+ * Centred on the plot's bottom edge, shown while a mouse is over the chart. */
+.tcw-nav {
+  position: absolute;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: calc(var(--tcw-control-radius) + 3px);
+  background: var(--tcw-bg-elevated);
+  box-shadow: var(--tcw-menu-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-nav.tcw-nav-shown {
+  opacity: 1;
+  pointer-events: auto;
+}
+.tcw-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tcw-control-h);
+  height: var(--tcw-control-h);
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+  touch-action: none;
+}
+.tcw-nav-btn:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+.tcw-nav-btn:active {
+  background: var(--tcw-active-bg);
+}
+.tcw-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+.tcw-nav-btn svg {
+  width: var(--tcw-icon);
+  height: var(--tcw-icon);
+}
+@media (hover: none) {
+  .tcw-nav { display: none; }
+}
+
 /* === Symbol info ===
  * Top left, beside the drawing tools: the panels on the right stay clear. */
 .tcw-syminfo {

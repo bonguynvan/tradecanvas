@@ -115,6 +115,22 @@ export const VI_MESSAGES: WidgetMessages = {
   'symbolInfo.loading': 'Đang tải…',
   'action.symbolInfo': 'Thông tin mã',
 
+  // Navigation over the chart
+  'nav.label': 'Điều hướng biểu đồ',
+  'nav.zoomIn': 'Phóng to',
+  'nav.zoomOut': 'Thu nhỏ',
+  'nav.scrollLeft': 'Cuộn sang trái',
+  'nav.scrollRight': 'Cuộn sang phải',
+  'nav.reset': 'Đặt lại khung nhìn',
+
+  // Screen readers
+  'a11y.role': 'biểu đồ',
+  'a11y.summary': '{what}. Giá cuối {close}.',
+  'a11y.empty': 'Biểu đồ, chưa có dữ liệu.',
+  'a11y.view': 'Đang hiện {count} nến, từ {from} đến {to}. Cao nhất {high}, thấp nhất {low}.',
+  'a11y.bar': '{time}: mở {open}, cao {high}, thấp {low}, đóng {close}, khối lượng {volume}.',
+  'a11y.keys': 'Phím mũi tên để cuộn và phóng to thu nhỏ, Home và End để về đầu và cuối. Dấu phẩy và dấu chấm đọc từng nến một.',
+
   'status.connecting': 'Đang kết nối...',
   'status.live': 'Trực tiếp',
   'status.connectionFailed': 'Kết nối thất bại',
