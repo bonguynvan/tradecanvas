@@ -321,3 +321,34 @@ new ChartWidget(document.getElementById('chart')!, {
   chartOptions: { numberLocale: 'vi-VN' },
 });
 ```
+
+## The widget in a look of your own
+
+```ts
+import { ChartWidget, WIDGET_UI_PRESETS } from '@tradecanvas/chart/widget';
+import { BinanceAdapter } from '@tradecanvas/chart';
+
+// 'studio' (the default), 'terminal' (dense, square) or 'capsule' (pills, floating bars)
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  adapter: new BinanceAdapter(),
+  symbol: 'BTCUSDT',
+  ui: 'terminal',
+});
+
+// Your theme over a preset: what you leave out stays the preset's.
+widget.setUI({
+  preset: 'studio',
+  radius: { md: 10, lg: 14 },   // buttons and fields take md, menus and panels lg
+  density: 'compact',
+  font: { family: "'Manrope', system-ui, sans-serif", labelCase: 'uppercase' },
+  toolbar: 'floating',
+  active: 'solid',              // tint · solid · underline
+  tagRadius: 999,               // pill price tags on the chart
+});
+console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.control);
+```
+
+The look changes shapes and sizes only; colours stay with `theme`. The
+widget loads no fonts, so load the families a look names. Without `ui` the
+look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
+stylesheet's and your CSS can set them; with it the widget writes them inline.

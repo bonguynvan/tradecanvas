@@ -128,10 +128,12 @@ const fr: SiteMessages = {
       'Choisissez une scène. Chacune lance le <code>ChartWidget</code> complet dans un état qui montre un domaine à l’œuvre — ensuite, il est à vous : faites glisser, dessinez, changez de symbole ou d’unité de temps.',
     scenes: 'Scènes de fonctionnalités',
     widgetLanguage: 'Langue du widget',
+    widgetLook: 'Apparence du widget',
     idle: 'Faites défiler jusqu’ici pour lancer le graphique en direct',
     metricHint: 'Changez de symbole ou d’unité de temps pour chronométrer le changement',
     metricSwitch: '→ {label} : {ms} · {bars} barres',
     metricSetData: 'setData({bars} barres) : {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'À essayer',
   },
 
@@ -259,6 +261,18 @@ const fr: SiteMessages = {
         'Ctrl+P cherche parmi tous les symboles Binance, avec leur nom, au fil de la frappe',
         'Ouvrez les Paramètres ou les outils de dessin pour les voir traduits',
         'Survolez le graphique : l’étiquette du réticule garde toute la précision, au format numérique de la langue',
+      ],
+    },
+    looks: {
+      title: 'Votre propre apparence',
+      stat: '3 préréglages',
+      blurb:
+        'Les formes et les tailles du widget sont des tokens : coins, hauteur des contrôles, typographie, bordures, ombres, aspect d’un bouton sélectionné, barres ancrées ou flottantes. Partez de Studio, Terminal ou Capsule et changez ce qui vous plaît ; les étiquettes de prix du graphique prennent les mêmes coins.',
+      tryThis: [
+        'Changez d’apparence au-dessus du graphique : elle change sur place, rien n’est reconstruit',
+        'Ouvrez les Paramètres, un menu ou les outils de dessin dans chaque apparence',
+        'Capsule fait flotter la barre d’outils et les outils de dessin comme des îlots, avec des étiquettes de prix en pastille',
+        'Terminal est dense et carré : libellés en majuscules, et un trait sous l’unité de temps choisie',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const fr: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget intégrable',
       api: 'Référence de l’API',
+      styling: 'Apparence',
       'chart-types': 'Types de graphiques',
       indicators: 'Indicateurs',
       'drawing-tools': 'Outils de dessin',

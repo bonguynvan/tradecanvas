@@ -130,10 +130,12 @@ const es: SiteMessages = {
       'Elige una escena. Cada una arranca el <code>ChartWidget</code> completo en un estado que muestra un área en acción; después es tuyo para arrastrar, dibujar y cambiar.',
     scenes: 'Escenas de funciones',
     widgetLanguage: 'Idioma del widget',
+    widgetLook: 'Aspecto del widget',
     idle: 'Desplázate hasta aquí para iniciar el gráfico en vivo',
     metricHint: 'Cambia de símbolo o de temporalidad para medir el tiempo',
     metricSwitch: '→ {label}: {ms} · {bars} barras',
     metricSetData: 'setData({bars} barras): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Prueba esto',
   },
 
@@ -261,6 +263,18 @@ const es: SiteMessages = {
         'Ctrl+P busca entre todos los símbolos de Binance, con sus nombres, mientras escribes',
         'Abre Configuración o las herramientas de dibujo para verlas traducidas',
         'Pasa el cursor: la etiqueta de la cruz mantiene la precisión completa en el formato numérico del idioma',
+      ],
+    },
+    looks: {
+      title: 'Tu propio aspecto',
+      stat: '3 preajustes',
+      blurb:
+        'Las formas y los tamaños del widget son tokens: esquinas, altura de los controles, tipografía, bordes, sombras, cómo se ve un botón elegido, barras acopladas o flotantes. Parte de Studio, Terminal o Capsule y cambia lo que quieras; las etiquetas de precio del gráfico usan las mismas esquinas.',
+      tryThis: [
+        'Cambia el aspecto encima del gráfico: cambia en el sitio, sin reconstruir nada',
+        'Abre Configuración, un menú o las herramientas de dibujo en cada aspecto',
+        'Capsule hace flotar la barra de herramientas y las herramientas de dibujo como islas, con etiquetas de precio en forma de píldora',
+        'Terminal es denso y cuadrado: etiquetas en mayúsculas y una línea bajo la temporalidad elegida',
       ],
     },
     bigdata: {
@@ -458,6 +472,7 @@ const es: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget incrustable',
       api: 'Referencia de la API',
+      styling: 'Estilos',
       'chart-types': 'Tipos de gráfico',
       indicators: 'Indicadores',
       'drawing-tools': 'Herramientas de dibujo',

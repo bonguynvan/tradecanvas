@@ -160,6 +160,17 @@ Consulta `packages/library/src/widget/locales/en.ts` para ver la lista completa 
 | Personalización | Control total | Activar/desactivar secciones |
 | Acceso avanzado | API directa | `widget.getChart()` para la API directa |
 
+### Aspecto del widget
+
+Las formas y los tamaños del widget (esquinas, altura de los controles, tipografía, bordes, sombras, cómo se ve un botón elegido, barras acopladas o flotantes) forman un aspecto propio, independiente de los colores. Hay tres preajustes: **Studio** (el predeterminado), **Terminal** (denso y cuadrado) y **Capsule** (píldoras, barras flotantes). Parte de uno y cambia lo que quieras:
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+Las etiquetas de precio del gráfico usan las mismas esquinas (`tagRadius`; en un `Chart` sin widget, `chart.setShapes({ tagRadius })`). El widget no carga fuentes: carga tú las que nombre cada aspecto. Consulta [Estilos](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
 ### Temas del widget
 
 La interfaz propia de `ChartWidget` (barra de herramientas, barras laterales, panel de configuración, lista de seguimiento: todo lo que está *fuera* del canvas) se estiliza por completo mediante propiedades personalizadas de CSS en `.tcw-root`, el elemento raíz del propio widget. Forman un **contrato estable y documentado**: entre versiones menores y de parche solo se añaden propiedades; ninguna se renombra ni se elimina sin un cambio de versión mayor. Sobrescríbelas desde la página anfitriona; no hace falta ningún paso de compilación ni objeto de tema.
@@ -199,12 +210,19 @@ La interfaz propia de `ChartWidget` (barra de herramientas, barras laterales, pa
 | `--tcw-divider` | `rgba(255,255,255,.06)` | Divisores finos |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | Curva de las transiciones |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Duración de las transiciones |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | Radios de las esquinas: ponlos a `0` para un aspecto cuadrado |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | La escala de esquinas: ponla a `0` para un aspecto cuadrado |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | de la escala | Las esquinas de cada tipo de pieza |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | Tamaños |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | Tipografía |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | Etiquetas pequeñas (títulos de sección) |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | Grosor del borde; líneas entre los grupos de la barra de herramientas |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | las sombras de elevación | Sombras de menús, diálogos y tooltips |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | Menús esmerilados |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | valores de box-shadow | Elevación |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | Anillo de foco |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | Pila de fuentes monoespaciadas (escalera de precios, código) |
 
-El tema claro (`[data-tcw-theme="light"]`) redefine el grupo de colores (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) con sus propios valores por defecto; sobrescribe ambos selectores si admites los dos temas.
+El tema claro (`[data-tcw-theme="light"]`) redefine el grupo de colores (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) con sus propios valores por defecto; sobrescribe ambos selectores si admites los dos temas. Con la opción `ui`, el widget escribe las variables de su aspecto en el elemento, así que prevalecen sobre tu CSS; sin ella, sigues siendo tú quien las fija.
 
 ## Funciones
 

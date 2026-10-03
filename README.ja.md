@@ -160,6 +160,17 @@ new ChartWidget(el, {
 | カスタマイズ | 完全に制御可能 | セクションごとにオン / オフ |
 | 高度なアクセス | API を直接使用 | `widget.getChart()` で API に直接アクセス |
 
+### ウィジェットの外観
+
+ウィジェットの形とサイズ（角の丸み、コントロールの高さ、文字、枠線、影、選択中のボタンの見せ方、バーを端に固定するか浮かせるか）は、色とは別のひとつの「外観」として扱われます。プリセットは 3 つ：**Studio**（デフォルト）、**Terminal**（高密度で角張った外観）、**Capsule**（ピル形、浮いたバー）。どれかから始めて、好きなところを変えられます。
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+チャートの価格ラベルも同じ角の丸みになります（`tagRadius`。素の `Chart` では `chart.setShapes({ tagRadius })`）。ウィジェットはフォントを読み込まないので、外観が指定するフォントは自分で読み込んでください。詳しくは[スタイル設定](https://bonguynvan.github.io/tradecanvas/docs/styling)を参照してください。
+
 ### ウィジェットのテーマ設定
 
 `ChartWidget` 自身の外枠（ツールバー、サイドバー、設定パネル、ウォッチリストなど、キャンバスの*外側*にあるすべて）は、ウィジェットのルート要素 `.tcw-root` に設定された CSS カスタムプロパティだけでスタイルが決まります。これらは **安定した、文書化された契約** です。マイナー / パッチリリースでは追加のみで、メジャーバージョンを上げない限りプロパティの名前変更や削除は行いません。ホストページから上書きするだけでよく、ビルドステップやテーマオブジェクトは不要です。
@@ -199,12 +210,19 @@ new ChartWidget(el, {
 | `--tcw-divider` | `rgba(255,255,255,.06)` | 極細の区切り線 |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | トランジションのイージング |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | トランジションの長さ |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | 角の丸み — `0` にすると角張った見た目に |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | 角の丸みのスケール — `0` にすると角張った見た目に |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | スケールに従う | パーツの種類ごとの角の丸み |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | サイズ |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | 文字 |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | 小さなラベル（セクション見出し） |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | 枠線の太さ、ツールバーのグループ間の区切り線 |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | エレベーションの影 | メニュー、ダイアログ、ツールチップの影 |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | すりガラス風のメニュー |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow の値 | 立体感（エレベーション） |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | フォーカスリング |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | 等幅フォントのスタック（価格ラダー、コード） |
 
-ライトテーマ（`[data-tcw-theme="light"]`）は、色のグループ（`--tcw-bg*`、`--tcw-border*`、`--tcw-text*`、`--tcw-accent*`、`--tcw-hover-bg`、`--tcw-active-bg`、`--tcw-divider`、`--tcw-shadow*`）を独自のデフォルト値で再定義します。両方のテーマに対応する場合は、両方のセレクターで上書きしてください。
+ライトテーマ（`[data-tcw-theme="light"]`）は、色のグループ（`--tcw-bg*`、`--tcw-border*`、`--tcw-text*`、`--tcw-accent*`、`--tcw-hover-bg`、`--tcw-active-bg`、`--tcw-divider`、`--tcw-shadow*`）を独自のデフォルト値で再定義します。両方のテーマに対応する場合は、両方のセレクターで上書きしてください。`ui` オプションを指定すると、ウィジェットは外観の変数を要素に直接書き込むため、そちらが CSS より優先されます。指定しなければ、これらの変数は自由に設定できます。
 
 ## 機能
 

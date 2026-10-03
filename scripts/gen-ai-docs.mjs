@@ -81,6 +81,7 @@ function llmsTxt() {
     `- [Getting started](${SITE}/docs/getting-started): install, the widget, the headless chart`,
     `- [API reference](${SITE}/docs/api): Chart and ChartWidget methods, options and events`,
     `- [Indicators](${SITE}/docs/indicators): every built-in indicator with its id, inputs and lines`,
+    `- [Styling](${SITE}/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables`,
     `- [Chart types](${SITE}/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more`,
     `- [Drawing tools](${SITE}/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text`,
     `- [Realtime and replay](${SITE}/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay`,

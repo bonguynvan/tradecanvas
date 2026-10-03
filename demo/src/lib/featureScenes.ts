@@ -1,5 +1,5 @@
 import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
-import type { ChartWidget, ChartWidgetGrid, ChartWidgetGridOptions, ChartWidgetOptions, WidgetMessages } from '@tradecanvas/chart/widget';
+import type { ChartWidget, ChartWidgetGrid, ChartWidgetGridOptions, ChartWidgetOptions, WidgetMessages, WidgetUIPreset } from '@tradecanvas/chart/widget';
 import type { SiteMessages } from './i18n/messages';
 import { generateBars } from './sampleData';
 
@@ -13,6 +13,8 @@ export interface SceneEnv {
   lib: typeof import('@tradecanvas/chart');
   /** The language picked above the chart, for scenes with `languages`. */
   language?: { code: string; numberLocale: string; messages: WidgetMessages };
+  /** The look picked above the chart, for scenes with `looks`. */
+  look?: WidgetUIPreset;
 }
 
 /** A scene's title, figure ("40 tools"), blurb and tips live in the site's strings under this id. */
@@ -26,6 +28,8 @@ export interface FeatureScene {
   data?: (symbol: string) => OHLCBar[];
   /** Shows a language picker above the chart; the scene reads `env.language`. */
   languages?: boolean;
+  /** Shows a look picker above the chart (it calls `setUI`); the scene reads `env.look`. */
+  looks?: boolean;
   /** Runs once the first bars are on the chart. */
   setup?: (widget: ChartWidget, chart: Chart, env: SceneEnv) => void | Promise<void>;
   /** Several charts at once (ChartWidgetGrid) instead of one widget; `options` go to every chart. */
@@ -303,6 +307,34 @@ new ChartWidget(host, {
       watchlist: true,
       chartOptions: { numberLocale: env.language?.numberLocale ?? 'vi-VN' },
     }),
+  },
+  {
+    id: 'looks',
+    code: `new ChartWidget(host, { ui: 'terminal' })   // 'studio' (default) · 'terminal' · 'capsule'
+
+widget.setUI({
+  preset: 'studio',
+  radius: { md: 10 },              // buttons and fields follow the scale
+  components: { dialog: 20 },
+  density: 'compact',
+  font: { family: "'Manrope', sans-serif", labelCase: 'uppercase' },
+  toolbar: 'floating',             // the toolbar as an island
+  active: 'solid',                 // tint · solid · underline
+  tagRadius: 999,                  // pill price tags on the chart
+})`,
+    looks: true,
+    options: (env) => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO', 'ALPHA', 'BETA'],
+      timeframe: '1h',
+      ui: env.look ?? 'studio',
+      chartOptions: { highLowLines: true },
+      onReady: (chart) => {
+        chart.addIndicator('ema', { period: 21 });
+        chart.addIndicator('rsi', { period: 14 });
+      },
+    }),
+    data: (symbol) => generateBars(900, symbol, HOUR, 120),
   },
   {
     id: 'bigdata',
