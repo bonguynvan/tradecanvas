@@ -309,6 +309,9 @@ export class Chart {
   private currentSymbol: string = '';
   /** Timeframe and adapter of the connected stream, for paging its history. */
   private streamTimeframe: TimeFrame | null = null;
+  /** The symbol and timeframe last told (symbolChange, timeframeChange). */
+  private announcedSymbol: string | null = null;
+  private announcedTimeframe: TimeFrame | null = null;
   private streamAdapter: DataAdapter | null = null;
   /** Pages older bars in as the view nears the oldest one. */
   private history: HistoryPager;
@@ -411,8 +414,16 @@ export class Chart {
       this.features.drawings && (this.features.drawingTools.length === 0 || this.features.drawingTools.includes(type)));
     // Undo/redo
     this.undoRedoManager = new UndoRedoManager();
+    this.undoRedoManager.setOnChange(() => {
+      const { canUndo, canRedo } = this.undoRedoManager.getState();
+      this.eventBus.emit('historyChange', { canUndo, canRedo });
+    });
     this.drawingManager.setUndoRedoManager(this.undoRedoManager);
-    this.drawingManager.setForeignHistory((action, direction) => this.applyIndicatorStep(action, direction));
+    this.drawingManager.setSelectionListener((ids) => this.eventBus.emit('drawingSelect', { ids, primary: ids[0] ?? null }));
+    this.drawingManager.setForeignHistory((action, direction) => {
+      if (action.type === 'custom') action.custom?.[direction]();
+      else this.applyIndicatorStep(action, direction);
+    });
     this.drawingManager.setDataGetter(() => this.dataManager.getData());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
@@ -1224,12 +1235,14 @@ export class Chart {
   // --- Chart type ---
 
   setChartType(type: ChartType | (string & {})): void {
+    const previous = this.options.chartType ?? 'candlestick';
     this.options.chartType = type as ChartType;
     this.chartRenderer = this.createChartRenderer(type);
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
     this.markStateChanged();
+    if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
   }
 
   /**
@@ -2156,8 +2169,34 @@ export class Chart {
     return this.drawingManager.redo();
   }
 
+  /** Select a drawing (and the rest of its group); false for one it can't (unknown, hidden). */
+  selectDrawing(id: string): boolean {
+    const ok = this.drawingManager.select(id);
+    if (ok) this.engine.requestRender();
+    return ok;
+  }
+
   getUndoRedoState(): { canUndo: boolean; canRedo: boolean } {
     return this.undoRedoManager.getState();
+  }
+
+  /**
+   * Put a change of yours in the chart's undo history, with its drawings and
+   * indicators: undo (Ctrl/Cmd+Z) calls `undo`, redo calls `redo`. Call it
+   * after making the change. Changes about the same `subject` close together
+   * merge into one step (a colour dragged across a picker). Ignored when
+   * `features.drawingUndoRedo` is off.
+   */
+  recordUndo(step: { undo: () => void; redo: () => void; subject?: string }): void {
+    if (!this.features.drawingUndoRedo || typeof step?.undo !== 'function' || typeof step.redo !== 'function') return;
+    const at = performance.now();
+    const last = this.undoRedoManager.last();
+    if (step.subject !== undefined && last?.type === 'custom' && last.custom?.subject === step.subject && at - last.custom.at < INDICATOR_EDIT_MERGE_MS) {
+      // Undo goes back to before the burst; redo to its end.
+      this.undoRedoManager.replaceLast({ ...last, custom: { undo: last.custom.undo, redo: step.redo, subject: step.subject, at } });
+      return;
+    }
+    this.undoRedoManager.push({ type: 'custom', before: null, after: null, custom: { undo: step.undo, redo: step.redo, subject: step.subject, at } });
   }
 
   // --- Drawing magnet ---
@@ -2725,8 +2764,7 @@ export class Chart {
     });
 
     this.autoScrollOnNewBar = config.autoScroll !== false;
-    this.currentSymbol = config.symbol;
-    this.streamTimeframe = config.timeframe;
+    this.setStreamTarget(config.symbol, config.timeframe);
     this.streamAdapter = config.adapter;
 
     const manager = this.streamManager;
@@ -2749,6 +2787,22 @@ export class Chart {
     }, 1000);
   }
 
+  /** The stream's symbol and timeframe, told when they change. */
+  private setStreamTarget(symbol: string, timeframe: TimeFrame): void {
+    const previousSymbol = this.announcedSymbol;
+    const previousTimeframe = this.announcedTimeframe;
+    this.currentSymbol = symbol;
+    this.streamTimeframe = timeframe;
+    if (symbol !== previousSymbol) {
+      this.announcedSymbol = symbol;
+      this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
+    }
+    if (timeframe !== previousTimeframe) {
+      this.announcedTimeframe = timeframe;
+      this.eventBus.emit('timeframeChange', { timeframe, previous: previousTimeframe });
+    }
+  }
+
   /**
    * Switch symbol or timeframe on an active stream without full reconnect.
    */
@@ -2758,8 +2812,7 @@ export class Chart {
     if (adapter && !servesTimeframe(adapter, timeframe)) {
       throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
     }
-    this.currentSymbol = symbol;
-    this.streamTimeframe = timeframe;
+    this.setStreamTarget(symbol, timeframe);
     // Until the new series is in, a page would be the new symbol's bars in
     // front of the old one's.
     if (this.historyFromStream) this.history.setLoader(null);

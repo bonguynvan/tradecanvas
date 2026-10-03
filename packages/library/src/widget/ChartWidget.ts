@@ -578,7 +578,7 @@ export class ChartWidget {
     // 7. Create settings (lazy, not appended until opened)
     if (options.settings !== false) {
       this.settings = new WidgetSettings({
-        onChange: (patch) => this.applySettings(patch),
+        onChange: (patch) => this.changeSettings(patch),
         onReset: () => this.resetSettings(),
         onClose: () => {},
       }, this.t, {
@@ -1005,7 +1005,7 @@ export class ChartWidget {
         if (e.code === 'KeyI') {
           // Alt+I → invert the price scale.
           e.preventDefault();
-          this.applySettings({ invertScale: !this.settingsState.invertScale });
+          this.changeSettings({ invertScale: !this.settingsState.invertScale });
         } else if (this.goToDate) {
           // Alt+G → go to date.
           e.preventDefault();
@@ -1740,7 +1740,7 @@ export class ChartWidget {
       }
       case 'resetView':
         this.chart.fitContent();
-        this.applySettings({ autoScale: true });
+        this.changeSettings({ autoScale: true });
         break;
       case 'hideDrawings':
         this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
@@ -1756,16 +1756,16 @@ export class ChartWidget {
         this.openSettings();
         break;
       case 'autoScale':
-        this.applySettings({ autoScale: !this.chart.isAutoScale() });
+        this.changeSettings({ autoScale: !this.chart.isAutoScale() });
         break;
       case 'logScale':
-        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' });
+        this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' });
         break;
       case 'percentScale':
-        this.applySettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' });
+        this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' });
         break;
       case 'invertScale':
-        this.applySettings({ invertScale: !this.chart.isInvertScale() });
+        this.changeSettings({ invertScale: !this.chart.isInvertScale() });
         break;
       case 'goToDate':
         this.toggleGoToDate();
@@ -2103,7 +2103,7 @@ export class ChartWidget {
     if (s.symbol && s.symbol !== this.state.symbol) await this.setSymbol(s.symbol);
     if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
 
-    if (s.chartType) this.handleChartType(s.chartType);
+    if (s.chartType) this.applyChartType(s.chartType);
     this.chart.setScaleMode(s.scaleMode);
 
     // The shared indicators in place of the chart's, as one undo step.
@@ -2416,7 +2416,15 @@ export class ChartWidget {
     return price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits });
   }
 
+  /** The user picked a chart type: applied, and undoable. */
   private handleChartType(type: ChartType): void {
+    const before = this.state.chartType;
+    if (type === before) return;
+    this.applyChartType(type);
+    this.chart.recordUndo({ subject: 'chartType', undo: () => this.applyChartType(before), redo: () => this.applyChartType(type) });
+  }
+
+  private applyChartType(type: ChartType): void {
     this.state = { ...this.state, chartType: type };
     this.chart.setChartType(type);
     this.updateUI();
@@ -3072,8 +3080,41 @@ export class ChartWidget {
   }
 
   private resetSettings(): void {
+    const before = { ...this.settingsState };
     this.settingsState = { ...this.settingsDefaults };
     this.applySettings(this.settingsState);
+    const after = { ...this.settingsState };
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    this.chart.recordUndo({ undo: () => this.restoreSettings(before), redo: () => this.restoreSettings(after) });
+  }
+
+  /**
+   * A settings change the user made: applied, and put in the chart's undo
+   * history with its drawings and indicators. A burst on the same settings
+   * (a colour dragged across the picker) is one step.
+   */
+  private changeSettings(patch: Partial<ChartSettingsState>): void {
+    const keys = Object.keys(patch) as (keyof ChartSettingsState)[];
+    // The scale mode and the legacy log flag move together.
+    if (keys.includes('scaleMode') || keys.includes('logScale')) {
+      for (const k of ['scaleMode', 'logScale'] as const) if (!keys.includes(k)) keys.push(k);
+    }
+    const pick = (): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, this.settingsState[k]]));
+    const before = pick();
+    this.applySettings(patch);
+    const after = pick();
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    this.chart.recordUndo({
+      subject: `settings:${Object.keys(patch).sort().join(',')}`,
+      undo: () => this.restoreSettings(before),
+      redo: () => this.restoreSettings(after),
+    });
+  }
+
+  /** Settings back as they were (an undo or redo), shown in the settings if they're open. */
+  private restoreSettings(values: Partial<ChartSettingsState>): void {
+    this.applySettings(values);
+    this.settings?.refresh(this.settingsState);
   }
 
   private async connectStream(): Promise<void> {
