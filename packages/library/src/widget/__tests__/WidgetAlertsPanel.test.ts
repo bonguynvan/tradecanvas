@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { WidgetAlertsPanel, type AlertSpec } from '../WidgetAlertsPanel.js';
+import { WidgetAlertsPanel, describeAlert, type AlertSpec } from '../WidgetAlertsPanel.js';
+import { EN_TRANSLATOR } from '../i18n.js';
 
 let host: HTMLDivElement;
 let panel: WidgetAlertsPanel;
@@ -70,6 +71,12 @@ describe('alerts panel form', () => {
     expect(added).toEqual([]);
     expect($('.tcw-alerts-percent').getAttribute('aria-invalid')).toBe('true');
     $<HTMLInputElement>('.tcw-alerts-percent').value = '3';
+    // A move is between two bars at least.
+    $<HTMLInputElement>('.tcw-alerts-bars').value = '1';
+    submit();
+    expect(added).toEqual([]);
+    expect($('.tcw-alerts-bars').getAttribute('aria-invalid')).toBe('true');
+    expect($<HTMLInputElement>('.tcw-alerts-bars').min).toBe('2');
     $<HTMLInputElement>('.tcw-alerts-bars').value = '12';
     submit();
     expect(added[0]).toMatchObject({ condition: 'movesDown', options: { percent: 3, bars: 12 } });
@@ -113,3 +120,16 @@ describe('alerts panel list', () => {
     expect(rows[0].querySelector('.tcw-alerts-badge')!.textContent).toBe('Expired');
   });
 });
+
+describe('describeAlert', () => {
+  const say = (alert: Parameters<typeof describeAlert>[0]) => describeAlert(alert, EN_TRANSLATOR, (p) => p.toFixed(2));
+
+  it('names the line compared with, and a move, instead of a price', () => {
+    expect(say({ id: 'a', price: 101.3, condition: 'crossingUp', triggered: true, channel: 'price', label: 'Price', target: 'ema:value', targetLabel: 'EMA 20' }))
+      .toBe('Price Crossing up EMA 20');
+    expect(say({ id: 'b', price: Number.NaN, condition: 'movesUp', triggered: true, channel: 'price', percent: 5, bars: 10 }))
+      .toBe('Price Moves up 5% within 10 bars');
+    expect(say({ id: 'c', price: 105, condition: 'crossing', triggered: true, channel: 'price' })).toBe('Crossing 105.00');
+  });
+});
+

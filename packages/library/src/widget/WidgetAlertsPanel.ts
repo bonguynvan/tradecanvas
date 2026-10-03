@@ -1,4 +1,4 @@
-import type { AlertCondition, AlertOptions } from '@tradecanvas/core';
+import { MAX_ALERT_BARS, MIN_ALERT_BARS, type AlertCondition, type AlertOptions } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
@@ -52,6 +52,22 @@ export interface AlertsPanelCallbacks {
   formatTime?: (ms: number) => string;
   /** Now, in ms (an expiry is counted from it). */
   now?: () => number;
+}
+
+/** What an alert watches, in words: "RSI crossing 70", "Price crossing EMA 20", "Price up 5% within 10 bars". */
+export function describeAlert(alert: AlertListItem, t: Translator, formatPrice: (price: number) => string): string {
+  const source = alert.label ?? t('alerts.source.price');
+  const conditionKey = CONDITION_KEY.get(alert.condition as AlertCondition);
+  const condition = conditionKey ? t(conditionKey) : alert.condition;
+  if (MOVES.includes(alert.condition)) {
+    return `${source} ${condition} ${fill(t('alerts.moveSummary'), { percent: alert.percent ?? 0, bars: alert.bars ?? 0 })}`;
+  }
+  if (alert.target) return `${source} ${condition} ${alert.targetLabel ?? alert.target}`;
+  const isIndicator = alert.channel && alert.channel !== 'price';
+  const valueStr = !Number.isFinite(alert.price) ? '—'
+    : isIndicator ? formatPlain(alert.price) : formatPrice(alert.price);
+  const prefix = (isIndicator || alert.drawingId) && alert.label ? `${alert.label} ` : '';
+  return `${prefix}${condition} ${valueStr}`;
 }
 
 const CONDITION_OPTIONS: { value: AlertCondition; key: MessageKey }[] = [
@@ -140,6 +156,8 @@ export class WidgetAlertsPanel {
     // Add form
     const form = document.createElement('form');
     form.className = 'tcw-alerts-form';
+    // The panel checks the fields itself (and marks the one that's wrong).
+    form.noValidate = true;
 
     this.sourceSelect = document.createElement('select');
     this.sourceSelect.className = 'tcw-alerts-source';
@@ -180,7 +198,8 @@ export class WidgetAlertsPanel {
     this.moveRow.className = 'tcw-alerts-row-fields';
     this.percentInput = this.numberField('tcw-alerts-percent', this.t('alerts.percent'), '1', '0.01');
     this.barsInput = this.numberField('tcw-alerts-bars', this.t('alerts.bars'), '10', '1');
-    this.barsInput.min = '1';
+    this.barsInput.min = String(MIN_ALERT_BARS);
+    this.barsInput.max = String(MAX_ALERT_BARS);
     this.moveRow.append(this.percentInput, this.barsInput);
 
     // On bar close; an end.
@@ -340,7 +359,8 @@ export class WidgetAlertsPanel {
     if (MOVES.includes(condition)) {
       options.percent = Number(this.percentInput.value);
       options.bars = Number(this.barsInput.value);
-      if (!(options.percent > 0) || !Number.isInteger(options.bars) || options.bars < 1) {
+      const barsOk = Number.isInteger(options.bars) && options.bars >= MIN_ALERT_BARS && options.bars <= MAX_ALERT_BARS;
+      if (!(options.percent > 0) || !barsOk) {
         this.markInvalid(!(options.percent > 0) ? this.percentInput : this.barsInput);
         return;
       }
@@ -367,20 +387,8 @@ export class WidgetAlertsPanel {
     input.addEventListener('input', () => input.removeAttribute('aria-invalid'), { once: true });
   }
 
-  /** What an alert watches, in words: "RSI crossing 70", "Price crossing EMA 20", "Price up 5% within 10 bars". */
   private describe(alert: AlertListItem): string {
-    const source = alert.label ?? this.t('alerts.source.price');
-    const conditionKey = CONDITION_KEY.get(alert.condition as AlertCondition);
-    const condition = conditionKey ? this.t(conditionKey) : alert.condition;
-    if (MOVES.includes(alert.condition)) {
-      return `${source} ${condition} ${fill(this.t('alerts.moveSummary'), { percent: alert.percent ?? 0, bars: alert.bars ?? 0 })}`;
-    }
-    if (alert.target) return `${source} ${condition} ${alert.targetLabel ?? alert.target}`;
-    const isIndicator = alert.channel && alert.channel !== 'price';
-    const valueStr = !Number.isFinite(alert.price) ? '—'
-      : isIndicator ? formatPlain(alert.price) : this.callbacks.formatPrice(alert.price);
-    const prefix = (isIndicator || alert.drawingId) && alert.label ? `${alert.label} ` : '';
-    return `${prefix}${condition} ${valueStr}`;
+    return describeAlert(alert, this.t, this.callbacks.formatPrice);
   }
 
   private renderList(): void {

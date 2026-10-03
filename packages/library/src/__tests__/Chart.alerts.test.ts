@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -56,3 +56,40 @@ describe('Chart alerts with options', () => {
     expect(() => chart.addAlert(100, 'movesUp', '', 'price', undefined, { percent: 0, bars: 3 })).toThrow(RangeError);
   });
 });
+
+describe('Chart alerts on a live feed', () => {
+  it('fire on the feed’s prices, not only on setCurrentPrice', async () => {
+    const handlers = new Map<string, (e: { data: unknown }) => void>();
+    const adapter: DataAdapter = {
+      name: 'fake',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
+      on: ((type: string, cb: (e: { data: unknown }) => void) => { handlers.set(type, cb); }) as DataAdapter['on'],
+      off: () => {},
+      dispose: () => {},
+    };
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60 });
+    const fired: string[] = [];
+    chart.on('alertTriggered', (e) => fired.push(e.payload.message ?? ''));
+    chart.addAlert(105, 'crossingUp', 'over 105');
+    const tick = (price: number) => handlers.get('tick')?.({ data: { price, volume: 1, time: T0 + 60 * HOUR } });
+    tick(104);
+    tick(106);
+    expect(fired).toEqual(['over 105']);
+  });
+
+  it('say what they watch in their events', () => {
+    const sma = chart.addIndicator('sma', { period: 5 })!;
+    const seen: unknown[] = [];
+    chart.on('alertAdd', (e) => seen.push(e.payload));
+    chart.addAlert(Number.NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 });
+    chart.addAlert(Number.NaN, 'crossingUp', 'cross', 'price', 'Price', { target: `${sma}:value` });
+    expect(seen).toMatchObject([
+      { condition: 'movesUp', channel: 'price', percent: 5, bars: 12 },
+      { condition: 'crossingUp', channel: 'price', label: 'Price', target: `${sma}:value` },
+    ]);
+  });
+});
+

@@ -119,3 +119,65 @@ describe('alert storage', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('alerts fed several lines at once', () => {
+  it('compares the price with the line as of the same moment', () => {
+    alerts.addAlert(Number.NaN, 'crossingUp', 'above EMA', false, 'price', undefined, { target: 'ema:value' });
+    alerts.checkChannels({ price: 9, 'ema:value': 10 });
+    // The price passes the old line value, but the line moved above it too.
+    alerts.checkChannels({ price: 11, 'ema:value': 12 });
+    expect(fired).toEqual([]);
+    alerts.checkChannels({ price: 13, 'ema:value': 12 });
+    expect(fired).toEqual(['above EMA']);
+  });
+
+  it('measures a move over two bars at least', () => {
+    expect(() => alerts.addAlert(Number.NaN, 'movesUp', '', false, 'price', undefined, { percent: 1, bars: 1 })).toThrow(/2 to 500/);
+    expect(() => alerts.addAlert(Number.NaN, 'movesUp', '', false, 'price', undefined, { percent: 1, bars: 2 })).not.toThrow();
+  });
+
+  it('starts a line’s bars again from a time that goes back, with no bar closing', () => {
+    alerts.addAlert(100, 'greaterThan', 'closed above', false, 'price', undefined, { onBarClose: true });
+    tick(1000, 90);
+    tick(2000, 95);
+    tick(1500, 120); // back in time (a reload): no bar closed on 120
+    expect(fired).toEqual([]);
+    tick(2500, 99); // the 1500 bar closes, at 120
+    expect(fired).toEqual(['closed above']);
+  });
+});
+
+describe('alert expiry', () => {
+  it('expires on time with no price coming in, and not once it has fired', () => {
+    vi.useFakeTimers();
+    try {
+      const expired: string[] = [];
+      alerts.on('expired', (a) => expired.push(a.message ?? a.id));
+      const now = Date.now();
+      alerts.addAlert(100, 'crossing', 'quiet', false, 'price', undefined, { expiresAt: now + 60_000 });
+      alerts.addAlert(100, 'crossing', 'fired', false, 'price', undefined, { expiresAt: now + 30_000 });
+      tick(1, 99);
+      tick(1, 101);
+      expect(fired).toEqual(['quiet', 'fired']);
+      alerts.addAlert(200, 'crossing', 'waiting', false, 'price', undefined, { expiresAt: now + 90_000 });
+      vi.advanceTimersByTime(90_000);
+      expect(expired).toEqual(['waiting']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops its timer when disposed', () => {
+    vi.useFakeTimers();
+    try {
+      const expired: string[] = [];
+      alerts.on('expired', (a) => expired.push(a.id));
+      alerts.addAlert(100, 'crossing', 'x', false, 'price', undefined, { expiresAt: Date.now() + 1000 });
+      alerts.dispose();
+      vi.advanceTimersByTime(5000);
+      expect(expired).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

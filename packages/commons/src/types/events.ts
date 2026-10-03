@@ -232,10 +232,19 @@ export interface TradeZoneRemovePayload {
 
 export interface AlertPayload {
   id: string;
+  /** The level; for an alert on another line, that line's latest value; NaN for a move. */
   price: number;
   condition: string;
   message?: string;
   triggered: boolean;
+  /** What it watches: `'price'` or `<instanceId>:<key>`. */
+  channel?: string;
+  label?: string;
+  /** The line it compares with. */
+  target?: string;
+  /** A move: the percent, within how many bars. */
+  percent?: number;
+  bars?: number;
 }
 
 /**

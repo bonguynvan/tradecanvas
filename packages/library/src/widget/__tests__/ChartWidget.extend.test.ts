@@ -36,7 +36,12 @@ class FakeChart {
   replaying = false;
   isReplayActive(): boolean { return this.replaying; }
   getReplayProgress() { return { current: 0, total: 10, percent: 0 }; }
-  getReplayState(): string { return 'paused'; }
+  replayState = 'paused';
+  getReplayState(): string { return this.replayState; }
+  replayBarIndex = 0;
+  getReplayBarIndex(): number { return this.replayBarIndex; }
+  resumed = 0;
+  replayResume(): void { this.resumed++; this.replayState = 'playing'; }
   barsLoaded: { time: number; close: number }[] = [];
   setData(bars: { time: number; close: number }[]): void { this.barsLoaded = bars; }
   timeframes: string[] = [];
@@ -248,6 +253,29 @@ describe('ChartWidget replay in finer steps', () => {
     await new Promise((r) => setTimeout(r, 0));
     const config = FakeChart.last.replays.at(-1)!;
     expect((config.steps as unknown[]).length).toBe(64);
+  });
+
+  it('switches steps mid-replay from the bar before the forming one, still playing', async () => {
+    const MIN15 = 15 * 60_000;
+    const bars = Array.from({ length: 64 }, (_, i) => ({ time: i * MIN15, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h' });
+    widget.setData(bars as never);
+    await new Promise((r) => setTimeout(r, 0));
+    widget.replayFrom(8, true);
+    const fake = FakeChart.last;
+    fake.replayBarIndex = 10;
+    const resumed = fake.resumed;
+    const select = host.querySelector<HTMLSelectElement>('.tcw-replay-step')!;
+    select.value = '15m';
+    select.dispatchEvent(new Event('change'));
+    select.value = '30m'; // a second choice before the first one's steps are in
+    select.dispatchEvent(new Event('change'));
+    await new Promise((r) => setTimeout(r, 0));
+    const restarts = fake.replays.slice(1);
+    expect(restarts).toHaveLength(1);
+    expect(restarts[0]).toMatchObject({ startIndex: 9 });
+    expect((restarts[0].steps as unknown[]).length).toBe(32);
+    expect(fake.resumed).toBe(resumed + 1);
   });
 });
 

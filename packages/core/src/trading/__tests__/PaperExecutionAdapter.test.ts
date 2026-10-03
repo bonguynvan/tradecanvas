@@ -122,3 +122,18 @@ describe('PaperExecutionAdapter: closes, stops and reverses', () => {
     expect(fills.slice(-2).map((f) => f.reason)).toEqual(['reverse', 'order']);
   });
 });
+
+describe('PaperExecutionAdapter fill times', () => {
+  it('stamps fills with the mark’s time, and with now once a mark comes without one', async () => {
+    const paper = new PaperExecutionAdapter({ markPrice: 100 });
+    const times: number[] = [];
+    paper.on<FillEvent>('fill', (e) => times.push(e.data.time));
+    paper.setMarkPrice(100, 1_000);
+    await paper.placeOrder({ side: 'buy', type: 'market', quantity: 1 });
+    paper.setMarkPrice(101);
+    const before = Date.now();
+    await paper.placeOrder({ side: 'buy', type: 'market', quantity: 1 });
+    expect(times[0]).toBe(1_000);
+    expect(times[1]).toBeGreaterThanOrEqual(before);
+  });
+});

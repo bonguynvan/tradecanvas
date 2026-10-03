@@ -67,12 +67,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
 
   /**
    * Feed the latest traded price, and its time (fills are stamped with it: a
-   * replay's fills land on the replayed bars); fills triggered limit/stop
-   * orders and SL/TP.
+   * replay's fills land on the replayed bars; without one, fills are stamped
+   * now); fills triggered limit/stop orders and SL/TP.
    */
   setMarkPrice(price: number, time?: number): void {
     this.markPrice = price;
-    if (time !== undefined && Number.isFinite(time)) this.markTime = time;
+    this.markTime = time !== undefined && Number.isFinite(time) ? time : undefined;
     this.checkPendingOrders();
     this.checkStops();
   }

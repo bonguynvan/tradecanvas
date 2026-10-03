@@ -14,7 +14,7 @@ import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
-import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
+import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -204,6 +204,7 @@ export class ChartWidget {
   private replaySpeed = DEFAULT_REPLAY_SPEED;
   /** `'bar'`, or the finer interval a replay steps through. */
   private replayStep = 'bar';
+  private replayStartSeq = 0;
   /** Finer bars fetched or built for the last replay in steps. */
   private replayStepsCache: { key: string; steps: DataSeries } | null = null;
   /** While picking the start bar: shades the bars right of the pointer. */
@@ -817,7 +818,7 @@ export class ChartWidget {
       this.chart.on('alertUpdate', () => this.refreshAlerts());
       this.chart.on('alertExpired', (e) => {
         const p = e.payload;
-        this.toast(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.t('alerts.source.price') }));
+        this.toast(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.alertText(p) }));
         this.refreshAlerts();
       });
       if (options.alertNotifications) {
@@ -825,7 +826,7 @@ export class ChartWidget {
       }
       this.chart.on('alertTriggered', (e) => {
         const p = e.payload;
-        const text = `${this.t('alerts.source.price')} ${this.formatAlertPrice(p.price)}${p.message ? ` — ${p.message}` : ''}`;
+        const text = `${this.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
         this.toast(`🔔 ${fill(this.t('alerts.fired'), { text })}`, 'info');
         this.alertNotifier?.notify(text);
         this.refreshAlerts();
@@ -1941,25 +1942,32 @@ export class ChartWidget {
     if (!this.alertsPanel) return;
     const sources = this.buildAlertSources();
     this.alertsPanel.setSources(sources);
-    this.alertsPanel.setAlerts(
-      this.chart.getAlerts().map((a) => ({
-        id: a.id,
-        price: a.price,
-        condition: a.condition,
-        message: a.message,
-        triggered: a.triggered,
-        channel: a.channel,
-        label: a.label,
-        drawingId: a.drawingId,
-        target: a.target,
-        targetLabel: a.target ? sources.find((s) => s.channel === a.target)?.label : undefined,
-        percent: a.percent,
-        bars: a.bars,
-        onBarClose: a.onBarClose,
-        expiresAt: a.expiresAt,
-        expired: a.expired,
-      })),
-    );
+    this.alertsPanel.setAlerts(this.chart.getAlerts().map((a) => this.alertListItem(a, sources)));
+  }
+
+  private alertListItem(a: AlertListItem, sources: readonly AlertSource[]): AlertListItem {
+    return {
+      id: a.id,
+      price: a.price,
+      condition: a.condition,
+      message: a.message,
+      triggered: a.triggered,
+      channel: a.channel,
+      label: a.label,
+      drawingId: a.drawingId,
+      target: a.target,
+      targetLabel: a.target ? sources.find((s) => s.channel === a.target)?.label : undefined,
+      percent: a.percent,
+      bars: a.bars,
+      onBarClose: a.onBarClose,
+      expiresAt: a.expiresAt,
+      expired: a.expired,
+    };
+  }
+
+  /** An alert in words, for a toast or a notification: "Price crossing EMA 20", "RSI greater than 70". */
+  private alertText(p: AlertListItem): string {
+    return describeAlert(this.alertListItem(p, this.buildAlertSources()), this.t, (price) => this.formatAlertPrice(price));
   }
 
   /** Price + every active indicator line, as selectable alert sources. */
@@ -2386,8 +2394,11 @@ export class ChartWidget {
         onClose: () => this.exitReplay(),
         onStepChange: (step) => {
           this.replayStep = step;
-          // Mid-replay: start again from the bar it is on, in the new steps.
-          if (this.replayBar?.getMode() === 'replay') this.startReplayAt(this.chart.getReplayBarIndex());
+          if (this.replayBar?.getMode() !== 'replay') return;
+          // Mid-replay: start again in the new steps from the bar before the
+          // forming one (so the rest of it isn't given away), playing if it was.
+          const playing = this.chart.getReplayState() === 'playing';
+          this.startReplayAt(Math.max(0, this.chart.getReplayBarIndex() - 1), playing);
         },
       },
       {
@@ -2440,8 +2451,10 @@ export class ChartWidget {
     this.replayShade = null;
     this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
     bar.setMode('replay');
+    // A newer start (a quicker step choice) wins over one still fetching its steps.
+    const seq = ++this.replayStartSeq;
     const go = (steps: DataSeries | null) => {
-      if (this.destroyed || this.replayBar !== bar || !bar.isMounted()) return;
+      if (this.destroyed || this.replayBar !== bar || !bar.isMounted() || seq !== this.replayStartSeq) return;
       this.chart.replayStart({ speed: this.replaySpeed, interval: 1000, startIndex: start, paused: true, ...(steps ? { steps } : {}) });
       if (play) this.chart.replayResume();
       bar.setState(play ? 'playing' : 'paused');

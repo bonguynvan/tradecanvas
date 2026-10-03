@@ -75,6 +75,9 @@ export class InteractionManager {
   /** Signal markers: the one under a point, and who hears when the hovered one changes. */
   private markerAt: ((pos: Point) => unknown | null) | null = null;
   private onMarkerHover: ((marker: unknown | null, pos: Point) => void) | null = null;
+  private markerClickable: () => boolean = () => true;
+  /** Where the pointer was over the hovered marker. */
+  private markerPos: Point = { x: 0, y: 0 };
   private hoveredMarker: unknown | null = null;
   private downPos: Point | null = null;
   private downMoved = false;
@@ -141,13 +144,30 @@ export class InteractionManager {
     this.onConfirm = handler;
   }
 
-  /** Wire a plain left-click on the chart area (press + release without drag). */
-  /** Markers that react to the pointer: a hand over them, and word of the one hovered. */
-  setSignalMarkerHitTest(markerAt: ((pos: Point) => unknown | null) | null, onHover: ((marker: unknown | null, pos: Point) => void) | null): void {
+  /**
+   * Markers that react to the pointer: word of the one hovered (null when the
+   * pointer leaves it), and a hand over them while `clickable()` says a click
+   * on one does something.
+   */
+  setSignalMarkerHitTest(
+    markerAt: ((pos: Point) => unknown | null) | null,
+    onHover: ((marker: unknown | null, pos: Point) => void) | null,
+    clickable: () => boolean = () => true,
+  ): void {
     this.markerAt = markerAt;
     this.onMarkerHover = onHover;
+    this.markerClickable = clickable;
+    if (!markerAt) this.hoveredMarker = null;
   }
 
+  /** Leave the hovered marker (the pointer left, or a press started). */
+  private leaveMarker(): void {
+    if (this.hoveredMarker === null) return;
+    this.hoveredMarker = null;
+    this.onMarkerHover?.(null, this.markerPos);
+  }
+
+  /** Wire a plain left-click on the chart area (press + release without drag). */
   setClickHandler(handler: (pos: Point) => void): void {
     this.onClick = handler;
   }
@@ -347,6 +367,7 @@ export class InteractionManager {
     const beginPress = () => {
       if (pressActive) return;
       pressActive = true;
+      this.leaveMarker();
       savedUserSelect = document.documentElement.style.userSelect;
       document.documentElement.style.userSelect = 'none';
       document.addEventListener('mousemove', onDocMouseMove);
@@ -525,7 +546,8 @@ export class InteractionManager {
           this.hoveredMarker = marker;
           this.onMarkerHover?.(marker, pos);
         }
-        setCursor(marker ? 'pointer' : hoverCursor(pos));
+        if (marker) this.markerPos = pos;
+        setCursor(marker && this.markerClickable() ? 'pointer' : hoverCursor(pos));
       }
 
       if (this.tradingManager && vp && this.tradingManager.onPointerMove(pressActive ? clampToPlot(pos) : pos, vp)) {
@@ -603,6 +625,7 @@ export class InteractionManager {
     };
 
     const onMouseLeave = () => {
+      this.leaveMarker();
       if (pressActive) {
         // The gesture continues outside (document listener); only the hover
         // crosshair goes away.

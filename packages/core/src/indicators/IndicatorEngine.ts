@@ -486,7 +486,12 @@ export class IndicatorEngine {
    * values, its levels, zero for histograms and its fixed bounds. Null when
    * there is nothing to fit.
    */
-  getPaneValueRange(instanceId: string, from: number, to: number): { min: number; max: number } | null {
+  /**
+   * The value range of a pane over bars `[from, to]`, its members included.
+   * With `log`, the range for a logarithmic scale: null when any of them has
+   * a value at or below zero there (the pane stays linear).
+   */
+  getPaneValueRange(instanceId: string, from: number, to: number, log = false): { min: number; max: number } | null {
     let range: { min: number; max: number } | null = null;
     // The pane's own indicator and those drawn in it share one scale.
     for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
@@ -498,7 +503,9 @@ export class IndicatorEngine {
         scale: descriptor.scale,
         levels: instance.config.levels ?? descriptor.levels,
         zero: hasHistogram(descriptor.plots),
+        log,
       });
+      if (!own && log) return null;
       if (own) range = range ? { min: Math.min(range.min, own.min), max: Math.max(range.max, own.max) } : own;
     }
     return range;

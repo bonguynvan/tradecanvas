@@ -19,7 +19,10 @@ export interface AlertOptions {
   target?: string;
   /** `movesUp` / `movesDown`: the move in percent… */
   percent?: number;
-  /** …within this many bars (1–500), counting the forming one. */
+  /**
+   * …within this many bars (2–500), counting the forming one; the move is
+   * measured on each bar's latest value (its close, for a closed bar).
+   */
   bars?: number;
   /** Look only at bars that closed: no firing on a wick that comes back. */
   onBarClose?: boolean;
@@ -29,6 +32,8 @@ export interface AlertOptions {
 
 /** The most bars a move may be measured over. */
 export const MAX_ALERT_BARS = 500;
+/** The fewest: a move is between two bars at least. */
+export const MIN_ALERT_BARS = 2;
 
 const MOVES: readonly AlertCondition[] = ['movesUp', 'movesDown'];
 
@@ -109,6 +114,9 @@ interface BarValue {
 
 let alertId = 1;
 
+/** The longest a timer can wait (setTimeout's limit). */
+const MAX_TIMER_MS = 2 ** 31 - 1;
+
 /**
  * Manages price alerts. Renders alert lines on the chart overlay.
  * Checks each price update against configured alerts and emits 'triggered'.
@@ -123,6 +131,7 @@ export class AlertManager extends Emitter<AlertEvents> {
   private pricePrecision = 2;
   /** The forming bar's time, for moves over bars and bar closes. */
   private barTime: number | null = null;
+  private expiryTimer: ReturnType<typeof setTimeout> | null = null;
   private history = new Map<string, BarValue[]>();
   /** Per alert on another line, this line minus that one when last seen (a crossing needs two). */
   private lastDiffs = new Map<string, number>();
@@ -153,6 +162,7 @@ export class AlertManager extends Emitter<AlertEvents> {
     const id = `tc_alert_${alertId++}`;
     const alert: PriceAlert = { id, price, condition, message, triggered: false, repeating, channel, label, ...extra };
     this.alerts.push(alert);
+    if (extra.expiresAt !== undefined) this.scheduleExpiry();
     this.emit('added', alert);
     this.requestRender?.();
     return id;
@@ -208,6 +218,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       this.alerts.push(restored);
       this.emit('added', restored);
     }
+    this.scheduleExpiry();
     this.requestRender?.();
   }
 
@@ -221,7 +232,9 @@ export class AlertManager extends Emitter<AlertEvents> {
   removeAlert(id: string): void {
     this.drawingSides.delete(id);
     this.lastDiffs.delete(id);
+    const timed = this.alerts.some((a) => a.id === id && a.expiresAt !== undefined);
     this.alerts = this.alerts.filter((a) => a.id !== id);
+    if (timed) this.scheduleExpiry();
     this.emit('removed', id);
     this.requestRender?.();
   }
@@ -259,6 +272,9 @@ export class AlertManager extends Emitter<AlertEvents> {
 
   clearAlerts(): void {
     this.alerts = [];
+    this.lastDiffs.clear();
+    this.drawingSides.clear();
+    this.scheduleExpiry();
     this.requestRender?.();
   }
 
@@ -268,16 +284,49 @@ export class AlertManager extends Emitter<AlertEvents> {
     this.checkDrawingAlerts(price);
   }
 
-  /** Alerts past their `expiresAt` stop, and say so. */
+  /** Alerts on drawings, against the price (`checkChannels` covers the others). */
+  checkDrawings(price: number): void {
+    this.checkDrawingAlerts(price);
+  }
+
+  /** Alerts past their `expiresAt` stop, and say so (a one-shot that already fired is done, not expired). */
   private expire(): void {
     const now = Date.now();
+    let changed = false;
     for (const alert of this.alerts) {
       if (alert.expired || alert.expiresAt === undefined || now < alert.expiresAt) continue;
+      if (alert.triggered && !alert.repeating) continue;
       alert.expired = true;
+      changed = true;
       this.emit('expired', { ...alert });
       this.emit('updated', { ...alert });
-      this.requestRender?.();
     }
+    if (!changed) return;
+    this.requestRender?.();
+    this.scheduleExpiry();
+  }
+
+  /** Wake up at the next expiry, so an alert expires without ticks too. */
+  private scheduleExpiry(): void {
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    this.expiryTimer = null;
+    const next = Math.min(...this.alerts
+      .filter((a) => !a.expired && a.expiresAt !== undefined && !(a.triggered && !a.repeating))
+      .map((a) => a.expiresAt as number));
+    if (!Number.isFinite(next)) return;
+    // setTimeout holds at most ~24.8 days; a later expiry wakes up and waits again.
+    const wait = Math.min(Math.max(0, next - Date.now()), MAX_TIMER_MS);
+    this.expiryTimer = setTimeout(() => {
+      this.expiryTimer = null;
+      this.expire();
+      if (!this.expiryTimer) this.scheduleExpiry();
+    }, wait);
+  }
+
+  /** Stop the expiry timer (the chart is going). */
+  dispose(): void {
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    this.expiryTimer = null;
   }
 
   private checkDrawingAlerts(price: number): void {
@@ -310,30 +359,52 @@ export class AlertManager extends Emitter<AlertEvents> {
    * Evaluate every alert on `channel` (or comparing with it) against `value`,
    * e.g. the latest indicator-line value. The previous value per channel is
    * kept for crossings, and one value per bar (`setBarTime`) for moves over
-   * bars and for alerts that look only at closed bars.
+   * bars and for alerts that look only at closed bars. To compare lines at
+   * the same moment, give them together with `checkChannels`.
    */
   checkChannel(channel: string, value: number): void {
-    if (!Number.isFinite(value)) return;
+    this.checkChannels(new Map([[channel, value]]));
+  }
+
+  /**
+   * Take the latest value of several channels at once (the price and the
+   * indicator lines alerts watch), then evaluate the alerts on them: a line
+   * against another line compares values of the same moment.
+   */
+  checkChannels(values: ReadonlyMap<string, number> | Readonly<Record<string, number>>): void {
+    const entries = values instanceof Map ? [...values.entries()] : Object.entries(values);
+    const fresh = entries.filter(([, v]) => Number.isFinite(v));
+    if (fresh.length === 0) return;
     this.expire();
-    const prev = this.lastValues.get(channel);
-    const closedBar = this.recordBar(channel, value);
-    this.lastValues.set(channel, value);
+    const prevs = new Map<string, number | undefined>();
+    const closed = new Map<string, { channel: string; time: number }>();
+    for (const [channel, value] of fresh) {
+      prevs.set(channel, this.lastValues.get(channel));
+      const bar = this.recordBar(channel, value);
+      if (bar) closed.set(channel, bar);
+      this.lastValues.set(channel, value);
+    }
 
     for (const alert of this.alerts) {
       if (alert.drawingId || alert.expired) continue;
-      if (alert.channel !== channel && alert.target !== channel) continue;
+      const own = prevs.has(alert.channel);
+      const other = alert.target !== undefined && prevs.has(alert.target);
+      if (!own && !other) continue;
       let met: boolean;
       if (alert.onBarClose) {
         // Only when a bar closed, and by its values.
-        if (!closedBar) continue;
-        met = this.closedBarMet(alert, closedBar);
+        const bar = closed.get(alert.channel) ?? (alert.target ? closed.get(alert.target) : undefined);
+        if (!bar) continue;
+        met = this.closedBarMet(alert, bar);
       } else if (alert.target) {
         met = this.targetMet(alert);
       } else if (MOVES.includes(alert.condition)) {
-        met = this.moveMet(alert, this.history.get(channel) ?? []);
+        if (!own) continue;
+        met = this.moveMet(alert, this.history.get(alert.channel) ?? []);
       } else {
-        if (prev === undefined) continue; // the first value only seeds
-        met = levelMet(prev, value, alert.price, alert.condition);
+        const prev = prevs.get(alert.channel);
+        if (!own || prev === undefined) continue; // the first value only seeds
+        met = levelMet(prev, this.lastValues.get(alert.channel) as number, alert.price, alert.condition);
       }
       this.settle(alert, met);
     }
@@ -412,12 +483,20 @@ export class AlertManager extends Emitter<AlertEvents> {
   private recordBar(channel: string, value: number): { channel: string; time: number } | null {
     const time = this.barTime;
     if (time === null) return null;
-    const bars = this.history.get(channel) ?? [];
-    const last = bars[bars.length - 1];
+    let bars = this.history.get(channel) ?? [];
+    let last = bars[bars.length - 1];
+    if (last && time < last.time) {
+      // Back in time: what came after is not history any more, and no bar closed.
+      bars = bars.filter((b) => b.time < time);
+      bars.push({ time, value });
+      this.history.set(channel, bars);
+      return null;
+    }
     if (last && last.time === time) {
       bars[bars.length - 1] = { time, value };
       return null;
     }
+    last = bars[bars.length - 1];
     bars.push({ time, value });
     const keep = Math.min(MAX_ALERT_BARS + 2, Math.max(3, ...this.alerts.map((a) => (a.bars ?? 1) + 2)));
     if (bars.length > keep) bars.splice(0, bars.length - keep);
@@ -519,8 +598,8 @@ function checkedOptions(condition: AlertCondition, channel: string, options: Ale
   if (move) {
     const { percent, bars } = options;
     if (percent === undefined || !Number.isFinite(percent) || percent <= 0) throw new RangeError('An alert on a move needs a percent above 0');
-    if (bars === undefined || !Number.isInteger(bars) || bars < 1 || bars > MAX_ALERT_BARS) {
-      throw new RangeError(`An alert on a move needs 1 to ${MAX_ALERT_BARS} bars`);
+    if (bars === undefined || !Number.isInteger(bars) || bars < MIN_ALERT_BARS || bars > MAX_ALERT_BARS) {
+      throw new RangeError(`An alert on a move needs ${MIN_ALERT_BARS} to ${MAX_ALERT_BARS} bars`);
     }
     out.percent = percent;
     out.bars = bars;

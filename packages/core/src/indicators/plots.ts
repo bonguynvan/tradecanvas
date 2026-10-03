@@ -39,6 +39,11 @@ export interface PaneRangeOptions {
   levels?: readonly number[];
   /** Keep zero in view (histograms grow from it). */
   zero?: boolean;
+  /**
+   * For a logarithmic scale: padded by ratio, without zero or levels at or
+   * below it; null when a value is at or below zero (it has no place there).
+   */
+  log?: boolean;
 }
 
 /**
@@ -58,25 +63,18 @@ export function paneValueRange(
   let lo = Infinity;
   let hi = -Infinity;
   const keys = options.keys;
+  const take = (v: number | undefined): void => {
+    if (v === undefined || !Number.isFinite(v)) return;
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  };
   const scan = (val: IndicatorValue | null | undefined): void => {
     if (!val) return;
     if (keys) {
-      for (let k = 0; k < keys.length; k++) {
-        const v = val[keys[k]];
-        if (v !== undefined && Number.isFinite(v)) {
-          if (v < lo) lo = v;
-          if (v > hi) hi = v;
-        }
-      }
+      for (let k = 0; k < keys.length; k++) take(val[keys[k]]);
       return;
     }
-    for (const key in val) {
-      const v = val[key];
-      if (v !== undefined && Number.isFinite(v)) {
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
-      }
-    }
+    for (const key in val) take(val[key]);
   };
   const series = output?.series;
   if (series) {
@@ -92,6 +90,7 @@ export function paneValueRange(
     }
   }
   const scale = options.scale;
+  if (options.log) return logRange(lo, hi, options);
   const fixedMin = scale?.min;
   const fixedMax = scale?.max;
   if (lo === Infinity) {
@@ -115,6 +114,33 @@ export function paneValueRange(
   if (fixedMax !== undefined) hi = fixedMax;
   if (!(hi > lo)) hi = lo + 1;
   return { min: lo, max: hi };
+}
+
+/** `paneValueRange` on a logarithmic scale: from the values seen (`lo`…`hi`). */
+function logRange(lo: number, hi: number, options: PaneRangeOptions): { min: number; max: number } | null {
+  const positive = (v: number | undefined): v is number => v !== undefined && v > 0;
+  const fixedMin = positive(options.scale?.min) ? options.scale?.min : undefined;
+  const fixedMax = positive(options.scale?.max) ? options.scale?.max : undefined;
+  if (lo === Infinity) {
+    if (fixedMin === undefined || fixedMax === undefined) return null;
+    lo = fixedMin;
+    hi = fixedMax;
+  } else {
+    if (!(lo > 0)) return null;
+    // The same padding as a linear pane, on the log of the values.
+    const span = Math.log(hi / lo) || Math.LN2 / 4;
+    const pad = Math.exp(span * PANE_PADDING);
+    lo /= pad;
+    hi *= pad;
+  }
+  for (const level of options.levels ?? []) {
+    if (!(level > 0)) continue;
+    if (level < lo) lo = level;
+    if (level > hi) hi = level;
+  }
+  if (fixedMin !== undefined) lo = fixedMin;
+  if (fixedMax !== undefined) hi = fixedMax;
+  return hi > lo ? { min: lo, max: hi } : null;
 }
 
 /** Whether a plot list has a histogram (its pane then keeps zero in view). */

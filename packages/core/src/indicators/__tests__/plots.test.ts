@@ -115,3 +115,19 @@ describe('renderPlots', () => {
     expect(plotColor(plot, style, null)).toBe('#up');
   });
 });
+
+describe('paneValueRange on a log scale', () => {
+  it('pads by ratio and leaves zero out, so a volume pane can go log', () => {
+    const range = paneValueRange(out([{ value: 10 }, { value: 1000 }]), 0, 1, { keys: null, zero: true, levels: [0, 500], log: true })!;
+    expect(range.min).toBeGreaterThan(0);
+    expect(range.min).toBeLessThan(10);
+    expect(range.max).toBeGreaterThan(1000);
+    // Equal ratios either side.
+    expect(10 / range.min).toBeCloseTo(range.max / 1000, 6);
+  });
+
+  it('is null with a value at or below zero', () => {
+    expect(paneValueRange(out([{ value: 5 }, { value: 0 }]), 0, 1, { keys: null, log: true })).toBeNull();
+    expect(paneValueRange(out([{ value: -1 }, { value: 3 }]), 0, 1, { keys: null, log: true })).toBeNull();
+  });
+});
