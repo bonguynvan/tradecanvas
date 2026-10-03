@@ -156,7 +156,10 @@ const id: SiteMessages = {
         'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 85 indikator',
         'Klik nama indikator di legenda: parameter, warna, dan level',
         'Atur Sumber sebuah moving average ke garis indikator lain',
-        'Seret garis di antara panel untuk mengubah ukurannya',
+        'Seret garis di antara panel untuk mengubah ukurannya; tombol di kanan atas panel memindahkan, menciutkan, atau memaksimalkannya',
+        '⋯ pada baris legenda memindahkan indikator ke panel di atas atau di bawah, atau ke panel tersendiri',
+        'Menu Indikator → Simpan indikator sebagai templat…; Ctrl+Z juga mengurungkan perubahan indikator',
+        'Ketik angka di grafik (4, lalu h, Enter) untuk mengganti kerangka waktu; Alt+T memilih garis tren',
       ],
     },
     trading: {

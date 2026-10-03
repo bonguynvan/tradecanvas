@@ -14,10 +14,31 @@ export interface IndicatorLegendRow {
   pane: { x: number; y: number; width: number } | null;
 }
 
+/** An indicator pane, for the buttons at its top right. */
+export interface IndicatorLegendPane {
+  /** The indicator whose pane it is. */
+  instanceId: string;
+  /** The pane's top right corner, inside the price axis (container px). */
+  x: number;
+  y: number;
+  /** For the buttons' names: "Collapse pane RSI 14". */
+  label: string;
+  collapsed: boolean;
+  maximized: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}
+
+export type PaneAction = 'up' | 'down' | 'collapse' | 'expand' | 'maximize' | 'restore';
+
 export interface IndicatorLegendCallbacks {
   onToggleVisible: (instanceId: string, visible: boolean) => void;
   onSettings: (instanceId: string) => void;
   onRemove: (instanceId: string) => void;
+  /** The row's "more" button: a menu under `anchor` (move to another pane…). */
+  onMore?: (instanceId: string, anchor: HTMLElement) => void;
+  /** A pane's button: move it, fold it, maximise it. */
+  onPaneAction?: (instanceId: string, action: PaneAction) => void;
 }
 
 export interface IndicatorLegendLabels {
@@ -27,6 +48,19 @@ export interface IndicatorLegendLabels {
   remove: string;
   collapse: string;
   expand: string;
+  more?: string;
+  paneUp?: string;
+  paneDown?: string;
+  paneCollapse?: string;
+  paneExpand?: string;
+  paneMaximize?: string;
+  paneRestore?: string;
+}
+
+interface PaneEls {
+  el: HTMLDivElement;
+  buttons: Map<string, HTMLButtonElement>;
+  key: string;
 }
 
 /** Collapsing is offered once this many indicators share the price pane. */
@@ -38,6 +72,7 @@ interface RowEls {
   values: HTMLSpanElement;
   eye: HTMLButtonElement;
   settings: HTMLButtonElement;
+  more: HTMLButtonElement | null;
   remove: HTMLButtonElement;
   visible: boolean;
   valuesKey: string;
@@ -58,6 +93,7 @@ export class WidgetIndicatorLegend {
   private readonly stack: HTMLDivElement;
   private readonly toggle: HTMLButtonElement;
   private readonly rows = new Map<string, RowEls>();
+  private readonly panes = new Map<string, PaneEls>();
   private collapsed = false;
   private toggleKey = '';
   private stackKey = '';
@@ -80,7 +116,8 @@ export class WidgetIndicatorLegend {
     host.appendChild(this.stack);
   }
 
-  update(rows: readonly IndicatorLegendRow[], overlay: { left: number; top: number }): void {
+  update(rows: readonly IndicatorLegendRow[], overlay: { left: number; top: number }, panes: readonly IndicatorLegendPane[] = []): void {
+    this.updatePanes(panes);
     const stackKey = `${Math.round(overlay.left)},${Math.round(overlay.top)}`;
     if (stackKey !== this.stackKey) {
       this.stackKey = stackKey;
@@ -116,7 +153,68 @@ export class WidgetIndicatorLegend {
   destroy(): void {
     for (const els of this.rows.values()) els.el.remove();
     this.rows.clear();
+    for (const els of this.panes.values()) els.el.remove();
+    this.panes.clear();
     this.stack.remove();
+  }
+
+  /** Each pane's buttons at its top right: move up, move down, fold, maximise. */
+  private updatePanes(panes: readonly IndicatorLegendPane[]): void {
+    if (!this.callbacks.onPaneAction) return;
+    const seen = new Set<string>();
+    for (const pane of panes) {
+      seen.add(pane.instanceId);
+      const els = this.panes.get(pane.instanceId) ?? this.createPane(pane.instanceId);
+      const key = `${Math.round(pane.x)},${Math.round(pane.y)}|${pane.label}|${pane.collapsed}|${pane.maximized}|${pane.canMoveUp}|${pane.canMoveDown}`;
+      if (key === els.key) continue;
+      els.key = key;
+      els.el.style.left = `${Math.round(pane.x)}px`;
+      els.el.style.top = `${Math.round(pane.y)}px`;
+      const l = this.labels;
+      const show = (act: string, visible: boolean, icon: string, label: string | undefined) => {
+        const b = els.buttons.get(act)!;
+        if (!visible && document.activeElement === b) els.buttons.get('max')!.focus();
+        b.hidden = !visible;
+        b.innerHTML = createIcon(icon, 12);
+        setLabel(b, label ?? act, pane.label);
+      };
+      show('up', pane.canMoveUp && !pane.maximized, 'arrowUp', l.paneUp);
+      show('down', pane.canMoveDown && !pane.maximized, 'arrowDown', l.paneDown);
+      show('fold', !pane.maximized, pane.collapsed ? 'chevronDown' : 'chevronUp', pane.collapsed ? l.paneExpand : l.paneCollapse);
+      show('max', true, pane.maximized ? 'minimize' : 'maximize', pane.maximized ? l.paneRestore : l.paneMaximize);
+      els.el.dataset.collapsed = String(pane.collapsed);
+      els.el.dataset.maximized = String(pane.maximized);
+    }
+    for (const [id, els] of this.panes) {
+      if (seen.has(id)) continue;
+      els.el.remove();
+      this.panes.delete(id);
+    }
+  }
+
+  private createPane(instanceId: string): PaneEls {
+    const el = document.createElement('div');
+    el.className = 'tcw-pane-controls';
+    el.dataset.instance = instanceId;
+    const buttons = new Map<string, HTMLButtonElement>();
+    const run = (act: string): PaneAction => {
+      if (act === 'up' || act === 'down') return act;
+      if (act === 'fold') return el.dataset.collapsed === 'true' ? 'expand' : 'collapse';
+      return el.dataset.maximized === 'true' ? 'restore' : 'maximize';
+    };
+    for (const act of ['up', 'down', 'fold', 'max']) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tcw-pane-btn';
+      b.dataset.act = act;
+      b.addEventListener('click', () => this.callbacks.onPaneAction?.(instanceId, run(act)));
+      buttons.set(act, b);
+      el.appendChild(b);
+    }
+    this.host.appendChild(el);
+    const els: PaneEls = { el, buttons, key: '' };
+    this.panes.set(instanceId, els);
+    return els;
   }
 
   private createRow(instanceId: string): RowEls {
@@ -149,11 +247,14 @@ export class WidgetIndicatorLegend {
       this.callbacks.onToggleVisible(instanceId, !els.visible);
     });
     const settings = action('settings', 'settings', () => this.callbacks.onSettings(instanceId));
+    const more = this.callbacks.onMore
+      ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!))
+      : null;
     const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId));
 
     el.append(name, values, actions);
     const els: RowEls = {
-      el, name, values, eye, settings, remove, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, values, eye, settings, more, remove, visible: true, valuesKey: '', state: '', placeKey: '',
     };
     this.rows.set(instanceId, els);
     return els;
@@ -170,6 +271,10 @@ export class WidgetIndicatorLegend {
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
       setLabel(els.settings, this.labels.settings, row.label);
+      if (els.more) {
+        setLabel(els.more, this.labels.more ?? 'More', row.label);
+        els.more.setAttribute('aria-haspopup', 'menu');
+      }
       setLabel(els.remove, this.labels.remove, row.label);
     }
     const valuesKey = row.values.map((v) => `${v.text}${v.color ?? ''}`).join('\u0001');

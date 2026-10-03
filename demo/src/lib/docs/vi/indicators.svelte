@@ -113,11 +113,49 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">hướng dẫn mẫu cho chỉ báo tuỳ chỉnh</a>.
 </p>
 
-<h2>Đổi kích thước bảng</h2>
+<h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
 <p>
-  <strong>Kéo đường phân cách</strong> phía trên một bảng để đổi kích thước, hoặc đặt chiều cao cho nó:
+  <strong>Kéo đường phân cách</strong> phía trên một bảng để đổi kích thước. Trong ChartWidget, mỗi bảng
+  có các nút ở góc phải trên: đưa bảng lên hoặc xuống, thu gọn chỉ còn dòng tiêu đề, phóng to
+  (các bảng khác thu gọn lại, còn bảng giá chính giữ một dải hẹp). Bố cục đã lưu giữ kích thước, thứ tự,
+  trạng thái thu gọn và phóng to của từng bảng. Làm điều tương tự bằng code:
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>Chuyển một chỉ báo sang bảng khác</h2>
+<p>
+  Một chỉ báo có thể vào bảng của một chỉ báo khác (khi đó nó dùng chung thang của bảng đó),
+  có bảng riêng, hoặc quay về bảng giá chính. Khi nó rời một bảng mà nó làm chủ, các chỉ báo khác
+  trong bảng vẫn ở lại (chỉ báo kế tiếp trong bảng sẽ làm chủ bảng), và các chỉ báo đọc đường của nó
+  sẽ đi theo nó. Trong ChartWidget, nút <strong>⋯</strong> trên một dòng chú thích cho chọn bảng phía
+  trên, bảng phía dưới, một bảng mới và bảng giá chính.
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>Hoàn tác và mẫu</h2>
+<p>
+  Thêm, xoá, sửa và di chuyển chỉ báo đều là các bước hoàn tác, nằm chung lịch sử với hình vẽ
+  (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>); một chỉ báo được khôi phục khi hoàn tác sẽ quay lại
+  với đúng id cũ, nên các cảnh báo trên đường của nó vẫn khớp. Một loạt chỉnh sửa liền nhau trên cùng
+  một chỉ báo (kéo chọn màu, gõ chu kỳ) tính là một bước. Khi tải một bố cục, lịch sử bắt đầu lại từ đầu.
+</p>
+<p>
+  Có thể lấy ra và đặt lại toàn bộ chỉ báo cùng một lúc, và đó chính là việc mẫu chỉ báo của
+  ChartWidget làm: <strong>Lưu indicator thành mẫu…</strong> trong menu Chỉ báo lưu chúng (thông số,
+  kiểu, mức, bảng) dưới một cái tên, còn chọn một mẫu sẽ đặt chúng vào thay cho các chỉ báo hiện có
+  của biểu đồ, trong một bước hoàn tác.
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>Tính toán bên ngoài biểu đồ</h2>
 <p>

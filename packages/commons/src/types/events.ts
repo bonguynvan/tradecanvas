@@ -18,6 +18,8 @@ export type ChartEventType =
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
+  /** A pane was folded or opened, maximised or put back, or moved up or down. */
+  | 'paneChange'
   | 'indicatorUpdate'
   | 'indicatorChange'
   | 'themeChange'
@@ -263,6 +265,8 @@ export interface ChartEventMap {
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
   paneResize: { instanceId: string; size: number };
+  /** A pane was folded or opened, maximised or put back, or moved up or down. */
+  paneChange: { instanceId: string; change: 'collapsed' | 'maximized' | 'order' };
   /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */
   indicatorUpdate: { from: number };
   /** One indicator's settings changed: shown or hidden, restyled, new levels or inputs, moved to another pane. */

@@ -4,6 +4,15 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Panes, templates and undo
+
+- **Move an indicator to another pane** — into the pane above or below, a pane of its own, or back to the price pane — from the ⋯ button on its legend row, or `chart.moveIndicatorToPane`. The pane's other indicators stay, and those reading its lines follow it.
+- **Fold, maximise and reorder panes** with buttons at each pane's top right (`setPaneCollapsed`, `setMaximizedPane`, `movePane`). Saved layouts keep each pane's size, order, fold and maximise.
+- **Undo for indicators**: Ctrl/Cmd+Z takes back adding, removing, editing and moving indicators, in the same history as drawings. An indicator comes back under its own id, so alerts on its lines still match.
+- **Indicator templates**: save the chart's indicators (inputs, style, levels, panes) under a name from the indicators menu and apply them in one go.
+- **Type a number to change the interval** (`5`, `15m`, `1h`, `1D`, Enter), and **Alt+T / H / J / V / C / F** for the trend line, horizontal line and ray, vertical line, cross line and Fibonacci retracement.
+- Prices offered by the chart's menus and the order ticket sit on the market's price grid (`chart.roundPrice`).
+
 ### Trading and workspace
 
 - **Act on orders and positions from the chart**: × on an order line cancels it, × on a position closes it, ⇅ reverses it, × on a stop-loss or take-profit removes it. They raise the usual intents (a new `positionReverse` among them), so a connected adapter acts on them; an adapter without `reversePosition` gets a close and a market order the other way. Orders take a stop-loss, a take-profit and a time in force that carry over to the position. Adapter authors: `PositionModifyIntent.stopLoss` / `takeProfit` can now be `null`, meaning remove it (a missing field still means keep it).

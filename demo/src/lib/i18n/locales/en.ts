@@ -162,7 +162,10 @@ const en = {
         'Press the Indicators button (or Ctrl+K) and search any of the 85',
         'Click an indicator name in the legend: inputs, colours and levels',
         'Set a moving average’s Source to another indicator’s line',
-        'Drag the line between panes to resize them',
+        'Drag the line between panes to resize them; the buttons at a pane’s top right move, fold or maximise it',
+        'The ⋯ on a legend row moves the indicator into the pane above or below, or a pane of its own',
+        'Indicators menu → Save indicators as template…; Ctrl+Z undoes indicator changes too',
+        'Type a number on the chart (4, then h, Enter) to change the interval; Alt+T picks the trend line',
       ],
     },
     trading: {

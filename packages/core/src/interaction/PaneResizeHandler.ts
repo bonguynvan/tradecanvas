@@ -44,7 +44,8 @@ export class PaneResizeHandler {
             panelId: d.panelId,
             orientation: d.orientation,
             position: panel.config.position,
-            size: panel.config.size,
+            // As shown: a folded or maximised pane starts from its height on screen.
+            size: d.orientation === 'horizontal' ? panel.rect.height : panel.rect.width,
           };
         }
       }

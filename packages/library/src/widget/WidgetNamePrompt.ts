@@ -8,6 +8,8 @@ export interface NamePromptRequest {
   /** The name to start from (a rename), selected. */
   value?: string;
   submitLabel: string;
+  /** Example text in the empty field (default: a layout's). */
+  placeholder?: string;
   /** Resolves when done; a rejection keeps the prompt open. */
   onSubmit: (name: string) => void | Promise<void>;
 }
@@ -108,6 +110,7 @@ export class WidgetNamePrompt {
     this.titleEl.textContent = request.title;
     this.submit.textContent = request.submitLabel;
     this.input.value = request.value ?? '';
+    this.input.placeholder = request.placeholder ?? this.t('layouts.namePlaceholder');
     this.check();
     this.backdrop.hidden = false;
     this.input.focus();

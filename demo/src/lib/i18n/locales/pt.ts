@@ -156,7 +156,10 @@ const pt: SiteMessages = {
         'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 85',
         'Clique no nome de um indicador na legenda: parâmetros, cores e níveis',
         'Defina o campo “Source” de uma média móvel como a linha de outro indicador',
-        'Arraste a linha entre os painéis para redimensioná-los',
+        'Arraste a linha entre os painéis para redimensioná-los; os botões no canto superior direito de um painel o movem, recolhem ou maximizam',
+        'O ⋯ em uma linha da legenda move o indicador para o painel acima ou abaixo, ou para um painel próprio',
+        'Menu Indicadores → Salvar indicadores como modelo…; Ctrl+Z também desfaz alterações nos indicadores',
+        'Digite um número no gráfico (4, depois h, Enter) para trocar o tempo gráfico; Alt+T escolhe a linha de tendência',
       ],
     },
     trading: {

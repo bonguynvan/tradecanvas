@@ -78,12 +78,12 @@ export class IndicatorEngine {
     id: string,
     params: Record<string, number | string | boolean> = {},
     data?: DataSeries,
-    options: { pane?: string; scale?: OverlayScale } = {},
+    options: { pane?: string; scale?: OverlayScale; instanceId?: string } = {},
   ): string {
     const plugin = this.registry.get(id);
     if (!plugin) throw new Error(`Unknown indicator: ${id}`);
 
-    const instanceId = `tc_${id}_${nextId++}`;
+    const instanceId = this.claimInstanceId(id, options.instanceId);
     const config: IndicatorConfig = {
       id,
       instanceId,
@@ -301,6 +301,22 @@ export class IndicatorEngine {
       }
     }
     return out;
+  }
+
+  /**
+   * The id for a new instance: `wanted` when it is free (an undo puts an
+   * indicator back as it was), else a fresh one. Fresh ids never take one in
+   * use, and the counter moves past an id put back, so none is handed out twice.
+   */
+  private claimInstanceId(id: string, wanted?: string): string {
+    if (wanted && !this.instances.has(wanted)) {
+      const n = Number(/_(\d+)$/.exec(wanted)?.[1]);
+      if (Number.isSafeInteger(n) && n >= nextId) nextId = n + 1;
+      return wanted;
+    }
+    let fresh = `tc_${id}_${nextId++}`;
+    while (this.instances.has(fresh)) fresh = `tc_${id}_${nextId++}`;
+    return fresh;
   }
 
   /** The instances drawn in `hostId`'s pane besides it, in order. */

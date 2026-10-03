@@ -156,7 +156,10 @@ const fr: SiteMessages = {
         'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 85',
         'Cliquez sur le nom d’un indicateur dans la légende : paramètres, couleurs et niveaux',
         'Réglez le champ « Source » d’une moyenne mobile sur la ligne d’un autre indicateur',
-        'Faites glisser la ligne entre deux panneaux pour les redimensionner',
+        'Faites glisser la ligne entre deux panneaux pour les redimensionner ; les boutons en haut à droite d’un panneau le déplacent, le replient ou l’agrandissent',
+        'Le ⋯ d’une ligne de la légende déplace l’indicateur dans le panneau du dessus ou du dessous, ou dans son propre panneau',
+        'Menu Indicateurs → Enregistrer les indicateurs comme modèle… ; Ctrl+Z annule aussi les modifications des indicateurs',
+        'Tapez un nombre sur le graphique (4, puis h, Entrée) pour changer d’unité de temps ; Alt+T choisit la ligne de tendance',
       ],
     },
     trading: {

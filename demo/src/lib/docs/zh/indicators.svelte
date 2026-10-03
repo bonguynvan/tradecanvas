@@ -112,11 +112,46 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>。
 </p>
 
-<h2>可调整大小的窗格</h2>
+<h2>窗格：调整大小、收起、最大化、重新排序</h2>
 <p>
-  <strong>拖动窗格上方的分隔线</strong>即可调整其大小，也可以直接设置高度：
+  <strong>拖动窗格上方的分隔线</strong>即可调整其大小。在 ChartWidget 中，每个窗格右上角都有按钮：
+  上移或下移、收起到只剩标题栏、最大化（其他窗格随之收起，主图保留一条窄条）。
+  保存的布局会记住每个窗格的大小、顺序、收起与最大化状态。用代码也可以做到：
 </p>
-<pre><code>{`chart.setPanelSize(rsi, 180)   // px, clamped to a minimum`}</code></pre>
+<pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
+chart.setPaneCollapsed(macd, true)  // fold to its header
+chart.setMaximizedPane(rsi)         // null puts the panes back
+chart.movePane(rsi, -1)             // one place up; 1 = down
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+
+<h2>把指标移到另一个窗格</h2>
+<p>
+  指标可以加入另一个指标的窗格（随后与该窗格共用坐标），也可以独占一个窗格，或者回到主图。
+  当它离开原本归它所有的窗格时，窗格中的其他指标会留下（由下一个副图指标接管该窗格），
+  而基于它的线计算的指标会随它一起移动。在 ChartWidget 中，图例行上的 <strong>⋯</strong> 按钮
+  提供上方窗格、下方窗格、新窗格和主图几个去处。
+</p>
+<pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
+chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
+chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
+chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
+
+<h2>撤销与模板</h2>
+<p>
+  添加、删除、编辑和移动指标都是撤销步骤，与画线共用同一份历史记录
+  （<kbd>Ctrl/⌘ Z</kbd>、<kbd>Ctrl/⌘ Shift Z</kbd>）；通过撤销恢复的指标会沿用原来的 id，
+  因此其线上的提醒仍然对应得上。对同一个指标的一连串编辑（拖动颜色、输入周期）只算一步。
+  加载布局后，历史记录会重新开始。
+</p>
+<p>
+  所有指标可以作为一个整体取出再放回，ChartWidget 的指标模板正是这样做的：
+  “指标”菜单中的 <strong>将指标保存为模板…</strong> 会把它们（参数、样式、水平线、窗格）
+  以一个名称保存下来；选择模板后，它们会替换图表当前的指标，这也只算一次撤销步骤。
+</p>
+<pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
+chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
+
+new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pre>
 
 <h2>在图表之外计算</h2>
 <p>

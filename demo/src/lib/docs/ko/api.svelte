@@ -217,7 +217,13 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)`}</code></pre>
+chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  포인터 위치에서 얻은 가격은 <code>chart.roundPrice(price)</code>로 시장의 가격 단위에 맞출 수 있습니다.
+  종목의 <code>minTick</code> 배수로, 그 값이 없으면 종목의 정밀도에 맞춥니다. ChartWidget의 메뉴와 주문 티켓도
+  이렇게 합니다.
+</p>
 
 <h2>ChartWidget</h2>
 <p><code>Chart</code>를 완전한 UI로 감쌉니다. 같은 인스턴스를 <code>widget.chart</code>로 사용할 수 있습니다.</p>
@@ -245,6 +251,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>명령 팔레트(지표, 차트 유형, 그리기 도구…)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>종목 검색 — 설정된 종목 목록에서 퍼지 검색</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>레이아웃 저장(처음에는 이름을 묻습니다)</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>시간 단위(<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>)를 입력하고 Enter로 적용(<code>intervalTyping: false</code>로 끌 수 있음)</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>추세선, 수평선, 수평 반직선, 수직선, 십자선, 피보나치 되돌림</td></tr>
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록 표시</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>

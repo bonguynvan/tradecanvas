@@ -3,7 +3,7 @@ import type { ToolbarButtonSpec, ToolbarConfig, ToolbarCallbacks, WidgetState } 
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
-import type { Translator } from './i18n.js';
+import { fill, type Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
 
 let toolbarCount = 0;
@@ -29,6 +29,8 @@ export class WidgetToolbar {
   private readonly uid = (toolbarCount++).toString(36);
   private tfRendered = '';
   private themeBtn: HTMLButtonElement | null = null;
+  /** Indicator templates' names, listed atop the indicators menu. */
+  private indicatorTemplates: string[] = [];
   private fullscreenBtn: HTMLButtonElement | null = null;
   /** Where hosts' own buttons go: after the chart controls, and before the panel buttons. */
   private hostLeft: HTMLDivElement | null = null;
@@ -390,6 +392,32 @@ export class WidgetToolbar {
     });
   }
 
+  /**
+   * The indicator templates to list (names), after one is saved or deleted.
+   * `keepFocus`: focus was in the menu (a delete), so it goes to "Save…".
+   */
+  setIndicatorTemplates(names: readonly string[], keepFocus = false): void {
+    this.indicatorTemplates = [...names];
+    this.buildIndicatorMenu();
+    if (keepFocus) (this.indicatorDropdown?.['panel'] as HTMLDivElement | undefined)?.querySelector<HTMLButtonElement>('[data-tpl-save]')?.focus();
+  }
+
+  /** Templates atop the indicators menu: apply one, delete one, save the chart's. */
+  private templatesMenuHtml(): string {
+    if (!this.callbacks.onSaveIndicatorTemplate) return '';
+    const remove = this.t('templates.delete');
+    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.templates'))}</div>`;
+    for (const name of this.indicatorTemplates) {
+      const n = esc(name);
+      html += `<div class="tcw-tf-row">`
+        + `<button class="tcw-dropdown-item" data-tpl-apply="${n}">${createIcon('layers', 14)}<span>${n}</span></button>`
+        + `<button class="tcw-tf-remove" data-tpl-delete="${n}" title="${esc(fill(remove, { name }))}" aria-label="${esc(fill(remove, { name }))}">${createIcon('x', 12)}</button>`
+        + `</div>`;
+    }
+    html += `<button class="tcw-dropdown-item" data-tpl-save>${createIcon('save', 14)}<span>${esc(this.t('templates.save'))}</span></button>`;
+    return html + '<div class="tcw-dropdown-divider"></div>';
+  }
+
   private buildIndicatorMenu(): void {
     if (!this.indicatorDropdown) return;
     const { indicators, popularIndicatorIds } = this.config;
@@ -401,7 +429,8 @@ export class WidgetToolbar {
 
     const row = (ind: (typeof indicators)[number]) =>
       `<button class="tcw-dropdown-item" data-ind="${esc(ind.id)}"><span>${esc(ind.name)}</span><span class="tcw-tag">${esc(typeLabel(ind.type))}</span></button>`;
-    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.popular'))}</div>`;
+    let html = this.templatesMenuHtml();
+    html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.popular'))}</div>`;
     for (const ind of popular) html += row(ind);
     html += '<div class="tcw-dropdown-divider"></div>';
     html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.all'))}</div>`;
@@ -415,6 +444,22 @@ export class WidgetToolbar {
         const id = (e.currentTarget as HTMLElement).dataset.ind!;
         this.callbacks.onAddIndicator(id);
       });
+    });
+    panel.querySelectorAll<HTMLButtonElement>('[data-tpl-apply]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.indicatorDropdown?.close();
+        this.callbacks.onApplyIndicatorTemplate?.(btn.dataset.tplApply!);
+      });
+    });
+    panel.querySelectorAll<HTMLButtonElement>('[data-tpl-delete]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // deleting keeps the menu open
+        this.callbacks.onDeleteIndicatorTemplate?.(btn.dataset.tplDelete!);
+      });
+    });
+    panel.querySelector<HTMLButtonElement>('[data-tpl-save]')?.addEventListener('click', () => {
+      this.indicatorDropdown?.close();
+      this.callbacks.onSaveIndicatorTemplate?.();
     });
   }
 

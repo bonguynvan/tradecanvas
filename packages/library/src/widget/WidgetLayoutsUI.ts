@@ -155,7 +155,7 @@ export class WidgetLayoutsUI {
       else if (id === 'autoSave') session.setAutoSave(!session.isAutoSave());
       else if (id === 'manage') void this.openDialog();
       else if (id.startsWith('open:')) void this.open(id.slice('open:'.length));
-    });
+    }, anchor);
   }
 
   destroy(): void {

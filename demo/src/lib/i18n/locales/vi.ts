@@ -156,7 +156,10 @@ const vi: SiteMessages = {
         'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 85 chỉ báo',
         'Bấm vào tên chỉ báo trên chú thích: thông số, màu sắc và các mức',
         'Đặt Nguồn của một đường trung bình động là đường của một chỉ báo khác',
-        'Kéo đường phân cách giữa các bảng để đổi kích thước',
+        'Kéo đường phân cách giữa các bảng để đổi kích thước; các nút ở góc phải trên của bảng để di chuyển, thu gọn hoặc phóng to',
+        'Nút ⋯ trên dòng chú thích chuyển chỉ báo lên bảng trên, xuống bảng dưới hoặc sang bảng riêng',
+        'Menu Chỉ báo → Lưu indicator thành mẫu…; Ctrl+Z cũng hoàn tác thay đổi chỉ báo',
+        'Gõ số trên biểu đồ (4, rồi h, Enter) để đổi khung thời gian; Alt+T chọn đường xu hướng',
       ],
     },
     trading: {

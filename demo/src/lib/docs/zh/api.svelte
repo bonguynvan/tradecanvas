@@ -208,7 +208,12 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)`}</code></pre>
+chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  来自指针的价格可以用 <code>chart.roundPrice(price)</code> 对齐到市场的价格刻度：
+  取品种 <code>minTick</code> 的整数倍，未设置时按品种的价格精度取整。ChartWidget 的菜单和下单窗口都会这样做。
+</p>
 
 <h2>ChartWidget</h2>
 <p>为 <code>Chart</code> 包上一套完整界面。同一个实例可通过 <code>widget.chart</code> 访问。</p>
@@ -236,6 +241,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板（指标、图表类型、画线……）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索——在已配置的品种列表中模糊查找</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>保存布局（首次保存时会询问名称）</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>输入周期（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）后按 Enter（设置 <code>intervalTyping: false</code> 可关闭）</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>趋势线、水平线、水平射线、垂直线、十字线、斐波那契回撤</td></tr>
     <tr><td><kbd>?</kbd></td><td>显示快捷键列表</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>

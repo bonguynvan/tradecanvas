@@ -212,7 +212,12 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)`}</code></pre>
+chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+<p>
+  ポインターの位置から得た価格は、<code>chart.roundPrice(price)</code> で市場の価格刻みに合わせられます。
+  シンボルの <code>minTick</code> の倍数に、それがなければシンボルの精度に丸めます。ChartWidget のメニューと注文チケットはこれを使っています。
+</p>
 
 <h2>ChartWidget</h2>
 <p><code>Chart</code> を完全な UI で包みます。同じインスタンスに <code>widget.chart</code> でアクセスできます。</p>
@@ -240,6 +245,8 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット（インジケーター、チャートタイプ、描画など）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索 — 設定したシンボル一覧からのあいまい検索</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>レイアウトを保存（初回は名前を尋ねます）</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>時間足（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）を入力して Enter で切り替え（<code>intervalTyping: false</code> で無効）</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>トレンドライン、水平線、水平半直線、垂直線、十字線、フィボナッチ・リトレースメント</td></tr>
     <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧を表示</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>

@@ -156,7 +156,10 @@ const de: SiteMessages = {
         'Klicken Sie auf „Indikatoren“ (oder Ctrl+K) und durchsuchen Sie alle 85',
         'Klicken Sie in der Legende auf einen Indikatornamen: Parameter, Farben und Niveaus',
         'Setzen Sie bei einem gleitenden Durchschnitt das Feld „Source“ auf die Linie eines anderen Indikators',
-        'Ziehen Sie die Trennlinie zwischen zwei Bereichen, um ihre Größe zu ändern',
+        'Ziehen Sie die Trennlinie zwischen zwei Bereichen, um ihre Größe zu ändern; mit den Schaltflächen oben rechts in einem Bereich können Sie ihn verschieben, einklappen oder maximieren',
+        'Das ⋯ in einer Legendenzeile verschiebt den Indikator in den Bereich darüber oder darunter oder in einen eigenen Bereich',
+        'Menü „Indikatoren“ → „Indikatoren als Vorlage speichern…“; Ctrl+Z macht auch Änderungen an Indikatoren rückgängig',
+        'Geben Sie im Chart eine Zahl ein (4, dann h, Enter), um die Zeiteinheit zu wechseln; Alt+T wählt die Trendlinie',
       ],
     },
     trading: {

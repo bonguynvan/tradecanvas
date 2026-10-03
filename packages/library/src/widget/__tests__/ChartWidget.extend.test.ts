@@ -23,9 +23,17 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   addAlert(price: number): void { this.alerts.push(price); }
+  tools: (string | null)[] = [];
+  setDrawingTool(tool: string | null): void { this.tools.push(tool); }
+  setups: unknown[][] = [];
+  applyIndicatorSetup(list: unknown[]): void { this.setups.push(list); }
+  getIndicatorSetup(): unknown[] { return [{ id: 'rsi', instanceId: 'tc_rsi_1', params: { period: 14 } }]; }
+  getActiveIndicators(): unknown[] { return this.indicatorsShown; }
+  indicatorsShown: unknown[] = [];
+  roundPrice(p: number): number { return Math.round(p); }
+  timeframes: string[] = [];
   getData(): { close: number }[] { return [{ close: 100 }]; }
   getDrawings(): unknown[] { return []; }
-  getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   getLegendBottom(): number { return 40; }
@@ -135,5 +143,83 @@ describe('ChartWidget menu entries of the host', () => {
     });
     FakeChart.last.emit('priceAxisAdd', { price: 90, x: 0, y: 0 });
     expect(menuItems().map((b) => b.textContent)).toEqual(['Mine']);
+  });
+});
+
+describe('ChartWidget keys for tools and intervals', () => {
+  const press = () => host.querySelector('.tcw-root')!.dispatchEvent(new Event('pointerdown'));
+
+  it('picks a drawing tool with Alt and a letter', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    press();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyT', key: 't', altKey: true, cancelable: true }));
+    expect(FakeChart.last.tools).toEqual(['trendLine']);
+  });
+
+  it('leaves the keys to a dialog that has focus', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    press();
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const button = document.createElement('button');
+    dialog.appendChild(button);
+    host.querySelector('.tcw-root')!.appendChild(dialog);
+    button.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyT', key: 't', altKey: true, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '5', cancelable: true }));
+    expect(FakeChart.last.tools).toEqual([]);
+    expect(host.querySelector<HTMLElement>('.tcw-interval-input')!.hidden).toBe(true);
+  });
+
+  it('opens the interval field on a digit once the chart was used, and switches on Enter', () => {
+    const changes: string[] = [];
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, onTimeframeChange: (tf) => changes.push(tf) });
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '4', cancelable: true }));
+    expect(host.querySelector<HTMLElement>('.tcw-interval-input')!.hidden).toBe(true); // not used yet
+    press();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '4', cancelable: true }));
+    const field = host.querySelector<HTMLInputElement>('.tcw-interval-field')!;
+    expect(field.value).toBe('4');
+    field.value = '4h';
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(changes).toEqual(['4h']);
+  });
+});
+
+describe('ChartWidget indicator templates', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('saves the chart’s indicators under a name and applies them', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.indicatorsShown = [{ id: 'rsi', instanceId: 'tc_rsi_1', params: {}, visible: true, descriptor: { defaultConfig: {} } }];
+    host.querySelector<HTMLButtonElement>('[data-tpl-save]')!.click();
+    // The open prompt (the layouts have one of their own).
+    const prompt = [...host.querySelectorAll<HTMLFormElement>('.tcw-name-prompt')].find((f) => !f.closest('.tcw-modal-backdrop')!.hasAttribute('hidden'))!;
+    const input = prompt.querySelector('input')!;
+    input.value = 'Momentum';
+    input.dispatchEvent(new Event('input'));
+    prompt.dispatchEvent(new Event('submit', { cancelable: true }));
+    return Promise.resolve().then(() => {
+      const apply = host.querySelector<HTMLButtonElement>('[data-tpl-apply="Momentum"]')!;
+      expect(apply).not.toBeNull();
+      apply.click();
+      expect(FakeChart.last.setups).toEqual([[{ id: 'rsi', instanceId: 'tc_rsi_1', params: { period: 14 } }]]);
+    });
+  });
+
+  it('says there is nothing to save without indicators', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    host.querySelector<HTMLButtonElement>('[data-tpl-save]')!.click();
+    const open = [...host.querySelectorAll('.tcw-name-prompt')].filter((f) => !f.closest('.tcw-modal-backdrop')!.hasAttribute('hidden'));
+    expect(open).toEqual([]);
+  });
+});
+
+describe('ChartWidget prices on the market grid', () => {
+  it('rounds the price a menu offers', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.emit('priceAxisAdd', { price: 90.4, x: 0, y: 0 });
+    menuItems().find((b) => b.textContent?.startsWith('Add alert'))!.click();
+    expect(FakeChart.last.alerts).toEqual([90]);
   });
 });
