@@ -103,7 +103,7 @@ describe('ChartWidget symbol info', () => {
     expect(panel().querySelector('.tcw-syminfo-price')!.textContent).toBe('105.00');
     expect(panel().querySelector('.tcw-syminfo-change')!.textContent).toBe('+6.00 (+6.06%)');
     expect(stats()).toMatchObject({ Open: '100.00', High: '106.00', Low: '99.00', 'Prev. close': '99.00', Volume: '50' });
-    expect(stats()['Trading hours']).toBe('09:30–16:00 Mon–Fri');
+    expect(stats()['Trading hours']).toBe('⁦09:30–16:00⁩ Mon–Fri');
     expect(stats()['Time zone']).toBe('America/New_York');
     expect(stats()['Tick size']).toBe('0.01');
   });

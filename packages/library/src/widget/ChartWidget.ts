@@ -1178,7 +1178,7 @@ export class ChartWidget {
     const quote = this.quotes.get(symbol);
     const day = sessionDay(this.chart.getData(), info?.timezone);
     const fp = (p: number) => this.formatAlertPrice(p);
-    const locale = this.intlLocale();
+    const locale = this.textLocale();
 
     const last = quote?.last ?? day?.close;
     const prevClose = quote?.prevClose ?? day?.prevClose;
@@ -1203,7 +1203,7 @@ export class ChartWidget {
     add(this.t('dataWindow.low'), price(quote?.low ?? day?.low));
     add(this.t('symbolInfo.prevClose'), price(prevClose));
     const volume = quote?.volume ?? day?.volume;
-    add(this.t('dataWindow.volume'), volume !== undefined ? compactNumber(volume, locale) : undefined);
+    add(this.t('dataWindow.volume'), volume !== undefined ? compactNumber(volume, this.intlLocale()) : undefined);
     add(this.t('symbolInfo.bid'), price(quote?.bid));
     add(this.t('symbolInfo.ask'), price(quote?.ask));
     add(this.t('symbolInfo.tick'), info?.minTick !== undefined ? String(info.minTick) : undefined);
@@ -1238,7 +1238,7 @@ export class ChartWidget {
     const symbol = this.state.symbol;
     const request = ++this.newsRequest;
     const show = (items: NewsItem[]) => {
-      const locale = this.intlLocale();
+      const locale = this.textLocale();
       panel.renderNews({
         kind: 'items',
         items: items.map((item) => ({
@@ -1267,9 +1267,14 @@ export class ChartWidget {
       });
   }
 
-  /** The BCP 47 tag dates and numbers in the panels are written in. */
+  /** The BCP 47 tag numbers in the panels are written in. */
   private intlLocale(): string {
     return this.settingsState.numberLocale || this.options.locale || 'en';
+  }
+
+  /** The language words in the panels are written in ("in 3 hours", weekday names): the widget's. */
+  private textLocale(): string {
+    return this.options.locale || 'en';
   }
 
   private createWatchlist(body: HTMLElement, opts: import('./types.js').WatchlistOptions): void {
@@ -3464,7 +3469,7 @@ function relativeTime(deltaMs: number, locale: string): string {
   const minutes = deltaMs / 60_000;
   const [value, unit]: [number, Intl.RelativeTimeFormatUnit] = Math.abs(minutes) < 60
     ? [Math.round(minutes) || Math.sign(minutes) || 1, 'minute']
-    : Math.abs(minutes) < 48 * 60
+    : Math.abs(minutes) < 24 * 60
       ? [Math.round(minutes / 60), 'hour']
       : [Math.round(minutes / 1440), 'day'];
   try {
@@ -3499,7 +3504,8 @@ function sessionsText(info: SymbolInfo | null, locale: string): string | undefin
     const contiguous = list.every((d, i) => i === 0 || d === list[i - 1] + 1);
     return contiguous && list.length > 2 ? `${names[list[0]]}–${names[list[list.length - 1]]}` : list.map((d) => names[d]).join(', ');
   };
-  return sessions.map((s) => [`${s.start}–${s.end}`, daysText(s.days)].filter(Boolean).join(' ')).join(', ');
+  // The times read left to right in any language (isolated, so a right-to-left line keeps 09:30–16:00).
+  return sessions.map((s) => [`⁦${s.start}–${s.end}⁩`, daysText(s.days)].filter(Boolean).join(' ')).join(', ');
 }
 
 /** Languages written right to left. */
