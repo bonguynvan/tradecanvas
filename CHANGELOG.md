@@ -4,8 +4,6 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
-- A position's stop-loss or take-profit priced outside the visible range no longer draws over the time axis or the panes below the chart, and can't be grabbed there by accident (nor can an order line off the plot); an entry scrolled out of view no longer leaves its price tag on the axis.
-- The npm page shows the full README again (it had fallen behind the repository's), with screenshots; the demo's link previews now carry an image on every network.
 ### Sharper, calmer charts
 
 - **Sharp at any screen scale**: candles, bars, volume and the drawings' horizontal and vertical lines land on whole device pixels. A one-pixel wick is one sharp pixel at 100%, 125% or 200% scaling; it used to spread over two at half strength.
@@ -21,6 +19,12 @@ Collected on `main` for the next release. Not on npm yet.
 - **Lines on the pixel**: the crosshair, vertical lines and wicks share one device-pixel column, so a line drawn on a bar runs through its wick.
 - **Widget**: the drawing tools sit in sections with a divider between them: lines; Fibonacci, Gann and cycles; patterns and Elliott waves; forecasting and measuring; shapes, brushes and notes. The tools below are grouped too: modes, undo and redo, clear all.
 - **Looks different after the update**: the dark theme's colours, the volume's height, new Fibonacci drawings' colours and the order of the drawing tool groups change without any change of yours. Set `candleUp` / `candleDown` on the theme to keep the old candle colours.
+
+### Fixes
+
+- A position's stop-loss or take-profit priced outside the visible range no longer draws over the time axis or the panes below the chart, and can't be grabbed there by accident (nor can an order line off the plot); an entry scrolled out of view no longer leaves its price tag on the axis.
+- The npm page shows the full README again (it had fallen behind the repository's), with screenshots; the demo's link previews now carry an image on every network.
+- Panning by dragging no longer stops halfway with a "no drop" cursor: quick presses could leave text on the chart selected, and the next press then started the browser's own drag of it. The chart's text can't be selected now, and such drags are cancelled.
 
 ## 1.7.0 (2026-10-03)
 

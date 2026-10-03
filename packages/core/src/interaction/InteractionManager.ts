@@ -856,9 +856,20 @@ export class InteractionManager {
     const onAnyScroll = () => this.invalidateRect();
     const onMouseEnter = () => this.invalidateRect();
 
+    // Quick presses one after another can leave the canvas selected (a
+    // double-click selects it), and the next press on it then starts the
+    // browser's own drag of that selection: the cursor turns to "no drop" and
+    // the chart stops getting moves mid-pan. Such drags are cancelled: one
+    // that starts on the chart's surface, or any while a press on it is held.
+    const onDragStart = (e: DragEvent) => {
+      const onChart = e.target instanceof Node && this.element.contains(e.target) && onChartSurface(e.target);
+      if (pressActive || onChart) e.preventDefault();
+    };
+
     // Attach all — mouseup on document so we catch it even if cursor leaves the chart
     this.element.addEventListener('mousedown', onMouseDown);
     this.element.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('dragstart', onDragStart, true);
     document.addEventListener('mouseup', onMouseUp);
     this.element.addEventListener('mouseleave', onMouseLeave);
     this.element.addEventListener('dblclick', onDblClick);
@@ -875,6 +886,7 @@ export class InteractionManager {
     this.boundHandlers.push(
       endPress,
       () => this.element.removeEventListener('mousedown', onMouseDown),
+      () => document.removeEventListener('dragstart', onDragStart, true),
       () => this.element.removeEventListener('mousemove', onMouseMove),
       () => document.removeEventListener('mouseup', onMouseUp),
       () => this.element.removeEventListener('mouseleave', onMouseLeave),
