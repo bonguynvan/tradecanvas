@@ -63,8 +63,8 @@ export class ForecastTool extends DrawingBase {
 
     const span = spanBetween(state, 0, 1, viewport);
     const lines = [
-      formatPriceChange(from.price, to.price),
-      `${formatDrawingPrice(to.price, from.price)} · ${barsBetween(state, 0, 1, viewport)} bars${span ? `, ${span}` : ''}`,
+      formatPriceChange(from.price, to.price, viewport),
+      `${formatDrawingPrice(to.price, from.price, viewport)} · ${barsBetween(state, 0, 1, viewport)} bars${span ? `, ${span}` : ''}`,
       outcome === 'reached' ? 'Target reached' : outcome === 'missed' ? 'Target missed' : 'Pending',
     ];
     drawLabelBox(ctx, lines, b.x, b.y + (b.y < a.y ? -10 : 10), 'center', b.y < a.y);
@@ -115,7 +115,7 @@ export class ProjectionTool extends DrawingBase {
       drawArrowHead(ctx, c, d);
       const [a, b, cAnchor] = state.anchors;
       const end = cAnchor.price + (b.price - a.price);
-      drawLabelBox(ctx, [formatDrawingPrice(end, cAnchor.price), formatPriceChange(cAnchor.price, end)], d.x, d.y + (d.y < c.y ? -8 : 8), 'center', d.y < c.y);
+      drawLabelBox(ctx, [formatDrawingPrice(end, cAnchor.price, viewport), formatPriceChange(cAnchor.price, end, viewport)], d.x, d.y + (d.y < c.y ? -8 : 8), 'center', d.y < c.y);
     }
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

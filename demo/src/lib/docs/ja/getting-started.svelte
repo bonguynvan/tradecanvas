@@ -77,7 +77,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <h2>次のステップ</h2>
 <ul>
   <li><a href={href('/docs/api')}>API リファレンス</a> — <code>Chart</code> と <code>ChartWidget</code> の全 API</li>
-  <li><a href={href('/docs/chart-types')}>チャートタイプ</a> — 17 種類の組み込みチャートタイプ</li>
+  <li><a href={href('/docs/chart-types')}>チャートタイプ</a> — 18 種類の組み込みチャートタイプ</li>
   <li><a href={href('/docs/indicators')}>インジケーター</a> — 85 種類のインジケーター一覧</li>
   <li><a href={href('/docs/realtime')}>リアルタイムとリプレイ</a> — ストリーミングアダプターとリプレイモード</li>
   <li><a href={href('/docs/analytics')}>分析</a> — 戦略バックテスターとリスク指標</li>

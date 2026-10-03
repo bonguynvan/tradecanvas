@@ -31,7 +31,7 @@ export function dateAndPriceRangeLines(state: DrawingState, viewport: ViewportSt
   const span = spanBetween(state, 0, 1, viewport);
   const bars = barsBetween(state, 0, 1, viewport);
   const lines = [
-    formatPriceChange(state.anchors[0].price, state.anchors[1].price),
+    formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport),
     span ? `${bars} bars, ${span}` : `${bars} bars`,
   ];
   const vol = volumeBetween(state, viewport);

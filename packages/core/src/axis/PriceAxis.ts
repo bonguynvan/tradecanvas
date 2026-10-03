@@ -1,5 +1,25 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { autoPricePrecision, computeTickStep, formatPriceScaleLabel } from '@tradecanvas/commons';
+
+/**
+ * A price on a scale: rebased on a percent / indexed scale, else in the
+ * chart's price format (`viewport.formatPrice`), else in decimals.
+ */
+export function priceScaleText(price: number, viewport: ViewportState, precision: number, locale: string): string {
+  const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
+  if ((mode === 'percentage' || mode === 'indexedTo100') && viewport.scaleBaseline) {
+    return formatPriceScaleLabel(price, mode, viewport.scaleBaseline, precision, locale);
+  }
+  return viewport.formatPrice ? viewport.formatPrice(price) : formatPriceScaleLabel(price, 'regular', undefined, precision, locale);
+}
+
+/** A tick step below 1 made a whole number of `unit`s, doubling (32nds: 1/32, 1/16, 1/8, 1/4, 1/2). */
+function onUnits(step: number, unit: number | undefined): number {
+  if (!unit || !(unit > 0) || step >= 1) return step;
+  let s = unit;
+  while (s < step) s *= 2;
+  return s;
+}
 import { priceToY, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /** Tick labels this close (px) to the last-price tag's centre are hidden under it. */
@@ -44,21 +64,19 @@ export class PriceAxis {
     ctx.globalAlpha = 1;
 
     // Compute labels
-    const step = computeTickStep(priceRange.min, priceRange.max, 8);
+    const step = onUnits(computeTickStep(priceRange.min, priceRange.max, 8), viewport.priceUnit);
     const firstPrice = Math.ceil(priceRange.min / step) * step;
     const precision = autoPricePrecision(priceRange.min, priceRange.max);
     const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
-    const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
-    const baseline = viewport.scaleBaseline;
     const labels: { y: number; text: string }[] = [];
     const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
     for (let price = firstPrice; price <= priceRange.max; price += step) {
       const y = toY(price);
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
-      labels.push({ y, text: formatPriceScaleLabel(price, mode, baseline, precision, this.locale) });
+      labels.push({ y, text: priceScaleText(price, viewport, precision, this.locale) });
     }
 
     ctx.font = font;

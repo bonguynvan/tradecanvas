@@ -135,6 +135,8 @@ export type { KnownTimeFrame, TimeFrameUnit, TimeZoneSetting, HistoryLoadPayload
 
 // Symbol search and what a feed knows about a symbol
 export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
+export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/commons';
+export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
 export { EXCHANGE_TIMEZONE } from './Chart.js';
 

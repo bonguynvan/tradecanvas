@@ -14,6 +14,8 @@ export interface PanelConfig {
   logScale?: boolean;
   /** Its value scale runs upside down. */
   invertScale?: boolean;
+  /** Its value scale reads in percent of its first value on screen. */
+  percentScale?: boolean;
 }
 
 export interface PanelContentConfig {

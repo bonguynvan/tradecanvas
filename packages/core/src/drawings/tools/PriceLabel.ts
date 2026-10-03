@@ -11,14 +11,15 @@ const HEIGHT = 20;
 export class PriceLabelTool extends DrawingBase {
   descriptor = { type: 'priceLabel' as const, name: 'Price Label', requiredAnchors: 1, text: true };
 
-  private text(state: DrawingState): string {
-    return state.style.text || formatDrawingPrice(state.anchors[0].price);
+  private text(state: DrawingState, viewport: ViewportState): string {
+    return state.style.text || formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport);
   }
 
-  private box(ctx: CanvasRenderingContext2D | null, state: DrawingState, p: Point): { x: number; y: number; w: number; h: number } {
+  private box(ctx: CanvasRenderingContext2D | null, state: DrawingState, p: Point, viewport: ViewportState): { x: number; y: number; w: number; h: number } {
     const fontSize = state.style.fontSize ?? 12;
+    const text = this.text(state, viewport);
     // Without a context (hit-testing) estimate the width from the font size.
-    const textW = ctx ? ctx.measureText(this.text(state)).width : this.text(state).length * fontSize * 0.6;
+    const textW = ctx ? ctx.measureText(text).width : text.length * fontSize * 0.6;
     return { x: p.x + OFFSET_X, y: p.y - OFFSET_Y - HEIGHT / 2, w: textW + PAD_X * 2, h: HEIGHT };
   }
 
@@ -26,7 +27,7 @@ export class PriceLabelTool extends DrawingBase {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     ctx.font = `${state.style.fontSize ?? 12}px sans-serif`;
-    const b = this.box(ctx, state, p);
+    const b = this.box(ctx, state, p, viewport);
 
     // Leader from the point to the callout.
     ctx.strokeStyle = state.style.color;
@@ -42,7 +43,7 @@ export class PriceLabelTool extends DrawingBase {
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(this.text(state), b.x + PAD_X, b.y + b.h / 2);
+    ctx.fillText(this.text(state, viewport), b.x + PAD_X, b.y + b.h / 2);
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
@@ -56,7 +57,7 @@ export class PriceLabelTool extends DrawingBase {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     if (Math.hypot(point.x - p.x, point.y - p.y) <= tolerance) return true;
-    const b = this.box(null, state, p);
+    const b = this.box(null, state, p, viewport);
     return point.x >= b.x - tolerance && point.x <= b.x + b.w + tolerance
       && point.y >= b.y - tolerance && point.y <= b.y + b.h + tolerance;
   }

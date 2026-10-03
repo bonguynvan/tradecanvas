@@ -25,11 +25,13 @@ export interface WidgetGridSync {
   time: boolean;
   /** Drawings are copied to the charts showing the same symbol. */
   drawings: boolean;
+  /** A replay on one chart replays the others to the same time. */
+  replay: boolean;
 }
 
-export const DEFAULT_GRID_SYNC: Readonly<WidgetGridSync> = { symbol: false, interval: false, crosshair: true, time: false, drawings: false };
+export const DEFAULT_GRID_SYNC: Readonly<WidgetGridSync> = { symbol: false, interval: false, crosshair: true, time: false, drawings: false, replay: false };
 
-const SYNC_KEYS: readonly (keyof WidgetGridSync)[] = ['symbol', 'interval', 'crosshair', 'time', 'drawings'];
+const SYNC_KEYS: readonly (keyof WidgetGridSync)[] = ['symbol', 'interval', 'crosshair', 'time', 'drawings', 'replay'];
 
 /** Columns and rows of each arrangement. */
 export const GRID_SHAPES: Readonly<Record<GridLayout, { cols: number; rows: number }>> = {
@@ -443,6 +445,26 @@ export class ChartWidgetGrid {
         if (this.sync.drawings && !this.relaying) this.copyDrawingsSoon(cell);
       });
     }
+    // A replay leads the others: they start at its time, follow its steps and end with it.
+    chart.on('replayStep', (e) => {
+      if (!this.sync.replay || this.relaying) return;
+      const { until } = e.payload;
+      this.relay(cell, (w) => {
+        const other = w.getChart();
+        if (other.isReplayActive()) {
+          other.replaySeekToTime(until);
+          return;
+        }
+        const start = lastBarBefore(other.getData(), until);
+        if (start >= 0) other.replayStart({ startIndex: start, paused: true });
+      });
+    });
+    chart.on('replayState', (e) => {
+      if (!this.sync.replay || this.relaying || e.payload.state !== 'stopped') return;
+      this.relay(cell, (w) => {
+        if (w.getChart().isReplayActive()) w.getChart().replayStop();
+      });
+    });
     chart.on('stateChange', () => this.session?.changed());
     chart.on('themeChange', () => {
       if (!this.relaying) this.followTheme(cell);
@@ -452,7 +474,8 @@ export class ChartWidgetGrid {
   private destroyCell(cell: Cell): void {
     if (this.hovered === cell) this.hovered = null;
     if (this.drawingSource === cell) this.drawingSource = null;
-    cell.widget.destroy();
+    // What it says on its way out (its replay ending) is not for the others.
+    this.quietly(() => cell.widget.destroy());
     cell.el.remove();
   }
 
@@ -671,4 +694,11 @@ export class ChartWidgetGrid {
   private toast(message: string, kind: 'info' | 'error' = 'info'): void {
     this.cells[this.active]?.widget.toast(message, kind);
   }
+}
+
+/** The last bar of `data` that opened before `time`; -1 for none. */
+function lastBarBefore(data: readonly { time: number }[], time: number): number {
+  let at = -1;
+  for (let i = 0; i < data.length && data[i].time < time; i++) at = i;
+  return at;
 }

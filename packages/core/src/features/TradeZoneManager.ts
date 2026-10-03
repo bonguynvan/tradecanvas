@@ -170,7 +170,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     ctx.fillStyle = fillColor;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
-    ctx.fillText(`${dirIcon} ${zone.entryPrice.toFixed(this.pricePrecision)}`, left + 4, entryY - 3);
+    ctx.fillText(`${dirIcon} ${viewport.formatPrice?.(zone.entryPrice) ?? zone.entryPrice.toFixed(this.pricePrecision)}`, left + 4, entryY - 3);
 
     if (style.showPnl && !isActive && zone.pnl != null) {
       const pnlSign = zone.pnl >= 0 ? '+' : '';

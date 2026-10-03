@@ -2,10 +2,11 @@ import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 
 /**
  * Kagi chart.
- * Changes direction when price reverses by the reversal amount.
+ * Changes direction when price reverses by the reversal amount: `reversal`
+ * percent of the line's start, or `reversal` itself with `mode` 'price'.
  * Thick lines (yang) for uptrends, thin lines (yin) for downtrends.
  */
-export function toKagi(data: DataSeries, reversalPercent = 4): DataSeries {
+export function toKagi(data: DataSeries, reversal = 4, mode: 'percent' | 'price' = 'percent'): DataSeries {
   if (data.length < 2) return data.slice();
 
   const lines: OHLCBar[] = [];
@@ -17,11 +18,11 @@ export function toKagi(data: DataSeries, reversalPercent = 4): DataSeries {
 
   for (let i = 1; i < data.length; i++) {
     const price = data[i].close;
-    const reversal = lineStart * (reversalPercent / 100);
+    const amount = mode === 'price' ? reversal : lineStart * (reversal / 100);
 
     if (direction === 1) {
       if (price > high) high = price;
-      if (high - price >= reversal) {
+      if (high - price >= amount) {
         // Finish up line, start down
         lines.push({
           time: idx++,
@@ -38,7 +39,7 @@ export function toKagi(data: DataSeries, reversalPercent = 4): DataSeries {
       }
     } else {
       if (price < low) low = price;
-      if (price - low >= reversal) {
+      if (price - low >= amount) {
         // Finish down line, start up
         lines.push({
           time: idx++,

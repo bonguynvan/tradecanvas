@@ -177,6 +177,7 @@ describe('InteractionManager — price-based drags outside the chart', () => {
       isOverDraggableLine: () => false,
       isBracketActive: () => false,
       isOrderDraftActive: () => false,
+      isOverButton: () => false,
     } as unknown as TradingManager;
     const vp = { chartRect: { x: 0, y: 0, width: 400, height: 300 } } as ViewportState;
     im.setTradingManager(trading, () => vp);

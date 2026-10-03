@@ -18,6 +18,8 @@ export interface PriceAxisWidthInput {
   /** Decimals for the price tags (a market's `pricePrecision`), or null to follow the axis. */
   tagPrecision: number | null;
   locale: string;
+  /** The chart's price format, when it has one: labels and tags print with it. */
+  format?: ((price: number) => string) | null;
   fontFamily: string;
   fontSizeSmall: number;
   measure: (text: string, font: string) => number;
@@ -37,8 +39,8 @@ export function requiredPriceAxisWidth(input: PriceAxisWidthInput): number {
   let need = PRICE_AXIS_WIDTH;
   for (const price of prices) {
     if (!Number.isFinite(price)) continue;
-    const label = formatPrice(price, axisPrecision, locale);
-    const tag = formatPrice(price, tagPrecision, locale);
+    const label = input.format ? input.format(price) : formatPrice(price, axisPrecision, locale);
+    const tag = input.format ? label : formatPrice(price, tagPrecision, locale);
     need = Math.max(
       need,
       measure(label, `500 ${fontSizeSmall}px ${fontFamily}`) + LABEL_CHROME,

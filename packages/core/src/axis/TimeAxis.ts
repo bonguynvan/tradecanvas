@@ -1,4 +1,4 @@
-import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ViewportState, Theme, DataSeries, TimeFormatContext, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { timeParts, tzLabel, isDateOnly } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
@@ -10,9 +10,15 @@ export const TZ_LABEL_GAP_PX = 8;
 export class TimeAxis {
   /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
   private tz: TimeZoneSetting = null;
+  private timeFormatter: TimeFormatter | null = null;
 
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
+  }
+
+  /** Labels in your words, or null for its own. */
+  setTimeFormatter(formatter: TimeFormatter | null): void {
+    this.timeFormatter = formatter;
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
@@ -71,15 +77,20 @@ export class TimeAxis {
       // `month/day` alone is ambiguous across years (a Year chart's handful of bars can span
       // decades), so it carries the year instead. Otherwise show date on day change, time
       // otherwise, same as before.
-      let label: string;
+      let kind: TimeFormatContext['kind'];
       if (isDateOnly(parts)) {
-        label = `${month}/${day}/${year}`;
+        kind = 'date';
       } else if (day !== prevDay) {
-        label = `${month}/${day}`;
+        kind = 'day';
         prevDay = day;
       } else {
-        label = `${_pad2(hours)}:${_pad2(minutes)}`;
+        kind = 'time';
       }
+      const label = this.timeFormatter
+        ? this.timeFormatter(timeMs, { kind, timeZone: this.tz })
+        : kind === 'date' ? `${month}/${day}/${year}`
+          : kind === 'day' ? `${month}/${day}`
+            : `${_pad2(hours)}:${_pad2(minutes)}`;
 
       if (x + ctx.measureText(label).width / 2 > tzLeft) continue;
       ctx.fillText(label, x, axisY + 7);

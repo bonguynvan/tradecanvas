@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
+import { formatPriceChange } from './labels.js';
 
 export class MeasureTool extends DrawingBase {
   descriptor = { type: 'measure' as const, name: 'Measure', requiredAnchors: 2 };
@@ -21,14 +22,12 @@ export class MeasureTool extends DrawingBase {
 
     // Info label — resolve bar indices so the bar count is correct even when
     // anchor.time is a real timestamp (timestamp mode is the new default).
-    const priceDiff = state.anchors[1].price - state.anchors[0].price;
     const idx0 = resolveBarIndex(state.anchors[0].time, viewport);
     const idx1 = resolveBarIndex(state.anchors[1].time, viewport);
     const barsDiff = Math.max(0, Math.round(Math.abs(idx1 - idx0)));
-    const pctChange = state.anchors[0].price !== 0 ? (priceDiff / state.anchors[0].price * 100) : 0;
 
     const lines = [
-      `Price: ${priceDiff >= 0 ? '+' : ''}${priceDiff.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(2)}%)`,
+      `Price: ${formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport)}`,
       `Bars: ${barsDiff}`,
     ];
 

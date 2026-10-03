@@ -231,6 +231,30 @@ const en = {
         'Pick a finer Step in the replay bar (15m) to watch each bar form',
       ],
     },
+    compare: {
+      title: 'Compare, spread, ratio',
+      stat: 'symbols',
+      blurb:
+        'ETH on a price scale of its own beside BTC, and BTC ÷ ETH in a pane. Other symbols line up with the chart by time; the spread or ratio gets a legend, value tags and alerts like any indicator. The highest high and lowest low on screen are marked.',
+      tryThis: [
+        'Open the object tree and press + by Compare: pick a symbol, then how',
+        'Right-click the ratio pane for a percent scale',
+        'Right-click the chart: Export data (CSV) takes every indicator line along',
+        'Change the interval: the other symbol’s bars are fetched again',
+      ],
+    },
+    bonds: {
+      title: 'Bonds in 32nds',
+      stat: 'formats',
+      blurb:
+        'A note quoted in 32nds and half 32nds (110’165 is 110 and 16½ 32nds) on High-Low bars. Every price on the chart — axis, crosshair, legend, orders, drawings — reads the same way, and the axis ticks fall on whole fractions.',
+      tryThis: [
+        'Hover: the crosshair and the legend read in 32nds',
+        'Settings → Display → turn Extended hours off for the regular session only',
+        'Switch to Renko or Kagi and set the box or reversal in Settings',
+        'Draw a horizontal line: its label reads in 32nds too',
+      ],
+    },
     subcent: {
       title: '14 languages, sub-cent prices',
       stat: 'i18n',

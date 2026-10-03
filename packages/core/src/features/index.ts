@@ -9,6 +9,7 @@ export { SNAPSHOT_VERSION } from './ChartState.js';
 export { UndoRedoManager } from './UndoRedoManager.js';
 export type { UndoableAction } from './UndoRedoManager.js';
 export { DataExporter } from './DataExporter.js';
+export type { ExportColumn } from './DataExporter.js';
 export { SignalMarkerManager } from './SignalMarkerManager.js';
 export { TradeZoneManager } from './TradeZoneManager.js';
 export { MeasureOverlay } from './MeasureOverlay.js';

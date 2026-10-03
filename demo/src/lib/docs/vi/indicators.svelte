@@ -125,9 +125,10 @@ chart.setPaneCollapsed(macd, true)  // fold to its header
 chart.setMaximizedPane(rsi)         // null puts the panes back
 chart.movePane(rsi, -1)             // one place up; 1 = down
 chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order' | 'scale'
-chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0`}</code></pre>
+chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0
+chart.setPaneScale(atr, { percent: true })             // labels in percent of its first value on screen`}</code></pre>
 <p>
-  Bấm chuột phải vào một bảng trong ChartWidget để bật thang logarit và thang đảo ngược riêng cho bảng đó.
+  Bấm chuột phải vào một bảng trong ChartWidget để bật thang logarit, thang đảo ngược hoặc thang phần trăm riêng cho bảng đó.
 </p>
 
 <h2>Chuyển một chỉ báo sang bảng khác</h2>

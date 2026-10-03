@@ -240,6 +240,48 @@ chart.replayStop()                // back to the live series`,
     },
   },
   {
+    id: 'compare',
+    code: `widget.addCompareSymbol('ETHUSDT', 'scale')   // its price, on a scale of its own
+widget.addCompareSymbol('ETHUSDT', 'ratio')   // BTC ÷ ETH, in a pane
+
+// On a bare Chart: the indicators ask for the bars they need
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'],
+      timeframe: '1h',
+      adapter: env.binance(),
+      chartOptions: { highLowLines: true },
+    }),
+    setup: async (widget) => {
+      await widget.addCompareSymbol('ETHUSDT', 'scale');
+      await widget.addCompareSymbol('ETHUSDT', 'ratio');
+    },
+  },
+  {
+    id: 'bonds',
+    code: `new ChartWidget(host, {
+  chartOptions: {
+    chartType: 'hiLo',
+    priceFormat: { denominator: 32, subDenominator: 2 },  // 110'165 = 110 and 16½ 32nds
+  },
+})
+chart.setSymbolInfo({ symbol: 'TNOTE', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] })
+chart.setExtendedHours(false)   // the regular session only`,
+    options: () => ({
+      symbol: 'TNOTE',
+      symbols: ['TNOTE'],
+      timeframe: '30m',
+      chartOptions: { chartType: 'hiLo', priceFormat: { denominator: 32, subDenominator: 2 } },
+    }),
+    data: (symbol) => generateBars(1500, symbol, HOUR / 2, 110),
+    setup: (_widget, chart) => {
+      chart.setSymbolInfo({ symbol: 'TNOTE', description: '10-year note', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
+    },
+  },
+  {
     id: 'subcent',
     code: `import { ChartWidget } from '@tradecanvas/chart/widget'
 import { ja } from '@tradecanvas/chart/widget/locales'

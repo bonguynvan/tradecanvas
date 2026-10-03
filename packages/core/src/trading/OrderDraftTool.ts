@@ -124,7 +124,7 @@ export class OrderDraftTool {
       ctx,
       x0 + 6,
       y,
-      `${sideLabel} ${type.toUpperCase()} ${d.price.toFixed(pricePrecision)}`,
+      `${sideLabel} ${type.toUpperCase()} ${viewport.formatPrice?.(d.price) ?? d.price.toFixed(pricePrecision)}`,
       color,
       theme.background,
     );

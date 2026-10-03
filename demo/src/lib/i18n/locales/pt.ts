@@ -225,6 +225,30 @@ const pt: SiteMessages = {
         'Escolha um Passo menor na barra de replay (15m) para ver cada barra se formar',
       ],
     },
+    compare: {
+      title: 'Comparar, spread, razão',
+      stat: 'ativos',
+      blurb:
+        'ETH em uma escala de preço própria ao lado do BTC, e BTC ÷ ETH em um painel. Outros ativos se alinham ao gráfico pelo tempo; o spread ou a razão ganham legenda, rótulos de valor e alertas como qualquer indicador. A máxima mais alta e a mínima mais baixa na tela ficam marcadas.',
+      tryThis: [
+        'Abra a árvore de objetos e clique no + ao lado de Comparar: escolha um ativo e depois como comparar',
+        'Clique com o botão direito no painel da razão para uma escala percentual',
+        'Clique com o botão direito no gráfico: Exportar dados (CSV) leva junto todas as linhas dos indicadores',
+        'Mude o tempo gráfico: as barras do outro ativo são buscadas de novo',
+      ],
+    },
+    bonds: {
+      title: 'Títulos em 32 avos',
+      stat: 'formatos',
+      blurb:
+        'Um título cotado em 32 avos e meios 32 avos (110’165 é 110 e 16½ 32 avos) em barras de máxima-mínima. Todo preço no gráfico — eixo, mira, legenda, ordens, desenhos — aparece do mesmo jeito, e as marcas do eixo caem em frações inteiras.',
+      tryThis: [
+        'Passe o mouse: a mira e a legenda aparecem em 32 avos',
+        'Configurações → Exibição → desative Horário estendido para ver só o pregão regular',
+        'Mude para Renko ou Kagi e ajuste a caixa ou a reversão nas Configurações',
+        'Desenhe uma linha horizontal: o rótulo dela também aparece em 32 avos',
+      ],
+    },
     subcent: {
       title: '14 idiomas, preços abaixo de um centavo',
       stat: 'i18n',

@@ -12,6 +12,7 @@ export function buildPositionLabelContext(
   pos: TradingPosition,
   currentPrice: number,
   precision: number,
+  formatPrice?: (price: number) => string,
 ): PositionLabelContext {
   const closed = Math.min(Math.max(pos.closedQuantity ?? 0, 0), pos.quantity);
   const open = pos.quantity - closed;
@@ -31,6 +32,7 @@ export function buildPositionLabelContext(
     pnl,
     pnlPct,
     precision,
+    formatPrice,
   };
 }
 
@@ -51,9 +53,9 @@ export function formatPositionLabel(
       case 'openQty':
         return String(ctx.openQuantity);
       case 'entry':
-        return ctx.entryPrice.toFixed(ctx.precision);
+        return ctx.formatPrice?.(ctx.entryPrice) ?? ctx.entryPrice.toFixed(ctx.precision);
       case 'price':
-        return ctx.currentPrice.toFixed(ctx.precision);
+        return ctx.formatPrice?.(ctx.currentPrice) ?? ctx.currentPrice.toFixed(ctx.precision);
       case 'pnl':
         return ctx.pnl.toFixed(ctx.precision);
       case 'pnlPct':

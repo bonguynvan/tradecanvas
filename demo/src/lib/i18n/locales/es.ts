@@ -227,6 +227,30 @@ const es: SiteMessages = {
         'Elige un Paso más fino en la barra de repetición (15m) para ver cómo se forma cada barra',
       ],
     },
+    compare: {
+      title: 'Comparar, diferencial, ratio',
+      stat: 'símbolos',
+      blurb:
+        'ETH en su propia escala de precio junto a BTC, y BTC ÷ ETH en un panel. Los demás símbolos se alinean con el gráfico por tiempo; el diferencial o el ratio tienen leyenda, etiquetas de valor y alertas como cualquier indicador. El máximo más alto y el mínimo más bajo en pantalla quedan marcados.',
+      tryThis: [
+        'Abre el árbol de objetos y pulsa + junto a Comparar: elige un símbolo y luego cómo',
+        'Haz clic derecho en el panel del ratio para una escala porcentual',
+        'Haz clic derecho en el gráfico: Exportar datos (CSV) incluye todas las líneas de los indicadores',
+        'Cambia la temporalidad: las barras del otro símbolo se vuelven a pedir',
+      ],
+    },
+    bonds: {
+      title: 'Bonos en 32avos',
+      stat: 'formatos',
+      blurb:
+        'Un bono cotizado en 32avos y medios 32avos (110’165 es 110 y 16½ 32avos) en barras de máximo-mínimo. Cada precio del gráfico (eje, cruz, leyenda, órdenes, dibujos) se lee igual, y las marcas del eje caen en fracciones enteras.',
+      tryThis: [
+        'Pasa el cursor: la cruz y la leyenda se leen en 32avos',
+        'Configuración → Visualización → desactiva Horario extendido para ver solo la sesión regular',
+        'Cambia a Renko o Kagi y ajusta la caja o la reversión en Configuración',
+        'Dibuja una línea horizontal: su etiqueta también se lee en 32avos',
+      ],
+    },
     subcent: {
       title: '14 idiomas, precios por debajo del centavo',
       stat: 'i18n',

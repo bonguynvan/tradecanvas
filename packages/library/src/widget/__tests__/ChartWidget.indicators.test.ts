@@ -44,6 +44,10 @@ class FakeChart {
   indicators: { instanceId: string; id: string; params: Record<string, unknown>; visible: boolean }[] = [];
   bump = 0;
   timeAligned = true;
+  // The account panel reads these on its frame.
+  getOrders(): unknown[] { return []; }
+  getPositions(): unknown[] { return []; }
+  getFills(): unknown[] { return []; }
   private seq = 0;
   private listeners = new Map<string, Set<(e: { payload: unknown }) => void>>();
 
@@ -323,5 +327,11 @@ describe('indicatorChipLabel', () => {
   it('rounds long decimals and skips non-numbers', () => {
     expect(indicatorChipLabel('psar', { step: 0.0200000001, max: 0.2 }, { step: 0.02, max: 0.2 })).toBe('PSAR 0.02 0.2');
     expect(indicatorChipLabel('vwap', { anchor: 'session' }, { anchor: 'session' })).toBe('VWAP');
+  });
+
+  it('names an indicator on another symbol after it', () => {
+    expect(indicatorChipLabel('compareSymbol', { symbol: 'ETHUSDT' }, { symbol: '' }, 'Compare')).toBe('Compare ETHUSDT');
+    expect(indicatorChipLabel('spread', { symbol: 'ETHUSDT', mode: 'ratio' }, { symbol: '', mode: 'spread' }, 'Spread')).toBe('Ratio ETHUSDT');
+    expect(indicatorChipLabel('spread', { symbol: 'ETHUSDT', mode: 'spread' }, { symbol: '', mode: 'spread' }, 'Spread')).toBe('Spread ETHUSDT');
   });
 });

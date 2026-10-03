@@ -70,6 +70,8 @@ export class Viewport {
         scaleBaseline: this.state.scaleBaseline,
         invertScale: this.state.invertScale,
         priceAxisWidth: this.state.priceAxisWidth,
+        formatPrice: this.state.formatPrice,
+        priceUnit: this.state.priceUnit,
       };
     }
     return this.stateCache;
@@ -107,6 +109,13 @@ export class Viewport {
 
   isInvertScale(): boolean {
     return this.state.invertScale === true;
+  }
+
+  /** How prices on the scale read (null: decimals), and the step they move in (a fraction's). */
+  setPriceFormat(format: ((price: number) => string) | null, unit: number | null = null): void {
+    this.state.formatPrice = format ?? undefined;
+    this.state.priceUnit = unit ?? undefined;
+    this.invalidate();
   }
 
   /** Reference price for percentage / indexed-to-100 axis labels. */

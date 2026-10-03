@@ -77,7 +77,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <h2>Next steps</h2>
 <ul>
   <li><a href={href('/docs/api')}>API reference</a> — full surface of <code>Chart</code> and <code>ChartWidget</code></li>
-  <li><a href={href('/docs/chart-types')}>Chart types</a> — 17 built-in chart types</li>
+  <li><a href={href('/docs/chart-types')}>Chart types</a> — 18 built-in chart types</li>
   <li><a href={href('/docs/indicators')}>Indicators</a> — catalog of 85 indicators</li>
   <li><a href={href('/docs/realtime')}>Realtime &amp; replay</a> — streaming adapters and replay mode</li>
   <li><a href={href('/docs/analytics')}>Analytics</a> — strategy backtester and risk metrics</li>

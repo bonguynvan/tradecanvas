@@ -588,7 +588,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'right';
-      const label = `🔔 ${alert.price.toFixed(this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
+      const label = `🔔 ${viewport.formatPrice?.(alert.price) ?? alert.price.toFixed(this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
       ctx.fillText(label, chartRect.x + chartRect.width - 4, y - 2);
     }
   }

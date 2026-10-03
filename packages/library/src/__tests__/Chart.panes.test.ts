@@ -260,7 +260,7 @@ describe('pane scales', () => {
     // A line drawn in the pane with no value yet (a long average) doesn't turn it off.
     chart.addIndicator('sma', { period: 1000, source: indicatorSource(atr, 'value') });
     expect(vp(atr).logScale).toBe(true);
-    expect(chart.getPaneScale(atr)).toEqual({ log: true, invert: true });
+    expect(chart.getPaneScale(atr)).toEqual({ log: true, invert: true, percent: false });
   });
 
   it('keeps a pane’s scale in a saved layout', () => {
@@ -268,7 +268,7 @@ describe('pane scales', () => {
     chart.setPaneScale(atr, { invert: true });
     chart.loadState(chart.saveState()!);
     const now = chart.getActiveIndicators()[0].instanceId;
-    expect(chart.getPaneScale(now)).toEqual({ log: false, invert: true });
+    expect(chart.getPaneScale(now)).toEqual({ log: false, invert: true, percent: false });
   });
 
   it('says which pane a right-click was on', () => {

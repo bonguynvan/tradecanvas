@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
 
 export interface CompareSymbol {
   id: string;
@@ -11,29 +12,44 @@ export interface CompareSymbol {
 }
 
 /**
- * Renders comparison overlays on the main chart.
- * Each compare symbol is normalized to percentage change from the first visible bar,
- * then mapped onto the main chart's price axis.
+ * Renders comparison overlays on the main chart. Each compare series is
+ * lined up with the main bars by time (its bar at or before each one), and
+ * in percent mode rebased on the first main bar on screen it has a value
+ * for, then mapped onto the main chart's price axis.
  */
 export class CompareRenderer {
   private symbols = new Map<string, CompareSymbol>();
   private mode: 'percent' | 'absolute' = 'percent';
+  private store = new SymbolSeriesStore();
+  /** Each series' closes on the main bars, for the main series it was worked out for. */
+  private aligned = new Map<string, { main: DataSeries; data: DataSeries; length: number; lastTime: number; closes: Float64Array }>();
 
   setMode(mode: 'percent' | 'absolute'): void {
     this.mode = mode;
   }
 
+  getMode(): 'percent' | 'absolute' {
+    return this.mode;
+  }
+
   addSymbol(symbol: CompareSymbol): void {
     this.symbols.set(symbol.id, symbol);
+    this.store.set(symbol.id, symbol.data);
+    this.aligned.delete(symbol.id);
   }
 
   removeSymbol(id: string): void {
     this.symbols.delete(id);
+    this.store.set(id, null);
+    this.aligned.delete(id);
   }
 
   setSymbolData(id: string, data: DataSeries): void {
     const sym = this.symbols.get(id);
-    if (sym) sym.data = data;
+    if (!sym) return;
+    sym.data = data;
+    this.store.set(id, data);
+    this.aligned.delete(id);
   }
 
   setSymbolVisible(id: string, visible: boolean): void {
@@ -46,14 +62,37 @@ export class CompareRenderer {
   }
 
   clear(): void {
+    for (const id of this.symbols.keys()) this.store.set(id, null);
     this.symbols.clear();
+    this.aligned.clear();
+  }
+
+  /**
+   * The prices the visible compare lines reach on the main scale (rebased in
+   * percent mode), for the auto scale; null with none on screen.
+   */
+  getPriceRange(mainData: DataSeries, viewport: ViewportState): { min: number; max: number } | null {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const sym of this.symbols.values()) {
+      if (!sym.visible || sym.data.length === 0) continue;
+      const line = this.line(sym, mainData, viewport);
+      if (!line) continue;
+      for (let i = line.from; i <= line.to; i++) {
+        const price = line.priceAt(i);
+        if (price === null) continue;
+        if (price < min) min = price;
+        if (price > max) max = price;
+      }
+    }
+    return min <= max ? { min, max } : null;
   }
 
   render(
     ctx: CanvasRenderingContext2D,
     mainData: DataSeries,
     viewport: ViewportState,
-    theme: Theme,
+    _theme: Theme,
   ): void {
     if (this.symbols.size === 0 || mainData.length === 0) return;
 
@@ -66,10 +105,49 @@ export class CompareRenderer {
 
     for (const sym of this.symbols.values()) {
       if (!sym.visible || sym.data.length === 0) continue;
-      this.renderSymbol(ctx, sym, mainData, viewport, theme);
+      this.renderSymbol(ctx, sym, mainData, viewport);
     }
 
     ctx.restore();
+  }
+
+  /** `sym`'s closes on the bars of `main` (NaN where it has none). */
+  private closesOn(sym: CompareSymbol, main: DataSeries): Float64Array {
+    // The main series may be the same array grown by a bar, or its last bar replaced.
+    const lastTime = main.length > 0 ? main[main.length - 1].time : Number.NaN;
+    const cached = this.aligned.get(sym.id);
+    if (cached && cached.main === main && cached.data === sym.data && cached.length === main.length && cached.lastTime === lastTime) {
+      return cached.closes;
+    }
+    const closes = new Float64Array(main.length);
+    for (let i = 0; i < main.length; i++) closes[i] = this.store.closeAt(sym.id, main[i].time) ?? Number.NaN;
+    this.aligned.set(sym.id, { main, data: sym.data, length: main.length, lastTime, closes });
+    return closes;
+  }
+
+  /** The visible stretch of `sym`'s line and its price at each main bar there. */
+  private line(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
+    { from: number; to: number; priceAt: (i: number) => number | null } | null {
+    const closes = this.closesOn(sym, mainData);
+    const from = Math.max(0, viewport.visibleRange.from);
+    const to = Math.min(mainData.length - 1, viewport.visibleRange.to);
+    let base = -1;
+    for (let i = from; i <= to; i++) {
+      if (Number.isFinite(closes[i]) && closes[i] !== 0 && mainData[i].close !== 0) { base = i; break; }
+    }
+    if (base < 0) return null;
+    const mainBase = mainData[base].close;
+    const symBase = closes[base];
+    const percent = this.mode === 'percent';
+    return {
+      from: base,
+      to,
+      priceAt: (i) => {
+        const c = closes[i];
+        if (!Number.isFinite(c)) return null;
+        return percent ? mainBase * (c / symBase) : c;
+      },
+    };
   }
 
   private renderSymbol(
@@ -77,70 +155,35 @@ export class CompareRenderer {
     sym: CompareSymbol,
     mainData: DataSeries,
     viewport: ViewportState,
-    _theme: Theme,
   ): void {
-    const { chartRect } = viewport;
-
-    // Find the first visible bar index for the main data
-    const barUnit = viewport.barWidth + viewport.barSpacing;
-    const firstVisibleIdx = Math.max(0, Math.floor(viewport.offset / barUnit));
-
-    if (firstVisibleIdx >= mainData.length || firstVisibleIdx >= sym.data.length) return;
-
-    const mainBase = mainData[firstVisibleIdx].close;
-    const symBase = sym.data[firstVisibleIdx].close;
-
-    if (mainBase === 0 || symBase === 0) return;
+    const line = this.line(sym, mainData, viewport);
+    if (!line) return;
 
     ctx.strokeStyle = sym.color;
     ctx.lineWidth = sym.lineWidth ?? 1.5;
     ctx.lineJoin = 'round';
     ctx.beginPath();
 
-    let started = false;
-    const lastIdx = Math.min(mainData.length, sym.data.length);
-
-    for (let i = firstVisibleIdx; i < lastIdx; i++) {
+    let drawn = 0;
+    let label: { x: number; y: number } | null = null;
+    for (let i = line.from; i <= line.to; i++) {
+      const price = line.priceAt(i);
+      if (price === null) continue;
       const x = barIndexToX(i, viewport);
-      if (x < chartRect.x - barUnit) continue;
-      if (x > chartRect.x + chartRect.width + barUnit) break;
-
-      let y: number;
-      if (this.mode === 'percent') {
-        // Percentage change from base, mapped to main chart's price scale
-        const pctChange = (sym.data[i].close - symBase) / symBase;
-        const mappedPrice = mainBase * (1 + pctChange);
-        y = priceToY(mappedPrice, viewport);
-      } else {
-        y = priceToY(sym.data[i].close, viewport);
-      }
-
-      if (!started) {
-        ctx.moveTo(x, y);
-        started = true;
-      } else {
-        ctx.lineTo(x, y);
-      }
+      const y = priceToY(price, viewport);
+      if (drawn === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      if (drawn === 2 || (drawn === 0 && label === null)) label = { x: x + 4, y: y - 4 };
+      drawn++;
     }
-
     ctx.stroke();
 
-    // Draw label
-    if (started) {
-      const labelIdx = Math.min(firstVisibleIdx + 2, lastIdx - 1);
-      const labelX = barIndexToX(labelIdx, viewport) + 4;
-      let labelY: number;
-      if (this.mode === 'percent') {
-        const pct = (sym.data[labelIdx].close - symBase) / symBase;
-        labelY = priceToY(mainBase * (1 + pct), viewport) - 4;
-      } else {
-        labelY = priceToY(sym.data[labelIdx].close, viewport) - 4;
-      }
+    if (label) {
       ctx.fillStyle = sym.color;
       ctx.font = `bold 10px sans-serif`;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'left';
-      ctx.fillText(sym.label, labelX, labelY);
+      ctx.fillText(sym.label, label.x, label.y);
     }
   }
 }

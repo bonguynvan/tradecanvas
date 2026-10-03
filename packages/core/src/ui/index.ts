@@ -10,3 +10,5 @@ export { isRegularSession, isInWindow, minuteOfDay, mergeSessionHours } from './
 export type { SessionHoursConfig, SessionWindow } from './sessionHours.js';
 export { renderAxisValueLabels, spreadLabels, labelTextColor, indicatorValuePrecision, AXIS_LABEL_HEIGHT } from './axisValueLabels.js';
 export type { AxisValueLabel } from './axisValueLabels.js';
+export { PriceLines } from './PriceLines.js';
+export type { PriceLineKind, PriceLineLevel, BidAsk } from './PriceLines.js';

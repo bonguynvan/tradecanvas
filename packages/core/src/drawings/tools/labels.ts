@@ -25,18 +25,21 @@ function priceDecimals(ref: number): number {
   return Math.min(10, Math.ceil(-Math.log10(abs)) + 3);
 }
 
-/** Price text at the precision of `ref` (defaults to the price itself). */
-export function formatDrawingPrice(price: number, ref = price): string {
-  return price.toFixed(priceDecimals(ref));
+/**
+ * Price text in the chart's price format when it has one (`viewport`), else
+ * at the precision of `ref` (defaults to the price itself).
+ */
+export function formatDrawingPrice(price: number, ref = price, viewport?: ViewportState): string {
+  return viewport?.formatPrice ? viewport.formatPrice(price) : price.toFixed(priceDecimals(ref));
 }
 
 /** Signed price change with its percentage of `from`, e.g. "+12.50 (+1.25%)". */
-export function formatPriceChange(from: number, to: number): string {
+export function formatPriceChange(from: number, to: number, viewport?: ViewportState): string {
   const diff = to - from;
   const pct = from !== 0 ? (diff / from) * 100 : 0;
   const sign = diff >= 0 ? '+' : '';
   // A change is shown at the precision of the price it moved from.
-  return `${sign}${formatDrawingPrice(diff, from)} (${sign}${pct.toFixed(2)}%)`;
+  return `${sign}${formatDrawingPrice(diff, from, viewport)} (${sign}${pct.toFixed(2)}%)`;
 }
 
 /** Compact duration, e.g. "3d 4h", "45m", "2w 1d". */

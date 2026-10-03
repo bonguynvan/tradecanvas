@@ -39,6 +39,7 @@ export function autoPricePrecision(min: number, max: number): number {
 }
 
 import type { PriceScaleMode } from '../types/rendering.js';
+import type { PriceFormatter, PriceFraction } from '../types/chart.js';
 import { computeTickStep } from './math.js';
 
 /**
@@ -67,6 +68,48 @@ export function formatPriceScaleLabel(
     return formatPrice(indexed, 2, locale);
   }
   return formatPrice(price, precision, locale);
+}
+
+/**
+ * `value` in fractions of a point: whole points, an apostrophe, then the
+ * fraction's numerator padded to the denominator's digits (`101'16` for
+ * 101.5 in 32nds). A `subDenominator` of 2 or 4 adds the half or quarter of
+ * that fraction as one more digit, as futures quote it (`101'165`, `110'162`,
+ * `110'167`). Rounds to the nearest step. A denominator that isn't a whole
+ * number above 1 gives plain digits.
+ */
+export function formatFraction(value: number, denominator: number, subDenominator = 1): string {
+  const sub = Number.isInteger(subDenominator) && subDenominator > 1 ? subDenominator : 1;
+  if (!Number.isFinite(value) || !Number.isInteger(denominator) || denominator < 2) return String(value);
+  const steps = denominator * sub;
+  const total = Math.round(Math.abs(value) * steps);
+  const whole = Math.floor(total / steps);
+  const rest = total - whole * steps;
+  const numerator = Math.floor(rest / sub);
+  const width = String(denominator - 1).length;
+  const tail = sub > 1 ? String(Math.floor(((rest - numerator * sub) / sub) * 10)) : '';
+  const sign = value < 0 && total > 0 ? '-' : '';
+  return `${sign}${whole}'${String(numerator).padStart(width, '0')}${tail}`;
+}
+
+/**
+ * The smallest step a fraction format prints (a 32nd; a quarter of one with
+ * `subDenominator` 4), or null for a denominator it can't print (it falls
+ * back to plain digits then).
+ */
+export function fractionTick(fraction: PriceFraction): number | null {
+  if (!Number.isInteger(fraction.denominator) || fraction.denominator < 2) return null;
+  const sub = Number.isInteger(fraction.subDenominator) && (fraction.subDenominator ?? 0) > 1 ? fraction.subDenominator as number : 1;
+  return 1 / (fraction.denominator * sub);
+}
+
+/** The formatter a `priceFormat` option stands for: its function, its fraction's, or null for decimals. */
+export function priceFormatterFor(format: PriceFormatter | PriceFraction | null | undefined): PriceFormatter | null {
+  if (!format) return null;
+  if (typeof format === 'function') return format;
+  // A denominator it can't print leaves the chart's decimals.
+  if (fractionTick(format) === null) return null;
+  return (price) => formatFraction(price, format.denominator, format.subDenominator);
 }
 
 export function formatVolume(value: number): string {

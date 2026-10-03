@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Uno de los 17 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Uno de los 18 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>Cambia entre los temas integrados.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Cambia la temporalidad activa; reconecta el flujo en vivo.</td></tr>
   </tbody>
@@ -97,6 +97,57 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>Formatos de precio y de hora</h3>
+<p>
+  Los precios pueden mostrarse a tu manera, o en fracciones de punto, como se cotizan los bonos y sus
+  futuros (<code>101'16</code> es 101 y 16/32). El formato llega a todo lo que muestra un precio en la
+  escala de precio: eje, cruz, etiqueta del último precio, leyenda, información emergente, órdenes,
+  alertas y etiquetas de los dibujos; el eje coloca sus marcas en fracciones enteras y
+  <code>roundPrice</code> redondea a ellas. Los paneles de indicadores conservan sus propios números.
+  Las horas también pueden mostrarse a tu manera; al formateador se le indica qué tipo de etiqueta es.
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>Comparar símbolos</h3>
+<p>
+  El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su
+  precio en una escala propia, en un panel propio, o el diferencial o el ratio entre el cierre del
+  gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>,
+  <code>spread</code>), con leyenda, etiquetas de valor, alertas y diseños guardados como cualquier
+  otro. Las barras del otro símbolo se alinean con las del gráfico por tiempo. El gráfico pide las
+  barras que necesita; vuelve a dárselas tras un cambio de temporalidad.
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  En ChartWidget, el botón de comparar del árbol de objetos pide un símbolo y luego cómo mostrarlo:
+  cambio porcentual, escala propia, panel propio, diferencial o ratio.
+</p>
+
+<h3>Exportar datos</h3>
+<p>
+  Las barras en CSV o JSON, con cada línea de indicador en su propia columna y con el nombre que le da
+  la leyenda. ChartWidget tiene <strong>Exportar datos (CSV)</strong> en el menú del clic derecho del
+  gráfico.
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>Perfil de volumen</h3>
 <p>
   Histograma horizontal del volumen negociado, agrupado por precio, sobre el rango
@@ -144,6 +195,15 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>Horario extendido.</strong> Al desactivarlo, las barras fuera del horario regular del
+  símbolo (<code>SymbolInfo.sessions</code> en su <code>timezone</code>) salen del gráfico; se guardan
+  aparte, también las barras en vivo y las páginas del historial, y vuelven al activarlo. Las barras de
+  un día o más se quedan como están.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>Niveles del periodo anterior (PDH / PDL / PDC)</h3>
 <p>
@@ -582,7 +642,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // todos los gráficos
   adapter: () => new BinanceAdapter(),            // uno por gráfico: un adaptador mantiene un único flujo
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -598,7 +658,9 @@ new ChartWidgetGrid(host, {
   La sincronización de la cruz muestra en todos los gráficos la hora bajo el puntero;
   la del tiempo desplaza y amplía los demás junto con el gráfico que se está usando;
   los dibujos se copian a los gráficos que muestran el mismo símbolo (al activarla se
-  juntan sus dibujos, sin perder ninguno). Los gráficos que sobran cuando la cuadrícula
+  juntan sus dibujos, sin perder ninguno); la de la repetición lleva a los demás a la misma hora
+  que el gráfico que se está repitiendo (un gráfico con barras más largas que los pasos de la
+  repetición muestra entera la barra que contiene esa hora). Los gráficos que sobran cuando la cuadrícula
   se reduce se guardan aparte, se conservan en el diseño guardado y vuelven tal como
   estaban cuando crece de nuevo; un gráfico totalmente nuevo se abre con el símbolo y
   la temporalidad del gráfico activo cuando estos están sincronizados.

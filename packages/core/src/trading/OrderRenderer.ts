@@ -124,7 +124,7 @@ export class OrderRenderer {
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 
       const color = order.side === 'buy' ? buyColor : sellColor;
-      const priceText = `${price.toFixed(precision)} x ${order.quantity}`;
+      const priceText = `${viewport.formatPrice?.(price) ?? price.toFixed(precision)} x ${order.quantity}`;
       ctx.font = `11px ${theme.font.family}`;
       const badgeWidth = ctx.measureText(priceText).width + 10;
       ctx.fillStyle = color;

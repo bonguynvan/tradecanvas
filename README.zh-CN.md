@@ -12,7 +12,7 @@
 
 - **85 个内置指标**——SMA、EMA、TEMA、VWMA、Hull MA、RSI、MACD、Bollinger、Envelope、Ichimoku、Pivot Points、Anchored VWAP、ZigZag、Linear Regression Channel、Awesome / Chaikin Oscillator 等。任何指标都能读取另一个指标的线（例如 RSI 的 SMA）。无需单独的计算库。
 - **69 种画线工具**——趋势线（信息线、趋势角度、十字线）、斐波那契（回撤、扩展、通道、时间周期、速度阻力扇与弧、圆、螺旋、楔形）、水平/垂直线、通道、音叉与音叉扇、江恩扇 / 江恩箱 / 江恩正方、周期、谐波形态（XABCD、Cypher、ABCD、三驱动、头肩形态）、艾略特波浪、注释、标注与标记、画笔与路径、预测与投影、带仓位计算的多/空仓位、成交量分布区间。每种工具都有自己的设置，支持趋势线警报、分组与图层、撤销/重做和完整序列化。
-- **17 种图表类型**——蜡烛图、折线、面积图、美国线、空心蜡烛图、基准线、平均K线（Heikin-Ashi）、Renko、Kagi、Line Break、Point & Figure、Range Bars、成交量蜡烛图、**等量图（Equivolume）**、HLC 面积图、阶梯线、带标记的折线。
+- **18 种图表类型**——蜡烛图、折线、面积图、美国线、空心蜡烛图、基准线、高低图、平均K线（Heikin-Ashi）、Renko、Kagi、Line Break、Point & Figure、Range Bars、成交量蜡烛图、**等量图（Equivolume）**、HLC 面积图、阶梯线、带标记的折线。Renko 的砖块大小、Kagi 的反转幅度等参数都可以自行设置。
 - **专业级交互**——可自由平移，越过最后一根K线进入右侧空白的未来区域（画线也能放在那里）；拖动价格/时间轴进行缩放；双击自动适配；`Ctrl/⌘+drag` 选择多个画线（之后可一起移动、修改样式或删除）；`Shift+drag` 测量（K线数 × 价差 × %）；`Alt+click` 固定对比提示；上下文光标（十字光标、抓手、调整大小箭头）；光标下随坐标轴移动的价格/时间胶囊标签；K线悬停高亮。
 - **交易叠加层**——渲染持仓的开仓价线、盈亏区域以及 SL/TP 标记。订单显示为虚线。拖动 SL/TP 即可修改，通过每条线上的按钮撤单 / 平仓 / 反手，每笔成交都会标记在所在的K线上。ChartWidget 还提供边填写边校验订单的下单面板，以及包含持仓、挂单和历史记录的账户面板。非交易类项目可通过 `features.trading: false` 干净地关闭。
 - **实时数据流**——内置 Binance、Coinbase、Bybit 和 Kraken 适配器，另有通用的 `WebSocketAdapter` / `PollingAdapter` 基类，约 20 行代码即可接入任意数据源。回看历史时自动加载更早的K线，任意周期（`7m`、`90m`、`2d`）都能由数据源自带的周期合成，代码搜索也直接来自数据源。
@@ -23,6 +23,8 @@
 - **策略回测器**——`@tradecanvas/analytics` 提供逐K线运行的 `Backtester`，具备虚拟成交、手续费/滑点模型、投资组合跟踪和风险指标（Sharpe、Sortino、Calmar、最大回撤）。**现已附带 4 个开箱即用的参考策略 + 蒙特卡洛路径依赖分析。**
 - **回放模式**——从任意位置回放图表自身的K线，也可以按更细的步长回放（小时图由 5 分钟K线逐步形成），支持播放 / 暂停 / 单步 / 跳转 / 速度，还能在回放的价格上模拟交易。组件为此提供了回放栏；`ReplayController` 也能在无界面的情况下驱动K线。
 - **提醒**——可基于价格水平、指标线、画线，或一条线穿越另一条线；可在若干根K线内涨跌达到一定百分比时触发；可只看已收盘的K线；可设置到期时间。组件的提醒面板可以设置以上全部。
+- **对比与价差**——在价格坐标上以百分比显示其他品种，或放在独立坐标、独立窗格中，或显示为价差或比值，并按时间与图表对齐。
+- **价格格式**——每个标签上的价格都可使用你自己的格式或点的分数（以 1/32 报价的债券：110'165）；时间格式也可自定义；延长交易时段可开可关；导出数据时可带上指标线。
 - **成交量分布**——可选的水平成交量直方图，按价格对可见范围内的成交量分桶，并高亮控制点（POC）。
 - **自选列表侧边栏**——可选启用的垂直面板，列出各代码的最新价、涨跌幅 % 和迷你走势图。点击一行即可切换图表。
 - **CSV / JSON 拖放导入**——把文件拖到图表上，立即解析并加载。可识别表头布局、ISO/unix 秒/unix 毫秒时间戳，以及数组与对象两种 JSON 结构。
@@ -104,7 +106,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `fullscreen` | `boolean` | `true` | 工具栏中的全屏按钮 |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | 可搜索的代码列表 |
 | `timeframes` | `TimeFrame[]` | 1m 至 1M | 可选的周期；可在 ▾ 菜单中固定常用周期 |
-| `chartTypes` | `ChartType[]` | 11 种 | 可用的图表类型 |
+| `chartTypes` | `ChartType[]` | 18 种 | 可用的图表类型 |
 | `watchlist` | `boolean` | `false` | 右侧自选列表侧边栏 |
 | `dragDropImport` | `boolean` | `true` | 将 CSV / JSON 文件拖到图表上加载数据 |
 | `persistLayouts` | `boolean \| { keyPrefix, debounceMs }` | `false` | 按代码将指标 / 画线 / 图表类型保存到 localStorage |
@@ -745,7 +747,7 @@ mc.worstMaxDrawdownPct
 
 | 功能 | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| 图表类型 | 17 + 6 种金融图表 | 4 | 8（非金融） | 10+ |
+| 图表类型 | 18 + 6 种金融图表 | 4 | 8（非金融） | 10+ |
 | 金融图表 | 迷你走势图、深度图、权益曲线、热力图、瀑布图、仪表图 | 无 | 无 | 部分 |
 | 内置指标 | 85 | 0 | 0 | ~30 |
 | 画线工具 | 69 | 0 | 0 | 部分 |

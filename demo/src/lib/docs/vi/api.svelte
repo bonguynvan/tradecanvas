@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Một trong 17 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Một trong 18 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>Chuyển giữa các giao diện có sẵn.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Đổi khung thời gian đang dùng; nối lại luồng dữ liệu trực tiếp.</td></tr>
   </tbody>
@@ -95,6 +95,57 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>Định dạng giá và thời gian</h3>
+<p>
+  Giá có thể hiển thị theo định dạng của riêng bạn, hoặc theo phân số của một điểm như cách yết
+  giá trái phiếu và hợp đồng tương lai của chúng (<code>101'16</code> là 101 và 16/32). Định dạng
+  này áp dụng cho mọi chỗ in giá theo thang giá: trục, con trỏ chữ thập, nhãn giá cuối, chú thích,
+  tooltip, lệnh, cảnh báo và nhãn hình vẽ; trục đặt vạch đúng vào các phân số chẵn và
+  <code>roundPrice</code> làm tròn theo chúng. Các bảng chỉ báo giữ cách hiển thị số riêng. Thời
+  gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>So sánh các mã</h3>
+<p>
+  Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
+  nó trên thang riêng, trong bảng riêng, hoặc chênh lệch hay tỷ lệ giữa giá đóng cửa của biểu đồ
+  và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>spread</code>), có chú
+  thích, nhãn giá trị, cảnh báo và được lưu trong bố cục như mọi chỉ báo khác. Nến của mã kia được
+  khớp với nến của biểu đồ theo thời gian. Biểu đồ tự yêu cầu những nến nó cần; hãy cung cấp lại
+  sau khi đổi khung thời gian.
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  Trong ChartWidget, nút so sánh trong cây đối tượng hỏi mã, rồi hỏi cách so sánh: thay đổi
+  phần trăm, thang riêng, pane riêng, chênh lệch hoặc tỷ lệ.
+</p>
+
+<h3>Xuất dữ liệu</h3>
+<p>
+  Xuất các nến dưới dạng CSV hoặc JSON, mỗi đường chỉ báo nằm trong một cột riêng, đặt tên theo
+  tên trên chú thích. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
+  của biểu đồ.
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>Hồ sơ khối lượng (Volume Profile)</h3>
 <p>
   Biểu đồ tần suất nằm ngang của khối lượng giao dịch, gom theo mức giá trong khoảng
@@ -140,6 +191,15 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>Giờ giao dịch mở rộng.</strong> Khi tắt, các nến nằm ngoài giờ giao dịch chính của mã
+  (<code>SymbolInfo.sessions</code> theo <code>timezone</code> của mã) rời khỏi biểu đồ; chúng được
+  cất riêng, cả nến trực tiếp lẫn các trang lịch sử, và trở lại khi bật lên. Nến từ một ngày trở
+  lên được giữ nguyên.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>Mức của kỳ trước (PDH / PDL / PDC)</h3>
 <p>
@@ -562,7 +622,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // cho mọi biểu đồ
   adapter: () => new BinanceAdapter(),            // mỗi biểu đồ một adapter: một adapter giữ một luồng
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -578,7 +638,9 @@ new ChartWidgetGrid(host, {
   Đồng bộ con trỏ chữ thập hiện thời điểm dưới con trỏ chuột trên mọi biểu đồ; đồng bộ
   thời gian cuộn và phóng to/thu nhỏ các biểu đồ khác theo biểu đồ đang dùng; hình vẽ được
   sao chép sang các biểu đồ đang hiện cùng mã (bật mục này sẽ gộp hình vẽ của các biểu đồ
-  đó lại, không mất hình nào). Các biểu đồ bị bớt đi khi lưới thu nhỏ sẽ được cất đi, vẫn
+  đó lại, không mất hình nào); đồng bộ phát lại cho các biểu đồ khác phát lại đến cùng thời điểm
+  với biểu đồ đang phát lại (biểu đồ có nến dài hơn các bước phát lại sẽ hiện trọn nến chứa thời điểm đó).
+  Các biểu đồ bị bớt đi khi lưới thu nhỏ sẽ được cất đi, vẫn
   được giữ trong bố cục đã lưu, và trở lại nguyên như cũ khi lưới mở rộng lại; một biểu đồ
   hoàn toàn mới sẽ mở theo mã và khung thời gian của biểu đồ đang chọn nếu hai mục đó đang
   được đồng bộ.

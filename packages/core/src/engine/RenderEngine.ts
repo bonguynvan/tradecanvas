@@ -2,6 +2,7 @@ import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice } from '@tradecanvas/commons';
+import { priceScaleText } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { renderAxisValueLabels, indicatorValuePrecision, type AxisValueLabel } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
@@ -74,6 +75,8 @@ export interface RenderContext {
   sessionBreaks: SessionBreaks | null;
   sessionShading: import('../ui/SessionShading.js').SessionShading | null;
   compareRenderer: CompareRenderer | null;
+  /** The visible high and low, the bid and the ask. */
+  priceLines?: import('../ui/PriceLines.js').PriceLines | null;
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
   measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
@@ -226,6 +229,7 @@ export class RenderEngine {
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
+    ctx.priceLines?.render(c, viewport, theme, data);
 
     // --- Axes and price tags ---
     ctx.priceAxis?.render(c, viewport, theme);
@@ -237,6 +241,7 @@ export class RenderEngine {
     // Trading axis badges paint ON TOP of the regular price axis labels
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
+    ctx.priceLines?.renderAxisTags(c, viewport, theme, data);
     ctx.currentPriceLine?.render(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
@@ -409,7 +414,7 @@ export class RenderEngine {
         c.lineTo(axisX + 4, Math.round(y) + 0.5);
         c.stroke();
         c.fillStyle = theme.axisLabel;
-        c.fillText(formatPrice(val, precision, locale), axisX + 6, y);
+        c.fillText(priceScaleText(val, pv, precision, locale), axisX + 6, y);
       }
 
       // The pane indicator's latest values, tagged on its axis.
@@ -419,7 +424,10 @@ export class RenderEngine {
       if (latest?.length) {
         const labels = latest.map((v) => ({
           y: priceToY(v.value, pv),
-          text: formatPrice(v.value, indicatorValuePrecision(v.value), locale),
+          // On a percent pane, in percent like its scale.
+          text: pv.scaleMode === 'percentage' && pv.scaleBaseline
+            ? priceScaleText(v.value, pv, 2, locale)
+            : formatPrice(v.value, indicatorValuePrecision(v.value), locale),
           color: v.color,
         }));
         renderAxisValueLabels(c, labels, axisX, ctx.viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
@@ -486,7 +494,7 @@ export class RenderEngine {
       const precision = panelPrecision(computeTickStep(min, max, 4));
 
       if (cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
-        const valText = formatPrice(yToPrice(cursorPos.y, pv), precision, locale);
+        const valText = priceScaleText(yToPrice(cursorPos.y, pv), pv, precision, locale);
         c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
         const tw = c.measureText(valText).width;
         const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
@@ -510,7 +518,7 @@ export class RenderEngine {
       if (plots) {
         for (const plot of plots) {
           const v = val[plot.key];
-          if (v !== undefined && Number.isFinite(v)) parts.push(`${plot.title} ${formatPrice(v, precision, locale)}`);
+          if (v !== undefined && Number.isFinite(v)) parts.push(`${plot.title} ${priceScaleText(v, pv, precision, locale)}`);
         }
       } else {
         for (const key in val) {
@@ -568,7 +576,7 @@ export class RenderEngine {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'left';
-      ctx.fillText(`${label} ${price.toFixed(2)}`, chartRect.x + 4, y - 2);
+      ctx.fillText(`${label} ${viewport.formatPrice?.(price) ?? price.toFixed(2)}`, chartRect.x + 4, y - 2);
 
       // Axis badge
       const axisX = chartRect.x + chartRect.width + 1;
@@ -578,7 +586,7 @@ export class RenderEngine {
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(price.toFixed(2), axisX + 4, y);
+      ctx.fillText(viewport.formatPrice?.(price) ?? price.toFixed(2), axisX + 4, y);
     }
   }
 

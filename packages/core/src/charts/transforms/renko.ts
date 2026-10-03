@@ -15,10 +15,11 @@ export function toRenko(data: DataSeries, config: RenkoConfig): DataSeries {
   if (data.length === 0) return [];
 
   let brickSize = config.brickSize;
-  if (config.useATR && data.length > (config.atrPeriod ?? 14)) {
+  if (config.useATR && data.length > 2) {
     brickSize = computeATRBrickSize(data, config.atrPeriod ?? 14);
   }
-  if (brickSize <= 0) brickSize = 1;
+  // Nothing to size by (a flat market): a hundredth of the price.
+  if (!(brickSize > 0)) brickSize = Math.abs(data[data.length - 1].close) / 100 || 1;
 
   const bricks: OHLCBar[] = [];
   let lastClose = Math.round(data[0].close / brickSize) * brickSize;
@@ -49,15 +50,24 @@ export function toRenko(data: DataSeries, config: RenkoConfig): DataSeries {
   return bricks;
 }
 
+/**
+ * The average true range of the last `period` closed bars (the forming one
+ * left out, so a tick doesn't re-brick the history), to two significant
+ * digits so it holds still while the market moves a little.
+ */
 function computeATRBrickSize(data: DataSeries, period: number): number {
-  let atr = 0;
-  for (let i = 1; i <= Math.min(period, data.length - 1); i++) {
-    const tr = Math.max(
+  const end = data.length - 1; // the forming bar
+  const from = Math.max(1, end - period);
+  let sum = 0;
+  for (let i = from; i < end; i++) {
+    sum += Math.max(
       data[i].high - data[i].low,
       Math.abs(data[i].high - data[i - 1].close),
       Math.abs(data[i].low - data[i - 1].close),
     );
-    atr += tr;
   }
-  return atr / period;
+  const atr = end > from ? sum / (end - from) : 0;
+  if (!(atr > 0)) return 0;
+  const scale = 10 ** (Math.floor(Math.log10(atr)) - 1);
+  return Math.round(atr / scale) * scale;
 }

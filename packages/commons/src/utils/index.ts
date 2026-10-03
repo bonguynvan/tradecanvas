@@ -9,3 +9,4 @@ export * from './timezone.js';
 export * from './symbols.js';
 export * from './drawingOptions.js';
 export * from './drawingStyle.js';
+export * from './chartTypeOptions.js';

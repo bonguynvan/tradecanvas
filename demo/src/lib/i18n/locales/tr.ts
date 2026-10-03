@@ -225,6 +225,30 @@ const tr: SiteMessages = {
         'Her barın oluşumunu izlemek için tekrar çubuğunda daha küçük bir Adım (15m) seçin',
       ],
     },
+    compare: {
+      title: 'Karşılaştırma, fark, oran',
+      stat: 'semboller',
+      blurb:
+        'BTC’nin yanında kendi fiyat ölçeğinde ETH ve bir panelde BTC ÷ ETH. Diğer semboller grafikle zamana göre hizalanır; fark ya da oran, her gösterge gibi açıklama, değer etiketleri ve alarmlar alır. Ekrandaki en yüksek tepe ve en düşük dip işaretlenir.',
+      tryThis: [
+        'Nesne ağacını açın ve Karşılaştır’ın yanındaki + düğmesine basın: önce bir sembol, ardından biçimini seçin',
+        'Yüzde ölçeği için oran paneline sağ tıklayın',
+        'Grafiğe sağ tıklayın: Verileri dışa aktar (CSV) tüm gösterge çizgilerini de içerir',
+        'Zaman dilimini değiştirin: diğer sembolün barları yeniden alınır',
+      ],
+    },
+    bonds: {
+      title: '1/32’lik tahviller',
+      stat: 'biçimler',
+      blurb:
+        '1/32’lik ve yarım 1/32’lik kesirlerle fiyatlanan bir tahvil (110’165, 110 ve 16½/32 demektir), yüksek-düşük barlarda. Grafikteki her fiyat (eksen, artı imleç, açıklama, emirler, çizimler) aynı biçimde okunur ve eksen çizgileri tam kesirlere denk gelir.',
+      tryThis: [
+        'İmleci gezdirin: artı imleç ve açıklama 1/32’lik kesirlerle okunur',
+        'Ayarlar → Görünüm → yalnızca normal seans için Uzatılmış işlem saatleri seçeneğini kapatın',
+        'Renko ya da Kagi’ye geçin ve kutu boyutunu ya da dönüşü Ayarlar’da belirleyin',
+        'Yatay bir çizgi çizin: etiketi de 1/32’lik kesirlerle okunur',
+      ],
+    },
     subcent: {
       title: '14 dil, sent altı fiyatlar',
       stat: 'i18n',

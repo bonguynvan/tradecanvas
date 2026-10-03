@@ -12,7 +12,7 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 
 - **85 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
 - **69 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan and arcs, circles, spiral, wedge), horizontal/vertical lines, channels, pitchforks and pitchfan, Gann fan / box / square, cycles, harmonic patterns (XABCD, cypher, ABCD, three drives, head and shoulders), Elliott waves, notes, callouts and marks, brush and path, forecast and projection, Long/Short Position with position sizing, Volume Profile range. Each with its own settings, alerts on trend lines, groups and layers, undo/redo and full serialization.
-- **17 chart types** — Candlestick, line, area, bar, hollow candle, baseline, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers.
+- **18 chart types** — Candlestick, line, area, bar, hollow candle, baseline, High-Low, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers. Renko's box, Kagi's reversal and the like are yours to set.
 - **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify, cancel / close / reverse from the buttons on each line, and see every fill marked on its bar. ChartWidget adds an order ticket that checks the order as you fill it in, and an account panel with positions, working orders and history. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines. Older bars load as you scroll back, any interval (`7m`, `90m`, `2d`) is built from the feed's own, and symbol search comes from the feed.
@@ -23,6 +23,8 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
 - **Replay mode** — replay the chart's own bars from any point, in finer steps if you like (an hourly chart forming from 5-minute bars), with play / pause / step / seek / speed, and paper-trade on the replayed prices. The widget has a replay bar for it; `ReplayController` drives bars headless too.
 - **Alerts** — on a price level, an indicator line, a drawing, or one line crossing another; on a move of some percent within some bars; only on closed bars; with an expiry. The widget's alerts panel sets all of them.
+- **Compare and spread** — other symbols in percent on the price scale, on a scale or pane of their own, or as a spread or ratio, lined up with the chart by time.
+- **Price formats** — prices in your own format or in fractions of a point (a bond in 32nds: 110'165) on every label; times your way; extended hours on or off; data export with the indicator lines.
 - **Volume Profile** — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
 - **Watchlist sidebar** — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
 - **CSV / JSON drag-and-drop** — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.
@@ -104,7 +106,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `fullscreen` | `boolean` | `true` | Fullscreen button in the toolbar |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Searchable symbol catalog |
 | `timeframes` | `TimeFrame[]` | 1m to 1M | Timeframes on offer; pin favourites from the ▾ menu |
-| `chartTypes` | `ChartType[]` | 11 types | Available chart types |
+| `chartTypes` | `ChartType[]` | 18 types | Available chart types |
 | `watchlist` | `boolean` | `false` | Right-side watchlist sidebar |
 | `dragDropImport` | `boolean` | `true` | Drop CSV / JSON files onto the chart to load data |
 | `persistLayouts` | `boolean \| { keyPrefix, debounceMs }` | `false` | Save per-symbol indicators / drawings / chart type to localStorage |
@@ -746,7 +748,7 @@ mc.worstMaxDrawdownPct
 
 | Feature | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Chart types | 17 + 6 finance | 4 | 8 (non-financial) | 10+ |
+| Chart types | 18 + 6 finance | 4 | 8 (non-financial) | 10+ |
 | Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
 | Built-in indicators | 85 | 0 | 0 | ~30 |
 | Drawing tools | 69 | 0 | 0 | Some |

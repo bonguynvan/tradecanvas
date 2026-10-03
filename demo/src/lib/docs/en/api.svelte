@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>One of 17 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>One of 18 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>Switch between built-in themes.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Switch active timeframe; rewires the live stream.</td></tr>
   </tbody>
@@ -95,6 +95,57 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>Price and time formats</h3>
+<p>
+  Prices can read in your own words, or in fractions of a point the way bonds and their
+  futures are quoted (<code>101'16</code> is 101 and 16/32). The format reaches
+  everything that prints a price on the price scale: axis, crosshair, last-price tag,
+  legend, tooltips, orders, alerts and drawing labels; the axis puts its ticks on whole
+  fractions and <code>roundPrice</code> rounds to them. Indicator panes keep their own
+  numbers. Times can read your way too; the formatter is told what a label is.
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>Comparing symbols</h3>
+<p>
+  Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or
+  its price on a scale of its own, in a pane of its own, or the spread or ratio of the
+  chart's close to it — those last are indicators (<code>compareSymbol</code>,
+  <code>spread</code>), with legends, value tags, alerts and saved layouts like any
+  other. The other symbol's bars line up with the chart's by time. The chart asks for
+  the bars it needs; give them again after a timeframe change.
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  In ChartWidget, the object tree's compare button asks for a symbol, then how:
+  percent change, own scale, own pane, spread or ratio.
+</p>
+
+<h3>Exporting data</h3>
+<p>
+  The bars as CSV or JSON, each indicator line in a column of its own named as the
+  legend names it. ChartWidget has <strong>Export data (CSV)</strong> in the chart's
+  right-click menu.
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>Volume Profile</h3>
 <p>
   Horizontal histogram of traded volume bucketed by price over the visible
@@ -140,6 +191,15 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>Extended hours.</strong> Turn them off and the bars outside the symbol's
+  regular hours (<code>SymbolInfo.sessions</code> in its <code>timezone</code>) leave the
+  chart; they are kept aside, live bars and history pages too, and come back when
+  turned on. Bars a day or longer are left as they are.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>Prior-period levels (PDH / PDL / PDC)</h3>
 <p>
@@ -561,7 +621,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // every chart
   adapter: () => new BinanceAdapter(),            // one per chart: an adapter keeps one stream
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -577,7 +637,10 @@ new ChartWidgetGrid(host, {
   Crosshair sync shows the time under the pointer on every chart; time sync
   scrolls and zooms the others with the chart being used; drawings are copied
   to the charts showing the same symbol (switching it on puts their drawings
-  together, none lost). Charts the grid shrinks from are put away, kept in the
+  together, none lost); replay sync replays the others to the same time as the chart
+  being replayed (a chart whose bars are longer than the replay's steps shows the whole
+  bar that holds that time).
+  Charts the grid shrinks from are put away, kept in the
   saved layout, and come back as they were when it grows again; a brand-new
   chart opens on the active chart's symbol and interval when those are synced.
 </p>

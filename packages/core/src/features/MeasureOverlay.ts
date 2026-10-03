@@ -108,7 +108,7 @@ export class MeasureOverlay {
     const lines: string[] = [];
     const sign = priceDelta > 0 ? '+' : priceDelta < 0 ? '−' : '';
     const absDelta = Math.abs(priceDelta);
-    lines.push(`${sign}${formatPrice(absDelta)}  (${sign}${Math.abs(pricePct).toFixed(2)}%)`);
+    lines.push(`${sign}${viewport.formatPrice?.(absDelta) ?? formatPrice(absDelta)}  (${sign}${Math.abs(pricePct).toFixed(2)}%)`);
     lines.push(`${bars} bars${timeSpan ? '  ·  ' + timeSpan : ''}`);
 
     ctx.save();

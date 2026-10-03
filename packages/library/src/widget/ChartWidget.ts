@@ -15,6 +15,8 @@ import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
+import { indicatorChipLabel } from '../indicatorLabel.js';
+import { readChartTypeOptions } from '@tradecanvas/commons';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -167,6 +169,10 @@ export class ChartWidget {
   private chartMenu: WidgetContextMenu | null = null;
   /** The pane a chart menu was opened on (its scale switches act on it). */
   private menuPane: string | null = null;
+  /** Whether the chart menu offers a download of the data. */
+  private canExport = true;
+  /** The latest fetch of each symbol the chart's indicators read. */
+  private symbolLoads = new Map<string, number>();
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -253,6 +259,9 @@ export class ChartWidget {
       ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
       ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
       ...(chartOptions?.leftPriceScale !== undefined ? { leftPriceScale: chartOptions.leftPriceScale } : {}),
+      ...(chartOptions?.highLowLines !== undefined ? { highLowLines: chartOptions.highLowLines } : {}),
+      ...(chartOptions?.extendedHours !== undefined ? { extendedHours: chartOptions.extendedHours } : {}),
+      ...(chartOptions?.chartTypeOptions ? { chartTypeOptions: readChartTypeOptions(chartOptions.chartTypeOptions) } : {}),
     };
     this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
@@ -296,6 +305,7 @@ export class ChartWidget {
       ...options.chartOptions?.features,
     };
 
+    this.canExport = features.dataExport !== false;
     // The display toggles start where the host's features put them, and Reset goes back there.
     this.settingsDefaults = {
       ...this.settingsState,
@@ -694,6 +704,8 @@ export class ChartWidget {
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
     this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
+    // Indicators that read another symbol (a compare on its own scale, a spread) ask for its bars.
+    this.chart.on('symbolSeriesRequest', (e) => void this.loadSymbolSeries(e.payload.symbol));
     // Prices from the pointer go on the market's grid (its smallest step).
     this.chart.on('chartContextMenu', (e) => {
       const { area, x, y, price: raw, time, pane } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
@@ -1302,6 +1314,7 @@ export class ChartWidget {
       hasDrawings: drawings.length > 0,
       drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
       canGoToDate: this.goToDate !== null,
+      canExport: this.canExport,
       autoScale: this.chart.isAutoScale(),
       scaleMode: this.settingsState.scaleMode,
       inverted: this.chart.isInvertScale(),
@@ -1379,12 +1392,18 @@ export class ChartWidget {
       case 'orderTicket':
         this.openOrderTicket(price);
         break;
+      case 'exportData':
+        // Every bar loaded, with the indicator lines, named after the symbol and interval.
+        this.chart.exportAllData('csv', `${this.state.symbol}-${this.state.timeframe}.csv`.replace(/[^\w.-]+/g, '_'));
+        break;
       case 'paneLog':
-      case 'paneInvert': {
+      case 'paneInvert':
+      case 'panePercent': {
         const pane = this.menuPane;
         if (!pane) break;
         const scale = this.chart.getPaneScale(pane);
-        this.chart.setPaneScale(pane, action === 'paneLog' ? { log: !scale.log } : { invert: !scale.invert });
+        this.chart.setPaneScale(pane, action === 'paneLog' ? { log: !scale.log }
+          : action === 'paneInvert' ? { invert: !scale.invert } : { percent: !scale.percent });
         break;
       }
       case 'horizontalLine': {
@@ -1894,13 +1913,43 @@ export class ChartWidget {
     const taken = new Set([this.state.symbol, ...this.compares.map((c) => c.symbol)]);
     const options = this.symbols.filter((s) => !taken.has(s));
     this.symbolSearch?.open(options.length ? options : this.symbols, this.state.symbol, (symbol) => {
-      void this.addCompareSymbol(symbol);
+      this.pickCompareWay(symbol);
     }, this.symbolSearchFn());
   }
 
-  /** Overlay another symbol's normalized series. Fetches history via the adapter. */
-  async addCompareSymbol(symbol: string): Promise<void> {
-    if (!this.adapter || this.compares.some((c) => c.symbol === symbol)) return;
+  /** How to compare with `symbol`: a menu by the chart's top left. */
+  private pickCompareWay(symbol: string): void {
+    const main = this.state.symbol;
+    const entries = [
+      { id: 'percent', label: this.t('compare.percent') },
+      { id: 'scale', label: this.t('compare.ownScale') },
+      { id: 'pane', label: this.t('compare.ownPane') },
+      { id: 'spread', label: fill(this.t('compare.spread'), { main, other: symbol }) },
+      { id: 'ratio', label: fill(this.t('compare.ratio'), { main, other: symbol }) },
+    ];
+    const rect = this.chart.getPlotRect();
+    this.chartMenu?.open(entries, rect.x + 24, rect.y + 24, (way) => void this.addCompareSymbol(symbol, way as CompareWay));
+  }
+
+  /**
+   * Compare with another symbol: its percent change on the price scale
+   * (`'percent'`, the default), its price on a scale of its own (`'scale'`)
+   * or in a pane of its own (`'pane'`), or the spread or ratio of this
+   * symbol to it (`'spread'`, `'ratio'`). Its bars come through the adapter.
+   */
+  async addCompareSymbol(symbol: string, way: CompareWay = 'percent'): Promise<void> {
+    if (!this.adapter) {
+      this.toast(this.t('toast.compareNeedsAdapter'), 'error');
+      return;
+    }
+    if (way !== 'percent') {
+      const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
+        : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
+          : this.chart.addIndicator('spread', { symbol, mode: way });
+      if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
+      return;
+    }
+    if (this.compares.some((c) => c.symbol === symbol)) return;
     const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
     const id = `cmp_${symbol}`;
     try {
@@ -1923,8 +1972,37 @@ export class ChartWidget {
     this.refreshObjects();
   }
 
+  /**
+   * Bars of a symbol the chart's indicators read (a compare on its own
+   * scale, a spread), at the chart's interval. A later interval wins.
+   */
+  private async loadSymbolSeries(symbol: string): Promise<void> {
+    if (!this.adapter) {
+      this.toast(this.t('toast.compareNeedsAdapter'), 'error');
+      return;
+    }
+    const timeframe = this.state.timeframe;
+    const seq = (this.symbolLoads.get(symbol) ?? 0) + 1;
+    this.symbolLoads.set(symbol, seq);
+    // Only the latest fetch of a symbol, at the interval on screen, answers.
+    const stale = () => this.destroyed || timeframe !== this.state.timeframe || this.symbolLoads.get(symbol) !== seq;
+    try {
+      const limit = Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
+      const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, limit);
+      if (stale()) return;
+      this.chart.setSymbolSeries(symbol, bars);
+    } catch (err: unknown) {
+      if (stale()) return;
+      // Keep what the chart had; an indicator on the symbol may ask again.
+      this.chart.setSymbolSeries(symbol, this.chart.getSymbolSeries(symbol));
+      this.toast(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
+    }
+  }
+
   /** Refetch every comparison overlay at the current symbol/timeframe. */
   private async refetchCompares(): Promise<void> {
+    // The symbols indicators read, at the new interval.
+    for (const symbol of this.chart.getRequiredSymbols?.() ?? []) void this.loadSymbolSeries(symbol);
     if (!this.adapter || this.compares.length === 0) return;
     // A comparison against the now-active symbol is redundant — drop it.
     const stale = this.compares.filter((c) => c.symbol === this.state.symbol);
@@ -2000,6 +2078,9 @@ export class ChartWidget {
   }
 
   private formatAlertPrice(price: number): string {
+    // The chart's own price format (fractions, a host's function) wins.
+    const custom = this.chart.getPriceFormatter?.();
+    if (custom) return custom(price);
     // No fixed precision config on the widget — pick digits from magnitude so
     // BTC (64,200.5) and a sub-dollar alt (0.04821) both read sensibly.
     const abs = Math.abs(price);
@@ -2166,7 +2247,9 @@ export class ChartWidget {
   }
 
   private openSettings(): void {
-    this.settings?.open(this.settingsState);
+    // The chart's own settings of its type (a layout may have brought them).
+    this.settingsState = { ...this.settingsState, chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {} };
+    this.settings?.open(this.settingsState, this.state.chartType);
   }
 
   // --- Toast ---
@@ -2632,6 +2715,13 @@ export class ChartWidget {
     if (patch.timezone !== undefined) {
       this.chart.setTimezone(settingToTimezone(patch.timezone));
     }
+    if (patch.highLowLines !== undefined) this.chart.setHighLowLines(patch.highLowLines);
+    if (patch.extendedHours !== undefined) this.chart.setExtendedHours(patch.extendedHours);
+    if (patch.mainSeriesVisible !== undefined) this.chart.setMainSeriesVisible(patch.mainSeriesVisible);
+    if (patch.chartTypeOptions !== undefined) {
+      // Every type: one left out goes back to its defaults (a reset).
+      this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
+    }
 
     // Apply theme colors
     const currentTheme = this.chart.getTheme();
@@ -2870,27 +2960,12 @@ export class ChartWidget {
   }
 }
 
-/**
- * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name (`shortName`, else the
- * id in capitals) plus up to three numeric parameters, in the indicator's own
- * order, so two instances of the same indicator can be told apart.
- */
-export function indicatorChipLabel(
-  id: string,
-  params: Record<string, unknown>,
-  defaults?: Record<string, unknown>,
-  shortName?: string,
-): string {
-  const order = defaults ? Object.keys(defaults) : Object.keys(params);
-  const numbers = order
-    .map((k) => params[k])
-    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
-    .slice(0, 3)
-    .map((v) => String(Number(v.toFixed(4))));
-  return [shortName ?? id.toUpperCase(), ...numbers].join(' ');
-}
+export { indicatorChipLabel };
 
 type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
+
+/** How `addCompareSymbol` compares: percent change on the price scale, its own scale or pane, spread, ratio. */
+export type CompareWay = 'percent' | 'scale' | 'pane' | 'spread' | 'ratio';
 
 /**
  * The lines `instanceId` can be computed from: every drawn line of the other

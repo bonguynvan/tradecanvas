@@ -132,10 +132,11 @@ chart.setPaneCollapsed(macd, true)  // fold to its header
 chart.setMaximizedPane(rsi)         // null puts the panes back
 chart.movePane(rsi, -1)             // one place up; 1 = down
 chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order' | 'scale'
-chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0`}</code></pre>
+chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0
+chart.setPaneScale(atr, { percent: true })             // labels in percent of its first value on screen`}</code></pre>
 <p>
-  En ChartWidget, haz clic derecho en un panel para darle su propia escala logarítmica e
-  invertida.
+  En ChartWidget, haz clic derecho en un panel para darle su propia escala logarítmica,
+  invertida o porcentual.
 </p>
 
 <h2>Mover un indicador a otro panel</h2>

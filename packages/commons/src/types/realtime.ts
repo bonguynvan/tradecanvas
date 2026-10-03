@@ -20,6 +20,9 @@ export interface RawTick {
   price: number;
   volume: number;
   side?: 'buy' | 'sell';
+  /** The best bid and ask with it, when the feed has them (the chart marks them). */
+  bid?: number;
+  ask?: number;
 }
 
 export interface AggregatedBar extends OHLCBar {

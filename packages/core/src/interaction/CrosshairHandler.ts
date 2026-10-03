@@ -1,5 +1,6 @@
-import type { Point, ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, timeParts, isDateOnly } from '@tradecanvas/commons';
+import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
+import { autoPricePrecision, timeParts, isDateOnly } from '@tradecanvas/commons';
+import { priceScaleText } from '../axis/PriceAxis.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -11,8 +12,14 @@ export class CrosshairHandler {
   private callback: CrosshairCallback | null = null;
   private data: DataSeries = [];
   private tz: TimeZoneSetting = null;
+  private timeFormatter: TimeFormatter | null = null;
 
   /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
+  /** Times in your words (the crosshair's label), or null for its own. */
+  setTimeFormatter(formatter: TimeFormatter | null): void {
+    this.timeFormatter = formatter;
+  }
+
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
   }
@@ -190,7 +197,7 @@ export class CrosshairHandler {
     // ── Price pill (right axis) ──
     const price = yToPrice(y, viewport);
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-    const priceText = formatPrice(price, precision, this.locale);
+    const priceText = priceScaleText(price, viewport, precision, this.locale);
     const priceAxisX = chartRect.x + chartRect.width;
     drawAxisPill(ctx, {
       text: priceText,
@@ -240,7 +247,10 @@ export class CrosshairHandler {
   ): void {
     if (data.length === 0) return;
     // Past either end of the data the time is extrapolated.
-    const timeText = formatBarTime(barIndexToTime(slot, data), this.tz);
+    const time = barIndexToTime(slot, data);
+    const timeText = this.timeFormatter
+      ? this.timeFormatter(time > 1e12 ? time : time * 1000, { kind: 'crosshair', timeZone: this.tz })
+      : formatBarTime(time, this.tz);
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,

@@ -158,6 +158,43 @@ chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
 
+## Another symbol on its own scale, and the ratio of the two
+
+ETH beside BTC on a price scale of its own, and BTC ÷ ETH in a pane. The
+indicators ask for the bars of the symbol they read; fetch them again when the
+interval changes:
+
+```ts
+import { Chart, BinanceAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
+
+const load = async (symbol: string) => chart.setSymbolSeries(symbol, await adapter.fetchHistory(symbol, '1h', 1000));
+chart.on('symbolSeriesRequest', (e) => void load(e.payload.symbol));
+
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' });
+const ratio = chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })!;
+chart.setPaneScale(ratio, { percent: true });
+```
+
+## Prices in 32nds
+
+A bond future quoted in 32nds and half 32nds, on High-Low bars, regular
+session only:
+
+```ts
+import { Chart } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  chartType: 'hiLo',
+  priceFormat: { denominator: 32, subDenominator: 2 },  // 110'165 = 110 and 16.5/32
+  extendedHours: false,
+});
+chart.setSymbolInfo({ symbol: 'ZN', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and
