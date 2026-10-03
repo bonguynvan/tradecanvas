@@ -17,7 +17,10 @@ export type {
   WidgetMenuItem,
   ToolbarButtonSpec,
   ToolbarButtonHandle,
+  WatchlistOptions,
 } from './types.js';
+export { readWatchlists } from './WatchlistStore.js';
+export type { WatchlistList } from './WatchlistStore.js';
 export { ChartWidgetGrid, DEFAULT_GRID_SYNC, GRID_SHAPES, readGridLayout } from './ChartWidgetGrid.js';
 export type { ChartWidgetGridOptions, WidgetGridSync, WidgetGridLayoutContent } from './ChartWidgetGrid.js';
 export { readWidgetLayout } from './widgetLayout.js';

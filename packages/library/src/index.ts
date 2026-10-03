@@ -139,6 +139,8 @@ export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/co
 export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
 export type { ShapeConfig } from '@tradecanvas/commons';
+export { readQuote, readNews, marketStatus, tickBarCount } from '@tradecanvas/commons';
+export type { Quote, QuoteSource, NewsItem, Trade, MarketStatus, ChartA11yLabels } from '@tradecanvas/commons';
 export { EXCHANGE_TIMEZONE } from './Chart.js';
 
 // Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)
@@ -165,7 +167,7 @@ export {
 export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
