@@ -225,6 +225,30 @@ const fr: SiteMessages = {
         'Choisissez un Pas plus fin dans la barre de relecture (15m) pour voir chaque barre se former',
       ],
     },
+    compare: {
+      title: 'Comparaison, écart, ratio',
+      stat: 'symboles',
+      blurb:
+        'ETH sur sa propre échelle de prix à côté de BTC, et BTC ÷ ETH dans un panneau. Les autres symboles s’alignent sur le graphique dans le temps ; l’écart ou le ratio a sa légende, ses étiquettes de valeur et ses alertes comme n’importe quel indicateur. Le plus haut et le plus bas à l’écran sont marqués.',
+      tryThis: [
+        'Ouvrez l’arborescence des objets et cliquez sur le + à côté de Comparer : choisissez un symbole, puis la manière',
+        'Faites un clic droit sur le panneau du ratio pour une échelle en pourcentage',
+        'Faites un clic droit sur le graphique : Exporter les données (CSV) emporte toutes les lignes d’indicateurs',
+        'Changez d’unité de temps : les barres de l’autre symbole sont récupérées de nouveau',
+      ],
+    },
+    bonds: {
+      title: 'Obligations en 32es',
+      stat: 'formats',
+      blurb:
+        'Une obligation cotée en 32es et demi-32es (110’165 vaut 110 et 16½ 32es) sur des barres haut-bas. Chaque prix du graphique — axe, réticule, légende, ordres, dessins — se lit de la même façon, et les graduations de l’axe tombent sur des fractions entières.',
+      tryThis: [
+        'Survolez le graphique : le réticule et la légende affichent des 32es',
+        'Paramètres → Affichage → désactivez Horaires de négociation étendus pour ne garder que la séance régulière',
+        'Passez en Renko ou en Kagi et réglez la boîte ou le retournement dans les Paramètres',
+        'Tracez une ligne horizontale : son étiquette s’affiche aussi en 32es',
+      ],
+    },
     subcent: {
       title: '14 langues, des prix sous le centime',
       stat: 'i18n',

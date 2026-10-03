@@ -12,7 +12,7 @@ La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonit
 
 - **85 indicadores integrados** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator y más. Cualquier indicador puede leer la línea de otro (una SMA del RSI). No hace falta una biblioteca de cálculo aparte.
 - **69 herramientas de dibujo** — Líneas de tendencia (línea de información, ángulo de tendencia, línea en cruz), Fibonacci (retroceso, extensión, canal, zonas temporales, abanico y arcos de velocidad, círculos, espiral, cuña), líneas horizontales/verticales, canales, horquillas y abanico de horquilla, abanico / caja / cuadrado de Gann, ciclos, patrones armónicos (XABCD, cypher, ABCD, tres impulsos, hombro-cabeza-hombro), ondas de Elliott, notas, globos de texto y marcas, pincel y trazado, previsión y proyección, posición larga/corta con cálculo del tamaño, perfil de volumen de rango fijo. Cada una con sus propios ajustes, alertas sobre líneas de tendencia, grupos y capas, deshacer/rehacer y serialización completa.
-- **17 tipos de gráfico** — Velas, línea, área, barras, velas huecas, línea base, Heikin-Ashi, Renko, Kagi, ruptura de líneas, punto y figura, barras de rango, velas de volumen, **Equivolumen**, área HLC, línea escalonada, línea con marcadores.
+- **18 tipos de gráfico** — Velas, línea, área, barras, velas huecas, línea base, máximo-mínimo, Heikin-Ashi, Renko, Kagi, ruptura de líneas, punto y figura, barras de rango, velas de volumen, **Equivolumen**, área HLC, línea escalonada, línea con marcadores. La caja de Renko, la reversión de Kagi y parámetros similares los configuras tú.
 - **Interacción de nivel profesional** — desplázate libremente más allá de la última barra, hacia el espacio futuro vacío (los dibujos también pueden ir allí), arrastra los ejes de precio/tiempo para escalarlos, haz doble clic para el ajuste automático, `Ctrl/⌘+drag` para seleccionar varios dibujos (y luego moverlos, cambiarles el estilo o borrarlos juntos), `Shift+drag` para medir (barras × Δ precio × %), `Alt+click` para fijar un tooltip de comparación, cursores contextuales (cruz, mano de agarre, flechas de redimensionado), etiquetas de precio/tiempo bajo el cursor que siguen a los ejes y resaltado de la barra al pasar el cursor.
 - **Capa de trading** — Muestra las posiciones abiertas con línea de entrada, zona de P&L y marcadores SL/TP. Las órdenes, como líneas discontinuas. Arrastra SL/TP para modificarlos, cancela / cierra / invierte con los botones de cada línea y ve cada ejecución marcada en su barra. ChartWidget añade un ticket de orden que valida la orden mientras la rellenas y un panel de cuenta con posiciones, órdenes pendientes e historial. Se desactiva limpiamente con `features.trading: false` en proyectos sin trading.
 - **Streaming en tiempo real** — Adaptadores integrados para Binance, Coinbase, Bybit y Kraken, además de las bases genéricas `WebSocketAdapter` / `PollingAdapter`, para conectar cualquier fuente en ~20 líneas. Las barras antiguas se cargan al desplazarte hacia atrás, cualquier intervalo (`7m`, `90m`, `2d`) se construye a partir de los de la propia fuente, y la búsqueda de símbolos viene de la fuente.
@@ -23,6 +23,8 @@ La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonit
 - **Backtester de estrategias** — `@tradecanvas/analytics` incluye un `Backtester` barra a barra con ejecuciones virtuales, modelos de comisión/deslizamiento, seguimiento de cartera y métricas de riesgo (Sharpe, Sortino, Calmar, drawdown máximo). **Ahora con 4 estrategias de referencia listas para usar + análisis de dependencia de la trayectoria con Monte Carlo.**
 - **Modo de repetición** — repite las propias barras del gráfico desde cualquier punto, en pasos más finos si quieres (un gráfico horario formándose a partir de barras de 5 minutos), con reproducir / pausa / paso / búsqueda / velocidad, y opera en simulado sobre los precios repetidos. El widget tiene una barra de repetición para ello; `ReplayController` también hace avanzar las barras sin interfaz.
 - **Alertas** — sobre un nivel de precio, una línea de indicador, un dibujo o una línea que cruza otra; sobre un movimiento de cierto porcentaje en cierto número de barras; solo con barras cerradas; con vencimiento. El panel de alertas del widget las configura todas.
+- **Comparación y diferencial** — otros símbolos en porcentaje sobre la escala de precio, en una escala o un panel propios, o como diferencial o ratio, alineados con el gráfico por tiempo.
+- **Formatos de precio** — precios en tu propio formato o en fracciones de punto (un bono en 32avos: 110'165) en cada etiqueta; horas a tu manera; horario extendido activado o desactivado; exportación de datos con las líneas de los indicadores.
 - **Perfil de volumen** — histograma horizontal opcional del volumen negociado, agrupado por precio en el rango visible, con el punto de control (POC) resaltado.
 - **Lista de seguimiento lateral** — panel vertical opcional que lista símbolos con último precio, % de cambio y un mini sparkline. Haz clic en una fila para cambiar de gráfico.
 - **Arrastrar y soltar CSV / JSON** — suelta un archivo sobre el gráfico y se analiza y carga al instante. Detecta distintas disposiciones de encabezado, marcas de tiempo ISO/unix-s/unix-ms y JSON en forma de array o de objeto.
@@ -104,7 +106,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `fullscreen` | `boolean` | `true` | Botón de pantalla completa en la barra de herramientas |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Catálogo de símbolos con búsqueda |
 | `timeframes` | `TimeFrame[]` | de 1m a 1M | Temporalidades disponibles; fija tus favoritas desde el menú ▾ |
-| `chartTypes` | `ChartType[]` | 11 tipos | Tipos de gráfico disponibles |
+| `chartTypes` | `ChartType[]` | 18 tipos | Tipos de gráfico disponibles |
 | `watchlist` | `boolean` | `false` | Lista de seguimiento lateral a la derecha |
 | `dragDropImport` | `boolean` | `true` | Suelta archivos CSV / JSON sobre el gráfico para cargar datos |
 | `persistLayouts` | `boolean \| { keyPrefix, debounceMs }` | `false` | Guarda por símbolo los indicadores / dibujos / tipo de gráfico en localStorage |
@@ -746,7 +748,7 @@ mc.worstMaxDrawdownPct
 
 | Función | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Tipos de gráfico | 17 + 6 financieros | 4 | 8 (no financieros) | 10+ |
+| Tipos de gráfico | 18 + 6 financieros | 4 | 8 (no financieros) | 10+ |
 | Gráficos financieros | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Ninguno | Ninguno | Algunos |
 | Indicadores integrados | 85 | 0 | 0 | ~30 |
 | Herramientas de dibujo | 69 | 0 | 0 | Algunas |

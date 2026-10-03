@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Tipos de gráfico — Documentación de TradeCanvas</title>
-  <meta name="description" content="17 tipos de gráfico integrados: velas, OHLC, Heikin-Ashi, Renko, Kagi, Punto y figura, Equivolumen y más." />
+  <meta name="description" content="18 tipos de gráfico integrados: velas, OHLC, máximo-mínimo, Heikin-Ashi, Renko, Kagi, Punto y figura, Equivolumen y más." />
 </svelte:head>
 
 <h1>Tipos de gráfico</h1>
-<p>17 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
+<p>18 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
 
 <h2>Estándar</h2>
 <table>
@@ -19,6 +19,7 @@
     <tr><td><code>lineWithMarkers</code></td><td>Línea con un punto en cada dato.</td></tr>
     <tr><td><code>hollowCandle</code></td><td>Cuerpo hueco cuando el cierre &gt; cierre anterior.</td></tr>
     <tr><td><code>hlcArea</code></td><td>Banda entre máximo y mínimo con una línea de cierre.</td></tr>
+    <tr><td><code>hiLo</code></td><td>Una barra del mínimo al máximo de cada periodo, coloreada según la dirección; las barras anchas muestran su máximo y su mínimo.</td></tr>
   </tbody>
 </table>
 
@@ -28,8 +29,8 @@
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Serie de velas suavizada mediante la transformación Heikin-Ashi.</td></tr>
     <tr><td><code>renko</code></td><td>Gráfico de ladrillos de precio fijo; independiente del tiempo.</td></tr>
-    <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin según un umbral porcentual.</td></tr>
-    <tr><td><code>lineBreak</code></td><td>Patrón de giro de ruptura de 3 líneas.</td></tr>
+    <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin; el giro es un porcentaje (4 por defecto) o una cantidad de precio.</td></tr>
+    <tr><td><code>lineBreak</code></td><td>Una línea nueva cuando el cierre rompe las últimas líneas (3 por defecto).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>Columnas de X/O; tamaño de caja + número de cajas para el giro.</td></tr>
     <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo.</td></tr>
   </tbody>
@@ -53,3 +54,32 @@
   Las transformaciones (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) se
   gestionan internamente: <code>chart.getData()</code> sigue devolviendo la serie de entrada original.
 </p>
+
+<h2>Configuración de los tipos derivados</h2>
+<p>
+  La caja de Renko, las líneas que un Line Break tiene que romper, la reversión de Kagi, la caja y la
+  reversión de Punto y figura, y el rango de las Range Bars. Lo que no se configura se calcula a partir
+  de los datos (una caja por ATR para Renko, el 1% del cierre medio para la caja de P&amp;F…). La
+  configuración forma parte del estado guardado; en ChartWidget está en el cuadro de configuración del
+  tipo de gráfico.
+</p>
+<pre><code>{`chart.setChartTypeOptions({
+  renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
+  lineBreak: { lines: 2 },
+  kagi: { reversal: 25, reversalType: 'price' },  // or a percent
+  pointAndFigure: { boxSize: 10, reversal: 3 },
+  rangeBars: { range: 20 },
+})
+chart.getChartTypeOptions()
+new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
+
+<h2>La serie principal y las líneas del panel de precio</h2>
+<p>
+  Oculta la serie principal para ver solo los indicadores o los símbolos comparados; marca el máximo
+  más alto y el mínimo más bajo en pantalla; marca el bid y el ask. Una fuente cuyos ticks traen
+  <code>bid</code> y <code>ask</code> los mantiene al día por sí sola.
+</p>
+<pre><code>{`chart.setMainSeriesVisible(false)
+chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
+chart.setBidAsk({ bid: 64210.5, ask: 64211 })
+chart.setBidAsk(null)`}</code></pre>

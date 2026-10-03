@@ -28,7 +28,7 @@
     <tr><td><code>symbol</code></td><td><code>BTCUSDT</code></td><td>Binance 交易对代码。</td></tr>
     <tr><td><code>timeframe</code></td><td><code>5m</code></td><td><code>1m</code>、<code>5m</code>、<code>15m</code>、<code>1h</code>、<code>4h</code>、<code>1d</code>。</td></tr>
     <tr><td><code>theme</code></td><td><code>dark</code></td><td><code>dark</code>、<code>light</code>、<code>darkTerminal</code>。</td></tr>
-    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>17 种类型中的任意一种。</td></tr>
+    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>18 种类型中的任意一种。</td></tr>
     <tr><td><code>indicators</code></td><td><em>无</em></td><td>以逗号分隔的 id，例如 <code>indicators=sma,rsi</code>。</td></tr>
     <tr><td><code>trading</code></td><td><code>false</code></td><td>显示交易面板。</td></tr>
   </tbody>

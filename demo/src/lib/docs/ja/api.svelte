@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>17 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>18 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>組み込みテーマを切り替えます。</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>表示中の時間足を切り替え、ライブストリームを接続し直します。</td></tr>
   </tbody>
@@ -94,6 +94,54 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>価格と時刻の書式</h3>
+<p>
+  価格は独自の書式で表示できるほか、債券やその先物の呼値のように 1 ポイントの分数でも表示できます
+  （<code>101'16</code> は 101 と 32 分の 16）。この書式は、価格スケールに沿って価格を表示するすべての箇所に
+  適用されます。軸、クロスヘア、現在値タグ、凡例、ツールチップ、注文、アラート、描画のラベルです。軸の目盛りは
+  ちょうど分数の区切りに置かれ、<code>roundPrice</code> もその単位で丸めます。インジケーターのペインは
+  独自の数値表示のままです。時刻も好きな書式で表示でき、フォーマッターにはそのラベルの種類が渡されます。
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>シンボルの比較</h3>
+<p>
+  別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
+  スケールや専用のペインに表示したり、チャートの終値とのスプレッドや比率を表示したりできます。後者は
+  インジケーター（<code>compareSymbol</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
+  凡例、値ラベル、アラートを持ち、レイアウトにも保存されます。もう一方のシンボルのバーは時刻でチャートのバーに
+  揃えられます。チャートは必要なバーを要求するので、時間足を変えたら改めて渡してください。
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  ChartWidget では、オブジェクトツリーの比較ボタンでまずシンボルを、次に表示方法（変化率、専用スケール、
+  専用サブチャート、スプレッド、比率）を選びます。
+</p>
+
+<h3>データのエクスポート</h3>
+<p>
+  バーを CSV または JSON で書き出します。インジケーターのラインはそれぞれ独立した列になり、列名は凡例での
+  名前と同じです。ChartWidget では、チャートの右クリックメニューに<strong>データをエクスポート (CSV)</strong>があります。
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>価格帯別出来高</h3>
 <p>
   表示範囲の出来高を価格帯ごとに集計した横向きのヒストグラムです。既定ではオフで、
@@ -137,6 +185,14 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>時間外取引。</strong>オフにすると、シンボルの通常取引時間（その <code>timezone</code> での
+  <code>SymbolInfo.sessions</code>）の外にあるバーがチャートから外れます。外れたバーはライブのバーや履歴のページも
+  含めて取り置かれ、オンに戻すと再び表示されます。日足以上のバーはそのままです。
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>前期間のレベル (PDH / PDL / PDC)</h3>
 <p>
@@ -543,7 +599,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // すべてのチャートに適用
   adapter: () => new BinanceAdapter(),            // チャートごとに 1 つ：アダプターは 1 本のストリームを保持する
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -559,6 +615,8 @@ new ChartWidgetGrid(host, {
   クロスヘアの同期では、ポインター位置の時刻がすべてのチャートに表示されます。時間軸の同期では、
   操作中のチャートに合わせてほかのチャートもスクロール・ズームします。描画は、同じシンボルを表示している
   チャートにコピーされます（オンにすると、それらのチャートの描画がまとめられ、失われるものはありません）。
+  リプレイの同期では、リプレイ中のチャートと同じ時刻までほかのチャートもリプレイします（リプレイのステップより
+  長いバーのチャートには、その時刻を含むバー全体が表示されます）。
   グリッドが減ったときに外れたチャートはしまわれて保存済みのレイアウトに残り、グリッドが再び増えたときに
   元の状態で戻ります。まったく新しいチャートは、シンボルと時間足が同期されていれば、
   アクティブなチャートのシンボルと時間足で開きます。

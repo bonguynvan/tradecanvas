@@ -12,7 +12,7 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 
 - **85 chỉ báo có sẵn** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator và nhiều nữa. Mọi chỉ báo đều đọc được đường của một chỉ báo khác (SMA của RSI). Không cần thêm thư viện tính toán riêng.
 - **69 công cụ vẽ** — Đường xu hướng (đường thông tin, góc xu hướng, đường chữ thập), Fibonacci (thoái lui, mở rộng, kênh, vùng thời gian, quạt và cung tốc độ, vòng tròn, xoắn ốc, nêm), đường ngang/dọc, kênh, pitchfork và quạt pitchfork, quạt / hộp / hình vuông Gann, chu kỳ, mô hình harmonic (XABCD, cypher, ABCD, ba nhịp, vai đầu vai), sóng Elliott, ghi chú, chú thích và dấu đánh dấu, bút vẽ và đường nhiều điểm, dự báo và phóng chiếu, vị thế Long/Short có tính khối lượng, hồ sơ khối lượng theo khoảng. Mỗi công cụ có cài đặt riêng, cảnh báo theo đường xu hướng, nhóm và thứ tự lớp, hoàn tác/làm lại và tuần tự hoá đầy đủ.
-- **17 loại biểu đồ** — Nến, đường, vùng, thanh, nến rỗng, đường cơ sở, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, nến khối lượng, **Equivolume**, vùng HLC, đường bậc thang, đường + điểm đánh dấu.
+- **18 loại biểu đồ** — Nến, đường, vùng, thanh, nến rỗng, đường cơ sở, Cao-Thấp, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, nến khối lượng, **Equivolume**, vùng HLC, đường bậc thang, đường + điểm đánh dấu. Kích thước ô Renko, mức đảo chiều Kagi và các thông số tương tự đều chỉnh được.
 - **Tương tác chuyên nghiệp** — kéo tự do qua nến cuối cùng vào vùng tương lai còn trống (hình vẽ cũng đặt được ở đó), kéo trục giá/thời gian để co giãn, bấm đúp để tự vừa khít, `Ctrl/⌘+drag` để chọn nhiều hình vẽ (rồi di chuyển, đổi kiểu hoặc xoá cùng lúc), `Shift+drag` để đo (số nến × Δ giá × %), `Alt+click` để ghim chú thích so sánh, con trỏ theo ngữ cảnh (chữ thập, bàn tay nắm, mũi tên đổi kích thước), nhãn giá/thời gian bám theo trục dưới con trỏ, làm nổi nến khi rê chuột.
 - **Lớp phủ giao dịch** — Hiển thị vị thế đang mở với đường giá vào lệnh, vùng lãi/lỗ và điểm SL/TP. Lệnh hiện bằng đường nét đứt. Kéo SL/TP để sửa, huỷ / đóng / đảo chiều bằng các nút trên từng đường, và xem mỗi lần khớp lệnh được đánh dấu trên nến của nó. ChartWidget có thêm phiếu đặt lệnh kiểm tra lệnh ngay khi bạn điền, cùng bảng tài khoản với vị thế, lệnh chờ và lịch sử. Tắt gọn gàng bằng `features.trading: false` cho dự án không cần giao dịch.
 - **Dữ liệu thời gian thực** — Có sẵn adapter Binance, Coinbase, Bybit và Kraken, cùng các lớp cơ sở chung `WebSocketAdapter` / `PollingAdapter` để cắm bất kỳ nguồn dữ liệu nào chỉ với khoảng 20 dòng code. Nến cũ hơn tải dần khi bạn cuộn về quá khứ, mọi khung thời gian (`7m`, `90m`, `2d`) đều dựng được từ các khung mà nguồn có sẵn, và tìm mã lấy trực tiếp từ nguồn.
@@ -23,6 +23,8 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 - **Backtest chiến lược** — `@tradecanvas/analytics` có sẵn `Backtester` chạy theo từng nến với khớp lệnh ảo, mô hình phí giao dịch/trượt giá, theo dõi danh mục và các chỉ số rủi ro (Sharpe, Sortino, Calmar, sụt giảm tối đa). **Nay có thêm 4 chiến lược tham khảo dùng ngay + phân tích Monte Carlo về sự phụ thuộc đường đi (path-dependence).**
 - **Chế độ phát lại** — phát lại chính các nến của biểu đồ từ bất kỳ điểm nào, theo bước nhỏ hơn nếu muốn (biểu đồ giờ hình thành từ nến 5 phút), có phát / tạm dừng / bước / tua / tốc độ, và giao dịch giấy trên giá phát lại. Widget có thanh phát lại cho việc này; `ReplayController` cũng chạy nến không cần giao diện.
 - **Cảnh báo** — theo mức giá, theo đường chỉ báo, theo hình vẽ, hoặc khi một đường cắt đường khác; khi giá biến động một số phần trăm trong một số nến; chỉ khi nến đóng; có hạn dùng. Bảng cảnh báo của widget đặt được tất cả.
+- **So sánh và chênh lệch** — mã khác theo phần trăm trên thang giá, trên thang hoặc pane riêng, hoặc thành chênh lệch hay tỷ lệ, khớp với biểu đồ theo thời gian.
+- **Định dạng giá** — giá theo định dạng của bạn hoặc theo phân số (trái phiếu theo 1/32: 110'165) trên mọi nhãn; thời gian theo cách của bạn; bật/tắt giờ giao dịch mở rộng; xuất dữ liệu kèm các đường chỉ báo.
 - **Hồ sơ khối lượng (Volume Profile)** — biểu đồ cột ngang tuỳ chọn, thể hiện khối lượng giao dịch gom theo mức giá trong khoảng đang hiện, có làm nổi điểm kiểm soát (point of control).
 - **Danh mục theo dõi** — bảng dọc tuỳ chọn liệt kê các mã với giá gần nhất, % thay đổi và sparkline nhỏ. Bấm vào một dòng để chuyển biểu đồ.
 - **Kéo-thả CSV / JSON** — thả một tệp vào biểu đồ, tệp được đọc và nạp ngay. Tự nhận dạng bố cục dòng tiêu đề, dấu thời gian ISO/unix-s/unix-ms, và JSON dạng mảng hay đối tượng.
@@ -104,7 +106,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `fullscreen` | `boolean` | `true` | Nút toàn màn hình trên thanh công cụ |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Danh mục mã có thể tìm kiếm |
 | `timeframes` | `TimeFrame[]` | 1m đến 1M | Các khung thời gian có sẵn; ghim khung yêu thích từ menu ▾ |
-| `chartTypes` | `ChartType[]` | 11 loại | Các loại biểu đồ có sẵn |
+| `chartTypes` | `ChartType[]` | 18 loại | Các loại biểu đồ có sẵn |
 | `watchlist` | `boolean` | `false` | Thanh danh mục theo dõi bên phải |
 | `dragDropImport` | `boolean` | `true` | Thả tệp CSV / JSON vào biểu đồ để nạp dữ liệu |
 | `persistLayouts` | `boolean \| { keyPrefix, debounceMs }` | `false` | Lưu chỉ báo / hình vẽ / loại biểu đồ theo từng mã vào localStorage |
@@ -746,7 +748,7 @@ mc.worstMaxDrawdownPct
 
 | Tính năng | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
 |---|---|---|---|---|
-| Loại biểu đồ | 17 + 6 tài chính | 4 | 8 (phi tài chính) | 10+ |
+| Loại biểu đồ | 18 + 6 tài chính | 4 | 8 (phi tài chính) | 10+ |
 | Biểu đồ tài chính | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Không có | Không có | Một số |
 | Chỉ báo có sẵn | 85 | 0 | 0 | ~30 |
 | Công cụ vẽ | 69 | 0 | 0 | Một số |

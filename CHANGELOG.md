@@ -4,6 +4,16 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Scales, formats and comparisons
+
+- **Price formats**: prices in your own format, or in fractions of a point (a bond in 32nds: `110'165`), on every label of the price scale — axis, crosshair, legend, tooltips, orders, alerts, drawings (`priceFormat`). Times your way too (`timeFormatter`).
+- **Compare, spread and ratio**: another symbol on a price scale or pane of its own, or the spread or ratio to it, lined up with the chart by time; compare lines count in the auto scale and line up by time as well.
+- **Percent panes**: a pane can read in percent of its first value on screen.
+- **High-Low bars**, settings for Renko, Line Break, Kagi, Point & Figure and range bars, a hidden main series, lines at the visible high and low, and bid/ask lines.
+- **Extended hours** on or off: bars outside a symbol's regular hours are kept aside while hidden.
+- **Data export** with every indicator line in a column of its own (CSV or JSON); bars timed in seconds no longer export as 1970.
+- **Replay across a grid**: replaying one chart takes the others along to the same time.
+
 ### Alerts, replay and panes
 
 - **More kinds of alert**: a line crossing another line (the price and a moving average, MACD and its signal), a move of some percent within some bars, only on closed bars (no firing on a wick that comes back), and an expiry. All in the alerts panel and in `addAlert`'s options.

@@ -225,6 +225,30 @@ const vi: SiteMessages = {
         'Chọn Bước nhỏ hơn trên thanh phát lại (15m) để xem từng nến hình thành',
       ],
     },
+    compare: {
+      title: 'So sánh, chênh lệch, tỷ lệ',
+      stat: 'nhiều mã',
+      blurb:
+        'ETH trên thang giá riêng bên cạnh BTC, và BTC ÷ ETH trong một pane. Mã khác được khớp với biểu đồ theo thời gian; chênh lệch hay tỷ lệ có chú thích, nhãn giá trị và cảnh báo như mọi chỉ báo. Giá cao nhất và thấp nhất trên màn hình được đánh dấu.',
+      tryThis: [
+        'Mở cây đối tượng, bấm + cạnh So sánh: chọn mã, rồi chọn cách so sánh',
+        'Nhấp chuột phải vào pane tỷ lệ để chọn thang phần trăm',
+        'Nhấp chuột phải vào biểu đồ: Xuất dữ liệu (CSV) kèm mọi đường chỉ báo',
+        'Đổi khung thời gian: dữ liệu của mã kia được tải lại',
+      ],
+    },
+    bonds: {
+      title: 'Trái phiếu theo 1/32',
+      stat: 'định dạng',
+      blurb:
+        'Một hợp đồng trái phiếu yết giá theo 1/32 và nửa 1/32 (110’165 là 110 và 16½ phần 32) trên nến Cao-Thấp. Mọi giá trên biểu đồ — trục, crosshair, chú thích, lệnh, hình vẽ — đều hiển thị như vậy, và vạch trục rơi đúng các phân số chẵn.',
+      tryThis: [
+        'Rê chuột: crosshair và chú thích hiển thị theo 1/32',
+        'Cài đặt → Hiển thị → tắt Giờ giao dịch mở rộng để chỉ xem phiên chính',
+        'Chuyển sang Renko hoặc Kagi và chỉnh ô hay mức đảo chiều trong Cài đặt',
+        'Vẽ một đường ngang: nhãn của nó cũng theo 1/32',
+      ],
+    },
     subcent: {
       title: '14 ngôn ngữ, giá dưới một xu',
       stat: 'i18n',

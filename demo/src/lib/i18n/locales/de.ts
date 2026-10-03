@@ -225,6 +225,30 @@ const de: SiteMessages = {
         'Wählen Sie in der Replay-Leiste einen feineren Schritt (15m), um jede Kerze entstehen zu sehen',
       ],
     },
+    compare: {
+      title: 'Vergleich, Spread, Verhältnis',
+      stat: 'Symbole',
+      blurb:
+        'ETH auf einer eigenen Preisskala neben BTC und BTC ÷ ETH in einem eigenen Bereich. Andere Symbole werden zeitlich am Chart ausgerichtet; Spread oder Verhältnis erhalten Legende, Wertmarken und Alarme wie jeder Indikator. Das höchste Hoch und das tiefste Tief auf dem Bildschirm sind markiert.',
+      tryThis: [
+        'Öffnen Sie den Objektbaum und klicken Sie auf das + neben „Vergleichen“: erst ein Symbol wählen, dann die Darstellung',
+        'Klicken Sie mit der rechten Maustaste in den Verhältnis-Bereich für eine prozentuale Skala',
+        'Klicken Sie mit der rechten Maustaste auf den Chart: „Daten exportieren (CSV)“ nimmt jede Indikatorlinie mit',
+        'Wechseln Sie die Zeiteinheit: Die Kerzen des anderen Symbols werden neu abgerufen',
+      ],
+    },
+    bonds: {
+      title: 'Anleihen in 32steln',
+      stat: 'Formate',
+      blurb:
+        'Eine Anleihe, notiert in 32steln und halben 32steln (110’165 ist 110 und 16½ 32stel), auf Hoch-Tief-Balken. Jeder Preis im Chart – Achse, Fadenkreuz, Legende, Orders, Zeichnungen – erscheint im selben Format, und die Achsenstriche liegen auf ganzen Brüchen.',
+      tryThis: [
+        'Fahren Sie mit der Maus über den Chart: Fadenkreuz und Legende zeigen 32stel',
+        'Einstellungen → Anzeige → „Erweiterte Handelszeiten“ ausschalten, um nur die reguläre Sitzung zu sehen',
+        'Wechseln Sie zu Renko oder Kagi und stellen Sie Box oder Umkehr in den Einstellungen ein',
+        'Zeichnen Sie eine horizontale Linie: Auch ihre Beschriftung zeigt 32stel',
+      ],
+    },
     subcent: {
       title: '14 Sprachen, Preise unter einem Cent',
       stat: 'i18n',

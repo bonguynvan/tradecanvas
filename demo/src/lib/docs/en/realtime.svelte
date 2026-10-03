@@ -118,6 +118,9 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replaySeekToTime(t)      // to the bars that opened before t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>Paper trading in a replay</h3>

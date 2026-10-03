@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>17가지 유형 중 하나 — <a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>18가지 유형 중 하나 — <a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>내장 테마 사이에서 전환합니다.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>활성 시간 단위를 바꾸고 실시간 스트림을 다시 연결합니다.</td></tr>
   </tbody>
@@ -95,6 +95,54 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>가격 및 시간 형식</h3>
+<p>
+  가격은 원하는 형식으로 표시할 수 있고, 채권과 채권 선물의 호가처럼 1포인트의 분수로도 표시할 수
+  있습니다(<code>101'16</code>은 101과 32분의 16). 이 형식은 가격 눈금을 따라 가격을 표시하는 모든 곳에
+  적용됩니다. 축, 십자선, 현재가 태그, 범례, 툴팁, 주문, 알림, 그림 라벨이 모두 해당하며, 축 눈금은 정확히
+  분수 단위에 놓이고 <code>roundPrice</code>도 그 단위로 반올림합니다. 지표 패널은 자체 숫자 형식을
+  유지합니다. 시간도 원하는 형식으로 표시할 수 있으며, 포매터에는 라벨의 종류가 함께 전달됩니다.
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>종목 비교</h3>
+<p>
+  다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나
+  별도 패널에 표시하거나, 차트 종가와의 스프레드 또는 비율을 표시할 수 있습니다. 뒤의 방식들은
+  지표(<code>compareSymbol</code>, <code>spread</code>)이므로 다른 지표처럼 범례, 값 라벨, 알림을 갖고
+  레이아웃에도 저장됩니다. 다른 종목의 봉은 시간 기준으로 차트의 봉에 맞춰집니다. 차트가 필요한 봉을
+  요청하므로, 시간 단위를 바꾼 뒤에는 다시 넘겨 주세요.
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  ChartWidget에서는 개체 트리의 비교 버튼이 종목을 먼저 묻고, 이어서 표시 방식(변동률, 별도 눈금,
+  별도 보조 차트, 스프레드, 비율)을 묻습니다.
+</p>
+
+<h3>데이터 내보내기</h3>
+<p>
+  봉을 CSV 또는 JSON으로 내보내며, 각 지표 선은 범례에 표시되는 이름으로 별도의 열이 됩니다.
+  ChartWidget에서는 차트의 오른쪽 클릭 메뉴에 <strong>데이터 내보내기 (CSV)</strong>가 있습니다.
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>매물대 (Volume Profile)</h3>
 <p>
   보이는 범위의 거래량을 가격대별로 나누어 보여 주는 가로 히스토그램입니다.
@@ -140,6 +188,14 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>시간외 거래.</strong> 끄면 종목의 정규 거래 시간(종목의 <code>timezone</code> 기준
+  <code>SymbolInfo.sessions</code>) 밖의 봉이 차트에서 빠집니다. 빠진 봉은 실시간 봉과 과거 데이터
+  페이지까지 따로 보관되며, 다시 켜면 돌아옵니다. 하루 이상 단위의 봉은 그대로 둡니다.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>이전 기간 레벨 (PDH / PDL / PDC)</h3>
 <p>
@@ -558,7 +614,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // 모든 차트에 적용
   adapter: () => new BinanceAdapter(),            // 차트마다 하나: 어댑터 하나는 스트림 하나를 유지
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -573,7 +629,9 @@ new ChartWidgetGrid(host, {
 <p>
   십자선 동기화는 포인터 아래의 시간을 모든 차트에 표시하고, 시간 축 동기화는 사용 중인 차트에 맞춰
   나머지 차트를 스크롤하고 확대/축소하며, 그림은 같은 종목을 보여 주는 차트로 복사됩니다(이 동기화를 켜면
-  그 차트들의 그림이 하나로 합쳐지며, 사라지는 그림은 없습니다). 그리드가 작아질 때 빠진 차트는 치워 두며
+  그 차트들의 그림이 하나로 합쳐지며, 사라지는 그림은 없습니다). 리플레이 동기화는 리플레이 중인 차트와
+  같은 시간까지 다른 차트도 리플레이합니다(리플레이 스텝보다 긴 봉의 차트에는 그 시간을 포함하는 봉 전체가 표시됩니다).
+  그리드가 작아질 때 빠진 차트는 치워 두며
   저장된 레이아웃에도 남고, 그리드가 다시 커지면 이전 모습 그대로 돌아옵니다. 완전히 새로운 차트는 종목과
   시간 단위가 동기화되어 있으면 활성 차트의 종목과 시간 단위로 열립니다.
 </p>

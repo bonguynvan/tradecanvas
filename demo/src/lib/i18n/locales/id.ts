@@ -225,6 +225,30 @@ const id: SiteMessages = {
         'Pilih Langkah yang lebih kecil di bilah putar ulang (15m) untuk melihat setiap bar terbentuk',
       ],
     },
+    compare: {
+      title: 'Bandingkan, selisih, rasio',
+      stat: 'simbol',
+      blurb:
+        'ETH pada skala harga tersendiri di samping BTC, dan BTC ÷ ETH di sebuah panel. Simbol lain diselaraskan dengan grafik menurut waktu; selisih atau rasio punya legenda, label nilai, dan peringatan seperti indikator lainnya. Harga tertinggi dan terendah di layar ditandai.',
+      tryThis: [
+        'Buka pohon objek dan tekan + di samping Bandingkan: pilih simbol, lalu caranya',
+        'Klik kanan panel rasio untuk skala persentase',
+        'Klik kanan grafik: Ekspor data (CSV) ikut menyertakan setiap garis indikator',
+        'Ganti kerangka waktu: bar simbol lain diambil ulang',
+      ],
+    },
+    bonds: {
+      title: 'Obligasi dalam 1/32',
+      stat: 'format',
+      blurb:
+        'Sebuah obligasi yang dikuotasikan dalam 1/32 dan setengah 1/32 (110’165 berarti 110 dan 16½ per 32) pada bar tertinggi-terendah. Setiap harga di grafik — sumbu, crosshair, legenda, order, gambar — tampil dengan cara yang sama, dan tanda sumbu jatuh tepat pada pecahan bulat.',
+      tryThis: [
+        'Arahkan kursor: crosshair dan legenda tampil dalam 1/32',
+        'Pengaturan → Tampilan → matikan Jam perdagangan diperpanjang untuk sesi reguler saja',
+        'Beralih ke Renko atau Kagi dan atur ukuran kotak atau pembalikan di Pengaturan',
+        'Gambar garis horizontal: labelnya juga tampil dalam 1/32',
+      ],
+    },
     subcent: {
       title: '14 bahasa, harga di bawah satu sen',
       stat: 'i18n',

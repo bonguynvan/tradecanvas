@@ -35,7 +35,7 @@
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>17 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>18 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
     <tr><td><code>setTheme(name)</code></td><td>在内置主题之间切换。</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>切换当前周期；重新连接实时数据流。</td></tr>
   </tbody>
@@ -93,6 +93,51 @@ chart.setScaleMode('indexedTo100') // first visible bar reads as 100
 chart.setScaleMode('logarithmic')
 chart.getScaleMode()`}</code></pre>
 
+<h3>价格与时间格式</h3>
+<p>
+  价格可以按你自己的方式显示，也可以像债券及其期货报价那样以一个点的分数显示
+  （<code>101'16</code> 表示 101 又 16/32）。该格式作用于价格坐标上所有显示价格的地方：坐标轴、十字光标、
+  最新价标签、图例、提示框、委托、提醒和画线标签；坐标轴刻度落在整分数上，<code>roundPrice</code>
+  也按整分数取整。指标窗格保留各自的数字格式。时间同样可以按你的方式显示；格式化函数会得知当前标签的类型。
+</p>
+<pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
+chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
+chart.setPriceFormat((p) => '$' + p.toFixed(2))
+chart.setPriceFormat(null)                                              // decimals again
+
+chart.setTimeFormatter((time, { kind, timeZone }) =>
+  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3>品种对比</h3>
+<p>
+  可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，
+  或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>spread</code>），
+  和其他指标一样有图例、数值标签和提醒，并会保存在布局中。另一个品种的K线按时间与图表的K线对齐。
+  图表会请求它需要的K线；切换周期后请重新提供。
+</p>
+<pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
+chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+
+chart.on('symbolSeriesRequest', async ({ payload }) =>
+  chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
+chart.getRequiredSymbols()                           // what to fetch again on a new interval
+chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
+<p>
+  在 ChartWidget 中，对象树的对比按钮会先询问品种，再询问对比方式：涨跌幅、独立坐标、独立副图、价差或比值。
+</p>
+
+<h3>导出数据</h3>
+<p>
+  以 CSV 或 JSON 导出K线，每条指标线各占一列，列名与图例中的名称一致。ChartWidget 的图表右键菜单中有
+  <strong>导出数据 (CSV)</strong>。
+</p>
+<pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
+chart.exportVisibleData('json', undefined, { indicators: false })
+const text = chart.getExportText('csv', { range: 'visible' })
+const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
+
 <h3>成交量分布（Volume Profile）</h3>
 <p>
   在可见范围内按价格分组统计成交量的水平直方图。默认关闭——
@@ -135,6 +180,14 @@ chart.setSessionShadingConfig({
   endMinute: 16 * 60,           // 16:00 (end-exclusive; end < start wraps midnight)
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
+<p>
+  <strong>延长交易时段。</strong>关闭后，品种常规交易时段（按其 <code>timezone</code> 计算的
+  <code>SymbolInfo.sessions</code>）以外的K线会离开图表；它们会被暂存起来，实时K线和历史分页也是如此，
+  重新开启后即恢复。日线及更长周期的K线保持不变。
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
+chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>前一周期高低点（PDH / PDL / PDC）</h3>
 <p>
@@ -532,7 +585,7 @@ const grid = new ChartWidgetGrid(host, {
   widget: { timeframe: '1h' },                    // 作用于每个图表
   adapter: () => new BinanceAdapter(),            // 每个图表一个：一个适配器只维持一条数据流
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
-  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false },
+  sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
@@ -546,7 +599,8 @@ new ChartWidgetGrid(host, {
 })`}</code></pre>
 <p>
   十字光标同步会在每个图表上显示指针所在的时间；时间同步会让其他图表随正在操作的图表一起滚动和缩放；
-  画线会复制到显示同一品种的图表上（开启时会把这些图表的画线合并到一起，不会丢失任何画线）。
+  画线会复制到显示同一品种的图表上（开启时会把这些图表的画线合并到一起，不会丢失任何画线）；
+  回放同步会把其他图表回放到与正在回放的图表相同的时间（K线比回放步长更长的图表会显示包含该时间的整根K线）。
   网格缩小时被移除的图表会被收起并保留在已保存的布局中，网格再次变大时会原样恢复；
   全新的图表在品种和周期处于同步状态时，会使用当前图表的品种和周期打开。
 </p>
