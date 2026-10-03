@@ -40,7 +40,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -1394,26 +1394,33 @@ export class Chart {
     return this.recordIndicators(instanceId, () => this.moveIndicatorToPaneNow(instanceId, target));
   }
 
-  private moveIndicatorToPaneNow(instanceId: string, target: string): boolean {
+  /** Whether `moveIndicatorToPane(instanceId, target)` would move it. */
+  canMoveIndicatorToPane(instanceId: string, target: string): boolean {
+    return this.paneMoveHost(instanceId, target) !== undefined;
+  }
+
+  /** Where a move would put the indicator: the pane's host, `null` (its own or the price pane), or `undefined` when it can't go. */
+  private paneMoveHost(instanceId: string, target: string): string | null | undefined {
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
     const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
-    if (!config || !descriptor) return false;
-    const ownsPane = this.layoutManager.getPanels().some((p) => p.id === instanceId);
+    if (!config || !descriptor) return undefined;
     // An overlay computed from another indicator's line stays with that line.
     const name = sourceParam(descriptor);
-    if (descriptor.placement === 'overlay' && name && parseIndicatorSource(config.params[name])) return false;
-
-    let host: string | null;
-    if (target === 'price') {
-      if (descriptor.placement !== 'overlay' || !config.pane) return false;
-      host = null;
-    } else if (target === 'new') {
-      if (descriptor.placement !== 'panel' || ownsPane) return false;
-      host = null;
-    } else {
-      host = this.paneHostOf(target, instanceId);
-      if (!host || host === config.pane || host === instanceId) return false;
+    if (descriptor.placement === 'overlay' && name && parseIndicatorSource(config.params[name])) return undefined;
+    if (target === 'price') return descriptor.placement === 'overlay' && config.pane ? null : undefined;
+    if (target === 'new') {
+      const ownsPane = this.layoutManager.getPanels().some((p) => p.id === instanceId);
+      return descriptor.placement === 'panel' && !ownsPane ? null : undefined;
     }
+    const host = this.paneHostOf(target, instanceId);
+    return host && host !== config.pane && host !== instanceId ? host : undefined;
+  }
+
+  private moveIndicatorToPaneNow(instanceId: string, target: string): boolean {
+    const host = this.paneMoveHost(instanceId, target);
+    const config = this.indicatorEngine.getIndicatorConfig(instanceId);
+    if (host === undefined || !config) return false;
+    const ownsPane = this.layoutManager.getPanels().some((p) => p.id === instanceId);
 
     const changed = new Set<string>([instanceId]);
     if (ownsPane) {
@@ -1527,6 +1534,18 @@ export class Chart {
   isTimeAligned(): boolean {
     if (isReshapedChartType(this.options.chartType)) return false;
     return this.getDisplayData().length === this.dataManager.getLength();
+  }
+
+  /**
+   * A price on the market's grid: a multiple of its smallest step (`minTick`),
+   * else rounded to its precision, else to the decimals the axis shows.
+   */
+  roundPrice(price: number): number {
+    if (!Number.isFinite(price)) return price;
+    const tick = this.symbolInfo?.minTick;
+    if (tick !== undefined && tick > 0) return Number((Math.round(price / tick) * tick).toFixed(stepDecimals(tick)));
+    const { min, max } = this.viewport.getState().priceRange;
+    return Number(price.toFixed(this.marketPricePrecision ?? autoPricePrecision(min, max)));
   }
 
   /** A price as the price axis writes it: the market's precision or the visible range's, in the number locale. */

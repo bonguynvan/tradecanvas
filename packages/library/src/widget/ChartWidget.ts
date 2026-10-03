@@ -20,12 +20,15 @@ import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
-import { WidgetContextMenu } from './WidgetContextMenu.js';
+import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
+import { WidgetNamePrompt } from './WidgetNamePrompt.js';
+import { WidgetIntervalInput } from './WidgetIntervalInput.js';
+import { IndicatorTemplateStore } from './indicatorTemplates.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
 import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
 import { LayoutSession } from '../state/LayoutSession.js';
@@ -40,7 +43,7 @@ import {
 } from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
-import { WidgetIndicatorLegend, type IndicatorLegendRow } from './WidgetIndicatorLegend.js';
+import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
 import { RANGE_PRESETS, servesTimeframe, sourceParam, withResampling } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
@@ -94,6 +97,17 @@ const LEGEND_INSET = 4;
 const PANE_ROW_TOP = 7;
 /** Rows of the indicators sharing a pane, one under the other (px). */
 const PANE_ROW_STEP = 17;
+/** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
+const PANE_CONTROLS_TOP = 3;
+/** Alt + a letter picks a drawing tool (by key position, so it works on any layout). */
+const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
+  KeyT: 'trendLine',
+  KeyH: 'horizontalLine',
+  KeyJ: 'horizontalRay',
+  KeyV: 'verticalLine',
+  KeyC: 'crossLine',
+  KeyF: 'fibRetracement',
+};
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
@@ -142,6 +156,11 @@ export class ChartWidget {
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
   private chartMenu: WidgetContextMenu | null = null;
+  /** The legend row's "more" menu: move the indicator to another pane. */
+  private legendMenu: WidgetContextMenu | null = null;
+  private templates = new IndicatorTemplateStore();
+  private templatePrompt: WidgetNamePrompt | null = null;
+  private intervalInput: WidgetIntervalInput | null = null;
   private accountPanel: WidgetAccountPanel | null = null;
   private orderTicket: WidgetOrderTicket | null = null;
   private accountFrame = 0;
@@ -344,6 +363,16 @@ export class ChartWidget {
           onToggleObjects: options.objectTree !== false ? () => this.toggleObjects() : undefined,
           onToggleAccount: options.trading !== false && options.accountPanel !== false ? () => this.accountPanel?.toggle() : undefined,
           onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
+          ...(options.indicatorTemplates !== false
+            ? {
+              onApplyIndicatorTemplate: (name: string) => this.applyIndicatorTemplate(name),
+              onSaveIndicatorTemplate: () => this.promptSaveIndicatorTemplate(),
+              onDeleteIndicatorTemplate: (name: string) => {
+                this.templates.remove(name);
+                this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
+              },
+            }
+            : {}),
           onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
           onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
           onToggleFullscreen: options.fullscreen !== false && typeof document !== 'undefined' && document.fullscreenEnabled
@@ -531,6 +560,8 @@ export class ChartWidget {
         },
         onSettings: (iid) => this.openIndicatorSettings(iid),
         onRemove: (iid) => this.handleRemoveIndicator(iid),
+        onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
+        onPaneAction: (iid, action) => this.runPaneAction(iid, action),
       }, {
         show: this.t('legend.show'),
         hide: this.t('legend.hide'),
@@ -538,7 +569,15 @@ export class ChartWidget {
         remove: this.t('legend.remove'),
         collapse: this.t('legend.collapse'),
         expand: this.t('legend.expand'),
+        more: this.t('legend.more'),
+        paneUp: this.t('pane.moveUp'),
+        paneDown: this.t('pane.moveDown'),
+        paneCollapse: this.t('pane.collapse'),
+        paneExpand: this.t('pane.expand'),
+        paneMaximize: this.t('pane.maximize'),
+        paneRestore: this.t('pane.restore'),
       });
+      this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
       this.chart.on('crosshairMove', (e) => {
         const p = e.payload as { barIndex?: number };
         this.legendHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
@@ -549,7 +588,7 @@ export class ChartWidget {
         this.legendHoverIndex = null;
         this.scheduleLegend();
       });
-      for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'themeChange'] as const) {
+      for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange'] as const) {
         this.chart.on(event, () => this.scheduleLegend());
       }
     }
@@ -636,14 +675,27 @@ export class ChartWidget {
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
     this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
+    // Prices from the pointer go on the market's grid (its smallest step).
     this.chart.on('chartContextMenu', (e) => {
-      const { area, x, y, price, time } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      const { area, x, y, price: raw, time } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      const price = raw === undefined ? undefined : this.chart.roundPrice(raw);
       this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, { area, price, time });
     });
     this.chart.on('priceAxisAdd', (e) => {
-      const { price, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
+      const { price: raw, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
+      const price = this.chart.roundPrice(raw);
       this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, { area: 'priceAxisAdd', price });
     });
+
+    // Typing a number on the chart changes the interval.
+    if (options.intervalTyping !== false) {
+      this.intervalInput = new WidgetIntervalInput(this.chartContainer, {
+        title: this.t('interval.title'),
+        hint: this.t('interval.hint'),
+        invalid: this.t('interval.invalid'),
+      }, (tf) => this.selectTypedTimeframe(tf));
+    }
+    if (options.indicatorTemplates !== false) this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
 
     // Named layouts: save, open, rename, delete, auto-save.
     if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
@@ -842,6 +894,19 @@ export class ChartWidget {
         if (!this.layoutSession || isTyping() || !isKeyTarget(this.root, true)) return;
         e.preventDefault();
         void this.saveLayout();
+      } else if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && TOOL_HOTKEYS[e.code]) {
+        // Alt+T trend line, Alt+H horizontal line… (the drawing tools' keys).
+        if (isTyping() || !mine || this.options.drawingTools === false) return;
+        e.preventDefault();
+        this.handleDrawingTool(TOOL_HOTKEYS[e.code]);
+      } else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // A number typed on the chart starts an interval (5, 15m, 1h…).
+        if (!this.intervalInput || isTyping() || !isKeyTarget(this.root, true)) return;
+        const active = document.activeElement;
+        // A dialog elsewhere (settings, search) has the keys.
+        if (active && active !== document.body && !this.root.contains(active)) return;
+        e.preventDefault();
+        this.intervalInput.open(e.key);
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || !mine) return;
@@ -1026,6 +1091,9 @@ export class ChartWidget {
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
     this.chartMenu?.destroy();
+    this.legendMenu?.destroy();
+    this.templatePrompt?.destroy();
+    this.intervalInput?.destroy();
     this.layoutSession?.destroy();
     this.layoutsUI?.destroy();
     this.accountPanel?.destroy();
@@ -1409,6 +1477,53 @@ export class ChartWidget {
     }
     this.handleTimeframe(tf);
     return true;
+  }
+
+  /** A typed interval: one on offer is picked; another joins the menu (not the toolbar's pins). */
+  private selectTypedTimeframe(tf: TimeFrame): boolean {
+    if (!this.chart.isTimeframeAllowed(tf)) return false;
+    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
+    if (!this.timeframes.includes(tf)) {
+      this.customTimeframes.add(tf);
+      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
+      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
+    }
+    this.handleTimeframe(tf);
+    return true;
+  }
+
+  /** Put a template's indicators in place of the chart's (one undo step). */
+  private applyIndicatorTemplate(name: string): void {
+    const template = this.templates.get(name);
+    if (!template) return;
+    this.chart.applyIndicatorSetup(template.indicators);
+    this.syncIndicatorsFromChart();
+    this.updateUI();
+    this.toast(fill(this.t('templates.applied'), { name: template.name }));
+  }
+
+  /** Save the chart's indicators as a template, asking for its name. */
+  private promptSaveIndicatorTemplate(): void {
+    if (this.chart.getActiveIndicators().length === 0) {
+      this.toast(this.t('templates.nothing'), 'error');
+      return;
+    }
+    this.templatePrompt ??= new WidgetNamePrompt(this.root, this.t);
+    this.templatePrompt.open({
+      title: this.t('templates.saveTitle'),
+      submitLabel: this.t('common.save'),
+      placeholder: this.t('templates.namePlaceholder'),
+      onSubmit: (name) => {
+        try {
+          this.templates.save(name, this.chart.getIndicatorSetup());
+        } catch (err) {
+          this.toast(this.t('templates.saveFailed'), 'error');
+          throw err;
+        }
+        this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
+        this.toast(fill(this.t('templates.saved'), { name }));
+      },
+    });
   }
 
   private handleRemoveTimeframe(tf: TimeFrame): void {
@@ -2499,7 +2614,66 @@ export class ChartWidget {
       };
     });
     const plot = this.chart.getPlotRect();
-    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + 1 });
+    const infos = this.chart.getIndicatorPanes();
+    const maximized = this.chart.getMaximizedPane();
+    const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
+    const paneControls: IndicatorLegendPane[] = infos.map((pane, i) => ({
+      instanceId: pane.instanceId,
+      x: pane.rect.x + pane.rect.width - LEGEND_INSET,
+      y: pane.rect.y + PANE_CONTROLS_TOP,
+      label: labelOf(pane.instanceId),
+      collapsed: this.chart.isPaneCollapsed(pane.instanceId),
+      maximized: maximized === pane.instanceId,
+      canMoveUp: i > 0,
+      canMoveDown: i < infos.length - 1,
+    }));
+    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + 1 }, paneControls);
+  }
+
+  /** A pane's button on the chart. */
+  private runPaneAction(instanceId: string, action: PaneAction): void {
+    if (action === 'up' || action === 'down') this.chart.movePane(instanceId, action === 'up' ? -1 : 1);
+    else if (action === 'collapse' || action === 'expand') this.chart.setPaneCollapsed(instanceId, action === 'collapse');
+    else this.chart.setMaximizedPane(action === 'maximize' ? instanceId : null);
+    this.scheduleLegend();
+  }
+
+  /**
+   * An indicator's "more" menu: into the pane above or below it (the price
+   * pane at the top), a pane of its own, back to the price pane; then its
+   * settings and remove.
+   */
+  private openLegendMenu(instanceId: string, anchor: HTMLElement): void {
+    const menu = this.legendMenu;
+    if (!menu) return;
+    if (menu.isOpen()) {
+      menu.close();
+      return;
+    }
+    // The price pane, then each indicator pane top to bottom.
+    const places = ['price', ...this.chart.getIndicatorPanes().map((p) => p.instanceId)];
+    const at = 1 + this.chart.getIndicatorPanes().findIndex((p) => p.instanceIds.includes(instanceId));
+    const above = places[at - 1];
+    const below = places[at + 1];
+    const can = (target: string | undefined) => target !== undefined && this.chart.canMoveIndicatorToPane(instanceId, target);
+    const entries: ContextMenuEntry[] = [];
+    if (can(above)) entries.push({ id: `move:${above}`, label: this.t(above === 'price' ? 'legend.movePrice' : 'legend.moveUp'), icon: 'arrowUp' });
+    if (can(below)) entries.push({ id: `move:${below}`, label: this.t('legend.moveDown'), icon: 'arrowDown' });
+    if (can('new')) entries.push({ id: 'move:new', label: this.t('legend.moveNew'), icon: 'plus' });
+    if (above !== 'price' && can('price')) entries.push({ id: 'move:price', label: this.t('legend.movePrice'), icon: 'trendingUp' });
+    if (entries.length > 0) entries.push('separator');
+    entries.push(
+      { id: 'settings', label: this.t('legend.settings'), icon: 'settings' },
+      { id: 'remove', label: this.t('legend.remove'), icon: 'trash', danger: true },
+    );
+    const box = anchor.getBoundingClientRect();
+    const root = this.root.getBoundingClientRect();
+    menu.open(entries, box.left - root.left, box.bottom - root.top + 2, (id) => {
+      if (id === 'settings') this.openIndicatorSettings(instanceId);
+      else if (id === 'remove') this.handleRemoveIndicator(instanceId);
+      else if (id.startsWith('move:')) this.chart.moveIndicatorToPane(instanceId, id.slice('move:'.length));
+      this.scheduleLegend();
+    });
   }
 
   private updateUI(): void {

@@ -92,6 +92,19 @@ export interface ChartWidgetOptions {
   layouts?: boolean | WidgetLayoutsOptions;
 
   /**
+   * Indicator templates: the indicators menu saves the chart's indicators
+   * (inputs, style, levels, panes) under a name and applies them in one go.
+   * Kept in this browser's `localStorage`. Default `true`.
+   */
+  indicatorTemplates?: boolean;
+
+  /**
+   * Type a number on the chart (after using it) to change the interval:
+   * `5`, `15m`, `1h`, `1D`, then Enter. Default `true`.
+   */
+  intervalTyping?: boolean;
+
+  /**
    * Your own entries at the end of the chart's right-click menus (and of the
    * "+" by the price axis), after the widget's. Called each time a menu opens.
    */
@@ -289,6 +302,10 @@ export interface ToolbarCallbacks {
   onToggleAccount?: () => void;
   /** The layouts button was pressed: open its menu under it. */
   onLayouts?: (anchor: HTMLElement) => void;
+  /** Indicator templates in the indicators menu: apply, save the chart's, delete. */
+  onApplyIndicatorTemplate?: (name: string) => void;
+  onSaveIndicatorTemplate?: () => void;
+  onDeleteIndicatorTemplate?: (name: string) => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
   /** Shown only when given (and the browser allows fullscreen). */

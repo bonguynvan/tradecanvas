@@ -335,7 +335,8 @@ chart.setIndicatorLevels(rsi, [20, 50, 80])
 ```
 
 - **Sources**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, or another indicator's line.
-- **Panes**: one value scale per pane for lines, levels, axis and crosshair; indicators can share a pane.
+- **Panes**: one value scale per pane for lines, levels, axis and crosshair; move an indicator into another pane, a new one or back to the price pane; fold, maximise and reorder panes (`moveIndicatorToPane`, `setPaneCollapsed`, `setMaximizedPane`, `movePane`).
+- **Undo and templates**: Ctrl/Cmd+Z undoes indicator changes, in the same history as drawings; ChartWidget saves the indicators as named templates (`getIndicatorSetup` / `applyIndicatorSetup`).
 - **Levels**: editable per instance (RSI 30/70, CCI ±100 …), kept in saved layouts.
 - **Value tags**: each line's latest value on its axis, in its colour.
 - **Custom indicators** declare their lines (`plots`), scale, levels and inputs; the chart draws and labels them.
