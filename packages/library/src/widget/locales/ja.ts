@@ -85,6 +85,15 @@ export const JA_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'レンジバー',
 
   'watchlist.title': 'ウォッチリスト',
+  'watchlist.lists': 'リスト',
+  'watchlist.newList': '新しいリスト…',
+  'watchlist.rename': 'リスト名を変更…',
+  'watchlist.deleteList': 'リストを削除',
+  'watchlist.confirmDelete': '「{name}」を削除しますか？もう一度クリック',
+  'watchlist.add': 'シンボルを追加',
+  'watchlist.remove': '{symbol} を削除',
+  'watchlist.empty': 'シンボルはまだありません。+ で追加してください。',
+  'watchlist.listName': 'リスト名',
 
   'status.connecting': '接続中…',
   'status.live': 'ライブ',

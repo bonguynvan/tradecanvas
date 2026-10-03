@@ -85,6 +85,15 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': '區間K線',
 
   'watchlist.title': '自選清單',
+  'watchlist.lists': '清單',
+  'watchlist.newList': '新增清單…',
+  'watchlist.rename': '重新命名清單…',
+  'watchlist.deleteList': '刪除清單',
+  'watchlist.confirmDelete': '刪除「{name}」？再次點擊確認',
+  'watchlist.add': '新增代碼',
+  'watchlist.remove': '刪除 {symbol}',
+  'watchlist.empty': '尚無代碼。點擊 + 新增。',
+  'watchlist.listName': '清單名稱',
 
   'status.connecting': '連線中…',
   'status.live': '即時',

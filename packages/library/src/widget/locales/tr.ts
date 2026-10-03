@@ -85,6 +85,15 @@ export const TR_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'Aralık barları',
 
   'watchlist.title': 'İzleme listesi',
+  'watchlist.lists': 'Listeler',
+  'watchlist.newList': 'Yeni liste…',
+  'watchlist.rename': 'Listeyi yeniden adlandır…',
+  'watchlist.deleteList': 'Listeyi sil',
+  'watchlist.confirmDelete': '“{name}” silinsin mi? Tekrar tıklayın',
+  'watchlist.add': 'Sembol ekle',
+  'watchlist.remove': 'Kaldır: {symbol}',
+  'watchlist.empty': 'Henüz sembol yok. + ile ekleyin.',
+  'watchlist.listName': 'Liste adı',
 
   'status.connecting': 'Bağlanıyor…',
   'status.live': 'Canlı',

@@ -1947,13 +1947,143 @@
 }
 
 .tcw-watchlist-header {
-  padding: 10px 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 8px;
+  border-bottom: 1px solid var(--tcw-divider);
+}
+
+/* The shown list's name: opens the lists menu. */
+.tcw-watchlist-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--tcw-control-h-sm);
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   text-transform: var(--tcw-label-case);
   letter-spacing: var(--tcw-label-tracking);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.tcw-watchlist-name::after {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-left: auto;
+  border: 4px solid transparent;
+  border-top-color: currentColor;
+  border-bottom-width: 0;
+  opacity: 0.7;
+}
+
+.tcw-watchlist-add {
+  flex: none;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
   color: var(--tcw-text-muted);
-  border-bottom: 1px solid var(--tcw-divider);
+  font: inherit;
+  font-size: var(--tcw-font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tcw-watchlist-name:hover,
+.tcw-watchlist-add:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+.tcw-watchlist-name:focus-visible,
+.tcw-watchlist-add:focus-visible,
+.tcw-watchlist-input:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* The lists menu, under the header. */
+.tcw-watchlist-menu {
+  top: calc(100% - 2px);
+  left: 6px;
+  right: 6px;
+  margin-top: 0;
+}
+.tcw-watchlist-count {
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+}
+.tcw-watchlist-menu .tcw-danger {
+  color: var(--tcw-red);
+}
+
+/* Naming a list in place. */
+.tcw-watchlist-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--tcw-control-h-sm);
+  padding: 0 8px;
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-input-radius);
+  background: var(--tcw-bg);
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+}
+
+.tcw-watchlist-empty {
+  padding: 16px 14px;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.5;
+}
+
+/* A row's remove button shows on hover or focus, over its numbers. */
+.tcw-watchlist-remove {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-bg-elevated);
+  color: var(--tcw-text-muted);
+  font: inherit;
+  font-size: var(--tcw-font-size);
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-watchlist-row:hover .tcw-watchlist-remove,
+.tcw-watchlist-row:focus-within .tcw-watchlist-remove {
+  opacity: 1;
+}
+.tcw-watchlist-remove:hover {
+  color: var(--tcw-red);
+}
+.tcw-watchlist-row.tcw-watchlist-dragging {
+  opacity: 0.45;
 }
 
 .tcw-watchlist-list {
@@ -1963,6 +2093,7 @@
 }
 
 .tcw-watchlist-row {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;

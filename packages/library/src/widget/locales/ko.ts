@@ -85,6 +85,15 @@ export const KO_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': '레인지 바',
 
   'watchlist.title': '관심 종목',
+  'watchlist.lists': '목록',
+  'watchlist.newList': '새 목록…',
+  'watchlist.rename': '목록 이름 바꾸기…',
+  'watchlist.deleteList': '목록 삭제',
+  'watchlist.confirmDelete': '‘{name}’을(를) 삭제할까요? 다시 클릭하세요',
+  'watchlist.add': '종목 추가',
+  'watchlist.remove': '{symbol} 삭제',
+  'watchlist.empty': '아직 종목이 없습니다. +로 추가하세요.',
+  'watchlist.listName': '목록 이름',
 
   'status.connecting': '연결 중…',
   'status.live': '실시간',

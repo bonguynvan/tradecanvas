@@ -1,4 +1,5 @@
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { OHLCBar, Quote } from '@tradecanvas/commons';
+import { readQuote } from '@tradecanvas/commons';
 
 /**
  * Binance REST `/klines` returns a 12-element array per kline.
@@ -102,4 +103,50 @@ function toFiniteNumber(value: unknown): number | null {
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+/** A Binance number field (a string or a number) as a finite number. */
+function num(v: unknown): number | undefined {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * A 24 h mini-ticker frame (the combined stream's `{ stream, data }` or the
+ * bare event) as a quote: the change is over the last 24 hours.
+ */
+export function parseMiniTicker(raw: unknown): Quote | null {
+  const frame = raw && typeof raw === 'object' && 'data' in raw ? (raw as { data: unknown }).data : raw;
+  if (!frame || typeof frame !== 'object') return null;
+  const m = frame as Record<string, unknown>;
+  if (m.e !== '24hrMiniTicker') return null;
+  return readQuote({
+    symbol: m.s,
+    last: num(m.c),
+    open: num(m.o),
+    high: num(m.h),
+    low: num(m.l),
+    volume: num(m.v),
+    time: num(m.E),
+  });
+}
+
+/** A REST 24 h ticker (`/ticker/24hr`) as a quote. */
+export function parseRestTicker(raw: unknown): Quote | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const t = raw as Record<string, unknown>;
+  return readQuote({
+    symbol: t.symbol,
+    last: num(t.lastPrice),
+    change: num(t.priceChange),
+    changePercent: num(t.priceChangePercent),
+    open: num(t.openPrice),
+    high: num(t.highPrice),
+    low: num(t.lowPrice),
+    prevClose: num(t.prevClosePrice),
+    volume: num(t.volume),
+    bid: num(t.bidPrice),
+    ask: num(t.askPrice),
+    time: num(t.closeTime),
+  });
 }

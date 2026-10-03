@@ -85,6 +85,15 @@ export const RU_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'Рейндж-бары',
 
   'watchlist.title': 'Список наблюдения',
+  'watchlist.lists': 'Списки',
+  'watchlist.newList': 'Новый список…',
+  'watchlist.rename': 'Переименовать список…',
+  'watchlist.deleteList': 'Удалить список',
+  'watchlist.confirmDelete': 'Удалить «{name}»? Нажмите ещё раз',
+  'watchlist.add': 'Добавить символ',
+  'watchlist.remove': 'Удалить {symbol}',
+  'watchlist.empty': 'Символов пока нет. Добавьте с помощью +.',
+  'watchlist.listName': 'Название списка',
 
   'status.connecting': 'Подключение…',
   'status.live': 'В реальном времени',

@@ -85,6 +85,15 @@ export const DE_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'Range-Balken',
 
   'watchlist.title': 'Beobachtungsliste',
+  'watchlist.lists': 'Listen',
+  'watchlist.newList': 'Neue Liste…',
+  'watchlist.rename': 'Liste umbenennen…',
+  'watchlist.deleteList': 'Liste löschen',
+  'watchlist.confirmDelete': '„{name}“ löschen? Erneut klicken',
+  'watchlist.add': 'Symbol hinzufügen',
+  'watchlist.remove': '{symbol} entfernen',
+  'watchlist.empty': 'Noch keine Symbole. Fügen Sie eines mit + hinzu.',
+  'watchlist.listName': 'Name der Liste',
 
   'status.connecting': 'Verbinde…',
   'status.live': 'Live',

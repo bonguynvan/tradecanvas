@@ -5,12 +5,13 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  Quote,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 import { rankSymbols, stepDecimals } from '@tradecanvas/commons';
-import { parseRestKline, parseWsKline } from './binanceTypes.js';
+import { parseMiniTicker, parseRestKline, parseRestTicker, parseWsKline } from './binanceTypes.js';
 
 const TF_MAP: Record<string, string> = {
   '1s': '1s', '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
@@ -20,6 +21,8 @@ const TF_MAP: Record<string, string> = {
 
 /** Most klines one REST request returns. */
 const MAX_KLINES = 1000;
+/** Most symbols one quote subscription streams (one socket, one URL). */
+const MAX_QUOTE_SYMBOLS = 200;
 
 /** Quote currencies most traded against, first: their pairs rank higher in a search. */
 const QUOTE_RANK = ['USDT', 'USDC', 'FDUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'TRY', 'BRL', 'JPY'];
@@ -169,6 +172,82 @@ export class BinanceAdapter implements DataAdapter {
   }
 
   /** Up to `limit` klines (1000 at most) that open before `before` (ms). */
+  /**
+   * Live quotes for up to 200 symbols: last price and the 24 h change, high,
+   * low and volume. A snapshot first, then the exchange's mini-ticker stream
+   * (reconnected while subscribed). Symbols that can't be Binance tickers are
+   * left out.
+   */
+  subscribeQuotes(symbols: readonly string[], onQuotes: (quotes: Quote[]) => void): () => void {
+    const wanted = [...new Set(symbols.map((s) => s.trim().toUpperCase()))]
+      .filter((s) => /^[A-Z0-9]{2,30}$/.test(s))
+      .slice(0, MAX_QUOTE_SYMBOLS);
+    if (wanted.length === 0) return () => {};
+
+    let stopped = false;
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    /** Symbols the stream has quoted: an older snapshot never overwrites them. */
+    const streamed = new Set<string>();
+    const controller = new AbortController();
+
+    fetch(`${this.restBase}/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(wanted))}`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows: unknown) => {
+        if (stopped || !Array.isArray(rows)) return;
+        const quotes = rows.map(parseRestTicker).filter((q): q is Quote => q !== null && !streamed.has(q.symbol));
+        if (quotes.length > 0) onQuotes(quotes);
+      })
+      .catch(() => { /* the stream still comes */ });
+
+    const streamBase = this.wsBase.replace(/\/ws\/?$/, '');
+    const open = (): void => {
+      if (stopped) return;
+      try {
+        ws = new WebSocket(`${streamBase}/stream?streams=${wanted.map((s) => `${s.toLowerCase()}@miniTicker`).join('/')}`);
+      } catch {
+        reconnect();
+        return;
+      }
+      ws.onopen = () => { attempts = 0; };
+      ws.onmessage = (event) => {
+        let frame: unknown;
+        try {
+          frame = JSON.parse(typeof event.data === 'string' ? event.data : '');
+        } catch {
+          return;
+        }
+        const quote = parseMiniTicker(frame);
+        if (!quote || stopped) return;
+        streamed.add(quote.symbol);
+        onQuotes([quote]);
+      };
+      ws.onclose = () => {
+        ws = null;
+        reconnect();
+      };
+    };
+    const reconnect = (): void => {
+      if (stopped) return;
+      retry = setTimeout(open, Math.min(30_000, 1000 * 2 ** attempts++));
+    };
+    open();
+
+    return () => {
+      stopped = true;
+      controller.abort();
+      if (retry) clearTimeout(retry);
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.close();
+        ws = null;
+      }
+    };
+  }
+
   fetchHistoryBefore(symbol: string, timeframe: TimeFrame, before: number, limit = 500): Promise<OHLCBar[]> {
     return this.fetchKlines(symbol, timeframe, Math.min(limit, MAX_KLINES), `&endTime=${Math.floor(before) - 1}`);
   }

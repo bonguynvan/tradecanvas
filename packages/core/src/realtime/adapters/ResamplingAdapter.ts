@@ -5,7 +5,9 @@ import type {
   DataAdapterEvent,
   DataAdapterEventType,
   DataAdapterListener,
+  NewsItem,
   OHLCBar,
+  Quote,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
@@ -115,6 +117,8 @@ export class ResamplingAdapter implements DataAdapter {
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
   readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
   readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
+  readonly subscribeQuotes?: (symbols: readonly string[], onQuotes: (quotes: Quote[]) => void) => () => void;
+  readonly fetchNews?: (symbol: string, limit?: number) => Promise<NewsItem[]>;
 
   private readonly listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly unsubscribe: (() => void)[] = [];
@@ -134,6 +138,8 @@ export class ResamplingAdapter implements DataAdapter {
     }
     if (inner.searchSymbols) this.searchSymbols = inner.searchSymbols.bind(inner);
     if (inner.resolveSymbol) this.resolveSymbol = inner.resolveSymbol.bind(inner);
+    if (inner.subscribeQuotes) this.subscribeQuotes = inner.subscribeQuotes.bind(inner);
+    if (inner.fetchNews) this.fetchNews = inner.fetchNews.bind(inner);
     this.listen('bar', (e) => this.onBar(e));
     for (const type of FORWARDED) this.listen(type, (e) => this.emit(type, e.data));
   }

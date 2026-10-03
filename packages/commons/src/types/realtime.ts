@@ -1,5 +1,7 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
 import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
+import type { Quote } from './quote.js';
+import type { NewsItem } from './news.js';
 
 // --- Connection ---
 
@@ -110,6 +112,16 @@ export interface DataAdapter {
    * asks for it and applies it.
    */
   resolveSymbol?(symbol: string): Promise<SymbolInfo | null>;
+
+  /**
+   * Optional: live quotes (last price, the day's change, high, low, volume)
+   * for many symbols at once, until the function it returns is called. A
+   * widget's watchlist fills its rows from it.
+   */
+  subscribeQuotes?(symbols: readonly string[], onQuotes: (quotes: Quote[]) => void): () => void;
+
+  /** Optional: recent headlines about `symbol`, newest first. */
+  fetchNews?(symbol: string, limit?: number): Promise<NewsItem[]>;
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;

@@ -1,4 +1,5 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import { readQuote } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -14,6 +15,7 @@ import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
+import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { readChartTypeOptions } from '@tradecanvas/commons';
@@ -208,6 +210,15 @@ export class ChartWidget {
   /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
   private hostWatchlistRefPrice = new Map<string, number>();
   private watchlistInterval: ReturnType<typeof setInterval> | null = null;
+  private watchlistStore: WatchlistStore | null = null;
+  /** The list follows `setSymbols` (no lists given, none kept). */
+  private watchlistFromSymbols = false;
+  private quoteSource: QuoteSource | null = null;
+  private stopQuotes: (() => void) | null = null;
+  /** The symbols quotes are coming for, joined. */
+  private quotedKey = '';
+  /** The latest quote of each symbol. */
+  private quotes = new Map<string, Quote>();
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
   /** Bars revealed per second. */
   private replaySpeed = DEFAULT_REPLAY_SPEED;
@@ -465,13 +476,7 @@ export class ChartWidget {
 
     // Watchlist sidebar (right side). Appended AFTER the chart container so
     // it sits to the right of the canvas in the flexbox row.
-    if (options.watchlist) {
-      this.watchlist = new WidgetWatchlist(body, this.symbols, {
-        onSelect: (sym) => { void this.setSymbol(sym); },
-      }, this.t('watchlist.title'));
-      this.watchlist.setActive(this.state.symbol);
-      this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
-    }
+    if (options.watchlist) this.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
 
     this.root.appendChild(body);
     // The account panel docks under the chart, above the status bar.
@@ -1024,7 +1029,141 @@ export class ChartWidget {
   /** Replace the searchable symbol catalog. Does not change the active symbol. */
   setSymbols(symbols: string[]): void {
     this.symbols = symbols;
-    this.watchlist?.setSymbols(symbols);
+    // A list made from the symbols follows them; lists given or kept stay.
+    const store = this.watchlistStore;
+    if (store && this.watchlistFromSymbols) {
+      store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols } : l)));
+    }
+  }
+
+  // --- Watchlists ---
+
+  /** Every watchlist, in order. */
+  getWatchlists(): WatchlistList[] {
+    return this.watchlistStore?.getLists() ?? [];
+  }
+
+  /** The shown watchlist's id, or null without a watchlist. */
+  getActiveWatchlist(): string | null {
+    return this.watchlistStore?.getActive().id ?? null;
+  }
+
+  /** Replace every watchlist (and which one shows). */
+  setWatchlists(lists: WatchlistList[], activeList?: string): void {
+    this.watchlistFromSymbols = false;
+    this.watchlistStore?.replace(lists, activeList);
+  }
+
+  setActiveWatchlist(id: string): void {
+    this.watchlistStore?.setActive(id);
+  }
+
+  /** Add a symbol to a watchlist (the shown one by default). */
+  addToWatchlist(symbol: string, listId?: string): void {
+    this.watchlistStore?.add(symbol, listId);
+  }
+
+  removeFromWatchlist(symbol: string, listId?: string): void {
+    this.watchlistStore?.removeSymbol(symbol, listId);
+  }
+
+  /**
+   * Quotes for the watchlist's rows (and `getQuote`), from your own feed.
+   * What isn't a quote (no symbol, no finite last price) is left out.
+   */
+  setQuotes(quotes: readonly Quote[]): void {
+    const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
+    if (read.length > 0) this.takeQuotes(read);
+  }
+
+  /** The latest quote of a symbol, from the quote source or `setQuotes`. */
+  getQuote(symbol: string): Quote | null {
+    const quote = this.quotes.get(symbol);
+    return quote ? { ...quote } : null;
+  }
+
+  private createWatchlist(body: HTMLElement, opts: import('./types.js').WatchlistOptions): void {
+    const storage = opts.persist ? browserStorage() : null;
+    const store = new WatchlistStore({
+      lists: opts.lists,
+      activeList: opts.activeList,
+      symbols: this.symbols,
+      defaultName: this.t('watchlist.title'),
+      storage,
+      storageKey: opts.storageKey,
+    });
+    this.watchlistStore = store;
+    this.watchlistFromSymbols = !opts.lists && !opts.persist;
+    this.quoteSource = opts.quotes === false ? null : opts.quotes ?? (this.options.adapter?.subscribeQuotes ? this.options.adapter as QuoteSource : null);
+
+    const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
+    this.watchlist = new WidgetWatchlist(body, {
+      onSelect: (sym) => { void this.setSymbol(sym); },
+      onAdd: () => this.symbolSearch?.open(this.symbols, this.state.symbol, (sym) => store.add(sym), this.symbolSearchFn()),
+      onRemove: (sym) => store.removeSymbol(sym),
+      onMove: (sym, index) => store.move(sym, index),
+      onPickList: (id) => store.setActive(id),
+      onCreateList: (name) => store.create(name),
+      onRenameList: (id, name) => store.rename(id, name),
+      onDeleteList: (id) => store.remove(id),
+    }, {
+      title: t('watchlist.title'),
+      lists: t('watchlist.lists'),
+      newList: t('watchlist.newList'),
+      rename: t('watchlist.rename'),
+      deleteList: t('watchlist.deleteList'),
+      confirmDelete: t('watchlist.confirmDelete'),
+      add: t('watchlist.add'),
+      remove: t('watchlist.remove'),
+      empty: t('watchlist.empty'),
+      listName: t('watchlist.listName'),
+    });
+    this.watchlist.setActive(this.state.symbol);
+    this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
+    const show = () => {
+      this.watchlist?.setLists(store.getLists(), store.getActive().id);
+      this.followQuotes();
+    };
+    store.subscribe(() => {
+      show();
+      opts.onChange?.(store.getLists(), store.getActive().id);
+    });
+    show();
+  }
+
+  /** Quotes for the shown list's symbols: a new subscription when they change. */
+  private followQuotes(): void {
+    if (!this.quoteSource || !this.watchlistStore) return;
+    const symbols = this.watchlistStore.getActive().symbols;
+    const key = symbols.join('\u0000');
+    if (key === this.quotedKey) return;
+    this.quotedKey = key;
+    this.stopQuotes?.();
+    this.stopQuotes = null;
+    if (symbols.length === 0) return;
+    try {
+      this.stopQuotes = this.quoteSource.subscribeQuotes(symbols, (quotes) => {
+        if (!this.destroyed) this.takeQuotes(quotes);
+      });
+    } catch {
+      this.stopQuotes = null;
+    }
+  }
+
+  private takeQuotes(quotes: readonly Quote[]): void {
+    for (const quote of quotes) {
+      this.quotes.set(quote.symbol, quote);
+      const buf = this.watchlistSparkBuffer.get(quote.symbol) ?? [];
+      buf.push(quote.last);
+      if (buf.length > 40) buf.shift();
+      this.watchlistSparkBuffer.set(quote.symbol, buf);
+      const hostRef = this.hostWatchlistRefPrice.get(quote.symbol);
+      this.watchlist?.setEntry(quote.symbol, {
+        lastPrice: quote.last,
+        refPrice: hostRef ?? (quote.change !== undefined ? quote.last - quote.change : undefined),
+        sparkline: buf.slice(),
+      });
+    }
   }
 
   async setSymbol(symbol: string): Promise<void> {
@@ -1061,7 +1200,8 @@ export class ChartWidget {
   }
 
   private tickWatchlist(): void {
-    if (!this.watchlist) return;
+    // A symbol with quotes shows them (the day's move), not the loaded bars'.
+    if (!this.watchlist || this.quotes.has(this.state.symbol)) return;
     const data = this.chart.getData();
     if (data.length === 0) return;
     const last = data[data.length - 1];
@@ -1189,6 +1329,8 @@ export class ChartWidget {
     this.depthLadder?.destroy();
     this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
+    this.stopQuotes?.();
+    this.stopQuotes = null;
     this.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
@@ -3030,4 +3172,13 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
     }
   }
   return out;
+}
+
+/** The page's localStorage, or null where it can't be used (private mode, SSR). */
+function browserStorage(): Storage | null {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage : null;
+  } catch {
+    return null;
+  }
 }

@@ -85,6 +85,15 @@ export const ID_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'Bar rentang',
 
   'watchlist.title': 'Daftar pantauan',
+  'watchlist.lists': 'Daftar',
+  'watchlist.newList': 'Daftar baru…',
+  'watchlist.rename': 'Ganti nama daftar…',
+  'watchlist.deleteList': 'Hapus daftar',
+  'watchlist.confirmDelete': 'Hapus “{name}”? Klik lagi',
+  'watchlist.add': 'Tambah simbol',
+  'watchlist.remove': 'Hapus {symbol}',
+  'watchlist.empty': 'Belum ada simbol. Tambahkan dengan +.',
+  'watchlist.listName': 'Nama daftar',
 
   'status.connecting': 'Menghubungkan…',
   'status.live': 'Langsung',

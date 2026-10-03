@@ -89,6 +89,15 @@ export const EN_MESSAGES = {
 
   // Watchlist
   'watchlist.title': 'Watchlist',
+  'watchlist.lists': 'Lists',
+  'watchlist.newList': 'New list…',
+  'watchlist.rename': 'Rename list…',
+  'watchlist.deleteList': 'Delete list',
+  'watchlist.confirmDelete': 'Delete “{name}”? Click again',
+  'watchlist.add': 'Add symbol',
+  'watchlist.remove': 'Remove {symbol}',
+  'watchlist.empty': 'No symbols yet. Add one with +.',
+  'watchlist.listName': 'List name',
 
   // Status bar / connection
   'status.connecting': 'Connecting...',

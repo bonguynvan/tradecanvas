@@ -5,6 +5,7 @@ import type {
   DataAdapterListener,
   ConnectionState,
   OHLCBar,
+  Quote,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
@@ -73,6 +74,42 @@ export class MockAdapter implements DataAdapter {
 
   getConnectionState(): ConnectionState {
     return this.state;
+  }
+
+  /**
+   * Made-up quotes: a random walk per symbol around `basePrice` (each symbol
+   * starting at a price of its own), every symbol quoted at once and then each
+   * `tickInterval`.
+   */
+  subscribeQuotes(symbols: readonly string[], onQuotes: (quotes: Quote[]) => void): () => void {
+    const walks = [...new Set(symbols)].map((symbol) => {
+      const open = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
+      return { symbol, open, last: open, high: open, low: open, volume: 0 };
+    });
+    if (walks.length === 0) return () => {};
+    const step = this.options.volatility! / 100;
+    const emit = (): void => onQuotes(walks.map((w) => ({
+      symbol: w.symbol,
+      last: w.last,
+      open: w.open,
+      high: w.high,
+      low: w.low,
+      volume: w.volume,
+      change: w.last - w.open,
+      changePercent: ((w.last - w.open) / w.open) * 100,
+      time: Date.now(),
+    })));
+    emit();
+    const timer = setInterval(() => {
+      for (const w of walks) {
+        w.last = Math.max(w.open * 0.01, w.last * (1 + (Math.random() - 0.5) * step));
+        w.high = Math.max(w.high, w.last);
+        w.low = Math.min(w.low, w.last);
+        w.volume += Math.random() * 100;
+      }
+      emit();
+    }, this.options.tickInterval);
+    return () => clearInterval(timer);
   }
 
   async fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
@@ -195,4 +232,11 @@ export class MockAdapter implements DataAdapter {
       for (const listener of set) listener(event);
     }
   }
+}
+
+/** A steady number for a symbol, so each one's made-up price is its own. */
+function symbolHash(symbol: string): number {
+  let h = 0;
+  for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) >>> 0;
+  return h;
 }

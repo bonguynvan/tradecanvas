@@ -85,6 +85,15 @@ export const TH_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'บาร์ตามช่วงราคา',
 
   'watchlist.title': 'รายการเฝ้าดู',
+  'watchlist.lists': 'รายการ',
+  'watchlist.newList': 'รายการใหม่…',
+  'watchlist.rename': 'เปลี่ยนชื่อรายการ…',
+  'watchlist.deleteList': 'ลบรายการ',
+  'watchlist.confirmDelete': 'ลบ “{name}” หรือไม่? คลิกอีกครั้ง',
+  'watchlist.add': 'เพิ่มสัญลักษณ์',
+  'watchlist.remove': 'ลบ {symbol}',
+  'watchlist.empty': 'ยังไม่มีสัญลักษณ์ เพิ่มได้ด้วยปุ่ม +',
+  'watchlist.listName': 'ชื่อรายการ',
 
   'status.connecting': 'กำลังเชื่อมต่อ…',
   'status.live': 'สด',

@@ -85,6 +85,15 @@ export const ZH_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': '区间K线',
 
   'watchlist.title': '自选列表',
+  'watchlist.lists': '列表',
+  'watchlist.newList': '新建列表…',
+  'watchlist.rename': '重命名列表…',
+  'watchlist.deleteList': '删除列表',
+  'watchlist.confirmDelete': '删除“{name}”？再次点击确认',
+  'watchlist.add': '添加代码',
+  'watchlist.remove': '删除 {symbol}',
+  'watchlist.empty': '暂无代码。点击 + 添加。',
+  'watchlist.listName': '列表名称',
 
   'status.connecting': '连接中…',
   'status.live': '实时',

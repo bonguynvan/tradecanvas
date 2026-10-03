@@ -85,6 +85,15 @@ export const VI_MESSAGES: WidgetMessages = {
   'chartType.rangeBars': 'Nến theo biên độ',
 
   'watchlist.title': 'Danh mục theo dõi',
+  'watchlist.lists': 'Danh sách',
+  'watchlist.newList': 'Danh sách mới…',
+  'watchlist.rename': 'Đổi tên danh sách…',
+  'watchlist.deleteList': 'Xoá danh sách',
+  'watchlist.confirmDelete': 'Xoá “{name}”? Bấm lần nữa',
+  'watchlist.add': 'Thêm mã',
+  'watchlist.remove': 'Bỏ {symbol}',
+  'watchlist.empty': 'Chưa có mã nào. Thêm bằng nút +.',
+  'watchlist.listName': 'Tên danh sách',
 
   'status.connecting': 'Đang kết nối...',
   'status.live': 'Trực tiếp',
