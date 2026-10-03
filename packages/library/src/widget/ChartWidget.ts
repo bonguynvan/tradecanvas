@@ -381,6 +381,10 @@ export class ChartWidget {
     this.root = document.createElement('div');
     this.root.className = 'tcw-root';
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
+    // Right to left for Arabic, Hebrew and the like (or as asked); the chart itself runs left to right.
+    const dir = options.dir === 'ltr' || options.dir === 'rtl' ? options.dir : isRtlLocale(options.locale) ? 'rtl' : 'ltr';
+    this.root.dir = dir;
+    this.portal.dir = dir;
     container.appendChild(this.root);
     this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
@@ -476,6 +480,7 @@ export class ChartWidget {
 
     this.chartContainer = document.createElement('div');
     this.chartContainer.className = 'tcw-chart-container';
+    this.chartContainer.dir = 'ltr';
     body.appendChild(this.chartContainer);
 
     // Loading state: covers the empty chart until the first
@@ -3495,4 +3500,9 @@ function sessionsText(info: SymbolInfo | null, locale: string): string | undefin
     return contiguous && list.length > 2 ? `${names[list[0]]}–${names[list[list.length - 1]]}` : list.map((d) => names[d]).join(', ');
   };
   return sessions.map((s) => [`${s.start}–${s.end}`, daysText(s.days)].filter(Boolean).join(' ')).join(', ');
+}
+
+/** Languages written right to left. */
+function isRtlLocale(locale: string | undefined): boolean {
+  return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
 }

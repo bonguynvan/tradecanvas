@@ -111,6 +111,11 @@ describe('the stylesheet’s look', () => {
     expect(phone).toContain(".tcw-root[data-tcw-toolbar='floating'] > .tcw-toolbar");
   });
 
+  it('writes directions logically, so a right-to-left widget mirrors', () => {
+    const physical = [...css.matchAll(/(?<![\w-])(?:text-align:\s*(?:left|right)|border-(?:left|right)(?:-color)?:|margin-(?:left|right):\s*auto)/g)].map((m) => m[0]);
+    expect(physical).toEqual([]);
+  });
+
   it('shows a chosen button by the look’s tokens', () => {
     expect(ruleBody('.tcw-btn.tcw-active')).toContain('background: var(--tcw-on-bg)');
     expect(ruleBody('.tcw-sidebar-btn.tcw-active')).toContain('background: var(--tcw-on-icon-bg)');

@@ -182,6 +182,13 @@ export interface ChartWidgetOptions {
   navigation?: boolean;
 
   /**
+   * Writing direction of the widget's chrome: `'rtl'` mirrors the toolbar,
+   * drawing tools, menus and dialogs (the chart keeps time running left to
+   * right). Default `'auto'`: right to left for Arabic, Hebrew, Persian, Urdu.
+   */
+  dir?: 'ltr' | 'rtl' | 'auto';
+
+  /**
    * Headlines for the symbol info panel, newest first; default the adapter's
    * `fetchNews` when it has one. Links that aren't web pages are dropped.
    */
