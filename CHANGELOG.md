@@ -15,6 +15,7 @@ Collected on `main` for the next release, which ships as one version once the cu
 - **Arabic and Hebrew**, right to left: the widget in 16 languages.
 - **Ten more indicators** (95 in all): Stochastic Momentum Index, Relative Volatility Index, Trend Strength Index, Linear Regression Slope, Standard Error and its bands, Guppy Multiple Moving Average, Moving Average Ribbon, Average Day Range and Net Volume.
 - New events: the chart type, symbol or timeframe changed, the undo history changed, drawings were selected.
+- A live bar that closes keeps its final values (it used to keep the ones before its last update).
 
 ### The widget's look
 

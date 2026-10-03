@@ -32,6 +32,9 @@
   `DataAdapter.fetchTrades` / `subscribeTrades`, `tickBarCount`,
   `TickBarBuilder`, `TickBarAdapter`, `withTickBars`); Binance aggregate
   trades.
+- **Stream bars land by their time**: a bar again replaces the last one, a
+  later one is added, an older one is left out — so a closed bar keeps its
+  final values (it used to keep the ones before its last update).
 - **Indicators**: SMI, Relative Volatility Index, Trend Strength Index,
   Linear Regression Slope, Standard Error, Standard Error Bands, GMMA, MA
   Ribbon, Average Day Range, Net Volume (95 in all).
