@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 (2026-10-03)
 
-Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
+Everything since 1.4.0 in one release (1.5.0 and 1.6.0 were never published): the drawing toolkit, trading and workspace, panes and undo, alerts and replay, scales and comparisons, the widget's look, and watchlists, symbol info, tick charts and access. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.10 pick up the new core.
+
+The widget looks different after the update: Studio is the new default look (see *The widget's look* below); `ui: 'terminal'` is the closest to a square, ruled look.
 
 ### Workspace, markets and access
 
