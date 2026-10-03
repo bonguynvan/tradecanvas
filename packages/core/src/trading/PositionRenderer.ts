@@ -8,6 +8,7 @@ import {
 } from './positionFormat.js';
 import { drawCloseButton, drawReverseButton, type LineButton } from './lineButtons.js';
 import { fillTag } from '../ui/shapes.js';
+import { inPlot } from './plot.js';
 
 /** Side of the buttons on a position's label (px), and on its SL / TP labels. */
 const BUTTON = 20;
@@ -94,9 +95,9 @@ export class PositionRenderer {
       // Entry badge on axis — rendered separately via renderAxisBadges()
       // after the price axis so it paints on top of its labels.
 
-      // SL line
-      if (pos.stopLoss !== undefined) {
-        const slY = priceToY(pos.stopLoss, viewport);
+      // SL line (none when priced off the plot: its tag would show as a sliver at the edge)
+      const slY = pos.stopLoss === undefined ? NaN : priceToY(pos.stopLoss, viewport);
+      if (inPlot(slY, viewport)) {
         ctx.setLineDash([4, 4]);
         ctx.strokeStyle = lossColor;
         ctx.lineWidth = 1;
@@ -118,8 +119,8 @@ export class PositionRenderer {
       }
 
       // TP line
-      if (pos.takeProfit !== undefined) {
-        const tpY = priceToY(pos.takeProfit, viewport);
+      const tpY = pos.takeProfit === undefined ? NaN : priceToY(pos.takeProfit, viewport);
+      if (inPlot(tpY, viewport)) {
         ctx.setLineDash([4, 4]);
         ctx.strokeStyle = profitColor;
         ctx.lineWidth = 1;
@@ -202,6 +203,7 @@ export class PositionRenderer {
 
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
+      if (!inPlot(entryY, viewport)) continue;
       ctx.fillStyle = entryColor;
       fillTag(ctx, axisX, entryY - 9, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 18, theme);
       ctx.fillStyle = '#FFFFFF';
