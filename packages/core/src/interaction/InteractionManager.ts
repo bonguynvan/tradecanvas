@@ -72,6 +72,10 @@ export class InteractionManager {
   private onEscape: (() => void) | null = null;
   private onConfirm: (() => boolean) | null = null;
   private onClick: ((pos: Point) => void) | null = null;
+  /** Signal markers: the one under a point, and who hears when the hovered one changes. */
+  private markerAt: ((pos: Point) => unknown | null) | null = null;
+  private onMarkerHover: ((marker: unknown | null, pos: Point) => void) | null = null;
+  private hoveredMarker: unknown | null = null;
   private downPos: Point | null = null;
   private downMoved = false;
   private pressForClick = false;
@@ -138,6 +142,12 @@ export class InteractionManager {
   }
 
   /** Wire a plain left-click on the chart area (press + release without drag). */
+  /** Markers that react to the pointer: a hand over them, and word of the one hovered. */
+  setSignalMarkerHitTest(markerAt: ((pos: Point) => unknown | null) | null, onHover: ((marker: unknown | null, pos: Point) => void) | null): void {
+    this.markerAt = markerAt;
+    this.onMarkerHover = onHover;
+  }
+
   setClickHandler(handler: (pos: Point) => void): void {
     this.onClick = handler;
   }
@@ -509,7 +519,14 @@ export class InteractionManager {
 
       // Hover cursor — only between gestures; a press keeps the cursor it
       // started with (grabbing hand while panning, etc.).
-      if (!pressActive) setCursor(hoverCursor(pos));
+      if (!pressActive) {
+        const marker = this.markerAt?.(pos) ?? null;
+        if (marker !== this.hoveredMarker) {
+          this.hoveredMarker = marker;
+          this.onMarkerHover?.(marker, pos);
+        }
+        setCursor(marker ? 'pointer' : hoverCursor(pos));
+      }
 
       if (this.tradingManager && vp && this.tradingManager.onPointerMove(pressActive ? clampToPlot(pos) : pos, vp)) {
         this.crosshairHandler?.onPointerMove(pos);

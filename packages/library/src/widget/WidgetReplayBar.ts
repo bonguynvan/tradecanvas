@@ -19,6 +19,14 @@ export interface ReplayBarCallbacks {
   onSpeedChange: (barsPerSecond: number) => void;
   onRandomStart: () => void;
   onClose: () => void;
+  /** The step picked: `'bar'`, or a finer interval to replay through. */
+  onStepChange?: (step: string) => void;
+}
+
+/** A replay step on offer: `'bar'` or a finer interval. */
+export interface ReplayStepOption {
+  value: string;
+  label: string;
 }
 
 export interface ReplayBarLabels {
@@ -33,6 +41,7 @@ export interface ReplayBarLabels {
   replay: string;
   position: string;
   speed: string;
+  step: string;
 }
 
 export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
@@ -47,6 +56,7 @@ export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
   replay: 'Replay',
   position: 'Replay position',
   speed: 'Speed',
+  step: 'Step',
 };
 
 export type ReplayBarState = 'playing' | 'paused' | 'stopped';
@@ -67,16 +77,23 @@ export class WidgetReplayBar {
   private ended = false;
   private total = 0;
   private speed = DEFAULT_REPLAY_SPEED;
+  private steps: readonly ReplayStepOption[] = [];
+  private step = 'bar';
   private readonly labels: ReplayBarLabels;
 
   constructor(private readonly callbacks: ReplayBarCallbacks, labels: Partial<ReplayBarLabels> = {}) {
     this.labels = { ...DEFAULT_REPLAY_LABELS, ...labels };
   }
 
-  mount(host: HTMLElement, opts: { total: number; speed?: number; mode?: ReplayBarMode }): void {
+  mount(
+    host: HTMLElement,
+    opts: { total: number; speed?: number; mode?: ReplayBarMode; steps?: readonly ReplayStepOption[]; step?: string },
+  ): void {
     if (this.root) return;
     this.total = Math.max(0, opts.total);
     this.speed = opts.speed ?? DEFAULT_REPLAY_SPEED;
+    this.steps = opts.steps ?? [];
+    this.step = opts.step ?? 'bar';
     this.state = 'paused';
     this.mode = opts.mode ?? 'select';
 
@@ -165,6 +182,9 @@ export class WidgetReplayBar {
         <span class="tcw-replay-progress" data-tcw="progress">1 / ${this.total}</span>
         <select class="tcw-replay-speed" data-act="speed" aria-label="${escapeHtml(this.labels.speed)}">${speeds}</select>
       </span>
+      ${this.steps.length > 1 ? `<select class="tcw-replay-speed tcw-replay-step" data-act="step" aria-label="${escapeHtml(l.step)}" title="${escapeHtml(l.step)}">${
+        this.steps.map((s) => `<option value="${escapeHtml(s.value)}"${s.value === this.step ? ' selected' : ''}>${escapeHtml(s.label)}</option>`).join('')
+      }</select>` : ''}
       <button class="tcw-replay-text-btn tcw-replay-realtime" data-act="realtime">${escapeHtml(l.realtime)}</button>
     `;
   }
@@ -190,6 +210,10 @@ export class WidgetReplayBar {
       const v = Number((e.target as HTMLSelectElement).value);
       this.speed = v;
       this.callbacks.onSpeedChange(v);
+    });
+    (root.querySelector('[data-act="step"]') as HTMLSelectElement | null)?.addEventListener('change', (e) => {
+      this.step = (e.target as HTMLSelectElement).value;
+      this.callbacks.onStepChange?.(this.step);
     });
   }
 

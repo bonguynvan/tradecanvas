@@ -99,6 +99,10 @@ const PANE_ROW_TOP = 7;
 const PANE_ROW_STEP = 17;
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
+/** Finer intervals a replay may step through (those dividing the chart's interval are offered). */
+const REPLAY_STEP_CANDIDATES: readonly TimeFrame[] = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d'];
+/** The most finer bars fetched for one replay. */
+const MAX_REPLAY_STEPS = 5000;
 /** Focus is in a dialog or a menu (the widget's or the page's): its keys are its own. */
 const inOverlay = (): boolean => {
   const active = document.activeElement;
@@ -161,11 +165,15 @@ export class ChartWidget {
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
   private chartMenu: WidgetContextMenu | null = null;
+  /** The pane a chart menu was opened on (its scale switches act on it). */
+  private menuPane: string | null = null;
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
   private intervalInput: WidgetIntervalInput | null = null;
+  /** The note shown over a signal marker under the pointer. */
+  private markerTip: HTMLDivElement | null = null;
   private accountPanel: WidgetAccountPanel | null = null;
   private orderTicket: WidgetOrderTicket | null = null;
   private accountFrame = 0;
@@ -194,6 +202,10 @@ export class ChartWidget {
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
   /** Bars revealed per second. */
   private replaySpeed = DEFAULT_REPLAY_SPEED;
+  /** `'bar'`, or the finer interval a replay steps through. */
+  private replayStep = 'bar';
+  /** Finer bars fetched or built for the last replay in steps. */
+  private replayStepsCache: { key: string; steps: DataSeries } | null = null;
   /** While picking the start bar: shades the bars right of the pointer. */
   private replayShade: HTMLDivElement | null = null;
   private layoutKeyPrefix: string | null = null;
@@ -609,7 +621,8 @@ export class ChartWidget {
         return;
       }
       if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-      this.chart.replaySeek(idx);
+      // To the end of the bar clicked (in finer steps, its last step).
+      this.chart.replaySeekToBar(idx);
       this.replayBar.setState('paused');
     });
     // While picking the start bar, shade the bars that would be hidden.
@@ -682,15 +695,20 @@ export class ChartWidget {
     this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
     // Prices from the pointer go on the market's grid (its smallest step).
     this.chart.on('chartContextMenu', (e) => {
-      const { area, x, y, price: raw, time } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
+      const { area, x, y, price: raw, time, pane } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
       const price = raw === undefined ? undefined : this.chart.roundPrice(raw);
-      this.openChartMenu(chartMenuEntries(area, this.chartMenuContext(price), this.t), x, y, { area, price, time });
+      const context = { ...this.chartMenuContext(price), ...(pane ? { pane: this.chart.getPaneScale(pane) } : {}) };
+      this.menuPane = pane ?? null;
+      this.openChartMenu(chartMenuEntries(area, context, this.t), x, y, { area, price, time });
     });
     this.chart.on('priceAxisAdd', (e) => {
       const { price: raw, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
       const price = this.chart.roundPrice(raw);
       this.openChartMenu(priceEntries(this.chartMenuContext(price), this.t), x, y, { area: 'priceAxisAdd', price });
     });
+
+    // A signal marker under the pointer says what it is.
+    this.chart.on('signalMarkerHover', (e) => this.showMarkerTip(e.payload));
 
     // Typing a number on the chart changes the interval.
     if (options.intervalTyping !== false) {
@@ -774,8 +792,18 @@ export class ChartWidget {
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
     if (options.alerts !== false) {
       this.alertsPanel = new WidgetAlertsPanel(this.root, {
-        onAdd: (price, condition, message, channel, label) => {
-          this.chart.addAlert(price, condition, message, channel, label);
+        onAdd: ({ price, condition, message, channel, label, options }) => {
+          try {
+            this.chart.addAlert(price, condition, message, channel, label, options);
+            return true;
+          } catch {
+            this.toast(this.t('alerts.invalid'), 'error');
+            return false;
+          }
+        },
+        formatTime: (ms) => {
+          const { date, time } = utcToWallTime(ms, this.displayTimezone());
+          return `${date} ${time}`;
         },
         onRemove: (id) => this.chart.removeAlert(id),
         onClear: () => this.chart.clearAlerts(),
@@ -787,6 +815,11 @@ export class ChartWidget {
       this.chart.on('alertAdd', () => this.refreshAlerts());
       this.chart.on('alertRemove', () => this.refreshAlerts());
       this.chart.on('alertUpdate', () => this.refreshAlerts());
+      this.chart.on('alertExpired', (e) => {
+        const p = e.payload;
+        this.toast(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.t('alerts.source.price') }));
+        this.refreshAlerts();
+      });
       if (options.alertNotifications) {
         this.alertNotifier = new AlertNotifier(options.alertNotifications);
       }
@@ -1099,6 +1132,7 @@ export class ChartWidget {
     this.legendMenu?.destroy();
     this.templatePrompt?.destroy();
     this.intervalInput?.destroy();
+    this.markerTip?.remove();
     this.layoutSession?.destroy();
     this.layoutsUI?.destroy();
     this.accountPanel?.destroy();
@@ -1344,6 +1378,14 @@ export class ChartWidget {
       case 'orderTicket':
         this.openOrderTicket(price);
         break;
+      case 'paneLog':
+      case 'paneInvert': {
+        const pane = this.menuPane;
+        if (!pane) break;
+        const scale = this.chart.getPaneScale(pane);
+        this.chart.setPaneScale(pane, action === 'paneLog' ? { log: !scale.log } : { invert: !scale.invert });
+        break;
+      }
       case 'horizontalLine': {
         const data = this.chart.getData();
         if (data.length > 0) this.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[data.length - 1].time, price: at }] });
@@ -1482,6 +1524,37 @@ export class ChartWidget {
     }
     this.handleTimeframe(tf);
     return true;
+  }
+
+  /** A note by a signal marker: its source or label, side, confidence, price and time; null hides it. */
+  private showMarkerTip(hover: { marker: import('@tradecanvas/commons').SignalMarker | null; x: number; y: number }): void {
+    const { marker } = hover;
+    if (!marker) {
+      if (this.markerTip) this.markerTip.hidden = true;
+      return;
+    }
+    if (!this.markerTip) {
+      this.markerTip = document.createElement('div');
+      this.markerTip.className = 'tcw-marker-tip';
+      this.markerTip.setAttribute('role', 'tooltip');
+      this.chartContainer.appendChild(this.markerTip);
+    }
+    const side = marker.direction === 'long' ? this.t('account.long') : marker.direction === 'short' ? this.t('account.short') : this.t('markers.neutral');
+    const title = document.createElement('strong');
+    title.textContent = marker.label ? `${marker.label} · ${marker.source}` : marker.source;
+    const line = document.createElement('div');
+    line.textContent = `${side} · ${this.formatAlertPrice(marker.price)} · ${fill(this.t('markers.confidence'), { pct: Math.round(marker.confidence * 100) })}`;
+    const when = document.createElement('div');
+    const { date, time } = utcToWallTime(marker.time, this.displayTimezone());
+    when.textContent = `${date} ${time}`;
+    this.markerTip.replaceChildren(title, line, when);
+    this.markerTip.hidden = false;
+    // Beside the pointer, kept inside the chart.
+    const box = this.chartContainer.getBoundingClientRect();
+    const left = Math.min(hover.x + 12, Math.max(0, box.width - this.markerTip.offsetWidth - 4));
+    const top = Math.max(0, hover.y - this.markerTip.offsetHeight - 10);
+    this.markerTip.style.left = `${left}px`;
+    this.markerTip.style.top = `${top}px`;
   }
 
   /** A typed interval: one on offer is picked; another joins the menu (not the toolbar's pins). */
@@ -1866,7 +1939,8 @@ export class ChartWidget {
 
   private refreshAlerts(): void {
     if (!this.alertsPanel) return;
-    this.alertsPanel.setSources(this.buildAlertSources());
+    const sources = this.buildAlertSources();
+    this.alertsPanel.setSources(sources);
     this.alertsPanel.setAlerts(
       this.chart.getAlerts().map((a) => ({
         id: a.id,
@@ -1877,6 +1951,13 @@ export class ChartWidget {
         channel: a.channel,
         label: a.label,
         drawingId: a.drawingId,
+        target: a.target,
+        targetLabel: a.target ? sources.find((s) => s.channel === a.target)?.label : undefined,
+        percent: a.percent,
+        bars: a.bars,
+        onBarClose: a.onBarClose,
+        expiresAt: a.expiresAt,
+        expired: a.expired,
       })),
     );
   }
@@ -2303,6 +2384,11 @@ export class ChartWidget {
           this.startReplayAt(lo + Math.floor(Math.random() * (hi - lo + 1)));
         },
         onClose: () => this.exitReplay(),
+        onStepChange: (step) => {
+          this.replayStep = step;
+          // Mid-replay: start again from the bar it is on, in the new steps.
+          if (this.replayBar?.getMode() === 'replay') this.startReplayAt(this.chart.getReplayBarIndex());
+        },
       },
       {
         selectHint: t('replay.selectHint'),
@@ -2316,9 +2402,15 @@ export class ChartWidget {
         replay: t('replay.label'),
         position: t('replay.position'),
         speed: t('replay.speed'),
+        step: t('replay.step'),
       },
     );
-    this.replayBar.mount(this.chartContainer, { total: this.replayTotal(), speed: this.replaySpeed, mode: 'select' });
+    const steps = [
+      { value: 'bar', label: t('replay.step.bar') },
+      ...this.replayStepOptions().map((tf) => ({ value: tf, label: tf })),
+    ];
+    if (!steps.some((s) => s.value === this.replayStep)) this.replayStep = 'bar';
+    this.replayBar.mount(this.chartContainer, { total: this.replayTotal(), speed: this.replaySpeed, mode: 'select', steps, step: this.replayStep });
 
     this.replayShade = document.createElement('div');
     this.replayShade.className = 'tcw-replay-shade';
@@ -2348,13 +2440,55 @@ export class ChartWidget {
     this.replayShade = null;
     this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
     bar.setMode('replay');
-    this.chart.replayStart({ speed: this.replaySpeed, interval: 1000, startIndex: start, paused: true });
-    if (play) this.chart.replayResume();
-    bar.setState(play ? 'playing' : 'paused');
-    this.syncReplayBar();
+    const go = (steps: DataSeries | null) => {
+      if (this.destroyed || this.replayBar !== bar || !bar.isMounted()) return;
+      this.chart.replayStart({ speed: this.replaySpeed, interval: 1000, startIndex: start, paused: true, ...(steps ? { steps } : {}) });
+      if (play) this.chart.replayResume();
+      bar.setState(play ? 'playing' : 'paused');
+      this.syncReplayBar();
+      if (this.replayPollInterval) clearInterval(this.replayPollInterval);
+      this.replayPollInterval = setInterval(() => this.syncReplayBar(), 150);
+    };
+    if (this.replayStep === 'bar') {
+      go(null);
+      return;
+    }
+    void this.replayStepsFor(this.replayStep as TimeFrame).then((steps) => {
+      if (!steps) this.toast(this.t('replay.stepsFailed'), 'error');
+      go(steps);
+    });
+  }
 
-    if (this.replayPollInterval) clearInterval(this.replayPollInterval);
-    this.replayPollInterval = setInterval(() => this.syncReplayBar(), 150);
+  /** Finer intervals a replay can step through: they divide the chart's, and the feed (or the bars loaded) has them. */
+  private replayStepOptions(): TimeFrame[] {
+    const current = timeframeToMs(this.state.timeframe);
+    return REPLAY_STEP_CANDIDATES.filter((tf) => {
+      const ms = timeframeToMs(tf);
+      if (!(ms < current) || current % ms !== 0) return false;
+      if (this.adapter) return servesTimeframe(this.adapter, tf);
+      return this.baseSeries !== null && this.baseTimeframeMs > 0 && ms >= this.baseTimeframeMs && ms % this.baseTimeframeMs === 0;
+    });
+  }
+
+  /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */
+  private async replayStepsFor(tf: TimeFrame): Promise<DataSeries | null> {
+    const key = `${this.state.symbol}|${this.state.timeframe}|${tf}`;
+    if (this.replayStepsCache?.key === key) return this.replayStepsCache.steps;
+    let steps: DataSeries | null = null;
+    if (this.adapter) {
+      const ratio = Math.max(1, Math.round(timeframeToMs(this.state.timeframe) / timeframeToMs(tf)));
+      const limit = Math.min(MAX_REPLAY_STEPS, Math.max(this.chart.getData().length, 100) * ratio);
+      try {
+        steps = await withResampling(this.adapter).fetchHistory(this.state.symbol, tf, limit);
+      } catch {
+        steps = null;
+      }
+    } else if (this.baseSeries) {
+      steps = timeframeToMs(tf) === this.baseTimeframeMs ? this.baseSeries : resampleOHLCV(this.baseSeries, tf);
+    }
+    if (!steps || steps.length === 0) return null;
+    this.replayStepsCache = { key, steps };
+    return steps;
   }
 
   /** Bars available to replay: the whole series, not the slice on screen. */

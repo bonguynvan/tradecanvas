@@ -31,8 +31,16 @@ class FakeChart {
   getActiveIndicators(): unknown[] { return this.indicatorsShown; }
   indicatorsShown: unknown[] = [];
   roundPrice(p: number): number { return Math.round(p); }
+  replays: Record<string, unknown>[] = [];
+  replayStart(config: Record<string, unknown>): void { this.replays.push(config); this.replaying = true; }
+  replaying = false;
+  isReplayActive(): boolean { return this.replaying; }
+  getReplayProgress() { return { current: 0, total: 10, percent: 0 }; }
+  getReplayState(): string { return 'paused'; }
+  barsLoaded: { time: number; close: number }[] = [];
+  setData(bars: { time: number; close: number }[]): void { this.barsLoaded = bars; }
   timeframes: string[] = [];
-  getData(): { close: number }[] { return [{ close: 100 }]; }
+  getData(): { close: number; time: number }[] { return this.barsLoaded.length ? this.barsLoaded : [{ close: 100, time: 0 }]; }
   getDrawings(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
@@ -221,5 +229,38 @@ describe('ChartWidget prices on the market grid', () => {
     FakeChart.last.emit('priceAxisAdd', { price: 90.4, x: 0, y: 0 });
     menuItems().find((b) => b.textContent?.startsWith('Add alert'))!.click();
     expect(FakeChart.last.alerts).toEqual([90]);
+  });
+});
+
+describe('ChartWidget replay in finer steps', () => {
+  it('offers the finer intervals the loaded bars have, and replays through them', async () => {
+    const MIN15 = 15 * 60_000;
+    const bars = Array.from({ length: 64 }, (_, i) => ({ time: i * MIN15, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h' });
+    widget.setData(bars as never);
+    await new Promise((r) => setTimeout(r, 0));
+    widget.toggleReplay();
+    const select = host.querySelector<HTMLSelectElement>('.tcw-replay-step')!;
+    expect([...select.options].map((o) => o.value)).toEqual(['bar', '15m', '30m']);
+    select.value = '15m';
+    select.dispatchEvent(new Event('change'));
+    host.querySelector<HTMLButtonElement>('[data-act="random"]')!.click();
+    await new Promise((r) => setTimeout(r, 0));
+    const config = FakeChart.last.replays.at(-1)!;
+    expect((config.steps as unknown[]).length).toBe(64);
+  });
+});
+
+describe('ChartWidget signal marker note', () => {
+  it('shows what a marker is while the pointer is on it', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const marker = { id: 'm1', time: Date.UTC(2026, 0, 1), price: 101, direction: 'long', confidence: 0.82, source: 'momentum', label: 'EMA cross' };
+    FakeChart.last.emit('signalMarkerHover', { marker, x: 40, y: 80 });
+    const tip = host.querySelector<HTMLElement>('.tcw-marker-tip')!;
+    expect(tip.hidden).toBe(false);
+    expect(tip.textContent).toContain('EMA cross · momentum');
+    expect(tip.textContent).toContain('Long · 101.00 · confidence 82%');
+    FakeChart.last.emit('signalMarkerHover', { marker: null, x: 0, y: 0 });
+    expect(tip.hidden).toBe(true);
   });
 });

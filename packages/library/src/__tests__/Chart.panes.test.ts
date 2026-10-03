@@ -245,3 +245,33 @@ describe('review fixes', () => {
     expect(chart.getMaximizedPane()).toBeNull();
   });
 });
+
+describe('pane scales', () => {
+  type Probe = { buildPanelRenderInfos(): { instanceId: string; viewport: { logScale?: boolean; invertScale?: boolean } }[] };
+  const vp = (id: string) => (chart as unknown as Probe).buildPanelRenderInfos().find((p) => p.instanceId === id)!.viewport;
+
+  it('puts a pane on a log scale while its values are above 0, and upside down', () => {
+    const atr = chart.addIndicator('atr')!;
+    const macd = chart.addIndicator('macd')!;
+    expect(chart.setPaneScale(atr, { log: true, invert: true })).toBe(true);
+    expect(vp(atr)).toMatchObject({ logScale: true, invertScale: true });
+    chart.setPaneScale(macd, { log: true }); // MACD goes below 0: stays linear
+    expect(vp(macd).logScale).toBe(false);
+    expect(chart.getPaneScale(atr)).toEqual({ log: true, invert: true });
+  });
+
+  it('keeps a pane’s scale in a saved layout', () => {
+    const atr = chart.addIndicator('atr')!;
+    chart.setPaneScale(atr, { invert: true });
+    chart.loadState(chart.saveState()!);
+    const now = chart.getActiveIndicators()[0].instanceId;
+    expect(chart.getPaneScale(now)).toEqual({ log: false, invert: true });
+  });
+
+  it('says which pane a right-click was on', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const pane = chart.getIndicatorPanes()[0].rect;
+    const payload = (chart as unknown as { contextAt(a: string, p: { x: number; y: number }): { pane?: string } }).contextAt('pane', { x: pane.x + 10, y: pane.y + 30 });
+    expect(payload.pane).toBe(rsi);
+  });
+});

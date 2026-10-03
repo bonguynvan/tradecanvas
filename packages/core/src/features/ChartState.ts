@@ -60,6 +60,9 @@ export interface SnapshotIndicator {
   paneOrder?: number;
   paneCollapsed?: boolean;
   paneMaximized?: boolean;
+  /** The pane's value scale: logarithmic, upside down. */
+  paneLog?: boolean;
+  paneInvert?: boolean;
 }
 
 /**
@@ -218,6 +221,8 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       paneOrder: typeof ind.paneOrder === 'number' && Number.isInteger(ind.paneOrder) && ind.paneOrder >= 0 ? ind.paneOrder : undefined,
       paneCollapsed: ind.paneCollapsed === true ? true : undefined,
       paneMaximized: ind.paneMaximized === true ? true : undefined,
+      paneLog: ind.paneLog === true ? true : undefined,
+      paneInvert: ind.paneInvert === true ? true : undefined,
     });
   }
 

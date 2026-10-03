@@ -97,6 +97,12 @@ export interface ExecutionAdapter {
    * it, the chart closes the position and places a market order instead.
    */
   reversePosition?(intent: PositionReverseIntent): Promise<void>;
+  /**
+   * The market price, live or replayed, and its time (ms). Optional: a paper
+   * adapter fills pending orders and stops against it and stamps fills with
+   * the time. The chart calls it with the replayed price during a replay.
+   */
+  setMarkPrice?(price: number, time?: number): void;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;

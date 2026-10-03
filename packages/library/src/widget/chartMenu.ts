@@ -7,7 +7,9 @@ export type ChartMenuAction =
   | 'alert' | 'buyLimit' | 'buyStop' | 'sellLimit' | 'sellStop' | 'orderTicket' | 'horizontalLine'
   | 'resetView' | 'hideDrawings' | 'showDrawings' | 'removeDrawings' | 'settings'
   | 'autoScale' | 'logScale' | 'percentScale' | 'invertScale'
-  | 'goToDate';
+  | 'goToDate'
+  | 'paneLog'
+  | 'paneInvert';
 
 /** What the widget can do here, and how the chart is set now. */
 export interface ChartMenuContext {
@@ -27,6 +29,8 @@ export interface ChartMenuContext {
   autoScale: boolean;
   scaleMode: PriceScaleMode;
   inverted: boolean;
+  /** For a pane's menu: its scale switches. */
+  pane?: { log: boolean; invert: boolean };
 }
 
 /**
@@ -80,7 +84,16 @@ export function chartMenuEntries(area: ChartContextArea, ctx: ChartMenuContext, 
         ...(ctx.canGoToDate ? [{ id: 'goToDate', label: t('chartMenu.goToDate'), icon: 'calendar' }] : []),
       ];
     case 'pane':
-      return [{ id: 'resetView', label: t('chartMenu.resetView') }, 'separator', settings];
+      return [
+        { id: 'resetView', label: t('chartMenu.resetView') },
+        ...(ctx.pane
+          ? ['separator' as const,
+            { id: 'paneLog', label: t('chartMenu.paneLog'), checked: ctx.pane.log },
+            { id: 'paneInvert', label: t('chartMenu.paneInvert'), checked: ctx.pane.invert }]
+          : []),
+        'separator',
+        settings,
+      ];
     default: {
       const drawings: ContextMenuEntry[] = ctx.hasDrawings
         ? [
