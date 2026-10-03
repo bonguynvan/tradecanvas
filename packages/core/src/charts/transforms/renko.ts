@@ -49,15 +49,16 @@ export function toRenko(data: DataSeries, config: RenkoConfig): DataSeries {
   return bricks;
 }
 
+/** The average true range of the last `period` bars: the market as it moves now. */
 function computeATRBrickSize(data: DataSeries, period: number): number {
-  let atr = 0;
-  for (let i = 1; i <= Math.min(period, data.length - 1); i++) {
-    const tr = Math.max(
+  const from = Math.max(1, data.length - period);
+  let sum = 0;
+  for (let i = from; i < data.length; i++) {
+    sum += Math.max(
       data[i].high - data[i].low,
       Math.abs(data[i].high - data[i - 1].close),
       Math.abs(data[i].low - data[i - 1].close),
     );
-    atr += tr;
   }
-  return atr / period;
+  return sum / (data.length - from);
 }

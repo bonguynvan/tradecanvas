@@ -41,7 +41,9 @@ import type {
   ExecutionConfig,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
+import type { ChartTypeOptions, PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
+import { readChartTypeOptions } from '@tradecanvas/commons';
+import { PriceLines, type BidAsk } from '@tradecanvas/core';
 import {
   RenderEngine,
   Viewport,
@@ -255,6 +257,11 @@ export class Chart {
   private interactionManager: InteractionManager;
   private crosshairHandler: CrosshairHandler;
   private chartRenderer: ChartRendererInterface;
+  /** Settings of the chart types that build their own bars. */
+  private chartTypeOptions: ChartTypeOptions = {};
+  private mainSeriesVisible = true;
+  /** The visible high and low, the bid and the ask. */
+  private priceLines = new PriceLines();
   private gridRenderer: GridRenderer;
   private priceAxis: PriceAxis;
   /** The left price scale: overlays put on it, else a mirror of the price scale. */
@@ -553,6 +560,8 @@ export class Chart {
     this.pinnedTooltip = new PinnedTooltip();
     this.pinnedTooltip.create(container);
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
+    if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
+    if (options.highLowLines) this.priceLines.setHighLow(true);
     if (options.timeFormatter) this.applyTimeFormatter(options.timeFormatter);
 
     // Keyboard navigation
@@ -1165,6 +1174,55 @@ export class Chart {
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
     this.markStateChanged();
+  }
+
+  /**
+   * Settings of Renko, Line Break, Kagi, Point & Figure and range bars, by
+   * type: each type given replaces that type's settings (`{}` puts it back
+   * to the defaults). Values it can't use are left out.
+   */
+  setChartTypeOptions(options: ChartTypeOptions): void {
+    this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
+    this.displayDataCache = null;
+    this.updateViewportAndRender(true);
+    this.markStateChanged();
+  }
+
+  getChartTypeOptions(): ChartTypeOptions {
+    return readChartTypeOptions(this.chartTypeOptions);
+  }
+
+  /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
+  setMainSeriesVisible(visible: boolean): void {
+    this.mainSeriesVisible = visible;
+    this.engine.requestRender();
+  }
+
+  isMainSeriesVisible(): boolean {
+    return this.mainSeriesVisible;
+  }
+
+  /** Mark the highest high and lowest low on screen with a line and a price tag. */
+  setHighLowLines(visible: boolean): void {
+    this.priceLines.setHighLow(visible);
+    this.engine.requestRender();
+  }
+
+  isHighLowLinesVisible(): boolean {
+    return this.priceLines.isHighLowVisible();
+  }
+
+  /**
+   * Mark the best bid and ask with lines and price tags (null takes them
+   * off). A connected feed whose ticks carry `bid` / `ask` keeps them up to date.
+   */
+  setBidAsk(quote: BidAsk | null): void {
+    this.priceLines.setBidAsk(quote);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
+  getBidAsk(): BidAsk | null {
+    return this.priceLines.getBidAsk();
   }
 
   // --- Indicators ---
@@ -2369,6 +2427,8 @@ export class Chart {
       this.scheduleRender();
     });
 
+    this.streamManager.on('quote', (quote) => this.setBidAsk(quote));
+
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
       // Orders and alerts keep tracking the live market during a replay; the
       // price line shows the replayed close instead.
@@ -3532,7 +3592,7 @@ export class Chart {
         getAlerts: () => this.getAlerts(),
         getIndicators: () => this.getIndicatorSetup(),
       },
-      { chartType: this.options.chartType, symbol: this.currentSymbol || undefined },
+      { chartType: this.options.chartType, chartTypeOptions: this.getChartTypeOptions(), symbol: this.currentSymbol || undefined },
     );
   }
 
@@ -3781,6 +3841,9 @@ export class Chart {
   loadState(json: string): void {
     if (!this.features.saveLoad) return;
     const snapshot = ChartStateManager.deserialize(json);
+    // The saved type's settings (none saved: the defaults).
+    this.chartTypeOptions = snapshot.chartTypeOptions ?? {};
+    this.displayDataCache = null;
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
     if (snapshot.theme) this.setTheme(snapshot.theme as any);
@@ -4016,7 +4079,7 @@ export class Chart {
     if (this.displayDataCache) return this.displayDataCache;
     const raw = this.dataManager.getData();
     if (raw.length === 0) return raw;
-    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t));
+    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions);
     this.displayDataCache = result;
     return result;
   }
@@ -4364,7 +4427,8 @@ export class Chart {
       leftViewport: this.leftViewport,
       leftPriceAxis: this.leftPriceAxis,
       leftAxisWidth: this.leftAxisWidth,
-      chartRenderer: this.chartRenderer,
+      chartRenderer: this.mainSeriesVisible ? this.chartRenderer : null,
+      priceLines: this.priceLines,
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,
       timeAxis: this.features.timeAxis ? this.timeAxis : null,

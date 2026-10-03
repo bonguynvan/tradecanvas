@@ -13,6 +13,7 @@ export { EquivolumeRenderer } from './EquivolumeRenderer.js';
 export { HLCAreaRenderer } from './HLCAreaRenderer.js';
 export { StepLineRenderer } from './StepLineRenderer.js';
 export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';
+export { HiLoRenderer } from './HiLoRenderer.js';
 export { VolumeRenderer } from './VolumeRenderer.js';
 export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';
 export { MarketProfileRenderer } from './MarketProfileRenderer.js';

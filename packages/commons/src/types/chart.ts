@@ -8,7 +8,24 @@ export type ChartType =
   | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure'
   | 'rangeBars'
   | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers'
-  | 'equivolume';
+  | 'equivolume' | 'hiLo';
+
+/**
+ * Settings of the chart types that build bars of their own. What isn't set
+ * is worked out from the data.
+ */
+export interface ChartTypeOptions {
+  /** Box size in price, or 'atr' (default): the average true range of the last `atrPeriod` bars (14). */
+  renko?: { boxSize?: number | 'atr'; atrPeriod?: number };
+  /** How many lines a reversal has to break (3). */
+  lineBreak?: { lines?: number };
+  /** The reversal: percent of the line's start (4), or an amount of price with `reversalType` 'price'. */
+  kagi?: { reversal?: number; reversalType?: 'percent' | 'price' };
+  /** Box size in price ('auto': 1% of the average close) and boxes to reverse (3). */
+  pointAndFigure?: { boxSize?: number | 'auto'; reversal?: number };
+  /** Each bar's range in price ('auto': 0.5% of the average close). */
+  rangeBars?: { range?: number | 'auto' };
+}
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 
@@ -161,6 +178,10 @@ export interface ChartOptions {
   priceFormat?: PriceFormatter | PriceFraction;
   /** How times read on the time axis, the crosshair and the tooltip. Default: the chart's own. */
   timeFormatter?: TimeFormatter;
+  /** Settings of Renko, Line Break, Kagi, Point & Figure and range bars. */
+  chartTypeOptions?: ChartTypeOptions;
+  /** Mark the highest high and lowest low on screen with a line and a price tag. */
+  highLowLines?: boolean;
 }
 
 /** A price in your words, e.g. `(p) => '$' + p.toFixed(2)`. */

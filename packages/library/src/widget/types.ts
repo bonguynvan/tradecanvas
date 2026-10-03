@@ -1,4 +1,5 @@
 import type {
+  ChartTypeOptions,
   Theme,
   ThemeName,
   ChartType,
@@ -377,6 +378,12 @@ export interface ChartSettingsState {
   numberLocale: string;
   /** 'local' = browser timezone; an IANA zone ('America/New_York'); or a fixed UTC offset in minutes (as a string, from older settings). */
   timezone: string;
+  /** Lines at the highest high and lowest low on screen. */
+  highLowLines: boolean;
+  /** The main series (bars, candles, line) shown. */
+  mainSeriesVisible: boolean;
+  /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
+  chartTypeOptions: ChartTypeOptions;
 }
 
 export interface IndicatorDef {

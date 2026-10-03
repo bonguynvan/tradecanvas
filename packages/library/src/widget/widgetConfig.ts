@@ -15,6 +15,12 @@ export const CHART_TYPES: { label: string; value: ChartType }[] = [
   { label: 'HLC Area', value: 'hlcArea' },
   { label: 'Step Line', value: 'stepLine' },
   { label: 'Line + Markers', value: 'lineWithMarkers' },
+  { label: 'High-Low', value: 'hiLo' },
+  { label: 'Renko', value: 'renko' },
+  { label: 'Line Break', value: 'lineBreak' },
+  { label: 'Kagi', value: 'kagi' },
+  { label: 'Point & Figure', value: 'pointAndFigure' },
+  { label: 'Range Bars', value: 'rangeBars' },
 ];
 
 export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
@@ -285,4 +291,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   crosshairMode: 'magnet',
   numberLocale: 'en-US',
   timezone: 'local',
+  highLowLines: false,
+  mainSeriesVisible: true,
+  chartTypeOptions: {},
 };

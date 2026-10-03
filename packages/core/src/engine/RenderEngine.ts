@@ -74,6 +74,8 @@ export interface RenderContext {
   sessionBreaks: SessionBreaks | null;
   sessionShading: import('../ui/SessionShading.js').SessionShading | null;
   compareRenderer: CompareRenderer | null;
+  /** The visible high and low, the bid and the ask. */
+  priceLines?: import('../ui/PriceLines.js').PriceLines | null;
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
   measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
@@ -226,6 +228,7 @@ export class RenderEngine {
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
+    ctx.priceLines?.render(c, viewport, theme, data);
 
     // --- Axes and price tags ---
     ctx.priceAxis?.render(c, viewport, theme);
@@ -237,6 +240,7 @@ export class RenderEngine {
     // Trading axis badges paint ON TOP of the regular price axis labels
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
+    ctx.priceLines?.renderAxisTags(c, viewport, theme, data);
     ctx.currentPriceLine?.render(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);

@@ -26,6 +26,8 @@ export interface StreamEvents {
   tick: RawTick;
   /** Current price changed */
   priceChange: { price: number; previousClose: number | null };
+  /** The best bid and ask changed (from ticks that carry them) */
+  quote: { bid?: number; ask?: number };
   /** Connection state changed */
   connectionChange: ConnectionInfo;
   /** Error occurred */
@@ -252,6 +254,7 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.lastMessageTime = Date.now();
       const tick = e.data as RawTick;
       this.emit('tick', tick);
+      if (tick.bid !== undefined || tick.ask !== undefined) this.emit('quote', { bid: tick.bid, ask: tick.ask });
 
       if (this.config?.aggregateTicks && this.aggregator) {
         this.aggregator.processTick(tick);

@@ -2169,7 +2169,9 @@ export class ChartWidget {
   }
 
   private openSettings(): void {
-    this.settings?.open(this.settingsState);
+    // The chart's own settings of its type (a layout may have brought them).
+    this.settingsState = { ...this.settingsState, chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {} };
+    this.settings?.open(this.settingsState, this.state.chartType);
   }
 
   // --- Toast ---
@@ -2634,6 +2636,12 @@ export class ChartWidget {
     }
     if (patch.timezone !== undefined) {
       this.chart.setTimezone(settingToTimezone(patch.timezone));
+    }
+    if (patch.highLowLines !== undefined) this.chart.setHighLowLines(patch.highLowLines);
+    if (patch.mainSeriesVisible !== undefined) this.chart.setMainSeriesVisible(patch.mainSeriesVisible);
+    if (patch.chartTypeOptions !== undefined) {
+      // Every type: one left out goes back to its defaults (a reset).
+      this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
     }
 
     // Apply theme colors

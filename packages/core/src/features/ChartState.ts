@@ -1,4 +1,5 @@
-import type { ChartType, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import type { ChartType, ChartTypeOptions, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import { readChartTypeOptions } from '@tradecanvas/commons';
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
 
@@ -14,6 +15,9 @@ export interface ChartSnapshot {
   symbol?: string;
   timeframe?: string;
   chartType: ChartType;
+
+  /** Settings of the chart types that build their own bars. */
+  chartTypeOptions?: ChartTypeOptions;
 
   // Viewport
   viewport: {
@@ -258,6 +262,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
     symbol: typeof raw.symbol === 'string' ? raw.symbol : undefined,
     timeframe: typeof raw.timeframe === 'string' ? raw.timeframe : undefined,
     chartType: asString(raw.chartType, 'candlestick') as ChartType,
+    ...(raw.chartTypeOptions !== undefined ? { chartTypeOptions: readChartTypeOptions(raw.chartTypeOptions) } : {}),
     viewport: {
       barWidth: asNumber(viewport.barWidth, 8),
       barSpacing: asNumber(viewport.barSpacing, 2),
@@ -299,12 +304,13 @@ export class ChartStateManager {
     getAlerts?: () => PriceAlert[];
     getTheme: () => Theme;
     getIndicators?: () => SnapshotIndicator[];
-  }, meta?: { symbol?: string; timeframe?: string; chartType?: ChartType }): ChartSnapshot {
+  }, meta?: { symbol?: string; timeframe?: string; chartType?: ChartType; chartTypeOptions?: ChartTypeOptions }): ChartSnapshot {
     return {
       // Version 2 promises the indicator list; without `getIndicators` it is a version-1 save.
       version: chart.getIndicators ? CURRENT_VERSION : 1,
       timestamp: Date.now(),
       chartType: meta?.chartType ?? 'candlestick',
+      ...(meta?.chartTypeOptions && Object.keys(meta.chartTypeOptions).length > 0 ? { chartTypeOptions: meta.chartTypeOptions } : {}),
       symbol: meta?.symbol,
       timeframe: meta?.timeframe,
       viewport: { barWidth: 8, barSpacing: 2, offset: 0 },

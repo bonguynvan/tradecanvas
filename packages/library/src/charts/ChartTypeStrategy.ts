@@ -1,10 +1,11 @@
-import type { ChartType, DataSeries } from '@tradecanvas/commons';
+import type { ChartType, ChartTypeOptions, DataSeries } from '@tradecanvas/commons';
 import {
   AreaRenderer,
   BarRenderer,
   BaselineRenderer,
   CandlestickRenderer,
   EquivolumeRenderer,
+  HiLoRenderer,
   HLCAreaRenderer,
   HollowCandleRenderer,
   KagiRenderer,
@@ -62,36 +63,43 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
       return new StepLineRenderer();
     case 'lineWithMarkers':
       return new LineWithMarkersRenderer();
+    case 'hiLo':
+      return new HiLoRenderer();
     default:
       return new CandlestickRenderer();
   }
 }
 
 /**
- * Transform raw OHLC bars into the display series for a given chart type.
+ * Transform raw OHLC bars into the display series for a given chart type,
+ * with its settings (`options`; what isn't set is worked out from the data).
  * Returns the input unchanged for chart types that render raw OHLC directly.
  *
  * Centralized so adding a new chart type only requires editing one file.
  */
-export function transformDisplayData(type: ChartType, raw: DataSeries): DataSeries {
+export function transformDisplayData(type: ChartType, raw: DataSeries, options: ChartTypeOptions = {}): DataSeries {
   if (raw.length === 0) return raw;
 
   switch (type) {
     case 'heikinAshi':
       return toHeikinAshi(raw);
-    case 'renko':
-      return toRenko(raw, { brickSize: 0, useATR: true, atrPeriod: 14 });
+    case 'renko': {
+      const box = options.renko?.boxSize;
+      return typeof box === 'number'
+        ? toRenko(raw, { brickSize: box })
+        : toRenko(raw, { brickSize: 0, useATR: true, atrPeriod: options.renko?.atrPeriod ?? 14 });
+    }
     case 'lineBreak':
-      return toLineBreak(raw, 3);
+      return toLineBreak(raw, options.lineBreak?.lines ?? 3);
     case 'kagi':
-      return toKagi(raw, 4);
+      return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent');
     case 'pointAndFigure': {
-      const avgPrice = averageClose(raw);
-      return toPointAndFigure(raw, avgPrice * 0.01, 3);
+      const box = options.pointAndFigure?.boxSize;
+      return toPointAndFigure(raw, typeof box === 'number' ? box : averageClose(raw) * 0.01, options.pointAndFigure?.reversal ?? 3);
     }
     case 'rangeBars': {
-      const avgPrice = averageClose(raw);
-      return toRangeBars(raw, { rangeSize: avgPrice * 0.005 });
+      const range = options.rangeBars?.range;
+      return toRangeBars(raw, { rangeSize: typeof range === 'number' ? range : averageClose(raw) * 0.005 });
     }
     default:
       return raw;
@@ -149,9 +157,10 @@ export function resolveDisplayData(
   type: string,
   raw: DataSeries,
   lookup?: ChartTypeLookup,
+  options?: ChartTypeOptions,
 ): DataSeries {
   if (raw.length === 0) return raw;
   const plugin = lookup?.(type);
   if (plugin?.transform) return plugin.transform(raw);
-  return transformDisplayData(type as ChartType, raw);
+  return transformDisplayData(type as ChartType, raw, options);
 }

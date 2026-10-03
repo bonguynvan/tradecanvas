@@ -1,4 +1,7 @@
+import type { ChartType, ChartTypeOptions } from '@tradecanvas/commons';
 import type { ChartSettingsState, SettingsCallbacks } from './types.js';
+import { CHART_TYPES } from './widgetConfig.js';
+import { chartTypeLabel } from './widgetLocales.js';
 import { createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
 import { numberLocaleOptions } from './widgetLocales.js';
@@ -16,6 +19,8 @@ export class WidgetSettings {
   private currentSettings: ChartSettingsState | null = null;
   private bodyEl: HTMLDivElement | null = null;
   private tabButtons: HTMLButtonElement[] = [];
+  /** The chart's type, whose settings the Style tab offers. */
+  private chartType: ChartType | null = null;
 
   /**
    * `barCountdown` / `logScale` false leave out the controls for features the
@@ -37,8 +42,9 @@ export class WidgetSettings {
     this.t = t;
   }
 
-  open(currentSettings: ChartSettingsState): void {
+  open(currentSettings: ChartSettingsState, chartType: ChartType | null = null): void {
     this.currentSettings = { ...currentSettings };
+    this.chartType = chartType;
     this.currentTab = 'style';
     this.buildModal();
   }
@@ -160,6 +166,8 @@ export class WidgetSettings {
     if (!this.bodyEl || !this.currentSettings) return;
     const s = this.currentSettings;
 
+    this.renderChartTypeSection();
+
     // Candle Colors
     const candleSection = this.section(this.t('settings.section.candleColors'));
     candleSection.appendChild(this.colorRow(this.t('settings.upBody'), s.candleUpColor, (v) => this.patch({ candleUpColor: v })));
@@ -180,6 +188,8 @@ export class WidgetSettings {
     const s = this.currentSettings;
 
     const section = this.section();
+    section.appendChild(this.toggleRow(this.t('settings.mainSeries'), s.mainSeriesVisible, (v) => this.patch({ mainSeriesVisible: v })));
+    section.appendChild(this.toggleRow(this.t('settings.highLowLines'), s.highLowLines, (v) => this.patch({ highLowLines: v })));
     section.appendChild(this.toggleRow(this.t('settings.gridLines'), s.gridVisible, (v) => this.patch({ gridVisible: v })));
     section.appendChild(this.toggleRow(this.t('settings.volume'), s.volumeVisible, (v) => this.patch({ volumeVisible: v })));
     section.appendChild(this.toggleRow(this.t('settings.volumeProfile'), s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));
@@ -242,6 +252,84 @@ export class WidgetSettings {
     section.appendChild(this.selectRow(this.t('settings.priceScale'), s.scaleMode, scales,
       (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
     this.bodyEl.appendChild(section);
+  }
+
+  /** The settings of the chart's type, when it has any (Renko's box, Kagi's reversal…). */
+  private renderChartTypeSection(): void {
+    if (!this.bodyEl || !this.currentSettings || !this.chartType) return;
+    const type = this.chartType;
+    const all = this.currentSettings.chartTypeOptions ?? {};
+    const def = CHART_TYPES.find((c) => c.value === type);
+    const section = this.section(def ? chartTypeLabel(def, this.t) : type);
+    /** Change one type's settings: the rest of its own stay. */
+    const set = <K extends keyof ChartTypeOptions>(key: K, value: NonNullable<ChartTypeOptions[K]>) =>
+      this.patch({ chartTypeOptions: { ...(this.currentSettings?.chartTypeOptions ?? {}), [key]: value } });
+    switch (type) {
+      case 'renko': {
+        const o = all.renko ?? {};
+        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof o.boxSize === 'number' ? o.boxSize : null, 'any',
+          (v) => set('renko', { ...(this.currentSettings?.chartTypeOptions?.renko ?? {}), boxSize: v ?? 'atr' })));
+        section.appendChild(this.numberRow(this.t('settings.atrPeriod'), o.atrPeriod ?? null, '1',
+          (v) => set('renko', withValue(this.currentSettings?.chartTypeOptions?.renko, 'atrPeriod', v))));
+        break;
+      }
+      case 'lineBreak':
+        section.appendChild(this.numberRow(this.t('settings.lineBreakLines'), all.lineBreak?.lines ?? null, '1',
+          (v) => set('lineBreak', withValue(this.currentSettings?.chartTypeOptions?.lineBreak, 'lines', v))));
+        break;
+      case 'kagi':
+        section.appendChild(this.numberRow(this.t('settings.reversal'), all.kagi?.reversal ?? null, 'any',
+          (v) => set('kagi', withValue(this.currentSettings?.chartTypeOptions?.kagi, 'reversal', v))));
+        section.appendChild(this.selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
+          { value: 'percent', label: this.t('settings.reversalType.percent') },
+          { value: 'price', label: this.t('settings.reversalType.price') },
+        ], (v) => set('kagi', { ...(this.currentSettings?.chartTypeOptions?.kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
+        break;
+      case 'pointAndFigure':
+        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any',
+          (v) => set('pointAndFigure', { ...(this.currentSettings?.chartTypeOptions?.pointAndFigure ?? {}), boxSize: v ?? 'auto' })));
+        section.appendChild(this.numberRow(this.t('settings.reversalBoxes'), all.pointAndFigure?.reversal ?? null, '1',
+          (v) => set('pointAndFigure', withValue(this.currentSettings?.chartTypeOptions?.pointAndFigure, 'reversal', v))));
+        break;
+      case 'rangeBars':
+        section.appendChild(this.numberRow(this.t('settings.barRange'), typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any',
+          (v) => set('rangeBars', { range: v ?? 'auto' })));
+        break;
+      default:
+        return;
+    }
+    this.bodyEl.appendChild(section);
+  }
+
+  /** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0 are taken. */
+  private numberRow(label: string, value: number | null, step: string, onChange: (v: number | null) => void): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'tcw-settings-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'tcw-settings-label';
+    lbl.textContent = label;
+    row.appendChild(lbl);
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'tcw-settings-number';
+    input.min = '0';
+    input.step = step;
+    input.placeholder = this.t('settings.auto');
+    input.value = value === null ? '' : String(value);
+    input.setAttribute('aria-label', label);
+    input.addEventListener('change', () => {
+      if (input.value.trim() === '') {
+        input.removeAttribute('aria-invalid');
+        onChange(null);
+        return;
+      }
+      const v = Number(input.value);
+      const ok = Number.isFinite(v) && v > 0 && (step !== '1' || Number.isInteger(v));
+      input.toggleAttribute('aria-invalid', !ok);
+      if (ok) onChange(v);
+    });
+    row.appendChild(input);
+    return row;
   }
 
   private patch(partial: Partial<ChartSettingsState>): void {
@@ -388,4 +476,12 @@ export class WidgetSettings {
   destroy(): void {
     this.close();
   }
+}
+
+/** `settings` with `key` set to `value`, or without it (back to its default) for null. */
+function withValue<T extends object, K extends string>(settings: T | undefined, key: K, value: number | null): T {
+  const next = { ...(settings ?? {}) } as Record<string, unknown>;
+  if (value === null) delete next[key];
+  else next[key] = value;
+  return next as T;
 }
