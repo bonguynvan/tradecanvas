@@ -182,6 +182,8 @@ export interface ChartOptions {
   chartTypeOptions?: ChartTypeOptions;
   /** Mark the highest high and lowest low on screen with a line and a price tag. */
   highLowLines?: boolean;
+  /** The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills. */
+  shapes?: import('./theme.js').ShapeConfig;
   /**
    * Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`):
    * pre- and post-market. Default true; bars a day or longer are never left out.

@@ -160,6 +160,17 @@ new ChartWidget(el, {
 | 定制 | 完全掌控 | 按区块开关 |
 | 高级访问 | 直接调用 API | 通过 `widget.getChart()` 直接调用 API |
 
+### 组件外观
+
+组件的形状与尺寸——圆角、控件高度、字体、边框、阴影、选中按钮的样式、工具栏停靠还是悬浮——自成一套外观，与颜色相互独立。共有三套预设：**Studio**（默认）、**Terminal**（紧凑方正）和 **Capsule**（胶囊形、悬浮工具栏）。从其中一套出发，想改哪里就改哪里：
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+图表上的价格标签也采用同样的圆角（`tagRadius`；直接使用 `Chart` 时，调用 `chart.setShapes({ tagRadius })`）。组件不会加载任何字体：请自行加载外观中指定的字体。参见[样式](https://bonguynvan.github.io/tradecanvas/docs/styling)。
+
 ### 组件主题
 
 `ChartWidget` 自身的外围界面（工具栏、侧边栏、设置面板、自选列表——画布*之外*的所有部分）完全通过 `.tcw-root`（组件自己的根元素）上的 CSS 自定义属性设置样式。这些属性是**稳定且有文档的约定**：在次版本/补丁版本中只增不减——不升主版本号，就绝不会重命名或删除任何属性。从宿主页面覆盖它们即可；无需构建步骤，也无需主题对象。
@@ -199,12 +210,19 @@ new ChartWidget(el, {
 | `--tcw-divider` | `rgba(255,255,255,.06)` | 细分隔线 |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | 过渡缓动 |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | 过渡时长 |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | 圆角半径——设为 `0` 即为直角外观 |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | 圆角刻度——设为 `0` 即为直角外观 |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | 取自刻度 | 各类部件的圆角 |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | 尺寸 |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | 字体 |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | 小标签（分区标题） |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | 边框宽度；工具栏分组之间的分隔线 |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | 对应层级的阴影 | 菜单、对话框、提示框的阴影 |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | 磨砂效果的菜单 |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow 值 | 层级阴影 |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | 焦点环 |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | 等宽字体栈（盘口深度、代码） |
 
-浅色主题（`[data-tcw-theme="light"]`）用自己的默认值重新定义了颜色组（`--tcw-bg*`、`--tcw-border*`、`--tcw-text*`、`--tcw-accent*`、`--tcw-hover-bg`、`--tcw-active-bg`、`--tcw-divider`、`--tcw-shadow*`）——如果同时支持两种主题，请同时覆盖这两个选择器。
+浅色主题（`[data-tcw-theme="light"]`）用自己的默认值重新定义了颜色组（`--tcw-bg*`、`--tcw-border*`、`--tcw-text*`、`--tcw-accent*`、`--tcw-hover-bg`、`--tcw-active-bg`、`--tcw-divider`、`--tcw-shadow*`）——如果同时支持两种主题，请同时覆盖这两个选择器。设置了 `ui` 选项时，组件会把外观的变量直接写到元素上，因此它们会覆盖你的 CSS；不设置时，这些变量仍由你自行设置。
 
 ## 功能
 

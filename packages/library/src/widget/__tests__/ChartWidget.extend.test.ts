@@ -41,6 +41,8 @@ class FakeChart {
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
+  shapes: unknown[] = [];
+  setShapes(shapes: unknown): void { this.shapes.push(shapes); }
   chartTypeOptions: unknown = {};
   getChartTypeOptions(): unknown { return this.chartTypeOptions; }
   required: string[] = [];
@@ -383,5 +385,51 @@ describe('ChartWidget symbol fetches out of order', () => {
     failFirst(new Error('late'));
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.series.get('BBB')).toBe(bars);
+  });
+});
+
+describe('ChartWidget look', () => {
+  it('starts in the Studio look, takes a preset or a theme, and gives the chart its tag shape', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.dataset.tcwUi).toBe('studio');
+    // Without `ui` the tokens stay the stylesheet's (Studio's), yours to override in CSS.
+    expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 4 });
+
+    widget.setUI({ preset: 'capsule', radius: { lg: 14 } });
+    expect(root.dataset.tcwToolbar).toBe('floating');
+    expect(root.style.getPropertyValue('--tcw-menu-radius')).toBe('14px');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
+    expect(widget.getUI().preset).toBe('capsule');
+    // The modal portal carries the same look.
+    const portal = (widget as unknown as { portal: HTMLElement }).portal;
+    expect(portal.dataset.tcwToolbar).toBe('floating');
+  });
+
+  it('keeps the look across a theme switch, on the root and the dialogs alike', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget.setTheme('light');
+    widget.setUI('terminal');
+    const portal = (widget as unknown as { portal: HTMLElement }).portal;
+    expect(portal.dataset.tcwTheme).toBe('light');
+    expect(portal.style.getPropertyValue('--tcw-control-h')).toBe('26px');
+    widget.setTheme('dark');
+    expect(host.querySelector<HTMLElement>('.tcw-root')!.dataset.tcwUi).toBe('terminal');
+    expect(widget.getUI().preset).toBe('terminal');
+  });
+
+  it('leaves the chart the tag shape its options give, until a look is set', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { shapes: { tagRadius: 0 } } });
+    expect(FakeChart.last.shapes).toEqual([]);
+    widget.setUI('capsule');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
+  });
+
+  it('takes the look from its options', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'terminal' });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.dataset.tcwSeparators).toBe('on');
+    expect(root.style.getPropertyValue('--tcw-control-h')).toBe('26px');
   });
 });

@@ -7,6 +7,11 @@ export interface FontConfig {
   sizeLarge: number;
 }
 
+export interface ShapeConfig {
+  /** Corner radius of price tags, axis pills and order badges, px (0: square; 999: pills). */
+  tagRadius?: number;
+}
+
 export interface Theme {
   name: string;
   background: string;
@@ -27,4 +32,6 @@ export interface Theme {
   axisLabel: string;
   axisLabelBackground: string;
   font: FontConfig;
+  /** The shapes the chart draws: its price tags and axis pills square, rounded or pills. */
+  shape?: ShapeConfig;
 }

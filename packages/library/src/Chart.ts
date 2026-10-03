@@ -41,7 +41,7 @@ import type {
   ExecutionConfig,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { ChartTypeOptions, PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
+import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -578,6 +578,7 @@ export class Chart {
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
+    if (options.shapes) this.themeManager.setShape(readShapes(options.shapes));
     // Their tags in the chart's precision, locale and format.
     this.priceLines.setPriceText((p) => this.formatPrice(p));
     if (options.extendedHours === false) this.extendedHours = false;
@@ -1326,6 +1327,23 @@ export class Chart {
   private quoteLines(): PriceLines {
     this.priceLines.setQuoteShown(this.replaySession === null);
     return this.priceLines;
+  }
+
+  /**
+   * The shapes the chart draws: `tagRadius` rounds its price tags, axis
+   * pills and order badges (0: square, 999: pills). Kept through theme
+   * changes.
+   */
+  setShapes(shapes: ShapeConfig): void {
+    const read = readShapes(shapes);
+    if (read.tagRadius === undefined) return;
+    this.themeManager.setShape({ ...this.themeManager.getTheme().shape, ...read });
+    this.syncRenderContext();
+    this.engine.requestRender();
+  }
+
+  getShapes(): ShapeConfig {
+    return { ...this.themeManager.getTheme().shape };
   }
 
   /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
@@ -4827,6 +4845,12 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.pane ?? null) === (b.pane ?? null)
     && (a.scale ?? null) === (b.scale ?? null)
     && (a.position === undefined) === (b.position === undefined);
+}
+
+/** Shapes the chart can draw: a corner radius from 0 to 999 px. */
+function readShapes(shapes: ShapeConfig): ShapeConfig {
+  const r = shapes.tagRadius;
+  return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
 
 /** The indicators that read another symbol's bars (`params.symbol`). */

@@ -154,6 +154,17 @@ See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) a
 | Customization | Full control | Toggle sections on/off |
 | Advanced access | Direct API | `widget.getChart()` for direct API |
 
+### Widget Look
+
+The widget's shapes and sizes — corners, control heights, type, borders, shadows, how a chosen button shows, bars docked or floating — are a look of their own, apart from the colours. Three presets: **Studio** (the default), **Terminal** (dense and square) and **Capsule** (pills, floating bars). Start from one and change what you like:
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+The chart's price tags take the same corners (`tagRadius`; on a bare `Chart`, `chart.setShapes({ tagRadius })`). The widget loads no fonts: load the ones a look names. See [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
 ### Widget Theming
 
 `ChartWidget`'s own chrome (toolbar, sidebars, settings panel, watchlist — everything *outside* the canvas) is styled entirely through CSS custom properties on `.tcw-root`, the widget's own root element. These are a **stable, documented contract**: additive-only across minor/patch releases — a property is never renamed or removed without a major version bump. Override them from the host page; no build step or theme object needed.
@@ -193,12 +204,19 @@ See `packages/library/src/widget/i18n.ts` for the full key list (`MessageKey`) a
 | `--tcw-divider` | `rgba(255,255,255,.06)` | Hairline dividers |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | Transition easing |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Transition durations |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | Corner radii — set to `0` for a square look |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | The corner scale — set to `0` for a square look |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | from the scale | Each kind of part's corners |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | Sizes |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | Type |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | Small labels (section titles) |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | Border width; rules between toolbar groups |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | the elevation shadows | Shadows of menus, dialogs, tooltips |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | Frosted menus |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow values | Elevation |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | Focus ring |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | Monospace font stack (price ladder, code) |
 
-Light theme (`[data-tcw-theme="light"]`) redefines the color group (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) with its own defaults — override both selectors if you support both themes.
+Light theme (`[data-tcw-theme="light"]`) redefines the color group (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) with its own defaults — override both selectors if you support both themes. With the `ui` option set, the widget writes its look's variables on the element, so they win over your CSS; without it they stay yours to set.
 
 ## Features
 

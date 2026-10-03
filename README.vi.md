@@ -160,6 +160,17 @@ Xem `packages/library/src/widget/locales/en.ts` để có danh sách khoá đầ
 | Tuỳ biến | Toàn quyền kiểm soát | Bật/tắt từng phần |
 | Truy cập nâng cao | API trực tiếp | `widget.getChart()` để dùng API trực tiếp |
 
+### Giao diện widget
+
+Hình khối và kích thước của widget — góc bo, chiều cao nút, kiểu chữ, đường viền, bóng đổ, cách hiện nút đang chọn, thanh gắn cạnh hay nổi — là một giao diện riêng, tách khỏi màu sắc. Có ba preset: **Studio** (mặc định), **Terminal** (dày đặc và vuông vức) và **Capsule** (hình viên thuốc, thanh nổi). Bắt đầu từ một preset rồi đổi những gì bạn muốn:
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+Nhãn giá trên biểu đồ cũng theo cùng góc bo (`tagRadius`; với một `Chart` dùng riêng, gọi `chart.setShapes({ tagRadius })`). Widget không tải font nào: hãy tự tải những font mà giao diện đó dùng. Xem [Giao diện](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
 ### Tuỳ biến giao diện widget
 
 Phần khung giao diện của `ChartWidget` (thanh công cụ, thanh bên, bảng cài đặt, danh mục theo dõi — mọi thứ *bên ngoài* canvas) được tạo kiểu hoàn toàn qua CSS custom properties trên `.tcw-root`, phần tử gốc của widget. Đây là một **hợp đồng ổn định, có tài liệu**: qua các bản minor/patch chỉ thêm, không bớt — một thuộc tính không bao giờ bị đổi tên hay xoá nếu không tăng phiên bản major. Ghi đè chúng từ trang chứa widget; không cần bước build hay đối tượng theme.
@@ -199,12 +210,19 @@ Phần khung giao diện của `ChartWidget` (thanh công cụ, thanh bên, bả
 | `--tcw-divider` | `rgba(255,255,255,.06)` | Đường phân cách mảnh |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | Đường cong chuyển động |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Thời lượng chuyển động |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | Bo góc — đặt `0` để có góc vuông |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | Thang bo góc — đặt `0` để có góc vuông |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | theo thang | Góc bo của từng loại thành phần |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | Kích thước |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | Kiểu chữ |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | Nhãn nhỏ (tiêu đề mục) |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | Độ dày viền; đường kẻ giữa các nhóm trên thanh công cụ |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | các bóng đổ theo độ nổi | Bóng đổ của menu, hộp thoại, tooltip |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | Menu dạng kính mờ |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | giá trị box-shadow | Độ nổi |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | Vòng focus |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | Bộ font monospace (sổ lệnh, mã) |
 
-Giao diện sáng (`[data-tcw-theme="light"]`) định nghĩa lại nhóm màu (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) với giá trị mặc định riêng — hãy ghi đè cả hai selector nếu bạn hỗ trợ cả hai giao diện.
+Giao diện sáng (`[data-tcw-theme="light"]`) định nghĩa lại nhóm màu (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) với giá trị mặc định riêng — hãy ghi đè cả hai selector nếu bạn hỗ trợ cả hai giao diện. Khi có tuỳ chọn `ui`, widget ghi các biến của giao diện đã chọn thẳng lên phần tử, nên chúng được ưu tiên hơn CSS của bạn; khi không có, bạn vẫn toàn quyền đặt chúng.
 
 ## Tính năng
 

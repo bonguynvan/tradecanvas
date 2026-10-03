@@ -129,10 +129,12 @@ const zh: SiteMessages = {
       '选择一个场景。每个场景都会把完整的 <code>ChartWidget</code> 启动到展示某一方面功能的状态——之后就交给你随意拖动、画线和切换。',
     scenes: '功能场景',
     widgetLanguage: '组件语言',
+    widgetLook: '组件外观',
     idle: '滚动到此处即可启动实时图表',
     metricHint: '切换品种或周期即可计时',
     metricSwitch: '→ {label}：{ms} · {bars} 根K线',
     metricSetData: 'setData({bars} 根K线)：{ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: '试一试',
   },
 
@@ -260,6 +262,18 @@ const zh: SiteMessages = {
         'Ctrl+P 边输入边搜索所有 Binance 代码，并显示名称',
         '打开“设置”或画线工具，即可看到翻译后的界面',
         '悬停：十字光标的价格标签保持完整精度，并使用该语言的数字格式',
+      ],
+    },
+    looks: {
+      title: '你的专属外观',
+      stat: '3 套预设',
+      blurb:
+        '组件的形状与尺寸都由 token 决定：圆角、控件高度、字体、边框、阴影、选中按钮的样式，以及工具栏是停靠还是悬浮。从 Studio、Terminal 或 Capsule 出发，想改哪里就改哪里；图表上的价格标签也采用同样的圆角。',
+      tryThis: [
+        '在图表上方切换外观：原地生效，不会重建任何东西',
+        '在每种外观下打开“设置”、菜单或画线工具看看',
+        'Capsule 让工具栏和画线工具像小岛一样悬浮，价格标签也变成胶囊形',
+        'Terminal 紧凑方正：标签全部大写，选中的周期下方有一条下划线',
       ],
     },
     bigdata: {
@@ -454,6 +468,7 @@ const zh: SiteMessages = {
       frameworks: '框架',
       embed: '可嵌入组件',
       api: 'API 参考',
+      styling: '样式',
       'chart-types': '图表类型',
       indicators: '指标',
       'drawing-tools': '画线工具',

@@ -134,10 +134,12 @@ const en = {
       'Pick a scene. Each one boots the full <code>ChartWidget</code> into a state that shows one area at work — then it is yours to drag, draw and switch.',
     scenes: 'Feature scenes',
     widgetLanguage: 'Widget language',
+    widgetLook: 'Widget look',
     idle: 'Scroll into view to start the live chart',
     metricHint: 'Switch a symbol or timeframe to time it',
     metricSwitch: '→ {label}: {ms} · {bars} bars',
     metricSetData: 'setData({bars} bars): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Try this',
   },
 
@@ -265,6 +267,18 @@ const en = {
         'Ctrl+P searches every Binance symbol, with names, as you type',
         'Open Settings or the drawing tools to see them translated',
         'Hover: the crosshair pill keeps full precision in the language’s number format',
+      ],
+    },
+    looks: {
+      title: 'Your own look',
+      stat: '3 presets',
+      blurb:
+        'The widget’s shapes and sizes are tokens: corners, control heights, type, borders, shadows, how a chosen button shows, bars docked or floating. Start from Studio, Terminal or Capsule and change what you like; the chart’s price tags take the same corners.',
+      tryThis: [
+        'Switch the look above the chart: it changes in place, nothing is rebuilt',
+        'Open Settings, a menu or the drawing tools in each look',
+        'Capsule floats the toolbar and the drawing tools as islands, with pill price tags',
+        'Terminal is dense and square: capital labels, and a line under the chosen interval',
       ],
     },
     bigdata: {
@@ -459,6 +473,7 @@ const en = {
       frameworks: 'Frameworks',
       embed: 'Embeddable Widget',
       api: 'API Reference',
+      styling: 'Styling',
       'chart-types': 'Chart Types',
       indicators: 'Indicators',
       'drawing-tools': 'Drawing Tools',

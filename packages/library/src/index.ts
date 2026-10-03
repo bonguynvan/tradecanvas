@@ -138,6 +138,7 @@ export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
 export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/commons';
 export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
+export type { ShapeConfig } from '@tradecanvas/commons';
 export { EXCHANGE_TIMEZONE } from './Chart.js';
 
 // Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)

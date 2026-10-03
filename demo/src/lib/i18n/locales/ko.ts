@@ -128,10 +128,12 @@ const ko: SiteMessages = {
       '장면을 고르세요. 각 장면은 완전한 <code>ChartWidget</code>을 한 가지 영역이 작동하는 모습을 보여 주는 상태로 실행합니다. 그다음부터는 자유롭게 드래그하고, 그리고, 전환해 보세요.',
     scenes: '기능 장면',
     widgetLanguage: '위젯 언어',
+    widgetLook: '위젯 외관',
     idle: '화면에 보이도록 스크롤하면 실시간 차트가 시작됩니다',
     metricHint: '종목이나 시간 단위를 바꾸면 소요 시간을 측정합니다',
     metricSwitch: '→ {label}: {ms} · 봉 {bars}개',
     metricSetData: 'setData(봉 {bars}개): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: '해 보기',
   },
 
@@ -259,6 +261,18 @@ const ko: SiteMessages = {
         'Ctrl+P를 누르면 입력하는 대로 모든 Binance 종목을 이름과 함께 검색합니다',
         '설정이나 그리기 도구를 열어 번역된 모습을 확인하세요',
         '마우스를 올려 보세요. 십자선 라벨이 해당 언어의 숫자 형식으로 전체 정밀도를 유지합니다',
+      ],
+    },
+    looks: {
+      title: '나만의 외관',
+      stat: '프리셋 3개',
+      blurb:
+        '위젯의 모양과 크기는 토큰으로 정해집니다. 모서리, 컨트롤 높이, 글꼴, 테두리, 그림자, 선택된 버튼의 표시 방식, 가장자리에 붙는 바와 떠 있는 바까지. Studio, Terminal, Capsule 중 하나에서 시작해 원하는 부분만 바꾸세요. 차트의 가격 라벨도 같은 모서리를 따릅니다.',
+      tryThis: [
+        '차트 위에서 외관을 바꿔 보세요. 그 자리에서 바뀌며 아무것도 다시 만들지 않습니다',
+        '각 외관에서 설정, 메뉴, 그리기 도구를 열어 보세요',
+        'Capsule은 도구 모음과 그리기 도구를 섬처럼 띄우고, 가격 라벨을 알약 모양으로 그립니다',
+        'Terminal은 촘촘하고 각진 모양입니다. 라벨은 대문자로 표시되고, 선택한 시간 단위 아래에 밑줄이 그어집니다',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const ko: SiteMessages = {
       frameworks: '프레임워크',
       embed: '임베드 위젯',
       api: 'API 레퍼런스',
+      styling: '스타일링',
       'chart-types': '차트 유형',
       indicators: '지표',
       'drawing-tools': '그리기 도구',

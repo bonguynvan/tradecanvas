@@ -79,9 +79,9 @@ const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
   return widget;
 };
 const barButtons = (): string[] =>
-  [...host.querySelectorAll<HTMLElement>('.tcw-toolbar-group [data-tf]')].map((b) => b.dataset.tf!);
+  [...host.querySelectorAll<HTMLElement>('.tcw-tf-group [data-tf]')].map((b) => b.dataset.tf!);
 const activeButton = (): string | undefined =>
-  host.querySelector<HTMLElement>('.tcw-toolbar-group [data-tf].tcw-active')?.dataset.tf;
+  host.querySelector<HTMLElement>('.tcw-tf-group [data-tf].tcw-active')?.dataset.tf;
 const menuItems = (): string[] =>
   [...host.querySelectorAll<HTMLElement>('[data-tf-pick]')].map((b) => b.dataset.tfPick!);
 const star = (tf: string): HTMLButtonElement => host.querySelector(`[data-tf-star="${tf}"]`)!;

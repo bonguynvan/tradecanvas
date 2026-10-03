@@ -128,10 +128,12 @@ const tr: SiteMessages = {
       'Bir sahne seçin. Her sahne eksiksiz <code>ChartWidget</code>’ı tek bir alanın çalıştığını gösteren bir durumda açar; sonrası size kalmış: sürükleyin, çizin, değiştirin.',
     scenes: 'Özellik sahneleri',
     widgetLanguage: 'Widget dili',
+    widgetLook: 'Widget görünümü',
     idle: 'Canlı grafiği başlatmak için buraya kaydırın',
     metricHint: 'Süreyi ölçmek için sembolü veya zaman dilimini değiştirin',
     metricSwitch: '→ {label}: {ms} · {bars} bar',
     metricSetData: 'setData({bars} bar): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Bunu deneyin',
   },
 
@@ -259,6 +261,18 @@ const tr: SiteMessages = {
         'Ctrl+P siz yazarken tüm Binance sembollerini adlarıyla birlikte arar',
         'Çevirileri görmek için Ayarlar’ı ya da çizim araçlarını açın',
         'İmleci gezdirin: artı imleç etiketi, dilin sayı biçiminde tam hassasiyeti korur',
+      ],
+    },
+    looks: {
+      title: 'Kendi görünümünüz',
+      stat: '3 hazır ayar',
+      blurb:
+        'Widget’ın biçimleri ve boyutları token’lardır: köşeler, kontrol yükseklikleri, yazı tipi, kenarlıklar, gölgeler, seçili düğmenin nasıl göründüğü, kenara yaslanan ya da yüzen çubuklar. Studio, Terminal veya Capsule ile başlayın ve istediğinizi değiştirin; grafiğin fiyat etiketleri de aynı köşeleri alır.',
+      tryThis: [
+        'Grafiğin üstünden görünümü değiştirin: yerinde değişir, hiçbir şey yeniden kurulmaz',
+        'Her görünümde Ayarlar’ı, bir menüyü ya da çizim araçlarını açın',
+        'Capsule, araç çubuğunu ve çizim araçlarını adacıklar gibi yüzdürür; fiyat etiketleri hap biçimini alır',
+        'Terminal sık ve köşelidir: büyük harfli etiketler ve seçili zaman diliminin altında bir çizgi',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const tr: SiteMessages = {
       frameworks: 'Framework’ler',
       embed: 'Gömülebilir Widget',
       api: 'API Referansı',
+      styling: 'Görünüm',
       'chart-types': 'Grafik Türleri',
       indicators: 'Göstergeler',
       'drawing-tools': 'Çizim Araçları',

@@ -128,10 +128,12 @@ const pt: SiteMessages = {
       'Escolha uma cena. Cada uma abre o <code>ChartWidget</code> completo em um estado que mostra uma área em ação — depois é com você: arraste, desenhe e troque de ativo ou de tempo gráfico.',
     scenes: 'Cenas de recursos',
     widgetLanguage: 'Idioma do widget',
+    widgetLook: 'Aparência do widget',
     idle: 'Role até aqui para iniciar o gráfico ao vivo',
     metricHint: 'Troque de ativo ou de tempo gráfico para cronometrar',
     metricSwitch: '→ {label}: {ms} · {bars} barras',
     metricSetData: 'setData({bars} barras): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Experimente',
   },
 
@@ -259,6 +261,18 @@ const pt: SiteMessages = {
         'Ctrl+P busca todos os ativos da Binance, com nomes, enquanto você digita',
         'Abra as Configurações ou as ferramentas de desenho para ver a tradução',
         'Passe o mouse: o rótulo da mira mantém a precisão total no formato numérico do idioma',
+      ],
+    },
+    looks: {
+      title: 'Sua própria aparência',
+      stat: '3 predefinições',
+      blurb:
+        'As formas e os tamanhos do widget são tokens: cantos, altura dos controles, tipografia, bordas, sombras, o jeito de mostrar um botão selecionado, barras fixas ou flutuantes. Comece pelo Studio, Terminal ou Capsule e mude o que quiser; os rótulos de preço do gráfico usam os mesmos cantos.',
+      tryThis: [
+        'Troque a aparência acima do gráfico: ela muda na hora, nada é reconstruído',
+        'Abra as Configurações, um menu ou as ferramentas de desenho em cada aparência',
+        'O Capsule faz a barra de ferramentas e as ferramentas de desenho flutuarem como ilhas, com rótulos de preço em formato de pílula',
+        'O Terminal é denso e quadrado: rótulos em maiúsculas e uma linha sob o tempo gráfico selecionado',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const pt: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget incorporável',
       api: 'Referência da API',
+      styling: 'Aparência',
       'chart-types': 'Tipos de gráfico',
       indicators: 'Indicadores',
       'drawing-tools': 'Ferramentas de desenho',

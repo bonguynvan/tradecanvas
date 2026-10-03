@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { Chart, DataAdapter } from '@tradecanvas/chart';
-  import type { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
+  import type { ChartWidget, ChartWidgetGrid, WidgetUIPreset } from '@tradecanvas/chart/widget';
   import type { WidgetLanguage } from '@tradecanvas/chart/widget/locales';
   import { FEATURE_SCENES, type SceneEnv } from '$lib/featureScenes';
   import { useI18n } from '$lib/i18n/context.svelte';
@@ -23,6 +23,16 @@
   // The picker starts on the page's language (Vietnamese on the English site).
   // svelte-ignore state_referenced_locally
   let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
+  /** The look for scenes with a look picker. */
+  const LOOKS: readonly { id: WidgetUIPreset; name: string }[] = [
+    { id: 'studio', name: 'Studio' },
+    { id: 'terminal', name: 'Terminal' },
+    { id: 'capsule', name: 'Capsule' },
+  ];
+  let look = $state<WidgetUIPreset>('studio');
+  /** The fonts the looks name: the widget loads none, so the page does. */
+  const LOOK_FONTS =
+    'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600&display=swap';
 
   let widget: ChartWidget | ChartWidgetGrid | null = null;
   let mountToken = 0;
@@ -46,6 +56,15 @@
       return fetchHistory(...args);
     };
     return adapter;
+  }
+
+  function loadLookFonts() {
+    if (document.querySelector('link[data-look-fonts]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = LOOK_FONTS;
+    link.dataset.lookFonts = '';
+    document.head.appendChild(link);
   }
 
   function firstBars(chart: Chart): Promise<void> {
@@ -88,7 +107,9 @@
       binance: () => new lib.BinanceAdapter(),
       slowBinance: (ms) => delayed(new lib.BinanceAdapter(), ms),
       language: current.languages ? languages.find((l) => l.code === languageCode) : undefined,
+      look: current.looks ? look : undefined,
     };
+    if (current.looks) loadLookFonts();
     const opts = current.options(env);
     let pending: { label: string; t: number } | null = null;
 
@@ -173,6 +194,16 @@
     if (code === languageCode) return;
     languageCode = code;
     if (started) showScene(active);
+  }
+
+  /** A new look on the chart as it is: `setUI`, nothing rebuilt. */
+  function pickLook(id: WidgetUIPreset) {
+    if (id === look) return;
+    look = id;
+    if (!widget) return;
+    const t0 = performance.now();
+    widget.setUI(id);
+    pushMetric(fill(m.lab.metricLook, { name: id, ms: fmtMs(performance.now() - t0) }));
   }
 
   function select(index: number) {
@@ -271,6 +302,19 @@
               lang={language.code}
               onclick={() => pickLanguage(language.code)}
             >{language.name}</button>
+          {/each}
+        </div>
+      {/if}
+      {#if scene.looks}
+        <div class="stage-langs" role="group" aria-label={m.lab.widgetLook}>
+          {#each LOOKS as option (option.id)}
+            <button
+              type="button"
+              class="lang"
+              class:active={option.id === look}
+              aria-pressed={option.id === look}
+              onclick={() => pickLook(option.id)}
+            >{option.name}</button>
           {/each}
         </div>
       {/if}

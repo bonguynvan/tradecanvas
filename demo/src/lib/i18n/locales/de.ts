@@ -128,10 +128,12 @@ const de: SiteMessages = {
       'Wählen Sie eine Szene. Jede startet das komplette <code>ChartWidget</code> in einem Zustand, der einen Bereich in Aktion zeigt – danach können Sie frei ziehen, zeichnen und wechseln.',
     scenes: 'Feature-Szenen',
     widgetLanguage: 'Sprache des Widgets',
+    widgetLook: 'Erscheinungsbild des Widgets',
     idle: 'Scrollen Sie hierher, um den Live-Chart zu starten',
     metricHint: 'Wechseln Sie Symbol oder Zeiteinheit, um die Zeit zu messen',
     metricSwitch: '→ {label}: {ms} · {bars} Kerzen',
     metricSetData: 'setData({bars} Kerzen): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Zum Ausprobieren',
   },
 
@@ -259,6 +261,18 @@ const de: SiteMessages = {
         'Ctrl+P durchsucht schon beim Tippen alle Binance-Symbole, mit Namen',
         'Öffnen Sie die Einstellungen oder die Zeichenwerkzeuge, um die Übersetzung zu sehen',
         'Fahren Sie mit der Maus über den Chart: Das Fadenkreuz-Label behält die volle Genauigkeit im Zahlenformat der Sprache',
+      ],
+    },
+    looks: {
+      title: 'Ihr eigenes Erscheinungsbild',
+      stat: '3 Presets',
+      blurb:
+        'Formen und Größen des Widgets sind Tokens: Ecken, Höhe der Bedienelemente, Schrift, Rahmen, Schatten, wie ein gewählter Button aussieht, Leisten angedockt oder schwebend. Starten Sie mit Studio, Terminal oder Capsule und ändern Sie, was Sie möchten; die Preismarken im Chart übernehmen dieselben Ecken.',
+      tryThis: [
+        'Wechseln Sie das Erscheinungsbild über dem Chart: Es ändert sich an Ort und Stelle, nichts wird neu aufgebaut',
+        'Öffnen Sie in jedem Erscheinungsbild die Einstellungen, ein Menü oder die Zeichenwerkzeuge',
+        'Capsule lässt die Werkzeugleiste und die Zeichenwerkzeuge als Inseln schweben, mit pillenförmigen Preismarken',
+        'Terminal ist dicht und eckig: Beschriftungen in Großbuchstaben und eine Linie unter der gewählten Zeiteinheit',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const de: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Einbettbares Widget',
       api: 'API-Referenz',
+      styling: 'Gestaltung',
       'chart-types': 'Charttypen',
       indicators: 'Indikatoren',
       'drawing-tools': 'Zeichenwerkzeuge',

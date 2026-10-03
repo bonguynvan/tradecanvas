@@ -4,6 +4,13 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### The widget's look
+
+- **Three looks, and yours**: the widget's corners, sizes, type, borders, shadows and bars are a look apart from its colours. **Studio** is the new default (rounded controls, spaced groups, the interval buttons in a segmented track), **Terminal** is dense and square with capital labels, **Capsule** is all pills with the toolbar and drawing tools floating as islands. Start from one and change what you like with the `ui` option or `setUI`, on one chart or a whole grid.
+- **The chart's price tags take the same corners**: square, rounded or pills, along with the axis and crosshair pills and the order badges (`chart.setShapes`).
+- Every part of the widget follows the look's CSS variables; without `ui` they stay yours to set in CSS (the widget's stylesheet now goes first in the page, so your rules win a tie). Menus grow to fit their labels instead of wrapping them.
+- **Looks different after the update**: Studio is the new default, so an existing widget changes look without any change of yours — slightly rounder corners, a taller toolbar, wider drawing tools, the interval buttons in a track, no rules between toolbar groups, labels as written rather than in capitals, rounded price tags. Use `ui: 'terminal'` for a square, ruled look, or set any token yourself.
+
 ### Scales, formats and comparisons
 
 - **Price formats**: prices in your own format, or in fractions of a point (a bond in 32nds: `110'165`), on every label of the price scale — axis, crosshair, legend, tooltips, orders, alerts, drawings (`priceFormat`). Times your way too (`timeFormatter`).

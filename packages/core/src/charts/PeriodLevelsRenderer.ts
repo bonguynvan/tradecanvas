@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
+import { fillTag } from '../ui/shapes.js';
 import { computePeriodLevels, type LevelPeriod, type PriceLevel } from './periodLevels.js';
 
 /**
@@ -59,7 +60,7 @@ export class PeriodLevelsRenderer {
       const tagX = chartRect.x + chartRect.width - tw - 10;
       ctx.fillStyle = theme.background;
       ctx.globalAlpha = 0.85;
-      ctx.fillRect(tagX - 4, y - 7, tw + 8, 14);
+      fillTag(ctx, tagX - 4, y - 7, tw + 8, 14, theme);
       ctx.globalAlpha = 1;
       ctx.fillStyle = color;
       ctx.textAlign = 'left';

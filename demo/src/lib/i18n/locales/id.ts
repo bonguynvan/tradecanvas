@@ -128,10 +128,12 @@ const id: SiteMessages = {
       'Pilih sebuah skenario. Masing-masing menjalankan <code>ChartWidget</code> lengkap dalam kondisi yang menampilkan satu area sedang bekerja — setelah itu, silakan seret, gambar, dan ganti sesuka Anda.',
     scenes: 'Skenario fitur',
     widgetLanguage: 'Bahasa widget',
+    widgetLook: 'Tampilan widget',
     idle: 'Gulir hingga terlihat untuk memulai grafik langsung',
     metricHint: 'Ganti simbol atau kerangka waktu untuk mengukur waktunya',
     metricSwitch: '→ {label}: {ms} · {bars} bar',
     metricSetData: 'setData({bars} bar): {ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: 'Coba ini',
   },
 
@@ -259,6 +261,18 @@ const id: SiteMessages = {
         'Ctrl+P mencari semua simbol Binance, lengkap dengan nama, saat Anda mengetik',
         'Buka Pengaturan atau alat gambar untuk melihat terjemahannya',
         'Arahkan kursor: label crosshair mempertahankan presisi penuh dalam format angka bahasa tersebut',
+      ],
+    },
+    looks: {
+      title: 'Tampilan Anda sendiri',
+      stat: '3 preset',
+      blurb:
+        'Bentuk dan ukuran widget adalah token: sudut, tinggi kontrol, tipografi, garis tepi, bayangan, cara tombol terpilih ditampilkan, bilah yang menempel atau melayang. Mulai dari Studio, Terminal, atau Capsule lalu ubah sesuka Anda; label harga di grafik ikut memakai sudut yang sama.',
+      tryThis: [
+        'Ganti tampilan di atas grafik: berubah di tempat, tanpa membangun ulang apa pun',
+        'Buka Pengaturan, sebuah menu, atau alat gambar di setiap tampilan',
+        'Capsule membuat bilah alat dan alat gambar melayang seperti pulau, dengan label harga berbentuk pil',
+        'Terminal padat dan bersudut siku: label berhuruf kapital, dan garis di bawah kerangka waktu yang dipilih',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const id: SiteMessages = {
       frameworks: 'Framework',
       embed: 'Widget Tertanam',
       api: 'Referensi API',
+      styling: 'Tampilan',
       'chart-types': 'Jenis Grafik',
       indicators: 'Indikator',
       'drawing-tools': 'Alat Gambar',

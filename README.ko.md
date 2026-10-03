@@ -160,6 +160,17 @@ new ChartWidget(el, {
 | 커스터마이징 | 완전한 제어 | 섹션별 켜기/끄기 |
 | 고급 접근 | 직접 API | 직접 API는 `widget.getChart()`로 |
 
+### 위젯 외관
+
+위젯의 모양과 크기(모서리, 컨트롤 높이, 글꼴, 테두리, 그림자, 선택된 버튼의 표시 방식, 바를 가장자리에 붙일지 띄울지)는 색상과 별개인 하나의 외관입니다. 프리셋은 세 가지입니다: **Studio**(기본값), **Terminal**(촘촘하고 각진 모양), **Capsule**(알약 모양, 떠 있는 바). 하나에서 시작해 원하는 부분을 바꾸세요:
+
+```ts
+const widget = new ChartWidget(host, { ui: 'terminal' });
+widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
+```
+
+차트의 가격 라벨도 같은 모서리를 따릅니다(`tagRadius`; 위젯 없이 `Chart`만 쓴다면 `chart.setShapes({ tagRadius })`). 위젯은 글꼴을 불러오지 않으므로 외관이 지정한 글꼴은 직접 불러오세요. [스타일링](https://bonguynvan.github.io/tradecanvas/docs/styling)을 참고하세요.
+
 ### 위젯 테마
 
 `ChartWidget`의 자체 UI(도구 모음, 사이드바, 설정 패널, 관심 종목 — 캔버스 *바깥*의 모든 것)는 위젯의 루트 요소인 `.tcw-root`에 정의된 CSS 사용자 지정 속성만으로 스타일이 지정됩니다. 이 속성들은 **안정적이고 문서화된 계약**입니다. 마이너/패치 릴리스에서는 추가만 이루어지며, 메이저 버전 업 없이 속성 이름이 바뀌거나 삭제되는 일은 없습니다. 호스트 페이지에서 덮어쓰기만 하면 되며, 빌드 단계나 테마 객체는 필요 없습니다.
@@ -199,12 +210,19 @@ new ChartWidget(el, {
 | `--tcw-divider` | `rgba(255,255,255,.06)` | 가는 구분선 |
 | `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | 전환 이징 |
 | `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | 전환 지속 시간 |
-| `--tcw-radius-sm` / `-base` / `-lg` / `-xl` | `4px` / `6px` / `10px` / `14px` | 모서리 반경 — 각진 모양을 원하면 `0`으로 설정 |
+| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | 모서리 스케일 — 각진 모양을 원하면 `0`으로 설정 |
+| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | 스케일을 따름 | 부품 종류별 모서리 |
+| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | 크기 |
+| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | 글꼴 |
+| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | 작은 라벨 (섹션 제목) |
+| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | 테두리 두께; 도구 모음 그룹 사이의 구분선 |
+| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | 높이감 그림자 | 메뉴, 대화 상자, 툴팁의 그림자 |
+| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | 반투명 유리 효과의 메뉴 |
 | `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow 값 | 높이감(그림자) |
 | `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | 포커스 링 |
 | `--tcw-font-mono` | `'JetBrains Mono', …` | 고정폭 글꼴 스택 (호가창, 코드) |
 
-라이트 테마(`[data-tcw-theme="light"]`)는 색상 그룹(`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`)을 자체 기본값으로 다시 정의합니다. 두 테마를 모두 지원한다면 두 셀렉터를 모두 덮어쓰세요.
+라이트 테마(`[data-tcw-theme="light"]`)는 색상 그룹(`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`)을 자체 기본값으로 다시 정의합니다. 두 테마를 모두 지원한다면 두 셀렉터를 모두 덮어쓰세요. `ui` 옵션을 지정하면 위젯이 외관의 변수를 요소에 직접 쓰므로 그 값이 여러분의 CSS보다 우선합니다. 지정하지 않으면 이 변수들은 직접 설정할 수 있습니다.
 
 ## 기능
 

@@ -12,6 +12,7 @@ import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js
 import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './widgetLayout.js';
 import { utcToWallTime } from './WidgetGoToDate.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
+import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 
 /** What the charts of a grid follow from each other. */
 export interface WidgetGridSync {
@@ -142,6 +143,8 @@ export class ChartWidgetGrid {
   private hovered: Cell | null = null;
   /** Above 0 while the grid itself changes charts (a relay, a restore), so they don't pass it back. */
   private relayDepth = 0;
+  /** The look given to setUI, for charts added later. */
+  private uiTheme: WidgetUIPreset | WidgetUITheme | null = null;
   /** Charts the grid shrank away from, by position: growing again brings them back as they were. */
   private parked = new Map<number, WidgetLayoutContent>();
   private drawingFrame = 0;
@@ -171,6 +174,7 @@ export class ChartWidgetGrid {
     this.root = document.createElement('div');
     this.root.className = 'tcw-root tcw-grid';
     this.root.dataset.tcwTheme = options.widget?.theme === 'light' ? 'light' : 'dark';
+    applyWidgetUI(this.root, resolveWidgetUI(options.widget?.ui), { variables: options.widget?.ui !== undefined });
     if (options.bar !== false) this.root.appendChild(this.buildBar());
     this.cellsEl = document.createElement('div');
     this.cellsEl.className = 'tcw-grid-cells';
@@ -267,6 +271,19 @@ export class ChartWidgetGrid {
 
   getSync(): WidgetGridSync {
     return { ...this.sync };
+  }
+
+  /** Every chart's look, and the bar's (see `ChartWidget.setUI`). */
+  setUI(theme: WidgetUIPreset | WidgetUITheme): void {
+    const ui = resolveWidgetUI(theme);
+    applyWidgetUI(this.root, ui);
+    for (const cell of this.cells) cell.widget.setUI(ui);
+    this.uiTheme = ui;
+  }
+
+  /** The grid's look, every token set. */
+  getUI(): ResolvedWidgetUI {
+    return resolveWidgetUI(this.uiTheme ?? this.options.widget?.ui);
   }
 
   setSync(patch: Partial<WidgetGridSync>): void {
@@ -392,6 +409,8 @@ export class ChartWidgetGrid {
       ...(lead && this.sync.symbol ? { symbol: lead.getSymbol() } : {}),
       ...(lead && this.sync.interval ? { timeframe: lead.getTimeframe() } : {}),
       ...(this.options.adapter && !own.adapter ? { adapter: this.options.adapter(index) } : {}),
+      // A look set on the grid since (setUI) for a chart it adds too.
+      ...(this.uiTheme ? { ui: this.uiTheme } : {}),
       // The grid keeps the layouts, of all its charts at once.
       layouts: false,
       onSymbolChange: (symbol) => {

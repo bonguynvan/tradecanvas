@@ -127,10 +127,12 @@ const vi: SiteMessages = {
     subtitleHtml:
       'Chọn một cảnh. Mỗi cảnh khởi động <code>ChartWidget</code> đầy đủ ở trạng thái làm nổi bật một mảng tính năng — sau đó tuỳ bạn kéo, vẽ và chuyển đổi.',
     scenes: 'Các cảnh tính năng',
+    widgetLook: 'Giao diện widget',
     widgetLanguage: 'Ngôn ngữ của widget',
     idle: 'Cuộn tới đây để chạy biểu đồ trực tiếp',
     metricHint: 'Đổi mã hoặc khung thời gian để đo tốc độ chuyển',
     metricSwitch: '→ {label}: {ms} · {bars} nến',
+    metricLook: "setUI('{name}'): {ms}",
     metricSetData: 'setData({bars} nến): {ms}',
     tryThis: 'Thử ngay',
   },
@@ -259,6 +261,18 @@ const vi: SiteMessages = {
         'Ctrl+P tìm mọi mã trên Binance, kèm tên, ngay khi bạn gõ',
         'Mở Cài đặt hoặc công cụ vẽ để xem bản dịch',
         'Rê chuột: nhãn của con trỏ chữ thập giữ đủ độ chính xác theo định dạng số của ngôn ngữ đó',
+      ],
+    },
+    looks: {
+      title: 'Giao diện của riêng bạn',
+      stat: '3 preset',
+      blurb:
+        'Hình khối và kích thước của widget đều là token: góc bo, chiều cao nút, kiểu chữ, đường viền, bóng đổ, cách hiện nút đang chọn, thanh gắn cạnh hay nổi. Bắt đầu từ Studio, Terminal hoặc Capsule rồi đổi những gì bạn muốn; nhãn giá trên biểu đồ cũng theo cùng góc bo.',
+      tryThis: [
+        'Đổi giao diện phía trên biểu đồ: đổi ngay tại chỗ, không dựng lại gì',
+        'Mở Cài đặt, một menu hoặc công cụ vẽ ở từng giao diện',
+        'Capsule cho thanh công cụ và công cụ vẽ nổi thành đảo, nhãn giá hình viên thuốc',
+        'Terminal dày và vuông vức: nhãn chữ in hoa, khung giờ đang chọn có gạch chân',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const vi: SiteMessages = {
       frameworks: 'Framework',
       embed: 'Widget nhúng',
       api: 'Tham chiếu API',
+      styling: 'Giao diện',
       'chart-types': 'Loại biểu đồ',
       indicators: 'Chỉ báo',
       'drawing-tools': 'Công cụ vẽ',

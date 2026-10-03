@@ -61,7 +61,7 @@ export class WidgetToolbar {
     // pinned); the menu lists them all, with a star to pin or unpin.
     this.tfFavorites = [...(config.timeframeFavorites ?? config.timeframes.map((tf) => tf.value))];
     this.tfGroup = document.createElement('div');
-    this.tfGroup.className = 'tcw-toolbar-group';
+    this.tfGroup.className = 'tcw-toolbar-group tcw-tf-group';
     el.appendChild(this.tfGroup);
     if (callbacks.onToggleTimeframeFavorite && config.timeframes.length > 0) {
       const tfWrap = document.createElement('div');

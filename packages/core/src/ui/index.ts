@@ -12,3 +12,4 @@ export { renderAxisValueLabels, spreadLabels, labelTextColor, indicatorValuePrec
 export type { AxisValueLabel } from './axisValueLabels.js';
 export { PriceLines } from './PriceLines.js';
 export type { PriceLineKind, PriceLineLevel, BidAsk } from './PriceLines.js';
+export { fillTag } from './shapes.js';

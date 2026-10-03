@@ -128,10 +128,12 @@ const zhHant: SiteMessages = {
       '選擇一個場景。每個場景都會啟動完整的 <code>ChartWidget</code>，並設定成展示某項功能的狀態——之後就交給你拖曳、繪圖與切換。',
     scenes: '功能場景',
     widgetLanguage: '元件語言',
+    widgetLook: '元件外觀',
     idle: '捲動到此處即可啟動即時圖表',
     metricHint: '切換商品或週期即可計時',
     metricSwitch: '→ {label}：{ms} · {bars} 根K線',
     metricSetData: 'setData({bars} 根K線)：{ms}',
+    metricLook: "setUI('{name}'): {ms}",
     tryThis: '試試看',
   },
 
@@ -259,6 +261,18 @@ const zhHant: SiteMessages = {
         'Ctrl+P 邊打字邊搜尋所有 Binance 商品，並顯示名稱',
         '開啟「設定」或繪圖工具，查看翻譯後的介面',
         '滑鼠懸停：十字游標的標籤會以該語言的數字格式保留完整精度',
+      ],
+    },
+    looks: {
+      title: '專屬於你的外觀',
+      stat: '3 套預設',
+      blurb:
+        '元件的形狀與尺寸都由 token 決定：圓角、控制項高度、字型、邊框、陰影、選取中按鈕的樣式，以及工具列是停靠還是浮動。從 Studio、Terminal 或 Capsule 出發，想改哪裡就改哪裡；圖表上的價格標籤也會套用相同的圓角。',
+      tryThis: [
+        '在圖表上方切換外觀：就地生效，不會重建任何東西',
+        '在每種外觀下開啟「設定」、選單或繪圖工具看看',
+        'Capsule 讓工具列與繪圖工具像小島一樣浮動，價格標籤也變成膠囊形',
+        'Terminal 緊湊方正：標籤全為大寫，選取中的週期下方有一條底線',
       ],
     },
     bigdata: {
@@ -453,6 +467,7 @@ const zhHant: SiteMessages = {
       frameworks: '框架整合',
       embed: '可嵌入的元件',
       api: 'API 參考',
+      styling: '樣式',
       'chart-types': '圖表類型',
       indicators: '指標',
       'drawing-tools': '繪圖工具',

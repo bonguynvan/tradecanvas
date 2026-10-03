@@ -4,7 +4,7 @@ import { DEFAULT_LANG } from '$lib/i18n/languages';
 /** The docs pages, in sidebar order. Each is `./<lang>/<slug>.svelte`. */
 export const DOC_GROUPS = [
   { key: 'start', slugs: ['getting-started', 'frameworks', 'embed'] },
-  { key: 'chart', slugs: ['api', 'chart-types', 'indicators', 'drawing-tools', 'plugins', 'performance'] },
+  { key: 'chart', slugs: ['api', 'styling', 'chart-types', 'indicators', 'drawing-tools', 'plugins', 'performance'] },
   { key: 'trading', slugs: ['trading', 'finance', 'realtime', 'analytics'] },
 ] as const;
 

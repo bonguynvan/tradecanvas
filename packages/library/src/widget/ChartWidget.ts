@@ -17,6 +17,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { readChartTypeOptions } from '@tradecanvas/commons';
+import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -173,6 +174,8 @@ export class ChartWidget {
   private canExport = true;
   /** The latest fetch of each symbol the chart's indicators read. */
   private symbolLoads = new Map<string, number>();
+  /** The widget's look. */
+  private ui!: ResolvedWidgetUI;
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -360,6 +363,13 @@ export class ChartWidget {
     this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
+    // The look: tokens and layout switches on the root and the modal portal
+    // alike. Without `ui` the tokens stay the stylesheet's (Studio's), so a
+    // host's CSS can still set them.
+    this.ui = resolveWidgetUI(options.ui);
+    const variables = options.ui !== undefined;
+    applyWidgetUI(this.root, this.ui, { variables });
+    applyWidgetUI(this.portal, this.ui, { variables });
 
     // 3. Create toolbar
     if (options.toolbar !== false) {
@@ -482,6 +492,8 @@ export class ChartWidget {
       // would silently drop every other default.
       features,
     });
+    // A shape the chart's options give stays until a look is set.
+    if (!options.chartOptions?.shapes) this.applyChartShapes();
 
     // New bars end the loading state, whoever supplied them (stream snapshot,
     // widget.setData, or the host calling getChart().setData directly); stream
@@ -1111,6 +1123,27 @@ export class ChartWidget {
 
   getChart(): Chart {
     return this.chart;
+  }
+
+  /**
+   * Change the widget's look: a preset (`'studio'`, `'terminal'`,
+   * `'capsule'`) or your theme over one. Colours stay with `setTheme`.
+   */
+  setUI(theme: WidgetUIPreset | WidgetUITheme): void {
+    this.ui = resolveWidgetUI(theme);
+    applyWidgetUI(this.root, this.ui);
+    applyWidgetUI(this.portal, this.ui);
+    this.applyChartShapes();
+  }
+
+  /** The widget's look, every token set. */
+  getUI(): ResolvedWidgetUI {
+    return resolveWidgetUI({ ...this.ui });
+  }
+
+  /** The chart's own tags and pills take the look's corners. */
+  private applyChartShapes(): void {
+    this.chart.setShapes({ tagRadius: this.ui.tagRadius });
   }
 
   destroy(): void {
