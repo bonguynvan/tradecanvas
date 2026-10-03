@@ -32,6 +32,9 @@ export class WidgetIntervalInput {
     this.el = document.createElement('div');
     this.el.className = 'tcw-interval-input';
     this.el.hidden = true;
+    // A dialog: the chart's own keys (Enter confirms a bracket order) leave it alone.
+    this.el.setAttribute('role', 'dialog');
+    this.el.setAttribute('aria-label', labels.title);
     this.input = document.createElement('input');
     this.input.type = 'text';
     this.input.className = 'tcw-interval-field';
@@ -51,6 +54,7 @@ export class WidgetIntervalInput {
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         this.apply();
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -89,7 +93,8 @@ export class WidgetIntervalInput {
 
   private check(): void {
     const valid = parseTimeframeInput(this.input.value) !== null;
-    this.input.toggleAttribute('aria-invalid', !valid && this.input.value.trim() !== '');
+    if (!valid && this.input.value.trim() !== '') this.input.setAttribute('aria-invalid', 'true');
+    else this.input.removeAttribute('aria-invalid');
     this.hint.textContent = valid || this.input.value.trim() === '' ? this.labels.hint : this.labels.invalid;
   }
 

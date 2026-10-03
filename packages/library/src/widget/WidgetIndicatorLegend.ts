@@ -173,6 +173,7 @@ export class WidgetIndicatorLegend {
       const l = this.labels;
       const show = (act: string, visible: boolean, icon: string, label: string | undefined) => {
         const b = els.buttons.get(act)!;
+        if (!visible && document.activeElement === b) els.buttons.get('max')!.focus();
         b.hidden = !visible;
         b.innerHTML = createIcon(icon, 12);
         setLabel(b, label ?? act, pane.label);

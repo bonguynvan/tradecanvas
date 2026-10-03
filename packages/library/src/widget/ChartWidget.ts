@@ -99,6 +99,11 @@ const PANE_ROW_TOP = 7;
 const PANE_ROW_STEP = 17;
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
+/** Focus is in a dialog or a menu (the widget's or the page's): its keys are its own. */
+const inOverlay = (): boolean => {
+  const active = document.activeElement;
+  return active instanceof Element && active.closest('[role="dialog"], [aria-modal="true"], [role="menu"]') !== null;
+};
 /** Alt + a letter picks a drawing tool (by key position, so it works on any layout). */
 const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
   KeyT: 'trendLine',
@@ -369,7 +374,7 @@ export class ChartWidget {
               onSaveIndicatorTemplate: () => this.promptSaveIndicatorTemplate(),
               onDeleteIndicatorTemplate: (name: string) => {
                 this.templates.remove(name);
-                this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
+                this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name), true);
               },
             }
             : {}),
@@ -896,14 +901,14 @@ export class ChartWidget {
         void this.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && TOOL_HOTKEYS[e.code]) {
         // Alt+T trend line, Alt+H horizontal line… (the drawing tools' keys).
-        if (isTyping() || !mine || this.options.drawingTools === false) return;
+        if (e.defaultPrevented || isTyping() || !mine || inOverlay() || this.options.drawingTools === false) return;
         e.preventDefault();
         this.handleDrawingTool(TOOL_HOTKEYS[e.code]);
       } else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // A number typed on the chart starts an interval (5, 15m, 1h…).
-        if (!this.intervalInput || isTyping() || !isKeyTarget(this.root, true)) return;
+        if (e.defaultPrevented || !this.intervalInput || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
         const active = document.activeElement;
-        // A dialog elsewhere (settings, search) has the keys.
+        // Focus in another part of the page: the keys are its.
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
         this.intervalInput.open(e.key);
@@ -1681,8 +1686,8 @@ export class ChartWidget {
     if (s.chartType) this.handleChartType(s.chartType);
     this.chart.setScaleMode(s.scaleMode);
 
-    for (const instanceId of [...this.state.activeIndicators.keys()]) this.chart.removeIndicator(instanceId);
-    for (const ind of s.indicators) this.chart.addIndicator(ind.id, ind.params);
+    // The shared indicators in place of the chart's, as one undo step.
+    this.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));
     this.chart.setDrawings(s.drawings);
     this.updateUI();
     return true;
@@ -2614,18 +2619,18 @@ export class ChartWidget {
       };
     });
     const plot = this.chart.getPlotRect();
-    const infos = this.chart.getIndicatorPanes();
     const maximized = this.chart.getMaximizedPane();
     const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
-    const paneControls: IndicatorLegendPane[] = infos.map((pane, i) => ({
+    // As the panes show: one maximised folds the others.
+    const paneControls: IndicatorLegendPane[] = this.chart.getIndicatorPanes().map((pane) => ({
       instanceId: pane.instanceId,
       x: pane.rect.x + pane.rect.width - LEGEND_INSET,
       y: pane.rect.y + PANE_CONTROLS_TOP,
       label: labelOf(pane.instanceId),
       collapsed: this.chart.isPaneCollapsed(pane.instanceId),
       maximized: maximized === pane.instanceId,
-      canMoveUp: i > 0,
-      canMoveDown: i < infos.length - 1,
+      canMoveUp: this.chart.canMovePane(pane.instanceId, -1),
+      canMoveDown: this.chart.canMovePane(pane.instanceId, 1),
     }));
     this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + 1 }, paneControls);
   }
@@ -2673,7 +2678,7 @@ export class ChartWidget {
       else if (id === 'remove') this.handleRemoveIndicator(instanceId);
       else if (id.startsWith('move:')) this.chart.moveIndicatorToPane(instanceId, id.slice('move:'.length));
       this.scheduleLegend();
-    });
+    }, anchor);
   }
 
   private updateUI(): void {

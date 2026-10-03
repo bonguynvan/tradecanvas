@@ -392,10 +392,14 @@ export class WidgetToolbar {
     });
   }
 
-  /** The indicator templates to list (names), after one is saved or deleted. */
-  setIndicatorTemplates(names: readonly string[]): void {
+  /**
+   * The indicator templates to list (names), after one is saved or deleted.
+   * `keepFocus`: focus was in the menu (a delete), so it goes to "Save…".
+   */
+  setIndicatorTemplates(names: readonly string[], keepFocus = false): void {
     this.indicatorTemplates = [...names];
     this.buildIndicatorMenu();
+    if (keepFocus) (this.indicatorDropdown?.['panel'] as HTMLDivElement | undefined)?.querySelector<HTMLButtonElement>('[data-tpl-save]')?.focus();
   }
 
   /** Templates atop the indicators menu: apply one, delete one, save the chart's. */

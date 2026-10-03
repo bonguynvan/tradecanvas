@@ -73,6 +73,14 @@ export class UndoRedoManager {
     return this.undoStack[this.undoStack.length - 1] ?? null;
   }
 
+  /** Forget the last step (nothing to redo after it either). */
+  dropLast(): void {
+    if (this.undoStack.pop()) {
+      this.redoStack.length = 0;
+      this.onChange?.();
+    }
+  }
+
   /** Put `action` in place of the last step (a burst of edits as one step); nothing to redo after it. */
   replaceLast(action: UndoableAction): void {
     if (this.undoStack.length === 0) {

@@ -26,6 +26,8 @@ export class LayoutManager {
   }
 
   addPanel(instanceId: string, position: PanelPosition = 'bottom', size?: number): void {
+    // A new pane shows: the maximised layout goes back to normal.
+    this.maximized = null;
     const isVertical = position === 'left' || position === 'right';
     this.panels.push({
       id: instanceId,
@@ -50,17 +52,38 @@ export class LayoutManager {
     if (this.maximized === instanceId) this.maximized = null;
   }
 
-  /** Fold a top or bottom pane to its header, or open it again. False when nothing changed. */
+  /**
+   * Fold a top or bottom pane to its header, or open it again. While a pane
+   * is maximised this puts the layout back to normal first (the other panes
+   * show folded then). False when nothing changed.
+   */
   setPanelCollapsed(instanceId: string, collapsed: boolean): boolean {
     const panel = this.panels.find((p) => p.id === instanceId);
-    if (!panel || !isHorizontal(panel) || !!panel.collapsed === collapsed) return false;
+    if (!panel || !isHorizontal(panel)) return false;
+    if (this.maximized === null && !!panel.collapsed === collapsed) return false;
+    this.maximized = null;
     panel.collapsed = collapsed || undefined;
-    if (collapsed && this.maximized === instanceId) this.maximized = null;
     return true;
   }
 
+  /** Folded as set (see `isPanelShownCollapsed` for how it shows). */
   isPanelCollapsed(instanceId: string): boolean {
     return !!this.panels.find((p) => p.id === instanceId)?.collapsed;
+  }
+
+  /** Shown folded: folded as set, or another pane is maximised. */
+  isPanelShownCollapsed(instanceId: string): boolean {
+    const panel = this.panels.find((p) => p.id === instanceId);
+    if (!panel || !isHorizontal(panel)) return false;
+    return this.maximized !== null ? this.maximized !== instanceId : !!panel.collapsed;
+  }
+
+  /** Whether `movePanel(instanceId, delta)` would move it. */
+  canMovePanel(instanceId: string, delta: -1 | 1): boolean {
+    const panel = this.panels.find((p) => p.id === instanceId);
+    if (!panel) return false;
+    const group = this.panels.filter((p) => p.position === panel.position);
+    return group[group.indexOf(panel) + delta] !== undefined;
   }
 
   /**
@@ -126,14 +149,25 @@ export class LayoutManager {
         panel.size = isVertical ? DEFAULT_PANEL_WIDTH : DEFAULT_PANEL_HEIGHT;
         panel.minSize = isVertical ? MIN_PANEL_WIDTH : MIN_PANEL_HEIGHT;
       }
+      // Side panes neither fold nor maximise.
+      if (isVertical) {
+        panel.collapsed = undefined;
+        if (this.maximized === instanceId) this.maximized = null;
+      }
     }
   }
 
-  /** Resize a pane; a folded pane opens, and a maximised layout goes back to normal. */
+  /**
+   * Resize a pane; a folded pane opens, and a maximised layout goes back to
+   * normal. A height is kept within the room there is (a stored layout may ask
+   * for more).
+   */
   setPanelSize(instanceId: string, size: number): void {
     const panel = this.panels.find((p) => p.id === instanceId);
     if (panel) {
-      panel.size = Math.max(panel.minSize, size);
+      const room = isHorizontal(panel) ? this.containerHeight - TIME_AXIS_HEIGHT - MIN_MAIN_HEIGHT_WITH_MAXIMIZED : this.containerWidth / 2;
+      const capped = room > panel.minSize ? Math.min(size, room) : size;
+      panel.size = Math.max(panel.minSize, capped);
       panel.collapsed = undefined;
       this.maximized = null;
     }

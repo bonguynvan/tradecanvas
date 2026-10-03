@@ -23,8 +23,12 @@ export class WidgetContextMenu {
   private el: HTMLDivElement;
   private onPick: ((id: string) => void) | null = null;
   private returnFocus: HTMLElement | null = null;
+  /** The button that opened it: pressing it again is its click's to handle (a toggle). */
+  private anchor: HTMLElement | null = null;
   private readonly onDocPointer = (e: Event) => {
-    if (!this.el.contains(e.target as Node)) this.close();
+    const target = e.target as Node;
+    if (this.el.contains(target) || this.anchor?.contains(target)) return;
+    this.close();
   };
   /** Scrolling, resizing or leaving the window moves the chart from under the menu. */
   private readonly onAway = () => this.close();
@@ -44,9 +48,10 @@ export class WidgetContextMenu {
    * of the point when there is no room below or to the right, and stays
    * inside both the host and the window.
    */
-  open(entries: readonly ContextMenuEntry[], x: number, y: number, onPick: (id: string) => void): void {
+  open(entries: readonly ContextMenuEntry[], x: number, y: number, onPick: (id: string) => void, anchor?: HTMLElement): void {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.onPick = onPick;
+    this.anchor = anchor ?? null;
     this.el.replaceChildren(...entries.map((entry) => this.entry(entry)));
     this.el.hidden = false;
     const hostRect = this.host.getBoundingClientRect();
@@ -65,6 +70,7 @@ export class WidgetContextMenu {
     if (this.el.hidden) return;
     this.el.hidden = true;
     this.onPick = null;
+    this.anchor = null;
     document.removeEventListener('pointerdown', this.onDocPointer, true);
     document.removeEventListener('wheel', this.onAway, { capture: true });
     window.removeEventListener('resize', this.onAway);

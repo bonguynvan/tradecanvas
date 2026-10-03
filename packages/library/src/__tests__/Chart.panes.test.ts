@@ -116,7 +116,8 @@ describe('indicator undo', () => {
   it('undoes and redoes adding, editing, moving and removing an indicator, under the same ids', () => {
     const rsi = chart.addIndicator('rsi')!;
     chart.updateIndicator(rsi, { period: 21 });
-    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 10_000); // a later, separate edit
+    const later = performance.now() + 10_000;
+    vi.spyOn(performance, 'now').mockReturnValue(later); // a later, separate edit
     chart.setIndicatorLevels(rsi, [20, 80]);
     chart.removeIndicator(rsi);
     expect(chart.getActiveIndicators()).toEqual([]);
@@ -169,5 +170,78 @@ describe('indicator setups', () => {
     expect(chart.getActiveIndicators().map((a) => a.id)).toEqual(['rsi']);
     chart.undo();
     expect(chart.getActiveIndicators().map((a) => a.id)).toEqual(['ema']);
+  });
+});
+
+describe('review fixes', () => {
+  it('undo keeps a reader on its source and in its pane when the source was added after it', () => {
+    const ema = chart.addIndicator('ema', { period: 9 })!;
+    const rsi = chart.addIndicator('rsi')!;
+    chart.updateIndicator(ema, { source: indicatorSource(rsi, 'value') });
+    expect(panes()).toEqual([[rsi, ema]]);
+    chart.addIndicator('cci');
+    chart.undo();
+    expect(panes()).toEqual([[rsi, ema]]);
+    expect(chart.getIndicatorOutput(ema)?.series.some((p) => p !== null && p !== undefined)).toBe(true);
+  });
+
+  it('undo keeps an older indicator in the pane it was moved into', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const macd = chart.addIndicator('macd')!;
+    chart.moveIndicatorToPane(rsi, macd);
+    chart.addIndicator('ema', { period: 20 });
+    chart.undo();
+    expect(panes()).toEqual([[macd, rsi]]);
+  });
+
+  it('takes a member’s readers along into its new pane', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const macd = chart.addIndicator('macd')!;
+    chart.moveIndicatorToPane(macd, rsi);
+    const sma = chart.addIndicator('sma', { period: 9, source: indicatorSource(macd, 'macd') })!;
+    expect(chart.moveIndicatorToPane(macd, 'new')).toBe(true);
+    expect(panes()).toEqual([[rsi], [macd, sma]]);
+  });
+
+  it('undoes a restyle in place, without taking indicators down', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.addIndicator('cci');
+    chart.updateIndicatorStyle(rsi, { colors: ['#ff0000'] });
+    const removed: unknown[] = [];
+    chart.on('indicatorRemove', (e) => removed.push(e.payload));
+    chart.undo();
+    expect(removed).toEqual([]);
+    expect(chart.getIndicatorStyle(rsi)?.colors[0]).not.toBe('#ff0000');
+  });
+
+  it('leaves no step for a quick hide and show', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const steps = chart.getUndoRedoState().undoCount;
+    chart.setIndicatorVisible(rsi, false);
+    chart.setIndicatorVisible(rsi, true);
+    expect(chart.getUndoRedoState().undoCount).toBe(steps);
+  });
+
+  it('moves alerts on a replaced indicator to the template’s one of the same kind', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const setup = chart.getIndicatorSetup();
+    chart.addAlert(70, 'crossingUp', 'overbought', `${rsi}:value`);
+    chart.applyIndicatorSetup(setup);
+    const now = chart.getActiveIndicators()[0].instanceId;
+    expect(now).not.toBe(rsi);
+    expect(chart.getAlerts().map((a) => a.channel)).toEqual([`${now}:value`]);
+  });
+
+  it('shows the panes folded while another is maximised, and puts them back on fold or a new pane', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const cci = chart.addIndicator('cci')!;
+    chart.setMaximizedPane(rsi);
+    expect(chart.isPaneCollapsed(cci)).toBe(true);
+    expect(chart.setPaneCollapsed(cci, false)).toBe(true); // "expand": back to normal
+    expect(chart.getMaximizedPane()).toBeNull();
+    expect(chart.isPaneCollapsed(cci)).toBe(false);
+    chart.setMaximizedPane(rsi);
+    chart.addIndicator('macd');
+    expect(chart.getMaximizedPane()).toBeNull();
   });
 });

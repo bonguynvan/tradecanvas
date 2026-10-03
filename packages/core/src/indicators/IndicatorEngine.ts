@@ -303,7 +303,6 @@ export class IndicatorEngine {
     return out;
   }
 
-  /** The instances drawn in `hostId`'s pane besides it, in order. */
   /**
    * The id for a new instance: `wanted` when it is free (an undo puts an
    * indicator back as it was), else a fresh one. Fresh ids never take one in
@@ -320,6 +319,7 @@ export class IndicatorEngine {
     return fresh;
   }
 
+  /** The instances drawn in `hostId`'s pane besides it, in order. */
   getPaneMembers(hostId: string): string[] {
     const out: string[] = [];
     for (const instance of this.instances.values()) {

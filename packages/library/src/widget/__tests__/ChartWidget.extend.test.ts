@@ -156,6 +156,21 @@ describe('ChartWidget keys for tools and intervals', () => {
     expect(FakeChart.last.tools).toEqual(['trendLine']);
   });
 
+  it('leaves the keys to a dialog that has focus', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    press();
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const button = document.createElement('button');
+    dialog.appendChild(button);
+    host.querySelector('.tcw-root')!.appendChild(dialog);
+    button.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyT', key: 't', altKey: true, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '5', cancelable: true }));
+    expect(FakeChart.last.tools).toEqual([]);
+    expect(host.querySelector<HTMLElement>('.tcw-interval-input')!.hidden).toBe(true);
+  });
+
   it('opens the interval field on a digit once the chart was used, and switches on Enter', () => {
     const changes: string[] = [];
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, onTimeframeChange: (tf) => changes.push(tf) });

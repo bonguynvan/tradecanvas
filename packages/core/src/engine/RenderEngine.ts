@@ -439,6 +439,8 @@ export class RenderEngine {
         continue;
       }
       const pv = panel.viewport;
+      // Folded to its header: nothing to point at.
+      if (pv.chartRect.height < MIN_PANE_PLOT_HEIGHT) continue;
       // Vertical line (synced with main chart bar snapping)
       const barIdx = xToBarIndex(cursorPos.x, pv);
       const snappedIdx = Math.max(0, Math.min((ctx.data?.length ?? 1) - 1, Math.round(barIdx)));
@@ -479,7 +481,7 @@ export class RenderEngine {
       const pv = panel.viewport;
       const pr = panel.rect;
       const { min, max } = pv.priceRange;
-      if (max - min <= 0 || pr.height <= 0) continue;
+      if (max - min <= 0 || pr.height <= 0 || pv.chartRect.height < MIN_PANE_PLOT_HEIGHT) continue;
       const axisX = pr.x + pr.width;
       const precision = panelPrecision(computeTickStep(min, max, 4));
 

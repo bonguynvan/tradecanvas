@@ -81,6 +81,18 @@ describe('typed interval', () => {
     input.destroy();
   });
 
+  it('keeps Enter to itself (a pending bracket order is not confirmed)', () => {
+    const input = ui(() => true);
+    input.open('5');
+    const seen = vi.fn();
+    document.addEventListener('keydown', seen);
+    key('Enter');
+    document.removeEventListener('keydown', seen);
+    expect(seen).not.toHaveBeenCalled();
+    expect(host.querySelector('.tcw-interval-input')!.getAttribute('role')).toBe('dialog');
+    input.destroy();
+  });
+
   it('says when the text is not an interval, and stays open', () => {
     const input = ui(() => false);
     input.open('1');
