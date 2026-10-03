@@ -1,5 +1,12 @@
 # @tradecanvas/analytics
 
+## 1.8.0
+
+### Patch Changes
+
+- Updated dependencies [6fceef2]
+  - @tradecanvas/commons@1.8.0
+
 ## 1.7.0
 
 ### Patch Changes
