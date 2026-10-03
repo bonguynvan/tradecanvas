@@ -9,10 +9,7 @@ export class VerticalLineTool extends DrawingBase {
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const { chartRect } = viewport;
     this.applyLineStyle(ctx, state.style);
-    ctx.beginPath();
-    ctx.moveTo(p.x, chartRect.y);
-    ctx.lineTo(p.x, chartRect.y + chartRect.height);
-    ctx.stroke();
+    this.strokeVertical(ctx, p.x, chartRect.y, chartRect.y + chartRect.height);
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

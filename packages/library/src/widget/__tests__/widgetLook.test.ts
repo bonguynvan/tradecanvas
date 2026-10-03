@@ -58,7 +58,8 @@ describe('the stylesheet’s look', () => {
     expect(ruleBody('.tcw-sidebar-btn')).toContain('height: var(--tcw-control-h)');
     expect(ruleBody('.tcw-dropdown-item')).toContain('min-height: var(--tcw-menu-item-h)');
     expect(ruleBody('.tcw-toolbar-sep')).toContain('width: var(--tcw-sep-w)');
-    expect(ruleBody('.tcw-sidebar-divider')).toContain('height: var(--tcw-sep-w)');
+    // The drawing tools' sections keep a hairline even where the toolbar drops its rules.
+    expect(ruleBody('.tcw-sidebar-divider')).toContain('height: max(1px, var(--tcw-sep-w))');
   });
 
   it('gives each kind of part its own corners', () => {

@@ -42,7 +42,7 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, normalizeBarTime } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -4360,8 +4360,8 @@ export class Chart {
         candleDown: config.colorScheme.down,
         candleUpWick: config.colorScheme.up,
         candleDownWick: config.colorScheme.down,
-        volumeUp: config.colorScheme.up.replace(')', ', 0.3)').replace('rgb(', 'rgba(') || `${config.colorScheme.up}4D`,
-        volumeDown: config.colorScheme.down.replace(')', ', 0.3)').replace('rgb(', 'rgba(') || `${config.colorScheme.down}4D`,
+        volumeUp: volumeColor(config.colorScheme.up),
+        volumeDown: volumeColor(config.colorScheme.down),
       };
       this.themeManager.setTheme(marketTheme);
     }

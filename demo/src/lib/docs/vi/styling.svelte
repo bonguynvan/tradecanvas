@@ -153,3 +153,17 @@ grid.getUI()`}</code></pre>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
+
+<h2>Màu volume</h2>
+<p>
+  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến.
+</p>
+<pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
+
+chart.setTheme({
+  ...DARK_THEME,
+  candleUp: '#26a17b',
+  candleDown: '#e0525f',
+  volumeUp: volumeColor('#26a17b'),
+  volumeDown: volumeColor('#e0525f'),
+})`}</code></pre>

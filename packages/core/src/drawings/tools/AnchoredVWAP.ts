@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice } from './labels.js';
+import { formatDrawingPrice, drawingFont } from './labels.js';
 
 /**
  * Anchored VWAP drawing tool.
@@ -68,7 +68,7 @@ export class AnchoredVWAPTool extends DrawingBase {
       const y = priceToY(lastPrice, viewport);
       if (x >= chartRect.x && x <= chartRect.x + chartRect.width) {
         ctx.fillStyle = state.style.color;
-        ctx.font = 'bold 9px sans-serif';
+        ctx.font = drawingFont(9, 'bold');
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText(`AVWAP ${formatDrawingPrice(lastPrice, lastPrice, viewport)}`, x + 6, y);

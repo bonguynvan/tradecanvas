@@ -1,5 +1,6 @@
 import type { DataSeries, ViewportState } from '@tradecanvas/commons';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
+import { inDevicePixels } from './pixelGrid.js';
 
 /**
  * Below this bar width (CSS px) bar-shaped charts draw one column per pixel
@@ -76,20 +77,19 @@ export function renderDenseBars(
   const barUnit = viewport.barWidth + viewport.barSpacing;
   const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
   const toY = priceToYMapper(viewport);
-  const up = new Path2D();
-  const down = new Path2D();
-  forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
-    const path = c.close >= c.open ? up : down;
-    const x = c.x + 0.5;
-    const top = toY(c.high);
-    const bottom = toY(c.low);
-    // A flat column still gets a pixel, like a doji's body.
-    path.moveTo(x, Math.min(top, bottom) - 0.5);
-    path.lineTo(x, Math.max(top, bottom, Math.min(top, bottom) + 1) + 0.5);
+  inDevicePixels(ctx, (px) => {
+    const width = Math.max(1, Math.round(px.ratio));
+    const up = new Path2D();
+    const down = new Path2D();
+    forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
+      const top = px.y(toY(c.high));
+      const bottom = px.y(toY(c.low));
+      // A flat column still gets a pixel, like a doji's body.
+      (c.close >= c.open ? up : down).rect(px.x(c.x), Math.min(top, bottom), width, Math.max(Math.abs(bottom - top), width));
+    });
+    ctx.fillStyle = upColor;
+    ctx.fill(up);
+    ctx.fillStyle = downColor;
+    ctx.fill(down);
   });
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = upColor;
-  ctx.stroke(up);
-  ctx.strokeStyle = downColor;
-  ctx.stroke(down);
 }

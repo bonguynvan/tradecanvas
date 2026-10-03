@@ -1,7 +1,11 @@
 import type { Theme } from '../types/theme.js';
+import { withAlpha } from '../utils/color.js';
+
+/** The chart's own type: the system UI face, so text matches the page around it. */
+export const DEFAULT_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 const DEFAULT_FONT = {
-  family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  family: DEFAULT_FONT_FAMILY,
   sizeSmall: 10,
   sizeMedium: 12,
   sizeLarge: 14,
@@ -35,6 +39,20 @@ export const TC_PALETTE = {
   ink: '#0c1016',
 } as const;
 
+/**
+ * How strongly volume bars show: the candle colour at this opacity, so they
+ * read as a backdrop under the candles rather than a second chart.
+ */
+export const VOLUME_ALPHA = 0.22;
+
+/** The volume bar colour for a candle colour. */
+export function volumeColor(candleColor: string): string {
+  return withAlpha(candleColor, VOLUME_ALPHA);
+}
+
+const DARK_UP = '#2eb88a';
+const DARK_DOWN = '#e85a67';
+
 /** Order in which overlay indicators are coloured when no colour is given. */
 export const TC_SERIES_COLORS: readonly string[] = [
   TC_PALETTE.blue,
@@ -51,17 +69,17 @@ export const DARK_THEME: Theme = {
   textSecondary: '#7d8696',
   grid: '#161b23',
   crosshair: '#8a93a3',
-  candleUp: '#3ccf91',
-  candleDown: '#f0616d',
-  candleUpWick: '#3ccf91',
-  candleDownWick: '#f0616d',
+  candleUp: DARK_UP,
+  candleDown: DARK_DOWN,
+  candleUpWick: DARK_UP,
+  candleDownWick: DARK_DOWN,
   lineColor: TC_PALETTE.amber,
   areaTopColor: 'rgba(242, 169, 59, 0.32)',
   areaBottomColor: 'rgba(242, 169, 59, 0.0)',
-  volumeUp: 'rgba(60, 207, 145, 0.28)',
-  volumeDown: 'rgba(240, 97, 109, 0.28)',
+  volumeUp: volumeColor(DARK_UP),
+  volumeDown: volumeColor(DARK_DOWN),
   axisLine: '#1f2630',
-  axisLabel: '#c3c9d3',
+  axisLabel: '#9aa3b2',
   axisLabelBackground: '#1f2630',
   font: DEFAULT_FONT,
 };
@@ -80,10 +98,10 @@ export const LIGHT_THEME: Theme = {
   lineColor: '#c77a0a',
   areaTopColor: 'rgba(199, 122, 10, 0.24)',
   areaBottomColor: 'rgba(199, 122, 10, 0.0)',
-  volumeUp: 'rgba(22, 163, 106, 0.25)',
-  volumeDown: 'rgba(217, 65, 79, 0.25)',
+  volumeUp: volumeColor('#16a36a'),
+  volumeDown: volumeColor('#d9414f'),
   axisLine: '#dde1e7',
-  axisLabel: '#3f4754',
+  axisLabel: '#5b6472',
   axisLabelBackground: '#eef0f3',
   font: DEFAULT_FONT,
 };

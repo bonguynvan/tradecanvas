@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice } from './labels.js';
+import { formatDrawingPrice, drawingFont } from './labels.js';
 
 /**
  * Volume Profile (Visible/Fixed Range) drawing tool.
@@ -102,7 +102,7 @@ export class VolumeProfileRangeTool extends DrawingBase {
 
     // POC label
     ctx.fillStyle = pocColor;
-    ctx.font = '9px sans-serif';
+    ctx.font = drawingFont(9);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
     ctx.globalAlpha = 0.8;

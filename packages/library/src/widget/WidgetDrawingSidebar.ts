@@ -81,8 +81,12 @@ export class WidgetDrawingSidebar {
       this.renderFavorites();
     }
 
-    // Tool groups
+    // Tool groups, a divider between one section and the next.
     config.drawingToolGroups.forEach((group, idx) => {
+      const previous = config.drawingToolGroups[idx - 1];
+      if (previous && group.section !== undefined && group.section !== previous.section) {
+        el.appendChild(this.divider());
+      }
       const wrap = document.createElement('div');
       wrap.className = 'tcw-tool-group-wrap';
 
@@ -186,6 +190,8 @@ export class WidgetDrawingSidebar {
       el.appendChild(this.stayBtn);
     }
 
+    // History, then the one that clears everything, each apart.
+    el.appendChild(this.divider());
     const undoBtn = document.createElement('button');
     undoBtn.className = 'tcw-sidebar-btn';
     undoBtn.title = this.t('drawing.undo');
@@ -200,6 +206,7 @@ export class WidgetDrawingSidebar {
     redoBtn.addEventListener('click', callbacks.onRedo);
     el.appendChild(redoBtn);
 
+    el.appendChild(this.divider());
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
     clearBtn.title = this.t('drawing.clearAll');

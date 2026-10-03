@@ -1,9 +1,70 @@
 import type { DrawingState, ViewportState } from '@tradecanvas/commons';
+import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 
 /** Shared label helpers for the measuring / pattern drawing tools. */
 
-const LABEL_FONT = '11px sans-serif';
+/** Text in drawings: the chart's own type at `size` px (not the browser's default sans). */
+export function drawingFont(size: number, weight?: 'bold'): string {
+  return `${weight ? `${weight} ` : ''}${size}px ${DEFAULT_FONT_FAMILY}`;
+}
+
+/** The chart's background, around drawing text so it stays legible over bars and grid. */
+let labelHalo = 'rgba(12, 16, 22, 0.85)';
+
+/** Set by the drawing renderer from the theme before each pass. */
+export function setLabelHalo(color: string): void {
+  labelHalo = color;
+}
+
+/** `fillText` with a halo of the chart's background behind the glyphs. */
+export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = labelHalo;
+  ctx.globalAlpha = 0.85;
+  ctx.setLineDash([]);
+  ctx.strokeText(text, x, y);
+  ctx.restore();
+  ctx.fillText(text, x, y);
+}
+
+const LABEL_FONT = drawingFont(11);
+
+/** Height of a label pill (CSS px). */
+export const PILL_HEIGHT = 18;
+
+/** Width of a pill for `text` in the current font. */
+export function pillWidth(ctx: CanvasRenderingContext2D, text: string): number {
+  return Math.ceil(ctx.measureText(text).width) + 12;
+}
+
+/**
+ * Text on a small rounded tag of `background`, left edge at `x`, centred on
+ * `centerY`, in the current font. Returns its width.
+ */
+export function drawPill(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  centerY: number,
+  background: string,
+  color = '#ffffff',
+): number {
+  const width = pillWidth(ctx, text);
+  const top = Math.round(centerY - PILL_HEIGHT / 2);
+  ctx.fillStyle = background;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, top, width, PILL_HEIGHT, 4);
+  else ctx.rect(x, top, width, PILL_HEIGHT);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + 6, top + PILL_HEIGHT / 2 + 0.5);
+  return width;
+}
 const LABEL_LINE_HEIGHT = 14;
 const LABEL_PAD_X = 6;
 const LABEL_PAD_Y = 4;

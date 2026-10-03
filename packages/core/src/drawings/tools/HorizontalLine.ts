@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { priceToY } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice } from './labels.js';
+import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
 
 export class HorizontalLineTool extends DrawingBase {
   descriptor = { type: 'horizontalLine' as const, name: 'Horizontal Line', requiredAnchors: 1 };
@@ -15,17 +15,14 @@ export class HorizontalLineTool extends DrawingBase {
     const y = priceToY(state.anchors[0].price, viewport);
     const { chartRect } = viewport;
     this.applyLineStyle(ctx, state.style);
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, y);
-    ctx.lineTo(chartRect.x + chartRect.width, y);
-    ctx.stroke();
+    this.strokeHorizontal(ctx, chartRect.x, chartRect.x + chartRect.width, y);
     this.resetLineStyle(ctx);
 
     // Price label
     ctx.fillStyle = state.style.color;
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.textBaseline = 'bottom';
-    ctx.fillText(formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x + 4, y - 3);
+    fillTextWithHalo(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x + 4, y - 3);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

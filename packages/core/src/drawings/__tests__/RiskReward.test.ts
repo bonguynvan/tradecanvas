@@ -17,25 +17,32 @@ const texts = (anchors = LONG, options?: DrawingOptions) => {
 };
 
 describe('RiskRewardTool', () => {
-  it('labels target, stop, side, quantity and R:R for a long', () => {
+  it('labels side, quantity and R:R, then target and stop, for a long', () => {
     // 1% of 1,000 = 10 at risk, 10 per unit → qty 1; target 2R above → 70.
     expect(texts()).toEqual([
-      'Target: 70.00 (40.00%) 20.00',
-      'Long · Qty: 1.00 · R:R 2',
-      'Stop: 40.00 (-20.00%) 10.00',
+      'Long · Qty 1.00 · R:R 2',
+      'Target 70.00 (+40.00%) · 20.00',
+      'Stop 40.00 (−20.00%) · 10.00',
     ]);
   });
 
   it('puts the target below the entry for a short', () => {
-    expect(texts(SHORT)[0]).toBe('Target: 30.00 (-40.00%) 20.00');
-    expect(texts(SHORT)[1]).toBe('Short · Qty: 1.00 · R:R 2');
+    expect(texts(SHORT)[0]).toBe('Short · Qty 1.00 · R:R 2');
+    expect(texts(SHORT)[1]).toBe('Target 30.00 (−40.00%) · 20.00');
   });
 
   it('follows the R:R, the risk as a sum, and the quantity decimals', () => {
-    expect(texts(LONG, { rewardRatio: 3 })[0]).toBe('Target: 80.00 (60.00%) 30.00');
+    expect(texts(LONG, { rewardRatio: 3 })[1]).toBe('Target 80.00 (+60.00%) · 30.00');
     const bySum = texts(LONG, { riskMode: 'amount', risk: 55, qtyDecimals: 1 });
-    expect(bySum[1]).toBe('Long · Qty: 5.5 · R:R 2');
-    expect(bySum[0]).toBe('Target: 70.00 (40.00%) 110.00');
+    expect(bySum[0]).toBe('Long · Qty 5.5 · R:R 2');
+    expect(bySum[1]).toBe('Target 70.00 (+40.00%) · 110.00');
+  });
+
+  it('keeps the tags apart when the stop is close to the entry', () => {
+    const { ctx, calls } = recordingCtx();
+    tool.render(ctx, drawing('riskReward', [LONG[0], { ...LONG[1], price: 49.5 }]), unitViewport, false);
+    const tops = calls.filter((c) => c.name === 'roundRect' || c.name === 'rect').map((c) => c.args[1] as number).sort((a, b) => a - b);
+    for (let i = 1; i < tops.length; i++) expect(tops[i] - tops[i - 1]).toBeGreaterThanOrEqual(18);
   });
 
   it('draws no labels when they are off', () => {

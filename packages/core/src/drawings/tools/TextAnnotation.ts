@@ -1,3 +1,4 @@
+import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
@@ -23,7 +24,7 @@ export class TextAnnotationTool extends DrawingBase {
     const text = resolveAnnotationText(state);
     const fontSize = state.style.fontSize || 14;
 
-    ctx.font = `${fontSize}px sans-serif`;
+    ctx.font = `${fontSize}px ${DEFAULT_FONT_FAMILY}`;
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';

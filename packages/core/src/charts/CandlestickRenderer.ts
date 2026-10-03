@@ -2,70 +2,56 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
 import { isDense, renderDenseBars } from './denseBars.js';
+import { barColumns, inDevicePixels } from './pixelGrid.js';
 
 export class CandlestickRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     const { from, to } = viewport.visibleRange;
     const barWidth = viewport.barWidth;
-    const halfBar = barWidth / 2;
 
     // Pre-compute coordinate conversion constants (avoid function call overhead per bar)
     const barUnit = barWidth + viewport.barSpacing;
-    const offsetX = -viewport.offset + viewport.chartRect.x + halfBar;
+    const offsetX = -viewport.offset + viewport.chartRect.x + barWidth / 2;
     const { min, max } = viewport.priceRange;
-    const priceRange = max - min;
-    if (priceRange === 0) return;
+    if (max - min === 0) return;
     if (isDense(viewport)) {
       renderDenseBars(ctx, data, viewport, theme.candleUp, theme.candleDown);
       return;
     }
 
-    // Inline coordinate conversions
-    const toX = (i: number) => i * barUnit + offsetX;
     const toY = priceToYMapper(viewport);
 
-    // Batch: collect up/down wicks and bodies into Path2D objects — single draw call per color
-    const upWickPath = new Path2D();
-    const downWickPath = new Path2D();
-    const upBodyPath = new Path2D();
-    const downBodyPath = new Path2D();
+    // Wicks and bodies on whole device pixels, batched per colour: one fill each.
+    inDevicePixels(ctx, (px) => {
+      const { body, wick } = barColumns(barWidth, px.ratio);
+      const bodyInset = (body - wick) / 2;
+      const upWick = new Path2D();
+      const downWick = new Path2D();
+      const upBody = new Path2D();
+      const downBody = new Path2D();
 
-    for (let i = from; i <= to && i < data.length; i++) {
-      const bar = data[i];
-      const x = toX(i);
-      const highY = toY(bar.high);
-      const lowY = toY(bar.low);
-      const openY = toY(bar.open);
-      const closeY = toY(bar.close);
-      const isUp = bar.close >= bar.open;
+      for (let i = from; i <= to && i < data.length; i++) {
+        const bar = data[i];
+        const isUp = bar.close >= bar.open;
+        const wickLeft = px.x(i * barUnit + offsetX) - Math.floor(wick / 2);
+        const high = px.y(toY(bar.high));
+        const low = px.y(toY(bar.low));
+        (isUp ? upWick : downWick).rect(wickLeft, Math.min(high, low), wick, Math.max(Math.abs(low - high), 1));
 
-      // Wick
-      const wickPath = isUp ? upWickPath : downWickPath;
-      wickPath.moveTo(x, highY);
-      wickPath.lineTo(x, lowY);
+        const a = px.y(toY(bar.open));
+        const b = px.y(toY(bar.close));
+        // A doji still gets a body one CSS pixel tall.
+        (isUp ? upBody : downBody).rect(wickLeft - bodyInset, Math.min(a, b), body, Math.max(Math.abs(b - a), wick));
+      }
 
-      // Body
-      const bodyTop = Math.min(openY, closeY);
-      const bodyHeight = Math.max(Math.abs(closeY - openY), 1);
-      const bodyPath = isUp ? upBodyPath : downBodyPath;
-      bodyPath.rect(x - halfBar, bodyTop, barWidth, bodyHeight);
-    }
-
-    // Draw all up wicks
-    ctx.strokeStyle = theme.candleUpWick;
-    ctx.lineWidth = 1;
-    ctx.stroke(upWickPath);
-
-    // Draw all down wicks
-    ctx.strokeStyle = theme.candleDownWick;
-    ctx.stroke(downWickPath);
-
-    // Draw all up bodies
-    ctx.fillStyle = theme.candleUp;
-    ctx.fill(upBodyPath);
-
-    // Draw all down bodies
-    ctx.fillStyle = theme.candleDown;
-    ctx.fill(downBodyPath);
+      ctx.fillStyle = theme.candleUpWick;
+      ctx.fill(upWick);
+      ctx.fillStyle = theme.candleDownWick;
+      ctx.fill(downWick);
+      ctx.fillStyle = theme.candleUp;
+      ctx.fill(upBody);
+      ctx.fillStyle = theme.candleDown;
+      ctx.fill(downBody);
+    });
   }
 }

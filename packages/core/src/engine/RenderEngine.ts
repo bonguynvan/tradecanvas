@@ -4,7 +4,7 @@ import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleM
 import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice } from '@tradecanvas/commons';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
-import { renderAxisValueLabels, indicatorValuePrecision, type AxisValueLabel } from '../ui/axisValueLabels.js';
+import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
@@ -226,15 +226,19 @@ export class RenderEngine {
     // --- Chart objects: limits, trade zones, drawings, orders, markers, alerts ---
     if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits);
     ctx.tradeZoneManager?.render(c, viewport, theme);
-    ctx.drawingRenderer?.render(c, viewport);
+    ctx.drawingRenderer?.render(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
     ctx.priceLines?.render(c, viewport, theme, data);
 
     // --- Axes and price tags ---
-    ctx.priceAxis?.render(c, viewport, theme);
-    if (ctx.indicatorValueLabels !== false) this.renderOverlayValueLabels(c, ctx);
+    // Tags are placed first: value tags step around the fixed ones (last
+    // price, high/low, orders), and the scale's labels give way to them all.
+    const fixedTags = this.fixedAxisTags(ctx);
+    const valueTags = ctx.indicatorValueLabels !== false ? this.overlayValueTags(ctx, fixedTags) : [];
+    ctx.priceAxis?.render(c, viewport, theme, 'right', [...fixedTags.map((t) => t.y), ...valueTags.map((t) => t.y)]);
+    drawAxisValueLabels(c, valueTags, viewport.chartRect.x + viewport.chartRect.width, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme);
     if (ctx.leftViewport) {
       ctx.leftPriceAxis?.render(c, ctx.leftViewport, theme, 'left');
       if (ctx.indicatorValueLabels !== false) this.renderLeftValueLabels(c, ctx, ctx.leftViewport);
@@ -327,15 +331,27 @@ export class RenderEngine {
   }
 
   /** Price-pane indicators' latest values as tags on the price axis, under the last-price tag. */
-  private renderOverlayValueLabels(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+  /** Tags fixed on the price axis: the last price, the high/low and bid/ask lines, positions and orders. */
+  private fixedAxisTags(ctx: RenderContext): FixedAxisTag[] {
+    const { viewport, data } = ctx;
+    const { chartRect } = viewport;
+    const tags: FixedAxisTag[] = [];
+    const last = ctx.currentPriceLine?.isVisible() ? ctx.currentPriceLine.getPrice() : null;
+    if (last !== null && last !== undefined) tags.push({ y: priceToY(last, viewport), half: 10 });
+    for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
+    for (const y of ctx.tradingRenderer?.axisTagYs(viewport) ?? []) tags.push({ y, half: 9 });
+    return tags.filter((t) => t.y >= chartRect.y && t.y <= chartRect.y + chartRect.height);
+  }
+
+  /** Overlay indicators' latest values as tags on the price axis, clear of the fixed tags. */
+  private overlayValueTags(ctx: RenderContext, fixed: readonly FixedAxisTag[]): AxisValueLabel[] {
     const values = ctx.indicatorEngine?.getLatestOverlayValues();
-    if (!values?.length) return;
-    const { viewport, theme } = ctx;
+    if (!values?.length) return [];
+    const { viewport } = ctx;
     const { chartRect } = viewport;
     const format = ctx.formatPrice ?? ((v: number) => formatPrice(v, 2, ctx.numberLocale ?? 'en-US'));
     const labels: AxisValueLabel[] = values.map((v) => ({ y: priceToY(v.value, viewport), text: format(v.value), color: v.color }));
-    renderAxisValueLabels(c, labels, chartRect.x + chartRect.width, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
-      { top: chartRect.y, bottom: chartRect.y + chartRect.height }, theme);
+    return layoutAxisValueLabels(labels, { top: chartRect.y, bottom: chartRect.y + chartRect.height }, fixed);
   }
 
   /** Left-scale overlays' latest values as tags on the left axis. */

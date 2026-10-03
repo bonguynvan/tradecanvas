@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, timeParts, isDateOnly } from '@tradecanvas/commons';
+import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
@@ -252,7 +252,7 @@ export class CrosshairHandler {
     const time = barIndexToTime(slot, data);
     const timeText = this.timeFormatter
       ? this.timeFormatter(time > 1e12 ? time : time * 1000, { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time, this.tz);
+      : formatBarTime(time, this.tz, barsAreDaily(data));
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,
@@ -358,12 +358,12 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.restore();
 }
 
-function formatBarTime(rawTime: number, tz: TimeZoneSetting): string {
+function formatBarTime(rawTime: number, tz: TimeZoneSetting, daily?: boolean): string {
   const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
   const parts = timeParts(ms, tz);
   const { year, month: m, day, hours: h, minutes: mm } = parts;
   // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the
   // year takes that space instead — `${m}/${day}` alone is ambiguous once bars span years apart.
-  if (isDateOnly(parts)) return `${m}/${day}/${year}`;
+  if (daily ?? isDateOnly(parts)) return `${m}/${day}/${year}`;
   return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }

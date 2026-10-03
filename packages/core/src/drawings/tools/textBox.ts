@@ -1,3 +1,4 @@
+import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
 
 export interface Rect {
@@ -26,7 +27,7 @@ const LINE_GAP = 1.3;
 const MAX_LINES = 12;
 
 export function boxFont(fontSize: number): string {
-  return `${fontSize}px sans-serif`;
+  return `${fontSize}px ${DEFAULT_FONT_FAMILY}`;
 }
 
 /**

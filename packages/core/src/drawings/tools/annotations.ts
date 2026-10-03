@@ -1,3 +1,4 @@
+import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
@@ -229,7 +230,7 @@ export class ArrowMarkTool extends DrawingBase {
     const text = state.style.text;
     if (text) {
       // The label sits past the tail, on the arrow's line.
-      ctx.font = `${state.style.fontSize || 12}px sans-serif`;
+      ctx.font = `${state.style.fontSize || 12}px ${DEFAULT_FONT_FAMILY}`;
       ctx.textAlign = dir.x === 0 ? 'center' : dir.x > 0 ? 'right' : 'left';
       ctx.textBaseline = dir.y === 0 ? 'middle' : dir.y < 0 ? 'top' : 'bottom';
       ctx.fillText(text, tail.x - dir.x * 4, tail.y - dir.y * 4);

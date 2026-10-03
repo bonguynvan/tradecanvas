@@ -151,3 +151,17 @@ grid.getUI()`}</code></pre>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
+
+<h2>Volume colours</h2>
+<p>
+  Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code>. <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours.
+</p>
+<pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
+
+chart.setTheme({
+  ...DARK_THEME,
+  candleUp: '#26a17b',
+  candleDown: '#e0525f',
+  volumeUp: volumeColor('#26a17b'),
+  volumeDown: volumeColor('#e0525f'),
+})`}</code></pre>

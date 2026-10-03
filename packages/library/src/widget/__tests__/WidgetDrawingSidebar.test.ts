@@ -154,3 +154,29 @@ describe('tool menu hint', () => {
     expect(host.querySelector('.tcw-flyout-item[title]')).toBeNull();
   });
 });
+
+describe('sections', () => {
+  it('puts a divider between one section of tools and the next, none inside one', () => {
+    const bar = host.querySelector('.tcw-sidebar')!;
+    const kids = [...bar.children];
+    const firstGroup = kids.findIndex((el) => el.classList.contains('tcw-tool-group-wrap'));
+    const lastGroup = kids.findLastIndex((el) => el.classList.contains('tcw-tool-group-wrap'));
+    const between = kids.slice(firstGroup, lastGroup + 1).filter((el) => el.classList.contains('tcw-sidebar-divider'));
+    const sections = new Set(DRAWING_TOOL_GROUPS.map((g) => g.section));
+    expect(between).toHaveLength(sections.size - 1);
+    // The groups of one section are next to each other.
+    const order = DRAWING_TOOL_GROUPS.map((g) => g.section);
+    expect(order.filter((s, i) => s !== order[i - 1])).toEqual([...sections]);
+  });
+
+  it('draws no section dividers for groups without sections', () => {
+    sidebar.destroy();
+    sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS.map(({ section: _, ...g }) => g) }, {
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onUndo: () => {}, onRedo: () => {}, onClearDrawings: () => {},
+    });
+    const kids = [...host.querySelector('.tcw-sidebar')!.children];
+    const firstGroup = kids.findIndex((el) => el.classList.contains('tcw-tool-group-wrap'));
+    const lastGroup = kids.findLastIndex((el) => el.classList.contains('tcw-tool-group-wrap'));
+    expect(kids.slice(firstGroup, lastGroup + 1).some((el) => el.classList.contains('tcw-sidebar-divider'))).toBe(false);
+  });
+});

@@ -454,6 +454,11 @@ export interface IndicatorDef {
 export interface DrawingToolGroupDef {
   label: string;
   tools: { label: string; value: DrawingToolType }[];
+  /**
+   * Groups with the same section sit together in the sidebar, with a divider
+   * between one section and the next. Groups without one get no divider.
+   */
+  section?: string;
 }
 
 

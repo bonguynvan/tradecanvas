@@ -1129,11 +1129,13 @@
   opacity: 0.7;
 }
 
+/* The drawing tools' sections: always a hairline (it groups the tools), even in
+   looks that drop the rules between toolbar groups. */
 .tcw-sidebar-divider {
-  width: 22px;
-  height: var(--tcw-sep-w);
+  width: 20px;
+  height: max(1px, var(--tcw-sep-w));
   background: var(--tcw-divider);
-  margin: 6px 0;
+  margin: 5px 0;
   flex-shrink: 0;
 }
 

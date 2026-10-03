@@ -1,3 +1,4 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
@@ -49,11 +50,11 @@ export class TrendAngleTool extends DrawingBase {
     ctx.arc(a.x, a.y, ARC_RADIUS, Math.min(refRad, lineRad), Math.max(refRad, lineRad));
     ctx.stroke();
 
-    ctx.font = '11px sans-serif';
+    ctx.font = drawingFont(11);
     ctx.fillStyle = state.style.color;
     ctx.textAlign = dir > 0 ? 'left' : 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));
+    fillTextWithHalo(ctx, `${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

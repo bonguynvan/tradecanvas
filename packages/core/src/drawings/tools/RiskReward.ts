@@ -1,3 +1,4 @@
+import { drawingFont, drawPill, pillWidth, PILL_HEIGHT } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { autoPricePrecision } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
@@ -92,18 +93,26 @@ export class RiskRewardTool extends DrawingBase {
       const qtyDecimals = this.option<number>(state, 'qtyDecimals');
       const pct = (price: number) => (g.entry !== 0 ? ((price - g.entry) / g.entry) * 100 : 0).toFixed(2);
       const ratio = Number(g.ratio.toFixed(2));
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      // Each label sits inside its zone, near the far edge from the entry.
-      const inset = (edgeY: number) => edgeY + (edgeY < entryPt.y ? 8 : -8);
-      ctx.fillStyle = '#1fa874';
+      ctx.font = drawingFont(11);
       const price = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(decimals);
-      ctx.fillText(`Target: ${price(g.target)} (${pct(g.target)}%) ${g.rewardAmount.toFixed(2)}`, x + 4, inset(targetPt.y));
-      ctx.fillStyle = state.style.color;
-      ctx.fillText(`${g.isLong ? 'Long' : 'Short'} · Qty: ${g.qty.toFixed(qtyDecimals)} · R:R ${ratio}`, x + 4, entryPt.y + (g.isLong ? 8 : -8));
-      ctx.fillStyle = '#e8505b';
-      ctx.fillText(`Stop: ${price(g.stop)} (${pct(g.stop)}%) ${g.riskAmount.toFixed(2)}`, x + 4, inset(stopPt.y));
+      const signed = (p: number) => `${p >= g.entry ? '+' : '−'}${Math.abs(Number(pct(p))).toFixed(2)}%`;
+      // Tags: the entry's on its line, the target's and the stop's just outside
+      // their zones, pushed apart when the zones are thin so none overlap.
+      const gap = PILL_HEIGHT + 2;
+      const away = (edgeY: number) => (edgeY < entryPt.y ? -1 : 1);
+      const outside = (edgeY: number) => {
+        const dir = away(edgeY);
+        const y = edgeY + dir * (PILL_HEIGHT / 2 + 2);
+        return dir < 0 ? Math.min(y, entryPt.y - gap) : Math.max(y, entryPt.y + gap);
+      };
+      // Tags start at the zone's left edge, moved left when they'd run off the plot.
+      const plotRight = viewport.chartRect.x + viewport.chartRect.width - 4;
+      const tag = (text: string, y: number, color: string) => {
+        drawPill(ctx, text, Math.max(viewport.chartRect.x + 4, Math.min(x + 4, plotRight - pillWidth(ctx, text))), y, color);
+      };
+      tag(`${g.isLong ? 'Long' : 'Short'} · Qty ${g.qty.toFixed(qtyDecimals)} · R:R ${ratio}`, entryPt.y, state.style.color);
+      tag(`Target ${price(g.target)} (${signed(g.target)}) · ${g.rewardAmount.toFixed(2)}`, outside(targetPt.y), '#1fa874');
+      tag(`Stop ${price(g.stop)} (${signed(g.stop)}) · ${g.riskAmount.toFixed(2)}`, outside(stopPt.y), '#e8505b');
     }
 
     if (selected) this.renderHandles(ctx, state, viewport);

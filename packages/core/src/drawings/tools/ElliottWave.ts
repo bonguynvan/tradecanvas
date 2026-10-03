@@ -1,3 +1,4 @@
+import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
 
@@ -53,7 +54,7 @@ abstract class WaveTool extends DrawingBase {
     this.resetLineStyle(ctx);
 
     const degree = this.option<string>(state, 'degree') as WaveDegree;
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = drawingFont(12, 'bold');
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     for (let i = 0; i < pts.length && i < this.labels.length; i++) {
@@ -61,7 +62,7 @@ abstract class WaveTool extends DrawingBase {
       const next = pts[i + 1] ?? pts[i - 1];
       const high = pts[i].y <= Math.min(prev.y, next.y);
       ctx.textBaseline = high ? 'bottom' : 'top';
-      ctx.fillText(waveLabel(this.labels[i], degree), pts[i].x, pts[i].y + (high ? -6 : 6));
+      fillTextWithHalo(ctx, waveLabel(this.labels[i], degree), pts[i].x, pts[i].y + (high ? -6 : 6));
     }
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

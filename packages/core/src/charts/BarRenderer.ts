@@ -2,16 +2,16 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
 import { isDense, renderDenseBars } from './denseBars.js';
+import { barColumns, inDevicePixels } from './pixelGrid.js';
 
 export class BarRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     const { from, to } = viewport.visibleRange;
     const barWidth = viewport.barWidth;
-    const halfBar = barWidth / 2;
 
     // Pre-compute constants
     const barUnit = barWidth + viewport.barSpacing;
-    const offsetX = -viewport.offset + viewport.chartRect.x + halfBar;
+    const offsetX = -viewport.offset + viewport.chartRect.x + barWidth / 2;
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
     if (priceRange === 0) return;
@@ -19,39 +19,29 @@ export class BarRenderer implements ChartRendererInterface {
       renderDenseBars(ctx, data, viewport, theme.candleUp, theme.candleDown);
       return;
     }
-    const toX = (i: number) => i * barUnit + offsetX;
     const toY = priceToYMapper(viewport);
 
-    // Batch by color using Path2D
-    const upPath = new Path2D();
-    const downPath = new Path2D();
-
-    for (let i = from; i <= to && i < data.length; i++) {
-      const bar = data[i];
-      const x = toX(i);
-      const isUp = bar.close >= bar.open;
-      const path = isUp ? upPath : downPath;
-
-      const highY = toY(bar.high);
-      const lowY = toY(bar.low);
-      const openY = toY(bar.open);
-      const closeY = toY(bar.close);
-
-      // Vertical line (high to low)
-      path.moveTo(x, highY);
-      path.lineTo(x, lowY);
-      // Open tick (left)
-      path.moveTo(x - halfBar, openY);
-      path.lineTo(x, openY);
-      // Close tick (right)
-      path.moveTo(x, closeY);
-      path.lineTo(x + halfBar, closeY);
-    }
-
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = theme.candleUp;
-    ctx.stroke(upPath);
-    ctx.strokeStyle = theme.candleDown;
-    ctx.stroke(downPath);
+    // Stem, open tick (left) and close tick (right) as rects on whole device pixels.
+    inDevicePixels(ctx, (px) => {
+      const { body, wick } = barColumns(barWidth, px.ratio);
+      const tick = Math.max((body - wick) / 2, wick);
+      const half = Math.floor(wick / 2);
+      const up = new Path2D();
+      const down = new Path2D();
+      for (let i = from; i <= to && i < data.length; i++) {
+        const bar = data[i];
+        const path = bar.close >= bar.open ? up : down;
+        const stem = px.x(i * barUnit + offsetX) - half;
+        const high = px.y(toY(bar.high));
+        const low = px.y(toY(bar.low));
+        path.rect(stem, Math.min(high, low), wick, Math.max(Math.abs(low - high), wick));
+        path.rect(stem - tick, px.y(toY(bar.open)) - half, tick, wick);
+        path.rect(stem + wick, px.y(toY(bar.close)) - half, tick, wick);
+      }
+      ctx.fillStyle = theme.candleUp;
+      ctx.fill(up);
+      ctx.fillStyle = theme.candleDown;
+      ctx.fill(down);
+    });
   }
 }
