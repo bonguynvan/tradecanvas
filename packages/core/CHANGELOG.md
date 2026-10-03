@@ -1,5 +1,346 @@
 # @tradecanvas/core
 
+## 1.7.0
+
+### Minor Changes
+
+- da9cb37: **Alerts, replay in finer steps, markers and pane scales.**
+
+  - **Alerts** take `AlertOptions` (`addAlert(…, options)`): `target` compares
+    with another channel (the price crossing a moving average, one indicator
+    line crossing another); `movesUp` / `movesDown` with `percent` and `bars`;
+    `onBarClose` looks only at closed bars; `expiresAt` ends it (`expired`, the
+    `alertExpired` event). Saved layouts and stored alerts keep them. The
+    widget's alerts panel offers all of it. Alerts now also check on a
+    connected feed's prices, take the lines they watch at the same moment
+    (`AlertManager.checkChannels`), and keep watching the live market during
+    a replay (alerts on indicator lines wait for it to end). Alert events say
+    what an alert watches (`channel`, `label`, `target`, `drawingId`,
+    `percent`, `bars`).
+  - **Replay in finer steps**: `replayStart({ steps })` grows the forming bar
+    from finer bars; `replaySeekToBar`, `getReplayBarIndex`. ChartWidget's
+    replay bar has a Step menu (finer intervals from the feed or the bars
+    loaded).
+  - **Paper trading in a replay**: `ExecutionAdapter.setMarkPrice?(price,
+time)`; the chart feeds it the replayed prices (each step's low, high
+    and close, every step a jump passes) and times, and
+    `PaperExecutionAdapter` stamps fills with them. It only goes forward
+    (after a seek back it waits until the replay is past where it was), and
+    goes back to the live price when the replay ends; a mark with no time
+    stamps fills now.
+  - **Signal markers** react to the pointer: `signalMarkerHover`,
+    `signalMarkerClick`, `SignalMarkerManager.markerAt`; ChartWidget shows a
+    note by the marker.
+  - **Pane scales**: `setPaneScale(id, { log, invert })`, `getPaneScale` (log
+    works for volume-like panes too: `paneLogRange`, `getPaneValueRange(…, log)`); kept
+    in saved layouts; `chartContextMenu` says which pane (`pane`); ChartWidget's
+    pane menu has the switches.
+
+- c063f30: **Drawing toolkit.**
+
+  - **Each tool has its own settings.**
+    - A tool's descriptor can list settings (`DrawingDescriptor.options`):
+      switches, numbers, choices, text and level lists. A drawing keeps its
+      values in `DrawingState.options`; saved layouts and pasted drawings keep
+      them, cleaned by `sanitizeDrawingOptions` (at most 48 levels, numbers kept
+      within their range).
+    - Fibonacci retracement and extension: edit, hide or add levels, show
+      prices and percentages, labels left or right, reverse, extend left or
+      right, background. Fib channel, speed-resistance fan and time zones edit
+      their levels too.
+    - Trend lines and parallel channels extend left, right or both; a channel
+      can hide its middle line.
+    - New `chart.getDrawingOptions(id)`, `setDrawingOptions(id, options)`,
+      `getDrawingOptionDefs(type)` and `getDrawingToolDescriptor(type)`;
+      `addDrawing` takes `options`.
+    - Each tool's starting settings: `setDrawingToolDefaults(type, options)` /
+      `getDrawingToolDefaults(type)`.
+    - `updateDrawing(id, { style, options, anchors })` changes a drawing in one
+      undo step. `beginDrawingEdit(id)` / `endDrawingEdit(id, { cancel })`
+      gather a dialog's changes into one undo step, or put the drawing back.
+    - New events: `drawingUpdate`, `drawingDoubleClick`, `drawingContextMenu`.
+  - **Long/Short position works out the size.** It takes an account size and
+    the risk, as a percent of the account or an amount, and shows the
+    quantity, the reward:risk ratio and each line's price, distance and P&L.
+    The target handle sits on the target line and sets the ratio.
+    A plugin can move handles that are not anchors (`DrawingPlugin.moveHandle`).
+  - **Alerts on drawings.** `chart.addDrawingAlert(id, { condition, message,
+repeating, label })` fires when the price crosses a trend line, ray,
+    extended or horizontal line, or a channel's lines, wherever the line is by
+    then, as drawn: straight across bars and, on a log scale, in log price.
+    `canAddDrawingAlert(id)` tells which drawings take one now
+    (`DrawingPlugin.priceAt(state, time, viewport?)`); a trend line that ends
+    before the last bar takes none. The alert goes with its drawing, comes
+    back with it on undo, and is kept in saved layouts; alerts left without
+    their drawing are dropped.
+  - **Checked input.** Layouts and templates have every style field checked
+    (new `sanitizeDrawingStyle`), group names are capped, and level values and
+    money amounts are kept within range.
+  - **Order and groups.**
+    - `moveDrawing(id, 'front' | 'forward' | 'backward' | 'back')`; undo puts a
+      deleted drawing back where it was. Ctrl+] / Ctrl+[ move the selected
+      drawing a step, with Shift to the top or bottom.
+    - `groupDrawings(ids, name?)`, `ungroupDrawings`, `renameDrawingGroup`,
+      `setDrawingGroupVisible`, `setDrawingGroupLocked`, `getDrawingGroups`.
+      Clicking one drawing of a group selects the group. Ctrl+G groups the
+      selection, Ctrl+Shift+G ungroups it.
+    - `removeDrawings(ids)`, `setDrawingsVisible(ids, visible)` and
+      `setDrawingsLocked(ids, locked)` change several drawings as one undo
+      step; `getSelectedDrawingIds()` lists the selection.
+    - Hiding and locking are undoable now, and a hidden drawing leaves the
+      selection. New drawings and groups never reuse an id from a loaded
+      layout.
+  - **Undo, redo and events.** Undo and redo report drawings that come and go
+    (`drawingCreate`, `drawingRemove`) and change (`drawingUpdate`), so
+    listeners and alerts follow them. `drawingCreate` always carries `id` and
+    `type`. Ctrl+Shift+Z redoes, as the hotkey sheet says; it used to undo.
+    Drawing shortcuts no longer fire while a dialog or menu has focus.
+  - **29 new drawing tools** (69 in all):
+    - Notes and marks: Note (a pin with its text), Callout, Flag Mark, Arrow
+      Mark (up, down, left, right, with a label) and Icon (star, heart, tick,
+      cross, circle, triangles, bolt).
+    - Brush and Highlighter, drawn freehand; Path (with an arrow at the end)
+      and Polyline, a point per click until a double-click or Enter; Curve and
+      Arc through three points.
+    - Fib Circles, Fib Spiral, Fib Speed Resistance Arcs, Fib Wedge, Pitchfan
+      and Gann Square, each with editable levels.
+    - Elliott Impulse, Correction, Triangle, Double Combo and Triple Combo
+      waves, with the wave degree's label style (①, (1), 1, i); the Elliott
+      Wave tool takes the degree too.
+    - Three Drives and Cypher patterns with their ratios; Time Cycles and Sine
+      Line.
+    - Forecast (green once the price reaches the target, red when its time
+      runs out first), Projection (a move carried over from a third point) and
+      Bars Pattern (a copy of some bars, as bars, a line or high-low, mirrored
+      or flipped).
+    - A tool says how it is drawn (`DrawingDescriptor.creation`: 'clicks',
+      'freehand' or 'path', with `maxAnchors`); a tool drawn from the bars gets
+      them through `DrawingPlugin.setDataGetter`. This also fixes Anchored
+      VWAP and Fixed Range Volume Profile, which were never handed the bars
+      and drew nothing.
+  - **Eraser, zoom area and a strong magnet.** `chart.setEraserMode(true)`:
+    each click on a drawing removes it, until Escape or a tool is picked.
+    `chart.setZoomAreaMode(true)`: the next drag zooms to the bars in its box.
+    Both report `toolModeChange`. `setDrawingMagnetMode('off' | 'weak' |
+'strong')`: the strong magnet always snaps to the bar's open, high, low or
+    close.
+  - **ChartWidget.**
+    - Double-clicking a drawing (or its settings button in the object tree)
+      opens its settings: Style, the tool's own settings, and Coordinates in
+      the chart's time zone. Changes show as you make them; Cancel or Escape
+      takes them back. "Save as default" keeps a tool's settings for the next
+      drawing; templates keep settings as well as style.
+    - Right-clicking a drawing opens its menu: settings, add an alert, order,
+      group or ungroup, lock, hide, duplicate and delete. It works from the
+      keyboard and stays on screen.
+    - The object tree lists each group with its drawings under it, and can
+      hide, lock, rename or ungroup it.
+    - The sidebar has the new tools in their groups (new Brushes, Cycles and
+      Elliott Waves groups), an eraser and a zoom button, and a magnet button
+      that goes off, weak, strong. On a short screen the sidebar scrolls and
+      its menus open beside it.
+    - The alerts panel lists alerts on drawings; the hotkey sheet lists the new
+      shortcuts. All of it is in the widget's 14 languages.
+
+- e2516f1: **Panes, indicator templates and undo.**
+
+  - **Move indicators between panes**: `chart.moveIndicatorToPane(id, target)`
+    into another indicator's pane, a pane of its own (`'new'`) or the price
+    pane (`'price'`); `canMoveIndicatorToPane`. A pane's other indicators stay
+    (one takes the pane over) or follow when they read its lines. ChartWidget:
+    a ⋯ button on each legend row.
+  - **Fold, maximise and reorder panes**: `setPaneCollapsed`, `setMaximizedPane`,
+    `movePane`, the `paneChange` event; ChartWidget puts buttons at each pane's
+    top right. Saved layouts keep each pane's size, order, fold and maximise
+    (`SnapshotIndicator.paneSize`, `paneOrder`, `paneCollapsed`, `paneMaximized`).
+  - **Undo for indicators**: adding, removing, editing and moving indicators are
+    steps in the drawings' history; an undone indicator comes back under its own
+    id; a burst of edits to one indicator is one step; a loaded layout starts a
+    fresh history. `UndoableAction` has an `'indicators'` type.
+  - **Indicator templates** in ChartWidget (`indicatorTemplates`, on by default),
+    built on `chart.getIndicatorSetup()` / `applyIndicatorSetup()`.
+  - **Type an interval**: a number typed on the chart opens a field (`5`, `15m`,
+    `1h`, `1D`, Enter) — `intervalTyping`, on by default. **Alt+T / H / J / V /
+    C / F** pick the trend line, horizontal line and ray, vertical line, cross
+    line and Fibonacci retracement.
+  - `chart.roundPrice(price)` puts a price on the market's grid (`minTick`);
+    ChartWidget's menus and order ticket use it.
+
+- 6b9a936: **Scales, formats and comparisons.**
+
+  - **Price and time formats**: `ChartOptions.priceFormat` (a function, or
+    `{ denominator, subDenominator }` fractions: `formatFraction`,
+    `fractionTick`, `priceFormatterFor`), `setPriceFormat`,
+    `getPriceFormatter`; `timeFormatter` / `setTimeFormatter` (told whether a
+    label is a date, a new day, a time or the crosshair's). The format rides
+    on `ViewportState.formatPrice` / `priceUnit` to every price label of the
+    price scale; indicator panes keep their own numbers. The crosshair pill
+    reads in percent on a percent scale.
+  - **Chart types**: `'hiLo'`; `ChartTypeOptions` (`chartTypeOptions`,
+    `setChartTypeOptions`, `getChartTypeOptions`, `readChartTypeOptions`),
+    kept in saved states; Renko's ATR measures the latest bars; `toKagi` takes
+    a price reversal. `setMainSeriesVisible`, `setHighLowLines` /
+    `highLowLines`, `setBidAsk` (and `RawTick.bid` / `ask` through
+    StreamManager's `quote`). ChartWidget offers all 18 types and their
+    settings.
+  - **Compare**: `compareSymbol` and `spread` indicators on other symbols'
+    bars (`SymbolSeriesStore`), `setSymbolSeries`, `getSymbolSeries`,
+    `getRequiredSymbols`, the `symbolSeriesRequest` event; compare overlays
+    line up by time and count in the auto scale (`CompareRenderer.getPriceRange`);
+    `setPaneScale(id, { percent })`. ChartWidget asks how to compare (percent,
+    own scale, own pane, spread, ratio) and fetches the bars.
+  - **Extended hours**: `setExtendedHours`, `isExtendedHoursVisible`,
+    `ChartOptions.extendedHours` (from `SymbolInfo.sessions`).
+  - **Export**: `getExportData`, `getExportText`; `exportAllData` /
+    `exportVisibleData` take `{ indicators }`; `DataExporter` columns
+    (`ExportColumn`), CSV cells safe from formulas.
+  - **Replay**: `replayStep` and `replayState` events, `replaySeekToTime`;
+    `ChartWidgetGrid` sync `replay`.
+
+- e4fa579: **Trading and workspace.**
+
+  - **Act on orders and positions from the chart.**
+    - Order and position lines carry buttons: × cancels an order or closes a
+      position, ⇅ reverses a position, × on a stop-loss or take-profit removes
+      it (`TradingConfig.lineButtons`).
+    - New `positionReverse` intent and `ExecutionAdapter.reversePosition`;
+      without it the chart closes and sends a market order the other way.
+      `chart.cancelOrderIntent`, `closePositionIntent`, `reversePositionIntent`,
+      `modifyPositionIntent` (a `null` stop removes it).
+    - **Adapters:** `PositionModifyIntent.stopLoss` / `takeProfit` may now be
+      `null`, meaning remove it; a missing field still means keep it. An
+      adapter written as `intent.stopLoss ?? position.stopLoss` would keep a
+      stop the user removed.
+    - Orders take `stopLoss`, `takeProfit` and `timeInForce` (`'gtc'` |
+      `'day'`), carried to the position they open. `PaperExecutionAdapter`
+      fills stops and targets and reverses.
+  - **Fills on the chart**: a mark per fill on its bar (solid opening, hollow
+    closing; `TradingConfig.fillMarks`). `FillEvent` has `reason`
+    (`order`, `close`, `reverse`, `stopLoss`, `takeProfit`), `pnl` and
+    `positionId`; the chart emits `executionFill` and keeps the latest 1000
+    (`getFills`, `addFill`, `clearFills`; `getRealisedPnl` sums them all).
+  - The buttons on the lines act on release over them; a press that slides off
+    does nothing.
+  - **Right-click areas and a "+" by the price axis**: `chartContextMenu`
+    says which part was clicked (plot, pane, price axis, time axis) with the
+    price and time there; `features.priceAxisAddButton` shows a "+" level with
+    the crosshair that emits `priceAxisAdd`.
+  - **Events**: `ordersChange`, `positionsChange`, and `stateChange` when
+    something a saved layout holds may have changed. `setChartType` and
+    `setTheme` now schedule an auto-save too.
+  - **ChartWidget menus**: the plot offers an alert, a buy and a sell at the
+    price (a limit where it would wait, else a stop), an order ticket, a
+    horizontal line, reset view and the drawings; the price axis its scale
+    switches; the time axis reset view and go to date. `chartMenuItems` adds
+    the host's own entries.
+  - **Order ticket and account panel** (`accountPanel`, on with trading):
+    positions with their P&L, working orders and fills with close, reverse and
+    cancel; a ticket with side, type, quantity, price, stop-loss, take-profit
+    and time in force, checked as it is filled in, with the reward:risk.
+  - **Named layouts** (`layouts`, on by default): save the chart under a name,
+    open, rename and delete, auto-save the one open, Ctrl/Cmd+S. Storage is
+    pluggable (`LayoutStorage`: `localStorageLayouts`, `memoryLayouts`, or the
+    host's server); `LayoutSession` runs it. `widget.getLayoutContent()` /
+    `applyLayoutContent()` give the content alone.
+  - **ChartWidgetGrid**: up to six chart widgets side by side with a bar to pick
+    the arrangement, link symbol, interval, crosshair, time and drawings, and
+    save the whole grid as a named layout. `adapter: () => …` gives each chart
+    its own feed, `onChartAdd` sees each chart made, and charts the grid shrinks
+    from come back as they were.
+  - **`ChartGrid.connectAll`** takes a function that makes an adapter per chart:
+    an adapter keeps one stream, so one adapter object shared by every chart
+    sent each of them the last symbol's bars.
+  - Layouts record their `kind` (`'chart'` or `'grid'`), so both can share one
+    storage; saving, opening and auto-saving run one at a time.
+  - `widget.toggleAccountPanel()`, `getSymbol()`, `getTimeframe()`.
+  - **`widget.addToolbarButton()`** for the host's own toolbar buttons (icon or
+    element, text, a switch).
+  - With several widgets on a page, Ctrl/Cmd+K and +P go to the one used last.
+
+- b92e2fc: **A built-in UI system for the widget.**
+
+  - `ChartWidgetOptions.ui`, `ChartWidget.setUI` / `getUI` and
+    `ChartWidgetGrid.setUI`: the widget's look as tokens — a corner scale and
+    each kind of part's corners, sizes and density, type, borders and
+    separators, shadows, frosted surfaces, how a chosen button shows (`tint`,
+    `solid`, `underline`), a docked or floating toolbar and drawing sidebar,
+    and plain or segmented interval buttons. Three presets: `studio` (the
+    default), `terminal` and `capsule`; a theme of yours lays over one.
+    `resolveWidgetUI`, `widgetUIVariables`, `applyWidgetUI` and
+    `WIDGET_UI_PRESETS` are exported with their types.
+  - The stylesheet reads the look's CSS variables everywhere (new:
+    `--tcw-control-radius`, `--tcw-menu-radius`, `--tcw-dialog-radius`,
+    `--tcw-toolbar-h`, `--tcw-control-h`, `--tcw-font`, `--tcw-font-size`,
+    `--tcw-weight`, `--tcw-sep-w`, `--tcw-menu-shadow`, … ), with Studio's
+    values as its defaults; the existing variables stay. Without `ui` they
+    are left to the stylesheet, so host CSS can still set them.
+  - The chart's tags take a shape: `Theme.shape.tagRadius`,
+    `ChartOptions.shapes`, `chart.setShapes` / `getShapes`, and `fillTag` in
+    core. Price tags, axis pills, the crosshair's pills, order, position and
+    bracket tags and period-level tags are square, rounded or pills. A shape
+    in `chartOptions.shapes` stays until `setUI` is called.
+  - `ChartWidgetGrid.getUI`. Panels sit below the toolbar and beside the
+    drawing tools as the look sizes them; on phones the look keeps 40 px tap
+    targets.
+  - The widget's stylesheet now goes first in `<head>`, so the page's own CSS
+    wins a tie of specificity.
+  - Dropdowns grow to fit their labels instead of wrapping them.
+
+  **The default look changes.** Studio is the new default, so an existing
+  widget looks different without any change of yours: corners 5/7/11/16 px
+  (were 4/6/10/14), a 46 px toolbar and 48 px drawing tools (were 44 and 40),
+  30 px controls (were 32), interval buttons in a segmented track, no rules
+  between toolbar groups, small labels as written (were capitals), dialog tabs
+  as chips, the replay bar, toasts and badges rounded rather than pills, and
+  price tags on the chart rounded 4 px. `ui: 'terminal'` is the closest to a
+  square, ruled look; any token can be set with `setUI` or in CSS.
+
+- 6d844ad: **Workspace, markets and access.**
+
+  - **Quotes**: `Quote`, `QuoteSource`, `readQuote`; `DataAdapter.subscribeQuotes`
+    (BinanceAdapter: a 24 h snapshot, then the mini-ticker stream; MockAdapter
+    made-up quotes).
+  - **Watchlists**: `watchlist` takes `{ lists, activeList, persist, storageKey,
+quotes, onChange }`; lists to switch, create, rename and delete; symbols
+    added from the symbol search, removed and reordered (drag, Alt+↑/↓).
+    `getWatchlists`, `setWatchlists`, `setActiveWatchlist`, `addToWatchlist`,
+    `removeFromWatchlist`, `setQuotes`, `getQuote`; `readWatchlists`.
+  - **Symbol info**: a panel with price and move, the market's status, the
+    day's numbers, hours and news (`symbolInfo`, `news`, `toggleSymbolInfo`);
+    `marketStatus`, `SymbolSession.days`, `NewsItem`, `readNews`,
+    `DataAdapter.fetchNews`. The status bar shows the market's status.
+  - **Undo**: `Chart.recordUndo` for changes of your own; the widget's settings
+    and chart type are undone with drawings and indicators.
+  - **Events**: `chartTypeChange`, `symbolChange`, `timeframeChange`,
+    `historyChange`, `drawingSelect`; `Chart.selectDrawing`, `Chart.scrollBars`.
+  - **Navigation** buttons over the chart (`navigation`).
+  - **Accessibility**: charts are announced with a summary, the view after a
+    key moves it, and the bars one at a time (comma and period);
+    `ChartOptions.a11y`.
+  - **Right to left**: `dir` (auto for Arabic, Hebrew, Persian, Urdu); logical
+    CSS; Arabic and Hebrew widget strings (16 languages).
+  - **Tick charts**: `'100T'` timeframes from a feed's trades (`Trade`,
+    `DataAdapter.fetchTrades` / `subscribeTrades`, `tickBarCount`,
+    `TickBarBuilder`, `TickBarAdapter`, `withTickBars`); Binance aggregate
+    trades.
+  - **Stream bars land by their time**: a bar again replaces the last one, a
+    later one is added, an older one is left out — so a closed bar keeps its
+    final values (it used to keep the ones before its last update).
+  - **Indicators**: SMI, Relative Volatility Index, Trend Strength Index,
+    Linear Regression Slope, Standard Error, Standard Error Bands, GMMA, MA
+    Ribbon, Average Day Range, Net Volume (95 in all).
+
+### Patch Changes
+
+- Updated dependencies [da9cb37]
+- Updated dependencies [c063f30]
+- Updated dependencies [e2516f1]
+- Updated dependencies [6b9a936]
+- Updated dependencies [e4fa579]
+- Updated dependencies [b92e2fc]
+- Updated dependencies [6d844ad]
+  - @tradecanvas/commons@1.7.0
+
 ## 1.6.0
 
 ### Minor Changes
@@ -13,25 +354,15 @@
     bars, volume candles and volume draw one column per pixel
     (`forEachPixelColumn`, `renderDenseBars`). The 1Y, 5Y and All presets are no
     longer capped at about 200 bars.
-  - **Older bars load as you scroll back.**
-    - New optional `DataAdapter.fetchHistoryBefore(symbol, timeframe, before,
+  - **Older bars load as you scroll back.** - New optional `DataAdapter.fetchHistoryBefore(symbol, timeframe, before,
 limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
-      `PollingAdapter` take it as an option.
-    - A connected chart loads a page (`StreamConfig.historyPageSize`, default 500) when less than a screen of bars is left of the view.
-      - It runs one request at a time and keeps the same bars on screen.
-      - It stops at the start of the history.
-      - After a failed request it waits 5 s before asking again, doubling each
-        time; after 5 failures in a row only `loadMore()` retries.
-      - Chart types that reshape the bars (Renko, Kagi…) only page on
-        `loadMore()`.
-      - A loader set with `setHistoryLoader` wins over the stream's.
-      - A reconnect keeps the paged-in bars and the view when its bars reach
-        back over them. After a longer outage the chart starts over instead of
-        joining the two across a gap; a host's `setData` also ends the merging.
-    - New `chart.prependBars()`, `setHistoryLoader()`, `loadMoreHistory()`,
-      `hasMoreHistory()`, `isLoadingHistory()` and the `historyLoad` event.
-    - ChartWidget shows a small pill while older bars load (`historyPageSize`
-      widget option).
+    `PollingAdapter` take it as an option. - A connected chart loads a page (`StreamConfig.historyPageSize`, default 500) when less than a screen of bars is left of the view. - It runs one request at a time and keeps the same bars on screen. - It stops at the start of the history. - After a failed request it waits 5 s before asking again, doubling each
+    time; after 5 failures in a row only `loadMore()` retries. - Chart types that reshape the bars (Renko, Kagi…) only page on
+    `loadMore()`. - A loader set with `setHistoryLoader` wins over the stream's. - A reconnect keeps the paged-in bars and the view when its bars reach
+    back over them. After a longer outage the chart starts over instead of
+    joining the two across a gap; a host's `setData` also ends the merging. - New `chart.prependBars()`, `setHistoryLoader()`, `loadMoreHistory()`,
+    `hasMoreHistory()`, `isLoadingHistory()` and the `historyLoad` event. - ChartWidget shows a small pill while older bars load (`historyPageSize`
+    widget option).
   - **Any interval.**
     - `TimeFrame` accepts any whole count of a unit (`'7m'`, `'90m'`, `'2d'`,
       `'5w'`) besides the listed ones; `parseTimeframe` and `isTimeFrame` check a
