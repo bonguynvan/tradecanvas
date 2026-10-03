@@ -98,11 +98,12 @@ export class RiskRewardTool extends DrawingBase {
       // Each label sits inside its zone, near the far edge from the entry.
       const inset = (edgeY: number) => edgeY + (edgeY < entryPt.y ? 8 : -8);
       ctx.fillStyle = '#1fa874';
-      ctx.fillText(`Target: ${g.target.toFixed(decimals)} (${pct(g.target)}%) ${g.rewardAmount.toFixed(2)}`, x + 4, inset(targetPt.y));
+      const price = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(decimals);
+      ctx.fillText(`Target: ${price(g.target)} (${pct(g.target)}%) ${g.rewardAmount.toFixed(2)}`, x + 4, inset(targetPt.y));
       ctx.fillStyle = state.style.color;
       ctx.fillText(`${g.isLong ? 'Long' : 'Short'} · Qty: ${g.qty.toFixed(qtyDecimals)} · R:R ${ratio}`, x + 4, entryPt.y + (g.isLong ? 8 : -8));
       ctx.fillStyle = '#e8505b';
-      ctx.fillText(`Stop: ${g.stop.toFixed(decimals)} (${pct(g.stop)}%) ${g.riskAmount.toFixed(2)}`, x + 4, inset(stopPt.y));
+      ctx.fillText(`Stop: ${price(g.stop)} (${pct(g.stop)}%) ${g.riskAmount.toFixed(2)}`, x + 4, inset(stopPt.y));
     }
 
     if (selected) this.renderHandles(ctx, state, viewport);

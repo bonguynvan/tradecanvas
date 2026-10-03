@@ -63,7 +63,7 @@ export class PivotMarkersRenderer {
       ctx.fill();
 
       const text: string | null =
-        this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? formatPrice(p.price) : null;
+        this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? viewport.formatPrice?.(p.price) ?? formatPrice(p.price) : null;
       if (text) {
         ctx.textBaseline = above ? 'bottom' : 'top';
         ctx.fillText(text, x, above ? tipY - size - 1 : tipY + size + 1);

@@ -40,6 +40,8 @@ class FakeChart {
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
+  chartTypeOptions: unknown = {};
+  getChartTypeOptions(): unknown { return this.chartTypeOptions; }
   required: string[] = [];
   getRequiredSymbols(): string[] { return this.required; }
   replays: Record<string, unknown>[] = [];
@@ -339,5 +341,27 @@ describe('ChartWidget comparing with another symbol', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.series.get('BBB')).toBe(bars);
     expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', expect.any(Number));
+  });
+});
+
+describe('ChartWidget round 8 review', () => {
+  it('lets the chart ask again after a failed fetch', async () => {
+    const failing = {
+      name: 'fake', connect: () => {}, disconnect: () => {}, getConnectionState: () => 'connected',
+      fetchHistory: vi.fn(async () => { throw new Error('451'); }), on: () => {}, off: () => {}, dispose: () => {},
+    };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: failing as never });
+    FakeChart.last.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(FakeChart.last.series.get('BBB')).toBeNull();
+  });
+
+  it('starts its settings where the chart options put them', () => {
+    widget = new ChartWidget(host, {
+      symbol: 'AAA', watchlist: false,
+      chartOptions: { highLowLines: true, extendedHours: false, chartTypeOptions: { renko: { boxSize: 5 } } },
+    });
+    const settings = (widget as unknown as { settingsState: Record<string, unknown> }).settingsState;
+    expect(settings).toMatchObject({ highLowLines: true, extendedHours: false, chartTypeOptions: { renko: { boxSize: 5 } } });
   });
 });

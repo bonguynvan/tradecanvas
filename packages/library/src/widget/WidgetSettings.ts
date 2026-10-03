@@ -268,18 +268,18 @@ export class WidgetSettings {
     switch (type) {
       case 'renko': {
         const o = all.renko ?? {};
-        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof o.boxSize === 'number' ? o.boxSize : null, 'any',
+        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof o.boxSize === 'number' ? o.boxSize : null, 'any', Infinity,
           (v) => set('renko', { ...(this.currentSettings?.chartTypeOptions?.renko ?? {}), boxSize: v ?? 'atr' })));
-        section.appendChild(this.numberRow(this.t('settings.atrPeriod'), o.atrPeriod ?? null, '1',
+        section.appendChild(this.numberRow(this.t('settings.atrPeriod'), o.atrPeriod ?? null, '1', 500,
           (v) => set('renko', withValue(this.currentSettings?.chartTypeOptions?.renko, 'atrPeriod', v))));
         break;
       }
       case 'lineBreak':
-        section.appendChild(this.numberRow(this.t('settings.lineBreakLines'), all.lineBreak?.lines ?? null, '1',
+        section.appendChild(this.numberRow(this.t('settings.lineBreakLines'), all.lineBreak?.lines ?? null, '1', 10,
           (v) => set('lineBreak', withValue(this.currentSettings?.chartTypeOptions?.lineBreak, 'lines', v))));
         break;
       case 'kagi':
-        section.appendChild(this.numberRow(this.t('settings.reversal'), all.kagi?.reversal ?? null, 'any',
+        section.appendChild(this.numberRow(this.t('settings.reversal'), all.kagi?.reversal ?? null, 'any', Infinity,
           (v) => set('kagi', withValue(this.currentSettings?.chartTypeOptions?.kagi, 'reversal', v))));
         section.appendChild(this.selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
           { value: 'percent', label: this.t('settings.reversalType.percent') },
@@ -287,13 +287,13 @@ export class WidgetSettings {
         ], (v) => set('kagi', { ...(this.currentSettings?.chartTypeOptions?.kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
         break;
       case 'pointAndFigure':
-        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any',
+        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any', Infinity,
           (v) => set('pointAndFigure', { ...(this.currentSettings?.chartTypeOptions?.pointAndFigure ?? {}), boxSize: v ?? 'auto' })));
-        section.appendChild(this.numberRow(this.t('settings.reversalBoxes'), all.pointAndFigure?.reversal ?? null, '1',
+        section.appendChild(this.numberRow(this.t('settings.reversalBoxes'), all.pointAndFigure?.reversal ?? null, '1', 10,
           (v) => set('pointAndFigure', withValue(this.currentSettings?.chartTypeOptions?.pointAndFigure, 'reversal', v))));
         break;
       case 'rangeBars':
-        section.appendChild(this.numberRow(this.t('settings.barRange'), typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any',
+        section.appendChild(this.numberRow(this.t('settings.barRange'), typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any', Infinity,
           (v) => set('rangeBars', { range: v ?? 'auto' })));
         break;
       default:
@@ -303,7 +303,7 @@ export class WidgetSettings {
   }
 
   /** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0 are taken. */
-  private numberRow(label: string, value: number | null, step: string, onChange: (v: number | null) => void): HTMLDivElement {
+  private numberRow(label: string, value: number | null, step: string, max: number, onChange: (v: number | null) => void): HTMLDivElement {
     const row = document.createElement('div');
     row.className = 'tcw-settings-row';
     const lbl = document.createElement('label');
@@ -315,6 +315,7 @@ export class WidgetSettings {
     input.className = 'tcw-settings-number';
     input.min = '0';
     input.step = step;
+    if (Number.isFinite(max)) input.max = String(max);
     input.placeholder = this.t('settings.auto');
     input.value = value === null ? '' : String(value);
     input.setAttribute('aria-label', label);
@@ -325,7 +326,7 @@ export class WidgetSettings {
         return;
       }
       const v = Number(input.value);
-      const ok = Number.isFinite(v) && v > 0 && (step !== '1' || Number.isInteger(v));
+      const ok = Number.isFinite(v) && v > 0 && v <= max && (step !== '1' || Number.isInteger(v));
       input.toggleAttribute('aria-invalid', !ok);
       if (ok) onChange(v);
     });

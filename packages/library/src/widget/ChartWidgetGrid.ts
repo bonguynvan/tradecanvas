@@ -474,7 +474,8 @@ export class ChartWidgetGrid {
   private destroyCell(cell: Cell): void {
     if (this.hovered === cell) this.hovered = null;
     if (this.drawingSource === cell) this.drawingSource = null;
-    cell.widget.destroy();
+    // What it says on its way out (its replay ending) is not for the others.
+    this.quietly(() => cell.widget.destroy());
     cell.el.remove();
   }
 

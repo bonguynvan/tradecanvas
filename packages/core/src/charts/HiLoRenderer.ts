@@ -14,6 +14,13 @@ const LABEL_GAP = 3;
  * their low below.
  */
 export class HiLoRenderer implements ChartRendererInterface {
+  private priceText: ((price: number) => string) | null = null;
+
+  /** How its labels print a price (the chart's precision, locale and format); null: decimals. */
+  setPriceText(format: ((price: number) => string) | null): void {
+    this.priceText = format;
+  }
+
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     const { from, to } = viewport.visibleRange;
     const { min, max } = viewport.priceRange;
@@ -28,7 +35,7 @@ export class HiLoRenderer implements ChartRendererInterface {
     const width = Math.max(1, Math.round(viewport.barWidth * 0.6));
     const labelled = viewport.barWidth >= LABEL_MIN_BAR_WIDTH;
     const precision = autoPricePrecision(min, max);
-    const text = (p: number) => viewport.formatPrice?.(p) ?? formatPrice(p, precision);
+    const text = (p: number) => viewport.formatPrice?.(p) ?? this.priceText?.(p) ?? formatPrice(p, precision);
 
     if (labelled) {
       ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;

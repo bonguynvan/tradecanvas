@@ -40,9 +40,11 @@ describe('formatFraction', () => {
     expect(formatFraction(Number.NaN, 32)).toBe('NaN');
   });
 
-  it('knows the smallest step of a fraction', () => {
+  it('knows the smallest step of a fraction, and has none for one it can’t print', () => {
     expect(fractionTick({ denominator: 32 })).toBe(1 / 32);
     expect(fractionTick({ denominator: 32, subDenominator: 4 })).toBe(1 / 128);
+    expect(fractionTick({ denominator: 0 })).toBeNull();
+    expect(fractionTick({ denominator: 1.5 })).toBeNull();
   });
 });
 

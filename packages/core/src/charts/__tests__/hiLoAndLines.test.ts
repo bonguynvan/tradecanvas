@@ -113,3 +113,29 @@ describe('chart type settings in the transforms', () => {
     expect(toRenko(rising, { brickSize: 5 }).every((b) => Math.abs(b.close - b.open - 5) < 1e-9)).toBe(true);
   });
 });
+
+describe('round 8 review', () => {
+  it('keeps Renko’s brick size while the forming bar moves', () => {
+    const series: DataSeries = Array.from({ length: 40 }, (_, i) => bar(i, 100 + i - 1, 100 + i + 1, 100 + i, 100 + i));
+    const size = (d: DataSeries) => { const b = toRenko(d, { brickSize: 0, useATR: true, atrPeriod: 14 }); return Math.abs(b[0].close - b[0].open); };
+    const wider = [...series.slice(0, -1), { ...series[series.length - 1], high: 200, low: 50 }];
+    expect(size(wider)).toBe(size(series));
+  });
+
+  it('sizes Renko from the bars there are, even fewer than its length', () => {
+    const few: DataSeries = Array.from({ length: 6 }, (_, i) => bar(i, 0.5 + i * 0.01 - 0.005, 0.5 + i * 0.01 + 0.005, 0.5 + i * 0.01, 0.5 + i * 0.01));
+    expect(toRenko(few, { brickSize: 0, useATR: true, atrPeriod: 200 }).length).toBeGreaterThan(0);
+  });
+
+  it('prints its tags the chart’s way, and leaves the quote out when told', () => {
+    const lines = new PriceLines();
+    lines.setHighLow(true);
+    lines.setBidAsk({ bid: 4.5, ask: 4.6 });
+    lines.setPriceText((p) => `≈${p}`);
+    const { ctx, texts } = recorder();
+    lines.renderAxisTags(ctx, viewport(16), DARK_THEME, [bar(0, 2, 5), bar(1, 3, 8)]);
+    expect(texts).toEqual(expect.arrayContaining(['≈8', '≈2', '≈4.5', '≈4.6']));
+    lines.setQuoteShown(false);
+    expect(lines.levels([bar(0, 2, 5)], viewport(16)).map((l) => l.kind)).toEqual(['high', 'low']);
+  });
+});

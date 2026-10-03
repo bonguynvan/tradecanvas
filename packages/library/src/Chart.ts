@@ -43,7 +43,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { indicatorChipLabel } from './indicatorLabel.js';
 import type { ExportColumn } from '@tradecanvas/core';
@@ -269,6 +269,8 @@ export class Chart {
   private symbolSeries = new SymbolSeriesStore();
   /** Bars outside the symbol's regular hours shown. */
   private extendedHours = true;
+  /** A replay being restarted (or the chart going): its stop is not reported. */
+  private replayRestarting = false;
   /** While they are hidden: the whole series, theirs included (the data manager has the rest). */
   private fullSeries: OHLCBar[] | null = null;
   /** Symbols asked for (`symbolSeriesRequest`) and not given yet. */
@@ -676,7 +678,9 @@ export class Chart {
 
     // Replay
     this.replayManager = new ReplayManager();
-    this.replayManager.on('stateChange', (state) => this.eventBus.emit('replayState', { state }));
+    this.replayManager.on('stateChange', (state) => {
+      if (!this.replayRestarting) this.eventBus.emit('replayState', { state });
+    });
 
     // Measure overlay (shift-drag ruler)
     this.measureOverlay = new MeasureOverlay();
@@ -991,7 +995,10 @@ export class Chart {
     let taken: number | null = null;
     if (this.fullSeries) {
       const first = this.fullSeries[0]?.time;
-      const older = bars.filter((b) => first === undefined || b.time < first);
+      const seen = new Set<number>();
+      const older = bars
+        .filter((b) => isWholeBar(b) && (first === undefined || b.time < first) && !seen.has(b.time) && seen.add(b.time))
+        .sort((a, b) => a.time - b.time);
       this.fullSeries = [...older, ...this.fullSeries];
       const keep = this.sessionKeep(this.fullSeries);
       taken = older.length;
@@ -1161,6 +1168,7 @@ export class Chart {
     }
     if (!this.takeBar(bar, 'update')) {
       this.currentPriceLine.setPrice(bar.close);
+      this.scheduleRender();
       return;
     }
     this.dataManager.updateLastBar(bar);
@@ -1196,6 +1204,10 @@ export class Chart {
     }
     this.dataManager.updateLastBarFromTick(tick);
     this.currentPriceLine.setPrice(tick.price);
+    // While extended hours are hidden, the whole series keeps the same bar.
+    const full = this.fullSeries;
+    const merged = this.dataManager.getData()[this.dataManager.getLength() - 1];
+    if (full && merged && full.length > 0 && full[full.length - 1].time === merged.time) full[full.length - 1] = merged;
     if (this.options.chartType !== 'candlestick' && this.options.chartType !== 'line'
         && this.options.chartType !== 'area' && this.options.chartType !== 'bar'
         && this.options.chartType !== 'hollowCandle') {
@@ -1270,6 +1282,19 @@ export class Chart {
 
   /** A new or updated bar into the whole series (while one is kept): whether the chart shows it. */
   private takeBar(bar: OHLCBar, how: 'append' | 'update'): boolean {
+    // Hidden hours with no whole series yet (too few bars to tell the interval): start one now if it can.
+    if (!this.fullSeries && !this.extendedHours && !this.replaySession) {
+      const data = this.dataManager.getData();
+      const all = how === 'append' || data.length === 0 ? [...data, bar] : [...data.slice(0, -1), bar];
+      if (this.sessionKeep(all)) {
+        this.fullSeries = data.slice();
+        const keep = this.sessionKeep(this.fullSeries.length > 1 ? this.fullSeries : all);
+        if (keep && data.some((b) => !keep(b.time))) {
+          this.dataManager.setData(data.filter((b) => keep(b.time)));
+          this.displayDataCache = null;
+        }
+      }
+    }
     const full = this.fullSeries;
     if (!full) return true;
     if (how === 'append' || full.length === 0) full.push(bar);
@@ -1293,9 +1318,16 @@ export class Chart {
     this.eventBus.emit('dataUpdate', { length: data.length });
   }
 
+  /** The price lines for this frame: during a replay without the live bid and ask. */
+  private quoteLines(): PriceLines {
+    this.priceLines.setQuoteShown(this.replaySession === null);
+    return this.priceLines;
+  }
+
   /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
   setMainSeriesVisible(visible: boolean): void {
     this.mainSeriesVisible = visible;
+    this.syncRenderContext();
     this.engine.requestRender();
   }
 
@@ -1380,13 +1412,19 @@ export class Chart {
     const data = this.dataManager.getData();
     let changed = false;
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
-      if (!SYMBOL_INDICATORS.has(ind.id) || ind.params.symbol !== symbol) continue;
+      if (!SYMBOL_INDICATORS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
       this.indicatorEngine.updateIndicator(ind.instanceId, {}, data);
       changed = true;
     }
     if (!changed) return;
     this.announceIndicatorUpdate(0);
     this.updateViewportAndRender();
+  }
+
+  /** A symbol no indicator reads any more may be asked for again later. */
+  private forgetUnreadSymbols(): void {
+    const required = new Set(this.getRequiredSymbols());
+    for (const symbol of this.requestedSymbols) if (!required.has(symbol)) this.requestedSymbols.delete(symbol);
   }
 
   /** The bars given for `symbol`, or null. */
@@ -1406,6 +1444,7 @@ export class Chart {
 
   /** Ask once for each symbol an indicator reads and the chart hasn't got. */
   private requestMissingSymbols(): void {
+    this.forgetUnreadSymbols();
     for (const symbol of this.getRequiredSymbols()) {
       if (this.symbolSeries.has(symbol) || this.requestedSymbols.has(symbol)) continue;
       this.requestedSymbols.add(symbol);
@@ -1592,6 +1631,7 @@ export class Chart {
       this.eventBus.emit('indicatorChange', { instanceId: member, change: 'pane' });
     }
     this.eventBus.emit('indicatorRemove', { instanceId });
+    this.forgetUnreadSymbols();
   }
 
   /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
@@ -1854,9 +1894,8 @@ export class Chart {
    */
   setPriceFormat(format: PriceFormatter | PriceFraction | null): void {
     this.applyPriceFormat(format);
-    this.panelInfoCache = null;
-    this.fitPriceAxisWidth();
-    this.engine.requestRender();
+    // The axis may need room for the new labels, and the frame its new format.
+    this.updateViewportAndRender();
   }
 
   /** The chart's price format as a function (`priceFormat`), or null for decimals. */
@@ -1867,6 +1906,7 @@ export class Chart {
   private applyPriceFormat(format: PriceFormatter | PriceFraction | null): void {
     this.priceFormatter = priceFormatterFor(format);
     this.priceUnit = format && typeof format !== 'function' ? fractionTick(format) : null;
+    this.priceLines.setPriceText((p) => this.formatPrice(p));
     this.viewport.setPriceFormat(this.priceFormatter, this.priceUnit);
     this.crosshairTooltip.setPriceFormatter(this.priceFormatter);
     this.pinnedTooltip.setPriceFormatter(this.priceFormatter);
@@ -2256,6 +2296,13 @@ export class Chart {
         columns.push({ name: `${name}${title}`, values: bars.map((_, i) => series[from + i]?.[plot.key] ?? null) });
       }
     }
+    // Two alike (an SMA 20 on the close and one on RSI) get a number each, so no column is lost.
+    const seen = new Map<string, number>();
+    for (const column of columns) {
+      const count = (seen.get(column.name) ?? 0) + 1;
+      seen.set(column.name, count);
+      if (count > 1) column.name = `${column.name} (${count})`;
+    }
     return { bars, columns };
   }
 
@@ -2624,7 +2671,12 @@ export class Chart {
       this.scheduleRender();
     });
 
-    this.streamManager.on('quote', (quote) => this.setBidAsk(quote));
+    this.setBidAsk(null); // the last symbol's quote
+    // A tick may carry one side only: the other stays.
+    this.streamManager.on('quote', (quote) => {
+      const now = this.priceLines.getBidAsk();
+      this.setBidAsk({ bid: quote.bid ?? now?.bid, ask: quote.ask ?? now?.ask });
+    });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
       // Orders and alerts keep tracking the live market during a replay; the
@@ -2712,6 +2764,7 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
+    this.priceLines.setBidAsk(null);
     if (this.streamManager) {
       this.streamManager.dispose();
       this.streamManager = null;
@@ -2792,27 +2845,28 @@ export class Chart {
   addCompareSymbol(id: string, label: string, data: DataSeries, color: string): void {
     if (!this.features.compareSymbols) return;
     this.compareRenderer.addSymbol({ id, label, data, color, visible: true });
-    this.engine.requestRender(LayerType.Main);
+    // They count in the auto scale.
+    this.updateViewportAndRender();
   }
 
   removeCompareSymbol(id: string): void {
     this.compareRenderer.removeSymbol(id);
-    this.engine.requestRender(LayerType.Main);
+    this.updateViewportAndRender();
   }
 
   updateCompareData(id: string, data: DataSeries): void {
     this.compareRenderer.setSymbolData(id, data);
-    this.engine.requestRender(LayerType.Main);
+    this.updateViewportAndRender();
   }
 
   setCompareMode(mode: 'percent' | 'absolute'): void {
     this.compareRenderer.setMode(mode);
-    this.engine.requestRender(LayerType.Main);
+    this.updateViewportAndRender();
   }
 
   clearCompareSymbols(): void {
     this.compareRenderer.clear();
-    this.engine.requestRender(LayerType.Main);
+    this.updateViewportAndRender();
   }
 
   // --- Price scale ---
@@ -3616,7 +3670,13 @@ export class Chart {
     this.replayCoarse = coarse;
     // A replay fits each step; a price-axis drag from before shouldn't pin it.
     this.options.autoScale = true;
-    this.replayManager.load(steps ?? coarse);
+    // Loading stops the run before: that is a restart, not the replay ending.
+    this.replayRestarting = true;
+    try {
+      this.replayManager.load(steps ?? coarse);
+    } finally {
+      this.replayRestarting = false;
+    }
     if (steps && playConfig.startIndex !== undefined) playConfig.startIndex = lastStepOfBar(steps, coarse, playConfig.startIndex);
     // Each replayStart used to stack another 'bar' listener, so a restarted
     // replay ran every step once per previous start.
@@ -4277,6 +4337,7 @@ export class Chart {
     this.animator.dispose();
     this.crosshairTooltip.destroy();
     this.pinnedTooltip.destroy();
+    this.replayRestarting = true; // going away: no word to the others
     this.replayManager.dispose();
     this.alertManager.dispose();
     this.undoRedoManager.clear();
@@ -4288,7 +4349,9 @@ export class Chart {
   // --- Internal ---
 
   private createChartRenderer(type: ChartType | string): ChartRendererInterface {
-    return resolveRenderer(type, (t) => this.pluginManager.getChartType(t));
+    const renderer = resolveRenderer(type, (t) => this.pluginManager.getChartType(t));
+    if (renderer instanceof HiLoRenderer) renderer.setPriceText((p) => this.formatPrice(p));
+    return renderer;
   }
 
   /** Cached display data. Invalidated when raw data or chart type changes. */
@@ -4648,7 +4711,7 @@ export class Chart {
       leftPriceAxis: this.leftPriceAxis,
       leftAxisWidth: this.leftAxisWidth,
       chartRenderer: this.mainSeriesVisible ? this.chartRenderer : null,
-      priceLines: this.priceLines,
+      priceLines: this.quoteLines(),
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,
       timeAxis: this.features.timeAxis ? this.timeAxis : null,

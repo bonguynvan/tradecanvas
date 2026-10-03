@@ -16,6 +16,7 @@ import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
+import { readChartTypeOptions } from '@tradecanvas/commons';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -256,6 +257,9 @@ export class ChartWidget {
       ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
       ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
       ...(chartOptions?.leftPriceScale !== undefined ? { leftPriceScale: chartOptions.leftPriceScale } : {}),
+      ...(chartOptions?.highLowLines !== undefined ? { highLowLines: chartOptions.highLowLines } : {}),
+      ...(chartOptions?.extendedHours !== undefined ? { extendedHours: chartOptions.extendedHours } : {}),
+      ...(chartOptions?.chartTypeOptions ? { chartTypeOptions: readChartTypeOptions(chartOptions.chartTypeOptions) } : {}),
     };
     this.t = createTranslator(resolveMessages(options.locale, options.messages));
 
@@ -1982,6 +1986,8 @@ export class ChartWidget {
       if (this.destroyed || timeframe !== this.state.timeframe) return;
       this.chart.setSymbolSeries(symbol, bars);
     } catch (err: unknown) {
+      // Nothing to show: the next indicator on it asks again.
+      if (!this.destroyed) this.chart.setSymbolSeries(symbol, null);
       this.toast(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
     }
   }

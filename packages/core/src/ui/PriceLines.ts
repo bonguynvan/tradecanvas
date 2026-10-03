@@ -25,6 +25,18 @@ const TAG_HEIGHT = 16;
 export class PriceLines {
   private highLow = false;
   private quote: BidAsk | null = null;
+  private quoteShown = true;
+  private priceText: ((price: number) => string) | null = null;
+
+  /** How its tags print a price (the chart's precision, locale and format); null: decimals. */
+  setPriceText(format: ((price: number) => string) | null): void {
+    this.priceText = format;
+  }
+
+  /** Leave the bid and ask out for now (a replay: they are the live market's). */
+  setQuoteShown(shown: boolean): void {
+    this.quoteShown = shown;
+  }
 
   /** Mark the highest high and lowest low of the bars on screen. */
   setHighLow(visible: boolean): void {
@@ -59,7 +71,7 @@ export class PriceLines {
       if (Number.isFinite(high)) out.push({ kind: 'high', price: high });
       if (Number.isFinite(low)) out.push({ kind: 'low', price: low });
     }
-    const { bid, ask } = this.quote ?? {};
+    const { bid, ask } = (this.quoteShown ? this.quote : null) ?? {};
     if (bid !== undefined && Number.isFinite(bid)) out.push({ kind: 'bid', price: bid });
     if (ask !== undefined && Number.isFinite(ask)) out.push({ kind: 'ask', price: ask });
     return out;
@@ -99,7 +111,8 @@ export class PriceLines {
       ctx.fillStyle = colorOf(level.kind, theme);
       ctx.fillRect(axisX, y - TAG_HEIGHT / 2, width, TAG_HEIGHT);
       ctx.fillStyle = theme.background;
-      ctx.fillText(viewport.formatPrice?.(level.price) ?? formatPrice(level.price, precision), axisX + 5, y);
+      const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
+      ctx.fillText(text, axisX + 5, y);
     }
     ctx.restore();
   }

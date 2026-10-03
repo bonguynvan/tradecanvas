@@ -22,7 +22,7 @@ export class CompareRenderer {
   private mode: 'percent' | 'absolute' = 'percent';
   private store = new SymbolSeriesStore();
   /** Each series' closes on the main bars, for the main series it was worked out for. */
-  private aligned = new Map<string, { main: DataSeries; data: DataSeries; closes: Float64Array }>();
+  private aligned = new Map<string, { main: DataSeries; data: DataSeries; length: number; lastTime: number; closes: Float64Array }>();
 
   setMode(mode: 'percent' | 'absolute'): void {
     this.mode = mode;
@@ -113,11 +113,15 @@ export class CompareRenderer {
 
   /** `sym`'s closes on the bars of `main` (NaN where it has none). */
   private closesOn(sym: CompareSymbol, main: DataSeries): Float64Array {
+    // The main series may be the same array grown by a bar, or its last bar replaced.
+    const lastTime = main.length > 0 ? main[main.length - 1].time : Number.NaN;
     const cached = this.aligned.get(sym.id);
-    if (cached && cached.main === main && cached.data === sym.data) return cached.closes;
+    if (cached && cached.main === main && cached.data === sym.data && cached.length === main.length && cached.lastTime === lastTime) {
+      return cached.closes;
+    }
     const closes = new Float64Array(main.length);
     for (let i = 0; i < main.length; i++) closes[i] = this.store.closeAt(sym.id, main[i].time) ?? Number.NaN;
-    this.aligned.set(sym.id, { main, data: sym.data, closes });
+    this.aligned.set(sym.id, { main, data: sym.data, length: main.length, lastTime, closes });
     return closes;
   }
 

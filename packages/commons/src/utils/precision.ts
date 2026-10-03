@@ -92,8 +92,13 @@ export function formatFraction(value: number, denominator: number, subDenominato
   return `${sign}${whole}'${String(numerator).padStart(width, '0')}${tail}`;
 }
 
-/** The smallest step a fraction format prints (a 32nd; a quarter of one with `subDenominator` 4). */
-export function fractionTick(fraction: PriceFraction): number {
+/**
+ * The smallest step a fraction format prints (a 32nd; a quarter of one with
+ * `subDenominator` 4), or null for a denominator it can't print (it falls
+ * back to plain digits then).
+ */
+export function fractionTick(fraction: PriceFraction): number | null {
+  if (!Number.isInteger(fraction.denominator) || fraction.denominator < 2) return null;
   const sub = Number.isInteger(fraction.subDenominator) && (fraction.subDenominator ?? 0) > 1 ? fraction.subDenominator as number : 1;
   return 1 / (fraction.denominator * sub);
 }

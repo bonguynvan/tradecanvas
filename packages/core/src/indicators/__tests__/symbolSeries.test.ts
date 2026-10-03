@@ -100,3 +100,20 @@ describe('CompareRenderer', () => {
     expect(renderer.getPriceRange(main, viewport)).toBeNull();
   });
 });
+
+describe('CompareRenderer on a series that grows', () => {
+  it('follows bars added to the same array', () => {
+    const renderer = new CompareRenderer();
+    renderer.setMode('absolute');
+    const longer: DataSeries = [...other, bar(T0 + 16 * HOUR, 40)];
+    renderer.addSymbol({ id: 'b', label: 'B', data: longer, color: '#f00', visible: true });
+    const growing = main.slice(0, 8);
+    const vp = (to: number): ViewportState => ({
+      visibleRange: { from: 0, to }, priceRange: { min: 0, max: 50 }, barWidth: 8, barSpacing: 2, offset: 0,
+      chartRect: { x: 0, y: 0, width: 100, height: 300 },
+    });
+    expect(renderer.getPriceRange(growing, vp(7))?.max).toBe(30);
+    growing.push(main[8]); // 16:00, on the same array
+    expect(renderer.getPriceRange(growing, vp(8))?.max).toBe(40);
+  });
+});

@@ -50,6 +50,7 @@ class FakeChart {
   replayStart(config: { startIndex: number }): void { this.replaying = true; this.replay.push(`start ${config.startIndex}`); }
   replaySeekToTime(time: number): void { this.replay.push(`seek ${time}`); }
   replayStop(): void { this.replaying = false; this.replay.push('stop'); }
+  destroy(): void { this.emit('replayState', { state: 'stopped' }); }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -263,3 +264,14 @@ describe('ChartWidgetGrid replay', () => {
   });
 });
 
+describe('ChartWidgetGrid replay, a chart going away', () => {
+  it('doesn’t end the others’ replay', () => {
+    make({ layout: '1x2', sync: { replay: true } });
+    const [a, b] = charts();
+    a.replaying = true; // the one replaying stays
+    a.emit('replayStep', { barIndex: 1, time: 200, until: 300 });
+    expect(b.replay).toEqual(['start 1']);
+    grid.setLayout('1x1'); // the second goes, saying its replay stopped
+    expect(a.replay).toEqual([]);
+  });
+});
