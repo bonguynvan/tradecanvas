@@ -39,11 +39,6 @@ export interface PaneRangeOptions {
   levels?: readonly number[];
   /** Keep zero in view (histograms grow from it). */
   zero?: boolean;
-  /**
-   * For a logarithmic scale: padded by ratio, without zero or levels at or
-   * below it; null when a value is at or below zero (it has no place there).
-   */
-  log?: boolean;
 }
 
 /**
@@ -60,9 +55,74 @@ export function paneValueRange(
   to: number,
   options: PaneRangeOptions,
 ): { min: number; max: number } | null {
+  let { lo, hi } = valueSpan(output, from, to, options.keys);
+  const scale = options.scale;
+  const fixedMin = scale?.min;
+  const fixedMax = scale?.max;
+  if (lo === Infinity) {
+    if (fixedMin === undefined && fixedMax === undefined) return null;
+    lo = fixedMin ?? 0;
+    hi = fixedMax ?? lo + 1;
+  } else {
+    const span = hi - lo || Math.abs(hi) || 1;
+    lo -= span * PANE_PADDING;
+    hi += span * PANE_PADDING;
+  }
+  for (const level of options.levels ?? []) {
+    if (level < lo) lo = level;
+    if (level > hi) hi = level;
+  }
+  if (options.zero || scale?.zero) {
+    if (lo > 0) lo = 0;
+    if (hi < 0) hi = 0;
+  }
+  if (fixedMin !== undefined) lo = fixedMin;
+  if (fixedMax !== undefined) hi = fixedMax;
+  if (!(hi > lo)) hi = lo + 1;
+  return { min: lo, max: hi };
+}
+
+/**
+ * `paneValueRange` for a logarithmic scale: padded by ratio, without zero
+ * and levels at or below it. Null when nothing is visible (and no positive
+ * bounds are fixed); false when a value there is at or below zero, which a
+ * log scale has no place for.
+ */
+export function paneLogRange(
+  output: IndicatorOutput | null,
+  from: number,
+  to: number,
+  options: PaneRangeOptions,
+): { min: number; max: number } | null | false {
+  let { lo, hi } = valueSpan(output, from, to, options.keys);
+  const positive = (v: number | undefined): v is number => v !== undefined && v > 0;
+  const fixedMin = positive(options.scale?.min) ? options.scale?.min : undefined;
+  const fixedMax = positive(options.scale?.max) ? options.scale?.max : undefined;
+  if (lo === Infinity) {
+    if (fixedMin === undefined || fixedMax === undefined) return null;
+    lo = fixedMin;
+    hi = fixedMax;
+  } else {
+    if (!(lo > 0)) return false;
+    // The same padding as a linear pane, on the log of the values.
+    const pad = Math.exp((Math.log(hi / lo) || Math.LN2 / 4) * PANE_PADDING);
+    lo /= pad;
+    hi *= pad;
+  }
+  for (const level of options.levels ?? []) {
+    if (!(level > 0)) continue;
+    if (level < lo) lo = level;
+    if (level > hi) hi = level;
+  }
+  if (fixedMin !== undefined) lo = fixedMin;
+  if (fixedMax !== undefined) hi = fixedMax;
+  return hi > lo ? { min: lo, max: hi } : null;
+}
+
+/** The lowest and highest drawn value over bars `[from, to]` (Infinity / -Infinity when none). */
+function valueSpan(output: IndicatorOutput | null, from: number, to: number, keys: readonly string[] | null): { lo: number; hi: number } {
   let lo = Infinity;
   let hi = -Infinity;
-  const keys = options.keys;
   const take = (v: number | undefined): void => {
     if (v === undefined || !Number.isFinite(v)) return;
     if (v < lo) lo = v;
@@ -89,58 +149,7 @@ export function paneValueRange(
       i++;
     }
   }
-  const scale = options.scale;
-  if (options.log) return logRange(lo, hi, options);
-  const fixedMin = scale?.min;
-  const fixedMax = scale?.max;
-  if (lo === Infinity) {
-    if (fixedMin === undefined && fixedMax === undefined) return null;
-    lo = fixedMin ?? 0;
-    hi = fixedMax ?? lo + 1;
-  } else {
-    const span = hi - lo || Math.abs(hi) || 1;
-    lo -= span * PANE_PADDING;
-    hi += span * PANE_PADDING;
-  }
-  for (const level of options.levels ?? []) {
-    if (level < lo) lo = level;
-    if (level > hi) hi = level;
-  }
-  if (options.zero || scale?.zero) {
-    if (lo > 0) lo = 0;
-    if (hi < 0) hi = 0;
-  }
-  if (fixedMin !== undefined) lo = fixedMin;
-  if (fixedMax !== undefined) hi = fixedMax;
-  if (!(hi > lo)) hi = lo + 1;
-  return { min: lo, max: hi };
-}
-
-/** `paneValueRange` on a logarithmic scale: from the values seen (`lo`…`hi`). */
-function logRange(lo: number, hi: number, options: PaneRangeOptions): { min: number; max: number } | null {
-  const positive = (v: number | undefined): v is number => v !== undefined && v > 0;
-  const fixedMin = positive(options.scale?.min) ? options.scale?.min : undefined;
-  const fixedMax = positive(options.scale?.max) ? options.scale?.max : undefined;
-  if (lo === Infinity) {
-    if (fixedMin === undefined || fixedMax === undefined) return null;
-    lo = fixedMin;
-    hi = fixedMax;
-  } else {
-    if (!(lo > 0)) return null;
-    // The same padding as a linear pane, on the log of the values.
-    const span = Math.log(hi / lo) || Math.LN2 / 4;
-    const pad = Math.exp(span * PANE_PADDING);
-    lo /= pad;
-    hi *= pad;
-  }
-  for (const level of options.levels ?? []) {
-    if (!(level > 0)) continue;
-    if (level < lo) lo = level;
-    if (level > hi) hi = level;
-  }
-  if (fixedMin !== undefined) lo = fixedMin;
-  if (fixedMax !== undefined) hi = fixedMax;
-  return hi > lo ? { min: lo, max: hi } : null;
+  return { lo, hi };
 }
 
 /** Whether a plot list has a histogram (its pane then keeps zero in view). */

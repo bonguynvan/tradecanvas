@@ -1967,7 +1967,7 @@ export class ChartWidget {
 
   /** An alert in words, for a toast or a notification: "Price crossing EMA 20", "RSI greater than 70". */
   private alertText(p: AlertListItem): string {
-    return describeAlert(this.alertListItem(p, this.buildAlertSources()), this.t, (price) => this.formatAlertPrice(price));
+    return describeAlert(this.alertListItem(p, this.buildAlertSources()), this.t, (price) => this.formatAlertPrice(price), true);
   }
 
   /** Price + every active indicator line, as selectable alert sources. */
@@ -2467,6 +2467,7 @@ export class ChartWidget {
       return;
     }
     void this.replayStepsFor(this.replayStep as TimeFrame).then((steps) => {
+      if (seq !== this.replayStartSeq) return; // a newer start took over
       if (!steps) this.toast(this.t('replay.stepsFailed'), 'error');
       go(steps);
     });

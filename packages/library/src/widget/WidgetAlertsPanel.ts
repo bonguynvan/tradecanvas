@@ -54,8 +54,12 @@ export interface AlertsPanelCallbacks {
   now?: () => number;
 }
 
-/** What an alert watches, in words: "RSI crossing 70", "Price crossing EMA 20", "Price up 5% within 10 bars". */
-export function describeAlert(alert: AlertListItem, t: Translator, formatPrice: (price: number) => string): string {
+/**
+ * What an alert watches, in words: "RSI crossing 70", "Price crossing EMA 20",
+ * "Price up 5% within 10 bars". `named` names the price too ("Price crossing
+ * 105"), for words read away from the list (a toast, a notification).
+ */
+export function describeAlert(alert: AlertListItem, t: Translator, formatPrice: (price: number) => string, named = false): string {
   const source = alert.label ?? t('alerts.source.price');
   const conditionKey = CONDITION_KEY.get(alert.condition as AlertCondition);
   const condition = conditionKey ? t(conditionKey) : alert.condition;
@@ -66,7 +70,7 @@ export function describeAlert(alert: AlertListItem, t: Translator, formatPrice: 
   const isIndicator = alert.channel && alert.channel !== 'price';
   const valueStr = !Number.isFinite(alert.price) ? '—'
     : isIndicator ? formatPlain(alert.price) : formatPrice(alert.price);
-  const prefix = (isIndicator || alert.drawingId) && alert.label ? `${alert.label} ` : '';
+  const prefix = (isIndicator || alert.drawingId) && alert.label ? `${alert.label} ` : named ? `${source} ` : '';
   return `${prefix}${condition} ${valueStr}`;
 }
 

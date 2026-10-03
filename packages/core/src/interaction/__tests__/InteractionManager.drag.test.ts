@@ -404,3 +404,14 @@ describe('InteractionManager — signal markers', () => {
   });
 });
 
+describe('InteractionManager — a marker under HTML laid over the chart', () => {
+  it('leaves the marker when the pointer moves onto the legend or a bar', () => {
+    const hovers: (string | null)[] = [];
+    im.setSignalMarkerHitTest((p) => (p.x > 100 && p.x < 120 ? 'm1' : null), (m) => hovers.push(m as string | null));
+    const legend = document.createElement('div');
+    el.appendChild(legend);
+    el.dispatchEvent(at('mousemove', 110));
+    legend.dispatchEvent(at('mousemove', 112));
+    expect(hovers).toEqual(['m1', null]);
+  });
+});

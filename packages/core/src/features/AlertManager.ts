@@ -266,6 +266,7 @@ export class AlertManager extends Emitter<AlertEvents> {
     if (!alert || !Number.isFinite(price)) return;
     alert.price = price;
     alert.triggered = false;
+    if (alert.expiresAt !== undefined) this.scheduleExpiry(); // armed again: it can expire again
     this.emit('updated', { ...alert });
     this.requestRender?.();
   }
@@ -292,18 +293,19 @@ export class AlertManager extends Emitter<AlertEvents> {
   /** Alerts past their `expiresAt` stop, and say so (a one-shot that already fired is done, not expired). */
   private expire(): void {
     const now = Date.now();
-    let changed = false;
-    for (const alert of this.alerts) {
-      if (alert.expired || alert.expiresAt === undefined || now < alert.expiresAt) continue;
-      if (alert.triggered && !alert.repeating) continue;
-      alert.expired = true;
-      changed = true;
-      this.emit('expired', { ...alert });
-      this.emit('updated', { ...alert });
+    const due = this.alerts.filter((a) => !a.expired && a.expiresAt !== undefined && now >= a.expiresAt && !(a.triggered && !a.repeating));
+    if (due.length === 0) return;
+    for (const alert of due) alert.expired = true;
+    try {
+      for (const alert of due) {
+        this.emit('expired', { ...alert });
+        this.emit('updated', { ...alert });
+      }
+    } finally {
+      // A listener that throws doesn't stop the others' timer.
+      this.requestRender?.();
+      this.scheduleExpiry();
     }
-    if (!changed) return;
-    this.requestRender?.();
-    this.scheduleExpiry();
   }
 
   /** Wake up at the next expiry, so an alert expires without ticks too. */
@@ -369,9 +371,14 @@ export class AlertManager extends Emitter<AlertEvents> {
   /**
    * Take the latest value of several channels at once (the price and the
    * indicator lines alerts watch), then evaluate the alerts on them: a line
-   * against another line compares values of the same moment.
+   * against another line compares values of the same moment. With
+   * `together`, an alert comparing two lines waits for a call that gives
+   * both (otherwise it takes the other's latest value).
    */
-  checkChannels(values: ReadonlyMap<string, number> | Readonly<Record<string, number>>): void {
+  checkChannels(
+    values: ReadonlyMap<string, number> | Readonly<Record<string, number>>,
+    options: { together?: boolean } = {},
+  ): void {
     const entries = values instanceof Map ? [...values.entries()] : Object.entries(values);
     const fresh = entries.filter(([, v]) => Number.isFinite(v));
     if (fresh.length === 0) return;
@@ -390,6 +397,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       const own = prevs.has(alert.channel);
       const other = alert.target !== undefined && prevs.has(alert.target);
       if (!own && !other) continue;
+      if (alert.target !== undefined && options.together && !(own && other)) continue;
       let met: boolean;
       if (alert.onBarClose) {
         // Only when a bar closed, and by its values.

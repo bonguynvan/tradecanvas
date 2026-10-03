@@ -130,6 +130,9 @@ describe('describeAlert', () => {
     expect(say({ id: 'b', price: Number.NaN, condition: 'movesUp', triggered: true, channel: 'price', percent: 5, bars: 10 }))
       .toBe('Price Moves up 5% within 10 bars');
     expect(say({ id: 'c', price: 105, condition: 'crossing', triggered: true, channel: 'price' })).toBe('Crossing 105.00');
+    // Read away from the list (a toast): the price is named.
+    expect(describeAlert({ id: 'c', price: 105, condition: 'crossing', triggered: true, channel: 'price' }, EN_TRANSLATOR, (p) => p.toFixed(2), true))
+      .toBe('Price Crossing 105.00');
   });
 });
 

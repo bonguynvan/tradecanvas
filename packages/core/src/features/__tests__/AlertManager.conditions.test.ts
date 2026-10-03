@@ -181,3 +181,55 @@ describe('alert expiry', () => {
     }
   });
 });
+
+describe('alerts on two lines given together', () => {
+  it('wait for both lines when asked to', () => {
+    alerts.addAlert(Number.NaN, 'crossingUp', 'above EMA', false, 'price', undefined, { target: 'ema:value' });
+    alerts.checkChannels({ price: 9, 'ema:value': 10 }, { together: true });
+    // The price alone (the line not given, e.g. during a replay): no comparison with an old line value.
+    alerts.checkChannels({ price: 11 }, { together: true });
+    expect(fired).toEqual([]);
+    alerts.checkChannels({ price: 11, 'ema:value': 10 }, { together: true });
+    expect(fired).toEqual(['above EMA']);
+  });
+});
+
+describe('alert expiry, more', () => {
+  it('keeps the timer going when an expiry listener throws', () => {
+    vi.useFakeTimers();
+    try {
+      const expired: string[] = [];
+      let first = true;
+      alerts.on('expired', (a) => {
+        expired.push(a.message ?? '');
+        if (first) { first = false; throw new Error('listener'); }
+      });
+      const now = Date.now();
+      alerts.addAlert(100, 'crossing', 'one', false, 'price', undefined, { expiresAt: now + 1000 });
+      alerts.addAlert(100, 'crossing', 'two', false, 'price', undefined, { expiresAt: now + 5000 });
+      expect(() => vi.advanceTimersByTime(1000)).toThrow('listener');
+      vi.advanceTimersByTime(4000);
+      expect(expired).toEqual(['one', 'two']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('can expire again once a fired alert is moved (armed again)', () => {
+    vi.useFakeTimers();
+    try {
+      const expired: string[] = [];
+      alerts.on('expired', (a) => expired.push(a.message ?? ''));
+      const id = alerts.addAlert(100, 'crossing', 'moved', false, 'price', undefined, { expiresAt: Date.now() + 10_000 });
+      tick(1, 99);
+      tick(1, 101); // fired: done, not expiring
+      alerts.addAlert(500, 'crossing', 'other', false, 'price', undefined, { expiresAt: Date.now() + 1000 });
+      vi.advanceTimersByTime(1000);
+      alerts.updateAlertPrice(id, 120);
+      vi.advanceTimersByTime(9000);
+      expect(expired).toEqual(['other', 'moved']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

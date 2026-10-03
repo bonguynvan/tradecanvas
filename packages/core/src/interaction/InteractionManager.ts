@@ -492,7 +492,10 @@ export class InteractionManager {
       // Over a layered control the crosshair stays put. This also ignores the
       // mousemove a browser sends after a tap on one, which would otherwise
       // leave a crosshair behind that no mouseleave clears.
-      if (!onChartSurface(e.target)) return;
+      if (!onChartSurface(e.target)) {
+        this.leaveMarker(); // onto the legend or a bar laid over the chart
+        return;
+      }
       handleMove(e);
     };
 

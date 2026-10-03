@@ -178,3 +178,76 @@ describe('alerts during a replay', () => {
   });
 });
 
+describe('a paper account only goes forward in a replay', () => {
+  let paper: PaperExecutionAdapter;
+  let fills: { time: number; price: number; reason?: string }[];
+
+  beforeEach(() => {
+    paper = new PaperExecutionAdapter({ markPrice: 500 });
+    chart.connectExecution(paper);
+    fills = [];
+    chart.on('executionFill', (e) => fills.push(e.payload as { time: number; price: number; reason?: string }));
+  });
+
+  it('doesn’t take a stop on prices from before the entry after a seek back and forward', async () => {
+    chart.replayStart({ steps, startIndex: 3, paused: true }); // the end of hour 3: 133
+    await paper.placeOrder({ side: 'buy', type: 'market', quantity: 1, stopLoss: 131 });
+    expect(fills).toHaveLength(1);
+    const at = chart.getReplayProgress().current;
+    chart.replaySeek(at - 3); // back to 130 (its low 129.5 is under the stop)
+    chart.replaySeek(at);     // and on to where it was
+    expect(fills).toHaveLength(1);
+    chart.replaySeek(at + 1); // hour 4 begins: 140, away from the stop
+    expect(fills).toHaveLength(1);
+  });
+
+  it('isn’t fed again when the replay restarts from an earlier bar', () => {
+    const spy = vi.spyOn(paper, 'setMarkPrice');
+    chart.replayStart({ steps, startIndex: 5, paused: true });
+    expect(spy).toHaveBeenCalledTimes(1);
+    chart.replayStart({ steps, startIndex: 2, paused: true }); // a new step choice, say
+    chart.replaySeekToBar(5);
+    expect(spy).toHaveBeenCalledTimes(1);
+    chart.replaySeek(chart.getReplayProgress().current + 1);
+    expect(spy).toHaveBeenCalledTimes(4); // one step on: low, high, close
+  });
+
+  it('goes by a long jump in chunks', () => {
+    const fine: OHLCBar[] = Array.from({ length: 4000 }, (_, i) => ({ time: T0 + i * 9000, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
+    const spy = vi.spyOn(paper, 'setMarkPrice');
+    chart.replayStart({ steps: fine, startIndex: 0, paused: true });
+    chart.replaySeek(3999);
+    expect(spy.mock.calls.length).toBeGreaterThan(1);
+    expect(spy.mock.calls.length).toBeLessThanOrEqual(1 + 3 * 500);
+  });
+
+  it('goes back to the live price when it is disconnected mid-replay', () => {
+    chart.replayStart({ steps, startIndex: 2, paused: true });
+    const spy = vi.spyOn(paper, 'setMarkPrice');
+    chart.disconnectExecution();
+    expect(spy).toHaveBeenCalledWith(hours[9].close, undefined);
+  });
+});
+
+describe('replay steps under irregular bars', () => {
+  it('keeps the steps of a last bar longer than the gap before it', () => {
+    // Hourly bars, but the last starts half an hour after the one before and runs an hour.
+    chart.setData([...hours.slice(0, 9), { ...hours[9], time: T0 + 8.5 * HOUR }]);
+    chart.replayStart({ steps, startIndex: 9, paused: true });
+    // Every step before 9:30 counts (not only those before 9:00).
+    expect(chart.getReplayProgress().total).toBe(38);
+  });
+});
+
+describe('alerts across a replay', () => {
+  it('keep the price they had before it, so a crossing right after it counts', () => {
+    const fired: string[] = [];
+    chart.on('alertTriggered', (e) => fired.push(e.payload.message ?? ''));
+    chart.addAlert(150, 'crossingUp', 'up');
+    chart.setCurrentPrice(140);
+    chart.replayStart({ startIndex: 2, paused: true });
+    chart.replayStop();
+    chart.setCurrentPrice(160);
+    expect(fired).toEqual(['up']);
+  });
+});

@@ -257,6 +257,9 @@ describe('pane scales', () => {
     expect(vp(atr)).toMatchObject({ logScale: true, invertScale: true });
     chart.setPaneScale(macd, { log: true }); // MACD goes below 0: stays linear
     expect(vp(macd).logScale).toBe(false);
+    // A line drawn in the pane with no value yet (a long average) doesn't turn it off.
+    chart.addIndicator('sma', { period: 1000, source: indicatorSource(atr, 'value') });
+    expect(vp(atr).logScale).toBe(true);
     expect(chart.getPaneScale(atr)).toEqual({ log: true, invert: true });
   });
 

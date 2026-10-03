@@ -242,6 +242,8 @@ export interface AlertPayload {
   label?: string;
   /** The line it compares with. */
   target?: string;
+  /** The drawing it watches. */
+  drawingId?: string;
   /** A move: the percent, within how many bars. */
   percent?: number;
   bars?: number;
