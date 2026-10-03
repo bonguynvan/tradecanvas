@@ -5,12 +5,12 @@ export class TradingContextMenu {
   private removeHandler: (() => void) | null = null;
   onItemSelect: ((intent: OrderPlaceIntent) => void) | null = null;
 
-  show(pos: Point, price: number, container: HTMLElement, config: TradingConfig): void {
+  show(pos: Point, price: number, container: HTMLElement, config: TradingConfig, formatPrice?: (price: number) => string): void {
     this.hide();
     if (!config.contextMenu?.enabled) return;
 
     const precision = config.pricePrecision ?? 2;
-    const priceStr = price.toFixed(precision);
+    const priceStr = formatPrice?.(price) ?? price.toFixed(precision);
 
     const menu = document.createElement('div');
     menu.style.cssText = `

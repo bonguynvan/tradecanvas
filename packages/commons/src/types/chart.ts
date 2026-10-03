@@ -152,7 +152,44 @@ export interface ChartOptions {
   leftPriceScale?: boolean;
   /** Bounds for free panning. */
   panLimits?: { minVisibleBars?: number };
+  /**
+   * How prices read on the price scale and everything that prints one (axis,
+   * crosshair, last-price tag, legend, tooltip, orders, alerts, drawings): a
+   * function of yours, or fractions of a point (a bond in 32nds: `101'16`).
+   * Indicator panes keep their own numbers. Default: decimals.
+   */
+  priceFormat?: PriceFormatter | PriceFraction;
+  /** How times read on the time axis, the crosshair and the tooltip. Default: the chart's own. */
+  timeFormatter?: TimeFormatter;
 }
+
+/** A price in your words, e.g. `(p) => '$' + p.toFixed(2)`. */
+export type PriceFormatter = (price: number) => string;
+
+/**
+ * Prices in fractions of a point: `denominator` 32 prints 101.5 as `101'16`.
+ * `subDenominator` 2 or 4 splits each fraction in halves or quarters, printed
+ * as a last digit the way futures quote them (`101'165` is 101 and 16½ 32nds).
+ */
+export interface PriceFraction {
+  denominator: number;
+  subDenominator?: number;
+}
+
+/** Where a time is printed, for a `TimeFormatter`. */
+export interface TimeFormatContext {
+  /**
+   * `'date'`: an axis label of a bar a day or longer; `'day'`: an axis label
+   * where a new day starts; `'time'`: an axis label within a day;
+   * `'crosshair'`: the crosshair's label and the tooltip.
+   */
+  kind: 'date' | 'day' | 'time' | 'crosshair';
+  /** The chart's time zone: an IANA name, minutes east of UTC, or null for the browser's. */
+  timeZone: string | number | null;
+}
+
+/** A time (ms since the epoch) in your words. */
+export type TimeFormatter = (time: number, context: TimeFormatContext) => string;
 
 export interface SessionBreakOptions {
   visible?: boolean;

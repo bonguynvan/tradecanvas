@@ -318,7 +318,7 @@ export class TradingManager {
   onContextMenu(pos: Point, viewport: ViewportState): boolean {
     if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container) return false;
     const price = yToPrice(pos.y, viewport);
-    this.contextMenu.show(pos, price, this.container, this.config);
+    this.contextMenu.show(pos, price, this.container, this.config, viewport.formatPrice);
     return true;
   }
 

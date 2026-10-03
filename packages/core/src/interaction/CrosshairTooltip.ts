@@ -1,4 +1,4 @@
-import type { OHLCBar, Theme, Point, TimeZoneSetting } from '@tradecanvas/commons';
+import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter } from '@tradecanvas/commons';
 
 /** Gap between the pointer and the card. */
@@ -78,6 +78,8 @@ export class CrosshairTooltip {
   private locale = 'en-US';
   private pricePrecision: number | null = null;
   private tz: TimeZoneSetting = null;
+  private priceFormatter: ((price: number) => string) | null = null;
+  private timeFormatter: TimeFormatter | null = null;
 
   // Pre-built nodes, updated through textContent.
   private dirEl!: HTMLElement;
@@ -165,6 +167,16 @@ export class CrosshairTooltip {
     this.tz = tz;
   }
 
+  /** Prices in the chart's format (null: decimals). */
+  setPriceFormatter(formatter: ((price: number) => string) | null): void {
+    this.priceFormatter = formatter;
+  }
+
+  /** The time line in your words (null: its own). */
+  setTimeFormatter(formatter: TimeFormatter | null): void {
+    this.timeFormatter = formatter;
+  }
+
   show(
     pos: Point,
     bar: OHLCBar,
@@ -178,7 +190,7 @@ export class CrosshairTooltip {
 
     const precision = this.pricePrecision
       ?? (context.priceRange ? autoPricePrecision(context.priceRange.min, context.priceRange.max) : autoPricePrecision(bar.low, bar.high));
-    const fmt = (v: number) => formatPrice(v, precision, this.locale);
+    const fmt = (v: number) => this.priceFormatter?.(v) ?? formatPrice(v, precision, this.locale);
 
     const base = context.prevClose ?? bar.open;
     const change = bar.close - base;
@@ -187,7 +199,9 @@ export class CrosshairTooltip {
     const tone = up ? theme.candleUp : theme.candleDown;
     const sign = up ? '+' : '−';
 
-    this.timeEl.textContent = formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale);
+    this.timeEl.textContent = this.timeFormatter
+      ? this.timeFormatter(normalizeBarTime(bar.time), { kind: 'crosshair', timeZone: this.tz })
+      : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);

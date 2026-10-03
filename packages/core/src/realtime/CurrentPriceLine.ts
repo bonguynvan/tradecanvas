@@ -70,7 +70,7 @@ export class CurrentPriceLine {
     // Price badge on axis
     const axisX = chartRect.x + chartRect.width + 1;
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-    const text = formatPrice(this.price, precision, this.locale);
+    const text = viewport.formatPrice ? viewport.formatPrice(this.price) : formatPrice(this.price, precision, this.locale);
     ctx.font = `bold 11px ${theme.font.family}`;
     const textWidth = ctx.measureText(text).width;
     const axisWidth = viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH;

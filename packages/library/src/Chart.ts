@@ -40,7 +40,8 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import type { PriceFormatter, PriceFraction, TimeFormatter } from '@tradecanvas/commons';
 import {
   RenderEngine,
   Viewport,
@@ -271,6 +272,10 @@ export class Chart {
   private numberLocale: string;
   /** The market's price precision, when set: otherwise it follows the visible range. */
   private marketPricePrecision: number | null = null;
+  /** The chart's price format (`priceFormat`), or null for decimals. */
+  private priceFormatter: PriceFormatter | null = null;
+  /** A fraction format's smallest step (a 32nd), or null. */
+  private priceUnit: number | null = null;
   private paneTitles = true;
   /**
    * The `autoScale` the chart was constructed with — distinct from
@@ -547,6 +552,8 @@ export class Chart {
     this.crosshairTooltip.setLocale(this.numberLocale);
     this.pinnedTooltip = new PinnedTooltip();
     this.pinnedTooltip.create(container);
+    if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
+    if (options.timeFormatter) this.applyTimeFormatter(options.timeFormatter);
 
     // Keyboard navigation
     this.keyboardHandler = new KeyboardHandler({
@@ -1318,6 +1325,9 @@ export class Chart {
       logScale: false,
       scaleMode: 'regular',
       invertScale: false,
+      // The overlays' own numbers, not the price's format.
+      formatPrice: undefined,
+      priceUnit: undefined,
     };
   }
 
@@ -1609,14 +1619,56 @@ export class Chart {
    */
   roundPrice(price: number): number {
     if (!Number.isFinite(price)) return price;
-    const tick = this.symbolInfo?.minTick;
+    const tick = this.symbolInfo?.minTick ?? this.priceUnit ?? undefined;
     if (tick !== undefined && tick > 0) return Number((Math.round(price / tick) * tick).toFixed(stepDecimals(tick)));
     const { min, max } = this.viewport.getState().priceRange;
     return Number(price.toFixed(this.marketPricePrecision ?? autoPricePrecision(min, max)));
   }
 
-  /** A price as the price axis writes it: the market's precision or the visible range's, in the number locale. */
+  /**
+   * How prices read on the price scale and everything that prints one: a
+   * function of yours, fractions of a point (`{ denominator: 32 }` prints
+   * `101'16`), or null for decimals. Indicator panes keep their own numbers.
+   */
+  setPriceFormat(format: PriceFormatter | PriceFraction | null): void {
+    this.applyPriceFormat(format);
+    this.panelInfoCache = null;
+    this.fitPriceAxisWidth();
+    this.engine.requestRender();
+  }
+
+  /** The chart's price format as a function (`priceFormat`), or null for decimals. */
+  getPriceFormatter(): PriceFormatter | null {
+    return this.priceFormatter;
+  }
+
+  private applyPriceFormat(format: PriceFormatter | PriceFraction | null): void {
+    this.priceFormatter = priceFormatterFor(format);
+    this.priceUnit = format && typeof format !== 'function' ? fractionTick(format) : null;
+    this.viewport.setPriceFormat(this.priceFormatter, this.priceUnit);
+    this.crosshairTooltip.setPriceFormatter(this.priceFormatter);
+    this.pinnedTooltip.setPriceFormatter(this.priceFormatter);
+  }
+
+  /** How times read on the time axis, the crosshair and the tooltip; null for the chart's own. */
+  setTimeFormatter(formatter: TimeFormatter | null): void {
+    this.applyTimeFormatter(formatter);
+    this.engine.requestRender();
+  }
+
+  private applyTimeFormatter(formatter: TimeFormatter | null): void {
+    this.timeAxis.setTimeFormatter(formatter);
+    this.crosshairHandler.setTimeFormatter(formatter);
+    this.crosshairTooltip.setTimeFormatter(formatter);
+  }
+
+  /**
+   * A price as the price axis writes it: in the chart's price format when it
+   * has one (`priceFormat`), else at the market's precision or the visible
+   * range's, in the number locale.
+   */
   formatPrice(price: number): string {
+    if (this.priceFormatter) return this.priceFormatter(price);
     const { min, max } = this.viewport.getState().priceRange;
     return formatPrice(price, this.marketPricePrecision ?? autoPricePrecision(min, max), this.numberLocale);
   }
@@ -4138,6 +4190,7 @@ export class Chart {
       lastPrice: this.currentPriceLine.getPrice(),
       tagPrecision: this.marketPricePrecision,
       locale: this.numberLocale,
+      format: this.priceFormatter,
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: (text, font) => this.measureText(text, font),
@@ -4270,6 +4323,9 @@ export class Chart {
           // all its values are above 0), upright unless set upside down.
           logScale: logRange !== null,
           scaleMode: 'regular' as const,
+          // A pane's values are its own, not prices.
+          formatPrice: undefined,
+          priceUnit: undefined,
           invertScale: !!panel.config.invertScale,
         },
       };

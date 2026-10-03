@@ -50,7 +50,7 @@ export class PositionRenderer {
       // P&L zone
       if (currentPrice !== null) {
         const currentY = priceToY(currentPrice, viewport);
-        const labelCtx = buildPositionLabelContext(pos, currentPrice, precision);
+        const labelCtx = buildPositionLabelContext(pos, currentPrice, precision, viewport.formatPrice);
         const pnl = labelCtx.pnl;
         const isProfit = pnl >= 0;
         const fallbackZone = isProfit ? profitColor : lossColor;
@@ -207,7 +207,7 @@ export class PositionRenderer {
       ctx.font = `11px ${theme.font.family}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(pos.entryPrice.toFixed(precision), axisX + 5, entryY);
+      ctx.fillText(viewport.formatPrice?.(pos.entryPrice) ?? pos.entryPrice.toFixed(precision), axisX + 5, entryY);
     }
   }
 }

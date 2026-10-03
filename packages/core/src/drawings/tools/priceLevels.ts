@@ -1,5 +1,6 @@
 import type { DrawingLevel, DrawingState, ViewportState } from '@tradecanvas/commons';
 import { priceToY } from '../../viewport/ScaleMapping.js';
+import { formatDrawingPrice } from './labels.js';
 
 /** A Fibonacci level at its price. */
 export interface PriceLevel {
@@ -18,9 +19,15 @@ export interface PriceLevelLook {
   background: boolean;
 }
 
-export function levelLabel(level: number, price: number, showLevels: boolean, showPrices: boolean): string {
+export function levelLabel(
+  level: number,
+  price: number,
+  showLevels: boolean,
+  showPrices: boolean,
+  format: (price: number) => string = (p) => p.toFixed(2),
+): string {
   const pct = `${(level * 100).toFixed(1)}%`;
-  const value = price.toFixed(2);
+  const value = format(price);
   if (showLevels && showPrices) return `${pct} (${value})`;
   return showLevels ? pct : showPrices ? value : '';
 }
@@ -67,7 +74,7 @@ export function renderPriceLevels(
     ctx.moveTo(look.x0, y);
     ctx.lineTo(look.x1, y);
     ctx.stroke();
-    const text = levelLabel(level.value, price, look.showLevels, look.showPrices);
+    const text = levelLabel(level.value, price, look.showLevels, look.showPrices, (p) => formatDrawingPrice(p, p, viewport));
     if (text) {
       ctx.fillStyle = color;
       ctx.fillText(text, labelX, y - 2);

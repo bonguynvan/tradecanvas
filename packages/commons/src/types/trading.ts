@@ -52,6 +52,8 @@ export interface PositionLabelContext {
   pnl: number;
   pnlPct: number;
   precision: number;
+  /** The chart's price format, for `{entry}` and `{price}` (decimals at `precision` without one). */
+  formatPrice?: (price: number) => string;
 }
 
 export interface DepthLevel {

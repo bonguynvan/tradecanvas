@@ -151,9 +151,10 @@ export class BracketTool {
 
     const rr = bracketRiskReward(d);
     const sideLabel = d.side === 'buy' ? 'LONG' : 'SHORT';
-    label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${d.entry.toFixed(pricePrecision)}`, theme.text, theme.background);
-    label(ctx, x0 + 6, yTp, `TP ${d.takeProfit.toFixed(pricePrecision)}  ·  ${rr.toFixed(2)}R`, profit, theme.background);
-    label(ctx, x0 + 6, ySl, `SL ${d.stopLoss.toFixed(pricePrecision)}`, loss, theme.background);
+    const fmt = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(pricePrecision);
+    label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${fmt(d.entry)}`, theme.text, theme.background);
+    label(ctx, x0 + 6, yTp, `TP ${fmt(d.takeProfit)}  ·  ${rr.toFixed(2)}R`, profit, theme.background);
+    label(ctx, x0 + 6, ySl, `SL ${fmt(d.stopLoss)}`, loss, theme.background);
 
     // Drag handles (small knobs at the right edge).
     for (const [price, color] of [[d.entry, theme.text], [d.takeProfit, profit], [d.stopLoss, loss]] as const) {

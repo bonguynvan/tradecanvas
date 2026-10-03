@@ -44,6 +44,17 @@ export interface ViewportState {
   /** Upside down: higher prices lower on screen. */
   invertScale?: boolean;
   /**
+   * How prices on this scale read, when the chart has a price format of its
+   * own (`ChartOptions.priceFormat`). Unset: decimals. Indicator panes leave
+   * it unset.
+   */
+  formatPrice?: (price: number) => string;
+  /**
+   * The step prices move in under that format (a 32nd): the axis puts its
+   * ticks on whole numbers of it.
+   */
+  priceUnit?: number;
+  /**
    * Optional reference to the current bar series. When set, drawings/indicators
    * treat `anchor.time` as a real timestamp and convert to bar index via
    * `timestampToBarIndex(time, data)` at render/hit-test time. This lets

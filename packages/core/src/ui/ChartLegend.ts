@@ -130,7 +130,7 @@ export class ChartLegend {
       // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
       const precision = this.pricePrecision
         ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-      const fmt = (v: number) => formatPrice(v, precision, this.locale);
+      const fmt = (v: number) => viewport.formatPrice?.(v) ?? formatPrice(v, precision, this.locale);
 
       const items = [
         { label: 'O', value: fmt(bar.open), color: theme.text },

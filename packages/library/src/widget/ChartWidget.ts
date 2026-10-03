@@ -2000,6 +2000,9 @@ export class ChartWidget {
   }
 
   private formatAlertPrice(price: number): string {
+    // The chart's own price format (fractions, a host's function) wins.
+    const custom = this.chart.getPriceFormatter?.();
+    if (custom) return custom(price);
     // No fixed precision config on the widget — pick digits from magnitude so
     // BTC (64,200.5) and a sub-dollar alt (0.04821) both read sensibly.
     const abs = Math.abs(price);

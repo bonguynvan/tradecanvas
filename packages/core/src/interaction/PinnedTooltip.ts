@@ -28,9 +28,21 @@ export class PinnedTooltip {
   private pinnedIndex = -1;
   private tz: TimeZoneSetting = null;
 
+  private priceFormatter: ((price: number) => string) | null = null;
+
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
     this.tz = tz;
+  }
+
+  /** Prices in the chart's format (null: two decimals). */
+  setPriceFormatter(formatter: ((price: number) => string) | null): void {
+    this.priceFormatter = formatter;
+  }
+
+  /** A price as markup-safe text. */
+  private fmt(v: number): string {
+    return escapeText(this.priceFormatter ? this.priceFormatter(v) : v.toFixed(2));
   }
 
   create(container: HTMLElement): void {
@@ -90,10 +102,10 @@ export class PinnedTooltip {
     this.timeEl.style.color = theme.textSecondary;
 
     this.ohlcEl.innerHTML = `
-      <span style="opacity:.6">O </span><span style="color:${color}">${fmt(bar.open)}</span>
-      <span style="opacity:.6"> H </span><span style="color:${color}">${fmt(bar.high)}</span>
-      <span style="opacity:.6"> L </span><span style="color:${color}">${fmt(bar.low)}</span>
-      <span style="opacity:.6"> C </span><span style="color:${color}">${fmt(bar.close)}</span>
+      <span style="opacity:.6">O </span><span style="color:${color}">${this.fmt(bar.open)}</span>
+      <span style="opacity:.6"> H </span><span style="color:${color}">${this.fmt(bar.high)}</span>
+      <span style="opacity:.6"> L </span><span style="color:${color}">${this.fmt(bar.low)}</span>
+      <span style="opacity:.6"> C </span><span style="color:${color}">${this.fmt(bar.close)}</span>
     `;
 
     const isDark = isDarkColor(theme.background);
@@ -152,7 +164,7 @@ export class PinnedTooltip {
         const barΔ = hoverIndex - this.pinnedIndex;
         const direction = priceΔ >= 0 ? theme.candleUp : theme.candleDown;
         this.deltaEl.style.color = direction;
-        this.deltaEl.innerHTML = `Δ ${sign}${fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${Math.abs(pct).toFixed(2)}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
+        this.deltaEl.innerHTML = `Δ ${sign}${this.fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${Math.abs(pct).toFixed(2)}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
         this.deltaEl.style.display = 'block';
       } else {
         this.deltaEl.style.display = 'none';
@@ -171,8 +183,8 @@ export class PinnedTooltip {
   }
 }
 
-function fmt(v: number): string {
-  return v.toFixed(2);
+function escapeText(text: string): string {
+  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 function pad(n: number): string {
