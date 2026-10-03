@@ -81,3 +81,16 @@ describe('a chart’s time format', () => {
     expect(toAxis).toHaveBeenLastCalledWith(null);
   });
 });
+
+describe('the chart’s shapes', () => {
+  it('rounds its tags, through theme changes too', () => {
+    chart = new Chart(host, { shapes: { tagRadius: 6 } });
+    expect(chart.getShapes()).toEqual({ tagRadius: 6 });
+    chart.setTheme('light');
+    expect(chart.getShapes()).toEqual({ tagRadius: 6 });
+    chart.setShapes({ tagRadius: 999 });
+    expect(chart.getTheme().shape).toEqual({ tagRadius: 999 });
+    chart.setShapes({ tagRadius: -3 });
+    expect(chart.getShapes()).toEqual({ tagRadius: 999 }); // not a radius: nothing changes
+  });
+});

@@ -1,8 +1,10 @@
-import type { Theme, ThemeName } from '@tradecanvas/commons';
+import type { ShapeConfig, Theme, ThemeName } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 
 export class ThemeManager {
   private theme: Theme;
+  /** Shapes set apart from the theme (`setShapes`): they stay through theme switches. */
+  private shape: ShapeConfig | null = null;
 
   constructor(themeOrName?: ThemeName | Theme) {
     if (!themeOrName || themeOrName === 'dark') {
@@ -26,5 +28,12 @@ export class ThemeManager {
     } else {
       this.theme = { ...themeOrName };
     }
+    if (this.shape) this.theme = { ...this.theme, shape: { ...this.theme.shape, ...this.shape } };
+  }
+
+  /** Shapes over every theme from now on (null: each theme's own). */
+  setShape(shape: ShapeConfig | null): void {
+    this.shape = shape ? { ...shape } : null;
+    this.theme = { ...this.theme, shape: shape ? { ...this.theme.shape, ...shape } : this.theme.shape };
   }
 }

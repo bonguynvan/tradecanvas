@@ -1,6 +1,7 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
+import { fillTag } from '../ui/shapes.js';
 
 /**
  * Renders the current (last) price as a horizontal line with a badge.
@@ -77,7 +78,7 @@ export class CurrentPriceLine {
     const badgeWidth = Math.min(textWidth + 12, axisWidth - 2);
 
     ctx.fillStyle = color;
-    ctx.fillRect(axisX, y - 10, badgeWidth, 20);
+    fillTag(ctx, axisX, y - 10, badgeWidth, 20, theme);
 
     // Arrow indicator
     const arrowX = axisX - 5;

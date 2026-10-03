@@ -1,4 +1,15 @@
 export { ChartWidget } from './ChartWidget.js';
+export { resolveWidgetUI, widgetUIVariables, applyWidgetUI, WIDGET_UI_PRESETS } from './widgetUI.js';
+export type {
+  WidgetUIPreset,
+  WidgetUITheme,
+  ResolvedWidgetUI,
+  WidgetUIRadius,
+  WidgetUIComponentRadius,
+  WidgetUISizes,
+  WidgetUIFont,
+  WidgetUIShadows,
+} from './widgetUI.js';
 export type {
   ChartWidgetOptions,
   WidgetLayoutsOptions,

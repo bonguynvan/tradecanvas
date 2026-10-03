@@ -26,6 +26,7 @@ import type { CompareRenderer } from '../charts/CompareRenderer.js';
 import type { AlertManager } from '../features/AlertManager.js';
 import type { SignalMarkerManager } from '../features/SignalMarkerManager.js';
 import type { TradeZoneManager } from '../features/TradeZoneManager.js';
+import { fillTag } from '../ui/shapes.js';
 
 /** Height of an indicator pane's title strip; the indicator draws below it. */
 const PANEL_HEADER_HEIGHT = 20;
@@ -499,7 +500,7 @@ export class RenderEngine {
         const tw = c.measureText(valText).width;
         const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
         c.fillStyle = theme.crosshair;
-        c.fillRect(axisX + 1, cursorPos.y - 9, badgeW, 18);
+        fillTag(c, axisX + 1, cursorPos.y - 9, badgeW, 18, theme);
         c.fillStyle = theme.background;
         c.textBaseline = 'middle';
         c.textAlign = 'left';
@@ -581,7 +582,7 @@ export class RenderEngine {
       // Axis badge
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
-      ctx.fillRect(axisX, y - 7, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 14);
+      fillTag(ctx, axisX, y - 7, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 14, theme);
       ctx.fillStyle = '#000';
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';

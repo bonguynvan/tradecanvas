@@ -2,6 +2,7 @@ import type { TradingOrder, TradingConfig, ViewportState, Theme } from '@tradeca
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 import { drawCloseButton, type LineButton } from './lineButtons.js';
+import { fillTag } from '../ui/shapes.js';
 
 /** Side of the × button on an order's label (px). */
 const BUTTON = 16;
@@ -52,7 +53,7 @@ export class OrderRenderer {
       ctx.font = `bold 10px ${theme.font.family}`;
       const labelWidth = ctx.measureText(label).width + 8;
       ctx.fillStyle = color;
-      ctx.fillRect(chartRect.x + 4, y - 8, labelWidth, 16);
+      fillTag(ctx, chartRect.x + 4, y - 8, labelWidth, 16, theme);
       ctx.fillStyle = '#FFFFFF';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
@@ -128,7 +129,7 @@ export class OrderRenderer {
       ctx.font = `11px ${theme.font.family}`;
       const badgeWidth = ctx.measureText(priceText).width + 10;
       ctx.fillStyle = color;
-      ctx.fillRect(axisX, y - 9, Math.min(badgeWidth, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2), 18);
+      fillTag(ctx, axisX, y - 9, Math.min(badgeWidth, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2), 18, theme);
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';

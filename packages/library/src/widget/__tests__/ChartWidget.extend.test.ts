@@ -41,6 +41,8 @@ class FakeChart {
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
+  shapes: unknown[] = [];
+  setShapes(shapes: unknown): void { this.shapes.push(shapes); }
   chartTypeOptions: unknown = {};
   getChartTypeOptions(): unknown { return this.chartTypeOptions; }
   required: string[] = [];
@@ -383,5 +385,31 @@ describe('ChartWidget symbol fetches out of order', () => {
     failFirst(new Error('late'));
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.series.get('BBB')).toBe(bars);
+  });
+});
+
+describe('ChartWidget look', () => {
+  it('starts in the Studio look, takes a preset or a theme, and gives the chart its tag shape', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.dataset.tcwUi).toBe('studio');
+    expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('7px');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 4 });
+
+    widget.setUI({ preset: 'capsule', radius: { lg: 14 } });
+    expect(root.dataset.tcwToolbar).toBe('floating');
+    expect(root.style.getPropertyValue('--tcw-menu-radius')).toBe('14px');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
+    expect(widget.getUI().preset).toBe('capsule');
+    // The modal portal carries the same look.
+    const portal = (widget as unknown as { portal: HTMLElement }).portal;
+    expect(portal.dataset.tcwToolbar).toBe('floating');
+  });
+
+  it('takes the look from its options', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'terminal' });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.dataset.tcwSeparators).toBe('on');
+    expect(root.style.getPropertyValue('--tcw-control-h')).toBe('26px');
   });
 });

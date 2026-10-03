@@ -1,4 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
+import { fillTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
 export interface AxisValueLabel {
@@ -89,7 +90,7 @@ export function renderAxisValueLabels(
     if (y + half > bounds.bottom + 0.5) break; // no room left on this axis
     const width = Math.min(ctx.measureText(label.text).width + 10, axisWidth - 2);
     ctx.fillStyle = label.color;
-    ctx.fillRect(axisX + 1, Math.round(y - half), width, AXIS_LABEL_HEIGHT);
+    fillTag(ctx, axisX + 1, Math.round(y - half), width, AXIS_LABEL_HEIGHT, theme);
     ctx.fillStyle = labelTextColor(label.color);
     ctx.fillText(label.text, axisX + 5, Math.round(y));
   }

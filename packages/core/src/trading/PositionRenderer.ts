@@ -7,6 +7,7 @@ import {
   resolvePositionLabel,
 } from './positionFormat.js';
 import { drawCloseButton, drawReverseButton, type LineButton } from './lineButtons.js';
+import { fillTag } from '../ui/shapes.js';
 
 /** Side of the buttons on a position's label (px), and on its SL / TP labels. */
 const BUTTON = 20;
@@ -79,7 +80,7 @@ export class PositionRenderer {
         const lblX = chartRect.x + 8;
         ctx.fillStyle = zoneColor;
         ctx.globalAlpha = 0.9;
-        ctx.fillRect(lblX, entryY - 10, lblWidth, 20);
+        fillTag(ctx, lblX, entryY - 10, lblWidth, 20, theme);
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#FFFFFF';
         ctx.textBaseline = 'middle';
@@ -106,7 +107,7 @@ export class PositionRenderer {
 
         ctx.font = `bold 10px ${theme.font.family}`;
         ctx.fillStyle = lossColor;
-        ctx.fillRect(chartRect.x + 4, slY - 8, 24, 16);
+        fillTag(ctx, chartRect.x + 4, slY - 8, 24, 16, theme);
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
@@ -129,7 +130,7 @@ export class PositionRenderer {
 
         ctx.font = `bold 10px ${theme.font.family}`;
         ctx.fillStyle = profitColor;
-        ctx.fillRect(chartRect.x + 4, tpY - 8, 24, 16);
+        fillTag(ctx, chartRect.x + 4, tpY - 8, 24, 16, theme);
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
@@ -202,7 +203,7 @@ export class PositionRenderer {
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
       ctx.fillStyle = entryColor;
-      ctx.fillRect(axisX, entryY - 9, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 18);
+      fillTag(ctx, axisX, entryY - 9, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 18, theme);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `11px ${theme.font.family}`;
       ctx.textAlign = 'left';

@@ -1,6 +1,7 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, timeParts, isDateOnly } from '@tradecanvas/commons';
 import { priceScaleText } from '../axis/PriceAxis.js';
+import { fillTag } from '../ui/shapes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -206,6 +207,7 @@ export class CrosshairHandler {
       orientation: 'right',
       bg: theme.text,
       fg: theme.background,
+      theme,
       font,
     });
 
@@ -258,6 +260,7 @@ export class CrosshairHandler {
       orientation: 'bottom',
       bg: theme.text,
       fg: theme.background,
+      theme,
       font: `600 ${theme.font.sizeSmall}px ${theme.font.family}`,
     });
   }
@@ -304,6 +307,8 @@ interface AxisPillOptions {
   bg: string;
   fg: string;
   font: string;
+  /** For the tag shape. */
+  theme: Theme;
 }
 
 /**
@@ -315,48 +320,37 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.save();
   ctx.font = opts.font;
   const padX = 8;
-  const padY = 4;
   const notch = 5;
   const textW = Math.ceil(ctx.measureText(opts.text).width);
   const w = textW + padX * 2;
-  const h = 20 + padY * 0;
-
+  const h = 20;
+  ctx.fillStyle = opts.bg;
+  ctx.textBaseline = 'middle';
   if (opts.orientation === 'right') {
     const x = opts.anchorX + notch;
     const y = opts.anchorY - h / 2;
+    fillTag(ctx, x, y, w, h, opts.theme);
+    // The notch pointing at the crosshair line.
     ctx.beginPath();
     ctx.moveTo(opts.anchorX, opts.anchorY);
-    ctx.lineTo(x, opts.anchorY - notch);
-    ctx.lineTo(x, y);
-    ctx.lineTo(x + w, y);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.lineTo(x, opts.anchorY + notch);
+    ctx.lineTo(x + 1, opts.anchorY - notch);
+    ctx.lineTo(x + 1, opts.anchorY + notch);
     ctx.closePath();
-    ctx.fillStyle = opts.bg;
     ctx.fill();
-
     ctx.fillStyle = opts.fg;
-    ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillText(opts.text, x + padX, opts.anchorY);
   } else {
     const x = opts.anchorX - w / 2;
     const y = opts.anchorY + notch;
+    fillTag(ctx, x, y, w, h, opts.theme);
     ctx.beginPath();
     ctx.moveTo(opts.anchorX, opts.anchorY);
-    ctx.lineTo(opts.anchorX + notch, y);
-    ctx.lineTo(x + w, y);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.lineTo(x, y);
-    ctx.lineTo(opts.anchorX - notch, y);
+    ctx.lineTo(opts.anchorX - notch, y + 1);
+    ctx.lineTo(opts.anchorX + notch, y + 1);
     ctx.closePath();
-    ctx.fillStyle = opts.bg;
     ctx.fill();
-
     ctx.fillStyle = opts.fg;
-    ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
     ctx.fillText(opts.text, opts.anchorX, y + h / 2);
   }

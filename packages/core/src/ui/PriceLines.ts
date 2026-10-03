@@ -1,6 +1,7 @@
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
+import { fillTag } from './shapes.js';
 
 export type PriceLineKind = 'high' | 'low' | 'bid' | 'ask';
 
@@ -109,7 +110,7 @@ export class PriceLines {
       const y = priceToY(level.price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
       ctx.fillStyle = colorOf(level.kind, theme);
-      ctx.fillRect(axisX, y - TAG_HEIGHT / 2, width, TAG_HEIGHT);
+      fillTag(ctx, axisX, y - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
       ctx.fillStyle = theme.background;
       const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
       ctx.fillText(text, axisX + 5, y);

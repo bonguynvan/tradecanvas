@@ -275,3 +275,15 @@ describe('ChartWidgetGrid replay, a chart going away', () => {
     expect(a.replay).toEqual([]);
   });
 });
+
+describe('ChartWidgetGrid look', () => {
+  it('puts a look on every chart and on its bar, and on charts it adds later', () => {
+    make({ layout: '1x2' });
+    grid.setUI('terminal');
+    const roots = () => [...host.querySelectorAll<HTMLElement>('.tcw-grid-cell .tcw-root')];
+    expect(roots().map((r) => r.dataset.tcwUi)).toEqual(['terminal', 'terminal']);
+    expect(host.querySelector<HTMLElement>('.tcw-grid')!.dataset.tcwUi).toBe('terminal');
+    grid.setLayout('2x2');
+    expect(roots().map((r) => r.dataset.tcwUi)).toEqual(['terminal', 'terminal', 'terminal', 'terminal']);
+  });
+});
