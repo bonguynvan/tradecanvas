@@ -393,7 +393,8 @@ describe('ChartWidget look', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
     expect(root.dataset.tcwUi).toBe('studio');
-    expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('7px');
+    // Without `ui` the tokens stay the stylesheet's (Studio's), yours to override in CSS.
+    expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('');
     expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 4 });
 
     widget.setUI({ preset: 'capsule', radius: { lg: 14 } });

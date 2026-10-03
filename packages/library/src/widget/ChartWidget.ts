@@ -363,10 +363,13 @@ export class ChartWidget {
     this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
-    // The look: tokens and layout switches on the root and the modal portal alike.
+    // The look: tokens and layout switches on the root and the modal portal
+    // alike. Without `ui` the tokens stay the stylesheet's (Studio's), so a
+    // host's CSS can still set them.
     this.ui = resolveWidgetUI(options.ui);
-    applyWidgetUI(this.root, this.ui);
-    applyWidgetUI(this.portal, this.ui);
+    const variables = options.ui !== undefined;
+    applyWidgetUI(this.root, this.ui, { variables });
+    applyWidgetUI(this.portal, this.ui, { variables });
 
     // 3. Create toolbar
     if (options.toolbar !== false) {

@@ -111,7 +111,7 @@ export interface WidgetUITheme {
 }
 
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, ui-monospace, monospace";
+const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace";
 
 type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset'> & { components: Partial<WidgetUIComponentRadius> };
 
@@ -122,11 +122,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sizes: { toolbar: 46, control: 30, controlSmall: 24, icon: 18, sidebar: 48, menuItem: 30 },
     font: { family: `'Manrope', 'Inter', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
-    shadows: {
-      menu: '0 14px 34px -8px rgba(0, 0, 0, 0.55), 0 3px 8px rgba(0, 0, 0, 0.3)',
-      dialog: '0 30px 70px -12px rgba(0, 0, 0, 0.65), 0 6px 16px rgba(0, 0, 0, 0.3)',
-      tooltip: '0 4px 14px rgba(0, 0, 0, 0.28)',
-    },
+    // Shadows from the theme's tokens, so they suit dark and light alike.
+    shadows: { menu: 'var(--tcw-shadow-lg)', dialog: 'var(--tcw-shadow-xl)', tooltip: 'var(--tcw-shadow-md)' },
     blur: 0,
     active: 'tint',
     toolbar: 'docked',
@@ -145,8 +142,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     },
     borders: { width: 1, separators: true },
     shadows: {
-      menu: '0 0 0 1px rgba(0, 0, 0, 0.55)',
-      dialog: '0 0 0 1px rgba(0, 0, 0, 0.6), 0 18px 40px rgba(0, 0, 0, 0.45)',
+      menu: '0 0 0 1px var(--tcw-border-strong)',
+      dialog: '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-lg)',
       tooltip: 'none',
     },
     blur: 0,
@@ -163,9 +160,9 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     font: { family: `'Sora', 'Manrope', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
     shadows: {
-      menu: '0 18px 48px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06)',
-      dialog: '0 40px 90px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.07)',
-      tooltip: '0 8px 24px rgba(0, 0, 0, 0.4)',
+      menu: '0 0 0 1px var(--tcw-divider), var(--tcw-shadow-xl)',
+      dialog: '0 0 0 1px var(--tcw-divider), var(--tcw-shadow-xl)',
+      tooltip: 'var(--tcw-shadow-lg)',
     },
     blur: 16,
     active: 'solid',
@@ -321,12 +318,24 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-dialog-shadow': ui.shadows.dialog,
     '--tcw-tooltip-shadow': ui.shadows.tooltip,
     '--tcw-blur': p(ui.blur),
+    // A frosted surface lets some of the chart through.
+    '--tcw-surface-opacity': ui.blur > 0 ? '82%' : '100%',
   };
 }
 
-/** Put the look on an element of the widget (its root, its modal portal). */
-export function applyWidgetUI(el: HTMLElement, ui: ResolvedWidgetUI): void {
-  for (const [name, value] of Object.entries(widgetUIVariables(ui))) el.style.setProperty(name, value);
+/**
+ * Put the look on an element of the widget (its root, its modal portal):
+ * its tokens inline and its layout switches as data attributes. With
+ * `variables: false` only the switches; the tokens are left to the
+ * stylesheet (whose defaults are Studio's), and any set inline before are
+ * cleared.
+ */
+export function applyWidgetUI(el: HTMLElement, ui: ResolvedWidgetUI, options: { variables?: boolean } = {}): void {
+  const inline = options.variables !== false;
+  for (const [name, value] of Object.entries(widgetUIVariables(ui))) {
+    if (inline) el.style.setProperty(name, value);
+    else el.style.removeProperty(name);
+  }
   el.dataset.tcwUi = ui.preset;
   el.dataset.tcwActive = ui.active;
   el.dataset.tcwToolbar = ui.toolbar;

@@ -11,7 +11,8 @@ export class WidgetDropdown {
 
     this.panel = document.createElement('div');
     this.panel.className = 'tcw-dropdown';
-    this.panel.style.width = config.width ?? '200px';
+    // At least this wide; wider when a label in the look's font or a longer language needs it.
+    this.panel.style.minWidth = config.width ?? '200px';
     if (config.align === 'right') {
       this.panel.style.right = '0';
     } else {

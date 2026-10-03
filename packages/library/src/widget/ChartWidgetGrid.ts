@@ -174,7 +174,7 @@ export class ChartWidgetGrid {
     this.root = document.createElement('div');
     this.root.className = 'tcw-root tcw-grid';
     this.root.dataset.tcwTheme = options.widget?.theme === 'light' ? 'light' : 'dark';
-    applyWidgetUI(this.root, resolveWidgetUI(options.widget?.ui));
+    applyWidgetUI(this.root, resolveWidgetUI(options.widget?.ui), { variables: options.widget?.ui !== undefined });
     if (options.bar !== false) this.root.appendChild(this.buildBar());
     this.cellsEl = document.createElement('div');
     this.cellsEl.className = 'tcw-grid-cells';

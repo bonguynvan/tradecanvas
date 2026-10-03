@@ -85,4 +85,28 @@ describe('the look on the page', () => {
     expect(el.dataset.tcwToolbar).toBe('docked');
     expect(el.style.getPropertyValue('--tcw-control-radius')).toBe('7px');
   });
+
+  it('can leave the tokens to the stylesheet: the switches only, inline tokens cleared', () => {
+    const el = document.createElement('div');
+    applyWidgetUI(el, resolveWidgetUI('capsule'));
+    applyWidgetUI(el, resolveWidgetUI('studio'), { variables: false });
+    expect(el.dataset.tcwUi).toBe('studio');
+    expect(el.dataset.tcwToolbar).toBe('docked');
+    expect(el.style.getPropertyValue('--tcw-control-radius')).toBe('');
+    expect(el.style.length).toBe(0);
+  });
+
+  it('frosts floating surfaces only when they blur', () => {
+    expect(widgetUIVariables(resolveWidgetUI('capsule'))['--tcw-surface-opacity']).not.toBe('100%');
+    expect(widgetUIVariables(resolveWidgetUI('studio'))['--tcw-surface-opacity']).toBe('100%');
+    expect(widgetUIVariables(resolveWidgetUI({ blur: 8 }))['--tcw-surface-opacity']).not.toBe('100%');
+  });
+
+  it('draws shadows from the theme’s tokens, so they suit dark and light', () => {
+    for (const name of ['studio', 'terminal', 'capsule'] as const) {
+      const { menu, dialog } = WIDGET_UI_PRESETS[name].shadows;
+      expect(menu, name).toMatch(/var\(--tcw-/);
+      expect(dialog, name).toMatch(/var\(--tcw-/);
+    }
+  });
 });
