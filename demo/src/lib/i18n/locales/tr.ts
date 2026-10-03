@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 85 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 95 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const tr: SiteMessages = {
     release: 'iki katmanlı canvas çizimi, serbest kaydırma',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 85 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 95 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -80,7 +80,7 @@ const tr: SiteMessages = {
       {
         label: 'Widget',
         title: 'Tek çağrıyla eksiksiz alım satım arayüzü',
-        text: 'ChartWidget; araç çubuğunu, çizim kenar çubuğunu, izleme listesini, alarmları, nesne ağacını, veri penceresini, tekrarı ve komut paletini (Ctrl+K) İngilizce ve Vietnamca’dan Çince, Japonca ve Korece’ye kadar 14 dilde sunar.',
+        text: 'ChartWidget; araç çubuğunu, çizim kenar çubuğunu, izleme listesini, alarmları, nesne ağacını, veri penceresini, tekrarı ve komut paletini (Ctrl+K) İngilizce ve Vietnamca’dan Çince, Japonca, Korece ve Arapça’ya kadar 16 dilde sunar.',
       },
       {
         label: 'Veri',
@@ -151,11 +151,11 @@ const tr: SiteMessages = {
     },
     indicators: {
       title: 'Göstergeler',
-      stat: '85 yerleşik',
+      stat: '95 yerleşik',
       blurb:
         'Grafik üstü katmanlar ve paneller kütüphanenin kendi içinde hesaplanır, sıfır matematik bağımlılığı. Canlı tick’ler yalnızca oluşmakta olan barı yeniden hesaplar: 100k barda dört göstergeyle tick başına 0.001 ms.',
       tryThis: [
-        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 85 göstergeden herhangi birini arayın',
+        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 95 göstergeden herhangi birini arayın',
         'Açıklamadaki bir gösterge adına tıklayın: parametreler, renkler ve seviyeler',
         'Bir hareketli ortalamanın kaynağını başka bir göstergenin çizgisi yapın',
         'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin; bir panelin sağ üstündeki düğmeler onu taşır, daraltır veya büyütür',
@@ -252,10 +252,10 @@ const tr: SiteMessages = {
       ],
     },
     subcent: {
-      title: '14 dil, sent altı fiyatlar',
+      title: '16 dil, sent altı fiyatlar',
       stat: 'i18n',
       blurb:
-        'Widget’ın tamamı 14 dilde: menüler, ayarlar, çizim araçları, diyaloglar; sayılar da her dilin kendi biçiminde. PEPE 0.000004 civarında işlem görüyor: her etiket fiyat ölçeğinin hassasiyetini izler ve eksen sığacak şekilde genişler.',
+        'Widget’ın tamamı 16 dilde: menüler, ayarlar, çizim araçları, diyaloglar, sağdan sola Arapça ve İbranice; sayılar da her dilin kendi biçiminde. PEPE 0.000004 civarında işlem görüyor: her etiket fiyat ölçeğinin hassasiyetini izler ve eksen sığacak şekilde genişler.',
       tryThis: [
         'Grafiğin üstünden bir dil seçin: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P siz yazarken tüm Binance sembollerini adlarıyla birlikte arar',
@@ -273,6 +273,18 @@ const tr: SiteMessages = {
         'Her görünümde Ayarlar’ı, bir menüyü ya da çizim araçlarını açın',
         'Capsule, araç çubuğunu ve çizim araçlarını adacıklar gibi yüzdürür; fiyat etiketleri hap biçimini alır',
         'Terminal sık ve köşelidir: büyük harfli etiketler ve seçili zaman diliminin altında bir çizgi',
+      ],
+    },
+    markets: {
+      title: 'İzleme listeleri ve piyasa',
+      stat: 'canlı fiyatlar',
+      blurb:
+        'Akıştan canlı fiyatlarla sembol listeleri, sembolün fiyatını, piyasanın durumunu ve günün rakamlarını gösteren bir panel ve tick grafikleri: her 100 işlemde bir bar.',
+      tryThis: [
+        'İzleme listesinin menüsünü açın: Memes’e geçin, kendi listenizi oluşturun, adını değiştirin',
+        '+ ile bir sembol ekleyin, satırları sürükleyerek sıralayın ya da bir satırda Delete’e basın',
+        'Her 100 işlemde bir bar için grafikte 100T yazın, geri dönmek için 1m yazın',
+        'Alt kenarındaki yakınlaştırma ve kaydırma düğmeleri için fareyi grafiğin üzerine getirin',
       ],
     },
     bigdata: {
@@ -388,7 +400,7 @@ const tr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 14 dilde.',
+        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 16 dilde.',
       },
       react: {
         title: 'React',

@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading em Canvas2D: 17 tipos de gráfico, 85 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting. Zero dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading em Canvas2D: 17 tipos de gráfico, 95 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting. Zero dependências, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const pt: SiteMessages = {
     release: 'renderizador com dois canvas, deslocamento livre',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 85 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado em Canvas2D, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 95 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado em Canvas2D, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -80,7 +80,7 @@ const pt: SiteMessages = {
       {
         label: 'Widget',
         title: 'Uma chamada, interface de trading completa',
-        text: 'O ChartWidget traz barra de ferramentas, barra lateral de desenho, lista de observação, alertas, árvore de objetos, janela de dados, replay e uma paleta de comandos (Ctrl+K), em 14 idiomas, do inglês e vietnamita ao chinês, japonês e coreano.',
+        text: 'O ChartWidget traz barra de ferramentas, barra lateral de desenho, lista de observação, alertas, árvore de objetos, janela de dados, replay e uma paleta de comandos (Ctrl+K), em 16 idiomas, do inglês e vietnamita ao chinês, japonês, coreano e árabe.',
       },
       {
         label: 'Dados',
@@ -151,11 +151,11 @@ const pt: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '85 integrados',
+      stat: '95 integrados',
       blurb:
         'Sobrepostos e em painéis, calculados internamente, sem dependências matemáticas. Ticks ao vivo recalculam só a barra em formação — 0,001 ms por tick com quatro indicadores em 100k barras.',
       tryThis: [
-        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 85',
+        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 95',
         'Clique no nome de um indicador na legenda: parâmetros, cores e níveis',
         'Defina o campo “Source” de uma média móvel como a linha de outro indicador',
         'Arraste a linha entre os painéis para redimensioná-los; os botões no canto superior direito de um painel o movem, recolhem ou maximizam',
@@ -252,10 +252,10 @@ const pt: SiteMessages = {
       ],
     },
     subcent: {
-      title: '14 idiomas, preços abaixo de um centavo',
+      title: '16 idiomas, preços abaixo de um centavo',
       stat: 'i18n',
       blurb:
-        'O widget inteiro em 14 idiomas — menus, configurações, ferramentas de desenho, diálogos — com números no formato de cada idioma. O PEPE é negociado perto de 0,000004: cada rótulo segue a precisão da escala de preço, e o eixo se alarga para caber.',
+        'O widget inteiro em 16 idiomas — menus, configurações, ferramentas de desenho, diálogos, árabe e hebraico da direita para a esquerda — com números no formato de cada idioma. O PEPE é negociado perto de 0,000004: cada rótulo segue a precisão da escala de preço, e o eixo se alarga para caber.',
       tryThis: [
         'Escolha um idioma acima do gráfico: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P busca todos os ativos da Binance, com nomes, enquanto você digita',
@@ -273,6 +273,18 @@ const pt: SiteMessages = {
         'Abra as Configurações, um menu ou as ferramentas de desenho em cada aparência',
         'O Capsule faz a barra de ferramentas e as ferramentas de desenho flutuarem como ilhas, com rótulos de preço em formato de pílula',
         'O Terminal é denso e quadrado: rótulos em maiúsculas e uma linha sob o tempo gráfico selecionado',
+      ],
+    },
+    markets: {
+      title: 'Listas de observação e mercado',
+      stat: 'cotações ao vivo',
+      blurb:
+        'Listas de ativos com cotações ao vivo da fonte de dados, um painel com o preço do ativo, o status do mercado e os números do dia, e gráficos de ticks: uma barra a cada 100 negócios.',
+      tryThis: [
+        'Abra o menu da lista de observação: troque para Memes, crie sua própria lista e renomeie-a',
+        'Adicione um ativo com +, arraste as linhas para reordená-las ou pressione Delete em uma delas',
+        'Digite 100T no gráfico para ter uma barra a cada 100 negócios e depois 1m para voltar',
+        'Passe o mouse sobre o gráfico para ver os botões de zoom e rolagem na parte de baixo',
       ],
     },
     bigdata: {
@@ -388,7 +400,7 @@ const pt: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 69 ferramentas de desenho, lista de observação, trading, replay, em 14 idiomas.',
+        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 69 ferramentas de desenho, lista de observação, trading, replay, em 16 idiomas.',
       },
       react: {
         title: 'React',

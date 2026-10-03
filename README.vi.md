@@ -10,14 +10,15 @@ Biểu đồ giao dịch canvas hiệu năng cao, có sẵn chỉ báo, công c�
 
 Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đẹp nhưng không có tính năng giao dịch, hoặc có tính năng giao dịch nhưng API xấu xí. TradeCanvas cho bạn cả hai.
 
-- **85 chỉ báo có sẵn** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator và nhiều nữa. Mọi chỉ báo đều đọc được đường của một chỉ báo khác (SMA của RSI). Không cần thêm thư viện tính toán riêng.
+- **95 chỉ báo có sẵn** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator và nhiều nữa. Mọi chỉ báo đều đọc được đường của một chỉ báo khác (SMA của RSI). Không cần thêm thư viện tính toán riêng.
 - **69 công cụ vẽ** — Đường xu hướng (đường thông tin, góc xu hướng, đường chữ thập), Fibonacci (thoái lui, mở rộng, kênh, vùng thời gian, quạt và cung tốc độ, vòng tròn, xoắn ốc, nêm), đường ngang/dọc, kênh, pitchfork và quạt pitchfork, quạt / hộp / hình vuông Gann, chu kỳ, mô hình harmonic (XABCD, cypher, ABCD, ba nhịp, vai đầu vai), sóng Elliott, ghi chú, chú thích và dấu đánh dấu, bút vẽ và đường nhiều điểm, dự báo và phóng chiếu, vị thế Long/Short có tính khối lượng, hồ sơ khối lượng theo khoảng. Mỗi công cụ có cài đặt riêng, cảnh báo theo đường xu hướng, nhóm và thứ tự lớp, hoàn tác/làm lại và tuần tự hoá đầy đủ.
 - **18 loại biểu đồ** — Nến, đường, vùng, thanh, nến rỗng, đường cơ sở, Cao-Thấp, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, nến khối lượng, **Equivolume**, vùng HLC, đường bậc thang, đường + điểm đánh dấu. Kích thước ô Renko, mức đảo chiều Kagi và các thông số tương tự đều chỉnh được.
 - **Tương tác chuyên nghiệp** — kéo tự do qua nến cuối cùng vào vùng tương lai còn trống (hình vẽ cũng đặt được ở đó), kéo trục giá/thời gian để co giãn, bấm đúp để tự vừa khít, `Ctrl/⌘+drag` để chọn nhiều hình vẽ (rồi di chuyển, đổi kiểu hoặc xoá cùng lúc), `Shift+drag` để đo (số nến × Δ giá × %), `Alt+click` để ghim chú thích so sánh, con trỏ theo ngữ cảnh (chữ thập, bàn tay nắm, mũi tên đổi kích thước), nhãn giá/thời gian bám theo trục dưới con trỏ, làm nổi nến khi rê chuột.
 - **Lớp phủ giao dịch** — Hiển thị vị thế đang mở với đường giá vào lệnh, vùng lãi/lỗ và điểm SL/TP. Lệnh hiện bằng đường nét đứt. Kéo SL/TP để sửa, huỷ / đóng / đảo chiều bằng các nút trên từng đường, và xem mỗi lần khớp lệnh được đánh dấu trên nến của nó. ChartWidget có thêm phiếu đặt lệnh kiểm tra lệnh ngay khi bạn điền, cùng bảng tài khoản với vị thế, lệnh chờ và lịch sử. Tắt gọn gàng bằng `features.trading: false` cho dự án không cần giao dịch.
-- **Dữ liệu thời gian thực** — Có sẵn adapter Binance, Coinbase, Bybit và Kraken, cùng các lớp cơ sở chung `WebSocketAdapter` / `PollingAdapter` để cắm bất kỳ nguồn dữ liệu nào chỉ với khoảng 20 dòng code. Nến cũ hơn tải dần khi bạn cuộn về quá khứ, mọi khung thời gian (`7m`, `90m`, `2d`) đều dựng được từ các khung mà nguồn có sẵn, và tìm mã lấy trực tiếp từ nguồn.
+- **Dữ liệu thời gian thực** — Có sẵn adapter Binance, Coinbase, Bybit và Kraken, cùng các lớp cơ sở chung `WebSocketAdapter` / `PollingAdapter` để cắm bất kỳ nguồn dữ liệu nào chỉ với khoảng 20 dòng code. Nến cũ hơn tải dần khi bạn cuộn về quá khứ, mọi khung thời gian (`7m`, `90m`, `2d`) đều dựng được từ các khung mà nguồn có sẵn, biểu đồ tick (`100T`) dựng từ các giao dịch của nguồn, còn tìm mã và giá đều lấy trực tiếp từ nguồn.
 - **Múi giờ** — mọi múi giờ IANA, kể cả giờ mùa hè (`'America/New_York'`), một độ lệch cố định, hoặc múi giờ riêng của sàn, áp dụng cho trục, con trỏ chữ thập, đường ngắt ngày và giờ phiên.
-- **14 ngôn ngữ** — `ChartWidget` bằng tiếng Anh, tiếng Việt, tiếng Trung giản thể và phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Pháp, tiếng Đức, tiếng Nga, tiếng Thổ Nhĩ Kỳ, tiếng Indonesia và tiếng Thái.
+- **16 ngôn ngữ** — `ChartWidget` bằng tiếng Anh, tiếng Việt, tiếng Trung giản thể và phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Pháp, tiếng Đức, tiếng Nga, tiếng Thổ Nhĩ Kỳ, tiếng Indonesia, tiếng Thái, tiếng Ả Rập và tiếng Do Thái; tiếng Ả Rập và tiếng Do Thái hiển thị từ phải sang trái.
+- **Hỗ trợ tiếp cận** — điều hướng bằng bàn phím, các nút phóng to và cuộn trên biểu đồ, và phần tóm tắt cho trình đọc màn hình, đọc khung nhìn và đọc từng nến một.
 - **Khớp lệnh thực** — kết nối một `ExecutionAdapter` để biến lớp phủ giao dịch thành bề mặt giao dịch thật, kéo trên biểu đồ để tạo lệnh, và đối chiếu các lệnh đã khớp. Đi kèm sandbox `PaperExecutionAdapter`.
 - **Plugin SDK** — đăng ký chỉ báo, công cụ vẽ, loại biểu đồ và lớp phủ tuỳ chỉnh — cho mọi biểu đồ hoặc cho từng biểu đồ.
 - **Backtest chiến lược** — `@tradecanvas/analytics` có sẵn `Backtester` chạy theo từng nến với khớp lệnh ảo, mô hình phí giao dịch/trượt giá, theo dõi danh mục và các chỉ số rủi ro (Sharpe, Sortino, Calmar, sụt giảm tối đa). **Nay có thêm 4 chiến lược tham khảo dùng ngay + phân tích Monte Carlo về sự phụ thuộc đường đi (path-dependence).**
@@ -26,7 +27,7 @@ Phần lớn thư viện biểu đồ bắt bạn phải chọn: biểu đồ đ
 - **So sánh và chênh lệch** — mã khác theo phần trăm trên thang giá, trên thang hoặc pane riêng, hoặc thành chênh lệch hay tỷ lệ, khớp với biểu đồ theo thời gian.
 - **Định dạng giá** — giá theo định dạng của bạn hoặc theo phân số (trái phiếu theo 1/32: 110'165) trên mọi nhãn; thời gian theo cách của bạn; bật/tắt giờ giao dịch mở rộng; xuất dữ liệu kèm các đường chỉ báo.
 - **Hồ sơ khối lượng (Volume Profile)** — biểu đồ cột ngang tuỳ chọn, thể hiện khối lượng giao dịch gom theo mức giá trong khoảng đang hiện, có làm nổi điểm kiểm soát (point of control).
-- **Danh mục theo dõi** — bảng dọc tuỳ chọn liệt kê các mã với giá gần nhất, % thay đổi và sparkline nhỏ. Bấm vào một dòng để chuyển biểu đồ.
+- **Danh mục theo dõi và thông tin mã** — các danh sách mã để chuyển qua lại, chỉnh sửa và sắp xếp, kèm giá trực tiếp; một bảng thông tin mã với giá, trạng thái thị trường, số liệu trong ngày, giờ giao dịch và tin tức.
 - **Kéo-thả CSV / JSON** — thả một tệp vào biểu đồ, tệp được đọc và nạp ngay. Tự nhận dạng bố cục dòng tiêu đề, dấu thời gian ISO/unix-s/unix-ms, và JSON dạng mảng hay đối tượng.
 - **Bố cục có tên** — lưu biểu đồ dưới một cái tên (mã, khung thời gian, thang giá, chỉ báo, hình vẽ, cảnh báo), mở, đổi tên, xoá, tự động lưu bố cục đang mở, `Ctrl/⌘+S`. Lưu trong trình duyệt, hoặc trên máy chủ của bạn qua một `LayoutStorage` chỉ gồm bốn hàm. Vẫn có tự động lưu theo từng mã (`persistLayouts`).
 - **Nhiều biểu đồ** — `ChartWidgetGrid` đặt tối đa sáu widget đầy đủ cạnh nhau, liên kết theo mã, khung thời gian, con trỏ chữ thập, thời gian hoặc hình vẽ tuỳ bạn chọn, và lưu tất cả thành một bố cục. `ChartGrid` làm điều tương tự cho biểu đồ không có widget.
@@ -63,7 +64,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Vậy là xong. Dữ liệu trực tiếp, đủ 85 chỉ báo, đủ 69 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
+Vậy là xong. Dữ liệu trực tiếp, đủ 95 chỉ báo, đủ 69 công cụ vẽ, bảng lệnh (`Ctrl+K`), tìm mã (`Ctrl+P`), bảng phím tắt (`?`), đo bằng Shift + kéo, ghim chú thích bằng Alt + bấm, và nạp CSV/JSON bằng kéo-thả.
 
 ## Chart headless
 
@@ -129,7 +130,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### i18n cho widget
 
-`ChartWidget` hỗ trợ 14 ngôn ngữ: tiếng Anh, tiếng Việt, tiếng Trung giản thể và phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Pháp, tiếng Đức, tiếng Nga, tiếng Thổ Nhĩ Kỳ, tiếng Indonesia và tiếng Thái. Mọi chuỗi hiển thị đều được dịch: thanh công cụ, cài đặt, công cụ vẽ, cảnh báo, hộp thoại, bảng lệnh, bảng phím tắt và thông báo. Tên chỉ báo (SMA, RSI…) giữ nguyên. Đặt khi khởi tạo.
+`ChartWidget` hỗ trợ 16 ngôn ngữ: tiếng Anh, tiếng Việt, tiếng Trung giản thể và phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Pháp, tiếng Đức, tiếng Nga, tiếng Thổ Nhĩ Kỳ, tiếng Indonesia, tiếng Thái, tiếng Ả Rập và tiếng Do Thái (hai ngôn ngữ cuối viết từ phải sang trái; `dir` để bạn tự đặt hướng). Mọi chuỗi hiển thị đều được dịch: thanh công cụ, cài đặt, công cụ vẽ, cảnh báo, hộp thoại, bảng lệnh, bảng phím tắt và thông báo. Tên chỉ báo (SMA, RSI…) giữ nguyên. Đặt khi khởi tạo.
 
 Tiếng Anh và tiếng Việt có sẵn. Các ngôn ngữ khác nạp từ `@tradecanvas/chart/widget/locales`, nên mỗi trang chỉ mang theo những ngôn ngữ mà nó import:
 
@@ -342,7 +343,7 @@ gauge.setValue(85) // animates smoothly
 
 ### Chỉ báo (có sẵn)
 
-85 chỉ báo — đường trung bình động (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+95 chỉ báo — đường trung bình động (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
 LSMA, McGinley, SMMA, MA Cross, MTF MA), dải và kênh (Bollinger,
 Keltner, Donchian, Envelope, Linear Regression), xu hướng và điểm dừng (Ichimoku,
 Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,
@@ -768,7 +769,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | Loại biểu đồ | 18 + 6 tài chính | 4 | 8 (phi tài chính) | 10+ |
 | Biểu đồ tài chính | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Không có | Không có | Một số |
-| Chỉ báo có sẵn | 85 | 0 | 0 | ~30 |
+| Chỉ báo có sẵn | 95 | 0 | 0 | ~30 |
 | Công cụ vẽ | 69 | 0 | 0 | Một số |
 | Lớp phủ giao dịch | Đầy đủ (vị thế + lệnh + kéo) | Không có | Không có | Không có |
 | Dữ liệu thời gian thực | Có sẵn (Binance) | Thủ công | Thủ công | Có sẵn |
@@ -853,7 +854,7 @@ interface OHLCBar {
 
 | Ví dụ | Mô tả |
 |---|---|
-| [Demo trực tiếp](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: công cụ vẽ, chỉ báo, giao dịch, khoảng hiển thị, lịch sử theo trang, phát lại, 14 ngôn ngữ với giá dưới một xu, 200k nến, chuyển đổi khi mạng chậm — mỗi thứ trên một biểu đồ trực tiếp. Trang web và tài liệu cũng có bằng tiếng Việt, tiếng Trung, tiếng Nhật, tiếng Hàn và tiếng Tây Ban Nha |
+| [Demo trực tiếp](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: công cụ vẽ, chỉ báo, giao dịch, khoảng hiển thị, lịch sử theo trang, phát lại, 16 ngôn ngữ với giá dưới một xu, danh mục theo dõi với giá trực tiếp, 200k nến, chuyển đổi khi mạng chậm — mỗi thứ trên một biểu đồ trực tiếp. Trang web và tài liệu cũng có bằng tiếng Việt, tiếng Trung, tiếng Nhật, tiếng Hàn và tiếng Tây Ban Nha |
 | [Sandbox StackBlitz](https://bonguynvan.github.io/tradecanvas/examples/) | Một cú bấm, fork được: `Chart` thuần (vanilla), `ChartWidget`, wrapper React / Vue / Svelte, biểu đồ tài chính |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | Component cho framework — props reactive, có kiểu, không cần code khởi tạo rườm rà |
 

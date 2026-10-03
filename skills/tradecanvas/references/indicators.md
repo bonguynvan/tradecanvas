@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-85 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+95 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (32)
+## On the price pane (35)
 
 Drawn over the candles, on the price scale.
 
@@ -44,8 +44,11 @@ Drawn over the candles, on the price scale.
 | `macross` | MA Cross | fast: 9, slow: 21, type: "sma", source: "close" | fast: Fast, slow: Slow | — | ✓ |
 | `fractals` | Williams Fractals | period: 2 | up: Up, down: Down | — | |
 | `cks` | Chande Kroll Stop | p: 10, x: 1, q: 9 | long: Stop Long, short: Stop Short | — | |
+| `seb` | Standard Error Bands | period: 21, mult: 2, smooth: 3 | upper: Upper, middle: Middle, lower: Lower | — | |
+| `gmma` | Guppy Multiple Moving Average | — | s3: EMA 3, s5: EMA 5, s8: EMA 8, s10: EMA 10, s12: EMA 12, s15: EMA 15, l30: EMA 30, l35: EMA 35, l40: EMA 40, l45: EMA 45, l50: EMA 50, l60: EMA 60 | — | |
+| `maribbon` | Moving Average Ribbon | ma1: 20, ma2: 50, ma3: 100, ma4: 200, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4 | — | |
 
-## In a pane of their own (53)
+## In a pane of their own (60)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -104,3 +107,10 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `hv` | Historical Volatility | period: 10, annual: 365, source: "close" | value: HV | — | ✓ |
 | `vo` | Volume Oscillator | short: 5, long: 10 | value: Vol Osc | 0 | |
 | `ulcer` | Ulcer Index | period: 14, source: "close" | value: Ulcer | — | ✓ |
+| `smi` | Stochastic Momentum Index | period: 10, smooth: 3, signal: 3 | smi: SMI, signal: Signal | 40, -40 | |
+| `rvix` | Relative Volatility Index | period: 10, smooth: 14 | value: RVI | 80, 50, 20 | |
+| `trendstrength` | Trend Strength Index | period: 14 | value: Trend | 0 | |
+| `lrslope` | Linear Regression Slope | period: 14 | value: Slope | 0 | |
+| `stderror` | Standard Error | period: 14 | value: StdErr | — | |
+| `adr` | Average Day Range | period: 14 | value: ADR | — | |
+| `netvolume` | Net Volume | — | value: Net | 0 | |

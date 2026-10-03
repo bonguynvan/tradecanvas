@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>약 20줄로 어떤 피드든 연결하기</h2>
@@ -57,6 +66,48 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>여러 종목의 시세</h2>
+<p>
+  <code>subscribeQuotes</code>가 있는 피드는 중지할 때까지 여러 종목의 시세(현재가, 당일 변동, 고가, 저가,
+  거래량, 매수호가와 매도호가)를 한꺼번에 보냅니다. <code>BinanceAdapter</code>는 24시간 스냅샷을 보낸 뒤
+  미니 티커 스트림을 이어 보내고, <code>MockAdapter</code>는 시세를 만들어 냅니다. 위젯의 관심 종목은 이것으로
+  각 행을 채웁니다.
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>틱 차트</h2>
+<p>
+  틱 시간 단위 — <code>'100T'</code> — 는 체결 100건마다 봉 하나를 그립니다. 피드의 체결로 만들어지며, 과거 데이터에는
+  최근 체결(<code>fetchTrades</code>)을, 그 뒤로는 실시간 체결(<code>subscribeTrades</code>)을 씁니다.
+  <code>BinanceAdapter</code>는 집계 체결(aggregate trades)을 스트리밍합니다. 틱 차트에는 카운트다운이 없고 더 이전의
+  과거 데이터도 불러오지 않으며, 체결을 제공하지 않는 피드는 틱 시간 단위를 거부합니다.
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>시장 상태와 뉴스</h2>
+<p>
+  <code>marketStatus(info, now)</code>는 거래소 시간대 기준의 거래 시간(서머타임 전환 포함)으로 특정 시점에 종목의 시장이
+  열려 있는지, 그리고 그것이 언제 바뀌는지 알려 줍니다. 세션에는 열리는 요일을 지정할 수 있습니다. 피드의
+  <code>fetchNews</code>는 위젯의 종목 정보 패널에 헤드라인을 제공하고, <code>readNews</code>는 제목과 시간이 있는 항목만,
+  링크는 웹 페이지 링크만 남깁니다.
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>재연결</h2>
 <p><code>ReconnectManager</code>는 상한이 있는 지수 백오프와 마지막 포기 처리를 담당합니다.</p>

@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 85 indikator, 69 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 95 indikator, 69 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const id: SiteMessages = {
     release: 'renderer dua kanvas, geser dengan bebas',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 85 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 95 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
@@ -80,7 +80,7 @@ const id: SiteMessages = {
       {
         label: 'Widget',
         title: 'Satu panggilan, UI trading lengkap',
-        text: 'ChartWidget menghadirkan bilah alat, panel samping menggambar, daftar pantauan, peringatan, pohon objek, jendela data, putar ulang, dan palet perintah (Ctrl+K), dalam 14 bahasa, dari bahasa Inggris dan Vietnam hingga Tionghoa, Jepang, dan Korea.',
+        text: 'ChartWidget menghadirkan bilah alat, panel samping menggambar, daftar pantauan, peringatan, pohon objek, jendela data, putar ulang, dan palet perintah (Ctrl+K), dalam 16 bahasa, dari bahasa Inggris dan Vietnam hingga Tionghoa, Jepang, Korea, dan Arab.',
       },
       {
         label: 'Data',
@@ -151,11 +151,11 @@ const id: SiteMessages = {
     },
     indicators: {
       title: 'Indikator',
-      stat: '85 bawaan',
+      stat: '95 bawaan',
       blurb:
         'Overlay dan panel dihitung sendiri oleh pustaka, tanpa dependensi matematika. Tick langsung hanya menghitung ulang bar yang sedang terbentuk — 0.001 ms per tick dengan empat indikator pada 100k bar.',
       tryThis: [
-        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 85 indikator',
+        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 95 indikator',
         'Klik nama indikator di legenda: parameter, warna, dan level',
         'Atur Sumber sebuah moving average ke garis indikator lain',
         'Seret garis di antara panel untuk mengubah ukurannya; tombol di kanan atas panel memindahkan, menciutkan, atau memaksimalkannya',
@@ -252,10 +252,10 @@ const id: SiteMessages = {
       ],
     },
     subcent: {
-      title: '14 bahasa, harga di bawah satu sen',
+      title: '16 bahasa, harga di bawah satu sen',
       stat: 'i18n',
       blurb:
-        'Seluruh widget dalam 14 bahasa — menu, pengaturan, alat gambar, dialog — dengan angka dalam format masing-masing bahasa. PEPE diperdagangkan di sekitar 0.000004: setiap label mengikuti presisi skala harga, dan sumbu melebar agar semuanya muat.',
+        'Seluruh widget dalam 16 bahasa — menu, pengaturan, alat gambar, dialog, bahasa Arab dan Ibrani dari kanan ke kiri — dengan angka dalam format masing-masing bahasa. PEPE diperdagangkan di sekitar 0.000004: setiap label mengikuti presisi skala harga, dan sumbu melebar agar semuanya muat.',
       tryThis: [
         'Pilih bahasa di atas grafik: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P mencari semua simbol Binance, lengkap dengan nama, saat Anda mengetik',
@@ -273,6 +273,18 @@ const id: SiteMessages = {
         'Buka Pengaturan, sebuah menu, atau alat gambar di setiap tampilan',
         'Capsule membuat bilah alat dan alat gambar melayang seperti pulau, dengan label harga berbentuk pil',
         'Terminal padat dan bersudut siku: label berhuruf kapital, dan garis di bawah kerangka waktu yang dipilih',
+      ],
+    },
+    markets: {
+      title: 'Daftar pantauan dan pasar',
+      stat: 'harga langsung',
+      blurb:
+        'Daftar simbol dengan harga langsung dari feed, panel berisi harga simbol, status pasar dan angka hari ini, serta grafik tick: satu bar per 100 transaksi.',
+      tryThis: [
+        'Buka menu daftar pantauan: beralih ke Memes, buat daftar Anda sendiri, lalu ganti namanya',
+        'Tambah simbol dengan +, seret baris untuk mengurutkan ulang, atau tekan Delete pada salah satunya',
+        'Ketik 100T di grafik untuk satu bar per 100 transaksi, lalu 1m untuk kembali',
+        'Arahkan kursor ke grafik untuk melihat tombol zoom dan gulir di bagian bawahnya',
       ],
     },
     bigdata: {
@@ -388,7 +400,7 @@ const id: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 69 alat gambar, daftar pantauan, trading, putar ulang, dalam 14 bahasa.',
+        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 69 alat gambar, daftar pantauan, trading, putar ulang, dalam 16 bahasa.',
       },
       react: {
         title: 'React',

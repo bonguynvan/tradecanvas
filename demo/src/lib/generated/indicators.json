@@ -2161,5 +2161,356 @@
     "scale": {
       "min": 0
     }
+  },
+  {
+    "id": "smi",
+    "name": "Stochastic Momentum Index",
+    "shortName": "SMI",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "smooth": 3,
+      "signal": 3
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "smooth": {
+        "min": 1
+      },
+      "signal": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "smi",
+        "title": "SMI",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      40,
+      -40
+    ]
+  },
+  {
+    "id": "rvix",
+    "name": "Relative Volatility Index",
+    "shortName": "RVI (vol)",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "smooth": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      },
+      "smooth": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "RVI",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      80,
+      50,
+      20
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "trendstrength",
+    "name": "Trend Strength Index",
+    "shortName": "TSI (trend)",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Trend",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ],
+    "scale": {
+      "min": -1,
+      "max": 1
+    }
+  },
+  {
+    "id": "lrslope",
+    "name": "Linear Regression Slope",
+    "shortName": "LR Slope",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 2
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Slope",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "stderror",
+    "name": "Standard Error",
+    "shortName": "StdErr",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 3
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "StdErr",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "adr",
+    "name": "Average Day Range",
+    "shortName": "ADR",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "ADR",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "netvolume",
+    "name": "Net Volume",
+    "shortName": "Net Vol",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Net",
+        "kind": "histogram"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "seb",
+    "name": "Standard Error Bands",
+    "shortName": "SEB",
+    "placement": "overlay",
+    "params": {
+      "period": 21,
+      "mult": 2,
+      "smooth": 3
+    },
+    "inputs": {
+      "period": {
+        "min": 3
+      },
+      "mult": {
+        "min": 0,
+        "step": 0.1
+      },
+      "smooth": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "middle",
+        "title": "Middle",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "gmma",
+    "name": "Guppy Multiple Moving Average",
+    "shortName": "GMMA",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "s3",
+        "title": "EMA 3",
+        "kind": "line"
+      },
+      {
+        "key": "s5",
+        "title": "EMA 5",
+        "kind": "line"
+      },
+      {
+        "key": "s8",
+        "title": "EMA 8",
+        "kind": "line"
+      },
+      {
+        "key": "s10",
+        "title": "EMA 10",
+        "kind": "line"
+      },
+      {
+        "key": "s12",
+        "title": "EMA 12",
+        "kind": "line"
+      },
+      {
+        "key": "s15",
+        "title": "EMA 15",
+        "kind": "line"
+      },
+      {
+        "key": "l30",
+        "title": "EMA 30",
+        "kind": "line"
+      },
+      {
+        "key": "l35",
+        "title": "EMA 35",
+        "kind": "line"
+      },
+      {
+        "key": "l40",
+        "title": "EMA 40",
+        "kind": "line"
+      },
+      {
+        "key": "l45",
+        "title": "EMA 45",
+        "kind": "line"
+      },
+      {
+        "key": "l50",
+        "title": "EMA 50",
+        "kind": "line"
+      },
+      {
+        "key": "l60",
+        "title": "EMA 60",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "maribbon",
+    "name": "Moving Average Ribbon",
+    "shortName": "MA Ribbon",
+    "placement": "overlay",
+    "params": {
+      "ma1": 20,
+      "ma2": 50,
+      "ma3": 100,
+      "ma4": 200,
+      "exponential": 0
+    },
+    "inputs": {
+      "ma1": {
+        "min": 1
+      },
+      "ma2": {
+        "min": 1
+      },
+      "ma3": {
+        "min": 1
+      },
+      "ma4": {
+        "min": 1
+      },
+      "exponential": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "ma1",
+        "title": "MA 1",
+        "kind": "line"
+      },
+      {
+        "key": "ma2",
+        "title": "MA 2",
+        "kind": "line"
+      },
+      {
+        "key": "ma3",
+        "title": "MA 3",
+        "kind": "line"
+      },
+      {
+        "key": "ma4",
+        "title": "MA 4",
+        "kind": "line"
+      }
+    ]
   }
 ]

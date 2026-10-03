@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>約 20 行で任意のフィードに対応</h2>
@@ -57,6 +66,48 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>複数シンボルのクオート</h2>
+<p>
+  <code>subscribeQuotes</code> を持つフィードは、止めるまで複数のシンボルのクオート（最新価格、当日の変化、高値、安値、
+  出来高、買気配と売気配）をまとめて送ります。<code>BinanceAdapter</code> は 24 時間のスナップショットを送ったあと、
+  ミニティッカーのストリームを流します。<code>MockAdapter</code> はクオートを生成します。ウィジェットのウォッチリストは、
+  これで各行を埋めます。
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>ティックチャート</h2>
+<p>
+  ティックの時間足 — <code>'100T'</code> — は 100 約定ごとに 1 本のバーを描きます。フィードの約定から組み立て、
+  履歴には直近の約定（<code>fetchTrades</code>）、その後はライブの約定（<code>subscribeTrades</code>）を使います。
+  <code>BinanceAdapter</code> は集約約定（aggregate trades）をストリーミングします。ティックチャートにはカウントダウンがなく、
+  さらに古い履歴も読み込みません。約定を提供しないフィードはティックの時間足を受け付けません。
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>市場の状態とニュース</h2>
+<p>
+  <code>marketStatus(info, now)</code> は、取引所のタイムゾーンでの取引時間（夏時間の切り替えを含む）から、ある時点で
+  シンボルの市場が開いているかどうかと、それがいつ変わるかを返します。セッションには開く曜日を指定できます。
+  フィードの <code>fetchNews</code> はウィジェットのシンボル情報パネルにヘッドラインを渡します。<code>readNews</code> は
+  タイトルと時刻のある項目だけを残し、リンクも Web ページへのものだけを残します。
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>再接続</h2>
 <p><code>ReconnectManager</code> は、上限付きの指数バックオフと、最終的な再試行の打ち切りを処理します。</p>

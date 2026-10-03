@@ -284,7 +284,33 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>Deshacer tus propios cambios</h3>
+<p>
+  <code>recordUndo</code> pone un cambio tuyo en el historial de deshacer del gráfico, junto con sus dibujos e
+  indicadores: Ctrl/Cmd+Z llama a <code>undo</code> y rehacer llama a <code>redo</code>. Los cambios sobre el mismo
+  <code>subject</code> hechos seguidos cuentan como un solo paso. ChartWidget registra así su configuración y su tipo de gráfico.
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>Teclado y lectores de pantalla</h3>
+<p>
+  Un gráfico con el foco se desplaza con las flechas (Mayús para diez barras), hace zoom con ↑/↓ o +/− y va al
+  principio y al final con Inicio y Fin. Para los lectores de pantalla es una aplicación con un resumen
+  (símbolo, tipo, temporalidad, último precio); cuando las teclas mueven la vista, dice lo que hay en pantalla, y
+  la coma y el punto leen las barras una a una. <code>a11y.labels</code> lo pone en tu idioma;
+  <code>a11y: false</code> lo quita. <code>scrollBars(n)</code> y <code>selectDrawing(id)</code>
+  hacen desde el código lo que hacen las teclas y un clic.
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   Los precios que vienen del puntero se pueden ajustar a la cuadrícula del mercado con
   <code>chart.roundPrice(price)</code>: a un múltiplo del <code>minTick</code> del símbolo o,
@@ -454,24 +480,56 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   Las barras de entrada nunca se modifican.
 </p>
 
-<h3>Lista de seguimiento lateral</h3>
+<h3>Listas de seguimiento</h3>
 <p>
-  Panel lateral derecho opcional que muestra todos los símbolos configurados con
-  el último precio, el cambio en % y un minigráfico:
+  Un panel a la derecha con listas de símbolos; cada fila lleva el último precio, el % de cambio y un minigráfico. Las
+  listas se cambian, crean, renombran y borran desde su menú; los símbolos se añaden desde la búsqueda de símbolos
+  (+), se quitan y se reordenan arrastrando o con Alt+↑/↓. Las filas toman las cotizaciones del
+  <code>subscribeQuotes</code> del adaptador, de una fuente de cotizaciones tuya o de lo que tú envíes.
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code> muestra una sola lista de <code>symbols</code>, como antes; <code>setWatchlistEntry</code>
+  sigue enviando el precio, la variación y el minigráfico de una fila.
+</p>
+
+<h3>Información del símbolo</h3>
+<p>
+  Un panel que se abre con el botón ⓘ de la barra de herramientas (o desde la paleta de comandos): los nombres del
+  símbolo, el último precio y su variación, el estado del mercado con la cuenta atrás hasta la próxima apertura o cierre,
+  la apertura del día, el rango, el volumen, el cierre anterior, compra y venta, el tamaño del tick, la moneda, la zona y
+  el horario de negociación, y noticias. La barra de estado indica cuándo el mercado está cerrado.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>Navegación, deshacer y dirección</h3>
+<p>
+  Los botones sobre el gráfico (alejar y acercar, desplazarse hacia atrás y hacia delante, que siguen mientras los
+  mantienes pulsados, y restablecer) aparecen mientras el ratón está encima (<code>navigation: false</code> los quita).
+  Los cambios de configuración y de tipo de gráfico se deshacen con Ctrl/Cmd+Z, junto con los dibujos y los indicadores.
+  En árabe, hebreo, persa o urdu el widget se refleja (<code>dir: 'auto'</code>; o <code>'rtl'</code> / <code>'ltr'</code>);
+  el gráfico mantiene el tiempo de izquierda a derecha.
+</p>
 
 <h3>Herramientas de dibujo favoritas</h3>
 <p>

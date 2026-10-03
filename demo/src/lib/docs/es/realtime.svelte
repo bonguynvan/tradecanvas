@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>Cualquier fuente de datos en ~20 líneas</h2>
@@ -58,6 +67,48 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>Cotizaciones de muchos símbolos</h2>
+<p>
+  Una fuente con <code>subscribeQuotes</code> envía cotizaciones (último precio, variación del día, máximo, mínimo,
+  volumen, compra y venta) de muchos símbolos a la vez hasta que la detienes. <code>BinanceAdapter</code> envía
+  una instantánea de 24 h y luego su flujo mini-ticker; <code>MockAdapter</code> se inventa las cotizaciones. La
+  lista de seguimiento de un widget llena sus filas con ellas.
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>Gráficos de ticks</h2>
+<p>
+  Una temporalidad de ticks — <code>'100T'</code> — dibuja una barra cada 100 operaciones. Se construye con las
+  operaciones de la fuente: las recientes para el historial (<code>fetchTrades</code>) y después las que llegan en vivo
+  (<code>subscribeTrades</code>). <code>BinanceAdapter</code> transmite operaciones agregadas. Un gráfico de ticks no
+  tiene cuenta atrás ni carga historial más antiguo; una fuente sin operaciones rechaza las temporalidades de ticks.
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>Estado del mercado y noticias</h2>
+<p>
+  <code>marketStatus(info, now)</code> indica si el mercado de un símbolo está abierto en un momento dado, a partir de su
+  horario en la zona de su bolsa (con los cambios de hora incluidos), y cuándo cambia eso. Las sesiones pueden indicar los
+  días de la semana en que abren. El <code>fetchNews</code> de una fuente da titulares para el panel de información del
+  símbolo del widget; <code>readNews</code> solo conserva los elementos con título y hora, y solo los enlaces a páginas web.
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>Reconexión</h2>
 <p><code>ReconnectManager</code> gestiona un retroceso exponencial con un límite y una renuncia final.</p>

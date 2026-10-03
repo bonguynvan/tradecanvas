@@ -31,6 +31,15 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
   off(event, listener): void
   dispose(): void
+
+  // Optional
+  fetchHistoryBefore?(symbol, timeframe, before, limit): Promise<OHLCBar[]>
+  searchSymbols?(query, options?): Promise<SymbolInfo[]>
+  resolveSymbol?(symbol): Promise<SymbolInfo | null>
+  subscribeQuotes?(symbols, onQuotes): () => void      // a watchlist's rows
+  fetchNews?(symbol, limit?): Promise<NewsItem[]>       // the symbol info panel
+  fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
+  subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 
 <h2>Nguồn dữ liệu bất kỳ trong ~20 dòng</h2>
@@ -57,6 +66,48 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar
 const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+
+<h2>Giá của nhiều mã</h2>
+<p>
+  Nguồn dữ liệu có <code>subscribeQuotes</code> gửi giá (giá cuối, thay đổi trong ngày, cao nhất, thấp nhất,
+  khối lượng, giá mua và giá bán) của nhiều mã cùng lúc cho đến khi bạn dừng. <code>BinanceAdapter</code> gửi
+  một ảnh chụp 24 giờ, rồi đến luồng mini-ticker; <code>MockAdapter</code> tự tạo giá giả. Danh mục theo dõi
+  của widget lấy giá cho các dòng từ đây.
+</p>
+<pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
+  for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
+})
+stop()
+
+readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, changePercent 1.06`}</code></pre>
+
+<h2>Biểu đồ tick</h2>
+<p>
+  Khung thời gian tick — <code>'100T'</code> — vẽ mỗi nến từ 100 giao dịch. Nó được dựng từ các giao dịch
+  của nguồn dữ liệu: các giao dịch gần đây cho phần lịch sử (<code>fetchTrades</code>), rồi các giao dịch trực tiếp
+  (<code>subscribeTrades</code>). <code>BinanceAdapter</code> stream các giao dịch gộp (aggregate trades). Biểu đồ tick
+  không có đồng hồ đếm ngược và không tải thêm lịch sử cũ hơn; nguồn không có giao dịch sẽ từ chối khung thời gian tick.
+</p>
+<pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
+await chart.setTimeframe('500T')
+
+// Your own trades into tick bars
+const builder = new TickBarBuilder(100)
+builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
+
+<h2>Trạng thái thị trường và tin tức</h2>
+<p>
+  <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở tại một thời điểm hay không, dựa trên
+  giờ giao dịch theo múi giờ của sàn (tính cả lúc đổi giờ), và khi nào điều đó thay đổi. Mỗi phiên có thể ghi rõ
+  những ngày trong tuần mà nó mở. <code>fetchNews</code> của nguồn dữ liệu cung cấp tiêu đề tin cho bảng thông tin mã
+  của widget; <code>readNews</code> chỉ giữ các tin có tiêu đề và thời gian, và chỉ giữ liên kết tới trang web.
+</p>
+<pre><code>{`const info = {
+  symbol: 'AAPL',
+  timezone: 'America/New_York',
+  sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
+}
+marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>Kết nối lại</h2>
 <p><code>ReconnectManager</code> giãn cách các lần thử lại theo cấp số nhân (exponential backoff), có mức trần và dừng hẳn sau lần thử cuối.</p>

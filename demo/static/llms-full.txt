@@ -1,6 +1,6 @@
 # TradeCanvas
 
-> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 85 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 95 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
 
 Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
 
@@ -598,6 +598,36 @@ widget loads no fonts, so load the families a look names. Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
 
+## Watchlists with live quotes, and a tick chart
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import { BinanceAdapter, marketStatus } from '@tradecanvas/chart';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  adapter: new BinanceAdapter(),      // its subscribeQuotes fills the rows
+  symbol: 'BTCUSDT',
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,
+  },
+});
+widget.addToWatchlist('BNBUSDT', 'alts');
+widget.toggleSymbolInfo(true);         // price, market status, the day, hours, news
+await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's trades
+
+// Your own feed's quotes instead
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }]);
+console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }] }, Date.now()).state);
+```
+
+Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
+`setQuotes`); tick timeframes need a feed with `fetchTrades` and
+`subscribeTrades`.
+
 ==============================================================================
 skills/tradecanvas/references/indicators.md
 ==============================================================================
@@ -606,11 +636,11 @@ skills/tradecanvas/references/indicators.md
 
 # Built-in indicators
 
-85 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+95 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (32)
+## On the price pane (35)
 
 Drawn over the candles, on the price scale.
 
@@ -648,8 +678,11 @@ Drawn over the candles, on the price scale.
 | `macross` | MA Cross | fast: 9, slow: 21, type: "sma", source: "close" | fast: Fast, slow: Slow | — | ✓ |
 | `fractals` | Williams Fractals | period: 2 | up: Up, down: Down | — | |
 | `cks` | Chande Kroll Stop | p: 10, x: 1, q: 9 | long: Stop Long, short: Stop Short | — | |
+| `seb` | Standard Error Bands | period: 21, mult: 2, smooth: 3 | upper: Upper, middle: Middle, lower: Lower | — | |
+| `gmma` | Guppy Multiple Moving Average | — | s3: EMA 3, s5: EMA 5, s8: EMA 8, s10: EMA 10, s12: EMA 12, s15: EMA 15, l30: EMA 30, l35: EMA 35, l40: EMA 40, l45: EMA 45, l50: EMA 50, l60: EMA 60 | — | |
+| `maribbon` | Moving Average Ribbon | ma1: 20, ma2: 50, ma3: 100, ma4: 200, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4 | — | |
 
-## In a pane of their own (53)
+## In a pane of their own (60)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -708,6 +741,13 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `hv` | Historical Volatility | period: 10, annual: 365, source: "close" | value: HV | — | ✓ |
 | `vo` | Volume Oscillator | short: 5, long: 10 | value: Vol Osc | 0 | |
 | `ulcer` | Ulcer Index | period: 14, source: "close" | value: Ulcer | — | ✓ |
+| `smi` | Stochastic Momentum Index | period: 10, smooth: 3, signal: 3 | smi: SMI, signal: Signal | 40, -40 | |
+| `rvix` | Relative Volatility Index | period: 10, smooth: 14 | value: RVI | 80, 50, 20 | |
+| `trendstrength` | Trend Strength Index | period: 14 | value: Trend | 0 | |
+| `lrslope` | Linear Regression Slope | period: 14 | value: Slope | 0 | |
+| `stderror` | Standard Error | period: 14 | value: StdErr | — | |
+| `adr` | Average Day Range | period: 14 | value: ADR | — | |
+| `netvolume` | Net Volume | — | value: Net | 0 | |
 
 ==============================================================================
 packages/library/README.md
@@ -772,7 +812,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 85 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 95 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 ## Headless Chart
 
@@ -1051,7 +1091,7 @@ gauge.setValue(85) // animates smoothly
 
 ### Indicators (built-in)
 
-85 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+95 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
 LSMA, McGinley, SMMA, MA Cross, MTF MA), bands and channels (Bollinger,
 Keltner, Donchian, Envelope, Linear Regression), trend and stops (Ichimoku,
 Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,

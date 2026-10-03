@@ -269,7 +269,32 @@ chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
-chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)`}</code></pre>
+chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('chartTypeChange', e => /* { type, previous } */)
+chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('timeframeChange', e => /* { timeframe, previous } */)
+chart.on('historyChange', e => /* { canUndo, canRedo } */)
+chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+
+<h3>独自の変更を元に戻す</h3>
+<p>
+  <code>recordUndo</code> は、あなたの変更を描画やインジケーターと同じチャートの取り消し履歴に加えます。Ctrl/Cmd+Z で
+  <code>undo</code> が、やり直しで <code>redo</code> が呼ばれます。同じ <code>subject</code> に対して続けて行った変更は
+  1 ステップにまとまります。ChartWidget も設定とチャートタイプをこの方法で記録しています。
+</p>
+<pre><code>{`const before = panel.color
+panel.color = 'red'
+chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), redo: () => (panel.color = 'red') })`}</code></pre>
+
+<h3>キーボードとスクリーンリーダー</h3>
+<p>
+  フォーカスのあるチャートは、矢印キーでスクロール（Shift で 10 本ずつ）、↑/↓ または +/− でズームし、Home と End で
+  先頭と末尾へ移動します。スクリーンリーダーに対しては、概要（シンボル、タイプ、時間足、現在値）を持つアプリケーションです。
+  キーで表示を動かすと画面に映っている内容を伝え、カンマとピリオドでバーを 1 本ずつ読み上げます。<code>a11y.labels</code>
+  でこれらを自分の言語にでき、<code>a11y: false</code> で無効にできます。<code>scrollBars(n)</code> と
+  <code>selectDrawing(id)</code> は、キー操作やクリックと同じことをコードから行います。
+</p>
+<pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   ポインターの位置から得た価格は、<code>chart.roundPrice(price)</code> で市場の価格刻みに合わせられます。
   シンボルの <code>minTick</code> の倍数に、それがなければシンボルの精度に丸めます。ChartWidget のメニューと注文チケットはこれを使っています。
@@ -427,24 +452,55 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
   月足 / 四半期足 / 年足はカレンダーの境界にそろえます。入力のバーが変更されることはありません。
 </p>
 
-<h3>ウォッチリストのサイドバー</h3>
+<h3>ウォッチリスト</h3>
 <p>
-  設定したすべてのシンボルを、最新価格、変化率（%）、小さなスパークラインとともに表示する
-  右側のパネルです（オプトイン）：
+  シンボルのリストを並べた右側のパネルで、各行に最新価格、変化率（%）、スパークラインを表示します。リストの切り替え、
+  作成、名前の変更、削除はパネルのメニューから行います。シンボルはシンボル検索（+）から追加し、削除でき、ドラッグか
+  Alt+↑/↓ で並べ替えられます。各行のクオートは、アダプターの <code>subscribeQuotes</code>、独自のクオートソース、
+  または自分で送った値から取ります。
 </p>
-<pre><code>{`new ChartWidget(host, {
+<pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
-  symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
-  adapter: new BinanceAdapter(),
-  watchlist: true,
+  adapter: new BinanceAdapter(),               // its quotes fill the rows
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
+      { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
+    ],
+    persist: true,                             // kept in this browser
+    onChange: (lists, active) => save(lists),  // or keep them yourself
+  },
 })
 
-// Feed non-active rows from your own data source
-widget.setWatchlistEntry('ETHUSDT', {
-  lastPrice: 3245.12,
-  refPrice: 3180.50,
-  sparkline: [3180, 3195, 3210, ...],
-})`}</code></pre>
+widget.addToWatchlist('BNBUSDT', 'alts')
+widget.setActiveWatchlist('alts')
+widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
+widget.getQuote('AAPL')`}</code></pre>
+<p>
+  <code>watchlist: true</code> はこれまでどおり <code>symbols</code> の 1 つのリストを表示します。<code>setWatchlistEntry</code>
+  でも引き続き行の価格、変化、スパークラインを送れます。
+</p>
+
+<h3>シンボル情報</h3>
+<p>
+  ツールバーの ⓘ ボタン（またはコマンドパレット）から開くパネルです。シンボルの名称、最新価格と変化、次の取引開始または
+  終了までのカウントダウン付きの市場の状態、当日の始値、値幅、出来高、前日終値、買気配と売気配、呼値の単位、通貨、
+  タイムゾーンと取引時間、ニュースを表示します。市場が閉まっているときはステータスバーにも表示されます。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'AAPL',
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+})
+widget.toggleSymbolInfo(true)`}</code></pre>
+
+<h3>ナビゲーション、元に戻す、表示方向</h3>
+<p>
+  チャート上のボタン — 縮小と拡大、過去と未来へのスクロール（押し続けると動き続けます）、リセット — は、マウスが
+  チャート上にあるときに表示されます（<code>navigation: false</code> で非表示）。設定の変更とチャートタイプの変更は、
+  描画やインジケーターと同じく Ctrl/Cmd+Z で元に戻せます。アラビア語、ヘブライ語、ペルシア語、ウルドゥー語では
+  ウィジェットが左右反転します（<code>dir: 'auto'</code>、または <code>'rtl'</code> / <code>'ltr'</code>）。
+  チャートの時間は左から右へ進んだままです。
+</p>
 
 <h3>お気に入りの描画ツール</h3>
 <p>

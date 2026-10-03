@@ -337,6 +337,35 @@ widget.setUI({
     data: (symbol) => generateBars(900, symbol, HOUR, 120),
   },
   {
+    id: 'markets',
+    code: `new ChartWidget(host, {
+  adapter: new BinanceAdapter(),        // quotes for every row
+  watchlist: {
+    lists: [
+      { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'] },
+      { id: 'memes', name: 'Memes', symbols: ['DOGEUSDT', 'PEPEUSDT', 'SHIBUSDT'] },
+    ],
+  },
+})
+widget.toggleSymbolInfo(true)           // price, market status, the day, hours
+await widget.setTimeframe('100T')       // a bar per 100 trades`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'DOGEUSDT', 'PEPEUSDT', 'SHIBUSDT'],
+      timeframe: '1m',
+      adapter: env.binance(),
+      watchlist: {
+        lists: [
+          { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'] },
+          { id: 'memes', name: 'Memes', symbols: ['DOGEUSDT', 'PEPEUSDT', 'SHIBUSDT'] },
+        ],
+      },
+    }),
+    setup: (widget) => {
+      widget.toggleSymbolInfo(true);
+    },
+  },
+  {
     id: 'bigdata',
     code: `widget.setData(bars)          // the finest series you have
 widget.setTimeframe('1h')     // resampled locally, no refetch`,
