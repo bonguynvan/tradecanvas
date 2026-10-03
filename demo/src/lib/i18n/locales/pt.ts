@@ -222,6 +222,7 @@ const pt: SiteMessages = {
         'Clique em Reproduzir ou avance e volte uma barra por vez com Shift+→ / Shift+←',
         'Clique em qualquer barra já revelada para levar o cursor até ela',
         '“Voltar ao tempo real” retorna à série ao vivo',
+        'Escolha um Passo menor na barra de replay (15m) para ver cada barra se formar',
       ],
     },
     subcent: {

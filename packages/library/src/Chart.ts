@@ -103,6 +103,7 @@ import {
   yToPrice,
   PriceAxisAddButton,
   findDominantSwing,
+  readAlertOptions,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -236,7 +237,15 @@ export class Chart {
    * host updates land in `live` instead of the replayed slice — and comes
    * back on `replayStop()`. `price` is the latest live tick.
    */
-  private replaySession: { live: DataManager; price: { price: number; previousClose?: number } | null } | null = null;
+  private replaySession: {
+    live: DataManager;
+    price: { price: number; previousClose?: number } | null;
+    /** The latest replayed time a paper account has been given (it only goes forward). */
+    fedTime: number | null;
+  } | null = null;
+  /** During a replay in finer steps: the steps, and the series they build. */
+  private replayStepsSeries: DataSeries | null = null;
+  private replayCoarse: DataSeries | null = null;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -595,19 +604,21 @@ export class Chart {
     this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.alertManager.on('triggered', (alert) => {
-      const payload = { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered };
-      this.eventBus.emit('alertTriggered', payload);
+      this.eventBus.emit('alertTriggered', alertPayload(alert));
       // Back-compat: legacy listeners keyed off dataUpdate.
       this.eventBus.emit('dataUpdate', { alert: 'triggered', alertId: alert.id, price: alert.price, message: alert.message });
     });
     this.alertManager.on('added', (alert) => {
-      this.eventBus.emit('alertAdd', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
+      this.eventBus.emit('alertAdd', alertPayload(alert));
     });
     this.alertManager.on('removed', (id) => {
       this.eventBus.emit('alertRemove', { id });
     });
+    this.alertManager.on('expired', (alert) => {
+      this.eventBus.emit('alertExpired', alertPayload(alert));
+    });
     this.alertManager.on('updated', (alert) => {
-      this.eventBus.emit('alertUpdate', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
+      this.eventBus.emit('alertUpdate', alertPayload(alert));
     });
 
     // Signal markers
@@ -784,8 +795,22 @@ export class Chart {
       this.engine.requestRender(LayerType.Overlay);
     });
 
+    // Signal markers react to the pointer, when someone listens.
+    this.interactionManager.setSignalMarkerHitTest(
+      (pos) => (this.eventBus.hasListeners('signalMarkerHover') || this.eventBus.hasListeners('signalMarkerClick')
+        ? this.signalMarkerManager.markerAt(pos, this.viewport.getState())
+        : null),
+      (marker, pos) => this.eventBus.emit('signalMarkerHover', { marker: marker as import('@tradecanvas/commons').SignalMarker | null, x: pos.x, y: pos.y }),
+      // A hand only where a click does something.
+      () => this.eventBus.hasListeners('signalMarkerClick'),
+    );
     this.interactionManager.setClickHandler((pos) => {
       const data = this.getDisplayData();
+      const marker = this.eventBus.hasListeners('signalMarkerClick') ? this.signalMarkerManager.markerAt(pos, this.viewport.getState()) : null;
+      if (marker) {
+        this.eventBus.emit('signalMarkerClick', { marker, x: pos.x, y: pos.y });
+        return;
+      }
       this.eventBus.emit('click', { x: pos.x, y: pos.y });
       if (data.length === 0) return;
       // Canonical bar mapping (accounts for chartRect.x + bar centering) so the
@@ -886,6 +911,14 @@ export class Chart {
   // --- Data ---
 
   setData(data: DataSeries): void {
+    this.loadSeries(data, false);
+  }
+
+  /**
+   * `setData`; `restoring` puts the live series back after a replay, which
+   * goes on as it was for alerts (their bars and last values stay).
+   */
+  private loadSeries(data: DataSeries, restoring: boolean): void {
     // A full replace is a new series: any replay of the old one ends, and a
     // stream's reconnect no longer merges into it.
     this.snapshotKey = null;
@@ -903,7 +936,7 @@ export class Chart {
     this.options.autoScale = this.defaultAutoScale;
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
-    this.alertManager.clearLastValues();
+    if (!restoring) this.alertManager.clearLastValues();
     this.recalcIndicators(this.dataManager.getData());
     // Auto-set current price line from last bar's close
     if (data.length > 0) {
@@ -965,7 +998,7 @@ export class Chart {
     this.crosshairHandler.setData(merged);
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
-    this.alertManager.clearLastValues();
+    // The same series goes on (a reconnect): alerts keep their bars and last values.
     this.recalcIndicators(merged);
     if (merged.length > 0) this.currentPriceLine.setPrice(merged[merged.length - 1].close);
     this.updateViewportAndRender(follow);
@@ -1487,6 +1520,21 @@ export class Chart {
     return this.layoutManager.getMaximizedPanel();
   }
 
+  /**
+   * A pane's value scale: logarithmic (used while all its values are above 0;
+   * linear otherwise), upside down. The pane `instanceId` is drawn in.
+   */
+  setPaneScale(instanceId: string, scale: { log?: boolean; invert?: boolean }): boolean {
+    const pane = this.paneOf(instanceId);
+    return this.recordIndicators(pane, () => this.paneChange(pane, 'scale', () => this.layoutManager.setPanelScale(pane, scale)));
+  }
+
+  /** The pane's value scale as set (see `setPaneScale`). */
+  getPaneScale(instanceId: string): { log: boolean; invert: boolean } {
+    const panel = this.layoutManager.getPanels().find((p) => p.id === this.paneOf(instanceId));
+    return { log: !!panel?.logScale, invert: !!panel?.invertScale };
+  }
+
   /** Move a pane one place up (`-1`) or down (`1`) among the panes on its side. */
   movePane(instanceId: string, delta: -1 | 1): boolean {
     const pane = this.paneOf(instanceId);
@@ -1503,7 +1551,7 @@ export class Chart {
     return this.indicatorEngine.getIndicatorConfig(instanceId)?.pane ?? instanceId;
   }
 
-  private paneChange(instanceId: string, change: 'collapsed' | 'maximized' | 'order', apply: () => boolean): boolean {
+  private paneChange(instanceId: string, change: 'collapsed' | 'maximized' | 'order' | 'scale', apply: () => boolean): boolean {
     if (!apply()) return false;
     this.updateViewportAndRender();
     this.eventBus.emit('paneChange', { instanceId, change });
@@ -1807,6 +1855,10 @@ export class Chart {
     const payload: import('@tradecanvas/commons').ChartContextMenuPayload = { area, x: pos.x, y: pos.y };
     if (area === 'plot' || area === 'priceAxis') payload.price = yToPrice(pos.y, vs);
     if ((area === 'plot' || area === 'timeAxis') && vs.data.length > 0) payload.time = xToTime(pos.x, vs);
+    if (area === 'pane') {
+      const pane = this.getIndicatorPanes().find((p) => pos.y >= p.rect.y && pos.y <= p.rect.y + p.rect.height);
+      if (pane) payload.pane = pane.instanceId;
+    }
     return payload;
   }
 
@@ -2130,7 +2182,7 @@ export class Chart {
   }
 
   setCurrentPrice(price: number, _pulseColor?: string): void {
-    this.tradingManager.setCurrentPrice(price);
+    this.followLivePrice(price);
     if (this.replaySession) {
       // During a replay the price line shows the replayed close; the live
       // price comes back with replayStop(). Orders and alerts stay live.
@@ -2140,38 +2192,55 @@ export class Chart {
       this.currentPriceLine.setPrice(price);
       this.scheduleRender();
     }
-    if (this.features.alerts) {
-      this.alertManager.checkPrice(price);
-      this.feedIndicatorAlerts();
-    }
+  }
+
+  /** Whether a paper account trades on the replay (it takes a mark price) rather than on the live price. */
+  private replayTrades(): boolean {
+    return this.replaySession !== null && this.executionAdapter?.setMarkPrice !== undefined;
+  }
+
+  /** The orders and the alerts follow a live price (a paper account in a replay follows the replay). */
+  private followLivePrice(price: number): void {
+    if (!this.replayTrades()) this.tradingManager.setCurrentPrice(price);
+    if (this.features.alerts) this.checkAlerts(price);
   }
 
   /**
-   * Feed the latest indicator-line values to any indicator-channel alerts.
+   * Alerts against a live price, and against the indicator lines they watch,
+   * all as of the same moment (a line crossing another compares like with
+   * like). During a replay they keep watching the live market: the bars are
+   * the live ones, and indicator lines — computed on the replayed bars — wait.
+   */
+  private checkAlerts(price: number): void {
+    const live = this.replaySession ? this.replaySession.live.getData() : this.dataManager.getData();
+    this.alertManager.setBarTime(live.length > 0 ? live[live.length - 1].time : null);
+    const values = new Map<string, number>([['price', price]]);
+    if (!this.replaySession) this.collectIndicatorValues(values);
+    // A line against a line only with both of this moment (not during a replay).
+    this.alertManager.checkChannels(values, { together: true });
+    this.alertManager.checkDrawings(price);
+  }
+
+  /**
+   * The latest values of the indicator lines alerts watch or compare with.
    * Channel format: `<instanceId>:<key>`; instanceIds are `tc_<id>_<n>` and
    * built-in keys are colon-free, so the first colon splits them. Values come
    * from the recalculated series, so indicator alerts evaluate at bar cadence
    * (the live intrabar tick doesn't repaint closed-bar indicator values).
    * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
    */
-  private feedIndicatorAlerts(): void {
-    const alerts = this.alertManager.getAlerts();
+  private collectIndicatorValues(into: Map<string, number>): void {
     const data = this.dataManager.getData();
     if (data.length === 0) return;
     const lastIdx = data.length - 1;
-    const seen = new Set<string>();
-    for (const alert of alerts) {
-      if (alert.channel === 'price' || seen.has(alert.channel)) continue;
-      seen.add(alert.channel);
-      const sep = alert.channel.indexOf(':');
+    const channels = this.alertManager.getAlerts().flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
+    for (const channel of channels) {
+      if (into.has(channel)) continue;
+      const sep = channel.indexOf(':');
       if (sep < 0) continue;
-      const instanceId = alert.channel.slice(0, sep);
-      const key = alert.channel.slice(sep + 1);
-      const point = this.indicatorEngine.getOutput(instanceId)?.series?.[lastIdx];
-      const value = point?.[key];
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        this.alertManager.checkChannel(alert.channel, value);
-      }
+      const point = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series?.[lastIdx];
+      const value = point?.[channel.slice(sep + 1)];
+      if (typeof value === 'number' && Number.isFinite(value)) into.set(channel, value);
     }
   }
 
@@ -2249,9 +2318,9 @@ export class Chart {
     });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
-      // Orders keep tracking the live market during a replay; the price line
-      // shows the replayed close instead.
-      this.tradingManager.setCurrentPrice(price);
+      // Orders and alerts keep tracking the live market during a replay; the
+      // price line shows the replayed close instead.
+      this.followLivePrice(price);
       if (this.replaySession) {
         this.replaySession.price = { price, previousClose: previousClose ?? undefined };
         return;
@@ -2381,6 +2450,7 @@ export class Chart {
 
   /** Tear down the active execution adapter (if any) and stop routing intents. */
   disconnectExecution(): void {
+    this.returnMarkToLive();
     if (this.execTeardown) {
       this.execTeardown();
       this.execTeardown = null;
@@ -2999,15 +3069,23 @@ export class Chart {
 
   // --- Alerts ---
 
+  /**
+   * Add an alert on `channel` (`'price'`, or an indicator line
+   * `'<instanceId>:<key>'`) at `price`. `options` compare with another line
+   * instead (`target`), measure a move (`movesUp` / `movesDown` with
+   * `percent` and `bars`), look only at closed bars (`onBarClose`), or end it
+   * (`expiresAt`). Throws a RangeError for options that don't fit together.
+   */
   addAlert(
     price: number,
     condition: import('@tradecanvas/core').AlertCondition = 'crossing',
     message?: string,
     channel = 'price',
     label?: string,
+    options: import('@tradecanvas/core').AlertOptions = {},
   ): string | null {
     if (!this.features.alerts) return null;
-    const id = this.alertManager.addAlert(price, condition, message, false, channel, label);
+    const id = this.alertManager.addAlert(price, condition, message, false, channel, label, options);
     this.markStateChanged();
     return id;
   }
@@ -3074,7 +3152,8 @@ export class Chart {
    * scale; null when it has none there (a trend line that ends before it).
    */
   private drawingLevelsNow(drawingId: string): number[] | null {
-    const data = this.getDisplayData();
+    // Alerts watch the live market, during a replay too.
+    const data = this.replaySession ? this.replaySession.live.getData() : this.getDisplayData();
     if (data.length === 0) return null;
     const viewport = { ...this.viewport.getState(), data };
     return this.drawingManager.priceAt(drawingId, data[data.length - 1].time, viewport);
@@ -3204,6 +3283,10 @@ export class Chart {
    * aside (orders still track the live price), the price line shows the
    * replayed close, and auto-scale refits every step. `replayStop()` brings
    * back the live series, including everything that arrived meanwhile.
+   *
+   * With `steps` (finer bars), each step grows the forming bar from them.
+   * A connected execution adapter that takes a mark price (a paper one)
+   * trades on the replayed price and time.
    */
   replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
@@ -3212,49 +3295,132 @@ export class Chart {
       if (this.dataManager.getLength() === 0) return; // nothing to replay
       const live = new DataManager();
       live.setData(this.dataManager.getData());
-      this.replaySession = { live, price: null };
+      this.replaySession = { live, price: null, fedTime: null };
     }
     // Replay the live series as it stands now (a restart includes bars that
     // arrived during the previous run).
-    const data = this.replaySession.live.getData().slice();
+    const coarse = this.replaySession.live.getData().slice();
+    const { steps: rawSteps, ...playConfig } = config ?? {};
+    const steps = rawSteps ? replaySteps(rawSteps, coarse) : null;
+    this.replayStepsSeries = steps;
+    this.replayCoarse = coarse;
     // A replay fits each step; a price-axis drag from before shouldn't pin it.
     this.options.autoScale = true;
-    this.replayManager.load(data);
-    let loaded = -1; // bars of `data` currently in the DataManager, as of the last step
+    this.replayManager.load(steps ?? coarse);
+    if (steps && playConfig.startIndex !== undefined) playConfig.startIndex = lastStepOfBar(steps, coarse, playConfig.startIndex);
     // Each replayStart used to stack another 'bar' listener, so a restarted
     // replay ran every step once per previous start.
     this.replayBarUnsub?.();
-    this.replayBarUnsub = this.replayManager.on('bar', ({ bar: _bar, index }) => {
-      const nextLen = index + 1;
-      const forward = loaded > 0 && nextLen > loaded && this.dataManager.getLength() === loaded;
+    let loaded = -1; // bars of `coarse` shown, as of the last step (the forming one included)
+    let lastStep = -1;
+    let forming: OHLCBar | null = null;
+    const series = steps ?? coarse;
+    this.replayBarUnsub = this.replayManager.on('bar', ({ index }) => {
+      // Which bar of the chart's series forms now, and how it looks.
+      let barIndex = index;
+      let shownBar: OHLCBar = coarse[index];
+      if (steps) {
+        const step = steps[index];
+        barIndex = barAt(coarse, step.time);
+        const sameBar = forming !== null && lastStep === index - 1 && barIndex === loaded - 1;
+        forming = sameBar && forming ? mergeBar(forming, step) : formingBar(coarse[barIndex], steps, index);
+        shownBar = forming;
+      }
+      lastStep = index;
+      const nextLen = barIndex + 1;
+      const forward = loaded > 0 && nextLen >= loaded && this.dataManager.getLength() === loaded;
       // Like live data: a replay step follows the newest bar while the view
       // rests at the end, and leaves it alone while the user looks at history.
       // The first step and any seek (back or forward) show the replay
       // position. (Read before the new bars land: `isAtEnd` compares against
       // the old length.)
-      const step = forward && !this.replaySeeking;
-      const follow = !step || (this.autoScrollOnNewBar && this.viewport.isAtEnd());
+      const stepForward = forward && !this.replaySeeking;
+      const follow = !stepForward || (this.autoScrollOnNewBar && this.viewport.isAtEnd());
       if (forward) {
-        // Forward step: append just the newly revealed bars and update
-        // indicators from there — not re-copy, re-sanitize and recompute the
-        // whole prefix on every tick of the replay clock.
-        for (let j = loaded; j < nextLen; j++) this.dataManager.appendBar(data[j]);
-        this.recalcIndicatorsFrom(this.dataManager.getData(), loaded);
+        // Forward: the bar that was forming closes as it is in the series, the
+        // newly revealed bars are appended, and indicators update from there.
+        if (steps && nextLen > loaded) this.dataManager.updateLastBar(coarse[loaded - 1]);
+        for (let j = loaded; j < nextLen - 1; j++) this.dataManager.appendBar(coarse[j]);
+        if (nextLen > loaded) this.dataManager.appendBar(shownBar);
+        else this.dataManager.updateLastBar(shownBar);
+        this.recalcIndicatorsFrom(this.dataManager.getData(), Math.max(0, loaded - 1));
       } else {
-        // First step, or a seek backwards: reload the prefix.
-        this.dataManager.setData(data.slice(0, nextLen));
+        // First step, or a seek: reload the prefix.
+        this.dataManager.setData([...coarse.slice(0, barIndex), shownBar]);
         this.recalcIndicators(this.dataManager.getData());
       }
       loaded = nextLen;
       // The price line follows the replay, not the live market.
-      this.currentPriceLine.setPrice(data[index].close, index > 0 ? data[index - 1].close : undefined);
+      this.currentPriceLine.setPrice(shownBar.close, barIndex > 0 ? coarse[barIndex - 1].close : undefined);
       this.crosshairHandler.setData(this.dataManager.getData());
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
       this.displayDataCache = null;
       this.updateViewportAndRender(follow);
+      this.feedReplaySteps(series, index);
     });
-    this.replayManager.play(config);
+    this.replayManager.play(playConfig);
+  }
+
+  /** A replay step's price to an adapter that takes a mark (a paper account), and to the orders on the chart. */
+  private feedReplayPrice(price: number, time?: number): void {
+    const adapter = this.executionAdapter;
+    if (!adapter?.setMarkPrice) return;
+    adapter.setMarkPrice(price, time);
+    this.tradingManager.setCurrentPrice(price);
+  }
+
+  /** A paper account trading on the replay goes back to the live price (the orders too), and its fills to the clock. */
+  private returnMarkToLive(): void {
+    const session = this.replaySession;
+    if (!session || !this.replayTrades()) return;
+    const live = session.live.getData();
+    const price = session.price?.price ?? live[live.length - 1]?.close;
+    if (price !== undefined) this.feedReplayPrice(price);
+  }
+
+  /**
+   * A paper account trades on the replayed prices and times, forward only:
+   * it gets every step past the latest time it has seen (a jump ahead passes
+   * them all, a long one in chunks), and nothing after a seek back or a
+   * restart from an earlier bar until the replay is past that time again.
+   */
+  private feedReplaySteps(series: DataSeries, index: number): void {
+    const session = this.replaySession;
+    const adapter = this.executionAdapter;
+    const bar = series[index];
+    if (!session || !adapter?.setMarkPrice || !bar) return;
+    if (session.fedTime === null) {
+      // The start: the account's mark is where the replay begins.
+      session.fedTime = bar.time;
+      this.feedReplayPrice(bar.close, bar.time);
+      return;
+    }
+    if (bar.time <= session.fedTime) return;
+    const run = series.slice(firstAfter(series, session.fedTime), index + 1);
+    session.fedTime = bar.time;
+    const size = Math.ceil(run.length / MAX_REPLAY_CHUNKS);
+    for (let i = 0; i < run.length; i += size) {
+      for (const [price, time] of replayMarks(run.slice(i, i + size))) adapter.setMarkPrice(price, time);
+    }
+    this.tradingManager.setCurrentPrice(bar.close);
+  }
+
+  /**
+   * The bar of the chart's series the replay is on (the forming one), or -1
+   * without a replay.
+   */
+  getReplayBarIndex(): number {
+    if (!this.replaySession) return -1;
+    const { current } = this.replayManager.getProgress();
+    const steps = this.replayStepsSeries;
+    return steps && this.replayCoarse ? barAt(this.replayCoarse, steps[current]?.time ?? -Infinity) : current;
+  }
+
+  /** Jump the replay to the end of bar `barIndex` of the chart's series (a click on it). */
+  replaySeekToBar(barIndex: number): void {
+    const steps = this.replayStepsSeries;
+    this.replaySeek(steps && this.replayCoarse ? lastStepOfBar(steps, this.replayCoarse, barIndex) : barIndex);
   }
 
   replayPause(): void { this.replayManager.pause(); }
@@ -3264,7 +3430,7 @@ export class Chart {
     const session = this.replaySession;
     this.endReplaySession();
     if (!session) return;
-    this.setData(session.live.getData());
+    this.loadSeries(session.live.getData(), true);
     if (session.price) this.currentPriceLine.setPrice(session.price.price, session.price.previousClose);
   }
 
@@ -3282,7 +3448,10 @@ export class Chart {
   /** Stop the replay clock and drop the session without touching the data. */
   private endReplaySession(): void {
     if (!this.replaySession) return;
+    this.returnMarkToLive();
     this.replaySession = null;
+    this.replayStepsSeries = null;
+    this.replayCoarse = null;
     this.replayBarUnsub?.();
     this.replayBarUnsub = null;
     this.replayManager.stop();
@@ -3409,6 +3578,7 @@ export class Chart {
     for (const [ind, instanceId] of restored) {
       if (ind.paneSize !== undefined) this.layoutManager.setPanelSize(instanceId, ind.paneSize);
       if (ind.paneSize !== undefined || ind.paneCollapsed) this.layoutManager.setPanelCollapsed(instanceId, !!ind.paneCollapsed);
+      if (ind.paneSize !== undefined) this.layoutManager.setPanelScale(instanceId, { log: !!ind.paneLog, invert: !!ind.paneInvert });
     }
     const ordered = restored
       .filter(([ind]) => ind.paneOrder !== undefined)
@@ -3446,6 +3616,8 @@ export class Chart {
                 paneOrder: panels.indexOf(panel),
                 ...(panel.collapsed ? { paneCollapsed: true } : {}),
                 ...(maximized === ind.instanceId ? { paneMaximized: true } : {}),
+                ...(panel.logScale ? { paneLog: true } : {}),
+                ...(panel.invertScale ? { paneInvert: true } : {}),
               }
             : {}),
         };
@@ -3475,16 +3647,29 @@ export class Chart {
    */
   private followIndicatorAlerts(before: ReadonlyMap<string, string>, added: readonly string[]): void {
     if (!this.features.alerts) return;
-    for (const alert of this.alertManager.getAlerts()) {
-      const sep = alert.channel.indexOf(':');
-      if (sep <= 0) continue;
-      const from = alert.channel.slice(0, sep);
+    // A channel on a replaced indicator → the one new indicator of its kind (or null: leave it).
+    const heirOf = (channel: string): string | null => {
+      const sep = channel.indexOf(':');
+      if (sep <= 0) return null;
+      const from = channel.slice(0, sep);
       const kind = before.get(from);
-      if (!kind || this.indicatorEngine.getIndicatorConfig(from)) continue;
+      if (!kind || this.indicatorEngine.getIndicatorConfig(from)) return null;
       const heirs = added.filter((id) => this.indicatorEngine.getIndicatorConfig(id)?.id === kind);
-      if (heirs.length !== 1) continue;
+      return heirs.length === 1 ? heirs[0] + channel.slice(sep) : null;
+    };
+    for (const alert of this.alertManager.getAlerts()) {
+      const channel = heirOf(alert.channel);
+      const target = alert.target ? heirOf(alert.target) : null;
+      if (!channel && !target) continue;
+      const { target: _t, percent, bars, onBarClose, expiresAt } = alert;
       this.alertManager.removeAlert(alert.id);
-      this.alertManager.addAlert(alert.price, alert.condition, alert.message, alert.repeating, heirs[0] + alert.channel.slice(sep), alert.label);
+      this.alertManager.addAlert(alert.price, alert.condition, alert.message, alert.repeating, channel ?? alert.channel, alert.label, {
+        ...(alert.target ? { target: target ?? alert.target } : {}),
+        ...(percent !== undefined ? { percent } : {}),
+        ...(bars !== undefined ? { bars } : {}),
+        ...(onBarClose ? { onBarClose } : {}),
+        ...(expiresAt !== undefined ? { expiresAt } : {}),
+      });
     }
   }
 
@@ -3562,16 +3747,25 @@ export class Chart {
         // A one-shot alert that already fired stays fired (as AlertManager's own storage does).
         if (a.triggered && !a.repeating) continue;
         // `<instanceId>:<key>` channels follow their indicator to its new id.
-        const sep = a.channel.indexOf(':');
-        const renamed = sep > 0 ? instanceIds.get(a.channel.slice(0, sep)) : undefined;
-        const channel = renamed ? renamed + a.channel.slice(sep) : a.channel;
+        const follow = (ch: string) => {
+          const sep = ch.indexOf(':');
+          const renamed = sep > 0 ? instanceIds.get(ch.slice(0, sep)) : undefined;
+          return renamed ? renamed + ch.slice(sep) : ch;
+        };
+        const channel = follow(a.channel);
+        const options = { ...readAlertOptions(a as unknown as Record<string, unknown>), ...(a.target ? { target: follow(a.target) } : {}) };
+        if (a.expired) continue;
         if (a.drawingId) {
           if (this.drawingManager.hasPriceLevels(a.drawingId) && (a.condition === 'crossing' || a.condition === 'crossingUp' || a.condition === 'crossingDown')) {
             this.alertManager.addDrawingAlert(a.drawingId, a.condition, a.message, a.repeating, a.label);
           }
           continue;
         }
-        this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
+        try {
+          this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label, options);
+        } catch (err) {
+          console.warn('Layout alert left out:', err);
+        }
       }
     }
     this.markStateChanged();
@@ -3752,6 +3946,7 @@ export class Chart {
     this.crosshairTooltip.destroy();
     this.pinnedTooltip.destroy();
     this.replayManager.dispose();
+    this.alertManager.dispose();
     this.undoRedoManager.clear();
     this.engine.destroy();
     this.eventBus.destroy();
@@ -4050,7 +4245,9 @@ export class Chart {
     const { from, to } = mainVP.visibleRange;
     const panels = resolved.panels.map((panel) => {
       // The pane's one value scale: plots, axis, crosshair and levels all use it.
-      const priceRange = this.indicatorEngine.getPaneValueRange(panel.config.id, from, to) ?? { ...DEFAULT_PANE_RANGE };
+      // On a log scale only while all its values are above 0.
+      const logRange = panel.config.logScale ? this.indicatorEngine.getPaneValueRange(panel.config.id, from, to, true) : null;
+      const priceRange = logRange ?? this.indicatorEngine.getPaneValueRange(panel.config.id, from, to) ?? { ...DEFAULT_PANE_RANGE };
 
       // Inset the indicator drawing area below the panel header (title + divider)
       const PANEL_HEADER_HEIGHT = 20;
@@ -4069,11 +4266,11 @@ export class Chart {
           ...mainVP,
           chartRect: insetRect,
           priceRange,
-          // Panes keep their own upright, linear value scale; log and
-          // inverted belong to the price pane only.
-          logScale: false,
+          // Each pane has its own value scale: linear unless set to log (and
+          // all its values are above 0), upright unless set upside down.
+          logScale: logRange !== null,
           scaleMode: 'regular' as const,
-          invertScale: false,
+          invertScale: !!panel.config.invertScale,
         },
       };
     });
@@ -4219,4 +4416,131 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.pane ?? null) === (b.pane ?? null)
     && (a.scale ?? null) === (b.scale ?? null)
     && (a.position === undefined) === (b.position === undefined);
+}
+
+/** An alert as its events carry it. */
+function alertPayload(alert: import('@tradecanvas/core').PriceAlert): import('@tradecanvas/commons').AlertPayload {
+  return {
+    id: alert.id,
+    price: alert.price,
+    condition: alert.condition,
+    message: alert.message,
+    triggered: alert.triggered,
+    channel: alert.channel,
+    label: alert.label,
+    target: alert.target,
+    drawingId: alert.drawingId,
+    percent: alert.percent,
+    bars: alert.bars,
+  };
+}
+
+/** At most this many marks per jump go to a paper account (a long jump goes by in chunks). */
+const MAX_REPLAY_CHUNKS = 500;
+
+/** The first bar of `series` after `time` (its length when none is). */
+function firstAfter(series: DataSeries, time: number): number {
+  let lo = 0;
+  let hi = series.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (series[mid].time <= time) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/**
+ * The prices a run of bars went through, in order, as far as the bars tell:
+ * each extreme with its time, the earlier one first (within one bar, a rising
+ * bar dipped first), then the close.
+ */
+function replayMarks(run: readonly OHLCBar[]): [number, number][] {
+  let lowAt = 0;
+  let highAt = 0;
+  for (let i = 1; i < run.length; i++) {
+    if (run[i].low < run[lowAt].low) lowAt = i;
+    if (run[i].high > run[highAt].high) highAt = i;
+  }
+  const low: [number, number] = [run[lowAt].low, run[lowAt].time];
+  const high: [number, number] = [run[highAt].high, run[highAt].time];
+  const lowFirst = lowAt !== highAt ? lowAt < highAt : run[lowAt].close >= run[lowAt].open;
+  const last = run[run.length - 1];
+  return [...(lowFirst ? [low, high] : [high, low]), [last.close, last.time]];
+}
+
+/** How far the last of `coarse` reaches: its widest recent spacing (months differ, weekends skip). */
+function lastBarSpan(coarse: DataSeries): number {
+  let span = 0;
+  for (let i = Math.max(1, coarse.length - 10); i < coarse.length; i++) span = Math.max(span, coarse[i].time - coarse[i - 1].time);
+  return span > 0 ? span : Infinity;
+}
+
+/**
+ * Finer bars for a replay of `coarse`: sorted, inside its span (from its
+ * first bar to the end of its last one), with no repeated times. Where they
+ * start later than `coarse` (a feed's history is shorter), its earlier bars
+ * come first as whole steps, so a bar index means the same bar either way.
+ */
+function replaySteps(steps: DataSeries, coarse: DataSeries): DataSeries | null {
+  if (coarse.length === 0) return null;
+  const end = coarse[coarse.length - 1].time + lastBarSpan(coarse);
+  const sorted = steps
+    .filter((b) => isWholeBar(b) && b.time >= coarse[0].time && b.time < end)
+    .sort((a, b) => a.time - b.time);
+  const fine: OHLCBar[] = [];
+  for (const bar of sorted) if (fine.length === 0 || fine[fine.length - 1].time !== bar.time) fine.push(bar);
+  if (fine.length === 0) return null;
+  // The first coarse bar the finer ones cover from its start; the ones before are whole steps.
+  const from = coarse.findIndex((b) => b.time >= fine[0].time);
+  if (from < 0) return null; // they only reach into the last bar
+  const head = coarse.slice(0, from);
+  const tail = fine.filter((b) => b.time >= coarse[from].time);
+  return [...head, ...tail];
+}
+
+function isWholeBar(b: OHLCBar): boolean {
+  return [b.time, b.open, b.high, b.low, b.close].every(Number.isFinite);
+}
+
+/** The bar of `coarse` holding `time`: the last one starting at or before it (0 before the first). */
+function barAt(coarse: DataSeries, time: number): number {
+  let lo = 0;
+  let hi = coarse.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (coarse[mid].time <= time) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+/** The last step inside bar `barIndex` of `coarse` (where that bar is whole), or the nearest before it. */
+function lastStepOfBar(steps: DataSeries, coarse: DataSeries, barIndex: number): number {
+  const bar = Math.max(0, Math.min(Math.floor(Number.isFinite(barIndex) ? barIndex : 0), coarse.length - 1));
+  const end = bar + 1 < coarse.length ? coarse[bar + 1].time : Infinity;
+  let at = -1;
+  for (let i = 0; i < steps.length && steps[i].time < end; i++) at = i;
+  return Math.max(0, at);
+}
+
+/** Bar `bar` as it stood after step `index`: built from its steps so far. */
+function formingBar(bar: OHLCBar, steps: DataSeries, index: number): OHLCBar {
+  let i = index;
+  while (i > 0 && steps[i - 1].time >= bar.time) i--;
+  let out: OHLCBar = { ...steps[i], time: bar.time };
+  for (let j = i + 1; j <= index; j++) out = mergeBar(out, steps[j]);
+  return out;
+}
+
+/** `bar` with one more step in it. */
+function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
+  return {
+    time: bar.time,
+    open: bar.open,
+    high: Math.max(bar.high, step.high),
+    low: Math.min(bar.low, step.low),
+    close: step.close,
+    volume: (bar.volume ?? 0) + (step.volume ?? 0),
+  };
 }

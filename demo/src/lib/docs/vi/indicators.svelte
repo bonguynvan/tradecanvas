@@ -124,7 +124,11 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
 chart.setPaneCollapsed(macd, true)  // fold to its header
 chart.setMaximizedPane(rsi)         // null puts the panes back
 chart.movePane(rsi, -1)             // one place up; 1 = down
-chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order' | 'scale'
+chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0`}</code></pre>
+<p>
+  Bấm chuột phải vào một bảng trong ChartWidget để bật thang logarit và thang đảo ngược riêng cho bảng đó.
+</p>
 
 <h2>Chuyển một chỉ báo sang bảng khác</h2>
 <p>

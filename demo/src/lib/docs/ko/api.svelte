@@ -471,6 +471,23 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>가격 알림</h3>
 <p>
+  알림은 가격 수준뿐 아니라 한 선을 다른 선과 비교할 수 있고(가격이 이동평균선을 교차, MACD가
+  시그널선을 교차), 일정 봉 수(2~500) 안에 일정 퍼센트 움직이면 발생하게 하거나, 마감된 봉만 보게
+  하거나(되돌아오는 꼬리에는 발생하지 않음), 만료되게 할 수 있습니다. 위젯의 알림 패널에서 이 모두를
+  설정할 수 있고, 코드에서는 <code>addAlert</code>의 마지막 인수로 지정합니다. 알림은
+  <code>setCurrentPrice</code>에서 오든 연결된 피드에서 오든 가격이 들어올 때마다, 감시하는 선과 함께
+  검사됩니다.
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   도구 모음의 종 아이콘을 누르면 가격 알림을 추가, 조회, 삭제하는 플로팅 패널이
   열리며, 알림이 발생하면 토스트가 표시됩니다. 알림 선은
   <strong>드래그</strong>할 수도 있어서, 차트에서 잡고 밀어 가격을 바꿀 수 있습니다

@@ -122,7 +122,11 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
 chart.setPaneCollapsed(macd, true)  // fold to its header
 chart.setMaximizedPane(rsi)         // null puts the panes back
 chart.movePane(rsi, -1)             // one place up; 1 = down
-chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order' | 'scale'
+chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0`}</code></pre>
+<p>
+  在 ChartWidget 中右键点击窗格，即可为它单独设置对数坐标和反转坐标。
+</p>
 
 <h2>把指标移到另一个窗格</h2>
 <p>

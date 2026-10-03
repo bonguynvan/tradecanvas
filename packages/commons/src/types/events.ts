@@ -46,11 +46,17 @@ export type ChartEventType =
   | 'drawingToolChange'
   | 'signalMarkerAdd'
   | 'signalMarkerRemove'
+  /** The pointer went onto a signal marker, or off it (`marker: null`). */
+  | 'signalMarkerHover'
+  /** A signal marker was clicked. */
+  | 'signalMarkerClick'
   | 'tradeZoneAdd'
   | 'tradeZoneRemove'
   | 'alertAdd'
   | 'alertRemove'
   | 'alertTriggered'
+  /** An alert reached its `expiresAt` without firing. */
+  | 'alertExpired'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -194,6 +200,8 @@ export interface ChartContextMenuPayload {
   y: number;
   price?: number;
   time?: number;
+  /** For a pane: the indicator whose pane it is. */
+  pane?: string;
 }
 
 /** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`. */
@@ -224,10 +232,21 @@ export interface TradeZoneRemovePayload {
 
 export interface AlertPayload {
   id: string;
+  /** The level; for an alert on another line, that line's latest value; NaN for a move. */
   price: number;
   condition: string;
   message?: string;
   triggered: boolean;
+  /** What it watches: `'price'` or `<instanceId>:<key>`. */
+  channel?: string;
+  label?: string;
+  /** The line it compares with. */
+  target?: string;
+  /** The drawing it watches. */
+  drawingId?: string;
+  /** A move: the percent, within how many bars. */
+  percent?: number;
+  bars?: number;
 }
 
 /**
@@ -266,7 +285,7 @@ export interface ChartEventMap {
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
   paneResize: { instanceId: string; size: number };
   /** A pane was folded or opened, maximised or put back, or moved up or down. */
-  paneChange: { instanceId: string; change: 'collapsed' | 'maximized' | 'order' };
+  paneChange: { instanceId: string; change: 'collapsed' | 'maximized' | 'order' | 'scale' };
   /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */
   indicatorUpdate: { from: number };
   /** One indicator's settings changed: shown or hidden, restyled, new levels or inputs, moved to another pane. */
@@ -286,11 +305,14 @@ export interface ChartEventMap {
   drawingToolChange: { tool: DrawingToolType | null };
   signalMarkerAdd: SignalMarkerAddPayload;
   signalMarkerRemove: SignalMarkerRemovePayload;
+  signalMarkerHover: { marker: import('./signal.js').SignalMarker | null; x: number; y: number };
+  signalMarkerClick: { marker: import('./signal.js').SignalMarker; x: number; y: number };
   tradeZoneAdd: TradeZoneAddPayload;
   tradeZoneRemove: TradeZoneRemovePayload;
   alertAdd: AlertPayload;
   alertRemove: AlertRemovePayload;
   alertTriggered: AlertPayload;
+  alertExpired: AlertPayload;
   alertUpdate: AlertPayload;
 }
 

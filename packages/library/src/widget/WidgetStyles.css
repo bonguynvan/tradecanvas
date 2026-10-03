@@ -3691,3 +3691,45 @@
 }
 .tcw-interval-field[aria-invalid] { border-color: var(--tcw-red); }
 .tcw-interval-hint { font-size: 11px; color: var(--tcw-text-muted); max-width: 170px; }
+
+/* --- Alerts: lines, moves, bar close, expiry --- */
+.tcw-alerts-source { grid-column: auto; }
+.tcw-alerts-row-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.tcw-alerts-row-fields[hidden] { display: none; }
+.tcw-alerts-row-fields > input[hidden] { display: none; }
+.tcw-alerts-row-fields:has(> input[hidden]) { grid-template-columns: 1fr; }
+.tcw-alerts-options { align-items: center; }
+.tcw-alerts-form .tcw-alerts-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tcw-text-dim);
+}
+.tcw-alerts-form .tcw-alerts-check input { width: auto; height: auto; }
+.tcw-alerts-form input[aria-invalid="true"] { border-color: var(--tcw-red); }
+.tcw-alerts-row-meta { margin-top: 2px; font-size: 11px; color: var(--tcw-text-muted); }
+.tcw-alerts-expired { opacity: 0.6; }
+
+/* --- Signal marker note --- */
+.tcw-marker-tip {
+  position: absolute;
+  z-index: 12;
+  pointer-events: none;
+  padding: 6px 8px;
+  border: 1px solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  background: var(--tcw-tooltip-bg);
+  color: var(--tcw-tooltip-fg);
+  font-size: 11px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--tcw-shadow-xl);
+  max-width: 240px;
+}
+.tcw-marker-tip strong { display: block; font-size: 12px; }

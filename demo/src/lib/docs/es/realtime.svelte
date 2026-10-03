@@ -106,6 +106,40 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>Repetición en el gráfico, en pasos más finos</h3>
+<p>
+  <code>chart.replayStart()</code> repite la propia serie del gráfico. Pásale barras más
+  finas como <code>steps</code> (barras de 5 minutos bajo un gráfico horario) y cada paso
+  hace crecer con ellas la barra en formación, tal como creció en el mercado; las barras
+  cerradas se muestran tal como están en la serie. <code>startIndex</code> y
+  <code>replaySeekToBar</code> cuentan las barras del gráfico. En ChartWidget, el menú
+  <strong>Paso</strong> de la barra de repetición ofrece los intervalos más finos que tiene
+  la fuente (o que se pueden construir con las barras que cargaste).
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Trading simulado en una repetición</h3>
+<p>
+  Un adaptador de ejecución con <code>setMarkPrice(price, time)</code> (como
+  <code>PaperExecutionAdapter</code>) opera sobre la repetición: durante una repetición, el
+  gráfico le pasa cada precio y hora repetidos, así que las órdenes y los stops se ejecutan
+  cuando la repetición pasa por ellos y las ejecuciones quedan sobre las barras repetidas.
+  Cuentan el mínimo y el máximo de cada paso, y un salto hacia delante pasa por todos los
+  pasos intermedios. Solo avanza: tras un salto hacia atrás, espera a que la repetición
+  supere el punto más lejano que ha visto. Mientras tanto, el precio en vivo no lo mueve;
+  cuando termina la repetición vuelve al precio en vivo, y las ejecuciones, a la hora real.
+  Las alertas de precio siguen vigilando el mercado en vivo todo el tiempo; las alertas
+  sobre líneas de indicador esperan a que termine la repetición.
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>

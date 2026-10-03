@@ -78,6 +78,22 @@ export class LayoutManager {
     return this.maximized !== null ? this.maximized !== instanceId : !!panel.collapsed;
   }
 
+  /** A pane's value scale: logarithmic, upside down. False when nothing changed. */
+  setPanelScale(instanceId: string, scale: { log?: boolean; invert?: boolean }): boolean {
+    const panel = this.panels.find((p) => p.id === instanceId);
+    if (!panel) return false;
+    let changed = false;
+    if (scale.log !== undefined && !!panel.logScale !== scale.log) {
+      panel.logScale = scale.log || undefined;
+      changed = true;
+    }
+    if (scale.invert !== undefined && !!panel.invertScale !== scale.invert) {
+      panel.invertScale = scale.invert || undefined;
+      changed = true;
+    }
+    return changed;
+  }
+
   /** Whether `movePanel(instanceId, delta)` would move it. */
   canMovePanel(instanceId: string, delta: -1 | 1): boolean {
     const panel = this.panels.find((p) => p.id === instanceId);

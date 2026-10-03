@@ -10,6 +10,10 @@ export interface PanelConfig {
   content: PanelContentConfig;
   /** Folded to its header (a top or bottom pane); `size` is kept for when it opens again. */
   collapsed?: boolean;
+  /** Its value scale is logarithmic (only while all its values are above 0). */
+  logScale?: boolean;
+  /** Its value scale runs upside down. */
+  invertScale?: boolean;
 }
 
 export interface PanelContentConfig {

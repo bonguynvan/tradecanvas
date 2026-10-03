@@ -473,6 +473,23 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Price alerts</h3>
 <p>
+  Beyond a level, an alert can compare a line with another line (the price crossing a
+  moving average, MACD crossing its signal), fire on a move of some percent within some
+  bars (2 to 500), look only at closed bars (no firing on a wick that comes back), and
+  expire. The widget's alerts panel has all of these; from code they are the last
+  argument of <code>addAlert</code>. Alerts check on every price, from
+  <code>setCurrentPrice</code> or a connected feed, together with the lines they watch:
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   The toolbar bell opens a floating panel to add, list, and delete price
   alerts; a toast fires when one triggers. Alert lines are also
   <strong>draggable</strong> — grab one on the chart and slide it to re-price

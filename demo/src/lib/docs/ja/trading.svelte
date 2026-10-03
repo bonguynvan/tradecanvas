@@ -236,7 +236,15 @@ widget.setDepth(orderBook)
   confidence: 0.86,
   source: 'momentum-bot',
   label: 'EMA cross',
-})`}</code></pre>
+})
+
+// A marker under the pointer, and a click on one
+chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
+chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
+<p>
+  ChartWidget では、ポインターの下にあるマーカーの横にメモを表示します。内容はラベルとソース、方向、
+  価格、信頼度、時刻です。
+</p>
 
 <h2>トレードゾーン</h2>
 <p>エントリー → エグジットを、損益で色分けした長方形と方向のバッジで可視化します。</p>

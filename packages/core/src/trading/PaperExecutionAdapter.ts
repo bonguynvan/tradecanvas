@@ -41,6 +41,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private orders: TradingOrder[] = [];
   private positions: TradingPosition[] = [];
   private markPrice: number;
+  /** The mark's time (ms), when the caller gives one (a replay). */
+  private markTime: number | undefined;
   private seq = 0;
 
   constructor(options: PaperExecutionOptions = {}) {
@@ -63,11 +65,21 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     return this.state;
   }
 
-  /** Feed the latest traded price; fills triggered limit/stop orders and SL/TP. */
-  setMarkPrice(price: number): void {
+  /**
+   * Feed the latest traded price, and its time (fills are stamped with it: a
+   * replay's fills land on the replayed bars; without one, fills are stamped
+   * now); fills triggered limit/stop orders and SL/TP.
+   */
+  setMarkPrice(price: number, time?: number): void {
     this.markPrice = price;
+    this.markTime = time !== undefined && Number.isFinite(time) ? time : undefined;
     this.checkPendingOrders();
     this.checkStops();
+  }
+
+  /** When fills happen: the mark's time when one was given, else now. */
+  private fillTime(): number {
+    return this.markTime ?? Date.now();
   }
 
   getOrders(): TradingOrder[] {
@@ -183,7 +195,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       side: order.side,
       price,
       quantity: order.quantity,
-      time: Date.now(),
+      time: this.fillTime(),
       positionId: position.id,
       reason: 'order',
     };
@@ -202,7 +214,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       side: opposite(position.side),
       price,
       quantity,
-      time: Date.now(),
+      time: this.fillTime(),
       positionId: position.id,
       reason,
       pnl: (price - position.entryPrice) * quantity * direction,

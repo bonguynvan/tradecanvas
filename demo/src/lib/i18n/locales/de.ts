@@ -222,6 +222,7 @@ const de: SiteMessages = {
         'Drücken Sie auf Abspielen oder gehen Sie mit Shift+→ / Shift+← jeweils eine Kerze weiter',
         'Klicken Sie auf eine bereits aufgedeckte Kerze, um den Cursor dorthin zu setzen',
         '„Zurück zur Echtzeit“ kehrt zur Live-Serie zurück',
+        'Wählen Sie in der Replay-Leiste einen feineren Schritt (15m), um jede Kerze entstehen zu sehen',
       ],
     },
     subcent: {

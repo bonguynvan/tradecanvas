@@ -104,6 +104,36 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>차트에서 더 작은 스텝으로 리플레이하기</h3>
+<p>
+  <code>chart.replayStart()</code>는 차트 자체의 시리즈를 리플레이합니다. 더 작은 단위의 봉을
+  <code>steps</code>로 넘기면(1시간 차트 아래의 5분 봉 등) 각 스텝마다 그 봉들로 형성 중인 봉이
+  실제 시장에서 그랬던 것처럼 자라납니다. 마감된 봉은 시리즈에 있는 그대로 표시됩니다.
+  <code>startIndex</code>와 <code>replaySeekToBar</code>는 차트의 봉을 기준으로 셉니다.
+  ChartWidget에서는 리플레이 바의 <strong>스텝</strong> 메뉴에 피드가 제공하는(또는 불러온 봉으로
+  만들 수 있는) 더 작은 시간 단위가 나옵니다.
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>리플레이 중 모의 거래</h3>
+<p>
+  <code>setMarkPrice(price, time)</code> 메서드가 있는 실행 어댑터(<code>PaperExecutionAdapter</code> 등)는
+  리플레이 위에서 거래합니다. 리플레이하는 동안 차트가 리플레이되는 가격과 시각을 차례로 넘겨 주므로,
+  주문과 손절은 리플레이가 그 가격을 지날 때 체결되고 체결 내역은 리플레이된 봉 위에 놓입니다.
+  각 스텝의 저가와 고가가 모두 반영되고, 앞으로 건너뛰면 그 사이의 스텝을 모두 거칩니다. 어댑터는 앞으로만
+  나아가므로, 뒤로 이동한 뒤에는 리플레이가 지금까지 본 가장 먼 지점을 지날 때까지 기다립니다. 그동안 실시간
+  가격은 영향을 주지 않으며, 리플레이가 끝나면 다시 실시간 가격을 따르고 체결 시각도 실제 시계로 돌아갑니다.
+  가격 알림은 그동안에도 계속 실시간 시장을 감시하며, 지표 선에 건 알림은 리플레이가 끝날 때까지 기다립니다.
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>

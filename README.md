@@ -21,7 +21,8 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
 - **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
-- **Replay mode** — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed. The widget now ships a floating bottom scrubber UI (play/pause/step/seek + 0.5×–100× speed) on top of it.
+- **Replay mode** — replay the chart's own bars from any point, in finer steps if you like (an hourly chart forming from 5-minute bars), with play / pause / step / seek / speed, and paper-trade on the replayed prices. The widget has a replay bar for it; `ReplayController` drives bars headless too.
+- **Alerts** — on a price level, an indicator line, a drawing, or one line crossing another; on a move of some percent within some bars; only on closed bars; with an expiry. The widget's alerts panel sets all of them.
 - **Volume Profile** — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
 - **Watchlist sidebar** — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
 - **CSV / JSON drag-and-drop** — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.

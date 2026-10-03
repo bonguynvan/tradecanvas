@@ -102,6 +102,37 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>チャート上のリプレイを細かいステップで</h3>
+<p>
+  <code>chart.replayStart()</code> は、チャート自身の系列をリプレイします。下位足のバーを
+  <code>steps</code> として渡すと（1 時間足のチャートに 5 分足のバーなど）、各ステップでそれらから形成中のバーが
+  育っていきます。実際の市場で形成されたときと同じです。確定済みのバーは系列にあるとおりに表示されます。
+  <code>startIndex</code> と <code>replaySeekToBar</code> はチャートのバーで数えます。
+  ChartWidget では、リプレイバーの<strong>ステップ</strong>メニューに、フィードが持つ下位の時間足
+  （または読み込んだバーから組み立てられる時間足）が並びます。
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>リプレイ中のペーパー取引</h3>
+<p>
+  <code>PaperExecutionAdapter</code> のように <code>setMarkPrice(price, time)</code> を持つ実行アダプターは、
+  リプレイ上で取引します。リプレイ中、チャートはリプレイされる価格と時刻を順に渡すので、注文や損切りは
+  リプレイがその価格を通過したときに約定し、約定はリプレイ中のバーの上に記録されます。各ステップの安値と高値が
+  考慮され、先へジャンプすると途中のステップをすべて通過します。進むのは前方向だけで、後ろへシークした後は、
+  リプレイがそれまでに見た最も先の地点を越えるまで待ちます。
+  その間、ライブ価格の影響は受けません。リプレイが終わるとライブ価格に戻り、約定時刻も実際の時計に戻ります。
+  価格アラートは、その間もずっとライブの市場を監視し続けます。インジケーターのラインに対するアラートは、
+  リプレイが終わるまで待機します。
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>

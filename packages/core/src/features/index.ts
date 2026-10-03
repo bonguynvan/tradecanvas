@@ -1,5 +1,6 @@
 export { AlertManager } from './AlertManager.js';
-export type { PriceAlert, AlertCondition } from './AlertManager.js';
+export type { PriceAlert, AlertCondition, AlertOptions } from './AlertManager.js';
+export { isPriceLevelAlert, readAlertOptions, MAX_ALERT_BARS, MIN_ALERT_BARS } from './AlertManager.js';
 export { ReplayManager } from './ReplayManager.js';
 export type { ReplayConfig } from './ReplayManager.js';
 export { ChartStateManager } from './ChartState.js';

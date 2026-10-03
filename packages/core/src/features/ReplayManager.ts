@@ -10,6 +10,13 @@ export interface ReplayConfig {
    * the first tick — so entering replay shows the cut immediately.
    */
   paused?: boolean;
+  /**
+   * Finer bars to replay through (5-minute bars under an hourly chart): each
+   * step grows the forming bar from them, and closed bars show as they are
+   * in the chart's series. `startIndex` stays a bar of the chart's series.
+   * The chart reads this; the manager itself steps through what it is given.
+   */
+  steps?: DataSeries;
 }
 
 interface ReplayEvents {

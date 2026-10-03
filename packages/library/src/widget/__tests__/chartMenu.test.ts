@@ -49,6 +49,12 @@ describe('chart menus', () => {
     expect(checked).toEqual({ autoScale: false, logScale: true, percentScale: false, invertScale: true, alert: undefined });
   });
 
+  it('gives a pane its scale switches', () => {
+    const entries = chartMenuEntries('pane', ctx({ pane: { log: true, invert: false } }), EN_TRANSLATOR);
+    expect(ids(entries)).toEqual(['resetView', '|', 'paneLog', 'paneInvert', '|', 'settings']);
+    expect(entries.filter((e) => e !== 'separator').map((e) => (e as { checked?: boolean }).checked)).toEqual([undefined, true, false, undefined]);
+  });
+
   it('offers the time axis a reset and go-to-date', () => {
     expect(ids(chartMenuEntries('timeAxis', ctx(), EN_TRANSLATOR))).toEqual(['resetView', 'goToDate']);
     expect(ids(chartMenuEntries('timeAxis', ctx({ canGoToDate: false }), EN_TRANSLATOR))).toEqual(['resetView']);

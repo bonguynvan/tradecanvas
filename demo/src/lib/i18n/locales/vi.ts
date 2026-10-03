@@ -222,6 +222,7 @@ const vi: SiteMessages = {
         'Bấm phát, hoặc đi từng nến với Shift+→ / Shift+←',
         'Bấm vào bất kỳ nến nào đã hiện để đưa điểm phát lại tới đó',
         '“Về thời gian thực” quay lại chuỗi dữ liệu trực tiếp',
+        'Chọn Bước nhỏ hơn trên thanh phát lại (15m) để xem từng nến hình thành',
       ],
     },
     subcent: {

@@ -1,6 +1,6 @@
 import type { ChartType, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
-import type { AlertCondition, PriceAlert } from './AlertManager.js';
+import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
 
 /**
  * Serializable chart state for save/load functionality.
@@ -60,6 +60,9 @@ export interface SnapshotIndicator {
   paneOrder?: number;
   paneCollapsed?: boolean;
   paneMaximized?: boolean;
+  /** The pane's value scale: logarithmic, upside down. */
+  paneLog?: boolean;
+  paneInvert?: boolean;
 }
 
 /**
@@ -149,24 +152,30 @@ function validateIndicatorStyle(raw: unknown): IndicatorStyleConfig | undefined 
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
-const ALERT_CONDITIONS: readonly AlertCondition[] = ['crossingUp', 'crossingDown', 'crossing', 'greaterThan', 'lessThan'];
+const ALERT_CONDITIONS: readonly AlertCondition[] = ['crossingUp', 'crossingDown', 'crossing', 'greaterThan', 'lessThan', 'movesUp', 'movesDown'];
 
 function validateAlert(raw: unknown): PriceAlert | null {
   if (!isObject(raw) || typeof raw.id !== 'string') return null;
   // An alert on a drawing follows the drawing: its price is only the last level seen.
   const drawingId = typeof raw.drawingId === 'string' ? raw.drawingId : undefined;
   const price = typeof raw.price === 'number' && Number.isFinite(raw.price) ? raw.price : null;
-  if (price === null && !drawingId) return null;
+  const condition = ALERT_CONDITIONS.find((c) => c === raw.condition) ?? 'crossing';
+  const options = readAlertOptions(raw);
+  // A line against a line, or a move, needs no level of its own.
+  const levelFree = options.target !== undefined || condition === 'movesUp' || condition === 'movesDown';
+  if (price === null && !drawingId && !levelFree) return null;
   return {
     id: raw.id,
     price: price ?? Number.NaN,
     drawingId,
-    condition: ALERT_CONDITIONS.find((c) => c === raw.condition) ?? 'crossing',
+    condition,
     message: typeof raw.message === 'string' ? raw.message : undefined,
     triggered: raw.triggered === true,
     repeating: raw.repeating === true,
     channel: asString(raw.channel, 'price'),
     label: typeof raw.label === 'string' ? raw.label : undefined,
+    ...options,
+    ...(raw.expired === true ? { expired: true } : {}),
   };
 }
 
@@ -212,6 +221,8 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       paneOrder: typeof ind.paneOrder === 'number' && Number.isInteger(ind.paneOrder) && ind.paneOrder >= 0 ? ind.paneOrder : undefined,
       paneCollapsed: ind.paneCollapsed === true ? true : undefined,
       paneMaximized: ind.paneMaximized === true ? true : undefined,
+      paneLog: ind.paneLog === true ? true : undefined,
+      paneInvert: ind.paneInvert === true ? true : undefined,
     });
   }
 

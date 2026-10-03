@@ -104,6 +104,38 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>Phát lại trên biểu đồ, theo bước nhỏ hơn</h3>
+<p>
+  <code>chart.replayStart()</code> phát lại chính chuỗi dữ liệu của biểu đồ. Truyền các nến nhỏ hơn
+  vào <code>steps</code> (nến 5 phút dưới một biểu đồ khung giờ) và mỗi bước sẽ làm nến đang hình thành
+  lớn dần từ chúng, đúng như nó đã hình thành trên thị trường; các nến đã đóng hiện đúng như trong
+  chuỗi. <code>startIndex</code> và <code>replaySeekToBar</code> đếm theo nến của biểu đồ.
+  Trong ChartWidget, menu <strong>Bước</strong> trên thanh phát lại đưa ra các khung thời gian nhỏ hơn
+  mà nguồn dữ liệu có (hoặc dựng được từ các nến bạn đã nạp).
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Giao dịch giấy trong lúc phát lại</h3>
+<p>
+  Một adapter khớp lệnh có <code>setMarkPrice(price, time)</code> (như
+  <code>PaperExecutionAdapter</code>) sẽ giao dịch trên phiên phát lại: trong lúc phát lại, biểu đồ
+  chuyển cho nó từng mức giá và thời điểm được phát lại, nên lệnh và mức dừng lỗ khớp khi phát lại
+  đi qua chúng, và các lần khớp nằm trên các nến được phát lại. Giá thấp và giá cao của mỗi bước đều
+  được tính, và một lần nhảy tới trước sẽ đi qua mọi bước trên đường. Nó chỉ đi tới: sau khi tua lùi,
+  nó chờ đến khi phát lại vượt qua điểm xa nhất nó đã thấy. Trong lúc đó giá trực tiếp không làm nó
+  thay đổi; khi phát lại kết thúc, nó quay về giá trực tiếp, và các lần khớp quay về theo giờ thực.
+  Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt thời gian đó; cảnh báo theo đường chỉ báo
+  chờ đến khi phát lại kết thúc.
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>

@@ -10,7 +10,7 @@ import type {
   OverlayScale,
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
-import { drawnKeys, hasHistogram, paneValueRange, plotColor } from './plots.js';
+import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 
 interface IndicatorInstance {
@@ -486,19 +486,27 @@ export class IndicatorEngine {
    * values, its levels, zero for histograms and its fixed bounds. Null when
    * there is nothing to fit.
    */
-  getPaneValueRange(instanceId: string, from: number, to: number): { min: number; max: number } | null {
+  /**
+   * The value range of a pane over bars `[from, to]`, its members included.
+   * With `log`, the range for a logarithmic scale: null when any of them has
+   * a value at or below zero there (the pane stays linear); a member with
+   * nothing visible yet is left out, as on a linear scale.
+   */
+  getPaneValueRange(instanceId: string, from: number, to: number, log = false): { min: number; max: number } | null {
     let range: { min: number; max: number } | null = null;
     // The pane's own indicator and those drawn in it share one scale.
     for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
       const instance = this.instances.get(id);
       if (!instance || instance.config.visible === false) continue;
       const descriptor = instance.plugin.descriptor;
-      const own = paneValueRange(instance.output, from, to, {
+      const options = {
         keys: drawnKeys(descriptor),
         scale: descriptor.scale,
         levels: instance.config.levels ?? descriptor.levels,
         zero: hasHistogram(descriptor.plots),
-      });
+      };
+      const own = log ? paneLogRange(instance.output, from, to, options) : paneValueRange(instance.output, from, to, options);
+      if (own === false) return null; // a value at or below zero: no log scale
       if (own) range = range ? { min: Math.min(range.min, own.min), max: Math.max(range.max, own.max) } : own;
     }
     return range;

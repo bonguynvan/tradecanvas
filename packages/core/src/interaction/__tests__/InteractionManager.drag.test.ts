@@ -385,3 +385,33 @@ describe('InteractionManager — right-click on a drawing', () => {
   });
 });
 
+describe('InteractionManager — signal markers', () => {
+  it('says when the pointer leaves a marker, and shows a hand only where a click does something', () => {
+    const hovers: (string | null)[] = [];
+    let clickable = false;
+    im.setSignalMarkerHitTest((p) => (p.x > 100 && p.x < 120 ? 'm1' : null), (m) => hovers.push(m as string | null), () => clickable);
+    el.dispatchEvent(at('mousemove', 110));
+    expect(hovers).toEqual(['m1']);
+    expect(el.style.cursor).not.toBe('pointer');
+    el.dispatchEvent(at('mouseleave', 110));
+    expect(hovers).toEqual(['m1', null]);
+    clickable = true;
+    el.dispatchEvent(at('mousemove', 110));
+    expect(el.style.cursor).toBe('pointer');
+    // A press leaves it too: its note shouldn't sit over a drag.
+    el.dispatchEvent(at('mousedown', 110, { button: 0, buttons: 1 }));
+    expect(hovers).toEqual(['m1', null, 'm1', null]);
+  });
+});
+
+describe('InteractionManager — a marker under HTML laid over the chart', () => {
+  it('leaves the marker when the pointer moves onto the legend or a bar', () => {
+    const hovers: (string | null)[] = [];
+    im.setSignalMarkerHitTest((p) => (p.x > 100 && p.x < 120 ? 'm1' : null), (m) => hovers.push(m as string | null));
+    const legend = document.createElement('div');
+    el.appendChild(legend);
+    el.dispatchEvent(at('mousemove', 110));
+    legend.dispatchEvent(at('mousemove', 112));
+    expect(hovers).toEqual(['m1', null]);
+  });
+});

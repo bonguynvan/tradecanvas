@@ -124,7 +124,11 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
 chart.setPaneCollapsed(macd, true)  // fold to its header
 chart.setMaximizedPane(rsi)         // null puts the panes back
 chart.movePane(rsi, -1)             // one place up; 1 = down
-chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order'`}</code></pre>
+chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 'order' | 'scale'
+chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0`}</code></pre>
+<p>
+  Right-click a pane in ChartWidget for its own logarithmic and inverted scale.
+</p>
 
 <h2>Moving an indicator to another pane</h2>
 <p>

@@ -225,6 +225,7 @@ await chart.setTimeframe('7m')`,
     code: `widget.toggleReplay()             // pick a start bar on the chart
 widget.replayFrom(220)            // or start at a bar directly
 chart.replayStart({ startIndex: 220, paused: true, interval: 1000, speed: 5 })
+chart.replayStart({ steps: bars15m, startIndex: 220 })  // each hour forms in 15m steps
 chart.replayStop()                // back to the live series`,
     options: () => ({
       symbol: 'DEMO',
@@ -232,7 +233,8 @@ chart.replayStop()                // back to the live series`,
       timeframe: '1h',
       onReady: (chart) => chart.addIndicator('ema', {}),
     }),
-    data: (symbol) => generateBars(400, symbol, HOUR, 120),
+    // 15-minute bars shown as hours: the replay bar can step through them.
+    data: (symbol) => generateBars(1600, symbol, HOUR / 4, 120),
     setup: (widget, chart) => {
       widget.replayFrom(Math.floor(chart.getData().length * 0.55));
     },

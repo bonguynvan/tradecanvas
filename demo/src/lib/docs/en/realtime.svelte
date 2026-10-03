@@ -104,6 +104,38 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>Replay on the chart, in finer steps</h3>
+<p>
+  <code>chart.replayStart()</code> replays the chart's own series. Give it finer bars as
+  <code>steps</code> (5-minute bars under an hourly chart) and each step grows the
+  forming bar from them, as it grew in the market; closed bars show as they are in the
+  series. <code>startIndex</code> and <code>replaySeekToBar</code> count the chart's bars.
+  In ChartWidget, the replay bar's <strong>Step</strong> menu offers the finer intervals the
+  feed has (or that the bars you loaded can build).
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Paper trading in a replay</h3>
+<p>
+  An execution adapter with <code>setMarkPrice(price, time)</code> (as
+  <code>PaperExecutionAdapter</code> has) trades on the replay: during a replay the chart
+  hands it each replayed price and time, so orders and stops fill as the replay passes
+  them and fills land on the replayed bars. Each step's low and high count, and a jump
+  ahead passes every step on the way. It only goes forward: after a seek back it waits
+  until the replay is past the furthest point it has seen. The live price doesn't move
+  it meanwhile; when the replay ends it goes back to the live price, and fills to the
+  clock. Price alerts keep watching the live market throughout; alerts on indicator
+  lines wait for the replay to end.
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>

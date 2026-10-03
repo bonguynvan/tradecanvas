@@ -55,42 +55,7 @@ export function paneValueRange(
   to: number,
   options: PaneRangeOptions,
 ): { min: number; max: number } | null {
-  let lo = Infinity;
-  let hi = -Infinity;
-  const keys = options.keys;
-  const scan = (val: IndicatorValue | null | undefined): void => {
-    if (!val) return;
-    if (keys) {
-      for (let k = 0; k < keys.length; k++) {
-        const v = val[keys[k]];
-        if (v !== undefined && Number.isFinite(v)) {
-          if (v < lo) lo = v;
-          if (v > hi) hi = v;
-        }
-      }
-      return;
-    }
-    for (const key in val) {
-      const v = val[key];
-      if (v !== undefined && Number.isFinite(v)) {
-        if (v < lo) lo = v;
-        if (v > hi) hi = v;
-      }
-    }
-  };
-  const series = output?.series;
-  if (series) {
-    const end = Math.min(to, series.length - 1);
-    for (let i = Math.max(0, from); i <= end; i++) scan(series[i]);
-  } else if (output) {
-    // A plugin without `series`: its values in bar order stand for bars 0…n-1.
-    let i = 0;
-    for (const val of output.values.values()) {
-      if (i > to) break;
-      if (i >= from) scan(val);
-      i++;
-    }
-  }
+  let { lo, hi } = valueSpan(output, from, to, options.keys);
   const scale = options.scale;
   const fixedMin = scale?.min;
   const fixedMax = scale?.max;
@@ -115,6 +80,76 @@ export function paneValueRange(
   if (fixedMax !== undefined) hi = fixedMax;
   if (!(hi > lo)) hi = lo + 1;
   return { min: lo, max: hi };
+}
+
+/**
+ * `paneValueRange` for a logarithmic scale: padded by ratio, without zero
+ * and levels at or below it. Null when nothing is visible (and no positive
+ * bounds are fixed); false when a value there is at or below zero, which a
+ * log scale has no place for.
+ */
+export function paneLogRange(
+  output: IndicatorOutput | null,
+  from: number,
+  to: number,
+  options: PaneRangeOptions,
+): { min: number; max: number } | null | false {
+  let { lo, hi } = valueSpan(output, from, to, options.keys);
+  const positive = (v: number | undefined): v is number => v !== undefined && v > 0;
+  const fixedMin = positive(options.scale?.min) ? options.scale?.min : undefined;
+  const fixedMax = positive(options.scale?.max) ? options.scale?.max : undefined;
+  if (lo === Infinity) {
+    if (fixedMin === undefined || fixedMax === undefined) return null;
+    lo = fixedMin;
+    hi = fixedMax;
+  } else {
+    if (!(lo > 0)) return false;
+    // The same padding as a linear pane, on the log of the values.
+    const pad = Math.exp((Math.log(hi / lo) || Math.LN2 / 4) * PANE_PADDING);
+    lo /= pad;
+    hi *= pad;
+  }
+  for (const level of options.levels ?? []) {
+    if (!(level > 0)) continue;
+    if (level < lo) lo = level;
+    if (level > hi) hi = level;
+  }
+  if (fixedMin !== undefined) lo = fixedMin;
+  if (fixedMax !== undefined) hi = fixedMax;
+  return hi > lo ? { min: lo, max: hi } : null;
+}
+
+/** The lowest and highest drawn value over bars `[from, to]` (Infinity / -Infinity when none). */
+function valueSpan(output: IndicatorOutput | null, from: number, to: number, keys: readonly string[] | null): { lo: number; hi: number } {
+  let lo = Infinity;
+  let hi = -Infinity;
+  const take = (v: number | undefined): void => {
+    if (v === undefined || !Number.isFinite(v)) return;
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  };
+  const scan = (val: IndicatorValue | null | undefined): void => {
+    if (!val) return;
+    if (keys) {
+      for (let k = 0; k < keys.length; k++) take(val[keys[k]]);
+      return;
+    }
+    for (const key in val) take(val[key]);
+  };
+  const series = output?.series;
+  if (series) {
+    const end = Math.min(to, series.length - 1);
+    for (let i = Math.max(0, from); i <= end; i++) scan(series[i]);
+  } else if (output) {
+    // A plugin without `series`: its values in bar order stand for bars 0…n-1.
+    let i = 0;
+    for (const val of output.values.values()) {
+      if (i > to) break;
+      if (i >= from) scan(val);
+      i++;
+    }
+  }
+  return { lo, hi };
 }
 
 /** Whether a plot list has a histogram (its pane then keeps zero in view). */

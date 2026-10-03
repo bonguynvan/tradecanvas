@@ -222,6 +222,7 @@ const tr: SiteMessages = {
         'Oynat’a basın ya da Shift+→ / Shift+← ile birer bar ilerleyin',
         'İmleci oraya taşımak için açılmış herhangi bir bara tıklayın',
         '“Gerçek zamana dön” canlı seriye geri getirir',
+        'Her barın oluşumunu izlemek için tekrar çubuğunda daha küçük bir Adım (15m) seçin',
       ],
     },
     subcent: {

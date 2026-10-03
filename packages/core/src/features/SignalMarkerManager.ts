@@ -12,6 +12,9 @@ interface SignalMarkerEvents {
 
 let markerId = 1;
 
+/** Pixels around a marker's arrow that still count as on it. */
+const MARKER_SLOP = 3;
+
 export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
   private markers: SignalMarker[] = [];
   private style: SignalMarkerStyle = { ...DEFAULT_SIGNAL_STYLE };
@@ -63,6 +66,29 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
   setMarkers(markers: SignalMarker[]): void {
     this.markers = [...markers];
     this.requestRender?.();
+  }
+
+  /**
+   * The marker under `point` (the one drawn last when several overlap), or
+   * null. Its arrow and a few pixels around it count.
+   */
+  markerAt(point: { x: number; y: number }, viewport: ViewportState): SignalMarker | null {
+    const data = this.dataGetter?.();
+    if (!data || data.length === 0) return null;
+    const { chartRect } = viewport;
+    if (point.x < chartRect.x || point.x > chartRect.x + chartRect.width || point.y < chartRect.y || point.y > chartRect.y + chartRect.height) return null;
+    const arrowSize = this.style.arrowSize ?? 12;
+    for (let i = this.markers.length - 1; i >= 0; i--) {
+      const marker = this.markers[i];
+      const x = barIndexToX(timestampToBarIndex(marker.time, data), viewport);
+      const y = priceToY(marker.price, viewport);
+      const size = arrowSize * Math.max(0.6, Math.min(1, marker.confidence));
+      // The arrow points from y towards its tip: up for a long, down for a short.
+      const top = marker.direction === 'long' ? y - size : marker.direction === 'short' ? y - size * 0.4 : y - size * 0.4;
+      const bottom = marker.direction === 'long' ? y + size * 0.4 : marker.direction === 'short' ? y + size : y + size * 0.4;
+      if (Math.abs(point.x - x) <= size * 0.6 + MARKER_SLOP && point.y >= top - MARKER_SLOP && point.y <= bottom + MARKER_SLOP) return marker;
+    }
+    return null;
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
