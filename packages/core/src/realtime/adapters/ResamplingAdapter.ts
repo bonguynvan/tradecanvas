@@ -11,10 +11,12 @@ import type {
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
+  Trade,
 } from '@tradecanvas/commons';
 import {
   parseTimeframe,
   pickBaseTimeframe,
+  tickBarCount,
   resampleBars,
   timeframeBucketStart,
   timeframeToMs,
@@ -62,6 +64,8 @@ function baseTimeframe(target: TimeFrame, supported: readonly TimeFrame[]): Time
  * `MAX_BASE_RATIO` of its bars per bar.
  */
 export function servesTimeframe(adapter: DataAdapter, timeframe: TimeFrame): boolean {
+  // Tick bars come from the feed's trades.
+  if (tickBarCount(timeframe) !== null) return typeof adapter.fetchTrades === 'function' && typeof adapter.subscribeTrades === 'function';
   const supported = adapter.supportedTimeframes;
   return !supported?.length || baseTimeframe(timeframe, supported) !== null;
 }
@@ -119,6 +123,8 @@ export class ResamplingAdapter implements DataAdapter {
   readonly resolveSymbol?: (symbol: string) => Promise<SymbolInfo | null>;
   readonly subscribeQuotes?: (symbols: readonly string[], onQuotes: (quotes: Quote[]) => void) => () => void;
   readonly fetchNews?: (symbol: string, limit?: number) => Promise<NewsItem[]>;
+  readonly fetchTrades?: (symbol: string, limit?: number) => Promise<Trade[]>;
+  readonly subscribeTrades?: (symbol: string, onTrades: (trades: Trade[]) => void) => () => void;
 
   private readonly listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly unsubscribe: (() => void)[] = [];
@@ -140,6 +146,8 @@ export class ResamplingAdapter implements DataAdapter {
     if (inner.resolveSymbol) this.resolveSymbol = inner.resolveSymbol.bind(inner);
     if (inner.subscribeQuotes) this.subscribeQuotes = inner.subscribeQuotes.bind(inner);
     if (inner.fetchNews) this.fetchNews = inner.fetchNews.bind(inner);
+    if (inner.fetchTrades) this.fetchTrades = inner.fetchTrades.bind(inner);
+    if (inner.subscribeTrades) this.subscribeTrades = inner.subscribeTrades.bind(inner);
     this.listen('bar', (e) => this.onBar(e));
     for (const type of FORWARDED) this.listen(type, (e) => this.emit(type, e.data));
   }

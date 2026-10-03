@@ -78,3 +78,20 @@ describe('chart events', () => {
     ]);
   });
 });
+
+describe('tick timeframes', () => {
+  it('connects a feed with trades on a tick timeframe, with no older pages and no countdown', async () => {
+    const adapter = new MockAdapter({ basePrice: 50, tickInterval: 60_000 });
+    const before = vi.spyOn(adapter, 'fetchHistoryBefore');
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '10T' });
+    expect(chart.getData().length).toBeGreaterThan(50);
+    expect(chart.hasMoreHistory()).toBe(false);
+    expect(before).not.toHaveBeenCalled();
+  });
+
+  it('refuses a tick timeframe from a feed without trades', async () => {
+    const adapter = new MockAdapter();
+    (adapter as { subscribeTrades?: unknown }).subscribeTrades = undefined;
+    await expect(chart.connect({ adapter, symbol: 'AAA', timeframe: '10T' })).rejects.toThrow(RangeError);
+  });
+});

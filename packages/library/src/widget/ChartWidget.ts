@@ -1,5 +1,5 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { marketStatus, readNews, readQuote, isValidTimeZone, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
+import { marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -1902,6 +1902,8 @@ export class ChartWidget {
     const tf = parseTimeframeInput(text);
     if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
     if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
+    // Tick bars come from a feed's trades; bars on the chart can't make them.
+    if (!this.adapter && tickBarCount(tf) !== null) return false;
     if (!this.timeframes.includes(tf)) {
       this.customTimeframes.add(tf);
       this.timeframeFavorites.add(tf);

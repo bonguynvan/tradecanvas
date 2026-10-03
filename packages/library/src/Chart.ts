@@ -42,7 +42,7 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import { readChartTypeOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -1150,7 +1150,8 @@ export class Chart {
     const adapter = withResampling(feed);
     const fetchBefore = adapter.fetchHistoryBefore;
     const timeframe = this.streamTimeframe;
-    if (!fetchBefore || timeframe === null) {
+    // Tick bars come from recent trades: a feed keeps no older ones to page in.
+    if (!fetchBefore || timeframe === null || tickBarCount(timeframe) !== null) {
       if (this.historyFromStream) this.history.setLoader(null);
       this.historyFromStream = false;
       return;

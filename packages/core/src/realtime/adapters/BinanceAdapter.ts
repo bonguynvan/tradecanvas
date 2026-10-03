@@ -6,12 +6,13 @@ import type {
   ConnectionState,
   OHLCBar,
   Quote,
+  Trade,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
 import { rankSymbols, stepDecimals } from '@tradecanvas/commons';
-import { parseMiniTicker, parseRestKline, parseRestTicker, parseWsKline } from './binanceTypes.js';
+import { parseAggTrade, parseMiniTicker, parseRestKline, parseRestTicker, parseWsKline } from './binanceTypes.js';
 
 const TF_MAP: Record<string, string> = {
   '1s': '1s', '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
@@ -237,6 +238,65 @@ export class BinanceAdapter implements DataAdapter {
     return () => {
       stopped = true;
       controller.abort();
+      if (retry) clearTimeout(retry);
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.close();
+        ws = null;
+      }
+    };
+  }
+
+  /** Up to 1000 recent trades, oldest first (aggregate trades: one per taker order and price). */
+  async fetchTrades(symbol: string, limit = 1000): Promise<Trade[]> {
+    const capped = Math.max(1, Math.min(1000, Math.floor(limit)));
+    const res = await fetch(`${this.restBase}/aggTrades?symbol=${encodeURIComponent(symbol.toUpperCase())}&limit=${capped}`);
+    if (!res.ok) throw new Error(`Binance aggTrades ${res.status}`);
+    const rows: unknown = await res.json();
+    return Array.isArray(rows) ? rows.map(parseAggTrade).filter((t): t is Trade => t !== null) : [];
+  }
+
+  /** Live trades of `symbol` (the aggregate trade stream), reconnected while subscribed. */
+  subscribeTrades(symbol: string, onTrades: (trades: Trade[]) => void): () => void {
+    const stream = `${symbol.trim().toLowerCase()}@aggTrade`;
+    if (!/^[a-z0-9]{2,30}@aggTrade$/.test(stream)) return () => {};
+    let stopped = false;
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    const open = (): void => {
+      if (stopped) return;
+      try {
+        ws = new WebSocket(`${this.wsBase}/${stream}`);
+      } catch {
+        reconnect();
+        return;
+      }
+      ws.onopen = () => { attempts = 0; };
+      ws.onmessage = (event) => {
+        let frame: unknown;
+        try {
+          frame = JSON.parse(typeof event.data === 'string' ? event.data : '');
+        } catch {
+          return;
+        }
+        const trade = parseAggTrade(frame);
+        if (trade && !stopped) onTrades([trade]);
+      };
+      ws.onclose = () => {
+        ws = null;
+        reconnect();
+      };
+    };
+    const reconnect = (): void => {
+      if (stopped) return;
+      retry = setTimeout(open, Math.min(30_000, 1000 * 2 ** attempts++));
+    };
+    open();
+    return () => {
+      stopped = true;
       if (retry) clearTimeout(retry);
       if (ws) {
         ws.onopen = null;

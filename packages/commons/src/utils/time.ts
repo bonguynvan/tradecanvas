@@ -50,6 +50,17 @@ export function parseTimeframe(value: string): { count: number; unit: TimeFrameU
   return Number.isSafeInteger(count) ? { count, unit: match[2] as TimeFrameUnit } : null;
 }
 
+/** Most trades a tick bar may hold. */
+const MAX_TICKS_PER_BAR = 1_000_000;
+
+/** The trades per bar of a tick timeframe (`'100T'` → 100), or null for any other. */
+export function tickBarCount(timeframe: string): number | null {
+  const match = /^([1-9]\d*)T$/.exec(timeframe);
+  if (!match) return null;
+  const count = Number(match[1]);
+  return Number.isSafeInteger(count) && count <= MAX_TICKS_PER_BAR ? count : null;
+}
+
 export function isTimeFrame(value: string): value is TimeFrame {
   return parseTimeframe(value) !== null;
 }

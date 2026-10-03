@@ -1,5 +1,5 @@
 import type { TimeFrame } from '@tradecanvas/commons';
-import { isTimeFrame, timeframeToMs } from '@tradecanvas/commons';
+import { isTimeFrame, tickBarCount, timeframeToMs } from '@tradecanvas/commons';
 
 /** The timeframe menu when the host offers no list of its own. */
 export const WIDGET_TIMEFRAMES: TimeFrame[] = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M'];
@@ -15,7 +15,15 @@ export function timeframeLabel(tf: TimeFrame): string {
   return unit === 'h' || unit === 'd' || unit === 'w' ? tf.slice(0, -1) + unit.toUpperCase() : tf;
 }
 
-const isKnown = (tf: TimeFrame): boolean => Number.isFinite(timeframeToMs(tf));
+const isKnown = (tf: TimeFrame): boolean => Number.isFinite(timeframeToMs(tf)) || tickBarCount(tf) !== null;
+
+/** Shortest first: tick timeframes (fewest trades first), then by length. */
+const byLength = (a: TimeFrame, b: TimeFrame): number => {
+  const ta = tickBarCount(a);
+  const tb = tickBarCount(b);
+  if (ta !== null || tb !== null) return ta === null ? 1 : tb === null ? -1 : ta - tb;
+  return timeframeToMs(a) - timeframeToMs(b);
+};
 
 /**
  * The timeframes to offer, shortest first: the widget's own list (or the
@@ -27,7 +35,7 @@ export function availableTimeframes(widgetList?: TimeFrame[], whitelist?: TimeFr
   const base = widgetList?.length ? widgetList : (allowed ?? WIDGET_TIMEFRAMES);
   return [...new Set(base)]
     .filter((tf) => isKnown(tf) && (!allowed || allowed.includes(tf)))
-    .sort((a, b) => timeframeToMs(a) - timeframeToMs(b));
+    .sort(byLength);
 }
 
 /**
@@ -65,6 +73,11 @@ const ROLL_UP: Partial<Record<'s' | 'm' | 'h', ['m' | 'h' | 'd', number]>> = { s
 export function parseTimeframeInput(text: string): TimeFrame | null {
   const match = /^(\d+)([a-zA-Z]?)$/.exec(text.trim());
   if (!match) return null;
+  // Ticks: bars of that many trades (`100T`), from a feed with trades.
+  if (match[2] === 'T' || match[2] === 't') {
+    const tf = `${Number(match[1])}T` as TimeFrame;
+    return Number(match[1]) <= MAX_TYPED_COUNT && tickBarCount(tf) !== null ? tf : null;
+  }
   let count = Number(match[1]);
   let unit = TYPED_UNITS[match[2]];
   if (!unit || !Number.isSafeInteger(count) || count < 1) return null;
@@ -81,5 +94,5 @@ export function parseTimeframeInput(text: string): TimeFrame | null {
 export function withExtraTimeframes(list: TimeFrame[], extra: TimeFrame[], whitelist?: TimeFrame[]): TimeFrame[] {
   const allowed = whitelist?.length ? whitelist : null;
   const added = extra.filter((tf) => isKnown(tf) && (!allowed || allowed.includes(tf)));
-  return [...new Set([...list, ...added])].sort((a, b) => timeframeToMs(a) - timeframeToMs(b));
+  return [...new Set([...list, ...added])].sort(byLength);
 }

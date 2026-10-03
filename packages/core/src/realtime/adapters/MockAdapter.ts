@@ -6,6 +6,7 @@ import type {
   ConnectionState,
   OHLCBar,
   Quote,
+  Trade,
   SymbolInfo,
   SymbolSearchOptions,
   TimeFrame,
@@ -108,6 +109,35 @@ export class MockAdapter implements DataAdapter {
         w.volume += Math.random() * 100;
       }
       emit();
+    }, this.options.tickInterval);
+    return () => clearInterval(timer);
+  }
+
+  /** Made-up recent trades: a walk around `basePrice`, a second apart, oldest first. */
+  async fetchTrades(symbol: string, limit = 1000): Promise<Trade[]> {
+    const count = Math.max(1, Math.min(1000, Math.floor(limit)));
+    const now = Date.now();
+    const step = this.options.volatility! / 1000;
+    let price = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
+    const trades: Trade[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      price = Math.max(price * 0.5, price * (1 + (Math.random() - 0.5) * step));
+      trades.push({ time: now - i * 1000, price, volume: Math.random() * 5 });
+    }
+    return trades;
+  }
+
+  /** Made-up live trades, a few each `tickInterval`. */
+  subscribeTrades(symbol: string, onTrades: (trades: Trade[]) => void): () => void {
+    const step = this.options.volatility! / 1000;
+    let price = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
+    const timer = setInterval(() => {
+      const trades: Trade[] = [];
+      for (let i = 0; i < 3; i++) {
+        price = Math.max(price * 0.5, price * (1 + (Math.random() - 0.5) * step));
+        trades.push({ time: Date.now(), price, volume: Math.random() * 5 });
+      }
+      onTrades(trades);
     }, this.options.tickInterval);
     return () => clearInterval(timer);
   }

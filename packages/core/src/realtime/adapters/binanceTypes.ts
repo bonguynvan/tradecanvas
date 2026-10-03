@@ -1,4 +1,4 @@
-import type { OHLCBar, Quote } from '@tradecanvas/commons';
+import type { OHLCBar, Quote, Trade } from '@tradecanvas/commons';
 import { readQuote } from '@tradecanvas/commons';
 
 /**
@@ -149,4 +149,14 @@ export function parseRestTicker(raw: unknown): Quote | null {
     ask: num(t.askPrice),
     time: num(t.closeTime),
   });
+}
+
+/** An aggregate trade (REST `aggTrades` row or stream frame) as a trade. */
+export function parseAggTrade(raw: unknown): Trade | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const t = raw as Record<string, unknown>;
+  const time = num(t.T);
+  const price = num(t.p);
+  const volume = num(t.q);
+  return time !== undefined && price !== undefined && volume !== undefined ? { time, price, volume } : null;
 }

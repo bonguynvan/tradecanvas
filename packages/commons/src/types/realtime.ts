@@ -3,6 +3,13 @@ import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
 import type { Quote } from './quote.js';
 import type { NewsItem } from './news.js';
 
+/** One trade: when (ms), at what price, how much. */
+export interface Trade {
+  time: number;
+  price: number;
+  volume: number;
+}
+
 // --- Connection ---
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
@@ -122,6 +129,15 @@ export interface DataAdapter {
 
   /** Optional: recent headlines about `symbol`, newest first. */
   fetchNews?(symbol: string, limit?: number): Promise<NewsItem[]>;
+
+  /**
+   * Optional, with `subscribeTrades`: up to `limit` recent trades, oldest
+   * first. A chart builds tick timeframes (`'100T'`) from a feed's trades.
+   */
+  fetchTrades?(symbol: string, limit?: number): Promise<Trade[]>;
+
+  /** Optional, with `fetchTrades`: live trades of `symbol` until the function it returns is called. */
+  subscribeTrades?(symbol: string, onTrades: (trades: Trade[]) => void): () => void;
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
   off<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void;
