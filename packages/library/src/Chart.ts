@@ -103,6 +103,7 @@ import {
   yToPrice,
   PriceAxisAddButton,
   findDominantSwing,
+  readAlertOptions,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -605,6 +606,9 @@ export class Chart {
     });
     this.alertManager.on('removed', (id) => {
       this.eventBus.emit('alertRemove', { id });
+    });
+    this.alertManager.on('expired', (alert) => {
+      this.eventBus.emit('alertExpired', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
     });
     this.alertManager.on('updated', (alert) => {
       this.eventBus.emit('alertUpdate', { id: alert.id, price: alert.price, condition: alert.condition, message: alert.message, triggered: alert.triggered });
@@ -2141,6 +2145,8 @@ export class Chart {
       this.scheduleRender();
     }
     if (this.features.alerts) {
+      const data = this.dataManager.getData();
+      this.alertManager.setBarTime(data.length > 0 ? data[data.length - 1].time : null);
       this.alertManager.checkPrice(price);
       this.feedIndicatorAlerts();
     }
@@ -2160,17 +2166,19 @@ export class Chart {
     if (data.length === 0) return;
     const lastIdx = data.length - 1;
     const seen = new Set<string>();
-    for (const alert of alerts) {
-      if (alert.channel === 'price' || seen.has(alert.channel)) continue;
-      seen.add(alert.channel);
-      const sep = alert.channel.indexOf(':');
+    // The lines alerts watch, and the lines they compare with.
+    const channels = alerts.flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
+    for (const channel of channels) {
+      if (channel === 'price' || seen.has(channel)) continue;
+      seen.add(channel);
+      const sep = channel.indexOf(':');
       if (sep < 0) continue;
-      const instanceId = alert.channel.slice(0, sep);
-      const key = alert.channel.slice(sep + 1);
+      const instanceId = channel.slice(0, sep);
+      const key = channel.slice(sep + 1);
       const point = this.indicatorEngine.getOutput(instanceId)?.series?.[lastIdx];
       const value = point?.[key];
       if (typeof value === 'number' && Number.isFinite(value)) {
-        this.alertManager.checkChannel(alert.channel, value);
+        this.alertManager.checkChannel(channel, value);
       }
     }
   }
@@ -2999,15 +3007,23 @@ export class Chart {
 
   // --- Alerts ---
 
+  /**
+   * Add an alert on `channel` (`'price'`, or an indicator line
+   * `'<instanceId>:<key>'`) at `price`. `options` compare with another line
+   * instead (`target`), measure a move (`movesUp` / `movesDown` with
+   * `percent` and `bars`), look only at closed bars (`onBarClose`), or end it
+   * (`expiresAt`). Throws a RangeError for options that don't fit together.
+   */
   addAlert(
     price: number,
     condition: import('@tradecanvas/core').AlertCondition = 'crossing',
     message?: string,
     channel = 'price',
     label?: string,
+    options: import('@tradecanvas/core').AlertOptions = {},
   ): string | null {
     if (!this.features.alerts) return null;
-    const id = this.alertManager.addAlert(price, condition, message, false, channel, label);
+    const id = this.alertManager.addAlert(price, condition, message, false, channel, label, options);
     this.markStateChanged();
     return id;
   }
@@ -3475,16 +3491,29 @@ export class Chart {
    */
   private followIndicatorAlerts(before: ReadonlyMap<string, string>, added: readonly string[]): void {
     if (!this.features.alerts) return;
-    for (const alert of this.alertManager.getAlerts()) {
-      const sep = alert.channel.indexOf(':');
-      if (sep <= 0) continue;
-      const from = alert.channel.slice(0, sep);
+    // A channel on a replaced indicator → the one new indicator of its kind (or null: leave it).
+    const heirOf = (channel: string): string | null => {
+      const sep = channel.indexOf(':');
+      if (sep <= 0) return null;
+      const from = channel.slice(0, sep);
       const kind = before.get(from);
-      if (!kind || this.indicatorEngine.getIndicatorConfig(from)) continue;
+      if (!kind || this.indicatorEngine.getIndicatorConfig(from)) return null;
       const heirs = added.filter((id) => this.indicatorEngine.getIndicatorConfig(id)?.id === kind);
-      if (heirs.length !== 1) continue;
+      return heirs.length === 1 ? heirs[0] + channel.slice(sep) : null;
+    };
+    for (const alert of this.alertManager.getAlerts()) {
+      const channel = heirOf(alert.channel);
+      const target = alert.target ? heirOf(alert.target) : null;
+      if (!channel && !target) continue;
+      const { target: _t, percent, bars, onBarClose, expiresAt } = alert;
       this.alertManager.removeAlert(alert.id);
-      this.alertManager.addAlert(alert.price, alert.condition, alert.message, alert.repeating, heirs[0] + alert.channel.slice(sep), alert.label);
+      this.alertManager.addAlert(alert.price, alert.condition, alert.message, alert.repeating, channel ?? alert.channel, alert.label, {
+        ...(alert.target ? { target: target ?? alert.target } : {}),
+        ...(percent !== undefined ? { percent } : {}),
+        ...(bars !== undefined ? { bars } : {}),
+        ...(onBarClose ? { onBarClose } : {}),
+        ...(expiresAt !== undefined ? { expiresAt } : {}),
+      });
     }
   }
 
@@ -3562,16 +3591,25 @@ export class Chart {
         // A one-shot alert that already fired stays fired (as AlertManager's own storage does).
         if (a.triggered && !a.repeating) continue;
         // `<instanceId>:<key>` channels follow their indicator to its new id.
-        const sep = a.channel.indexOf(':');
-        const renamed = sep > 0 ? instanceIds.get(a.channel.slice(0, sep)) : undefined;
-        const channel = renamed ? renamed + a.channel.slice(sep) : a.channel;
+        const follow = (ch: string) => {
+          const sep = ch.indexOf(':');
+          const renamed = sep > 0 ? instanceIds.get(ch.slice(0, sep)) : undefined;
+          return renamed ? renamed + ch.slice(sep) : ch;
+        };
+        const channel = follow(a.channel);
+        const options = { ...readAlertOptions(a as unknown as Record<string, unknown>), ...(a.target ? { target: follow(a.target) } : {}) };
+        if (a.expired) continue;
         if (a.drawingId) {
           if (this.drawingManager.hasPriceLevels(a.drawingId) && (a.condition === 'crossing' || a.condition === 'crossingUp' || a.condition === 'crossingDown')) {
             this.alertManager.addDrawingAlert(a.drawingId, a.condition, a.message, a.repeating, a.label);
           }
           continue;
         }
-        this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label);
+        try {
+          this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label, options);
+        } catch (err) {
+          console.warn('Layout alert left out:', err);
+        }
       }
     }
     this.markStateChanged();

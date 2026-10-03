@@ -183,7 +183,8 @@ export type { RangePreset } from '@tradecanvas/core';
 
 // Re-export features
 export { AlertManager, ReplayManager, ChartStateManager, UndoRedoManager, SignalMarkerManager, TradeZoneManager } from '@tradecanvas/core';
-export type { PriceAlert, AlertCondition, ReplayConfig, ChartSnapshot, UndoableAction } from '@tradecanvas/core';
+export type { PriceAlert, AlertCondition, AlertOptions, ReplayConfig, ChartSnapshot, UndoableAction } from '@tradecanvas/core';
+export { isPriceLevelAlert, MAX_ALERT_BARS } from '@tradecanvas/core';
 
 // Re-export animation
 export { Animator, Easing } from '@tradecanvas/core';

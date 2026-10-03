@@ -51,6 +51,8 @@ export type ChartEventType =
   | 'alertAdd'
   | 'alertRemove'
   | 'alertTriggered'
+  /** An alert reached its `expiresAt` without firing. */
+  | 'alertExpired'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -291,6 +293,7 @@ export interface ChartEventMap {
   alertAdd: AlertPayload;
   alertRemove: AlertRemovePayload;
   alertTriggered: AlertPayload;
+  alertExpired: AlertPayload;
   alertUpdate: AlertPayload;
 }
 
