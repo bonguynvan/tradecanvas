@@ -245,7 +245,15 @@ widget.setDepth(orderBook)
   confidence: 0.86,
   source: 'momentum-bot',
   label: 'EMA cross',
-})`}</code></pre>
+})
+
+// A marker under the pointer, and a click on one
+chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
+chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
+<p>
+  ChartWidget hiện một ghi chú cạnh điểm đánh dấu đang nằm dưới con trỏ: nhãn và nguồn, chiều,
+  giá, độ tin cậy và thời gian của nó.
+</p>
 
 <h2>Vùng giao dịch</h2>
 <p>Hiển thị hình chữ nhật từ điểm vào → điểm ra, tô màu theo lãi/lỗ (P&amp;L) và có huy hiệu hướng lệnh.</p>

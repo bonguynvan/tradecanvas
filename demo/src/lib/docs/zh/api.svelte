@@ -450,6 +450,21 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>价格提醒</h3>
 <p>
+  除了价格水平，提醒还可以把一条线与另一条线比较（价格穿越移动平均线、MACD 穿越其信号线），
+  在若干根K线内（2 到 500 根）涨跌达到一定百分比时触发，只看已收盘的K线（影线刺破后又收回不会触发），
+  以及到期失效。组件的提醒面板支持以上全部功能；在代码中，它们是 <code>addAlert</code> 的最后一个参数。
+  每次有新价格（来自 <code>setCurrentPrice</code> 或已连接的数据源）时，提醒都会与其监控的线一起检查：
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   工具栏中的铃铛按钮会打开浮动面板，用于添加、查看和删除价格提醒；
   提醒触发时会弹出通知。提醒线也可以<strong>拖动</strong>——
   在图表上抓住它并滑动即可修改价格（移动提醒会重新激活它）。默认启用——

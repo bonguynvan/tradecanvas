@@ -491,6 +491,24 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Alertas de precio</h3>
 <p>
+  Además de un nivel, una alerta puede comparar una línea con otra (el precio cruzando una
+  media móvil, el MACD cruzando su señal), saltar con un movimiento de cierto porcentaje en
+  cierto número de barras (de 2 a 500), mirar solo las barras cerradas (sin saltar por una
+  mecha que vuelve) y vencer. El panel de alertas del widget tiene todo esto; desde código
+  son el último argumento de <code>addAlert</code>. Las alertas se comprueban con cada
+  precio, venga de <code>setCurrentPrice</code> o de una fuente conectada, junto con las
+  líneas que vigilan:
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   La campana de la barra de herramientas abre un panel flotante para añadir,
   listar y eliminar alertas de precio; cuando una se activa aparece un aviso.
   Las líneas de alerta también se pueden <strong>arrastrar</strong>: toma una en

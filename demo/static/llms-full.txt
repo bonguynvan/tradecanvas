@@ -358,6 +358,50 @@ chart.on('indicatorUpdate', () => {
 });
 ```
 
+## Alerts beyond a price level
+
+A line crossing another line, a fast move, a close past a level, and an end
+date. They check on every price the feed sends, with the lines they watch
+taken at the same moment:
+
+```ts
+import { Chart, BinanceAdapter } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h' });
+
+const ema = chart.addIndicator('ema', { period: 50 })!;
+const rsi = chart.addIndicator('rsi', { period: 14 })!;
+
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: `${ema}:value` });
+chart.addAlert(NaN, 'movesDown', 'dump', 'price', undefined, { percent: 4, bars: 6 });        // bars: 2–500
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', `${rsi}:value`, 'RSI', { onBarClose: true });
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 });
+
+chart.on('alertTriggered', (e) => console.log(e.payload.message, e.payload.channel, e.payload.target));
+chart.on('alertExpired', (e) => console.log('expired', e.payload.id));
+```
+
+## Practising on a replay with a paper account
+
+Replay an hourly chart in 5-minute steps and trade it on paper: orders fill on
+the replayed prices and fills land on the replayed bars. Alerts keep watching
+the live market meanwhile.
+
+```ts
+import { Chart, BinanceAdapter, PaperExecutionAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
+chart.connectExecution(new PaperExecutionAdapter());
+
+const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000);
+chart.replayStart({ steps, startIndex: 300, paused: true, speed: 5 });
+chart.replayResume();
+// … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and
@@ -617,7 +661,8 @@ Most chart libraries make you choose: pretty charts with no trading features, or
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify, cancel / close / reverse from the buttons on each line, and see every fill marked on its bar. ChartWidget adds an order ticket that checks the order as you fill it in, and an account panel with positions, working orders and history. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance adapter. Plug in your own data source with the adapter interface.
 - **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
-- **Replay mode** — `ReplayController` drives historical bars forward at controlled speed with start / pause / step / seek / setSpeed. *(new in 0.9)* The widget now ships a floating bottom scrubber UI (play/pause/step/seek + 0.5×–100× speed) on top of it.
+- **Replay mode** — replay the chart's own bars from any point, in finer steps if you like (an hourly chart forming from 5-minute bars), with play / pause / step / seek / speed, and paper-trade on the replayed prices. The widget has a replay bar for it; `ReplayController` drives bars headless too.
+- **Alerts** — on a price level, an indicator line, a drawing, or one line crossing another; on a move of some percent within some bars; only on closed bars; with an expiry. The widget's alerts panel sets all of them.
 - **Volume Profile** *(new in 0.9)* — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
 - **Watchlist sidebar** *(new in 0.9)* — opt-in vertical panel listing symbols with last price, % change, mini sparkline. Click a row to switch chart.
 - **CSV / JSON drag-and-drop** *(new in 0.9)* — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.

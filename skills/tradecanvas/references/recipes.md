@@ -114,6 +114,50 @@ chart.on('indicatorUpdate', () => {
 });
 ```
 
+## Alerts beyond a price level
+
+A line crossing another line, a fast move, a close past a level, and an end
+date. They check on every price the feed sends, with the lines they watch
+taken at the same moment:
+
+```ts
+import { Chart, BinanceAdapter } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h' });
+
+const ema = chart.addIndicator('ema', { period: 50 })!;
+const rsi = chart.addIndicator('rsi', { period: 14 })!;
+
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: `${ema}:value` });
+chart.addAlert(NaN, 'movesDown', 'dump', 'price', undefined, { percent: 4, bars: 6 });        // bars: 2–500
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', `${rsi}:value`, 'RSI', { onBarClose: true });
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 });
+
+chart.on('alertTriggered', (e) => console.log(e.payload.message, e.payload.channel, e.payload.target));
+chart.on('alertExpired', (e) => console.log('expired', e.payload.id));
+```
+
+## Practising on a replay with a paper account
+
+Replay an hourly chart in 5-minute steps and trade it on paper: orders fill on
+the replayed prices and fills land on the replayed bars. Alerts keep watching
+the live market meanwhile.
+
+```ts
+import { Chart, BinanceAdapter, PaperExecutionAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
+chart.connectExecution(new PaperExecutionAdapter());
+
+const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000);
+chart.replayStart({ steps, startIndex: 300, paused: true, speed: 5 });
+chart.replayResume();
+// … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

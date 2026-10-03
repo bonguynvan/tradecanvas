@@ -102,6 +102,35 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
+<h3>在图表上按更细的步长回放</h3>
+<p>
+  <code>chart.replayStart()</code> 回放图表自身的序列。把更小周期的K线作为 <code>steps</code>
+  传入（例如小时图下的 5 分钟K线），每一步都会用它们让正在形成的K线逐渐长成，
+  就像它当初在市场中形成时那样；已收盘的K线则按序列中的原样显示。
+  <code>startIndex</code> 和 <code>replaySeekToBar</code> 按图表的K线计数。
+  在 ChartWidget 中，回放栏的<strong>步长</strong>菜单会列出数据源提供的更小周期
+  （或由你加载的K线能够合成的周期）。
+</p>
+<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
+chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+chart.replayResume()
+chart.getReplayBarIndex()      // the chart bar forming now
+chart.replaySeekToBar(150)     // to the end of bar 150
+chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>在回放中模拟交易</h3>
+<p>
+  带有 <code>setMarkPrice(price, time)</code> 的执行适配器（如
+  <code>PaperExecutionAdapter</code>）可以在回放中交易：回放期间，图表会把每个回放出的价格和时间交给它，
+  因此订单和止损会在回放经过时成交，成交也会落在回放的K线上。每一步的最低价和最高价都会计入，
+  向前跳转会经过途中的每一步。它只会向前推进：向后跳转后，它会等到回放越过它见过的最远位置。
+  这期间实时价格不会影响它；回放结束后，它会回到实时价格，成交时间也回到实际时钟。
+  价格提醒在整个过程中始终监控实时行情；基于指标线的提醒则会等到回放结束。
+</p>
+<pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
+chart.replayStart({ startIndex: 300, paused: true })
+// place orders from the chart or the order ticket, then play`}</code></pre>
+
 <h3>API</h3>
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>

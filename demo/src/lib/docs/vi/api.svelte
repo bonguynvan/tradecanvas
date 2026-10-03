@@ -474,6 +474,24 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Cảnh báo giá</h3>
 <p>
+  Ngoài một mức giá, cảnh báo còn có thể so một đường với một đường khác (giá cắt một đường
+  trung bình động, MACD cắt đường tín hiệu của nó), kích hoạt khi giá biến động một số phần trăm
+  trong một số nến (từ 2 đến 500), chỉ xét các nến đã đóng (không kích hoạt bởi một râu nến đâm
+  qua rồi quay lại), và hết hạn. Bảng cảnh báo của widget có tất cả những tuỳ chọn này; trong code
+  chúng là tham số cuối cùng của <code>addAlert</code>. Cảnh báo được kiểm tra ở mỗi lần có giá,
+  dù từ <code>setCurrentPrice</code> hay từ một nguồn dữ liệu đã kết nối, cùng lúc với các đường
+  mà chúng theo dõi:
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   Biểu tượng chuông trên thanh công cụ mở một bảng nổi để thêm, xem và xoá cảnh báo
   giá; một thông báo toast hiện lên khi cảnh báo kích hoạt. Đường cảnh báo cũng
   <strong>kéo được</strong> — nắm một đường trên biểu đồ và trượt để đổi giá

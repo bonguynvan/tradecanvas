@@ -228,6 +228,7 @@ const en = {
         'Press play, or step one bar at a time with Shift+→ / Shift+←',
         'Click any revealed bar to jump the cursor there',
         '“Back to realtime” returns to the live series',
+        'Pick a finer Step in the replay bar (15m) to watch each bar form',
       ],
     },
     subcent: {

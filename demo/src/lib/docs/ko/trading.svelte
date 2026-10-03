@@ -243,7 +243,15 @@ widget.setDepth(orderBook)
   confidence: 0.86,
   source: 'momentum-bot',
   label: 'EMA cross',
-})`}</code></pre>
+})
+
+// A marker under the pointer, and a click on one
+chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
+chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
+<p>
+  ChartWidget에서는 포인터 아래에 있는 마커 옆에 메모가 표시됩니다. 레이블과 출처, 방향, 가격,
+  신뢰도, 시각이 나옵니다.
+</p>
 
 <h2>거래 구간</h2>
 <p>진입 → 청산 사각형을 손익 색상과 방향 배지로 시각화합니다.</p>

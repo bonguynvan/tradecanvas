@@ -258,7 +258,15 @@ widget.setDepth(orderBook)
   confidence: 0.86,
   source: 'momentum-bot',
   label: 'EMA cross',
-})`}</code></pre>
+})
+
+// A marker under the pointer, and a click on one
+chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
+chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
+<p>
+  ChartWidget muestra una nota junto al marcador que queda bajo el puntero: su etiqueta y
+  su origen, el lado, el precio, la confianza y la hora.
+</p>
 
 <h2>Zonas de operación</h2>
 <p>Visualiza rectángulos de entrada → salida coloreados según el P&amp;L y con distintivos de dirección.</p>

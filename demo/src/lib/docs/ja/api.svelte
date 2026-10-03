@@ -459,6 +459,22 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>価格アラート</h3>
 <p>
+  アラートは価格レベルだけでなく、ラインと別のラインを比較したり（価格が移動平均線をクロスする、MACD がシグナルをクロスする）、
+  一定の本数（2〜500 本）以内に一定のパーセント動いたときに発動したり、確定したバーだけを見たり（戻ってくるヒゲでは発動しません）、
+  有効期限を設けたりできます。ウィジェットのアラートパネルではこれらすべてを設定でき、コードからは
+  <code>addAlert</code> の最後の引数で指定します。アラートは、<code>setCurrentPrice</code> からでも接続中のフィードからでも、
+  価格が届くたびに、監視しているラインと合わせてチェックされます：
+</p>
+<pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
+const rsi = chart.addIndicator('rsi')
+chart.addAlert(NaN, 'crossingUp', 'above the 50 EMA', 'price', undefined, { target: \`\${ema}:value\` })
+chart.addAlert(NaN, 'movesUp', 'pump', 'price', undefined, { percent: 5, bars: 12 })
+chart.addAlert(70, 'greaterThan', 'RSI closed above 70', \`\${rsi}:value\`, 'RSI', { onBarClose: true })
+chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt: Date.now() + 86_400_000 })
+
+chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
+chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
+<p>
   ツールバーのベルでフローティングパネルが開き、価格アラートの追加、一覧、削除ができます。
   アラートが発動するとトースト通知が表示されます。アラートのラインは<strong>ドラッグ</strong>もでき、
   チャート上でつかんでスライドさせると価格を変更できます（移動したアラートは再び有効になります）。

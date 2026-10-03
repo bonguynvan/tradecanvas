@@ -235,7 +235,14 @@ widget.setDepth(orderBook)
   confidence: 0.86,
   source: 'momentum-bot',
   label: 'EMA cross',
-})`}</code></pre>
+})
+
+// A marker under the pointer, and a click on one
+chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
+chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
+<p>
+  ChartWidget 会在指针下方的标记旁显示一条说明：它的标签和来源、方向、价格、置信度和时间。
+</p>
 
 <h2>交易区域</h2>
 <p>以矩形展示入场 → 出场区间，按盈亏着色并带有方向标记。</p>

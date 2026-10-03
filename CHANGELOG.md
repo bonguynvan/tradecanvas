@@ -4,6 +4,15 @@
 
 Collected on `main` for the next release, which ships as one version once the current roadmap is done. Not on npm yet.
 
+### Alerts, replay and panes
+
+- **More kinds of alert**: a line crossing another line (the price and a moving average, MACD and its signal), a move of some percent within some bars, only on closed bars (no firing on a wick that comes back), and an expiry. All in the alerts panel and in `addAlert`'s options.
+- **Replay in finer steps**: pick 5m under an hourly chart and watch each bar form, step by step (`replayStart({ steps })`).
+- **Paper trading in a replay**: a paper account fills on the replayed prices (each step's high and low too), and its fills land on the replayed bars.
+- **Alerts on a connected feed**: price alerts now check on every price a `connect()`ed feed sends, not only on `setCurrentPrice`.
+- **Signal markers** say what they are when the pointer is on them, and report clicks (`signalMarkerHover`, `signalMarkerClick`).
+- **Each pane can have its own logarithmic or inverted scale** (right-click the pane, or `setPaneScale`).
+
 ### Panes, templates and undo
 
 - **Move an indicator to another pane** — into the pane above or below, a pane of its own, or back to the price pane — from the ⋯ button on its legend row, or `chart.moveIndicatorToPane`. The pane's other indicators stay, and those reading its lines follow it.
