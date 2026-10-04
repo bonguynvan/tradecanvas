@@ -3561,6 +3561,8 @@ export class Chart {
       this.applyRenderer(null);
       return 'canvas';
     }
+    // Already on the GPU: keep that context rather than make a second one.
+    if (this.engine.getGpu()) return 'webgl';
     const gpu = await loadWebGLRenderer(mode);
     // Superseded by a later call, or the chart is gone.
     if (token !== this.rendererToken || this.disposed) {

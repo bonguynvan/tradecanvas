@@ -1,7 +1,7 @@
-import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
+import type { ChartOptions, DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 
 /** Which renderer draws the chart: Canvas 2D, WebGL, or WebGL where it's fast and Canvas 2D otherwise. */
-export type RendererMode = 'canvas' | 'webgl' | 'auto';
+export type RendererMode = NonNullable<ChartOptions['renderer']>;
 
 /** A filled rectangle in CSS pixels, in `color` at `alpha` (as `globalAlpha` would draw it). */
 export interface GpuRect {
@@ -11,6 +11,8 @@ export interface GpuRect {
   height: number;
   color: string;
   alpha: number;
+  /** Dashed down from the top: on and off lengths in CSS pixels, as `setLineDash` lays them out. */
+  dash?: readonly [number, number];
 }
 
 /** What goes under the bars, unclipped: the grid, then filled rectangles (session shading, break lines). */

@@ -1,9 +1,8 @@
 /**
  * The shaders. Each draws axis-aligned rectangles, one instance per
  * rectangle under the bars, bar (or pixel column when zoomed out), placed on
- * device pixels by the
- * same rules as `charts/pixelGrid.ts`, so GPU bars line up with what the 2D
- * layer draws over them (crosshair, drawings). `floor(v + 0.5)` is used for
+ * device pixels by the same rules as `charts/pixelGrid.ts`, so GPU bars line
+ * up with what the 2D layer draws over them (crosshair, drawings). `floor(v + 0.5)` is used for
  * rounding: GLSL's `round()` may round halves either way, `Math.round` does not.
  */
 
@@ -15,17 +14,19 @@ uniform int u_log;
 uniform int u_invert;
 uniform float u_yA;
 uniform float u_yB;
-uniform float u_base;
-uniform float u_logMin;
+uniform float u_logOffset;
+uniform float u_min;
+uniform float u_logFloor;
 uniform float u_logK;
 uniform float u_top;
 uniform float u_bottom;
 out vec4 v_color;
 
-// A price (relative to u_base) to a CSS-pixel y, as priceToYMapper does.
+// A price (relative to the base price) to a CSS-pixel y, as priceToYMapper
+// does; mappedY in yMapping.ts is the same steps in TypeScript.
 float cssY(float rel) {
   if (u_log == 1) {
-    float v = (log(max(u_base + rel, 2.220446e-16)) - u_logMin) * u_logK;
+    float v = log(max(1.0 + (rel + u_logOffset) / u_min, u_logFloor)) * u_logK;
     return u_invert == 1 ? u_top + v : u_bottom - v;
   }
   return u_yA + rel * u_yB;
@@ -160,20 +161,24 @@ void main() {
 `;
 
 /**
- * Rectangles under the bars (grid lines, session shading, break dashes): one
+ * Rectangles under the bars (grid lines, session shading, break lines): one
  * per instance, in CSS pixels (left, top, right, bottom), in a premultiplied
- * colour. The quad covers every device pixel the rectangle touches; the
- * fragment shader works out how much of each it covers, as Canvas 2D
- * antialiases an edge at a fractional pixel ratio.
+ * colour, dashed down from the top when a_dash (on, off) is set. The quad
+ * covers every device pixel the rectangle touches; the fragment shader works
+ * out how much of each it covers, as Canvas 2D antialiases an edge at a
+ * fractional pixel ratio.
  */
 export const RECT_VS = `${HEADER}
 in vec4 a_rect;
 in vec4 a_color;
+in vec2 a_dash;
 flat out vec4 v_rect;
+flat out vec2 v_dash;
 
 void main() {
   vec2 cr = corner(gl_VertexID % 6);
   v_rect = a_rect * u_dpr;
+  v_dash = a_dash * u_dpr;
   v_color = a_color;
   gl_Position = toClip(mix(floor(v_rect.xy), ceil(v_rect.zw), cr));
 }
@@ -190,13 +195,31 @@ uniform vec2 u_canvas;
 uniform int u_union;
 in vec4 v_color;
 flat in vec4 v_rect;
+flat in vec2 v_dash;
 out vec4 outColor;
+
+// The share of rows [y, y + 1] inside the rectangle and, dashed, on a dash.
+float rows(float y) {
+  float lo = max(y, v_rect.y);
+  float hi = min(y + 1.0, v_rect.w);
+  if (hi <= lo) return 0.0;
+  if (v_dash.x <= 0.0) return hi - lo;
+  // A dash period is longer than a device pixel, so the row meets the dash
+  // of the period it starts in and the next (a third to spare).
+  float period = v_dash.x + v_dash.y;
+  float first = v_rect.y + floor((lo - v_rect.y) / period) * period;
+  float on = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float start = first + float(i) * period;
+    on += max(0.0, min(hi, start + v_dash.x) - max(lo, start));
+  }
+  return on;
+}
 
 void main() {
   // This pixel's top-left corner in device pixels, y down.
   vec2 p = vec2(floor(gl_FragCoord.x), u_canvas.y - floor(gl_FragCoord.y) - 1.0);
-  vec2 c = clamp(min(p + 1.0, v_rect.zw) - max(p, v_rect.xy), 0.0, 1.0);
-  float coverage = c.x * c.y;
+  float coverage = clamp(min(p.x + 1.0, v_rect.z) - max(p.x, v_rect.x), 0.0, 1.0) * rows(p.y);
   outColor = u_union == 1 ? vec4(v_color.rgb * coverage, coverage) : v_color * coverage;
 }
 `;

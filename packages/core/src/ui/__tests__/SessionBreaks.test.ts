@@ -106,36 +106,38 @@ describe('SessionBreaks — lines under the bars, labels over them', () => {
     return sb;
   };
 
-  it('draws only the lines in render, and only the labels in renderLabels', () => {
+  it('draws only the lines in renderLines, only the labels in renderLabels, both in render', () => {
     const sb = breaks();
+    const data = hourlyBarsAcrossMonthBoundary();
     const lines = mockCtx();
-    sb.render(lines.ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLines(lines.ctx, viewport(), DARK_THEME, data);
     expect(lines.fillTextCalls).toEqual([]);
     expect(lines.ctx.stroke).toHaveBeenCalled();
 
     const labels = mockCtx();
-    sb.renderLabels(labels.ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLabels(labels.ctx, viewport(), DARK_THEME, data);
     expect(labels.fillTextCalls.length).toBeGreaterThan(0);
     expect(labels.ctx.stroke).not.toHaveBeenCalled();
+
+    const both = mockCtx();
+    sb.render(both.ctx, viewport(), DARK_THEME, data);
+    expect(both.ctx.stroke).toHaveBeenCalled();
+    expect(both.fillTextCalls).toEqual(labels.fillTextCalls);
   });
 
-  it('gives the lines as rectangles, a dash each, heavier for bigger breaks', () => {
+  it('gives a rectangle per line, dashed, heavier for bigger breaks', () => {
     const rects = breaks().lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
     // A day break at bar 24 (x 287.5) and a month break at bar 48 (x 575.5),
-    // each dashed 6 on, 4 off down the 100 px plot.
-    const day = rects.filter((r) => r.x === 287);
-    expect(day).toHaveLength(10);
-    expect(day[0]).toEqual({ x: 287, y: 0, width: 1, height: 6, color: DARK_THEME.axisLine, alpha: 0.22 });
-    expect(day[1].y).toBe(10);
-    const month = rects.filter((r) => r.x === 574.75);
-    expect(month).toHaveLength(10);
-    expect(month[0]).toMatchObject({ width: 1.5, height: 6, alpha: 0.5 });
+    // down the 100 px plot, 6 on and 4 off.
+    expect(rects.find((r) => r.x === 287)).toEqual({ x: 287, y: 0, width: 1, height: 100, color: DARK_THEME.axisLine, alpha: 0.22, dash: [6, 4] });
+    expect(rects.find((r) => r.x === 574.75)).toMatchObject({ width: 1.5, height: 100, alpha: 0.5, dash: [6, 4] });
   });
 
-  it('cuts the last dash at the bottom of the plot', () => {
-    const vp = { ...viewport(), chartRect: { x: 0, y: 0, width: 1000, height: 93 } };
-    const day = breaks().lineRects(vp, DARK_THEME, hourlyBarsAcrossMonthBoundary()).filter((r) => r.x === 287);
-    expect(day.at(-1)).toMatchObject({ y: 90, height: 3 });
+  it('dots a dotted line', () => {
+    const sb = breaks();
+    sb.setConfig({ lineStyle: 'dotted' });
+    const day = sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary()).find((r) => r.x === 287);
+    expect(day?.dash).toEqual([2, 3]);
   });
 
   it('gives a solid line as one rectangle', () => {

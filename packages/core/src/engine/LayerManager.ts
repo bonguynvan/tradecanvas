@@ -7,10 +7,13 @@ import { CanvasLayer } from './CanvasLayer.js';
  * axes) and a top canvas for pointer-tied visuals. A hover repaints only the
  * top one, and the compositor blends two surfaces instead of four.
  *
- * With a GPU renderer attached, its canvas (grid, bars, volume) goes under
- * the scene, and under that, only while something needs it, a 2D background
- * (sessions, watermark, heatmaps). Every full-size canvas costs a blend per
- * frame, so the background is there only when it has something to show.
+ * With a GPU renderer attached, its canvas (grid, sessions, bars, volume)
+ * goes under the scene, and under that, only while something needs it, a 2D
+ * background (watermark, heatmaps, profiles). Every full-size canvas costs a
+ * blend per frame, so the background is there only when it has something to
+ * show. Both share the scene's z-index and go before it in the document, so
+ * the scene and top keep theirs and whatever a page stacks over the chart
+ * stays over it.
  */
 export class LayerManager {
   private scene: CanvasLayer | null = null;
@@ -39,9 +42,15 @@ export class LayerManager {
     if (!this.gpuCanvas) return null;
     if (!this.back) {
       this.back = new CanvasLayer(this.container, 0);
+      this.container.insertBefore(this.back.canvas, this.gpuCanvas);
       if (this.size) this.back.resize(this.size, this.dpr);
     }
     return this.back;
+  }
+
+  /** The pixel ratio the canvases were last sized for. */
+  getDpr(): number {
+    return this.dpr;
   }
 
   /** Remove the background canvas, if there is one. */
@@ -56,12 +65,10 @@ export class LayerManager {
     canvas.style.position = 'absolute';
     canvas.style.top = '0';
     canvas.style.left = '0';
-    canvas.style.zIndex = '1';
+    canvas.style.zIndex = '0';
     canvas.style.pointerEvents = 'none';
-    this.container.appendChild(canvas);
+    this.container.insertBefore(canvas, this.scene?.canvas ?? null);
     this.gpuCanvas = canvas;
-    if (this.scene) this.scene.canvas.style.zIndex = '2';
-    if (this.top) this.top.canvas.style.zIndex = '3';
     if (this.size) this.sizeGpu(this.size, this.dpr);
   }
 
@@ -70,8 +77,6 @@ export class LayerManager {
     this.dropBackLayer();
     this.gpuCanvas?.remove();
     this.gpuCanvas = null;
-    if (this.scene) this.scene.canvas.style.zIndex = '0';
-    if (this.top) this.top.canvas.style.zIndex = '1';
   }
 
   resize(size: Size, dpr: number): void {

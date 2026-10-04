@@ -64,6 +64,19 @@ describe('SeriesUploads', () => {
     expect(up.sync(data)).toEqual({ full: false, from: 4, to: 4 });
   });
 
+  it('writes everything again once appended bars outgrow the buffer', () => {
+    const up = new SeriesUploads();
+    const data = series(5);
+    up.sync(data);
+    const room = up.values.length / FLOATS_PER_BAR;
+    while (data.length < room) data.push(bar(data.length));
+    expect(up.sync(data).full).toBe(false);
+    data.push(bar(data.length));
+    expect(up.sync(data)).toEqual({ full: true, from: 0, to: room + 1 });
+    expect(up.values.length / FLOATS_PER_BAR).toBeGreaterThan(room + 1);
+    expect(up.values[room * FLOATS_PER_BAR + 3]).toBe(data[room].close - up.base);
+  });
+
   it('empties for no bars', () => {
     const up = new SeriesUploads();
     up.sync(series(3));

@@ -1,19 +1,20 @@
 import { resolveVolumeColors } from '@tradecanvas/commons';
 import type { ViewportState } from '@tradecanvas/commons';
-import type { GpuBackground, GpuDrawn, GpuFrame, GpuRenderer } from '../engine/gpu.js';
+import type { GpuBackground, GpuDrawn, GpuFrame, GpuRect, GpuRenderer } from '../engine/gpu.js';
 import { barColumns } from '../charts/pixelGrid.js';
 import { gridLines } from '../axis/gridLines.js';
 import { forEachPixelColumn, isDense } from '../charts/denseBars.js';
 import { FLOATS_PER_BAR, SeriesUploads } from './seriesUploads.js';
-import { parseColor, premultiplied } from './glColor.js';
+import { parseColor, premultiplied, type RGBA } from './glColor.js';
+import { yMapping } from './yMapping.js';
 import { CANDLE_BARS_VS, CANDLE_COLUMNS_VS, FILL_FS, RECT_FS, RECT_VS, VOLUME_BARS_VS, VOLUME_COLUMNS_VS } from './shaders.js';
 
 const BAR_STRIDE = FLOATS_PER_BAR * 4;
 /** Floats per zoomed-out column: x, high, low, volume, up. */
 const COLUMN_FLOATS = 5;
 const COLUMN_STRIDE = COLUMN_FLOATS * 4;
-/** Floats per background rectangle: left, top, right, bottom, then its premultiplied colour. */
-const RECT_FLOATS = 8;
+/** Floats per background rectangle: left, top, right, bottom, its premultiplied colour, then dash on and off (0 for solid). */
+const RECT_FLOATS = 10;
 const RECT_STRIDE = RECT_FLOATS * 4;
 
 interface Program {
@@ -23,43 +24,12 @@ interface Program {
   attribs: Map<string, number>;
 }
 
-/** Price-to-pixel uniforms for a frame, as `priceToYMapper` maps (linear or log, upright or inverted). */
-interface YMapping {
-  log: number;
-  invert: number;
-  yA: number;
-  yB: number;
-  logMin: number;
-  logK: number;
-  top: number;
-  bottom: number;
-}
-
-function yMapping(viewport: ViewportState, base: number): YMapping {
-  const { min, max } = viewport.priceRange;
-  const { y: top, height } = viewport.chartRect;
-  const invert = viewport.invertScale === true ? 1 : 0;
-  const flat = { log: 0, invert, yA: top + height / 2, yB: 0, logMin: 0, logK: 0, top, bottom: top + height };
-  if (viewport.logScale && min > 0 && max > 0) {
-    const logMin = Math.log(min);
-    const logRange = Math.log(max) - logMin;
-    if (logRange === 0) return flat;
-    return { ...flat, log: 1, logMin, logK: height / logRange };
-  }
-  const range = max - min;
-  if (range === 0) return flat;
-  const k = height / range;
-  return invert
-    ? { ...flat, yA: top + (base - min) * k, yB: k }
-    : { ...flat, yA: top + (max - base) * k, yB: -k };
-}
-
 /**
  * The background (grid, sessions), candles and volume on WebGL 2, on a
- * canvas of their own under the 2D scene. The series lives in a GPU buffer, rewritten only where it
- * changed; a frame sets a few uniforms and makes a few draw calls. Zoomed
- * out below a pixel per bar it draws a column per pixel, like the 2D
- * renderers.
+ * canvas of their own under the 2D scene. The series lives in a GPU buffer,
+ * rewritten only where it changed; a frame sets a few uniforms and makes a
+ * few draw calls. Zoomed out below a pixel per bar it draws a column per
+ * pixel, like the 2D renderers.
  */
 export class WebGLSeriesRenderer implements GpuRenderer {
   readonly label: string;
@@ -96,13 +66,18 @@ export class WebGLSeriesRenderer implements GpuRenderer {
         preserveDrawingBuffer: false,
         failIfMajorPerformanceCaveat: options.failIfMajorPerformanceCaveat ?? false,
       });
-    } catch {
-      gl = null;
+    } catch (err) {
+      warnUnavailable(err);
+      return null;
     }
+    // No WebGL 2 here: nothing to report, Canvas 2D it is.
     if (!gl) return null;
     try {
       return new WebGLSeriesRenderer(canvas, gl);
-    } catch {
+    } catch (err) {
+      // A shader the driver won't compile, say: tell why, and let the context go.
+      warnUnavailable(err);
+      loseContext(gl);
       return null;
     }
   }
@@ -122,8 +97,15 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     canvas.addEventListener('webglcontextlost', this.handleLost);
   }
 
+  /** `callback` once the context is lost; soon (in a microtask) if it already is. */
   onLost(callback: () => void): void {
     this.lostCallback = callback;
+    if (this.lost || this.gl.isContextLost()) {
+      this.lost = true;
+      queueMicrotask(() => {
+        if (this.lostCallback === callback) callback();
+      });
+    }
   }
 
   render(frame: GpuFrame): GpuDrawn {
@@ -131,6 +113,8 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false };
     const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null };
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    // A frame that failed half-way may have left the scissor on.
+    gl.disable(gl.SCISSOR_TEST);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
@@ -167,6 +151,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   destroy(): void {
     this.canvas.removeEventListener('webglcontextlost', this.handleLost);
+    this.lostCallback = null;
     const gl = this.gl;
     if (!gl.isContextLost()) {
       for (const p of [this.candleBars, this.volumeBars, this.candleColumns, this.volumeColumns, this.rects]) {
@@ -176,6 +161,9 @@ export class WebGLSeriesRenderer implements GpuRenderer {
       gl.deleteBuffer(this.seriesBuffer);
       gl.deleteBuffer(this.columnBuffer);
       gl.deleteBuffer(this.rectBuffer);
+      // Hand the context back now, not at garbage collection: a page keeps
+      // only so many, and the browser drops the oldest (maybe a live chart's).
+      loseContext(gl);
     }
     this.canvas.remove();
   }
@@ -242,18 +230,29 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     if (this.rectValues.length < total * RECT_FLOATS) this.rectValues = new Float32Array(total * RECT_FLOATS * 2);
     const values = this.rectValues;
     let k = 0;
-    const put = (left: number, top: number, right: number, bottom: number, color: readonly number[], alpha: number) => {
+    const put = (left: number, top: number, right: number, bottom: number, color: RGBA, alpha: number, dash?: GpuRect['dash']) => {
       values[k++] = left;
       values[k++] = top;
       values[k++] = right;
       values[k++] = bottom;
       for (let i = 0; i < 4; i++) values[k++] = color[i] * alpha;
+      values[k++] = dash ? dash[0] : 0;
+      values[k++] = dash ? dash[1] : 0;
     };
     const gridColor = premultiplied(parseColor(theme.grid));
     const { chartRect } = viewport;
     for (const y of lines.horizontal) put(chartRect.x, y - 0.5, chartRect.x + chartRect.width, y + 0.5, gridColor, 1);
     for (const x of lines.vertical) put(x - 0.5, chartRect.y, x + 0.5, chartRect.y + chartRect.height, gridColor, 1);
-    for (const r of background.rects) put(r.x, r.y, r.x + r.width, r.y + r.height, premultiplied(parseColor(r.color)), r.alpha);
+    // The rectangles mostly share a colour or two.
+    let lastColor = '';
+    let color = gridColor;
+    for (const r of background.rects) {
+      if (r.color !== lastColor) {
+        lastColor = r.color;
+        color = premultiplied(parseColor(r.color));
+      }
+      put(r.x, r.y, r.x + r.width, r.y + r.height, color, r.alpha, r.dash);
+    }
 
     const gl = this.gl;
     const p = this.use(this.rects, frame);
@@ -341,8 +340,9 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     gl.uniform1i(this.loc(p, 'u_invert'), y.invert);
     this.float(p, 'u_yA', y.yA);
     this.float(p, 'u_yB', y.yB);
-    this.float(p, 'u_base', this.uploads.base);
-    this.float(p, 'u_logMin', y.logMin);
+    this.float(p, 'u_logOffset', y.logOffset);
+    this.float(p, 'u_min', y.min);
+    this.float(p, 'u_logFloor', y.logFloor);
     this.float(p, 'u_logK', y.logK);
     this.float(p, 'u_top', y.top);
     this.float(p, 'u_bottom', y.bottom);
@@ -359,6 +359,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   private bindRects(p: Program, from: number): void {
     this.attrib(p, 'a_rect', 4, RECT_STRIDE, from * RECT_STRIDE);
     this.attrib(p, 'a_color', 4, RECT_STRIDE, from * RECT_STRIDE + 16);
+    this.attrib(p, 'a_dash', 2, RECT_STRIDE, from * RECT_STRIDE + 32);
   }
 
   private bindColumns(p: Program): void {
@@ -425,7 +426,16 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     const vao = gl.createVertexArray();
     if (!vao) throw new Error('WebGL: no vertex array');
     const attribs = new Map<string, number>();
-    for (const name of ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color']) attribs.set(name, gl.getAttribLocation(program, name));
+    for (const name of ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color', 'a_dash']) attribs.set(name, gl.getAttribLocation(program, name));
     return { program, vao, uniforms: new Map(), attribs };
   }
+}
+
+/** Let a context go now rather than at garbage collection. */
+function loseContext(gl: WebGL2RenderingContext): void {
+  gl.getExtension('WEBGL_lose_context')?.loseContext();
+}
+
+function warnUnavailable(err: unknown): void {
+  console.warn('TradeCanvas: WebGL renderer unavailable, drawing with Canvas 2D.', err);
 }

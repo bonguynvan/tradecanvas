@@ -312,11 +312,14 @@ export class RenderEngine {
 
   /**
    * With a GPU: the grid, session shading, break lines, bars and volume on
-   * the GPU. A watermark or heatmap needs Canvas 2D: then the whole
+   * the GPU. A watermark, heatmap or profile needs Canvas 2D: then the whole
    * background goes on a 2D canvas under the GPU's, there only while needed.
+   * A profile goes over the volume bars, as in Canvas 2D, so then volume is
+   * drawn there too.
    */
   private renderGpu(gpu: GpuRenderer, ctx: RenderContext): GpuDrawn {
     const { viewport, theme, data } = ctx;
+    const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
     const background: GpuBackground | null = needsBackCanvas(ctx)
       ? null
       : {
@@ -326,12 +329,13 @@ export class RenderEngine {
             ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? []),
           ],
         };
-    const volume = ctx.volumeRenderer?.isVisible() ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
+    const volume = ctx.volumeRenderer?.isVisible() && !profiles ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
     const drawn = gpu.render({
       data,
       viewport,
       theme,
-      dpr: this.dprManager.getDpr(),
+      // The ratio the canvases are sized for, which may trail the screen's.
+      dpr: this.layerManager.getDpr(),
       candles: ctx.chartRenderer instanceof CandlestickRenderer,
       volume,
       background,
@@ -345,10 +349,11 @@ export class RenderEngine {
     this.renderBackground(back.ctx, ctx);
     this.inPlot(back.ctx, viewport, () => {
       ctx.depthHeatmap?.render(back.ctx, viewport, theme);
+      if (profiles) ctx.volumeRenderer?.render(back.ctx, data, viewport, theme);
       ctx.volumeProfile?.render(back.ctx, data, viewport, theme);
       ctx.marketProfile?.render(back.ctx, data, viewport, theme);
     });
-    return drawn;
+    return { ...drawn, volume: drawn.volume || profiles };
   }
 
   /** The background: grid, session shading and breaks, watermark. */
@@ -356,7 +361,7 @@ export class RenderEngine {
     const { viewport, theme, data } = ctx;
     ctx.gridRenderer?.render(c, viewport, theme);
     ctx.sessionShading?.render(c, data, viewport, theme);
-    ctx.sessionBreaks?.render(c, viewport, theme, data);
+    ctx.sessionBreaks?.renderLines(c, viewport, theme, data);
     ctx.watermark?.render(c, viewport, theme);
   }
 

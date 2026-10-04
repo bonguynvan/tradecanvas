@@ -192,7 +192,7 @@ describe('RenderEngine — two canvases', () => {
     const order: string[] = [];
     scene.mockImplementation(() => order.push('series'));
     ctx.sessionBreaks = {
-      render: () => order.push('lines'),
+      renderLines: () => order.push('lines'),
       renderLabels: () => order.push('labels'),
       isVisible: () => true,
     } as unknown as RenderContext['sessionBreaks'];
@@ -244,15 +244,27 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     return { ctx, series, grid, volume };
   }
 
-  const zIndexes = () => [...container.querySelectorAll('canvas')].map((c) => c.style.zIndex).sort();
+  /** Each canvas by role, bottom to top: by z-index, then document order. */
+  const stack = (gpu?: { canvas: HTMLCanvasElement }) => {
+    const scene = engine.layerManager.getLayer(LayerType.Main)!.canvas;
+    const top = engine.layerManager.getLayer(LayerType.Hover)!.canvas;
+    const nameOf = (c: HTMLCanvasElement) => (c === scene ? 'scene' : c === top ? 'top' : c === gpu?.canvas ? 'gpu' : 'back');
+    return [...container.querySelectorAll('canvas')]
+      .map((c, i) => ({ c, z: Number(c.style.zIndex), i }))
+      .sort((a, b) => a.z - b.z || a.i - b.i)
+      .map(({ c }) => nameOf(c));
+  };
+  /** Whether `c` is the 2D canvas under the GPU's. */
+  const isBack = (c: CanvasRenderingContext2D, gpu: { canvas: HTMLCanvasElement }) =>
+    c.canvas !== gpu.canvas && c.canvas !== engine.layerManager.getLayer(LayerType.Main)!.canvas && c.canvas !== engine.layerManager.getLayer(LayerType.Hover)!.canvas;
 
-  it('stacks the GPU canvas under the scene and the top', () => {
+  it('stacks the GPU canvas under the scene and the top, leaving their z-index as it was', () => {
     const { gpu } = fakeGpu();
     engine.attachGpu(gpu);
-    const byZ = [...container.querySelectorAll('canvas')].sort((a, b) => Number(a.style.zIndex) - Number(b.style.zIndex));
-    expect(byZ.map((c) => c.style.zIndex)).toEqual(['1', '2', '3']);
-    expect(byZ[0]).toBe(gpu.canvas);
-    expect(byZ[1]).toBe(engine.layerManager.getLayer(LayerType.Main)!.canvas);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+    // Page elements stacked over the chart stay over it.
+    expect(engine.layerManager.getLayer(LayerType.Main)!.canvas.style.zIndex).toBe('0');
+    expect(engine.layerManager.getLayer(LayerType.Hover)!.canvas.style.zIndex).toBe('1');
   });
 
   it('leaves candles, volume and the grid to the GPU', async () => {
@@ -267,7 +279,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(volume).not.toHaveBeenCalled();
     expect(grid).not.toHaveBeenCalled();
     // Nothing else under the bars: no canvas for it.
-    expect(zIndexes()).toEqual(['1', '2', '3']);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
   });
 
   it('gives session shading and break lines to the GPU, and draws break labels over the bars', async () => {
@@ -277,7 +289,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     const lines = vi.fn();
     const labels = vi.fn();
     ctx.sessionShading = { render: vi.fn(), rects: () => [shade], isVisible: () => true } as unknown as RenderContext['sessionShading'];
-    ctx.sessionBreaks = { render: lines, renderLabels: labels, lineRects: () => [dash], isVisible: () => true } as unknown as RenderContext['sessionBreaks'];
+    ctx.sessionBreaks = { renderLines: lines, renderLabels: labels, lineRects: () => [dash], isVisible: () => true } as unknown as RenderContext['sessionBreaks'];
     const { gpu } = fakeGpu();
     engine.attachGpu(gpu);
     engine.setRenderContext(ctx);
@@ -285,8 +297,8 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     runFrame();
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: { grid: true, rects: [shade, dash] } }));
     expect(lines).not.toHaveBeenCalled();
-    expect(zIndexes()).toEqual(['1', '2', '3']);
-    expect((labels.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('2');
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+    expect((labels.mock.calls[0][0] as CanvasRenderingContext2D).canvas).toBe(engine.layerManager.getLayer(LayerType.Main)!.canvas);
   });
 
   it('draws the background under the GPU canvas when there is more than the grid', async () => {
@@ -299,11 +311,11 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.start();
     runFrame();
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: null }));
-    expect(zIndexes()).toEqual(['0', '1', '2', '3']);
+    expect(stack(gpu)).toEqual(['back', 'gpu', 'scene', 'top']);
     // The grid goes under the watermark, on the canvas under the GPU's.
     expect(grid).toHaveBeenCalledTimes(1);
-    expect((grid.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
-    expect((watermark.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
+    expect(isBack(grid.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
+    expect(isBack(watermark.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
   });
 
   it('drops the background canvas once nothing needs it', async () => {
@@ -315,11 +327,11 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(zIndexes()).toEqual(['0', '1', '2', '3']);
+    expect(stack(gpu)).toEqual(['back', 'gpu', 'scene', 'top']);
     watermark = false;
     engine.requestRender();
     runFrame();
-    expect(zIndexes()).toEqual(['1', '2', '3']);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
   });
 
   it('draws the grid with Canvas 2D when the GPU does not', async () => {
@@ -330,7 +342,22 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.start();
     runFrame();
     expect(grid).toHaveBeenCalledTimes(1);
-    expect((grid.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
+    expect(isBack(grid.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
+  });
+
+  it('draws volume under a volume or market profile, as Canvas 2D does', async () => {
+    const { ctx, volume } = await candleContext();
+    const order: string[] = [];
+    volume.mockImplementation(() => order.push('volume'));
+    ctx.volumeProfile = { render: () => order.push('profile'), isVisible: () => true } as unknown as RenderContext['volumeProfile'];
+    const { gpu } = fakeGpu({ series: true, volume: false, background: false });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ volume: null }));
+    expect(order).toEqual(['volume', 'profile']);
+    expect(isBack(volume.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
   });
 
   it('asks for no grid when it is hidden', async () => {
@@ -342,7 +369,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.start();
     runFrame();
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: { grid: false, rects: [] } }));
-    expect(zIndexes()).toEqual(['1', '2', '3']);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
   });
 
   it('draws with Canvas 2D what the GPU leaves', async () => {
@@ -391,6 +418,6 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     runFrame();
     engine.detachGpu();
     expect(gpu.destroy).toHaveBeenCalled();
-    expect(zIndexes()).toEqual(['0', '1']);
+    expect(stack(gpu)).toEqual(['scene', 'top']);
   });
 });

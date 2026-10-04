@@ -38,23 +38,37 @@ function browserProbe(): CanvasRenderingContext2D | OffscreenCanvasRenderingCont
 }
 
 /**
+ * A colour as the browser reads it: names and hsl() come back as hex or
+ * rgb(); oklch(), color() and the like are painted on a pixel and read back.
+ * Null for what Canvas 2D would reject too (it then keeps its last style, so
+ * two different starting styles tell).
+ */
+function viaBrowser(color: string): RGBA | null {
+  const ctx = browserProbe();
+  if (!ctx) return null;
+  ctx.fillStyle = '#000';
+  ctx.fillStyle = color;
+  const style = String(ctx.fillStyle);
+  ctx.fillStyle = '#fff';
+  ctx.fillStyle = color;
+  if (String(ctx.fillStyle) !== style) return null;
+  const text = fromText(style);
+  if (text) return text;
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.fillRect(0, 0, 1, 1);
+  const d = ctx.getImageData(0, 0, 1, 1).data;
+  return [d[0] / 255, d[1] / 255, d[2] / 255, d[3] / 255];
+}
+
+/**
  * Any CSS colour the chart's themes use, for WebGL. Hex and rgb() are read
- * directly; anything else goes through the browser's own parser. Unreadable
- * colours come back transparent.
+ * directly; anything else goes through the browser. Unreadable colours come
+ * back transparent, as Canvas 2D would leave them unpainted.
  */
 export function parseColor(color: string): RGBA {
   const hit = cache.get(color);
   if (hit) return hit;
-  let rgba = fromText(color);
-  if (!rgba) {
-    const ctx = browserProbe();
-    if (ctx) {
-      ctx.fillStyle = '#00000000';
-      ctx.fillStyle = color;
-      rgba = fromText(String(ctx.fillStyle));
-    }
-  }
-  const out: RGBA = rgba ?? [0, 0, 0, 0];
+  const out: RGBA = fromText(color) ?? viaBrowser(color) ?? [0, 0, 0, 0];
   if (cache.size > 256) cache.clear();
   cache.set(color, out);
   return out;

@@ -79,6 +79,17 @@ describe('Chart renderer', () => {
     expect(changes).toEqual([{ renderer: 'webgl' }, { renderer: 'canvas' }]);
   });
 
+  it('keeps the GPU it has when asked for WebGL again', async () => {
+    makeChart();
+    const { gpu } = fakeGpu();
+    loadWebGLRenderer.mockResolvedValue(gpu);
+    await chart.setRenderer('webgl');
+    await expect(chart.setRenderer('auto')).resolves.toBe('webgl');
+    expect(loadWebGLRenderer).toHaveBeenCalledTimes(1);
+    expect(gpu.destroy).not.toHaveBeenCalled();
+    expect(changes).toEqual([{ renderer: 'webgl' }]);
+  });
+
   it('stays on Canvas 2D where WebGL 2 is missing, and says why', async () => {
     makeChart();
     loadWebGLRenderer.mockResolvedValue(null);

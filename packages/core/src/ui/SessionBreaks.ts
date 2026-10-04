@@ -17,7 +17,7 @@ export interface SessionBreakConfig {
 }
 
 /** The dash pattern of each line style; null for solid. */
-const DASHES: Record<NonNullable<SessionBreakConfig['lineStyle']>, number[] | null> = {
+const DASHES: Record<NonNullable<SessionBreakConfig['lineStyle']>, [number, number] | null> = {
   solid: null,
   dashed: [6, 4],
   dotted: [2, 3],
@@ -121,8 +121,19 @@ export class SessionBreaks {
     return timestamp > 1e12 ? timestamp : timestamp * 1000;
   }
 
-  /** The break lines, under the bars; their labels go over them (`renderLabels`). */
+  /** The break lines and their labels. */
   render(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+  ): void {
+    this.renderLines(ctx, viewport, theme, data);
+    this.renderLabels(ctx, viewport, theme, data);
+  }
+
+  /** The break lines alone: the chart draws them under the bars and the labels over them. */
+  renderLines(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
     theme: Theme,
@@ -154,7 +165,7 @@ export class SessionBreaks {
     theme: Theme,
     data: DataSeries,
   ): void {
-    const marks = this.marks(viewport, data).filter((m) => m.label !== null);
+    const marks = this.marks(viewport, data).filter((m): m is BreakMark & { label: string } => m.label !== null);
     if (marks.length === 0) return;
     const { chartRect } = viewport;
 
@@ -165,35 +176,19 @@ export class SessionBreaks {
     ctx.fillStyle = theme.textSecondary;
     for (const m of marks) {
       ctx.globalAlpha = Math.min(1, m.alpha + 0.35);
-      ctx.fillText(m.label as string, m.px + 4, chartRect.y + 4);
+      ctx.fillText(m.label, m.px + 4, chartRect.y + 4);
     }
     ctx.restore();
   }
 
-  /** The break lines as filled rectangles, one per dash, for the GPU. */
+  /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */
   lineRects(viewport: ViewportState, theme: Theme, data: DataSeries): GpuRect[] {
     const marks = this.marks(viewport, data);
     if (marks.length === 0) return [];
     const color = this.config.color ?? theme.axisLine;
-    const dash = DASHES[this.config.lineStyle ?? 'dashed'];
-    const top = viewport.chartRect.y;
-    const bottom = top + viewport.chartRect.height;
-    const out: GpuRect[] = [];
-    for (const m of marks) {
-      const x = m.px - m.width / 2;
-      if (!dash) {
-        out.push({ x, y: top, width: m.width, height: bottom - top, color, alpha: m.alpha });
-        continue;
-      }
-      // On, off, on, … from the top, as a dashed stroke lays it out.
-      let y = top;
-      for (let k = 0; y < bottom; k++) {
-        const length = dash[k % dash.length];
-        if (k % 2 === 0) out.push({ x, y, width: m.width, height: Math.min(length, bottom - y), color, alpha: m.alpha });
-        y += length;
-      }
-    }
-    return out;
+    const dash = DASHES[this.config.lineStyle ?? 'dashed'] ?? undefined;
+    const { y, height } = viewport.chartRect;
+    return marks.map((m) => ({ x: m.px - m.width / 2, y, width: m.width, height, color, alpha: m.alpha, ...(dash ? { dash } : {}) }));
   }
 
   /** The breaks on screen, each with its line and label, heavier as the boundary is more significant. */
