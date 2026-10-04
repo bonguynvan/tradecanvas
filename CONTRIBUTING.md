@@ -48,6 +48,7 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
    pnpm --filter @tradecanvas/demo test
    ```
    If `docs:check` fails, run `pnpm docs:gen` and commit what it writes.
+   For a change to how the chart draws, `pnpm build && pnpm bench:render` measures frames in Chrome on your GPU; put the numbers before and after in the pull request.
 4. **Add a changeset** for anything users of the packages will notice: `pnpm changeset`, pick the packages, and describe the change from the user's side. Docs-only and site-only changes don't need one.
 5. **Docs**: a new option or method belongs in the README and the docs pages. Write the English; translations into the other languages can follow in a later pull request.
 

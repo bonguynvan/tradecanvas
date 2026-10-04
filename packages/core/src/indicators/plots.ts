@@ -7,6 +7,7 @@ import type {
   ViewportState,
 } from '@tradecanvas/commons';
 import { barIndexToX, priceToYMapper } from '../viewport/ScaleMapping.js';
+import { LinePen, isDenseSlots } from './linePen.js';
 
 /** Room left above and below the values in an auto-fitted pane, as a share of their span. */
 const PANE_PADDING = 0.1;
@@ -201,49 +202,57 @@ function finite(val: IndicatorValue | null, key: string): number | undefined {
   return v !== undefined && Number.isFinite(v) ? v : undefined;
 }
 
-/** A line (or steps). Two-tone: each segment takes the colour of the bar it ends on. */
+/**
+ * A line (or steps). Two-tone: each segment takes the colour of the bar it
+ * ends on. Zoomed out below a pixel per bar, the pen fills a span per pixel
+ * column instead of stroking thousands of segments.
+ */
 function drawPath(
   ctx: CanvasRenderingContext2D, series: Series, key: string, from: number, to: number,
   viewport: ViewportState, toY: (v: number) => number, color: string, width: number,
   step: boolean, take: Take | null,
 ): void {
-  ctx.beginPath();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.lineJoin = 'round';
+  const pen = new LinePen(ctx, color, width, isDenseSlots(viewport));
   let prevX = 0;
   let prevY = 0;
   let hasPrev = false;
   for (let i = from; i <= to; i++) {
     const val = series[i];
     const v = finite(val, key);
-    if (v === undefined) { hasPrev = false; continue; }
+    if (v === undefined) {
+      hasPrev = false;
+      pen.gap();
+      continue;
+    }
     const x = barIndexToX(i, viewport);
     const y = toY(v);
     if (!take) {
-      // One colour: one continuous path, so joins are rounded.
-      if (!hasPrev) ctx.moveTo(x, y);
-      else {
-        if (step) ctx.lineTo(x, prevY);
-        ctx.lineTo(x, y);
-      }
+      // One colour: one continuous line, so joins are rounded.
+      if (hasPrev && step) pen.add(x, prevY);
+      pen.add(x, y);
     } else if (hasPrev && take(val!)) {
-      ctx.moveTo(prevX, prevY);
-      if (step) ctx.lineTo(x, prevY);
-      ctx.lineTo(x, y);
+      if (step) {
+        pen.segment(prevX, prevY, x, prevY);
+        pen.add(x, y);
+      } else {
+        pen.segment(prevX, prevY, x, y);
+      }
     }
     prevX = x;
     prevY = y;
     hasPrev = true;
   }
-  ctx.stroke();
+  pen.finish();
 }
 
+/** Dots; zoomed out, one per pixel column (the first there). */
 function drawDots(
   ctx: CanvasRenderingContext2D, series: Series, key: string, from: number, to: number,
   viewport: ViewportState, toY: (v: number) => number, color: string, take: Take,
 ): void {
   const r = Math.max(1.5, viewport.barWidth * 0.15);
+  const dense = isDenseSlots(viewport);
+  let lastCol = NaN;
   ctx.beginPath();
   ctx.fillStyle = color;
   for (let i = from; i <= to; i++) {
@@ -251,6 +260,11 @@ function drawDots(
     const v = finite(val, key);
     if (v === undefined || !take(val!)) continue;
     const x = barIndexToX(i, viewport);
+    if (dense) {
+      const col = Math.floor(x);
+      if (col === lastCol) continue;
+      lastCol = col;
+    }
     const y = toY(v);
     ctx.moveTo(x + r, y);
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -258,14 +272,40 @@ function drawDots(
   ctx.fill();
 }
 
+/** Columns from zero; zoomed out, one per pixel column (its largest). */
 function drawHistogram(
   ctx: CanvasRenderingContext2D, series: Series, key: string, from: number, to: number,
   viewport: ViewportState, toY: (v: number) => number, color: string, take: Take,
 ): void {
-  const w = Math.max(1, viewport.barWidth);
   const base = toY(0);
   ctx.beginPath();
   ctx.fillStyle = color;
+  if (isDenseSlots(viewport)) {
+    let col = NaN;
+    let extreme = 0;
+    const flush = () => {
+      if (Number.isNaN(col)) return;
+      const y = toY(extreme);
+      ctx.rect(col, Math.min(y, base), 1, Math.max(1, Math.abs(y - base)));
+    };
+    for (let i = from; i <= to; i++) {
+      const val = series[i];
+      const v = finite(val, key);
+      if (v === undefined || !take(val!)) continue;
+      const c = Math.floor(barIndexToX(i, viewport));
+      if (c !== col) {
+        flush();
+        col = c;
+        extreme = v;
+      } else if (Math.abs(v) > Math.abs(extreme)) {
+        extreme = v;
+      }
+    }
+    flush();
+    ctx.fill();
+    return;
+  }
+  const w = Math.max(1, viewport.barWidth);
   for (let i = from; i <= to; i++) {
     const val = series[i];
     const v = finite(val, key);

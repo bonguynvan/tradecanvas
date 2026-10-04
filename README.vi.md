@@ -1037,9 +1037,10 @@ onUnmounted(() => chart?.destroy())
 
 ## Hiệu năng
 
-Quy trình Canvas2D hai lớp canvas: rê chuột chỉ vẽ lại lớp canvas mỏng phía trên, không bao giờ vẽ lại cả cảnh. Bốn điều giữ cho dữ liệu lớn vẫn nhanh:
+Quy trình Canvas2D hai lớp canvas: rê chuột chỉ vẽ lại lớp canvas mỏng phía trên, không bao giờ vẽ lại cả cảnh. Năm điều giữ cho dữ liệu lớn vẫn nhanh:
 
 - **Giảm mẫu LTTB** — biểu đồ đường / vùng tự động giảm mẫu khoảng đang hiện xuống khoảng 2 điểm mỗi pixel bằng thuật toán Largest-Triangle-Three-Buckets khi số nến nhiều hơn hẳn số pixel. Đường vẫn trông y hệt trong khi số điểm cần vẽ ít hơn hàng chục lần; ở mức phóng bình thường thì không làm gì cả. Tiện ích `lttbDownsample` được export để bạn tự dùng.
+- **Chỉ báo khi thu nhỏ** — khi mỗi nến hẹp hơn một pixel, đường, dải và histogram của chỉ báo được vẽ thành một đoạn cho mỗi cột pixel thay vì một nét qua hàng nghìn điểm: trông gần như y hệt mà ít công raster hơn hẳn (khoảng 54 → 21 ms mỗi khung hình khi thu nhỏ trên 200.000 nến với bốn chỉ báo, trên GPU tích hợp). `node scripts/bench-render.mjs` đo trên máy của bạn.
 - **Chỉ vẽ khoảng đang hiện** — mọi bộ vẽ chỉ duyệt các nến trong khung nhìn, không bao giờ duyệt cả chuỗi. Chi phí mỗi khung hình khi rê chuột và kéo giữ nguyên từ 500 đến 100,000 nến đã tải.
 - **Chỉ báo tính tăng dần trên tick trực tiếp** — một tick chỉ thay đổi nến đang hình thành, nên các chỉ báo có sẵn hiện thực `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) chỉ tính lại nến đó thay vì toàn bộ lịch sử. Các chỉ báo khác quay về tính lại toàn bộ. Plugin tuỳ chỉnh có thể tham gia qua `IndicatorPlugin.update`.
 - **Nạp toàn bộ nhẹ nhàng** — một lần đổi mã/khung thời gian chỉ tính lại mỗi chỉ báo một lần. Bảng tra `values` theo từng nến của chúng là một `IndicatorValueMap` (dùng mảng khi nến đến theo thứ tự thời gian, dựng rẻ hơn khoảng 3 lần so với một `Map` có khoá là dấu thời gian), và `setData` dùng lại các nến đã đúng định dạng thay vì sao chép từng nến.

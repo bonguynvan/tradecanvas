@@ -70,6 +70,11 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   </tbody>
 </table>
 
+<h2>縮小時のインジケーター</h2>
+<p>
+  1 本のバーが 1 ピクセルより細くなると、インジケーターのライン、バンド、ヒストグラムはピクセル列ごとに 1 本のスパンで描かれます。列の最安値から最高値まで、前の列とつながり、幅は線の太さと同じです。数千点を通るストロークとほぼ同じ見た目のまま、ラスタライズの手間はずっと少なくなります。200,000 本のバーを縮小表示し、ボリンジャーバンド、EMA、RSI、MACD を重ねた場合、内蔵 GPU で 1 フレームが約 54 ms から約 21 ms になりました。<code>node scripts/bench-render.mjs</code> で手元のマシンでも計測できます。
+</p>
+
 <h2>メインスレッドの外で計算</h2>
 <p>
   <code>IndicatorWorkerHost</code> は、Promise ベースの <code>calculate()</code>、リクエストごとのタイムアウト、

@@ -1407,7 +1407,7 @@ colours, visibility) and alerts, including alerts on indicator lines.
 ### Themes
 
 ```typescript
-import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL } from '@tradecanvas/chart'
+import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL, volumeColor } from '@tradecanvas/chart'
 
 // Built-in presets: DARK_THEME, LIGHT_THEME, DARK_TERMINAL
 chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace
@@ -1417,6 +1417,8 @@ chart.setTheme({
   ...DARK_THEME,
   candleUp: '#1fa874',
   candleDown: '#e8505b',
+  volumeUp: volumeColor('#1fa874'),    // volume bars: the candle colour, see-through
+  volumeDown: volumeColor('#e8505b'),
   background: '#0a0a0f',
 })
 ```
@@ -1790,9 +1792,10 @@ onUnmounted(() => chart?.destroy())
 
 ## Performance
 
-A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Four things keep large data fast:
+A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Five things keep large data fast:
 
 - **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
+- **Indicators zoomed out** — below a pixel per bar, indicator lines, bands and histograms draw one span per pixel column instead of a stroke through thousands of points: much the same look for a fraction of the raster work (about 54 → 21 ms a frame zoomed out on 200,000 bars with four indicators, on integrated graphics). `node scripts/bench-render.mjs` measures it on your machine.
 - **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.
 - **Incremental indicators on live ticks** — a tick only changes the forming bar, so built-in indicators that implement `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) recompute just that bar instead of the whole history. Others fall back to a full recalculation. Custom plugins can opt in via `IndicatorPlugin.update`.
 - **Cheap full loads** — a symbol/timeframe switch recomputes every indicator once. Their per-bar `values` lookup is an `IndicatorValueMap` (array-backed while bars arrive in time order, ~3x cheaper to build than a `Map` keyed by timestamps), and `setData` reuses already well-formed bars instead of copying each one.
