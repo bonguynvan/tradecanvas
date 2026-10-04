@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL 렌더러 (미리 보기)</h2>
 <p>
-  <code>renderer: 'webgl'</code>을 쓰면 그리드, 세션 음영과 구분선, 캔들, 거래량을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 지표, 드로잉, 축, 크로스헤어는 계속 Canvas 2D로 그립니다. <code>'auto'</code>는 하드웨어 GPU일 때만 WebGL을 씁니다. 픽셀은 Canvas 2D와 2/255 이내로 일치합니다. WebGL 코드는 별도 청크(gzip 약 7 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+  <code>renderer: 'webgl'</code>을 쓰면 플롯 영역과 지표 패널을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 그리드, 세션, 캔들, 거래량은 직접 그리고, 지표·비교선·대부분의 차트 유형의 Canvas 2D 그리기는 GPU의 선, 채우기, 사각형으로 기록되어 Canvas 2D처럼 가장자리가 안티앨리어싱됩니다. 텍스트, 드로잉, 주문, 축, 크로스헤어는 Canvas 2D로 남고, GPU가 똑같이 그릴 수 없는 것도 Canvas 2D가 그립니다(순서대로 그리므로 겹침 순서는 그대로입니다). 직접 만든 지표 플러그인도 수정 없이 동작합니다. 캔들은 Canvas 2D와 2/255 이내로 일치하고, 선과 채우기는 안티앨리어싱된 가장자리의 일부 픽셀만 다릅니다. WebGL 코드는 별도 청크(gzip 약 17 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -89,15 +89,17 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
 <table>
   <thead><tr><th>차트</th><th>픽셀 비율</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
   <tbody>
-    <tr><td>1600×900, 캔들 2,000개</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
-    <tr><td>1600×900, 봉 200,000개를 축소해서</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
-    <tr><td>2560×1400, 캔들 2,000개</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
-    <tr><td>2560×1400, 캔들 2,000개</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
-    <tr><td>차트 6개, 각각 캔들 500개와 지표 2개</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+    <tr><td>1600×900, 캔들 500개 + 지표 4개</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
+    <tr><td>1600×900, 봉 200,000개를 축소 + 지표 4개</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>차트 6개, 각각 캔들 500개와 지표 2개</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개 + 지표 4개</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개 + 지표 4개</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개 + 지표 4개</td><td>2</td><td>114.5 ms</td><td>29.1 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개</td><td>2</td><td>33.1 ms</td><td>20.9 ms</td></tr>
   </tbody>
 </table>
 <p>
-  지표는 아직 Canvas 2D로 그리므로 지표가 많은 차트일수록 이득이 적습니다. 2560×1400에 지표 4개, 픽셀 비율 2에서는 138 ms에서 97 ms가 됩니다. 이 크기와 비율에서는 이 GPU에서 브라우저가 전체 크기 레이어를 합성하는 데만 약 23 ms가 걸립니다. <code>node scripts/bench-render.mjs --renderer=webgl</code>로 내 컴퓨터에서 측정할 수 있습니다.
+  위 WebGL 프레임 대부분은 16.7 ms이며, 평균에는 몇몇 긴 프레임이 포함됩니다. 픽셀 비율 2의 2560×1400 차트에서는 이 GPU에서 브라우저가 전체 크기 레이어를 합성하는 데만 약 23 ms가 걸립니다. <code>node scripts/bench-render.mjs --renderer=webgl</code>로 내 컴퓨터에서 측정할 수 있습니다.
 </p>
 
 <h2>메인 스레드 밖에서 계산</h2>

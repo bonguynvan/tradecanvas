@@ -5,4 +5,4 @@ export { DPRManager } from './DPRManager.js';
 export { RenderEngine } from './RenderEngine.js';
 export type { RenderContext, PanelRenderInfo } from './RenderEngine.js';
 export { loadWebGLRenderer } from './loadWebGL.js';
-export type { GpuRenderer, GpuFrame, GpuDrawn, GpuBackground, GpuRect, RendererMode } from './gpu.js';
+export type { GpuRenderer, GpuFrame, GpuDrawn, GpuBackground, GpuRect, GpuRecorder, GpuRegion, RendererMode } from './gpu.js';

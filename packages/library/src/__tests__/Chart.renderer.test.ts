@@ -24,7 +24,9 @@ function fakeGpu() {
   const gpu = {
     canvas,
     label: 'test GPU',
-    render: vi.fn(() => ({ series: true, volume: true, background: true })),
+    render: vi.fn(() => ({ series: true, volume: true, background: true, recorded: true })),
+    // Records nothing: every step stays with Canvas 2D.
+    recorder: () => ({ region: () => ({ step: () => false, drawText: () => {} }) }),
     onLost: (cb: () => void) => { lost = cb; },
     destroy: vi.fn(() => canvas.remove()),
   };

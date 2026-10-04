@@ -387,12 +387,20 @@ export class IndicatorEngine {
 
   /** Price-pane overlays; those on the left scale draw with `leftViewport` (its range). */
   renderOverlays(ctx: CanvasRenderingContext2D, viewport: ViewportState, leftViewport?: ViewportState): void {
+    for (const draw of this.overlayDraws(viewport, leftViewport)) draw(ctx);
+  }
+
+  /** The visible overlays as one drawing each, in order, for any 2D context (the chart's, or one recording for the GPU). */
+  overlayDraws(viewport: ViewportState, leftViewport?: ViewportState): ((ctx: CanvasRenderingContext2D) => void)[] {
+    const draws: ((ctx: CanvasRenderingContext2D) => void)[] = [];
     for (const instance of this.instances.values()) {
-      if (!instance.output || !instance.config.visible) continue;
+      const output = instance.output;
+      if (!output || !instance.config.visible) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
-      const onLeft = instance.config.scale === 'left';
-      instance.plugin.render(ctx, instance.output, onLeft ? leftViewport ?? viewport : viewport, instance.style);
+      const vp = instance.config.scale === 'left' ? leftViewport ?? viewport : viewport;
+      draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style));
     }
+    return draws;
   }
 
   /** Whether any visible overlay is drawn on the left scale. */

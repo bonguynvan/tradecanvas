@@ -1066,7 +1066,7 @@ Một biểu đồ đường 100k nến giảm mẫu trong ~0.3 ms — nằm g�
 
 ### Bộ vẽ WebGL (bản xem trước)
 
-`renderer: 'webgl'` vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 7 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+`renderer: 'webgl'` vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến khớp Canvas 2D, lệch không quá 2/255; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
@@ -1081,13 +1081,15 @@ Thời gian mỗi khung hình khi kéo, trên GPU tích hợp (Intel UHD; 16.7 m
 
 | Biểu đồ | Tỉ lệ điểm ảnh | Canvas 2D | WebGL |
 |---|---|---|---|
-| 1600×900, 2,000 nến | 2 | 23.3 ms | 17.6 ms |
-| 1600×900, thu nhỏ trên 200,000 nến | 2 | 25.1 ms | 18.2 ms |
-| 2560×1400, 2,000 nến | 1.5 | 28.8 ms | 20.9 ms |
-| 2560×1400, 2,000 nến | 2 | 38.1 ms | 22.5 ms |
-| Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo | 2 | 33.4 ms | 24 ms |
+| 1600×900, 500 nến + 4 chỉ báo | 2 | 27.4 ms | 19.6 ms |
+| 1600×900, thu nhỏ trên 200,000 nến + 4 chỉ báo | 2 | 34.5 ms | 20.2 ms |
+| Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo | 2 | 23.5 ms | 17.2 ms |
+| 2560×1400, 2,000 nến + 4 chỉ báo | 1 | 41.6 ms | 17.7 ms |
+| 2560×1400, 2,000 nến + 4 chỉ báo | 1.5 | 70.8 ms | 17.6 ms |
+| 2560×1400, 2,000 nến + 4 chỉ báo | 2 | 114.5 ms | 29.1 ms |
+| 2560×1400, 2,000 nến | 2 | 33.1 ms | 20.9 ms |
 
-Chỉ báo vẫn vẽ bằng Canvas 2D, nên biểu đồ nhiều chỉ báo được lợi ít hơn (2560×1400 với bốn chỉ báo ở tỉ lệ 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl` chạy các số đo này trên máy của bạn.
+Phần lớn khung hình WebGL ở trên đạt 16.7 ms; số trung bình gồm cả vài khung dài hơn. Ở tỉ lệ 2 với biểu đồ 2560×1400, riêng việc trình duyệt ghép các lớp full-size đã mất khoảng 23 ms trên GPU này. `node scripts/bench-render.mjs --renderer=webgl` chạy các số đo này trên máy của bạn.
 
 ## Kiến trúc
 

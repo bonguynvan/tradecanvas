@@ -1066,7 +1066,7 @@ Un gráfico de líneas de 100k barras se submuestrea en ~0.3 ms, muy por debajo 
 
 ### Renderizador WebGL (versión preliminar)
 
-`renderer: 'webgl'` dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 7 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+`renderer: 'webgl'` dibuja el área del gráfico y los paneles de indicadores con WebGL 2, en un canvas bajo la escena 2D: la cuadrícula, las sesiones, las velas y el volumen directamente, y el dibujo en Canvas 2D de los indicadores, las líneas de comparación y la mayoría de los tipos de gráfico se graba como trazos, rellenos y rectángulos de la GPU, con los bordes suavizados como en Canvas 2D. El texto, los dibujos, las órdenes, los ejes y la cruceta siguen en Canvas 2D, igual que todo lo que la GPU no dibujaría igual (se deja a Canvas 2D en orden, así que el apilado no cambia); los plugins de indicadores propios funcionan sin cambios. Las velas coinciden con Canvas 2D con una diferencia máxima de 2/255; las líneas y los rellenos solo difieren en algunos píxeles de borde suavizados. El código WebGL es un chunk propio (unos 17 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
@@ -1081,13 +1081,15 @@ Tiempo por fotograma al desplazar, en una GPU integrada (Intel UHD; 16.7 ms son 
 
 | Gráfico | Densidad de píxeles | Canvas 2D | WebGL |
 |---|---|---|---|
-| 1600×900, 2,000 velas | 2 | 23.3 ms | 17.6 ms |
-| 1600×900, zoom alejado sobre 200,000 barras | 2 | 25.1 ms | 18.2 ms |
-| 2560×1400, 2,000 velas | 1.5 | 28.8 ms | 20.9 ms |
-| 2560×1400, 2,000 velas | 2 | 38.1 ms | 22.5 ms |
-| Seis gráficos, cada uno con 500 velas y dos indicadores | 2 | 33.4 ms | 24 ms |
+| 1600×900, 500 velas + 4 indicadores | 2 | 27.4 ms | 19.6 ms |
+| 1600×900, zoom alejado sobre 200,000 barras + 4 indicadores | 2 | 34.5 ms | 20.2 ms |
+| Seis gráficos, cada uno con 500 velas y dos indicadores | 2 | 23.5 ms | 17.2 ms |
+| 2560×1400, 2,000 velas + 4 indicadores | 1 | 41.6 ms | 17.7 ms |
+| 2560×1400, 2,000 velas + 4 indicadores | 1.5 | 70.8 ms | 17.6 ms |
+| 2560×1400, 2,000 velas + 4 indicadores | 2 | 114.5 ms | 29.1 ms |
+| 2560×1400, 2,000 velas | 2 | 33.1 ms | 20.9 ms |
 
-Los indicadores siguen dibujándose con Canvas 2D, así que un gráfico lleno de ellos gana menos (2560×1400 con cuatro indicadores y densidad 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl` mide estas cifras en tu equipo.
+La mayoría de los fotogramas WebGL de arriba se quedan en 16.7 ms; las medias incluyen algunos más largos. Con densidad 2 en un gráfico de 2560×1400, solo la composición de las capas a tamaño completo ya le cuesta al navegador unos 23 ms en esta GPU. `node scripts/bench-render.mjs --renderer=webgl` mide estas cifras en tu equipo.
 
 ## Arquitectura
 

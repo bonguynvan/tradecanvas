@@ -371,7 +371,7 @@ await widget.setTimeframe('100T')       // a bar per 100 trades`,
     id: 'bigdata',
     code: `widget.setData(bars)          // the finest series you have
 widget.setTimeframe('1h')     // resampled locally, no refetch
-await chart.setRenderer('webgl')  // bars on the GPU`,
+await chart.setRenderer('webgl')  // drawn on the GPU`,
     renderers: true,
     options: () => ({
       symbol: 'DEMO',

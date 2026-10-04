@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Bộ vẽ WebGL (bản xem trước)</h2>
 <p>
-  <code>renderer: 'webgl'</code> vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. <code>'auto'</code> chỉ dùng WebGL khi có GPU phần cứng. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 7 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến khớp Canvas 2D, lệch không quá 2/255; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -89,15 +89,17 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
 <table>
   <thead><tr><th>Biểu đồ</th><th>Tỉ lệ điểm ảnh</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
   <tbody>
-    <tr><td>1600×900, 2,000 nến</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
-    <tr><td>1600×900, thu nhỏ trên 200,000 nến</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
-    <tr><td>2560×1400, 2,000 nến</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
-    <tr><td>2560×1400, 2,000 nến</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
-    <tr><td>Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+    <tr><td>1600×900, 500 nến + 4 chỉ báo</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
+    <tr><td>1600×900, thu nhỏ trên 200,000 nến + 4 chỉ báo</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>2</td><td>114.5 ms</td><td>29.1 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến</td><td>2</td><td>33.1 ms</td><td>20.9 ms</td></tr>
   </tbody>
 </table>
 <p>
-  Chỉ báo vẫn vẽ bằng Canvas 2D, nên biểu đồ nhiều chỉ báo được lợi ít hơn: 2560×1400 với bốn chỉ báo ở tỉ lệ 2 giảm từ 138 xuống 97 ms. Ở kích thước và tỉ lệ đó, riêng việc trình duyệt ghép các lớp full-size đã mất khoảng 23 ms trên GPU này. <code>node scripts/bench-render.mjs --renderer=webgl</code> chạy các số đo này trên máy của bạn.
+  Phần lớn khung hình WebGL ở trên đạt 16.7 ms; số trung bình gồm cả vài khung dài hơn. Ở tỉ lệ 2 với biểu đồ 2560×1400, riêng việc trình duyệt ghép các lớp full-size đã mất khoảng 23 ms trên GPU này. <code>node scripts/bench-render.mjs --renderer=webgl</code> chạy các số đo này trên máy của bạn.
 </p>
 
 <h2>Ngoài luồng chính</h2>

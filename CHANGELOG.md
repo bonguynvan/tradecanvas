@@ -4,6 +4,19 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### WebGL: indicators, panes and more chart types on the GPU
+
+- **More on the GPU**: with `renderer: 'webgl'`, indicators, indicator panes, compare lines and most other chart types (line, area, bars, Heikin-Ashi, hollow candles, Renko, line break, range bars, HLC area, step line, line with markers, equivolume, high-low) draw with WebGL too. Their Canvas 2D drawing is recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is; text, drawings, orders, axes and the crosshair stay on Canvas 2D.
+- **Same look**: lines and fills differ from Canvas 2D only on a few edge pixels. Anything the GPU wouldn't draw the same (images, patterns, rotated or non-rectangular clips, sharp mitered corners, overlapping pieces of one path, shapes other than bands and areas) is left to Canvas 2D, in order, so the stacking doesn't change. Baseline, Kagi and point & figure charts stay on Canvas 2D for now.
+- **Faster where it counts**: panning on integrated graphics at a pixel ratio of 2, 500 candles with four indicators take 19.6 ms a frame instead of 27.4, zoomed out on 200,000 bars with four indicators 20.2 instead of 34.5, six charts side by side 17.2 instead of 23.5, and a 2560×1400 chart with four indicators 29.1 instead of 114.5. At 150% scaling that chart pans at 60 fps (70.8 → 17.6 ms).
+- **Custom indicators come along**: a plugin's `render` draws on the recording context like on any other, and falls back to Canvas 2D by itself where it needs to. Its `render` may then run twice in a frame, so it should draw without side effects. Text it draws goes on the 2D canvas, over the lines of the indicators drawn with it.
+- **Session break labels** draw over the indicators too.
+- The WebGL code is now about 17 KB gzipped, still loaded only on first use.
+
+## 1.9.0 (2026-10-04)
+
+Includes 1.8.0, which wasn't published on its own.
+
 ### WebGL renderer (preview)
 
 - **`renderer: 'webgl'`** draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene. Indicators, drawings, axes and the crosshair stay on Canvas 2D. `'auto'` takes WebGL only on a hardware GPU; Canvas 2D stays the default.

@@ -1,12 +1,15 @@
 import { resolveVolumeColors } from '@tradecanvas/commons';
 import type { ViewportState } from '@tradecanvas/commons';
-import type { GpuBackground, GpuDrawn, GpuFrame, GpuRect, GpuRenderer } from '../engine/gpu.js';
+import type { GpuBackground, GpuDrawn, GpuFrame, GpuRect, GpuRecorder, GpuRenderer } from '../engine/gpu.js';
 import { barColumns } from '../charts/pixelGrid.js';
 import { gridLines } from '../axis/gridLines.js';
 import { forEachPixelColumn, isDense } from '../charts/denseBars.js';
 import { FLOATS_PER_BAR, SeriesUploads } from './seriesUploads.js';
 import { parseColor, premultiplied, type RGBA } from './glColor.js';
 import { yMapping } from './yMapping.js';
+import { GlKit, type Program } from './glKit.js';
+import { CommandDrawer } from './commandDrawer.js';
+import { createRecorder, type Recorder } from './recorder.js';
 import { CANDLE_BARS_VS, CANDLE_COLUMNS_VS, FILL_FS, RECT_FS, RECT_VS, VOLUME_BARS_VS, VOLUME_COLUMNS_VS } from './shaders.js';
 
 const BAR_STRIDE = FLOATS_PER_BAR * 4;
@@ -17,23 +20,22 @@ const COLUMN_STRIDE = COLUMN_FLOATS * 4;
 const RECT_FLOATS = 10;
 const RECT_STRIDE = RECT_FLOATS * 4;
 
-interface Program {
-  program: WebGLProgram;
-  vao: WebGLVertexArrayObject;
-  uniforms: Map<string, WebGLUniformLocation | null>;
-  attribs: Map<string, number>;
-}
+/** Attributes the bar and rectangle programs read. */
+const ATTRIBS = ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color', 'a_dash'];
 
 /**
  * The background (grid, sessions), candles and volume on WebGL 2, on a
- * canvas of their own under the 2D scene. The series lives in a GPU buffer,
- * rewritten only where it changed; a frame sets a few uniforms and makes a
- * few draw calls. Zoomed out below a pixel per bar it draws a column per
- * pixel, like the 2D renderers.
+ * canvas of their own under the 2D scene, then whatever 2D drawing was
+ * recorded for it (series of other kinds, indicators, panes). The series
+ * lives in a GPU buffer, rewritten only where it changed; a frame sets a few
+ * uniforms and makes a few draw calls. Zoomed out below a pixel per bar it
+ * draws a column per pixel, like the 2D renderers.
  */
 export class WebGLSeriesRenderer implements GpuRenderer {
   readonly label: string;
   private readonly gl: WebGL2RenderingContext;
+  private readonly kit: GlKit;
+  private readonly drawer: CommandDrawer;
   private readonly candleBars: Program;
   private readonly volumeBars: Program;
   private readonly candleColumns: Program;
@@ -84,16 +86,19 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   private constructor(readonly canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
     this.gl = gl;
+    this.kit = new GlKit(gl);
     const info = gl.getExtension('WEBGL_debug_renderer_info');
     this.label = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-    this.candleBars = this.program(CANDLE_BARS_VS);
-    this.volumeBars = this.program(VOLUME_BARS_VS);
-    this.candleColumns = this.program(CANDLE_COLUMNS_VS);
-    this.volumeColumns = this.program(VOLUME_COLUMNS_VS);
-    this.rects = this.program(RECT_VS, RECT_FS);
-    this.seriesBuffer = this.buffer();
-    this.columnBuffer = this.buffer();
-    this.rectBuffer = this.buffer();
+    const kit = this.kit;
+    this.candleBars = kit.program(CANDLE_BARS_VS, FILL_FS, ATTRIBS);
+    this.volumeBars = kit.program(VOLUME_BARS_VS, FILL_FS, ATTRIBS);
+    this.candleColumns = kit.program(CANDLE_COLUMNS_VS, FILL_FS, ATTRIBS);
+    this.volumeColumns = kit.program(VOLUME_COLUMNS_VS, FILL_FS, ATTRIBS);
+    this.rects = kit.program(RECT_VS, RECT_FS, ATTRIBS);
+    this.seriesBuffer = kit.buffer();
+    this.columnBuffer = kit.buffer();
+    this.rectBuffer = kit.buffer();
+    this.drawer = new CommandDrawer(kit);
     canvas.addEventListener('webglcontextlost', this.handleLost);
   }
 
@@ -108,10 +113,15 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     }
   }
 
+  recorder(dpr: number, measure: CanvasRenderingContext2D | null): GpuRecorder {
+    return createRecorder(dpr, measure);
+  }
+
   render(frame: GpuFrame): GpuDrawn {
     const gl = this.gl;
-    if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false };
-    const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null };
+    if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false, recorded: false };
+    const recorded = isRecorder(frame.recorded) ? frame.recorded : null;
+    const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null, recorded: recorded !== null };
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     // A frame that failed half-way may have left the scissor on.
     gl.disable(gl.SCISSOR_TEST);
@@ -119,14 +129,23 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     if (frame.background) this.drawBackground(frame, frame.background);
+    this.drawSeries(frame);
+    if (recorded && recorded.commands.length > 0) {
+      this.drawer.draw(recorded.commands, this.canvas.width, this.canvas.height, (values, count) => this.drawRecordedRects(frame, values, count));
+    }
+    return drawn;
+  }
 
+  /** Volume and candles, clipped to the plot. */
+  private drawSeries(frame: GpuFrame): void {
+    const gl = this.gl;
     const { data, viewport, dpr } = frame;
-    if (data.length === 0 || (!frame.candles && !frame.volume)) return drawn;
+    if (data.length === 0 || (!frame.candles && !frame.volume)) return;
     this.syncSeries(frame);
 
     const from = Math.max(0, viewport.visibleRange.from);
     const to = Math.min(viewport.visibleRange.to, data.length - 1);
-    if (to < from) return drawn;
+    if (to < from) return;
 
     // The series is clipped to the plot, as the 2D renderers are: the
     // scissor to the pixels it touches, the shader to the share of each.
@@ -146,7 +165,18 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     const { min, max } = viewport.priceRange;
     if (frame.candles && max - min !== 0) this.drawCandles(frame, from, to, dense, columnCount);
     gl.disable(gl.SCISSOR_TEST);
-    return drawn;
+  }
+
+  /** Recorded rectangles: device pixels, already clipped. */
+  private drawRecordedRects(frame: GpuFrame, values: Float32Array, count: number): void {
+    const gl = this.gl;
+    const p = this.use(this.rects, frame);
+    this.kit.float(p, 'u_dpr', 1);
+    this.kit.int(p, 'u_union', 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, values, gl.STREAM_DRAW);
+    this.bindRects(p, 0);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, count);
   }
 
   destroy(): void {
@@ -154,10 +184,8 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     this.lostCallback = null;
     const gl = this.gl;
     if (!gl.isContextLost()) {
-      for (const p of [this.candleBars, this.volumeBars, this.candleColumns, this.volumeColumns, this.rects]) {
-        gl.deleteVertexArray(p.vao);
-        gl.deleteProgram(p.program);
-      }
+      for (const p of [this.candleBars, this.volumeBars, this.candleColumns, this.volumeColumns, this.rects]) this.kit.deleteProgram(p);
+      this.drawer.destroy();
       gl.deleteBuffer(this.seriesBuffer);
       gl.deleteBuffer(this.columnBuffer);
       gl.deleteBuffer(this.rectBuffer);
@@ -330,8 +358,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   private use(p: Program, frame: GpuFrame): Program {
     const gl = this.gl;
-    gl.useProgram(p.program);
-    gl.bindVertexArray(p.vao);
+    this.kit.use(p);
     gl.uniform2f(this.loc(p, 'u_canvas'), this.canvas.width, this.canvas.height);
     this.vec4(p, 'u_clip', this.clip);
     this.float(p, 'u_dpr', frame.dpr);
@@ -370,65 +397,25 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   }
 
   private attrib(p: Program, name: string, size: number, stride: number, offset: number): void {
-    const loc = p.attribs.get(name);
-    if (loc === undefined || loc < 0) return;
-    const gl = this.gl;
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, offset);
-    gl.vertexAttribDivisor(loc, 1);
+    this.kit.attrib(p, name, size, stride, offset);
   }
 
   private float(p: Program, name: string, v: number): void {
-    this.gl.uniform1f(this.loc(p, name), v);
+    this.kit.float(p, name, v);
   }
 
   private vec4(p: Program, name: string, v: readonly number[]): void {
-    this.gl.uniform4f(this.loc(p, name), v[0], v[1], v[2], v[3]);
+    this.kit.vec4(p, name, v);
   }
 
   private loc(p: Program, name: string): WebGLUniformLocation | null {
-    if (!p.uniforms.has(name)) p.uniforms.set(name, this.gl.getUniformLocation(p.program, name));
-    return p.uniforms.get(name) ?? null;
+    return this.kit.loc(p, name);
   }
+}
 
-  private buffer(): WebGLBuffer {
-    const b = this.gl.createBuffer();
-    if (!b) throw new Error('WebGL: no buffer');
-    return b;
-  }
-
-  private program(vertexSource: string, fragmentSource = FILL_FS): Program {
-    const gl = this.gl;
-    const compile = (type: number, source: string) => {
-      const shader = gl.createShader(type);
-      if (!shader) throw new Error('WebGL: no shader');
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        const log = gl.getShaderInfoLog(shader);
-        gl.deleteShader(shader);
-        throw new Error(`WebGL shader: ${log}`);
-      }
-      return shader;
-    };
-    const vs = compile(gl.VERTEX_SHADER, vertexSource);
-    const fs = compile(gl.FRAGMENT_SHADER, fragmentSource);
-    const program = gl.createProgram();
-    if (!program) throw new Error('WebGL: no program');
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error(`WebGL program: ${gl.getProgramInfoLog(program)}`);
-    }
-    const vao = gl.createVertexArray();
-    if (!vao) throw new Error('WebGL: no vertex array');
-    const attribs = new Map<string, number>();
-    for (const name of ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color', 'a_dash']) attribs.set(name, gl.getAttribLocation(program, name));
-    return { program, vao, uniforms: new Map(), attribs };
-  }
+/** A recorder of this renderer's own making. */
+function isRecorder(r: unknown): r is Recorder {
+  return typeof r === 'object' && r !== null && Array.isArray((r as Recorder).commands);
 }
 
 /** Let a context go now rather than at garbage collection. */
