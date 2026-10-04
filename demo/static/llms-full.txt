@@ -1640,6 +1640,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | Serialize chart state |
 | `loadState(json)` | Restore chart state |
 | `screenshot()` | Download chart as image |
+| `setRenderer(mode)` | Draw with `'canvas'` (default), `'webgl'` or `'auto'`; resolves to what draws now |
+| `getRenderer()` | `'canvas'` or `'webgl'` |
 | `on(event, handler)` | Subscribe to events |
 | `destroy()` | Clean up all resources |
 
@@ -1816,6 +1818,31 @@ Downsampling throughput (`pnpm bench`, single core):
 | 1,000,000 | ~2.6 ms | 380 / s |
 
 A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame budget — then draws ~62× fewer points (100k → 1600).
+
+### WebGL renderer (preview)
+
+`renderer: 'webgl'` draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 6 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+Frame time while panning, on integrated graphics (Intel UHD; 16.7 ms is 60 fps):
+
+| Chart | Pixel ratio | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900, 2,000 candles | 2 | 23.3 ms | 17.6 ms |
+| 1600×900, zoomed out on 200,000 bars | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400, 2,000 candles | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400, 2,000 candles | 2 | 38.1 ms | 22.5 ms |
+| Six charts, 500 candles and two indicators each | 2 | 33.4 ms | 24 ms |
+
+Indicators still draw with Canvas 2D, so a chart full of them gains less (2560×1400 with four indicators at a pixel ratio of 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl` runs these numbers on your own machine.
 
 ## Architecture
 

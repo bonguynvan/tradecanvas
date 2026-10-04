@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+<h3>Renderizador</h3>
+<table>
+  <thead><tr><th>Método</th><th>Propósito</th></tr></thead>
+  <tbody>
+    <tr><td>Opción <code>renderer</code></td><td><code>'canvas'</code> (predeterminado), <code>'webgl'</code> o <code>'auto'</code> (WebGL solo con una GPU de hardware).</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>Cambia en tiempo de ejecución. Devuelve lo que dibuja ahora: <code>'canvas'</code> si no hay WebGL 2.</td></tr>
+    <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> o <code>'webgl'</code>.</td></tr>
+  </tbody>
+</table>
+<p>Qué dibuja la GPU, y las cifras: <a href={href('/docs/performance')}>Rendimiento → Renderizador WebGL</a>.</p>
+
 <h3>Indicadores</h3>
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
@@ -289,7 +300,8 @@ chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
-chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+chart.on('drawingSelect', e => /* { ids, primary } */)
+chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' } */)`}</code></pre>
 
 <h3>Deshacer tus propios cambios</h3>
 <p>

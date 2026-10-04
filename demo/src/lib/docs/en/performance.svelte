@@ -75,6 +75,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   Below a pixel per bar, indicator lines, bands and histograms draw one span per pixel column: the column's lowest to highest point, joined to the column before, as wide as the line. It looks much the same as a stroke through thousands of points for a fraction of the raster work. Zoomed out on 200,000 bars with Bollinger Bands, EMA, RSI and MACD, a frame went from about 54 ms to about 21 ms on integrated graphics. <code>node scripts/bench-render.mjs</code> runs these numbers on your own machine.
 </p>
 
+<h2>WebGL renderer (preview)</h2>
+<p>
+  <code>renderer: 'webgl'</code> draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. <code>'auto'</code> takes WebGL only on a hardware GPU. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 6 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>Frame time while panning, on integrated graphics (Intel UHD; 16.7 ms is 60 fps):</p>
+<table>
+  <thead><tr><th>Chart</th><th>Pixel ratio</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900, 2,000 candles</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900, zoomed out on 200,000 bars</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400, 2,000 candles</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400, 2,000 candles</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>Six charts, 500 candles and two indicators each</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  Indicators still draw with Canvas 2D, so a chart full of them gains less: 2560×1400 with four indicators at a pixel ratio of 2 goes from 138 to 97 ms. At that size and ratio, the browser's compositing of the full-size layers alone takes about 23 ms on this GPU. <code>node scripts/bench-render.mjs --renderer=webgl</code> runs these numbers on your own machine.
+</p>
+
 <h2>Off the main thread</h2>
 <p>
   <code>IndicatorWorkerHost</code> runs indicator math in a Web Worker with a Promise-based

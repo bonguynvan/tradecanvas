@@ -30,6 +30,8 @@ export interface FeatureScene {
   languages?: boolean;
   /** Shows a look picker above the chart (it calls `setUI`); the scene reads `env.look`. */
   looks?: boolean;
+  /** Shows a Canvas 2D / WebGL picker above the chart (it calls `setRenderer` and times a pan). */
+  renderers?: boolean;
   /** Runs once the first bars are on the chart. */
   setup?: (widget: ChartWidget, chart: Chart, env: SceneEnv) => void | Promise<void>;
   /** Several charts at once (ChartWidgetGrid) instead of one widget; `options` go to every chart. */
@@ -368,7 +370,9 @@ await widget.setTimeframe('100T')       // a bar per 100 trades`,
   {
     id: 'bigdata',
     code: `widget.setData(bars)          // the finest series you have
-widget.setTimeframe('1h')     // resampled locally, no refetch`,
+widget.setTimeframe('1h')     // resampled locally, no refetch
+await chart.setRenderer('webgl')  // bars on the GPU`,
+    renderers: true,
     options: () => ({
       symbol: 'DEMO',
       symbols: ['DEMO'],

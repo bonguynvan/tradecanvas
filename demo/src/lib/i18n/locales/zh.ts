@@ -130,11 +130,14 @@ const zh: SiteMessages = {
     scenes: '功能场景',
     widgetLanguage: '组件语言',
     widgetLook: '组件外观',
+    widgetRenderer: '渲染器',
     idle: '滚动到此处即可启动实时图表',
     metricHint: '切换品种或周期即可计时',
     metricSwitch: '→ {label}：{ms} · {bars} 根K线',
     metricSetData: 'setData({bars} 根K线)：{ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}：平移时每帧 {ms}',
+    metricRendererMissing: '此处没有 WebGL 2：使用 Canvas 2D 绘制',
     tryThis: '试一试',
   },
 
@@ -294,6 +297,7 @@ const zh: SiteMessages = {
       blurb:
         '20 万根 1 分钟K线，外加四个指标。渲染只涉及可见的K线；更大的周期在本地重新采样，耗时超过几帧时会显示加载遮罩。',
       tryThis: [
+        '在图表上方切换 Canvas 2D 与 WebGL：每次切换都会测一次短暂平移',
         '切换到 1H、4H，再切回 1m——耗时会显示在图表下方',
         '一直缩小到底再平移：每帧开销保持不变',
         '再添加一个指标，观察切换耗时',

@@ -79,6 +79,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   Cuando cada barra mide menos de un píxel, las líneas, bandas e histogramas de los indicadores se dibujan con un tramo por columna de píxeles: del punto más bajo al más alto de la columna, unido a la columna anterior y tan ancho como la línea. Se ve casi igual que un trazo por miles de puntos con una fracción del trabajo de rasterizado. Con el zoom alejado sobre 200.000 barras con Bandas de Bollinger, EMA, RSI y MACD, un fotograma pasó de unos 54 ms a unos 21 ms en una GPU integrada. <code>node scripts/bench-render.mjs</code> mide estas cifras en tu propio equipo.
 </p>
 
+<h2>Renderizador WebGL (versión preliminar)</h2>
+<p>
+  <code>renderer: 'webgl'</code> dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. <code>'auto'</code> usa WebGL solo con una GPU de hardware. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 6 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>Tiempo por fotograma al desplazar, en una GPU integrada (Intel UHD; 16.7 ms son 60 fps):</p>
+<table>
+  <thead><tr><th>Gráfico</th><th>Densidad de píxeles</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900, 2,000 velas</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900, zoom alejado sobre 200,000 barras</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400, 2,000 velas</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400, 2,000 velas</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>Seis gráficos, cada uno con 500 velas y dos indicadores</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  Los indicadores siguen dibujándose con Canvas 2D, así que un gráfico lleno de ellos gana menos: 2560×1400 con cuatro indicadores y densidad 2 pasa de 138 a 97 ms. Con ese tamaño y densidad, solo la composición de las capas a tamaño completo ya le cuesta al navegador unos 23 ms en esta GPU. <code>node scripts/bench-render.mjs --renderer=webgl</code> mide estas cifras en tu equipo.
+</p>
+
 <h2>Fuera del hilo principal</h2>
 <p>
   <code>IndicatorWorkerHost</code> ejecuta los cálculos de los indicadores en un

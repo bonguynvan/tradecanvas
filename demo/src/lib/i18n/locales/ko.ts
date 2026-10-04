@@ -129,11 +129,14 @@ const ko: SiteMessages = {
     scenes: '기능 장면',
     widgetLanguage: '위젯 언어',
     widgetLook: '위젯 외관',
+    widgetRenderer: '렌더러',
     idle: '화면에 보이도록 스크롤하면 실시간 차트가 시작됩니다',
     metricHint: '종목이나 시간 단위를 바꾸면 소요 시간을 측정합니다',
     metricSwitch: '→ {label}: {ms} · 봉 {bars}개',
     metricSetData: 'setData(봉 {bars}개): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: 이동 중 프레임당 {ms}',
+    metricRendererMissing: 'WebGL 2를 쓸 수 없어 Canvas 2D로 그립니다',
     tryThis: '해 보기',
   },
 
@@ -293,6 +296,7 @@ const ko: SiteMessages = {
       blurb:
         '1분봉 20만 개에 지표 4개. 렌더링은 보이는 봉만 처리하며, 더 큰 시간 단위는 로컬에서 리샘플링합니다. 리샘플링이 몇 프레임 이상 걸리면 로딩 가림막 뒤에서 진행됩니다.',
       tryThis: [
+        '차트 위에서 Canvas 2D와 WebGL을 전환: 전환할 때마다 짧은 이동을 측정',
         '1H, 4H로 바꿨다가 다시 1m으로 돌아오세요 — 차트 아래에 소요 시간이 표시됩니다',
         '끝까지 축소한 뒤 이동해 보세요. 프레임 비용이 일정하게 유지됩니다',
         '지표를 하나 더 추가하고 전환 시간을 지켜보세요',

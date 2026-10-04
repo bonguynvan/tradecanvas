@@ -74,6 +74,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   当每根K线窄于一个像素时，指标的线、带和柱状图按像素列绘制：每列一段，从该列最低点到最高点，与前一列相连，宽度等于线宽。它看起来与穿过数千个点的描边几乎一样，光栅化的工作量却少得多。在 200,000 根K线上缩小并叠加布林带、EMA、RSI 和 MACD 时，集成显卡上每帧从约 54 ms 降到约 21 ms。<code>node scripts/bench-render.mjs</code> 可在你自己的机器上跑出这些数字。
 </p>
 
+<h2>WebGL 渲染器（预览）</h2>
+<p>
+  <code>renderer: 'webgl'</code> 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。<code>'auto'</code> 只在硬件 GPU 上启用 WebGL。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 6 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>平移时的每帧耗时，集成显卡（Intel UHD；16.7 ms 即 60 fps）：</p>
+<table>
+  <thead><tr><th>图表</th><th>像素比</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900，2,000 根K线</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900，在 200,000 根K线上缩小</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>六个图表，每个 500 根K线加两个指标</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  指标仍用 Canvas 2D 绘制，所以指标多的图表收益较小：2560×1400 加四个指标、像素比 2 时，从 138 ms 降到 97 ms。在这个尺寸和像素比下，仅浏览器合成全尺寸图层就要在这块 GPU 上花约 23 ms。<code>node scripts/bench-render.mjs --renderer=webgl</code> 可在你的机器上测出这些数字。
+</p>
+
 <h2>脱离主线程</h2>
 <p>
   <code>IndicatorWorkerHost</code> 在 Web Worker 中运行指标计算，提供基于 Promise 的

@@ -129,11 +129,14 @@ const fr: SiteMessages = {
     scenes: 'Scènes de fonctionnalités',
     widgetLanguage: 'Langue du widget',
     widgetLook: 'Apparence du widget',
+    widgetRenderer: 'Moteur de rendu',
     idle: 'Faites défiler jusqu’ici pour lancer le graphique en direct',
     metricHint: 'Changez de symbole ou d’unité de temps pour chronométrer le changement',
     metricSwitch: '→ {label} : {ms} · {bars} barres',
     metricSetData: 'setData({bars} barres) : {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name} : {ms} par image en défilement',
+    metricRendererMissing: 'Pas de WebGL 2 ici : rendu en Canvas 2D',
     tryThis: 'À essayer',
   },
 
@@ -293,6 +296,7 @@ const fr: SiteMessages = {
       blurb:
         'Deux cent mille barres d’une minute avec quatre indicateurs. Le rendu ne touche que les barres visibles ; les unités de temps plus longues sont recalculées localement, derrière un voile de chargement quand cela prend plus de quelques images.',
       tryThis: [
+        'Basculez entre Canvas 2D et WebGL au-dessus du graphique : chaque bascule chronomètre un court défilement',
         'Passez en 1H, en 4H puis revenez en 1m — les durées s’affichent sous le graphique',
         'Dézoomez au maximum et faites défiler : le coût par image reste constant',
         'Ajoutez un indicateur et observez le temps de changement',

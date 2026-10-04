@@ -131,11 +131,14 @@ const es: SiteMessages = {
     scenes: 'Escenas de funciones',
     widgetLanguage: 'Idioma del widget',
     widgetLook: 'Aspecto del widget',
+    widgetRenderer: 'Renderizador',
     idle: 'Desplázate hasta aquí para iniciar el gráfico en vivo',
     metricHint: 'Cambia de símbolo o de temporalidad para medir el tiempo',
     metricSwitch: '→ {label}: {ms} · {bars} barras',
     metricSetData: 'setData({bars} barras): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: {ms} por fotograma al desplazar',
+    metricRendererMissing: 'Sin WebGL 2 aquí: se dibuja con Canvas 2D',
     tryThis: 'Prueba esto',
   },
 
@@ -295,6 +298,7 @@ const es: SiteMessages = {
       blurb:
         'Doscientas mil barras de 1 minuto con cuatro indicadores. El renderizado solo toca las barras visibles; las temporalidades mayores se remuestrean localmente, tras un velo de carga cuando eso tarda más de unos pocos fotogramas.',
       tryThis: [
+        'Cambia entre Canvas 2D y WebGL sobre el gráfico: cada cambio mide un breve desplazamiento',
         'Cambia a 1H, 4H y vuelve a 1m: los tiempos aparecen bajo el gráfico',
         'Aleja el zoom al máximo y desplázate: el coste por fotograma se mantiene constante',
         'Añade otro indicador y observa el tiempo del cambio',

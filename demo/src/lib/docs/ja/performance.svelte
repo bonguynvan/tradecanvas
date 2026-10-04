@@ -75,6 +75,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   1 本のバーが 1 ピクセルより細くなると、インジケーターのライン、バンド、ヒストグラムはピクセル列ごとに 1 本のスパンで描かれます。列の最安値から最高値まで、前の列とつながり、幅は線の太さと同じです。数千点を通るストロークとほぼ同じ見た目のまま、ラスタライズの手間はずっと少なくなります。200,000 本のバーを縮小表示し、ボリンジャーバンド、EMA、RSI、MACD を重ねた場合、内蔵 GPU で 1 フレームが約 54 ms から約 21 ms になりました。<code>node scripts/bench-render.mjs</code> で手元のマシンでも計測できます。
 </p>
 
+<h2>WebGL レンダラー（プレビュー）</h2>
+<p>
+  <code>renderer: 'webgl'</code> を指定すると、グリッド、セッションの網掛けと区切り線、ローソク足、出来高を WebGL 2 で、2D シーンの下にあるキャンバスに描きます。インジケーター、描画、軸、クロスヘアは Canvas 2D のままです。<code>'auto'</code> はハードウェア GPU のときだけ WebGL を使います。ピクセルは Canvas 2D と 2/255 以内で一致します。WebGL のコードは独立したチャンク（gzip で約 6 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>パン中の 1 フレームの時間、内蔵 GPU（Intel UHD、16.7 ms で 60 fps）：</p>
+<table>
+  <thead><tr><th>チャート</th><th>ピクセル比</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900、ローソク足 2,000 本</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900、200,000 本を縮小表示</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>チャート 6 つ、それぞれローソク足 500 本とインジケーター 2 つ</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  インジケーターはまだ Canvas 2D で描くため、多く表示したチャートほど効果は小さくなります。2560×1400 にインジケーター 4 つ、ピクセル比 2 では 138 ms から 97 ms です。このサイズとピクセル比では、この GPU だとブラウザーがフルサイズのレイヤーを合成するだけで約 23 ms かかります。<code>node scripts/bench-render.mjs --renderer=webgl</code> で手元のマシンでも計測できます。
+</p>
+
 <h2>メインスレッドの外で計算</h2>
 <p>
   <code>IndicatorWorkerHost</code> は、Promise ベースの <code>calculate()</code>、リクエストごとのタイムアウト、

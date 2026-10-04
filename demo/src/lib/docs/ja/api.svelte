@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+<h3>レンダラー</h3>
+<table>
+  <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>renderer</code> オプション</td><td><code>'canvas'</code>（既定）、<code>'webgl'</code>、または <code>'auto'</code>（ハードウェア GPU のときだけ WebGL）。</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>実行中に切り替えます。実際に描いているレンダラーを返します（WebGL 2 がなければ <code>'canvas'</code>）。</td></tr>
+    <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> または <code>'webgl'</code>。</td></tr>
+  </tbody>
+</table>
+<p>GPU が描くものと計測値：<a href={href('/docs/performance')}>パフォーマンス → WebGL レンダラー</a>。</p>
+
 <h3>インジケーター</h3>
 <table>
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
@@ -274,7 +285,8 @@ chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
-chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+chart.on('drawingSelect', e => /* { ids, primary } */)
+chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' } */)`}</code></pre>
 
 <h3>独自の変更を元に戻す</h3>
 <p>

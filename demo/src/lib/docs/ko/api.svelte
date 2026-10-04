@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+<h3>렌더러</h3>
+<table>
+  <thead><tr><th>메서드</th><th>용도</th></tr></thead>
+  <tbody>
+    <tr><td><code>renderer</code> 옵션</td><td><code>'canvas'</code>(기본값), <code>'webgl'</code>, 또는 <code>'auto'</code>(하드웨어 GPU일 때만 WebGL).</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>실행 중에 전환합니다. 실제로 그리는 렌더러를 반환합니다(WebGL 2가 없으면 <code>'canvas'</code>).</td></tr>
+    <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> 또는 <code>'webgl'</code>.</td></tr>
+  </tbody>
+</table>
+<p>GPU가 그리는 것과 측정값: <a href={href('/docs/performance')}>성능 → WebGL 렌더러</a>.</p>
+
 <h3>지표</h3>
 <table>
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
@@ -279,7 +290,8 @@ chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
-chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+chart.on('drawingSelect', e => /* { ids, primary } */)
+chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' } */)`}</code></pre>
 
 <h3>직접 만든 변경의 실행 취소</h3>
 <p>

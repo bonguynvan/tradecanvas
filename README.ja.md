@@ -884,6 +884,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | チャートの状態をシリアライズ |
 | `loadState(json)` | チャートの状態を復元 |
 | `screenshot()` | チャートを画像としてダウンロード |
+| `setRenderer(mode)` | `'canvas'`（既定）、`'webgl'`、`'auto'` で描画。実際に描いているレンダラーを返す |
+| `getRenderer()` | `'canvas'` または `'webgl'` |
 | `on(event, handler)` | イベントを購読 |
 | `destroy()` | すべてのリソースを解放 |
 
@@ -1060,6 +1062,31 @@ BB + EMA + RSI + MACD（`pnpm bench`、シングルコア）：
 | 1,000,000 | 約 2.6 ms | 380 / s |
 
 10 万本のラインチャートは約 0.3 ms でダウンサンプリングされ（16.6 ms のフレーム予算に十分収まります）、描画する点は約 62 分の 1 になります（100k → 1600）。
+
+### WebGL レンダラー（プレビュー）
+
+`renderer: 'webgl'` を指定すると、グリッド、セッションの網掛けと区切り線、ローソク足、出来高を WebGL 2 で、2D シーンの下にあるキャンバスに描きます。インジケーター、描画、軸、クロスヘアは Canvas 2D のままです。ピクセルは Canvas 2D と 2/255 以内で一致します。WebGL のコードは独立したチャンク（gzip で約 6 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+パン中の 1 フレームの時間、内蔵 GPU（Intel UHD、16.7 ms で 60 fps）：
+
+| チャート | ピクセル比 | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900、ローソク足 2,000 本 | 2 | 23.3 ms | 17.6 ms |
+| 1600×900、200,000 本を縮小表示 | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400、ローソク足 2,000 本 | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400、ローソク足 2,000 本 | 2 | 38.1 ms | 22.5 ms |
+| チャート 6 つ、それぞれローソク足 500 本とインジケーター 2 つ | 2 | 33.4 ms | 24 ms |
+
+インジケーターはまだ Canvas 2D で描くため、多く表示したチャートほど効果は小さくなります（2560×1400 にインジケーター 4 つ、ピクセル比 2：138 → 97 ms）。`node scripts/bench-render.mjs --renderer=webgl` で手元のマシンでも計測できます。
 
 ## アーキテクチャ
 

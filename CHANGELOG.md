@@ -4,6 +4,16 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### WebGL renderer (preview)
+
+- **`renderer: 'webgl'`** draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene. Indicators, drawings, axes and the crosshair stay on Canvas 2D. `'auto'` takes WebGL only on a hardware GPU; Canvas 2D stays the default.
+- **Same pixels**: the GPU follows the 2D rules for whole device pixels and antialiased edges, so the two match to within 2/255 at 100%, 125%, 150% and 200% scaling.
+- **Faster where it counts**: panning on integrated graphics at a pixel ratio of 2, 2,000 candles on a 1600×900 chart take 17.6 ms a frame instead of 23.3 (60 fps), and on a 2560×1400 chart 22.5 ms instead of 38.1; six charts side by side, 24 ms instead of 33.4. At 150% scaling a 2560×1400 chart pans at about 60 fps (28.8 → 20.9 ms on average).
+- **Safe to try**: `chart.setRenderer(mode)` switches at runtime and resolves to what draws, `chart.getRenderer()` says which, and `rendererChange` reports each change and why (`'unsupported'`, `'contextLost'`). Where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D. The WebGL code is a chunk of its own (about 6 KB gzipped), loaded on first use. Screenshots include what the GPU drew.
+- **Session break labels** now draw over the bars instead of under them, with Canvas 2D or WebGL.
+- **Feature Lab**: the 200,000-bar scene has a Canvas 2D / WebGL switch, and times a short pan on each switch.
+- `pnpm bench:render --renderer=webgl` (or `--renderer=auto`) measures the WebGL path.
+
 ### Faster when zoomed out
 
 - **Faster when zoomed out**: once each bar takes less than a pixel, indicator lines, bands (Bollinger and the like) and histograms draw one span per pixel column instead of a stroke through thousands of points. Much the same look for a fraction of the raster work: zoomed out on 200,000 bars with Bollinger Bands, EMA, RSI and MACD, a frame went from about 54 ms to about 21 ms on integrated graphics (85 → 38 ms at 2x). Supertrend draws one line per colour instead of one stroke per bar.

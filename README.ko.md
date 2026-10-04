@@ -884,6 +884,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | 차트 상태 직렬화 |
 | `loadState(json)` | 차트 상태 복원 |
 | `screenshot()` | 차트를 이미지로 다운로드 |
+| `setRenderer(mode)` | `'canvas'`(기본값), `'webgl'`, `'auto'`로 그리기; 실제로 그리는 렌더러를 반환 |
+| `getRenderer()` | `'canvas'` 또는 `'webgl'` |
 | `on(event, handler)` | 이벤트 구독 |
 | `destroy()` | 모든 리소스 정리 |
 
@@ -1059,6 +1061,31 @@ BB + EMA + RSI + MACD (`pnpm bench`, 단일 코어):
 | 1,000,000 | ~2.6 ms | 380 / s |
 
 10만 봉 라인 차트는 약 0.3 ms 만에 다운샘플링되어 16.6 ms 프레임 예산 안에 넉넉히 들어오며, 그다음 약 62배 적은 포인트를 그립니다(100k → 1600).
+
+### WebGL 렌더러 (미리 보기)
+
+`renderer: 'webgl'`을 쓰면 그리드, 세션 음영과 구분선, 캔들, 거래량을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 지표, 드로잉, 축, 크로스헤어는 계속 Canvas 2D로 그립니다. 픽셀은 Canvas 2D와 2/255 이내로 일치합니다. WebGL 코드는 별도 청크(gzip 약 6 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+이동 중 프레임 시간, 내장 GPU(Intel UHD, 16.7 ms가 60 fps):
+
+| 차트 | 픽셀 비율 | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900, 캔들 2,000개 | 2 | 23.3 ms | 17.6 ms |
+| 1600×900, 봉 200,000개를 축소해서 | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400, 캔들 2,000개 | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400, 캔들 2,000개 | 2 | 38.1 ms | 22.5 ms |
+| 차트 6개, 각각 캔들 500개와 지표 2개 | 2 | 33.4 ms | 24 ms |
+
+지표는 아직 Canvas 2D로 그리므로 지표가 많은 차트일수록 이득이 적습니다(2560×1400에 지표 4개, 픽셀 비율 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl`로 내 컴퓨터에서 측정할 수 있습니다.
 
 ## 아키텍처
 

@@ -129,11 +129,14 @@ const de: SiteMessages = {
     scenes: 'Feature-Szenen',
     widgetLanguage: 'Sprache des Widgets',
     widgetLook: 'Erscheinungsbild des Widgets',
+    widgetRenderer: 'Renderer',
     idle: 'Scrollen Sie hierher, um den Live-Chart zu starten',
     metricHint: 'Wechseln Sie Symbol oder Zeiteinheit, um die Zeit zu messen',
     metricSwitch: '→ {label}: {ms} · {bars} Kerzen',
     metricSetData: 'setData({bars} Kerzen): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: {ms} pro Frame beim Verschieben',
+    metricRendererMissing: 'Kein WebGL 2 verfügbar: Zeichnen mit Canvas 2D',
     tryThis: 'Zum Ausprobieren',
   },
 
@@ -293,6 +296,7 @@ const de: SiteMessages = {
       blurb:
         'Zweihunderttausend 1-Minuten-Kerzen mit vier Indikatoren. Gerendert werden nur die sichtbaren Kerzen; gröbere Zeiteinheiten werden lokal umgerechnet, hinter einem Ladeschleier, wenn das länger als ein paar Frames dauert.',
       tryThis: [
+        'Über dem Chart zwischen Canvas 2D und WebGL wechseln: jeder Wechsel misst ein kurzes Verschieben',
         'Wechseln Sie zu 1H, 4H und zurück zu 1m – die Zeiten erscheinen unter dem Chart',
         'Zoomen Sie ganz heraus und verschieben Sie: Die Kosten pro Frame bleiben konstant',
         'Fügen Sie einen weiteren Indikator hinzu und beobachten Sie die Wechselzeit',
