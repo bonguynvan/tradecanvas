@@ -1064,7 +1064,7 @@ BB + EMA + RSI + MACD（`pnpm bench`，单核）：
 
 ### WebGL 渲染器（预览）
 
-`renderer: 'webgl'` 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 7 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+`renderer: 'webgl'` 用 WebGL 2 绘制图表区和指标窗格，画在 2D 场景下方的一个画布上：网格、交易时段、K线和成交量直接绘制；指标、对比线和大多数图表类型的 Canvas 2D 绘制会被记录成 GPU 上的线条、填充和矩形，边缘像 Canvas 2D 一样抗锯齿。文字、绘图、订单、坐标轴和十字线仍用 Canvas 2D，GPU 无法画得一致的内容也交给 Canvas 2D（按原顺序绘制，层叠顺序不变）；自定义指标插件无需修改即可使用。K线与 Canvas 2D 的差异不超过 2/255；线条和填充只在少数抗锯齿边缘像素上有差别。WebGL 代码是一个独立的 chunk（gzip 后约 17 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
@@ -1079,13 +1079,15 @@ await chart.setRenderer('canvas')   // resolves to what draws now
 
 | 图表 | 像素比 | Canvas 2D | WebGL |
 |---|---|---|---|
-| 1600×900，2,000 根K线 | 2 | 23.3 ms | 17.6 ms |
-| 1600×900，在 200,000 根K线上缩小 | 2 | 25.1 ms | 18.2 ms |
-| 2560×1400，2,000 根K线 | 1.5 | 28.8 ms | 20.9 ms |
-| 2560×1400，2,000 根K线 | 2 | 38.1 ms | 22.5 ms |
-| 六个图表，每个 500 根K线加两个指标 | 2 | 33.4 ms | 24 ms |
+| 1600×900，500 根K线 + 4 个指标 | 2 | 27.4 ms | 19.6 ms |
+| 1600×900，在 200,000 根K线上缩小 + 4 个指标 | 2 | 34.5 ms | 20.2 ms |
+| 六个图表，每个 500 根K线加两个指标 | 2 | 23.5 ms | 17.2 ms |
+| 2560×1400，2,000 根K线 + 4 个指标 | 1 | 41.6 ms | 17.7 ms |
+| 2560×1400，2,000 根K线 + 4 个指标 | 1.5 | 70.8 ms | 17.6 ms |
+| 2560×1400，2,000 根K线 + 4 个指标 | 2 | 114.5 ms | 29.1 ms |
+| 2560×1400，2,000 根K线 | 2 | 33.1 ms | 20.9 ms |
 
-指标仍用 Canvas 2D 绘制，所以指标多的图表收益较小（2560×1400 加四个指标、像素比 2：138 → 97 ms）。`node scripts/bench-render.mjs --renderer=webgl` 可在你的机器上测出这些数字。
+上表中 WebGL 的大多数帧都在 16.7 ms；平均值包含了少数较长的帧。像素比 2、2560×1400 的图表上，仅浏览器合成全尺寸图层就要在这块 GPU 上花约 23 ms。`node scripts/bench-render.mjs --renderer=webgl` 可在你的机器上测出这些数字。
 
 ## 架构
 

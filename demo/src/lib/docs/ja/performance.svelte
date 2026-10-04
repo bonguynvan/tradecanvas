@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL レンダラー（プレビュー）</h2>
 <p>
-  <code>renderer: 'webgl'</code> を指定すると、グリッド、セッションの網掛けと区切り線、ローソク足、出来高を WebGL 2 で、2D シーンの下にあるキャンバスに描きます。インジケーター、描画、軸、クロスヘアは Canvas 2D のままです。<code>'auto'</code> はハードウェア GPU のときだけ WebGL を使います。ピクセルは Canvas 2D と 2/255 以内で一致します。WebGL のコードは独立したチャンク（gzip で約 7 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
+  <code>renderer: 'webgl'</code> を指定すると、プロット領域とインジケーターのペインを WebGL 2 で、2D シーンの下にあるキャンバスに描きます。グリッド、セッション、ローソク足、出来高は直接描き、インジケーター、比較ライン、ほとんどのチャートタイプの Canvas 2D 描画は GPU の線・塗り・矩形として記録し、Canvas 2D と同じように縁をアンチエイリアスします。テキスト、描画、注文、軸、クロスヘアは Canvas 2D のままで、GPU で同じに描けないものも Canvas 2D に任せます（順番どおりに描くので重なり順は変わりません）。自作のインジケータープラグインも変更なしで動きます。ローソク足は Canvas 2D と 2/255 以内で一致し、線と塗りはアンチエイリアスされた縁のわずかなピクセルだけが異なります。WebGL のコードは独立したチャンク（gzip で約 17 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -89,15 +89,17 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
 <table>
   <thead><tr><th>チャート</th><th>ピクセル比</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
   <tbody>
-    <tr><td>1600×900、ローソク足 2,000 本</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
-    <tr><td>1600×900、200,000 本を縮小表示</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
-    <tr><td>2560×1400、ローソク足 2,000 本</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
-    <tr><td>2560×1400、ローソク足 2,000 本</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
-    <tr><td>チャート 6 つ、それぞれローソク足 500 本とインジケーター 2 つ</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+    <tr><td>1600×900、ローソク足 500 本 + インジケーター 4 つ</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
+    <tr><td>1600×900、200,000 本を縮小表示 + インジケーター 4 つ</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>チャート 6 つ、それぞれローソク足 500 本とインジケーター 2 つ</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本 + インジケーター 4 つ</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本 + インジケーター 4 つ</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本 + インジケーター 4 つ</td><td>2</td><td>114.5 ms</td><td>29.1 ms</td></tr>
+    <tr><td>2560×1400、ローソク足 2,000 本</td><td>2</td><td>33.1 ms</td><td>20.9 ms</td></tr>
   </tbody>
 </table>
 <p>
-  インジケーターはまだ Canvas 2D で描くため、多く表示したチャートほど効果は小さくなります。2560×1400 にインジケーター 4 つ、ピクセル比 2 では 138 ms から 97 ms です。このサイズとピクセル比では、この GPU だとブラウザーがフルサイズのレイヤーを合成するだけで約 23 ms かかります。<code>node scripts/bench-render.mjs --renderer=webgl</code> で手元のマシンでも計測できます。
+  上の WebGL のフレームの大半は 16.7 ms に収まり、平均値には少し長いフレームが含まれます。ピクセル比 2 の 2560×1400 のチャートでは、この GPU だとブラウザーがフルサイズのレイヤーを合成するだけで約 23 ms かかります。<code>node scripts/bench-render.mjs --renderer=webgl</code> で手元のマシンでも計測できます。
 </p>
 
 <h2>メインスレッドの外で計算</h2>

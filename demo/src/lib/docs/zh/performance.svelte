@@ -76,7 +76,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL 渲染器（预览）</h2>
 <p>
-  <code>renderer: 'webgl'</code> 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。<code>'auto'</code> 只在硬件 GPU 上启用 WebGL。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 7 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+  <code>renderer: 'webgl'</code> 用 WebGL 2 绘制图表区和指标窗格，画在 2D 场景下方的一个画布上：网格、交易时段、K线和成交量直接绘制；指标、对比线和大多数图表类型的 Canvas 2D 绘制会被记录成 GPU 上的线条、填充和矩形，边缘像 Canvas 2D 一样抗锯齿。文字、绘图、订单、坐标轴和十字线仍用 Canvas 2D，GPU 无法画得一致的内容也交给 Canvas 2D（按原顺序绘制，层叠顺序不变）；自定义指标插件无需修改即可使用。K线与 Canvas 2D 的差异不超过 2/255；线条和填充只在少数抗锯齿边缘像素上有差别。WebGL 代码是一个独立的 chunk（gzip 后约 17 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -88,15 +88,17 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
 <table>
   <thead><tr><th>图表</th><th>像素比</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
   <tbody>
-    <tr><td>1600×900，2,000 根K线</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
-    <tr><td>1600×900，在 200,000 根K线上缩小</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
-    <tr><td>2560×1400，2,000 根K线</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
-    <tr><td>2560×1400，2,000 根K线</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
-    <tr><td>六个图表，每个 500 根K线加两个指标</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+    <tr><td>1600×900，500 根K线 + 4 个指标</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
+    <tr><td>1600×900，在 200,000 根K线上缩小 + 4 个指标</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>六个图表，每个 500 根K线加两个指标</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线 + 4 个指标</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线 + 4 个指标</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线 + 4 个指标</td><td>2</td><td>114.5 ms</td><td>29.1 ms</td></tr>
+    <tr><td>2560×1400，2,000 根K线</td><td>2</td><td>33.1 ms</td><td>20.9 ms</td></tr>
   </tbody>
 </table>
 <p>
-  指标仍用 Canvas 2D 绘制，所以指标多的图表收益较小：2560×1400 加四个指标、像素比 2 时，从 138 ms 降到 97 ms。在这个尺寸和像素比下，仅浏览器合成全尺寸图层就要在这块 GPU 上花约 23 ms。<code>node scripts/bench-render.mjs --renderer=webgl</code> 可在你的机器上测出这些数字。
+  上表中 WebGL 的大多数帧都在 16.7 ms；平均值包含了少数较长的帧。像素比 2、2560×1400 的图表上，仅浏览器合成全尺寸图层就要在这块 GPU 上花约 23 ms。<code>node scripts/bench-render.mjs --renderer=webgl</code> 可在你的机器上测出这些数字。
 </p>
 
 <h2>脱离主线程</h2>
