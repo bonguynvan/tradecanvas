@@ -30,11 +30,26 @@
     { id: 'capsule', name: 'Capsule' },
   ];
   let look = $state<WidgetUIPreset>('studio');
+  /** The renderer for scenes with a renderer picker. */
+  const RENDERERS: readonly { id: 'canvas' | 'webgl'; name: string }[] = [
+    { id: 'canvas', name: 'Canvas 2D' },
+    { id: 'webgl', name: 'WebGL' },
+  ];
+  let renderer = $state<'canvas' | 'webgl'>('canvas');
+  /**
+   * The pan a renderer switch times: back and forth, 15 frames each way, so
+   * it ends where it began; the first frames (the first upload, shader
+   * compiles) go untimed.
+   */
+  const WARMUP_FRAMES = 10;
+  const PAN_FRAMES = 50;
   /** The fonts the looks name: the widget loads none, so the page does. */
   const LOOK_FONTS =
     'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600&display=swap';
 
   let widget: ChartWidget | ChartWidgetGrid | null = null;
+  /** The single widget's chart, for the renderer picker. */
+  let sceneChart: Chart | null = null;
   let mountToken = 0;
 
   const scene = $derived(FEATURE_SCENES[active]);
@@ -84,6 +99,7 @@
     const token = ++mountToken;
     widget?.destroy();
     widget = null;
+    sceneChart = null;
     metrics = [];
     if (!host) return;
 
@@ -160,6 +176,7 @@
     });
     widget = w;
     const chart = w.getChart();
+    sceneChart = chart;
 
     // Time every switch, network included, until its bars are on the chart.
     chart.on('dataUpdate', (e) => {
@@ -183,6 +200,43 @@
     await firstBars(chart);
     if (token !== mountToken) return;
     await current.setup?.(w, chart, env);
+    if (current.renderers && renderer !== 'canvas') await applyRenderer(chart, renderer, token);
+  }
+
+  /** The chart on `mode`, then a short pan back and forth, timed a frame at a time. */
+  async function applyRenderer(chart: Chart, mode: 'canvas' | 'webgl', token: number) {
+    const now = await chart.setRenderer(mode);
+    if (token !== mountToken) return;
+    if (now !== mode) {
+      renderer = now;
+      pushMetric(m.lab.metricRendererMissing);
+      return;
+    }
+    const frames: number[] = [];
+    await new Promise<void>((done) => {
+      let last = 0;
+      let k = 0;
+      const step = (ts: number) => {
+        if (token !== mountToken) return done();
+        if (last && k > WARMUP_FRAMES) frames.push(ts - last);
+        last = ts;
+        chart.scrollBars(k % 30 < 15 ? 3 : -3);
+        if (++k < WARMUP_FRAMES + PAN_FRAMES) requestAnimationFrame(step);
+        else done();
+      };
+      requestAnimationFrame(step);
+    });
+    if (token !== mountToken || frames.length === 0) return;
+    const name = RENDERERS.find((r) => r.id === now)?.name ?? now;
+    pushMetric(fill(m.lab.metricRenderer, { name, ms: fmtMs(frames.reduce((a, b) => a + b, 0) / frames.length) }));
+  }
+
+  function pickRenderer(id: 'canvas' | 'webgl') {
+    if (id === renderer) return;
+    renderer = id;
+    // Not mounted yet: the scene picks it up when it is.
+    if (!sceneChart) return;
+    applyRenderer(sceneChart, id, mountToken).catch((err: unknown) => console.error('Renderer switch failed:', err));
   }
 
   /** Mount a scene; one that fails to load (offline, a missing chunk) leaves the stage as it was. */
@@ -314,6 +368,19 @@
               class:active={option.id === look}
               aria-pressed={option.id === look}
               onclick={() => pickLook(option.id)}
+            >{option.name}</button>
+          {/each}
+        </div>
+      {/if}
+      {#if scene.renderers}
+        <div class="stage-langs" role="group" aria-label={m.lab.widgetRenderer}>
+          {#each RENDERERS as option (option.id)}
+            <button
+              type="button"
+              class="lang"
+              class:active={option.id === renderer}
+              aria-pressed={option.id === renderer}
+              onclick={() => pickRenderer(option.id)}
             >{option.name}</button>
           {/each}
         </div>

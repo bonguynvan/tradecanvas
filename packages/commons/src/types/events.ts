@@ -77,7 +77,9 @@ export type ChartEventType =
   /** The undo history changed: whether there is something to undo or redo. */
   | 'historyChange'
   /** The drawings selected changed. */
-  | 'drawingSelect';
+  | 'drawingSelect'
+  /** The chart started drawing with another renderer (`renderer` option, `setRenderer`, a lost GPU). */
+  | 'rendererChange';
 
 export interface ChartEvent<T = unknown> {
   type: ChartEventType;
@@ -296,6 +298,12 @@ export interface ChartEventMap {
   /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */
   symbolInfoChange: { info: SymbolInfo | null };
   chartTypeChange: { type: string; previous: string };
+  /**
+   * What draws the chart now. `reason` says why it isn't what was asked for:
+   * no WebGL 2 here (or only a slow software one, with 'auto'), or the GPU
+   * context was lost.
+   */
+  rendererChange: { renderer: 'canvas' | 'webgl'; reason?: 'unsupported' | 'contextLost' };
   symbolChange: { symbol: string; previous: string | null };
   timeframeChange: { timeframe: string; previous: string | null };
   historyChange: { canUndo: boolean; canRedo: boolean };

@@ -43,7 +43,8 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer, loadWebGLRenderer } from '@tradecanvas/core';
+import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
 import { zonedDateFormatter } from '@tradecanvas/commons';
@@ -262,6 +263,9 @@ export class Chart {
   private interactionManager: InteractionManager;
   private crosshairHandler: CrosshairHandler;
   private chartRenderer: ChartRendererInterface;
+  /** The latest `setRenderer` call: an earlier one that resolves later is dropped. */
+  private rendererToken = 0;
+  private disposed = false;
   /** Settings of the chart types that build their own bars. */
   private chartTypeOptions: ChartTypeOptions = {};
   private mainSeriesVisible = true;
@@ -996,6 +1000,9 @@ export class Chart {
     // Set render context
     this.syncRenderContext();
     this.engine.start();
+    // A lost GPU context: the engine is back on Canvas 2D.
+    this.engine.onGpuLost = () => this.eventBus.emit('rendererChange', { renderer: 'canvas', reason: 'contextLost' });
+    if (this.options.renderer && this.options.renderer !== 'canvas') void this.setRenderer(this.options.renderer);
   }
 
   // --- Data ---
@@ -3540,10 +3547,55 @@ export class Chart {
     this.engine.requestRender(LayerType.Hover);
   }
 
+  // --- Renderer ---
+
+  /**
+   * Draw the bars and volume with WebGL 2 (`'webgl'`; `'auto'` only on a real
+   * GPU, not a software one) or with Canvas 2D (`'canvas'`). Resolves to what
+   * draws now: Canvas 2D where WebGL 2 can't be had. The WebGL code loads on
+   * first use. Emits `rendererChange`.
+   */
+  async setRenderer(mode: RendererMode): Promise<'canvas' | 'webgl'> {
+    const token = ++this.rendererToken;
+    if (mode === 'canvas') {
+      this.applyRenderer(null);
+      return 'canvas';
+    }
+    // Already on the GPU: keep that context rather than make a second one.
+    if (this.engine.getGpu()) return 'webgl';
+    const gpu = await loadWebGLRenderer(mode);
+    // Superseded by a later call, or the chart is gone.
+    if (token !== this.rendererToken || this.disposed) {
+      gpu?.destroy();
+      return this.getRenderer();
+    }
+    this.applyRenderer(gpu, gpu ? undefined : 'unsupported');
+    return this.getRenderer();
+  }
+
+  /** What draws the bars and volume now. */
+  getRenderer(): 'canvas' | 'webgl' {
+    return this.engine.getGpu() ? 'webgl' : 'canvas';
+  }
+
+  private applyRenderer(gpu: GpuRenderer | null, reason?: 'unsupported'): void {
+    const before = this.getRenderer();
+    if (gpu) this.engine.attachGpu(gpu);
+    else this.engine.detachGpu();
+    const now = this.getRenderer();
+    if (now !== before || reason) this.eventBus.emit('rendererChange', reason ? { renderer: now, reason } : { renderer: now });
+  }
+
+  /** The GPU canvas is cleared once shown: draw it again right before reading it. */
+  private freshFrame(): void {
+    if (this.engine.getGpu()) this.engine.renderNow();
+  }
+
   // --- Screenshot ---
 
   screenshot(filename?: string): void {
     if (!this.features.screenshot) return;
+    this.freshFrame();
     Screenshot.download(this.container, filename, this.themeManager.getTheme().background);
   }
 
@@ -3551,6 +3603,7 @@ export class Chart {
   async copyScreenshot(): Promise<boolean> {
     if (!this.features.screenshot) return false;
     try {
+      this.freshFrame();
       const blob = await Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
       const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
       if (!blob || !navigator.clipboard?.write || !ClipboardItemCtor) return false;
@@ -3563,11 +3616,13 @@ export class Chart {
 
   screenshotDataURL(): string | null {
     if (!this.features.screenshot) return null;
+    this.freshFrame();
     return Screenshot.toDataURL(this.container, this.themeManager.getTheme().background);
   }
 
   async screenshotBlob(): Promise<Blob | null> {
     if (!this.features.screenshot) return null;
+    this.freshFrame();
     return Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
   }
 
@@ -4461,6 +4516,7 @@ export class Chart {
   }
 
   destroy(): void {
+    this.disposed = true;
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     // A loader of the host's own: no page lands in, or is asked for by, a destroyed chart.
     this.history.setLoader(null);

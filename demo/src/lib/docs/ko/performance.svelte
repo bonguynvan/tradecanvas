@@ -75,6 +75,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   봉 하나가 1픽셀보다 좁아지면 지표의 선, 밴드, 히스토그램은 픽셀 열마다 하나의 구간으로 그려집니다. 열의 최저점부터 최고점까지, 앞 열과 이어지고, 폭은 선 두께와 같습니다. 수천 개의 점을 지나는 선과 거의 같아 보이면서도 래스터 작업은 훨씬 적습니다. 200,000개 봉을 축소해 볼린저 밴드, EMA, RSI, MACD를 함께 띄우면 내장 GPU에서 한 프레임이 약 54 ms에서 약 21 ms로 줄었습니다. <code>node scripts/bench-render.mjs</code>로 내 컴퓨터에서도 측정할 수 있습니다.
 </p>
 
+<h2>WebGL 렌더러 (미리 보기)</h2>
+<p>
+  <code>renderer: 'webgl'</code>을 쓰면 그리드, 세션 음영과 구분선, 캔들, 거래량을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 지표, 드로잉, 축, 크로스헤어는 계속 Canvas 2D로 그립니다. <code>'auto'</code>는 하드웨어 GPU일 때만 WebGL을 씁니다. 픽셀은 Canvas 2D와 2/255 이내로 일치합니다. WebGL 코드는 별도 청크(gzip 약 7 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>이동 중 프레임 시간, 내장 GPU(Intel UHD, 16.7 ms가 60 fps):</p>
+<table>
+  <thead><tr><th>차트</th><th>픽셀 비율</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900, 캔들 2,000개</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900, 봉 200,000개를 축소해서</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400, 캔들 2,000개</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>차트 6개, 각각 캔들 500개와 지표 2개</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  지표는 아직 Canvas 2D로 그리므로 지표가 많은 차트일수록 이득이 적습니다. 2560×1400에 지표 4개, 픽셀 비율 2에서는 138 ms에서 97 ms가 됩니다. 이 크기와 비율에서는 이 GPU에서 브라우저가 전체 크기 레이어를 합성하는 데만 약 23 ms가 걸립니다. <code>node scripts/bench-render.mjs --renderer=webgl</code>로 내 컴퓨터에서 측정할 수 있습니다.
+</p>
+
 <h2>메인 스레드 밖에서 계산</h2>
 <p>
   <code>IndicatorWorkerHost</code>는 Promise 기반 <code>calculate()</code>, 요청별 타임아웃,

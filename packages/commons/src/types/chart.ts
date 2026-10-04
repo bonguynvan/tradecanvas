@@ -191,6 +191,14 @@ export interface ChartOptions {
    */
   a11y?: false | { labels?: Partial<import('./a11y.js').ChartA11yLabels> };
   /**
+   * What draws the grid, sessions, candles and volume: `'canvas'` (Canvas
+   * 2D, the default), `'webgl'` (WebGL 2 on the GPU, Canvas 2D where it
+   * can't be had) or `'auto'` (WebGL 2 where the GPU is a real one).
+   * Everything else on the chart (text, drawings, orders, indicators) stays
+   * Canvas 2D. The WebGL code loads only when asked for. See `rendererChange`.
+   */
+  renderer?: 'canvas' | 'webgl' | 'auto';
+  /**
    * Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`):
    * pre- and post-market. Default true; bars a day or longer are never left out.
    */

@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+<h3>Bộ vẽ</h3>
+<table>
+  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <tbody>
+    <tr><td>Tuỳ chọn <code>renderer</code></td><td><code>'canvas'</code> (mặc định), <code>'webgl'</code>, hoặc <code>'auto'</code> (chỉ dùng WebGL khi có GPU phần cứng).</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>Đổi khi đang chạy. Trả về bộ đang vẽ: <code>'canvas'</code> nếu không có WebGL 2.</td></tr>
+    <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> hoặc <code>'webgl'</code>.</td></tr>
+  </tbody>
+</table>
+<p>GPU vẽ những gì, và số đo: <a href={href('/docs/performance')}>Hiệu năng → Bộ vẽ WebGL</a>.</p>
+
 <h3>Chỉ báo</h3>
 <table>
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
@@ -283,7 +294,8 @@ chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
-chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+chart.on('drawingSelect', e => /* { ids, primary } */)
+chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' } */)`}</code></pre>
 
 <h3>Hoàn tác cho thay đổi của riêng bạn</h3>
 <p>

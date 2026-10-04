@@ -57,7 +57,7 @@ describe('SessionBreaks — month-boundary label', () => {
     sb.setVisible(true);
     const { ctx, fillTextCalls } = mockCtx();
 
-    sb.render(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
     // "Oct 26" (2-digit year) reads like a day-of-month and was mistaken for
     // the wrong date; the fix always renders the 4-digit year.
@@ -71,7 +71,7 @@ describe('SessionBreaks — month-boundary label', () => {
     sb.setLocale('vi-VN');
     const { ctx, fillTextCalls } = mockCtx();
 
-    sb.render(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
     expect(fillTextCalls.some((t) => t.includes('Oct') || t.includes('Sep'))).toBe(false);
     expect(fillTextCalls.some((t) => t.includes('thg') || /\d{1,2}\/\d{4}/.test(t))).toBe(true);
@@ -97,3 +97,59 @@ describe('SessionBreaks in the display timezone', () => {
   });
 });
 
+
+describe('SessionBreaks — lines under the bars, labels over them', () => {
+  const breaks = () => {
+    const sb = new SessionBreaks();
+    sb.setVisible(true);
+    sb.setTimezone(0);
+    return sb;
+  };
+
+  it('draws only the lines in renderLines, only the labels in renderLabels, both in render', () => {
+    const sb = breaks();
+    const data = hourlyBarsAcrossMonthBoundary();
+    const lines = mockCtx();
+    sb.renderLines(lines.ctx, viewport(), DARK_THEME, data);
+    expect(lines.fillTextCalls).toEqual([]);
+    expect(lines.ctx.stroke).toHaveBeenCalled();
+
+    const labels = mockCtx();
+    sb.renderLabels(labels.ctx, viewport(), DARK_THEME, data);
+    expect(labels.fillTextCalls.length).toBeGreaterThan(0);
+    expect(labels.ctx.stroke).not.toHaveBeenCalled();
+
+    const both = mockCtx();
+    sb.render(both.ctx, viewport(), DARK_THEME, data);
+    expect(both.ctx.stroke).toHaveBeenCalled();
+    expect(both.fillTextCalls).toEqual(labels.fillTextCalls);
+  });
+
+  it('gives a rectangle per line, dashed, heavier for bigger breaks', () => {
+    const rects = breaks().lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    // A day break at bar 24 (x 287.5) and a month break at bar 48 (x 575.5),
+    // down the 100 px plot, 6 on and 4 off.
+    expect(rects.find((r) => r.x === 287)).toEqual({ x: 287, y: 0, width: 1, height: 100, color: DARK_THEME.axisLine, alpha: 0.22, dash: [6, 4] });
+    expect(rects.find((r) => r.x === 574.75)).toMatchObject({ width: 1.5, height: 100, alpha: 0.5, dash: [6, 4] });
+  });
+
+  it('dots a dotted line', () => {
+    const sb = breaks();
+    sb.setConfig({ lineStyle: 'dotted' });
+    const day = sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary()).find((r) => r.x === 287);
+    expect(day?.dash).toEqual([2, 3]);
+  });
+
+  it('gives a solid line as one rectangle', () => {
+    const sb = breaks();
+    sb.setConfig({ lineStyle: 'solid' });
+    const day = sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary()).filter((r) => r.x === 287);
+    expect(day).toEqual([{ x: 287, y: 0, width: 1, height: 100, color: DARK_THEME.axisLine, alpha: 0.22 }]);
+  });
+
+  it('gives nothing while hidden', () => {
+    const sb = breaks();
+    sb.setVisible(false);
+    expect(sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary())).toEqual([]);
+  });
+});

@@ -14,7 +14,9 @@ export class VolumeRenderer {
   private heightRatio = 0.15;
 
   setVisible(v: boolean): void { this.visible = v; }
+  isVisible(): boolean { return this.visible; }
   setHeightRatio(r: number): void { this.heightRatio = Math.max(0.05, Math.min(0.5, r)); }
+  getHeightRatio(): number { return this.heightRatio; }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;

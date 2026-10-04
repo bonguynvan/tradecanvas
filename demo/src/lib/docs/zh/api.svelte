@@ -41,6 +41,17 @@
   </tbody>
 </table>
 
+<h3>渲染器</h3>
+<table>
+  <thead><tr><th>方法</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>renderer</code> 选项</td><td><code>'canvas'</code>（默认）、<code>'webgl'</code> 或 <code>'auto'</code>（仅在硬件 GPU 上用 WebGL）。</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>运行时切换。返回当前实际使用的渲染器：没有 WebGL 2 时为 <code>'canvas'</code>。</td></tr>
+    <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> 或 <code>'webgl'</code>。</td></tr>
+  </tbody>
+</table>
+<p>GPU 绘制哪些内容以及测量数字：<a href={href('/docs/performance')}>性能 → WebGL 渲染器</a>。</p>
+
 <h3>指标</h3>
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>
@@ -267,7 +278,8 @@ chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
-chart.on('drawingSelect', e => /* { ids, primary } */)`}</code></pre>
+chart.on('drawingSelect', e => /* { ids, primary } */)
+chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' } */)`}</code></pre>
 
 <h3>为你自己的改动提供撤销</h3>
 <p>

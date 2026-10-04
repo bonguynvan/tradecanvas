@@ -75,6 +75,31 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   Khi mỗi nến hẹp hơn một pixel, đường, dải và histogram của chỉ báo được vẽ thành một đoạn cho mỗi cột pixel: từ điểm thấp nhất tới cao nhất trong cột, nối với cột trước, rộng bằng nét đường. Cách này trông gần như y hệt nét vẽ qua hàng nghìn điểm, nhưng tốn ít công raster hơn hẳn. Khi thu nhỏ trên 200.000 nến với Bollinger Bands, EMA, RSI và MACD, mỗi khung hình giảm từ khoảng 54 ms xuống khoảng 21 ms trên GPU tích hợp. <code>node scripts/bench-render.mjs</code> chạy các số đo này trên máy của bạn.
 </p>
 
+<h2>Bộ vẽ WebGL (bản xem trước)</h2>
+<p>
+  <code>renderer: 'webgl'</code> vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. <code>'auto'</code> chỉ dùng WebGL khi có GPU phần cứng. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 7 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+</p>
+<pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+<p>Thời gian mỗi khung hình khi kéo, trên GPU tích hợp (Intel UHD; 16.7 ms là 60 fps):</p>
+<table>
+  <thead><tr><th>Biểu đồ</th><th>Tỉ lệ điểm ảnh</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
+  <tbody>
+    <tr><td>1600×900, 2,000 nến</td><td>2</td><td>23.3 ms</td><td>17.6 ms</td></tr>
+    <tr><td>1600×900, thu nhỏ trên 200,000 nến</td><td>2</td><td>25.1 ms</td><td>18.2 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến</td><td>1.5</td><td>28.8 ms</td><td>20.9 ms</td></tr>
+    <tr><td>2560×1400, 2,000 nến</td><td>2</td><td>38.1 ms</td><td>22.5 ms</td></tr>
+    <tr><td>Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo</td><td>2</td><td>33.4 ms</td><td>24 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  Chỉ báo vẫn vẽ bằng Canvas 2D, nên biểu đồ nhiều chỉ báo được lợi ít hơn: 2560×1400 với bốn chỉ báo ở tỉ lệ 2 giảm từ 138 xuống 97 ms. Ở kích thước và tỉ lệ đó, riêng việc trình duyệt ghép các lớp full-size đã mất khoảng 23 ms trên GPU này. <code>node scripts/bench-render.mjs --renderer=webgl</code> chạy các số đo này trên máy của bạn.
+</p>
+
 <h2>Ngoài luồng chính</h2>
 <p>
   <code>IndicatorWorkerHost</code> chạy phần tính toán chỉ báo trong một Web Worker với <code>calculate()</code>

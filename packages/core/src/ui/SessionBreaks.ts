@@ -1,6 +1,7 @@
 import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
 import { timeParts, zonedDateFormatter } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
+import type { GpuRect } from '../engine/gpu.js';
 
 export interface SessionBreakConfig {
   /** Whether to show session break lines */
@@ -13,6 +14,21 @@ export interface SessionBreakConfig {
   lineStyle?: 'solid' | 'dashed' | 'dotted';
   /** Line width (default 1) */
   lineWidth?: number;
+}
+
+/** The dash pattern of each line style; null for solid. */
+const DASHES: Record<NonNullable<SessionBreakConfig['lineStyle']>, [number, number] | null> = {
+  solid: null,
+  dashed: [6, 4],
+  dotted: [2, 3],
+};
+
+/** A break on screen: its line's centre and width, its strength, and its label. */
+interface BreakMark {
+  px: number;
+  width: number;
+  alpha: number;
+  label: string | null;
 }
 
 /** A day, week, month or year boundary at bar `idx`. */
@@ -105,43 +121,96 @@ export class SessionBreaks {
     return timestamp > 1e12 ? timestamp : timestamp * 1000;
   }
 
+  /** The break lines and their labels. */
   render(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
     theme: Theme,
     data: DataSeries,
   ): void {
-    if (!this.config.visible || data.length < 2) return;
+    this.renderLines(ctx, viewport, theme, data);
+    this.renderLabels(ctx, viewport, theme, data);
+  }
+
+  /** The break lines alone: the chart draws them under the bars and the labels over them. */
+  renderLines(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+  ): void {
+    const marks = this.marks(viewport, data);
+    if (marks.length === 0) return;
+    const { chartRect } = viewport;
+    const dash = DASHES[this.config.lineStyle ?? 'dashed'];
+
+    ctx.save();
+    if (dash) ctx.setLineDash(dash);
+    ctx.strokeStyle = this.config.color ?? theme.axisLine;
+    for (const m of marks) {
+      ctx.globalAlpha = m.alpha;
+      ctx.lineWidth = m.width;
+      ctx.beginPath();
+      ctx.moveTo(m.px, chartRect.y);
+      ctx.lineTo(m.px, chartRect.y + chartRect.height);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** The labels of week, month and year breaks, drawn over the bars. */
+  renderLabels(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+  ): void {
+    const marks = this.marks(viewport, data).filter((m): m is BreakMark & { label: string } => m.label !== null);
+    if (marks.length === 0) return;
+    const { chartRect } = viewport;
+
+    ctx.save();
+    ctx.font = `600 11px ${theme.font.family}`;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = theme.textSecondary;
+    for (const m of marks) {
+      ctx.globalAlpha = Math.min(1, m.alpha + 0.35);
+      ctx.fillText(m.label, m.px + 4, chartRect.y + 4);
+    }
+    ctx.restore();
+  }
+
+  /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */
+  lineRects(viewport: ViewportState, theme: Theme, data: DataSeries): GpuRect[] {
+    const marks = this.marks(viewport, data);
+    if (marks.length === 0) return [];
+    const color = this.config.color ?? theme.axisLine;
+    const dash = DASHES[this.config.lineStyle ?? 'dashed'] ?? undefined;
+    const { y, height } = viewport.chartRect;
+    return marks.map((m) => ({ x: m.px - m.width / 2, y, width: m.width, height, color, alpha: m.alpha, ...(dash ? { dash } : {}) }));
+  }
+
+  /** The breaks on screen, each with its line and label, heavier as the boundary is more significant. */
+  private marks(viewport: ViewportState, data: DataSeries): BreakMark[] {
+    if (!this.config.visible || data.length < 2) return [];
 
     const breaks = this.computeBreaksTyped(data);
-    if (breaks.length === 0) return;
+    if (breaks.length === 0) return [];
 
     // Suppress separators when the dataset is already at day-or-coarser
     // granularity — every bar would be a "day boundary" and the screen
     // would fill with lines.
-    if (this.cachedMedianStep >= 23 * 60 * 60 * 1000) return;
+    if (this.cachedMedianStep >= 23 * 60 * 60 * 1000) return [];
 
     const { chartRect } = viewport;
-    const baseColor = this.config.color ?? theme.axisLine;
     const lineWidth = this.config.lineWidth ?? 1;
-    const lineStyle = this.config.lineStyle ?? 'dashed';
-
-    ctx.save();
-    if (lineStyle === 'dashed') {
-      ctx.setLineDash([6, 4]);
-    } else if (lineStyle === 'dotted') {
-      ctx.setLineDash([2, 3]);
-    }
-    ctx.font = `600 11px ${theme.font.family}`;
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-
+    const out: BreakMark[] = [];
     for (const brk of breaks) {
       const x = barIndexToX(brk.idx, viewport) - (viewport.barWidth + viewport.barSpacing) / 2;
       if (x < chartRect.x - 1 || x > chartRect.x + chartRect.width + 1) continue;
       const px = Math.round(x) + 0.5;
 
-      // Heavier line + label as the boundary gets more significant.
       let alpha = 0.25;
       let width = lineWidth;
       let label: string | null = null;
@@ -159,23 +228,9 @@ export class SessionBreaks {
         width = lineWidth + 1;
         label = String(brk.year);
       }
-
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = baseColor;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(px, chartRect.y);
-      ctx.lineTo(px, chartRect.y + chartRect.height);
-      ctx.stroke();
-
-      if (label) {
-        ctx.globalAlpha = Math.min(1, alpha + 0.35);
-        ctx.fillStyle = theme.textSecondary;
-        ctx.fillText(label, px + 4, chartRect.y + 4);
-      }
+      out.push({ px, width, alpha, label });
     }
-
-    ctx.restore();
+    return out;
   }
 
   /** Invalidate cache when data changes */

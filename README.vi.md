@@ -885,6 +885,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | Tuần tự hoá trạng thái biểu đồ |
 | `loadState(json)` | Khôi phục trạng thái biểu đồ |
 | `screenshot()` | Tải biểu đồ về dưới dạng ảnh |
+| `setRenderer(mode)` | Vẽ bằng `'canvas'` (mặc định), `'webgl'` hoặc `'auto'`; trả về bộ đang vẽ |
+| `getRenderer()` | `'canvas'` hoặc `'webgl'` |
 | `on(event, handler)` | Đăng ký nhận sự kiện |
 | `destroy()` | Giải phóng mọi tài nguyên |
 
@@ -1061,6 +1063,31 @@ Thông lượng giảm mẫu (`pnpm bench`, một nhân):
 | 1,000,000 | ~2.6 ms | 380 / s |
 
 Một biểu đồ đường 100k nến giảm mẫu trong ~0.3 ms — nằm gọn trong ngân sách 16.6 ms của một khung hình — rồi vẽ ít hơn ~62× số điểm (100k → 1600).
+
+### Bộ vẽ WebGL (bản xem trước)
+
+`renderer: 'webgl'` vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 7 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+Thời gian mỗi khung hình khi kéo, trên GPU tích hợp (Intel UHD; 16.7 ms là 60 fps):
+
+| Biểu đồ | Tỉ lệ điểm ảnh | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900, 2,000 nến | 2 | 23.3 ms | 17.6 ms |
+| 1600×900, thu nhỏ trên 200,000 nến | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400, 2,000 nến | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400, 2,000 nến | 2 | 38.1 ms | 22.5 ms |
+| Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo | 2 | 33.4 ms | 24 ms |
+
+Chỉ báo vẫn vẽ bằng Canvas 2D, nên biểu đồ nhiều chỉ báo được lợi ít hơn (2560×1400 với bốn chỉ báo ở tỉ lệ 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl` chạy các số đo này trên máy của bạn.
 
 ## Kiến trúc
 

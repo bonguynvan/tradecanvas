@@ -884,6 +884,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | 序列化图表状态 |
 | `loadState(json)` | 恢复图表状态 |
 | `screenshot()` | 将图表下载为图片 |
+| `setRenderer(mode)` | 用 `'canvas'`（默认）、`'webgl'` 或 `'auto'` 绘制；返回当前实际使用的渲染器 |
+| `getRenderer()` | `'canvas'` 或 `'webgl'` |
 | `on(event, handler)` | 订阅事件 |
 | `destroy()` | 清理所有资源 |
 
@@ -1059,6 +1061,31 @@ BB + EMA + RSI + MACD（`pnpm bench`，单核）：
 | 1,000,000 | ~2.6 ms | 380 / s |
 
 一个 10 万根K线的折线图降采样约需 0.3 ms——远低于 16.6 ms 的帧预算——之后绘制的点数减少约 62 倍（100k → 1600）。
+
+### WebGL 渲染器（预览）
+
+`renderer: 'webgl'` 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 7 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+平移时的每帧耗时，集成显卡（Intel UHD；16.7 ms 即 60 fps）：
+
+| 图表 | 像素比 | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900，2,000 根K线 | 2 | 23.3 ms | 17.6 ms |
+| 1600×900，在 200,000 根K线上缩小 | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400，2,000 根K线 | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400，2,000 根K线 | 2 | 38.1 ms | 22.5 ms |
+| 六个图表，每个 500 根K线加两个指标 | 2 | 33.4 ms | 24 ms |
+
+指标仍用 Canvas 2D 绘制，所以指标多的图表收益较小（2560×1400 加四个指标、像素比 2：138 → 97 ms）。`node scripts/bench-render.mjs --renderer=webgl` 可在你的机器上测出这些数字。
 
 ## 架构
 

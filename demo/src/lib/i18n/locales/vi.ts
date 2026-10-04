@@ -128,11 +128,14 @@ const vi: SiteMessages = {
       'Chọn một cảnh. Mỗi cảnh khởi động <code>ChartWidget</code> đầy đủ ở trạng thái làm nổi bật một mảng tính năng — sau đó tuỳ bạn kéo, vẽ và chuyển đổi.',
     scenes: 'Các cảnh tính năng',
     widgetLook: 'Giao diện widget',
+    widgetRenderer: 'Bộ vẽ',
     widgetLanguage: 'Ngôn ngữ của widget',
     idle: 'Cuộn tới đây để chạy biểu đồ trực tiếp',
     metricHint: 'Đổi mã hoặc khung thời gian để đo tốc độ chuyển',
     metricSwitch: '→ {label}: {ms} · {bars} nến',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: {ms} mỗi khung hình khi kéo',
+    metricRendererMissing: 'Không có WebGL 2: vẽ bằng Canvas 2D',
     metricSetData: 'setData({bars} nến): {ms}',
     tryThis: 'Thử ngay',
   },
@@ -293,6 +296,7 @@ const vi: SiteMessages = {
       blurb:
         'Hai trăm nghìn nến 1 phút với bốn chỉ báo. Chỉ các nến đang hiện mới được vẽ; khung thời gian lớn hơn được dựng lại ngay trên máy, sau một lớp che báo đang tải khi việc đó mất hơn vài khung hình.',
       tryThis: [
+        'Chuyển giữa Canvas 2D và WebGL phía trên biểu đồ: mỗi lần chuyển sẽ đo một lần kéo ngắn',
         'Chuyển sang 1H, 4H rồi về lại 1m — thời gian đo hiện dưới biểu đồ',
         'Thu nhỏ hết cỡ rồi kéo: thời gian mỗi khung hình vẫn không đổi',
         'Thêm một chỉ báo nữa và xem thời gian chuyển đổi',

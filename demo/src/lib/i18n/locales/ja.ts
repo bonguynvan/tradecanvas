@@ -129,11 +129,14 @@ const ja: SiteMessages = {
     scenes: '機能シーン',
     widgetLanguage: 'ウィジェットの言語',
     widgetLook: 'ウィジェットの外観',
+    widgetRenderer: 'レンダラー',
     idle: 'スクロールして表示するとライブチャートが始まります',
     metricHint: 'シンボルか時間足を切り替えると所要時間を計測します',
     metricSwitch: '→ {label}: {ms} · {bars} 本',
     metricSetData: 'setData({bars} 本): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: パン中は 1 フレーム {ms}',
+    metricRendererMissing: 'WebGL 2 が使えないため Canvas 2D で描画',
     tryThis: '試してみる',
   },
 
@@ -293,6 +296,7 @@ const ja: SiteMessages = {
       blurb:
         '1 分足 20 万本にインジケーター 4 つ。描画するのは表示中のバーだけです。より長い時間足はローカルでリサンプリングし、数フレーム以上かかるときは読み込み表示でチャートを覆います。',
       tryThis: [
+        'チャート上部で Canvas 2D と WebGL を切り替え：切り替えるたびに短いパンを計測',
         '1H、4H に切り替えてから 1m に戻す。所要時間がチャートの下に表示されます',
         '最大まで縮小してパンしても、フレームのコストは一定のままです',
         'インジケーターをもう 1 つ追加して、切り替え時間の変化を見る',

@@ -129,11 +129,14 @@ const tr: SiteMessages = {
     scenes: 'Özellik sahneleri',
     widgetLanguage: 'Widget dili',
     widgetLook: 'Widget görünümü',
+    widgetRenderer: 'Oluşturucu',
     idle: 'Canlı grafiği başlatmak için buraya kaydırın',
     metricHint: 'Süreyi ölçmek için sembolü veya zaman dilimini değiştirin',
     metricSwitch: '→ {label}: {ms} · {bars} bar',
     metricSetData: 'setData({bars} bar): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: kaydırırken kare başına {ms}',
+    metricRendererMissing: 'WebGL 2 yok: Canvas 2D ile çiziliyor',
     tryThis: 'Bunu deneyin',
   },
 
@@ -293,6 +296,7 @@ const tr: SiteMessages = {
       blurb:
         'Dört göstergeyle iki yüz bin adet 1 dakikalık bar. Çizim yalnızca görünen barlara dokunur; daha büyük zaman dilimleri yerelde yeniden örneklenir, birkaç kareden uzun sürerse bir yükleme perdesinin arkasında.',
       tryThis: [
+        'Grafiğin üstünde Canvas 2D ile WebGL arasında geçiş yapın: her geçiş kısa bir kaydırmayı ölçer',
         '1H’ye, 4H’ye ve tekrar 1m’ye geçin; süreler grafiğin altında görünür',
         'Sonuna kadar uzaklaştırın ve kaydırın: kare maliyeti sabit kalır',
         'Bir gösterge daha ekleyin ve geçiş süresini izleyin',

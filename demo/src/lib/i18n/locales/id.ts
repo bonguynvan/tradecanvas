@@ -129,11 +129,14 @@ const id: SiteMessages = {
     scenes: 'Skenario fitur',
     widgetLanguage: 'Bahasa widget',
     widgetLook: 'Tampilan widget',
+    widgetRenderer: 'Perender',
     idle: 'Gulir hingga terlihat untuk memulai grafik langsung',
     metricHint: 'Ganti simbol atau kerangka waktu untuk mengukur waktunya',
     metricSwitch: '→ {label}: {ms} · {bars} bar',
     metricSetData: 'setData({bars} bar): {ms}',
     metricLook: "setUI('{name}'): {ms}",
+    metricRenderer: '{name}: {ms} per frame saat menggeser',
+    metricRendererMissing: 'WebGL 2 tidak tersedia: menggambar dengan Canvas 2D',
     tryThis: 'Coba ini',
   },
 
@@ -293,6 +296,7 @@ const id: SiteMessages = {
       blurb:
         'Dua ratus ribu bar 1 menit dengan empat indikator. Rendering hanya menyentuh bar yang terlihat; kerangka waktu yang lebih besar di-resample secara lokal, di balik selubung pemuatan jika butuh lebih dari beberapa frame.',
       tryThis: [
+        'Beralih antara Canvas 2D dan WebGL di atas grafik: tiap peralihan mengukur geseran singkat',
         'Ganti ke 1H, 4H, lalu kembali ke 1m — waktunya muncul di bawah grafik',
         'Perkecil sepenuhnya lalu geser: biaya per frame tetap datar',
         'Tambahkan satu indikator lagi dan perhatikan waktu pergantiannya',

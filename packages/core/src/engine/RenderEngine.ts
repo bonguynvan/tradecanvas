@@ -8,6 +8,8 @@ import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indi
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
+import type { GpuBackground, GpuDrawn, GpuRenderer } from './gpu.js';
+import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
 import type { GridRenderer } from '../axis/GridRenderer.js';
 import type { PriceAxis } from '../axis/PriceAxis.js';
@@ -32,6 +34,16 @@ import { fillTag } from '../ui/shapes.js';
 const PANEL_HEADER_HEIGHT = 20;
 /** Below this a pane (folded to its header) draws no scale. */
 const MIN_PANE_PLOT_HEIGHT = 8;
+
+/** Whether something under the bars needs Canvas 2D (text, images), not just rectangles. */
+function needsBackCanvas(ctx: RenderContext): boolean {
+  return !!(
+    ctx.watermark?.isVisible() ||
+    ctx.depthHeatmap?.isVisible() ||
+    ctx.volumeProfile?.isVisible() ||
+    ctx.marketProfile?.isVisible()
+  );
+}
 
 /** Decimals for a pane's axis labels and header values, from its tick step. */
 function panelPrecision(step: number): number {
@@ -112,6 +124,11 @@ export class RenderEngine {
   // Cached canvas references — avoid a lookup per frame
   private sceneLayer: CanvasLayer | undefined;
   private topLayer: CanvasLayer | undefined;
+  /** The GPU renderer under the scene. */
+  private gpu: GpuRenderer | null = null;
+
+  /** Called when the GPU context is lost and the engine has gone back to Canvas 2D. */
+  onGpuLost: (() => void) | null = null;
 
   /**
    * Optional hook fired AFTER the canvas layers have been resized in
@@ -155,6 +172,39 @@ export class RenderEngine {
     this.renderCtx = ctx;
   }
 
+  /** Draw bars and volume with `gpu`, on its canvas under the scene. */
+  attachGpu(gpu: GpuRenderer): void {
+    this.detachGpu();
+    this.gpu = gpu;
+    this.layerManager.attachGpu(gpu.canvas);
+    gpu.onLost(() => {
+      if (this.gpu !== gpu) return;
+      this.detachGpu();
+      this.onGpuLost?.();
+    });
+    this.renderLoop.markAllDirty();
+  }
+
+  /** Back to Canvas 2D for everything. */
+  detachGpu(): void {
+    const gpu = this.gpu;
+    if (!gpu) return;
+    this.gpu = null;
+    this.layerManager.detachGpu();
+    gpu.destroy();
+    this.renderLoop.markAllDirty();
+  }
+
+  /** Draw every layer now, synchronously (a screenshot reads the GPU canvas before the browser clears it). */
+  renderNow(): void {
+    this.render(new Set([LayerType.Main, LayerType.Hover]));
+  }
+
+  /** The GPU renderer in use, if any. */
+  getGpu(): GpuRenderer | null {
+    return this.gpu;
+  }
+
   start(): void {
     this.renderLoop.start();
   }
@@ -195,25 +245,33 @@ export class RenderEngine {
     const { viewport, theme, data } = ctx;
     layer.clear();
     const c = layer.ctx;
+    const gpu = this.gpu;
+    let drawn: GpuDrawn = { series: false, volume: false, background: false };
 
-    // --- Background: grid, session shading/breaks, watermark ---
-    ctx.gridRenderer?.render(c, viewport, theme);
-    ctx.sessionShading?.render(c, data, viewport, theme);
-    ctx.sessionBreaks?.render(c, viewport, theme, data);
-    ctx.watermark?.render(c, viewport, theme);
+    if (gpu) {
+      drawn = this.renderGpu(gpu, ctx);
+    } else {
+      this.renderBackground(c, ctx);
+    }
 
     // --- Series, volume, overlay indicators (clipped to the main chart) ---
     c.save();
     c.beginPath();
     c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
     c.clip();
-    // Liquidity heatmap (backmost, behind volume + candles)
-    ctx.depthHeatmap?.render(c, viewport, theme);
+    if (!gpu) {
+      // Liquidity heatmap (backmost, behind volume + candles)
+      ctx.depthHeatmap?.render(c, viewport, theme);
+    }
     // Volume bars (drawn first, behind candles)
-    ctx.volumeRenderer?.render(c, data, viewport, theme);
-    ctx.volumeProfile?.render(c, data, viewport, theme);
-    ctx.marketProfile?.render(c, data, viewport, theme);
-    ctx.chartRenderer?.render(c, data, viewport, theme);
+    if (!drawn.volume) ctx.volumeRenderer?.render(c, data, viewport, theme);
+    if (!gpu) {
+      ctx.volumeProfile?.render(c, data, viewport, theme);
+      ctx.marketProfile?.render(c, data, viewport, theme);
+    }
+    if (!drawn.series) ctx.chartRenderer?.render(c, data, viewport, theme);
+    // Break labels over the bars, which would otherwise hide them.
+    ctx.sessionBreaks?.renderLabels(c, viewport, theme, data);
     ctx.compareRenderer?.render(c, data, viewport, theme);
     ctx.indicatorEngine?.renderOverlays(c, viewport, ctx.leftViewport ?? undefined);
     ctx.periodLevels?.render(c, data, viewport, theme);
@@ -250,6 +308,71 @@ export class RenderEngine {
     ctx.currentPriceLine?.render(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
+  }
+
+  /**
+   * With a GPU: the grid, session shading, break lines, bars and volume on
+   * the GPU. A watermark, heatmap or profile needs Canvas 2D: then the whole
+   * background goes on a 2D canvas under the GPU's, there only while needed.
+   * A profile goes over the volume bars, as in Canvas 2D, so then volume is
+   * drawn there too.
+   */
+  private renderGpu(gpu: GpuRenderer, ctx: RenderContext): GpuDrawn {
+    const { viewport, theme, data } = ctx;
+    const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
+    const background: GpuBackground | null = needsBackCanvas(ctx)
+      ? null
+      : {
+          grid: ctx.gridRenderer?.isVisible() ?? false,
+          rects: [
+            ...(ctx.sessionShading?.rects(data, viewport, theme) ?? []),
+            ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? []),
+          ],
+        };
+    const volume = ctx.volumeRenderer?.isVisible() && !profiles ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
+    const drawn = gpu.render({
+      data,
+      viewport,
+      theme,
+      // The ratio the canvases are sized for, which may trail the screen's.
+      dpr: this.layerManager.getDpr(),
+      candles: ctx.chartRenderer instanceof CandlestickRenderer,
+      volume,
+      background,
+    });
+    const back = background === null || !drawn.background ? this.layerManager.backLayer() : null;
+    if (!back) {
+      this.layerManager.dropBackLayer();
+      return drawn;
+    }
+    back.clear();
+    this.renderBackground(back.ctx, ctx);
+    this.inPlot(back.ctx, viewport, () => {
+      ctx.depthHeatmap?.render(back.ctx, viewport, theme);
+      if (profiles) ctx.volumeRenderer?.render(back.ctx, data, viewport, theme);
+      ctx.volumeProfile?.render(back.ctx, data, viewport, theme);
+      ctx.marketProfile?.render(back.ctx, data, viewport, theme);
+    });
+    return { ...drawn, volume: drawn.volume || profiles };
+  }
+
+  /** The background: grid, session shading and breaks, watermark. */
+  private renderBackground(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const { viewport, theme, data } = ctx;
+    ctx.gridRenderer?.render(c, viewport, theme);
+    ctx.sessionShading?.render(c, data, viewport, theme);
+    ctx.sessionBreaks?.renderLines(c, viewport, theme, data);
+    ctx.watermark?.render(c, viewport, theme);
+  }
+
+  /** Run `draw` clipped to the main plot. */
+  private inPlot(c: CanvasRenderingContext2D, viewport: ViewportState, draw: () => void): void {
+    c.save();
+    c.beginPath();
+    c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
+    c.clip();
+    draw();
+    c.restore();
   }
 
   /**
@@ -608,6 +731,7 @@ export class RenderEngine {
 
   destroy(): void {
     this.renderLoop.stop();
+    this.detachGpu();
     this.dprManager.destroy();
     this.layerManager.destroy();
   }

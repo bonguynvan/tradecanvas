@@ -885,6 +885,8 @@ chart.setNumberLocale('de-DE')  // 65.234,00
 | `saveState(key?)` | Serializa el estado del gráfico |
 | `loadState(json)` | Restaura el estado del gráfico |
 | `screenshot()` | Descarga el gráfico como imagen |
+| `setRenderer(mode)` | Dibuja con `'canvas'` (predeterminado), `'webgl'` o `'auto'`; devuelve lo que dibuja ahora |
+| `getRenderer()` | `'canvas'` o `'webgl'` |
 | `on(event, handler)` | Se suscribe a eventos |
 | `destroy()` | Libera todos los recursos |
 
@@ -1061,6 +1063,31 @@ Velocidad del submuestreo (`pnpm bench`, un solo núcleo):
 | 1,000,000 | ~2.6 ms | 380 / s |
 
 Un gráfico de líneas de 100k barras se submuestrea en ~0.3 ms, muy por debajo de un presupuesto de 16.6 ms por fotograma, y luego dibuja ~62× menos puntos (100k → 1600).
+
+### Renderizador WebGL (versión preliminar)
+
+`renderer: 'webgl'` dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 7 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+
+```typescript
+const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
+
+chart.on('rendererChange', (e) => console.log(e.payload))
+// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+
+await chart.setRenderer('canvas')   // resolves to what draws now
+```
+
+Tiempo por fotograma al desplazar, en una GPU integrada (Intel UHD; 16.7 ms son 60 fps):
+
+| Gráfico | Densidad de píxeles | Canvas 2D | WebGL |
+|---|---|---|---|
+| 1600×900, 2,000 velas | 2 | 23.3 ms | 17.6 ms |
+| 1600×900, zoom alejado sobre 200,000 barras | 2 | 25.1 ms | 18.2 ms |
+| 2560×1400, 2,000 velas | 1.5 | 28.8 ms | 20.9 ms |
+| 2560×1400, 2,000 velas | 2 | 38.1 ms | 22.5 ms |
+| Seis gráficos, cada uno con 500 velas y dos indicadores | 2 | 33.4 ms | 24 ms |
+
+Los indicadores siguen dibujándose con Canvas 2D, así que un gráfico lleno de ellos gana menos (2560×1400 con cuatro indicadores y densidad 2: 138 → 97 ms). `node scripts/bench-render.mjs --renderer=webgl` mide estas cifras en tu equipo.
 
 ## Arquitectura
 
