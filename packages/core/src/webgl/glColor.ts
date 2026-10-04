@@ -10,6 +10,7 @@ function channel(v: string, max: number): number {
 
 function fromText(text: string): RGBA | null {
   const c = text.trim();
+  if (c.toLowerCase() === 'transparent') return [0, 0, 0, 0];
   const hex = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(c);
   if (hex) {
     let h = hex[1];
@@ -60,18 +61,28 @@ function viaBrowser(color: string): RGBA | null {
   return [d[0] / 255, d[1] / 255, d[2] / 255, d[3] / 255];
 }
 
+const unreadable = new Set<string>();
+
+/** A CSS colour as WebGL takes it, or null when it can't be read (Canvas 2D ignores such a style). */
+export function readColor(color: string): RGBA | null {
+  const hit = cache.get(color);
+  if (hit) return hit;
+  if (unreadable.has(color)) return null;
+  const out = fromText(color) ?? viaBrowser(color);
+  if (cache.size > 256) cache.clear();
+  if (unreadable.size > 256) unreadable.clear();
+  if (out) cache.set(color, out);
+  else unreadable.add(color);
+  return out;
+}
+
 /**
  * Any CSS colour the chart's themes use, for WebGL. Hex and rgb() are read
  * directly; anything else goes through the browser. Unreadable colours come
  * back transparent, as Canvas 2D would leave them unpainted.
  */
 export function parseColor(color: string): RGBA {
-  const hit = cache.get(color);
-  if (hit) return hit;
-  const out: RGBA = fromText(color) ?? viaBrowser(color) ?? [0, 0, 0, 0];
-  if (cache.size > 256) cache.clear();
-  cache.set(color, out);
-  return out;
+  return readColor(color) ?? [0, 0, 0, 0];
 }
 
 /** The colour multiplied by its alpha, the form the canvas blends in. */

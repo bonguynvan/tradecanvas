@@ -191,11 +191,13 @@ export interface ChartOptions {
    */
   a11y?: false | { labels?: Partial<import('./a11y.js').ChartA11yLabels> };
   /**
-   * What draws the grid, sessions, candles and volume: `'canvas'` (Canvas
-   * 2D, the default), `'webgl'` (WebGL 2 on the GPU, Canvas 2D where it
-   * can't be had) or `'auto'` (WebGL 2 where the GPU is a real one).
-   * Everything else on the chart (text, drawings, orders, indicators) stays
-   * Canvas 2D. The WebGL code loads only when asked for. See `rendererChange`.
+   * What draws the plot and panes: `'canvas'` (Canvas 2D, the default),
+   * `'webgl'` (WebGL 2 on the GPU, Canvas 2D where it can't be had) or
+   * `'auto'` (WebGL 2 where the GPU is a real one). On the GPU go the grid,
+   * sessions, series, compare lines, indicators and panes; text, drawings,
+   * orders, axes and the crosshair stay Canvas 2D, as does anything the GPU
+   * can't draw the same. The WebGL code loads only when asked for. See
+   * `rendererChange`.
    */
   renderer?: 'canvas' | 'webgl' | 'auto';
   /**

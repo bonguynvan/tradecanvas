@@ -86,8 +86,8 @@ describe('WebGLSeriesRenderer', () => {
   it('reports what it drew', () => {
     const r = makeRenderer()!;
     expect(r.label).toBe('Fake GPU');
-    expect(r.render(frame())).toEqual({ series: true, volume: true, background: true });
-    expect(r.render(frame({ candles: false, volume: null, background: null }))).toEqual({ series: false, volume: false, background: false });
+    expect(r.render(frame())).toEqual({ series: true, volume: true, background: true, recorded: false });
+    expect(r.render(frame({ candles: false, volume: null, background: null }))).toEqual({ series: false, volume: false, background: false, recorded: false });
   });
 
   it('draws the grid, the other rectangles, the volume, then the candles: a call each', () => {
@@ -131,11 +131,55 @@ describe('WebGLSeriesRenderer', () => {
     expect([...(upload!.args[1] as Float32Array)]).toEqual([1, 2, 4, 6, 0.5, 0, 0, 0.5, 6, 4]);
   });
 
+  it('draws recorded 2D drawing over the bars, in the order it was recorded', () => {
+    const r = makeRenderer()!;
+    const rec = r.recorder(2, null);
+    const plotRegion = rec.region(viewport.chartRect);
+    plotRegion.step((c) => {
+      c.strokeStyle = '#ff0000';
+      c.beginPath();
+      c.moveTo(10, 20);
+      c.lineTo(20, 30);
+      c.lineTo(30, 25);
+      c.stroke();
+      c.fillStyle = 'rgba(0, 0, 255, 0.1)';
+      c.beginPath();
+      c.moveTo(10, 20);
+      c.lineTo(30, 20);
+      c.lineTo(20, 40);
+      c.fill();
+      c.fillRect(40, 20, 3, 10);
+    });
+    fake.calls.length = 0;
+    const drawn = r.render(frame({ recorded: rec, background: null }));
+    expect(drawn.recorded).toBe(true);
+    const order = fake.calls.filter((c) => c.name === 'drawArraysInstanced' || c.name === 'drawArrays').map((c) => [c.name, c.args[2], c.args[3]]);
+    expect(order).toEqual([
+      // Volume, candles.
+      ['drawArraysInstanced', 6, 20],
+      ['drawArraysInstanced', 12, 20],
+      // The stroke: two segments.
+      ['drawArraysInstanced', 6, 2],
+      // The polygon: a span each side of its middle corner.
+      ['drawArraysInstanced', 6, 2],
+      // The rectangle.
+      ['drawArraysInstanced', 6, 1],
+    ]);
+    // The scissor is left off.
+    expect(named('disable').at(-1)?.args[0]).toBe(fake.enumOf('SCISSOR_TEST'));
+  });
+
+  it('ignores a recorder it did not make', () => {
+    const r = makeRenderer()!;
+    const drawn = r.render(frame({ recorded: { region: () => { throw new Error('no'); } } }));
+    expect(drawn.recorded).toBe(false);
+  });
+
   it('draws nothing once the context is lost', () => {
     const r = makeRenderer()!;
     fake.lose();
     fake.calls.length = 0;
-    expect(r.render(frame())).toEqual({ series: false, volume: false, background: false });
+    expect(r.render(frame())).toEqual({ series: false, volume: false, background: false, recorded: false });
     expect(named('drawArraysInstanced')).toHaveLength(0);
   });
 

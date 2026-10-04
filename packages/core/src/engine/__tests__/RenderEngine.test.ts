@@ -109,6 +109,20 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** An indicator engine drawing `overlays` in the plot and `panes` (id → draw) in panes. */
+function fakeIndicators(overlays: ((c: CanvasRenderingContext2D) => void)[], panes: Record<string, (c: CanvasRenderingContext2D) => void> = {}) {
+  return {
+    overlayDraws: () => overlays,
+    getLatestOverlayValues: () => [],
+    getLatestValues: () => [],
+    getPanelIndicators: () => Object.keys(panes).map((instanceId) => ({ instanceId, descriptor: { name: instanceId.toUpperCase() } })),
+    isVisible: () => true,
+    getLevels: () => [30, 70],
+    getOutput: () => null,
+    renderPanel: (c: CanvasRenderingContext2D, id: string) => panes[id]?.(c),
+  } as unknown as RenderContext['indicatorEngine'];
+}
+
 describe('RenderEngine — two canvases', () => {
   it('paints into a scene canvas and a top canvas', () => {
     const canvases = [...container.querySelectorAll('canvas')];
@@ -187,10 +201,12 @@ describe('RenderEngine — two canvases', () => {
     expect(top).not.toHaveBeenCalled();
   });
 
-  it('draws session break lines under the series and their labels over it', () => {
+  it('draws session break lines under the series, and their labels over the indicators', () => {
     const { ctx, scene } = makeContext();
     const order: string[] = [];
     scene.mockImplementation(() => order.push('series'));
+    ctx.compareRenderer = { render: () => order.push('compare') } as unknown as RenderContext['compareRenderer'];
+    ctx.indicatorEngine = fakeIndicators([() => order.push('overlay')]);
     ctx.sessionBreaks = {
       renderLines: () => order.push('lines'),
       renderLabels: () => order.push('labels'),
@@ -199,7 +215,7 @@ describe('RenderEngine — two canvases', () => {
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(order).toEqual(['lines', 'series', 'labels']);
+    expect(order).toEqual(['lines', 'series', 'compare', 'overlay', 'labels']);
   });
 
   it('several requests in one frame paint each canvas once', () => {
@@ -218,18 +234,139 @@ describe('RenderEngine — two canvases', () => {
 });
 
 describe('RenderEngine — a GPU layer under the scene', () => {
-  function fakeGpu(drawn = { series: true, volume: true, background: true }) {
+  /**
+   * A recorder whose steps run on a context of its own; step `i` (counted
+   * over the frame) is kept when `keep(i)`.
+   */
+  function fakeRecorder(keep: (i: number) => boolean = () => true) {
+    const canvas = document.createElement('canvas');
+    const recording = fakeContext(canvas);
+    let i = 0;
+    const regions: { clip: { x: number; y: number; width: number; height: number }; drawText: ReturnType<typeof vi.fn> }[] = [];
+    const recorder = {
+      region: (clip: { x: number; y: number; width: number; height: number }) => {
+        const drawText = vi.fn();
+        regions.push({ clip, drawText });
+        return {
+          step: (draw: (c: CanvasRenderingContext2D) => void) => {
+            if (!keep(i++)) return false;
+            draw(recording);
+            return true;
+          },
+          drawText,
+        };
+      },
+    };
+    return { recorder, recording, regions };
+  }
+
+  function fakeGpu(drawn: Record<string, boolean> = { series: true, volume: true, background: true, recorded: true }, rec = fakeRecorder()) {
     const canvas = document.createElement('canvas');
     let lostCallback: (() => void) | null = null;
     const gpu = {
       canvas,
       label: 'test GPU',
-      render: vi.fn(() => drawn),
+      render: vi.fn(() => drawn as { series: boolean; volume: boolean; background: boolean; recorded?: boolean }),
+      recorder: vi.fn(() => rec.recorder),
       onLost: (cb: () => void) => { lostCallback = cb; },
       destroy: vi.fn(() => canvas.remove()),
     };
-    return { gpu, lose: () => lostCallback?.() };
+    return { gpu, lose: () => lostCallback?.(), rec };
   }
+
+  /** The plot drawn by steps that say on which context they ran. */
+  function stepContext() {
+    const { ctx } = makeContext();
+    const calls: [string, CanvasRenderingContext2D][] = [];
+    const step = (name: string) => (c: CanvasRenderingContext2D) => { calls.push([name, c]); };
+    ctx.chartRenderer = { render: (c: CanvasRenderingContext2D) => step('series')(c) } as unknown as RenderContext['chartRenderer'];
+    ctx.compareRenderer = { render: (c: CanvasRenderingContext2D) => step('compare')(c) } as unknown as RenderContext['compareRenderer'];
+    ctx.indicatorEngine = fakeIndicators([step('ema'), step('bands')], { rsi: step('rsi') });
+    return { ctx, calls };
+  }
+
+  const sceneCtx = () => engine.layerManager.getLayer(LayerType.Main)!.ctx;
+
+  it('records a series of another kind, compare and overlays for the GPU, in order', () => {
+    const { ctx, calls } = stepContext();
+    const { gpu, rec } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(calls.map(([name, c]) => [name, c === rec.recording])).toEqual([['series', true], ['compare', true], ['ema', true], ['bands', true]]);
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ candles: false, recorded: rec.recorder }));
+    // Their text goes on the scene, in the plot.
+    expect(rec.regions[0].clip).toEqual(ctx.viewport.chartRect);
+    expect(rec.regions[0].drawText.mock.calls[0][0]).toBe(sceneCtx());
+  });
+
+  it('draws with Canvas 2D from the first step the GPU cannot take, keeping the order', () => {
+    const { ctx, calls } = stepContext();
+    const { gpu, rec } = fakeGpu(undefined, fakeRecorder((i) => i !== 1));
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    const plot = calls.filter(([name]) => name !== 'rsi');
+    expect(plot.map(([name, c]) => [name, c === rec.recording ? 'gpu' : c === sceneCtx() ? 'scene' : '?'])).toEqual([
+      ['series', 'gpu'],
+      ['compare', 'scene'],
+      ['ema', 'scene'],
+      ['bands', 'scene'],
+    ]);
+  });
+
+  it('draws every step with Canvas 2D when the GPU did not draw what was recorded', () => {
+    const { ctx, calls } = stepContext();
+    ctx.panels = [{ instanceId: 'rsi', rect: { x: 0, y: 200, width: 300, height: 100 }, viewport: ctx.viewport }];
+    const { gpu, rec } = fakeGpu({ series: false, volume: false, background: true, recorded: false });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    const onScene = calls.filter(([, c]) => c === sceneCtx()).map(([name]) => name);
+    expect(onScene).toEqual(['series', 'compare', 'ema', 'bands', 'rsi']);
+    expect(rec.regions.every((r) => r.drawText.mock.calls.length === 0)).toBe(true);
+  });
+
+  it('draws every step with Canvas 2D for a GPU renderer that records nothing', () => {
+    const { ctx, calls } = stepContext();
+    const { gpu } = fakeGpu();
+    const bare = { ...gpu, recorder: undefined };
+    engine.attachGpu(bare);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(calls.filter(([, c]) => c === sceneCtx()).map(([name]) => name)).toEqual(['series', 'compare', 'ema', 'bands']);
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ recorded: null }));
+  });
+
+  it('records a pane: its background, levels and indicator; the header stays on the scene', () => {
+    const { ctx, calls } = stepContext();
+    ctx.panels = [{ instanceId: 'rsi', rect: { x: 0, y: 200, width: 300, height: 100 }, viewport: { ...ctx.viewport, chartRect: { x: 0, y: 220, width: 300, height: 80 } } }];
+    const { gpu, rec } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    const fillRect = vi.fn();
+    const fillText = vi.fn();
+    sceneCtx().fillRect = fillRect;
+    sceneCtx().fillText = fillText;
+    runFrame();
+    expect(calls.find(([name]) => name === 'rsi')?.[1]).toBe(rec.recording);
+    // The pane's background and its inner part are regions of their own.
+    expect(rec.regions.map((r) => r.clip)).toEqual([
+      ctx.viewport.chartRect,
+      { x: 0, y: 200, width: 300, height: 100 },
+      { x: 0, y: 220, width: 300, height: 80 },
+    ]);
+    // On the scene: the divider and the title, not the background.
+    expect(fillRect.mock.calls).toContainEqual([0, 200, 300, 3]);
+    expect(fillRect.mock.calls).not.toContainEqual([0, 200, 300, 100]);
+    expect(fillText).toHaveBeenCalledWith('RSI', 6, 206);
+    expect(rec.regions[2].drawText.mock.calls[0][0]).toBe(sceneCtx());
+  });
 
   async function candleContext() {
     const { CandlestickRenderer } = await import('../../charts/CandlestickRenderer.js');

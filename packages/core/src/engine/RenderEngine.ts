@@ -9,6 +9,7 @@ import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
 import type { GpuBackground, GpuDrawn, GpuRenderer } from './gpu.js';
+import { canvasPlan, recordSteps, type DrawStep, type PaneSteps, type StepPlan } from './plotSteps.js';
 import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
 import type { GridRenderer } from '../axis/GridRenderer.js';
@@ -246,10 +247,22 @@ export class RenderEngine {
     layer.clear();
     const c = layer.ctx;
     const gpu = this.gpu;
+    // Candles the GPU draws itself; any other series is a step like the rest.
+    const native = !!gpu && ctx.chartRenderer instanceof CandlestickRenderer;
+    const series: DrawStep[] = ctx.chartRenderer ? [(s) => ctx.chartRenderer!.render(s, data, viewport, theme)] : [];
+    const plot: DrawStep[] = [
+      ...(native ? [] : series),
+      ...(ctx.compareRenderer ? [(s: CanvasRenderingContext2D) => ctx.compareRenderer!.render(s, data, viewport, theme)] : []),
+      ...(ctx.indicatorEngine?.overlayDraws(viewport, ctx.leftViewport ?? undefined) ?? []),
+    ];
+    const panes = this.paneSteps(ctx);
     let drawn: GpuDrawn = { series: false, volume: false, background: false };
+    let plan = canvasPlan(plot);
 
     if (gpu) {
-      drawn = this.renderGpu(gpu, ctx);
+      ({ drawn, plan } = this.renderGpu(gpu, ctx, c, plot, panes));
+      // The GPU drew nothing (its context is lost): its candles go first.
+      if (native && !drawn.series) plan = { ...plan, plot: [...series, ...plan.plot] };
     } else {
       this.renderBackground(c, ctx);
     }
@@ -269,17 +282,17 @@ export class RenderEngine {
       ctx.volumeProfile?.render(c, data, viewport, theme);
       ctx.marketProfile?.render(c, data, viewport, theme);
     }
-    if (!drawn.series) ctx.chartRenderer?.render(c, data, viewport, theme);
-    // Break labels over the bars, which would otherwise hide them.
+    // The series, compare and overlays: what the GPU didn't draw, over what it did.
+    plan.plotText?.drawText(c);
+    for (const step of plan.plot) step(c);
+    // Break labels over the bars and indicators, which would otherwise hide them.
     ctx.sessionBreaks?.renderLabels(c, viewport, theme, data);
-    ctx.compareRenderer?.render(c, data, viewport, theme);
-    ctx.indicatorEngine?.renderOverlays(c, viewport, ctx.leftViewport ?? undefined);
     ctx.periodLevels?.render(c, data, viewport, theme);
     ctx.pivotMarkers?.render(c, data, viewport, theme);
     ctx.renderOverlayPlugins?.(c, 'main');
     c.restore();
 
-    this.renderPanels(c, ctx);
+    this.renderPanels(c, ctx, panes, plan);
 
     // --- Chart objects: limits, trade zones, drawings, orders, markers, alerts ---
     if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits);
@@ -317,8 +330,18 @@ export class RenderEngine {
    * A profile goes over the volume bars, as in Canvas 2D, so then volume is
    * drawn there too.
    */
-  private renderGpu(gpu: GpuRenderer, ctx: RenderContext): GpuDrawn {
+  private renderGpu(
+    gpu: GpuRenderer,
+    ctx: RenderContext,
+    scene: CanvasRenderingContext2D,
+    plot: DrawStep[],
+    panes: readonly PaneSteps[],
+  ): { drawn: GpuDrawn; plan: StepPlan } {
     const { viewport, theme, data } = ctx;
+    const dpr = this.layerManager.getDpr();
+    // What the GPU can draw of the plot and panes, recorded before it draws.
+    const recorder = gpu.recorder?.(dpr, scene) ?? null;
+    const recorded = recorder ? recordSteps(recorder, viewport.chartRect, plot, panes) : canvasPlan(plot);
     const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
     const background: GpuBackground | null = needsBackCanvas(ctx)
       ? null
@@ -335,15 +358,17 @@ export class RenderEngine {
       viewport,
       theme,
       // The ratio the canvases are sized for, which may trail the screen's.
-      dpr: this.layerManager.getDpr(),
+      dpr,
       candles: ctx.chartRenderer instanceof CandlestickRenderer,
       volume,
       background,
+      recorded: recorder,
     });
+    const plan = drawn.recorded ? recorded : canvasPlan(plot);
     const back = background === null || !drawn.background ? this.layerManager.backLayer() : null;
     if (!back) {
       this.layerManager.dropBackLayer();
-      return drawn;
+      return { drawn, plan };
     }
     back.clear();
     this.renderBackground(back.ctx, ctx);
@@ -353,7 +378,7 @@ export class RenderEngine {
       ctx.volumeProfile?.render(back.ctx, data, viewport, theme);
       ctx.marketProfile?.render(back.ctx, data, viewport, theme);
     });
-    return { ...drawn, volume: drawn.volume || profiles };
+    return { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };
   }
 
   /** The background: grid, session shading and breaks, watermark. */
@@ -401,52 +426,76 @@ export class RenderEngine {
     this.renderPanelHoverValues(c, ctx);
   }
 
-  /** Indicator panes: background, divider, name and the indicator itself. */
-  private renderPanels(c: CanvasRenderingContext2D, ctx: RenderContext): void {
-    const { theme } = ctx;
-    const panels = ctx.panels;
+  /** Each pane's drawing as steps: its background, then its levels and indicators. */
+  private paneSteps(ctx: RenderContext): PaneSteps[] {
+    const { theme, panels } = ctx;
     const indicatorEngine = ctx.indicatorEngine;
-    if (!indicatorEngine || panels.length === 0) return;
+    if (!indicatorEngine || panels.length === 0) return [];
+    const out: PaneSteps[] = [];
+    for (const panel of panels) {
+      const { rect, viewport } = panel;
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
+      const steps: DrawStep[] = [];
+      for (const id of ids) {
+        const levels = indicatorEngine.isVisible(id) ? indicatorEngine.getLevels(id) : [];
+        if (levels.length > 0) steps.push((c) => this.renderLevels(c, levels, viewport, theme));
+      }
+      for (const id of ids) steps.push((c) => indicatorEngine.renderPanel(c, id, viewport));
+      out.push({
+        id: panel.instanceId,
+        rect,
+        inner: { x: rect.x, y: rect.y + PANEL_HEADER_HEIGHT, width: rect.width, height: rect.height - PANEL_HEADER_HEIGHT },
+        background: (c) => {
+          c.fillStyle = theme.background;
+          c.fillRect(rect.x, rect.y, rect.width, rect.height);
+        },
+        steps,
+      });
+    }
+    return out;
+  }
+
+  /** Indicator panes: background, divider, name and the indicator itself (what the GPU didn't draw). */
+  private renderPanels(c: CanvasRenderingContext2D, ctx: RenderContext, panes: readonly PaneSteps[], plan: StepPlan): void {
+    const { theme } = ctx;
+    const indicatorEngine = ctx.indicatorEngine;
+    if (!indicatorEngine || panes.length === 0) return;
 
     // Cache font string once for all panels
     const panelFont = `10px ${theme.font.family}`;
     // Build descriptor lookup once per frame — avoids O(n*m) .find() per panel
     const descMap = this.panelDescriptors(indicatorEngine);
 
-    for (const panel of panels) {
-      if (panel.rect.width <= 0 || panel.rect.height <= 0) continue;
-
+    for (const pane of panes) {
+      const { rect, inner } = pane;
+      const gpu = plan.panes.get(pane.id);
       c.save();
       c.beginPath();
-      c.rect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
+      c.rect(rect.x, rect.y, rect.width, rect.height);
       c.clip();
 
-      // Panel background
-      c.fillStyle = theme.background;
-      c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, panel.rect.height);
+      if (!gpu?.background) pane.background(c);
 
       // Thick divider bar at top of panel
       c.fillStyle = theme.axisLine;
-      c.fillRect(panel.rect.x, panel.rect.y, panel.rect.width, 3);
+      c.fillRect(rect.x, rect.y, rect.width, 3);
 
       // Panel indicator name in header area
       c.fillStyle = theme.textSecondary;
       c.font = panelFont;
       c.textBaseline = 'top';
       c.textAlign = 'left';
-      const desc = descMap.get(panel.instanceId);
-      if (desc && ctx.paneTitles !== false) c.fillText(desc.descriptor.name, panel.rect.x + 6, panel.rect.y + 6);
+      const desc = descMap.get(pane.id);
+      if (desc && ctx.paneTitles !== false) c.fillText(desc.descriptor.name, rect.x + 6, rect.y + 6);
 
       // Clip indicator rendering to below the header
       c.save();
       c.beginPath();
-      c.rect(panel.rect.x, panel.rect.y + PANEL_HEADER_HEIGHT, panel.rect.width, panel.rect.height - PANEL_HEADER_HEIGHT);
+      c.rect(inner.x, inner.y, inner.width, inner.height);
       c.clip();
-      const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
-      for (const id of ids) {
-        if (indicatorEngine.isVisible(id)) this.renderLevels(c, indicatorEngine.getLevels(id), panel.viewport, theme);
-      }
-      for (const id of ids) indicatorEngine.renderPanel(c, id, panel.viewport);
+      gpu?.text?.drawText(c);
+      for (const step of gpu ? gpu.rest : pane.steps) step(c);
       c.restore();
 
       c.restore();
