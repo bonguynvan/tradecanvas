@@ -1,0 +1,431 @@
+import { resolveVolumeColors } from '@tradecanvas/commons';
+import type { ViewportState } from '@tradecanvas/commons';
+import type { GpuBackground, GpuDrawn, GpuFrame, GpuRenderer } from '../engine/gpu.js';
+import { barColumns } from '../charts/pixelGrid.js';
+import { gridLines } from '../axis/gridLines.js';
+import { forEachPixelColumn, isDense } from '../charts/denseBars.js';
+import { FLOATS_PER_BAR, SeriesUploads } from './seriesUploads.js';
+import { parseColor, premultiplied } from './glColor.js';
+import { CANDLE_BARS_VS, CANDLE_COLUMNS_VS, FILL_FS, RECT_FS, RECT_VS, VOLUME_BARS_VS, VOLUME_COLUMNS_VS } from './shaders.js';
+
+const BAR_STRIDE = FLOATS_PER_BAR * 4;
+/** Floats per zoomed-out column: x, high, low, volume, up. */
+const COLUMN_FLOATS = 5;
+const COLUMN_STRIDE = COLUMN_FLOATS * 4;
+/** Floats per background rectangle: left, top, right, bottom, then its premultiplied colour. */
+const RECT_FLOATS = 8;
+const RECT_STRIDE = RECT_FLOATS * 4;
+
+interface Program {
+  program: WebGLProgram;
+  vao: WebGLVertexArrayObject;
+  uniforms: Map<string, WebGLUniformLocation | null>;
+  attribs: Map<string, number>;
+}
+
+/** Price-to-pixel uniforms for a frame, as `priceToYMapper` maps (linear or log, upright or inverted). */
+interface YMapping {
+  log: number;
+  invert: number;
+  yA: number;
+  yB: number;
+  logMin: number;
+  logK: number;
+  top: number;
+  bottom: number;
+}
+
+function yMapping(viewport: ViewportState, base: number): YMapping {
+  const { min, max } = viewport.priceRange;
+  const { y: top, height } = viewport.chartRect;
+  const invert = viewport.invertScale === true ? 1 : 0;
+  const flat = { log: 0, invert, yA: top + height / 2, yB: 0, logMin: 0, logK: 0, top, bottom: top + height };
+  if (viewport.logScale && min > 0 && max > 0) {
+    const logMin = Math.log(min);
+    const logRange = Math.log(max) - logMin;
+    if (logRange === 0) return flat;
+    return { ...flat, log: 1, logMin, logK: height / logRange };
+  }
+  const range = max - min;
+  if (range === 0) return flat;
+  const k = height / range;
+  return invert
+    ? { ...flat, yA: top + (base - min) * k, yB: k }
+    : { ...flat, yA: top + (max - base) * k, yB: -k };
+}
+
+/**
+ * The background (grid, sessions), candles and volume on WebGL 2, on a
+ * canvas of their own under the 2D scene. The series lives in a GPU buffer, rewritten only where it
+ * changed; a frame sets a few uniforms and makes a few draw calls. Zoomed
+ * out below a pixel per bar it draws a column per pixel, like the 2D
+ * renderers.
+ */
+export class WebGLSeriesRenderer implements GpuRenderer {
+  readonly label: string;
+  private readonly gl: WebGL2RenderingContext;
+  private readonly candleBars: Program;
+  private readonly volumeBars: Program;
+  private readonly candleColumns: Program;
+  private readonly volumeColumns: Program;
+  private readonly rects: Program;
+  private readonly seriesBuffer: WebGLBuffer;
+  private readonly columnBuffer: WebGLBuffer;
+  private readonly rectBuffer: WebGLBuffer;
+  private readonly uploads = new SeriesUploads();
+  private gpuFloats = 0;
+  private columns = new Float32Array(4096 * COLUMN_FLOATS);
+  private rectValues = new Float32Array(64 * RECT_FLOATS);
+  /** The plot in device pixels (left, top, right, bottom), for the bar programs' clip. */
+  private clip: [number, number, number, number] = [0, 0, 0, 0];
+  private lost = false;
+  private lostCallback: (() => void) | null = null;
+
+  /** A renderer on a new canvas, or null where WebGL 2 isn't there (or, asked for, only a software one). */
+  static create(options: { failIfMajorPerformanceCaveat?: boolean } = {}): WebGLSeriesRenderer | null {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    let gl: WebGL2RenderingContext | null = null;
+    try {
+      gl = canvas.getContext('webgl2', {
+        alpha: true,
+        premultipliedAlpha: true,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        preserveDrawingBuffer: false,
+        failIfMajorPerformanceCaveat: options.failIfMajorPerformanceCaveat ?? false,
+      });
+    } catch {
+      gl = null;
+    }
+    if (!gl) return null;
+    try {
+      return new WebGLSeriesRenderer(canvas, gl);
+    } catch {
+      return null;
+    }
+  }
+
+  private constructor(readonly canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
+    this.gl = gl;
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    this.label = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    this.candleBars = this.program(CANDLE_BARS_VS);
+    this.volumeBars = this.program(VOLUME_BARS_VS);
+    this.candleColumns = this.program(CANDLE_COLUMNS_VS);
+    this.volumeColumns = this.program(VOLUME_COLUMNS_VS);
+    this.rects = this.program(RECT_VS, RECT_FS);
+    this.seriesBuffer = this.buffer();
+    this.columnBuffer = this.buffer();
+    this.rectBuffer = this.buffer();
+    canvas.addEventListener('webglcontextlost', this.handleLost);
+  }
+
+  onLost(callback: () => void): void {
+    this.lostCallback = callback;
+  }
+
+  render(frame: GpuFrame): GpuDrawn {
+    const gl = this.gl;
+    if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false };
+    const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null };
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    if (frame.background) this.drawBackground(frame, frame.background);
+
+    const { data, viewport, dpr } = frame;
+    if (data.length === 0 || (!frame.candles && !frame.volume)) return drawn;
+    this.syncSeries(frame);
+
+    const from = Math.max(0, viewport.visibleRange.from);
+    const to = Math.min(viewport.visibleRange.to, data.length - 1);
+    if (to < from) return drawn;
+
+    // The series is clipped to the plot, as the 2D renderers are: the
+    // scissor to the pixels it touches, the shader to the share of each.
+    const { chartRect } = viewport;
+    this.clip = [chartRect.x * dpr, chartRect.y * dpr, (chartRect.x + chartRect.width) * dpr, (chartRect.y + chartRect.height) * dpr];
+    const left = Math.floor(this.clip[0]);
+    const top = Math.floor(this.clip[1]);
+    const width = Math.ceil(this.clip[2]) - left;
+    const height = Math.ceil(this.clip[3]) - top;
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(left, this.canvas.height - top - height, Math.max(0, width), Math.max(0, height));
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    const dense = isDense(viewport);
+    const columnCount = dense ? this.buildColumns(frame, from, to) : 0;
+    if (frame.volume) this.drawVolume(frame, from, to, dense, columnCount);
+    const { min, max } = viewport.priceRange;
+    if (frame.candles && max - min !== 0) this.drawCandles(frame, from, to, dense, columnCount);
+    gl.disable(gl.SCISSOR_TEST);
+    return drawn;
+  }
+
+  destroy(): void {
+    this.canvas.removeEventListener('webglcontextlost', this.handleLost);
+    const gl = this.gl;
+    if (!gl.isContextLost()) {
+      for (const p of [this.candleBars, this.volumeBars, this.candleColumns, this.volumeColumns, this.rects]) {
+        gl.deleteVertexArray(p.vao);
+        gl.deleteProgram(p.program);
+      }
+      gl.deleteBuffer(this.seriesBuffer);
+      gl.deleteBuffer(this.columnBuffer);
+      gl.deleteBuffer(this.rectBuffer);
+    }
+    this.canvas.remove();
+  }
+
+  private readonly handleLost = (e: Event) => {
+    e.preventDefault();
+    if (this.lost) return;
+    this.lost = true;
+    this.lostCallback?.();
+  };
+
+  private syncSeries(frame: GpuFrame): void {
+    const gl = this.gl;
+    const change = this.uploads.sync(frame.data);
+    const values = this.uploads.values;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.seriesBuffer);
+    if (change.full || values.length !== this.gpuFloats) {
+      gl.bufferData(gl.ARRAY_BUFFER, values, gl.DYNAMIC_DRAW);
+      this.gpuFloats = values.length;
+    } else if (change.to > change.from) {
+      gl.bufferSubData(gl.ARRAY_BUFFER, change.from * BAR_STRIDE, values, change.from * FLOATS_PER_BAR, (change.to - change.from) * FLOATS_PER_BAR);
+    }
+  }
+
+  /** Zoomed out: the bars merged per pixel column, as the 2D dense renderers merge them. */
+  private buildColumns(frame: GpuFrame, from: number, to: number): number {
+    const { viewport, data } = frame;
+    const barUnit = viewport.barWidth + viewport.barSpacing;
+    const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
+    const base = this.uploads.base;
+    let n = 0;
+    forEachPixelColumn(data, from, to, (i) => i * barUnit + offsetX, (c) => {
+      if ((n + 1) * COLUMN_FLOATS > this.columns.length) {
+        const bigger = new Float32Array(this.columns.length * 2);
+        bigger.set(this.columns);
+        this.columns = bigger;
+      }
+      const k = n * COLUMN_FLOATS;
+      this.columns[k] = c.x;
+      this.columns[k + 1] = c.high - base;
+      this.columns[k + 2] = c.low - base;
+      this.columns[k + 3] = c.volume;
+      this.columns[k + 4] = c.close >= c.open ? 1 : 0;
+      n++;
+    });
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.columnBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.columns.subarray(0, n * COLUMN_FLOATS), gl.STREAM_DRAW);
+    return n;
+  }
+
+  /**
+   * The grid, then the other rectangles, unclipped like the 2D background.
+   * The grid's coverage blends as the union of its lines: colour weighted by
+   * coverage, alpha by the colour's own alpha (the blend constant) times
+   * coverage. The rest blend as Canvas 2D fills do.
+   */
+  private drawBackground(frame: GpuFrame, background: GpuBackground): void {
+    const { viewport, theme } = frame;
+    const lines = background.grid ? gridLines(viewport) : { horizontal: [], vertical: [] };
+    const gridCount = lines.horizontal.length + lines.vertical.length;
+    const total = gridCount + background.rects.length;
+    if (total === 0) return;
+    if (this.rectValues.length < total * RECT_FLOATS) this.rectValues = new Float32Array(total * RECT_FLOATS * 2);
+    const values = this.rectValues;
+    let k = 0;
+    const put = (left: number, top: number, right: number, bottom: number, color: readonly number[], alpha: number) => {
+      values[k++] = left;
+      values[k++] = top;
+      values[k++] = right;
+      values[k++] = bottom;
+      for (let i = 0; i < 4; i++) values[k++] = color[i] * alpha;
+    };
+    const gridColor = premultiplied(parseColor(theme.grid));
+    const { chartRect } = viewport;
+    for (const y of lines.horizontal) put(chartRect.x, y - 0.5, chartRect.x + chartRect.width, y + 0.5, gridColor, 1);
+    for (const x of lines.vertical) put(x - 0.5, chartRect.y, x + 0.5, chartRect.y + chartRect.height, gridColor, 1);
+    for (const r of background.rects) put(r.x, r.y, r.x + r.width, r.y + r.height, premultiplied(parseColor(r.color)), r.alpha);
+
+    const gl = this.gl;
+    const p = this.use(this.rects, frame);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, values.subarray(0, k), gl.STREAM_DRAW);
+    if (gridCount > 0) {
+      gl.uniform1i(this.loc(p, 'u_union'), 1);
+      gl.blendColor(0, 0, 0, gridColor[3]);
+      gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.CONSTANT_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      this.bindRects(p, 0);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, gridCount);
+    }
+    if (background.rects.length > 0) {
+      gl.uniform1i(this.loc(p, 'u_union'), 0);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      this.bindRects(p, gridCount);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, background.rects.length);
+    }
+  }
+
+  private drawCandles(frame: GpuFrame, from: number, to: number, dense: boolean, columns: number): void {
+    const { theme, viewport, dpr } = frame;
+    const up = premultiplied(parseColor(theme.candleUp));
+    const down = premultiplied(parseColor(theme.candleDown));
+    if (dense) {
+      const p = this.use(this.candleColumns, frame);
+      this.vec4(p, 'u_upBody', up);
+      this.vec4(p, 'u_downBody', down);
+      this.bindColumns(p);
+      this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, 6, columns);
+      return;
+    }
+    const p = this.use(this.candleBars, frame);
+    this.barUniforms(p, viewport, from, dpr);
+    this.vec4(p, 'u_upBody', up);
+    this.vec4(p, 'u_downBody', down);
+    this.vec4(p, 'u_upWick', premultiplied(parseColor(theme.candleUpWick)));
+    this.vec4(p, 'u_downWick', premultiplied(parseColor(theme.candleDownWick)));
+    this.bindBars(p, from);
+    this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, 12, to - from + 1);
+  }
+
+  private drawVolume(frame: GpuFrame, from: number, to: number, dense: boolean, columns: number): void {
+    const { data, viewport, theme, dpr } = frame;
+    let maxVol = 0;
+    for (let i = from; i <= to; i++) if (data[i].volume > maxVol) maxVol = data[i].volume;
+    if (maxVol === 0) return;
+    const { chartRect } = viewport;
+    const colors = resolveVolumeColors(theme);
+    const p = this.use(dense ? this.volumeColumns : this.volumeBars, frame);
+    this.float(p, 'u_volBottom', chartRect.y + chartRect.height);
+    this.float(p, 'u_volScale', (chartRect.height * (frame.volume?.heightRatio ?? 0.15)) / maxVol);
+    this.vec4(p, 'u_volUp', premultiplied(parseColor(colors.up)));
+    this.vec4(p, 'u_volDown', premultiplied(parseColor(colors.down)));
+    if (dense) {
+      this.bindColumns(p);
+      this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, 6, columns);
+      return;
+    }
+    this.barUniforms(p, viewport, from, dpr);
+    this.bindBars(p, from);
+    this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, 6, to - from + 1);
+  }
+
+  /** Where bar `from` is, the bar step, and the wick and body widths in device pixels. */
+  private barUniforms(p: Program, viewport: ViewportState, from: number, dpr: number): void {
+    const barUnit = viewport.barWidth + viewport.barSpacing;
+    const offsetX = -viewport.offset + viewport.chartRect.x + viewport.barWidth / 2;
+    const { body, wick } = barColumns(viewport.barWidth, dpr);
+    this.float(p, 'u_x0', from * barUnit + offsetX);
+    this.float(p, 'u_unit', barUnit);
+    this.float(p, 'u_wick', wick);
+    this.float(p, 'u_body', body);
+  }
+
+  private use(p: Program, frame: GpuFrame): Program {
+    const gl = this.gl;
+    gl.useProgram(p.program);
+    gl.bindVertexArray(p.vao);
+    gl.uniform2f(this.loc(p, 'u_canvas'), this.canvas.width, this.canvas.height);
+    this.vec4(p, 'u_clip', this.clip);
+    this.float(p, 'u_dpr', frame.dpr);
+    const y = yMapping(frame.viewport, this.uploads.base);
+    gl.uniform1i(this.loc(p, 'u_log'), y.log);
+    gl.uniform1i(this.loc(p, 'u_invert'), y.invert);
+    this.float(p, 'u_yA', y.yA);
+    this.float(p, 'u_yB', y.yB);
+    this.float(p, 'u_base', this.uploads.base);
+    this.float(p, 'u_logMin', y.logMin);
+    this.float(p, 'u_logK', y.logK);
+    this.float(p, 'u_top', y.top);
+    this.float(p, 'u_bottom', y.bottom);
+    return p;
+  }
+
+  private bindBars(p: Program, from: number): void {
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.seriesBuffer);
+    this.attrib(p, 'a_ohlc', 4, BAR_STRIDE, from * BAR_STRIDE);
+    this.attrib(p, 'a_vd', 2, BAR_STRIDE, from * BAR_STRIDE + 16);
+  }
+
+  private bindRects(p: Program, from: number): void {
+    this.attrib(p, 'a_rect', 4, RECT_STRIDE, from * RECT_STRIDE);
+    this.attrib(p, 'a_color', 4, RECT_STRIDE, from * RECT_STRIDE + 16);
+  }
+
+  private bindColumns(p: Program): void {
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.columnBuffer);
+    this.attrib(p, 'a_col', 4, COLUMN_STRIDE, 0);
+    this.attrib(p, 'a_up', 1, COLUMN_STRIDE, 16);
+  }
+
+  private attrib(p: Program, name: string, size: number, stride: number, offset: number): void {
+    const loc = p.attribs.get(name);
+    if (loc === undefined || loc < 0) return;
+    const gl = this.gl;
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, offset);
+    gl.vertexAttribDivisor(loc, 1);
+  }
+
+  private float(p: Program, name: string, v: number): void {
+    this.gl.uniform1f(this.loc(p, name), v);
+  }
+
+  private vec4(p: Program, name: string, v: readonly number[]): void {
+    this.gl.uniform4f(this.loc(p, name), v[0], v[1], v[2], v[3]);
+  }
+
+  private loc(p: Program, name: string): WebGLUniformLocation | null {
+    if (!p.uniforms.has(name)) p.uniforms.set(name, this.gl.getUniformLocation(p.program, name));
+    return p.uniforms.get(name) ?? null;
+  }
+
+  private buffer(): WebGLBuffer {
+    const b = this.gl.createBuffer();
+    if (!b) throw new Error('WebGL: no buffer');
+    return b;
+  }
+
+  private program(vertexSource: string, fragmentSource = FILL_FS): Program {
+    const gl = this.gl;
+    const compile = (type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) throw new Error('WebGL: no shader');
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(`WebGL shader: ${log}`);
+      }
+      return shader;
+    };
+    const vs = compile(gl.VERTEX_SHADER, vertexSource);
+    const fs = compile(gl.FRAGMENT_SHADER, fragmentSource);
+    const program = gl.createProgram();
+    if (!program) throw new Error('WebGL: no program');
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(`WebGL program: ${gl.getProgramInfoLog(program)}`);
+    }
+    const vao = gl.createVertexArray();
+    if (!vao) throw new Error('WebGL: no vertex array');
+    const attribs = new Map<string, number>();
+    for (const name of ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color']) attribs.set(name, gl.getAttribLocation(program, name));
+    return { program, vao, uniforms: new Map(), attribs };
+  }
+}

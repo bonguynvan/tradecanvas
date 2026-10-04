@@ -11,6 +11,11 @@ export class Watermark {
     this.config = config;
   }
 
+  /** Whether there is a watermark to draw. */
+  isVisible(): boolean {
+    return !!this.config?.text;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (!this.config?.text) return;
 

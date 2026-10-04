@@ -57,7 +57,7 @@ describe('SessionBreaks — month-boundary label', () => {
     sb.setVisible(true);
     const { ctx, fillTextCalls } = mockCtx();
 
-    sb.render(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
     // "Oct 26" (2-digit year) reads like a day-of-month and was mistaken for
     // the wrong date; the fix always renders the 4-digit year.
@@ -71,7 +71,7 @@ describe('SessionBreaks — month-boundary label', () => {
     sb.setLocale('vi-VN');
     const { ctx, fillTextCalls } = mockCtx();
 
-    sb.render(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
     expect(fillTextCalls.some((t) => t.includes('Oct') || t.includes('Sep'))).toBe(false);
     expect(fillTextCalls.some((t) => t.includes('thg') || /\d{1,2}\/\d{4}/.test(t))).toBe(true);
@@ -97,3 +97,57 @@ describe('SessionBreaks in the display timezone', () => {
   });
 });
 
+
+describe('SessionBreaks — lines under the bars, labels over them', () => {
+  const breaks = () => {
+    const sb = new SessionBreaks();
+    sb.setVisible(true);
+    sb.setTimezone(0);
+    return sb;
+  };
+
+  it('draws only the lines in render, and only the labels in renderLabels', () => {
+    const sb = breaks();
+    const lines = mockCtx();
+    sb.render(lines.ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    expect(lines.fillTextCalls).toEqual([]);
+    expect(lines.ctx.stroke).toHaveBeenCalled();
+
+    const labels = mockCtx();
+    sb.renderLabels(labels.ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    expect(labels.fillTextCalls.length).toBeGreaterThan(0);
+    expect(labels.ctx.stroke).not.toHaveBeenCalled();
+  });
+
+  it('gives the lines as rectangles, a dash each, heavier for bigger breaks', () => {
+    const rects = breaks().lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    // A day break at bar 24 (x 287.5) and a month break at bar 48 (x 575.5),
+    // each dashed 6 on, 4 off down the 100 px plot.
+    const day = rects.filter((r) => r.x === 287);
+    expect(day).toHaveLength(10);
+    expect(day[0]).toEqual({ x: 287, y: 0, width: 1, height: 6, color: DARK_THEME.axisLine, alpha: 0.22 });
+    expect(day[1].y).toBe(10);
+    const month = rects.filter((r) => r.x === 574.75);
+    expect(month).toHaveLength(10);
+    expect(month[0]).toMatchObject({ width: 1.5, height: 6, alpha: 0.5 });
+  });
+
+  it('cuts the last dash at the bottom of the plot', () => {
+    const vp = { ...viewport(), chartRect: { x: 0, y: 0, width: 1000, height: 93 } };
+    const day = breaks().lineRects(vp, DARK_THEME, hourlyBarsAcrossMonthBoundary()).filter((r) => r.x === 287);
+    expect(day.at(-1)).toMatchObject({ y: 90, height: 3 });
+  });
+
+  it('gives a solid line as one rectangle', () => {
+    const sb = breaks();
+    sb.setConfig({ lineStyle: 'solid' });
+    const day = sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary()).filter((r) => r.x === 287);
+    expect(day).toEqual([{ x: 287, y: 0, width: 1, height: 100, color: DARK_THEME.axisLine, alpha: 0.22 }]);
+  });
+
+  it('gives nothing while hidden', () => {
+    const sb = breaks();
+    sb.setVisible(false);
+    expect(sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary())).toEqual([]);
+  });
+});

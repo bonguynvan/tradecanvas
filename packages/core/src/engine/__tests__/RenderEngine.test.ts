@@ -187,6 +187,21 @@ describe('RenderEngine — two canvases', () => {
     expect(top).not.toHaveBeenCalled();
   });
 
+  it('draws session break lines under the series and their labels over it', () => {
+    const { ctx, scene } = makeContext();
+    const order: string[] = [];
+    scene.mockImplementation(() => order.push('series'));
+    ctx.sessionBreaks = {
+      render: () => order.push('lines'),
+      renderLabels: () => order.push('labels'),
+      isVisible: () => true,
+    } as unknown as RenderContext['sessionBreaks'];
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(order).toEqual(['lines', 'series', 'labels']);
+  });
+
   it('several requests in one frame paint each canvas once', () => {
     const { ctx, scene, top } = makeContext();
     engine.setRenderContext(ctx);
@@ -199,5 +214,183 @@ describe('RenderEngine — two canvases', () => {
     runFrame();
     expect(scene).toHaveBeenCalledTimes(2);
     expect(top).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('RenderEngine — a GPU layer under the scene', () => {
+  function fakeGpu(drawn = { series: true, volume: true, background: true }) {
+    const canvas = document.createElement('canvas');
+    let lostCallback: (() => void) | null = null;
+    const gpu = {
+      canvas,
+      label: 'test GPU',
+      render: vi.fn(() => drawn),
+      onLost: (cb: () => void) => { lostCallback = cb; },
+      destroy: vi.fn(() => canvas.remove()),
+    };
+    return { gpu, lose: () => lostCallback?.() };
+  }
+
+  async function candleContext() {
+    const { CandlestickRenderer } = await import('../../charts/CandlestickRenderer.js');
+    const { ctx } = makeContext();
+    const candles = new CandlestickRenderer();
+    const series = vi.spyOn(candles, 'render').mockImplementation(() => {});
+    const grid = vi.fn();
+    const volume = vi.fn();
+    ctx.chartRenderer = candles;
+    ctx.gridRenderer = { render: grid, isVisible: () => true } as unknown as RenderContext['gridRenderer'];
+    ctx.volumeRenderer = { render: volume, isVisible: () => true, getHeightRatio: () => 0.15 } as unknown as RenderContext['volumeRenderer'];
+    return { ctx, series, grid, volume };
+  }
+
+  const zIndexes = () => [...container.querySelectorAll('canvas')].map((c) => c.style.zIndex).sort();
+
+  it('stacks the GPU canvas under the scene and the top', () => {
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    const byZ = [...container.querySelectorAll('canvas')].sort((a, b) => Number(a.style.zIndex) - Number(b.style.zIndex));
+    expect(byZ.map((c) => c.style.zIndex)).toEqual(['1', '2', '3']);
+    expect(byZ[0]).toBe(gpu.canvas);
+    expect(byZ[1]).toBe(engine.layerManager.getLayer(LayerType.Main)!.canvas);
+  });
+
+  it('leaves candles, volume and the grid to the GPU', async () => {
+    const { ctx, series, grid, volume } = await candleContext();
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ candles: true, volume: { heightRatio: 0.15 }, background: { grid: true, rects: [] } }));
+    expect(series).not.toHaveBeenCalled();
+    expect(volume).not.toHaveBeenCalled();
+    expect(grid).not.toHaveBeenCalled();
+    // Nothing else under the bars: no canvas for it.
+    expect(zIndexes()).toEqual(['1', '2', '3']);
+  });
+
+  it('gives session shading and break lines to the GPU, and draws break labels over the bars', async () => {
+    const { ctx } = await candleContext();
+    const shade = { x: 0, y: 0, width: 50, height: 200, color: 'rgba(0,0,0,0.28)', alpha: 1 };
+    const dash = { x: 99.5, y: 0, width: 1, height: 6, color: '#333', alpha: 0.22 };
+    const lines = vi.fn();
+    const labels = vi.fn();
+    ctx.sessionShading = { render: vi.fn(), rects: () => [shade], isVisible: () => true } as unknown as RenderContext['sessionShading'];
+    ctx.sessionBreaks = { render: lines, renderLabels: labels, lineRects: () => [dash], isVisible: () => true } as unknown as RenderContext['sessionBreaks'];
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: { grid: true, rects: [shade, dash] } }));
+    expect(lines).not.toHaveBeenCalled();
+    expect(zIndexes()).toEqual(['1', '2', '3']);
+    expect((labels.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('2');
+  });
+
+  it('draws the background under the GPU canvas when there is more than the grid', async () => {
+    const { ctx, grid } = await candleContext();
+    const watermark = vi.fn();
+    ctx.watermark = { render: watermark, isVisible: () => true } as unknown as RenderContext['watermark'];
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: null }));
+    expect(zIndexes()).toEqual(['0', '1', '2', '3']);
+    // The grid goes under the watermark, on the canvas under the GPU's.
+    expect(grid).toHaveBeenCalledTimes(1);
+    expect((grid.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
+    expect((watermark.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
+  });
+
+  it('drops the background canvas once nothing needs it', async () => {
+    const { ctx } = await candleContext();
+    let watermark = true;
+    ctx.watermark = { render: vi.fn(), isVisible: () => watermark } as unknown as RenderContext['watermark'];
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(zIndexes()).toEqual(['0', '1', '2', '3']);
+    watermark = false;
+    engine.requestRender();
+    runFrame();
+    expect(zIndexes()).toEqual(['1', '2', '3']);
+  });
+
+  it('draws the grid with Canvas 2D when the GPU does not', async () => {
+    const { ctx, grid } = await candleContext();
+    const { gpu } = fakeGpu({ series: true, volume: true, background: false });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(grid).toHaveBeenCalledTimes(1);
+    expect((grid.mock.calls[0][0] as CanvasRenderingContext2D).canvas.style.zIndex).toBe('0');
+  });
+
+  it('asks for no grid when it is hidden', async () => {
+    const { ctx } = await candleContext();
+    ctx.gridRenderer = { render: vi.fn(), isVisible: () => false } as unknown as RenderContext['gridRenderer'];
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: { grid: false, rects: [] } }));
+    expect(zIndexes()).toEqual(['1', '2', '3']);
+  });
+
+  it('draws with Canvas 2D what the GPU leaves', async () => {
+    const { ctx, series } = await candleContext();
+    const { gpu } = fakeGpu({ series: false, volume: true, background: true });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(series).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks the GPU for no candles when the series is drawn some other way', () => {
+    const { ctx } = makeContext();
+    const { gpu } = fakeGpu({ series: false, volume: false, background: true });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ candles: false, volume: null }));
+  });
+
+  it('goes back to Canvas 2D when the GPU context is lost', async () => {
+    const { ctx, series } = await candleContext();
+    const { gpu, lose } = fakeGpu();
+    const lost = vi.fn();
+    engine.onGpuLost = lost;
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    lose();
+    expect(lost).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('canvas')).toHaveLength(2);
+    runFrame();
+    expect(series).toHaveBeenCalledTimes(1);
+  });
+
+  it('detaches, leaving the two canvases', async () => {
+    const { ctx } = await candleContext();
+    ctx.watermark = { render: vi.fn(), isVisible: () => true } as unknown as RenderContext['watermark'];
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    engine.detachGpu();
+    expect(gpu.destroy).toHaveBeenCalled();
+    expect(zIndexes()).toEqual(['0', '1']);
   });
 });

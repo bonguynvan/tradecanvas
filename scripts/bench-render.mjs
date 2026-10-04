@@ -1,7 +1,7 @@
 // Rendering benchmark: the chart in headless Chrome on the machine's own GPU,
 // panned for 150 frames per scene, at one or more device pixel ratios.
 //
-//   pnpm build && node scripts/bench-render.mjs [--dpr=1,2] [--only=S6,S11] [--json]
+//   pnpm build && node scripts/bench-render.mjs [--dpr=1,2] [--only=S6,S11] [--renderer=webgl] [--json]
 //   node scripts/bench-render.mjs --shot=S6 [--dpr=2] [--out=s6.png]   a screenshot of one scene
 //     (saved to the system temp folder unless --out says where)
 //
@@ -23,6 +23,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [k, v];
 }));
 const DPRS = (args.dpr ?? '1,2').split(',').map(Number);
+const RENDERER = args.renderer ?? 'canvas';
 const ONLY = args.shot ? null : args.only ? args.only.split(',') : null;
 
 const CHROME = process.env.CHROME_PATH ?? [
@@ -47,6 +48,7 @@ const SCENES = [
   { id: 'S9', label: 'area, zoomed out on 200k', n: 200_000, zoomOut: true, type: 'area' },
   { id: 'S10', label: 'grid of 6 charts x 500 + 2 indicators', count: 6, w: 620, h: 420, visible: 500, indicators: ['ema', 'rsi'] },
   { id: 'S11', label: '2560x1400, 2,000 visible + 4 indicators', w: 2560, h: 1400, visible: 2000, indicators: ['bb', 'ema', 'rsi', 'macd'] },
+  { id: 'S12', label: '2560x1400, 2,000 visible, candles only', w: 2560, h: 1400, visible: 2000 },
   // One indicator at a time on the heaviest view, to see which costs what.
   { id: 'S6a', label: 'zoomed out on 200k + Bollinger', n: 200_000, zoomOut: true, indicators: ['bb'], extra: true },
   { id: 'S6b', label: 'zoomed out on 200k + EMA', n: 200_000, zoomOut: true, indicators: ['ema'], extra: true },
@@ -62,6 +64,7 @@ const PAGE = `<!doctype html><html><head><meta charset="utf-8">
 <script type="module">
 import { Chart } from '/packages/library/dist/index.js';
 const SCENES = ${JSON.stringify(SCENES)};
+const RENDERER = ${JSON.stringify(RENDERER)};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function bars(n, step = 60_000) {
   let s = 12345; const rand = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -83,12 +86,14 @@ async function run(sc) {
     const host = document.createElement('div');
     host.style.width = w + 'px'; host.style.height = h + 'px';
     grid.appendChild(host);
-    const c = new Chart(host, { theme: 'dark', chartType: sc.type ?? 'candlestick', features: { volume: true } });
+    const c = new Chart(host, { theme: 'dark', chartType: sc.type ?? 'candlestick', features: { volume: true }, renderer: RENDERER });
     c.setData(data);
     for (const id of sc.indicators ?? []) c.addIndicator(id, {});
     if (sc.zoomOut) c.fitContent(); else c.setVisibleRange(data[n - sc.visible].time, data[n - 1].time);
     return c;
   });
+  // WebGL loads on demand: wait for it before measuring.
+  if (RENDERER !== 'canvas') for (let i = 0; i < 100 && charts.some((c) => c.getRenderer() !== 'webgl'); i++) await sleep(50);
   await sleep(400);
   // Frames first: reading pixels back later can move a canvas off the GPU.
   const frames = []; let last = 0;
@@ -98,12 +103,19 @@ async function run(sc) {
     if (++k < 150) requestAnimationFrame(step); else done();
   }; requestAnimationFrame(step); });
   const eng = charts[0].engine;
+  const gpu = eng.getGpu();
   let t = performance.now();
-  for (let i = 0; i < 30; i++) { eng.renderScene(eng.sceneLayer, eng.renderCtx); eng.sceneLayer.ctx.getImageData(0, 0, 1, 1); }
+  for (let i = 0; i < 30; i++) {
+    eng.renderScene(eng.sceneLayer, eng.renderCtx);
+    eng.sceneLayer.ctx.getImageData(0, 0, 1, 1);
+    // Wait for the GPU too: a one-pixel read of its canvas.
+    if (gpu) { const gl = gpu.canvas.getContext('webgl2'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); }
+  }
   const scene = (performance.now() - t) / 30;
+  const drawnWith = charts[0].getRenderer();
   for (const c of charts) c.destroy();
   const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
-  return { id: sc.id, label: sc.label, sceneMs: +scene.toFixed(2), frameMs: +avg.toFixed(1), p95Ms: +pct(frames, 0.95).toFixed(1), dropped: frames.filter((f) => f > 20).length };
+  return { id: sc.id, label: sc.label, renderer: drawnWith, sceneMs: +scene.toFixed(2), frameMs: +avg.toFixed(1), p95Ms: +pct(frames, 0.95).toFixed(1), dropped: frames.filter((f) => f > 20).length };
 }
 async function show(sc) {
   const grid = document.getElementById('grid');
@@ -114,14 +126,16 @@ async function show(sc) {
     const host = document.createElement('div');
     host.style.width = w + 'px'; host.style.height = h + 'px';
     grid.appendChild(host);
-    const c = new Chart(host, { theme: 'dark', chartType: sc.type ?? 'candlestick', features: { volume: true } });
+    const c = new Chart(host, { theme: 'dark', chartType: sc.type ?? 'candlestick', features: { volume: true }, renderer: RENDERER });
+    window.lastChart = c;
     c.setData(data);
     for (const id of sc.indicators ?? []) c.addIndicator(id, {});
     if (sc.zoomOut) c.fitContent(); else c.setVisibleRange(data[n - sc.visible].time, data[n - 1].time);
+    if (RENDERER !== 'canvas') for (let i = 0; i < 100 && c.getRenderer() !== 'webgl'; i++) await sleep(50);
   }
   await sleep(800);
   const box = grid.getBoundingClientRect();
-  window.result = [{ w: Math.ceil(box.width), h: Math.ceil(box.height) }];
+  window.result = [{ w: Math.ceil(box.width), h: Math.ceil(box.height), renderer: window.lastChart?.getRenderer() }];
 }
 const shot = new URLSearchParams(location.search).get('shot');
 if (shot) await show(SCENES.find((s) => s.id === shot));
@@ -190,6 +204,9 @@ async function bench(dpr) {
     let pageError = null;
     ws.addEventListener('message', (ev) => {
       const msg = JSON.parse(ev.data);
+      if (msg.method === 'Runtime.consoleAPICalled' && (msg.params.type === 'error' || msg.params.type === 'warning')) {
+        console.error(`page ${msg.params.type}:`, msg.params.args.map((a) => a.value ?? a.description).join(' '));
+      }
       if (msg.method === 'Runtime.exceptionThrown') {
         const d = msg.params.exceptionDetails;
         pageError = d.exception?.description ?? d.text;
@@ -218,7 +235,7 @@ async function bench(dpr) {
       const name = `tradecanvas-bench-${args.shot}-dpr${dpr}.png`;
       const out = args.out ? (DPRS.length > 1 ? args.out.replace(/(\.png)?$/, `-dpr${dpr}.png`) : args.out) : join(tmpdir(), name);
       writeFileSync(out, Buffer.from(png.result.data, 'base64'));
-      console.log(`saved ${out}`);
+      console.log(`saved ${out} (drawn with ${result[0].renderer})`);
     }
     return { dpr, renderer, result };
   } finally {
