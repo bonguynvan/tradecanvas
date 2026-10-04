@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL renderer (preview)</h2>
 <p>
-  <code>renderer: 'webgl'</code> draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. <code>'auto'</code> takes WebGL only on a hardware GPU. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 6 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+  <code>renderer: 'webgl'</code> draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. <code>'auto'</code> takes WebGL only on a hardware GPU. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 7 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 

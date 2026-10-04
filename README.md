@@ -1066,7 +1066,7 @@ A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame bud
 
 ### WebGL renderer (preview)
 
-`renderer: 'webgl'` draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 6 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+`renderer: 'webgl'` draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene; indicators, drawings, axes and the crosshair stay on Canvas 2D. Pixels match Canvas 2D to within 2/255. The WebGL code is a chunk of its own (about 7 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only

@@ -81,7 +81,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Renderizador WebGL (versión preliminar)</h2>
 <p>
-  <code>renderer: 'webgl'</code> dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. <code>'auto'</code> usa WebGL solo con una GPU de hardware. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 6 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+  <code>renderer: 'webgl'</code> dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. <code>'auto'</code> usa WebGL solo con una GPU de hardware. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 7 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 

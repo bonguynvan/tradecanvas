@@ -1065,7 +1065,7 @@ BB + EMA + RSI + MACD（`pnpm bench`、シングルコア）：
 
 ### WebGL レンダラー（プレビュー）
 
-`renderer: 'webgl'` を指定すると、グリッド、セッションの網掛けと区切り線、ローソク足、出来高を WebGL 2 で、2D シーンの下にあるキャンバスに描きます。インジケーター、描画、軸、クロスヘアは Canvas 2D のままです。ピクセルは Canvas 2D と 2/255 以内で一致します。WebGL のコードは独立したチャンク（gzip で約 6 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
+`renderer: 'webgl'` を指定すると、グリッド、セッションの網掛けと区切り線、ローソク足、出来高を WebGL 2 で、2D シーンの下にあるキャンバスに描きます。インジケーター、描画、軸、クロスヘアは Canvas 2D のままです。ピクセルは Canvas 2D と 2/255 以内で一致します。WebGL のコードは独立したチャンク（gzip で約 7 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only

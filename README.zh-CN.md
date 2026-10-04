@@ -1064,7 +1064,7 @@ BB + EMA + RSI + MACD（`pnpm bench`，单核）：
 
 ### WebGL 渲染器（预览）
 
-`renderer: 'webgl'` 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 6 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+`renderer: 'webgl'` 用 WebGL 2 绘制网格、交易时段底色与分隔线、K线和成交量，画在 2D 场景下方的一个画布上；指标、绘图、坐标轴和十字线仍用 Canvas 2D 绘制。像素与 Canvas 2D 的差异不超过 2/255。WebGL 代码是一个独立的 chunk（gzip 后约 7 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only

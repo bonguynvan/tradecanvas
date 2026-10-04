@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL 렌더러 (미리 보기)</h2>
 <p>
-  <code>renderer: 'webgl'</code>을 쓰면 그리드, 세션 음영과 구분선, 캔들, 거래량을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 지표, 드로잉, 축, 크로스헤어는 계속 Canvas 2D로 그립니다. <code>'auto'</code>는 하드웨어 GPU일 때만 WebGL을 씁니다. 픽셀은 Canvas 2D와 2/255 이내로 일치합니다. WebGL 코드는 별도 청크(gzip 약 6 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+  <code>renderer: 'webgl'</code>을 쓰면 그리드, 세션 음영과 구분선, 캔들, 거래량을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 지표, 드로잉, 축, 크로스헤어는 계속 Canvas 2D로 그립니다. <code>'auto'</code>는 하드웨어 GPU일 때만 WebGL을 씁니다. 픽셀은 Canvas 2D와 2/255 이내로 일치합니다. WebGL 코드는 별도 청크(gzip 약 7 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 

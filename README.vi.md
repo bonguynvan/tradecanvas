@@ -1066,7 +1066,7 @@ Một biểu đồ đường 100k nến giảm mẫu trong ~0.3 ms — nằm g�
 
 ### Bộ vẽ WebGL (bản xem trước)
 
-`renderer: 'webgl'` vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 6 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+`renderer: 'webgl'` vẽ lưới, vùng tô phiên, vạch ngắt phiên, nến và khối lượng bằng WebGL 2, trên một canvas nằm dưới cảnh 2D; chỉ báo, hình vẽ, trục và crosshair vẫn vẽ bằng Canvas 2D. Điểm ảnh khớp với Canvas 2D, lệch không quá 2/255. Mã WebGL nằm trong một chunk riêng (khoảng 7 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only

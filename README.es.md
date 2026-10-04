@@ -1066,7 +1066,7 @@ Un gráfico de líneas de 100k barras se submuestrea en ~0.3 ms, muy por debajo 
 
 ### Renderizador WebGL (versión preliminar)
 
-`renderer: 'webgl'` dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 6 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+`renderer: 'webgl'` dibuja la cuadrícula, el sombreado y las líneas de sesión, las velas y el volumen con WebGL 2, en un canvas bajo la escena 2D; los indicadores, los dibujos, los ejes y la cruceta siguen en Canvas 2D. Los píxeles coinciden con Canvas 2D con una diferencia máxima de 2/255. El código WebGL es un chunk propio (unos 7 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
