@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { LinePen, fillDenseBand, isDenseSlots } from '../linePen.js';
 
 export class BollingerBandsIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -93,9 +94,7 @@ export class BollingerBandsIndicator extends IndicatorBase {
     const maxPts = to - from + 1;
     const upperXs = new Float64Array(maxPts);
     const upperYs = new Float64Array(maxPts);
-    const middleXs = new Float64Array(maxPts);
     const middleYs = new Float64Array(maxPts);
-    const lowerXs = new Float64Array(maxPts);
     const lowerYs = new Float64Array(maxPts);
 
     for (let i = from; i <= to && i < series.length; i++) {
@@ -103,43 +102,37 @@ export class BollingerBandsIndicator extends IndicatorBase {
       if (!val || val.upper === undefined) continue;
       const x = barIndexToX(i, viewport);
       upperXs[count] = x; upperYs[count] = priceToY(val.upper!, viewport);
-      middleXs[count] = x; middleYs[count] = priceToY(val.middle!, viewport);
-      lowerXs[count] = x; lowerYs[count] = priceToY(val.lower!, viewport);
+      middleYs[count] = priceToY(val.middle!, viewport);
+      lowerYs[count] = priceToY(val.lower!, viewport);
       count++;
     }
 
     if (count < 2) return;
+    // Zoomed out, the band and the lines go column by column (see LinePen).
+    const dense = isDenseSlots(viewport);
+    const xs = upperXs.subarray(0, count);
 
     // Band fill
-    ctx.beginPath();
-    ctx.moveTo(upperXs[0], upperYs[0]);
-    for (let i = 1; i < count; i++) ctx.lineTo(upperXs[i], upperYs[i]);
-    for (let i = count - 1; i >= 0; i--) ctx.lineTo(lowerXs[i], lowerYs[i]);
-    ctx.closePath();
-    ctx.fillStyle = withAlpha(style.colors[0], 0.1);
-    ctx.fill();
+    if (dense) {
+      fillDenseBand(ctx, xs, upperYs, lowerYs, withAlpha(style.colors[0], 0.1), count);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(upperXs[0], upperYs[0]);
+      for (let i = 1; i < count; i++) ctx.lineTo(upperXs[i], upperYs[i]);
+      for (let i = count - 1; i >= 0; i--) ctx.lineTo(upperXs[i], lowerYs[i]);
+      ctx.closePath();
+      ctx.fillStyle = withAlpha(style.colors[0], 0.1);
+      ctx.fill();
+    }
 
-    // Upper line
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-    ctx.moveTo(upperXs[0], upperYs[0]);
-    for (let i = 1; i < count; i++) ctx.lineTo(upperXs[i], upperYs[i]);
-    ctx.stroke();
-
-    // Middle line
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[1] ?? style.colors[0];
-    ctx.moveTo(middleXs[0], middleYs[0]);
-    for (let i = 1; i < count; i++) ctx.lineTo(middleXs[i], middleYs[i]);
-    ctx.stroke();
-
-    // Lower line
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.moveTo(lowerXs[0], lowerYs[0]);
-    for (let i = 1; i < count; i++) ctx.lineTo(lowerXs[i], lowerYs[i]);
-    ctx.stroke();
+    // Upper, middle and lower lines
+    const line = (ys: Float64Array, color: string) => {
+      const pen = new LinePen(ctx, color, style.lineWidths[0], dense);
+      for (let i = 0; i < count; i++) pen.add(xs[i], ys[i]);
+      pen.finish();
+    };
+    line(upperYs, style.colors[0]);
+    line(middleYs, style.colors[1] ?? style.colors[0]);
+    line(lowerYs, style.colors[0]);
   }
 }

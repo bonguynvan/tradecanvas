@@ -74,6 +74,11 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   </tbody>
 </table>
 
+<h2>Indicadores con zoom alejado</h2>
+<p>
+  Cuando cada barra mide menos de un píxel, las líneas, bandas e histogramas de los indicadores se dibujan con un tramo por columna de píxeles: del punto más bajo al más alto de la columna, unido a la columna anterior y tan ancho como la línea. Se ve casi igual que un trazo por miles de puntos con una fracción del trabajo de rasterizado. Con el zoom alejado sobre 200.000 barras con Bandas de Bollinger, EMA, RSI y MACD, un fotograma pasó de unos 54 ms a unos 21 ms en una GPU integrada. <code>node scripts/bench-render.mjs</code> mide estas cifras en tu propio equipo.
+</p>
+
 <h2>Fuera del hilo principal</h2>
 <p>
   <code>IndicatorWorkerHost</code> ejecuta los cálculos de los indicadores en un

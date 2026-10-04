@@ -1037,9 +1037,10 @@ onUnmounted(() => chart?.destroy())
 
 ## Rendimiento
 
-Un pipeline de Canvas2D con dos canvas: al pasar el cursor solo se repinta el fino canvas superior, nunca la escena. Cuatro cosas mantienen la fluidez con grandes volúmenes de datos:
+Un pipeline de Canvas2D con dos canvas: al pasar el cursor solo se repinta el fino canvas superior, nunca la escena. Cinco cosas mantienen la fluidez con grandes volúmenes de datos:
 
 - **Submuestreo LTTB** — los gráficos de línea / área submuestrean automáticamente el rango visible a ~2 puntos por píxel con Largest-Triangle-Three-Buckets cuando hay muchas más barras que píxeles. La línea se ve idéntica y se dibujan decenas de veces menos puntos; con un zoom normal no hace nada. La utilidad `lttbDownsample` se exporta para que la uses tú.
+- **Indicadores con zoom alejado** — cuando cada barra mide menos de un píxel, las líneas, bandas e histogramas de los indicadores se dibujan con un tramo por columna de píxeles en lugar de un trazo por miles de puntos: casi el mismo aspecto con una fracción del rasterizado (de unos 54 a unos 21 ms por fotograma con el zoom alejado sobre 200.000 barras y cuatro indicadores, en una GPU integrada). `node scripts/bench-render.mjs` lo mide en tu equipo.
 - **Renderizado del rango visible** — cada renderizador recorre solo las barras a la vista, nunca la serie completa. El coste por fotograma al pasar el cursor y al desplazar se mantiene constante de 500 a 100,000 barras cargadas.
 - **Indicadores incrementales en los ticks en vivo** — un tick solo cambia la barra en formación, así que los indicadores integrados que implementan `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) recalculan solo esa barra en lugar de todo el historial. Los demás recurren a un recálculo completo. Los plugins personalizados pueden sumarse mediante `IndicatorPlugin.update`.
 - **Cargas completas baratas** — un cambio de símbolo/temporalidad recalcula cada indicador una vez. Su búsqueda de `values` por barra es un `IndicatorValueMap` (respaldado por un array mientras las barras llegan en orden temporal, ~3x más barato de construir que un `Map` indexado por marcas de tiempo), y `setData` reutiliza las barras que ya están bien formadas en lugar de copiar cada una.

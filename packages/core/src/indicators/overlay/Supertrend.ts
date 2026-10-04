@@ -3,6 +3,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { LinePen, isDenseSlots } from '../linePen.js';
 
 export class SupertrendIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -80,27 +81,24 @@ export class SupertrendIndicator extends IndicatorBase {
     const upColor = style.colors[0];
     const downColor = style.colors[1] ?? '#e8505b';
 
-    // Draw segments per trend direction
-    let prevX = 0, prevY = 0, prevTrend = 0;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = priceToY(val.value, viewport);
-      const trend = val.trend ?? 1;
-
-      if (prevTrend !== 0) {
-        ctx.beginPath();
-        ctx.strokeStyle = trend === 1 ? upColor : downColor;
-        ctx.lineWidth = style.lineWidths[0] + 0.5;
-        ctx.moveTo(prevX, prevY);
-        ctx.lineTo(x, y);
-        ctx.stroke();
+    // Each segment in the colour of the trend it ends in: one pen per colour,
+    // joined where a run continues.
+    const dense = isDenseSlots(viewport);
+    const width = style.lineWidths[0] + 0.5;
+    for (const [color, side] of [[upColor, 1], [downColor, -1]] as const) {
+      const pen = new LinePen(ctx, color, width, dense);
+      let prevX = 0, prevY = 0, hasPrev = false;
+      for (let i = from; i <= to && i < series.length; i++) {
+        const val = series[i];
+        if (!val || val.value === undefined) continue;
+        const x = barIndexToX(i, viewport);
+        const y = priceToY(val.value, viewport);
+        if (hasPrev && (val.trend ?? 1) === side) pen.segment(prevX, prevY, x, y);
+        prevX = x;
+        prevY = y;
+        hasPrev = true;
       }
-
-      prevX = x;
-      prevY = y;
-      prevTrend = trend;
+      pen.finish();
     }
   }
 }

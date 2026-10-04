@@ -4,6 +4,11 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Faster when zoomed out
+
+- **Faster when zoomed out**: once each bar takes less than a pixel, indicator lines, bands (Bollinger and the like) and histograms draw one span per pixel column instead of a stroke through thousands of points. Much the same look for a fraction of the raster work: zoomed out on 200,000 bars with Bollinger Bands, EMA, RSI and MACD, a frame went from about 54 ms to about 21 ms on integrated graphics (85 → 38 ms at 2x). Supertrend draws one line per colour instead of one stroke per bar.
+- `pnpm bench:render` measures frames in headless Chrome on your own GPU, scene by scene.
+
 ### Sharper, calmer charts
 
 - **Sharp at any screen scale**: candles, bars, volume and the drawings' horizontal and vertical lines land on whole device pixels. A one-pixel wick is one sharp pixel at 100%, 125% or 200% scaling; it used to spread over two at half strength.

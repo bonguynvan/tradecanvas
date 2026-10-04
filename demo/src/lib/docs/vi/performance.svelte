@@ -70,6 +70,11 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   </tbody>
 </table>
 
+<h2>Chỉ báo khi thu nhỏ</h2>
+<p>
+  Khi mỗi nến hẹp hơn một pixel, đường, dải và histogram của chỉ báo được vẽ thành một đoạn cho mỗi cột pixel: từ điểm thấp nhất tới cao nhất trong cột, nối với cột trước, rộng bằng nét đường. Cách này trông gần như y hệt nét vẽ qua hàng nghìn điểm, nhưng tốn ít công raster hơn hẳn. Khi thu nhỏ trên 200.000 nến với Bollinger Bands, EMA, RSI và MACD, mỗi khung hình giảm từ khoảng 54 ms xuống khoảng 21 ms trên GPU tích hợp. <code>node scripts/bench-render.mjs</code> chạy các số đo này trên máy của bạn.
+</p>
+
 <h2>Ngoài luồng chính</h2>
 <p>
   <code>IndicatorWorkerHost</code> chạy phần tính toán chỉ báo trong một Web Worker với <code>calculate()</code>

@@ -4,6 +4,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { LinePen, isDenseSlots } from '../linePen.js';
 
 /**
  * Session VWAP — a volume-weighted average price that resets at the start of
@@ -107,20 +108,18 @@ export class SessionVWAPIndicator extends IndicatorBase {
     to: number,
     accessor: (v: IndicatorValue) => number | undefined,
   ): void {
-    ctx.beginPath();
+    const pen = new LinePen(ctx, String(ctx.strokeStyle), ctx.lineWidth, isDenseSlots(viewport));
     let prevSession: number | undefined;
-    let started = false;
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
       const value = val ? accessor(val) : undefined;
-      if (val === null || value === undefined) { started = false; continue; }
+      if (val === null || value === undefined) { pen.gap(); continue; }
       const x = barIndexToX(i, viewport);
       const y = priceToY(value, viewport);
-      const newSession = val.session !== prevSession;
-      if (!started || newSession) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
+      if (val.session !== prevSession) pen.gap();
+      pen.add(x, y);
       prevSession = val.session;
     }
-    ctx.stroke();
+    pen.finish();
   }
 }

@@ -70,6 +70,11 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   </tbody>
 </table>
 
+<h2>축소했을 때의 지표</h2>
+<p>
+  봉 하나가 1픽셀보다 좁아지면 지표의 선, 밴드, 히스토그램은 픽셀 열마다 하나의 구간으로 그려집니다. 열의 최저점부터 최고점까지, 앞 열과 이어지고, 폭은 선 두께와 같습니다. 수천 개의 점을 지나는 선과 거의 같아 보이면서도 래스터 작업은 훨씬 적습니다. 200,000개 봉을 축소해 볼린저 밴드, EMA, RSI, MACD를 함께 띄우면 내장 GPU에서 한 프레임이 약 54 ms에서 약 21 ms로 줄었습니다. <code>node scripts/bench-render.mjs</code>로 내 컴퓨터에서도 측정할 수 있습니다.
+</p>
+
 <h2>메인 스레드 밖에서 계산</h2>
 <p>
   <code>IndicatorWorkerHost</code>는 Promise 기반 <code>calculate()</code>, 요청별 타임아웃,

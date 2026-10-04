@@ -70,6 +70,11 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
   </tbody>
 </table>
 
+<h2>Indicators zoomed out</h2>
+<p>
+  Below a pixel per bar, indicator lines, bands and histograms draw one span per pixel column: the column's lowest to highest point, joined to the column before, as wide as the line. It looks much the same as a stroke through thousands of points for a fraction of the raster work. Zoomed out on 200,000 bars with Bollinger Bands, EMA, RSI and MACD, a frame went from about 54 ms to about 21 ms on integrated graphics. <code>node scripts/bench-render.mjs</code> runs these numbers on your own machine.
+</p>
+
 <h2>Off the main thread</h2>
 <p>
   <code>IndicatorWorkerHost</code> runs indicator math in a Web Worker with a Promise-based

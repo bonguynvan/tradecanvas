@@ -14,6 +14,7 @@
     "docs:gen": "node scripts/gen-ai-docs.mjs",
     "docs:check": "node scripts/gen-ai-docs.mjs --check && node scripts/check-skill-examples.mjs",
     "bench": "pnpm --filter @tradecanvas/core exec vitest bench --run",
+    "bench:render": "node scripts/bench-render.mjs",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish"

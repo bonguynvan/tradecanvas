@@ -2,6 +2,7 @@ import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput,
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { LinePen, isDenseSlots } from '../linePen.js';
 
 export class VWAPIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -37,20 +38,14 @@ export class VWAPIndicator extends IndicatorBase {
     if (!series) return;
     const { from, to } = viewport.visibleRange;
 
-    ctx.beginPath();
-    ctx.strokeStyle = style.colors[0];
-    ctx.lineWidth = style.lineWidths[0];
-    ctx.lineJoin = 'round';
-
-    let started = false;
+    const pen = new LinePen(ctx, style.colors[0], style.lineWidths[0], isDenseSlots(viewport));
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
       if (!val || val.value === undefined) continue;
       const x = barIndexToX(i, viewport);
       const y = priceToY(val.value, viewport);
-      if (!started) { ctx.moveTo(x, y); started = true; }
-      else ctx.lineTo(x, y);
+      pen.add(x, y);
     }
-    ctx.stroke();
+    pen.finish();
   }
 }

@@ -11,6 +11,7 @@ import type {
 } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { renderPlots } from './plots.js';
+import { LinePen, fillDenseBand, isDenseLine } from './linePen.js';
 
 export abstract class IndicatorBase implements IndicatorPlugin {
   abstract descriptor: IndicatorDescriptor;
@@ -57,15 +58,10 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     lineWidth: number,
   ): void {
     if (points.length < 2) return;
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    ctx.lineJoin = 'round';
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-    ctx.stroke();
+    const dense = isDenseLine(points.length, points[0].x, points[points.length - 1].x);
+    const pen = new LinePen(ctx, color, lineWidth, dense);
+    for (const p of points) pen.add(p.x, p.y);
+    pen.finish();
   }
 
   protected drawBand(
@@ -75,6 +71,11 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     fillColor: string,
   ): void {
     if (upper.length < 2 || lower.length < 2) return;
+    // Zoomed out: a span per pixel column instead of a polygon of thousands of points.
+    if (upper.length === lower.length && isDenseLine(upper.length, upper[0].x, upper[upper.length - 1].x)) {
+      fillDenseBand(ctx, upper.map((p) => p.x), upper.map((p) => p.y), lower.map((p) => p.y), fillColor);
+      return;
+    }
     ctx.beginPath();
     ctx.moveTo(upper[0].x, upper[0].y);
     for (let i = 1; i < upper.length; i++) {
