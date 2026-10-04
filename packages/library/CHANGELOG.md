@@ -1,5 +1,21 @@
 # @tradecanvas/chart
 
+## 1.9.0
+
+### Minor Changes
+
+- bdab23b: WebGL renderer (preview): `renderer: 'webgl'` (or `'auto'`, WebGL on a hardware GPU only) draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene. `chart.setRenderer(mode)` switches at runtime, `chart.getRenderer()` says what draws, and the `rendererChange` event reports each change and why (`'unsupported'`, `'contextLost'`). Canvas 2D stays the default and takes over wherever WebGL 2 is missing or its context is lost (a failure to load or compile is logged as a warning). The WebGL code loads on first use, as a chunk of its own, and a chart hands its GPU context back when destroyed. Session break labels now draw over the bars instead of under them, inside the plot; `SessionBreaks.renderLines()` draws the lines alone.
+
+### Patch Changes
+
+- 6b396e7: Panning by dragging no longer stops halfway with a "no drop" cursor: quick presses could leave text on the chart selected, and the next press then started the browser's own drag of it. The chart's text can't be selected now, and a native drag that starts on the chart, or while a press on it is held, is cancelled.
+- 5588767: Faster when zoomed out: once each bar takes less than a pixel, indicator lines, bands and histograms draw one span per pixel column instead of a stroke through thousands of points. Much the same look for a fraction of the raster work: zoomed out on 200,000 bars with Bollinger Bands, EMA, RSI and MACD, a frame went from about 54 ms to about 21 ms on integrated graphics. Supertrend draws one line per colour instead of one stroke per bar.
+- Updated dependencies [6b396e7]
+- Updated dependencies [bdab23b]
+- Updated dependencies [5588767]
+  - @tradecanvas/core@1.9.0
+  - @tradecanvas/commons@1.9.0
+
 ## 1.8.0
 
 ### Minor Changes
