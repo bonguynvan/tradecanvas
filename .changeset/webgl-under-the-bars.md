@@ -1,6 +1,0 @@
----
-"@tradecanvas/core": minor
-"@tradecanvas/chart": minor
----
-
-WebGL renderer: the depth heatmap, the volume profile and the market profile draw on the GPU, under the bars, with volume under a profile as in Canvas 2D. A market profile showing its stats readout or TPO letters stays with Canvas 2D, as text can't go between the GPU's background and its bars; the extra 2D canvas under the GPU's is now only there for that, a watermark, or what the GPU can't take. A depth heatmap of 240 snapshots by 80 levels pans at 60 fps at a pixel ratio of 2 (25.5 ms a frame with Canvas 2D). Rectangles filled one by one, as heatmap cells are, are recorded straight to the GPU and drawn together. Candles and volume land on the same device pixels with Canvas 2D and WebGL at any scaling: bars exactly on half a device pixel (a round bar step such as 5.1 px at 200%) could land one pixel apart. Volume candles land on whole device pixels as candles do, with a sharp wick in the middle of a body as wide as the bar's volume. `chart.pushDepthSnapshot(book, time)` stamps a heatmap snapshot at `time`, to fill in order books recorded for older bars, oldest first; without `time` it takes the latest bar's, as before.
