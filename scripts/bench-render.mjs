@@ -49,6 +49,8 @@ const SCENES = [
   { id: 'S10', label: 'grid of 6 charts x 500 + 2 indicators', count: 6, w: 620, h: 420, visible: 500, indicators: ['ema', 'rsi'] },
   { id: 'S11', label: '2560x1400, 2,000 visible + 4 indicators', w: 2560, h: 1400, visible: 2000, indicators: ['bb', 'ema', 'rsi', 'macd'] },
   { id: 'S12', label: '2560x1400, 2,000 visible, candles only', w: 2560, h: 1400, visible: 2000 },
+  { id: 'S13', label: 'zoomed out on 1,000,000 + 4 indicators', n: 1_000_000, zoomOut: true, indicators: ['bb', 'ema', 'rsi', 'macd'] },
+  { id: 'S14', label: 'depth heatmap, 240 snapshots x 80 levels', visible: 240, heatmap: true },
   // One indicator at a time on the heaviest view, to see which costs what.
   { id: 'S6a', label: 'zoomed out on 200k + Bollinger', n: 200_000, zoomOut: true, indicators: ['bb'], extra: true },
   { id: 'S6b', label: 'zoomed out on 200k + EMA', n: 200_000, zoomOut: true, indicators: ['ema'], extra: true },
@@ -75,6 +77,19 @@ function bars(n, step = 60_000) {
   }
   return out;
 }
+/** An order book around \`price\`: \`levels\` levels each side, sizes rising toward a few walls. */
+function depthAround(price, levels, seed) {
+  let s = seed; const rand = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const step = price * 0.0004;
+  const side = (dir) => Array.from({ length: levels }, (_, i) => ({ price: price + dir * (i + 1) * step, volume: 5 + rand() * 40 + (i % 17 === 0 ? 300 : 0) }));
+  return { bids: side(-1), asks: side(1) };
+}
+/** A depth snapshot at each of the last \`count\` bars, as a live feed would have pushed them. */
+function feedHeatmap(chart, data, count) {
+  chart.setDepthHeatmapVisible(true);
+  chart.setDepthHeatmapConfig({ capacity: count });
+  for (let i = Math.max(0, data.length - count); i < data.length; i++) chart.pushDepthSnapshot(depthAround(data[i].close, 40, i + 1), data[i].time);
+}
 const pct = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(s.length * p))]; };
 async function run(sc) {
   const grid = document.getElementById('grid');
@@ -89,6 +104,7 @@ async function run(sc) {
     const c = new Chart(host, { theme: 'dark', chartType: sc.type ?? 'candlestick', features: { volume: true }, renderer: RENDERER });
     c.setData(data);
     for (const id of sc.indicators ?? []) c.addIndicator(id, {});
+    if (sc.heatmap) feedHeatmap(c, data, sc.visible);
     if (sc.zoomOut) c.fitContent(); else c.setVisibleRange(data[n - sc.visible].time, data[n - 1].time);
     return c;
   });
@@ -130,6 +146,7 @@ async function show(sc) {
     window.lastChart = c;
     c.setData(data);
     for (const id of sc.indicators ?? []) c.addIndicator(id, {});
+    if (sc.heatmap) feedHeatmap(c, data, sc.visible);
     if (sc.zoomOut) c.fitContent(); else c.setVisibleRange(data[n - sc.visible].time, data[n - 1].time);
     if (RENDERER !== 'canvas') for (let i = 0; i < 100 && c.getRenderer() !== 'webgl'; i++) await sleep(50);
   }

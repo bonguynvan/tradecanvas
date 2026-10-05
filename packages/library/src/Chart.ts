@@ -3353,13 +3353,16 @@ export class Chart {
   }
 
   /**
-   * Record an order-book snapshot for the liquidity heatmap, stamped at the
-   * latest bar's time. Call alongside `setDepthData` on each book update.
+   * Record an order-book snapshot for the liquidity heatmap, stamped at
+   * `time`, or else at the latest bar's time. Call alongside `setDepthData`
+   * on each book update; pass `time` to fill in books recorded for older
+   * bars, oldest first.
    */
-  pushDepthSnapshot(depth: import('@tradecanvas/commons').DepthData): void {
+  pushDepthSnapshot(depth: import('@tradecanvas/commons').DepthData, time?: number): void {
     const data = this.dataManager.getData();
-    if (data.length === 0) return;
-    this.depthHeatmap.push(data[data.length - 1].time, depth);
+    const at = time ?? data[data.length - 1]?.time;
+    if (at === undefined || !Number.isFinite(at)) return;
+    this.depthHeatmap.push(at, depth);
     if (this.depthHeatmap.isVisible()) this.engine.requestRender(LayerType.Main);
   }
 

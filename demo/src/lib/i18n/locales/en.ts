@@ -308,6 +308,17 @@ const en = {
         'Add another indicator and watch the switch time',
       ],
     },
+    heatmap: {
+      title: 'Liquidity heatmap',
+      stat: '240 × 80 cells',
+      blurb:
+        'Two hundred forty order-book snapshots, 80 price levels each, as a heatmap behind the candles: resting size lights up level by level, bids green and asks red, and walls that persist stand out. With WebGL, the 19,200 cells draw on the GPU under the bars.',
+      tryThis: [
+        'Switch between Canvas 2D and WebGL above the chart: each switch times a short pan',
+        'Look for the bright rows: walls of size that stay at one price over time',
+        'Zoom in on a wall, then pan back and forth: the cells keep pace with the bars',
+      ],
+    },
     switching: {
       title: 'Slow-network switching',
       stat: '+1.2 s latency',

@@ -2,9 +2,12 @@
  * The shaders. Each draws axis-aligned rectangles, one instance per
  * rectangle under the bars, bar (or pixel column when zoomed out), placed on
  * device pixels by the same rules as `charts/pixelGrid.ts`, so GPU bars line
- * up with what the 2D layer draws over them (crosshair, drawings). `floor(v + 0.5)` is used for
- * rounding: GLSL's `round()` may round halves either way, `Math.round` does not.
+ * up with what the 2D layer draws over them (crosshair, drawings). Rounding
+ * is `floor(v + PIXEL_ROUNDING)`, as `toPixel` there: GLSL's `round()` may
+ * round halves either way.
  */
+
+import { PIXEL_ROUNDING } from '../charts/pixelGrid.js';
 
 const HEADER = `#version 300 es
 precision highp float;
@@ -32,7 +35,7 @@ float cssY(float rel) {
   return u_yA + rel * u_yB;
 }
 
-float snap(float v) { return floor(v + 0.5); }
+float snap(float v) { return floor(v + ${PIXEL_ROUNDING.toFixed(4)}); }
 
 vec4 toClip(vec2 dev) {
   return vec4(dev.x / u_canvas.x * 2.0 - 1.0, 1.0 - dev.y / u_canvas.y * 2.0, 0.0, 1.0);

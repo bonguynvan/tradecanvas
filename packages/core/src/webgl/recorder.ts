@@ -85,25 +85,34 @@ class Recorder implements GpuRecorder {
   readonly ctx: CanvasRenderingContext2D;
   /** Where text goes: the region being recorded. */
   private texts: TextOp[] = [];
+  /** Whether the region being recorded takes text. */
+  private takesText = true;
   private state!: State;
   private stack: State[] = [];
   private path: Subpath[] = [];
   private ok = true;
+  /** Where the step being recorded starts in `commands`: rectangles merge into a command of this step only. */
+  private stepStart = 0;
+  /** The last colour style parsed, premultiplied (charts fill many cells in one, at alphas of their own). */
+  private solid: { style: string; color: RGBA } | null = null;
 
   constructor(private readonly dpr: number, private readonly measure: CanvasRenderingContext2D | null) {
     this.reset({ x0: 0, y0: 0, x1: Infinity, y1: Infinity });
     this.ctx = this.proxy();
   }
 
-  region(clip: Rect): GpuRegion {
+  region(clip: Rect, options?: { text?: boolean }): GpuRegion {
     const d = this.dpr;
     const box = { x0: clip.x * d, y0: clip.y * d, x1: (clip.x + clip.width) * d, y1: (clip.y + clip.height) * d };
     const texts: TextOp[] = [];
+    const takesText = options?.text !== false;
     return {
       step: (draw) => {
         this.reset(box);
         this.texts = texts;
+        this.takesText = takesText;
         const marks = { commands: this.commands.length, texts: texts.length };
+        this.stepStart = marks.commands;
         this.ok = true;
         try {
           withRecordedPaths(() => draw(this.ctx));
@@ -297,13 +306,30 @@ class Recorder implements GpuRecorder {
 
   // --- Paint ---------------------------------------------------------------
 
+  /** A colour style, premultiplied. */
+  private baseColor(style: string): RGBA {
+    const hit = this.solid;
+    if (hit && hit.style === style) return hit.color;
+    const color = premultiplied(parseColor(style));
+    this.solid = { style, color };
+    return color;
+  }
+
+  private alpha(): number {
+    return Math.max(0, Math.min(1, this.state.globalAlpha));
+  }
+
+  /** A colour style, premultiplied, at the global alpha. */
+  private solidColor(style: string): RGBA {
+    const c = this.baseColor(style);
+    const a = this.alpha();
+    return [c[0] * a, c[1] * a, c[2] * a, c[3] * a];
+  }
+
   /** The style as the GPU paints it, or null when it can't. */
   private paint(style: Style): GpuPaint | null {
-    const alpha = Math.max(0, Math.min(1, this.state.globalAlpha));
-    if (typeof style === 'string') {
-      const c = premultiplied(parseColor(style));
-      return { kind: 'solid', color: [c[0] * alpha, c[1] * alpha, c[2] * alpha, c[3] * alpha] };
-    }
+    const alpha = this.alpha();
+    if (typeof style === 'string') return { kind: 'solid', color: this.solidColor(style) };
     if (!(style instanceof RecordedGradient)) return null;
     if (style.stops.length === 0) return { kind: 'solid', color: [0, 0, 0, 0] };
     if (style.stops.length > 4) return null;
@@ -324,7 +350,8 @@ class Recorder implements GpuRecorder {
   private plain(): boolean {
     const s = this.state;
     if (s.globalCompositeOperation !== 'source-over' || s.filter !== 'none') return false;
-    return !(parseColor(s.shadowColor)[3] > 0 && (s.shadowBlur > 0 || s.shadowOffsetX !== 0 || s.shadowOffsetY !== 0));
+    if (s.shadowBlur === 0 && s.shadowOffsetX === 0 && s.shadowOffsetY === 0) return true;
+    return !(parseColor(s.shadowColor)[3] > 0);
   }
 
   // --- Fill ----------------------------------------------------------------
@@ -363,12 +390,33 @@ class Recorder implements GpuRecorder {
   }
 
   private fillRects(subs: readonly Subpath[], color: RGBA): void {
-    const values: number[] = [];
-    for (const s of subs) {
-      const r = intersect(s.rect!, this.state.clip);
-      if (!isEmpty(r)) values.push(r.x0, r.y0, r.x1, r.y1, color[0], color[1], color[2], color[3]);
-    }
-    if (values.length) this.commands.push({ type: 'rects', values });
+    for (const s of subs) this.pushRect(s.rect!, color);
+  }
+
+  /** A rectangle, clipped, in `color` at `alpha`, added to this step's last command when that holds rectangles too. */
+  private pushRect(r: Box, color: RGBA, alpha = 1): void {
+    const c = this.state.clip;
+    const x0 = Math.max(r.x0, c.x0), y0 = Math.max(r.y0, c.y0), x1 = Math.min(r.x1, c.x1), y1 = Math.min(r.y1, c.y1);
+    if (!(x1 > x0 && y1 > y0)) return;
+    const last = this.commands[this.commands.length - 1];
+    const values = last && last.type === 'rects' && this.commands.length > this.stepStart ? last.values : null;
+    const r0 = color[0] * alpha, g0 = color[1] * alpha, b0 = color[2] * alpha, a0 = color[3] * alpha;
+    if (values) values.push(x0, y0, x1, y1, r0, g0, b0, a0);
+    else this.commands.push({ type: 'rects', values: [x0, y0, x1, y1, r0, g0, b0, a0] });
+  }
+
+  /** fillRect in a plain colour on an axis-aligned transform, straight to a rectangle; anything else through a path. */
+  private fillRect(x: number, y: number, w: number, h: number): void {
+    const style = this.state.fillStyle;
+    if (typeof style !== 'string' || !this.axisAligned() || !this.plain()) return this.withPath(() => this.rect(x, y, w, h), () => this.fill());
+    if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h))) return;
+    const color = this.baseColor(style);
+    const alpha = this.alpha();
+    if (color[3] * alpha === 0) return;
+    const t = this.state.transform;
+    const ax = t[0] * x + t[4], bx = t[0] * (x + w) + t[4];
+    const ay = t[3] * y + t[5], by = t[3] * (y + h) + t[5];
+    this.pushRect({ x0: Math.min(ax, bx), y0: Math.min(ay, by), x1: Math.max(ax, bx), y1: Math.max(ay, by) }, color, alpha);
   }
 
   // --- Stroke --------------------------------------------------------------
@@ -429,7 +477,7 @@ class Recorder implements GpuRecorder {
 
   private text(stroke: boolean, text: string, x: number, y: number, maxWidth?: number): void {
     const style = stroke ? this.state.strokeStyle : this.state.fillStyle;
-    if (typeof style !== 'string' || !this.plain()) return this.unsupported();
+    if (!this.takesText || typeof style !== 'string' || !this.plain()) return this.unsupported();
     this.texts.push({ stroke, text: String(text), x, y, maxWidth, state: this.copyState() });
   }
 
@@ -462,7 +510,7 @@ class Recorder implements GpuRecorder {
       fill: (a?: CanvasFillRule | Path2D, b?: CanvasFillRule) => (typeof a === 'object' ? this.onPath(a, () => this.fill(b)) : this.fill(a)),
       stroke: (path?: Path2D) => (path ? this.onPath(path, () => this.stroke()) : this.stroke()),
       clip: (a?: CanvasFillRule | Path2D) => (typeof a === 'object' ? this.onPath(a, () => this.clip()) : this.clip()),
-      fillRect: (x: number, y: number, w: number, h: number) => this.withPath(() => this.rect(x, y, w, h), () => this.fill()),
+      fillRect: (x: number, y: number, w: number, h: number) => this.fillRect(x, y, w, h),
       strokeRect: (x: number, y: number, w: number, h: number) => this.withPath(() => this.rect(x, y, w, h), () => this.stroke()),
       fillText: (text: string, x: number, y: number, maxWidth?: number) => this.text(false, text, x, y, maxWidth),
       strokeText: (text: string, x: number, y: number, maxWidth?: number) => this.text(true, text, x, y, maxWidth),

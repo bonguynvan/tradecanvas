@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL 렌더러 (미리 보기)</h2>
 <p>
-  <code>renderer: 'webgl'</code>을 쓰면 플롯 영역과 지표 패널을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 그리드, 세션, 캔들, 거래량은 직접 그리고, 지표·비교선·대부분의 차트 유형의 Canvas 2D 그리기는 GPU의 선, 채우기, 사각형으로 기록되어 Canvas 2D처럼 가장자리가 안티앨리어싱됩니다. 텍스트, 드로잉, 주문, 축, 크로스헤어는 Canvas 2D로 남고, GPU가 똑같이 그릴 수 없는 것도 Canvas 2D가 그립니다(순서대로 그리므로 겹침 순서는 그대로입니다). 직접 만든 지표 플러그인도 수정 없이 동작합니다. 캔들은 Canvas 2D와 2/255 이내로 일치하고, 선과 채우기는 안티앨리어싱된 가장자리의 일부 픽셀만 다릅니다. WebGL 코드는 별도 청크(gzip 약 17 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+  <code>renderer: 'webgl'</code>을 쓰면 플롯 영역과 지표 패널을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 그리드, 세션, 캔들, 거래량은 직접 그리고, 지표·비교선·대부분의 차트 유형의 Canvas 2D 그리기는 GPU의 선, 채우기, 사각형으로 기록되어 Canvas 2D처럼 가장자리가 안티앨리어싱됩니다. 호가 깊이 히트맵, 볼륨 프로파일, 마켓 프로파일도 같은 방식으로 기록되어 캔들 아래에 그려집니다. 통계 상자나 TPO 문자를 표시하는 마켓 프로파일은 Canvas 2D로 남습니다. 텍스트, 드로잉, 주문, 축, 크로스헤어는 Canvas 2D로 남고, GPU가 똑같이 그릴 수 없는 것도 Canvas 2D가 그립니다(순서대로 그리므로 겹침 순서는 그대로입니다). 직접 만든 지표 플러그인도 수정 없이 동작합니다. 캔들은 Canvas 2D와 똑같은 디바이스 픽셀에 그려지고, 선과 채우기는 안티앨리어싱된 가장자리의 일부 픽셀만 다릅니다. WebGL 코드는 별도 청크(gzip 약 17 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -91,6 +91,8 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
   <tbody>
     <tr><td>1600×900, 캔들 500개 + 지표 4개</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
     <tr><td>1600×900, 봉 200,000개를 축소 + 지표 4개</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>1600×900, 봉 1,000,000개를 축소 + 지표 4개</td><td>2</td><td>34.5 ms</td><td>16.7 ms</td></tr>
+    <tr><td>1600×900, 호가 깊이 히트맵, 스냅샷 240개 × 호가 80단계</td><td>2</td><td>25.5 ms</td><td>16.8 ms</td></tr>
     <tr><td>차트 6개, 각각 캔들 500개와 지표 2개</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
     <tr><td>2560×1400, 캔들 2,000개 + 지표 4개</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
     <tr><td>2560×1400, 캔들 2,000개 + 지표 4개</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>

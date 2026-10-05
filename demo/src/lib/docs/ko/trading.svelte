@@ -231,7 +231,8 @@ chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
-// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
+// books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
 <h2>신호 마커</h2>
 <p>봇이나 신호 트레이딩 연동에서 오버레이에 방향 화살표를 표시할 수 있습니다.</p>

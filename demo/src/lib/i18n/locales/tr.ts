@@ -302,6 +302,17 @@ const tr: SiteMessages = {
         'Bir gösterge daha ekleyin ve geçiş süresini izleyin',
       ],
     },
+    heatmap: {
+      title: 'Likidite ısı haritası',
+      stat: '240 × 80 hücre',
+      blurb:
+        'Her biri 80 fiyat seviyeli iki yüz kırk emir defteri anlık görüntüsü, mumların arkasında bir ısı haritası olarak: bekleyen miktar seviye seviye parlar, alışlar yeşil, satışlar kırmızı; uzun süre duran duvarlar öne çıkar. WebGL ile 19.200 hücreyi GPU barların altına çizer.',
+      tryThis: [
+        'Grafiğin üstünde Canvas 2D ile WebGL arasında geçiş yapın: her geçiş kısa bir kaydırmayı ölçer',
+        'Parlak satırları arayın: zaman içinde tek bir fiyatta duran miktar duvarları',
+        'Bir duvara yakınlaştırıp ileri geri kaydırın: hücreler barlarla birlikte hareket eder',
+      ],
+    },
     switching: {
       title: 'Yavaş ağda geçiş',
       stat: '+1.2 s gecikme',

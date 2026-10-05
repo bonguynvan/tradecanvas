@@ -119,9 +119,10 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   render(frame: GpuFrame): GpuDrawn {
     const gl = this.gl;
-    if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false, recorded: false };
+    if (this.lost || gl.isContextLost()) return { series: false, volume: false, background: false, recorded: false, under: false };
     const recorded = isRecorder(frame.recorded) ? frame.recorded : null;
-    const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null, recorded: recorded !== null };
+    const under = isRecorder(frame.under) ? frame.under : null;
+    const drawn: GpuDrawn = { series: frame.candles, volume: frame.volume !== null, background: frame.background !== null, recorded: recorded !== null, under: under !== null };
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     // A frame that failed half-way may have left the scissor on.
     gl.disable(gl.SCISSOR_TEST);
@@ -129,10 +130,9 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     if (frame.background) this.drawBackground(frame, frame.background);
+    if (under) this.drawRecorded(frame, under);
     this.drawSeries(frame);
-    if (recorded && recorded.commands.length > 0) {
-      this.drawer.draw(recorded.commands, this.canvas.width, this.canvas.height, (values, count) => this.drawRecordedRects(frame, values, count));
-    }
+    if (recorded) this.drawRecorded(frame, recorded);
     return drawn;
   }
 
@@ -165,6 +165,11 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     const { min, max } = viewport.priceRange;
     if (frame.candles && max - min !== 0) this.drawCandles(frame, from, to, dense, columnCount);
     gl.disable(gl.SCISSOR_TEST);
+  }
+
+  private drawRecorded(frame: GpuFrame, recorder: Recorder): void {
+    if (recorder.commands.length === 0) return;
+    this.drawer.draw(recorder.commands, this.canvas.width, this.canvas.height, (values, count) => this.drawRecordedRects(frame, values, count));
   }
 
   /** Recorded rectangles: device pixels, already clipped. */

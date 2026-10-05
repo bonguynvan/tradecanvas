@@ -130,3 +130,17 @@ describe('assignSessionLetters', () => {
     expect(cols.flat()).toEqual([0]);
   });
 });
+
+describe('MarketProfileRenderer.drawsText', () => {
+  it('says it writes text with its stats readout, or split by session with letters', async () => {
+    const { MarketProfileRenderer } = await import('../MarketProfileRenderer.js');
+    const r = new MarketProfileRenderer();
+    expect(r.drawsText()).toBe(true);
+    r.setShowStats(false);
+    expect(r.drawsText()).toBe(false);
+    r.setSplitBySession(true);
+    expect(r.drawsText()).toBe(false);
+    r.setLetters(true);
+    expect(r.drawsText()).toBe(true);
+  });
+});

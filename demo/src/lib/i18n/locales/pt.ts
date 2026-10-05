@@ -302,6 +302,17 @@ const pt: SiteMessages = {
         'Adicione outro indicador e observe o tempo da troca',
       ],
     },
+    heatmap: {
+      title: 'Heatmap de liquidez',
+      stat: '240 × 80 células',
+      blurb:
+        'Duzentos e quarenta instantâneos do livro de ofertas, com 80 níveis de preço cada, como um heatmap atrás das velas: o volume em espera acende nível a nível, compras em verde e vendas em vermelho, e as paredes que persistem se destacam. Com WebGL, as 19.200 células são desenhadas na GPU sob as barras.',
+      tryThis: [
+        'Alterne entre Canvas 2D e WebGL acima do gráfico: cada troca mede um breve arrasto',
+        'Procure as linhas brilhantes: paredes de volume que ficam num preço ao longo do tempo',
+        'Aproxime uma parede e arraste de um lado para o outro: as células acompanham as barras',
+      ],
+    },
     switching: {
       title: 'Trocas em rede lenta',
       stat: '+1,2 s de latência',

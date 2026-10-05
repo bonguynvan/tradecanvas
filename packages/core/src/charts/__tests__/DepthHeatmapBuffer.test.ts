@@ -31,6 +31,19 @@ describe('DepthHeatmapBuffer', () => {
     expect(b.snapshots().map((s) => s.time)).toEqual([2, 3]);
   });
 
+  it('puts a book recorded earlier in its place in time, and drops the oldest beyond capacity', () => {
+    const b = new DepthHeatmapBuffer(4);
+    b.push(10, depth(1, 1));
+    b.push(30, depth(3, 3));
+    b.push(20, depth(2, 2));
+    b.push(5, depth(0, 0));
+    b.push(20, depth(9, 9)); // the book for that bar again
+    expect(b.snapshots().map((s) => s.time)).toEqual([5, 10, 20, 30]);
+    expect(b.snapshots()[2].bids[0].volume).toBe(9);
+    b.push(15, depth(4, 4));
+    expect(b.snapshots().map((s) => s.time)).toEqual([10, 15, 20, 30]);
+  });
+
   it('reports the max single-level volume', () => {
     const b = new DepthHeatmapBuffer();
     b.push(1, depth(5, 4));

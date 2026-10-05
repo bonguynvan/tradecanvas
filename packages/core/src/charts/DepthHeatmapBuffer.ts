@@ -8,9 +8,10 @@ export interface DepthSnapshot {
 
 /**
  * A fixed-capacity ring of order-book snapshots, the data behind the liquidity
- * heatmap. Snapshots are appended in time order; the oldest are dropped once
- * `capacity` is exceeded. A repeated timestamp replaces the last snapshot
- * (the book updating within the same bar) rather than growing the buffer.
+ * heatmap, kept in time order; the oldest are dropped once `capacity` is
+ * exceeded. A repeated timestamp replaces its snapshot (the book updating
+ * within the same bar) rather than growing the buffer, and an older one
+ * (a book recorded earlier) goes in its place in time.
  */
 export class DepthHeatmapBuffer {
   private buffer: DepthSnapshot[] = [];
@@ -25,15 +26,29 @@ export class DepthHeatmapBuffer {
       bids: depth.bids.map((l) => ({ ...l })),
       asks: depth.asks.map((l) => ({ ...l })),
     };
-    const last = this.buffer[this.buffer.length - 1];
-    if (last && last.time === time) {
-      this.buffer[this.buffer.length - 1] = snapshot;
-    } else {
-      this.buffer.push(snapshot);
-      if (this.buffer.length > this.capacity) {
-        this.buffer = this.buffer.slice(this.buffer.length - this.capacity);
-      }
+    const at = this.indexAfter(time);
+    if (at > 0 && this.buffer[at - 1].time === time) {
+      this.buffer[at - 1] = snapshot;
+      return;
     }
+    this.buffer.splice(at, 0, snapshot);
+    if (this.buffer.length > this.capacity) {
+      this.buffer = this.buffer.slice(this.buffer.length - this.capacity);
+    }
+  }
+
+  /** Where a snapshot at `time` goes: after every snapshot at or before it. */
+  private indexAfter(time: number): number {
+    const b = this.buffer;
+    // Live books come last: check the end before searching.
+    if (b.length === 0 || b[b.length - 1].time <= time) return b.length;
+    let lo = 0, hi = b.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (b[mid].time <= time) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
   }
 
   snapshots(): ReadonlyArray<DepthSnapshot> {

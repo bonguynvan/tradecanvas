@@ -2,6 +2,7 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
 import { isDense, renderDenseBars } from './denseBars.js';
+import { barColumns, inDevicePixels } from './pixelGrid.js';
 
 export class VolumeCandleRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
@@ -24,48 +25,40 @@ export class VolumeCandleRenderer implements ChartRendererInterface {
     }
     if (maxVolume === 0) maxVolume = 1;
 
-    const upWickPath = new Path2D();
-    const downWickPath = new Path2D();
-    const upBodyPath = new Path2D();
-    const downBodyPath = new Path2D();
-
     const toX = (i: number) => i * barUnit + offsetX;
     const toY = priceToYMapper(viewport);
 
-    for (let i = from; i <= to && i < data.length; i++) {
-      const bar = data[i];
-      const x = toX(i);
-      const highY = toY(bar.high);
-      const lowY = toY(bar.low);
-      const openY = toY(bar.open);
-      const closeY = toY(bar.close);
-      const isUp = bar.close >= bar.open;
+    // Wicks and bodies on whole device pixels, as candles are, batched per colour.
+    inDevicePixels(ctx, (px) => {
+      const { wick } = barColumns(maxBarWidth, px.ratio);
+      const upWick = new Path2D();
+      const downWick = new Path2D();
+      const upBody = new Path2D();
+      const downBody = new Path2D();
 
-      const volRatio = Math.max(0.2, bar.volume / maxVolume);
-      const w = maxBarWidth * volRatio;
-      const halfW = w / 2;
+      for (let i = from; i <= to && i < data.length; i++) {
+        const bar = data[i];
+        const isUp = bar.close >= bar.open;
+        const wickLeft = px.left(toX(i), wick);
+        const high = px.y(toY(bar.high));
+        const low = px.y(toY(bar.low));
+        (isUp ? upWick : downWick).rect(wickLeft, Math.min(high, low), wick, Math.max(Math.abs(low - high), 1));
 
-      const wickPath = isUp ? upWickPath : downWickPath;
-      wickPath.moveTo(x, highY);
-      wickPath.lineTo(x, lowY);
+        // The body's width follows the bar's volume, centred on the wick.
+        const { body } = barColumns(maxBarWidth * Math.max(0.2, bar.volume / maxVolume), px.ratio);
+        const a = px.y(toY(bar.open));
+        const b = px.y(toY(bar.close));
+        (isUp ? upBody : downBody).rect(wickLeft - (body - wick) / 2, Math.min(a, b), body, Math.max(Math.abs(b - a), wick));
+      }
 
-      const bodyTop = Math.min(openY, closeY);
-      const bodyHeight = Math.max(Math.abs(closeY - openY), 1);
-      const bodyPath = isUp ? upBodyPath : downBodyPath;
-      bodyPath.rect(x - halfW, bodyTop, w, bodyHeight);
-    }
-
-    ctx.strokeStyle = theme.candleUpWick;
-    ctx.lineWidth = 1;
-    ctx.stroke(upWickPath);
-
-    ctx.strokeStyle = theme.candleDownWick;
-    ctx.stroke(downWickPath);
-
-    ctx.fillStyle = theme.candleUp;
-    ctx.fill(upBodyPath);
-
-    ctx.fillStyle = theme.candleDown;
-    ctx.fill(downBodyPath);
+      ctx.fillStyle = theme.candleUpWick;
+      ctx.fill(upWick);
+      ctx.fillStyle = theme.candleDownWick;
+      ctx.fill(downWick);
+      ctx.fillStyle = theme.candleUp;
+      ctx.fill(upBody);
+      ctx.fillStyle = theme.candleDown;
+      ctx.fill(downBody);
+    });
   }
 }
