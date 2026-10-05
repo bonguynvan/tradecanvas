@@ -43,6 +43,8 @@ function localeCandidates(locale: string): string[] {
   if (/^zh-(tw|hk|mo|hant)/.test(lower)) out.push('zh-hant');
   const language = lower.split('-')[0];
   if (language !== lower) out.push(language);
+  // Norwegian: the general and the Nynorsk codes read the Bokmål table.
+  if (language === 'no' || language === 'nn') out.push('nb');
   return out;
 }
 

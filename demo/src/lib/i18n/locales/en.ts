@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 95 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.',
+      'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 111 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -46,7 +46,7 @@ const en = {
     release: 'two-canvas renderer, free panning',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 95 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -86,7 +86,7 @@ const en = {
       {
         label: 'Widget',
         title: 'One call, full trading UI',
-        text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in 16 languages from English and Vietnamese to Chinese, Japanese, Korean and Arabic.',
+        text: 'ChartWidget brings the toolbar, drawing sidebar, watchlist, alerts, object tree, data window, replay and a command palette (Ctrl+K), in 30 languages from English and Vietnamese to Chinese, Japanese, Korean and Arabic.',
       },
       {
         label: 'Data',
@@ -160,11 +160,11 @@ const en = {
     },
     indicators: {
       title: 'Indicators',
-      stat: '95 built-in',
+      stat: '111 built-in',
       blurb:
         'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
       tryThis: [
-        'Press the Indicators button (or Ctrl+K) and search any of the 95',
+        'Press the Indicators button (or Ctrl+K) and search any of the 111',
         'Click an indicator name in the legend: inputs, colours and levels',
         'Set a moving average’s Source to another indicator’s line',
         'Drag the line between panes to resize them; the buttons at a pane’s top right move, fold or maximise it',
@@ -261,10 +261,10 @@ const en = {
       ],
     },
     subcent: {
-      title: '16 languages, sub-cent prices',
+      title: '30 languages, sub-cent prices',
       stat: 'i18n',
       blurb:
-        'The whole widget in 16 languages — menus, settings, drawing tools, dialogs, Arabic and Hebrew right to left — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
+        'The whole widget in 30 languages — menus, settings, drawing tools, dialogs, Arabic, Hebrew and Persian right to left — with numbers in each one’s own format. PEPE trades around 0.000004: every label follows the price scale’s precision, and the axis widens to fit.',
       tryThis: [
         'Pick a language above the chart: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P searches every Binance symbol, with names, as you type',
@@ -422,7 +422,7 @@ const en = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'The full trading UI in one call: toolbar, 69 drawing tools, watchlist, trading, replay, in 16 languages.',
+        blurb: 'The full trading UI in one call: toolbar, 69 drawing tools, watchlist, trading, replay, in 30 languages.',
       },
       react: {
         title: 'React',

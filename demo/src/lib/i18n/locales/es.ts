@@ -4,7 +4,7 @@ const es: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading en Canvas para la web',
     description:
-      'TradeCanvas es una biblioteca de gráficos de trading en Canvas2D: 17 tipos de gráfico, 95 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, repetición y backtesting. Sin dependencias, MIT.',
+      'TradeCanvas es una biblioteca de gráficos de trading en Canvas2D: 17 tipos de gráfico, 111 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, repetición y backtesting. Sin dependencias, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const es: SiteMessages = {
     release: 'renderizador de dos canvas, desplazamiento libre',
     title: 'El motor de gráficos para apps de trading.',
     ledeHtml:
-      'De velas a Renko, 95 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado en Canvas2D sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
+      'De velas a Renko, 111 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado en Canvas2D sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
     getStarted: 'Empezar',
     browseExamples: 'Ver ejemplos',
     specsLabel: 'Cifras clave',
@@ -82,7 +82,7 @@ const es: SiteMessages = {
       {
         label: 'Widget',
         title: 'Una llamada, toda la interfaz de trading',
-        text: 'ChartWidget trae la barra de herramientas, la barra lateral de dibujo, la lista de seguimiento, las alertas, el árbol de objetos, la ventana de datos, la repetición y una paleta de comandos (Ctrl+K), en 16 idiomas, del inglés y el vietnamita al chino, el japonés, el coreano y el árabe.',
+        text: 'ChartWidget trae la barra de herramientas, la barra lateral de dibujo, la lista de seguimiento, las alertas, el árbol de objetos, la ventana de datos, la repetición y una paleta de comandos (Ctrl+K), en 30 idiomas, del inglés y el vietnamita al chino, el japonés, el coreano y el árabe.',
       },
       {
         label: 'Datos',
@@ -156,11 +156,11 @@ const es: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '95 integrados',
+      stat: '111 integrados',
       blurb:
         'Superpuestos y en paneles, calculados internamente, sin dependencias matemáticas. Los ticks en vivo recalculan solo la barra en formación: 0.001 ms por tick con cuatro indicadores sobre 100k barras.',
       tryThis: [
-        'Pulsa el botón Indicadores (o Ctrl+K) y busca cualquiera de los 95',
+        'Pulsa el botón Indicadores (o Ctrl+K) y busca cualquiera de los 111',
         'Haz clic en el nombre de un indicador en la leyenda: parámetros, colores y niveles',
         'Pon como fuente de una media móvil la línea de otro indicador',
         'Arrastra la línea entre paneles para cambiar su tamaño; los botones de arriba a la derecha de un panel lo mueven, lo contraen o lo maximizan',
@@ -257,10 +257,10 @@ const es: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 idiomas, precios por debajo del centavo',
+      title: '30 idiomas, precios por debajo del centavo',
       stat: 'i18n',
       blurb:
-        'Todo el widget en 16 idiomas (menús, configuración, herramientas de dibujo, diálogos, árabe y hebreo de derecha a izquierda), con los números en el formato propio de cada uno. PEPE cotiza en torno a 0.000004: cada etiqueta sigue la precisión de la escala de precio y el eje se ensancha para que quepa.',
+        'Todo el widget en 30 idiomas (menús, configuración, herramientas de dibujo, diálogos, árabe, hebreo y persa de derecha a izquierda), con los números en el formato propio de cada uno. PEPE cotiza en torno a 0.000004: cada etiqueta sigue la precisión de la escala de precio y el eje se ensancha para que quepa.',
       tryThis: [
         'Elige un idioma encima del gráfico: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P busca entre todos los símbolos de Binance, con sus nombres, mientras escribes',
@@ -421,7 +421,7 @@ const es: SiteMessages = {
       widget: {
         title: 'ChartWidget',
         blurb:
-          'Toda la interfaz de trading en una llamada: barra de herramientas, 69 herramientas de dibujo, lista de seguimiento, trading y repetición, en 16 idiomas.',
+          'Toda la interfaz de trading en una llamada: barra de herramientas, 69 herramientas de dibujo, lista de seguimiento, trading y repetición, en 30 idiomas.',
       },
       react: {
         title: 'React',

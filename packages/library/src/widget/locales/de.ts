@@ -499,6 +499,8 @@ export const DE_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Preis, in eigenem Bereich',
   'compare.spread': 'Spread: {main} − {other}',
   'compare.ratio': 'Verhältnis: {main} ÷ {other}',
+  'compare.correlation': 'Korrelation: {main} mit {other}',
+  'compare.correlationLog': 'Korrelation der Renditen: {main} mit {other}',
   'drawingSettings.addAlert': 'Alarm hinzufügen',
   'drawingSettings.alertAdded': 'Alarm hinzugefügt: Preis kreuzt {name}',
   'drawingOption.rewardRatio': 'Chance:Risiko',

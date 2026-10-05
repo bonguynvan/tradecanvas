@@ -499,6 +499,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'compare.ownPane': '價格，顯示在獨立副圖',
   'compare.spread': '價差：{main} − {other}',
   'compare.ratio': '比值：{main} ÷ {other}',
+  'compare.correlation': '相關性：{main} 與 {other}',
+  'compare.correlationLog': '報酬率相關性：{main} 與 {other}',
   'drawingSettings.addAlert': '新增警示',
   'drawingSettings.alertAdded': '已新增警示：價格穿越 {name}',
   'drawingOption.rewardRatio': '盈虧比',

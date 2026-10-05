@@ -108,3 +108,17 @@ describe('a pane in percent', () => {
     expect(cmp).toBeTruthy();
   });
 });
+
+describe('correlation with another symbol', () => {
+  it('asks for the symbol, and draws the correlation once its bars are given', () => {
+    const asked: string[] = [];
+    chart.on('symbolSeriesRequest', (e) => asked.push(e.payload.symbol));
+    const id = chart.addIndicator('correlation', { symbol: 'C', length: 10 })!;
+    chart.addIndicator('correlationlog', { symbol: 'D', length: 10 });
+    expect(asked).toEqual(['C', 'D']);
+    expect(chart.getRequiredSymbols().sort()).toEqual(['C', 'D']);
+    // The main series climbs one an hour: a symbol climbing with it correlates fully.
+    chart.setSymbolSeries('C', main.map((b) => bar(b.time, b.close * 3)));
+    expect(values(id).at(-1)).toBeCloseTo(1, 9);
+  });
+});

@@ -15,6 +15,7 @@ import { priceToY } from '../../viewport/ScaleMapping.js';
 /** Output fields that are computed but not drawn. A new one must be added here on purpose. */
 const NOT_DRAWN: Record<string, readonly string[]> = {
   psar: ['trend'],
+  volindex: ['long'],
   supertrend: ['trend'],
   svwap: ['session'],
   ao: ['up'],
@@ -32,6 +33,9 @@ const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 } };
 
 /** Not drawn bar by bar: a profile over price. */
 const NOT_PER_BAR = new Set(['volumeProfile']);
+
+/** Coloured by value, whatever the style: Chop Zone's zones are what it shows. */
+const OWN_COLOURS = new Set(['chopzone']);
 
 const HOUR = 3_600_000;
 
@@ -156,6 +160,7 @@ describe('built-in indicators keep to their declarations', () => {
         expect(off.length, `points off the scale, e.g. ${off.slice(0, 3).join(', ')}`).toBe(0);
         expect(ys.length).toBeGreaterThan(0);
 
+        if (OWN_COLOURS.has(descriptor.id)) return;
         for (const plot of plots!) {
           const visible = output.series?.slice(from).some((v) => Number.isFinite(v?.[plot.key]));
           if (visible) expect(colors, `${plot.key} in colours[${plot.color}]`).toContain(COLORS[plot.color]);

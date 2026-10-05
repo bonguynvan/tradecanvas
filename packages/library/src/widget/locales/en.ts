@@ -511,6 +511,8 @@ export const EN_MESSAGES = {
   'compare.ownPane': 'Price, in a pane of its own',
   'compare.spread': 'Spread: {main} − {other}',
   'compare.ratio': 'Ratio: {main} ÷ {other}',
+  'compare.correlation': 'Correlation: {main} with {other}',
+  'compare.correlationLog': 'Correlation of returns: {main} with {other}',
   'drawingSettings.addAlert': 'Add alert',
   'drawingSettings.alertAdded': 'Alert added: price crossing {name}',
   'drawingOption.rewardRatio': 'Reward:risk',

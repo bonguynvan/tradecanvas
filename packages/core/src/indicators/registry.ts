@@ -97,6 +97,18 @@ import { NetVolumeIndicator } from './panel/NetVolume.js';
 import { StandardErrorBandsIndicator } from './overlay/StandardErrorBands.js';
 import { GuppyMMAIndicator } from './overlay/GuppyMMA.js';
 import { MARibbonIndicator } from './overlay/MARibbon.js';
+import { AveragePriceIndicator, MedianPriceIndicator, TypicalPriceIndicator } from './overlay/PriceAverages.js';
+import { MAChannelIndicator } from './overlay/MAChannel.js';
+import { HammingMAIndicator } from './overlay/HammingMA.js';
+import { MADoubleIndicator, MATripleIndicator } from './overlay/MovingAverageSets.js';
+import { VolatilityIndexIndicator } from './overlay/VolatilityIndex.js';
+import { AccumulativeSwingIndexIndicator } from './panel/AccumulativeSwingIndex.js';
+import { AdvanceDeclineIndicator } from './panel/AdvanceDecline.js';
+import { MajorityRuleIndicator } from './panel/MajorityRule.js';
+import { ChopZoneIndicator } from './panel/ChopZone.js';
+import { SMIErgodicIndicator } from './panel/SMIErgodic.js';
+import { PriceOscillatorIndicator } from './panel/PriceOscillator.js';
+import { VolatilityOHLCIndicator, VolatilityZeroTrendIndicator } from './panel/VolatilityEstimators.js';
 
 export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   // Overlays
@@ -196,4 +208,20 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new StandardErrorBandsIndicator());
   engine.register(new GuppyMMAIndicator());
   engine.register(new MARibbonIndicator());
+  engine.register(new AveragePriceIndicator());
+  engine.register(new MedianPriceIndicator());
+  engine.register(new TypicalPriceIndicator());
+  engine.register(new MAChannelIndicator());
+  engine.register(new HammingMAIndicator());
+  engine.register(new MADoubleIndicator());
+  engine.register(new MATripleIndicator());
+  engine.register(new VolatilityIndexIndicator());
+  engine.register(new AccumulativeSwingIndexIndicator());
+  engine.register(new AdvanceDeclineIndicator());
+  engine.register(new MajorityRuleIndicator());
+  engine.register(new ChopZoneIndicator());
+  engine.register(new SMIErgodicIndicator());
+  engine.register(new PriceOscillatorIndicator());
+  engine.register(new VolatilityOHLCIndicator());
+  engine.register(new VolatilityZeroTrendIndicator());
 }

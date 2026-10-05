@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是以 Canvas2D 繪製的交易圖表函式庫：17 種圖表類型、95 個指標、69 種繪圖工具、交易所即時行情、圖上下單、K線回放與回測。零相依套件，MIT 授權。',
+      'TradeCanvas 是以 Canvas2D 繪製的交易圖表函式庫：17 種圖表類型、111 個指標、69 種繪圖工具、交易所即時行情、圖上下單、K線回放與回測。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const zhHant: SiteMessages = {
     release: '雙層 Canvas 渲染，自由平移',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，95 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas2D 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，111 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas2D 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
@@ -80,7 +80,7 @@ const zhHant: SiteMessages = {
       {
         label: '元件',
         title: '一次呼叫，完整交易介面',
-        text: 'ChartWidget 內建工具列、繪圖側欄、自選清單、價格警示、物件樹、資料視窗、K線回放與命令面板（Ctrl+K），支援 16 種語言，從英文、越南文到中文、日文、韓文與阿拉伯文。',
+        text: 'ChartWidget 內建工具列、繪圖側欄、自選清單、價格警示、物件樹、資料視窗、K線回放與命令面板（Ctrl+K），支援 30 種語言，從英文、越南文到中文、日文、韓文與阿拉伯文。',
       },
       {
         label: '資料',
@@ -154,11 +154,11 @@ const zhHant: SiteMessages = {
     },
     indicators: {
       title: '指標',
-      stat: '內建 95 個',
+      stat: '內建 111 個',
       blurb:
         '疊加與副圖指標皆自行計算，不依賴任何數學套件。即時 tick 只重算正在形成的那根K線——10 萬根K線、四個指標下，每個 tick 僅需 0.001 ms。',
       tryThis: [
-        '按下「指標」按鈕（或 Ctrl+K），從 95 個指標中搜尋',
+        '按下「指標」按鈕（或 Ctrl+K），從 111 個指標中搜尋',
         '點擊圖例中的指標名稱：參數、顏色與水平線',
         '把移動平均線的「Source」設為另一個指標的線',
         '拖曳副圖之間的分隔線來調整大小；副圖右上角的按鈕可以移動、收合或最大化副圖',
@@ -255,10 +255,10 @@ const zhHant: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 種語言，不到一美分的價格',
+      title: '30 種語言，不到一美分的價格',
       stat: 'i18n',
       blurb:
-        '整個元件支援 16 種語言——選單、設定、繪圖工具、對話框，阿拉伯文與希伯來文由右至左顯示——數字也採用各語言自己的格式。PEPE 的價格約在 0.000004 附近：每個標籤都遵循價格座標的精度，座標軸也會自動加寬以容納。',
+        '整個元件支援 30 種語言——選單、設定、繪圖工具、對話框，阿拉伯文、希伯來文與波斯文由右至左顯示——數字也採用各語言自己的格式。PEPE 的價格約在 0.000004 附近：每個標籤都遵循價格座標的精度，座標軸也會自動加寬以容納。',
       tryThis: [
         '在圖表上方選擇語言：日本語、한국어、简体中文、Deutsch…',
         'Ctrl+P 邊打字邊搜尋所有 Binance 商品，並顯示名稱',
@@ -416,7 +416,7 @@ const zhHant: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: '一次呼叫就有完整的交易介面：工具列、69 種繪圖工具、自選清單、交易、K線回放，支援 16 種語言。',
+        blurb: '一次呼叫就有完整的交易介面：工具列、69 種繪圖工具、自選清單、交易、K線回放，支援 30 種語言。',
       },
       react: {
         title: 'React',

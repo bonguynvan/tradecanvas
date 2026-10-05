@@ -499,6 +499,8 @@ export const ES_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Precio, en su propio panel',
   'compare.spread': 'Diferencial: {main} − {other}',
   'compare.ratio': 'Ratio: {main} ÷ {other}',
+  'compare.correlation': 'Correlación: {main} con {other}',
+  'compare.correlationLog': 'Correlación de rendimientos: {main} con {other}',
   'drawingSettings.addAlert': 'Añadir alerta',
   'drawingSettings.alertAdded': 'Alerta añadida: el precio cruza {name}',
   'drawingOption.rewardRatio': 'Beneficio:riesgo',

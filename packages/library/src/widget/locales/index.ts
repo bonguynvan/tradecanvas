@@ -28,6 +28,20 @@ import { ID_MESSAGES } from './id.js';
 import { TH_MESSAGES } from './th.js';
 import { AR_MESSAGES } from './ar.js';
 import { HE_MESSAGES } from './he.js';
+import { IT_MESSAGES } from './it.js';
+import { NL_MESSAGES } from './nl.js';
+import { PL_MESSAGES } from './pl.js';
+import { CS_MESSAGES } from './cs.js';
+import { SK_MESSAGES } from './sk.js';
+import { HU_MESSAGES } from './hu.js';
+import { RO_MESSAGES } from './ro.js';
+import { EL_MESSAGES } from './el.js';
+import { SV_MESSAGES } from './sv.js';
+import { DA_MESSAGES } from './da.js';
+import { NB_MESSAGES } from './nb.js';
+import { ET_MESSAGES } from './et.js';
+import { MS_MESSAGES } from './ms.js';
+import { FA_MESSAGES } from './fa.js';
 
 export {
   EN_MESSAGES as en,
@@ -46,6 +60,20 @@ export {
   TH_MESSAGES as th,
   AR_MESSAGES as ar,
   HE_MESSAGES as he,
+  IT_MESSAGES as it,
+  NL_MESSAGES as nl,
+  PL_MESSAGES as pl,
+  CS_MESSAGES as cs,
+  SK_MESSAGES as sk,
+  HU_MESSAGES as hu,
+  RO_MESSAGES as ro,
+  EL_MESSAGES as el,
+  SV_MESSAGES as sv,
+  DA_MESSAGES as da,
+  NB_MESSAGES as nb,
+  ET_MESSAGES as et,
+  MS_MESSAGES as ms,
+  FA_MESSAGES as fa,
 };
 export type { WidgetMessages };
 
@@ -75,9 +103,24 @@ export const WIDGET_LANGUAGES: readonly WidgetLanguage[] = [
   { code: 'tr', name: 'Türkçe', numberLocale: 'tr-TR', messages: TR_MESSAGES },
   { code: 'id', name: 'Bahasa Indonesia', numberLocale: 'id-ID', messages: ID_MESSAGES },
   { code: 'th', name: 'ไทย', numberLocale: 'th-TH', messages: TH_MESSAGES },
-  // Right to left; numbers in Latin digits, as the strings write them.
+  { code: 'it', name: 'Italiano', numberLocale: 'it-IT', messages: IT_MESSAGES },
+  { code: 'nl', name: 'Nederlands', numberLocale: 'nl-NL', messages: NL_MESSAGES },
+  { code: 'pl', name: 'Polski', numberLocale: 'pl-PL', messages: PL_MESSAGES },
+  { code: 'cs', name: 'Čeština', numberLocale: 'cs-CZ', messages: CS_MESSAGES },
+  { code: 'sk', name: 'Slovenčina', numberLocale: 'sk-SK', messages: SK_MESSAGES },
+  { code: 'hu', name: 'Magyar', numberLocale: 'hu-HU', messages: HU_MESSAGES },
+  { code: 'ro', name: 'Română', numberLocale: 'ro-RO', messages: RO_MESSAGES },
+  { code: 'el', name: 'Ελληνικά', numberLocale: 'el-GR', messages: EL_MESSAGES },
+  { code: 'sv', name: 'Svenska', numberLocale: 'sv-SE', messages: SV_MESSAGES },
+  { code: 'da', name: 'Dansk', numberLocale: 'da-DK', messages: DA_MESSAGES },
+  { code: 'nb', name: 'Norsk bokmål', numberLocale: 'nb-NO', messages: NB_MESSAGES },
+  { code: 'et', name: 'Eesti', numberLocale: 'et-EE', messages: ET_MESSAGES },
+  { code: 'ms', name: 'Bahasa Melayu', numberLocale: 'ms-MY', messages: MS_MESSAGES },
+  // Right to left; numbers in Latin digits, as the strings write them, and
+  // dates by the Gregorian calendar the bars are in.
   { code: 'ar', name: 'العربية', numberLocale: 'ar-u-nu-latn', messages: AR_MESSAGES },
   { code: 'he', name: 'עברית', numberLocale: 'he-IL', messages: HE_MESSAGES },
+  { code: 'fa', name: 'فارسی', numberLocale: 'fa-u-ca-gregory-nu-latn', messages: FA_MESSAGES },
 ];
 
 /** Make every built-in language available to ChartWidget's `locale` option. */

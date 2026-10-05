@@ -24,7 +24,7 @@
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**A complete trading chart for the web.** Candlesticks to Renko, 95 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn on Canvas2D with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
+**A complete trading chart for the web.** Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn on Canvas2D with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
@@ -51,7 +51,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 95 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+That's it. Live data, all 111 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
 
 Using a framework? [`@tradecanvas/react`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/react/), [`@tradecanvas/vue`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/vue/) and [`@tradecanvas/svelte`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/svelte/) wrap the headless `Chart` as a component, and the widget above mounts the same way in any framework; see [Framework Integration](#framework-integration). Or fork a [StackBlitz sandbox](https://bonguynvan.github.io/tradecanvas/examples/) and start from there.
 
@@ -88,14 +88,14 @@ Using a framework? [`@tradecanvas/react`](https://github.com/bonguynvan/tradecan
 
 Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
 
-- **95 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
+- **111 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
 - **69 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan and arcs, circles, spiral, wedge), horizontal/vertical lines, channels, pitchforks and pitchfan, Gann fan / box / square, cycles, harmonic patterns (XABCD, cypher, ABCD, three drives, head and shoulders), Elliott waves, notes, callouts and marks, brush and path, forecast and projection, Long/Short Position with position sizing, Volume Profile range. Each with its own settings, alerts on trend lines, groups and layers, undo/redo and full serialization.
 - **18 chart types** — Candlestick, line, area, bar, hollow candle, baseline, High-Low, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers. Renko's box, Kagi's reversal and the like are yours to set.
 - **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
 - **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify, cancel / close / reverse from the buttons on each line, and see every fill marked on its bar. ChartWidget adds an order ticket that checks the order as you fill it in, and an account panel with positions, working orders and history. Cleanly opt-out via `features.trading: false` for non-trading projects.
 - **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines. Older bars load as you scroll back, any interval (`7m`, `90m`, `2d`) is built from the feed's own, tick charts (`100T`) from its trades, and symbol search and quotes come from the feed.
 - **Time zones** — any IANA zone with daylight saving time (`'America/New_York'`), a fixed offset, or the exchange's own zone, for the axis, crosshair, day breaks and session hours.
-- **16 languages** — `ChartWidget` in English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian, Thai, Arabic and Hebrew; Arabic and Hebrew mirror right to left.
+- **30 languages** — `ChartWidget` in English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian, Estonian, Russian, Turkish, Indonesian, Malay, Thai, Arabic, Hebrew and Persian; Arabic, Hebrew and Persian mirror right to left.
 - **Accessible** — keyboard navigation, zoom and scroll buttons over the chart, and a screen-reader summary that reads the view and the bars one at a time.
 - **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
 - **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
@@ -179,7 +179,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### Widget i18n
 
-`ChartWidget` speaks 16 languages: English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Russian, Turkish, Indonesian, Thai, Arabic and Hebrew (the last two right to left; `dir` sets the direction yourself). Every string it shows is translated: toolbar, settings, drawing tools, alerts, dialogs, the command palette, the hotkey sheet and notices. Indicator names (SMA, RSI…) stay as they are. Set at construction.
+`ChartWidget` speaks 30 languages: English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian, Estonian, Russian, Turkish, Indonesian, Malay, Thai, Arabic, Hebrew and Persian (the last three right to left; `dir` sets the direction yourself). Every string it shows is translated: toolbar, settings, drawing tools, alerts, dialogs, the command palette, the hotkey sheet and notices. Indicator names (SMA, RSI…) stay as they are. Set at construction.
 
 English and Vietnamese are built in. The others load from `@tradecanvas/chart/widget/locales`, so a page ships only the languages it imports:
 
@@ -392,13 +392,13 @@ gauge.setValue(85) // animates smoothly
 
 ### Indicators (built-in)
 
-95 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
-LSMA, McGinley, SMMA, MA Cross, MTF MA), bands and channels (Bollinger,
-Keltner, Donchian, Envelope, Linear Regression), trend and stops (Ichimoku,
+111 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+LSMA, McGinley, SMMA, MA Cross, MTF MA, Hamming, MA Double/Triple), bands and channels (Bollinger,
+Keltner, Donchian, Envelope, Linear Regression, MA Channel), trend and stops (Ichimoku,
 Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,
-Fractals, Pivot Points), VWAPs and Volume Profile on the price pane; RSI, MACD,
+Fractals, Pivot Points, Volatility Index), VWAPs and Volume Profile on the price pane; RSI, MACD,
 Stochastic, ATR, ADX, CCI, OBV, MFI, Bollinger %B and BandWidth, Historical
-Volatility, Ulcer Index and 40 more oscillators, volume and volatility
+Volatility, Ulcer Index and 48 more oscillators, volume and volatility
 indicators in panes. The [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators)
 lists every id with its inputs, lines and levels.
 
@@ -820,7 +820,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | Chart types | 18 + 6 finance | 4 | 8 (non-financial) | 10+ |
 | Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
-| Built-in indicators | 95 | 0 | 0 | ~30 |
+| Built-in indicators | 111 | 0 | 0 | ~30 |
 | Drawing tools | 69 | 0 | 0 | Some |
 | Trading overlay | Full (pos + orders + drag) | None | None | None |
 | Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |
@@ -907,7 +907,7 @@ interface OHLCBar {
 
 | Example | Description |
 |---|---|
-| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, ranges, paged history, replay, 16 languages with sub-cent prices, watchlists with live quotes, 200k bars, slow-network switching — each on a live chart. The site and docs are also in Vietnamese, Chinese, Japanese, Korean and Spanish |
+| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, ranges, paged history, replay, 30 languages with sub-cent prices, watchlists with live quotes, 200k bars, slow-network switching — each on a live chart. The site and docs are also in Vietnamese, Chinese, Japanese, Korean and Spanish |
 | [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
 | [`@tradecanvas/react`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/react/) · [`/vue`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/vue/) · [`/svelte`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/svelte/) | Framework components — reactive props, typed, zero boilerplate |
 

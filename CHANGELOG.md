@@ -4,6 +4,14 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Indicators and languages: the rest of the gap
+
+- **16 more indicators, 111 in all**: Average Price, Median Price and Typical Price; Moving Average Channel, Hamming, Double and Triple; Volatility Index (Wilder's stop and reverse on the average true range); Accumulative Swing Index, Advance/Decline, Majority Rule, Chop Zone, SMI Ergodic and Price Oscillator; Volatility O-H-L-C and Zero Trend Close-to-Close.
+- **Correlation with another symbol**: Correlation Coefficient and Correlation Log (of returns), beside Compare and Spread/Ratio among the indicators that read a second symbol; the widget offers them when you compare with one.
+- **Pivot Points in six kinds**: traditional (as before), Fibonacci, Woodie, classic, Camarilla and DeMark (`type`). Its name loses "(Classic)": its levels were the traditional ones all along.
+- **MA Cross** takes a simple average against an exponential one (`type: 'sma-ema'`).
+- **ChartWidget in 30 languages**: Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian Bokmål (also for `no` and `nn`), Estonian, Malay and Persian join the 16, Persian right to left.
+
 ### WebGL: back after a lost context, many charts, every browser
 
 - **Back after a lost context**: when the browser hands a lost WebGL context back (after a GPU reset, say), the chart draws with WebGL again and says so: `rendererChange` with `{ renderer: 'webgl', reason: 'contextRestored' }`. Before, it stayed on Canvas 2D for good.

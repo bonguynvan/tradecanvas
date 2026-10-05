@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 95 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 111 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const tr: SiteMessages = {
     release: 'iki katmanlı canvas çizimi, serbest kaydırma',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 95 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 111 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -80,7 +80,7 @@ const tr: SiteMessages = {
       {
         label: 'Widget',
         title: 'Tek çağrıyla eksiksiz alım satım arayüzü',
-        text: 'ChartWidget; araç çubuğunu, çizim kenar çubuğunu, izleme listesini, alarmları, nesne ağacını, veri penceresini, tekrarı ve komut paletini (Ctrl+K) İngilizce ve Vietnamca’dan Çince, Japonca, Korece ve Arapça’ya kadar 16 dilde sunar.',
+        text: 'ChartWidget; araç çubuğunu, çizim kenar çubuğunu, izleme listesini, alarmları, nesne ağacını, veri penceresini, tekrarı ve komut paletini (Ctrl+K) İngilizce ve Vietnamca’dan Çince, Japonca, Korece ve Arapça’ya kadar 30 dilde sunar.',
       },
       {
         label: 'Veri',
@@ -154,11 +154,11 @@ const tr: SiteMessages = {
     },
     indicators: {
       title: 'Göstergeler',
-      stat: '95 yerleşik',
+      stat: '111 yerleşik',
       blurb:
         'Grafik üstü katmanlar ve paneller kütüphanenin kendi içinde hesaplanır, sıfır matematik bağımlılığı. Canlı tick’ler yalnızca oluşmakta olan barı yeniden hesaplar: 100k barda dört göstergeyle tick başına 0.001 ms.',
       tryThis: [
-        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 95 göstergeden herhangi birini arayın',
+        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 111 göstergeden herhangi birini arayın',
         'Açıklamadaki bir gösterge adına tıklayın: parametreler, renkler ve seviyeler',
         'Bir hareketli ortalamanın kaynağını başka bir göstergenin çizgisi yapın',
         'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin; bir panelin sağ üstündeki düğmeler onu taşır, daraltır veya büyütür',
@@ -255,10 +255,10 @@ const tr: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 dil, sent altı fiyatlar',
+      title: '30 dil, sent altı fiyatlar',
       stat: 'i18n',
       blurb:
-        'Widget’ın tamamı 16 dilde: menüler, ayarlar, çizim araçları, diyaloglar, sağdan sola Arapça ve İbranice; sayılar da her dilin kendi biçiminde. PEPE 0.000004 civarında işlem görüyor: her etiket fiyat ölçeğinin hassasiyetini izler ve eksen sığacak şekilde genişler.',
+        'Widget’ın tamamı 30 dilde: menüler, ayarlar, çizim araçları, diyaloglar, sağdan sola Arapça, İbranice ve Farsça; sayılar da her dilin kendi biçiminde. PEPE 0.000004 civarında işlem görüyor: her etiket fiyat ölçeğinin hassasiyetini izler ve eksen sığacak şekilde genişler.',
       tryThis: [
         'Grafiğin üstünden bir dil seçin: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P siz yazarken tüm Binance sembollerini adlarıyla birlikte arar',
@@ -416,7 +416,7 @@ const tr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 16 dilde.',
+        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 30 dilde.',
       },
       react: {
         title: 'React',

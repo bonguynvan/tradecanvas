@@ -499,6 +499,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'compare.ownPane': '价格，显示在独立副图',
   'compare.spread': '价差：{main} − {other}',
   'compare.ratio': '比值：{main} ÷ {other}',
+  'compare.correlation': '相关性：{main} 与 {other}',
+  'compare.correlationLog': '收益率相关性：{main} 与 {other}',
   'drawingSettings.addAlert': '添加提醒',
   'drawingSettings.alertAdded': '已添加提醒：价格穿越 {name}',
   'drawingOption.rewardRatio': '盈亏比',

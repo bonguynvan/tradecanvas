@@ -49,7 +49,7 @@ const root = () => host.querySelector<HTMLElement>('.tcw-root')!;
 
 describe('right-to-left widgets', () => {
   it('turns right to left for Arabic and Hebrew, the chart itself left to right', () => {
-    for (const locale of ['ar', 'he-IL']) {
+    for (const locale of ['ar', 'he-IL', 'fa']) {
       widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA'], locale, messages: {} });
       expect(root().dir, locale).toBe('rtl');
       expect(host.querySelector<HTMLElement>('.tcw-chart-container')!.dir).toBe('ltr');

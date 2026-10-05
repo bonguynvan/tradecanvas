@@ -3,6 +3,15 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { getIntParam } from '../params.js';
 import { closeMeanAt, closes, emaOf, outputOf } from '../math.js';
 
+type Kind = 'sma' | 'ema';
+
+/** The kinds of the fast and the slow line: both simple, both exponential, or a simple one against an exponential one. */
+function kindsOf(config: IndicatorConfig): readonly [Kind, Kind] {
+  if (config.params.type === 'ema') return ['ema', 'ema'];
+  if (config.params.type === 'sma-ema') return ['sma', 'ema'];
+  return ['sma', 'sma'];
+}
+
 /** Two moving averages, a fast and a slow one: their crossings are the classic trend signal. */
 export class MACrossIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -11,39 +20,33 @@ export class MACrossIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { fast: 9, slow: 21, type: 'sma', source: 'close' },
     shortName: 'MA Cross',
-    inputs: { fast: { min: 1 }, slow: { min: 1 }, type: { options: ['sma', 'ema'] }, source: { source: true } },
+    inputs: { fast: { min: 1 }, slow: { min: 1 }, type: { options: ['sma', 'ema', 'sma-ema'] }, source: { source: true } },
     plots: [{ key: 'fast', title: 'Fast', color: 0 }, { key: 'slow', title: 'Slow', color: 1 }],
   };
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
-    const fastN = getIntParam(config, 'fast', 9, 1);
-    const slowN = getIntParam(config, 'slow', 21, 1);
-    if (config.params.type !== 'ema') {
-      return outputOf(data, data.map((_, i) => pair(closeMeanAt(data, i, fastN), closeMeanAt(data, i, slowN))));
-    }
+    const [fastKind, slowKind] = kindsOf(config);
     const src = closes(data);
-    const fast = emaOf(src, fastN);
-    const slow = emaOf(src, slowN);
+    const line = (kind: Kind, n: number) => (kind === 'ema' ? emaOf(src, n) : data.map((_, i) => closeMeanAt(data, i, n)));
+    const fast = line(fastKind, getIntParam(config, 'fast', 9, 1));
+    const slow = line(slowKind, getIntParam(config, 'slow', 21, 1));
     return outputOf(data, fast.map((f, i) => pair(f, slow[i])));
   }
 
   update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
     if (!this.canResume(data, prev, from)) return null;
+    const [fastKind, slowKind] = kindsOf(config);
     const fastN = getIntParam(config, 'fast', 9, 1);
     const slowN = getIntParam(config, 'slow', 21, 1);
-    if (config.params.type !== 'ema') {
-      for (let i = from; i < data.length; i++) {
-        this.writePoint(prev, data, i, pair(closeMeanAt(data, i, fastN), closeMeanAt(data, i, slowN)));
-      }
-      return prev;
-    }
     let fast = prev.series![from - 1]?.fast;
     let slow = prev.series![from - 1]?.slow;
-    if (fast === undefined || slow === undefined) return null; // still warming up
+    // An exponential line goes on from its last value: none yet, start over.
+    if ((fastKind === 'ema' && fast === undefined) || (slowKind === 'ema' && slow === undefined)) return null;
     for (let i = from; i < data.length; i++) {
-      fast += (2 / (fastN + 1)) * (data[i].close - fast);
-      slow += (2 / (slowN + 1)) * (data[i].close - slow);
-      this.writePoint(prev, data, i, { fast, slow });
+      const close = data[i].close;
+      fast = fastKind === 'ema' ? fast! + (2 / (fastN + 1)) * (close - fast!) : closeMeanAt(data, i, fastN);
+      slow = slowKind === 'ema' ? slow! + (2 / (slowN + 1)) * (close - slow!) : closeMeanAt(data, i, slowN);
+      this.writePoint(prev, data, i, pair(fast, slow));
     }
     return prev;
   }

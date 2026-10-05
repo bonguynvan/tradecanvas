@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），95 个指标、69 种画线工具、交易所实时行情和图上下单，全部基于 Canvas2D 绘制，零依赖。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的 UI，支持原生 TypeScript、React、Vue 和 Svelte。
+**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），111 个指标、69 种画线工具、交易所实时行情和图上下单，全部基于 Canvas2D 绘制，零依赖。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的 UI，支持原生 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
@@ -51,7 +51,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-就这么简单。实时数据、全部 95 个指标、全部 69 种画线工具、命令面板（`Ctrl+K`）、代码搜索（`Ctrl+P`）、快捷键列表（`?`）、Shift 拖动测量、Alt 点击固定提示，以及拖放加载 CSV/JSON。
+就这么简单。实时数据、全部 111 个指标、全部 69 种画线工具、命令面板（`Ctrl+K`）、代码搜索（`Ctrl+P`）、快捷键列表（`?`）、Shift 拖动测量、Alt 点击固定提示，以及拖放加载 CSV/JSON。
 
 使用框架？[`@tradecanvas/react`](./packages/react/)、[`@tradecanvas/vue`](./packages/vue/) 和 [`@tradecanvas/svelte`](./packages/svelte/) 把无界面的 `Chart` 封装成组件，上面的 widget 在任何框架里也能用同样的方式挂载，参见[框架集成](#框架集成)。也可以 fork 一个 [StackBlitz 沙盒](https://bonguynvan.github.io/tradecanvas/zh/examples/)直接上手。
 
@@ -88,14 +88,14 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 
 大多数图表库都要你二选一：要么图表漂亮却没有交易功能，要么有交易功能但 API 难用。TradeCanvas 两者兼得。
 
-- **95 个内置指标**——SMA、EMA、TEMA、VWMA、Hull MA、RSI、MACD、Bollinger、Envelope、Ichimoku、Pivot Points、Anchored VWAP、ZigZag、Linear Regression Channel、Awesome / Chaikin Oscillator 等。任何指标都能读取另一个指标的线（例如 RSI 的 SMA）。无需单独的计算库。
+- **111 个内置指标**——SMA、EMA、TEMA、VWMA、Hull MA、RSI、MACD、Bollinger、Envelope、Ichimoku、Pivot Points、Anchored VWAP、ZigZag、Linear Regression Channel、Awesome / Chaikin Oscillator 等。任何指标都能读取另一个指标的线（例如 RSI 的 SMA）。无需单独的计算库。
 - **69 种画线工具**——趋势线（信息线、趋势角度、十字线）、斐波那契（回撤、扩展、通道、时间周期、速度阻力扇与弧、圆、螺旋、楔形）、水平/垂直线、通道、音叉与音叉扇、江恩扇 / 江恩箱 / 江恩正方、周期、谐波形态（XABCD、Cypher、ABCD、三驱动、头肩形态）、艾略特波浪、注释、标注与标记、画笔与路径、预测与投影、带仓位计算的多/空仓位、成交量分布区间。每种工具都有自己的设置，支持趋势线警报、分组与图层、撤销/重做和完整序列化。
 - **18 种图表类型**——蜡烛图、折线、面积图、美国线、空心蜡烛图、基准线、高低图、平均K线（Heikin-Ashi）、Renko、Kagi、Line Break、Point & Figure、Range Bars、成交量蜡烛图、**等量图（Equivolume）**、HLC 面积图、阶梯线、带标记的折线。Renko 的砖块大小、Kagi 的反转幅度等参数都可以自行设置。
 - **专业级交互**——可自由平移，越过最后一根K线进入右侧空白的未来区域（画线也能放在那里）；拖动价格/时间轴进行缩放；双击自动适配；`Ctrl/⌘+drag` 选择多个画线（之后可一起移动、修改样式或删除）；`Shift+drag` 测量（K线数 × 价差 × %）；`Alt+click` 固定对比提示；上下文光标（十字光标、抓手、调整大小箭头）；光标下随坐标轴移动的价格/时间胶囊标签；K线悬停高亮。
 - **交易叠加层**——渲染持仓的开仓价线、盈亏区域以及 SL/TP 标记。订单显示为虚线。拖动 SL/TP 即可修改，通过每条线上的按钮撤单 / 平仓 / 反手，每笔成交都会标记在所在的K线上。ChartWidget 还提供边填写边校验订单的下单面板，以及包含持仓、挂单和历史记录的账户面板。非交易类项目可通过 `features.trading: false` 干净地关闭。
 - **实时数据流**——内置 Binance、Coinbase、Bybit 和 Kraken 适配器，另有通用的 `WebSocketAdapter` / `PollingAdapter` 基类，约 20 行代码即可接入任意数据源。回看历史时自动加载更早的K线，任意周期（`7m`、`90m`、`2d`）都能由数据源自带的周期合成，Tick 图（`100T`）由它的成交合成，代码搜索和报价也直接来自数据源。
 - **时区**——支持任意带夏令时的 IANA 时区（`'America/New_York'`）、固定偏移量或交易所自身的时区，作用于坐标轴、十字光标、日分隔线和交易时段。
-- **16 种语言**——`ChartWidget` 支持英语、越南语、简体中文和繁体中文、日语、韩语、西班牙语、葡萄牙语、法语、德语、俄语、土耳其语、印尼语、泰语、阿拉伯语和希伯来语；阿拉伯语和希伯来语会从右到左镜像显示。
+- **30 种语言**——`ChartWidget` 支持英语、越南语、简体中文和繁体中文、日语、韩语、西班牙语、葡萄牙语、法语、德语、意大利语、荷兰语、波兰语、捷克语、斯洛伐克语、匈牙利语、罗马尼亚语、希腊语、瑞典语、丹麦语、挪威语、爱沙尼亚语、俄语、土耳其语、印尼语、马来语、泰语、阿拉伯语、希伯来语和波斯语；阿拉伯语、希伯来语和波斯语会从右到左镜像显示。
 - **无障碍**——键盘导航、图表上的缩放和滚动按钮，以及供屏幕阅读器使用的摘要，可朗读当前视图并逐根朗读K线。
 - **实盘执行**——连接 `ExecutionAdapter`，把交易叠加层变成真正的交易界面：在图表上拖动即可创建订单，并核对成交回报。附带 `PaperExecutionAdapter` 沙盒。
 - **插件 SDK**——注册自定义指标、画线工具、图表类型和叠加层——可全局注册，也可按图表注册。
@@ -179,7 +179,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### 组件国际化
 
-`ChartWidget` 支持 16 种语言：英语、越南语、简体中文和繁体中文、日语、韩语、西班牙语、葡萄牙语、法语、德语、俄语、土耳其语、印尼语、泰语、阿拉伯语和希伯来语（后两种从右到左；可用 `dir` 自行设置方向）。它显示的每一条文案都已翻译：工具栏、设置、画线工具、提醒、对话框、命令面板、快捷键列表和通知。指标名称（SMA、RSI…）保持原样。语言在构造时设置。
+`ChartWidget` 支持 30 种语言：英语、越南语、简体中文和繁体中文、日语、韩语、西班牙语、葡萄牙语、法语、德语、意大利语、荷兰语、波兰语、捷克语、斯洛伐克语、匈牙利语、罗马尼亚语、希腊语、瑞典语、丹麦语、挪威语、爱沙尼亚语、俄语、土耳其语、印尼语、马来语、泰语、阿拉伯语、希伯来语和波斯语（最后三种从右到左；可用 `dir` 自行设置方向）。它显示的每一条文案都已翻译：工具栏、设置、画线工具、提醒、对话框、命令面板、快捷键列表和通知。指标名称（SMA、RSI…）保持原样。语言在构造时设置。
 
 英语和越南语为内置语言。其他语言从 `@tradecanvas/chart/widget/locales` 加载，因此页面只会打包它导入的语言：
 
@@ -392,13 +392,13 @@ gauge.setValue(85) // animates smoothly
 
 ### 指标（内置）
 
-95 个指标——价格图上有：移动平均线（SMA、EMA、WMA、Hull、DEMA、TEMA、ALMA、KAMA、
-LSMA、McGinley、SMMA、MA Cross、MTF MA）、带状与通道（Bollinger、
-Keltner、Donchian、Envelope、Linear Regression）、趋势与止损（Ichimoku、
+111 个指标——价格图上有：移动平均线（SMA、EMA、WMA、Hull、DEMA、TEMA、ALMA、KAMA、
+LSMA、McGinley、SMMA、MA Cross、MTF MA、Hamming、MA Double/Triple）、带状与通道（Bollinger、
+Keltner、Donchian、Envelope、Linear Regression、MA Channel）、趋势与止损（Ichimoku、
 Supertrend、Parabolic SAR、Chandelier、Chande Kroll Stop、Alligator、ZigZag、
-Fractals、Pivot Points）、VWAP 系列和 Volume Profile；副图中有：RSI、MACD、
+Fractals、Pivot Points、Volatility Index）、VWAP 系列和 Volume Profile；副图中有：RSI、MACD、
 Stochastic、ATR、ADX、CCI、OBV、MFI、Bollinger %B 和 BandWidth、Historical
-Volatility、Ulcer Index，以及另外 40 个振荡器、成交量和波动率指标。
+Volatility、Ulcer Index，以及另外 48 个振荡器、成交量和波动率指标。
 [指标目录](https://bonguynvan.github.io/tradecanvas/docs/indicators)
 列出了每个 id 及其参数、线和水平线。
 
@@ -819,7 +819,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | 图表类型 | 18 + 6 种金融图表 | 4 | 8（非金融） | 10+ |
 | 金融图表 | 迷你走势图、深度图、权益曲线、热力图、瀑布图、仪表图 | 无 | 无 | 部分 |
-| 内置指标 | 95 | 0 | 0 | ~30 |
+| 内置指标 | 111 | 0 | 0 | ~30 |
 | 画线工具 | 69 | 0 | 0 | 部分 |
 | 交易叠加层 | 完整（持仓 + 订单 + 拖动） | 无 | 无 | 无 |
 | 实时数据流 | 内置（Binance） | 手动 | 手动 | 内置 |
@@ -906,7 +906,7 @@ interface OHLCBar {
 
 | 示例 | 说明 |
 |---|---|
-| [在线演示](https://bonguynvan.github.io/tradecanvas/) | 功能实验室：画线工具、指标、交易、范围、分页历史、K线回放、支持低于一美分价格的 16 种语言、带实时报价的自选列表、20 万根K线、慢速网络下的切换——每一项都在实时图表上。网站和文档也提供越南语、中文、日语、韩语和西班牙语版本 |
+| [在线演示](https://bonguynvan.github.io/tradecanvas/) | 功能实验室：画线工具、指标、交易、范围、分页历史、K线回放、支持低于一美分价格的 30 种语言、带实时报价的自选列表、20 万根K线、慢速网络下的切换——每一项都在实时图表上。网站和文档也提供越南语、中文、日语、韩语和西班牙语版本 |
 | [StackBlitz 沙盒](https://bonguynvan.github.io/tradecanvas/examples/) | 一键即可 fork：原生 `Chart`、`ChartWidget`、React / Vue / Svelte 封装、金融图表 |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | 框架组件——响应式 props，带类型，零样板代码 |
 

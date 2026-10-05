@@ -125,18 +125,20 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，
   或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>spread</code>），
   和其他指标一样有图例、数值标签和提醒，并会保存在布局中。另一个品种的K线按时间与图表的K线对齐。
-  图表会请求它需要的K线；切换周期后请重新提供。
+  图表会请求它需要的K线；切换周期后请重新提供。<code>correlation</code>（按收盘价）和 <code>correlationlog</code>
+  （按逐根K线收益率）以同样方式读取另一个品种，取值在 −1 到 1 之间。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  在 ChartWidget 中，对象树的对比按钮会先询问品种，再询问对比方式：涨跌幅、独立坐标、独立副图、价差或比值。
+  在 ChartWidget 中，对象树的对比按钮会先询问品种，再询问对比方式：涨跌幅、独立坐标、独立副图、价差、比值，或按价格或收益率计算的相关性。
 </p>
 
 <h3>导出数据</h3>

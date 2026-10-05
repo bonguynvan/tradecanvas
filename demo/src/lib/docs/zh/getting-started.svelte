@@ -77,7 +77,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <ul>
   <li><a href={href('/docs/api')}>API 参考</a> — <code>Chart</code> 与 <code>ChartWidget</code> 的完整接口</li>
   <li><a href={href('/docs/chart-types')}>图表类型</a> — 18 种内置图表类型</li>
-  <li><a href={href('/docs/indicators')}>指标</a> — 95 个指标的目录</li>
+  <li><a href={href('/docs/indicators')}>指标</a> — 111 个指标的目录</li>
   <li><a href={href('/docs/realtime')}>实时数据与回放</a> — 流式数据适配器与回放模式</li>
   <li><a href={href('/docs/analytics')}>分析</a> — 策略回测与风险指标</li>
 </ul>

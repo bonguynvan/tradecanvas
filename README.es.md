@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 95 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado en Canvas2D sin dependencias. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript puro, React, Vue o Svelte.
+**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 111 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado en Canvas2D sin dependencias. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript puro, React, Vue o Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/es/"><img src=".github/assets/hero.png" alt="ChartWidget con BTCUSDT en vivo desde Binance: EMA 21 y 55, RSI, una línea de tendencia, una posición larga y una lista de seguimiento con cotizaciones en vivo" width="100%"></a>
@@ -51,7 +51,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Eso es todo. Datos en vivo, los 95 indicadores, las 69 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
+Eso es todo. Datos en vivo, los 111 indicadores, las 69 herramientas de dibujo, paleta de comandos (`Ctrl+K`), búsqueda de símbolos (`Ctrl+P`), hoja de atajos (`?`), medición con Shift + arrastrar, tooltip fijado con Alt + clic y carga de CSV/JSON arrastrando y soltando.
 
 ¿Usas un framework? [`@tradecanvas/react`](./packages/react/), [`@tradecanvas/vue`](./packages/vue/) y [`@tradecanvas/svelte`](./packages/svelte/) envuelven el `Chart` headless como componente, y el widget de arriba se monta igual en cualquier framework; consulta [Integración con frameworks](#integración-con-frameworks). O haz un fork de un [sandbox de StackBlitz](https://bonguynvan.github.io/tradecanvas/es/examples/) y empieza desde ahí.
 
@@ -88,14 +88,14 @@ Eso es todo. Datos en vivo, los 95 indicadores, las 69 herramientas de dibujo, p
 
 La mayoría de las bibliotecas de gráficos te obligan a elegir: gráficos bonitos sin funciones de trading, o funciones de trading con una API fea. TradeCanvas te da las dos cosas.
 
-- **95 indicadores integrados** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator y más. Cualquier indicador puede leer la línea de otro (una SMA del RSI). No hace falta una biblioteca de cálculo aparte.
+- **111 indicadores integrados** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator y más. Cualquier indicador puede leer la línea de otro (una SMA del RSI). No hace falta una biblioteca de cálculo aparte.
 - **69 herramientas de dibujo** — Líneas de tendencia (línea de información, ángulo de tendencia, línea en cruz), Fibonacci (retroceso, extensión, canal, zonas temporales, abanico y arcos de velocidad, círculos, espiral, cuña), líneas horizontales/verticales, canales, horquillas y abanico de horquilla, abanico / caja / cuadrado de Gann, ciclos, patrones armónicos (XABCD, cypher, ABCD, tres impulsos, hombro-cabeza-hombro), ondas de Elliott, notas, globos de texto y marcas, pincel y trazado, previsión y proyección, posición larga/corta con cálculo del tamaño, perfil de volumen de rango fijo. Cada una con sus propios ajustes, alertas sobre líneas de tendencia, grupos y capas, deshacer/rehacer y serialización completa.
 - **18 tipos de gráfico** — Velas, línea, área, barras, velas huecas, línea base, máximo-mínimo, Heikin-Ashi, Renko, Kagi, ruptura de líneas, punto y figura, barras de rango, velas de volumen, **Equivolumen**, área HLC, línea escalonada, línea con marcadores. La caja de Renko, la reversión de Kagi y parámetros similares los configuras tú.
 - **Interacción de nivel profesional** — desplázate libremente más allá de la última barra, hacia el espacio futuro vacío (los dibujos también pueden ir allí), arrastra los ejes de precio/tiempo para escalarlos, haz doble clic para el ajuste automático, `Ctrl/⌘+drag` para seleccionar varios dibujos (y luego moverlos, cambiarles el estilo o borrarlos juntos), `Shift+drag` para medir (barras × Δ precio × %), `Alt+click` para fijar un tooltip de comparación, cursores contextuales (cruz, mano de agarre, flechas de redimensionado), etiquetas de precio/tiempo bajo el cursor que siguen a los ejes y resaltado de la barra al pasar el cursor.
 - **Capa de trading** — Muestra las posiciones abiertas con línea de entrada, zona de P&L y marcadores SL/TP. Las órdenes, como líneas discontinuas. Arrastra SL/TP para modificarlos, cancela / cierra / invierte con los botones de cada línea y ve cada ejecución marcada en su barra. ChartWidget añade un ticket de orden que valida la orden mientras la rellenas y un panel de cuenta con posiciones, órdenes pendientes e historial. Se desactiva limpiamente con `features.trading: false` en proyectos sin trading.
 - **Streaming en tiempo real** — Adaptadores integrados para Binance, Coinbase, Bybit y Kraken, además de las bases genéricas `WebSocketAdapter` / `PollingAdapter`, para conectar cualquier fuente en ~20 líneas. Las barras antiguas se cargan al desplazarte hacia atrás, cualquier intervalo (`7m`, `90m`, `2d`) se construye a partir de los de la propia fuente, los gráficos de ticks (`100T`) a partir de sus operaciones, y la búsqueda de símbolos y las cotizaciones vienen de la fuente.
 - **Zonas horarias** — cualquier zona IANA con horario de verano (`'America/New_York'`), un desfase fijo o la zona propia de la bolsa, para el eje, la cruz, los cortes de día y el horario de sesión.
-- **16 idiomas** — `ChartWidget` en inglés, vietnamita, chino simplificado y tradicional, japonés, coreano, español, portugués, francés, alemán, ruso, turco, indonesio, tailandés, árabe y hebreo; en árabe y hebreo se refleja de derecha a izquierda.
+- **30 idiomas** — `ChartWidget` en inglés, vietnamita, chino simplificado y tradicional, japonés, coreano, español, portugués, francés, alemán, italiano, neerlandés, polaco, checo, eslovaco, húngaro, rumano, griego, sueco, danés, noruego, estonio, ruso, turco, indonesio, malayo, tailandés, árabe, hebreo y persa; en árabe, hebreo y persa se refleja de derecha a izquierda.
 - **Accesible** — navegación con teclado, botones de zoom y desplazamiento sobre el gráfico y un resumen para lectores de pantalla que lee la vista y las barras una a una.
 - **Ejecución en vivo** — conecta un `ExecutionAdapter` para convertir la capa de trading en una superficie de trading real, arrastra en el gráfico para crear órdenes y concilia las ejecuciones. Incluye el sandbox `PaperExecutionAdapter`.
 - **SDK de plugins** — registra indicadores, herramientas de dibujo, tipos de gráfico y superposiciones personalizados, de forma global o por gráfico.
@@ -179,7 +179,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### i18n del widget
 
-`ChartWidget` habla 16 idiomas: inglés, vietnamita, chino simplificado y tradicional, japonés, coreano, español, portugués, francés, alemán, ruso, turco, indonesio, tailandés, árabe y hebreo (los dos últimos de derecha a izquierda; `dir` fija la dirección a mano). Todas las cadenas que muestra están traducidas: barra de herramientas, configuración, herramientas de dibujo, alertas, diálogos, la paleta de comandos, la hoja de atajos y los avisos. Los nombres de los indicadores (SMA, RSI…) se mantienen tal cual. Se define al construir el widget.
+`ChartWidget` habla 30 idiomas: inglés, vietnamita, chino simplificado y tradicional, japonés, coreano, español, portugués, francés, alemán, italiano, neerlandés, polaco, checo, eslovaco, húngaro, rumano, griego, sueco, danés, noruego, estonio, ruso, turco, indonesio, malayo, tailandés, árabe, hebreo y persa (los tres últimos de derecha a izquierda; `dir` fija la dirección a mano). Todas las cadenas que muestra están traducidas: barra de herramientas, configuración, herramientas de dibujo, alertas, diálogos, la paleta de comandos, la hoja de atajos y los avisos. Los nombres de los indicadores (SMA, RSI…) se mantienen tal cual. Se define al construir el widget.
 
 El inglés y el vietnamita vienen integrados. Los demás se cargan desde `@tradecanvas/chart/widget/locales`, así que una página solo incluye los idiomas que importa:
 
@@ -392,13 +392,13 @@ gauge.setValue(85) // animates smoothly
 
 ### Indicadores (integrados)
 
-95 indicadores: medias móviles (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
-LSMA, McGinley, SMMA, MA Cross, MTF MA), bandas y canales (Bollinger,
-Keltner, Donchian, Envelope, Linear Regression), tendencia y stops (Ichimoku,
+111 indicadores: medias móviles (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+LSMA, McGinley, SMMA, MA Cross, MTF MA, Hamming, MA Double/Triple), bandas y canales (Bollinger,
+Keltner, Donchian, Envelope, Linear Regression, MA Channel), tendencia y stops (Ichimoku,
 Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,
-Fractals, Pivot Points), VWAP y Volume Profile en el panel de precio; RSI, MACD,
+Fractals, Pivot Points, Volatility Index), VWAP y Volume Profile en el panel de precio; RSI, MACD,
 Stochastic, ATR, ADX, CCI, OBV, MFI, Bollinger %B y BandWidth, Historical
-Volatility, Ulcer Index y 40 osciladores más, e indicadores de volumen y de
+Volatility, Ulcer Index y 48 osciladores más, e indicadores de volumen y de
 volatilidad en paneles. El [catálogo de indicadores](https://bonguynvan.github.io/tradecanvas/docs/indicators)
 lista cada id con sus parámetros, líneas y niveles.
 
@@ -820,7 +820,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | Tipos de gráfico | 18 + 6 financieros | 4 | 8 (no financieros) | 10+ |
 | Gráficos financieros | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | Ninguno | Ninguno | Algunos |
-| Indicadores integrados | 95 | 0 | 0 | ~30 |
+| Indicadores integrados | 111 | 0 | 0 | ~30 |
 | Herramientas de dibujo | 69 | 0 | 0 | Algunas |
 | Capa de trading | Completa (posiciones + órdenes + arrastre) | Ninguna | Ninguna | Ninguna |
 | Streaming en tiempo real | Integrado (Binance) | Manual | Manual | Integrado |
@@ -907,7 +907,7 @@ interface OHLCBar {
 
 | Ejemplo | Descripción |
 |---|---|
-| [Demo en vivo](https://bonguynvan.github.io/tradecanvas/) | Laboratorio de funciones: herramientas de dibujo, indicadores, trading, rangos, historial paginado, repetición, 16 idiomas con precios por debajo del centavo, listas de seguimiento con cotizaciones en vivo, 200k barras, cambios con red lenta; cada uno en un gráfico en vivo. El sitio y la documentación también están en vietnamita, chino, japonés, coreano y español |
+| [Demo en vivo](https://bonguynvan.github.io/tradecanvas/) | Laboratorio de funciones: herramientas de dibujo, indicadores, trading, rangos, historial paginado, repetición, 30 idiomas con precios por debajo del centavo, listas de seguimiento con cotizaciones en vivo, 200k barras, cambios con red lenta; cada uno en un gráfico en vivo. El sitio y la documentación también están en vietnamita, chino, japonés, coreano y español |
 | [Entornos de StackBlitz](https://bonguynvan.github.io/tradecanvas/examples/) | Con un clic y bifurcables: `Chart` con JS puro, `ChartWidget`, wrappers de React / Vue / Svelte, gráficos financieros |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | Componentes para frameworks: props reactivas y tipadas, sin código repetitivo |
 

@@ -499,6 +499,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Цена, на отдельной панели',
   'compare.spread': 'Спред: {main} − {other}',
   'compare.ratio': 'Отношение: {main} ÷ {other}',
+  'compare.correlation': 'Корреляция: {main} с {other}',
+  'compare.correlationLog': 'Корреляция доходностей: {main} с {other}',
   'drawingSettings.addAlert': 'Добавить оповещение',
   'drawingSettings.alertAdded': 'Оповещение о пересечении цены добавлено: {name}',
   'drawingOption.rewardRatio': 'Прибыль:риск',

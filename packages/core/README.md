@@ -34,11 +34,9 @@ Two stacked canvases — a hover repaints only the thin top one:
 
 Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars`
 
-### Indicators (33 built-in)
+### Indicators (111 built-in)
 
-**Overlay** (on price chart): SMA, EMA, Hull MA, Bollinger Bands, Keltner Channel, Donchian Channel, Ichimoku Cloud, Parabolic SAR, Supertrend, VWAP, Anchored VWAP, Pivot Points (Classic), ZigZag, Linear Regression Channel
-
-**Panel** (separate sub-chart): RSI, MACD, Stochastic, ATR, ADX, CCI, CMF, MFI, OBV, ROC, TSI, Williams %R, Awesome Oscillator, Chaikin Oscillator, Volume Profile, VROC, Standard Deviation, Accumulation/Distribution, Aroon
+Moving averages, bands and channels, trend and stops, VWAPs and profiles on the price pane; oscillators, volume and volatility indicators in panes of their own. Every id with its inputs, lines and levels is in the [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators). Four more read a second symbol's bars (`compareSymbol`, `spread`, `correlation`, `correlationlog`); `@tradecanvas/chart`'s `Chart` registers them with its symbol store.
 
 Indicator parameters are read through `getNumberParam` / `getIntParam` helpers, so invalid values (NaN, Infinity, missing keys, non-numeric strings) safely fall back to defaults instead of producing NaN-laced calculations.
 

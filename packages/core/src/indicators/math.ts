@@ -65,6 +65,26 @@ export function emaOf(src: readonly Num[], period: number): Num[] {
   return smoothOf(src, period, 2 / (period + 1));
 }
 
+/** Linearly weighted moving average: the newest of `period` values weighs `period`, the oldest 1 (none across a gap). */
+export function wmaOf(src: readonly Num[], period: number): Num[] {
+  const out: Num[] = new Array(src.length).fill(undefined);
+  const denom = (period * (period + 1)) / 2;
+  for (let i = period - 1; i < src.length; i++) {
+    let sum = 0;
+    let whole = true;
+    for (let k = 0; k < period; k++) {
+      const v = src[i - period + 1 + k];
+      if (v === undefined) {
+        whole = false;
+        break;
+      }
+      sum += v * (k + 1);
+    }
+    if (whole) out[i] = sum / denom;
+  }
+  return out;
+}
+
 /** Wilder's smoothing (RMA, SMMA): an EMA with alpha 1 / period. */
 export function rmaOf(src: readonly Num[], period: number): Num[] {
   return smoothOf(src, period, 1 / period);

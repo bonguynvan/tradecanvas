@@ -133,11 +133,14 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>,
   <code>spread</code>), con leyenda, etiquetas de valor, alertas y diseños guardados como cualquier
   otro. Las barras del otro símbolo se alinean con las del gráfico por tiempo. El gráfico pide las
-  barras que necesita; vuelve a dárselas tras un cambio de temporalidad.
+  barras que necesita; vuelve a dárselas tras un cambio de temporalidad. <code>correlation</code> (de los
+  cierres) y <code>correlationlog</code> (de los rendimientos barra a barra) leen el otro símbolo del mismo
+  modo, de −1 a 1.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
@@ -145,7 +148,7 @@ chart.getRequiredSymbols()                           // what to fetch again on a
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
   En ChartWidget, el botón de comparar del árbol de objetos pide un símbolo y luego cómo mostrarlo:
-  cambio porcentual, escala propia, panel propio, diferencial o ratio.
+  cambio porcentual, escala propia, panel propio, diferencial, ratio, o la correlación de precios o de rendimientos.
 </p>
 
 <h3>Exportar datos</h3>

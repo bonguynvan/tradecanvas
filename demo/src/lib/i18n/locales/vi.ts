@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch Canvas2D: 17 loại biểu đồ, 95 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch Canvas2D: 17 loại biểu đồ, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ hai lớp canvas, kéo tự do',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 95 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -80,7 +80,7 @@ const vi: SiteMessages = {
       {
         label: 'Widget',
         title: 'Một lệnh gọi, đủ giao diện giao dịch',
-        text: 'ChartWidget có sẵn thanh công cụ, thanh công cụ vẽ, danh mục theo dõi, cảnh báo, danh sách đối tượng, cửa sổ dữ liệu, phát lại và bảng lệnh (Ctrl+K), bằng 16 ngôn ngữ, từ tiếng Anh, tiếng Việt đến tiếng Trung, tiếng Nhật, tiếng Hàn và tiếng Ả Rập.',
+        text: 'ChartWidget có sẵn thanh công cụ, thanh công cụ vẽ, danh mục theo dõi, cảnh báo, danh sách đối tượng, cửa sổ dữ liệu, phát lại và bảng lệnh (Ctrl+K), bằng 30 ngôn ngữ, từ tiếng Anh, tiếng Việt đến tiếng Trung, tiếng Nhật, tiếng Hàn và tiếng Ả Rập.',
       },
       {
         label: 'Dữ liệu',
@@ -154,11 +154,11 @@ const vi: SiteMessages = {
     },
     indicators: {
       title: 'Chỉ báo',
-      stat: '95 có sẵn',
+      stat: '111 có sẵn',
       blurb:
         'Chỉ báo phủ lên giá và chỉ báo ở bảng riêng, đều tự tính trong thư viện, không phụ thuộc thư viện toán nào. Tick trực tiếp chỉ tính lại nến đang hình thành — 0.001 ms mỗi tick với bốn chỉ báo trên 100k nến.',
       tryThis: [
-        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 95 chỉ báo',
+        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 111 chỉ báo',
         'Bấm vào tên chỉ báo trên chú thích: thông số, màu sắc và các mức',
         'Đặt Nguồn của một đường trung bình động là đường của một chỉ báo khác',
         'Kéo đường phân cách giữa các bảng để đổi kích thước; các nút ở góc phải trên của bảng để di chuyển, thu gọn hoặc phóng to',
@@ -255,10 +255,10 @@ const vi: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 ngôn ngữ, giá dưới một xu',
+      title: '30 ngôn ngữ, giá dưới một xu',
       stat: 'i18n',
       blurb:
-        'Toàn bộ widget bằng 16 ngôn ngữ — menu, cài đặt, công cụ vẽ, hộp thoại, tiếng Ả Rập và tiếng Do Thái viết từ phải sang trái — với số theo định dạng riêng của từng ngôn ngữ. PEPE giao dịch quanh 0.000004: mọi nhãn đều theo độ chính xác của thang giá, và trục tự nới rộng cho vừa.',
+        'Toàn bộ widget bằng 30 ngôn ngữ — menu, cài đặt, công cụ vẽ, hộp thoại, tiếng Ả Rập, tiếng Do Thái và tiếng Ba Tư viết từ phải sang trái — với số theo định dạng riêng của từng ngôn ngữ. PEPE giao dịch quanh 0.000004: mọi nhãn đều theo độ chính xác của thang giá, và trục tự nới rộng cho vừa.',
       tryThis: [
         'Chọn ngôn ngữ phía trên biểu đồ: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P tìm mọi mã trên Binance, kèm tên, ngay khi bạn gõ',
@@ -416,7 +416,7 @@ const vi: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 69 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 16 ngôn ngữ.',
+        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 69 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 30 ngôn ngữ.',
       },
       react: {
         title: 'React',
