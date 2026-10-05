@@ -24,7 +24,7 @@
   <b>English</b> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**A complete trading chart for the web.** Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn on Canvas2D with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
+**A complete trading chart for the web.** Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/"><img src=".github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>

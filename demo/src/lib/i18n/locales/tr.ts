@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas2D tabanlı bir alım satım grafiği kütüphanesidir: 17 grafik türü, 111 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, tekrar ve geriye dönük test. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 111 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const tr: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Web için Canvas2D alım satım grafikleri. Sıfır bağımlılık, MIT lisanslı.',
+    tagline: 'Web için alım satım grafikleri, Canvas 2D veya WebGL ile çizilir. Sıfır bağımlılık, MIT lisanslı.',
     library: 'Kütüphane',
     packages: 'Paketler',
     project: 'Proje',
@@ -37,21 +37,78 @@ const tr: SiteMessages = {
   },
 
   home: {
-    release: 'iki katmanlı canvas çizimi, serbest kaydırma',
+    release: 'WebGL oluşturucu, 30 dil',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 111 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas2D ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 111 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
     specs: [
-      'grafik türü',
       'gösterge',
       'çizim aracı',
+      'grafik türü',
+      'widget dili',
+      'bar, WebGL ile 60 fps’de',
       'çalışma zamanı bağımlılığı',
-      'gzip, headless çekirdek',
-      'üzerine gelme karesi, 100k bar',
     ],
+    tape: 'Binance’ten canlı fiyatlar',
+    tapePause: 'Fiyatları duraklat',
+    tapePlay: 'Fiyatları oynat',
+    story: {
+      eyebrow: 'İlk bakıştan gerçekleşen emre',
+      title: 'Tüm işlem için tek grafik',
+      subtitle: 'Dört canlı grafik, her biri kendi kısmında çalışıyor. Sürükleyin, yakınlaştırın, üzerlerine çizin.',
+      chapters: [
+        {
+          title: 'Piyasayı okuyun',
+          text: 'Mumların üzerinde bantlar, ortalamalar ve osilatörler, onların üstünde Fibonacci seviyeleri ve trend çizgileri; her birinin kendi ayarları ve alarmları var.',
+          points: [
+            '111 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
+            'Mıknatıs, gruplar ve geri almayla 69 çizim aracı',
+            'Fiyatlar, çizgiler ve gösterge kesişimleri için alarmlar',
+          ],
+        },
+        {
+          title: 'Grafikte işlem yapın',
+          text: 'Emirler, pozisyonlar ve braketleri fiyat ölçeğinde durur. Bir stopu taşımak için sürükleyin; kâğıt broker onları gerçekleştirir, böylece bağlanmadan önce kurabilirsiniz.',
+          points: [
+            'Sürükleyerek emir verin, zarar durdur ve kâr al çizgilerini sürükleyerek taşıyın',
+            'Gerçekleşme işaretleri ve kâr-zarar grafikte',
+            'Broker’ınız tek bir adaptörle bağlanır',
+          ],
+        },
+        {
+          title: 'Geçmişi yeniden oynatın',
+          text: 'Geçmişte mum mum ilerleyin ya da kendi aksın: göstergeler, çizimler ve kâğıt emirler yeniden oynatılan fiyatı izler.',
+          points: [
+            'İstediğiniz başlangıç mumu, istediğiniz hız',
+            'Her mum daha küçük mumlardan adım adım oluşabilir',
+            'Replay sırasında kâğıt broker ile işlem yapın',
+          ],
+        },
+        {
+          title: 'Takılmadan ölçeklenin',
+          text: 'Burada dört göstergeyle 200.000 bar kendi kendine kayıyor. Oluşturucuyu değiştirin ve kare süresini izleyin: WebGL ile mumları ve çizgileri GPU çizer.',
+          points: [
+            'WebGL ile 1.000.000 bar uzaklaştırılmış hâlde 60 fps’de',
+            'WebGL olmayan yerde aynı görünümle Canvas 2D',
+            'Yalnızca ekrandaki barlar çizilir',
+          ],
+        },
+      ],
+      frameTime: 'kare başına {ms} ms',
+      panning: 'Siz devralana kadar kendi kendine kayar',
+      renderer: 'Oluşturucu',
+      replaying: 'Yeniden oynatılıyor',
+    },
+    trust: {
+      label: 'Açık kaynak',
+      downloads: 'ayda {n} npm indirmesi',
+      license: '{n} lisanslı',
+      dependencies: '{n} çalışma zamanı bağımlılığı',
+      typescript: 'her API için {n} türleri',
+    },
     hood: {
       eyebrow: 'Kaputun altında',
       title: 'Ölçülmüş, belgelenmiş, genişletmeye açık',
@@ -368,6 +425,11 @@ const tr: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Grafiği kullanmak için tıklayın',
+    tap: 'Grafiği kullanmak için dokunun',
+  },
+
   terminal: {
     symbol: 'Sembol',
     timeframe: 'Zaman dilimi',
@@ -380,12 +442,13 @@ const tr: SiteMessages = {
       baseline: 'Taban çizgisi',
     },
     unavailable: 'Canlı akış kullanılamıyor: {error}',
+    drawnWith: '{renderer} ile çizildi',
     live: 'CANLI',
     offline: 'ÇEVRİMDIŞI',
     connecting: 'BAĞLANIYOR',
     hints: [
       ['Sürükle', 'kaydır'],
-      ['Kaydırma', 'yakınlaştır'],
+      ['Tıkla + kaydır', 'yakınlaştır'],
       ['Ekseni sürükle', 'ölçekle'],
     ],
   },

@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 111 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado en Canvas2D sin dependencias. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript puro, React, Vue o Svelte.
+**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 111 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL, sin dependencias. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript puro, React, Vue o Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/es/"><img src=".github/assets/hero.png" alt="ChartWidget con BTCUSDT en vivo desde Binance: EMA 21 y 55, RSI, una línea de tendencia, una posición larga y una lista de seguimiento con cotizaciones en vivo" width="100%"></a>

@@ -4,6 +4,8 @@
   import { siteTheme, onSiteThemeChange } from '$lib/site';
   import type { ChartType, DataSeries } from '@tradecanvas/chart';
   import { useI18n } from '$lib/i18n/context.svelte';
+  import { pressToEngage } from '$lib/pressToEngage';
+  import EngageHint from './EngageHint.svelte';
 
   const i18n = useI18n();
   const m = $derived(i18n.m);
@@ -109,12 +111,14 @@
 
   <div class="bento" bind:this={gridEl} data-reveal data-reveal-stagger>
     {#each tiles as t, i}
-      <article class="tile" class:tile--wide={i === 0}>
+      <!-- The wheel and swipes scroll the page until the chart is clicked. -->
+      <article class="tile" class:tile--wide={i === 0} use:pressToEngage={{ surface: '.tile-chart' }}>
         <header class="tile-head">
           <span class="tile-name">{m.gallery.tiles[t.type].name}</span>
           <span class="tile-tag">{m.gallery.tiles[t.type].tag}</span>
         </header>
         <div class="tile-chart"></div>
+        <EngageHint touch={false} />
       </article>
     {/each}
   </div>
@@ -135,6 +139,7 @@
   }
 
   .tile {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: var(--bg);
@@ -145,6 +150,7 @@
   }
 
   .tile:hover { border-color: var(--text-muted); }
+  .tile:global([data-engaged]) { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 
   .tile--wide {
     grid-column: span 2;

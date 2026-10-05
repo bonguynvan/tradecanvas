@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），111 个指标、69 种画线工具、交易所实时行情和图上下单，全部基于 Canvas2D 绘制，零依赖。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的 UI，支持原生 TypeScript、React、Vue 和 Svelte。
+**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），111 个指标、69 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的 UI，支持原生 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>

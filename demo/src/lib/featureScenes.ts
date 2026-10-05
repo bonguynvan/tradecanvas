@@ -61,7 +61,7 @@ function bookRecorder(step: number) {
 }
 
 /** Extreme bar in `[from, to)`: the highest high or the lowest low, as an anchor. */
-function swing(data: OHLCBar[], from: number, to: number, kind: 'high' | 'low'): { time: number; price: number } {
+export function swing(data: OHLCBar[], from: number, to: number, kind: 'high' | 'low'): { time: number; price: number } {
   let best = data[from];
   for (let i = from; i < to; i++) {
     const b = data[i];

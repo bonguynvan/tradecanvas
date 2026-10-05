@@ -70,7 +70,7 @@ function llmsTxt() {
   return [
     '# TradeCanvas',
     '',
-    '> Canvas2D trading chart library for the web (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, '
+    '> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, '
       + `${catalog.length} indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. `
       + 'npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.',
     '',

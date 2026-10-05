@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading en Canvas2D : 17 types de graphiques, 111 indicateurs, 69 outils de dessin, flux en direct des plateformes d’échange, ordres sur le graphique, relecture et backtesting. Zéro dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 111 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const fr: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Graphiques de trading Canvas2D pour le web. Zéro dépendance, sous licence MIT.',
+    tagline: 'Des graphiques de trading pour le web, dessinés en Canvas 2D ou WebGL. Aucune dépendance, licence MIT.',
     library: 'Bibliothèque',
     packages: 'Paquets',
     project: 'Projet',
@@ -37,21 +37,78 @@ const fr: SiteMessages = {
   },
 
   home: {
-    release: 'rendu sur deux canvas, défilement libre',
+    release: 'moteur de rendu WebGL, 30 langues',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 111 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas2D, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 111 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
     specs: [
-      'types de graphiques',
       'indicateurs',
       'outils de dessin',
+      'types de graphiques',
+      'langues du widget',
+      'barres à 60 fps avec WebGL',
       'dépendance d’exécution',
-      'gzip, cœur headless',
-      'rendu au survol, 100k barres',
     ],
+    tape: 'Cours en direct de Binance',
+    tapePause: 'Mettre les cours en pause',
+    tapePlay: 'Relancer les cours',
+    story: {
+      eyebrow: 'Du premier coup d’œil à l’ordre exécuté',
+      title: 'Un graphique pour tout le trade',
+      subtitle: 'Quatre graphiques en direct, chacun à l’œuvre sur sa part. Faites-les glisser, zoomez, dessinez dessus.',
+      chapters: [
+        {
+          title: 'Lire le marché',
+          text: 'Bandes, moyennes et oscillateurs sur les bougies, niveaux de Fibonacci et lignes de tendance par-dessus, chacun avec ses réglages et ses alertes.',
+          points: [
+            '111 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
+            '69 outils de dessin avec aimant, groupes et annulation',
+            'Alertes sur les prix, les lignes et les croisements d’indicateurs',
+          ],
+        },
+        {
+          title: 'Trader sur le graphique',
+          text: 'Ordres, positions et leurs brackets vivent sur l’échelle des prix. Faites glisser un stop pour le déplacer ; le courtier fictif les exécute, vous construisez donc avant de vous connecter.',
+          points: [
+            'Placez un ordre en glissant, déplacez son stop-loss et son take-profit de même',
+            'Marques d’exécution et profits et pertes sur le graphique',
+            'Votre courtier se branche par un seul adaptateur',
+          ],
+        },
+        {
+          title: 'Rejouer le passé',
+          text: 'Parcourez l’historique bougie par bougie ou laissez-le défiler : indicateurs, dessins et ordres fictifs suivent le prix rejoué.',
+          points: [
+            'N’importe quelle bougie de départ, n’importe quelle vitesse',
+            'Chaque bougie peut se former pas à pas à partir de plus fines',
+            'Tradez le replay avec le courtier fictif',
+          ],
+        },
+        {
+          title: 'Monter en charge sans saccades',
+          text: 'Ici, 200 000 barres et quatre indicateurs qui défilent seuls. Changez de moteur de rendu et regardez le temps par image : avec WebGL, le GPU dessine les bougies et les lignes.',
+          points: [
+            '1 000 000 de barres en vue d’ensemble à 60 fps avec WebGL',
+            'Canvas 2D là où WebGL manque, avec le même rendu',
+            'Seules les barres à l’écran sont dessinées',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms par image',
+      panning: 'Défile seul jusqu’à ce que vous preniez la main',
+      renderer: 'Moteur de rendu',
+      replaying: 'Replay en cours',
+    },
+    trust: {
+      label: 'Open source',
+      downloads: '{n} téléchargements npm par mois',
+      license: 'licence {n}',
+      dependencies: '{n} dépendance d’exécution',
+      typescript: 'types {n} pour toute l’API',
+    },
     hood: {
       eyebrow: 'Sous le capot',
       title: 'Mesuré, documenté, à vous de l’étendre',
@@ -368,6 +425,11 @@ const fr: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Cliquez pour utiliser le graphique',
+    tap: 'Touchez pour utiliser le graphique',
+  },
+
   terminal: {
     symbol: 'Symbole',
     timeframe: 'Unité de temps',
@@ -380,12 +442,13 @@ const fr: SiteMessages = {
       baseline: 'Ligne de base',
     },
     unavailable: 'Flux en direct indisponible : {error}',
+    drawnWith: 'Dessiné avec {renderer}',
     live: 'EN DIRECT',
     offline: 'HORS LIGNE',
     connecting: 'CONNEXION',
     hints: [
       ['Glisser', 'défiler'],
-      ['Molette', 'zoom'],
+      ['Clic + molette', 'zoom'],
       ['Glisser l’axe', 'échelle'],
     ],
   },

@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a Canvas2D trading chart library: 17 chart types, 111 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 111 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -29,7 +29,7 @@ const en = {
   },
 
   footer: {
-    tagline: 'Canvas2D trading charts for the web. Zero dependencies, MIT licensed.',
+    tagline: 'Trading charts for the web, drawn with Canvas 2D or WebGL. Zero dependencies, MIT licensed.',
     library: 'Library',
     packages: 'Packages',
     project: 'Project',
@@ -43,21 +43,79 @@ const en = {
   },
 
   home: {
-    release: 'two-canvas renderer, free panning',
+    release: 'WebGL renderer, 30 languages',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn on Canvas2D with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
     specs: [
-      'chart types',
       'indicators',
       'drawing tools',
+      'chart types',
+      'widget languages',
+      'bars at 60 fps with WebGL',
       'runtime dependencies',
-      'gzip, headless core',
-      'hover frame at 100k bars',
     ],
+    tape: 'Live prices from Binance',
+    tapePause: 'Pause the prices',
+    tapePlay: 'Play the prices',
+    story: {
+      eyebrow: 'From first look to filled order',
+      title: 'One chart for the whole trade',
+      subtitle: 'Four live charts, each at work on its part of it. Drag them, zoom them, draw on them.',
+      chapters: [
+        {
+          title: 'Read the market',
+          text: 'Bands, averages and oscillators over the bars, Fibonacci levels and trend lines on top, each with its own settings and alerts.',
+          points: [
+            '111 indicators, any one on another, such as an average of the RSI',
+            '69 drawing tools with magnet, groups and undo',
+            'Alerts on prices, lines and indicator crossings',
+          ],
+        },
+        {
+          title: 'Trade on the chart',
+          text: 'Orders, positions and their brackets live on the price scale. Drag a stop to move it; the paper broker fills them, so you can build before you connect.',
+          points: [
+            'Drag to place an order, drag its stop-loss and take-profit to move them',
+            'Fill marks and profit and loss on the chart',
+            'Your broker plugs in through one adapter',
+          ],
+        },
+        {
+          title: 'Replay the past',
+          text: 'Step through history bar by bar or let it run: indicators, drawings and paper orders all follow the replayed price.',
+          points: [
+            'Any start bar, any speed',
+            'Each bar can form from finer ones, step by step',
+            'Trade the replay with the paper broker',
+          ],
+        },
+        {
+          title: 'Scale without stutter',
+          text: '200,000 bars here with four indicators, panning on their own. Switch the renderer and watch the frame time: with WebGL the GPU draws the bars and the lines.',
+          points: [
+            '1,000,000 bars zoomed out at 60 fps with WebGL',
+            'Canvas 2D where WebGL isn’t available, with the same look',
+            'Only the bars on screen are drawn',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms a frame',
+      panning: 'Panning on its own until you take over',
+      renderer: 'Renderer',
+      replaying: 'Replaying',
+    },
+    /** `{n}` is the figure, set in bold: a count, "MIT", "0" or ".d.ts". */
+    trust: {
+      label: 'Open source',
+      downloads: '{n} npm downloads a month',
+      license: '{n} licensed',
+      dependencies: '{n} runtime dependencies',
+      typescript: '{n} types for every API',
+    },
     hood: {
       eyebrow: 'Under the hood',
       title: 'Measured, documented, yours to extend',
@@ -374,6 +432,12 @@ const en = {
     },
   },
 
+  /** Over a chart on a scrolling page, which takes the pointer only once clicked. */
+  engage: {
+    click: 'Click to use the chart',
+    tap: 'Tap to use the chart',
+  },
+
   terminal: {
     symbol: 'Symbol',
     timeframe: 'Timeframe',
@@ -386,12 +450,13 @@ const en = {
       baseline: 'Baseline',
     },
     unavailable: 'Live feed unavailable: {error}',
+    drawnWith: 'Drawn with {renderer}',
     live: 'LIVE',
     offline: 'OFFLINE',
     connecting: 'CONNECTING',
     hints: [
       ['Drag', 'pan'],
-      ['Scroll', 'zoom'],
+      ['Click + scroll', 'zoom'],
       ['Drag axis', 'scale'],
     ],
   },

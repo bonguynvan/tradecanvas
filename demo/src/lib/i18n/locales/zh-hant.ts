@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是以 Canvas2D 繪製的交易圖表函式庫：17 種圖表類型、111 個指標、69 種繪圖工具、交易所即時行情、圖上下單、K線回放與回測。零相依套件，MIT 授權。',
+      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、111 個指標、69 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const zhHant: SiteMessages = {
   },
 
   footer: {
-    tagline: '網頁用的 Canvas2D 交易圖表。零相依套件，MIT 授權。',
+    tagline: '網頁用的交易圖表，以 Canvas 2D 或 WebGL 繪製。零相依套件，MIT 授權。',
     library: '函式庫',
     packages: '套件',
     project: '專案',
@@ -37,21 +37,78 @@ const zhHant: SiteMessages = {
   },
 
   home: {
-    release: '雙層 Canvas 渲染，自由平移',
+    release: 'WebGL 渲染器，30 種語言',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，111 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas2D 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，111 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
     specs: [
-      '圖表類型',
       '指標',
       '繪圖工具',
+      '圖表類型',
+      '元件語言',
+      '根K線，WebGL 下 60 fps',
       '執行期相依套件',
-      'gzip 後的 headless 核心',
-      '10 萬根K線下的懸停重繪',
     ],
+    tape: '來自 Binance 的即時價格',
+    tapePause: '暫停行情',
+    tapePlay: '播放行情',
+    story: {
+      eyebrow: '從第一眼到成交',
+      title: '一張圖表，走完整筆交易',
+      subtitle: '四張即時圖表，各自示範一部分。可以拖曳、縮放，也能在上面畫線。',
+      chapters: [
+        {
+          title: '解讀行情',
+          text: 'K線上疊加通道、均線與震盪指標，再在上面畫斐波那契與趨勢線，每一項都有自己的設定與警示。',
+          points: [
+            '111 個指標，可以互相疊加，例如 RSI 的均線',
+            '69 種繪圖工具，具備磁吸、群組與復原',
+            '價格、線條與指標交叉都能警示',
+          ],
+        },
+        {
+          title: '在圖上交易',
+          text: '委託、部位及其停利停損都顯示在價格軸上。拖曳停損即可移動；模擬券商負責成交，所以接上真實券商前就能先做出來。',
+          points: [
+            '拖曳下單，拖曳停損線與停利線來調整',
+            '成交標記與損益直接顯示在圖上',
+            '你的券商透過一個轉接器接入',
+          ],
+        },
+        {
+          title: '回放歷史',
+          text: '逐根K線翻看歷史，或讓它自動播放：指標、繪圖與模擬委託都跟著回放的價格走。',
+          points: [
+            '任意起始K線，任意速度',
+            '每根K線可由更細的K線逐步形成',
+            '回放時用模擬券商交易',
+          ],
+        },
+        {
+          title: '資料再多也順暢',
+          text: '這裡有 200,000 根K線與四個指標，正在自動平移。切換渲染器，看看每格畫面的耗時：使用 WebGL 時，K線與線條都由 GPU 繪製。',
+          points: [
+            'WebGL 下 1,000,000 根K線全部縮小顯示也有 60 fps',
+            '沒有 WebGL 時改用 Canvas 2D，外觀一致',
+            '只繪製螢幕上的K線',
+          ],
+        },
+      ],
+      frameTime: '每格畫面 {ms} ms',
+      panning: '自動平移，直到你接手',
+      renderer: '渲染器',
+      replaying: '回放中',
+    },
+    trust: {
+      label: '開放原始碼',
+      downloads: '每月 npm 下載 {n} 次',
+      license: '{n} 授權',
+      dependencies: '{n} 個執行期相依套件',
+      typescript: '所有 API 皆提供 {n} 型別',
+    },
     hood: {
       eyebrow: '深入底層',
       title: '經過量測、文件齊全，並可自由擴充',
@@ -368,6 +425,11 @@ const zhHant: SiteMessages = {
     },
   },
 
+  engage: {
+    click: '點擊以操作圖表',
+    tap: '輕觸以操作圖表',
+  },
+
   terminal: {
     symbol: '商品',
     timeframe: '週期',
@@ -380,12 +442,13 @@ const zhHant: SiteMessages = {
       baseline: '基準線',
     },
     unavailable: '無法取得即時行情：{error}',
+    drawnWith: '以 {renderer} 繪製',
     live: '即時',
     offline: '離線',
     connecting: '連線中',
     hints: [
       ['拖曳', '平移'],
-      ['滾輪', '縮放'],
+      ['點擊後滾輪', '縮放'],
       ['拖曳座標軸', '調整刻度'],
     ],
   },

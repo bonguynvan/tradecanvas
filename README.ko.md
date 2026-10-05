@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 의존성 없이 Canvas2D로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, 순수 TypeScript, React, Vue, Svelte를 지원합니다.
+**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, 순수 TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>

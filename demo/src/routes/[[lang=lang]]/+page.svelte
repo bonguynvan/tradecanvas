@@ -4,6 +4,9 @@
   import 'lenis/dist/lenis.css';
   import { initLandingMotion } from '$lib/motion';
   import LiveTerminal from '$lib/components/LiveTerminal.svelte';
+  import TickerTape from '$lib/components/TickerTape.svelte';
+  import StorySection from '$lib/components/StorySection.svelte';
+  import TrustBand from '$lib/components/TrustBand.svelte';
   import ChartGallery from '$lib/components/ChartGallery.svelte';
   import FinanceCharts from '$lib/components/FinanceCharts.svelte';
   import FeatureLab from '$lib/components/FeatureLab.svelte';
@@ -15,16 +18,20 @@
   const i18n = useI18n();
   const m = $derived(i18n.m);
 
-  /** Counts come from the source: ChartType, DrawingToolType, the indicator registry. */
-  // `value` is what counts up on scroll; `prefix` stays put. Labels are `m.home.specs`, in order.
+  /**
+   * Counts come from the source: the indicator registry, DrawingToolType, ChartType,
+   * the widget's locales; the million bars from the WebGL bench.
+   */
+  // `value` is what counts up on scroll; `prefix` and `suffix` stay put, `unit` is set small. Labels are `m.home.specs`, in order.
   const SPECS = [
-    { prefix: '', value: '17', unit: '' },
-    { prefix: '', value: '85', unit: '' },
-    { prefix: '', value: '40', unit: '' },
-    { prefix: '', value: '0', unit: '' },
-    { prefix: '≈', value: '100', unit: 'kB' },
-    { prefix: '<', value: '0.3', unit: 'ms' },
+    { prefix: '', value: '111', unit: '', suffix: '' },
+    { prefix: '', value: '69', unit: '', suffix: '' },
+    { prefix: '', value: '18', unit: '', suffix: '' },
+    { prefix: '', value: '30', unit: '', suffix: '' },
+    { prefix: '', value: '1', unit: '', suffix: 'M' },
+    { prefix: '', value: '0', unit: '', suffix: '' },
   ];
+
 
   /** Labels are `m.home.hood.perf`, in order. */
   const PERF = [
@@ -65,7 +72,7 @@ new ChartWidget(document.getElementById('chart')!, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   adapter: new BinanceAdapter(),
-  locale: 'en',            // 14 languages: 'vi', 'ja', 'zh'…
+  locale: 'en',            // 30 languages: 'vi', 'ja', 'zh'…
   trading: true,
 })`,
     },
@@ -151,10 +158,12 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 </svelte:head>
 
 <div class="home" bind:this={page}>
+<TickerTape />
+
 <section class="home-hero">
   <div class="hero-grid" data-parallax aria-hidden="true"></div>
   <div class="home-hero-inner">
-    <div class="hero-copy">
+    <div class="hero-title">
       <a class="hero-release" href={i18n.href('/changelog')}>
         <span class="live" aria-hidden="true"></span>
         <span>v{VERSION}</span>
@@ -162,6 +171,9 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
         <span>{m.home.release}</span>
       </a>
       <h1 class="hero-h1">{m.home.title}</h1>
+    </div>
+
+    <div class="hero-copy">
       <!-- The site's own strings: markup in them is ours, never a visitor's. -->
       <p class="hero-lede">{@html m.home.ledeHtml}</p>
 
@@ -178,7 +190,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     </div>
 
     <div class="hero-stage">
-      <LiveTerminal />
+      <LiveTerminal variant="stage" renderer="auto" />
     </div>
   </div>
 </section>
@@ -187,12 +199,16 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   <dl class="spec-grid">
     {#each SPECS as s, i}
       <div class="spec">
-        <dt>{s.prefix}<span class="count" data-count={s.value} style:min-width="{s.value.length}ch">{s.value}</span>{#if s.unit}<small>{s.unit}</small>{/if}</dt>
+        <dt>{s.prefix}<span class="count" data-count={s.value} style:min-width="{s.value.length}ch">{s.value}</span>{s.suffix}{#if s.unit}<small>{s.unit}</small>{/if}</dt>
         <dd>{m.home.specs[i]}</dd>
       </div>
     {/each}
   </dl>
 </section>
+
+<StorySection />
+
+<TrustBand />
 
 <FeatureLab />
 
@@ -302,18 +318,31 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     pointer-events: none;
   }
 
+  /* The headline and its pitch side by side, the live chart the full width below. */
   .home-hero-inner {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-    gap: clamp(32px, 4vw, 64px);
-    align-items: center;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-areas:
+      'title copy'
+      'stage stage';
+    gap: clamp(28px, 3.5vw, 48px) clamp(32px, 5vw, 88px);
+    align-items: end;
     max-width: var(--page-max);
     margin: 0 auto;
-    padding: clamp(40px, 6vw, 80px) var(--gutter) clamp(40px, 5vw, 64px);
+    padding: clamp(48px, 7vw, 104px) var(--gutter) clamp(40px, 5vw, 72px);
+  }
+
+  .hero-title {
+    grid-area: title;
+    display: grid;
+    gap: 26px;
+    justify-items: start;
+    min-width: 0;
   }
 
   .hero-copy {
+    grid-area: copy;
     display: grid;
     gap: 22px;
     justify-items: start;
@@ -322,17 +351,21 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
 
   /* Entrance: pure CSS, so it plays on first paint without waiting for JS
      (reduced motion collapses it to the final frame, see app.css). */
+  .hero-title > :global(*),
   .hero-copy > :global(*) {
     animation: hero-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .hero-copy > :global(:nth-child(2)) { animation-delay: 0.06s; }
-  .hero-copy > :global(:nth-child(3)) { animation-delay: 0.12s; }
-  .hero-copy > :global(:nth-child(4)) { animation-delay: 0.18s; }
-  .hero-copy > :global(:nth-child(5)) { animation-delay: 0.24s; }
-  .hero-copy > :global(:nth-child(6)) { animation-delay: 0.3s; }
+  .hero-title > :global(:nth-child(2)) { animation-delay: 0.06s; }
+  .hero-copy > :global(:nth-child(1)) { animation-delay: 0.14s; }
+  .hero-copy > :global(:nth-child(2)) { animation-delay: 0.2s; }
+  .hero-copy > :global(:nth-child(3)) { animation-delay: 0.26s; }
+  .hero-copy > :global(:nth-child(4)) { animation-delay: 0.32s; }
 
   .hero-stage {
-    animation: hero-stage-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+    grid-area: stage;
+    min-width: 0;
+    margin-top: clamp(4px, 1.5vw, 20px);
+    animation: hero-stage-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
   }
 
   @keyframes hero-rise {
@@ -379,15 +412,16 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   }
 
   .hero-h1 {
-    font-size: clamp(2.4rem, 4.4vw, 3.6rem);
-    line-height: 1;
+    font-size: clamp(2.7rem, 6.2vw, 5.9rem);
+    line-height: 0.96;
     font-weight: 600;
-    letter-spacing: -0.045em;
+    letter-spacing: -0.052em;
+    max-width: 11ch;
     text-wrap: balance;
   }
 
   .hero-lede {
-    font-size: clamp(1rem, 1.3vw, 1.125rem);
+    font-size: clamp(1rem, 1.25vw, 1.125rem);
     color: var(--text-dim);
     max-width: 34rem;
   }
@@ -417,8 +451,6 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
     vertical-align: middle;
     background: var(--accent);
   }
-
-  .hero-stage { min-width: 0; }
 
   /* --- Spec strip --- */
   .spec-strip { border-bottom: 1px solid var(--border); }
@@ -635,9 +667,19 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b] })`,
   }
 
   @media (max-width: 980px) {
-    .home-hero-inner { grid-template-columns: minmax(0, 1fr); }
+    .home-hero-inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'title' 'copy' 'stage';
+      align-items: start;
+    }
+    .hero-h1 { max-width: 13ch; }
     .hood { grid-template-columns: minmax(0, 1fr); }
     .closing-inner { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* The live chart runs edge to edge on a phone. */
+  @media (max-width: 768px) {
+    .hero-stage { margin-inline: calc(-1 * var(--gutter)); }
   }
 
   @media (max-width: 640px) {
