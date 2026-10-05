@@ -1,5 +1,19 @@
 # @tradecanvas/chart
 
+## 1.12.0
+
+### Minor Changes
+
+- f84f4c5: 16 more indicators (111 in all): Average, Median and Typical Price; Moving Average Channel, Hamming, Double and Triple; Volatility Index; Accumulative Swing Index; Advance/Decline; Majority Rule; Chop Zone; SMI Ergodic; Price Oscillator; Volatility O-H-L-C and Zero Trend Close-to-Close. Correlation Coefficient and Correlation Log (`correlation`, `correlationlog`) read a second symbol, like Compare and Spread, and the widget's compare menu offers them. Pivot Points come in six kinds (`type`: traditional, fibonacci, woodie, classic, camarilla, dm) and are named "Pivot Points". MA Cross takes `type: 'sma-ema'`. ChartWidget speaks 30 languages: Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian Bokmål (also for `no` and `nn`), Estonian, Malay and Persian (right to left) join the 16.
+- f914d01: WebGL renderer: a chart whose WebGL context is lost draws with it again once the browser hands it back (`rendererChange` with `reason: 'contextRestored'`). At most 8 charts on a page draw with WebGL at once, as Chrome and Safari drop the oldest context past about 16; a chart past the limit draws with Canvas 2D (`reason: 'limit'`) and takes WebGL as soon as another lets go, and `setMaxWebGLCharts(n)` sets the limit. Checked in Chrome, Firefox and WebKit; Firefox no longer warns about the deprecated `WEBGL_debug_renderer_info`. Baseline, Kagi and point & figure charts draw on the GPU too: baseline and Kagi lines are drawn whole, round where they bend, instead of in pieces with notches at each bend, and an X's two strokes are drawn apart. Point & figure columns are drawn in boxes of the size they were built with (they were drawn in boxes of 1, a smear of specks at prices far from 1).
+
+### Patch Changes
+
+- Updated dependencies [f84f4c5]
+- Updated dependencies [f914d01]
+  - @tradecanvas/core@1.12.0
+  - @tradecanvas/commons@1.12.0
+
 ## 1.11.0
 
 ### Minor Changes
