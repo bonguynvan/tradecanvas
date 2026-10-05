@@ -5,6 +5,7 @@ export * from './rendering.js';
 export * from './events.js';
 export * from './axis.js';
 export * from './theme.js';
+export * from './style.js';
 export * from './drawing.js';
 export * from './layout.js';
 export * from './trading.js';

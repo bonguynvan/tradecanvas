@@ -142,6 +142,95 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code>, <code>data-tcw-separators</code>(<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="overrides">차트의 모양: 스타일 오버라이드</h2>
+<p>
+  테마는 차트 전체의 색을 정합니다. 차트가 그리는 어떤 부분이든 키로 따로 정할 수 있습니다: 방향별 격자선,
+  크로스헤어, 축, 패널, 범례, 최근 가격, 거래량, 세션 구분선, 그리고 차트 유형별 메인 시리즈. 정하지 않은 키는
+  테마를 따르므로, 테마를 바꾸면 정하지 않은 부분도 색이 바뀝니다.
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // 처음부터
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // 상승/하락이 있는 모든 유형이 이것을 따름
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null 은 키를 뺌
+chart.resetOverrides(['grid.horizontal.style'])         // 또는 키를 지정
+chart.setOverrides({ 'background.color': '#000' })      // 레이어 전체를 한 번에
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': 키의 최종 값
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</code></pre>
+
+<h3>키</h3>
+<table>
+  <thead><tr><th>키</th><th>정하는 것</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>차트 배경(패널에 자체 배경이 없으면 패널도).</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>지표 패널: 배경, 위쪽 막대, 이름.</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code>(<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — 방향별로 따로.</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 점선).</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름.</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>거래량 막대.</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>일·주·월 구분선.</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>고가·저가 선, 워터마크.</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>그 유형으로 그려질 때의 메인 시리즈: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
+      <code>wickDownColor</code>(캔들, 하이킨아시, 거래량 캔들, 이퀴볼륨), <code>color</code> / <code>lineColor</code>
+      와 <code>lineWidth</code>(라인, 스텝 라인, 마커 라인, 영역, HLC 영역, 베이스라인), <code>topColor</code> 와
+      <code>bottomColor</code>(영역, HLC 영역).</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> 에 모든 키와 값의 종류가 있고, TypeScript 가 작성하는 즉시 키와 값을 검사합니다.
+  상승/하락 색은 <code>series.candlestick.*</code>, 선 색과 두께는 <code>series.line.*</code>, 영역 채우기는
+  <code>series.area.*</code>, 그다음 테마를 따릅니다. 몸통 색을 정하면 꼬리도 그 색을 씁니다.
+  알 수 없는 키와 값은 경고와 함께 무시됩니다.
+</p>
+
+<h3>앱의 것과 사용자의 것</h3>
+<p>
+  오버라이드는 두 레이어로 나뉩니다. 앱의 것(<code>layer: 'host'</code>, 기본값)은 테마를 바꿔도 남고 저장되지 않습니다.
+  사용자의 것(<code>layer: 'user'</code>)은 앱의 것보다 우선하며, 정한 테마별로 유지되고 — 다크 테마에서 고른 색은
+  다크 테마로 돌아오면 다시 나타납니다 — <code>saveState()</code> 로 저장됩니다. 위젯의 설정은 사용자 레이어에 쓰고,
+  재설정은 어떤 테마든 그 테마의 색으로 돌아갑니다.
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // 현재 테마에서 사용자의 것
+chart.getTheme()                           // 설정한 그대로의 테마: 오버라이드는 따로 둠`}</code></pre>
+<p>
+  격자와 크로스헤어 옵션(<code>grid.hLineColor</code>, <code>crosshair.vLine.style</code>…)은 해당 키의 줄임말입니다.
+  여러 차트 그리드는 모든 차트에 오버라이드를 적용합니다: <code>grid.applyOverrides(patch)</code>.
+  React, Vue, Svelte 컴포넌트는 <code>overrides</code> prop 으로 받습니다.
+</p>
+
+<h3>지표 플롯과 패널</h3>
+<pre><code>{`// 플롯별 선 종류와 표시 여부, 키로 지정(색과 두께는 colors / lineWidths 그대로)
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// 앞으로 추가할 같은 종류 지표의 시작 스타일
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// 패널 자체의 배경과 구분선, 지표와 함께 저장
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  숨긴 플롯은 값 태그도 범례 값도 없습니다. 모든 지표가 숨긴 플롯을 그리지 않고, 거의 모든 지표가 플롯의
+  선 종류도 따릅니다. 자체 도형을 그리는 일부(파라볼릭 SAR 점, Supertrend, 지그재그, 거래량 프로파일)는
+  자기 선을 유지합니다.
+</p>
+
 <h2>차트의 라벨</h2>
 <p>
   위젯은 <code>tagRadius</code>를 자신의 차트에 넘깁니다(<code>chartOptions.shapes</code>에 지정한 모양은
@@ -155,7 +244,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>거래량 색</h2>
 <p>
-  거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code>을 씁니다. <code>volumeColor(candleColor)</code>는 캔들 색을 거래량의 투명도로 돌려주므로, 직접 만든 테마에서도 막대가 캔들 뒤의 배경으로 남습니다. widget의 설정에서 캔들 색을 바꾸면 widget이 알아서 이렇게 하고, 프리셋을 바탕으로 <code>candleUp</code> / <code>candleDown</code>만 바꾼 테마도 거래량이 그 색을 따릅니다.
+  거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code> (또는 <code>volume.*</code> 키)을 씁니다. <code>volumeColor(candleColor)</code>는 캔들 색을 거래량의 투명도로 돌려주므로, 직접 만든 테마에서도 막대가 캔들 뒤의 배경으로 남습니다. widget의 설정에서 캔들 색을 바꾸면 widget이 알아서 이렇게 하고, 프리셋을 바탕으로 <code>candleUp</code> / <code>candleDown</code>만 바꾼 테마도 거래량이 그 색을 따릅니다.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

@@ -1,4 +1,5 @@
 import type { Theme, ThemeName } from './theme.js';
+import type { ChartStyleOverridesPatch } from './style.js';
 import type { DrawingToolType } from './drawing.js';
 import type { TimeFrame } from './ohlc.js';
 
@@ -135,8 +136,16 @@ export interface ChartOptions {
   rightMargin?: number;
   minBarSpacing?: number;
   maxBarSpacing?: number;
+  /** The grid's lines: shorthand for the `grid.*` overrides. */
   grid?: GridOptions;
+  /** The crosshair's mode, and its lines: shorthand for the `crosshair.*` overrides. */
   crosshair?: CrosshairOptions;
+  /**
+   * Style overrides to start with, on the host's layer: any part of the
+   * chart's look, by key (`'grid.vertical.visible': false`,
+   * `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`.
+   */
+  overrides?: ChartStyleOverridesPatch;
   priceAxis?: PriceAxisOptions;
   timeAxis?: TimeAxisOptions;
   watermark?: WatermarkConfig;

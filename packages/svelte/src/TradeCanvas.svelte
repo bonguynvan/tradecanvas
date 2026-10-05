@@ -17,6 +17,7 @@
     SignalMarkerStyle,
     TradeZoneStyle,
     DataAdapter,
+    ChartStyleOverrides,
   } from '@tradecanvas/chart';
 
   interface Props {
@@ -34,6 +35,8 @@
     signalMarkerStyle?: SignalMarkerStyle;
     tradeZones?: TradeZone[];
     tradeZoneStyle?: TradeZoneStyle;
+    /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
+    overrides?: ChartStyleOverrides;
     watermarkText?: string;
     onReady?: (chart: Chart) => void;
     chart?: Chart | null;
@@ -54,6 +57,7 @@
     signalMarkerStyle = undefined as SignalMarkerStyle | undefined,
     tradeZones = undefined as TradeZone[] | undefined,
     tradeZoneStyle = undefined as TradeZoneStyle | undefined,
+    overrides = undefined as ChartStyleOverrides | undefined,
     watermarkText = undefined as string | undefined,
     onReady = undefined as ((chart: Chart) => void) | undefined,
     chart = $bindable(null) as Chart | null,
@@ -159,6 +163,15 @@
   $effect(() => { if (signalMarkerStyle) instance?.setSignalMarkerStyle(signalMarkerStyle); });
   $effect(() => { if (tradeZones) instance?.setTradeZones(tradeZones); });
   $effect(() => { if (tradeZoneStyle) instance?.setTradeZoneStyle(tradeZoneStyle); });
+  // All of the host's overrides: keys left out of the prop are taken away.
+  // Without the prop, overrides set through the chart itself are left alone.
+  let overridesGiven = false;
+  $effect(() => {
+    const next = $state.snapshot(overrides);
+    if (next === undefined && !overridesGiven) return;
+    overridesGiven = next !== undefined;
+    instance?.setOverrides(next ?? {});
+  });
 </script>
 
 <div bind:this={container} style="width:100%;height:100%"></div>

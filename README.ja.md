@@ -667,6 +667,28 @@ chart.setTheme({
 })
 ```
 
+### スタイルのオーバーライド
+
+チャートが描くどの部分も、テーマとは別にキーで設定できます — 方向ごとのグリッド線、クロスヘア、軸、ペイン、凡例、最新価格、出来高、そしてチャートタイプごとのメイン系列。設定していないキーはテーマに従います。アプリのオーバーライドはテーマを切り替えても残り、ユーザーのもの（`layer: 'user'`、ウィジェットの設定が書き込むもの）はテーマごとに保たれ `saveState()` で保存されます。
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // 上昇/下落のあるタイプはすべてこれに従う
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// インジケーターのプロットとペイン
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` にすべてのキーがあります。React、Vue、Svelte のコンポーネントは `overrides` プロパティで受け取ります。
+
 ### イベント
 
 ```typescript

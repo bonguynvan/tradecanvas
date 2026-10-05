@@ -1,5 +1,5 @@
-import type { ChartType, ChartTypeOptions, DrawingState, IndicatorStyleConfig, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
-import { readChartTypeOptions } from '@tradecanvas/commons';
+import type { ChartStyleOverrides, ChartType, ChartTypeOptions, DrawingState, IndicatorStyleConfig, PaneStyle, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import { readChartStyleOverrides, readChartTypeOptions, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
 
@@ -28,6 +28,8 @@ export interface ChartSnapshot {
 
   // Visual
   theme?: string | Theme;
+  /** The user's style overrides, by the name of the theme they go with (from version 3 on). */
+  overrides?: Record<string, ChartStyleOverrides>;
   locale?: string;
 
   // Indicators (captured from version 2 on; version-1 saves never had them)
@@ -59,6 +61,8 @@ export interface SnapshotIndicator {
   pane?: string;
   /** `'left'`: an overlay on the left price scale. */
   scale?: 'left';
+  /** Its pane's own background and separator. */
+  paneStyle?: PaneStyle;
   /** For an indicator with a pane of its own: the pane's height, place among the panes, fold and maximise. */
   paneSize?: number;
   paneOrder?: number;
@@ -70,11 +74,15 @@ export interface SnapshotIndicator {
   panePercent?: boolean;
 }
 
+/** A theme name long enough for any real one. */
+const MAX_THEME_NAME = 64;
+
 /**
  * 2: indicators (params, pane, style, visibility) and full alerts (channel,
- * repeating, label) are captured. Version-1 saves carry no indicators.
+ * repeating, label) are captured; version-1 saves carry no indicators.
+ * 3: the user's style overrides too.
  */
-export const SNAPSHOT_VERSION = 2;
+export const SNAPSHOT_VERSION = 3;
 const CURRENT_VERSION = SNAPSHOT_VERSION;
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -154,6 +162,8 @@ function validateIndicatorStyle(raw: unknown): IndicatorStyleConfig | undefined 
   const lineWidths = asArray(raw.lineWidths).filter((w): w is number => typeof w === 'number' && Number.isFinite(w) && w > 0);
   if (lineWidths.length > 0) style.lineWidths = lineWidths;
   if (typeof raw.opacity === 'number' && Number.isFinite(raw.opacity)) style.opacity = Math.min(1, Math.max(0, raw.opacity));
+  const plots = readIndicatorPlotStyles(raw.plots);
+  if (plots) style.plots = plots;
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
@@ -194,6 +204,22 @@ function validatePosition(raw: unknown): TradingPosition | null {
 /** The tallest pane a stored layout may ask for (px); the layout keeps it within the chart too. */
 const MAX_PANE_SIZE = 4000;
 
+/** The user's overrides by theme name, the keys and values each knows; what it can't read is left out. */
+function validateOverrides(raw: unknown): Record<string, ChartStyleOverrides> | undefined {
+  if (!isObject(raw)) return undefined;
+  const out: Record<string, ChartStyleOverrides> = {};
+  const rejected: string[] = [];
+  for (const [name, layer] of Object.entries(raw)) {
+    const read = readChartStyleOverrides(layer);
+    rejected.push(...read.rejected);
+    // A save holds values: a null (take away) means nothing here.
+    const values = Object.fromEntries(Object.entries(read.overrides).filter(([, v]) => v !== null)) as ChartStyleOverrides;
+    if (Object.keys(values).length > 0) out[name.slice(0, MAX_THEME_NAME)] = values;
+  }
+  if (rejected.length > 0) console.warn(`Saved style overrides left out: ${[...new Set(rejected)].join(', ')}`);
+  return out;
+}
+
 export function validateSnapshot(raw: unknown): ChartSnapshot {
   if (!isObject(raw)) {
     return emptySnapshot();
@@ -222,6 +248,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
         : undefined,
       pane: typeof ind.pane === 'string' ? ind.pane : undefined,
       scale: ind.scale === 'left' ? 'left' : undefined,
+      paneStyle: readPaneStyle(ind.paneStyle) ?? undefined,
       paneSize: typeof ind.paneSize === 'number' && Number.isFinite(ind.paneSize) && ind.paneSize > 0 ? Math.min(ind.paneSize, MAX_PANE_SIZE) : undefined,
       paneOrder: typeof ind.paneOrder === 'number' && Number.isInteger(ind.paneOrder) && ind.paneOrder >= 0 ? ind.paneOrder : undefined,
       paneCollapsed: ind.paneCollapsed === true ? true : undefined,
@@ -256,6 +283,8 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
     if (v) alerts.push(v);
   }
 
+  const overrides = validateOverrides(raw.overrides);
+
   return {
     // Without an indicators list there is nothing to restore them from: read
     // it as version 1, which leaves the chart's indicators alone.
@@ -271,6 +300,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
       offset: asNumber(viewport.offset, 0),
     },
     theme: typeof raw.theme === 'string' ? raw.theme : undefined,
+    ...(overrides ? { overrides } : {}),
     locale: typeof raw.locale === 'string' ? raw.locale : undefined,
     indicators,
     drawings,
@@ -306,6 +336,8 @@ export class ChartStateManager {
     getAlerts?: () => PriceAlert[];
     getTheme: () => Theme;
     getIndicators?: () => SnapshotIndicator[];
+    /** The user's style overrides by theme name. */
+    getOverrides?: () => Record<string, ChartStyleOverrides>;
   }, meta?: { symbol?: string; timeframe?: string; chartType?: ChartType; chartTypeOptions?: ChartTypeOptions }): ChartSnapshot {
     return {
       // Version 2 promises the indicator list; without `getIndicators` it is a version-1 save.
@@ -317,6 +349,7 @@ export class ChartStateManager {
       timeframe: meta?.timeframe,
       viewport: { barWidth: 8, barSpacing: 2, offset: 0 },
       theme: chart.getTheme().name,
+      ...(chart.getOverrides && Object.keys(chart.getOverrides()).length > 0 ? { overrides: chart.getOverrides() } : {}),
       indicators: chart.getIndicators?.() ?? [],
       drawings: chart.getDrawings(),
       orders: chart.getOrders?.() ?? [],

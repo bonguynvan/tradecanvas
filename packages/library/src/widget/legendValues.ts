@@ -1,6 +1,6 @@
-import type { IndicatorDescriptor, IndicatorValue } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, IndicatorPlotStyle, IndicatorValue } from '@tradecanvas/commons';
 import { formatPrice } from '@tradecanvas/commons';
-import { plotColor, indicatorValuePrecision } from '@tradecanvas/core';
+import { plotColor, plotShown, indicatorValuePrecision } from '@tradecanvas/core';
 
 /** One value in an indicator's legend row; `color` null = the neutral text colour. */
 export interface LegendValue {
@@ -18,6 +18,8 @@ export function legendValues(
   descriptor: Pick<IndicatorDescriptor, 'plots'>,
   point: IndicatorValue | null | undefined,
   colors: readonly string[],
+  /** Each plot's own style: a hidden plot shows no value. */
+  plotStyles?: Record<string, IndicatorPlotStyle>,
 ): LegendValue[] {
   if (!point) return [];
   const plots = descriptor.plots;
@@ -33,6 +35,7 @@ export function legendValues(
   const style = { colors: [...colors], lineWidths: [], opacity: 1 };
   const out: LegendValue[] = [];
   for (const plot of plots) {
+    if (!plotShown(plot, { plots: plotStyles })) continue;
     const v = point[plot.key];
     if (typeof v !== 'number' || !Number.isFinite(v)) continue;
     out.push({ value: v, color: colors.length ? plotColor(plot, style, point) : null });

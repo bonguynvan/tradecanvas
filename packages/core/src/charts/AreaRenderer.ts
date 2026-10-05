@@ -51,7 +51,7 @@ export class AreaRenderer implements ChartRendererInterface {
     // Line on top
     ctx.beginPath();
     ctx.strokeStyle = theme.lineColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = theme.style?.series.lineWidth ?? 2;
     ctx.lineJoin = 'round';
     ctx.moveTo(firstX, firstY);
     for (let k = 1; k < indices.length; k++) {

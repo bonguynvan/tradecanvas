@@ -138,6 +138,91 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>、<code>data-tcw-intervals</code> 和 <code>data-tcw-separators</code>（<code>on</code> / <code>off</code>）。
 </p>
 
+<h2 id="overrides">图表的外观：样式覆盖</h2>
+<p>
+  主题决定整个图表的颜色。图表所画的任何一部分都可以按键单独设置：每个方向的网格线、十字光标、坐标轴、
+  面板、图例、最新价、成交量、时段分隔线，以及每种图表类型下的主序列。没有设置的键沿用主题，所以切换主题时，
+  您没设置的部分仍会跟着变色。
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // 初始设置
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // 所有涨跌类图表都回退到它
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null 移除一个键
+chart.resetOverrides(['grid.horizontal.style'])         // 或列出要移除的键
+chart.setOverrides({ 'background.color': '#000' })      // 一次替换整个层
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': 某个键最终的值
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</code></pre>
+
+<h3>键</h3>
+<table>
+  <thead><tr><th>键</th><th>设置内容</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>图表背景（面板没有自己的背景时也用它）。</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>指标面板：背景、顶部的分隔条、名称。</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>，每个方向分别设置。</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为虚线）。</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新价线和标签；未设置时颜色跟随主序列。</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>成交量柱。</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日、周、月分隔线。</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>最高价与最低价线、水印。</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>主序列以该类型绘制时的样式：<code>upColor</code>、<code>downColor</code>、<code>wickUpColor</code>、
+      <code>wickDownColor</code>（K线、Heikin-Ashi、成交量K线、等量图），<code>color</code> / <code>lineColor</code>
+      和 <code>lineWidth</code>（折线、阶梯线、带点折线、面积图、HLC 面积图、基线图），<code>topColor</code> 和
+      <code>bottomColor</code>（面积图、HLC 面积图）。</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> 列出了每个键及其取值类型，TypeScript 会在您编写时检查键和值。涨跌颜色回退到
+  <code>series.candlestick.*</code>，线条颜色和宽度回退到 <code>series.line.*</code>，面积填充回退到
+  <code>series.area.*</code>，然后是主题；设置了实体颜色后，影线也随之使用该颜色。未知的键和值会被忽略并给出警告。
+</p>
+
+<h3>应用的与用户的</h3>
+<p>
+  覆盖分为两层。您的（<code>layer: 'host'</code>，默认）在切换主题时保留，且从不保存。用户的
+  （<code>layer: 'user'</code>）优先于您的，按设置时的主题保存——在深色主题上选的颜色会随深色主题回来——并随
+  <code>saveState()</code> 一起保存。组件的设置面板写入用户层，其“重置”会回到当前主题的颜色。
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // 当前主题下用户的覆盖
+chart.getTheme()                           // 设置时的主题：覆盖单独存放`}</code></pre>
+<p>
+  网格和十字光标选项（<code>grid.hLineColor</code>、<code>crosshair.vLine.style</code>…）是对应键的简写。多图表网格
+  会把覆盖应用到其所有图表：<code>grid.applyOverrides(patch)</code>。React、Vue 和 Svelte 组件通过 <code>overrides</code> 属性接收它们。
+</p>
+
+<h3>指标线条与面板</h3>
+<pre><code>{`// 每条线各自的线型和显示与否，按键设置（颜色和宽度仍在 colors / lineWidths 中）
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// 从现在起同类指标的初始样式
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// 面板自己的背景和分隔线，随其指标一起保存
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  隐藏的线条没有数值标签，也不在图例中显示数值。所有指标都不绘制隐藏的线条，几乎所有指标也支持线条的线型；
+  少数绘制自有图形的指标（Parabolic SAR 点、Supertrend、Zig Zag、成交量分布）保持自己的笔触。
+</p>
+
 <h2>图表上的标签</h2>
 <p>
   组件会把 <code>tagRadius</code> 传给它的图表（写在 <code>chartOptions.shapes</code> 中的形状会一直保留，直到你调用
@@ -150,7 +235,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>成交量颜色</h2>
 <p>
-  成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code>。<code>volumeColor(candleColor)</code> 返回带成交量透明度的K线颜色，这样在你自己的主题里，成交量柱依然只是K线背后的衬底。在 widget 的设置里修改K线颜色时，它会自动这样处理；基于预设、只改了 <code>candleUp</code> / <code>candleDown</code> 的主题，成交量也会跟随这些颜色。
+  成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code> （或 <code>volume.*</code> 键）。<code>volumeColor(candleColor)</code> 返回带成交量透明度的K线颜色，这样在你自己的主题里，成交量柱依然只是K线背后的衬底。在 widget 的设置里修改K线颜色时，它会自动这样处理；基于预设、只改了 <code>candleUp</code> / <code>candleDown</code> 的主题，成交量也会跟随这些颜色。
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

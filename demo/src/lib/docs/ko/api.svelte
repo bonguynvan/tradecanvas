@@ -36,7 +36,10 @@
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>18가지 유형 중 하나 — <a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
-    <tr><td><code>setTheme(name)</code></td><td>내장 테마 사이에서 전환합니다.</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>내장 테마 사이에서 전환하거나 자신의 테마를 설정합니다. <code>getTheme()</code> 은 설정한 그대로 돌려줍니다.</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>차트의 어떤 부분이든 키로 스타일 지정(<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…). <code>null</code> 은 키를 뺍니다. <a href={href('/docs/styling#overrides')}>스타일</a> 참고.</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>레이어 전체를 한 번에. 키(또는 전부)를 뺌.</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>레이어의 오버라이드, 해석된 모양, 키의 최종 값.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>활성 시간 단위를 바꾸고 실시간 스트림을 다시 연결합니다.</td></tr>
   </tbody>
 </table>
@@ -59,6 +62,9 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>오버레이 또는 패널 지표를 추가합니다. 인스턴스 id를 반환합니다.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>실행 중인 지표를 변경합니다.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>지표를 제거하고 정리합니다.</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>색, 선 두께, 불투명도, 그리고 플롯별 선 종류와 표시(<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>앞으로 추가할 같은 종류 지표의 시작 스타일.</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>패널 자체의 모양, 지표와 함께 저장.</td></tr>
   </tbody>
 </table>
 
@@ -687,6 +693,7 @@ const grid = new ChartWidgetGrid(host, {
 
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // 나머지 차트를 활성 차트에 맞춤
+grid.applyOverrides({ 'grid.vertical.visible': false })   // 모든 차트의 모양, 나중에 추가하는 차트까지
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

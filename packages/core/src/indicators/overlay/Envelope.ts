@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { plotLook } from '../plots.js';
 
 /** Moving Average Envelope — an SMA offset by a fixed percentage band above and below. */
 export class EnvelopeIndicator extends IndicatorBase {
@@ -78,8 +79,8 @@ export class EnvelopeIndicator extends IndicatorBase {
     }
 
     this.drawBand(ctx, upper, lower, withAlpha(style.colors[0], 0.08));
-    this.drawLine(ctx, upper, style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, lower, style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, basis, style.colors[1] ?? style.colors[0], style.lineWidths[0]);
+    this.drawLine(ctx, upper, style.colors[0], style.lineWidths[0], plotLook(style, 'upper', style.lineWidths[0]));
+    this.drawLine(ctx, lower, style.colors[0], style.lineWidths[0], plotLook(style, 'lower', style.lineWidths[0]));
+    this.drawLine(ctx, basis, style.colors[1] ?? style.colors[0], style.lineWidths[0], plotLook(style, 'basis', style.lineWidths[0]));
   }
 }

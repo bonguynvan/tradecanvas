@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { plotLook } from '../plots.js';
 
 export class KeltnerChannelIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -85,8 +86,8 @@ export class KeltnerChannelIndicator extends IndicatorBase {
     }
 
     this.drawBand(ctx, upperPts, lowerPts, withAlpha(style.colors[0], 0.08));
-    this.drawLine(ctx, upperPts, style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, middlePts, style.colors[1] ?? style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, lowerPts, style.colors[0], style.lineWidths[0]);
+    this.drawLine(ctx, upperPts, style.colors[0], style.lineWidths[0], plotLook(style, 'upper', style.lineWidths[0]));
+    this.drawLine(ctx, middlePts, style.colors[1] ?? style.colors[0], style.lineWidths[0], plotLook(style, 'middle', style.lineWidths[0]));
+    this.drawLine(ctx, lowerPts, style.colors[0], style.lineWidths[0], plotLook(style, 'lower', style.lineWidths[0]));
   }
 }

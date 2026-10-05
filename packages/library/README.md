@@ -668,6 +668,28 @@ chart.setTheme({
 })
 ```
 
+### Style overrides
+
+Any one part of what the chart draws can be set apart from the theme, by key — the grid's lines each way, the crosshair, the axes, the panes, the legend, the last price, the volume and the main series as each chart type draws it. Keys left alone follow the theme. Your app's overrides stay through theme switches; the user's (`layer: 'user'`, what the widget's Settings write) are kept per theme and saved with `saveState()`.
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // every up/down chart type falls back to it
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// Indicator plots and panes
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop.
+
 ### Events
 
 ```typescript

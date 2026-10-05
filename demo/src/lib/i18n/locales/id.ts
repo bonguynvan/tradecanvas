@@ -335,6 +335,17 @@ const id: SiteMessages = {
         'Terminal padat dan bersudut siku: label berhuruf kapital, dan garis di bawah kerangka waktu yang dipilih',
       ],
     },
+    overrides: {
+      title: 'Override gaya',
+      stat: '89 kunci',
+      blurb:
+        'Bagian mana pun dari tampilan grafik lewat kunci, terpisah dari tema: grid di tiap arah, crosshair, sumbu, panel, legenda, harga terakhir, volume, dan warna tiap jenis grafik. Di sini grid vertikal dimatikan, grid horizontal bertitik, crosshair garis penuh, dan garis sinyal MACD putus-putus di panel dengan pemisahnya sendiri.',
+      tryThis: [
+        'Ganti jenis grafik: bar dan Heikin-Ashi memakai warna candle kalau tidak punya warna sendiri',
+        'Ganti tema situs: yang tidak di-override mengikutinya',
+        'Buka Pengaturan dan pilih warna: masuk ke lapisan pengguna, disimpan bersama temanya',
+      ],
+    },
     markets: {
       title: 'Daftar pantauan dan pasar',
       stat: 'harga langsung',

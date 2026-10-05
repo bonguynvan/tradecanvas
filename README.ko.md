@@ -667,6 +667,28 @@ chart.setTheme({
 })
 ```
 
+### 스타일 오버라이드
+
+차트가 그리는 어떤 부분이든 테마와 따로 키로 정할 수 있습니다 — 방향별 격자선, 크로스헤어, 축, 패널, 범례, 최근 가격, 거래량, 그리고 차트 유형별 메인 시리즈. 정하지 않은 키는 테마를 따릅니다. 앱의 오버라이드는 테마를 바꿔도 남고, 사용자의 것(`layer: 'user'`, 위젯 설정이 쓰는 것)은 테마별로 유지되며 `saveState()` 로 저장됩니다.
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // 상승/하락이 있는 모든 유형이 이것을 따름
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// 지표 플롯과 패널
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` 에 모든 키가 있습니다. React, Vue, Svelte 컴포넌트는 `overrides` prop 으로 받습니다.
+
 ### 이벤트
 
 ```typescript

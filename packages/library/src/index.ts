@@ -37,6 +37,7 @@ export type {
   OrderPlacePayload,
   IndicatorChangePayload,
   ThemeChangePayload,
+  StyleChangePayload,
   ResizePayload,
   ZoomChangePayload,
   PriceRangeChangePayload,
@@ -104,6 +105,16 @@ export type {
   AggregatedBar,
   ReconnectConfig,
   ResolvedIndicatorStyle,
+  IndicatorStyleConfig,
+  IndicatorPlotStyle,
+  ChartStyleKey,
+  ChartStyleOverrides,
+  ChartStyleOverridesPatch,
+  ResolvedChartStyle,
+  ResolvedLineLook,
+  StyleLayer,
+  StyleValueKind,
+  PaneStyle,
   WatermarkConfig,
   GridOptions,
   CrosshairOptions,
@@ -117,7 +128,7 @@ export type {
 
 // Re-export themes and defaults
 export {
-  DARK_THEME, LIGHT_THEME, DARK_TERMINAL, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA,
+  DARK_THEME, LIGHT_THEME, DARK_TERMINAL, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
   DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
   DEFAULT_SIGNAL_STYLE, DEFAULT_TRADE_ZONE_STYLE,
   TIMEFRAMES_CRYPTO, TIMEFRAMES_STOCK, TIMEFRAMES_FOREX, DEFAULT_TIMEFRAME_FAVORITES,

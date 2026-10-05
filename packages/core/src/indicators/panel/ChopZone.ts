@@ -44,7 +44,8 @@ export class ChopZoneIndicator extends IndicatorBase {
     return outputOf(data, points);
   }
 
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, _style: ResolvedIndicatorStyle): void {
+  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
+    if (style.plots?.angle?.visible === false) return;
     const series = output.series;
     if (!series) return;
     const { from, to } = viewport.visibleRange;

@@ -36,7 +36,10 @@
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>Một trong 18 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
-    <tr><td><code>setTheme(name)</code></td><td>Chuyển giữa các giao diện có sẵn.</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>Chuyển giữa các giao diện có sẵn, hoặc đặt theme của bạn. <code>getTheme()</code> trả lại đúng như đã đặt.</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style bất kỳ phần nào của biểu đồ theo khoá (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một khoá. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Cả một lớp một lúc; bỏ các khoá (hoặc tất cả).</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>Override của một lớp; giao diện đã phân giải; giá trị một khoá ra.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Đổi khung thời gian đang dùng; nối lại luồng dữ liệu trực tiếp.</td></tr>
   </tbody>
 </table>
@@ -59,6 +62,9 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Thêm một chỉ báo phủ lên biểu đồ hoặc ở bảng riêng. Trả về id của instance.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Sửa một chỉ báo đang chạy.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày, độ mờ, và kiểu nét, ẩn/hiện của từng đường (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style mà các chỉ báo cùng loại bắt đầu với, từ nay.</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>Giao diện riêng của một pane, lưu cùng chỉ báo của nó.</td></tr>
   </tbody>
 </table>
 
@@ -699,6 +705,7 @@ const grid = new ChartWidgetGrid(host, {
 
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // đưa các biểu đồ khác về cùng khung với biểu đồ đang chọn
+grid.applyOverrides({ 'grid.vertical.visible': false })   // giao diện của mọi biểu đồ, kể cả biểu đồ thêm sau
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

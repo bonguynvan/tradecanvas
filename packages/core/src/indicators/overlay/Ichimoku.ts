@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { plotLook } from '../plots.js';
 
 export class IchimokuIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -111,20 +112,23 @@ export class IchimokuIndicator extends IndicatorBase {
     }
 
     // Lines — set state once per line
-    const drawTypedLine = (xs: Float64Array, ys: Float64Array, n: number, color: string, lw: number) => {
-      if (n < 2) return;
+    const drawTypedLine = (key: string, xs: Float64Array, ys: Float64Array, n: number, color: string, lw: number) => {
+      const look = plotLook(style, key, lw);
+      if (n < 2 || !look.visible) return;
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = lw;
       ctx.lineJoin = 'round';
+      ctx.setLineDash(look.dash);
       ctx.moveTo(xs[0], ys[0]);
       for (let i = 1; i < n; i++) ctx.lineTo(xs[i], ys[i]);
       ctx.stroke();
+      ctx.setLineDash([]);
     };
 
-    drawTypedLine(tenkanXs, tenkanYs, tenkanN, style.colors[0], style.lineWidths[0]);
-    drawTypedLine(kijunXs, kijunYs, kijunN, style.colors[1] ?? '#f2a93b', style.lineWidths[0]);
-    drawTypedLine(senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#1fa874', 1);
-    drawTypedLine(senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#e8505b', 1);
+    drawTypedLine('tenkan', tenkanXs, tenkanYs, tenkanN, style.colors[0], style.lineWidths[0]);
+    drawTypedLine('kijun', kijunXs, kijunYs, kijunN, style.colors[1] ?? '#f2a93b', style.lineWidths[0]);
+    drawTypedLine('senkouA', senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#1fa874', 1);
+    drawTypedLine('senkouB', senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#e8505b', 1);
   }
 }

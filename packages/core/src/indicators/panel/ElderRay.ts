@@ -55,6 +55,7 @@ export class ElderRayIndicator extends IndicatorBase {
     const half = Math.max(1, viewport.barWidth / 2);
     const sides = [['bull', style.colors[0], -half], ['bear', style.colors[1] ?? style.colors[0], 0]] as const;
     for (const [key, color, offset] of sides) {
+      if (style.plots?.[key]?.visible === false) continue;
       ctx.beginPath();
       ctx.fillStyle = color;
       for (let i = from; i <= to; i++) {

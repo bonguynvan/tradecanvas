@@ -99,6 +99,9 @@ export class ChartLegend {
     const prevBar = data.length > 1 ? data[data.length - 2] : bar;
     const { chartRect } = viewport;
     const fs = this.config.fontSize;
+    // Values in the legend's text colour, their labels in its label colour.
+    const text = theme.style?.legend.text ?? theme.text;
+    const label = theme.style?.legend.label ?? theme.textSecondary;
     const isLeft = this.config.position === 'top-left';
 
     let x = isLeft ? chartRect.x + 8 : chartRect.x + chartRect.width - 8;
@@ -110,14 +113,14 @@ export class ChartLegend {
     // Symbol + timeframe + chart type + status text
     if (this.config.showSymbol) {
       ctx.font = `bold ${fs + 2}px ${theme.font.family}`;
-      ctx.fillStyle = theme.text;
+      ctx.fillStyle = text;
       const symbolText = [this.symbol, this.timeframe].filter(Boolean).join(' · ');
       const displayText = this.statusText ? `${symbolText}  ${this.statusText}` : symbolText;
       ctx.fillText(displayText, x, y);
       y += fs + 6;
     } else if (this.statusText) {
       ctx.font = `${fs}px ${theme.font.family}`;
-      ctx.fillStyle = theme.textSecondary;
+      ctx.fillStyle = label;
       ctx.fillText(this.statusText, x, y);
       y += fs + 4;
     }
@@ -133,9 +136,9 @@ export class ChartLegend {
       const fmt = (v: number) => viewport.formatPrice?.(v) ?? formatPrice(v, precision, this.locale);
 
       const items = [
-        { label: 'O', value: fmt(bar.open), color: theme.text },
-        { label: 'H', value: fmt(bar.high), color: theme.text },
-        { label: 'L', value: fmt(bar.low), color: theme.text },
+        { label: 'O', value: fmt(bar.open), color: text },
+        { label: 'H', value: fmt(bar.high), color: text },
+        { label: 'L', value: fmt(bar.low), color: text },
         { label: 'C', value: fmt(bar.close), color: isUp ? theme.candleUp : theme.candleDown },
       ];
 
@@ -156,7 +159,7 @@ export class ChartLegend {
       if (isLeft) {
         for (const item of items) {
           if (item.label) {
-            ctx.fillStyle = theme.textSecondary;
+            ctx.fillStyle = label;
             ctx.fillText(item.label, cx, y);
             cx += ctx.measureText(item.label + ' ').width;
           }
@@ -167,7 +170,7 @@ export class ChartLegend {
       } else {
         // Right-aligned: build full string and measure
         const fullText = items.map((i) => `${i.label} ${i.value}`).join('  ');
-        ctx.fillStyle = theme.text;
+        ctx.fillStyle = text;
         ctx.fillText(fullText, x, y);
       }
       y += fs + 3;
@@ -176,7 +179,7 @@ export class ChartLegend {
     // Volume
     if (this.config.showVolume) {
       ctx.font = `${fs - 1}px ${theme.font.family}`;
-      ctx.fillStyle = theme.textSecondary;
+      ctx.fillStyle = label;
       const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
       ctx.fillText(`Vol ${vol}`, x, y);
       y += fs + 2;
@@ -188,9 +191,9 @@ export class ChartLegend {
       let ix = x;
       for (const ind of this.indicators) {
         ctx.fillStyle = ind.color;
-        const text = `${ind.name} ${ind.value}`;
-        ctx.fillText(text, ix, y);
-        ix += ctx.measureText(text + '  ').width;
+        const entry = `${ind.name} ${ind.value}`;
+        ctx.fillText(entry, ix, y);
+        ix += ctx.measureText(entry + '  ').width;
       }
     }
   }

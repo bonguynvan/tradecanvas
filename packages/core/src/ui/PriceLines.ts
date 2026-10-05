@@ -123,6 +123,6 @@ function colorOf(kind: PriceLineKind, theme: Theme): string {
   switch (kind) {
     case 'bid': return theme.candleUp;
     case 'ask': return theme.candleDown;
-    default: return theme.textSecondary;
+    default: return theme.style?.highLow.color ?? theme.textSecondary;
   }
 }

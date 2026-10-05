@@ -47,7 +47,7 @@ export class HLCAreaRenderer implements ChartRendererInterface {
 
     ctx.beginPath();
     ctx.strokeStyle = theme.lineColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = theme.style?.series.lineWidth ?? 2;
     ctx.lineJoin = 'round';
     for (let i = from; i <= to && i < data.length; i++) {
       const x = toX(i);

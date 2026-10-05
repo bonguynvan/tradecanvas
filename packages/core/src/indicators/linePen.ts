@@ -39,6 +39,8 @@ export class LinePen {
     color: string,
     width: number,
     private readonly dense: boolean,
+    /** Dashes for the stroked line; zoomed out (dense) there are no dashes to see. */
+    private readonly dash: readonly number[] = [],
   ) {
     this.width = Number.isFinite(width) && width > 0 ? width : 1;
     ctx.beginPath();
@@ -81,8 +83,15 @@ export class LinePen {
   /** Draw what was added. */
   finish(): void {
     this.flush();
-    if (this.dense) this.ctx.fill();
-    else this.ctx.stroke();
+    if (this.dense) {
+      this.ctx.fill();
+    } else if (this.dash.length > 0) {
+      this.ctx.setLineDash([...this.dash]);
+      this.ctx.stroke();
+      this.ctx.setLineDash([]);
+    } else {
+      this.ctx.stroke();
+    }
   }
 
   private addDense(x: number, y: number): void {

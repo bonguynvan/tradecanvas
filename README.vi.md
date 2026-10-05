@@ -668,6 +668,28 @@ chart.setTheme({
 })
 ```
 
+### Override style
+
+Bất kỳ phần nào biểu đồ vẽ cũng có thể đặt riêng khỏi theme, theo khoá — các đường lưới theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume và chuỗi chính theo cách từng loại biểu đồ vẽ nó. Khoá để nguyên thì theo theme. Override của ứng dụng giữ qua mọi lần đổi theme; của người dùng (`layer: 'user'`, phần Settings của widget ghi vào) được giữ theo theme và lưu bằng `saveState()`.
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // mọi loại tăng/giảm đều lấy theo đây
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// Đường của chỉ báo và pane
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` liệt kê mọi khoá. Component React, Vue và Svelte nhận chúng qua prop `overrides`.
+
 ### Sự kiện
 
 ```typescript

@@ -19,7 +19,7 @@ export class LineWithMarkersRenderer implements ChartRendererInterface {
 
     ctx.beginPath();
     ctx.strokeStyle = theme.lineColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = theme.style?.series.lineWidth ?? 2;
     ctx.lineJoin = 'round';
 
     const points: { x: number; y: number }[] = [];

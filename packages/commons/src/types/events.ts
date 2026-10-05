@@ -23,6 +23,8 @@ export type ChartEventType =
   | 'indicatorUpdate'
   | 'indicatorChange'
   | 'themeChange'
+  /** Style overrides changed (`applyOverrides`, `resetOverrides`, a layout loaded). */
+  | 'styleChange'
   | 'resize'
   | 'orderPlace'
   | 'orderModify'
@@ -163,6 +165,11 @@ export interface IndicatorChangePayload {
 
 export interface ThemeChangePayload {
   theme: string;
+}
+
+/** Which layer of overrides changed: the host's or the user's. */
+export interface StyleChangePayload {
+  layer: 'host' | 'user';
 }
 
 export interface ResizePayload {
@@ -321,6 +328,7 @@ export interface ChartEventMap {
   /** One indicator's settings changed: shown or hidden, restyled, new levels or inputs, moved to another pane. */
   indicatorChange: IndicatorSettingsChangePayload;
   themeChange: ThemeChangePayload;
+  styleChange: StyleChangePayload;
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
   bracketPlace: BracketPlacePayload;

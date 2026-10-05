@@ -246,4 +246,28 @@ describe('Chart renderer', () => {
     chart.screenshotDataURL();
     expect(gpu.render).toHaveBeenCalledTimes(1);
   });
+
+  it('hands a dashed or two-colour grid to Canvas 2D, and leaves a plain one to the GPU', async () => {
+    makeChart();
+    const { gpu } = fakeGpu();
+    loadWebGLRenderer.mockResolvedValue(gpu);
+    await chart.setRenderer('webgl');
+    const lastFrame = () => gpu.render.mock.calls.at(-1)![0] as unknown as { background: unknown; theme: { style?: unknown } };
+
+    gpu.render.mockClear();
+    chart.screenshotDataURL();
+    expect(lastFrame().background).not.toBeNull();
+    // The frame's theme carries the resolved style the GPU draws the grid from.
+    expect(lastFrame().theme.style).toBeDefined();
+
+    chart.applyOverrides({ 'grid.horizontal.style': 'dashed' });
+    gpu.render.mockClear();
+    chart.screenshotDataURL();
+    expect(lastFrame().background).toBeNull();
+
+    chart.applyOverrides({ 'grid.horizontal.style': null, 'grid.vertical.visible': false });
+    gpu.render.mockClear();
+    chart.screenshotDataURL();
+    expect(lastFrame().background).not.toBeNull();
+  });
 });

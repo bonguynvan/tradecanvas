@@ -335,6 +335,17 @@ const fr: SiteMessages = {
         'Terminal est dense et carré : libellés en majuscules, et un trait sous l’unité de temps choisie',
       ],
     },
+    overrides: {
+      title: 'Overrides de style',
+      stat: '89 clés',
+      blurb:
+        'N’importe quelle partie de l’aspect du graphique par clé, à part du thème : la grille dans chaque sens, le réticule, les axes, les panneaux, la légende, le dernier cours, le volume et les couleurs de chaque type de graphique. Ici la grille verticale est masquée, l’horizontale en pointillés, le réticule plein, et la ligne de signal du MACD en tirets dans un panneau avec son propre séparateur.',
+      tryThis: [
+        'Changez de type de graphique : les barres et le Heikin-Ashi prennent les couleurs des bougies s’ils n’ont pas les leurs',
+        'Changez le thème du site : ce qui n’est pas surchargé le suit',
+        'Ouvrez les réglages et choisissez une couleur : elle va dans la couche de l’utilisateur, gardée avec le thème',
+      ],
+    },
     markets: {
       title: 'Listes de suivi et marché',
       stat: 'cours en direct',

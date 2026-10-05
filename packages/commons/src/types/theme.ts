@@ -1,3 +1,5 @@
+import type { ResolvedChartStyle } from './style.js';
+
 export type ThemeName = 'dark' | 'light';
 
 export interface FontConfig {
@@ -34,4 +36,10 @@ export interface Theme {
   font: FontConfig;
   /** The shapes the chart draws: its price tags and axis pills square, rounded or pills. */
   shape?: ShapeConfig;
+  /**
+   * The finer looks the chart worked out from its overrides
+   * (`chart.applyOverrides`). Set by the chart on the theme it draws with;
+   * yours needn't have one.
+   */
+  style?: ResolvedChartStyle;
 }

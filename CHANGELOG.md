@@ -4,6 +4,25 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Style overrides: the chart's look by key
+
+- **Any part of the look, apart from the theme**: `chart.applyOverrides({ 'grid.vertical.visible': false, 'series.candlestick.upColor': '#26a69a' })`. 89 keys, listed in `CHART_STYLE_KEYS` and checked by TypeScript:
+  - the grid's lines each way and the crosshair's: shown or not, colour, solid / dashed / dotted, width;
+  - the crosshair's labels, each axis's line and labels, the panes' background, separator and name;
+  - the legend, the last price (shown, colours, dash, width), the volume, the session breaks, the high and low lines, the watermark;
+  - the main series as each of the 18 chart types draws it: up and down colours, wicks, line colour and width, area fills. Up and down colours fall back to the candles', lines to the line chart's, fills to the area's, then to the theme.
+- **Two layers**: your app's (`layer: 'host'`) stay through theme switches and are never saved; the user's (`layer: 'user'`) win over them, are kept with the theme they were made on, and are saved with `saveState()` (snapshot version 3; version 2 saves still load). `setOverrides` puts a whole layer in place, `resetOverrides` takes keys away, `getStyleValue(key)` tells what a key resolves to, `getStyle()` gives the resolved looks, and `styleChange` says when they changed. `getTheme()` returns the theme as set, so `setTheme(getTheme())` never bakes the overrides in.
+- **Everywhere a chart is**: the `overrides` option, `ChartWidgetGrid.applyOverrides` (every chart, and the charts it adds later), and an `overrides` prop on the React, Vue and Svelte components. The grid and crosshair options (`grid.hLineColor`, `crosshair.vLine.style`…), which were typed but did nothing, are now shorthand for their keys.
+- **Indicator plots and panes**: each plot's dash and visibility by its key (`updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`); a hidden plot shows no value tag and no legend value, and stretches no scale. `setIndicatorDefaults(id, style)` sets what every indicator of a kind starts with. `setPaneStyle(instanceId, { background, separator })` gives a pane its own look, saved with its indicator and undone with it.
+- **On the GPU too**: the WebGL renderer draws the grid each way as it is styled, and hands it to Canvas 2D when it is dashed, wider than a pixel or two colours.
+- **The widget's Settings** write the user's layer: the colours picked stay with their theme. Reset puts back the current theme's colours; it used to put the dark theme's on any theme.
+- **Fixes**:
+  - the widget's theme toggle brings back the host's own theme when toggled back to its mode; it used to swap it for a built-in one for good;
+  - a baseline chart's fills work with `rgb()` and named colours (they appended a hex alpha to the colour);
+  - loading a save that names a theme of its own leaves the chart's theme as it is; it used to break it;
+  - a pane's crosshair value pill takes the crosshair label colours, as the price axis's does.
+- **Feature Lab**: a style overrides scene; the Styling docs explain every key, in six languages.
+
 ### The site: a new front page
 
 - **Live from the first line**: a tape of live Binance prices along the top, a large headline, and the live chart across the page under it, drawn with WebGL where there is a GPU and saying which renderer draws it.

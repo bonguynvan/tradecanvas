@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { IndicatorOutput, IndicatorPlot, IndicatorValue, ViewportState } from '@tradecanvas/commons';
 import { paneValueRange, paneLogRange, renderPlots, plotColor, drawnKeys } from '../plots.js';
+import { strokeRecorder } from '../../__tests__/strokeRecorder.js';
 
 const out = (series: (IndicatorValue | null)[]): IndicatorOutput => ({ values: new Map(), series });
 const ALL = { keys: null };
@@ -105,6 +106,19 @@ describe('renderPlots', () => {
     const plots: IndicatorPlot[] = [{ key: 'h', title: 'H', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 }];
     renderPlots(ctx, out([{ h: 10 }, { h: -20 }]), { ...viewport, priceRange: { min: -50, max: 50 } }, { ...style, colors: ['#only'] }, plots);
     expect(points.map((p) => p.color)).toEqual(['#only', '#only']);
+  });
+
+  it('leaves out a plot that is hidden, and dashes a plot as its style says', () => {
+    const rec = strokeRecorder();
+    const plots: IndicatorPlot[] = [{ key: 'a', title: 'A', color: 0 }, { key: 'b', title: 'B', color: 1 }];
+    const series = out([{ a: 20, b: 30 }, { a: 40, b: 50 }]);
+    renderPlots(rec.ctx, series, viewport, { ...style, plots: { a: { visible: false }, b: { lineStyle: 'dashed' } } }, plots);
+    expect(rec.strokes).toHaveLength(1);
+    expect(rec.strokes[0].dash.length).toBeGreaterThan(0);
+
+    const plain = strokeRecorder();
+    renderPlots(plain.ctx, series, viewport, style, plots);
+    expect(plain.strokes.map((s) => s.dash)).toEqual([[], []]);
   });
 
   it('names the drawn fields and their colours', () => {

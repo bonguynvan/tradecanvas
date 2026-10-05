@@ -14,6 +14,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     setSignalMarkerStyle: vi.fn(),
     setTradeZones: vi.fn(),
     setTradeZoneStyle: vi.fn(),
+    setOverrides: vi.fn(),
     setWatermark: vi.fn(),
     on: vi.fn(),
     disconnectStream: vi.fn(),
@@ -58,6 +59,18 @@ describe('<TradeCanvas> (svelte)', () => {
     flushSync();
     expect(chart.addIndicator).toHaveBeenCalledWith('rsi');
     expect(chart.addIndicator).toHaveBeenCalledWith('macd');
+  });
+
+  it("leaves the chart's overrides alone without the prop", () => {
+    render(TradeCanvas);
+    flushSync();
+    expect(chart.setOverrides).not.toHaveBeenCalled();
+  });
+
+  it('puts the overrides prop on the chart', () => {
+    render(TradeCanvas, { props: { overrides: { 'grid.vertical.visible': false } } });
+    flushSync();
+    expect(chart.setOverrides).toHaveBeenLastCalledWith({ 'grid.vertical.visible': false });
   });
 
   it('destroys the chart on unmount', () => {

@@ -1,5 +1,6 @@
-import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
+import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
+import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily, lineDash } from '@tradecanvas/commons';
+import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
@@ -150,19 +151,24 @@ export class CrosshairHandler {
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're
     // sitting on. Especially helpful in dense candle charts.
-    if (this.magnetMode && onBar) drawBarTint(ctx, x, viewport, theme);
+    const looks = crosshairLooks(theme);
+    if (this.magnetMode && onBar) drawBarTint(ctx, x, viewport, looks.vertical.color);
 
     // Draw crosshair lines — minimal work, no DOM, no allocations
-    drawVerticalLine(ctx, x, chartRect, theme);
+    drawVerticalLine(ctx, x, chartRect, looks.vertical);
 
-    ctx.setLineDash([4, 4]);
-    // On the same device-pixel row a 1 px drawing line at this y takes.
-    const row = crispY(ctx, y, 1);
-    ctx.lineWidth = row.width;
-    ctx.beginPath();
-    ctx.moveTo(chartRect.x, row.y);
-    ctx.lineTo(chartRect.x + chartRect.width, row.y);
-    ctx.stroke();
+    const h = looks.horizontal;
+    if (h.visible) {
+      ctx.setLineDash(lineDash(h.style, CROSSHAIR_DASH, h.width));
+      ctx.strokeStyle = h.color;
+      // On the same device-pixel row a drawing line this wide at this y takes.
+      const row = crispY(ctx, y, h.width);
+      ctx.lineWidth = row.width;
+      ctx.beginPath();
+      ctx.moveTo(chartRect.x, row.y);
+      ctx.lineTo(chartRect.x + chartRect.width, row.y);
+      ctx.stroke();
+    }
 
     ctx.setLineDash([]);
   }
@@ -209,8 +215,8 @@ export class CrosshairHandler {
       anchorX: priceAxisX,
       anchorY: y,
       orientation: 'right',
-      bg: theme.text,
-      fg: theme.background,
+      bg: crosshairLooks(theme).labelBackground,
+      fg: crosshairLooks(theme).labelText,
       theme,
       font,
     });
@@ -224,8 +230,9 @@ export class CrosshairHandler {
     const x = barIndexToX(slot, viewport);
     const { chartRect } = viewport;
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
-    if (this.magnetMode && slot >= 0 && slot < this.data.length) drawBarTint(ctx, x, viewport, theme);
-    drawVerticalLine(ctx, x, chartRect, theme);
+    const looks = crosshairLooks(theme);
+    if (this.magnetMode && slot >= 0 && slot < this.data.length) drawBarTint(ctx, x, viewport, looks.vertical.color);
+    drawVerticalLine(ctx, x, chartRect, looks.vertical);
   }
 
   private renderSyncedTimeLabel(
@@ -262,8 +269,8 @@ export class CrosshairHandler {
       anchorX: x,
       anchorY: timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height),
       orientation: 'bottom',
-      bg: theme.text,
-      fg: theme.background,
+      bg: crosshairLooks(theme).labelBackground,
+      fg: crosshairLooks(theme).labelText,
       theme,
       font: `600 ${theme.font.sizeSmall}px ${theme.font.family}`,
     });
@@ -284,19 +291,23 @@ export class CrosshairHandler {
   }
 }
 
-function drawBarTint(ctx: CanvasRenderingContext2D, x: number, viewport: ViewportState, theme: Theme): void {
+/** The crosshair's dashes when `dashed`. */
+const CROSSHAIR_DASH = [4, 4];
+
+function drawBarTint(ctx: CanvasRenderingContext2D, x: number, viewport: ViewportState, color: string): void {
   const barUnit = viewport.barWidth + viewport.barSpacing;
-  ctx.fillStyle = theme.crosshair;
+  ctx.fillStyle = color;
   ctx.globalAlpha = 0.08;
   ctx.fillRect(x - barUnit / 2, viewport.chartRect.y, barUnit, viewport.chartRect.height);
   ctx.globalAlpha = 1;
 }
 
-function drawVerticalLine(ctx: CanvasRenderingContext2D, x: number, chartRect: ViewportState['chartRect'], theme: Theme): void {
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = theme.crosshair;
+function drawVerticalLine(ctx: CanvasRenderingContext2D, x: number, chartRect: ViewportState['chartRect'], look: ResolvedLineLook): void {
+  if (!look.visible) return;
+  ctx.setLineDash(lineDash(look.style, CROSSHAIR_DASH, look.width));
+  ctx.strokeStyle = look.color;
   // The wick's own device-pixel column: the line runs through it, not beside it.
-  const column = crispX(ctx, x, 1);
+  const column = crispX(ctx, x, look.width);
   ctx.lineWidth = column.width;
   ctx.beginPath();
   ctx.moveTo(column.x, chartRect.y);

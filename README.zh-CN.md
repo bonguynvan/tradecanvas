@@ -667,6 +667,28 @@ chart.setTheme({
 })
 ```
 
+### 样式覆盖
+
+图表所画的任何一部分都可以按键脱离主题单独设置——每个方向的网格线、十字光标、坐标轴、面板、图例、最新价、成交量，以及每种图表类型下的主序列。没有设置的键沿用主题。应用的覆盖在切换主题时保留；用户的（`layer: 'user'`，组件的设置面板写入的）按主题保存，并随 `saveState()` 一起保存。
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // 所有涨跌类图表都回退到它
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// 指标线条与面板
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` 列出了所有键。React、Vue 和 Svelte 组件通过 `overrides` 属性接收它们。
+
 ### 事件
 
 ```typescript

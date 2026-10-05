@@ -36,7 +36,10 @@
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>One of 18 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
-    <tr><td><code>setTheme(name)</code></td><td>Switch between built-in themes.</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>Switch between built-in themes, or set your own. <code>getTheme()</code> gives it back as set.</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Style any part of the chart by key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> takes a key away. See <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>All of a layer at once; take keys (or all) away.</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>A layer's overrides; the looks as resolved; what one key resolves to.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Switch active timeframe; rewires the live stream.</td></tr>
   </tbody>
 </table>
@@ -59,6 +62,9 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Adds an overlay or panel indicator. Returns instance id.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Mutate a live indicator.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Remove and tear down.</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colours, line widths, opacity, and each plot's dash and visibility (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>The style indicators of a kind start with from now on.</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>A pane's own look, saved with its indicator.</td></tr>
   </tbody>
 </table>
 
@@ -698,6 +704,7 @@ const grid = new ChartWidgetGrid(host, {
 
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // lines the others up with the active chart
+grid.applyOverrides({ 'grid.vertical.visible': false })   // every chart's look, and the charts it adds
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

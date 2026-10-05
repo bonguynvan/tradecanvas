@@ -76,6 +76,7 @@ export class SupertrendIndicator extends IndicatorBase {
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
     const series = output.series;
     if (!series) return;
+    if (style.plots?.value?.visible === false) return;
     const { from, to } = viewport.visibleRange;
 
     const upColor = style.colors[0];

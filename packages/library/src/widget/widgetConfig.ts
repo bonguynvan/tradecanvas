@@ -1,5 +1,5 @@
 import { DARK_THEME } from '@tradecanvas/commons';
-import type { ChartType, DrawingToolType } from '@tradecanvas/commons';
+import type { ChartStyleKey, ChartType, DrawingToolType } from '@tradecanvas/commons';
 import type { IndicatorDef, DrawingToolGroupDef, ChartSettingsState } from './types.js';
 
 export const CHART_TYPES: { label: string; value: ChartType }[] = [
@@ -299,6 +299,19 @@ export const POPULAR_INDICATORS = [
 export const DEFAULT_SYMBOLS = [
   'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT',
 ];
+
+/**
+ * The settings' colours and the style keys they set, on the user's layer.
+ * The candles' colours are the base every up/down chart type falls back to.
+ */
+export const SETTINGS_STYLE_KEYS = {
+  candleUpColor: ['series.candlestick.upColor'],
+  candleDownColor: ['series.candlestick.downColor'],
+  candleUpWick: ['series.candlestick.wickUpColor'],
+  candleDownWick: ['series.candlestick.wickDownColor'],
+  backgroundColor: ['background.color'],
+  gridColor: ['grid.horizontal.color', 'grid.vertical.color'],
+} as const satisfies Partial<Record<keyof ChartSettingsState, readonly ChartStyleKey[]>>;
 
 export const DEFAULT_SETTINGS: ChartSettingsState = {
   candleUpColor: DARK_THEME.candleUp,

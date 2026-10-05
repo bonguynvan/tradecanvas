@@ -3,6 +3,7 @@ import type { ViewportState } from '@tradecanvas/commons';
 import type { GpuBackground, GpuDrawn, GpuFrame, GpuRect, GpuRecorder, GpuRenderer } from '../engine/gpu.js';
 import { barColumns } from '../charts/pixelGrid.js';
 import { gridLines } from '../axis/gridLines.js';
+import { gridLooks } from '../axis/GridRenderer.js';
 import { forEachPixelColumn, isDense } from '../charts/denseBars.js';
 import { FLOATS_PER_BAR, SeriesUploads } from './seriesUploads.js';
 import { parseColor, premultiplied, type RGBA } from './glColor.js';
@@ -322,7 +323,10 @@ export class WebGLSeriesRenderer implements GpuRenderer {
    */
   private drawBackground(frame: GpuFrame, background: GpuBackground): void {
     const { viewport, theme } = frame;
-    const lines = background.grid ? gridLines(viewport) : { horizontal: [], vertical: [] };
+    // The ways shown: the engine hands the GPU a grid only when they are solid, 1 px and one colour.
+    const looks = gridLooks(theme);
+    const all = background.grid ? gridLines(viewport) : { horizontal: [], vertical: [] };
+    const lines = { horizontal: looks.horizontal.visible ? all.horizontal : [], vertical: looks.vertical.visible ? all.vertical : [] };
     const gridCount = lines.horizontal.length + lines.vertical.length;
     const total = gridCount + background.rects.length;
     if (total === 0) return;
@@ -338,7 +342,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
       values[k++] = dash ? dash[0] : 0;
       values[k++] = dash ? dash[1] : 0;
     };
-    const gridColor = premultiplied(parseColor(theme.grid));
+    const gridColor = premultiplied(parseColor(looks.horizontal.visible ? looks.horizontal.color : looks.vertical.color));
     const { chartRect } = viewport;
     for (const y of lines.horizontal) put(chartRect.x, y - 0.5, chartRect.x + chartRect.width, y + 0.5, gridColor, 1);
     for (const x of lines.vertical) put(x - 0.5, chartRect.y, x + 0.5, chartRect.y + chartRect.height, gridColor, 1);

@@ -11,3 +11,4 @@ export * from './marketStatus.js';
 export * from './drawingOptions.js';
 export * from './drawingStyle.js';
 export * from './chartTypeOptions.js';
+export * from './chartStyle.js';

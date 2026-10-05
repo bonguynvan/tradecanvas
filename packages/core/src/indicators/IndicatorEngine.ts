@@ -4,13 +4,15 @@ import type {
   IndicatorOutput,
   IndicatorDescriptor,
   ResolvedIndicatorStyle,
+  IndicatorStyleConfig,
+  IndicatorPlotStyle,
   DataSeries,
   OHLCBar,
   ViewportState,
   OverlayScale,
 } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
-import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor } from './plots.js';
+import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 
 interface IndicatorInstance {
@@ -59,6 +61,8 @@ export interface ActiveIndicatorInfo {
 export class IndicatorEngine {
   private registry = new Map<string, IndicatorPlugin>();
   private instances = new Map<string, IndicatorInstance>();
+  /** The style each kind of indicator starts with, by id (`setStyleDefaults`). */
+  private styleDefaults = new Map<string, IndicatorStyleConfig>();
   /** Instances in computing order (each after the indicators it reads); null = recompute. */
   private order: IndicatorInstance[] | null = null;
 
@@ -93,10 +97,14 @@ export class IndicatorEngine {
     if (options.pane && this.canHost(options.pane)) config.pane = options.pane;
     if (options.scale === 'left' && plugin.descriptor.placement === 'overlay' && !config.pane) config.scale = 'left';
 
+    // The kind's defaults (setStyleDefaults) under what the config sets.
+    const defaults = this.styleDefaults.get(id);
+    const plots = { ...defaults?.plots, ...config.style?.plots };
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
-      lineWidths: config.style?.lineWidths ?? [1.5],
-      opacity: config.style?.opacity ?? 1,
+      colors: config.style?.colors ?? defaults?.colors?.slice() ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
+      lineWidths: config.style?.lineWidths ?? defaults?.lineWidths?.slice() ?? [1.5],
+      opacity: config.style?.opacity ?? defaults?.opacity ?? 1,
+      ...(Object.keys(plots).length > 0 ? { plots: copyPlots(plots) } : {}),
     };
 
     const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0 };
@@ -508,7 +516,7 @@ export class IndicatorEngine {
       if (!instance || instance.config.visible === false) continue;
       const descriptor = instance.plugin.descriptor;
       const options = {
-        keys: drawnKeys(descriptor),
+        keys: shownKeys(instance),
         scale: descriptor.scale,
         levels: instance.config.levels ?? descriptor.levels,
         zero: hasHistogram(descriptor.plots),
@@ -545,14 +553,45 @@ export class IndicatorEngine {
   getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
     const style = this.instances.get(instanceId)?.style;
     if (!style) return null;
-    return { colors: [...style.colors], lineWidths: [...style.lineWidths], opacity: style.opacity };
+    return {
+      colors: [...style.colors],
+      lineWidths: [...style.lineWidths],
+      opacity: style.opacity,
+      ...(style.plots ? { plots: copyPlots(style.plots) } : {}),
+    };
   }
 
-  /** Update indicator style (colors, line widths) at runtime */
+  /**
+   * Update indicator style at runtime: colours, widths and opacity as given;
+   * each plot's style merged into what it had.
+   */
   updateIndicatorStyle(instanceId: string, style: Partial<ResolvedIndicatorStyle>): void {
     const instance = this.instances.get(instanceId);
     if (!instance) return;
-    Object.assign(instance.style, style);
+    const { plots, ...rest } = style;
+    Object.assign(instance.style, rest);
+    if (plots) {
+      const merged = copyPlots(instance.style.plots ?? {});
+      for (const [key, plot] of Object.entries(plots)) merged[key] = { ...merged[key], ...plot };
+      instance.style.plots = merged;
+    }
+  }
+
+  /** Each plot's style in place of what it had (null: none), as a layout or an undo has them. */
+  setPlotStyles(instanceId: string, plots: Record<string, IndicatorPlotStyle> | null): void {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return;
+    if (plots && Object.keys(plots).length > 0) instance.style.plots = copyPlots(plots);
+    else delete instance.style.plots;
+  }
+
+  /**
+   * The style indicators of kind `id` start with from now on (null: none of
+   * their own). Those already on the chart keep theirs.
+   */
+  setStyleDefaults(id: string, style: IndicatorStyleConfig | null): void {
+    if (style) this.styleDefaults.set(id, { ...style, ...(style.plots ? { plots: copyPlots(style.plots) } : {}) });
+    else this.styleDefaults.delete(id);
   }
 
   /**
@@ -578,7 +617,7 @@ export class IndicatorEngine {
 
       // Only what is drawn: a trend flag (±1) or a session key must not
       // stretch the price scale.
-      const keys = drawnKeys(instance.plugin.descriptor);
+      const keys = shownKeys(instance);
       const end = Math.min(to, series.length - 1);
       for (let idx = Math.max(0, from); idx <= end; idx++) {
         const val = series[idx];
@@ -618,6 +657,18 @@ export class IndicatorEngine {
   }
 }
 
+/** The fields an instance draws and shows: a hidden plot stretches no scale. */
+function shownKeys(instance: IndicatorInstance): readonly string[] | null {
+  const keys = drawnKeys(instance.plugin.descriptor);
+  const plots = instance.style.plots;
+  return keys && plots ? keys.filter((key) => plots[key]?.visible !== false) : keys;
+}
+
+/** A copy of plot styles, each its own object. */
+function copyPlots(plots: Record<string, IndicatorPlotStyle>): Record<string, IndicatorPlotStyle> {
+  return Object.fromEntries(Object.entries(plots).map(([key, plot]) => [key, { ...plot }]));
+}
+
 function latestValues(instance: IndicatorInstance): { value: number; color: string }[] {
   const series = instance.output?.series;
   const plots = instance.plugin.descriptor.plots;
@@ -626,6 +677,7 @@ function latestValues(instance: IndicatorInstance): { value: number; color: stri
   if (!point) return [];
   const out: { value: number; color: string }[] = [];
   for (const plot of plots) {
+    if (!plotShown(plot, instance.style)) continue;
     const v = point[plot.key];
     if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
   }

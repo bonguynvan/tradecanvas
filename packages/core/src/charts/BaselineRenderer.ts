@@ -2,6 +2,9 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
+/** The fills above and below the baseline: the line's colour at an eighth (the `20` hex alpha it had). */
+const BASELINE_FILL_ALPHA = 0x20 / 0xff;
+
 /**
  * Baseline chart: line chart split at a baseline price.
  * Above baseline = green (bullish), below = red (bearish).
@@ -60,7 +63,9 @@ export class BaselineRenderer implements ChartRendererInterface {
     for (let i = 0; i <= lastIdx; i++) fillAbovePath.lineTo(xs[i], ys[i]);
     fillAbovePath.lineTo(xs[lastIdx], baselineY);
     fillAbovePath.closePath();
-    ctx.fillStyle = `${theme.candleUp}20`;
+    // The colour as given, at an eighth: works for any way of writing it (a name, hsl(), oklch()).
+    ctx.globalAlpha *= BASELINE_FILL_ALPHA;
+    ctx.fillStyle = theme.candleUp;
     ctx.fill(fillAbovePath);
     ctx.restore();
 
@@ -75,7 +80,8 @@ export class BaselineRenderer implements ChartRendererInterface {
     for (let i = 0; i <= lastIdx; i++) fillBelowPath.lineTo(xs[i], ys[i]);
     fillBelowPath.lineTo(xs[lastIdx], baselineY);
     fillBelowPath.closePath();
-    ctx.fillStyle = `${theme.candleDown}20`;
+    ctx.globalAlpha *= BASELINE_FILL_ALPHA;
+    ctx.fillStyle = theme.candleDown;
     ctx.fill(fillBelowPath);
     ctx.restore();
 
@@ -93,7 +99,7 @@ export class BaselineRenderer implements ChartRendererInterface {
       path.lineTo(xs[i], ys[i]);
     }
     ctx.save();
-    ctx.lineWidth = 2;
+    ctx.lineWidth = theme.style?.series.lineWidth ?? 2;
     ctx.lineJoin = 'round';
     ctx.strokeStyle = theme.candleUp;
     ctx.stroke(abovePath);

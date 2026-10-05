@@ -18,7 +18,7 @@ export class LineRenderer implements ChartRendererInterface {
 
     ctx.beginPath();
     ctx.strokeStyle = theme.lineColor;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = theme.style?.series.lineWidth ?? 2;
     ctx.lineJoin = 'round';
 
     // LTTB-downsample the visible range when it far exceeds the pixel width so

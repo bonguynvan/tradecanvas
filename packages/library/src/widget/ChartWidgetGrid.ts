@@ -1,4 +1,4 @@
-import type { DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
+import type { ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import type { GridLayout } from '../grid/ChartGrid.js';
@@ -145,6 +145,8 @@ export class ChartWidgetGrid {
   private relayDepth = 0;
   /** The look given to setUI, for charts added later. */
   private uiTheme: WidgetUIPreset | WidgetUITheme | null = null;
+  /** The style overrides given to applyOverrides, for charts added later. */
+  private styleOverrides: ChartStyleOverrides = {};
   /** Charts the grid shrank away from, by position: growing again brings them back as they were. */
   private parked = new Map<number, WidgetLayoutContent>();
   private drawingFrame = 0;
@@ -303,6 +305,20 @@ export class ChartWidgetGrid {
     this.session?.changed();
   }
 
+  /**
+   * Style overrides on every chart, as your app's (`Chart.applyOverrides`):
+   * a value sets a key, `null` takes it away. Charts added later get them too.
+   */
+  applyOverrides(patch: ChartStyleOverridesPatch): void {
+    for (const c of this.cells) c.widget.getChart().applyOverrides(patch);
+    const next: Record<string, unknown> = { ...this.styleOverrides };
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === undefined) delete next[key];
+      else next[key] = value;
+    }
+    this.styleOverrides = next as ChartStyleOverrides;
+  }
+
   /** Every chart's theme. */
   setTheme(theme: ThemeName | Theme): void {
     for (const c of this.cells) c.widget.setTheme(theme);
@@ -428,6 +444,8 @@ export class ChartWidgetGrid {
     });
     cell.el = el;
     cell.widget = widget;
+    // Style overrides given to the grid since, for a chart it adds too.
+    if (Object.keys(this.styleOverrides).length > 0) widget.getChart().applyOverrides(this.styleOverrides);
     this.wireCell(cell);
     el.addEventListener('pointerdown', () => this.setActive(this.cells.indexOf(cell)), true);
     el.addEventListener('pointerenter', () => { this.hovered = cell; });

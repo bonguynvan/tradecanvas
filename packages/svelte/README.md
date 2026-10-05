@@ -35,7 +35,7 @@ Streams live Binance data by default. Pass `data={bars}` for static OHLC, or `ad
 
 ## Props
 
-`symbol`, `timeframe`, `theme`, `chartType`, `indicators`, `data`, `adapter`, `historyLimit`, `features`, `autoScale`, `signalMarkers`, `signalMarkerStyle`, `tradeZones`, `tradeZoneStyle`, `watermarkText`, `onReady`, and `bind:chart`.
+`symbol`, `timeframe`, `theme`, `chartType`, `indicators`, `data`, `adapter`, `historyLimit`, `features`, `autoScale`, `signalMarkers`, `signalMarkerStyle`, `tradeZones`, `tradeZoneStyle`, `overrides` (style overrides by key, all of your app's), `watermarkText`, `onReady`, and `bind:chart`.
 
 Reach the underlying `Chart` (drawings, trading, execution adapters, plugins, resizable panes) via `bind:chart` or `onReady`. See the [main docs](https://github.com/bonguynvan/tradecanvas).
 
