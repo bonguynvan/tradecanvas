@@ -1,5 +1,12 @@
 # @tradecanvas/analytics
 
+## 1.12.0
+
+### Patch Changes
+
+- Updated dependencies [f914d01]
+  - @tradecanvas/commons@1.12.0
+
 ## 1.11.0
 
 ### Patch Changes
