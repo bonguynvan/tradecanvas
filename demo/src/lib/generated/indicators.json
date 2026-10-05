@@ -214,11 +214,27 @@
   },
   {
     "id": "pivots",
-    "name": "Pivot Points (Classic)",
+    "name": "Pivot Points",
     "shortName": "Pivots",
     "placement": "overlay",
     "params": {
-      "lookback": 24
+      "lookback": 24,
+      "type": "traditional"
+    },
+    "inputs": {
+      "lookback": {
+        "min": 1
+      },
+      "type": {
+        "options": [
+          "traditional",
+          "fibonacci",
+          "woodie",
+          "classic",
+          "camarilla",
+          "dm"
+        ]
+      }
     },
     "plots": [
       {
@@ -1895,7 +1911,8 @@
       "type": {
         "options": [
           "sma",
-          "ema"
+          "ema",
+          "sma-ema"
         ]
       },
       "source": {
@@ -2512,5 +2529,464 @@
         "kind": "line"
       }
     ]
+  },
+  {
+    "id": "avgprice",
+    "name": "Average Price",
+    "shortName": "OHLC4",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Average",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "medprice",
+    "name": "Median Price",
+    "shortName": "HL2",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Median",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "typprice",
+    "name": "Typical Price",
+    "shortName": "HLC3",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Typical",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "machannel",
+    "name": "Moving Average Channel",
+    "shortName": "MA Channel",
+    "placement": "overlay",
+    "params": {
+      "upperLength": 20,
+      "lowerLength": 20,
+      "upperOffset": 0,
+      "lowerOffset": 0
+    },
+    "inputs": {
+      "upperLength": {
+        "min": 1
+      },
+      "lowerLength": {
+        "min": 1
+      },
+      "upperOffset": {
+        "min": -500,
+        "max": 500
+      },
+      "lowerOffset": {
+        "min": -500,
+        "max": 500
+      }
+    },
+    "plots": [
+      {
+        "key": "upper",
+        "title": "Upper",
+        "kind": "line"
+      },
+      {
+        "key": "lower",
+        "title": "Lower",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "hamming",
+    "name": "Moving Average Hamming",
+    "shortName": "HMA (Hamming)",
+    "placement": "overlay",
+    "params": {
+      "period": 10,
+      "source": "close"
+    },
+    "inputs": {
+      "period": {
+        "min": 2,
+        "max": 500
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "MA",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "madouble",
+    "name": "Moving Average Double",
+    "shortName": "MA x2",
+    "placement": "overlay",
+    "params": {
+      "first": 20,
+      "second": 50,
+      "type": "sma",
+      "source": "close"
+    },
+    "inputs": {
+      "first": {
+        "min": 1
+      },
+      "second": {
+        "min": 1
+      },
+      "type": {
+        "options": [
+          "sma",
+          "ema",
+          "wma"
+        ]
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "ma1",
+        "title": "MA 1",
+        "kind": "line"
+      },
+      {
+        "key": "ma2",
+        "title": "MA 2",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "matriple",
+    "name": "Moving Average Triple",
+    "shortName": "MA x3",
+    "placement": "overlay",
+    "params": {
+      "first": 10,
+      "second": 20,
+      "third": 50,
+      "type": "sma",
+      "source": "close"
+    },
+    "inputs": {
+      "first": {
+        "min": 1
+      },
+      "second": {
+        "min": 1
+      },
+      "third": {
+        "min": 1
+      },
+      "type": {
+        "options": [
+          "sma",
+          "ema",
+          "wma"
+        ]
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "ma1",
+        "title": "MA 1",
+        "kind": "line"
+      },
+      {
+        "key": "ma2",
+        "title": "MA 2",
+        "kind": "line"
+      },
+      {
+        "key": "ma3",
+        "title": "MA 3",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "volindex",
+    "name": "Volatility Index",
+    "shortName": "VI",
+    "placement": "overlay",
+    "params": {
+      "period": 7,
+      "mult": 3
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "mult": {
+        "label": "ATR multiple",
+        "min": 0.1,
+        "step": 0.1
+      }
+    },
+    "plots": [
+      {
+        "key": "sar",
+        "title": "Stop",
+        "kind": "dots"
+      }
+    ]
+  },
+  {
+    "id": "asi",
+    "name": "Accumulative Swing Index",
+    "shortName": "ASI",
+    "placement": "panel",
+    "params": {
+      "limit": 10
+    },
+    "inputs": {
+      "limit": {
+        "label": "Limit move",
+        "min": 0.0001,
+        "step": 0.1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "ASI",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "advdecline",
+    "name": "Advance/Decline",
+    "shortName": "A/D Ratio",
+    "placement": "panel",
+    "params": {
+      "length": 10
+    },
+    "inputs": {
+      "length": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Ratio",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "majority",
+    "name": "Majority Rule",
+    "shortName": "Majority",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Majority",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      50
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "chopzone",
+    "name": "Chop Zone",
+    "shortName": "Chop Zone",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "angle",
+        "title": "Angle",
+        "kind": "histogram"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "smiergodic",
+    "name": "SMI Ergodic",
+    "shortName": "SMIIO",
+    "placement": "panel",
+    "params": {
+      "short": 5,
+      "long": 20,
+      "signal": 5,
+      "source": "close"
+    },
+    "inputs": {
+      "short": {
+        "min": 1
+      },
+      "long": {
+        "min": 1
+      },
+      "signal": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "oscillator",
+        "title": "Oscillator",
+        "kind": "histogram"
+      },
+      {
+        "key": "indicator",
+        "title": "Indicator",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "po",
+    "name": "Price Oscillator",
+    "shortName": "PO",
+    "placement": "panel",
+    "params": {
+      "short": 10,
+      "long": 21,
+      "source": "close"
+    },
+    "inputs": {
+      "short": {
+        "min": 1
+      },
+      "long": {
+        "min": 1
+      },
+      "source": {
+        "source": true
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "PO",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "volohlc",
+    "name": "Volatility O-H-L-C",
+    "shortName": "Vol OHLC",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "annual": 365
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "annual": {
+        "label": "Bars per year",
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Volatility",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
+  },
+  {
+    "id": "volzt",
+    "name": "Volatility Zero Trend Close-to-Close",
+    "shortName": "Vol ZT",
+    "placement": "panel",
+    "params": {
+      "period": 10,
+      "annual": 365
+    },
+    "inputs": {
+      "period": {
+        "min": 1
+      },
+      "annual": {
+        "label": "Bars per year",
+        "min": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Volatility",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0
+    }
   }
 ]

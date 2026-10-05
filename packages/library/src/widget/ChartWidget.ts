@@ -2310,6 +2310,8 @@ export class ChartWidget {
       { id: 'pane', label: this.t('compare.ownPane') },
       { id: 'spread', label: fill(this.t('compare.spread'), { main, other: symbol }) },
       { id: 'ratio', label: fill(this.t('compare.ratio'), { main, other: symbol }) },
+      { id: 'correlation', label: fill(this.t('compare.correlation'), { main, other: symbol }) },
+      { id: 'correlationLog', label: fill(this.t('compare.correlationLog'), { main, other: symbol }) },
     ];
     const rect = this.chart.getPlotRect();
     this.chartMenu?.open(entries, rect.x + 24, rect.y + 24, (way) => void this.addCompareSymbol(symbol, way as CompareWay));
@@ -2318,8 +2320,10 @@ export class ChartWidget {
   /**
    * Compare with another symbol: its percent change on the price scale
    * (`'percent'`, the default), its price on a scale of its own (`'scale'`)
-   * or in a pane of its own (`'pane'`), or the spread or ratio of this
-   * symbol to it (`'spread'`, `'ratio'`). Its bars come through the adapter.
+   * or in a pane of its own (`'pane'`), the spread or ratio of this symbol
+   * to it (`'spread'`, `'ratio'`), or how they correlate, by price or by
+   * bar-to-bar returns (`'correlation'`, `'correlationLog'`). Its bars come
+   * through the adapter.
    */
   async addCompareSymbol(symbol: string, way: CompareWay = 'percent'): Promise<void> {
     if (!this.adapter) {
@@ -2329,7 +2333,9 @@ export class ChartWidget {
     if (way !== 'percent') {
       const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
         : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
-          : this.chart.addIndicator('spread', { symbol, mode: way });
+          : way === 'correlation' ? this.chart.addIndicator('correlation', { symbol })
+            : way === 'correlationLog' ? this.chart.addIndicator('correlationlog', { symbol })
+              : this.chart.addIndicator('spread', { symbol, mode: way });
       if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
       return;
     }
@@ -3403,7 +3409,7 @@ export { indicatorChipLabel };
 type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
 
 /** How `addCompareSymbol` compares: percent change on the price scale, its own scale or pane, spread, ratio. */
-export type CompareWay = 'percent' | 'scale' | 'pane' | 'spread' | 'ratio';
+export type CompareWay = 'percent' | 'scale' | 'pane' | 'spread' | 'ratio' | 'correlation' | 'correlationLog';
 
 /**
  * The lines `instanceId` can be computed from: every drawn line of the other

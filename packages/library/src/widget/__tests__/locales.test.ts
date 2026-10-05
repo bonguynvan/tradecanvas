@@ -21,6 +21,21 @@ describe('built-in widget languages', () => {
     }
   });
 
+  it('dates months on the chart by the Gregorian calendar its bars are in (Thai keeps its Buddhist year)', () => {
+    for (const language of WIDGET_LANGUAGES) {
+      if (language.code === 'th') continue;
+      const calendar = new Intl.DateTimeFormat(language.numberLocale, { month: 'long' }).resolvedOptions().calendar;
+      expect(calendar, language.code).toBe('gregory');
+    }
+  });
+
+  it('speaks thirty languages, Arabic, Hebrew and Persian among them', () => {
+    expect(WIDGET_LANGUAGES).toHaveLength(30);
+    for (const code of ['ar', 'he', 'fa', 'it', 'nl', 'pl', 'cs', 'sk', 'hu', 'ro', 'el', 'sv', 'da', 'nb', 'et', 'ms']) {
+      expect(WIDGET_LANGUAGES.some((l) => l.code === code), code).toBe(true);
+    }
+  });
+
   it('has no duplicate codes', () => {
     const codes = WIDGET_LANGUAGES.map((l) => l.code.toLowerCase());
     expect(new Set(codes).size).toBe(codes.length);
@@ -32,6 +47,7 @@ describe('locale lookup', () => {
     registerWidgetLocale('ja', {});
     registerWidgetLocale('zh-hant', {});
     registerWidgetLocale('pt', {});
+    registerWidgetLocale('nb', {});
   });
 
   it('falls back from a region to its language, and Chinese regions to their script', () => {
@@ -42,6 +58,14 @@ describe('locale lookup', () => {
     expect(findWidgetLocale('zh-TW')).toBe(zhHant);
     expect(findWidgetLocale('zh_HK')).toBe(zhHant);
     expect(findWidgetLocale('zh-CN')).not.toBe(zhHant);
+  });
+
+  it('finds Norwegian Bokmål for the general and Nynorsk codes too', () => {
+    const nb = { 'toolbar.indicators': 'Indikatorer' };
+    registerWidgetLocale('nb', nb);
+    expect(findWidgetLocale('no')).toBe(nb);
+    expect(findWidgetLocale('nb-NO')).toBe(nb);
+    expect(findWidgetLocale('nn-NO')).toBe(nb);
   });
 
   it('lets messages passed in win over the registered table', () => {

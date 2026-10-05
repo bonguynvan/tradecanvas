@@ -129,11 +129,13 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   별도 패널에 표시하거나, 차트 종가와의 스프레드 또는 비율을 표시할 수 있습니다. 뒤의 방식들은
   지표(<code>compareSymbol</code>, <code>spread</code>)이므로 다른 지표처럼 범례, 값 라벨, 알림을 갖고
   레이아웃에도 저장됩니다. 다른 종목의 봉은 시간 기준으로 차트의 봉에 맞춰집니다. 차트가 필요한 봉을
-  요청하므로, 시간 단위를 바꾼 뒤에는 다시 넘겨 주세요.
+  요청하므로, 시간 단위를 바꾼 뒤에는 다시 넘겨 주세요. <code>correlation</code>(종가 기준)과
+  <code>correlationlog</code>(봉별 수익률 기준)도 같은 방식으로 다른 종목을 읽으며, 값은 −1에서 1 사이입니다.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
@@ -141,7 +143,7 @@ chart.getRequiredSymbols()                           // what to fetch again on a
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
   ChartWidget에서는 개체 트리의 비교 버튼이 종목을 먼저 묻고, 이어서 표시 방식(변동률, 별도 눈금,
-  별도 보조 차트, 스프레드, 비율)을 묻습니다.
+  별도 보조 차트, 스프레드, 비율, 가격 또는 수익률 상관관계)을 묻습니다.
 </p>
 
 <h3>데이터 내보내기</h3>

@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 95개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 의존성 없이 Canvas2D로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, 순수 TypeScript, React, Vue, Svelte를 지원합니다.
+**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 의존성 없이 Canvas2D로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, 순수 TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>
@@ -51,7 +51,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-이게 전부입니다. 실시간 데이터, 95개 지표 전부, 69개 그리기 도구 전부, 명령 팔레트(`Ctrl+K`), 종목 검색(`Ctrl+P`), 단축키 목록(`?`), Shift 드래그 측정, Alt 클릭 툴팁 고정, CSV/JSON 드래그 앤 드롭 불러오기까지 갖춰집니다.
+이게 전부입니다. 실시간 데이터, 111개 지표 전부, 69개 그리기 도구 전부, 명령 팔레트(`Ctrl+K`), 종목 검색(`Ctrl+P`), 단축키 목록(`?`), Shift 드래그 측정, Alt 클릭 툴팁 고정, CSV/JSON 드래그 앤 드롭 불러오기까지 갖춰집니다.
 
 프레임워크를 사용하나요? [`@tradecanvas/react`](./packages/react/), [`@tradecanvas/vue`](./packages/vue/), [`@tradecanvas/svelte`](./packages/svelte/)는 헤드리스 `Chart`를 컴포넌트로 감싸며, 위의 widget도 어떤 프레임워크에서든 같은 방식으로 붙일 수 있습니다. [프레임워크 통합](#프레임워크-통합)을 참고하세요. [StackBlitz 샌드박스](https://bonguynvan.github.io/tradecanvas/ko/examples/)를 포크해서 시작할 수도 있습니다.
 
@@ -88,14 +88,14 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 
 대부분의 차트 라이브러리는 둘 중 하나를 고르게 합니다. 트레이딩 기능이 없는 예쁜 차트, 아니면 API가 투박한 트레이딩 기능. TradeCanvas는 둘 다 제공합니다.
 
-- **내장 지표 95개** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator 등. 어떤 지표든 다른 지표의 선을 입력으로 읽을 수 있습니다(RSI의 SMA). 별도의 계산 라이브러리가 필요 없습니다.
+- **내장 지표 111개** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator 등. 어떤 지표든 다른 지표의 선을 입력으로 읽을 수 있습니다(RSI의 SMA). 별도의 계산 라이브러리가 필요 없습니다.
 - **그리기 도구 69개** — 추세선(정보선, 추세 각도, 십자선), 피보나치(되돌림, 확장, 채널, 시간대, 속도 저항 팬과 아크, 서클, 스파이럴, 웨지), 수평/수직선, 채널, 피치포크와 피치팬, 갠 팬 / 박스 / 스퀘어, 주기, 하모닉 패턴(XABCD, 사이퍼, ABCD, 스리 드라이브, 헤드 앤 숄더), 엘리엇 파동, 메모, 말풍선과 표시, 브러시와 패스, 예측과 투영, 포지션 크기를 계산하는 롱/숏 포지션, 고정 범위 매물대. 도구마다 설정, 추세선 알림, 그룹과 레이어, 실행 취소/다시 실행, 완전한 직렬화를 지원합니다.
 - **18가지 차트 유형** — 캔들스틱, 라인, 영역, 바, 할로우 캔들, 기준선, 고가-저가, 하이킨아시, 렌코, 카기, 라인 브레이크, 포인트 앤 피겨, 레인지 바, 거래량 캔들, **이퀴볼륨**, HLC 영역, 계단선, 라인+마커. 렌코의 박스 크기, 카기의 반전 폭 같은 값은 직접 정할 수 있습니다.
 - **프로급 인터랙션** — 마지막 봉을 지나 비어 있는 미래 영역까지 자유롭게 이동(그림도 그곳에 그릴 수 있습니다), 가격/시간 축을 드래그해 눈금 조절, 더블 클릭으로 자동 맞춤, `Ctrl/⌘+drag`로 여러 그림 선택(그다음 함께 이동, 스타일 변경, 삭제), `Shift+drag`로 측정(봉 수 × 가격 Δ × %), `Alt+click`으로 비교 툴팁 고정, 상황별 커서(십자선, 잡는 손, 크기 조절 화살표), 커서 아래에서 축을 따라가는 가격/시간 라벨, 봉 호버 강조.
 - **트레이딩 오버레이** — 진입선, 손익 구간, SL/TP 마커와 함께 열린 포지션을 그립니다. 주문은 점선으로 표시됩니다. SL/TP를 드래그해 수정하고, 각 선의 버튼으로 취소 / 청산 / 반전하며, 모든 체결은 해당 봉에 표시됩니다. ChartWidget에는 입력하는 동안 주문을 검사하는 주문 티켓과, 포지션·대기 주문·내역을 보여 주는 계좌 패널이 더해집니다. 트레이딩이 필요 없는 프로젝트에서는 `features.trading: false`로 깔끔하게 끌 수 있습니다.
 - **실시간 스트리밍** — Binance, Coinbase, Bybit, Kraken 어댑터가 내장되어 있고, 범용 `WebSocketAdapter` / `PollingAdapter` 기반 클래스로 어떤 피드든 약 20줄이면 연결됩니다. 뒤로 스크롤하면 이전 봉을 불러오고, 어떤 간격(`7m`, `90m`, `2d`)이든 피드 자체의 간격으로, 틱 차트(`100T`)는 피드의 체결로 만들어 내며, 종목 검색과 시세는 피드에서 가져옵니다.
 - **시간대** — 서머타임을 반영하는 모든 IANA 시간대(`'America/New_York'`), 고정 오프셋, 또는 거래소 자체 시간대를 축, 십자선, 일 구분선, 세션 시간에 적용합니다.
-- **16개 언어** — `ChartWidget`을 영어, 베트남어, 중국어 간체 및 번체, 일본어, 한국어, 스페인어, 포르투갈어, 프랑스어, 독일어, 러시아어, 튀르키예어, 인도네시아어, 태국어, 아랍어, 히브리어로 제공합니다. 아랍어와 히브리어에서는 오른쪽에서 왼쪽으로 반전됩니다.
+- **30개 언어** — `ChartWidget`을 영어, 베트남어, 중국어 간체 및 번체, 일본어, 한국어, 스페인어, 포르투갈어, 프랑스어, 독일어, 이탈리아어, 네덜란드어, 폴란드어, 체코어, 슬로바키아어, 헝가리어, 루마니아어, 그리스어, 스웨덴어, 덴마크어, 노르웨이어, 에스토니아어, 러시아어, 튀르키예어, 인도네시아어, 말레이어, 태국어, 아랍어, 히브리어, 페르시아어로 제공합니다. 아랍어, 히브리어, 페르시아어에서는 오른쪽에서 왼쪽으로 반전됩니다.
 - **접근성** — 키보드 탐색, 차트 위의 확대/축소와 스크롤 버튼, 그리고 보이는 범위와 봉을 하나씩 읽어 주는 스크린 리더용 요약.
 - **실시간 주문 실행** — `ExecutionAdapter`를 연결하면 트레이딩 오버레이가 실제 거래 화면이 됩니다. 차트를 드래그해 주문을 만들고 체결 내역을 맞춰 봅니다. `PaperExecutionAdapter` 샌드박스가 함께 제공됩니다.
 - **플러그인 SDK** — 사용자 지정 지표, 그리기 도구, 차트 유형, 오버레이를 전역 또는 차트별로 등록합니다.
@@ -179,7 +179,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### 위젯 i18n
 
-`ChartWidget`은 16개 언어를 지원합니다: 영어, 베트남어, 중국어 간체와 번체, 일본어, 한국어, 스페인어, 포르투갈어, 프랑스어, 독일어, 러시아어, 튀르키예어, 인도네시아어, 태국어, 아랍어, 히브리어(마지막 두 언어는 오른쪽에서 왼쪽으로 쓰며, `dir`로 방향을 직접 정할 수 있습니다). 도구 모음, 설정, 그리기 도구, 가격 알림, 대화 상자, 명령 팔레트, 단축키 목록, 안내 메시지까지 화면에 표시되는 모든 문자열이 번역되어 있습니다. 지표 이름(SMA, RSI…)은 그대로 유지됩니다. 언어는 생성할 때 설정합니다.
+`ChartWidget`은 30개 언어를 지원합니다: 영어, 베트남어, 중국어 간체와 번체, 일본어, 한국어, 스페인어, 포르투갈어, 프랑스어, 독일어, 이탈리아어, 네덜란드어, 폴란드어, 체코어, 슬로바키아어, 헝가리어, 루마니아어, 그리스어, 스웨덴어, 덴마크어, 노르웨이어, 에스토니아어, 러시아어, 튀르키예어, 인도네시아어, 말레이어, 태국어, 아랍어, 히브리어, 페르시아어(마지막 세 언어는 오른쪽에서 왼쪽으로 쓰며, `dir`로 방향을 직접 정할 수 있습니다). 도구 모음, 설정, 그리기 도구, 가격 알림, 대화 상자, 명령 팔레트, 단축키 목록, 안내 메시지까지 화면에 표시되는 모든 문자열이 번역되어 있습니다. 지표 이름(SMA, RSI…)은 그대로 유지됩니다. 언어는 생성할 때 설정합니다.
 
 영어와 베트남어는 내장되어 있습니다. 나머지 언어는 `@tradecanvas/chart/widget/locales`에서 불러오므로, 페이지에는 import한 언어만 포함됩니다:
 
@@ -392,13 +392,13 @@ gauge.setValue(85) // animates smoothly
 
 ### 지표 (내장)
 
-95개 지표 — 가격 패널에는 이동평균(SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
-LSMA, McGinley, SMMA, MA Cross, MTF MA), 밴드와 채널(Bollinger, Keltner,
-Donchian, Envelope, Linear Regression), 추세와 스탑(Ichimoku, Supertrend,
+111개 지표 — 가격 패널에는 이동평균(SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
+LSMA, McGinley, SMMA, MA Cross, MTF MA, Hamming, MA Double/Triple), 밴드와 채널(Bollinger, Keltner,
+Donchian, Envelope, Linear Regression, MA Channel), 추세와 스탑(Ichimoku, Supertrend,
 Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag, Fractals,
-Pivot Points), VWAP과 매물대가 있고, 별도 패널에는 RSI, MACD, Stochastic, ATR,
+Pivot Points, Volatility Index), VWAP과 매물대가 있고, 별도 패널에는 RSI, MACD, Stochastic, ATR,
 ADX, CCI, OBV, MFI, Bollinger %B와 BandWidth, Historical Volatility, Ulcer Index
-외 40개의 오실레이터, 거래량 및 변동성 지표가 있습니다.
+외 48개의 오실레이터, 거래량 및 변동성 지표가 있습니다.
 [지표 카탈로그](https://bonguynvan.github.io/tradecanvas/docs/indicators)에서
 모든 id와 그 입력값, 선, 레벨을 확인할 수 있습니다.
 
@@ -819,7 +819,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | 차트 유형 | 18 + 금융 6 | 4 | 8 (비금융) | 10+ |
 | 금융 차트 | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | 없음 | 없음 | 일부 |
-| 내장 지표 | 95 | 0 | 0 | ~30 |
+| 내장 지표 | 111 | 0 | 0 | ~30 |
 | 그리기 도구 | 69 | 0 | 0 | 일부 |
 | 트레이딩 오버레이 | 완전 지원 (포지션 + 주문 + 드래그) | 없음 | 없음 | 없음 |
 | 실시간 스트리밍 | 내장 (Binance) | 수동 | 수동 | 내장 |
@@ -906,7 +906,7 @@ interface OHLCBar {
 
 | 예제 | 설명 |
 |---|---|
-| [라이브 데모](https://bonguynvan.github.io/tradecanvas/) | 기능 랩: 그리기 도구, 지표, 트레이딩, 기간, 페이지 단위 과거 데이터, 리플레이, 1센트 미만 가격과 16개 언어, 실시간 시세가 있는 관심 종목, 20만 봉, 느린 네트워크에서의 전환 — 모두 실시간 차트에서. 사이트와 문서는 베트남어, 중국어, 일본어, 한국어, 스페인어로도 제공됩니다 |
+| [라이브 데모](https://bonguynvan.github.io/tradecanvas/) | 기능 랩: 그리기 도구, 지표, 트레이딩, 기간, 페이지 단위 과거 데이터, 리플레이, 1센트 미만 가격과 30개 언어, 실시간 시세가 있는 관심 종목, 20만 봉, 느린 네트워크에서의 전환 — 모두 실시간 차트에서. 사이트와 문서는 베트남어, 중국어, 일본어, 한국어, 스페인어로도 제공됩니다 |
 | [StackBlitz 샌드박스](https://bonguynvan.github.io/tradecanvas/examples/) | 클릭 한 번으로 포크 가능: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte 래퍼, 금융 차트 |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | 프레임워크 컴포넌트 — 반응형 props, 타입 지원, 보일러플레이트 없음 |
 

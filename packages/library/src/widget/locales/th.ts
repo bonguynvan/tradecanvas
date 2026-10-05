@@ -499,6 +499,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'ราคา ในแผงแยก',
   'compare.spread': 'ส่วนต่าง: {main} − {other}',
   'compare.ratio': 'อัตราส่วน: {main} ÷ {other}',
+  'compare.correlation': 'สหสัมพันธ์: {main} กับ {other}',
+  'compare.correlationLog': 'สหสัมพันธ์ของผลตอบแทน: {main} กับ {other}',
   'drawingSettings.addAlert': 'เพิ่มการแจ้งเตือน',
   'drawingSettings.alertAdded': 'เพิ่มการแจ้งเตือนแล้ว: ราคาตัดผ่าน {name}',
   'drawingOption.rewardRatio': 'ผลตอบแทน:ความเสี่ยง',

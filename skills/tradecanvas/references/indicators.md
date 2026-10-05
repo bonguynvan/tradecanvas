@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-95 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+111 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (35)
+## On the price pane (43)
 
 Drawn over the candles, on the price scale.
 
@@ -21,7 +21,7 @@ Drawn over the candles, on the price scale.
 | `supertrend` | Supertrend | period: 10, multiplier: 3 | value: Supertrend | — | |
 | `keltner` | Keltner Channel | emaPeriod: 20, atrPeriod: 10, multiplier: 1.5 | upper: Upper, middle: Basis, lower: Lower | — | |
 | `donchian` | Donchian Channel | period: 20 | upper: Upper, middle: Basis, lower: Lower | — | |
-| `pivots` | Pivot Points (Classic) | lookback: 24 | r3: R3, r2: R2, r1: R1, pp: P, s1: S1, s2: S2, s3: S3 | — | |
+| `pivots` | Pivot Points | lookback: 24, type: "traditional" | r3: R3, r2: R2, r1: R1, pp: P, s1: S1, s2: S2, s3: S3 | — | |
 | `avwap` | Anchored VWAP | anchorTime: 0 | value: AVWAP | — | |
 | `zigzag` | ZigZag | deviation: 5 | pivot: Pivot | — | |
 | `lrc` | Linear Regression Channel | period: 100, stdDev: 2, source: "close" | upper: Upper, middle: Basis, lower: Lower | — | ✓ |
@@ -47,8 +47,16 @@ Drawn over the candles, on the price scale.
 | `seb` | Standard Error Bands | period: 21, mult: 2, smooth: 3 | upper: Upper, middle: Middle, lower: Lower | — | |
 | `gmma` | Guppy Multiple Moving Average | — | s3: EMA 3, s5: EMA 5, s8: EMA 8, s10: EMA 10, s12: EMA 12, s15: EMA 15, l30: EMA 30, l35: EMA 35, l40: EMA 40, l45: EMA 45, l50: EMA 50, l60: EMA 60 | — | |
 | `maribbon` | Moving Average Ribbon | ma1: 20, ma2: 50, ma3: 100, ma4: 200, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4 | — | |
+| `avgprice` | Average Price | — | value: Average | — | |
+| `medprice` | Median Price | — | value: Median | — | |
+| `typprice` | Typical Price | — | value: Typical | — | |
+| `machannel` | Moving Average Channel | upperLength: 20, lowerLength: 20, upperOffset: 0, lowerOffset: 0 | upper: Upper, lower: Lower | — | |
+| `hamming` | Moving Average Hamming | period: 10, source: "close" | value: MA | — | ✓ |
+| `madouble` | Moving Average Double | first: 20, second: 50, type: "sma", source: "close" | ma1: MA 1, ma2: MA 2 | — | ✓ |
+| `matriple` | Moving Average Triple | first: 10, second: 20, third: 50, type: "sma", source: "close" | ma1: MA 1, ma2: MA 2, ma3: MA 3 | — | ✓ |
+| `volindex` | Volatility Index | period: 7, mult: 3 | sar: Stop | — | |
 
-## In a pane of their own (60)
+## In a pane of their own (68)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -114,3 +122,11 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `stderror` | Standard Error | period: 14 | value: StdErr | — | |
 | `adr` | Average Day Range | period: 14 | value: ADR | — | |
 | `netvolume` | Net Volume | — | value: Net | 0 | |
+| `asi` | Accumulative Swing Index | limit: 10 | value: ASI | — | |
+| `advdecline` | Advance/Decline | length: 10 | value: Ratio | — | |
+| `majority` | Majority Rule | period: 14 | value: Majority | 50 | |
+| `chopzone` | Chop Zone | — | angle: Angle | — | |
+| `smiergodic` | SMI Ergodic | short: 5, long: 20, signal: 5, source: "close" | oscillator: Oscillator, indicator: Indicator, signal: Signal | — | ✓ |
+| `po` | Price Oscillator | short: 10, long: 21, source: "close" | value: PO | — | ✓ |
+| `volohlc` | Volatility O-H-L-C | period: 10, annual: 365 | value: Volatility | — | |
+| `volzt` | Volatility Zero Trend Close-to-Close | period: 10, annual: 365 | value: Volatility | — | |

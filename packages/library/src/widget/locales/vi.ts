@@ -499,6 +499,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Giá, trong pane riêng',
   'compare.spread': 'Chênh lệch: {main} − {other}',
   'compare.ratio': 'Tỷ lệ: {main} ÷ {other}',
+  'compare.correlation': 'Tương quan: {main} với {other}',
+  'compare.correlationLog': 'Tương quan lợi suất: {main} với {other}',
   'drawingSettings.addAlert': 'Thêm cảnh báo',
   'drawingSettings.alertAdded': 'Đã thêm cảnh báo: giá cắt {name}',
   'drawingOption.rewardRatio': 'Tỷ lệ lời:lỗ',

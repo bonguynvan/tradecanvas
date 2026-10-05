@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading en Canvas2D : 17 types de graphiques, 95 indicateurs, 69 outils de dessin, flux en direct des plateformes d’échange, ordres sur le graphique, relecture et backtesting. Zéro dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading en Canvas2D : 17 types de graphiques, 111 indicateurs, 69 outils de dessin, flux en direct des plateformes d’échange, ordres sur le graphique, relecture et backtesting. Zéro dépendance, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const fr: SiteMessages = {
     release: 'rendu sur deux canvas, défilement libre',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 95 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas2D, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 111 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas2D, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -80,7 +80,7 @@ const fr: SiteMessages = {
       {
         label: 'Widget',
         title: 'Un appel, toute l’interface de trading',
-        text: 'ChartWidget apporte la barre d’outils, la barre latérale de dessin, la liste de suivi, les alertes, l’arborescence des objets, la fenêtre de données, la relecture et une palette de commandes (Ctrl+K), en 16 langues, de l’anglais et du vietnamien au chinois, au japonais, au coréen et à l’arabe.',
+        text: 'ChartWidget apporte la barre d’outils, la barre latérale de dessin, la liste de suivi, les alertes, l’arborescence des objets, la fenêtre de données, la relecture et une palette de commandes (Ctrl+K), en 30 langues, de l’anglais et du vietnamien au chinois, au japonais, au coréen et à l’arabe.',
       },
       {
         label: 'Données',
@@ -154,11 +154,11 @@ const fr: SiteMessages = {
     },
     indicators: {
       title: 'Indicateurs',
-      stat: '95 intégrés',
+      stat: '111 intégrés',
       blurb:
         'Superpositions et panneaux calculés en interne, sans aucune dépendance mathématique. En direct, seule la barre en formation est recalculée — 0,001 ms par tick avec quatre indicateurs sur 100k barres.',
       tryThis: [
-        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 95',
+        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 111',
         'Cliquez sur le nom d’un indicateur dans la légende : paramètres, couleurs et niveaux',
         'Réglez le champ « Source » d’une moyenne mobile sur la ligne d’un autre indicateur',
         'Faites glisser la ligne entre deux panneaux pour les redimensionner ; les boutons en haut à droite d’un panneau le déplacent, le replient ou l’agrandissent',
@@ -255,10 +255,10 @@ const fr: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 langues, des prix sous le centime',
+      title: '30 langues, des prix sous le centime',
       stat: 'i18n',
       blurb:
-        'Tout le widget en 16 langues — menus, paramètres, outils de dessin, boîtes de dialogue, l’arabe et l’hébreu de droite à gauche — avec les nombres au format de chaque langue. PEPE s’échange autour de 0,000004 : chaque étiquette suit la précision de l’échelle des prix, et l’axe s’élargit pour tout afficher.',
+        'Tout le widget en 30 langues — menus, paramètres, outils de dessin, boîtes de dialogue, l’arabe, l’hébreu et le persan de droite à gauche — avec les nombres au format de chaque langue. PEPE s’échange autour de 0,000004 : chaque étiquette suit la précision de l’échelle des prix, et l’axe s’élargit pour tout afficher.',
       tryThis: [
         'Choisissez une langue au-dessus du graphique : 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P cherche parmi tous les symboles Binance, avec leur nom, au fil de la frappe',
@@ -416,7 +416,7 @@ const fr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 69 outils de dessin, liste de suivi, trading, relecture, en 16 langues.',
+        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 69 outils de dessin, liste de suivi, trading, relecture, en 30 langues.',
       },
       react: {
         title: 'React',

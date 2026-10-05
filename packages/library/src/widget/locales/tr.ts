@@ -499,6 +499,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Fiyat, kendi panelinde',
   'compare.spread': 'Fark: {main} − {other}',
   'compare.ratio': 'Oran: {main} ÷ {other}',
+  'compare.correlation': 'Korelasyon: {main} ile {other}',
+  'compare.correlationLog': 'Getiri korelasyonu: {main} ile {other}',
   'drawingSettings.addAlert': 'Alarm ekle',
   'drawingSettings.alertAdded': 'Alarm eklendi: fiyatın {name} ile kesişmesi',
   'drawingOption.rewardRatio': 'Kazanç:risk',

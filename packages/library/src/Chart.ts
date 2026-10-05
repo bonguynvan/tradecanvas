@@ -43,7 +43,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -407,6 +407,8 @@ export class Chart {
     // Indicators on other symbols' bars, kept by this chart.
     this.indicatorEngine.register(new CompareSymbolIndicator(this.symbolSeries));
     this.indicatorEngine.register(new SpreadIndicator(this.symbolSeries));
+    this.indicatorEngine.register(new CorrelationCoefficientIndicator(this.symbolSeries));
+    this.indicatorEngine.register(new CorrelationLogIndicator(this.symbolSeries));
 
     // Drawing tools
     this.drawingManager = new DrawingManager();
@@ -1498,7 +1500,8 @@ export class Chart {
 
   /**
    * Another symbol's bars, for the indicators that read it ('compareSymbol',
-   * 'spread'): they line them up with the chart's bars by time. Give them
+   * 'spread', 'correlation', 'correlationlog'): they line them up with the
+   * chart's bars by time. Give them
    * again after a timeframe change; null forgets them.
    */
   setSymbolSeries(symbol: string, bars: DataSeries | null): void {
@@ -5058,7 +5061,7 @@ function readShapes(shapes: ShapeConfig): ShapeConfig {
 }
 
 /** The indicators that read another symbol's bars (`params.symbol`). */
-const SYMBOL_INDICATORS: ReadonlySet<string> = new Set(['compareSymbol', 'spread']);
+const SYMBOL_INDICATORS: ReadonlySet<string> = new Set(['compareSymbol', 'spread', 'correlation', 'correlationlog']);
 
 /** Both ranges in one (either may be null). */
 function joinRanges(

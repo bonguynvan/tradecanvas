@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、95 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas2D で描画し、依存関係はゼロです。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、素の TypeScript、React、Vue、Svelte に対応しています。
+**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、111 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas2D で描画し、依存関係はゼロです。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、素の TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>
@@ -51,7 +51,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-これだけです。ライブデータ、95 種類すべてのインジケーター、69 種類すべての描画ツール、コマンドパレット（`Ctrl+K`）、シンボル検索（`Ctrl+P`）、ショートカット一覧（`?`）、Shift+ドラッグでの計測、Alt+クリックでのツールチップ固定、CSV/JSON のドラッグ＆ドロップ読み込みが使えます。
+これだけです。ライブデータ、111 種類すべてのインジケーター、69 種類すべての描画ツール、コマンドパレット（`Ctrl+K`）、シンボル検索（`Ctrl+P`）、ショートカット一覧（`?`）、Shift+ドラッグでの計測、Alt+クリックでのツールチップ固定、CSV/JSON のドラッグ＆ドロップ読み込みが使えます。
 
 フレームワークを使っていますか？[`@tradecanvas/react`](./packages/react/)、[`@tradecanvas/vue`](./packages/vue/)、[`@tradecanvas/svelte`](./packages/svelte/) はヘッドレスな `Chart` をコンポーネントとしてラップしています。上の widget も、どのフレームワークでも同じ方法で組み込めます。[フレームワークとの統合](#フレームワークとの統合)を参照してください。[StackBlitz サンドボックス](https://bonguynvan.github.io/tradecanvas/ja/examples/)をフォークして始めることもできます。
 
@@ -88,14 +88,14 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 
 多くのチャートライブラリでは、トレード機能のない見栄えのよいチャートか、API が使いにくいトレード機能付きのチャートか、どちらかを選ぶことになります。TradeCanvas はその両方を提供します。
 
-- **95 種類のインジケーターを内蔵** — SMA、EMA、TEMA、VWMA、Hull MA、RSI、MACD、Bollinger、Envelope、Ichimoku、Pivot Points、Anchored VWAP、ZigZag、Linear Regression Channel、Awesome / Chaikin Oscillator など。どのインジケーターも別のインジケーターのラインを入力にできます（RSI の SMA など）。別途計算ライブラリは必要ありません。
+- **111 種類のインジケーターを内蔵** — SMA、EMA、TEMA、VWMA、Hull MA、RSI、MACD、Bollinger、Envelope、Ichimoku、Pivot Points、Anchored VWAP、ZigZag、Linear Regression Channel、Awesome / Chaikin Oscillator など。どのインジケーターも別のインジケーターのラインを入力にできます（RSI の SMA など）。別途計算ライブラリは必要ありません。
 - **69 種類の描画ツール** — トレンドライン（情報ライン、トレンドアングル、十字線）、フィボナッチ（リトレースメント、エクステンション、チャネル、タイムゾーン、スピード抵抗ファンとアーク、サークル、スパイラル、ウェッジ）、水平線 / 垂直線、チャネル、ピッチフォークとピッチファン、ギャン・ファン / ボックス / スクエア、サイクル、ハーモニックパターン（XABCD、サイファー、ABCD、スリードライブ、ヘッド・アンド・ショルダーズ）、エリオット波動、ノート、吹き出しとマーク、ブラシとパス、予測と投影、ポジションサイズ計算付きのロング / ショートポジション、期間指定の価格帯別出来高。ツールごとの設定、トレンドラインのアラート、グループとレイヤー、元に戻す / やり直す、完全なシリアライズに対応しています。
 - **18 種類のチャートタイプ** — ローソク足、ライン、エリア、バー、中空ローソク足、ベースライン、高値-安値、平均足、Renko、Kagi、Line Break、Point & Figure、Range Bars、出来高ローソク足、**エクイボリューム**、HLC エリア、ステップライン、マーカー付きライン。Renko のボックスサイズや Kagi の反転幅なども自由に設定できます。
 - **プロ品質の操作性** — 最後のバーより先の何もない未来の領域まで自由にパン（描画もそこに置けます）、価格軸 / 時間軸をドラッグして拡大縮小、ダブルクリックで自動フィット、`Ctrl/⌘+drag` で複数の描画を選択（まとめて移動、スタイル変更、削除が可能）、`Shift+drag` で計測（バー数 × 価格差 × %）、`Alt+click` で比較用ツールチップを固定、状況に応じたカーソル（クロスヘア、掴む手、サイズ変更の矢印）、カーソルの下で軸に追従する価格 / 時間のピルラベル、ホバー中のバーのハイライト。
 - **トレーディングオーバーレイ** — 保有中のポジションを、エントリーライン、損益ゾーン、SL/TP マーカーとともに表示します。注文は破線で表示。SL/TP はドラッグで変更でき、各ラインのボタンからキャンセル / 決済 / ドテンができ、約定はすべてそのバーにマークされます。ChartWidget には、入力しながら注文をチェックする注文チケットと、ポジション・未約定の注文・履歴を表示する口座パネルも加わります。トレードを扱わないプロジェクトでは `features.trading: false` で簡単に無効化できます。
 - **リアルタイムストリーミング** — Binance、Coinbase、Bybit、Kraken のアダプターを内蔵し、汎用の `WebSocketAdapter` / `PollingAdapter` ベースクラスを使えば、どんなフィードも約 20 行で接続できます。過去へスクロールすると古いバーを読み込み、任意の間隔（`7m`、`90m`、`2d`）をフィード本来の足から、ティックチャート（`100T`）をその約定から組み立て、シンボル検索とクオートもフィードから取得します。
 - **タイムゾーン** — 夏時間を含む任意の IANA タイムゾーン（`'America/New_York'`）、固定オフセット、または取引所自身のタイムゾーンを、軸、クロスヘア、日の区切り、取引時間に使えます。
-- **16 言語** — `ChartWidget` は英語、ベトナム語、簡体字中国語、繁体字中国語、日本語、韓国語、スペイン語、ポルトガル語、フランス語、ドイツ語、ロシア語、トルコ語、インドネシア語、タイ語、アラビア語、ヘブライ語に対応しています。アラビア語とヘブライ語では右から左に反転します。
+- **30 言語** — `ChartWidget` は英語、ベトナム語、簡体字中国語、繁体字中国語、日本語、韓国語、スペイン語、ポルトガル語、フランス語、ドイツ語、イタリア語、オランダ語、ポーランド語、チェコ語、スロバキア語、ハンガリー語、ルーマニア語、ギリシャ語、スウェーデン語、デンマーク語、ノルウェー語、エストニア語、ロシア語、トルコ語、インドネシア語、マレー語、タイ語、アラビア語、ヘブライ語、ペルシア語に対応しています。アラビア語、ヘブライ語、ペルシア語では右から左に反転します。
 - **アクセシビリティ** — キーボード操作、チャート上のズームとスクロールのボタン、そして表示範囲とバーを 1 本ずつ読み上げるスクリーンリーダー向けの概要。
 - **ライブ執行** — `ExecutionAdapter` を接続すると、トレーディングオーバーレイが実際の取引画面になり、チャート上でドラッグして注文を作成し、約定を照合できます。サンドボックスとして `PaperExecutionAdapter` を同梱しています。
 - **プラグイン SDK** — カスタムのインジケーター、描画ツール、チャートタイプ、オーバーレイを、グローバルまたはチャートごとに登録できます。
@@ -179,7 +179,7 @@ button.innerHTML = createToolIcon('fibRetracement', 16)
 
 ### ウィジェットの i18n
 
-`ChartWidget` は 16 言語に対応しています：英語、ベトナム語、簡体字中国語、繁体字中国語、日本語、韓国語、スペイン語、ポルトガル語、フランス語、ドイツ語、ロシア語、トルコ語、インドネシア語、タイ語、アラビア語、ヘブライ語（最後の 2 つは右から左。方向は `dir` で自分で指定することもできます）。ツールバー、設定、描画ツール、アラート、ダイアログ、コマンドパレット、ショートカット一覧、通知など、表示されるすべての文字列が翻訳されています。インジケーター名（SMA、RSI…）はそのままです。言語は生成時に指定します。
+`ChartWidget` は 30 言語に対応しています：英語、ベトナム語、簡体字中国語、繁体字中国語、日本語、韓国語、スペイン語、ポルトガル語、フランス語、ドイツ語、イタリア語、オランダ語、ポーランド語、チェコ語、スロバキア語、ハンガリー語、ルーマニア語、ギリシャ語、スウェーデン語、デンマーク語、ノルウェー語、エストニア語、ロシア語、トルコ語、インドネシア語、マレー語、タイ語、アラビア語、ヘブライ語、ペルシア語（最後の 3 つは右から左。方向は `dir` で自分で指定することもできます）。ツールバー、設定、描画ツール、アラート、ダイアログ、コマンドパレット、ショートカット一覧、通知など、表示されるすべての文字列が翻訳されています。インジケーター名（SMA、RSI…）はそのままです。言語は生成時に指定します。
 
 英語とベトナム語は内蔵されています。それ以外は `@tradecanvas/chart/widget/locales` から読み込むため、ページにはインポートした言語だけが含まれます。
 
@@ -392,13 +392,13 @@ gauge.setValue(85) // animates smoothly
 
 ### インジケーター（内蔵）
 
-95 種類のインジケーター — 価格ペインには、移動平均（SMA、EMA、WMA、Hull、DEMA、TEMA、ALMA、KAMA、
-LSMA、McGinley、SMMA、MA Cross、MTF MA）、バンドとチャネル（Bollinger、
-Keltner、Donchian、Envelope、Linear Regression）、トレンドとストップ（Ichimoku、
+111 種類のインジケーター — 価格ペインには、移動平均（SMA、EMA、WMA、Hull、DEMA、TEMA、ALMA、KAMA、
+LSMA、McGinley、SMMA、MA Cross、MTF MA、Hamming、MA Double/Triple）、バンドとチャネル（Bollinger、
+Keltner、Donchian、Envelope、Linear Regression、MA Channel）、トレンドとストップ（Ichimoku、
 Supertrend、Parabolic SAR、Chandelier、Chande Kroll Stop、Alligator、ZigZag、
-Fractals、Pivot Points）、VWAP 系と Volume Profile。個別のペインには、RSI、MACD、
+Fractals、Pivot Points、Volatility Index）、VWAP 系と Volume Profile。個別のペインには、RSI、MACD、
 Stochastic、ATR、ADX、CCI、OBV、MFI、Bollinger %B と BandWidth、Historical
-Volatility、Ulcer Index のほか、さらに 40 種類のオシレーター・出来高系・ボラティリティ系
+Volatility、Ulcer Index のほか、さらに 48 種類のオシレーター・出来高系・ボラティリティ系
 インジケーター。[インジケーターカタログ](https://bonguynvan.github.io/tradecanvas/docs/indicators)
 に、すべての id とその入力、ライン、レベルが掲載されています。
 
@@ -819,7 +819,7 @@ mc.worstMaxDrawdownPct
 |---|---|---|---|---|
 | チャートタイプ | 18 + 金融 6 | 4 | 8（金融以外） | 10+ |
 | 金融チャート | Sparkline、Depth、Equity、Heatmap、Waterfall、Gauge | なし | なし | 一部 |
-| 内蔵インジケーター | 95 | 0 | 0 | 約 30 |
+| 内蔵インジケーター | 111 | 0 | 0 | 約 30 |
 | 描画ツール | 69 | 0 | 0 | 一部 |
 | トレーディングオーバーレイ | 完全対応（ポジション + 注文 + ドラッグ） | なし | なし | なし |
 | リアルタイムストリーミング | 内蔵（Binance） | 手動 | 手動 | 内蔵 |
@@ -906,7 +906,7 @@ interface OHLCBar {
 
 | サンプル | 説明 |
 |---|---|
-| [ライブデモ](https://bonguynvan.github.io/tradecanvas/) | 機能ラボ：描画ツール、インジケーター、トレード、表示期間、ページ単位の履歴、リプレイ、1 セント未満の価格を扱う 16 言語、ライブのクオート付きウォッチリスト、20 万本のバー、低速回線での切り替え — それぞれをライブチャートで。サイトとドキュメントはベトナム語、中国語、日本語、韓国語、スペイン語でも読めます |
+| [ライブデモ](https://bonguynvan.github.io/tradecanvas/) | 機能ラボ：描画ツール、インジケーター、トレード、表示期間、ページ単位の履歴、リプレイ、1 セント未満の価格を扱う 30 言語、ライブのクオート付きウォッチリスト、20 万本のバー、低速回線での切り替え — それぞれをライブチャートで。サイトとドキュメントはベトナム語、中国語、日本語、韓国語、スペイン語でも読めます |
 | [StackBlitz サンドボックス](https://bonguynvan.github.io/tradecanvas/examples/) | ワンクリックでフォーク可能：Vanilla の `Chart`、`ChartWidget`、React / Vue / Svelte のラッパー、金融チャート |
 | [`@tradecanvas/react`](./packages/react/) · [`/vue`](./packages/vue/) · [`/svelte`](./packages/svelte/) | フレームワーク用コンポーネント — リアクティブな props、型付き、ボイラープレート不要 |
 

@@ -499,6 +499,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'Harga, di panel tersendiri',
   'compare.spread': 'Selisih: {main} − {other}',
   'compare.ratio': 'Rasio: {main} ÷ {other}',
+  'compare.correlation': 'Korelasi: {main} dengan {other}',
+  'compare.correlationLog': 'Korelasi imbal hasil: {main} dengan {other}',
   'drawingSettings.addAlert': 'Tambah peringatan',
   'drawingSettings.alertAdded': 'Peringatan ditambahkan: harga memotong {name}',
   'drawingOption.rewardRatio': 'Reward:risiko',

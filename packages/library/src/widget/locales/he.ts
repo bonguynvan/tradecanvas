@@ -510,6 +510,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'מחיר, בחלונית נפרדת',
   'compare.spread': 'מרווח: {main} − {other}',
   'compare.ratio': 'יחס: {main} ÷ {other}',
+  'compare.correlation': 'מתאם: {main} עם {other}',
+  'compare.correlationLog': 'מתאם תשואות: {main} עם {other}',
   'drawingSettings.addAlert': 'הוספת התראה',
   'drawingSettings.alertAdded': 'נוספה התראה: מחיר חוצה את {name}',
   'drawingOption.rewardRatio': 'סיכוי:סיכון',

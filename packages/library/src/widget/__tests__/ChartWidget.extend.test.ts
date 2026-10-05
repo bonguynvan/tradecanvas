@@ -323,16 +323,20 @@ describe('ChartWidget comparing with another symbol', () => {
     dispose: () => {},
   };
 
-  it('puts the other symbol on its own scale, in its own pane, or as a spread or ratio', async () => {
+  it('puts the other symbol on its own scale, in its own pane, as a spread or ratio, or as a correlation', async () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
     const fake = FakeChart.last;
     await widget.addCompareSymbol('BBB', 'scale');
     await widget.addCompareSymbol('BBB', 'pane');
     await widget.addCompareSymbol('BBB', 'ratio');
+    await widget.addCompareSymbol('BBB', 'correlation');
+    await widget.addCompareSymbol('BBB', 'correlationLog');
     expect(fake.added).toEqual([
       ['compareSymbol', { symbol: 'BBB' }, 'bottom', { scale: 'left' }],
       ['compareSymbol', { symbol: 'BBB' }, undefined, undefined],
       ['spread', { symbol: 'BBB', mode: 'ratio' }, undefined, undefined],
+      ['correlation', { symbol: 'BBB' }, undefined, undefined],
+      ['correlationlog', { symbol: 'BBB' }, undefined, undefined],
     ]);
     expect(fake.moved).toEqual([['tc_compareSymbol_2', 'new']]);
   });

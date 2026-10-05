@@ -4,7 +4,7 @@ const de: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Canvas-Trading-Charts fürs Web',
     description:
-      'TradeCanvas ist eine Canvas2D-Bibliothek für Trading-Charts: 17 Charttypen, 95 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting. Keine Abhängigkeiten, MIT.',
+      'TradeCanvas ist eine Canvas2D-Bibliothek für Trading-Charts: 17 Charttypen, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting. Keine Abhängigkeiten, MIT.',
   },
 
   nav: {
@@ -40,7 +40,7 @@ const de: SiteMessages = {
     release: 'Zwei-Canvas-Renderer, freies Verschieben',
     title: 'Die Chart-Engine für Trading-Apps.',
     ledeHtml:
-      'Von Kerzen bis Renko, 95 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet auf Canvas2D, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
+      'Von Kerzen bis Renko, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet auf Canvas2D, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
     getStarted: 'Loslegen',
     browseExamples: 'Beispiele ansehen',
     specsLabel: 'Kennzahlen',
@@ -80,7 +80,7 @@ const de: SiteMessages = {
       {
         label: 'Widget',
         title: 'Ein Aufruf, die komplette Trading-Oberfläche',
-        text: 'ChartWidget bringt Symbolleiste, Zeichenleiste, Beobachtungsliste, Alarme, Objektbaum, Datenfenster, Replay und eine Befehlspalette (Ctrl+K) mit – in 16 Sprachen, von Englisch und Vietnamesisch bis Chinesisch, Japanisch, Koreanisch und Arabisch.',
+        text: 'ChartWidget bringt Symbolleiste, Zeichenleiste, Beobachtungsliste, Alarme, Objektbaum, Datenfenster, Replay und eine Befehlspalette (Ctrl+K) mit – in 30 Sprachen, von Englisch und Vietnamesisch bis Chinesisch, Japanisch, Koreanisch und Arabisch.',
       },
       {
         label: 'Daten',
@@ -154,11 +154,11 @@ const de: SiteMessages = {
     },
     indicators: {
       title: 'Indikatoren',
-      stat: '95 integriert',
+      stat: '111 integriert',
       blurb:
         'Overlays und eigene Bereiche, selbst berechnet, ohne Mathe-Abhängigkeiten. Live-Ticks berechnen nur die laufende Kerze neu – 0,001 ms pro Tick mit vier Indikatoren auf 100k Kerzen.',
       tryThis: [
-        'Klicken Sie auf „Indikatoren“ (oder Ctrl+K) und durchsuchen Sie alle 95',
+        'Klicken Sie auf „Indikatoren“ (oder Ctrl+K) und durchsuchen Sie alle 111',
         'Klicken Sie in der Legende auf einen Indikatornamen: Parameter, Farben und Niveaus',
         'Setzen Sie bei einem gleitenden Durchschnitt das Feld „Source“ auf die Linie eines anderen Indikators',
         'Ziehen Sie die Trennlinie zwischen zwei Bereichen, um ihre Größe zu ändern; mit den Schaltflächen oben rechts in einem Bereich können Sie ihn verschieben, einklappen oder maximieren',
@@ -255,10 +255,10 @@ const de: SiteMessages = {
       ],
     },
     subcent: {
-      title: '16 Sprachen, Preise unter einem Cent',
+      title: '30 Sprachen, Preise unter einem Cent',
       stat: 'i18n',
       blurb:
-        'Das ganze Widget in 16 Sprachen – Menüs, Einstellungen, Zeichenwerkzeuge, Dialoge, Arabisch und Hebräisch von rechts nach links – mit Zahlen im jeweils eigenen Format. PEPE notiert um 0,000004: Jede Beschriftung folgt der Genauigkeit der Preisskala, und die Achse wird breiter, damit alles passt.',
+        'Das ganze Widget in 30 Sprachen – Menüs, Einstellungen, Zeichenwerkzeuge, Dialoge, Arabisch, Hebräisch und Persisch von rechts nach links – mit Zahlen im jeweils eigenen Format. PEPE notiert um 0,000004: Jede Beschriftung folgt der Genauigkeit der Preisskala, und die Achse wird breiter, damit alles passt.',
       tryThis: [
         'Wählen Sie über dem Chart eine Sprache: 日本語, 한국어, 简体中文, Deutsch…',
         'Ctrl+P durchsucht schon beim Tippen alle Binance-Symbole, mit Namen',
@@ -416,7 +416,7 @@ const de: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 69 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 16 Sprachen.',
+        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 69 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 30 Sprachen.',
       },
       react: {
         title: 'React',

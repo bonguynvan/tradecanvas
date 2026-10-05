@@ -273,6 +273,22 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'stderror', name: 'Standard Error', type: 'panel' },
   { id: 'adr', name: 'Average Day Range', type: 'panel' },
   { id: 'netvolume', name: 'Net Volume', type: 'panel' },
+  { id: 'avgprice', name: 'Average Price', type: 'overlay' },
+  { id: 'medprice', name: 'Median Price', type: 'overlay' },
+  { id: 'typprice', name: 'Typical Price', type: 'overlay' },
+  { id: 'machannel', name: 'Moving Average Channel', type: 'overlay' },
+  { id: 'hamming', name: 'Moving Average Hamming', type: 'overlay' },
+  { id: 'madouble', name: 'Moving Average Double', type: 'overlay' },
+  { id: 'matriple', name: 'Moving Average Triple', type: 'overlay' },
+  { id: 'volindex', name: 'Volatility Index', type: 'overlay' },
+  { id: 'asi', name: 'Accumulative Swing Index', type: 'panel' },
+  { id: 'advdecline', name: 'Advance/Decline', type: 'panel' },
+  { id: 'majority', name: 'Majority Rule', type: 'panel' },
+  { id: 'chopzone', name: 'Chop Zone', type: 'panel' },
+  { id: 'smiergodic', name: 'SMI Ergodic', type: 'panel' },
+  { id: 'po', name: 'Price Oscillator', type: 'panel' },
+  { id: 'volohlc', name: 'Volatility O-H-L-C', type: 'panel' },
+  { id: 'volzt', name: 'Volatility Zero Trend', type: 'panel' },
 ];
 
 export const POPULAR_INDICATORS = [

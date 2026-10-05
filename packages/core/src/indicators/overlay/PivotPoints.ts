@@ -7,13 +7,22 @@ import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 const LEVEL_KEYS = ['s3', 's2', 's1', 'pp', 'r1', 'r2', 'r3'] as const;
 type LevelKey = (typeof LEVEL_KEYS)[number];
 
+const KINDS = ['traditional', 'fibonacci', 'woodie', 'classic', 'camarilla', 'dm'] as const;
+type Kind = (typeof KINDS)[number];
+
+/**
+ * Pivot points from the high, low and close of the last `lookback` bars
+ * (and their first open, for DeMark's), by kind: traditional, Fibonacci,
+ * Woodie, classic, Camarilla or DeMark (one level either side).
+ */
 export class PivotPointsIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
     id: 'pivots',
-    name: 'Pivot Points (Classic)',
+    name: 'Pivot Points',
     placement: 'overlay' as const,
-    defaultConfig: { lookback: 24 },
+    defaultConfig: { lookback: 24, type: 'traditional' },
     shortName: 'Pivots',
+    inputs: { lookback: { min: 1 }, type: { options: KINDS } },
     plots: [
       { key: 'r3', title: 'R3', color: 1 },
       { key: 'r2', title: 'R2', color: 1 },
@@ -27,6 +36,7 @@ export class PivotPointsIndicator extends IndicatorBase {
 
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const lookback = getIntParam(config, 'lookback', 24, 1);
+    const kind: Kind = (KINDS as readonly unknown[]).includes(config.params.type) ? (config.params.type as Kind) : 'traditional';
     const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
@@ -39,18 +49,7 @@ export class PivotPointsIndicator extends IndicatorBase {
         if (data[j].high > high) high = data[j].high;
         if (data[j].low < low) low = data[j].low;
       }
-      const close = data[i - 1].close;
-      const pp = (high + low + close) / 3;
-      const range = high - low;
-      const val: IndicatorValue = {
-        pp,
-        r1: 2 * pp - low,
-        s1: 2 * pp - high,
-        r2: pp + range,
-        s2: pp - range,
-        r3: high + 2 * (pp - low),
-        s3: low - 2 * (high - pp),
-      };
+      const val = levels(kind, data[i - lookback].open, high, low, data[i - 1].close);
       values.set(data[i].time, val);
       series[i] = val;
     }
@@ -101,4 +100,36 @@ export class PivotPointsIndicator extends IndicatorBase {
       ctx.setLineDash([]);
     }
   }
+}
+
+/** The levels of one kind from a window's open, high, low and close. */
+function levels(kind: Kind, open: number, high: number, low: number, close: number): IndicatorValue {
+  const range = high - low;
+  if (kind === 'dm') {
+    const x = close < open ? high + 2 * low + close : close > open ? 2 * high + low + close : high + low + 2 * close;
+    return { pp: x / 4, r1: x / 2 - low, s1: x / 2 - high };
+  }
+  if (kind === 'camarilla') {
+    const step = range * 1.1;
+    return {
+      pp: (high + low + close) / 3,
+      r1: close + step / 12, s1: close - step / 12,
+      r2: close + step / 6, s2: close - step / 6,
+      r3: close + step / 4, s3: close - step / 4,
+    };
+  }
+  const pp = kind === 'woodie' ? (high + low + 2 * close) / 4 : (high + low + close) / 3;
+  if (kind === 'fibonacci') {
+    return {
+      pp,
+      r1: pp + 0.382 * range, s1: pp - 0.382 * range,
+      r2: pp + 0.618 * range, s2: pp - 0.618 * range,
+      r3: pp + range, s3: pp - range,
+    };
+  }
+  const r1 = 2 * pp - low;
+  const s1 = 2 * pp - high;
+  if (kind === 'classic') return { pp, r1, s1, r2: pp + range, s2: pp - range, r3: pp + 2 * range, s3: pp - 2 * range };
+  // Traditional, and Woodie's levels from its own pivot.
+  return { pp, r1, s1, r2: pp + range, s2: pp - range, r3: high + 2 * (pp - low), s3: low - 2 * (high - pp) };
 }

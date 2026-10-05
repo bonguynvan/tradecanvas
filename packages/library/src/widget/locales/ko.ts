@@ -499,6 +499,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'compare.ownPane': '가격, 별도 보조 차트에 표시',
   'compare.spread': '스프레드: {main} − {other}',
   'compare.ratio': '비율: {main} ÷ {other}',
+  'compare.correlation': '상관관계: {main} ↔ {other}',
+  'compare.correlationLog': '수익률 상관관계: {main} ↔ {other}',
   'drawingSettings.addAlert': '알림 추가',
   'drawingSettings.alertAdded': '알림을 추가했습니다: 가격과 {name}의 교차',
   'drawingOption.rewardRatio': '손익비',

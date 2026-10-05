@@ -499,6 +499,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'compare.ownPane': '価格（専用サブチャート）',
   'compare.spread': 'スプレッド：{main} − {other}',
   'compare.ratio': '比率：{main} ÷ {other}',
+  'compare.correlation': '相関：{main} と {other}',
+  'compare.correlationLog': 'リターンの相関：{main} と {other}',
   'drawingSettings.addAlert': 'アラートを追加',
   'drawingSettings.alertAdded': 'アラートを追加しました：価格と {name} のクロス',
   'drawingOption.rewardRatio': 'リスクリワード比',

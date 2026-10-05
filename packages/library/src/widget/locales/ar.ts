@@ -510,6 +510,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'compare.ownPane': 'السعر، في لوحة مستقلة',
   'compare.spread': 'الفارق: {main} − {other}',
   'compare.ratio': 'النسبة: {main} ÷ {other}',
+  'compare.correlation': 'الارتباط: {main} مع {other}',
+  'compare.correlationLog': 'ارتباط العوائد: {main} مع {other}',
   'drawingSettings.addAlert': 'إضافة تنبيه',
   'drawingSettings.alertAdded': 'تمت إضافة تنبيه: السعر يتقاطع مع {name}',
   'drawingOption.rewardRatio': 'العائد:المخاطرة',

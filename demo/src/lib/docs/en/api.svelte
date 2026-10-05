@@ -131,11 +131,13 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   chart's close to it — those last are indicators (<code>compareSymbol</code>,
   <code>spread</code>), with legends, value tags, alerts and saved layouts like any
   other. The other symbol's bars line up with the chart's by time. The chart asks for
-  the bars it needs; give them again after a timeframe change.
+  the bars it needs; give them again after a timeframe change. <code>correlation</code> (of the closes)
+  and <code>correlationlog</code> (of bar-to-bar returns) read the other symbol the same way, from −1 to 1.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
@@ -143,7 +145,7 @@ chart.getRequiredSymbols()                           // what to fetch again on a
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
   In ChartWidget, the object tree's compare button asks for a symbol, then how:
-  percent change, own scale, own pane, spread or ratio.
+  percent change, own scale, own pane, spread, ratio, or the correlation of prices or of returns.
 </p>
 
 <h3>Exporting data</h3>

@@ -131,11 +131,13 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>spread</code>), có chú
   thích, nhãn giá trị, cảnh báo và được lưu trong bố cục như mọi chỉ báo khác. Nến của mã kia được
   khớp với nến của biểu đồ theo thời gian. Biểu đồ tự yêu cầu những nến nó cần; hãy cung cấp lại
-  sau khi đổi khung thời gian.
+  sau khi đổi khung thời gian. <code>correlation</code> (theo giá đóng cửa) và <code>correlationlog</code>
+  (theo lợi suất từng nến) đọc mã kia theo cùng cách, cho giá trị từ −1 đến 1.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
@@ -143,7 +145,7 @@ chart.getRequiredSymbols()                           // what to fetch again on a
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
   Trong ChartWidget, nút so sánh trong cây đối tượng hỏi mã, rồi hỏi cách so sánh: thay đổi
-  phần trăm, thang riêng, pane riêng, chênh lệch hoặc tỷ lệ.
+  phần trăm, thang riêng, pane riêng, chênh lệch, tỷ lệ, hoặc tương quan theo giá hay theo lợi suất.
 </p>
 
 <h3>Xuất dữ liệu</h3>

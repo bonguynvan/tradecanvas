@@ -128,11 +128,13 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   スケールや専用のペインに表示したり、チャートの終値とのスプレッドや比率を表示したりできます。後者は
   インジケーター（<code>compareSymbol</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
   凡例、値ラベル、アラートを持ち、レイアウトにも保存されます。もう一方のシンボルのバーは時刻でチャートのバーに
-  揃えられます。チャートは必要なバーを要求するので、時間足を変えたら改めて渡してください。
+  揃えられます。チャートは必要なバーを要求するので、時間足を変えたら改めて渡してください。<code>correlation</code>（終値）と
+  <code>correlationlog</code>（バーごとのリターン）も同じようにもう一方のシンボルを読み、−1 から 1 の値を取ります。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
+chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
 chart.on('symbolSeriesRequest', async ({ payload }) =>
   chart.setSymbolSeries(payload.symbol, await adapter.fetchHistory(payload.symbol, '1h', 1000)))
@@ -140,7 +142,7 @@ chart.getRequiredSymbols()                           // what to fetch again on a
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
   ChartWidget では、オブジェクトツリーの比較ボタンでまずシンボルを、次に表示方法（変化率、専用スケール、
-  専用サブチャート、スプレッド、比率）を選びます。
+  専用サブチャート、スプレッド、比率、価格またはリターンの相関）を選びます。
 </p>
 
 <h3>データのエクスポート</h3>
