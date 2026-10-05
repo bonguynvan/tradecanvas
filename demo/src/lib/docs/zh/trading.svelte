@@ -223,7 +223,8 @@ chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
-// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
+// books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
 <h2>信号标记</h2>
 <p>交易机器人或信号交易集成可以在叠加层上放置方向箭头。</p>

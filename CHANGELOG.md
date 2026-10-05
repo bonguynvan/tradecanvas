@@ -4,26 +4,28 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
-### WebGL: indicators, panes and more chart types on the GPU
+### WebGL: the heatmap and profiles on the GPU
 
-- **More on the GPU**: with `renderer: 'webgl'`, indicators, indicator panes, compare lines and most other chart types (line, area, bars, Heikin-Ashi, hollow candles, Renko, line break, range bars, HLC area, step line, line with markers, equivolume, high-low) draw with WebGL too. Their Canvas 2D drawing is recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is; text, drawings, orders, axes and the crosshair stay on Canvas 2D.
-- **Same look**: lines and fills differ from Canvas 2D only on a few edge pixels. Anything the GPU wouldn't draw the same (images, patterns, rotated or non-rectangular clips, sharp mitered corners, overlapping pieces of one path, shapes other than bands and areas) is left to Canvas 2D, in order, so the stacking doesn't change. Baseline, Kagi and point & figure charts stay on Canvas 2D for now.
-- **Faster where it counts**: panning on integrated graphics at a pixel ratio of 2, 500 candles with four indicators take 19.6 ms a frame instead of 27.4, zoomed out on 200,000 bars with four indicators 20.2 instead of 34.5, six charts side by side 17.2 instead of 23.5, and a 2560×1400 chart with four indicators 29.1 instead of 114.5. At 150% scaling that chart pans at 60 fps (70.8 → 17.6 ms).
-- **Custom indicators come along**: a plugin's `render` draws on the recording context like on any other, and falls back to Canvas 2D by itself where it needs to. Its `render` may then run twice in a frame, so it should draw without side effects. Text it draws goes on the 2D canvas, over the lines of the indicators drawn with it.
-- **Session break labels** draw over the indicators too.
-- The WebGL code is now about 17 KB gzipped, still loaded only on first use.
+- **Under the bars, on the GPU**: with `renderer: 'webgl'`, the depth heatmap, the volume profile and the market profile draw with WebGL too, under the bars, with volume under a profile as in Canvas 2D. A market profile showing its stats readout or TPO letters stays with Canvas 2D: text can't go between the GPU's background and its bars. The 2D canvas under the GPU's is now only there for that, a watermark, or what the GPU can't take.
+- **Faster**: panning on integrated graphics at a pixel ratio of 2, a depth heatmap of 240 snapshots by 80 levels takes 16.8 ms a frame instead of 25.5 (60 fps), and zoomed out on 1,000,000 bars with four indicators 16.7 instead of 34.5. Rectangles filled one by one, as heatmap cells are, are recorded straight to the GPU and drawn together.
+- **Same pixels**: candles and volume land on the same device pixels with Canvas 2D and WebGL at any scaling. Bars exactly on half a device pixel (a round bar step such as 5.1 px at 200%) could land one pixel apart; rounding now turns up from a hair under the half on both.
+- **Sharp volume candles**: wicks and bodies on whole device pixels, as candles are, the wick in the middle of a body as wide as the bar's volume.
+- **Order books for older bars**: `chart.pushDepthSnapshot(book, time)` stamps a heatmap snapshot at `time`, to fill in books recorded earlier, oldest first; without `time` it takes the latest bar's, as before.
+- **Feature Lab**: a liquidity heatmap scene, 240 order books of 80 levels each, with the Canvas 2D / WebGL switch.
+- `pnpm bench:render` has two more scenes: zoomed out on 1,000,000 bars with four indicators, and a depth heatmap.
 
-## 1.9.0 (2026-10-04)
+## 1.10.0 (2026-10-05)
 
-Includes 1.8.0, which wasn't published on its own.
+Everything since 1.7.0 in one release (1.8.0 and 1.9.0 weren't published on their own).
 
 ### WebGL renderer (preview)
 
-- **`renderer: 'webgl'`** draws the grid, session shading and break lines, candles and volume with WebGL 2, on a canvas under the 2D scene. Indicators, drawings, axes and the crosshair stay on Canvas 2D. `'auto'` takes WebGL only on a hardware GPU; Canvas 2D stays the default.
-- **Same pixels**: the GPU follows the 2D rules for whole device pixels and antialiased edges, so the two match to within 2/255 at 100%, 125%, 150% and 200% scaling.
-- **Faster where it counts**: panning on integrated graphics at a pixel ratio of 2, 2,000 candles on a 1600×900 chart take 17.6 ms a frame instead of 23.3 (60 fps), and on a 2560×1400 chart 22.5 ms instead of 38.1; six charts side by side, 24 ms instead of 33.4. At 150% scaling a 2560×1400 chart pans at about 60 fps (28.8 → 20.9 ms on average).
-- **Safe to try**: `chart.setRenderer(mode)` switches at runtime and resolves to what draws, `chart.getRenderer()` says which, and `rendererChange` reports each change and why (`'unsupported'`, `'contextLost'`). Where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D; a failure to load or compile is logged as a warning. The WebGL code is a chunk of its own (about 7 KB gzipped), loaded on first use, and a destroyed chart hands its GPU context back at once. Screenshots include what the GPU drew.
-- **Session break labels** now draw over the bars instead of under them, inside the plot, with Canvas 2D or WebGL. `SessionBreaks.render()` still draws lines and labels; `renderLines()` draws the lines alone.
+- **`renderer: 'webgl'`** draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, session shading and break lines, candles and volume directly, and indicators, indicator panes, compare lines and most other chart types (line, area, bars, Heikin-Ashi, hollow candles, Renko, line break, range bars, HLC area, step line, line with markers, equivolume, high-low) through their Canvas 2D drawing, recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. Text, drawings, orders, axes and the crosshair stay on Canvas 2D. `'auto'` takes WebGL only on a hardware GPU; Canvas 2D stays the default.
+- **Same look**: the GPU follows the 2D rules for whole device pixels and antialiased edges, so candles match Canvas 2D to within 2/255 at 100%, 125%, 150% and 200% scaling, and lines and fills differ only on a few edge pixels. Anything the GPU wouldn't draw the same (images, patterns, rotated or non-rectangular clips, sharp mitered corners, overlapping pieces of one path, shapes other than bands and areas) is left to Canvas 2D, in order, so the stacking doesn't change. Baseline, Kagi and point & figure charts stay on Canvas 2D for now.
+- **Faster where it counts**: panning on integrated graphics at a pixel ratio of 2, 2,000 candles on a 1600×900 chart take 17.6 ms a frame instead of 23.3 (60 fps), 500 candles with four indicators 19.6 instead of 27.4, zoomed out on 200,000 bars with four indicators 20.2 instead of 34.5, six charts side by side 17.2 instead of 23.5, and a 2560×1400 chart with four indicators 29.1 instead of 114.5. At 150% scaling that chart pans at 60 fps (70.8 → 17.6 ms).
+- **Safe to try**: `chart.setRenderer(mode)` switches at runtime and resolves to what draws, `chart.getRenderer()` says which, and `rendererChange` reports each change and why (`'unsupported'`, `'contextLost'`). Where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D; a failure to load or compile is logged as a warning. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use, and a destroyed chart hands its GPU context back at once. Screenshots include what the GPU drew.
+- **Custom indicators come along**: a plugin's `render` draws on the recording context like on any other, and falls back to Canvas 2D by itself where it needs to. Its `render` may then run twice in a frame, so it should draw without side effects. Text it draws goes on the 2D canvas, over the lines of the indicators drawn with it.
+- **Session break labels** now draw over the bars and indicators instead of under them, inside the plot, with Canvas 2D or WebGL. `SessionBreaks.render()` still draws lines and labels; `renderLines()` draws the lines alone.
 - **Feature Lab**: the 200,000-bar scene has a Canvas 2D / WebGL switch, and times a short pan on each switch.
 - `pnpm bench:render --renderer=webgl` (or `--renderer=auto`) measures the WebGL path.
 

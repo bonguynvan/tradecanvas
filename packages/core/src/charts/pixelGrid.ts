@@ -6,6 +6,20 @@
  * wick is one sharp column, a body has hard edges, at any ratio (1, 1.25, 2…).
  */
 
+/**
+ * Rounding to a device pixel turns up from a hair under the half. Bar steps
+ * are often round numbers (5.1 px, say) that put bars exactly on half a
+ * pixel, where 64-bit arithmetic here and 32-bit on the GPU would round some
+ * of them apart; a hair under, both land on the same side. The shaders use
+ * the same constant.
+ */
+export const PIXEL_ROUNDING = 0.5037;
+
+/** The device pixel a device-pixel position rounds to. */
+export function toPixel(v: number): number {
+  return Math.floor(v + PIXEL_ROUNDING);
+}
+
 function transformOf(ctx: CanvasRenderingContext2D): { a: number; d: number; e: number; f: number } {
   const m = typeof ctx.getTransform === 'function' ? ctx.getTransform() : undefined;
   return {
@@ -42,9 +56,9 @@ export function inDevicePixels<T>(ctx: CanvasRenderingContext2D, draw: (grid: Pi
   try {
     return draw({
       ratio: a,
-      x: (v) => Math.round(v * a + e),
-      y: (v) => Math.round(v * d + f),
-      left: (v, width) => Math.round(v * a + e - width / 2),
+      x: (v) => toPixel(v * a + e),
+      y: (v) => toPixel(v * d + f),
+      left: (v, width) => toPixel(v * a + e - width / 2),
     });
   } finally {
     ctx.restore();
@@ -67,7 +81,7 @@ export function barColumns(barWidth: number, ratio: number): { body: number; wic
 function snap(v: number, width: number, scale: number, shift: number): { at: number; width: number } {
   const w = Math.max(1, Math.round(width * scale));
   const half = w % 2 ? 0.5 : 0;
-  return { at: (Math.round(v * scale + shift - half) + half - shift) / scale, width: w / scale };
+  return { at: (toPixel(v * scale + shift - half) + half - shift) / scale, width: w / scale };
 }
 
 /**

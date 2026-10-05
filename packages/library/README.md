@@ -1066,7 +1066,7 @@ A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame bud
 
 ### WebGL renderer (preview)
 
-`renderer: 'webgl'` draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, sessions, candles and volume directly, and the Canvas 2D drawing of indicators, compare lines and most chart types recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. Text, drawings, orders, axes and the crosshair stay on Canvas 2D, as does anything the GPU wouldn't draw the same (left to Canvas 2D in order, so the stacking doesn't change); custom indicator plugins come along without changes. Candles match Canvas 2D to within 2/255; lines and fills differ only on a few antialiased edge pixels. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+`renderer: 'webgl'` draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, sessions, candles and volume directly, and the Canvas 2D drawing of indicators, compare lines and most chart types recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. The depth heatmap and the volume and market profiles are recorded the same way, under the bars; a market profile showing its stats readout or letters stays with Canvas 2D. Text, drawings, orders, axes and the crosshair stay on Canvas 2D, as does anything the GPU wouldn't draw the same (left to Canvas 2D in order, so the stacking doesn't change); custom indicator plugins come along without changes. Candles land on the same device pixels as with Canvas 2D; lines and fills differ only on a few antialiased edge pixels. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
@@ -1083,6 +1083,8 @@ Frame time while panning, on integrated graphics (Intel UHD; 16.7 ms is 60 fps):
 |---|---|---|---|
 | 1600×900, 500 candles + 4 indicators | 2 | 27.4 ms | 19.6 ms |
 | 1600×900, zoomed out on 200,000 bars + 4 indicators | 2 | 34.5 ms | 20.2 ms |
+| 1600×900, zoomed out on 1,000,000 bars + 4 indicators | 2 | 34.5 ms | 16.7 ms |
+| 1600×900, depth heatmap, 240 snapshots × 80 levels | 2 | 25.5 ms | 16.8 ms |
 | Six charts, 500 candles and two indicators each | 2 | 23.5 ms | 17.2 ms |
 | 2560×1400, 2,000 candles + 4 indicators | 1 | 41.6 ms | 17.7 ms |
 | 2560×1400, 2,000 candles + 4 indicators | 1.5 | 70.8 ms | 17.6 ms |

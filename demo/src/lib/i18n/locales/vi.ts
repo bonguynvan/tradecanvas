@@ -302,6 +302,17 @@ const vi: SiteMessages = {
         'Thêm một chỉ báo nữa và xem thời gian chuyển đổi',
       ],
     },
+    heatmap: {
+      title: 'Heatmap thanh khoản',
+      stat: '240 × 80 ô',
+      blurb:
+        '240 ảnh chụp sổ lệnh, mỗi ảnh 80 mức giá, thành một heatmap nằm sau các cây nến: khối lượng chờ khớp sáng lên theo từng mức, bên mua màu xanh, bên bán màu đỏ, và những bức tường lệnh đứng lâu sẽ nổi bật. Với WebGL, 19.200 ô được vẽ trên GPU, dưới các cây nến.',
+      tryThis: [
+        'Chuyển giữa Canvas 2D và WebGL phía trên biểu đồ: mỗi lần chuyển sẽ đo một lần kéo ngắn',
+        'Tìm các hàng sáng: những bức tường khối lượng đứng yên ở một mức giá theo thời gian',
+        'Phóng to vào một bức tường rồi kéo qua lại: các ô chạy theo kịp các cây nến',
+      ],
+    },
     switching: {
       title: 'Chuyển đổi khi mạng chậm',
       stat: '+1.2 s độ trễ',

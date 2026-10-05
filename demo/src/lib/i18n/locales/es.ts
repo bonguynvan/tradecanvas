@@ -304,6 +304,17 @@ const es: SiteMessages = {
         'Añade otro indicador y observa el tiempo del cambio',
       ],
     },
+    heatmap: {
+      title: 'Mapa de calor de liquidez',
+      stat: '240 × 80 celdas',
+      blurb:
+        'Doscientas cuarenta instantáneas del libro de órdenes, de 80 niveles de precio cada una, como un mapa de calor tras las velas: el tamaño en espera se ilumina nivel a nivel, compras en verde y ventas en rojo, y los muros que persisten destacan. Con WebGL, las 19,200 celdas se dibujan en la GPU bajo las barras.',
+      tryThis: [
+        'Cambia entre Canvas 2D y WebGL sobre el gráfico: cada cambio mide un breve desplazamiento',
+        'Busca las filas brillantes: muros de tamaño que se quedan en un precio con el tiempo',
+        'Acerca el zoom a un muro y desplázate de un lado a otro: las celdas siguen a las barras',
+      ],
+    },
     switching: {
       title: 'Cambios con red lenta',
       stat: '+1.2 s de latencia',

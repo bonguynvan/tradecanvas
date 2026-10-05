@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
-import { barColumns, crispX, crispY, inDevicePixels } from '../pixelGrid.js';
+import { barColumns, crispX, crispY, inDevicePixels, PIXEL_ROUNDING } from '../pixelGrid.js';
 import { CandlestickRenderer } from '../CandlestickRenderer.js';
+import { VolumeCandleRenderer } from '../VolumeCandleRenderer.js';
+import { CANDLE_BARS_VS } from '../../webgl/shaders.js';
 
 /** A context with a transform: `ratio` device pixels per CSS pixel. */
 function ctxWithRatio(ratio: number, calls: string[] = []) {
@@ -54,6 +56,15 @@ describe('inDevicePixels', () => {
     expect(calls).toEqual(['save', 'setTransform', 'restore']);
   });
 
+  it('rounds up from a hair under the half, so a bar exactly on one lands alike on the GPU', () => {
+    // A 5.1 px bar step at ratio 2 puts every fifth bar on half a device
+    // pixel, which 64-bit arithmetic may see a hair under and 32-bit over.
+    const seen = inDevicePixels(ctxWithRatio(2), (grid) => [grid.x(10.25), grid.x(10.2499), grid.x(10.24), grid.left(10.2499, 2)]);
+    expect(seen).toEqual([21, 21, 20, 20]);
+    expect(crispX(ctxWithRatio(1), 10.9999, 1).x).toBe(11.5);
+    expect(CANDLE_BARS_VS).toContain(`float snap(float v) { return floor(v + ${PIXEL_ROUNDING.toFixed(4)}); }`);
+  });
+
   it('works as one-to-one when the context has no transform to read', () => {
     const ctx = new Proxy({}, { get: () => () => undefined, set: () => true }) as unknown as CanvasRenderingContext2D;
     expect(inDevicePixels(ctx, (grid) => [grid.ratio, grid.x(3.6)])).toEqual([1, 4]);
@@ -101,6 +112,45 @@ describe('crisp candles', () => {
   });
 });
 
+describe('crisp volume candles', () => {
+  let rects: number[][];
+  class RecordingPath {
+    rect(x: number, y: number, w: number, h: number) { rects.push([x, y, w, h]); }
+    moveTo() {}
+    lineTo() {}
+  }
+  beforeEach(() => {
+    rects = [];
+    vi.stubGlobal('Path2D', RecordingPath);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const bars: OHLCBar[] = [
+    { time: 0, open: 120, high: 180, low: 110, close: 170, volume: 1000 },
+    { time: 1, open: 170, high: 175, low: 105, close: 115, volume: 300 },
+  ];
+  const vp = {
+    visibleRange: { from: 0, to: 1 }, priceRange: { min: 100, max: 200 },
+    barWidth: 9.3, barSpacing: 2.1, offset: 0.37, chartRect: { x: 0, y: 0, width: 400, height: 300 },
+  } as ViewportState;
+
+  it('lands wicks and bodies on whole device pixels, the body as wide as its volume, the wick in its middle', () => {
+    for (const ratio of [1, 1.25, 2]) {
+      rects = [];
+      new VolumeCandleRenderer().render(ctxWithRatio(ratio), bars, vp, DARK_THEME);
+      expect(rects.flat().every(Number.isInteger), `ratio ${ratio}`).toBe(true);
+      // Bar by bar: the wick, then the body.
+      const [upWick, upBody, downWick, downBody] = rects;
+      const { wick } = barColumns(vp.barWidth, ratio);
+      expect([upWick[2], downWick[2]]).toEqual([wick, wick]);
+      expect(upBody[2]).toBe(barColumns(vp.barWidth, ratio).body);
+      expect(downBody[2]).toBeLessThan(upBody[2]);
+      expect(upBody[0] + (upBody[2] - wick) / 2).toBe(upWick[0]);
+      expect(downBody[0] + (downBody[2] - wick) / 2).toBe(downWick[0]);
+    }
+  });
+});
+
 describe('crispY / crispX', () => {
   const ctx = (ratio: number) => ctxWithRatio(ratio);
   it('puts an odd-width line on a pixel centre and an even one on a pixel edge', () => {
@@ -127,6 +177,36 @@ describe('one column rule for bars and lines', () => {
         expect(lineLeft, `ratio ${ratio}, x ${x}`).toBeCloseTo(left, 9);
       }
     }
+  });
+});
+
+describe('the same columns on the GPU', () => {
+  // The shader's arithmetic in 32-bit floats: where bar `from` is, then a bar step per instance.
+  const f = Math.fround;
+  function gpuWickLeft(i: number, from: number, barUnit: number, offsetX: number, ratio: number, wick: number): number {
+    const x0 = f(from * barUnit + offsetX);
+    const cx = f(f(x0 + f(f(i - from) * f(barUnit))) * f(ratio));
+    return Math.floor(f(f(cx - f(wick * 0.5)) + f(PIXEL_ROUNDING)));
+  }
+
+  it('puts every wick where Canvas 2D does, bar steps and scrolls on round numbers included', () => {
+    let apart = 0;
+    for (const ratio of [1, 1.25, 1.5, 2, 3]) {
+      for (const barUnit of [5.1, 3.3, 7.25, 2.6, 10, 4.5]) {
+        for (const scroll of [0, 1, 7, 120.5, 4321.25]) {
+          const from = 4700;
+          const offsetX = -(from * barUnit + scroll) + 1.55;
+          const wick = barColumns(barUnit * 0.6, ratio).wick;
+          const lefts = inDevicePixels(ctxWithRatio(ratio), (g) => {
+            const out: number[] = [];
+            for (let i = from; i < from + 400; i++) out.push(g.left(i * barUnit + offsetX, wick));
+            return out;
+          });
+          lefts.forEach((left, k) => { if (left !== gpuWickLeft(from + k, from, barUnit, offsetX, ratio, wick)) apart++; });
+        }
+      }
+    }
+    expect(apart).toBe(0);
   });
 });
 

@@ -86,8 +86,8 @@ describe('WebGLSeriesRenderer', () => {
   it('reports what it drew', () => {
     const r = makeRenderer()!;
     expect(r.label).toBe('Fake GPU');
-    expect(r.render(frame())).toEqual({ series: true, volume: true, background: true, recorded: false });
-    expect(r.render(frame({ candles: false, volume: null, background: null }))).toEqual({ series: false, volume: false, background: false, recorded: false });
+    expect(r.render(frame())).toEqual({ series: true, volume: true, background: true, recorded: false, under: false });
+    expect(r.render(frame({ candles: false, volume: null, background: null }))).toEqual({ series: false, volume: false, background: false, recorded: false, under: false });
   });
 
   it('draws the grid, the other rectangles, the volume, then the candles: a call each', () => {
@@ -169,6 +169,24 @@ describe('WebGLSeriesRenderer', () => {
     expect(named('disable').at(-1)?.args[0]).toBe(fake.enumOf('SCISSOR_TEST'));
   });
 
+  it('draws what was recorded to go under the bars before them, the rectangles of steps in a row in one call', () => {
+    const r = makeRenderer()!;
+    const under = r.recorder(2, null);
+    const region = under.region(viewport.chartRect, { text: false });
+    region.step((c) => {
+      c.fillStyle = '#00ff00';
+      c.fillRect(10, 20, 4, 4);
+      c.fillRect(20, 20, 4, 4);
+    });
+    region.step((c) => c.fillRect(30, 20, 4, 4));
+    fake.calls.length = 0;
+    const drawn = r.render(frame({ under, background: null }));
+    expect(drawn.under).toBe(true);
+    const order = fake.calls.filter((c) => c.name === 'drawArraysInstanced').map((c) => [c.args[2], c.args[3]]);
+    // The three rectangles, then volume and candles.
+    expect(order).toEqual([[6, 3], [6, 20], [12, 20]]);
+  });
+
   it('ignores a recorder it did not make', () => {
     const r = makeRenderer()!;
     const drawn = r.render(frame({ recorded: { region: () => { throw new Error('no'); } } }));
@@ -179,7 +197,7 @@ describe('WebGLSeriesRenderer', () => {
     const r = makeRenderer()!;
     fake.lose();
     fake.calls.length = 0;
-    expect(r.render(frame())).toEqual({ series: false, volume: false, background: false, recorded: false });
+    expect(r.render(frame())).toEqual({ series: false, volume: false, background: false, recorded: false, under: false });
     expect(named('drawArraysInstanced')).toHaveLength(0);
   });
 

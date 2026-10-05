@@ -233,7 +233,8 @@ chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
-// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
+// books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
 <h2>Điểm đánh dấu tín hiệu</h2>
 <p>Các tích hợp bot hoặc giao dịch theo tín hiệu có thể đặt mũi tên chỉ hướng lên lớp phủ.</p>

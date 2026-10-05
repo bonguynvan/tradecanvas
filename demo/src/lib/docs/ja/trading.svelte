@@ -224,7 +224,8 @@ chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
-// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
+// books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
 <h2>シグナルマーカー</h2>
 <p>ボットやシグナル取引との連携で、オーバーレイ上に方向を示す矢印を配置できます。</p>

@@ -48,6 +48,8 @@ export class MarketProfileRenderer {
   isSplitBySession(): boolean { return this.splitBySession; }
   /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */
   setLetters(enabled: boolean): void { this.letters = enabled; }
+  /** Whether it writes text: the stats readout, or TPO letters per session (when zoomed in enough). */
+  drawsText(): boolean { return this.splitBySession ? this.letters : this.showStats; }
 
   /** POC / VAH / VAL from the most recent render, or null if not drawn. */
   getStats(): MarketProfileStats | null {

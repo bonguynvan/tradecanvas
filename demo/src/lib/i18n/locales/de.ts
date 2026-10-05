@@ -302,6 +302,17 @@ const de: SiteMessages = {
         'Fügen Sie einen weiteren Indikator hinzu und beobachten Sie die Wechselzeit',
       ],
     },
+    heatmap: {
+      title: 'Liquiditäts-Heatmap',
+      stat: '240 × 80 Zellen',
+      blurb:
+        'Zweihundertvierzig Orderbuch-Schnappschüsse mit je 80 Preisstufen als Heatmap hinter den Kerzen: Ruhende Größe leuchtet Stufe für Stufe auf, Gebote grün, Angebote rot, und Wände, die lange stehen bleiben, fallen auf. Mit WebGL zeichnet die GPU die 19.200 Zellen unter den Kerzen.',
+      tryThis: [
+        'Über dem Chart zwischen Canvas 2D und WebGL wechseln: jeder Wechsel misst ein kurzes Verschieben',
+        'Suchen Sie die hellen Zeilen: Wände, die über die Zeit auf einem Preis stehen bleiben',
+        'Zoomen Sie auf eine Wand und verschieben Sie hin und her: Die Zellen halten mit den Kerzen Schritt',
+      ],
+    },
     switching: {
       title: 'Wechsel bei langsamem Netz',
       stat: '+1,2 s Latenz',

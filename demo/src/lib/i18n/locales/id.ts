@@ -302,6 +302,17 @@ const id: SiteMessages = {
         'Tambahkan satu indikator lagi dan perhatikan waktu pergantiannya',
       ],
     },
+    heatmap: {
+      title: 'Heatmap likuiditas',
+      stat: '240 × 80 sel',
+      blurb:
+        'Dua ratus empat puluh snapshot order book, masing-masing 80 level harga, menjadi heatmap di belakang candle: volume antrean menyala per level, bid hijau dan ask merah, dan dinding yang bertahan lama tampak menonjol. Dengan WebGL, 19.200 sel digambar GPU di bawah bar.',
+      tryThis: [
+        'Beralih antara Canvas 2D dan WebGL di atas grafik: tiap peralihan mengukur geseran singkat',
+        'Cari baris yang terang: dinding volume yang bertahan di satu harga dari waktu ke waktu',
+        'Perbesar satu dinding lalu geser bolak-balik: sel-selnya mengikuti bar',
+      ],
+    },
     switching: {
       title: 'Ganti di jaringan lambat',
       stat: '+1.2 s latensi',

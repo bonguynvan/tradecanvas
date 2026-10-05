@@ -246,7 +246,8 @@ chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
-// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()`}</code></pre>
+// low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
+// books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
 <h2>Marcadores de señales</h2>
 <p>Las integraciones con bots o de trading por señales pueden colocar flechas direccionales sobre la capa.</p>

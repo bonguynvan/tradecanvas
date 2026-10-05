@@ -242,11 +242,11 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     const canvas = document.createElement('canvas');
     const recording = fakeContext(canvas);
     let i = 0;
-    const regions: { clip: { x: number; y: number; width: number; height: number }; drawText: ReturnType<typeof vi.fn> }[] = [];
+    const regions: { clip: { x: number; y: number; width: number; height: number }; options?: { text?: boolean }; drawText: ReturnType<typeof vi.fn> }[] = [];
     const recorder = {
-      region: (clip: { x: number; y: number; width: number; height: number }) => {
+      region: (clip: { x: number; y: number; width: number; height: number }, options?: { text?: boolean }) => {
         const drawText = vi.fn();
-        regions.push({ clip, drawText });
+        regions.push({ clip, options, drawText });
         return {
           step: (draw: (c: CanvasRenderingContext2D) => void) => {
             if (!keep(i++)) return false;
@@ -260,7 +260,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     return { recorder, recording, regions };
   }
 
-  function fakeGpu(drawn: Record<string, boolean> = { series: true, volume: true, background: true, recorded: true }, rec = fakeRecorder()) {
+  function fakeGpu(drawn: Record<string, boolean> = { series: true, volume: true, background: true, recorded: true, under: true }, rec = fakeRecorder()) {
     const canvas = document.createElement('canvas');
     let lostCallback: (() => void) | null = null;
     const gpu = {
@@ -482,19 +482,98 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(isBack(grid.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
   });
 
-  it('draws volume under a volume or market profile, as Canvas 2D does', async () => {
-    const { ctx, volume } = await candleContext();
-    const order: string[] = [];
-    volume.mockImplementation(() => order.push('volume'));
-    ctx.volumeProfile = { render: () => order.push('profile'), isVisible: () => true } as unknown as RenderContext['volumeProfile'];
-    const { gpu } = fakeGpu({ series: true, volume: false, background: false });
+  it('records a depth heatmap under the bars, with no background canvas', async () => {
+    const { ctx } = await candleContext();
+    const heat = vi.fn();
+    ctx.depthHeatmap = { render: heat, isVisible: () => true } as unknown as RenderContext['depthHeatmap'];
+    const { gpu, rec } = fakeGpu();
     engine.attachGpu(gpu);
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
+    expect(heat.mock.calls[0][0]).toBe(rec.recording);
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: rec.recorder, background: { grid: true, rects: [] } }));
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+    // Clipped to the plot, as on the background canvas, and with no text:
+    // nothing could put it between the GPU's background and its bars.
+    expect(rec.regions[0].clip).toEqual(ctx.viewport.chartRect);
+    expect(rec.regions[0].options).toEqual({ text: false });
+  });
+
+  it('puts a market profile that writes text on the background canvas, with all under the bars, unrecorded', async () => {
+    const { ctx, volume } = await candleContext();
+    const profile = vi.fn();
+    const drawsText = vi.fn(() => true);
+    ctx.marketProfile = { render: profile, isVisible: () => true, drawsText } as unknown as RenderContext['marketProfile'];
+    const { gpu, rec } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(rec.regions.some((r) => r.options?.text === false)).toBe(false);
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: null, background: null, volume: null }));
+    expect(stack(gpu)).toEqual(['back', 'gpu', 'scene', 'top']);
+    const last = <T extends { mock: { calls: unknown[][] } }>(f: T) => f.mock.calls.at(-1)![0] as CanvasRenderingContext2D;
+    expect(isBack(last(volume), gpu)).toBe(true);
+    expect(isBack(last(profile), gpu)).toBe(true);
+    // Without text it goes to the GPU.
+    drawsText.mockReturnValue(false);
+    engine.requestRender(LayerType.Main);
+    runFrame();
+    expect(rec.regions.some((r) => r.options?.text === false)).toBe(true);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+  });
+
+  it('puts only what goes under the bars on the background canvas when the GPU drew the background but not them', async () => {
+    const { ctx, grid } = await candleContext();
+    const heat = vi.fn();
+    ctx.depthHeatmap = { render: heat, isVisible: () => true } as unknown as RenderContext['depthHeatmap'];
+    const { gpu } = fakeGpu({ series: true, volume: true, background: true, recorded: true, under: false });
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(stack(gpu)).toEqual(['back', 'gpu', 'scene', 'top']);
+    expect(isBack(heat.mock.calls.at(-1)![0] as CanvasRenderingContext2D, gpu)).toBe(true);
+    // The grid once, by the GPU.
+    expect(grid.mock.calls.some(([c]) => isBack(c as CanvasRenderingContext2D, gpu))).toBe(false);
+  });
+
+  it('records volume under a volume profile, in the order Canvas 2D draws them', async () => {
+    const { ctx, volume } = await candleContext();
+    const order: string[] = [];
+    volume.mockImplementation(() => order.push('volume'));
+    ctx.volumeProfile = { render: () => order.push('profile'), isVisible: () => true } as unknown as RenderContext['volumeProfile'];
+    const { gpu, rec } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    // The GPU's own volume would go over the profile: none, it's recorded.
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ volume: null }));
     expect(order).toEqual(['volume', 'profile']);
-    expect(isBack(volume.mock.calls[0][0] as CanvasRenderingContext2D, gpu)).toBe(true);
+    expect(volume.mock.calls[0][0]).toBe(rec.recording);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+  });
+
+  it('draws what goes under the bars on the background canvas when the GPU cannot take all of it', async () => {
+    const { ctx, volume } = await candleContext();
+    const heat = vi.fn();
+    const profile = vi.fn();
+    ctx.depthHeatmap = { render: heat, isVisible: () => true } as unknown as RenderContext['depthHeatmap'];
+    ctx.volumeProfile = { render: profile, isVisible: () => true } as unknown as RenderContext['volumeProfile'];
+    // The second of the steps under the bars (volume) can't be recorded.
+    const { gpu } = fakeGpu(undefined, fakeRecorder((i) => i !== 1));
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: null, background: null }));
+    expect(stack(gpu)).toEqual(['back', 'gpu', 'scene', 'top']);
+    const last = <T extends { mock: { calls: unknown[][] } }>(f: T) => f.mock.calls.at(-1)![0] as CanvasRenderingContext2D;
+    expect(isBack(last(heat), gpu)).toBe(true);
+    expect(isBack(last(volume), gpu)).toBe(true);
+    expect(isBack(last(profile), gpu)).toBe(true);
   });
 
   it('asks for no grid when it is hidden', async () => {

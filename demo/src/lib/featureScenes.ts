@@ -42,6 +42,24 @@ export interface FeatureScene {
 
 const HOUR = 3_600_000;
 
+/** Order books in the heatmap scene: one per 1-minute bar, 40 levels a side. */
+const HEATMAP_BOOKS = 240;
+const HEATMAP_LEVELS = 40;
+/** Every this many price steps, a wall of resting size that stays put over time. */
+const WALL_EVERY = 23;
+
+/** Order books around a price, on a fixed grid of `step`, with walls that stay at their prices. */
+function bookRecorder(step: number) {
+  let state = 7;
+  const rand = () => ((state = (state * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const side = (mid: number, dir: 1 | -1) =>
+    Array.from({ length: HEATMAP_LEVELS }, (_, i) => {
+      const tick = Math.round(mid / step) + dir * (i + 1);
+      return { price: tick * step, volume: 5 + rand() * 40 + (tick % WALL_EVERY === 0 ? 260 : 0) };
+    });
+  return (mid: number) => ({ bids: side(mid, -1), asks: side(mid, 1) });
+}
+
 /** Extreme bar in `[from, to)`: the highest high or the lowest low, as an anchor. */
 function swing(data: OHLCBar[], from: number, to: number, kind: 'high' | 'low'): { time: number; price: number } {
   let best = data[from];
@@ -382,6 +400,32 @@ await chart.setRenderer('webgl')  // drawn on the GPU`,
       },
     }),
     data: (symbol) => generateBars(200_000, symbol, 60_000, 30_000),
+  },
+  {
+    id: 'heatmap',
+    code: `chart.setDepthHeatmapVisible(true)
+for (const { time, book } of recordedBooks) {
+  chart.pushDepthSnapshot(book, time)
+}
+await chart.setRenderer('webgl')  // cells on the GPU`,
+    renderers: true,
+    options: () => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO'],
+      timeframe: '1m',
+      // The books are stamped at 1-minute bars.
+      timeframes: ['1m'],
+      customTimeframes: false,
+    }),
+    data: (symbol) => generateBars(2_000, symbol, 60_000, 30_000),
+    setup: (_widget, chart) => {
+      const bars = chart.getData().slice(-HEATMAP_BOOKS);
+      if (bars.length === 0) return;
+      const book = bookRecorder(bars[0].close * 0.0004);
+      chart.setDepthHeatmapConfig({ capacity: HEATMAP_BOOKS });
+      for (const bar of bars) chart.pushDepthSnapshot(book(bar.close), bar.time);
+      chart.setDepthHeatmapVisible(true);
+    },
   },
   {
     id: 'switching',

@@ -8,7 +8,7 @@ import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indi
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
-import type { GpuBackground, GpuDrawn, GpuRenderer } from './gpu.js';
+import type { GpuBackground, GpuDrawn, GpuRecorder, GpuRenderer } from './gpu.js';
 import { canvasPlan, recordSteps, type DrawStep, type PaneSteps, type StepPlan } from './plotSteps.js';
 import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
@@ -36,14 +36,12 @@ const PANEL_HEADER_HEIGHT = 20;
 /** Below this a pane (folded to its header) draws no scale. */
 const MIN_PANE_PLOT_HEIGHT = 8;
 
-/** Whether something under the bars needs Canvas 2D (text, images), not just rectangles. */
-function needsBackCanvas(ctx: RenderContext): boolean {
-  return !!(
-    ctx.watermark?.isVisible() ||
-    ctx.depthHeatmap?.isVisible() ||
-    ctx.volumeProfile?.isVisible() ||
-    ctx.marketProfile?.isVisible()
-  );
+/** `steps` recorded in one region, all or none: a recorder holding all of them, or null. */
+function recordAll(recorder: GpuRecorder | null, clip: Rect, steps: readonly DrawStep[]): GpuRecorder | null {
+  if (!recorder) return null;
+  // No text: there is no 2D layer between the GPU's background and its bars.
+  const region = recorder.region(clip, { text: false });
+  return steps.every((step) => region.step(step)) ? recorder : null;
 }
 
 /** Decimals for a pane's axis labels and header values, from its tick step. */
@@ -325,10 +323,12 @@ export class RenderEngine {
 
   /**
    * With a GPU: the grid, session shading, break lines, bars and volume on
-   * the GPU. A watermark, heatmap or profile needs Canvas 2D: then the whole
-   * background goes on a 2D canvas under the GPU's, there only while needed.
-   * A profile goes over the volume bars, as in Canvas 2D, so then volume is
-   * drawn there too.
+   * the GPU, then what was recorded of the plot and panes. What goes under
+   * the bars (a depth heatmap, volume profiles, with volume under them as in
+   * Canvas 2D) is recorded to go under them too. A watermark needs Canvas
+   * 2D, and so does what goes under the bars when the GPU can't take all of
+   * it: then the whole background goes on a 2D canvas under the GPU's,
+   * there only while needed.
    */
   private renderGpu(
     gpu: GpuRenderer,
@@ -339,46 +339,61 @@ export class RenderEngine {
   ): { drawn: GpuDrawn; plan: StepPlan } {
     const { viewport, theme, data } = ctx;
     const dpr = this.layerManager.getDpr();
+    const underSteps = this.underSteps(ctx);
+    // Text under the bars (a market profile's readout, its letters) needs a
+    // 2D canvas under them: then all of it goes there, unrecorded.
+    const underText = !!(ctx.marketProfile?.isVisible() && ctx.marketProfile.drawsText());
+    const under = underSteps.length > 0 && !underText ? recordAll(gpu.recorder?.(dpr, scene) ?? null, viewport.chartRect, underSteps) : null;
+    const underOnBack = underSteps.length > 0 && !under;
     // What the GPU can draw of the plot and panes, recorded before it draws.
     const recorder = gpu.recorder?.(dpr, scene) ?? null;
     const recorded = recorder ? recordSteps(recorder, viewport.chartRect, plot, panes) : canvasPlan(plot);
     const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
-    const background: GpuBackground | null = needsBackCanvas(ctx)
-      ? null
-      : {
-          grid: ctx.gridRenderer?.isVisible() ?? false,
-          rects: [
-            ...(ctx.sessionShading?.rects(data, viewport, theme) ?? []),
-            ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? []),
-          ],
-        };
+    const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack ? null : {
+      grid: ctx.gridRenderer?.isVisible() ?? false,
+      rects: [...(ctx.sessionShading?.rects(data, viewport, theme) ?? []), ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? [])],
+    };
+    // With a profile, volume goes under it, among the steps under the bars.
     const volume = ctx.volumeRenderer?.isVisible() && !profiles ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
     const drawn = gpu.render({
-      data,
-      viewport,
-      theme,
+      data, viewport, theme,
       // The ratio the canvases are sized for, which may trail the screen's.
       dpr,
       candles: ctx.chartRenderer instanceof CandlestickRenderer,
-      volume,
-      background,
-      recorded: recorder,
+      volume, background, under, recorded: recorder,
     });
     const plan = drawn.recorded ? recorded : canvasPlan(plot);
-    const back = background === null || !drawn.background ? this.layerManager.backLayer() : null;
-    if (!back) {
+    const result = { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };
+    const backgroundDrawn = background !== null && !!drawn.background;
+    const backSteps = under !== null && drawn.under ? [] : underSteps;
+    if (backgroundDrawn && backSteps.length === 0) {
       this.layerManager.dropBackLayer();
-      return { drawn, plan };
+      return result;
     }
+    this.renderBackCanvas(ctx, backSteps, !backgroundDrawn);
+    return result;
+  }
+
+  /** What goes under the bars, in Canvas 2D's order: the depth heatmap, then with a profile, volume and the profiles. */
+  private underSteps(ctx: RenderContext): DrawStep[] {
+    const { viewport, theme, data } = ctx;
+    const steps: DrawStep[] = [];
+    if (ctx.depthHeatmap?.isVisible()) steps.push((c) => ctx.depthHeatmap!.render(c, viewport, theme));
+    if (ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible()) {
+      if (ctx.volumeRenderer?.isVisible()) steps.push((c) => ctx.volumeRenderer!.render(c, data, viewport, theme));
+      if (ctx.volumeProfile?.isVisible()) steps.push((c) => ctx.volumeProfile!.render(c, data, viewport, theme));
+      if (ctx.marketProfile?.isVisible()) steps.push((c) => ctx.marketProfile!.render(c, data, viewport, theme));
+    }
+    return steps;
+  }
+
+  /** The 2D canvas under the GPU's: the background unless the GPU drew it, then `under` (clipped to the plot). */
+  private renderBackCanvas(ctx: RenderContext, under: readonly DrawStep[], background: boolean): void {
+    const back = this.layerManager.backLayer();
+    if (!back) return;
     back.clear();
-    this.renderBackground(back.ctx, ctx);
-    this.inPlot(back.ctx, viewport, () => {
-      ctx.depthHeatmap?.render(back.ctx, viewport, theme);
-      if (profiles) ctx.volumeRenderer?.render(back.ctx, data, viewport, theme);
-      ctx.volumeProfile?.render(back.ctx, data, viewport, theme);
-      ctx.marketProfile?.render(back.ctx, data, viewport, theme);
-    });
-    return { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };
+    if (background) this.renderBackground(back.ctx, ctx);
+    if (under.length > 0) this.inPlot(back.ctx, ctx.viewport, () => under.forEach((step) => step(back.ctx)));
   }
 
   /** The background: grid, session shading and breaks, watermark. */

@@ -81,7 +81,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Renderizador WebGL (versión preliminar)</h2>
 <p>
-  <code>renderer: 'webgl'</code> dibuja el área del gráfico y los paneles de indicadores con WebGL 2, en un canvas bajo la escena 2D: la cuadrícula, las sesiones, las velas y el volumen directamente, y el dibujo en Canvas 2D de los indicadores, las líneas de comparación y la mayoría de los tipos de gráfico se graba como trazos, rellenos y rectángulos de la GPU, con los bordes suavizados como en Canvas 2D. El texto, los dibujos, las órdenes, los ejes y la cruceta siguen en Canvas 2D, igual que todo lo que la GPU no dibujaría igual (se deja a Canvas 2D en orden, así que el apilado no cambia); los plugins de indicadores propios funcionan sin cambios. Las velas coinciden con Canvas 2D con una diferencia máxima de 2/255; las líneas y los rellenos solo difieren en algunos píxeles de borde suavizados. El código WebGL es un chunk propio (unos 17 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
+  <code>renderer: 'webgl'</code> dibuja el área del gráfico y los paneles de indicadores con WebGL 2, en un canvas bajo la escena 2D: la cuadrícula, las sesiones, las velas y el volumen directamente, y el dibujo en Canvas 2D de los indicadores, las líneas de comparación y la mayoría de los tipos de gráfico se graba como trazos, rellenos y rectángulos de la GPU, con los bordes suavizados como en Canvas 2D. El mapa de calor de profundidad y los perfiles de volumen y de mercado se graban igual, bajo las barras; un perfil de mercado que muestra su recuadro de estadísticas o sus letras sigue en Canvas 2D. El texto, los dibujos, las órdenes, los ejes y la cruceta siguen en Canvas 2D, igual que todo lo que la GPU no dibujaría igual (se deja a Canvas 2D en orden, así que el apilado no cambia); los plugins de indicadores propios funcionan sin cambios. Las velas caen en los mismos píxeles del dispositivo que con Canvas 2D; las líneas y los rellenos solo difieren en algunos píxeles de borde suavizados. El código WebGL es un chunk propio (unos 17 KB con gzip) que se carga la primera vez que se usa; donde falta WebGL 2, o si se pierde el contexto, el gráfico sigue dibujando con Canvas 2D.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -95,6 +95,8 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
   <tbody>
     <tr><td>1600×900, 500 velas + 4 indicadores</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
     <tr><td>1600×900, zoom alejado sobre 200,000 barras + 4 indicadores</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>1600×900, zoom alejado sobre 1,000,000 barras + 4 indicadores</td><td>2</td><td>34.5 ms</td><td>16.7 ms</td></tr>
+    <tr><td>1600×900, mapa de calor de profundidad, 240 instantáneas × 80 niveles</td><td>2</td><td>25.5 ms</td><td>16.8 ms</td></tr>
     <tr><td>Seis gráficos, cada uno con 500 velas y dos indicadores</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
     <tr><td>2560×1400, 2,000 velas + 4 indicadores</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
     <tr><td>2560×1400, 2,000 velas + 4 indicadores</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>

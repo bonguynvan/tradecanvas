@@ -26,8 +26,12 @@ export interface GpuBackground {
  * pane), in the order the GPU draws it: after the bars.
  */
 export interface GpuRecorder {
-  /** Start a region of the chart, clipped to `clip` (CSS pixels). */
-  region(clip: Rect): GpuRegion;
+  /**
+   * Start a region of the chart, clipped to `clip` (CSS pixels). With
+   * `text: false`, a step that writes text can't be kept: what goes under the
+   * bars has no 2D layer between them to put its text on.
+   */
+  region(clip: Rect, options?: { text?: boolean }): GpuRegion;
 }
 
 export interface GpuRegion {
@@ -56,6 +60,11 @@ export interface GpuFrame {
   background: GpuBackground | null;
   /** Drawing recorded on this renderer's `recorder()`, drawn over the bars. */
   recorded?: GpuRecorder | null;
+  /**
+   * Drawing recorded to go under the bars (a depth heatmap, volume profiles),
+   * after the background. A renderer that draws the background draws this too.
+   */
+  under?: GpuRecorder | null;
 }
 
 /** What it drew: the rest is left to the 2D layers. */
@@ -65,6 +74,8 @@ export interface GpuDrawn {
   background: boolean;
   /** Whether it drew `recorded`. */
   recorded?: boolean;
+  /** Whether it drew `under`. */
+  under?: boolean;
 }
 
 /**

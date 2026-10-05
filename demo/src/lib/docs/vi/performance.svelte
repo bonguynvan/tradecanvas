@@ -77,7 +77,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Bộ vẽ WebGL (bản xem trước)</h2>
 <p>
-  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến khớp Canvas 2D, lệch không quá 2/255; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Heatmap độ sâu, volume profile và market profile cũng được ghi lại như vậy, nằm dưới các cây nến; market profile có hiện bảng thống kê hoặc chữ TPO thì vẫn vẽ bằng Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến nằm trên đúng các pixel thiết bị như khi vẽ bằng Canvas 2D; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -91,6 +91,8 @@ await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
   <tbody>
     <tr><td>1600×900, 500 nến + 4 chỉ báo</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
     <tr><td>1600×900, thu nhỏ trên 200,000 nến + 4 chỉ báo</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
+    <tr><td>1600×900, thu nhỏ trên 1,000,000 nến + 4 chỉ báo</td><td>2</td><td>34.5 ms</td><td>16.7 ms</td></tr>
+    <tr><td>1600×900, heatmap độ sâu, 240 ảnh chụp × 80 mức giá</td><td>2</td><td>25.5 ms</td><td>16.8 ms</td></tr>
     <tr><td>Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
     <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
     <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>

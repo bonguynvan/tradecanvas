@@ -22,9 +22,9 @@ describe('the recording context: fills', () => {
       c.fillRect(60, 30, 4, 4);
     }, 2);
     expect(kept).toBe(true);
+    // One command for the step: rectangles in a row draw together.
     expect(commands).toEqual([
-      { type: 'rects', values: [20, 60, 40, 80, 1, 0, 0, 1, 100, 80, 110, 90, 1, 0, 0, 1] },
-      { type: 'rects', values: [120, 60, 128, 68, 0.5, 0, 0, 0.5] },
+      { type: 'rects', values: [20, 60, 40, 80, 1, 0, 0, 1, 100, 80, 110, 90, 1, 0, 0, 1, 120, 60, 128, 68, 0.5, 0, 0, 0.5] },
     ]);
   });
 
@@ -205,9 +205,8 @@ describe('the recording context: what it keeps and what it gives up', () => {
       c.fillRect(100, 60, 20, 20);
     });
     expect(commands).toEqual([
-      { type: 'rects', values: [20, 30, 30, 40, 1, 1, 1, 1] },
-      // restore() put back the clip, and the fill colour (black).
-      { type: 'rects', values: [100, 60, 110, 70, 0, 0, 0, 1] },
+      // After restore(), the clip and the fill colour (black) are back.
+      { type: 'rects', values: [20, 30, 30, 40, 1, 1, 1, 1, 100, 60, 110, 70, 0, 0, 0, 1] },
     ]);
   });
 
@@ -336,7 +335,58 @@ describe('the recording context: overlaps', () => {
       c.rect(25, 30, 5, 10);
       c.fill();
     });
-    expect(commands.map((x) => x.type)).toEqual(['rects', 'rects']);
+    expect(commands.map((x) => x.type)).toEqual(['rects']);
+    expect((commands[0] as Extract<GpuCommand, { type: 'rects' }>).values).toHaveLength(4 * 8);
+  });
+
+  it('keeps the rectangles of each step apart, so a step given up drops only its own', () => {
+    const rec = createRecorder(1, null);
+    const region = rec.region(plot);
+    region.step((c) => c.fillRect(20, 30, 5, 5));
+    region.step((c) => {
+      c.fillRect(30, 30, 5, 5);
+      c.drawImage({} as CanvasImageSource, 0, 0);
+    });
+    region.step((c) => c.fillRect(40, 30, 5, 5));
+    expect(rec.commands).toEqual([
+      { type: 'rects', values: [20, 30, 25, 35, 0, 0, 0, 1] },
+      { type: 'rects', values: [40, 30, 45, 35, 0, 0, 0, 1] },
+    ]);
+  });
+
+  it('fills rectangles of one colour at alphas of their own, as heatmap cells are', () => {
+    const { commands } = record((c) => {
+      c.fillStyle = '#ff0000';
+      c.globalAlpha = 0.5;
+      c.fillRect(20, 30, 5, 5);
+      c.globalAlpha = 0.25;
+      c.fillRect(30, 30, 5, 5);
+      c.globalAlpha = 0;
+      c.fillRect(40, 30, 5, 5);
+    });
+    expect(commands).toEqual([{ type: 'rects', values: [20, 30, 25, 35, 0.5, 0, 0, 0.5, 30, 30, 35, 35, 0.25, 0, 0, 0.25] }]);
+  });
+
+  it('leaves the current path as it was on fillRect', () => {
+    const { commands } = record((c) => {
+      c.fillStyle = '#ff0000';
+      c.beginPath();
+      c.rect(50, 40, 5, 5);
+      c.fillRect(20, 30, 5, 5);
+      c.fill();
+    });
+    expect(commands).toEqual([{ type: 'rects', values: [20, 30, 25, 35, 1, 0, 0, 1, 50, 40, 55, 45, 1, 0, 0, 1] }]);
+  });
+
+  it('gives up a step that writes text in a region that takes none, keeping the steps that do not', () => {
+    const rec = createRecorder(1, null);
+    const region = rec.region(plot, { text: false });
+    expect(region.step((c) => {
+      c.fillRect(20, 30, 5, 5);
+      c.fillText('A', 25, 35);
+    })).toBe(false);
+    expect(region.step((c) => c.fillRect(40, 30, 5, 5))).toBe(true);
+    expect(rec.commands).toEqual([{ type: 'rects', values: [40, 30, 45, 35, 0, 0, 0, 1] }]);
   });
 });
 

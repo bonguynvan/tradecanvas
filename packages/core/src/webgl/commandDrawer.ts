@@ -37,11 +37,16 @@ export class CommandDrawer {
   draw(commands: readonly GpuCommand[], width: number, height: number, rects: DrawRects): void {
     const gl = this.kit.gl;
     gl.enable(gl.BLEND);
-    for (const c of commands) {
+    for (let i = 0; i < commands.length; i++) {
+      const c = commands[i];
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.disable(gl.SCISSOR_TEST);
-      if (c.type === 'rects') this.drawRects(c.values, rects);
-      else if (c.type === 'stroke') this.drawStroke(c, width, height);
+      if (c.type === 'rects') {
+        // Rectangles one after another (one per step, say) in one draw.
+        const run: number[][] = [c.values];
+        while (commands[i + 1]?.type === 'rects') run.push((commands[++i] as typeof c).values);
+        this.drawRects(run, rects);
+      } else if (c.type === 'stroke') this.drawStroke(c, width, height);
       else if (c.type === 'fill') this.drawFill(c, width, height);
       else this.drawDiscs(c.values, c.clip, width, height);
     }
@@ -69,11 +74,15 @@ export class CommandDrawer {
   }
 
   /** Rectangles in the background program's layout: rectangle, colour, no dash. */
-  private drawRects(values: readonly number[], rects: DrawRects): void {
-    const count = values.length / 8;
+  private drawRects(runs: readonly (readonly number[])[], rects: DrawRects): void {
+    let count = 0;
+    for (const values of runs) count += values.length / 8;
     const out = new Float32Array(count * 10);
-    for (let i = 0; i < count; i++) {
-      for (let k = 0; k < 8; k++) out[i * 10 + k] = values[i * 8 + k];
+    let n = 0;
+    for (const values of runs) {
+      for (let i = 0; i < values.length; i += 8, n++) {
+        for (let k = 0; k < 8; k++) out[n * 10 + k] = values[i + k];
+      }
     }
     rects(out, count);
   }

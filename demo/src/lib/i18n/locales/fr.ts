@@ -302,6 +302,17 @@ const fr: SiteMessages = {
         'Ajoutez un indicateur et observez le temps de changement',
       ],
     },
+    heatmap: {
+      title: 'Heatmap de liquidité',
+      stat: '240 × 80 cellules',
+      blurb:
+        'Deux cent quarante instantanés du carnet d’ordres, de 80 niveaux de prix chacun, en heatmap derrière les bougies : la taille en attente s’allume niveau par niveau, achats en vert, ventes en rouge, et les murs qui persistent ressortent. Avec WebGL, les 19 200 cellules sont dessinées par le GPU sous les barres.',
+      tryThis: [
+        'Basculez entre Canvas 2D et WebGL au-dessus du graphique : chaque bascule chronomètre un court défilement',
+        'Repérez les rangées brillantes : des murs de taille qui restent sur un prix dans le temps',
+        'Zoomez sur un mur puis faites défiler d’un côté à l’autre : les cellules suivent les barres',
+      ],
+    },
     switching: {
       title: 'Changements sur réseau lent',
       stat: '+1,2 s de latence',
