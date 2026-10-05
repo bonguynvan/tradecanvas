@@ -24,7 +24,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、111 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas2D で描画し、依存関係はゼロです。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、素の TypeScript、React、Vue、Svelte に対応しています。
+**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、111 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、依存関係はゼロです。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、素の TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>

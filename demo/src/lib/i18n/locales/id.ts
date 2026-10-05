@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading berbasis Canvas2D: 17 jenis grafik, 111 indikator, 69 alat gambar, feed bursa langsung, order di grafik, putar ulang, dan backtesting. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 111 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const id: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Grafik trading Canvas2D untuk web. Tanpa dependensi, berlisensi MIT.',
+    tagline: 'Grafik trading untuk web, digambar dengan Canvas 2D atau WebGL. Tanpa dependensi, berlisensi MIT.',
     library: 'Pustaka',
     packages: 'Paket',
     project: 'Proyek',
@@ -37,21 +37,78 @@ const id: SiteMessages = {
   },
 
   home: {
-    release: 'renderer dua kanvas, geser dengan bebas',
+    release: 'perender WebGL, 30 bahasa',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 111 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar di Canvas2D tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 111 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
     specs: [
-      'jenis grafik',
       'indikator',
       'alat gambar',
+      'jenis grafik',
+      'bahasa widget',
+      'bar pada 60 fps dengan WebGL',
       'dependensi runtime',
-      'gzip, inti headless',
-      'frame hover pada 100k bar',
     ],
+    tape: 'Harga langsung dari Binance',
+    tapePause: 'Jeda harga',
+    tapePlay: 'Putar harga',
+    story: {
+      eyebrow: 'Dari pandangan pertama hingga order terisi',
+      title: 'Satu grafik untuk seluruh trade',
+      subtitle: 'Empat grafik langsung, masing-masing mengerjakan bagiannya. Seret, zoom, dan gambar di atasnya.',
+      chapters: [
+        {
+          title: 'Membaca pasar',
+          text: 'Band, rata-rata, dan osilator di atas bar, level Fibonacci dan garis tren di atasnya, masing-masing dengan pengaturan dan peringatannya sendiri.',
+          points: [
+            '111 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
+            '69 alat gambar dengan magnet, grup, dan undo',
+            'Peringatan pada harga, garis, dan persilangan indikator',
+          ],
+        },
+        {
+          title: 'Trading di grafik',
+          text: 'Order, posisi, dan bracket-nya ada di skala harga. Seret stop untuk memindahkannya; broker paper mengisinya, jadi Anda bisa membangun sebelum terhubung.',
+          points: [
+            'Seret untuk memasang order, seret stop-loss dan take-profit untuk memindahkannya',
+            'Tanda eksekusi serta untung dan rugi di grafik',
+            'Broker Anda tersambung lewat satu adapter',
+          ],
+        },
+        {
+          title: 'Memutar ulang masa lalu',
+          text: 'Telusuri riwayat bar demi bar atau biarkan berjalan: indikator, gambar, dan order paper mengikuti harga yang diputar ulang.',
+          points: [
+            'Bar awal mana pun, kecepatan berapa pun',
+            'Setiap bar dapat terbentuk langkah demi langkah dari bar yang lebih halus',
+            'Trading saat replay dengan broker paper',
+          ],
+        },
+        {
+          title: 'Skala tanpa tersendat',
+          text: 'Di sini 200.000 bar dengan empat indikator, bergeser sendiri. Ganti perender dan lihat waktu per frame: dengan WebGL, GPU menggambar bar dan garis.',
+          points: [
+            '1.000.000 bar diperkecil pada 60 fps dengan WebGL',
+            'Canvas 2D bila WebGL tidak ada, dengan tampilan yang sama',
+            'Hanya bar di layar yang digambar',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms per frame',
+      panning: 'Bergeser sendiri sampai Anda mengambil alih',
+      renderer: 'Perender',
+      replaying: 'Memutar ulang',
+    },
+    trust: {
+      label: 'Sumber terbuka',
+      downloads: '{n} unduhan npm per bulan',
+      license: 'lisensi {n}',
+      dependencies: '{n} dependensi runtime',
+      typescript: 'tipe {n} untuk setiap API',
+    },
     hood: {
       eyebrow: 'Di balik layar',
       title: 'Terukur, terdokumentasi, siap Anda kembangkan',
@@ -368,6 +425,11 @@ const id: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Klik untuk memakai grafik',
+    tap: 'Ketuk untuk memakai grafik',
+  },
+
   terminal: {
     symbol: 'Simbol',
     timeframe: 'Kerangka waktu',
@@ -380,12 +442,13 @@ const id: SiteMessages = {
       baseline: 'Garis dasar',
     },
     unavailable: 'Feed langsung tidak tersedia: {error}',
+    drawnWith: 'Digambar dengan {renderer}',
     live: 'LANGSUNG',
     offline: 'TERPUTUS',
     connecting: 'MENYAMBUNG',
     hints: [
       ['Seret', 'geser'],
-      ['Gulir', 'zoom'],
+      ['Klik + gulir', 'zoom'],
       ['Seret sumbu', 'skala'],
     ],
   },

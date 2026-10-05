@@ -9,6 +9,8 @@
   import { useI18n } from '$lib/i18n/context.svelte';
   import { fill } from '$lib/i18n/messages';
   import { widgetLanguage } from '$lib/i18n/widget';
+  import { pressToEngage } from '$lib/pressToEngage';
+  import EngageHint from './EngageHint.svelte';
 
   const i18n = useI18n();
   const m = $derived(i18n.m);
@@ -385,8 +387,10 @@
           {/each}
         </div>
       {/if}
-      <div class="stage-frame">
+      <!-- The wheel and swipes scroll the page until the chart is clicked. -->
+      <div class="stage-frame" use:pressToEngage={{ surface: '.stage-host', outside: '.tcw-portal' }}>
         <div class="stage-host" bind:this={host}></div>
+        {#if started}<EngageHint />{/if}
         {#if !started}
           <div class="stage-idle">{m.lab.idle}</div>
         {/if}
@@ -540,6 +544,8 @@
     font-size: 13.5px;
     color: var(--text-dim);
   }
+
+  .stage-frame:global([data-engaged]) { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 
   .stage-frame {
     position: relative;

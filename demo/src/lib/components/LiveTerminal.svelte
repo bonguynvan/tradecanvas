@@ -6,9 +6,23 @@
   import { useI18n } from '$lib/i18n/context.svelte';
   import { fill } from '$lib/i18n/messages';
   import { widgetLanguage } from '$lib/i18n/widget';
+  import { pressToEngage } from '$lib/pressToEngage';
+  import EngageHint from './EngageHint.svelte';
+
+  interface Props {
+    /** 'stage': wide and tall, edge to edge on a phone, as the hero's chart. */
+    variant?: 'panel' | 'stage';
+    /** What draws it: 'auto' takes WebGL on a real GPU. */
+    renderer?: 'canvas' | 'auto';
+  }
+
+  let { variant = 'panel', renderer = 'canvas' }: Props = $props();
 
   const i18n = useI18n();
   const m = $derived(i18n.m);
+
+  /** What draws the chart now, once known. */
+  let drawnWith = $state<'canvas' | 'webgl' | null>(null);
 
   let host: HTMLDivElement | undefined = $state();
   let status = $state<'loading' | 'ready' | 'error'>('loading');
@@ -88,7 +102,11 @@
           watchlist: false,
           onReady: (c: unknown) => {
             chart = c;
-            if (!cancelled) status = 'ready';
+            if (cancelled) return;
+            status = 'ready';
+            drawnWith = chart.getRenderer();
+            chart.on('rendererChange', (e: { payload: { renderer: 'canvas' | 'webgl' } }) => { drawnWith = e.payload.renderer; });
+            if (renderer !== 'canvas') void chart.setRenderer(renderer);
           },
         });
       } catch (err) {
@@ -109,7 +127,7 @@
   });
 </script>
 
-<div class="terminal">
+<div class="terminal" class:terminal--stage={variant === 'stage'}>
   <div class="terminal-bar">
     <div class="seg seg--symbol" role="group" aria-label={m.terminal.symbol}>
       {#each SYMBOLS as s}
@@ -129,8 +147,10 @@
   </div>
 
   <!-- While loading, the widget shows its own candle skeleton. -->
-  <div class="terminal-frame">
+  <!-- The wheel and swipes scroll the page until the chart is clicked. -->
+  <div class="terminal-frame" use:pressToEngage={{ surface: '.terminal-host', outside: '.tcw-portal' }}>
     <div class="terminal-host" bind:this={host}></div>
+    <EngageHint />
     {#if status === 'error'}
       <div class="terminal-overlay terminal-overlay--error">{fill(m.terminal.unavailable, { error: errorMessage })}</div>
     {/if}
@@ -140,6 +160,9 @@
     <span class="status-feed">
       <span class="live-dot" class:on={status === 'ready'}></span>
       {status === 'ready' ? m.terminal.live : status === 'error' ? m.terminal.offline : m.terminal.connecting} · BINANCE · {activeSymbol} · {activeTf}
+      {#if drawnWith && variant === 'stage'}
+        <span class="drawn-with" class:gpu={drawnWith === 'webgl'}>{fill(m.terminal.drawnWith, { renderer: drawnWith === 'webgl' ? 'WebGL' : 'Canvas 2D' })}</span>
+      {/if}
     </span>
     <span class="status-hints">
       {#each m.terminal.hints as [key, what]}
@@ -203,6 +226,8 @@
     background: transparent;
     border-color: var(--border);
   }
+
+  .terminal-frame:not([data-engaged]) { cursor: pointer; }
 
   .terminal-frame {
     position: relative;
@@ -271,8 +296,25 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 0%, transparent); }
   }
 
+  .drawn-with {
+    margin-left: 6px;
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+
+  .drawn-with.gpu { color: var(--accent); border-color: var(--accent-dim); }
+
+  /* The hero's stage: room for the bars to breathe. */
+  .terminal--stage .terminal-frame { height: clamp(380px, 54vh, 620px); }
+  .terminal--stage { box-shadow: 0 40px 120px -60px color-mix(in srgb, var(--accent) 35%, transparent), var(--shadow-lg); }
+
   @media (max-width: 768px) {
     .seg--type { margin-left: 0; }
     .status-hints { display: none; }
+    /* Edge to edge on a phone: the bars get the whole width. */
+    .terminal--stage { border-left: 0; border-right: 0; border-radius: 0; }
+    .terminal--stage .terminal-frame { height: clamp(320px, 58vh, 460px); }
   }
 </style>

@@ -4,6 +4,17 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The site: a new front page
+
+- **Live from the first line**: a tape of live Binance prices along the top, a large headline, and the live chart across the page under it, drawn with WebGL where there is a GPU and saying which renderer draws it.
+- **One chart for the whole trade**: four numbered chapters, each with its own live chart: reading the market (bands, averages, RSI, a Fibonacci retracement and a trend line), trading on the chart (a paper position with its stop-loss and take-profit, an order waiting), replaying the past (a replay that runs round), and scale (200,000 bars panning on their own, with a frame-time meter and a WebGL / Canvas 2D switch). Each starts only when it comes near the screen.
+- **Scrolling past a chart scrolls the page**: the wheel, and on a touch screen a swipe, go to a chart on the front page only once it has been clicked or tapped ("Click to use the chart"). It lets go when the mouse leaves it, on a press elsewhere, on Escape, and when it scrolls out of view. Smooth scrolling carries on over the charts.
+- **The key numbers brought up to date**: 111 indicators, 69 drawing tools, 18 chart types, 30 widget languages, a million bars at 60 fps with WebGL, no runtime dependencies; and an open-source band with the npm downloads a month, the licence and the GitHub stars.
+- The tape pauses on hover, on focus and with its own button; with reduced motion it stays still (it scrolls by hand), the replay waits at its start and nothing pans on its own. Off screen, the replay and the panning wait. In all 14 languages of the site.
+- The README and `llms.txt` say the charts draw with Canvas 2D or WebGL.
+
+## 1.12.0 (2026-10-05)
+
 ### Indicators and languages: the rest of the gap
 
 - **16 more indicators, 111 in all**: Average Price, Median Price and Typical Price; Moving Average Channel, Hamming, Double and Triple; Volatility Index (Wilder's stop and reverse on the average true range); Accumulative Swing Index, Advance/Decline, Majority Rule, Chop Zone, SMI Ergodic and Price Oscillator; Volatility O-H-L-C and Zero Trend Close-to-Close.

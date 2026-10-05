@@ -21,6 +21,7 @@
     "@sveltejs/adapter-static": "^3.0.6",
     "@sveltejs/kit": "^2.15.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "jsdom": "^25.0.1",
     "lucide-svelte": "^0.475.0",
     "svelte": "^5.20.0",
     "svelte-check": "^4.1.4",

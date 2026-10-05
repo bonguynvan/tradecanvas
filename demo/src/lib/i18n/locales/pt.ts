@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading em Canvas2D: 17 tipos de gráfico, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting. Zero dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const pt: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Gráficos de trading em Canvas2D para a web. Zero dependências, licença MIT.',
+    tagline: 'Gráficos de trading para a web, desenhados com Canvas 2D ou WebGL. Sem dependências, licença MIT.',
     library: 'Biblioteca',
     packages: 'Pacotes',
     project: 'Projeto',
@@ -37,21 +37,78 @@ const pt: SiteMessages = {
   },
 
   home: {
-    release: 'renderizador com dois canvas, deslocamento livre',
+    release: 'renderizador WebGL, 30 idiomas',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado em Canvas2D, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
     specs: [
-      'tipos de gráfico',
       'indicadores',
       'ferramentas de desenho',
+      'tipos de gráfico',
+      'idiomas do widget',
+      'barras a 60 fps com WebGL',
       'dependências de runtime',
-      'gzip, núcleo headless',
-      'quadro de hover com 100k barras',
     ],
+    tape: 'Preços ao vivo da Binance',
+    tapePause: 'Pausar os preços',
+    tapePlay: 'Retomar os preços',
+    story: {
+      eyebrow: 'Da primeira olhada à ordem executada',
+      title: 'Um gráfico para a operação inteira',
+      subtitle: 'Quatro gráficos ao vivo, cada um trabalhando na sua parte. Arraste, dê zoom, desenhe sobre eles.',
+      chapters: [
+        {
+          title: 'Ler o mercado',
+          text: 'Bandas, médias e osciladores sobre os candles, níveis de Fibonacci e linhas de tendência por cima, cada um com suas configurações e alertas.',
+          points: [
+            '111 indicadores, um sobre o outro, como uma média do RSI',
+            '69 ferramentas de desenho com ímã, grupos e desfazer',
+            'Alertas de preço, de linhas e de cruzamentos de indicadores',
+          ],
+        },
+        {
+          title: 'Operar no gráfico',
+          text: 'Ordens, posições e seus brackets ficam na escala de preços. Arraste um stop para movê-lo; o broker simulado as executa, então você constrói antes de conectar.',
+          points: [
+            'Arraste para criar uma ordem, arraste o stop-loss e o take-profit para movê-los',
+            'Marcas de execução e lucro e prejuízo no gráfico',
+            'Seu broker se conecta por um único adaptador',
+          ],
+        },
+        {
+          title: 'Reviver o passado',
+          text: 'Percorra o histórico candle a candle ou deixe correr: indicadores, desenhos e ordens simuladas seguem o preço reproduzido.',
+          points: [
+            'Qualquer candle inicial, qualquer velocidade',
+            'Cada candle pode se formar passo a passo a partir de outros menores',
+            'Opere o replay com o broker simulado',
+          ],
+        },
+        {
+          title: 'Escala sem engasgos',
+          text: 'Aqui, 200.000 barras com quatro indicadores, deslizando sozinhas. Troque o renderizador e veja o tempo por quadro: com WebGL, a GPU desenha os candles e as linhas.',
+          points: [
+            '1.000.000 de barras com zoom afastado a 60 fps com WebGL',
+            'Canvas 2D onde não há WebGL, com a mesma aparência',
+            'Só as barras na tela são desenhadas',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms por quadro',
+      panning: 'Desliza sozinho até você assumir',
+      renderer: 'Renderizador',
+      replaying: 'Reproduzindo',
+    },
+    trust: {
+      label: 'Código aberto',
+      downloads: '{n} downloads no npm por mês',
+      license: 'licença {n}',
+      dependencies: '{n} dependências de runtime',
+      typescript: 'tipos {n} para toda a API',
+    },
     hood: {
       eyebrow: 'Por dentro',
       title: 'Medido, documentado e pronto para você estender',
@@ -368,6 +425,11 @@ const pt: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Clique para usar o gráfico',
+    tap: 'Toque para usar o gráfico',
+  },
+
   terminal: {
     symbol: 'Ativo',
     timeframe: 'Tempo gráfico',
@@ -380,12 +442,13 @@ const pt: SiteMessages = {
       baseline: 'Linha de base',
     },
     unavailable: 'Feed ao vivo indisponível: {error}',
+    drawnWith: 'Desenhado com {renderer}',
     live: 'AO VIVO',
     offline: 'OFFLINE',
     connecting: 'CONECTANDO',
     hints: [
       ['Arrastar', 'deslocar'],
-      ['Rolar', 'zoom'],
+      ['Clique + rolar', 'zoom'],
       ['Arrastar eixo', 'escala'],
     ],
   },

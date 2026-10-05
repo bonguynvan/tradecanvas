@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch Canvas2D: 17 loại biểu đồ, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const vi: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Biểu đồ giao dịch Canvas2D cho web. Không phụ thuộc thư viện nào, giấy phép MIT.',
+    tagline: 'Biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL. Không phụ thuộc thư viện nào, giấy phép MIT.',
     library: 'Thư viện',
     packages: 'Gói',
     project: 'Dự án',
@@ -37,21 +37,78 @@ const vi: SiteMessages = {
   },
 
   home: {
-    release: 'bộ vẽ hai lớp canvas, kéo tự do',
+    release: 'bộ vẽ WebGL, 30 ngôn ngữ',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas2D, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
     specs: [
-      'loại biểu đồ',
       'chỉ báo',
       'công cụ vẽ',
+      'loại biểu đồ',
+      'ngôn ngữ của widget',
+      'nến ở 60 fps với WebGL',
       'phụ thuộc khi chạy',
-      'gzip, lõi headless',
-      'khung hình khi rê chuột, 100k nến',
     ],
+    tape: 'Giá trực tiếp từ Binance',
+    tapePause: 'Dừng dải giá',
+    tapePlay: 'Chạy dải giá',
+    story: {
+      eyebrow: 'Từ cái nhìn đầu tiên đến lệnh được khớp',
+      title: 'Một biểu đồ cho trọn một giao dịch',
+      subtitle: 'Bốn biểu đồ chạy thật, mỗi cái lo một phần việc. Kéo, phóng to, vẽ lên chúng.',
+      chapters: [
+        {
+          title: 'Đọc thị trường',
+          text: 'Dải băng, đường trung bình và dao động trên các cây nến, mức Fibonacci và đường xu hướng vẽ lên trên, mỗi thứ có cài đặt và cảnh báo riêng.',
+          points: [
+            '111 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
+            '69 công cụ vẽ, có nam châm, nhóm và hoàn tác',
+            'Cảnh báo theo giá, theo đường vẽ và khi chỉ báo cắt nhau',
+          ],
+        },
+        {
+          title: 'Giao dịch ngay trên biểu đồ',
+          text: 'Lệnh, vị thế cùng cắt lỗ và chốt lời của chúng nằm ngay trên thang giá. Kéo stop để dời nó; broker giấy khớp lệnh cho bạn, nên bạn làm xong được trước khi nối sàn thật.',
+          points: [
+            'Kéo để đặt lệnh, kéo đường cắt lỗ và chốt lời để dời chúng',
+            'Dấu khớp lệnh và lãi lỗ hiện ngay trên biểu đồ',
+            'Broker của bạn cắm vào qua một adapter duy nhất',
+          ],
+        },
+        {
+          title: 'Phát lại quá khứ',
+          text: 'Đi qua lịch sử từng cây nến hoặc để nó tự chạy: chỉ báo, hình vẽ và lệnh giấy đều đi theo giá đang phát lại.',
+          points: [
+            'Bắt đầu từ cây nến nào, tốc độ nào cũng được',
+            'Mỗi cây nến có thể hình thành dần từ các nến nhỏ hơn',
+            'Giao dịch trong lúc phát lại bằng broker giấy',
+          ],
+        },
+        {
+          title: 'Nhiều dữ liệu vẫn mượt',
+          text: 'Ở đây có 200.000 cây nến với bốn chỉ báo, tự kéo qua kéo lại. Đổi bộ vẽ và xem thời gian mỗi khung hình: với WebGL, GPU vẽ cả nến lẫn đường.',
+          points: [
+            '1.000.000 cây nến thu nhỏ hết cỡ vẫn 60 fps với WebGL',
+            'Canvas 2D khi không có WebGL, trông vẫn y như vậy',
+            'Chỉ vẽ những cây nến đang hiện trên màn hình',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms mỗi khung hình',
+      panning: 'Tự kéo cho đến khi bạn cầm lái',
+      renderer: 'Bộ vẽ',
+      replaying: 'Đang phát lại',
+    },
+    trust: {
+      label: 'Mã nguồn mở',
+      downloads: '{n} lượt tải npm mỗi tháng',
+      license: 'giấy phép {n}',
+      dependencies: '{n} phụ thuộc khi chạy',
+      typescript: 'khai báo kiểu {n} cho mọi API',
+    },
     hood: {
       eyebrow: 'Bên trong',
       title: 'Có số đo, có tài liệu, tuỳ bạn mở rộng',
@@ -368,6 +425,11 @@ const vi: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Bấm để dùng biểu đồ',
+    tap: 'Chạm để dùng biểu đồ',
+  },
+
   terminal: {
     symbol: 'Mã',
     timeframe: 'Khung thời gian',
@@ -380,12 +442,13 @@ const vi: SiteMessages = {
       baseline: 'Đường cơ sở',
     },
     unavailable: 'Không kết nối được dữ liệu trực tiếp: {error}',
+    drawnWith: 'Vẽ bằng {renderer}',
     live: 'TRỰC TIẾP',
     offline: 'NGOẠI TUYẾN',
     connecting: 'ĐANG KẾT NỐI',
     hints: [
       ['Kéo', 'di chuyển'],
-      ['Cuộn', 'phóng to'],
+      ['Bấm rồi cuộn', 'phóng to'],
       ['Kéo trục', 'co giãn'],
     ],
   },

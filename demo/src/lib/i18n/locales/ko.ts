@@ -4,7 +4,7 @@ const ko: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 웹을 위한 캔버스 트레이딩 차트',
     description:
-      'TradeCanvas는 Canvas2D 트레이딩 차트 라이브러리입니다. 17가지 차트 유형, 111개 지표, 69개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 제공합니다. 의존성 없음, MIT 라이선스.',
+      'TradeCanvas는 Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트 라이브러리입니다. 18가지 차트 유형, 111개 지표, 69개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 30개 언어로 제공합니다. 의존성 없음, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const ko: SiteMessages = {
   },
 
   footer: {
-    tagline: '웹을 위한 Canvas2D 트레이딩 차트. 의존성 없음, MIT 라이선스.',
+    tagline: 'Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트. 의존성 없음, MIT 라이선스.',
     library: '라이브러리',
     packages: '패키지',
     project: '프로젝트',
@@ -37,21 +37,78 @@ const ko: SiteMessages = {
   },
 
   home: {
-    release: '이중 캔버스 렌더러, 자유로운 이동',
+    release: 'WebGL 렌더러, 30개 언어',
     title: '트레이딩 앱을 위한 차트 엔진.',
     ledeHtml:
-      '캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas2D로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
+      '캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
     getStarted: '시작하기',
     browseExamples: '예제 둘러보기',
     specsLabel: '주요 수치',
     specs: [
-      '차트 유형',
       '지표',
       '그리기 도구',
+      '차트 유형',
+      '위젯 언어',
+      '봉을 WebGL로 60fps에',
       '런타임 의존성',
-      'gzip, 헤드리스 코어',
-      '10만 봉에서의 호버 프레임',
     ],
+    tape: 'Binance 실시간 시세',
+    tapePause: '시세 일시 정지',
+    tapePlay: '시세 재생',
+    story: {
+      eyebrow: '첫 분석부터 체결까지',
+      title: '거래의 모든 과정을 하나의 차트로',
+      subtitle: '네 개의 실시간 차트가 각자 맡은 일을 보여 줍니다. 드래그하고, 확대하고, 그 위에 그려 보세요.',
+      chapters: [
+        {
+          title: '시장 읽기',
+          text: '봉 위에 밴드, 이동평균, 오실레이터를, 그 위에 피보나치 레벨과 추세선을 올립니다. 각각 고유한 설정과 알림이 있습니다.',
+          points: [
+            '111개 지표, 지표 위에 지표를 얹을 수 있음 (예: RSI의 이동평균)',
+            '자석, 그룹, 실행 취소를 갖춘 69개 그리기 도구',
+            '가격, 선, 지표 교차에 대한 알림',
+          ],
+        },
+        {
+          title: '차트 위에서 거래',
+          text: '주문, 포지션과 그 브래킷이 가격 축 위에 놓입니다. 스톱은 드래그로 옮기고, 페이퍼 브로커가 체결해 주니 실제로 연결하기 전에 먼저 만들어 볼 수 있습니다.',
+          points: [
+            '드래그로 주문하고, 손절과 익절 선도 드래그로 이동',
+            '체결 표시와 손익을 차트 위에',
+            '브로커는 어댑터 하나로 연결',
+          ],
+        },
+        {
+          title: '과거 다시 보기',
+          text: '과거를 봉 단위로 넘기거나 자동으로 재생하세요. 지표, 그림, 페이퍼 주문 모두 재생되는 가격을 따라갑니다.',
+          points: [
+            '어떤 시작 봉이든, 어떤 속도든',
+            '각 봉이 더 짧은 봉들로부터 한 단계씩 만들어짐',
+            '페이퍼 브로커로 리플레이 중 거래',
+          ],
+        },
+        {
+          title: '데이터가 많아도 끊김 없이',
+          text: '여기서는 봉 200,000개와 지표 네 개가 스스로 움직입니다. 렌더러를 바꾸고 프레임 시간을 보세요. WebGL에서는 GPU가 봉과 선을 그립니다.',
+          points: [
+            'WebGL로 1,000,000개 봉을 전체 보기로도 60fps',
+            'WebGL이 없으면 Canvas 2D로, 모양은 그대로',
+            '화면에 보이는 봉만 그림',
+          ],
+        },
+      ],
+      frameTime: '프레임당 {ms}ms',
+      panning: '직접 조작하기 전까지 자동으로 이동',
+      renderer: '렌더러',
+      replaying: '리플레이 중',
+    },
+    trust: {
+      label: '오픈 소스',
+      downloads: '월간 npm 다운로드 {n}',
+      license: '{n} 라이선스',
+      dependencies: '런타임 의존성 {n}',
+      typescript: '모든 API에 {n} 타입 제공',
+    },
     hood: {
       eyebrow: '내부 구조',
       title: '측정하고 문서화했으며, 확장은 자유롭게',
@@ -368,6 +425,11 @@ const ko: SiteMessages = {
     },
   },
 
+  engage: {
+    click: '클릭하면 차트를 조작할 수 있습니다',
+    tap: '탭하면 차트를 조작할 수 있습니다',
+  },
+
   terminal: {
     symbol: '종목',
     timeframe: '시간 단위',
@@ -380,12 +442,13 @@ const ko: SiteMessages = {
       baseline: '기준선',
     },
     unavailable: '실시간 피드를 사용할 수 없습니다: {error}',
+    drawnWith: '{renderer}로 그림',
     live: '실시간',
     offline: '오프라인',
     connecting: '연결 중',
     hints: [
       ['드래그', '이동'],
-      ['스크롤', '확대/축소'],
+      ['클릭 + 스크롤', '확대/축소'],
       ['축 드래그', '눈금 조절'],
     ],
   },

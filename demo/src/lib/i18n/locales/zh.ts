@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个 Canvas2D 交易图表库：17 种图表类型、111 个指标、69 种画线工具、交易所实时行情、图表上下单、K线回放与回测。零依赖，MIT 许可。',
+      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、111 个指标、69 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -24,7 +24,7 @@ const zh: SiteMessages = {
   },
 
   footer: {
-    tagline: '面向 Web 的 Canvas2D 交易图表。零依赖，MIT 许可。',
+    tagline: '面向 Web 的交易图表，用 Canvas 2D 或 WebGL 绘制。零依赖，MIT 许可。',
     library: '库',
     packages: '包',
     project: '项目',
@@ -38,21 +38,78 @@ const zh: SiteMessages = {
   },
 
   home: {
-    release: '双画布渲染器，自由平移',
+    release: 'WebGL 渲染器，30 种语言',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，111 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。基于 Canvas2D 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，111 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
     specs: [
-      '图表类型',
       '指标',
       '画线工具',
+      '图表类型',
+      '组件语言',
+      '根K线，WebGL 下 60 fps',
       '运行时依赖',
-      'gzip 后的无界面核心',
-      '10 万根K线时的悬停帧',
     ],
+    tape: '来自 Binance 的实时价格',
+    tapePause: '暂停行情',
+    tapePlay: '播放行情',
+    story: {
+      eyebrow: '从第一眼到成交',
+      title: '一张图表，贯穿整笔交易',
+      subtitle: '四张实时图表，各自演示一部分。可以拖动、缩放，也可以在上面画线。',
+      chapters: [
+        {
+          title: '读懂行情',
+          text: 'K线上叠加通道、均线和振荡指标，再在上面画斐波那契和趋势线，每一项都有自己的设置和提醒。',
+          points: [
+            '111 个指标，可以互相叠加，比如 RSI 的均线',
+            '69 种画线工具，带磁吸、分组和撤销',
+            '价格、画线和指标交叉都能提醒',
+          ],
+        },
+        {
+          title: '在图表上交易',
+          text: '订单、持仓及其止盈止损都显示在价格轴上。拖动止损即可移动它；模拟经纪商负责成交，所以接入实盘前就能先做出来。',
+          points: [
+            '拖动下单，拖动止损线和止盈线来调整',
+            '成交标记和盈亏直接显示在图表上',
+            '你的经纪商通过一个适配器接入',
+          ],
+        },
+        {
+          title: '回放历史',
+          text: '逐根K线翻看历史，或让它自动播放：指标、画线和模拟订单都跟随回放的价格。',
+          points: [
+            '任意起始K线，任意速度',
+            '每根K线可由更细的K线逐步形成',
+            '回放时用模拟经纪商交易',
+          ],
+        },
+        {
+          title: '数据再多也不卡',
+          text: '这里有 200,000 根K线和四个指标，正在自动平移。切换渲染器，看看每帧耗时：使用 WebGL 时，K线和线条都由 GPU 绘制。',
+          points: [
+            'WebGL 下 1,000,000 根K线全部缩小显示也有 60 fps',
+            '没有 WebGL 时用 Canvas 2D，外观一致',
+            '只绘制屏幕上的K线',
+          ],
+        },
+      ],
+      frameTime: '每帧 {ms} ms',
+      panning: '自动平移，直到你接手',
+      renderer: '渲染器',
+      replaying: '回放中',
+    },
+    trust: {
+      label: '开源',
+      downloads: '每月 npm 下载 {n} 次',
+      license: '{n} 许可',
+      dependencies: '{n} 个运行时依赖',
+      typescript: '所有 API 均提供 {n} 类型',
+    },
     hood: {
       eyebrow: '引擎内部',
       title: '有实测，有文档，任你扩展',
@@ -369,6 +426,11 @@ const zh: SiteMessages = {
     },
   },
 
+  engage: {
+    click: '点击以操作图表',
+    tap: '轻触以操作图表',
+  },
+
   terminal: {
     symbol: '代码',
     timeframe: '周期',
@@ -381,12 +443,13 @@ const zh: SiteMessages = {
       baseline: '基准线',
     },
     unavailable: '实时行情不可用：{error}',
+    drawnWith: '使用 {renderer} 绘制',
     live: '实时',
     offline: '离线',
     connecting: '连接中',
     hints: [
       ['拖动', '平移'],
-      ['滚轮', '缩放'],
+      ['点击后滚轮', '缩放'],
       ['拖动坐标轴', '拉伸'],
     ],
   },

@@ -4,7 +4,7 @@ const de: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Canvas-Trading-Charts fürs Web',
     description:
-      'TradeCanvas ist eine Canvas2D-Bibliothek für Trading-Charts: 17 Charttypen, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting. Keine Abhängigkeiten, MIT.',
+      'TradeCanvas ist eine Trading-Chart-Bibliothek für das Web, gezeichnet mit Canvas 2D oder WebGL: 18 Charttypen, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting, in 30 Sprachen. Keine Abhängigkeiten, MIT.',
   },
 
   nav: {
@@ -23,7 +23,7 @@ const de: SiteMessages = {
   },
 
   footer: {
-    tagline: 'Canvas2D-Trading-Charts fürs Web. Keine Abhängigkeiten, MIT-lizenziert.',
+    tagline: 'Trading-Charts für das Web, gezeichnet mit Canvas 2D oder WebGL. Keine Abhängigkeiten, MIT-lizenziert.',
     library: 'Bibliothek',
     packages: 'Pakete',
     project: 'Projekt',
@@ -37,21 +37,78 @@ const de: SiteMessages = {
   },
 
   home: {
-    release: 'Zwei-Canvas-Renderer, freies Verschieben',
+    release: 'WebGL-Renderer, 30 Sprachen',
     title: 'Die Chart-Engine für Trading-Apps.',
     ledeHtml:
-      'Von Kerzen bis Renko, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet auf Canvas2D, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
+      'Von Kerzen bis Renko, 111 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet mit Canvas 2D oder WebGL, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
     getStarted: 'Loslegen',
     browseExamples: 'Beispiele ansehen',
     specsLabel: 'Kennzahlen',
     specs: [
-      'Charttypen',
       'Indikatoren',
       'Zeichenwerkzeuge',
+      'Charttypen',
+      'Widget-Sprachen',
+      'Kerzen bei 60 fps mit WebGL',
       'Laufzeitabhängigkeiten',
-      'gzip, Headless-Kern',
-      'Hover-Frame bei 100k Kerzen',
     ],
+    tape: 'Live-Kurse von Binance',
+    tapePause: 'Kurse anhalten',
+    tapePlay: 'Kurse abspielen',
+    story: {
+      eyebrow: 'Vom ersten Blick bis zur ausgeführten Order',
+      title: 'Ein Chart für den ganzen Trade',
+      subtitle: 'Vier Live-Charts, jeder bei seinem Teil der Arbeit. Ziehen, zoomen, darauf zeichnen.',
+      chapters: [
+        {
+          title: 'Den Markt lesen',
+          text: 'Bänder, Durchschnitte und Oszillatoren über den Kerzen, Fibonacci-Niveaus und Trendlinien darüber, jedes mit eigenen Einstellungen und Alarmen.',
+          points: [
+            '111 Indikatoren, jeder auf jedem anderen, etwa ein Durchschnitt des RSI',
+            '69 Zeichenwerkzeuge mit Magnet, Gruppen und Rückgängig',
+            'Alarme auf Kurse, Linien und Indikator-Kreuzungen',
+          ],
+        },
+        {
+          title: 'Direkt im Chart handeln',
+          text: 'Orders, Positionen und ihre Brackets liegen auf der Preisskala. Ziehen Sie einen Stop, um ihn zu verschieben; der Paper-Broker führt sie aus, so bauen Sie, bevor Sie sich verbinden.',
+          points: [
+            'Order per Ziehen platzieren, Stop-Loss und Take-Profit per Ziehen verschieben',
+            'Ausführungsmarken sowie Gewinn und Verlust im Chart',
+            'Ihr Broker wird über einen einzigen Adapter angebunden',
+          ],
+        },
+        {
+          title: 'Die Vergangenheit abspielen',
+          text: 'Gehen Sie Kerze für Kerze durch die Historie oder lassen Sie sie laufen: Indikatoren, Zeichnungen und Paper-Orders folgen dem abgespielten Kurs.',
+          points: [
+            'Jede Startkerze, jedes Tempo',
+            'Jede Kerze kann sich Schritt für Schritt aus feineren bilden',
+            'Im Replay mit dem Paper-Broker handeln',
+          ],
+        },
+        {
+          title: 'Skalieren ohne Ruckeln',
+          text: 'Hier 200.000 Kerzen mit vier Indikatoren, die von selbst schwenken. Wechseln Sie den Renderer und beobachten Sie die Bildzeit: Mit WebGL zeichnet die GPU Kerzen und Linien.',
+          points: [
+            '1.000.000 Kerzen herausgezoomt mit 60 fps dank WebGL',
+            'Canvas 2D, wo WebGL fehlt, mit demselben Aussehen',
+            'Gezeichnet werden nur die Kerzen auf dem Bildschirm',
+          ],
+        },
+      ],
+      frameTime: '{ms} ms pro Bild',
+      panning: 'Schwenkt von selbst, bis Sie übernehmen',
+      renderer: 'Renderer',
+      replaying: 'Replay läuft',
+    },
+    trust: {
+      label: 'Open Source',
+      downloads: '{n} npm-Downloads im Monat',
+      license: '{n}-Lizenz',
+      dependencies: '{n} Laufzeitabhängigkeiten',
+      typescript: '{n}-Typen für jede API',
+    },
     hood: {
       eyebrow: 'Unter der Haube',
       title: 'Gemessen, dokumentiert, frei erweiterbar',
@@ -368,6 +425,11 @@ const de: SiteMessages = {
     },
   },
 
+  engage: {
+    click: 'Klicken, um den Chart zu bedienen',
+    tap: 'Tippen, um den Chart zu bedienen',
+  },
+
   terminal: {
     symbol: 'Symbol',
     timeframe: 'Zeiteinheit',
@@ -380,12 +442,13 @@ const de: SiteMessages = {
       baseline: 'Basislinie',
     },
     unavailable: 'Live-Daten nicht verfügbar: {error}',
+    drawnWith: 'Gezeichnet mit {renderer}',
     live: 'LIVE',
     offline: 'OFFLINE',
     connecting: 'VERBINDE',
     hints: [
       ['Ziehen', 'verschieben'],
-      ['Mausrad', 'zoomen'],
+      ['Klick + Mausrad', 'zoomen'],
       ['Achse ziehen', 'skalieren'],
     ],
   },
