@@ -297,6 +297,7 @@ const id: SiteMessages = {
         'Dua ratus ribu bar 1 menit dengan empat indikator. Rendering hanya menyentuh bar yang terlihat; kerangka waktu yang lebih besar di-resample secara lokal, di balik selubung pemuatan jika butuh lebih dari beberapa frame.',
       tryThis: [
         'Beralih antara Canvas 2D dan WebGL di atas grafik: tiap peralihan mengukur geseran singkat',
+        'Dengan WebGL aktif, ganti jenis grafik ke Garis dasar, Kagi, atau Point & Figure: semuanya juga digambar GPU',
         'Ganti ke 1H, 4H, lalu kembali ke 1m — waktunya muncul di bawah grafik',
         'Perkecil sepenuhnya lalu geser: biaya per frame tetap datar',
         'Tambahkan satu indikator lagi dan perhatikan waktu pergantiannya',

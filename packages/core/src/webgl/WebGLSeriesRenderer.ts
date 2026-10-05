@@ -10,6 +10,7 @@ import { yMapping } from './yMapping.js';
 import { GlKit, type Program } from './glKit.js';
 import { CommandDrawer } from './commandDrawer.js';
 import { createRecorder, type Recorder } from './recorder.js';
+import { claimGpuContext } from '../engine/gpuContexts.js';
 import { CANDLE_BARS_VS, CANDLE_COLUMNS_VS, FILL_FS, RECT_FS, RECT_VS, VOLUME_BARS_VS, VOLUME_COLUMNS_VS } from './shaders.js';
 
 const BAR_STRIDE = FLOATS_PER_BAR * 4;
@@ -19,6 +20,8 @@ const COLUMN_STRIDE = COLUMN_FLOATS * 4;
 /** Floats per background rectangle: left, top, right, bottom, its premultiplied colour, then dash on and off (0 for solid). */
 const RECT_FLOATS = 10;
 const RECT_STRIDE = RECT_FLOATS * 4;
+
+const noop = (): void => {};
 
 /** Attributes the bar and rectangle programs read. */
 const ATTRIBS = ['a_ohlc', 'a_vd', 'a_col', 'a_up', 'a_rect', 'a_color', 'a_dash'];
@@ -35,16 +38,17 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   readonly label: string;
   private readonly gl: WebGL2RenderingContext;
   private readonly kit: GlKit;
-  private readonly drawer: CommandDrawer;
-  private readonly candleBars: Program;
-  private readonly volumeBars: Program;
-  private readonly candleColumns: Program;
-  private readonly volumeColumns: Program;
-  private readonly rects: Program;
-  private readonly seriesBuffer: WebGLBuffer;
-  private readonly columnBuffer: WebGLBuffer;
-  private readonly rectBuffer: WebGLBuffer;
-  private readonly uploads = new SeriesUploads();
+  // Programs and buffers: made again when a lost context comes back.
+  private drawer!: CommandDrawer;
+  private candleBars!: Program;
+  private volumeBars!: Program;
+  private candleColumns!: Program;
+  private volumeColumns!: Program;
+  private rects!: Program;
+  private seriesBuffer!: WebGLBuffer;
+  private columnBuffer!: WebGLBuffer;
+  private rectBuffer!: WebGLBuffer;
+  private uploads = new SeriesUploads();
   private gpuFloats = 0;
   private columns = new Float32Array(4096 * COLUMN_FLOATS);
   private rectValues = new Float32Array(64 * RECT_FLOATS);
@@ -52,9 +56,17 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   private clip: [number, number, number, number] = [0, 0, 0, 0];
   private lost = false;
   private lostCallback: (() => void) | null = null;
+  private restoredCallback: (() => void) | null = null;
+  /** Lets go of the context it holds of those the charts may have (`gpuContexts`), while its own is live. */
+  private release: () => void = noop;
 
-  /** A renderer on a new canvas, or null where WebGL 2 isn't there (or, asked for, only a software one). */
-  static create(options: { failIfMajorPerformanceCaveat?: boolean } = {}): WebGLSeriesRenderer | null {
+  /**
+   * A renderer on a new canvas, or null where WebGL 2 isn't there (or, asked
+   * for, only a software one). `release` lets go of the share of the charts'
+   * contexts it was made with (see `loadWebGL`): it calls it once its context
+   * is lost or it is destroyed, and claims another if the context comes back.
+   */
+  static create(options: { failIfMajorPerformanceCaveat?: boolean; release?: () => void } = {}): WebGLSeriesRenderer | null {
     if (typeof document === 'undefined') return null;
     const canvas = document.createElement('canvas');
     let gl: WebGL2RenderingContext | null = null;
@@ -75,7 +87,9 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     // No WebGL 2 here: nothing to report, Canvas 2D it is.
     if (!gl) return null;
     try {
-      return new WebGLSeriesRenderer(canvas, gl);
+      const renderer = new WebGLSeriesRenderer(canvas, gl);
+      renderer.release = options.release ?? noop;
+      return renderer;
     } catch (err) {
       // A shader the driver won't compile, say: tell why, and let the context go.
       warnUnavailable(err);
@@ -87,22 +101,40 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   private constructor(readonly canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
     this.gl = gl;
     this.kit = new GlKit(gl);
-    const info = gl.getExtension('WEBGL_debug_renderer_info');
-    this.label = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-    const kit = this.kit;
-    this.candleBars = kit.program(CANDLE_BARS_VS, FILL_FS, ATTRIBS);
-    this.volumeBars = kit.program(VOLUME_BARS_VS, FILL_FS, ATTRIBS);
-    this.candleColumns = kit.program(CANDLE_COLUMNS_VS, FILL_FS, ATTRIBS);
-    this.volumeColumns = kit.program(VOLUME_COLUMNS_VS, FILL_FS, ATTRIBS);
-    this.rects = kit.program(RECT_VS, RECT_FS, ATTRIBS);
-    this.seriesBuffer = kit.buffer();
-    this.columnBuffer = kit.buffer();
-    this.rectBuffer = kit.buffer();
-    this.drawer = new CommandDrawer(kit);
+    this.label = gpuName(gl);
+    this.build();
     canvas.addEventListener('webglcontextlost', this.handleLost);
+    canvas.addEventListener('webglcontextrestored', this.handleRestored);
   }
 
-  /** `callback` once the context is lost; soon (in a microtask) if it already is. */
+  /**
+   * Programs and buffers, and the series to upload whole: a lost context took
+   * the old ones with it. All are made before any is kept, so a throw half-way
+   * leaves the renderer as it was.
+   */
+  private build(): void {
+    const kit = this.kit;
+    Object.assign(this, {
+      candleBars: kit.program(CANDLE_BARS_VS, FILL_FS, ATTRIBS),
+      volumeBars: kit.program(VOLUME_BARS_VS, FILL_FS, ATTRIBS),
+      candleColumns: kit.program(CANDLE_COLUMNS_VS, FILL_FS, ATTRIBS),
+      volumeColumns: kit.program(VOLUME_COLUMNS_VS, FILL_FS, ATTRIBS),
+      rects: kit.program(RECT_VS, RECT_FS, ATTRIBS),
+      seriesBuffer: kit.buffer(),
+      columnBuffer: kit.buffer(),
+      rectBuffer: kit.buffer(),
+      drawer: new CommandDrawer(kit),
+      uploads: new SeriesUploads(),
+      gpuFloats: 0,
+    });
+  }
+
+  /** `callback` each time the context comes back after a loss, ready to draw. */
+  onRestored(callback: () => void): void {
+    this.restoredCallback = callback;
+  }
+
+  /** `callback` each time the context is lost; soon (in a microtask) if it already is. */
   onLost(callback: () => void): void {
     this.lostCallback = callback;
     if (this.lost || this.gl.isContextLost()) {
@@ -186,9 +218,16 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   destroy(): void {
     this.canvas.removeEventListener('webglcontextlost', this.handleLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleRestored);
     this.lostCallback = null;
+    this.restoredCallback = null;
+    this.release();
+    this.release = noop;
     const gl = this.gl;
-    if (!gl.isContextLost()) {
+    if (gl.isContextLost()) {
+      // Lost, and maybe handed back later all the same: let it go again then.
+      this.canvas.addEventListener('webglcontextrestored', () => loseContext(gl), { once: true });
+    } else {
       for (const p of [this.candleBars, this.volumeBars, this.candleColumns, this.volumeColumns, this.rects]) this.kit.deleteProgram(p);
       this.drawer.destroy();
       gl.deleteBuffer(this.seriesBuffer);
@@ -202,10 +241,37 @@ export class WebGLSeriesRenderer implements GpuRenderer {
   }
 
   private readonly handleLost = (e: Event) => {
+    // Cancelled: the browser may hand the context back, then `handleRestored`.
     e.preventDefault();
     if (this.lost) return;
     this.lost = true;
+    // Its share goes back: a context the browser dropped for others (past
+    // its limit) is never handed back, and charts may want it meanwhile.
+    this.release();
+    this.release = noop;
     this.lostCallback?.();
+  };
+
+  private readonly handleRestored = () => {
+    if (!this.lost || this.gl.isContextLost()) return;
+    // Back, but drawn with only on a share of the charts' contexts; without
+    // one, or with shaders it won't take, it is let go again for good.
+    const release = claimGpuContext();
+    if (!release) {
+      loseContext(this.gl);
+      return;
+    }
+    try {
+      this.build();
+    } catch (err) {
+      release();
+      warnUnavailable(err);
+      loseContext(this.gl);
+      return;
+    }
+    this.release = release;
+    this.lost = false;
+    this.restoredCallback?.();
   };
 
   private syncSeries(frame: GpuFrame): void {
@@ -421,6 +487,18 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 /** A recorder of this renderer's own making. */
 function isRecorder(r: unknown): r is Recorder {
   return typeof r === 'object' && r !== null && Array.isArray((r as Recorder).commands);
+}
+
+/**
+ * The GPU's name: RENDERER where it gives one (Firefox), else the debug
+ * extension's (Chrome says "WebKit WebGL"); some browsers warn that the
+ * extension is going away, so it's asked for only when needed.
+ */
+function gpuName(gl: WebGL2RenderingContext): string {
+  const plain = String(gl.getParameter(gl.RENDERER));
+  if (plain && plain !== 'WebKit WebGL') return plain;
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : plain;
 }
 
 /** Let a context go now rather than at garbage collection. */

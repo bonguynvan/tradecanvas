@@ -297,6 +297,7 @@ const de: SiteMessages = {
         'Zweihunderttausend 1-Minuten-Kerzen mit vier Indikatoren. Gerendert werden nur die sichtbaren Kerzen; gröbere Zeiteinheiten werden lokal umgerechnet, hinter einem Ladeschleier, wenn das länger als ein paar Frames dauert.',
       tryThis: [
         'Über dem Chart zwischen Canvas 2D und WebGL wechseln: jeder Wechsel misst ein kurzes Verschieben',
+        'Bei aktivem WebGL den Charttyp auf Basislinie, Kagi oder Point & Figure umstellen: auch sie zeichnet die GPU',
         'Wechseln Sie zu 1H, 4H und zurück zu 1m – die Zeiten erscheinen unter dem Chart',
         'Zoomen Sie ganz heraus und verschieben Sie: Die Kosten pro Frame bleiben konstant',
         'Fügen Sie einen weiteren Indikator hinzu und beobachten Sie die Wechselzeit',

@@ -196,8 +196,10 @@ export interface ChartOptions {
    * `'auto'` (WebGL 2 where the GPU is a real one). On the GPU go the grid,
    * sessions, series, compare lines, indicators and panes; text, drawings,
    * orders, axes and the crosshair stay Canvas 2D, as does anything the GPU
-   * can't draw the same. The WebGL code loads only when asked for. See
-   * `rendererChange`.
+   * can't draw the same. The WebGL code loads only when asked for. At most 8
+   * charts on a page draw with WebGL at once (`setMaxWebGLCharts`), the rest
+   * with Canvas 2D until one lets go; a chart whose WebGL context is lost
+   * draws with it again if the browser hands it back. See `rendererChange`.
    */
   renderer?: 'canvas' | 'webgl' | 'auto';
   /**

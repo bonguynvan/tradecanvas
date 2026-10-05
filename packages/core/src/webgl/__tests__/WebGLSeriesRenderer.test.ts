@@ -5,19 +5,27 @@ import { DARK_THEME } from '@tradecanvas/commons';
 import type { GpuFrame } from '../../engine/gpu.js';
 import { gridLines } from '../../axis/gridLines.js';
 import { WebGLSeriesRenderer } from '../WebGLSeriesRenderer.js';
+import { claimGpuContext, DEFAULT_MAX_WEBGL_CHARTS, gpuContextsLeft, setMaxWebGLCharts } from '../../engine/gpuContexts.js';
 
 /** A WebGL 2 context stand-in: records every call, answers what the renderer asks. */
-function fakeGL(options: { compiles?: boolean } = {}) {
+function fakeGL(options: { compiles?: boolean; renderer?: string } = {}) {
   const calls: { name: string; args: unknown[] }[] = [];
   let lost = false;
   const loseContext = vi.fn(() => { lost = true; });
   const constants = new Map<string, number>();
+  const extensions: string[] = [];
   const gl = new Proxy({} as Record<string, unknown>, {
     get(_target, prop) {
       if (typeof prop !== 'string') return undefined;
       if (prop === 'isContextLost') return () => lost;
-      if (prop === 'getExtension') return (name: string) => (name === 'WEBGL_lose_context' ? { loseContext } : null);
-      if (prop === 'getParameter') return () => 'Fake GPU';
+      if (prop === 'getExtension') {
+        return (name: string) => {
+          extensions.push(name);
+          if (name === 'WEBGL_lose_context') return { loseContext };
+          return name === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: -1 } : null;
+        };
+      }
+      if (prop === 'getParameter') return (p: number) => (p === -1 ? 'Unmasked GPU' : options.renderer ?? 'Fake GPU');
       if (prop === 'getShaderParameter') return () => options.compiles ?? true;
       if (prop === 'getProgramParameter') return () => true;
       if (prop === 'getShaderInfoLog' || prop === 'getProgramInfoLog') return () => 'bad shader';
@@ -33,7 +41,7 @@ function fakeGL(options: { compiles?: boolean } = {}) {
     },
   });
   const enumOf = (name: string) => constants.get(name);
-  return { gl, calls, loseContext, lose: () => { lost = true; }, enumOf };
+  return { gl, calls, loseContext, extensions, lose: () => { lost = true; }, restore: () => { lost = false; }, enumOf };
 }
 
 const bar = (i: number, close = 100 + (i % 7)): OHLCBar => ({ time: 1_700_000_000_000 + i * 60_000, open: close - 1, high: close + 2, low: close - 3, close, volume: 10 + i });
@@ -63,13 +71,14 @@ function frame(over: Partial<GpuFrame> = {}): GpuFrame {
 
 let fake: ReturnType<typeof fakeGL>;
 
-function makeRenderer(options?: { compiles?: boolean }) {
+function makeRenderer(options?: { compiles?: boolean; renderer?: string }, release?: () => void) {
   fake = fakeGL(options);
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement, type: string) {
     return (type === 'webgl2' ? fake.gl : null) as never;
   } as never);
-  const r = WebGLSeriesRenderer.create();
+  const r = WebGLSeriesRenderer.create({ release });
   if (r) {
+    made.push(r);
     r.canvas.width = 180;
     r.canvas.height = 120;
     document.body.appendChild(r.canvas);
@@ -79,8 +88,14 @@ function makeRenderer(options?: { compiles?: boolean }) {
 
 const named = (name: string) => fake.calls.filter((c) => c.name === name);
 
+const made: WebGLSeriesRenderer[] = [];
 beforeEach(() => vi.spyOn(console, 'warn').mockImplementation(() => {}));
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  // Each renderer holds a context until destroyed.
+  for (const r of made.splice(0)) r.destroy();
+  setMaxWebGLCharts(DEFAULT_MAX_WEBGL_CHARTS);
+  vi.restoreAllMocks();
+});
 
 describe('WebGLSeriesRenderer', () => {
   it('reports what it drew', () => {
@@ -88,6 +103,12 @@ describe('WebGLSeriesRenderer', () => {
     expect(r.label).toBe('Fake GPU');
     expect(r.render(frame())).toEqual({ series: true, volume: true, background: true, recorded: false, under: false });
     expect(r.render(frame({ candles: false, volume: null, background: null }))).toEqual({ series: false, volume: false, background: false, recorded: false, under: false });
+  });
+
+  it('names its GPU by RENDERER, asking the debug extension (deprecated in some browsers) only where that is generic', () => {
+    expect(makeRenderer()!.label).toBe('Fake GPU');
+    expect(fake.extensions).not.toContain('WEBGL_debug_renderer_info');
+    expect(makeRenderer({ renderer: 'WebKit WebGL' })!.label).toBe('Unmasked GPU');
   });
 
   it('draws the grid, the other rectangles, the volume, then the candles: a call each', () => {
@@ -219,6 +240,84 @@ describe('WebGLSeriesRenderer', () => {
     expect(late).not.toHaveBeenCalled();
     await Promise.resolve();
     expect(late).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds its programs and buffers again when the context comes back, and uploads the series whole', () => {
+    const r = makeRenderer()!;
+    r.render(frame());
+    const links = named('linkProgram').length;
+    const lost = vi.fn();
+    const restored = vi.fn();
+    r.onLost(lost);
+    r.onRestored(restored);
+    fake.lose();
+    r.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    fake.restore();
+    fake.calls.length = 0;
+    r.canvas.dispatchEvent(new Event('webglcontextrestored'));
+    expect(restored).toHaveBeenCalledTimes(1);
+    expect(named('linkProgram')).toHaveLength(links);
+    expect(r.render(frame()).series).toBe(true);
+    expect(named('bufferSubData')).toHaveLength(0);
+    expect(named('bufferData').some((c) => c.args[1] instanceof Float32Array && (c.args[1] as Float32Array).length >= 20 * 6)).toBe(true);
+    // A second loss is news again.
+    r.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    expect(lost).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets go of its share of the charts’ contexts when its context is lost, and claims one again when it comes back', () => {
+    setMaxWebGLCharts(1);
+    const r = makeRenderer(undefined, claimGpuContext()!)!;
+    expect(gpuContextsLeft()).toBe(0);
+    fake.lose();
+    r.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    // A context dropped past the browser's limit never comes back: its share is free meanwhile.
+    expect(gpuContextsLeft()).toBe(1);
+    fake.restore();
+    r.canvas.dispatchEvent(new Event('webglcontextrestored'));
+    expect(gpuContextsLeft()).toBe(0);
+    r.destroy();
+    expect(gpuContextsLeft()).toBe(1);
+  });
+
+  it('lets a context that comes back go again, staying lost, with no share free or shaders it will not build', () => {
+    setMaxWebGLCharts(1);
+    const options = { compiles: true };
+    const r = makeRenderer(options, claimGpuContext()!)!;
+    const restored = vi.fn();
+    r.onRestored(restored);
+    const lose = () => {
+      fake.lose();
+      r.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    };
+    const back = () => {
+      fake.restore();
+      r.canvas.dispatchEvent(new Event('webglcontextrestored'));
+    };
+    lose();
+    // Another chart takes the share it let go.
+    const taken = claimGpuContext()!;
+    back();
+    expect(restored).not.toHaveBeenCalled();
+    expect(fake.loseContext).toHaveBeenCalledTimes(1);
+    taken();
+    options.compiles = false;
+    lose();
+    back();
+    expect(restored).not.toHaveBeenCalled();
+    expect(fake.loseContext).toHaveBeenCalledTimes(2);
+    expect(gpuContextsLeft()).toBe(1);
+    expect(r.render(frame()).series).toBe(false);
+  });
+
+  it('lets a context handed back after it was destroyed go at once', () => {
+    const r = makeRenderer()!;
+    fake.lose();
+    r.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    r.destroy();
+    fake.restore();
+    r.canvas.dispatchEvent(new Event('webglcontextrestored'));
+    expect(fake.loseContext).toHaveBeenCalledTimes(1);
   });
 
   it('hands the context back on destroy and leaves the page', () => {

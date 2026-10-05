@@ -93,10 +93,8 @@ export function transformDisplayData(type: ChartType, raw: DataSeries, options: 
       return toLineBreak(raw, options.lineBreak?.lines ?? 3);
     case 'kagi':
       return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent');
-    case 'pointAndFigure': {
-      const box = options.pointAndFigure?.boxSize;
-      return toPointAndFigure(raw, typeof box === 'number' ? box : averageClose(raw) * 0.01, options.pointAndFigure?.reversal ?? 3);
-    }
+    case 'pointAndFigure':
+      return toPointAndFigure(raw, pointAndFigureBox(raw, options), options.pointAndFigure?.reversal ?? 3);
     case 'rangeBars': {
       const range = options.rangeBars?.range;
       return toRangeBars(raw, { rangeSize: typeof range === 'number' ? range : averageClose(raw) * 0.005 });
@@ -128,6 +126,12 @@ export function isTransformedChartType(type: ChartType): boolean {
  */
 export function isReshapedChartType(type: ChartType): boolean {
   return type !== 'heikinAshi' && isTransformedChartType(type);
+}
+
+/** The box of a point & figure chart: the one set, or 1% of the average close. */
+export function pointAndFigureBox(raw: DataSeries, options: ChartTypeOptions = {}): number {
+  const box = options.pointAndFigure?.boxSize;
+  return typeof box === 'number' ? box : averageClose(raw) * 0.01;
 }
 
 function averageClose(raw: DataSeries): number {

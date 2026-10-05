@@ -93,7 +93,9 @@ export interface GpuRenderer {
    * draws nothing. Without one, everything past the bars is Canvas 2D.
    */
   recorder?(dpr: number, measure: CanvasRenderingContext2D | null): GpuRecorder;
-  /** Called once if the GPU context is lost (the engine then draws with Canvas 2D). */
+  /** Called each time the GPU context is lost (the engine then draws with Canvas 2D). */
   onLost(callback: () => void): void;
+  /** Called each time the context comes back after a loss, ready to draw again. */
+  onRestored?(callback: () => void): void;
   destroy(): void;
 }

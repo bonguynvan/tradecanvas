@@ -77,14 +77,16 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL レンダラー（プレビュー）</h2>
 <p>
-  <code>renderer: 'webgl'</code> を指定すると、プロット領域とインジケーターのペインを WebGL 2 で、2D シーンの下にあるキャンバスに描きます。グリッド、セッション、ローソク足、出来高は直接描き、インジケーター、比較ライン、ほとんどのチャートタイプの Canvas 2D 描画は GPU の線・塗り・矩形として記録し、Canvas 2D と同じように縁をアンチエイリアスします。デプスヒートマップ、出来高プロファイル、マーケットプロファイルも同じように記録し、ローソク足の下に描きます。統計ボックスや TPO の文字を表示するマーケットプロファイルは Canvas 2D のままです。テキスト、描画、注文、軸、クロスヘアは Canvas 2D のままで、GPU で同じに描けないものも Canvas 2D に任せます（順番どおりに描くので重なり順は変わりません）。自作のインジケータープラグインも変更なしで動きます。ローソク足は Canvas 2D とまったく同じデバイスピクセルに描かれ、線と塗りはアンチエイリアスされた縁のわずかなピクセルだけが異なります。WebGL のコードは独立したチャンク（gzip で約 17 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。
+  <code>renderer: 'webgl'</code> を指定すると、プロット領域とインジケーターのペインを WebGL 2 で、2D シーンの下にあるキャンバスに描きます。グリッド、セッション、ローソク足、出来高は直接描き、インジケーター、比較ライン、ほとんどのチャートタイプの Canvas 2D 描画は GPU の線・塗り・矩形として記録し、Canvas 2D と同じように縁をアンチエイリアスします。デプスヒートマップ、出来高プロファイル、マーケットプロファイルも同じように記録し、ローソク足の下に描きます。統計ボックスや TPO の文字を表示するマーケットプロファイルは Canvas 2D のままです。テキスト、描画、注文、軸、クロスヘアは Canvas 2D のままで、GPU で同じに描けないものも Canvas 2D に任せます（順番どおりに描くので重なり順は変わりません）。自作のインジケータープラグインも変更なしで動きます。ローソク足は Canvas 2D とまったく同じデバイスピクセルに描かれ、線と塗りはアンチエイリアスされた縁のわずかなピクセルだけが異なります。WebGL のコードは独立したチャンク（gzip で約 17 KB）で、初めて使うときに読み込まれます。WebGL 2 がない環境やコンテキストを失ったときは、Canvas 2D で描き続けます。コンテキストが戻れば WebGL に戻ります。Chrome と Safari はページごとに WebGL コンテキストを 16 個ほどしか保持せず、超えると古いものから失われるため、同時に WebGL で描くチャートはページあたり最大 8 個です（<code>setMaxWebGLCharts</code>）。上限を超えたチャートは、コンテキストが空くまで Canvas 2D で描きます。Chrome、Firefox、WebKit で確認済みです。
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
 chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
 
-await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+await chart.setRenderer('canvas')   // resolves to what draws now
+
+setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)`}</code></pre>
 <p>パン中の 1 フレームの時間、内蔵 GPU（Intel UHD、16.7 ms で 60 fps）：</p>
 <table>
   <thead><tr><th>チャート</th><th>ピクセル比</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>

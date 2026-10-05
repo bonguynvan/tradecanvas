@@ -1064,15 +1064,17 @@ BB + EMA + RSI + MACD（`pnpm bench`，单核）：
 
 ### WebGL 渲染器（预览）
 
-`renderer: 'webgl'` 用 WebGL 2 绘制图表区和指标窗格，画在 2D 场景下方的一个画布上：网格、交易时段、K线和成交量直接绘制；指标、对比线和大多数图表类型的 Canvas 2D 绘制会被记录成 GPU 上的线条、填充和矩形，边缘像 Canvas 2D 一样抗锯齿。深度热力图、成交量分布和市场轮廓也以同样方式记录，画在K线下方；显示统计框或 TPO 字母的市场轮廓仍用 Canvas 2D 绘制。文字、绘图、订单、坐标轴和十字线仍用 Canvas 2D，GPU 无法画得一致的内容也交给 Canvas 2D（按原顺序绘制，层叠顺序不变）；自定义指标插件无需修改即可使用。K线与 Canvas 2D 落在完全相同的设备像素上；线条和填充只在少数抗锯齿边缘像素上有差别。WebGL 代码是一个独立的 chunk（gzip 后约 17 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。
+`renderer: 'webgl'` 用 WebGL 2 绘制图表区和指标窗格，画在 2D 场景下方的一个画布上：网格、交易时段、K线和成交量直接绘制；指标、对比线和大多数图表类型的 Canvas 2D 绘制会被记录成 GPU 上的线条、填充和矩形，边缘像 Canvas 2D 一样抗锯齿。深度热力图、成交量分布和市场轮廓也以同样方式记录，画在K线下方；显示统计框或 TPO 字母的市场轮廓仍用 Canvas 2D 绘制。文字、绘图、订单、坐标轴和十字线仍用 Canvas 2D，GPU 无法画得一致的内容也交给 Canvas 2D（按原顺序绘制，层叠顺序不变）；自定义指标插件无需修改即可使用。K线与 Canvas 2D 落在完全相同的设备像素上；线条和填充只在少数抗锯齿边缘像素上有差别。WebGL 代码是一个独立的 chunk（gzip 后约 17 KB），首次使用时才加载；没有 WebGL 2 或上下文丢失时，图表会继续用 Canvas 2D 绘制。上下文恢复后，图表也会回到 WebGL。一个页面最多同时有 8 个图表用 WebGL 绘制（`setMaxWebGLCharts`），因为 Chrome 和 Safari 每个页面只保留约 16 个 WebGL 上下文，超过后会丢弃最旧的；超出限制的图表先用 Canvas 2D 绘制，直到有上下文被释放。已在 Chrome、Firefox 和 WebKit 中验证。
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
 
 chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
 
 await chart.setRenderer('canvas')   // resolves to what draws now
+
+setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)
 ```
 
 平移时的每帧耗时，集成显卡（Intel UHD；16.7 ms 即 60 fps）：

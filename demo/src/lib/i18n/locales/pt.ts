@@ -297,6 +297,7 @@ const pt: SiteMessages = {
         'Duzentas mil barras de 1 minuto com quatro indicadores. A renderização toca só as barras visíveis; tempos gráficos maiores são reamostrados localmente, atrás de um véu de carregamento quando isso leva mais do que alguns quadros.',
       tryThis: [
         'Alterne entre Canvas 2D e WebGL acima do gráfico: cada troca mede um breve arrasto',
+        'Com o WebGL ligado, mude o tipo de gráfico para Linha de base, Kagi ou Ponto e figura: também são desenhados na GPU',
         'Mude para 1H, 4H e volte para 1m — os tempos aparecem abaixo do gráfico',
         'Afaste o zoom ao máximo e desloque: o custo por quadro continua estável',
         'Adicione outro indicador e observe o tempo da troca',

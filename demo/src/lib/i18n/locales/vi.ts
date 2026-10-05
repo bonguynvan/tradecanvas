@@ -297,6 +297,7 @@ const vi: SiteMessages = {
         'Hai trăm nghìn nến 1 phút với bốn chỉ báo. Chỉ các nến đang hiện mới được vẽ; khung thời gian lớn hơn được dựng lại ngay trên máy, sau một lớp che báo đang tải khi việc đó mất hơn vài khung hình.',
       tryThis: [
         'Chuyển giữa Canvas 2D và WebGL phía trên biểu đồ: mỗi lần chuyển sẽ đo một lần kéo ngắn',
+        'Khi đang dùng WebGL, đổi loại biểu đồ sang Đường cơ sở, Kagi hoặc Point & Figure: chúng cũng được vẽ trên GPU',
         'Chuyển sang 1H, 4H rồi về lại 1m — thời gian đo hiện dưới biểu đồ',
         'Thu nhỏ hết cỡ rồi kéo: thời gian mỗi khung hình vẫn không đổi',
         'Thêm một chỉ báo nữa và xem thời gian chuyển đổi',

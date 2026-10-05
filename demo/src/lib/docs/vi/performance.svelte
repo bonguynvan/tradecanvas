@@ -77,14 +77,16 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Bộ vẽ WebGL (bản xem trước)</h2>
 <p>
-  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Heatmap độ sâu, volume profile và market profile cũng được ghi lại như vậy, nằm dưới các cây nến; market profile có hiện bảng thống kê hoặc chữ TPO thì vẫn vẽ bằng Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến nằm trên đúng các pixel thiết bị như khi vẽ bằng Canvas 2D; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D.
+  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Heatmap độ sâu, volume profile và market profile cũng được ghi lại như vậy, nằm dưới các cây nến; market profile có hiện bảng thống kê hoặc chữ TPO thì vẫn vẽ bằng Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến nằm trên đúng các pixel thiết bị như khi vẽ bằng Canvas 2D; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D. Khi context quay lại, biểu đồ cũng quay lại WebGL. Mỗi trang có tối đa 8 biểu đồ vẽ bằng WebGL cùng lúc (<code>setMaxWebGLCharts</code>), vì Chrome và Safari chỉ giữ khoảng 16 context WebGL mỗi trang và bỏ cái cũ nhất khi vượt quá; biểu đồ vượt giới hạn vẽ bằng Canvas 2D cho tới khi có context được trả lại. Đã kiểm trên Chrome, Firefox và WebKit.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
 chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
 
-await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+await chart.setRenderer('canvas')   // resolves to what draws now
+
+setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)`}</code></pre>
 <p>Thời gian mỗi khung hình khi kéo, trên GPU tích hợp (Intel UHD; 16.7 ms là 60 fps):</p>
 <table>
   <thead><tr><th>Biểu đồ</th><th>Tỉ lệ điểm ảnh</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>
