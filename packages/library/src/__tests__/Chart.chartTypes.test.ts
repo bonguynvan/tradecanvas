@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
-import { HiLoRenderer } from '@tradecanvas/core';
+import { HiLoRenderer, PointAndFigureRenderer } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -146,5 +146,18 @@ describe('the main series and lines on the price pane', () => {
     await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 200 });
     handlers.get('tick')?.({ data: { price: 200, volume: 1, time: T0 + 200 * HOUR, bid: 199.95, ask: 200.05 } });
     expect(chart.getBidAsk()).toEqual({ bid: 199.95, ask: 200.05 });
+  });
+});
+
+describe('point & figure boxes', () => {
+  it('draws boxes of the size the columns were built with: 1% of the average close, or the one set', () => {
+    const setBox = vi.spyOn(PointAndFigureRenderer.prototype, 'setBoxSize');
+    const thousandfold = bars.map((b) => ({ ...b, open: b.open * 1000, high: b.high * 1000, low: b.low * 1000, close: b.close * 1000 }));
+    chart.setData(thousandfold);
+    chart.setChartType('pointAndFigure');
+    const average = thousandfold.reduce((s, b) => s + b.close, 0) / thousandfold.length;
+    expect(setBox.mock.calls.at(-1)?.[0]).toBeCloseTo(average * 0.01, 6);
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 250 } });
+    expect(setBox.mock.calls.at(-1)?.[0]).toBe(250);
   });
 });

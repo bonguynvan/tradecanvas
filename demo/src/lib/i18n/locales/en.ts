@@ -303,6 +303,7 @@ const en = {
         'Two hundred thousand 1-minute bars with four indicators. Rendering touches only the visible bars; coarser timeframes are resampled locally, behind a loading veil when that takes more than a few frames.',
       tryThis: [
         'Switch between Canvas 2D and WebGL above the chart: each switch times a short pan',
+        'With WebGL on, switch the chart type to Baseline, Kagi or Point & Figure: they draw on the GPU too',
         'Switch to 1H, 4H and back to 1m — timings appear under the chart',
         'Zoom all the way out and pan: frame cost stays flat',
         'Add another indicator and watch the switch time',

@@ -4,6 +4,16 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### WebGL: back after a lost context, many charts, every browser
+
+- **Back after a lost context**: when the browser hands a lost WebGL context back (after a GPU reset, say), the chart draws with WebGL again and says so: `rendererChange` with `{ renderer: 'webgl', reason: 'contextRestored' }`. Before, it stayed on Canvas 2D for good.
+- **Many charts on a page**: Chrome and Safari keep about 16 WebGL contexts a page and drop the oldest past that, a live chart's or a map's, never to hand it back. At most 8 charts now draw with WebGL at once; one past that draws with Canvas 2D (`rendererChange` with `reason: 'limit'`) and takes WebGL as soon as another chart lets go of its context, as a chart whose context was lost does. `setMaxWebGLCharts(n)`, from the package, sets the limit (`Infinity` for none).
+- **Every browser**: checked in Chrome, Firefox and WebKit (the engine of Safari): WebGL draws, loses and gets back its context, and keeps to the limit in all three, with the same pixels against Canvas 2D. Firefox no longer warns about the deprecated `WEBGL_debug_renderer_info`: the GPU's name comes from `RENDERER` where that gives one.
+- **Baseline, Kagi and point & figure on the GPU** too. Their lines are drawn whole and round where they bend (baseline, Kagi) where they were drawn in pieces that left notches at each bend, and the two strokes of an X are drawn apart. Zoomed out on 200,000 bars at a pixel ratio of 2, a baseline chart takes 23.2 ms a frame instead of 27.6.
+- **Point & figure boxes**: the chart drew every column in boxes of 1, whatever the box its columns were built with (1% of the average close unless set), so at a price of 30,000 a column was thousands of overlapping specks instead of a stack of Xs or Os. It draws them the size of the box now.
+
+## 1.11.0 (2026-10-05)
+
 ### WebGL: the heatmap and profiles on the GPU
 
 - **Under the bars, on the GPU**: with `renderer: 'webgl'`, the depth heatmap, the volume profile and the market profile draw with WebGL too, under the bars, with volume under a profile as in Canvas 2D. A market profile showing its stats readout or TPO letters stays with Canvas 2D: text can't go between the GPU's background and its bars. The 2D canvas under the GPU's is now only there for that, a watermark, or what the GPU can't take.

@@ -177,6 +177,8 @@ export type { LegendConfig, SessionBreakConfig, SessionHoursConfig, SessionWindo
 
 // Re-export chart renderers and transforms
 export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';
+// How many charts on the page draw with WebGL at once.
+export { setMaxWebGLCharts, DEFAULT_MAX_WEBGL_CHARTS } from '@tradecanvas/core';
 export { lttbDownsample, lttbVisibleIndices } from '@tradecanvas/core';
 export type { CompareSymbol } from '@tradecanvas/core';
 export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars } from '@tradecanvas/core';

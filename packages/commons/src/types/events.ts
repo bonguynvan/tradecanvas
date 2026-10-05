@@ -299,11 +299,12 @@ export interface ChartEventMap {
   symbolInfoChange: { info: SymbolInfo | null };
   chartTypeChange: { type: string; previous: string };
   /**
-   * What draws the chart now. `reason` says why it isn't what was asked for:
-   * no WebGL 2 here (or only a slow software one, with 'auto'), or the GPU
-   * context was lost.
+   * What draws the chart now. `reason` says why: no WebGL 2 here (or only a
+   * slow software one, with 'auto'), the GPU context was lost or came back,
+   * or the charts on the page draw with as many WebGL contexts as they may
+   * (`setMaxWebGLCharts`; WebGL follows once one is let go).
    */
-  rendererChange: { renderer: 'canvas' | 'webgl'; reason?: 'unsupported' | 'contextLost' };
+  rendererChange: { renderer: 'canvas' | 'webgl'; reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' };
   symbolChange: { symbol: string; previous: string | null };
   timeframeChange: { timeframe: string; previous: string | null };
   historyChange: { canUndo: boolean; canRedo: boolean };

@@ -297,6 +297,7 @@ const tr: SiteMessages = {
         'Dört göstergeyle iki yüz bin adet 1 dakikalık bar. Çizim yalnızca görünen barlara dokunur; daha büyük zaman dilimleri yerelde yeniden örneklenir, birkaç kareden uzun sürerse bir yükleme perdesinin arkasında.',
       tryThis: [
         'Grafiğin üstünde Canvas 2D ile WebGL arasında geçiş yapın: her geçiş kısa bir kaydırmayı ölçer',
+        'WebGL açıkken grafik türünü Taban çizgisi, Kagi veya Point & Figure yapın: onlar da GPU ile çizilir',
         '1H’ye, 4H’ye ve tekrar 1m’ye geçin; süreler grafiğin altında görünür',
         'Sonuna kadar uzaklaştırın ve kaydırın: kare maliyeti sabit kalır',
         'Bir gösterge daha ekleyin ve geçiş süresini izleyin',

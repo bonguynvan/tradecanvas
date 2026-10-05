@@ -297,6 +297,7 @@ const fr: SiteMessages = {
         'Deux cent mille barres d’une minute avec quatre indicateurs. Le rendu ne touche que les barres visibles ; les unités de temps plus longues sont recalculées localement, derrière un voile de chargement quand cela prend plus de quelques images.',
       tryThis: [
         'Basculez entre Canvas 2D et WebGL au-dessus du graphique : chaque bascule chronomètre un court défilement',
+        'Avec WebGL, passez le type de graphique en Ligne de base, Kagi ou Point & Figure : eux aussi sont dessinés par le GPU',
         'Passez en 1H, en 4H puis revenez en 1m — les durées s’affichent sous le graphique',
         'Dézoomez au maximum et faites défiler : le coût par image reste constant',
         'Ajoutez un indicateur et observez le temps de changement',

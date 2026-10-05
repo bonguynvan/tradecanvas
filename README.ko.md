@@ -1064,15 +1064,17 @@ BB + EMA + RSI + MACD (`pnpm bench`, 단일 코어):
 
 ### WebGL 렌더러 (미리 보기)
 
-`renderer: 'webgl'`을 쓰면 플롯 영역과 지표 패널을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 그리드, 세션, 캔들, 거래량은 직접 그리고, 지표·비교선·대부분의 차트 유형의 Canvas 2D 그리기는 GPU의 선, 채우기, 사각형으로 기록되어 Canvas 2D처럼 가장자리가 안티앨리어싱됩니다. 호가 깊이 히트맵, 볼륨 프로파일, 마켓 프로파일도 같은 방식으로 기록되어 캔들 아래에 그려집니다. 통계 상자나 TPO 문자를 표시하는 마켓 프로파일은 Canvas 2D로 남습니다. 텍스트, 드로잉, 주문, 축, 크로스헤어는 Canvas 2D로 남고, GPU가 똑같이 그릴 수 없는 것도 Canvas 2D가 그립니다(순서대로 그리므로 겹침 순서는 그대로입니다). 직접 만든 지표 플러그인도 수정 없이 동작합니다. 캔들은 Canvas 2D와 똑같은 디바이스 픽셀에 그려지고, 선과 채우기는 안티앨리어싱된 가장자리의 일부 픽셀만 다릅니다. WebGL 코드는 별도 청크(gzip 약 17 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다.
+`renderer: 'webgl'`을 쓰면 플롯 영역과 지표 패널을 WebGL 2로 2D 장면 아래의 캔버스에 그립니다. 그리드, 세션, 캔들, 거래량은 직접 그리고, 지표·비교선·대부분의 차트 유형의 Canvas 2D 그리기는 GPU의 선, 채우기, 사각형으로 기록되어 Canvas 2D처럼 가장자리가 안티앨리어싱됩니다. 호가 깊이 히트맵, 볼륨 프로파일, 마켓 프로파일도 같은 방식으로 기록되어 캔들 아래에 그려집니다. 통계 상자나 TPO 문자를 표시하는 마켓 프로파일은 Canvas 2D로 남습니다. 텍스트, 드로잉, 주문, 축, 크로스헤어는 Canvas 2D로 남고, GPU가 똑같이 그릴 수 없는 것도 Canvas 2D가 그립니다(순서대로 그리므로 겹침 순서는 그대로입니다). 직접 만든 지표 플러그인도 수정 없이 동작합니다. 캔들은 Canvas 2D와 똑같은 디바이스 픽셀에 그려지고, 선과 채우기는 안티앨리어싱된 가장자리의 일부 픽셀만 다릅니다. WebGL 코드는 별도 청크(gzip 약 17 KB)로, 처음 쓸 때 불러옵니다. WebGL 2가 없거나 컨텍스트를 잃으면 차트는 Canvas 2D로 계속 그립니다. 컨텍스트가 돌아오면 WebGL로도 돌아옵니다. Chrome과 Safari는 페이지당 WebGL 컨텍스트를 16개 정도만 유지하고 넘치면 가장 오래된 것을 버리므로, 한 페이지에서 동시에 WebGL로 그리는 차트는 최대 8개입니다(`setMaxWebGLCharts`). 한도를 넘은 차트는 컨텍스트가 반환될 때까지 Canvas 2D로 그립니다. Chrome, Firefox, WebKit에서 확인했습니다.
 
 ```typescript
 const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
 
 chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
 
 await chart.setRenderer('canvas')   // resolves to what draws now
+
+setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)
 ```
 
 이동 중 프레임 시간, 내장 GPU(Intel UHD, 16.7 ms가 60 fps):

@@ -43,7 +43,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer, loadWebGLRenderer } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -116,7 +116,7 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData, isReshapedChartType } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
@@ -265,6 +265,8 @@ export class Chart {
   private chartRenderer: ChartRendererInterface;
   /** The latest `setRenderer` call: an earlier one that resolves later is dropped. */
   private rendererToken = 0;
+  /** Stops waiting for a WebGL context to come free (the charts held all they may). */
+  private stopWaitingForGpu: (() => void) | null = null;
   private disposed = false;
   /** Settings of the chart types that build their own bars. */
   private chartTypeOptions: ChartTypeOptions = {};
@@ -1000,8 +1002,9 @@ export class Chart {
     // Set render context
     this.syncRenderContext();
     this.engine.start();
-    // A lost GPU context: the engine is back on Canvas 2D.
+    // A lost GPU context: the engine is back on Canvas 2D, until it comes back.
     this.engine.onGpuLost = () => this.eventBus.emit('rendererChange', { renderer: 'canvas', reason: 'contextLost' });
+    this.engine.onGpuRestored = () => this.eventBus.emit('rendererChange', { renderer: 'webgl', reason: 'contextRestored' });
     if (this.options.renderer && this.options.renderer !== 'canvas') void this.setRenderer(this.options.renderer);
   }
 
@@ -3555,25 +3558,46 @@ export class Chart {
   /**
    * Draw the bars and volume with WebGL 2 (`'webgl'`; `'auto'` only on a real
    * GPU, not a software one) or with Canvas 2D (`'canvas'`). Resolves to what
-   * draws now: Canvas 2D where WebGL 2 can't be had. The WebGL code loads on
-   * first use. Emits `rendererChange`.
+   * draws now: Canvas 2D where WebGL 2 can't be had, or while the charts on
+   * the page hold as many WebGL contexts as they may (`setMaxWebGLCharts`;
+   * WebGL follows once one is let go). The WebGL code loads on first use.
+   * Emits `rendererChange`.
    */
   async setRenderer(mode: RendererMode): Promise<'canvas' | 'webgl'> {
     const token = ++this.rendererToken;
+    this.waitForGpu(null);
     if (mode === 'canvas') {
       this.applyRenderer(null);
       return 'canvas';
     }
     // Already on the GPU: keep that context rather than make a second one.
     if (this.engine.getGpu()) return 'webgl';
-    const gpu = await loadWebGLRenderer(mode);
+    return this.takeGpu(mode, token, true);
+  }
+
+  /** WebGL for `mode`; or Canvas 2D, waiting for a context to come free when the charts hold all they may. */
+  private async takeGpu(mode: 'webgl' | 'auto', token: number, report: boolean): Promise<'canvas' | 'webgl'> {
+    const { gpu, reason } = await loadWebGL(mode);
     // Superseded by a later call, or the chart is gone.
     if (token !== this.rendererToken || this.disposed) {
       gpu?.destroy();
       return this.getRenderer();
     }
-    this.applyRenderer(gpu, gpu ? undefined : 'unsupported');
+    if (reason === 'limit') {
+      // One may have come free since it was asked for (a superseded call let go).
+      if (gpuContextsLeft() > 0) return this.takeGpu(mode, token, report);
+      this.waitForGpu(() => void this.takeGpu(mode, token, false));
+      if (report) this.applyRenderer(null, 'limit');
+      return this.getRenderer();
+    }
+    // A retry that found no WebGL after all says nothing: it said 'limit' already.
+    if (gpu || report) this.applyRenderer(gpu, reason);
     return this.getRenderer();
+  }
+
+  private waitForGpu(retry: (() => void) | null): void {
+    this.stopWaitingForGpu?.();
+    this.stopWaitingForGpu = retry ? whenGpuContextFree(retry) : null;
   }
 
   /** What draws the bars and volume now. */
@@ -3581,7 +3605,7 @@ export class Chart {
     return this.engine.getGpu() ? 'webgl' : 'canvas';
   }
 
-  private applyRenderer(gpu: GpuRenderer | null, reason?: 'unsupported'): void {
+  private applyRenderer(gpu: GpuRenderer | null, reason?: 'unsupported' | 'limit'): void {
     const before = this.getRenderer();
     if (gpu) this.engine.attachGpu(gpu);
     else this.engine.detachGpu();
@@ -4520,6 +4544,7 @@ export class Chart {
 
   destroy(): void {
     this.disposed = true;
+    this.waitForGpu(null);
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     // A loader of the host's own: no page lands in, or is asked for by, a destroyed chart.
     this.history.setLoader(null);
@@ -4561,6 +4586,10 @@ export class Chart {
     const raw = this.dataManager.getData();
     if (raw.length === 0) return raw;
     const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions);
+    // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).
+    if (this.chartRenderer instanceof PointAndFigureRenderer && !this.pluginManager.getChartType(this.options.chartType)) {
+      this.chartRenderer.setBoxSize(pointAndFigureBox(raw, this.chartTypeOptions));
+    }
     this.displayDataCache = result;
     return result;
   }

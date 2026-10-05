@@ -79,21 +79,27 @@ export class BaselineRenderer implements ChartRendererInterface {
     ctx.fill(fillBelowPath);
     ctx.restore();
 
-    // Line segments batched by color using Path2D
+    // The line in a colour a side, a line per run on one side: round where
+    // it bends, as a line chart is (pieces drawn apart left notches).
     const abovePath = new Path2D();
     const belowPath = new Path2D();
+    let side: boolean | null = null;
     for (let i = 1; i <= lastIdx; i++) {
       // At or above the baseline price: up on screen, down when inverted.
       const above = viewport.invertScale ? ys[i] >= baselineY : ys[i] <= baselineY;
       const path = above ? abovePath : belowPath;
-      path.moveTo(xs[i - 1], ys[i - 1]);
+      if (above !== side) path.moveTo(xs[i - 1], ys[i - 1]);
+      side = above;
       path.lineTo(xs[i], ys[i]);
     }
+    ctx.save();
     ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
     ctx.strokeStyle = theme.candleUp;
     ctx.stroke(abovePath);
     ctx.strokeStyle = theme.candleDown;
     ctx.stroke(belowPath);
+    ctx.restore();
 
     // Baseline dashed line
     ctx.setLineDash([6, 4]);

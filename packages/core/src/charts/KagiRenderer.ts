@@ -32,21 +32,18 @@ export class KagiRenderer implements ChartRendererInterface {
 
       const topY = toY(bar.high);
       const bottomY = toY(bar.low);
+      const connectY = isUp ? bottomY : topY;
 
-      // Vertical line
+      // The vertical line, then on along the connector to the next bar: one
+      // line, round at its corner (two pieces drawn apart left a notch).
       const path = isUp ? yangPath : yinPath;
-      path.moveTo(x, topY);
-      path.lineTo(x, bottomY);
-
-      // Horizontal connector to next bar
-      if (i < to && i + 1 < data.length) {
-        const nextX = toX(i + 1);
-        const connectY = isUp ? bottomY : topY;
-        path.moveTo(x, connectY);
-        path.lineTo(nextX, connectY);
-      }
+      path.moveTo(x, isUp ? topY : bottomY);
+      path.lineTo(x, connectY);
+      if (i < to && i + 1 < data.length) path.lineTo(toX(i + 1), connectY);
     }
 
+    ctx.save();
+    ctx.lineJoin = 'round';
     // Draw yang (up) lines - thick
     ctx.strokeStyle = theme.candleUp;
     ctx.lineWidth = 3;
@@ -56,5 +53,6 @@ export class KagiRenderer implements ChartRendererInterface {
     ctx.strokeStyle = theme.candleDown;
     ctx.lineWidth = 1;
     ctx.stroke(yinPath);
+    ctx.restore();
   }
 }

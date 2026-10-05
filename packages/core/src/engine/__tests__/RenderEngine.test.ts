@@ -263,15 +263,17 @@ describe('RenderEngine — a GPU layer under the scene', () => {
   function fakeGpu(drawn: Record<string, boolean> = { series: true, volume: true, background: true, recorded: true, under: true }, rec = fakeRecorder()) {
     const canvas = document.createElement('canvas');
     let lostCallback: (() => void) | null = null;
+    let restoredCallback: (() => void) | null = null;
     const gpu = {
       canvas,
       label: 'test GPU',
       render: vi.fn(() => drawn as { series: boolean; volume: boolean; background: boolean; recorded?: boolean }),
       recorder: vi.fn(() => rec.recorder),
       onLost: (cb: () => void) => { lostCallback = cb; },
+      onRestored: (cb: () => void) => { restoredCallback = cb; },
       destroy: vi.fn(() => canvas.remove()),
     };
-    return { gpu, lose: () => lostCallback?.(), rec };
+    return { gpu, lose: () => lostCallback?.(), restore: () => restoredCallback?.(), rec };
   }
 
   /** The plot drawn by steps that say on which context they ran. */
@@ -622,6 +624,56 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(container.querySelectorAll('canvas')).toHaveLength(2);
     runFrame();
     expect(series).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws with the GPU again once its context comes back', async () => {
+    const { ctx, series } = await candleContext();
+    const { gpu, lose, restore } = fakeGpu();
+    const restored = vi.fn();
+    engine.onGpuRestored = restored;
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    lose();
+    // Kept, waiting for its context.
+    expect(gpu.destroy).not.toHaveBeenCalled();
+    expect(engine.getGpu()).toBeNull();
+    runFrame();
+    expect(series).toHaveBeenCalledTimes(1);
+    restore();
+    expect(restored).toHaveBeenCalledTimes(1);
+    expect(engine.getGpu()).toBe(gpu);
+    expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
+    gpu.render.mockClear();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledTimes(1);
+    expect(series).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets go of a GPU waiting for its context when it is detached or replaced', async () => {
+    const { ctx } = await candleContext();
+    const first = fakeGpu();
+    const restored = vi.fn();
+    engine.onGpuRestored = restored;
+    engine.attachGpu(first.gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    first.lose();
+    engine.detachGpu();
+    expect(first.gpu.destroy).toHaveBeenCalledTimes(1);
+    first.restore();
+    expect(restored).not.toHaveBeenCalled();
+    expect(engine.getGpu()).toBeNull();
+
+    const second = fakeGpu();
+    const third = fakeGpu();
+    engine.attachGpu(second.gpu);
+    second.lose();
+    engine.attachGpu(third.gpu);
+    expect(second.gpu.destroy).toHaveBeenCalledTimes(1);
+    second.restore();
+    expect(engine.getGpu()).toBe(third.gpu);
   });
 
   it('detaches, leaving the two canvases', async () => {

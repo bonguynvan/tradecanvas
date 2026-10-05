@@ -77,14 +77,16 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>WebGL renderer (preview)</h2>
 <p>
-  <code>renderer: 'webgl'</code> draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, sessions, candles and volume directly, and the Canvas 2D drawing of indicators, compare lines and most chart types recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. The depth heatmap and the volume and market profiles are recorded the same way, under the bars; a market profile showing its stats readout or letters stays with Canvas 2D. Text, drawings, orders, axes and the crosshair stay on Canvas 2D, as does anything the GPU wouldn't draw the same (left to Canvas 2D in order, so the stacking doesn't change); custom indicator plugins come along without changes. Candles land on the same device pixels as with Canvas 2D; lines and fills differ only on a few antialiased edge pixels. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D.
+  <code>renderer: 'webgl'</code> draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, sessions, candles and volume directly, and the Canvas 2D drawing of indicators, compare lines and most chart types recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. The depth heatmap and the volume and market profiles are recorded the same way, under the bars; a market profile showing its stats readout or letters stays with Canvas 2D. Text, drawings, orders, axes and the crosshair stay on Canvas 2D, as does anything the GPU wouldn't draw the same (left to Canvas 2D in order, so the stacking doesn't change); custom indicator plugins come along without changes. Candles land on the same device pixels as with Canvas 2D; lines and fills differ only on a few antialiased edge pixels. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D. If the context comes back, WebGL does too. At most 8 charts on a page draw with WebGL at once (<code>setMaxWebGLCharts</code>), as Chrome and Safari keep only about 16 WebGL contexts a page and drop the oldest past that; a chart past the limit draws with Canvas 2D until one is let go. Checked in Chrome, Firefox and WebKit.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
 chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' }
+// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
 
-await chart.setRenderer('canvas')   // resolves to what draws now`}</code></pre>
+await chart.setRenderer('canvas')   // resolves to what draws now
+
+setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)`}</code></pre>
 <p>Frame time while panning, on integrated graphics (Intel UHD; 16.7 ms is 60 fps):</p>
 <table>
   <thead><tr><th>Chart</th><th>Pixel ratio</th><th>Canvas 2D</th><th>WebGL</th></tr></thead>

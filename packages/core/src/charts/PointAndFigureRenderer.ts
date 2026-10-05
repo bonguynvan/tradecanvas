@@ -23,7 +23,7 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
     const offsetX = -viewport.offset + viewport.chartRect.x + halfBar;
     const { min, max } = viewport.priceRange;
     const priceRange = max - min;
-    if (priceRange === 0) return;
+    if (priceRange === 0 || !(this.boxSize > 0)) return;
     const priceScale = viewport.chartRect.height / priceRange;
     const toX = (i: number) => i * barUnit + offsetX;
     const toY = priceToYMapper(viewport);
@@ -32,8 +32,10 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
     const symbolSize = Math.min(halfBar * 0.8, boxPixelHeight * 0.8);
     const s = symbolSize * 0.5;
 
-    // Batch X strokes and O strokes into separate Path2D objects
-    const xPath = new Path2D();
+    // X symbols as two strokes, each line of the X on its own (they cross,
+    // and a stroke's pieces should not), and O symbols.
+    const xFalling = new Path2D();
+    const xRising = new Path2D();
     const oPath = new Path2D();
 
     for (let i = from; i <= to && i < data.length; i++) {
@@ -44,17 +46,21 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
       const topPrice = bar.high;
       const bottomPrice = bar.low;
       const numBoxes = Math.max(1, Math.round((topPrice - bottomPrice) / this.boxSize));
+      // The boxes on screen only, and at most one a pixel: a box tiny for
+      // the prices can't run a column to millions of symbols.
+      const first = Math.max(0, Math.floor((min - bottomPrice) / this.boxSize) - 1);
+      const last = Math.min(numBoxes - 1, Math.ceil((max - bottomPrice) / this.boxSize));
+      const stride = Math.max(1, Math.ceil(1 / boxPixelHeight));
 
-      for (let j = 0; j < numBoxes; j++) {
+      for (let j = first; j <= last; j += stride) {
         const price = bottomPrice + (j + 0.5) * this.boxSize;
         const y = toY(price);
 
         if (isX) {
-          // Draw X into path
-          xPath.moveTo(x - s, y - s);
-          xPath.lineTo(x + s, y + s);
-          xPath.moveTo(x + s, y - s);
-          xPath.lineTo(x - s, y + s);
+          xFalling.moveTo(x - s, y - s);
+          xFalling.lineTo(x + s, y + s);
+          xRising.moveTo(x + s, y - s);
+          xRising.lineTo(x - s, y + s);
         } else {
           // Draw O into path
           oPath.moveTo(x + s, y);
@@ -63,10 +69,10 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
       }
     }
 
-    // Stroke all X symbols at once
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = theme.candleUp;
-    ctx.stroke(xPath);
+    ctx.stroke(xFalling);
+    ctx.stroke(xRising);
 
     // Stroke all O symbols at once
     ctx.strokeStyle = theme.candleDown;

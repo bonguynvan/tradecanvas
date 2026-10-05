@@ -125,9 +125,13 @@ export class RenderEngine {
   private topLayer: CanvasLayer | undefined;
   /** The GPU renderer under the scene. */
   private gpu: GpuRenderer | null = null;
+  /** A GPU whose context was lost, kept for when it comes back. */
+  private lostGpu: GpuRenderer | null = null;
 
   /** Called when the GPU context is lost and the engine has gone back to Canvas 2D. */
   onGpuLost: (() => void) | null = null;
+  /** Called when the lost context came back and the engine draws with the GPU again. */
+  onGpuRestored: (() => void) | null = null;
 
   /**
    * Optional hook fired AFTER the canvas layers have been resized in
@@ -174,21 +178,36 @@ export class RenderEngine {
   /** Draw bars and volume with `gpu`, on its canvas under the scene. */
   attachGpu(gpu: GpuRenderer): void {
     this.detachGpu();
-    this.gpu = gpu;
-    this.layerManager.attachGpu(gpu.canvas);
+    this.placeGpu(gpu);
+    // Lost: Canvas 2D, keeping the GPU for when its context comes back.
     gpu.onLost(() => {
       if (this.gpu !== gpu) return;
-      this.detachGpu();
+      this.gpu = null;
+      this.lostGpu = gpu;
+      this.layerManager.detachGpu();
+      this.renderLoop.markAllDirty();
       this.onGpuLost?.();
     });
+    gpu.onRestored?.(() => {
+      if (this.lostGpu !== gpu) return;
+      this.lostGpu = null;
+      this.placeGpu(gpu);
+      this.onGpuRestored?.();
+    });
+  }
+
+  private placeGpu(gpu: GpuRenderer): void {
+    this.gpu = gpu;
+    this.layerManager.attachGpu(gpu.canvas);
     this.renderLoop.markAllDirty();
   }
 
   /** Back to Canvas 2D for everything. */
   detachGpu(): void {
-    const gpu = this.gpu;
+    const gpu = this.gpu ?? this.lostGpu;
     if (!gpu) return;
     this.gpu = null;
+    this.lostGpu = null;
     this.layerManager.detachGpu();
     gpu.destroy();
     this.renderLoop.markAllDirty();
