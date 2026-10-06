@@ -123,6 +123,17 @@ describe('ChartWidgetGrid', () => {
     expect(charts()[3].overrides).toEqual([{ 'grid.vertical.visible': false }]);
   });
 
+  it('switches the widget parts of every chart, and of the charts it adds later', () => {
+    make();
+    grid.setFeatures({ 'toolbar.screenshot': false, sidebar: false });
+    grid.setFeatures({ sidebar: true });
+    expect(grid.getWidgets().map((w) => w.isFeatureOn('toolbar.screenshot'))).toEqual([false, false]);
+    expect(grid.getWidgets().map((w) => w.isFeatureOn('sidebar'))).toEqual([true, true]);
+    grid.setLayout('2x2');
+    expect(grid.getWidget(3)!.isFeatureOn('toolbar.screenshot')).toBe(false);
+    expect(grid.getWidget(3)!.isFeatureOn('sidebar')).toBe(true);
+  });
+
   it('puts away the charts it shrinks from, and brings them back as they were', async () => {
     make({ layout: '1x3', cells: [{ symbol: 'AAA' }, { symbol: 'BBB' }, { symbol: 'CCC' }] });
     charts()[2].drawings = ['kept'];

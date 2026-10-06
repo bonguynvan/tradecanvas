@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | 상태 표시줄의 기간 프리셋(1D … All)과 날짜로 이동(Alt+G) |
 | `indicatorLegend` | `boolean` | `true` | 차트에 표시되는 지표 목록(OHLCV 범례 아래와 각 패널 상단)과 표시 / 설정 / 삭제 |
 | `fullscreen` | `boolean` | `true` | 도구 모음의 전체 화면 버튼 |
+| `features` | `WidgetFeatures` | 모두 켜짐 | 위젯 부품을 켜고 끄는 112개 스위치, 실행 중에도 변경 가능 — 아래 **위젯 스위치와 직접 만든 부품** 참고 |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | 검색 가능한 종목 목록 |
 | `timeframes` | `TimeFrame[]` | 1m ~ 1M | 제공할 시간 단위. ▾ 메뉴에서 즐겨 쓰는 항목을 고정할 수 있습니다 |
 | `chartTypes` | `ChartType[]` | 18가지 | 사용 가능한 차트 유형 |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 차트의 가격 라벨도 같은 모서리를 따릅니다(`tagRadius`; 위젯 없이 `Chart`만 쓴다면 `chart.setShapes({ tagRadius })`). 위젯은 글꼴을 불러오지 않으므로 외관이 지정한 글꼴은 직접 불러오세요. [스타일링](https://bonguynvan.github.io/tradecanvas/docs/styling)을 참고하세요.
+
+### 위젯 스위치와 직접 만든 부품
+
+위젯의 모든 부품에는 스위치가 있어 끄기 전까지 켜져 있고 실행 중에도 바꿀 수 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고(`alerts`, `settings`, `hotkeys`), 점이 있는 이름은 한 자리입니다(`toolbar.screenshot`, `sidebar.magnet`, `menu.chart.order`). `WIDGET_FEATURES`에 112개 전부가 있으며, 예전 옵션(`toolbar: false`, `drawingTools: false`…)이 바로 이 스위치입니다. 직접 만든 버튼, 메뉴, 상태 항목은 위젯의 바 안에 들어가 테마와 모양을 따릅니다.
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // 실행 중에
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // 차트 위의 내 층
+```
+
+스위치는 위젯의 부품을 보이고 숨깁니다. 차트 자체에서 무언가를 막으려면(그리기, 거래, 확대·축소) `chartOptions.features`를 쓰세요. 색, 모양, 스타일 오버라이드, 스위치, 직접 만든 부품, 문구, 플러그인까지 모든 방법은 [커스터마이징](https://bonguynvan.github.io/tradecanvas/docs/customization) 페이지에 정리되어 있습니다.
 
 ### 위젯 테마
 

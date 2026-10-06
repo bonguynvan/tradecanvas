@@ -343,7 +343,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // the widget's switches: see Customization
   onReady: (chart) => { /* ... */ },
 })
 
@@ -663,6 +663,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Feature switches</h3>
+<p>112 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // every switch, on or off`}</code></pre>
+
 <h3>Your own buttons and menu entries</h3>
 <p>
   Add buttons to the toolbar (a built-in icon or an element of yours, text, a
@@ -683,6 +691,16 @@ new ChartWidget(host, {
   chartMenuItems: ({ area, price, time }) => area === 'plot' && price !== undefined
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
+})`}</code></pre>
+<p>Also a menu button on the toolbar, buttons on the drawing sidebar, items on the status bar, places of your own in each bar and over the chart, and entries at the end of a drawing's or an indicator's menu (see <a href={href('/docs/customization#parts')}>Customization</a>):</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // asked for each time it opens
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // a layer over the chart
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
@@ -705,6 +723,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // lines the others up with the active chart
 grid.applyOverrides({ 'grid.vertical.visible': false })   // every chart's look, and the charts it adds
+grid.setFeatures({ 'toolbar.replay': false })               // every chart's switches, and the charts it adds
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

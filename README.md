@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | Range presets (1D … All) and go to date (Alt+G) on the status bar |
 | `indicatorLegend` | `boolean` | `true` | Indicators listed on the chart (under the OHLCV legend and atop their panes) with show / settings / remove |
 | `fullscreen` | `boolean` | `true` | Fullscreen button in the toolbar |
+| `features` | `WidgetFeatures` | all on | 112 switches for the widget's parts, changeable while running — see **Widget switches and your own parts** |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Searchable symbol catalog |
 | `timeframes` | `TimeFrame[]` | 1m to 1M | Timeframes on offer; pin favourites from the ▾ menu |
 | `chartTypes` | `ChartType[]` | 18 types | Available chart types |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 The chart's price tags take the same corners (`tagRadius`; on a bare `Chart`, `chart.setShapes({ tagRadius })`). The widget loads no fonts: load the ones a look names. See [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
+### Widget switches and your own parts
+
+Every part of the widget has a switch, on until you turn it off and changeable while it runs. A name without a dot is a whole capability, off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name is one place (`toolbar.screenshot`, `sidebar.magnet`, `menu.chart.order`). `WIDGET_FEATURES` lists all 112; the older options (`toolbar: false`, `drawingTools: false`…) are the same switches. Your own buttons, menus and status items go into the widget's bars and follow its theme and look.
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // one button, a section of drawing tools, every key
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // while running
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // a layer of your own over the chart
+```
+
+Switches show and hide the widget's parts; to stop something on the chart itself (drawing, trading, zoom), use `chartOptions.features`. Every route — colours, looks, style overrides, switches, your parts, words, plugins — is laid out on the [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization) page.
 
 ### Widget Theming
 

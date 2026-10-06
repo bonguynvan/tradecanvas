@@ -346,6 +346,17 @@ const vi: SiteMessages = {
         'Mở Settings và chọn một màu: nó vào lớp của người dùng, giữ theo theme',
       ],
     },
+    parts: {
+      title: 'Widget của bạn, phần nào tùy bạn',
+      stat: '112 công tắc',
+      blurb:
+        'Mỗi phần của widget có một công tắc, bật sẵn cho tới khi bạn tắt và đổi được khi đang chạy: cả một tính năng (cảnh báo, cài đặt, phím tắt) hoặc một chỗ (một nút trên toolbar, một mục menu, một nhóm công cụ vẽ). Nút, menu và mục trạng thái của riêng bạn nằm ngay trong các thanh của widget. Ở đây replay, hai nhóm công cụ vẽ và nút tải dữ liệu đã tắt, còn toolbar có thêm một menu công tắc.',
+      tryThis: [
+        'Mở “features” trên toolbar rồi tắt, bật từng phần',
+        'Nút con mắt ở cuối thanh công cụ vẽ ẩn toolbar và thanh trạng thái, bấm lần nữa để hiện lại',
+        'Bấm chuột phải vào một hình vẽ: mục cuối cùng là của trang',
+      ],
+    },
     markets: {
       title: 'Danh mục theo dõi và thị trường',
       stat: 'giá trực tiếp',
@@ -570,6 +581,7 @@ const vi: SiteMessages = {
       embed: 'Widget nhúng',
       api: 'Tham chiếu API',
       styling: 'Giao diện',
+      customization: 'Tùy biến',
       'chart-types': 'Loại biểu đồ',
       indicators: 'Chỉ báo',
       'drawing-tools': 'Công cụ vẽ',

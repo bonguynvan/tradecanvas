@@ -323,7 +323,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // 组件的开关：见“定制”
   onReady: (chart) => { /* ... */ },
 })
 
@@ -622,6 +622,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>功能开关</h3>
+<p>112 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // 所有开关，开或关`}</code></pre>
+
 <h3>自定义按钮和菜单项</h3>
 <p>
   向工具栏添加按钮（内置图标或你自己的元素、文字、开关），并向图表的右键菜单添加菜单项，
@@ -643,6 +651,16 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
+<p>另外还有工具栏上的菜单按钮、绘图侧栏上的按钮、状态栏上的项目、各个栏和图表上方属于你的位置，以及绘图或指标菜单末尾的菜单项（见<a href={href('/docs/customization#parts')}>定制</a>）：</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // 每次打开时重新获取
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // 图表上方的一层
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
+})`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
 <p>
@@ -662,6 +680,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // 让其他图表与当前图表保持一致
 grid.applyOverrides({ 'grid.vertical.visible': false })   // 所有图表的外观，以及之后添加的图表
+grid.setFeatures({ 'toolbar.replay': false })               // 所有图表的开关，以及之后添加的图表
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

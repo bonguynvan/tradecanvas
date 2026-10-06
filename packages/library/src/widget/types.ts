@@ -57,7 +57,17 @@ export interface ChartWidgetOptions {
   /** Override or add individual UI strings, on top of `locale`'s built-in table. */
   messages?: Partial<Record<import('./i18n.js').MessageKey, string>>;
 
-  // UI toggles (default true)
+  /**
+   * The widget's switches, by name (`WIDGET_FEATURES`): every one is on
+   * unless set `false` here. A name without a dot turns a whole capability
+   * off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name,
+   * one place (`toolbar.screenshot`, `menu.chart.order`, `sidebar.magnet`).
+   * Change them while running with `setFeatures`. They win over the older
+   * on/off options below, which stand for switches of their own.
+   */
+  features?: import('./widgetFeatures.js').WidgetFeatures;
+
+  // UI toggles (default true). Each stands for a switch (see `features`): `toolbar: false` is `features: { toolbar: false }`.
   toolbar?: boolean;
   drawingTools?: boolean;
   settings?: boolean;
@@ -139,6 +149,12 @@ export interface ChartWidgetOptions {
    * "+" by the price axis), after the widget's. Called each time a menu opens.
    */
   chartMenuItems?: (context: ChartMenuItemsContext) => readonly WidgetMenuItem[];
+
+  /** Your own entries at the end of a drawing's right-click menu. Called each time it opens. */
+  drawingMenuItems?: (context: DrawingMenuItemsContext) => readonly WidgetMenuItem[];
+
+  /** Your own entries at the end of an indicator's "more" menu (on its row on the chart). */
+  indicatorMenuItems?: (context: IndicatorMenuItemsContext) => readonly WidgetMenuItem[];
 
   // Config
   symbols?: string[];
@@ -252,6 +268,23 @@ export interface ChartMenuItemsContext {
   time?: number;
 }
 
+/** The drawing a menu opened on, for `drawingMenuItems`. */
+export interface DrawingMenuItemsContext {
+  /** The drawing right-clicked. */
+  id: string;
+  type: DrawingToolType;
+  /** The selection it is part of (itself, its group or a wider selection). */
+  selected: readonly string[];
+}
+
+/** The indicator a menu opened on, for `indicatorMenuItems`. */
+export interface IndicatorMenuItemsContext {
+  /** The instance on the chart (`'tc_rsi_1'`, say). */
+  instanceId: string;
+  /** Its kind (`'rsi'`). */
+  indicatorId: string;
+}
+
 /** An entry of yours in a widget menu. */
 export interface WidgetMenuItem {
   label: string;
@@ -288,6 +321,75 @@ export interface ToolbarButtonHandle {
   setText(text: string): void;
   remove(): void;
 }
+
+/** A menu button of yours on the widget's toolbar; see `ChartWidget.addToolbarDropdown`. */
+export interface ToolbarDropdownSpec {
+  /** Tells your buttons apart (`data-host-button` on the element). */
+  id: string;
+  /** Its accessible name and tooltip, and its text without an icon or `text`. */
+  label: string;
+  /** A built-in icon's name, or an element of your own. */
+  icon?: string | Element;
+  /** Text after the icon. */
+  text?: string;
+  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  side?: 'left' | 'right';
+  /** The menu's entries, asked for each time it opens. */
+  items: () => readonly WidgetMenuItem[];
+}
+
+export interface ToolbarDropdownHandle {
+  readonly element: HTMLButtonElement;
+  setText(text: string): void;
+  remove(): void;
+}
+
+/** A button of yours on the drawing sidebar; see `ChartWidget.addSidebarButton`. */
+export interface SidebarButtonSpec {
+  /** Tells your buttons apart (`data-host-button` on the element). */
+  id: string;
+  /** Its accessible name and tooltip. */
+  label: string;
+  /** A built-in icon's name, or an element of your own (an `<svg>`, say). */
+  icon: string | Element;
+  /** A switch that shows pressed while on (see `setActive`). */
+  toggle?: boolean;
+  onClick: (button: HTMLButtonElement) => void;
+}
+
+export interface SidebarButtonHandle {
+  readonly element: HTMLButtonElement;
+  /** Show a `toggle` button as on or off. */
+  setActive(on: boolean): void;
+  remove(): void;
+}
+
+/** An item of yours on the status bar; see `ChartWidget.addStatusBarItem`. */
+export interface StatusBarItemSpec {
+  /** Tells your items apart (`data-host-item` on the element). */
+  id: string;
+  text: string;
+  /** Its tooltip, and its accessible name with the text. */
+  label?: string;
+  /** After the range presets on the left, or before the market's status on the right. Default `'right'`. */
+  side?: 'left' | 'right';
+  /** Makes it a button. */
+  onClick?: (item: HTMLButtonElement) => void;
+}
+
+export interface StatusBarItemHandle {
+  readonly element: HTMLElement;
+  setText(text: string): void;
+  remove(): void;
+}
+
+/**
+ * Places for anything of yours (`ChartWidget.getSlot`): beside the toolbar's
+ * chart controls or its panel buttons, under the drawing sidebar's switches,
+ * on the status bar's left or right, or over the chart (a layer that lets
+ * the pointer through; give your elements `pointer-events: auto`).
+ */
+export type WidgetSlot = 'toolbar.left' | 'toolbar.right' | 'sidebar' | 'statusBar.left' | 'statusBar.right' | 'chart';
 
 export interface WidgetLayoutsOptions {
   /** Where the layouts are kept: your server, say. Default: `localStorageLayouts()`. */

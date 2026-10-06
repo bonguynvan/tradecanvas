@@ -1,4 +1,5 @@
 import { escapeHtml } from './escapeHtml.js';
+import { markPart } from './widgetFeatures.js';
 /**
  * Replay control bar. Surfaces the chart's replay engine as a floating
  * bottom-of-chart control and reports user intent through callbacks (no
@@ -99,6 +100,7 @@ export class WidgetReplayBar {
 
     this.root = document.createElement('div');
     this.root.className = 'tcw-replay-bar';
+    markPart(this.root, 'replay');
     this.root.setAttribute('role', 'toolbar');
     this.root.setAttribute('aria-label', this.labels.replay);
     this.root.innerHTML = this.markup();

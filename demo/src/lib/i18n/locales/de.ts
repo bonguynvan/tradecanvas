@@ -346,6 +346,17 @@ const de: SiteMessages = {
         'Öffnen Sie die Einstellungen und wählen Sie eine Farbe: Sie landet in der Ebene des Nutzers, beim Theme gespeichert',
       ],
     },
+    parts: {
+      title: 'Dein Widget, deine Teile',
+      stat: '112 Schalter',
+      blurb:
+        'Jeder Teil des Widgets hat einen Schalter, an, bis du ihn ausschaltest, und im Betrieb änderbar: eine ganze Funktion (Alarme, Einstellungen, Tastenkürzel) oder eine Stelle (ein Knopf der Werkzeugleiste, ein Menüeintrag, eine Gruppe von Zeichenwerkzeugen). Eigene Knöpfe, Menüs und Statuseinträge sitzen in den Leisten des Widgets. Hier sind Replay, zwei Zeichengruppen und der Datendownload aus, und die Werkzeugleiste trägt ein Menü der Schalter.',
+      tryThis: [
+        'Öffne „features“ in der Werkzeugleiste und schalte Teile aus und an',
+        'Das Auge unten in der Zeichenleiste blendet Werkzeug- und Statusleiste aus und wieder ein',
+        'Rechtsklick auf eine Zeichnung: Der letzte Eintrag gehört der Seite',
+      ],
+    },
     markets: {
       title: 'Beobachtungslisten und Markt',
       stat: 'Live-Kurse',
@@ -570,6 +581,7 @@ const de: SiteMessages = {
       embed: 'Einbettbares Widget',
       api: 'API-Referenz',
       styling: 'Gestaltung',
+      customization: 'Anpassung',
       'chart-types': 'Charttypen',
       indicators: 'Indikatoren',
       'drawing-tools': 'Zeichenwerkzeuge',

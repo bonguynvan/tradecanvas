@@ -1,5 +1,6 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface DataWindowIndicator {
   name: string;
@@ -32,6 +33,7 @@ export class WidgetDataWindow {
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-datawin';
+    markPart(this.el, 'dataWindow');
     this.el.hidden = true;
 
     const header = document.createElement('div');

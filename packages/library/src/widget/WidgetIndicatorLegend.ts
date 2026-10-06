@@ -1,4 +1,5 @@
 import { createIcon } from './icons.js';
+import { markPart, type WidgetFeature } from './widgetFeatures.js';
 
 export interface IndicatorLegendRow {
   instanceId: string;
@@ -105,6 +106,7 @@ export class WidgetIndicatorLegend {
   ) {
     this.stack = document.createElement('div');
     this.stack.className = 'tcw-ind-legend';
+    markPart(this.stack, 'indicatorLegend');
     this.toggle = document.createElement('button');
     this.toggle.type = 'button';
     this.toggle.className = 'tcw-ind-legend-toggle';
@@ -195,6 +197,7 @@ export class WidgetIndicatorLegend {
   private createPane(instanceId: string): PaneEls {
     const el = document.createElement('div');
     el.className = 'tcw-pane-controls';
+    markPart(el, 'indicatorLegend');
     el.dataset.instance = instanceId;
     const buttons = new Map<string, HTMLButtonElement>();
     const run = (act: string): PaneAction => {
@@ -202,11 +205,13 @@ export class WidgetIndicatorLegend {
       if (act === 'fold') return el.dataset.collapsed === 'true' ? 'expand' : 'collapse';
       return el.dataset.maximized === 'true' ? 'restore' : 'maximize';
     };
+    const switches: Record<string, WidgetFeature> = { up: 'pane.move', down: 'pane.move', fold: 'pane.collapse', max: 'pane.maximize' };
     for (const act of ['up', 'down', 'fold', 'max']) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tcw-pane-btn';
       b.dataset.act = act;
+      markPart(b, switches[act]);
       b.addEventListener('click', () => this.callbacks.onPaneAction?.(instanceId, run(act)));
       buttons.set(act, b);
       el.appendChild(b);
@@ -220,6 +225,7 @@ export class WidgetIndicatorLegend {
   private createRow(instanceId: string): RowEls {
     const el = document.createElement('div');
     el.className = 'tcw-ind-legend-row';
+    markPart(el, 'indicatorLegend');
     el.dataset.instance = instanceId;
 
     const name = document.createElement('button');
@@ -229,15 +235,17 @@ export class WidgetIndicatorLegend {
 
     const values = document.createElement('span');
     values.className = 'tcw-ind-legend-values';
+    markPart(values, 'indicatorLegend.values');
 
     const actions = document.createElement('span');
     actions.className = 'tcw-ind-legend-actions';
     // Named in fill(), once the row's label is known.
-    const action = (act: string, icon: string, run: () => void) => {
+    const action = (act: string, icon: string, run: () => void, ...parts: WidgetFeature[]) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tcw-ind-legend-act';
       b.dataset.act = act;
+      markPart(b, ...parts);
       b.innerHTML = createIcon(icon, 13);
       b.addEventListener('click', run);
       actions.appendChild(b);
@@ -245,12 +253,12 @@ export class WidgetIndicatorLegend {
     };
     const eye = action('visible', 'eye', () => {
       this.callbacks.onToggleVisible(instanceId, !els.visible);
-    });
-    const settings = action('settings', 'settings', () => this.callbacks.onSettings(instanceId));
+    }, 'indicatorLegend.visibility');
+    const settings = action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
     const more = this.callbacks.onMore
-      ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!))
+      ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!), 'indicatorLegend.more')
       : null;
-    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId));
+    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId), 'indicatorLegend.remove');
 
     el.append(name, values, actions);
     const els: RowEls = {

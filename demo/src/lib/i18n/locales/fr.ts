@@ -346,6 +346,17 @@ const fr: SiteMessages = {
         'Ouvrez les réglages et choisissez une couleur : elle va dans la couche de l’utilisateur, gardée avec le thème',
       ],
     },
+    parts: {
+      title: 'Votre widget, vos pièces',
+      stat: '112 interrupteurs',
+      blurb:
+        'Chaque partie du widget a son interrupteur, allumé jusqu’à ce que vous l’éteigniez et modifiable en marche : une capacité entière (alertes, réglages, raccourcis) ou un seul endroit (un bouton de la barre, une entrée de menu, une section d’outils de dessin). Vos propres boutons, menus et éléments d’état prennent place dans les barres du widget. Ici le replay, deux sections de dessin et le téléchargement des données sont éteints, et la barre porte un menu d’interrupteurs.',
+      tryThis: [
+        'Ouvrez « features » dans la barre et éteignez ou rallumez des parties',
+        'L’œil en bas de la barre de dessin masque la barre d’outils et la barre d’état, puis les rend',
+        'Clic droit sur un dessin : la dernière entrée est celle de la page',
+      ],
+    },
     markets: {
       title: 'Listes de suivi et marché',
       stat: 'cours en direct',
@@ -570,6 +581,7 @@ const fr: SiteMessages = {
       embed: 'Widget intégrable',
       api: 'Référence de l’API',
       styling: 'Apparence',
+      customization: 'Personnalisation',
       'chart-types': 'Types de graphiques',
       indicators: 'Indicateurs',
       'drawing-tools': 'Outils de dessin',

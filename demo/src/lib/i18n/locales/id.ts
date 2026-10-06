@@ -346,6 +346,17 @@ const id: SiteMessages = {
         'Buka Pengaturan dan pilih warna: masuk ke lapisan pengguna, disimpan bersama temanya',
       ],
     },
+    parts: {
+      title: 'Widget Anda, bagian pilihan Anda',
+      stat: '112 sakelar',
+      blurb:
+        'Setiap bagian widget punya sakelar, menyala sampai Anda mematikannya dan bisa diubah saat berjalan: satu kemampuan utuh (peringatan, pengaturan, pintasan) atau satu tempat (tombol toolbar, entri menu, kelompok alat gambar). Tombol, menu, dan item status milik Anda sendiri duduk di bilah-bilah widget. Di sini replay, dua kelompok alat gambar, dan unduhan data dimatikan, dan toolbar membawa menu sakelar.',
+      tryThis: [
+        'Buka “features” di toolbar lalu matikan dan nyalakan bagian-bagiannya',
+        'Ikon mata di bawah bilah gambar menyembunyikan toolbar dan bilah status, lalu menampilkannya lagi',
+        'Klik kanan sebuah gambar: entri terakhir milik halaman itu sendiri',
+      ],
+    },
     markets: {
       title: 'Daftar pantauan dan pasar',
       stat: 'harga langsung',
@@ -570,6 +581,7 @@ const id: SiteMessages = {
       embed: 'Widget Tertanam',
       api: 'Referensi API',
       styling: 'Tampilan',
+      customization: 'Kustomisasi',
       'chart-types': 'Jenis Grafik',
       indicators: 'Indikator',
       'drawing-tools': 'Alat Gambar',

@@ -348,6 +348,17 @@ const es: SiteMessages = {
         'Abre los Ajustes y elige un color: va a la capa del usuario, guardado con el tema',
       ],
     },
+    parts: {
+      title: 'Tu widget, tus piezas',
+      stat: '112 interruptores',
+      blurb:
+        'Cada parte del widget tiene un interruptor, encendido hasta que lo apagas y cambiable en marcha: una capacidad entera (alertas, ajustes, atajos) o un solo lugar (un botón de la barra, una entrada de menú, una sección de herramientas de dibujo). Tus propios botones, menús y elementos de estado van en las barras del widget. Aquí la reproducción, dos secciones de dibujo y la descarga de datos están apagadas, y la barra lleva un menú de interruptores.',
+      tryThis: [
+        'Abre «features» en la barra y apaga y enciende partes',
+        'El ojo al pie de la barra de dibujo oculta la barra de herramientas y la de estado, y las devuelve',
+        'Haz clic derecho en un dibujo: la última entrada es de la página',
+      ],
+    },
     markets: {
       title: 'Listas de seguimiento y mercado',
       stat: 'cotizaciones en vivo',
@@ -575,6 +586,7 @@ const es: SiteMessages = {
       embed: 'Widget incrustable',
       api: 'Referencia de la API',
       styling: 'Estilos',
+      customization: 'Personalización',
       'chart-types': 'Tipos de gráfico',
       indicators: 'Indicadores',
       'drawing-tools': 'Herramientas de dibujo',

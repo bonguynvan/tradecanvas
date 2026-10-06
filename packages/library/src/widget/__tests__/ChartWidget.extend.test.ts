@@ -128,9 +128,13 @@ describe('ChartWidget toolbar buttons of the host', () => {
     expect(btn.compareDocumentPosition(spacer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('has nowhere to put a button without a toolbar', () => {
+  it('keeps a button on a toolbar switched off, to show with it', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, toolbar: false });
-    expect(widget.addToolbarButton({ id: 'x', label: 'X', onClick: () => {} })).toBeNull();
+    const handle = widget.addToolbarButton({ id: 'x', label: 'X', onClick: () => {} })!;
+    const toolbar = handle.element.closest<HTMLElement>('.tcw-toolbar')!;
+    expect(getComputedStyle(toolbar).display).toBe('none');
+    widget.setFeatures({ toolbar: true });
+    expect(getComputedStyle(toolbar).display).not.toBe('none');
   });
 });
 

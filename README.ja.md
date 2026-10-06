@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | ステータスバーに表示期間のプリセット（1D … All）と日付へ移動（Alt+G）を表示 |
 | `indicatorLegend` | `boolean` | `true` | インジケーターをチャート上（OHLCV 凡例の下と各ペインの上部）に一覧表示し、表示 / 設定 / 削除を可能に |
 | `fullscreen` | `boolean` | `true` | ツールバーの全画面ボタン |
+| `features` | `WidgetFeatures` | すべてオン | ウィジェットの部品を切り替える 112 個のスイッチ。動作中も変更可 — 下記 **ウィジェットのスイッチと独自の部品** を参照 |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | 検索可能なシンボル一覧 |
 | `timeframes` | `TimeFrame[]` | 1m〜1M | 選択できる時間足。▾ メニューからお気に入りを固定できます |
 | `chartTypes` | `ChartType[]` | 18 種類 | 利用できるチャートタイプ |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 チャートの価格ラベルも同じ角の丸みになります（`tagRadius`。素の `Chart` では `chart.setShapes({ tagRadius })`）。ウィジェットはフォントを読み込まないので、外観が指定するフォントは自分で読み込んでください。詳しくは[スタイル設定](https://bonguynvan.github.io/tradecanvas/docs/styling)を参照してください。
+
+### ウィジェットのスイッチと独自の部品
+
+ウィジェットのあらゆる部品にスイッチがあり、オフにするまではオン、動作中でも切り替えられます。ドットのない名前は機能まるごとで、現れるすべての場所でオフになります（`alerts`、`settings`、`hotkeys`）。ドットのある名前は一か所です（`toolbar.screenshot`、`sidebar.magnet`、`menu.chart.order`）。`WIDGET_FEATURES` に 112 個すべてが並び、従来のオプション（`toolbar: false`、`drawingTools: false` など）はこれらのスイッチそのものです。独自のボタン、メニュー、ステータス項目はウィジェットの各バーに収まり、テーマと見た目に従います。
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // ボタン一つ、描画ツールのグループ一つ、すべてのキー操作
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // 動作中に
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // チャート上の独自のレイヤー
+```
+
+スイッチはウィジェットの部品を表示・非表示にします。チャートそのものでの操作（描画、取引、ズーム）を止めるには `chartOptions.features` を使います。色、見た目、スタイルのオーバーライド、スイッチ、独自の部品、文言、プラグインまで、すべての方法は[カスタマイズ](https://bonguynvan.github.io/tradecanvas/docs/customization)のページにまとめています。
 
 ### ウィジェットのテーマ設定
 

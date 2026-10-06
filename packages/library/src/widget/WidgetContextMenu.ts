@@ -52,6 +52,7 @@ export class WidgetContextMenu {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.onPick = onPick;
     this.anchor = anchor ?? null;
+    this.anchor?.setAttribute('aria-expanded', 'true');
     this.el.replaceChildren(...entries.map((entry) => this.entry(entry)));
     this.el.hidden = false;
     const hostRect = this.host.getBoundingClientRect();
@@ -70,6 +71,7 @@ export class WidgetContextMenu {
     if (this.el.hidden) return;
     this.el.hidden = true;
     this.onPick = null;
+    this.anchor?.setAttribute('aria-expanded', 'false');
     this.anchor = null;
     document.removeEventListener('pointerdown', this.onDocPointer, true);
     document.removeEventListener('wheel', this.onAway, { capture: true });

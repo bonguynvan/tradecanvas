@@ -346,6 +346,17 @@ const tr: SiteMessages = {
         'Ayarları açıp bir renk seçin: kullanıcının katmanına gider, temayla birlikte saklanır',
       ],
     },
+    parts: {
+      title: 'Sizin widget’ınız, sizin parçalarınız',
+      stat: '112 anahtar',
+      blurb:
+        'Widget’ın her parçasının bir anahtarı var; siz kapatana dek açık ve çalışırken değiştirilebilir: bütün bir yetenek (uyarılar, ayarlar, kısayollar) ya da tek bir yer (bir araç çubuğu düğmesi, bir menü girişi, bir çizim aracı bölümü). Kendi düğmeleriniz, menüleriniz ve durum öğeleriniz widget’ın çubuklarına yerleşir. Burada yeniden oynatma, iki çizim bölümü ve veri indirme kapalı; araç çubuğunda bir anahtar menüsü var.',
+      tryThis: [
+        'Araç çubuğunda “features” menüsünü açıp parçaları kapatıp açın',
+        'Çizim çubuğunun altındaki göz, araç çubuğunu ve durum çubuğunu gizler ve geri getirir',
+        'Bir çizime sağ tıklayın: son giriş sayfanın kendisine ait',
+      ],
+    },
     markets: {
       title: 'İzleme listeleri ve piyasa',
       stat: 'canlı fiyatlar',
@@ -570,6 +581,7 @@ const tr: SiteMessages = {
       embed: 'Gömülebilir Widget',
       api: 'API Referansı',
       styling: 'Görünüm',
+      customization: 'Özelleştirme',
       'chart-types': 'Grafik Türleri',
       indicators: 'Göstergeler',
       'drawing-tools': 'Çizim Araçları',

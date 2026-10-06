@@ -4,6 +4,18 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The widget, part by part: switches and your own parts
+
+- **112 feature switches**, every one on until turned off and changeable while the widget runs: `new ChartWidget(el, { features: { 'toolbar.replay': false, hotkeys: false } })`, then `widget.setFeatures({ sidebar: false })`, `getFeatures()`, `isFeatureOn(name)`. The names are listed in `WIDGET_FEATURES` and checked by TypeScript:
+  - a name without a dot is a whole capability, off wherever it shows: its button, its menu entries, its command in the command palette, its keys (`alerts`, `settings`, `replay`, `symbolSearch`, `hotkeys`, `toasts`…);
+  - a dotted name is one place: a toolbar button (`toolbar.screenshot`), a section of drawing tools (`sidebar.fibonacci`), a status bar item (`statusBar.market`), a button on an indicator's row or a pane (`indicatorLegend.remove`, `pane.maximize`), a menu entry (`menu.chart.order`, `menu.drawing.lock`), a key (`hotkeys.tools`).
+- **The older options are the same switches**: `toolbar: false`, `drawingTools: false`, `statusBar: false`, `rangeBar: false`, `alerts: false` and the rest work as before. The parts they leave out are now built and hidden, so they can be switched on later, and `addToolbarButton` puts a button on a toolbar switched off, to show with it (it used to return `null` with `toolbar: false`). `drawingTools: false` also switches the drawing settings off, and `accountPanel: false` the order ticket, as before. `trading`, `watchlist`, `depthLadder` and `layouts` stay options, as they bring data or storage; switches hide their buttons.
+- **Your own parts in the widget's bars**: `addToolbarDropdown` (a menu button, its entries asked for each time it opens), `addSidebarButton`, `addStatusBarItem` (text, or a button), and `getSlot(name)` for anything else: beside the toolbar's chart controls or its panel buttons, under the drawing sidebar's switches, on either end of the status bar, or over the chart. They follow the widget's theme and look.
+- **Your entries in more menus**: `drawingMenuItems` and `indicatorMenuItems` add entries at the end of a drawing's right-click menu and of an indicator's "more" menu, beside `chartMenuItems`.
+- **Every chart of a grid**: `ChartWidgetGrid.setFeatures(patch)`, for the charts it adds later too.
+- A switch turned off while its part is in use closes it: a replay ends, a panel, dialog or menu closes; the public toggles open nothing switched off. Separators left with nothing to separate hide with the buttons around them, and the chart takes the room of a bar switched off at once. With `toasts` off the widget's errors still show.
+- **Docs**: a Customization page gathers every way to customise (colours, looks, style overrides, switches, your parts, words, plugins), in six languages; a Feature Lab scene switches parts on a live widget.
+
 ### Style overrides: the chart's look by key
 
 - **Any part of the look, apart from the theme**: `chart.applyOverrides({ 'grid.vertical.visible': false, 'series.candlestick.upColor': '#26a69a' })`. 89 keys, listed in `CHART_STYLE_KEYS` and checked by TypeScript:

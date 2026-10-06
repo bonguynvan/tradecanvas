@@ -2,6 +2,7 @@ import { MAX_ALERT_BARS, MIN_ALERT_BARS, type AlertCondition, type AlertOptions 
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface AlertListItem {
   id: string;
@@ -140,6 +141,7 @@ export class WidgetAlertsPanel {
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-alerts-panel';
+    markPart(this.el, 'alerts');
     this.el.hidden = true;
 
     // Header
