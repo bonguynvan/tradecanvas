@@ -710,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` にすべてのキーがあります。React、Vue、Svelte のコンポーネントは `overrides` プロパティで受け取ります。注文、ポジション、シグナルのマーク、取引ゾーン、選択中の描画のハンドルにもキーがあります（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` など）。
+`CHART_STYLE_KEYS` にすべてのキーがあります。React、Vue、Svelte のコンポーネントは `overrides` プロパティで受け取ります。注文、ポジション、シグナルのマーク、取引ゾーン、選択中の描画のハンドルにもキーがあります（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` など）。ウィジェットでは、設定 →「スタイル」で表示中のチャートタイプの色を含むすべてのキーを、設定 →「取引」で注文、ポジション、シグナルのマーク、取引ゾーンの色を設定できます（選ぶまでは「自動」）。
 
 ### イベント
 
