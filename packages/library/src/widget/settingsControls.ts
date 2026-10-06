@@ -85,10 +85,31 @@ export function toHex(color: unknown): string {
   if (typeof color !== 'string') return '#000000';
   const c = color.trim();
   if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase();
-  if (/^#[0-9a-f]{3}$/i.test(c)) return `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`.toLowerCase();
+  if (/^#[0-9a-f]{8}$/i.test(c)) return c.slice(0, 7).toLowerCase();
+  if (/^#[0-9a-f]{3,4}$/i.test(c)) return `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`.toLowerCase();
   const m = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(c);
-  if (!m) return '#000000';
-  return `#${[m[1], m[2], m[3]].map((v) => Math.min(255, Number(v)).toString(16).padStart(2, '0')).join('')}`;
+  if (m) return `#${[m[1], m[2], m[3]].map((v) => Math.min(255, Number(v)).toString(16).padStart(2, '0')).join('')}`;
+  // hsl(), oklch(), a colour's name…: as the browser reads it.
+  const read = readByBrowser(c);
+  return read !== null && read !== c ? toHex(read) : '#000000';
+}
+
+let colourReader: CanvasRenderingContext2D | null | undefined;
+
+/** A colour as a canvas reads it (`#rrggbb` or `rgba(…)`); null where there is no canvas or it isn't a colour. */
+function readByBrowser(color: string): string | null {
+  if (colourReader === undefined) {
+    try {
+      colourReader = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+    } catch {
+      colourReader = null;
+    }
+  }
+  if (!colourReader) return null;
+  colourReader.fillStyle = '#010203';
+  colourReader.fillStyle = color;
+  const out = String(colourReader.fillStyle);
+  return out === '#010203' ? null : out;
 }
 
 /** The alpha of a colour (1 for `#rgb` / `#rrggbb`). */

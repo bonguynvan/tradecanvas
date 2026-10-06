@@ -210,6 +210,8 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   사용자의 것(<code>layer: 'user'</code>)은 앱의 것보다 우선하며, 정한 테마별로 유지되고 — 다크 테마에서 고른 색은
   다크 테마로 돌아오면 다시 나타납니다 — <code>saveState()</code> 로 저장됩니다. 위젯의 설정은 사용자 레이어에 쓰고,
   재설정은 어떤 테마든 그 테마의 색으로 돌아갑니다.
+  스타일 탭은 이 키들로 차트의 모든 부분을 설정하며, 지금 보는 차트 유형의 색도 포함합니다. 거래 탭은 주문, 포지션,
+  시그널 표시, 거래 영역의 색을 설정합니다. 부품 자체에 맡긴 색은 자동으로 표시되고, 자동 버튼으로 되돌릴 수 있습니다.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // 현재 테마에서 사용자의 것

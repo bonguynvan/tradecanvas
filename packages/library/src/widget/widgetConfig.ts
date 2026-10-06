@@ -1,5 +1,4 @@
-import { DARK_THEME } from '@tradecanvas/commons';
-import type { ChartStyleKey, ChartType, DrawingToolType } from '@tradecanvas/commons';
+import type { ChartType, DrawingToolType } from '@tradecanvas/commons';
 import type { IndicatorDef, DrawingToolGroupDef, ChartSettingsState } from './types.js';
 
 export const CHART_TYPES: { label: string; value: ChartType }[] = [
@@ -300,48 +299,7 @@ export const DEFAULT_SYMBOLS = [
   'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT',
 ];
 
-/**
- * The settings' colours and the style keys they set, on the user's layer.
- * The candles' colours are the base every up/down chart type falls back to.
- */
-export const SETTINGS_STYLE_KEYS = {
-  candleUpColor: ['series.candlestick.upColor'],
-  candleDownColor: ['series.candlestick.downColor'],
-  candleUpWick: ['series.candlestick.wickUpColor'],
-  candleDownWick: ['series.candlestick.wickDownColor'],
-  backgroundColor: ['background.color'],
-  gridColor: ['grid.horizontal.color', 'grid.vertical.color'],
-  gridHorizontalVisible: ['grid.horizontal.visible'],
-  gridVerticalVisible: ['grid.vertical.visible'],
-  gridStyle: ['grid.horizontal.style', 'grid.vertical.style'],
-  crosshairColor: ['crosshair.horizontal.color', 'crosshair.vertical.color'],
-  crosshairStyle: ['crosshair.horizontal.style', 'crosshair.vertical.style'],
-  scaleTextColor: ['axis.price.textColor', 'axis.time.textColor'],
-  scaleLineColor: ['axis.price.lineColor', 'axis.time.lineColor'],
-  lastPriceVisible: ['lastPrice.visible'],
-  lastPriceStyle: ['lastPrice.style'],
-  paneSeparatorColor: ['panes.separatorColor'],
-  legendTextColor: ['legend.textColor'],
-} as const satisfies Partial<Record<keyof ChartSettingsState, readonly ChartStyleKey[]>>;
-
 export const DEFAULT_SETTINGS: ChartSettingsState = {
-  candleUpColor: DARK_THEME.candleUp,
-  candleDownColor: DARK_THEME.candleDown,
-  candleUpWick: DARK_THEME.candleUpWick,
-  candleDownWick: DARK_THEME.candleDownWick,
-  backgroundColor: DARK_THEME.background,
-  gridColor: DARK_THEME.grid,
-  gridHorizontalVisible: true,
-  gridVerticalVisible: true,
-  gridStyle: 'solid',
-  crosshairColor: DARK_THEME.crosshair,
-  crosshairStyle: 'dashed',
-  scaleTextColor: DARK_THEME.axisLabel,
-  scaleLineColor: DARK_THEME.axisLine,
-  lastPriceVisible: true,
-  lastPriceStyle: 'dashed',
-  paneSeparatorColor: DARK_THEME.axisLine,
-  legendTextColor: DARK_THEME.text,
   gridVisible: true,
   volumeVisible: true,
   volumeProfileVisible: false,

@@ -344,7 +344,7 @@ const de: SiteMessages = {
       tryThis: [
         'Wechseln Sie den Charttyp: Balken und Heikin-Ashi nehmen die Farben der Kerzen, solange sie keine eigenen haben',
         'Wechseln Sie das Theme der Seite: Was nicht überschrieben ist, folgt ihm',
-        'Öffnen Sie die Einstellungen und wählen Sie eine Farbe: Sie landet in der Ebene des Nutzers, beim Theme gespeichert',
+        'Öffnen Sie die Einstellungen: Der Tab „Stil“ setzt jeden Schlüssel, auch die Farben des gezeigten Charttyps; der Tab „Handel“ die Farben von Orders, Markern und Zonen, „Auto“, bis Sie eine wählen',
       ],
     },
     parts: {

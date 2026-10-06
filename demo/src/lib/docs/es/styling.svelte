@@ -214,6 +214,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   nunca se guardan. Los del usuario (<code>layer: 'user'</code>) ganan a los tuyos, se guardan con el tema en que se
   hicieron —los colores elegidos en el tema oscuro vuelven con el tema oscuro— y se guardan con <code>saveState()</code>. Los
   Ajustes del widget escriben en la capa del usuario, y su Restablecer vuelve a los colores del tema, sea cual sea.
+  Su pestaña Estilo ajusta cada parte del gráfico con estas claves, incluidos los colores del tipo de gráfico a la
+  vista, y su pestaña Trading los colores de órdenes, posiciones, marcas de señal y zonas de operación. Un color que
+  se deja a la propia parte aparece como Auto, y Auto lo devuelve allí.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // los del usuario, para el tema actual

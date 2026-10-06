@@ -211,6 +211,8 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   保存されません。ユーザーのもの（<code>layer: 'user'</code>）はあなたのものより優先され、設定したテーマごとに保たれ —
   ダークテーマで選んだ色はダークテーマに戻ると戻ってきます — <code>saveState()</code> で保存されます。ウィジェットの設定は
   ユーザーのレイヤーに書き込み、リセットはどのテーマでもそのテーマの色に戻します。
+  「スタイル」タブはこれらのキーでチャートの各部分を設定し、表示中のチャートタイプの色も含みます。「取引」タブは注文、
+  ポジション、シグナルのマーク、取引ゾーンの色を設定します。部品自身に任せた色は「自動」と表示され、「自動」で戻せます。
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // 現在のテーマでのユーザーのもの

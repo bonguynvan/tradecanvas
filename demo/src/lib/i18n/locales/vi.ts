@@ -344,7 +344,7 @@ const vi: SiteMessages = {
       tryThis: [
         'Đổi loại biểu đồ: bar và Heikin-Ashi lấy màu của nến trừ khi có màu riêng',
         'Đổi theme của trang: những gì không override sẽ theo theme',
-        'Mở Settings và chọn một màu: nó vào lớp của người dùng, giữ theo theme',
+        'Mở Settings: tab Giao diện chỉnh mọi khoá, kể cả màu của loại chart đang xem; tab Giao dịch chỉnh màu lệnh, điểm tín hiệu và vùng lệnh, để Tự động cho tới khi bạn chọn',
       ],
     },
     parts: {

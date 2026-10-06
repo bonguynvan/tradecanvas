@@ -204,6 +204,8 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   覆盖分为两层。您的（<code>layer: 'host'</code>，默认）在切换主题时保留，且从不保存。用户的
   （<code>layer: 'user'</code>）优先于您的，按设置时的主题保存——在深色主题上选的颜色会随深色主题回来——并随
   <code>saveState()</code> 一起保存。组件的设置面板写入用户层，其“重置”会回到当前主题的颜色。
+  “样式”页按这些键设置图表的各个部分，包括当前图表类型的颜色；“交易”页设置订单、持仓、信号标记和交易区域的颜色。
+  交由该部分自己决定的颜色显示为“自动”，点“自动”即可恢复。
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // 当前主题下用户的覆盖
