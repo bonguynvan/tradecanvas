@@ -758,6 +758,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+차트는 자기 시리즈도 리플레이합니다: `chart.replayStart()`. 시그널 표시와 거래 영역은 리플레이가 닿을 때 나타나고(거래는 청산 전까지 열린 상태로 그림), `startTime`은 시각에서 시작하며, `hideHistory`는 리플레이가 멈출 때까지 시작 전의 봉을 빼고, `duration`은 봉 수와 상관없이 대략 그 시간 안에 끝까지 재생합니다:
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // 최근 30일만, 약 3.5초 동안
+chart.on('replayComplete', () => chart.replayStop())                                              // 그다음 전체 시리즈로 복귀
+```
+
 ### 차트 인터랙션
 
 데스크톱 트레이딩 차트에서 기대하는 모든 제스처가 내장되어 있습니다:
@@ -980,7 +989,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators`는 id 또는 `{ id, params, position }`을 받고(입력값이 바뀐 지표는 새 입력값으로 다시 붙음), `data`는 직접 가진 봉을 보여 주며 스트림을 열지 않고, `stream={false}`는 스트림을 전혀 열지 않으며, `features`는 마운트 후의 변경도 따릅니다.
 
 세 패키지 모두 같은 props 구성을 공유하며, `onReady` / ref / `bind:chart`를 통해 내부 `Chart`(그림, 트레이딩, 주문 실행, 플러그인용)를 넘겨줍니다. [프레임워크 문서](https://bonguynvan.github.io/tradecanvas/docs/frameworks)를 참고하세요.
 

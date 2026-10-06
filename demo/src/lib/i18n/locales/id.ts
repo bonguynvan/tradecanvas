@@ -285,6 +285,7 @@ const id: SiteMessages = {
         'Klik bar mana pun yang sudah terbuka untuk memindahkan kursor ke sana',
         '“Kembali ke waktu nyata” mengembalikan ke seri langsung',
         'Pilih Langkah yang lebih kecil di bilah putar ulang (15m) untuk melihat setiap bar terbentuk',
+        'Tanda beli, jual, dan transaksinya baru muncul saat replay mencapainya',
       ],
     },
     compare: {

@@ -170,9 +170,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>내 앱에서의 리플레이</h3>
+<p>
+  매수·매도 표시와 거래 영역은 리플레이가 그곳에 닿을 때 나타납니다. 표시는 그 봉이 보일 때, 거래는 진입했을 때 나타나고 청산에 닿기 전까지는 열린 상태로 그려집니다(<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code>는 모두 보여 줌). <code>startTime</code>은 봉 대신 시각에서 시작하고, <code>hideHistory</code>는 리플레이가 멈출 때까지 시작 전의 봉을 뺍니다. <code>duration</code>은 봉 수와 상관없이 대략 그 시간 안에 끝까지 재생하며, 한 프레임에 여러 봉을 진행하고 늦은 프레임은 건너뛰지 않고 재생을 늦춥니다.
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // 백테스트 전체는 그대로
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // 최근 30일
+  hideHistory: true,                          // 차트에는 그것만
+  duration: 3500,                             // 약 3.5초 동안
+})
+chart.on('replayComplete', () => chart.replayStop())   // 그다음 전체 시리즈로 복귀
+chart.replayStart({ startIndex: 100, revealMarks: false })   // 처음부터 모든 표시를 보여 줌`}</code></pre>
 
 <h3>리플레이 중 모의 거래</h3>
 <p>

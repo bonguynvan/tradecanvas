@@ -1,6 +1,6 @@
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 16 other chart types, 85 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 111 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -181,6 +181,9 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |
+| `replayStep` | `{ barIndex, time, until, total }`: a replay step |
+| `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
+| `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
 
 ## Theming
 

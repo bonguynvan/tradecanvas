@@ -758,6 +758,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+チャートは自分の系列もリプレイできます：`chart.replayStart()`。シグナルのマークと取引ゾーンはリプレイが届いたときに現れ（取引はエグジットまで建玉中として描画）、`startTime` は時刻から始め、`hideHistory` はリプレイが止まるまで開始前の足を外し、`duration` は足の数にかかわらずほぼその時間で最後まで再生します：
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // 直近 30 日だけ, 約 3.5 秒で
+chart.on('replayComplete', () => chart.replayStop())                                              // そのあと系列全体に戻す
+```
+
 ### チャートの操作
 
 デスクトップのトレーディングチャートに期待される操作は、すべて組み込まれています。
@@ -981,7 +990,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators` は id か `{ id, params, position }` を受け取り（入力が変わったものは新しい入力で付け直します）、`data` は自前の足を表示してストリームを開かず、`stream={false}` はストリームを一切開かず、`features` はマウント後の変更にも追従します。
 
 3 つとも同じ props を持ち、内部の `Chart`（描画、トレード、執行、プラグイン用）を `onReady` / ref / `bind:chart` 経由で渡します。[フレームワークのドキュメント](https://bonguynvan.github.io/tradecanvas/docs/frameworks) を参照してください。
 

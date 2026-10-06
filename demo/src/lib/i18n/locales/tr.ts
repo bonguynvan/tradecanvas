@@ -285,6 +285,7 @@ const tr: SiteMessages = {
         'İmleci oraya taşımak için açılmış herhangi bir bara tıklayın',
         '“Gerçek zamana dön” canlı seriye geri getirir',
         'Her barın oluşumunu izlemek için tekrar çubuğunda daha küçük bir Adım (15m) seçin',
+        'Alım ve satım işaretleri ile işlem, yeniden oynatma onlara ulaştığında görünür',
       ],
     },
     compare: {

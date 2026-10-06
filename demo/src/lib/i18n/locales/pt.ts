@@ -285,6 +285,7 @@ const pt: SiteMessages = {
         'Clique em qualquer barra já revelada para levar o cursor até ela',
         '“Voltar ao tempo real” retorna à série ao vivo',
         'Escolha um Passo menor na barra de replay (15m) para ver cada barra se formar',
+        'As marcas de compra e venda e a operação só aparecem quando o replay chega a elas',
       ],
     },
     compare: {

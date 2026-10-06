@@ -64,6 +64,8 @@ export type ChartEventType =
   | 'replayStep'
   /** A replay started playing, paused or ended. */
   | 'replayState'
+  /** A replay reached its last bar (it waits there, paused). */
+  | 'replayComplete'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -355,6 +357,7 @@ export interface ChartEventMap {
   symbolSeriesRequest: { symbol: string };
   replayStep: ReplayStepPayload;
   replayState: { state: 'playing' | 'paused' | 'stopped' };
+  replayComplete: { barIndex: number; time: number };
   alertUpdate: AlertPayload;
 }
 
@@ -366,6 +369,8 @@ export interface ReplayStepPayload {
   time: number;
   /** The replay has shown everything before this time (the next step's). */
   until: number;
+  /** The bars the replay goes through (from its start, when it leaves the history out). */
+  total: number;
 }
 
 export interface AlertRemovePayload {

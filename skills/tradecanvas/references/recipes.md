@@ -71,13 +71,19 @@ export function PriceChart({ symbol }: { symbol: string }) {
       symbol={symbol}
       timeframe="15m"
       adapter={adapter}
-      indicators={['ema', 'rsi']}
+      indicators={['rsi', { id: 'ema', params: { period: 50 } }]}
       onReady={(chart) => chart.setIndicatorValueLabelsVisible(true)}
       style={{ height: 480 }}
     />
   );
 }
 ```
+
+`indicators` takes ids or `{ id, params, position }`; one whose inputs change
+is put back with them. With `data` at mount the component shows your bars and
+opens no stream; `stream={false}` never opens one (and closes one it had), so a
+chart mounted before its bars arrive doesn't start the default Binance feed.
+`features` follows its changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the
@@ -113,6 +119,33 @@ chart.on('indicatorUpdate', () => {
   }
 });
 ```
+
+## A backtest replayed on the chart
+
+```ts
+import { Chart, type OHLCBar, type SignalMarker, type TradeZone } from '@tradecanvas/chart';
+
+declare const bars: OHLCBar[];            // the whole lookback
+declare const signals: SignalMarker[];    // the backtest's buys and sells
+declare const trades: TradeZone[];        // and its trades
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+chart.setData(bars);
+chart.setSignalMarkers(signals);
+chart.setTradeZones(trades);
+
+// Sweep the last 30 days in about 3.5 s: only those bars on the chart, each
+// mark appearing as the replay reaches it, each trade open until its exit.
+const DAY = 86_400_000;
+chart.replayStart({ startTime: bars[bars.length - 1].time - 30 * DAY, hideHistory: true, duration: 3500 });
+chart.on('replayStep', (e) => console.log(`${e.payload.barIndex + 1} / ${e.payload.total}`));
+chart.on('replayComplete', () => chart.replayStop());   // the whole series, every mark
+```
+
+`revealMarks: false` shows every mark through the replay. `duration` plays
+several bars a frame when it must; a frame that comes late slows the replay
+rather than skip ahead. The bars before `startTime` come back with
+`replayStop()`.
 
 ## Alerts beyond a price level
 

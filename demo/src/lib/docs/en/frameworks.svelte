@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Frameworks — TradeCanvas docs</title>
   <meta name="description" content="React, Vue, and Svelte wrapper packages for TradeCanvas with idiomatic props and refs." />
@@ -67,16 +73,41 @@ const adapter = new BinanceAdapter()
 />`}</code></pre>
 
 <h2>Shared props</h2>
+<p>Bars of your own, indicators with their inputs, and a chart that never opens a stream of its own:</p>
+<pre><code>{'<' + `script lang="ts">
+  import { TradeCanvas } from '@tradecanvas/svelte'
+  import type { Chart } from '@tradecanvas/chart'
+
+  let { bars } = $props()
+  let chart = $state<Chart | null>(null)
+` + '<' + `/script>
+
+<TradeCanvas
+  data={bars}
+  stream={false}
+  indicators={['rsi', { id: 'ema', params: { period: 50 } }]}
+  features={{ replay: true }}
+  bind:chart
+/>`}</code></pre>
 <table>
   <thead><tr><th>Prop</th><th>Type</th><th>Notes</th></tr></thead>
   <tbody>
-    <tr><td><code>symbol</code></td><td><code>string</code></td><td>Required.</td></tr>
-    <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td><code>'1m' | '5m' | '15m' | '1h' | '4h' | '1d'</code></td></tr>
-    <tr><td><code>theme</code></td><td><code>ThemeName</code></td><td><code>'dark' | 'light' | 'darkTerminal'</code></td></tr>
-    <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>Live stream source.</td></tr>
-    <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>Initial bars to load.</td></tr>
-    <tr><td><code>trading</code></td><td><code>boolean</code></td><td>Enable trading overlay.</td></tr>
-    <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>Fires after the chart mounts.</td></tr>
+    <tr><td><code>symbol</code></td><td><code>string</code></td><td>The stream's symbol. Default <code>'BTCUSDT'</code>.</td></tr>
+    <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>The stream's interval. Default <code>'5m'</code>.</td></tr>
+    <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>Default <code>'dark'</code>.</td></tr>
+    <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>Default <code>'candlestick'</code>.</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>Bars of your own, shown as they are. Given at mount, no stream is opened; given later, a stream already open stays (<code>stream={false}</code> closes it).</td></tr>
+    <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>The stream's source; Binance without one.</td></tr>
+    <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>: no stream at all, the chart waits for <code>data</code>. Default <code>true</code>.</td></tr>
+    <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>Bars the stream loads first. Default 500.</td></tr>
+    <tr><td><code>indicators</code></td><td><code>IndicatorSpec[]</code></td><td><code>'rsi'</code>, or <code>{'{ id, params, position }'}</code>; one whose inputs change is put back with them.</td></tr>
+    <tr><td><code>features</code></td><td><code>FeaturesConfig</code></td><td>What users can do on the chart; changes after mount apply too.</td></tr>
+    <tr><td><code>signalMarkers / tradeZones</code></td><td><code>arrays</code></td><td>Buy and sell marks and trades; a replay shows them as it reaches them.</td></tr>
+    <tr><td><code>signalMarkerStyle / tradeZoneStyle</code></td><td><code>styles</code></td><td>Their colours and labels.</td></tr>
+    <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>The chart's look by key (see <a href={href('/docs/styling#overrides')}>Styling</a>).</td></tr>
+    <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>Default <code>true</code>.</td></tr>
+    <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>Text behind the bars.</td></tr>
+    <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>After the chart mounts (Vue: the <code>ready</code> event).</td></tr>
   </tbody>
 </table>
 

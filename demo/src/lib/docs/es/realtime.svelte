@@ -173,9 +173,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Una repetición en tu propia app</h3>
+<p>
+  Las marcas de compra y venta y las zonas de operación aparecen cuando la repetición llega a ellas: una marca cuando se muestra su vela, una operación cuando se entra, dibujada abierta hasta que se llega a su salida (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> las muestra todas). <code>startTime</code> empieza en un momento en lugar de en una vela; <code>hideHistory</code> deja fuera las velas anteriores al inicio hasta que la repetición se detiene; <code>duration</code> llega al final en más o menos ese tiempo, haya las velas que haya, varias por fotograma, y un fotograma tardío la frena en lugar de saltar.
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // todo el backtest, se conserva
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // los últimos 30 días
+  hideHistory: true,                          // solo ellos en el gráfico
+  duration: 3500,                             // en unos 3,5 s
+})
+chart.on('replayComplete', () => chart.replayStop())   // y luego la serie completa
+chart.replayStart({ startIndex: 100, revealMarks: false })   // todas las marcas desde el inicio`}</code></pre>
 
 <h3>Trading simulado en una repetición</h3>
 <p>

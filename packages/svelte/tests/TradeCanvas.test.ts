@@ -15,6 +15,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     setTradeZones: vi.fn(),
     setTradeZoneStyle: vi.fn(),
     setOverrides: vi.fn(),
+    setFeatures: vi.fn(),
     setWatermark: vi.fn(),
     on: vi.fn(),
     disconnectStream: vi.fn(),
@@ -25,7 +26,8 @@ const { chart, ChartCtor } = vi.hoisted(() => {
   return { chart, ChartCtor: vi.fn(() => chart) };
 });
 
-vi.mock('@tradecanvas/chart', () => ({
+vi.mock('@tradecanvas/chart', async (importOriginal) => ({
+  syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -71,6 +73,44 @@ describe('<TradeCanvas> (svelte)', () => {
     render(TradeCanvas, { props: { overrides: { 'grid.vertical.visible': false } } });
     flushSync();
     expect(chart.setOverrides).toHaveBeenLastCalledWith({ 'grid.vertical.visible': false });
+  });
+
+  it('adds indicators with their inputs, and puts one back when its inputs change', async () => {
+    const { rerender } = render(TradeCanvas, { props: { indicators: [{ id: 'ema', params: { period: 50 } }] } });
+    flushSync();
+    expect(chart.addIndicator).toHaveBeenCalledWith('ema', { period: 50 });
+    await rerender({ indicators: [{ id: 'ema', params: { period: 100 } }] });
+    flushSync();
+    expect(chart.removeIndicator).toHaveBeenCalledWith('iid-ema');
+    expect(chart.addIndicator).toHaveBeenLastCalledWith('ema', { period: 100 });
+  });
+
+  it('opens no stream of its own with stream={false}', () => {
+    render(TradeCanvas, { props: { stream: false } });
+    flushSync();
+    expect(chart.connect).not.toHaveBeenCalled();
+  });
+
+  it('keeps its stream when data comes later, and closes it when switched off', async () => {
+    const { rerender } = render(TradeCanvas);
+    flushSync();
+    expect(chart.connect).toHaveBeenCalledTimes(1);
+    await rerender({ data: [BAR] });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledWith([BAR]);
+    expect(chart.disconnectStream).not.toHaveBeenCalled();
+    await rerender({ data: [BAR], stream: false });
+    flushSync();
+    expect(chart.disconnectStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies features changed after mount', async () => {
+    const { rerender } = render(TradeCanvas, { props: { features: { replay: true } } });
+    flushSync();
+    expect(chart.setFeatures).not.toHaveBeenCalled();
+    await rerender({ features: { replay: false } });
+    flushSync();
+    expect(chart.setFeatures).toHaveBeenCalledWith({ replay: false });
   });
 
   it('destroys the chart on unmount', () => {

@@ -165,9 +165,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>在你自己的应用中回放</h3>
+<p>
+  买卖标记和交易区域会在回放到达时出现：标记在其 K 线出现时显示，交易在入场后显示，并在到达出场前一直画成未平仓（<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> 则全部显示）。<code>startTime</code> 按时间而不是按 K 线开始；<code>hideHistory</code> 在回放停止前不显示起点之前的 K 线；<code>duration</code> 不论 K 线多少，都在大约这段时间内播放到结尾，每帧可前进多根 K 线，迟到的帧会让回放放慢而不是跳过。
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // 整个回测，全部保留
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // 最近 30 天
+  hideHistory: true,                          // 图表上只显示它们
+  duration: 3500,                             // 大约 3.5 秒
+})
+chart.on('replayComplete', () => chart.replayStop())   // 然后恢复整个序列
+chart.replayStart({ startIndex: 100, revealMarks: false })   // 从一开始就显示所有标记`}</code></pre>
 
 <h3>在回放中模拟交易</h3>
 <p>

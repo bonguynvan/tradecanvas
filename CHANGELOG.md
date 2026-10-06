@@ -4,6 +4,22 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Replay for apps, and components that wait for your bars
+
+- **Marks as the replay reaches them**: during `chart.replayStart()`, signal markers show once their bar is shown and trade zones once entered, each drawn open (no exit, no result) until its exit is reached. They all come back with `replayStop()`. `revealMarks: false` shows them all through the replay. The widget's replay does the same.
+- **Where a replay starts**: `startTime` starts at the first bar at or after a time; `hideHistory` leaves the bars before the start out while the replay runs, so the chart shows only what it replays, and puts them back on `replayStop()`.
+- **As quick as you like**: `duration` plays from where the replay is to the end in about that long, however many bars (30 days of 5-minute bars take as long as a day of them). A replay quicker than a bar a frame now runs on animation frames, several bars a frame, instead of a timer the browser holds to a few milliseconds a tick; a frame that comes late slows it rather than skip ahead.
+- **Events**: `replayComplete` (`{ barIndex, time }`) when the replay reaches its last bar, and `replayStep` now says how many bars the replay goes through (`total`).
+- **React, Vue and Svelte components**:
+  - `indicators` takes `{ id, params, position }` as well as ids; one whose inputs change is put back with them (`syncIndicators`, exported for your own components);
+  - with `data` at mount a component opens no stream; `stream={false}` never opens one (and closes one it had), so a chart mounted before its bars arrive doesn't start the default Binance feed;
+  - `features` follows its changes after mount.
+- **The widget's replay** shows the marks as it reaches them too: markers and trade zones you put on the chart wait for the replay. `replayRevealMarks: false` shows them all, as before.
+- With `hideHistory`, the replay's indices (`replayStep`, `getReplayBarIndex`, a restart's `startIndex`) count from its start, a restart keeps the window, and indicators begin at the window's first bar.
+- Docs: a replay for your own app, and the components' props, in six languages; the Feature Lab's replay shows buys, sells and a trade appearing as it goes.
+
+## 1.13.0 (2026-10-06)
+
 ### The widget, part by part: switches and your own parts
 
 - **112 feature switches**, every one on until turned off and changeable while the widget runs: `new ChartWidget(el, { features: { 'toolbar.replay': false, hotkeys: false } })`, then `widget.setFeatures({ sidebar: false })`, `getFeatures()`, `isFeatureOn(name)`. The names are listed in `WIDGET_FEATURES` and checked by TypeScript:
