@@ -1345,16 +1345,13 @@
 
 .tcw-modal-tabs {
   display: flex;
+  /* Four tabs in a long language on a phone: they wrap rather than clip. No overflow here: in the
+     dialog's column it would let a long body squash the tabs, and clip the underline of the active one. */
+  flex-wrap: wrap;
+  flex-shrink: 0;
   gap: 4px;
   padding: var(--tcw-tabs-pad-block) 18px;
   border-bottom: 1px solid var(--tcw-divider);
-  /* Four tabs in a long language on a phone: they scroll rather than clip. */
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tcw-modal-tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tcw-modal-tab {
@@ -3244,8 +3241,11 @@
 
 /* === Indicator settings dialog === */
 
-.tcw-modal-narrow {
-  max-width: 360px;
+/* Narrow on a desktop; on a phone a sheet across the screen like every dialog. */
+@media (min-width: 641px) {
+  .tcw-modal-narrow {
+    max-width: 360px;
+  }
 }
 .tcw-indi-input {
   width: 110px;

@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-Collected on `main` for the next release. Nothing yet: everything on `main` is in 1.16.0.
+Collected on `main` for the next release. Not on npm yet.
+
+### Fixes
+
+- **The Settings' tabs keep their height** (broken in 1.16.0): with the Style tab's longer list, the tab bar was squashed to half its height. A dialog's tab bar now keeps its height and wraps on a narrow screen rather than scroll; the indicator and drawing settings, which share it, too.
+- **Dialogs span a phone screen**: the indicator settings, drawing settings, order ticket, layouts and name dialogs were held to 360px wide on a phone, short of the screen; they are sheets across it like the other dialogs.
+- Checked by opening every dialog, panel and menu of the widget at 1366×768, 1280×600 and 390×844, in the Studio, Terminal and Capsule looks. The demo's embed page takes `?ui=terminal` or `?ui=capsule` for such checks.
 
 ## 1.16.0 (2026-10-06)
 
