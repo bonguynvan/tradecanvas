@@ -24,6 +24,7 @@ import { renderFillMarks } from './fillMarks.js';
 /** Most fills kept for their marks; the oldest go first. */
 const MAX_FILLS = 1000;
 import type { OrderSide } from '@tradecanvas/commons';
+import { tradingConfigFor } from '../style/overlayColors.js';
 
 export class TradingManager {
   private orders: TradingOrder[] = [];
@@ -346,21 +347,23 @@ export class TradingManager {
   }
 
   private renderInPlot(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    // The config's colours, with the chart's style keys over them.
+    const config = tradingConfigFor(this.config, theme);
     // Depth overlay (back)
     if (this.depthData) {
-      this.depthOverlay.render(ctx, this.depthData, viewport, this.config);
+      this.depthOverlay.render(ctx, this.depthData, viewport, config);
     }
 
-    if (this.config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, this.config);
+    if (config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, config);
 
     // Positions (middle)
     if (this.positions.length > 0) {
-      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, this.config, this.buttons);
+      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, config, this.buttons);
     }
 
     // Orders (front)
     if (this.orders.length > 0) {
-      this.orderRenderer.render(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState(), this.buttons);
+      this.orderRenderer.render(ctx, this.orders, viewport, theme, config, this.dragHandler.getDragState(), this.buttons);
     }
 
     // Bracket placement preview (frontmost)
@@ -380,11 +383,12 @@ export class TradingManager {
    */
   renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (!this.config.enabled) return;
+    const config = tradingConfigFor(this.config, theme);
     if (this.positions.length > 0) {
-      this.positionRenderer.renderAxisBadges(ctx, this.positions, viewport, theme, this.config);
+      this.positionRenderer.renderAxisBadges(ctx, this.positions, viewport, theme, config);
     }
     if (this.orders.length > 0) {
-      this.orderRenderer.renderAxisBadges(ctx, this.orders, viewport, theme, this.config, this.dragHandler.getDragState());
+      this.orderRenderer.renderAxisBadges(ctx, this.orders, viewport, theme, config, this.dragHandler.getDragState());
     }
   }
 

@@ -194,3 +194,99 @@ describe('ChartWidget host entries in the drawing and indicator menus', () => {
     expect(shownMenu().map((b) => b.textContent).at(-1)).toBe('Explain');
   });
 });
+
+describe('ChartWidget shortcuts of the host', () => {
+  const press = () => host.querySelector('.tcw-root')!.dispatchEvent(new Event('pointerdown'));
+  const key = (init: KeyboardEventInit) => {
+    const e = new KeyboardEvent('keydown', { cancelable: true, ...init });
+    document.dispatchEvent(e);
+    return e;
+  };
+
+  it('runs a shortcut of the host while the widget is in use, until it is removed', () => {
+    make();
+    const pressed: string[] = [];
+    const handle = widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => pressed.push('note') })!;
+    press();
+    const e = key({ altKey: true, code: 'KeyN', key: 'n' });
+    expect(pressed).toEqual(['note']);
+    expect(e.defaultPrevented).toBe(true);
+    widget.setFeatures({ hotkeys: false });
+    key({ altKey: true, code: 'KeyN', key: 'n' });
+    expect(pressed).toEqual(['note']);
+    widget.setFeatures({ hotkeys: true });
+    handle.remove();
+    key({ altKey: true, code: 'KeyN', key: 'n' });
+    expect(pressed).toEqual(['note']);
+  });
+
+  it('leaves a plain key to a field elsewhere on the page, and to text being composed', () => {
+    make();
+    const pressed: string[] = [];
+    widget.addHotkey({ keys: 'N', label: 'Next', onPress: () => pressed.push('n') });
+    widget.addHotkey({ keys: 'Alt+N', label: 'Note', onPress: () => pressed.push('alt') });
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    // Focus in the page's own field: its keys.
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', code: 'KeyN', bubbles: true, cancelable: true }));
+    expect(pressed).toEqual([]);
+    field.blur();
+    field.remove();
+    press();
+    key({ key: 'n', code: 'KeyN', isComposing: true });
+    key({ key: 'Process', code: 'KeyN', keyCode: 229 } as KeyboardEventInit);
+    expect(pressed).toEqual([]);
+    key({ key: 'n', code: 'KeyN' });
+    key({ altKey: true, key: 'n', code: 'KeyN' });
+    expect(pressed).toEqual(['n', 'alt']);
+  });
+
+  it('warns of keys the chart answers itself', () => {
+    make();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(widget.addHotkey({ keys: 'Ctrl+Z', label: 'Mine', onPress: () => {} })).not.toBeNull();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('lists in the sheet only the keys that work, a host’s replacing a built-in one', () => {
+    make({ features: { commandPalette: false } });
+    widget.addHotkey({ keys: 'Alt+G', label: 'Mine on G', onPress: () => {} });
+    press();
+    key({ key: '?' });
+    const labels = [...document.querySelectorAll('.tcw-hotkey-sheet .tcw-hotkey-label')].map((l) => l.textContent);
+    expect(labels).toContain('Mine on G');
+    expect(labels).not.toContain('Command palette');
+    expect(labels).not.toContain('Go to date');
+  });
+
+  it('reads no shortcut it cannot use', () => {
+    make();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(widget.addHotkey({ keys: 'Hyper+N', label: 'X', onPress: () => {} })).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('lists the host’s shortcuts in the sheet, and leaves out the keys switched off', () => {
+    make({ features: { 'hotkeys.tools': false } });
+    widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => {} });
+    press();
+    key({ key: '?' });
+    const sheet = document.querySelector('.tcw-hotkey-sheet')!;
+    const labels = [...sheet.querySelectorAll('.tcw-hotkey-label')].map((l) => l.textContent);
+    expect(labels).toContain('New note');
+    expect(sheet.textContent).toContain('More');
+    expect(labels).not.toContain('Trend Line');
+    expect(labels).not.toContain('Fib Retracement');
+  });
+
+  it('lists the drawing tools’ keys while they are on', () => {
+    make();
+    press();
+    key({ key: '?' });
+    const labels = [...document.querySelectorAll('.tcw-hotkey-sheet .tcw-hotkey-label')].map((l) => l.textContent);
+    expect(labels).toContain('Trend Line');
+    expect(document.querySelector('.tcw-hotkey-sheet')!.textContent).not.toContain('More');
+  });
+});

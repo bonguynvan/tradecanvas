@@ -338,7 +338,7 @@ const tr: SiteMessages = {
     },
     overrides: {
       title: 'Stil geçersiz kılmaları',
-      stat: '89 anahtar',
+      stat: '101 anahtar',
       blurb:
         'Grafiğin görünümünün herhangi bir parçası, temadan ayrı olarak anahtarla: her yöndeki ızgara, artı imleç, eksenler, paneller, açıklama, son fiyat, hacim ve her grafik türünün renkleri. Burada dikey ızgara kapalı, yatay ızgara noktalı, artı imleç düz ve MACD’nin sinyal çizgisi kendi ayırıcısı olan bir panelde kesik çizgili.',
       tryThis: [
@@ -354,7 +354,7 @@ const tr: SiteMessages = {
         'Widget’ın her parçasının bir anahtarı var; siz kapatana dek açık ve çalışırken değiştirilebilir: bütün bir yetenek (uyarılar, ayarlar, kısayollar) ya da tek bir yer (bir araç çubuğu düğmesi, bir menü girişi, bir çizim aracı bölümü). Kendi düğmeleriniz, menüleriniz ve durum öğeleriniz widget’ın çubuklarına yerleşir. Burada yeniden oynatma, iki çizim bölümü ve veri indirme kapalı; araç çubuğunda bir anahtar menüsü var.',
       tryThis: [
         'Araç çubuğunda “features” menüsünü açıp parçaları kapatıp açın',
-        'Çizim çubuğunun altındaki göz, araç çubuğunu ve durum çubuğunu gizler ve geri getirir',
+        'Çizim çubuğunun altındaki göz, araç çubuğunu ve durum çubuğunu gizler ve geri getirir (Alt+X)',
         'Bir çizime sağ tıklayın: son giriş sayfanın kendisine ait',
       ],
     },

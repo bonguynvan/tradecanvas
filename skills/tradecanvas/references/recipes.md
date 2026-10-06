@@ -462,6 +462,11 @@ widget.addToolbarDropdown({
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '— ms', label: 'Latency' });
 latency?.setText('12 ms');
+
+// A shortcut of your own, listed in the shortcut sheet (?). It replaces a widget shortcut on the
+// same keys; the chart's own keys (arrows, Delete, Ctrl+Z) still run, and it warns of those.
+const shortcut = widget.addHotkey({ keys: 'Alt+L', label: 'Show the latency', onPress: () => latency?.setText('12 ms') });
+shortcut?.remove();
 const focus = widget.addSidebarButton({
   id: 'focus',
   label: 'Focus',

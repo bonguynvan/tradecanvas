@@ -345,7 +345,7 @@ const en = {
     },
     overrides: {
       title: 'Style overrides',
-      stat: '89 keys',
+      stat: '101 keys',
       blurb:
         'Any part of the chart’s look by key, apart from the theme: the grid each way, the crosshair, the axes, the panes, the legend, the last price, the volume and each chart type’s colours. Here the vertical grid is off, the horizontal one dotted, the crosshair solid, and MACD’s signal line dashed in a pane with a separator of its own.',
       tryThis: [
@@ -361,7 +361,7 @@ const en = {
         'Every part of the widget has a switch, on until you turn it off and changeable while running: a whole capability (alerts, settings, the keys) or one place (a toolbar button, a menu entry, a section of drawing tools). Your own buttons, menus and status items sit in the widget’s bars. Here replay, two sections of drawing tools and the data download are off, and the toolbar carries a menu of switches.',
       tryThis: [
         'Open “features” on the toolbar and switch parts off and on',
-        'The eye at the foot of the drawing bar hides the toolbar and the status bar, and brings them back',
+        'The eye at the foot of the drawing bar hides the toolbar and the status bar, and brings them back (Alt+X)',
         'Right-click a drawing: the last entry is the page’s own',
       ],
     },

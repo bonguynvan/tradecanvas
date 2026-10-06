@@ -26,6 +26,8 @@
     <tr><td>Phần nào của widget được hiện</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">bên dưới</a></td></tr>
     <tr><td>Người dùng được làm gì trên biểu đồ: vẽ, giao dịch, zoom</td><td>Features riêng của biểu đồ: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
     <tr><td>Nút, menu và mục trạng thái của riêng bạn</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, các hook menu — <a href="#parts">bên dưới</a></td></tr>
+    <tr><td>Phím tắt của riêng bạn</td><td><code>addHotkey</code> — <a href="#parts">bên dưới</a></td></tr>
+    <tr><td>CSS của riêng bạn</td><td>Các móc ổn định: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">bên dưới</a></td></tr>
     <tr><td>Chữ của widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">bên dưới</a></td></tr>
     <tr><td>Chỉ báo, công cụ vẽ hay loại biểu đồ của riêng bạn</td><td><a href={href('/docs/plugins')}>Plugin</a></td></tr>
     <tr><td>Toàn bộ giao diện</td><td><code>Chart</code> headless, với giao diện của bạn bao quanh — <a href={href('/docs/api')}>API</a></td></tr>
@@ -158,6 +160,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 latency?.setText('15 ms')
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // thay phím tắt của widget nếu trùng phím; có trong bảng phím tắt (?)
 
 // Bất cứ gì khác của bạn: cạnh các nút của toolbar, dưới các nút của sidebar,
 // ở hai đầu thanh trạng thái, hoặc trên biểu đồ
@@ -173,6 +176,20 @@ widget.getSlot('chart')?.append(myOverlay)   // lớp này cho con trỏ đi qua
   drawingMenuItems: ({ id, type, selected }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
+
+<h2 id="css">CSS của riêng bạn</h2>
+<p>Widget là một phần của trang, không nằm trong iframe, nên CSS của bạn chạm được tới nó. Những móc sau giữ nguyên suốt 1.x:</p>
+<ul>
+  <li>Biến <code>--tcw-*</code> trên <code>.tcw-root</code>: các token giao diện (xem <a href={href('/docs/styling')}>Giao diện</a>).</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>: mỗi phần mang tên các công tắc của nó, nên một rule tìm được nó bằng chính tên đó.</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>: các công tắc đang tắt, trên phần tử gốc của widget.</li>
+  <li><code>[data-host-button="id"]</code>, <code>[data-host-item="id"]</code>: nút và mục trạng thái của riêng bạn, theo id bạn đặt.</li>
+</ul>
+<p>Các tên class khác là của riêng widget và có thể đổi: hãy style qua các móc trên.</p>
+<pre><code>{`/* nút toolbar của bạn theo màu nhấn */
+.tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
+/* một panel của bạn rộng hơn khi công cụ vẽ bị tắt */
+.my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
 <h2 id="words">Chữ</h2>
 <p>

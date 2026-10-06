@@ -162,6 +162,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'Sentuhan (telefon / tablet)',
   'hotkeys.group.keyboard': 'Papan kekunci',
   'hotkeys.group.drawing': 'Melukis',
+  'hotkeys.group.more': 'Lain-lain',
 
   // Common
   'common.close': 'Tutup',
@@ -182,6 +183,13 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.downWick': 'Sumbu candle turun',
   'settings.background': 'Latar belakang',
   'settings.grid': 'Grid',
+  'settings.section.lastPrice': 'Harga terakhir',
+  'settings.horizontal': 'Mendatar',
+  'settings.vertical': 'Menegak',
+  'settings.scaleLines': 'Garisan',
+  'settings.priceLine': 'Garisan harga',
+  'settings.paneSeparator': 'Pemisah panel',
+  'settings.legendText': 'Teks legenda',
   'settings.gridLines': 'Garisan grid',
   'settings.volume': 'Volum',
   'settings.volumeProfile': 'Profil volum',

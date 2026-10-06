@@ -10,6 +10,7 @@ import type {
   AnchorPoint,
 } from '@tradecanvas/commons';
 import { crispX, crispY } from '../charts/pixelGrid.js';
+import { drawingHandleFill } from './tools/labels.js';
 import { priceToY, resolveBarIndex, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 
 /**
@@ -216,7 +217,7 @@ export abstract class DrawingBase implements DrawingPlugin {
 
   protected renderAnchorHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
     const size = 4;
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = drawingHandleFill();
     ctx.strokeStyle = state.style.color;
     ctx.lineWidth = 1;
     for (const anchor of state.anchors) {

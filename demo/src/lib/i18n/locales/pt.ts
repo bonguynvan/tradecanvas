@@ -338,7 +338,7 @@ const pt: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de estilo',
-      stat: '89 chaves',
+      stat: '101 chaves',
       blurb:
         'Qualquer parte da aparência do gráfico por chave, à parte do tema: a grade em cada direção, a cruz, os eixos, os painéis, a legenda, o último preço, o volume e as cores de cada tipo de gráfico. Aqui a grade vertical está desligada, a horizontal pontilhada, a cruz contínua, e a linha de sinal do MACD tracejada num painel com separador próprio.',
       tryThis: [
@@ -354,7 +354,7 @@ const pt: SiteMessages = {
         'Cada parte do widget tem uma chave, ligada até você desligar e alterável em execução: uma capacidade inteira (alertas, configurações, atalhos) ou um único lugar (um botão da barra, uma entrada de menu, uma seção de ferramentas de desenho). Seus próprios botões, menus e itens de status ficam nas barras do widget. Aqui o replay, duas seções de desenho e o download dos dados estão desligados, e a barra traz um menu de chaves.',
       tryThis: [
         'Abra “features” na barra e desligue e ligue partes',
-        'O olho no pé da barra de desenho esconde a barra de ferramentas e a de status, e as traz de volta',
+        'O olho no pé da barra de desenho esconde a barra de ferramentas e a de status, e as traz de volta (Alt+X)',
         'Clique com o botão direito num desenho: a última entrada é da própria página',
       ],
     },

@@ -3,6 +3,7 @@ import { DEFAULT_SIGNAL_STYLE } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 import { revealMarkers } from './replayReveal.js';
+import { markerStyleFor } from '../style/overlayColors.js';
 
 interface SignalMarkerEvents {
   added: SignalMarker;
@@ -116,7 +117,8 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     if (!data || data.length === 0 || markers.length === 0) return;
 
     const { chartRect } = viewport;
-    const style = this.style;
+    // Their own style, with the chart's style keys over it.
+    const style = markerStyleFor(this.style, theme);
     const arrowSize = style.arrowSize ?? 12;
 
     ctx.save();

@@ -26,6 +26,8 @@
     <tr><td>ウィジェットのどの部品を表示するか</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">下記</a></td></tr>
     <tr><td>チャート上でユーザーができること：描画、取引、ズーム</td><td>チャート自体の features：<code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
     <tr><td>独自のボタン、メニュー、ステータス項目</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、メニューのフック — <a href="#parts">下記</a></td></tr>
+    <tr><td>独自のキーボードショートカット</td><td><code>addHotkey</code> — <a href="#parts">下記</a></td></tr>
+    <tr><td>独自の CSS</td><td>安定したフック：<code>--tcw-*</code>、<code>data-tcw-part</code> — <a href="#css">下記</a></td></tr>
     <tr><td>ウィジェットの文言</td><td><code>locale</code>、<code>messages</code> — <a href="#words">下記</a></td></tr>
     <tr><td>独自のインジケーター、描画ツール、チャートタイプ</td><td><a href={href('/docs/plugins')}>プラグイン</a></td></tr>
     <tr><td>UI のすべて</td><td>ヘッドレスの <code>Chart</code> と、それを囲む独自の UI — <a href={href('/docs/api')}>API</a></td></tr>
@@ -158,6 +160,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 latency?.setText('15 ms')
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 同じキーのウィジェットのショートカットを置き換え、ショートカット一覧（?）にも出ます
 
 // そのほか何でも：ツールバーの操作ボタンの横、サイドバーのボタンの下、
 // ステータスバーの両端、またはチャートの上に
@@ -173,6 +176,20 @@ widget.getSlot('chart')?.append(myOverlay)   // ポインターは通り抜け�
   drawingMenuItems: ({ id, type, selected }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
+
+<h2 id="css">独自の CSS</h2>
+<p>ウィジェットは iframe ではなくページの一部なので、あなたの CSS が届きます。次のフックは 1.x の間変わりません：</p>
+<ul>
+  <li><code>.tcw-root</code> 上の <code>--tcw-*</code> 変数：見た目のトークン（<a href={href('/docs/styling')}>スタイル設定</a>を参照）。</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>：各部品はそのスイッチの名前を持つので、同じ名前でルールから見つけられます。</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>：オフのスイッチ。ウィジェットのルート要素に付きます。</li>
+  <li><code>[data-host-button="id"]</code>、<code>[data-host-item="id"]</code>：独自のボタンとステータス項目を、付けた id で。</li>
+</ul>
+<p>それ以外のクラス名はウィジェット内部のもので、変わることがあります。フックを使ってスタイルしてください。</p>
+<pre><code>{`/* 独自のツールバーボタンをアクセント色に */
+.tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
+/* 描画ツールがオフの間は自分のパネルを広く */
+.my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
 <h2 id="words">文言</h2>
 <p>

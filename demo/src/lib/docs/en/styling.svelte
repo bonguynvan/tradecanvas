@@ -188,6 +188,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</c
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>The volume bars.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>The day, week and month breaks.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>The high and low lines, the watermark.</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>Orders (buy, sell) and positions (profit, loss, entry), on the chart and on the price axis, over the trading config's colours.</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>Signal markers, over their own style.</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>Trade zones: won, lost and still open.</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>A selected drawing's handles (white without it).</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>
       The main series while it is drawn as that type: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
       <code>wickDownColor</code> (candles, Heikin-Ashi, volume candles, equivolume), <code>color</code> / <code>lineColor</code>

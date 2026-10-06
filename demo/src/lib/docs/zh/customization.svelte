@@ -26,6 +26,8 @@
     <tr><td>组件显示哪些部分</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">见下文</a></td></tr>
     <tr><td>用户能在图表上做什么：绘图、交易、缩放</td><td>图表自身的 features：<code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
     <tr><td>你自己的按钮、菜单和状态项</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、菜单钩子 — <a href="#parts">见下文</a></td></tr>
+    <tr><td>你自己的快捷键</td><td><code>addHotkey</code> — <a href="#parts">见下文</a></td></tr>
+    <tr><td>你自己的 CSS</td><td>稳定的挂钩：<code>--tcw-*</code>、<code>data-tcw-part</code> — <a href="#css">见下文</a></td></tr>
     <tr><td>组件的文字</td><td><code>locale</code>、<code>messages</code> — <a href="#words">见下文</a></td></tr>
     <tr><td>你自己的指标、绘图工具或图表类型</td><td><a href={href('/docs/plugins')}>插件</a></td></tr>
     <tr><td>整个界面</td><td>无界面的 <code>Chart</code>，外面套上你自己的界面 — <a href={href('/docs/api')}>API</a></td></tr>
@@ -154,6 +156,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 latency?.setText('15 ms')
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 按键相同时取代组件自带的快捷键；也列在快捷键面板中（?）
 
 // 你的其他任何内容：工具栏控件旁、侧栏按钮下、状态栏两端，或图表之上
 widget.getSlot('chart')?.append(myOverlay)   // 这一层让指针穿过；你的元素需设置 pointer-events: auto`}</code></pre>
@@ -168,6 +171,20 @@ widget.getSlot('chart')?.append(myOverlay)   // 这一层让指针穿过；你�
   drawingMenuItems: ({ id, type, selected }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
+
+<h2 id="css">你自己的 CSS</h2>
+<p>组件是页面的一部分，而不是嵌在 iframe 里，所以你的 CSS 能作用到它。以下这些挂钩在 1.x 中保持不变：</p>
+<ul>
+  <li><code>.tcw-root</code> 上的 <code>--tcw-*</code> 变量：外观的 token（见<a href={href('/docs/styling')}>样式</a>）。</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>：每个部分都带有其开关的名称，规则可以按同样的名称找到它。</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>：关闭的开关，写在组件的根元素上。</li>
+  <li><code>[data-host-button="id"]</code>、<code>[data-host-item="id"]</code>：你自己的按钮和状态项，按你给的 id。</li>
+</ul>
+<p>其他类名属于组件内部，可能会变：请通过这些挂钩来写样式。</p>
+<pre><code>{`/* 你的工具栏按钮使用强调色 */
+.tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
+/* 绘图工具关闭时，让你自己的面板更宽 */
+.my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
 <h2 id="words">文字</h2>
 <p>

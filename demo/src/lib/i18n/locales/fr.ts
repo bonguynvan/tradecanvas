@@ -338,7 +338,7 @@ const fr: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de style',
-      stat: '89 clés',
+      stat: '101 clés',
       blurb:
         'N’importe quelle partie de l’aspect du graphique par clé, à part du thème : la grille dans chaque sens, le réticule, les axes, les panneaux, la légende, le dernier cours, le volume et les couleurs de chaque type de graphique. Ici la grille verticale est masquée, l’horizontale en pointillés, le réticule plein, et la ligne de signal du MACD en tirets dans un panneau avec son propre séparateur.',
       tryThis: [
@@ -354,7 +354,7 @@ const fr: SiteMessages = {
         'Chaque partie du widget a son interrupteur, allumé jusqu’à ce que vous l’éteigniez et modifiable en marche : une capacité entière (alertes, réglages, raccourcis) ou un seul endroit (un bouton de la barre, une entrée de menu, une section d’outils de dessin). Vos propres boutons, menus et éléments d’état prennent place dans les barres du widget. Ici le replay, deux sections de dessin et le téléchargement des données sont éteints, et la barre porte un menu d’interrupteurs.',
       tryThis: [
         'Ouvrez « features » dans la barre et éteignez ou rallumez des parties',
-        'L’œil en bas de la barre de dessin masque la barre d’outils et la barre d’état, puis les rend',
+        'L’œil en bas de la barre de dessin masque la barre d’outils et la barre d’état, puis les rend (Alt+X)',
         'Clic droit sur un dessin : la dernière entrée est celle de la page',
       ],
     },

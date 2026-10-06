@@ -162,6 +162,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'Berøring (mobil / tablet)',
   'hotkeys.group.keyboard': 'Tastatur',
   'hotkeys.group.drawing': 'Tegning',
+  'hotkeys.group.more': 'Flere',
 
   // Common
   'common.close': 'Luk',
@@ -182,6 +183,13 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.downWick': 'Faldende væge',
   'settings.background': 'Baggrund',
   'settings.grid': 'Gitter',
+  'settings.section.lastPrice': 'Seneste kurs',
+  'settings.horizontal': 'Vandrette',
+  'settings.vertical': 'Lodrette',
+  'settings.scaleLines': 'Linjer',
+  'settings.priceLine': 'Kurslinje',
+  'settings.paneSeparator': 'Rudeskiller',
+  'settings.legendText': 'Forklaringstekst',
   'settings.gridLines': 'Gitterlinjer',
   'settings.volume': 'Volumen',
   'settings.volumeProfile': 'Volumenprofil',

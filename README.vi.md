@@ -239,6 +239,7 @@ widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: 
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')   // một lớp của riêng bạn trên biểu đồ
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // phím tắt của riêng bạn, có cả trong bảng phím tắt
 ```
 
 Công tắc chỉ ẩn, hiện các phần của widget; muốn chặn một việc trên chính biểu đồ (vẽ, giao dịch, zoom), hãy dùng `chartOptions.features`. Mọi cách tùy biến — màu, giao diện, override style, công tắc, phần của bạn, chữ, plugin — được bày ra ở trang [Tùy biến](https://bonguynvan.github.io/tradecanvas/docs/customization).
@@ -710,7 +711,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` liệt kê mọi khoá. Component React, Vue và Svelte nhận chúng qua prop `overrides`.
+`CHART_STYLE_KEYS` liệt kê mọi khoá. Component React, Vue và Svelte nhận chúng qua prop `overrides`. Lệnh, vị thế, điểm tín hiệu, vùng lệnh và tay nắm của hình vẽ đang chọn cũng có khoá (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…).
 
 ### Sự kiện
 

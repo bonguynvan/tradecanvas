@@ -162,6 +162,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'מגע (נייד / טאבלט)',
   'hotkeys.group.keyboard': 'מקלדת',
   'hotkeys.group.drawing': 'ציור',
+  'hotkeys.group.more': 'עוד',
 
   // Common
   'common.close': 'סגירה',
@@ -182,6 +183,13 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.downWick': 'פתיל יורד',
   'settings.background': 'רקע',
   'settings.grid': 'רשת',
+  'settings.section.lastPrice': 'מחיר אחרון',
+  'settings.horizontal': 'אופקיים',
+  'settings.vertical': 'אנכיים',
+  'settings.scaleLines': 'קווים',
+  'settings.priceLine': 'קו מחיר',
+  'settings.paneSeparator': 'מפריד חלוניות',
+  'settings.legendText': 'טקסט מקרא',
   'settings.gridLines': 'קווי רשת',
   'settings.volume': 'נפח מסחר',
   'settings.volumeProfile': 'פרופיל נפח',

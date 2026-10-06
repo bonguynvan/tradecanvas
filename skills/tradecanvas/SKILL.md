@@ -193,15 +193,18 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertical.visible': false,
 'series.candlestick.upColor': '#26a69a' })` (keys in `CHART_STYLE_KEYS`, `null` takes one away;
 `overrides` in the options and the React/Vue/Svelte props). `getTheme()` is the theme as set; what
-is drawn reads back from `getStyleValue(key)`. Each indicator plot's dash and visibility:
+is drawn reads back from `getStyleValue(key)`. Orders, positions, signal markers, trade zones and
+drawing handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`,
+`drawings.handleColor`). Each indicator plot's dash and visibility:
 `updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`.
 
 The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
 `widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability
 everywhere, dotted = one place). They hide the widget's UI only; to stop drawing, trading or zoom
 on the chart, use `chartOptions.features`. Your own parts: `addToolbarButton`,
-`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, and the
-`chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options.
+`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
+the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your
+own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable through 1.x).
 
 ## When something looks wrong
 

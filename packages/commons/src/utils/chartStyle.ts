@@ -148,6 +148,8 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
   const series = seriesLooks(plain, o, chartType);
   const background = (o('background.color') as string | undefined) ?? plain.background;
   const str = (key: ChartStyleKey, fallback: string) => (o(key) as string | undefined) ?? fallback;
+  /** A colour of a part with its own settings: the override, or null to keep to them. */
+  const ownColor = (key: ChartStyleKey): string | null => (o(key) as string | undefined) ?? null;
 
   const style: ResolvedChartStyle = {
     panes: {
@@ -185,6 +187,16 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
     },
     highLow: { color: (o('highLow.color') as string | undefined) ?? null },
     series: { lineWidth: series.lineWidth },
+    trading: {
+      buy: ownColor('trading.buyColor'),
+      sell: ownColor('trading.sellColor'),
+      profit: ownColor('trading.profitColor'),
+      loss: ownColor('trading.lossColor'),
+      entry: ownColor('trading.entryColor'),
+    },
+    markers: { long: ownColor('markers.longColor'), short: ownColor('markers.shortColor'), neutral: ownColor('markers.neutralColor') },
+    tradeZones: { profit: ownColor('tradeZones.profitColor'), loss: ownColor('tradeZones.lossColor'), active: ownColor('tradeZones.activeColor') },
+    drawings: { handle: ownColor('drawings.handleColor') },
   };
 
   return {
@@ -230,6 +242,18 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'sessionBreaks.style': (_t, s) => s.sessionBreaks.style,
   'sessionBreaks.width': (_t, s) => s.sessionBreaks.width,
   'highLow.color': (_t, s) => s.highLow.color,
+  'trading.buyColor': (_t, s) => s.trading.buy,
+  'trading.sellColor': (_t, s) => s.trading.sell,
+  'trading.profitColor': (_t, s) => s.trading.profit,
+  'trading.lossColor': (_t, s) => s.trading.loss,
+  'trading.entryColor': (_t, s) => s.trading.entry,
+  'markers.longColor': (_t, s) => s.markers.long,
+  'markers.shortColor': (_t, s) => s.markers.short,
+  'markers.neutralColor': (_t, s) => s.markers.neutral,
+  'tradeZones.profitColor': (_t, s) => s.tradeZones.profit,
+  'tradeZones.lossColor': (_t, s) => s.tradeZones.loss,
+  'tradeZones.activeColor': (_t, s) => s.tradeZones.active,
+  'drawings.handleColor': (_t, s) => s.drawings.handle,
 };
 
 const LINE_PROPS: Record<string, keyof ResolvedLineLook> = { visible: 'visible', color: 'color', style: 'style', width: 'width' };

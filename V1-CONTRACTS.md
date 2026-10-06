@@ -145,6 +145,8 @@ On connect, the chart:
 
 4. **Widget switches** → **the names in `WIDGET_FEATURES` are 1.x contracts.** Every switch is on unless set `false`; a name without a dot is a whole capability, a dotted name one place. A name is never renamed or dropped in 1.x without the old one kept working; new names are additive. The older on/off options (`toolbar`, `drawingTools`, `statusBar`, `rangeBar`…) stand for switches and keep working. Switches hide the widget's UI; what the chart allows stays with `FeaturesConfig`. Implemented in `library/src/widget/widgetFeatures.ts`.
 
+5. **The widget's CSS hooks** → **stable through 1.x**: the `--tcw-*` variables on `.tcw-root`, `[data-tcw-part]` (a part's switch names), `[data-tcw-off]` on the root (the switches off) and `[data-host-button]` / `[data-host-item]` (the host's own parts, by id). Other class names are internal and may change.
+
 Phases 1–2 build on these frozen contracts:
 - **Phase 1** — `WebSocketAdapter` / `PollingAdapter` base classes + Coinbase/Bybit/Kraken; render-time consumption of `ChartTypePlugin` / `OverlayPlugin`.
 - **Phase 2** — `chart.connectExecution(adapter)` wiring (route intents → adapter, subscribe adapter → `setOrders`/`setPositions`), drag-to-create orders, alerts→automation.

@@ -69,6 +69,8 @@ import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
+import { isChartKey, matchesHotkey, parseHotkey, typedIntoField, type ParsedHotkey } from './hostHotkeys.js';
+import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
 import {
   markPart,
   commandFeature,
@@ -139,6 +141,11 @@ const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
   KeyC: 'crossLine',
   KeyF: 'fibRetracement',
 };
+
+/** `keyCode` of a key press that goes to an IME composing text. */
+const IME_KEY_CODE = 229;
+/** The settings' style keys that aren't colours: they go with the user from theme to theme. */
+const LOOK_KEYS: readonly ChartStyleKey[] = Object.values(SETTINGS_STYLE_KEYS).flat().filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
@@ -287,6 +294,8 @@ export class ChartWidget {
   private compares: { id: string; symbol: string; color: string }[] = [];
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
+  /** The host's own shortcuts, first added first. */
+  private hostHotkeys: { spec: import('./types.js').HotkeySpec; parsed: ParsedHotkey }[] = [];
   /** The menus of the host's toolbar dropdowns. */
   private readonly hostMenus = new Set<WidgetContextMenu>();
   /** The host's layer over the chart (`getSlot('chart')`), made when first asked for. */
@@ -1024,6 +1033,7 @@ export class ChartWidget {
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.featureState.hotkeys && this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
+      if (this.handleHostHotkey(e)) return;
       // With several widgets on the page, the shortcuts go to the one used last.
       const mine = isKeyTarget(this.root);
       // The widget's keys may be switched off all together, or one by one.
@@ -1072,7 +1082,10 @@ export class ChartWidget {
         // Only fire when the user isn't typing into an input.
         if (isTyping() || !mine || !keyOn('hotkeys.help') || !this.featureState.hotkeySheet) return;
         e.preventDefault();
-        this.hotkeySheet?.open();
+        this.hotkeySheet?.open({
+          isOn: (name) => this.sheetKeyOn(name),
+          extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
+        });
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
@@ -1485,7 +1498,7 @@ export class ChartWidget {
     this.state = { ...this.state, isDark };
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
-    this.chart.setTheme(resolved);
+    this.keepingLook(() => this.chart.setTheme(resolved));
     this.syncSettingsColours();
     this.updateUI();
   }
@@ -1823,6 +1836,74 @@ export class ChartWidget {
       ['indicatorLegend.more', () => this.legendMenu?.close()],
     ];
     for (const [name, close] of closers) if (turnedOff(name)) close();
+  }
+
+  /**
+   * A keyboard shortcut of your own: `keys` as `'Alt+N'`, `'Shift+R'`,
+   * `'Ctrl+Shift+K'` (Ctrl is Cmd on a Mac) or one key, `label` what it does
+   * in the shortcut sheet. It works while this widget was used last, not
+   * while typing in a field or in a dialog, and not with the `hotkeys`
+   * switch off. It comes before the widget's own shortcuts (which it then
+   * replaces), not the chart's keys (arrows, Delete, Ctrl+Z…: those run as
+   * well, and it warns). `null` for keys it can't read.
+   */
+  addHotkey(spec: import('./types.js').HotkeySpec): import('./types.js').HotkeyHandle | null {
+    const parsed = parseHotkey(spec.keys);
+    if (!parsed) {
+      console.warn(`[ChartWidget] Can't read the shortcut "${spec.keys}": modifiers (Ctrl, Alt, Shift) and a key, joined by +.`);
+      return null;
+    }
+    if (isChartKey(parsed)) {
+      console.warn(`[ChartWidget] The chart answers ${spec.keys} itself (drawings, scrolling or zoom): both will run.`);
+    }
+    const entry = { spec, parsed };
+    this.hostHotkeys = [...this.hostHotkeys, entry];
+    return { remove: () => { this.hostHotkeys = this.hostHotkeys.filter((h) => h !== entry); } };
+  }
+
+  /** Runs the host's shortcut a key press is, if any; whether it did. */
+  private handleHostHotkey(e: KeyboardEvent): boolean {
+    if (this.hostHotkeys.length === 0 || !this.featureState.hotkeys) return false;
+    // Text being composed (an IME) or typed with AltGr: the keys are the text's.
+    if (e.isComposing || e.keyCode === IME_KEY_CODE || e.getModifierState?.('AltGraph')) return false;
+    if (e.defaultPrevented || isTyping() || typedIntoField(e) || inOverlay()) return false;
+    const hit = this.hostHotkeys.find((h) => matchesHotkey(e, h.parsed));
+    if (!hit) return false;
+    // A key without Ctrl or Alt types text elsewhere: only once this widget was pressed, and with
+    // focus nowhere else on the page.
+    const plain = !hit.parsed.ctrl && !hit.parsed.alt;
+    if (!isKeyTarget(this.root, plain)) return false;
+    const active = document.activeElement;
+    if (plain && active && active !== document.body && !this.root.contains(active)) return false;
+    e.preventDefault();
+    hit.spec.onPress(e);
+    return true;
+  }
+
+  /**
+   * Runs a theme change, the user's look that isn't a colour (a grid way hidden, a dash) going
+   * with them to the new theme: colours stay with the theme they were picked on.
+   */
+  private keepingLook(change: () => void): void {
+    const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
+    const kept = Object.fromEntries(LOOK_KEYS.filter((key) => user[key] !== undefined).map((key) => [key, user[key]]));
+    change();
+    if (Object.keys(kept).length > 0) this.chart.applyOverrides(kept, { layer: 'user' });
+  }
+
+  /** Whether a built-in key of the shortcut sheet works now (its switches, and what it needs). */
+  private sheetKeyOn(name: WidgetFeature): boolean {
+    const f = this.featureState;
+    if (!f.hotkeys || !f[name]) return false;
+    switch (name) {
+      case 'hotkeys.commandPalette': return f.commandPalette;
+      case 'hotkeys.symbolSearch': return f.symbolSearch;
+      case 'hotkeys.goToDate': return f.goToDate;
+      case 'hotkeys.save': return f.layouts && this.layoutSession !== null;
+      case 'hotkeys.help': return f.hotkeySheet;
+      case 'intervalTyping': return this.intervalInput !== null;
+      default: return true;
+    }
   }
 
   /** Puts the switches that are off on the widget and its dialogs (their parts hide), and tidies the bars' dividers. */
@@ -2856,7 +2937,7 @@ export class ChartWidget {
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     // The mode's theme: the host's own, or the built-in one. The user's colours stay with each.
-    this.chart.setTheme(isDark ? this.themeOf.dark : this.themeOf.light);
+    this.keepingLook(() => this.chart.setTheme(isDark ? this.themeOf.dark : this.themeOf.light));
     this.syncSettingsColours();
     this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
       fontSize: 48,
@@ -3360,9 +3441,9 @@ export class ChartWidget {
       this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
     }
 
-    // Colours: the user's style overrides, kept with the theme they were picked on.
-    // Volume follows the candles' colours by itself.
-    const style: Record<string, string> = {};
+    // The look (colours, lines shown, dashes): the user's style overrides, kept with the theme they
+    // were picked on. Volume follows the candles' colours by itself.
+    const style: Record<string, string | boolean> = {};
     for (const [setting, keys] of Object.entries(SETTINGS_STYLE_KEYS)) {
       const value = patch[setting as keyof typeof SETTINGS_STYLE_KEYS];
       if (value !== undefined) for (const key of keys) style[key] = value;
@@ -3370,14 +3451,15 @@ export class ChartWidget {
     if (Object.keys(style).length > 0) this.chart.applyOverrides(style, { layer: 'user' });
   }
 
-  /** The settings' colours as the chart draws them now (they show in the settings panel). */
+  /** The settings' look as the chart draws it now (it shows in the settings panel). */
   private syncSettingsColours(): void {
-    const colours: Partial<ChartSettingsState> = {};
+    const look: Record<string, unknown> = {};
     for (const [setting, keys] of Object.entries(SETTINGS_STYLE_KEYS)) {
       const value = this.chart.getStyleValue?.(keys[0]);
-      if (typeof value === 'string') (colours as Record<string, string>)[setting] = value;
+      // Of the setting's kind only (a colour, a switch, a dash).
+      if (value !== null && typeof value === typeof DEFAULT_SETTINGS[setting as keyof typeof SETTINGS_STYLE_KEYS]) look[setting] = value;
     }
-    this.settingsState = { ...this.settingsState, ...colours };
+    this.settingsState = { ...this.settingsState, ...(look as Partial<ChartSettingsState>) };
   }
 
   private resetSettings(): void {
@@ -3432,15 +3514,18 @@ export class ChartWidget {
    * The user's overrides on the settings' colours (null: none set), with the
    * theme they go with: what an undo of a colour puts back.
    */
-  private settingsStyle(): { theme: string; overrides: Record<string, string | null> } {
+  private settingsStyle(): { theme: string; overrides: Record<string, string | boolean | null> } {
     const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
-    const overrides: Record<string, string | null> = {};
-    for (const key of Object.values(SETTINGS_STYLE_KEYS).flat()) overrides[key] = typeof user[key] === 'string' ? user[key] as string : null;
+    const overrides: Record<string, string | boolean | null> = {};
+    for (const key of Object.values(SETTINGS_STYLE_KEYS).flat()) {
+      const value = user[key];
+      overrides[key] = typeof value === 'string' || typeof value === 'boolean' ? value : null;
+    }
     return { theme: this.chart.getTheme()?.name ?? '', overrides };
   }
 
   /** Settings back as they were (an undo or redo), shown in the settings if they're open. */
-  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: Record<string, string | null> } | null = null): void {
+  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: Record<string, string | boolean | null> } | null = null): void {
     this.applySettings(values);
     // Colours picked on another theme stay with that theme.
     if (style && style.theme === (this.chart.getTheme()?.name ?? '')) {

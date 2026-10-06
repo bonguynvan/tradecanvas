@@ -65,6 +65,22 @@ export const CHART_STYLE_KEYS = {
 
   'highLow.color': 'color',
 
+  'trading.buyColor': 'color',
+  'trading.sellColor': 'color',
+  'trading.profitColor': 'color',
+  'trading.lossColor': 'color',
+  'trading.entryColor': 'color',
+
+  'markers.longColor': 'color',
+  'markers.shortColor': 'color',
+  'markers.neutralColor': 'color',
+
+  'tradeZones.profitColor': 'color',
+  'tradeZones.lossColor': 'color',
+  'tradeZones.activeColor': 'color',
+
+  'drawings.handleColor': 'color',
+
   'series.candlestick.upColor': 'color',
   'series.candlestick.downColor': 'color',
   'series.candlestick.wickUpColor': 'color',
@@ -181,6 +197,14 @@ export interface ResolvedChartStyle {
   sessionBreaks: { color: string | null; style: LineStyle | null; width: number | null };
   /** Null: the high and low lines' own colour. */
   highLow: { color: string | null };
+  /** Orders (buy, sell) and positions (profit, loss, entry). Null: the trading config's colours. */
+  trading: { buy: string | null; sell: string | null; profit: string | null; loss: string | null; entry: string | null };
+  /** Signal markers. Null: their own style's colours. */
+  markers: { long: string | null; short: string | null; neutral: string | null };
+  /** Trade zones. Null: their own style's colours. */
+  tradeZones: { profit: string | null; loss: string | null; active: string | null };
+  /** A selected drawing's handles. Null: white. */
+  drawings: { handle: string | null };
   /** The main series' line width, for the chart types drawn as a line. */
   series: { lineWidth: number };
 }

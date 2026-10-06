@@ -697,6 +697,7 @@ new ChartWidget(host, {
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')          // a layer over the chart
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // a shortcut of yours; it replaces a widget shortcut on the same keys
 
 new ChartWidget(host, {
   drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],

@@ -162,6 +162,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'Berøring (mobil / nettbrett)',
   'hotkeys.group.keyboard': 'Tastatur',
   'hotkeys.group.drawing': 'Tegning',
+  'hotkeys.group.more': 'Flere',
 
   // Common
   'common.close': 'Lukk',
@@ -182,6 +183,13 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.downWick': 'Fallende veke',
   'settings.background': 'Bakgrunn',
   'settings.grid': 'Rutenett',
+  'settings.section.lastPrice': 'Siste kurs',
+  'settings.horizontal': 'Vannrette',
+  'settings.vertical': 'Loddrette',
+  'settings.scaleLines': 'Linjer',
+  'settings.priceLine': 'Kurslinje',
+  'settings.paneSeparator': 'Ruteskille',
+  'settings.legendText': 'Forklaringstekst',
   'settings.gridLines': 'Rutenettlinjer',
   'settings.volume': 'Volum',
   'settings.volumeProfile': 'Volumprofil',

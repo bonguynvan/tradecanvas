@@ -183,6 +183,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>成交量柱。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日、周、月分隔线。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>最高价与最低价线、水印。</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>订单（买、卖）和持仓（盈、亏、入场），包括图表上和价格轴上，覆盖交易配置里的颜色。</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>信号标记，覆盖它们自己的样式。</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>交易区域：盈利、亏损和未平仓。</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>选中绘图的控制点（不设置时为白色）。</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>主序列以该类型绘制时的样式：<code>upColor</code>、<code>downColor</code>、<code>wickUpColor</code>、
       <code>wickDownColor</code>（K线、Heikin-Ashi、成交量K线、等量图），<code>color</code> / <code>lineColor</code>
       和 <code>lineWidth</code>（折线、阶梯线、带点折线、面积图、HLC 面积图、基线图），<code>topColor</code> 和

@@ -1,4 +1,4 @@
-import type { ChartType, ChartTypeOptions } from '@tradecanvas/commons';
+import type { ChartType, ChartTypeOptions, LineStyle } from '@tradecanvas/commons';
 import type { ChartSettingsState, SettingsCallbacks } from './types.js';
 import { CHART_TYPES } from './widgetConfig.js';
 import { chartTypeLabel } from './widgetLocales.js';
@@ -190,8 +190,39 @@ export class WidgetSettings {
     // Background
     const bgSection = this.section(this.t('settings.section.background'));
     bgSection.appendChild(this.colorRow(this.t('settings.background'), s.backgroundColor, (v) => this.patch({ backgroundColor: v })));
-    bgSection.appendChild(this.colorRow(this.t('settings.grid'), s.gridColor, (v) => this.patch({ gridColor: v })));
+    bgSection.appendChild(this.colorRow(this.t('settings.paneSeparator'), s.paneSeparatorColor, (v) => this.patch({ paneSeparatorColor: v })));
+    bgSection.appendChild(this.colorRow(this.t('settings.legendText'), s.legendTextColor, (v) => this.patch({ legendTextColor: v })));
     this.bodyEl.appendChild(bgSection);
+
+    const lineStyles = (): { value: string; label: string }[] => [
+      { value: 'solid', label: this.t('drawingSettings.lineStyle.solid') },
+      { value: 'dashed', label: this.t('drawingSettings.lineStyle.dashed') },
+      { value: 'dotted', label: this.t('drawingSettings.lineStyle.dotted') },
+    ];
+    const asLineStyle = (v: string): LineStyle => (v === 'dashed' || v === 'dotted' ? v : 'solid');
+
+    // The grid, each way
+    const gridSection = this.section(this.t('settings.gridLines'));
+    gridSection.appendChild(this.toggleRow(this.t('settings.horizontal'), s.gridHorizontalVisible, (v) => this.patch({ gridHorizontalVisible: v })));
+    gridSection.appendChild(this.toggleRow(this.t('settings.vertical'), s.gridVerticalVisible, (v) => this.patch({ gridVerticalVisible: v })));
+    gridSection.appendChild(this.colorRow(this.t('drawingSettings.color'), s.gridColor, (v) => this.patch({ gridColor: v })));
+    gridSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.gridStyle, lineStyles(), (v) => this.patch({ gridStyle: asLineStyle(v) })));
+    this.bodyEl.appendChild(gridSection);
+
+    const crosshairSection = this.section(this.t('settings.crosshairMode'));
+    crosshairSection.appendChild(this.colorRow(this.t('drawingSettings.color'), s.crosshairColor, (v) => this.patch({ crosshairColor: v })));
+    crosshairSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.crosshairStyle, lineStyles(), (v) => this.patch({ crosshairStyle: asLineStyle(v) })));
+    this.bodyEl.appendChild(crosshairSection);
+
+    const scaleSection = this.section(this.t('settings.tab.scale'));
+    scaleSection.appendChild(this.colorRow(this.t('drawingSettings.text'), s.scaleTextColor, (v) => this.patch({ scaleTextColor: v })));
+    scaleSection.appendChild(this.colorRow(this.t('settings.scaleLines'), s.scaleLineColor, (v) => this.patch({ scaleLineColor: v })));
+    this.bodyEl.appendChild(scaleSection);
+
+    const lastPriceSection = this.section(this.t('settings.section.lastPrice'));
+    lastPriceSection.appendChild(this.toggleRow(this.t('settings.priceLine'), s.lastPriceVisible, (v) => this.patch({ lastPriceVisible: v })));
+    lastPriceSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.lastPriceStyle, lineStyles(), (v) => this.patch({ lastPriceStyle: asLineStyle(v) })));
+    this.bodyEl.appendChild(lastPriceSection);
   }
 
   private renderDisplayTab(): void {
@@ -360,6 +391,9 @@ export class WidgetSettings {
       t.className = 'tcw-settings-section-title';
       t.textContent = title;
       div.appendChild(t);
+      // Rows named alike ("Colour", "Style") under several titles: the title tells them apart.
+      div.setAttribute('role', 'group');
+      div.setAttribute('aria-label', title);
     }
     return div;
   }
@@ -379,6 +413,7 @@ export class WidgetSettings {
     const input = document.createElement('input');
     input.type = 'color';
     input.value = value;
+    input.setAttribute('aria-label', label);
 
     const hex = document.createElement('span');
     hex.className = 'tcw-color-hex';
@@ -405,10 +440,15 @@ export class WidgetSettings {
     row.appendChild(lbl);
 
     const toggle = document.createElement('button');
+    toggle.type = 'button';
     toggle.className = `tcw-toggle${value ? ' tcw-on' : ''}`;
+    toggle.setAttribute('role', 'switch');
+    toggle.setAttribute('aria-checked', String(value));
+    toggle.setAttribute('aria-label', label);
     toggle.addEventListener('click', () => {
       const newVal = !toggle.classList.contains('tcw-on');
       toggle.classList.toggle('tcw-on', newVal);
+      toggle.setAttribute('aria-checked', String(newVal));
       onChange(newVal);
     });
     row.appendChild(toggle);
@@ -431,6 +471,7 @@ export class WidgetSettings {
 
     const select = document.createElement('select');
     select.className = 'tcw-settings-select';
+    select.setAttribute('aria-label', label);
     for (const opt of options) {
       const o = document.createElement('option');
       o.value = opt.value;

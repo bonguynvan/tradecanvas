@@ -338,7 +338,7 @@ const id: SiteMessages = {
     },
     overrides: {
       title: 'Override gaya',
-      stat: '89 kunci',
+      stat: '101 kunci',
       blurb:
         'Bagian mana pun dari tampilan grafik lewat kunci, terpisah dari tema: grid di tiap arah, crosshair, sumbu, panel, legenda, harga terakhir, volume, dan warna tiap jenis grafik. Di sini grid vertikal dimatikan, grid horizontal bertitik, crosshair garis penuh, dan garis sinyal MACD putus-putus di panel dengan pemisahnya sendiri.',
       tryThis: [
@@ -354,7 +354,7 @@ const id: SiteMessages = {
         'Setiap bagian widget punya sakelar, menyala sampai Anda mematikannya dan bisa diubah saat berjalan: satu kemampuan utuh (peringatan, pengaturan, pintasan) atau satu tempat (tombol toolbar, entri menu, kelompok alat gambar). Tombol, menu, dan item status milik Anda sendiri duduk di bilah-bilah widget. Di sini replay, dua kelompok alat gambar, dan unduhan data dimatikan, dan toolbar membawa menu sakelar.',
       tryThis: [
         'Buka “features” di toolbar lalu matikan dan nyalakan bagian-bagiannya',
-        'Ikon mata di bawah bilah gambar menyembunyikan toolbar dan bilah status, lalu menampilkannya lagi',
+        'Ikon mata di bawah bilah gambar menyembunyikan toolbar dan bilah status, lalu menampilkannya lagi (Alt+X)',
         'Klik kanan sebuah gambar: entri terakhir milik halaman itu sendiri',
       ],
     },
