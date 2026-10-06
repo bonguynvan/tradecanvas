@@ -12,6 +12,10 @@ Collected on `main` for the next release. Not on npm yet.
 - **Your own CSS, on stable hooks**: `--tcw-*` variables, `[data-tcw-part]` (a part's switch names), `[data-tcw-off]` on the root, and `[data-host-button]` / `[data-host-item]` stay as they are through 1.x.
 - Docs: the new keys on the Styling page; shortcuts and CSS on the Customization page; six languages. The Feature Lab's parts scene adds a shortcut (Alt+X).
 
+## 1.14.0 (2026-10-06)
+
+React, Vue and Svelte components: 1.2.0.
+
 ### Replay for apps, and components that wait for your bars
 
 - **Marks as the replay reaches them**: during `chart.replayStart()`, signal markers show once their bar is shown and trade zones once entered, each drawn open (no exit, no result) until its exit is reached. They all come back with `replayStop()`. `revealMarks: false` shows them all through the replay. The widget's replay does the same.
