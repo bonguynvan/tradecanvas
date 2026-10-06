@@ -56,10 +56,12 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     points: Point[],
     color: string,
     lineWidth: number,
+    /** The plot's own look (`plotLook`): hidden, it isn't drawn; dashed, it is. */
+    look?: { visible: boolean; dash: readonly number[] },
   ): void {
-    if (points.length < 2) return;
+    if (points.length < 2 || look?.visible === false) return;
     const dense = isDenseLine(points.length, points[0].x, points[points.length - 1].x);
-    const pen = new LinePen(ctx, color, lineWidth, dense);
+    const pen = new LinePen(ctx, color, lineWidth, dense, look?.dash);
     for (const p of points) pen.add(p.x, p.y);
     pen.finish();
   }

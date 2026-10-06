@@ -335,6 +335,17 @@ const vi: SiteMessages = {
         'Terminal dày và vuông vức: nhãn chữ in hoa, khung giờ đang chọn có gạch chân',
       ],
     },
+    overrides: {
+      title: 'Override style',
+      stat: '89 khoá',
+      blurb:
+        'Bất kỳ phần nào của biểu đồ theo khoá, riêng khỏi theme: lưới theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume và màu của từng loại biểu đồ. Ở đây lưới dọc tắt, lưới ngang chấm chấm, crosshair nét liền, và đường signal của MACD nét đứt trong một pane có đường phân cách riêng.',
+      tryThis: [
+        'Đổi loại biểu đồ: bar và Heikin-Ashi lấy màu của nến trừ khi có màu riêng',
+        'Đổi theme của trang: những gì không override sẽ theo theme',
+        'Mở Settings và chọn một màu: nó vào lớp của người dùng, giữ theo theme',
+      ],
+    },
     markets: {
       title: 'Danh mục theo dõi và thị trường',
       stat: 'giá trực tiếp',

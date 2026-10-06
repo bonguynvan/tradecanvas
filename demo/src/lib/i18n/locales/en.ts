@@ -342,6 +342,17 @@ const en = {
         'Terminal is dense and square: capital labels, and a line under the chosen interval',
       ],
     },
+    overrides: {
+      title: 'Style overrides',
+      stat: '89 keys',
+      blurb:
+        'Any part of the chart’s look by key, apart from the theme: the grid each way, the crosshair, the axes, the panes, the legend, the last price, the volume and each chart type’s colours. Here the vertical grid is off, the horizontal one dotted, the crosshair solid, and MACD’s signal line dashed in a pane with a separator of its own.',
+      tryThis: [
+        'Switch the chart type: bars and Heikin-Ashi take the candles’ colours unless they have their own',
+        'Switch the site’s theme: what isn’t overridden follows it',
+        'Open Settings and pick a colour: it goes on the user’s layer, kept with the theme',
+      ],
+    },
     markets: {
       title: 'Watchlists and the market',
       stat: 'live quotes',

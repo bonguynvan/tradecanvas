@@ -42,7 +42,8 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor } from '@tradecanvas/commons';
+import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -121,6 +122,7 @@ import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { DataManager } from './DataManager.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
+import { startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
 import { VerticalPanGate } from './interaction/verticalPanGate.js';
@@ -183,6 +185,10 @@ export class Chart {
   private indicatorUpdateFrom: number | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
   private panelInfoCache: import('@tradecanvas/core').PanelRenderInfo[] | null = null;
+  /** Panes' own styles, by the instance whose pane it is (`setPaneStyle`). */
+  private paneStyles = new Map<string, PaneStyle>();
+  /** The background last put on the container (setTheme, a style change), so a host's own stays. */
+  private lastBackground: string | null = null;
   private renderScheduled = false;
   /** Current price-axis width; grows to fit long (e.g. sub-cent) labels. */
   private priceAxisWidth = PRICE_AXIS_WIDTH;
@@ -398,6 +404,8 @@ export class Chart {
       emit: (payload) => this.eventBus.emit('historyLoad', payload),
     });
     this.themeManager = new ThemeManager(options.theme);
+    this.themeManager.setChartType(this.options.chartType ?? 'candlestick');
+    this.applyStyle(startOverrides(options), 'host', false);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
     this.pluginManager = new PluginManager(this.indicatorEngine, { plugins: options.plugins });
@@ -1290,6 +1298,8 @@ export class Chart {
   setChartType(type: ChartType | (string & {})): void {
     const previous = this.options.chartType ?? 'candlestick';
     this.options.chartType = type as ChartType;
+    // The series' own style keys for this type.
+    this.themeManager.setChartType(type as ChartType);
     this.chartRenderer = this.createChartRenderer(type);
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
@@ -1721,9 +1731,13 @@ export class Chart {
     const isPanel = (id: string) => this.indicatorEngine.getIndicatorDescriptor(id)?.placement === 'panel';
     const heir = panel ? members.find(isPanel) ?? null : null;
     this.indicatorEngine.removeIndicator(instanceId);
+    // A pane's own style goes with the pane: to its heir, or away with it.
+    const paneStyle = this.paneStyles.get(instanceId);
+    this.paneStyles.delete(instanceId);
     if (heir) {
       this.indicatorEngine.setPane(heir, null);
       this.layoutManager.renamePanel(instanceId, heir);
+      if (paneStyle) this.paneStyles.set(heir, paneStyle);
     } else {
       this.layoutManager.removePanel(instanceId);
     }
@@ -1740,6 +1754,49 @@ export class Chart {
   /** The colours, line widths and opacity an indicator draws with (a copy), or null. */
   getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
     return this.indicatorEngine.getIndicatorStyle(instanceId);
+  }
+
+  /**
+   * The style indicators of kind `id` start with from now on: colours, line
+   * widths, opacity, each plot's dash and visibility (null: their own
+   * again). Indicators already on the chart keep theirs. Not saved: it is
+   * your app's.
+   */
+  setIndicatorDefaults(id: string, style: IndicatorStyleConfig | null): void {
+    if (!style) {
+      this.indicatorEngine.setStyleDefaults(id, null);
+      return;
+    }
+    const { plots, ...rest } = style;
+    const read = plots !== undefined ? readIndicatorPlotStyles(plots) : undefined;
+    this.indicatorEngine.setStyleDefaults(id, { ...rest, ...(read ? { plots: read } : {}) });
+  }
+
+  /**
+   * An indicator pane's own background and separator, over the panes' style
+   * (`panes.*` overrides); null takes them away. Colours it can't use are
+   * left out. Saved with the pane's indicator, and undone with it.
+   */
+  setPaneStyle(instanceId: string, style: PaneStyle | null): void {
+    const pane = this.paneOf(instanceId);
+    if (!this.layoutManager.getPanels().some((p) => p.id === pane)) return;
+    this.recordIndicators(pane, () => this.setPaneStyleNow(pane, style ? readPaneStyle(style) : null));
+  }
+
+  private setPaneStyleNow(instanceId: string, style: PaneStyle | null): void {
+    if (JSON.stringify(style) === JSON.stringify(this.paneStyles.get(instanceId) ?? null)) return;
+    if (style) this.paneStyles.set(instanceId, style);
+    else this.paneStyles.delete(instanceId);
+    this.panelInfoCache = null;
+    this.syncRenderContext();
+    this.engine.requestRender();
+    this.markStateChanged();
+  }
+
+  /** The own style of the pane `instanceId` is drawn in, or null when it has none. */
+  getPaneStyle(instanceId: string): PaneStyle | null {
+    const style = this.paneStyles.get(this.paneOf(instanceId));
+    return style ? { ...style } : null;
   }
 
   getIndicatorOutput(instanceId: string): IndicatorOutput | null {
@@ -1825,14 +1882,19 @@ export class Chart {
       const readers = new Set(this.indicatorEngine.getDependents(instanceId));
       const staying = members.filter((m) => !readers.has(m));
       const heir = staying.find((m) => this.indicatorEngine.getIndicatorDescriptor(m)?.placement === 'panel') ?? null;
+      // Its pane's own style goes with the pane: to the heir, or away with it.
+      const paneStyle = this.paneStyles.get(instanceId);
+      this.paneStyles.delete(instanceId);
       if (heir) {
         this.indicatorEngine.setPane(heir, null);
         this.layoutManager.renamePanel(instanceId, heir);
+        if (paneStyle) this.paneStyles.set(heir, paneStyle);
         for (const m of staying) if (m !== heir) this.indicatorEngine.setPane(m, heir);
       } else {
         this.layoutManager.removePanel(instanceId);
         for (const m of staying) this.indicatorEngine.setPane(m, null);
       }
+      this.panelInfoCache = null;
       for (const m of members) {
         if (readers.has(m)) this.indicatorEngine.setPane(m, host ?? instanceId);
         changed.add(m);
@@ -2508,13 +2570,18 @@ export class Chart {
     return { id: config.id, params: { ...config.params } };
   }
 
-  /** Update indicator colors/line widths at runtime */
-  updateIndicatorStyle(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
+  /**
+   * An indicator's colours, line widths and opacity, and each plot's own
+   * dash and visibility (`plots`, by plot key, merged into what it had).
+   */
+  updateIndicatorStyle(instanceId: string, style: IndicatorStyleConfig): void {
     this.recordIndicators(instanceId, () => this.updateIndicatorStyleNow(instanceId, style));
   }
 
-  private updateIndicatorStyleNow(instanceId: string, style: { colors?: string[]; lineWidths?: number[]; opacity?: number }): void {
-    this.indicatorEngine.updateIndicatorStyle(instanceId, style);
+  private updateIndicatorStyleNow(instanceId: string, style: IndicatorStyleConfig): void {
+    const { plots, ...rest } = style;
+    const read = plots !== undefined ? readIndicatorPlotStyles(plots) : undefined;
+    this.indicatorEngine.updateIndicatorStyle(instanceId, { ...rest, ...(read ? { plots: read } : {}) });
     this.engine.requestRender();
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'style' });
@@ -3208,13 +3275,89 @@ export class Chart {
     this.themeManager.setTheme(themeOrName);
     this.syncRenderContext();
     this.container.style.backgroundColor = this.themeManager.getTheme().background;
+    this.lastBackground = this.themeManager.getTheme().background;
     this.engine.requestRender();
     this.eventBus.emit('themeChange', { theme: themeOrName });
     this.markStateChanged();
   }
 
+  /**
+   * The theme as set. The style overrides go on it apart: what is drawn
+   * reads back from `getStyleValue` and `getStyle`.
+   */
   getTheme(): Theme {
-    return this.themeManager.getTheme();
+    return this.themeManager.getBaseTheme();
+  }
+
+  // --- Style overrides ---
+
+  /**
+   * Override any part of the chart's look, by key: the grid's lines each way,
+   * the crosshair, the axes, the panes, the legend, the last price, the
+   * volume, the main series as each chart type draws it, and more
+   * (`CHART_STYLE_KEYS` lists them). A value sets a key, `null` takes it away.
+   *
+   * `layer: 'host'` (default) is your app's: kept through theme changes,
+   * never saved. `layer: 'user'` is what the person using the chart chose:
+   * kept with the theme it was made on and saved with `saveState`. The
+   * user's win over the host's. Unknown keys and values are left out with a
+   * warning. Emits `styleChange`.
+   */
+  applyOverrides(patch: ChartStyleOverridesPatch, options: { layer?: StyleLayer } = {}): void {
+    this.applyStyle(patch, options.layer ?? 'host', true);
+  }
+
+  /**
+   * `overrides` in place of all of a layer's (the wrappers' `overrides` prop
+   * does this): keys left out are taken away.
+   */
+  setOverrides(overrides: ChartStyleOverrides, options: { layer?: StyleLayer } = {}): void {
+    const layer = options.layer ?? 'host';
+    const { overrides: read, rejected } = readChartStyleOverrides(overrides);
+    if (rejected.length > 0) console.warn(`Style overrides left out (unknown key or value): ${rejected.join(', ')}`);
+    const values = Object.fromEntries(Object.entries(read).filter(([, v]) => v !== null)) as ChartStyleOverrides;
+    if (this.themeManager.setOverrides(values, layer)) this.styleChanged(layer);
+  }
+
+  /** Take away `keys` from a layer, or all of its overrides without. */
+  resetOverrides(keys?: readonly ChartStyleKey[], options: { layer?: StyleLayer } = {}): void {
+    const layer = options.layer ?? 'host';
+    if (this.themeManager.resetOverrides(layer, keys)) this.styleChanged(layer);
+  }
+
+  /** A layer's overrides (the user's: those for the current theme). */
+  getOverrides(options: { layer?: StyleLayer } = {}): ChartStyleOverrides {
+    return this.themeManager.getOverrides(options.layer ?? 'host');
+  }
+
+  /** The finer looks as resolved from the theme and the overrides. */
+  getStyle(): Readonly<ResolvedChartStyle> {
+    return this.themeManager.getTheme().style!;
+  }
+
+  /** What a key resolves to now: its override, or what it falls back to. */
+  getStyleValue(key: ChartStyleKey): string | number | boolean | null {
+    return this.themeManager.getStyleValue(key);
+  }
+
+  private applyStyle(patch: ChartStyleOverridesPatch, layer: StyleLayer, notify: boolean): void {
+    const { overrides, rejected } = readChartStyleOverrides(patch);
+    if (rejected.length > 0) console.warn(`Style overrides left out (unknown key or value): ${rejected.join(', ')}`);
+    if (this.themeManager.applyOverrides(overrides, layer) && notify) this.styleChanged(layer);
+  }
+
+  private styleChanged(layer: StyleLayer): void {
+    this.syncRenderContext();
+    // The container's background only when the chart's changed: a host's own stays otherwise.
+    const background = this.themeManager.getTheme().background;
+    if (background !== this.lastBackground) {
+      this.container.style.backgroundColor = background;
+      this.lastBackground = background;
+    }
+    this.engine.requestRender();
+    this.eventBus.emit('styleChange', { layer });
+    // The user's are part of the chart's state; the host's are not.
+    if (layer === 'user') this.markStateChanged();
   }
 
   // --- Watermark ---
@@ -4089,9 +4232,11 @@ export class Chart {
     return ChartStateManager.capture(
       {
         getDrawings: () => this.getDrawings(),
-        getTheme: () => this.getTheme(),
+        // The theme as set: the overrides go apart, the user's saved by theme.
+        getTheme: () => this.themeManager.getBaseTheme(),
         getAlerts: () => this.getAlerts(),
         getIndicators: () => this.getIndicatorSetup(),
+        getOverrides: () => this.themeManager.getUserOverrides(),
       },
       { chartType: this.options.chartType, chartTypeOptions: this.getChartTypeOptions(), symbol: this.currentSymbol || undefined },
     );
@@ -4178,12 +4323,19 @@ export class Chart {
 
   /** An indicator's style, visibility and levels as `ind` has them, changing only what differs. */
   private restoreLooks(instanceId: string, ind: SnapshotIndicator): void {
-    const style = this.indicatorEngine.getIndicatorStyle(instanceId);
-    if (ind.style && JSON.stringify({ ...style, ...ind.style }) !== JSON.stringify(style)) this.updateIndicatorStyle(instanceId, ind.style);
+    const { plots: havePlots, ...have } = this.indicatorEngine.getIndicatorStyle(instanceId) ?? { colors: [], lineWidths: [], opacity: 1 };
+    const { plots: wantPlots, ...want } = ind.style ?? {};
+    if (ind.style && JSON.stringify({ ...have, ...want }) !== JSON.stringify(have)) this.updateIndicatorStyle(instanceId, want);
+    // Plot styles are merged by updateIndicatorStyle: here they are put back whole.
+    if (JSON.stringify(wantPlots ?? {}) !== JSON.stringify(havePlots ?? {})) {
+      this.indicatorEngine.setPlotStyles(instanceId, wantPlots ?? null);
+      this.engine.requestRender();
+    }
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
     if ((ind.visible ?? true) !== (config?.visible ?? true)) this.setIndicatorVisible(instanceId, ind.visible ?? true);
     const levels = ind.levels ?? null;
     if (JSON.stringify(levels) !== JSON.stringify(config?.levels ?? null)) this.setIndicatorLevels(instanceId, levels);
+    this.setPaneStyleNow(instanceId, ind.paneStyle ? readPaneStyle(ind.paneStyle) : null);
   }
 
   /** The panes as they were: size first (it opens a fold), then fold, order, maximise. */
@@ -4223,6 +4375,7 @@ export class Chart {
           levels: config?.levels?.slice(),
           pane: ind.pane,
           scale: config?.scale,
+          ...(panel && this.paneStyles.has(ind.instanceId) ? { paneStyle: { ...this.paneStyles.get(ind.instanceId) } } : {}),
           ...(panel
             ? {
                 paneSize: panel.size,
@@ -4348,7 +4501,11 @@ export class Chart {
     this.displayDataCache = null;
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
-    if (snapshot.theme) this.setTheme(snapshot.theme as any);
+    // A save names its theme: a built-in one loads, another (only its name was
+    // kept) leaves the chart's theme as it is.
+    if (snapshot.theme === 'dark' || snapshot.theme === 'light') this.setTheme(snapshot.theme);
+    // The user's overrides as saved. A save from before them (version 1 or 2) leaves them alone.
+    if (snapshot.version >= 3 && this.themeManager.setUserOverrides(snapshot.overrides ?? {})) this.styleChanged('user');
 
     // Indicators get new instance ids: remember old → new for alert channels.
     // Version-1 saves never captured indicators, so they leave them alone.
@@ -4443,7 +4600,7 @@ export class Chart {
 
     // Apply market color scheme to theme
     if (config.colorScheme) {
-      const base = this.themeManager.getTheme();
+      const base = this.themeManager.getBaseTheme();
       const marketTheme: Theme = {
         ...base,
         candleUp: config.colorScheme.up,
@@ -4888,9 +5045,11 @@ export class Chart {
         height: Math.max(0, panel.rect.height - PANEL_HEADER_HEIGHT),
       };
 
+      const style = this.paneStyles.get(panel.config.id);
       return {
         instanceId: panel.config.id,
         members: this.indicatorEngine.getPaneMembers(panel.config.id),
+        ...(style ? { style } : {}),
         rect: panel.rect,
         viewport: {
           ...mainVP,

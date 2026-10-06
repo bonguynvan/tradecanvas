@@ -13,6 +13,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     setSignalMarkerStyle: vi.fn(),
     setTradeZones: vi.fn(),
     setTradeZoneStyle: vi.fn(),
+    setOverrides: vi.fn(),
     setWatermark: vi.fn(),
     on: vi.fn(),
     disconnectStream: vi.fn(),
@@ -55,6 +56,13 @@ describe('<TradeCanvas> (vue)', () => {
     mount(TradeCanvas, { props: { indicators: ['rsi', 'macd'] } });
     expect(chart.addIndicator).toHaveBeenCalledWith('rsi');
     expect(chart.addIndicator).toHaveBeenCalledWith('macd');
+  });
+
+  it('puts the overrides prop on the chart, and changes them with it', async () => {
+    const wrapper = mount(TradeCanvas, { props: { overrides: { 'grid.vertical.visible': false } } });
+    expect(chart.setOverrides).toHaveBeenLastCalledWith({ 'grid.vertical.visible': false });
+    await wrapper.setProps({ overrides: { 'legend.textColor': '#fff' } });
+    expect(chart.setOverrides).toHaveBeenLastCalledWith({ 'legend.textColor': '#fff' });
   });
 
   it('reacts to a chartType prop change', async () => {

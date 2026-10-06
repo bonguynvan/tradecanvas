@@ -21,7 +21,7 @@ export class Watermark {
 
     const { chartRect } = viewport;
     const fontSize = this.config.fontSize ?? 48;
-    const color = this.config.color ?? theme.textSecondary;
+    const color = theme.style?.watermark.color ?? this.config.color ?? theme.textSecondary;
 
     ctx.save();
     ctx.globalAlpha = 0.07;

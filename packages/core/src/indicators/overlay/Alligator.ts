@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { LinePen, isDenseSlots } from '../linePen.js';
+import { plotLook } from '../plots.js';
 
 /**
  * Williams Alligator (Bill Williams) — three smoothed moving averages of the
@@ -71,7 +72,9 @@ export class AlligatorIndicator extends IndicatorBase {
     const { from, to } = viewport.visibleRange;
 
     const drawLine = (key: 'jaw' | 'teeth' | 'lips', color: string) => {
-      const pen = new LinePen(ctx, color, style.lineWidths[0], isDenseSlots(viewport));
+      const look = plotLook(style, key, style.lineWidths[0]);
+      if (!look.visible) return;
+      const pen = new LinePen(ctx, color, style.lineWidths[0], isDenseSlots(viewport), look.dash);
       for (let i = from; i <= to && i < series.length; i++) {
         const val = series[i];
         if (!val || val[key] === undefined) { pen.gap(); continue; }

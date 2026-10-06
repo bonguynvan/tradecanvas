@@ -143,6 +143,95 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> và <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="overrides">Giao diện của biểu đồ: override style</h2>
+<p>
+  Theme đặt màu cho cả biểu đồ. Bất kỳ phần nào biểu đồ vẽ cũng có thể đặt riêng, theo khoá: các đường lưới
+  theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume, đường ngắt phiên và chuỗi chính theo cách
+  từng loại biểu đồ vẽ nó. Khoá nào để nguyên thì theo theme, nên đổi theme vẫn đổi màu mọi thứ bạn không đặt.
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // để bắt đầu
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // mọi loại tăng/giảm đều lấy theo đây
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null bỏ một khoá
+chart.resetOverrides(['grid.horizontal.style'])         // hoặc nêu tên các khoá
+chart.setOverrides({ 'background.color': '#000' })      // cả một lớp một lúc
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': giá trị một khoá ra
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</code></pre>
+
+<h3>Các khoá</h3>
+<table>
+  <thead><tr><th>Khoá</th><th>Đặt gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>Nền biểu đồ (và nền các pane, trừ khi pane có nền riêng).</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>Pane chỉ báo: nền, thanh ở đỉnh pane, tên pane.</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code> (<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — riêng từng chiều.</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Bốn thuộc tính đó cho các đường crosshair (mặc định là nét đứt).</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Pill giá và thời gian trên các trục, và trên thang của pane.</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Đường và nhãn của từng trục (thang của pane lấy theo trục giá).</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Giá trị trong legend, và nhãn của nó (O, H, L, Vol).</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>Đường và nhãn giá cuối; màu theo chuỗi chính nếu không đặt.</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Cột volume.</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Đường ngắt ngày, tuần và tháng.</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Đường cao nhất và thấp nhất, watermark.</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>Chuỗi chính khi được vẽ theo loại đó: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
+      <code>wickDownColor</code> (nến, Heikin-Ashi, nến volume, equivolume), <code>color</code> / <code>lineColor</code>
+      và <code>lineWidth</code> (line, step line, line có điểm, area, HLC area, baseline), <code>topColor</code> và
+      <code>bottomColor</code> (area, HLC area).</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> liệt kê mọi khoá cùng kiểu giá trị của nó, và TypeScript kiểm tra khoá lẫn giá trị
+  ngay khi bạn gõ. Màu tăng/giảm lấy theo <code>series.candlestick.*</code>, màu và độ dày đường lấy theo
+  <code>series.line.*</code>, vùng tô lấy theo <code>series.area.*</code>, rồi đến theme; râu nến lấy màu thân nến khi màu
+  thân đã được đặt. Khoá hay giá trị không hợp lệ bị bỏ qua kèm cảnh báo.
+</p>
+
+<h3>Của ứng dụng và của người dùng</h3>
+<p>
+  Override có hai lớp. Của bạn (<code>layer: 'host'</code>, mặc định) giữ qua mọi lần đổi theme và không bao giờ được
+  lưu. Của người dùng (<code>layer: 'user'</code>) thắng của bạn, được giữ theo theme mà họ đặt — màu chọn trên theme tối
+  quay lại cùng theme tối — và được lưu bằng <code>saveState()</code>. Phần Settings của widget ghi vào lớp người dùng,
+  và nút Reset đưa về màu của theme, theme nào cũng vậy.
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // của người dùng, cho theme hiện tại
+chart.getTheme()                           // theme như đã đặt: override nằm riêng`}</code></pre>
+<p>
+  Các tuỳ chọn lưới và crosshair (<code>grid.hLineColor</code>, <code>crosshair.vLine.style</code>…) là cách viết tắt
+  của các khoá tương ứng. Một lưới nhiều biểu đồ nhận override cho mọi biểu đồ của nó: <code>grid.applyOverrides(patch)</code>.
+  Component React, Vue và Svelte nhận chúng qua prop <code>overrides</code>.
+</p>
+
+<h3>Đường của chỉ báo và pane</h3>
+<pre><code>{`// Kiểu nét và ẩn/hiện riêng của từng đường, theo khoá (màu và độ dày vẫn ở colors / lineWidths)
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// Style mà mọi chỉ báo cùng loại bắt đầu với, từ nay
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// Nền và đường phân cách riêng của một pane, lưu cùng chỉ báo của nó
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  Đường bị ẩn không có nhãn giá trị và không có giá trị trong legend. Mọi chỉ báo đều bỏ qua đường bị ẩn, và
+  hầu hết nhận kiểu nét của các đường; vài chỉ báo vẽ hình riêng (chấm Parabolic SAR, Supertrend, Zig Zag,
+  volume profile) giữ nét vẽ của mình.
+</p>
+
 <h2>Nhãn trên biểu đồ</h2>
 <p>
   Widget chuyển <code>tagRadius</code> cho biểu đồ của nó (hình dạng đặt trong <code>chartOptions.shapes</code> được
@@ -156,7 +245,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Màu volume</h2>
 <p>
-  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến, và một theme dựa trên preset chỉ đổi <code>candleUp</code> / <code>candleDown</code> cũng có volume theo màu đó.
+  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> (hoặc các khoá <code>volume.*</code>) của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến, và một theme dựa trên preset chỉ đổi <code>candleUp</code> / <code>candleDown</code> cũng có volume theo màu đó.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

@@ -1,7 +1,7 @@
 import { LayerType } from '@tradecanvas/commons';
-import type { Size, ViewportState, Theme, DataSeries, Rect } from '@tradecanvas/commons';
+import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice, lineDash } from '@tradecanvas/commons';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
@@ -12,7 +12,9 @@ import type { GpuBackground, GpuDrawn, GpuRecorder, GpuRenderer } from './gpu.js
 import { canvasPlan, recordSteps, type DrawStep, type PaneSteps, type StepPlan } from './plotSteps.js';
 import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
-import type { GridRenderer } from '../axis/GridRenderer.js';
+import { gridFitsGpu, type GridRenderer } from '../axis/GridRenderer.js';
+import { crosshairLooks } from '../interaction/crosshairLooks.js';
+import { crispX, crispY } from '../charts/pixelGrid.js';
 import type { PriceAxis } from '../axis/PriceAxis.js';
 import type { TimeAxis } from '../axis/TimeAxis.js';
 import type { CrosshairHandler } from '../interaction/CrosshairHandler.js';
@@ -56,6 +58,8 @@ export interface PanelRenderInfo {
   members?: string[];
   rect: Rect;
   viewport: ViewportState;
+  /** Its own background and separator, over the panes' style. */
+  style?: PaneStyle;
 }
 
 export interface RenderContext {
@@ -368,7 +372,9 @@ export class RenderEngine {
     const recorder = gpu.recorder?.(dpr, scene) ?? null;
     const recorded = recorder ? recordSteps(recorder, viewport.chartRect, plot, panes) : canvasPlan(plot);
     const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
-    const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack ? null : {
+    // A grid the GPU can't draw as it looks (dashed, wider, two colours) takes the background to Canvas 2D.
+    const gridOn2d = !!ctx.gridRenderer?.isVisible() && !gridFitsGpu(theme);
+    const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack || gridOn2d ? null : {
       grid: ctx.gridRenderer?.isVisible() ?? false,
       rects: [...(ctx.sessionShading?.rects(data, viewport, theme) ?? []), ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? [])],
     };
@@ -481,7 +487,7 @@ export class RenderEngine {
         rect,
         inner: { x: rect.x, y: rect.y + PANEL_HEADER_HEIGHT, width: rect.width, height: rect.height - PANEL_HEADER_HEIGHT },
         background: (c) => {
-          c.fillStyle = theme.background;
+          c.fillStyle = panel.style?.background ?? theme.style?.panes.background ?? theme.background;
           c.fillRect(rect.x, rect.y, rect.width, rect.height);
         },
         steps,
@@ -501,9 +507,11 @@ export class RenderEngine {
     // Build descriptor lookup once per frame — avoids O(n*m) .find() per panel
     const descMap = this.panelDescriptors(indicatorEngine);
 
+    const paneStyles = new Map(ctx.panels.map((p) => [p.instanceId, p.style]));
     for (const pane of panes) {
       const { rect, inner } = pane;
       const gpu = plan.panes.get(pane.id);
+      const own = paneStyles.get(pane.id);
       c.save();
       c.beginPath();
       c.rect(rect.x, rect.y, rect.width, rect.height);
@@ -512,11 +520,11 @@ export class RenderEngine {
       if (!gpu?.background) pane.background(c);
 
       // Thick divider bar at top of panel
-      c.fillStyle = theme.axisLine;
+      c.fillStyle = own?.separator ?? theme.style?.panes.separator ?? theme.axisLine;
       c.fillRect(rect.x, rect.y, rect.width, 3);
 
       // Panel indicator name in header area
-      c.fillStyle = theme.textSecondary;
+      c.fillStyle = theme.style?.panes.title ?? theme.textSecondary;
       c.font = panelFont;
       c.textBaseline = 'top';
       c.textAlign = 'left';
@@ -541,7 +549,7 @@ export class RenderEngine {
     const { viewport, data } = ctx;
     const { chartRect } = viewport;
     const tags: FixedAxisTag[] = [];
-    const last = ctx.currentPriceLine?.isVisible() ? ctx.currentPriceLine.getPrice() : null;
+    const last = ctx.currentPriceLine?.isVisible() && ctx.theme.style?.lastPrice.visible !== false ? ctx.currentPriceLine.getPrice() : null;
     if (last !== null && last !== undefined) tags.push({ y: priceToY(last, viewport), half: 10 });
     for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
     for (const y of ctx.tradingRenderer?.axisTagYs(viewport) ?? []) tags.push({ y, half: 9 });
@@ -609,8 +617,11 @@ export class RenderEngine {
 
       const axisX = pr.x + pr.width;
       const insetRect = pv.chartRect; // already inset by header
+      // A pane's value scale looks as the price scale does.
+      const axisLine = theme.style?.axis.price.line ?? theme.axisLine;
+      const axisText = theme.style?.axis.price.text ?? theme.axisLabel;
 
-      c.strokeStyle = theme.axisLine;
+      c.strokeStyle = axisLine;
       c.lineWidth = 1;
       c.beginPath();
       c.moveTo(axisX + 0.5, pr.y);
@@ -630,12 +641,12 @@ export class RenderEngine {
         const val = Math.abs(tick) < step * 1e-6 ? 0 : tick;
         const y = priceToY(val, pv);
         if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
-        c.strokeStyle = theme.axisLine;
+        c.strokeStyle = axisLine;
         c.beginPath();
         c.moveTo(axisX, Math.round(y) + 0.5);
         c.lineTo(axisX + 4, Math.round(y) + 0.5);
         c.stroke();
-        c.fillStyle = theme.axisLabel;
+        c.fillStyle = axisText;
         c.fillText(priceScaleText(val, pv, precision, locale), axisX + 6, y);
       }
 
@@ -676,21 +687,31 @@ export class RenderEngine {
       const snappedIdx = Math.max(0, Math.min((ctx.data?.length ?? 1) - 1, Math.round(barIdx)));
       const cx = barIndexToX(snappedIdx, pv);
 
+      const looks = crosshairLooks(theme);
       c.save();
       c.beginPath();
       c.rect(pr.x, pr.y, pr.width, pr.height);
       c.clip();
-      c.setLineDash([4, 4]);
-      c.strokeStyle = theme.crosshair;
-      c.lineWidth = 1;
-      c.beginPath();
-      c.moveTo(Math.round(cx) + 0.5, pr.y);
-      c.lineTo(Math.round(cx) + 0.5, pr.y + pr.height);
-      c.stroke();
-      c.beginPath();
-      c.moveTo(pr.x, Math.round(cursorPos.y) + 0.5);
-      c.lineTo(pr.x + pr.width, Math.round(cursorPos.y) + 0.5);
-      c.stroke();
+      if (looks.vertical.visible) {
+        c.setLineDash(lineDash(looks.vertical.style, [4, 4], looks.vertical.width));
+        c.strokeStyle = looks.vertical.color;
+        const column = crispX(c, cx, looks.vertical.width);
+        c.lineWidth = column.width;
+        c.beginPath();
+        c.moveTo(column.x, pr.y);
+        c.lineTo(column.x, pr.y + pr.height);
+        c.stroke();
+      }
+      if (looks.horizontal.visible) {
+        c.setLineDash(lineDash(looks.horizontal.style, [4, 4], looks.horizontal.width));
+        c.strokeStyle = looks.horizontal.color;
+        const row = crispY(c, cursorPos.y, looks.horizontal.width);
+        c.lineWidth = row.width;
+        c.beginPath();
+        c.moveTo(pr.x, row.y);
+        c.lineTo(pr.x + pr.width, row.y);
+        c.stroke();
+      }
       c.setLineDash([]);
       c.restore();
       break;
@@ -720,9 +741,10 @@ export class RenderEngine {
         c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
         const tw = c.measureText(valText).width;
         const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
-        c.fillStyle = theme.crosshair;
+        const looks = crosshairLooks(theme);
+        c.fillStyle = looks.labelBackground;
         fillTag(c, axisX + 1, cursorPos.y - 9, badgeW, 18, theme);
-        c.fillStyle = theme.background;
+        c.fillStyle = looks.labelText;
         c.textBaseline = 'middle';
         c.textAlign = 'left';
         c.fillText(valText, axisX + 5, cursorPos.y);

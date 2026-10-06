@@ -353,6 +353,46 @@ widget loads no fonts, so load the families a look names. Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
 
+## The chart's look by key
+
+```ts
+import { Chart, CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  theme: 'dark',
+  overrides: { 'grid.vertical.visible': false },   // the host's layer, from the start
+});
+
+// Any key of CHART_STYLE_KEYS; up/down colours fall back to series.candlestick.*
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'lastPrice.style': 'solid',
+});
+chart.applyOverrides({ 'lastPrice.style': null });          // null takes a key away
+
+// What the user picks: kept with the theme it was picked on, saved with saveState()
+chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' });
+
+const macd = chart.addIndicator('macd', {});
+if (macd) {
+  chart.updateIndicatorStyle(macd, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } });
+  chart.setPaneStyle(macd, { separator: '#f2a93b' });
+}
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] });
+
+const keys = Object.keys(CHART_STYLE_KEYS) as ChartStyleKey[];
+console.log(keys.length, chart.getStyleValue('series.bar.upColor'), chart.getStyle().grid.vertical.visible);
+chart.on('styleChange', (e) => console.log(e.payload.layer));
+```
+
+`getTheme()` is the theme as set; the overrides go on it apart, so
+`setTheme(getTheme())` never bakes them in. The host's layer stays through
+theme switches and is never saved. A grid of charts takes them for every
+chart with `grid.applyOverrides(patch)`.
+
 ## Watchlists with live quotes, and a tick chart
 
 ```ts

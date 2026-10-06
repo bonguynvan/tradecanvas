@@ -26,7 +26,7 @@ export class TimeAxis {
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
 
     // Subtle horizontal divider
-    ctx.strokeStyle = theme.axisLine;
+    ctx.strokeStyle = theme.style?.axis.time.line ?? theme.axisLine;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
     ctx.beginPath();
@@ -58,7 +58,7 @@ export class TimeAxis {
     ctx.font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
-    ctx.fillStyle = theme.axisLabel;
+    ctx.fillStyle = theme.style?.axis.time.text ?? theme.axisLabel;
 
     // Daily-or-larger bars carry dates (with the year); intraday ones show the
     // day where it changes and the time elsewhere, a midnight bar included.

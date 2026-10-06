@@ -337,6 +337,17 @@ const es: SiteMessages = {
         'Terminal es denso y cuadrado: etiquetas en mayúsculas y una línea bajo la temporalidad elegida',
       ],
     },
+    overrides: {
+      title: 'Overrides de estilo',
+      stat: '89 claves',
+      blurb:
+        'Cualquier parte del aspecto del gráfico por clave, aparte del tema: la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último precio, el volumen y los colores de cada tipo de gráfico. Aquí la cuadrícula vertical está apagada, la horizontal punteada, el crosshair continuo, y la línea de señal del MACD discontinua en un panel con su propio separador.',
+      tryThis: [
+        'Cambia el tipo de gráfico: las barras y Heikin-Ashi toman los colores de las velas si no tienen los suyos',
+        'Cambia el tema del sitio: lo que no tiene override lo sigue',
+        'Abre los Ajustes y elige un color: va a la capa del usuario, guardado con el tema',
+      ],
+    },
     markets: {
       title: 'Listas de seguimiento y mercado',
       stat: 'cotizaciones en vivo',

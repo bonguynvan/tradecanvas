@@ -335,6 +335,17 @@ const tr: SiteMessages = {
         'Terminal sık ve köşelidir: büyük harfli etiketler ve seçili zaman diliminin altında bir çizgi',
       ],
     },
+    overrides: {
+      title: 'Stil geçersiz kılmaları',
+      stat: '89 anahtar',
+      blurb:
+        'Grafiğin görünümünün herhangi bir parçası, temadan ayrı olarak anahtarla: her yöndeki ızgara, artı imleç, eksenler, paneller, açıklama, son fiyat, hacim ve her grafik türünün renkleri. Burada dikey ızgara kapalı, yatay ızgara noktalı, artı imleç düz ve MACD’nin sinyal çizgisi kendi ayırıcısı olan bir panelde kesik çizgili.',
+      tryThis: [
+        'Grafik türünü değiştirin: barlar ve Heikin-Ashi kendi renkleri yoksa mumların renklerini alır',
+        'Sitenin temasını değiştirin: geçersiz kılınmayan her şey onu izler',
+        'Ayarları açıp bir renk seçin: kullanıcının katmanına gider, temayla birlikte saklanır',
+      ],
+    },
     markets: {
       title: 'İzleme listeleri ve piyasa',
       stat: 'canlı fiyatlar',

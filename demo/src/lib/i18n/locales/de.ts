@@ -335,6 +335,17 @@ const de: SiteMessages = {
         'Terminal ist dicht und eckig: Beschriftungen in Großbuchstaben und eine Linie unter der gewählten Zeiteinheit',
       ],
     },
+    overrides: {
+      title: 'Style-Overrides',
+      stat: '89 Schlüssel',
+      blurb:
+        'Jeder Teil des Chart-Aussehens per Schlüssel, unabhängig vom Theme: das Raster je Richtung, das Fadenkreuz, die Achsen, die Panes, die Legende, der letzte Kurs, das Volumen und die Farben jedes Charttyps. Hier ist das vertikale Raster aus, das horizontale gepunktet, das Fadenkreuz durchgezogen und die Signallinie des MACD gestrichelt in einem Pane mit eigenem Trenner.',
+      tryThis: [
+        'Wechseln Sie den Charttyp: Balken und Heikin-Ashi nehmen die Farben der Kerzen, solange sie keine eigenen haben',
+        'Wechseln Sie das Theme der Seite: Was nicht überschrieben ist, folgt ihm',
+        'Öffnen Sie die Einstellungen und wählen Sie eine Farbe: Sie landet in der Ebene des Nutzers, beim Theme gespeichert',
+      ],
+    },
     markets: {
       title: 'Beobachtungslisten und Markt',
       stat: 'Live-Kurse',

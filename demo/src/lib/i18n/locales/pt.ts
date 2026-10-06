@@ -335,6 +335,17 @@ const pt: SiteMessages = {
         'O Terminal é denso e quadrado: rótulos em maiúsculas e uma linha sob o tempo gráfico selecionado',
       ],
     },
+    overrides: {
+      title: 'Overrides de estilo',
+      stat: '89 chaves',
+      blurb:
+        'Qualquer parte da aparência do gráfico por chave, à parte do tema: a grade em cada direção, a cruz, os eixos, os painéis, a legenda, o último preço, o volume e as cores de cada tipo de gráfico. Aqui a grade vertical está desligada, a horizontal pontilhada, a cruz contínua, e a linha de sinal do MACD tracejada num painel com separador próprio.',
+      tryThis: [
+        'Troque o tipo de gráfico: barras e Heikin-Ashi usam as cores dos candles se não tiverem as suas',
+        'Troque o tema do site: o que não tem override o acompanha',
+        'Abra as Configurações e escolha uma cor: ela vai para a camada do usuário, guardada com o tema',
+      ],
+    },
     markets: {
       title: 'Listas de observação e mercado',
       stat: 'cotações ao vivo',

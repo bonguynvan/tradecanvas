@@ -1,5 +1,5 @@
 import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
-import { timeframeBucketStart } from '@tradecanvas/commons';
+import { timeframeBucketStart, lineDash } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
@@ -83,20 +83,30 @@ export class SessionVWAPIndicator extends IndicatorBase {
     // Bands first (fainter, behind the VWAP line).
     ctx.globalAlpha = 0.55;
     ctx.lineWidth = 1;
-    ctx.setLineDash([4, 3]);
     ctx.strokeStyle = style.colors[1] ?? style.colors[0];
+    // Each band dashed unless its plot style says otherwise, and left out when hidden.
+    const band = (key: string) => {
+      const own = style.plots?.[key];
+      if (own?.visible === false) return;
+      ctx.setLineDash(own?.lineStyle ? lineDash(own.lineStyle, [4, 3], 1) : [4, 3]);
+      this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v[key]);
+    };
     for (let b = 1; b <= 3; b++) {
-      this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v[`u${b}`]);
-      this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v[`l${b}`]);
+      band(`u${b}`);
+      band(`l${b}`);
     }
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
 
     // VWAP line on top.
+    const vwap = style.plots?.value;
+    if (vwap?.visible === false) return;
     ctx.strokeStyle = style.colors[0];
     ctx.lineWidth = style.lineWidths[0];
     ctx.lineJoin = 'round';
+    ctx.setLineDash(lineDash(vwap?.lineStyle ?? 'solid', [6, 4], style.lineWidths[0]));
     this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v.value);
+    ctx.setLineDash([]);
   }
 
   /** Stroke a single series accessor, breaking the path at each session reset. */

@@ -39,7 +39,7 @@ Streams live Binance data by default. Pass `:data="bars"` for static OHLC, or `:
 
 ## Props & events
 
-Props: `symbol`, `timeframe`, `theme`, `chartType`, `indicators`, `data`, `adapter`, `historyLimit`, `features`, `autoScale`, `signalMarkers`, `signalMarkerStyle`, `tradeZones`, `tradeZoneStyle`, `watermarkText`.
+Props: `symbol`, `timeframe`, `theme`, `chartType`, `indicators`, `data`, `adapter`, `historyLimit`, `features`, `autoScale`, `signalMarkers`, `signalMarkerStyle`, `tradeZones`, `tradeZoneStyle`, `overrides` (style overrides by key, all of your app's), `watermarkText`.
 
 Events: `@ready="(chart) => …"`, `@crosshairMove="(payload) => …"`.
 

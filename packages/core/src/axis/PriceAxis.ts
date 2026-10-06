@@ -63,7 +63,7 @@ export class PriceAxis {
 
     // Subtle vertical divider — single pixel, less assertive than a solid axis
     // line, for a calmer frame.
-    ctx.strokeStyle = theme.axisLine;
+    ctx.strokeStyle = theme.style?.axis.price.line ?? theme.axisLine;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
     ctx.beginPath();
@@ -95,7 +95,7 @@ export class PriceAxis {
 
     // Tiny tick marks (3px notch) — gives the axis structure without the heavy
     // background rectangles that the previous implementation drew per label.
-    ctx.strokeStyle = theme.axisLine;
+    ctx.strokeStyle = theme.style?.axis.price.line ?? theme.axisLine;
     ctx.globalAlpha = 0.45;
     ctx.beginPath();
     const tick = left ? -1 : 1;
@@ -107,7 +107,7 @@ export class PriceAxis {
     ctx.globalAlpha = 1;
 
     // Text labels — single fillStyle pass.
-    ctx.fillStyle = theme.axisLabel;
+    ctx.fillStyle = theme.style?.axis.price.text ?? theme.axisLabel;
     for (const { y, text } of labels) {
       ctx.fillText(text, axisX + 8 * tick, y);
     }

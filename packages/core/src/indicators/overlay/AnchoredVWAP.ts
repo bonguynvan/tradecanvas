@@ -4,6 +4,7 @@ import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { LinePen, isDenseSlots } from '../linePen.js';
+import { plotLook } from '../plots.js';
 
 /**
  * Anchored VWAP — VWAP that resets at a chosen anchor.
@@ -56,7 +57,9 @@ export class AnchoredVWAPIndicator extends IndicatorBase {
     if (!series) return;
     const { from, to } = viewport.visibleRange;
 
-    const pen = new LinePen(ctx, style.colors[0], style.lineWidths[0], isDenseSlots(viewport));
+    const look = plotLook(style, 'value', style.lineWidths[0]);
+    if (!look.visible) return;
+    const pen = new LinePen(ctx, style.colors[0], style.lineWidths[0], isDenseSlots(viewport), look.dash);
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
       if (!val || val.value === undefined) continue;

@@ -101,12 +101,18 @@ export class PinnedTooltip {
     this.timeEl.textContent = `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 
-    this.ohlcEl.innerHTML = `
-      <span style="opacity:.6">O </span><span style="color:${color}">${this.fmt(bar.open)}</span>
-      <span style="opacity:.6"> H </span><span style="color:${color}">${this.fmt(bar.high)}</span>
-      <span style="opacity:.6"> L </span><span style="color:${color}">${this.fmt(bar.low)}</span>
-      <span style="opacity:.6"> C </span><span style="color:${color}">${this.fmt(bar.close)}</span>
-    `;
+    // Built as nodes: the colours are set as style values, never parsed as markup.
+    const parts: Node[] = [];
+    for (const [label, value] of [['O ', bar.open], [' H ', bar.high], [' L ', bar.low], [' C ', bar.close]] as const) {
+      const name = document.createElement('span');
+      name.style.opacity = '.6';
+      name.textContent = label;
+      const number = document.createElement('span');
+      number.style.color = color;
+      number.textContent = this.fmt(value);
+      parts.push(name, number);
+    }
+    this.ohlcEl.replaceChildren(...parts);
 
     const isDark = isDarkColor(theme.background);
     this.el.style.background = withAlpha(theme.background, isDark ? 0.96 : 0.97);

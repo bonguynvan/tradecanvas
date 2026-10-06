@@ -36,7 +36,10 @@
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>18 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
-    <tr><td><code>setTheme(name)</code></td><td>組み込みテーマを切り替えます。</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>組み込みテーマを切り替えるか、独自のテーマを設定します。<code>getTheme()</code> は設定したとおりに返します。</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>チャートの任意の部分をキーでスタイル設定（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）。<code>null</code> でキーを外します。<a href={href('/docs/styling#overrides')}>スタイル</a>を参照。</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>レイヤーをまるごと置き換え。キー（またはすべて）を外す。</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>レイヤーのオーバーライド、解決された見た目、キーの最終的な値。</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>表示中の時間足を切り替え、ライブストリームを接続し直します。</td></tr>
   </tbody>
 </table>
@@ -59,6 +62,9 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>オーバーレイ型またはパネル型のインジケーターを追加し、インスタンス id を返します。</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>表示中のインジケーターを変更します。</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>色、線の太さ、不透明度、そしてプロットごとの線種と表示（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>これから追加する同じ種類のインジケーターの初期スタイル。</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>ペイン独自の見た目。インジケーターとともに保存。</td></tr>
   </tbody>
 </table>
 
@@ -674,6 +680,7 @@ const grid = new ChartWidgetGrid(host, {
 
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // ほかのチャートをアクティブなチャートにそろえる
+grid.applyOverrides({ 'grid.vertical.visible': false })   // すべてのチャートの見た目と、あとから追加するチャートにも
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

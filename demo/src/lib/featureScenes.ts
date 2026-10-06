@@ -357,6 +357,45 @@ widget.setUI({
     data: (symbol) => generateBars(900, symbol, HOUR, 120),
   },
   {
+    id: 'overrides',
+    code: `chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',    // every up/down type falls back to it
+  'series.candlestick.downColor': '#ef5350',
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'lastPrice.style': 'solid',
+})
+chart.updateIndicatorStyle(macd, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setPaneStyle(macd, { separator: '#f2a93b' })
+chart.getStyleValue('series.bar.upColor')     // '#26a69a'`,
+    options: () => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO', 'ALPHA', 'BETA'],
+      timeframe: '1h',
+      chartOptions: {
+        // Colours that read on the dark and the light theme alike.
+        overrides: {
+          'series.candlestick.upColor': '#26a69a',
+          'series.candlestick.downColor': '#ef5350',
+          'grid.vertical.visible': false,
+          'grid.horizontal.style': 'dotted',
+          'crosshair.vertical.style': 'solid',
+          'crosshair.horizontal.style': 'solid',
+          'lastPrice.style': 'solid',
+        },
+      },
+      onReady: (chart) => {
+        chart.addIndicator('ema', { period: 50 });
+        const macd = chart.addIndicator('macd', {});
+        if (!macd) return;
+        chart.updateIndicatorStyle(macd, { plots: { signal: { lineStyle: 'dashed' } } });
+        chart.setPaneStyle(macd, { separator: '#f2a93b' });
+      },
+    }),
+    data: (symbol) => generateBars(900, symbol, HOUR, 120),
+  },
+  {
     id: 'markets',
     code: `new ChartWidget(host, {
   adapter: new BinanceAdapter(),        // quotes for every row

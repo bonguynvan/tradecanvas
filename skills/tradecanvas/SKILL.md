@@ -187,6 +187,12 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
 
+One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertical.visible': false,
+'series.candlestick.upColor': '#26a69a' })` (keys in `CHART_STYLE_KEYS`, `null` takes one away;
+`overrides` in the options and the React/Vue/Svelte props). `getTheme()` is the theme as set; what
+is drawn reads back from `getStyleValue(key)`. Each indicator plot's dash and visibility:
+`updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`.
+
 ## When something looks wrong
 
 | Symptom | Check |

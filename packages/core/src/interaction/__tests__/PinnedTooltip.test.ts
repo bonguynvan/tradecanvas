@@ -13,4 +13,15 @@ describe('PinnedTooltip', () => {
     tooltip.pin({ time: Date.UTC(2026, 2, 4, 23, 30), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, DARK_THEME);
     expect(host.textContent).toContain('3/5 08:30');
   });
+
+  it('puts the values in as text, whatever the theme colours hold', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    const hostile = { ...DARK_THEME, candleUp: 'red"><img src=x onerror=alert(1)>' };
+    tooltip.pin({ time: Date.UTC(2026, 2, 4), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, hostile);
+    expect(host.querySelector('img')).toBeNull();
+    expect(host.textContent).toContain('O');
+    expect(host.textContent).toContain('1.50');
+  });
 });

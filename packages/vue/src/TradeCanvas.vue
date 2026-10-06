@@ -21,6 +21,7 @@ import type {
   SignalMarkerStyle,
   TradeZoneStyle,
   DataAdapter,
+  ChartStyleOverrides,
 } from '@tradecanvas/chart';
 
 const props = withDefaults(
@@ -39,6 +40,8 @@ const props = withDefaults(
     signalMarkerStyle?: SignalMarkerStyle;
     tradeZones?: TradeZone[];
     tradeZoneStyle?: TradeZoneStyle;
+    /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
+    overrides?: ChartStyleOverrides;
     watermarkText?: string;
   }>(),
   {
@@ -130,6 +133,7 @@ onMounted(() => {
   if (props.signalMarkerStyle) chart.setSignalMarkerStyle(props.signalMarkerStyle);
   if (props.tradeZones) chart.setTradeZones(props.tradeZones);
   if (props.tradeZoneStyle) chart.setTradeZoneStyle(props.tradeZoneStyle);
+  if (props.overrides) chart.setOverrides(props.overrides);
 
   emit('ready', chart);
 });
@@ -182,4 +186,6 @@ watch(() => props.signalMarkers, (m) => { if (m) chart?.setSignalMarkers(m); }, 
 watch(() => props.signalMarkerStyle, (s) => { if (s) chart?.setSignalMarkerStyle(s); }, { deep: true });
 watch(() => props.tradeZones, (z) => { if (z) chart?.setTradeZones(z); }, { deep: true });
 watch(() => props.tradeZoneStyle, (s) => { if (s) chart?.setTradeZoneStyle(s); }, { deep: true });
+// All of the host's overrides: keys left out of the prop are taken away.
+watch(() => props.overrides, (o) => { chart?.setOverrides({ ...o }); }, { deep: true });
 </script>

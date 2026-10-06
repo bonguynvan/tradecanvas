@@ -18,6 +18,7 @@ import type {
   TradeZoneStyle,
   DataAdapter,
   StreamConfig,
+  ChartStyleOverrides,
 } from '@tradecanvas/chart';
 
 export interface TradeCanvasRef {
@@ -41,6 +42,8 @@ export interface TradeCanvasProps {
   signalMarkerStyle?: SignalMarkerStyle;
   tradeZones?: TradeZone[];
   tradeZoneStyle?: TradeZoneStyle;
+  /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
+  overrides?: ChartStyleOverrides;
   watermarkText?: string;
   onReady?: (chart: Chart) => void;
   onCrosshairMove?: (payload: unknown) => void;
@@ -71,6 +74,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       signalMarkerStyle,
       tradeZones,
       tradeZoneStyle,
+      overrides,
       watermarkText,
       onReady,
       onCrosshairMove,
@@ -205,6 +209,15 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
     useEffect(() => {
       if (tradeZoneStyle) chartRef.current?.setTradeZoneStyle(tradeZoneStyle);
     }, [tradeZoneStyle]);
+
+    // All of the host's overrides: keys left out of the prop are taken away.
+    // Without the prop, overrides set through the chart itself are left alone.
+    const overridesGiven = useRef(false);
+    useEffect(() => {
+      if (overrides === undefined && !overridesGiven.current) return;
+      overridesGiven.current = overrides !== undefined;
+      chartRef.current?.setOverrides(overrides ?? {});
+    }, [overrides]);
 
     useEffect(() => {
       const chart = chartRef.current;

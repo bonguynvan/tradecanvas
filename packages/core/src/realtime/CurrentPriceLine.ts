@@ -1,6 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
 import { fillTag } from '../ui/shapes.js';
 
 /**
@@ -45,7 +45,8 @@ export class CurrentPriceLine {
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    if (!this.visible || this.price === null) return;
+    const look = theme.style?.lastPrice;
+    if (!this.visible || this.price === null || look?.visible === false) return;
 
     const y = priceToY(this.price, viewport);
     const { chartRect } = viewport;
@@ -53,13 +54,14 @@ export class CurrentPriceLine {
     if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
 
     const isUp = this.previousClose !== null ? this.price >= this.previousClose : true;
-    const color = isUp ? (theme.candleUp ?? '#1fa874') : (theme.candleDown ?? '#e8505b');
+    const color = isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b');
     const isFlashing = Date.now() < this.flashUntil;
 
-    // Dashed price line
-    ctx.setLineDash([4, 3]);
+    // Dashed price line (unless its style says otherwise)
+    const width = look?.width ?? 1;
+    ctx.setLineDash(lineDash(look?.style ?? 'dashed', [4, 3], width));
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = width;
     ctx.globalAlpha = isFlashing ? 1 : 0.7;
     ctx.beginPath();
     ctx.moveTo(chartRect.x, Math.round(y) + 0.5);

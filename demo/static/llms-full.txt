@@ -222,6 +222,12 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
 
+One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertical.visible': false,
+'series.candlestick.upColor': '#26a69a' })` (keys in `CHART_STYLE_KEYS`, `null` takes one away;
+`overrides` in the options and the React/Vue/Svelte props). `getTheme()` is the theme as set; what
+is drawn reads back from `getStyleValue(key)`. Each indicator plot's dash and visibility:
+`updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`.
+
 ## When something looks wrong
 
 | Symptom | Check |
@@ -597,6 +603,46 @@ The look changes shapes and sizes only; colours stay with `theme`. The
 widget loads no fonts, so load the families a look names. Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
+
+## The chart's look by key
+
+```ts
+import { Chart, CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  theme: 'dark',
+  overrides: { 'grid.vertical.visible': false },   // the host's layer, from the start
+});
+
+// Any key of CHART_STYLE_KEYS; up/down colours fall back to series.candlestick.*
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'lastPrice.style': 'solid',
+});
+chart.applyOverrides({ 'lastPrice.style': null });          // null takes a key away
+
+// What the user picks: kept with the theme it was picked on, saved with saveState()
+chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' });
+
+const macd = chart.addIndicator('macd', {});
+if (macd) {
+  chart.updateIndicatorStyle(macd, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } });
+  chart.setPaneStyle(macd, { separator: '#f2a93b' });
+}
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] });
+
+const keys = Object.keys(CHART_STYLE_KEYS) as ChartStyleKey[];
+console.log(keys.length, chart.getStyleValue('series.bar.upColor'), chart.getStyle().grid.vertical.visible);
+chart.on('styleChange', (e) => console.log(e.payload.layer));
+```
+
+`getTheme()` is the theme as set; the overrides go on it apart, so
+`setTheme(getTheme())` never bakes them in. The host's layer stays through
+theme switches and is never saved. A grid of charts takes them for every
+chart with `grid.applyOverrides(patch)`.
 
 ## Watchlists with live quotes, and a tick chart
 
@@ -1438,6 +1484,28 @@ chart.setTheme({
   background: '#0a0a0f',
 })
 ```
+
+### Style overrides
+
+Any one part of what the chart draws can be set apart from the theme, by key — the grid's lines each way, the crosshair, the axes, the panes, the legend, the last price, the volume and the main series as each chart type draws it. Keys left alone follow the theme. Your app's overrides stay through theme switches; the user's (`layer: 'user'`, what the widget's Settings write) are kept per theme and saved with `saveState()`.
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // every up/down chart type falls back to it
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// Indicator plots and panes
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop.
 
 ### Events
 

@@ -3,6 +3,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam, getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { lineDash } from '@tradecanvas/commons';
 
 /**
  * Chandelier Exit (Chuck LeBeau) — ATR-based trailing stop levels.
@@ -63,11 +64,14 @@ export class ChandelierExitIndicator extends IndicatorBase {
     const { from, to } = viewport.visibleRange;
 
     const drawLine = (key: 'long' | 'short', color: string) => {
+      // Its plots are dashed unless their style says otherwise.
+      const own = style.plots?.[key];
+      if (own?.visible === false) return;
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = style.lineWidths[0];
       ctx.lineJoin = 'round';
-      ctx.setLineDash([5, 3]);
+      ctx.setLineDash(own?.lineStyle ? lineDash(own.lineStyle, [5, 3], style.lineWidths[0]) : [5, 3]);
       let started = false;
       for (let i = from; i <= to && i < series.length; i++) {
         const val = series[i];

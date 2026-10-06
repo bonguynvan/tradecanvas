@@ -141,6 +141,8 @@ On connect, the chart:
 1. **Plugin registration model** → **global + constructor + instance.** `registerPlugin()` populates a global default registry inherited by every chart; `new Chart(el, { plugins })` and `chart.plugins.register()` scope per-instance. Implemented in `library/src/plugins/{registry,PluginManager,contracts}.ts`.
 2. **Execution state ownership** → **adapter is the source of truth.** The chart holds no trading state; it routes intents to the adapter and renders the `orders`/`positions` the adapter emits. Implemented as the `ExecutionAdapter` contract (`commons/types/execution.ts`) + `PaperExecutionAdapter` reference (`core/trading`).
 
+3. **Style override keys** → **the names in `CHART_STYLE_KEYS` are 1.x contracts.** A key is never renamed or dropped in 1.x without the old name kept working as an alias; new keys are additive. The resolved `theme.style` is read by the built-in renderers; plugins may read it but needn't (a theme without it draws as before). The user's layer is saved per theme name in snapshot version 3. Implemented in `commons/src/types/style.ts` and `commons/src/utils/chartStyle.ts`.
+
 Phases 1–2 build on these frozen contracts:
 - **Phase 1** — `WebSocketAdapter` / `PollingAdapter` base classes + Coinbase/Bybit/Kraken; render-time consumption of `ChartTypePlugin` / `OverlayPlugin`.
 - **Phase 2** — `chart.connectExecution(adapter)` wiring (route intents → adapter, subscribe adapter → `setOrders`/`setPositions`), drag-to-create orders, alerts→automation.

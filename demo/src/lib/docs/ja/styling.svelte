@@ -143,6 +143,95 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>、<code>data-tcw-intervals</code>、<code>data-tcw-separators</code>（<code>on</code> / <code>off</code>）。
 </p>
 
+<h2 id="overrides">チャートの見た目：スタイルのオーバーライド</h2>
+<p>
+  テーマはチャート全体の色を決めます。チャートが描くどの部分も、キーで個別に設定できます：方向ごとのグリッド線、
+  クロスヘア、軸、ペイン、凡例、最新価格、出来高、セッションの区切り、そしてチャートタイプごとのメイン系列。
+  設定していないキーはテーマに従うので、テーマを切り替えれば設定していない部分の色も変わります。
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // 最初から
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // 上昇/下落のあるタイプはすべてこれに従う
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null でキーを外す
+chart.resetOverrides(['grid.horizontal.style'])         // またはキーを指定
+chart.setOverrides({ 'background.color': '#000' })      // レイヤーをまるごと
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': キーの最終的な値
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</code></pre>
+
+<h3>キー</h3>
+<table>
+  <thead><tr><th>キー</th><th>設定する内容</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>チャートの背景（ペインに独自の背景がなければペインも）。</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>インジケーターのペイン：背景、上端のバー、名前。</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>。方向ごとに別々。</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は破線）。</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新価格の線とタグ。未設定なら色はメイン系列に従う。</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>出来高のバー。</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日・週・月の区切り線。</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>高値・安値の線、ウォーターマーク。</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>そのタイプで描かれるときのメイン系列：<code>upColor</code>、<code>downColor</code>、<code>wickUpColor</code>、
+      <code>wickDownColor</code>（ローソク足、平均足、出来高ローソク足、エクイボリューム）、<code>color</code> / <code>lineColor</code>
+      と <code>lineWidth</code>（ライン、ステップライン、マーカー付きライン、エリア、HLC エリア、ベースライン）、<code>topColor</code> と
+      <code>bottomColor</code>（エリア、HLC エリア）。</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> にはすべてのキーと値の種類が並び、TypeScript が書いた時点でキーと値を検査します。
+  上昇/下落の色は <code>series.candlestick.*</code>、線の色と太さは <code>series.line.*</code>、塗りは
+  <code>series.area.*</code>、最後にテーマに従います。実体の色を設定すると、ヒゲもその色になります。
+  不明なキーや値は警告とともに無視されます。
+</p>
+
+<h3>アプリのものとユーザーのもの</h3>
+<p>
+  オーバーライドには 2 つのレイヤーがあります。あなたのもの（<code>layer: 'host'</code>、既定）はテーマを切り替えても残り、
+  保存されません。ユーザーのもの（<code>layer: 'user'</code>）はあなたのものより優先され、設定したテーマごとに保たれ —
+  ダークテーマで選んだ色はダークテーマに戻ると戻ってきます — <code>saveState()</code> で保存されます。ウィジェットの設定は
+  ユーザーのレイヤーに書き込み、リセットはどのテーマでもそのテーマの色に戻します。
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // 現在のテーマでのユーザーのもの
+chart.getTheme()                           // 設定したとおりのテーマ：オーバーライドは別に持つ`}</code></pre>
+<p>
+  グリッドとクロスヘアのオプション（<code>grid.hLineColor</code>、<code>crosshair.vLine.style</code>…）は対応するキーの
+  省略形です。複数チャートのグリッドはすべてのチャートにオーバーライドを適用します：<code>grid.applyOverrides(patch)</code>。
+  React、Vue、Svelte のコンポーネントは <code>overrides</code> プロパティで受け取ります。
+</p>
+
+<h3>インジケーターのプロットとペイン</h3>
+<pre><code>{`// プロットごとの線種と表示、キーで指定（色と太さは colors / lineWidths のまま）
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// これから追加する同じ種類のインジケーターの初期スタイル
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// ペイン独自の背景と区切り線。インジケーターとともに保存
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  非表示のプロットは値タグも凡例の値も出ません。すべてのインジケーターが非表示のプロットを描かず、ほぼすべてが
+  プロットの線種にも従います。独自の図形を描く一部（パラボリック SAR の点、Supertrend、ジグザグ、
+  出来高プロファイル）は自分の線を保ちます。
+</p>
+
 <h2>チャートのラベル</h2>
 <p>
   ウィジェットは <code>tagRadius</code> を自身のチャートに渡します（<code>chartOptions.shapes</code> で指定した形は、
@@ -156,7 +245,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>出来高の色</h2>
 <p>
-  出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> を使います。<code>volumeColor(candleColor)</code> はローソク足の色を出来高用の透明度にした色を返すので、独自のテーマでもバーはローソク足の背景にとどまります。widget の設定でローソク足の色を変えたときは、widget が自動でこれを行います。プリセットを元に <code>candleUp</code> / <code>candleDown</code> だけを変えたテーマでも、出来高はその色になります。
+  出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> （または <code>volume.*</code> キー） を使います。<code>volumeColor(candleColor)</code> はローソク足の色を出来高用の透明度にした色を返すので、独自のテーマでもバーはローソク足の背景にとどまります。widget の設定でローソク足の色を変えたときは、widget が自動でこれを行います。プリセットを元に <code>candleUp</code> / <code>candleDown</code> だけを変えたテーマでも、出来高はその色になります。
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

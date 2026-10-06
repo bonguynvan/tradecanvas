@@ -668,6 +668,28 @@ chart.setTheme({
 })
 ```
 
+### Overrides de estilo
+
+Cualquier parte de lo que dibuja el gráfico se puede fijar aparte del tema, por clave: las líneas de la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último precio, el volumen y la serie principal tal como la dibuja cada tipo de gráfico. Las claves que no toques siguen al tema. Los overrides de tu app se mantienen al cambiar de tema; los del usuario (`layer: 'user'`, lo que escriben los Ajustes del widget) se guardan por tema y con `saveState()`.
+
+```typescript
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',   // todos los tipos alcistas/bajistas vuelven a esta
+  'grid.vertical.visible': false,
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'panes.background': '#0d1117',
+})
+chart.getStyleValue('series.bar.upColor')    // '#26a69a'
+
+// Plots de indicadores y paneles
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
+chart.setPaneStyle(rsiId, { background: '#101418' })
+```
+
+`CHART_STYLE_KEYS` enumera todas las claves. Los componentes de React, Vue y Svelte las reciben en la prop `overrides`.
+
 ### Eventos
 
 ```typescript

@@ -145,6 +145,96 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> y <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="overrides">El aspecto del gráfico: overrides de estilo</h2>
+<p>
+  El tema fija los colores del gráfico en conjunto. Cualquier parte de lo que dibuja el gráfico se puede fijar aparte,
+  por clave: las líneas de la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último
+  precio, el volumen, los cortes de sesión y la serie principal tal como la dibuja cada tipo de gráfico. Una clave que
+  no toques sigue al tema, así que al cambiar de tema cambia todo lo que no fijaste.
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // para empezar
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // todos los tipos alcistas/bajistas vuelven a esta
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null quita una clave
+chart.resetOverrides(['grid.horizontal.style'])         // o nombra las claves
+chart.setOverrides({ 'background.color': '#000' })      // toda una capa de una vez
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': lo que resulta de una clave
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</code></pre>
+
+<h3>Claves</h3>
+<table>
+  <thead><tr><th>Claves</th><th>Qué fijan</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>El fondo del gráfico (y el de los paneles, salvo que tengan el suyo).</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>Paneles de indicadores: fondo, la barra de arriba, su nombre.</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code> (<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code>, cada dirección aparte.</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Las mismas cuatro para las líneas del crosshair (discontinuas por defecto).</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Las etiquetas de precio y hora en los ejes, y en las escalas de los paneles.</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>La línea y las etiquetas de cada eje (las escalas de los paneles siguen al eje de precios).</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Los valores de la leyenda, y sus etiquetas (O, H, L, Vol).</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>La línea y la etiqueta del último precio; sus colores siguen a la serie si no se fijan.</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Las barras de volumen.</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Los cortes de día, semana y mes.</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Las líneas de máximo y mínimo, la marca de agua.</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>La serie principal mientras se dibuja con ese tipo: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
+      <code>wickDownColor</code> (velas, Heikin-Ashi, velas de volumen, equivolumen), <code>color</code> / <code>lineColor</code>
+      y <code>lineWidth</code> (línea, línea escalonada, línea con marcadores, área, área HLC, línea base), <code>topColor</code> y
+      <code>bottomColor</code> (área, área HLC).</td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> enumera cada clave con el tipo de valor que admite, y TypeScript revisa claves y
+  valores mientras escribes. Los colores alcistas y bajistas vuelven a <code>series.candlestick.*</code>, los colores y
+  grosores de línea a <code>series.line.*</code>, los rellenos a <code>series.area.*</code>, y luego al tema; una mecha toma
+  el color de su cuerpo cuando este está fijado. Las claves y valores desconocidos se descartan con un aviso.
+</p>
+
+<h3>Los de tu app y los del usuario</h3>
+<p>
+  Los overrides van en dos capas. Los tuyos (<code>layer: 'host'</code>, por defecto) se mantienen al cambiar de tema y
+  nunca se guardan. Los del usuario (<code>layer: 'user'</code>) ganan a los tuyos, se guardan con el tema en que se
+  hicieron —los colores elegidos en el tema oscuro vuelven con el tema oscuro— y se guardan con <code>saveState()</code>. Los
+  Ajustes del widget escriben en la capa del usuario, y su Restablecer vuelve a los colores del tema, sea cual sea.
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // los del usuario, para el tema actual
+chart.getTheme()                           // el tema tal como se fijó: los overrides van aparte`}</code></pre>
+<p>
+  Las opciones de la cuadrícula y del crosshair (<code>grid.hLineColor</code>, <code>crosshair.vLine.style</code>…) son
+  atajos de sus claves. Una cuadrícula de gráficos aplica overrides a todos sus gráficos: <code>grid.applyOverrides(patch)</code>.
+  Los componentes de React, Vue y Svelte los reciben en la prop <code>overrides</code>.
+</p>
+
+<h3>Plots de indicadores y paneles</h3>
+<pre><code>{`// El trazo y la visibilidad de cada plot, por su clave (colores y grosores siguen en colors / lineWidths)
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// Con qué empieza desde ahora cada indicador de un tipo
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// El fondo y el separador propios de un panel, guardados con su indicador
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  Un plot oculto no muestra etiqueta de valor ni valor en la leyenda. Todos los indicadores dejan fuera un plot
+  oculto, y casi todos toman el trazo de sus plots; unos pocos que dibujan formas propias (los puntos del Parabolic
+  SAR, Supertrend, Zig Zag, los perfiles de volumen) mantienen su propio trazo.
+</p>
+
 <h2>Las etiquetas del gráfico</h2>
 <p>
   El widget pasa <code>tagRadius</code> a su gráfico (una forma indicada en <code>chartOptions.shapes</code> se
@@ -158,7 +248,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Colores del volumen</h2>
 <p>
-  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas, y un tema basado en un preajuste que solo cambia <code>candleUp</code> / <code>candleDown</code> también tiene el volumen en esos colores.
+  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> (o las claves <code>volume.*</code>) del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas, y un tema basado en un preajuste que solo cambia <code>candleUp</code> / <code>candleDown</code> también tiene el volumen en esos colores.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

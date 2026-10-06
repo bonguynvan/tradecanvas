@@ -36,7 +36,10 @@
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>Uno de los 18 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
-    <tr><td><code>setTheme(name)</code></td><td>Cambia entre los temas integrados.</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>Cambia entre los temas integrados, o fija el tuyo. <code>getTheme()</code> lo devuelve tal como se fijó.</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Da estilo a cualquier parte del gráfico por clave (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> quita una clave. Ver <a href={href('/docs/styling#overrides')}>Estilos</a>.</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Toda una capa de una vez; quita claves (o todas).</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>Los overrides de una capa; el aspecto resuelto; lo que resulta de una clave.</td></tr>
     <tr><td><code>setTimeframe(tf)</code></td><td>Cambia la temporalidad activa; reconecta el flujo en vivo.</td></tr>
   </tbody>
 </table>
@@ -59,6 +62,9 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Añade un indicador superpuesto o en panel. Devuelve el id de la instancia.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Modifica un indicador activo.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Lo quita y libera sus recursos.</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>El aspecto propio de un panel, guardado con su indicador.</td></tr>
   </tbody>
 </table>
 
@@ -720,6 +726,7 @@ const grid = new ChartWidgetGrid(host, {
 
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // alinea los demás con el gráfico activo
+grid.applyOverrides({ 'grid.vertical.visible': false })   // el aspecto de todos los gráficos, y de los que añada después
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

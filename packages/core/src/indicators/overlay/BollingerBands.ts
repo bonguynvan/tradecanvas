@@ -5,6 +5,7 @@ import { getIntParam, getNumberParam } from '../params.js';
 import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { LinePen, fillDenseBand, isDenseSlots } from '../linePen.js';
+import { plotLook } from '../plots.js';
 
 export class BollingerBandsIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -126,13 +127,15 @@ export class BollingerBandsIndicator extends IndicatorBase {
     }
 
     // Upper, middle and lower lines
-    const line = (ys: Float64Array, color: string) => {
-      const pen = new LinePen(ctx, color, style.lineWidths[0], dense);
+    const line = (ys: Float64Array, color: string, key: 'upper' | 'middle' | 'lower') => {
+      const look = plotLook(style, key, style.lineWidths[0]);
+      if (!look.visible) return;
+      const pen = new LinePen(ctx, color, style.lineWidths[0], dense, look.dash);
       for (let i = 0; i < count; i++) pen.add(xs[i], ys[i]);
       pen.finish();
     };
-    line(upperYs, style.colors[0]);
-    line(middleYs, style.colors[1] ?? style.colors[0]);
-    line(lowerYs, style.colors[0]);
+    line(upperYs, style.colors[0], 'upper');
+    line(middleYs, style.colors[1] ?? style.colors[0], 'middle');
+    line(lowerYs, style.colors[0], 'lower');
   }
 }

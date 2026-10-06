@@ -93,6 +93,7 @@ export class ZigZagIndicator extends IndicatorBase {
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
   ): void {
+    if (style.plots?.pivot?.visible === false) return;
     const pivots = output.meta?.pivots as
       | { idx: number; price: number }[]
       | undefined;

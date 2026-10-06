@@ -1,5 +1,6 @@
 import type { DataSeries } from './ohlc.js';
 import type { ViewportState } from './rendering.js';
+import type { LineStyle } from './chart.js';
 
 export type IndicatorPlacement = 'overlay' | 'panel';
 
@@ -96,10 +97,24 @@ export interface IndicatorConfig {
 /** Which price scale an overlay is drawn on. */
 export type OverlayScale = 'right' | 'left';
 
+/**
+ * One plot's own look, by its key (`'signal'`, `'upper'`). Its colour and
+ * width stay in `colors` and `lineWidths`; this adds its dash and whether it
+ * shows. Plots drawn from the descriptor's `plots` follow it; an indicator
+ * that draws itself keeps to its own look.
+ */
+export interface IndicatorPlotStyle {
+  lineStyle?: LineStyle;
+  /** False: not drawn, and no value tag or legend value. */
+  visible?: boolean;
+}
+
 export interface IndicatorStyleConfig {
   colors?: string[];
   lineWidths?: number[];
   opacity?: number;
+  /** Each plot's own dash and visibility, by its key. */
+  plots?: Record<string, IndicatorPlotStyle>;
 }
 
 export interface IndicatorOutput {
@@ -117,6 +132,7 @@ export interface ResolvedIndicatorStyle {
   colors: string[];
   lineWidths: number[];
   opacity: number;
+  plots?: Record<string, IndicatorPlotStyle>;
 }
 
 export interface IndicatorPlugin {

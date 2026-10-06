@@ -43,6 +43,8 @@ class FakeChart {
   getPositions(): unknown[] { return []; }
   getFills(): unknown[] { return []; }
   getIndicatorOutput(): null { return null; }
+  overrides: unknown[] = [];
+  applyOverrides(patch: unknown): void { this.overrides.push(patch); }
   formatPrice(v: number): string { return v.toFixed(2); }
   replay: (string | number)[] = [];
   replaying = false;
@@ -110,6 +112,15 @@ describe('ChartWidgetGrid', () => {
     expect(symbols()).toEqual(['AAA']);
     expect(grid.getActiveIndex()).toBe(0);
     expect(changes).toEqual([3, 0]);
+  });
+
+  it('gives every chart the style overrides, and the charts it adds later too', () => {
+    make();
+    grid.applyOverrides({ 'grid.vertical.visible': false, 'legend.textColor': '#fff' });
+    grid.applyOverrides({ 'legend.textColor': null });
+    expect(charts().map((c) => c.overrides.length)).toEqual([2, 2]);
+    grid.setLayout('2x2');
+    expect(charts()[3].overrides).toEqual([{ 'grid.vertical.visible': false }]);
   });
 
   it('puts away the charts it shrinks from, and brings them back as they were', async () => {

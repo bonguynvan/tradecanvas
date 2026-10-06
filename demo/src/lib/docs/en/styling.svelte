@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — TradeCanvas docs</title>
-  <meta name="description" content="The widget's look as tokens: corners, sizes, type, borders, shadows and bars. Three presets — Studio, Terminal, Capsule — and your own theme over them." />
+  <meta name="description" content="The widget's look as tokens, with three presets — Studio, Terminal, Capsule — and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
 </svelte:head>
 
 <h1>Styling the widget</h1>
@@ -142,6 +142,98 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> and <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="overrides">The chart's look: style overrides</h2>
+<p>
+  The theme sets the chart's colours as a whole. Any one part of what the chart draws can be set apart from it, by
+  key: the grid's lines each way, the crosshair, the axes, the panes, the legend, the last price, the volume, the
+  session breaks and the main series as each chart type draws it. A key left alone follows the theme, so a theme
+  switch still recolours everything you didn't set.
+</p>
+<pre><code>{`import { Chart } from '@tradecanvas/chart'
+
+const chart = new Chart(host, {
+  overrides: { 'grid.vertical.visible': false },       // to start with
+})
+
+chart.applyOverrides({
+  'series.candlestick.upColor': '#26a69a',              // every up/down type falls back to it
+  'series.candlestick.downColor': '#ef5350',
+  'grid.horizontal.style': 'dotted',
+  'crosshair.vertical.style': 'solid',
+  'crosshair.labelBackground': '#2962ff',
+  'lastPrice.style': 'solid',
+  'panes.background': '#0d1117',
+  'legend.textColor': '#c9d1d9',
+})
+chart.applyOverrides({ 'legend.textColor': null })      // null takes a key away
+chart.resetOverrides(['grid.horizontal.style'])         // or name the keys
+chart.setOverrides({ 'background.color': '#000' })      // all of a layer at once
+
+chart.getStyleValue('series.bar.upColor')               // '#26a69a': what a key resolves to
+chart.getStyle().grid.vertical                          // { visible: false, color, style, width }
+chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</code></pre>
+
+<h3>Keys</h3>
+<table>
+  <thead><tr><th>Keys</th><th>What they set</th></tr></thead>
+  <tbody>
+    <tr><td><code>background.color</code></td><td>The chart's background (and the panes', unless they have their own).</td></tr>
+    <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>Indicator panes: background, the bar at their top, their name.</td></tr>
+    <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code> (<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — each way apart.</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>The same four for the crosshair's lines (dashed by default).</td></tr>
+    <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>The price and time pills on the axes, and on the panes' scales.</td></tr>
+    <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Each axis's line and labels (the panes' scales take the price axis's).</td></tr>
+    <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>The legend's values, and its labels (O, H, L, Vol).</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>The last-price line and tag; their colours follow the series' unless set.</td></tr>
+    <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>The volume bars.</td></tr>
+    <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>The day, week and month breaks.</td></tr>
+    <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>The high and low lines, the watermark.</td></tr>
+    <tr><td><code>series.&lt;type&gt;.*</code></td><td>
+      The main series while it is drawn as that type: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
+      <code>wickDownColor</code> (candles, Heikin-Ashi, volume candles, equivolume), <code>color</code> / <code>lineColor</code>
+      and <code>lineWidth</code> (line, step line, line with markers, area, HLC area, baseline), <code>topColor</code> and
+      <code>bottomColor</code> (area, HLC area).
+    </td></tr>
+  </tbody>
+</table>
+<p>
+  <code>CHART_STYLE_KEYS</code> lists every key with the kind of value it takes, and TypeScript checks keys and
+  values as you write them. Up and down colours fall back to <code>series.candlestick.*</code>, line colours and widths
+  to <code>series.line.*</code>, area fills to <code>series.area.*</code>, then to the theme; a wick takes its body's
+  colour once that is set. Unknown keys and values are left out with a warning.
+</p>
+
+<h3>Your app's and the user's</h3>
+<p>
+  Overrides come in two layers. Yours (<code>layer: 'host'</code>, the default) stay through theme switches and are
+  never saved. The user's (<code>layer: 'user'</code>) win over yours, are kept with the theme they were made on —
+  colours picked on the dark theme come back with the dark theme — and are saved with <code>saveState()</code>. The
+  widget's Settings write the user's layer, and its Reset goes back to the theme's colours, whichever theme it is.
+</p>
+<pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
+chart.getOverrides({ layer: 'user' })                 // the user's, for the current theme
+chart.getTheme()                           // the theme as set: the overrides go on it apart`}</code></pre>
+<p>
+  The grid and crosshair options (<code>grid.hLineColor</code>, <code>crosshair.vLine.style</code>…) are shorthand
+  for their keys. A grid of charts takes overrides for all of its charts: <code>grid.applyOverrides(patch)</code>. The
+  React, Vue and Svelte components take them as an <code>overrides</code> prop.
+</p>
+
+<h3>Indicator plots and panes</h3>
+<pre><code>{`// Each plot's own dash and visibility, by its key (colours and widths stay in colors / lineWidths)
+chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' }, histogram: { visible: false } } })
+
+// What every indicator of a kind starts with from now on
+chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
+
+// A pane's own background and separator, saved with its indicator
+chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
+<p>
+  A hidden plot shows no value tag and no legend value. Every indicator leaves a hidden plot out, and nearly every
+  one takes its plots' dash; a few that draw shapes of their own (Parabolic SAR's dots, Supertrend, Zig Zag, the
+  volume profiles) keep their own stroke.
+</p>
+
 <h2>The chart's tags</h2>
 <p>
   The widget hands <code>tagRadius</code> to its chart (a shape in <code>chartOptions.shapes</code> stays until
@@ -154,7 +246,7 @@ chart.getShapes()`}</code></pre>
 
 <h2>Volume colours</h2>
 <p>
-  Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code>. <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours, and a theme spread from a preset that only changes <code>candleUp</code> / <code>candleDown</code> gets volume in those colours too.
+  Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code> (or the <code>volume.*</code> keys). <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours, and a theme spread from a preset that only changes <code>candleUp</code> / <code>candleDown</code> gets volume in those colours too.
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

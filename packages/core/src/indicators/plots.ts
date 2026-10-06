@@ -6,6 +6,7 @@ import type {
   ResolvedIndicatorStyle,
   ViewportState,
 } from '@tradecanvas/commons';
+import { lineDash } from '@tradecanvas/commons';
 import { barIndexToX, priceToYMapper } from '../viewport/ScaleMapping.js';
 import { LinePen, isDenseSlots } from './linePen.js';
 
@@ -22,6 +23,23 @@ export function isUpTone(plot: IndicatorPlot, val: IndicatorValue): boolean {
   if (!plot.tone) return true;
   if (plot.tone === 'sign') return (val[plot.key] ?? 0) >= 0;
   return val[plot.tone.field] === 1;
+}
+
+/** Whether `plot` is shown in `style` (a plot is hidden only when its style says so). */
+export function plotShown(plot: IndicatorPlot, style: Pick<ResolvedIndicatorStyle, 'plots'>): boolean {
+  return style.plots?.[plot.key]?.visible !== false;
+}
+
+/** The dashes an indicator's lines take when `dashed`. */
+const PLOT_DASH = [6, 4];
+
+/**
+ * A plot's own look, for an indicator that draws it itself: whether it
+ * shows, and its dashes at `width` (none when solid).
+ */
+export function plotLook(style: Pick<ResolvedIndicatorStyle, 'plots'>, key: string, width: number): { visible: boolean; dash: number[] } {
+  const own = style.plots?.[key];
+  return { visible: own?.visible !== false, dash: lineDash(own?.lineStyle ?? 'solid', PLOT_DASH, width) };
 }
 
 /** The colour `plot` is drawn in at `val` (its down colour on a down bar of a two-tone plot). */
@@ -179,7 +197,9 @@ export function renderPlots(
   const toY = priceToYMapper(viewport);
   for (let n = 0; n < plots.length; n++) {
     const plot = plots[n];
+    if (!plotShown(plot, style)) continue;
     const width = style.lineWidths[n] ?? style.lineWidths[0] ?? 1.5;
+    const dash = lineDash(style.plots?.[plot.key]?.lineStyle ?? 'solid', PLOT_DASH, width);
     const kind = plot.kind ?? 'line';
     const passes = plot.tone && plot.downColor !== undefined ? [true, false] : [null];
     for (const up of passes) {
@@ -189,7 +209,7 @@ export function renderPlots(
       const take = (val: IndicatorValue) => up === null || isUpTone(plot, val) === up;
       if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, take);
       else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, take);
-      else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', up === null ? null : take);
+      else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', up === null ? null : take, dash);
     }
   }
 }
@@ -210,9 +230,9 @@ function finite(val: IndicatorValue | null, key: string): number | undefined {
 function drawPath(
   ctx: CanvasRenderingContext2D, series: Series, key: string, from: number, to: number,
   viewport: ViewportState, toY: (v: number) => number, color: string, width: number,
-  step: boolean, take: Take | null,
+  step: boolean, take: Take | null, dash: readonly number[] = [],
 ): void {
-  const pen = new LinePen(ctx, color, width, isDenseSlots(viewport));
+  const pen = new LinePen(ctx, color, width, isDenseSlots(viewport), dash);
   let prevX = 0;
   let prevY = 0;
   let hasPrev = false;

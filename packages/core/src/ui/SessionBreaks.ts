@@ -139,14 +139,15 @@ export class SessionBreaks {
     theme: Theme,
     data: DataSeries,
   ): void {
-    const marks = this.marks(viewport, data);
+    const marks = this.marks(viewport, data, theme);
     if (marks.length === 0) return;
     const { chartRect } = viewport;
-    const dash = DASHES[this.config.lineStyle ?? 'dashed'];
+    const look = this.look(theme);
+    const dash = DASHES[look.style];
 
     ctx.save();
     if (dash) ctx.setLineDash(dash);
-    ctx.strokeStyle = this.config.color ?? theme.axisLine;
+    ctx.strokeStyle = look.color;
     for (const m of marks) {
       ctx.globalAlpha = m.alpha;
       ctx.lineWidth = m.width;
@@ -165,7 +166,7 @@ export class SessionBreaks {
     theme: Theme,
     data: DataSeries,
   ): void {
-    const marks = this.marks(viewport, data).filter((m): m is BreakMark & { label: string } => m.label !== null);
+    const marks = this.marks(viewport, data, theme).filter((m): m is BreakMark & { label: string } => m.label !== null);
     if (marks.length === 0) return;
     const { chartRect } = viewport;
 
@@ -183,16 +184,26 @@ export class SessionBreaks {
 
   /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */
   lineRects(viewport: ViewportState, theme: Theme, data: DataSeries): GpuRect[] {
-    const marks = this.marks(viewport, data);
+    const marks = this.marks(viewport, data, theme);
     if (marks.length === 0) return [];
-    const color = this.config.color ?? theme.axisLine;
-    const dash = DASHES[this.config.lineStyle ?? 'dashed'] ?? undefined;
+    const { color, style } = this.look(theme);
+    const dash = DASHES[style] ?? undefined;
     const { y, height } = viewport.chartRect;
     return marks.map((m) => ({ x: m.px - m.width / 2, y, width: m.width, height, color, alpha: m.alpha, ...(dash ? { dash } : {}) }));
   }
 
+  /** The lines' look: the style overrides, then the breaks' own settings, then the theme. */
+  private look(theme: Theme): { color: string; style: NonNullable<SessionBreakConfig['lineStyle']>; width: number } {
+    const style = theme.style?.sessionBreaks;
+    return {
+      color: style?.color ?? this.config.color ?? theme.axisLine,
+      style: style?.style ?? this.config.lineStyle ?? 'dashed',
+      width: style?.width ?? this.config.lineWidth ?? 1,
+    };
+  }
+
   /** The breaks on screen, each with its line and label, heavier as the boundary is more significant. */
-  private marks(viewport: ViewportState, data: DataSeries): BreakMark[] {
+  private marks(viewport: ViewportState, data: DataSeries, theme: Theme): BreakMark[] {
     if (!this.config.visible || data.length < 2) return [];
 
     const breaks = this.computeBreaksTyped(data);
@@ -204,7 +215,7 @@ export class SessionBreaks {
     if (this.cachedMedianStep >= 23 * 60 * 60 * 1000) return [];
 
     const { chartRect } = viewport;
-    const lineWidth = this.config.lineWidth ?? 1;
+    const lineWidth = this.look(theme).width;
     const out: BreakMark[] = [];
     for (const brk of breaks) {
       const x = barIndexToX(brk.idx, viewport) - (viewport.barWidth + viewport.barSpacing) / 2;

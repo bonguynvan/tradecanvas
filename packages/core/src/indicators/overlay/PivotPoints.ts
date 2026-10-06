@@ -3,6 +3,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { lineDash } from '@tradecanvas/commons';
 
 const LEVEL_KEYS = ['s3', 's2', 's1', 'pp', 'r1', 'r2', 'r3'] as const;
 type LevelKey = (typeof LEVEL_KEYS)[number];
@@ -77,10 +78,13 @@ export class PivotPointsIndicator extends IndicatorBase {
     };
 
     for (const key of LEVEL_KEYS) {
+      // Each level's plot style: hidden, or dashed otherwise than its own (the pivot solid, the others dashed).
+      const own = style.plots?.[key];
+      if (own?.visible === false) continue;
       ctx.beginPath();
       ctx.strokeStyle = colorFor(key);
       ctx.lineWidth = key === 'pp' ? lineWidth : Math.max(1, lineWidth - 1);
-      if (key !== 'pp') ctx.setLineDash([4, 3]);
+      ctx.setLineDash(lineDash(own?.lineStyle ?? (key === 'pp' ? 'solid' : 'dashed'), [4, 3], ctx.lineWidth));
 
       let started = false;
       for (let i = from; i <= to && i < series.length; i++) {

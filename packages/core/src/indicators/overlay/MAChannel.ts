@@ -4,6 +4,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { getIntParam } from '../params.js';
 import { outputOf, smaOf } from '../math.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
+import { plotLook } from '../plots.js';
 
 /** How far a line may be shifted, either way. */
 const MAX_OFFSET = 500;
@@ -66,8 +67,8 @@ export class MAChannelIndicator extends IndicatorBase {
       }
     }
     this.drawBand(ctx, bandUpper, bandLower, withAlpha(style.colors[0], 0.08));
-    this.drawLine(ctx, upper, style.colors[0], style.lineWidths[0]);
-    this.drawLine(ctx, lower, style.colors[1] ?? style.colors[0], style.lineWidths[1] ?? style.lineWidths[0]);
+    this.drawLine(ctx, upper, style.colors[0], style.lineWidths[0], plotLook(style, 'upper', style.lineWidths[0]));
+    this.drawLine(ctx, lower, style.colors[1] ?? style.colors[0], style.lineWidths[1] ?? style.lineWidths[0], plotLook(style, 'lower', style.lineWidths[1] ?? style.lineWidths[0]));
   }
 }
 
