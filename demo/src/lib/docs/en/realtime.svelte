@@ -170,9 +170,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>A replay in your own app</h3>
+<p>
+  Buy and sell marks and trade zones show as the replay reaches them: a mark once its bar is shown, a trade once entered, drawn open until its exit is reached (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> shows them all). <code>startTime</code> starts at a time instead of a bar; <code>hideHistory</code> leaves the bars before the start out until the replay stops; <code>duration</code> plays to the end in about that long however many bars there are, several bars a frame, and a late frame slows it rather than skip ahead.
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // the whole backtest, kept
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // the last 30 days
+  hideHistory: true,                          // only them on the chart
+  duration: 3500,                             // in about 3.5 s
+})
+chart.on('replayComplete', () => chart.replayStop())   // then the whole series again
+chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from the start`}</code></pre>
 
 <h3>Paper trading in a replay</h3>
 <p>

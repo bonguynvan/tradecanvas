@@ -759,6 +759,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+El gráfico también repite su propia serie: `chart.replayStart()`. Las marcas de señal y las zonas de operación aparecen cuando la repetición llega a ellas (una operación se dibuja abierta hasta su salida), `startTime` empieza en un momento, `hideHistory` deja fuera las velas anteriores al inicio hasta que se detiene, y `duration` llega al final en más o menos ese tiempo, haya las velas que haya:
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // los últimos 30 días, solo ellos, en unos 3,5 s
+chart.on('replayComplete', () => chart.replayStop())                                              // y luego la serie completa
+```
+
 ### Interacción con el gráfico
 
 Todos los gestos que esperarías de un gráfico de trading de escritorio vienen integrados:
@@ -982,7 +991,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators` acepta ids o `{ id, params, position }` (uno cuyos parámetros cambian se vuelve a poner con ellos), `data` muestra velas propias y no abre ningún flujo, `stream={false}` nunca abre uno, y `features` sigue sus cambios tras montar el componente.
 
 Los tres comparten la misma superficie de props y te dan el `Chart` subyacente (para dibujos, trading, ejecución y plugins) mediante `onReady` / ref / `bind:chart`. Consulta la [documentación de frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks).
 

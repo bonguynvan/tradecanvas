@@ -261,6 +261,10 @@ export class Chart {
   /** During a replay in finer steps: the steps, and the series they build. */
   private replayStepsSeries: DataSeries | null = null;
   private replayCoarse: DataSeries | null = null;
+  /** Whether the running replay shows markers and trades only as it reaches them. */
+  private replayRevealMarks = true;
+  /** Bars of the series left out before a replay's window (`hideHistory`). */
+  private replayOffset = 0;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -748,6 +752,11 @@ export class Chart {
 
     // Replay
     this.replayManager = new ReplayManager();
+    this.replayManager.on('complete', () => {
+      const barIndex = this.getReplayBarIndex();
+      const bar = this.replayCoarse?.[barIndex];
+      if (bar) this.eventBus.emit('replayComplete', { barIndex, time: bar.time });
+    });
     this.replayManager.on('stateChange', (state) => {
       if (!this.replayRestarting) this.eventBus.emit('replayState', { state });
     });
@@ -4019,10 +4028,17 @@ export class Chart {
    * With `steps` (finer bars), each step grows the forming bar from them.
    * A connected execution adapter that takes a mark price (a paper one)
    * trades on the replayed price and time.
+   *
+   * Signal markers and trade zones show as the replay reaches them
+   * (`revealMarks: false` shows them all). `startTime` starts at a time
+   * instead of a bar, `hideHistory` leaves the bars before the start out,
+   * and `duration` plays to the end in about that long, however many bars.
    */
   replayStart(config?: Partial<import('@tradecanvas/core').ReplayConfig>): void {
     if (!this.features.replay) return;
     this.history.reset();
+    // A restart of a replay without its history: bar indices count in its window.
+    const restartWindow = this.replaySession ? this.replayOffset : 0;
     if (!this.replaySession) {
       if (this.dataManager.getLength() === 0) return; // nothing to replay
       const live = new DataManager();
@@ -4031,8 +4047,22 @@ export class Chart {
     }
     // Replay the live series as it stands now (a restart includes bars that
     // arrived during the previous run).
-    const coarse = this.shownBars(this.replaySession.live.getData());
-    const { steps: rawSteps, ...playConfig } = config ?? {};
+    const { steps: rawSteps, startTime, hideHistory, revealMarks, ...playConfig } = config ?? {};
+    const full = this.shownBars(this.replaySession.live.getData());
+    // Where it starts, as a bar of the whole series: from a time, or an index.
+    // A restart within a window (no `startTime`, history not asked back) keeps
+    // the window, and its index counts in it, as the replay's indices do.
+    const inWindow = restartWindow > 0 && startTime === undefined && hideHistory !== false;
+    let start = playConfig.startIndex;
+    if (startTime !== undefined && start === undefined) start = firstAtOrAfter(full, startTime);
+    else if (inWindow && start !== undefined) start += restartWindow;
+    const windowStart = inWindow
+      ? restartWindow
+      : hideHistory && start !== undefined && start > 0 ? Math.min(Math.floor(start), full.length - 1) : 0;
+    const coarse = windowStart > 0 ? full.slice(windowStart) : full;
+    if (start !== undefined) playConfig.startIndex = start - windowStart;
+    this.replayOffset = windowStart;
+    this.replayRevealMarks = revealMarks !== false;
     const steps = rawSteps ? replaySteps(rawSteps, coarse) : null;
     this.replayStepsSeries = steps;
     this.replayCoarse = coarse;
@@ -4091,17 +4121,31 @@ export class Chart {
       // The price line follows the replay, not the live market.
       this.currentPriceLine.setPrice(shownBar.close, barIndex > 0 ? coarse[barIndex - 1].close : undefined);
       this.crosshairHandler.setData(this.dataManager.getData());
+      // Up to when it has shown: the next step's time (past the last one, its spacing on).
+      const next = series[index + 1]?.time;
+      const until = next ?? series[index].time + (index > 0 ? series[index].time - series[index - 1].time : 1);
+      // Markers and trades as far as the replay has shown, in the same frame as its bars.
+      if (this.replayRevealMarks) this.revealReplayMarks(until);
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
       this.displayDataCache = null;
       this.updateViewportAndRender(follow);
       this.feedReplaySteps(series, index);
-      // Up to when it has shown: the next step's time (past the last one, its spacing on).
-      const next = series[index + 1]?.time;
-      const until = next ?? series[index].time + (index > 0 ? series[index].time - series[index - 1].time : 0);
-      this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until });
+      this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until, total: coarse.length });
     });
+    // Markers and trades as far as the start, or all of them.
+    const first = series[Math.max(0, Math.min(Math.floor(Number(playConfig.startIndex ?? 0)) || 0, series.length - 1))];
+    this.revealReplayMarks(this.replayRevealMarks ? first?.time ?? null : null);
+    // Playing from a bar: the cut shows at once, not only after the first step.
+    if (!playConfig.paused && playConfig.startIndex !== undefined && playConfig.startIndex >= 1) this.replaySeek(playConfig.startIndex - 1);
     this.replayManager.play(playConfig);
+  }
+
+  /** Markers and trades as far as a replay has shown, from its window on; `null` shows them all. */
+  private revealReplayMarks(until: number | null): void {
+    const from = until !== null && this.replayOffset > 0 ? this.replayCoarse?.[0]?.time ?? -Infinity : -Infinity;
+    this.signalMarkerManager.setRevealUntil(until, from);
+    this.tradeZoneManager.setRevealUntil(until, from);
   }
 
   /** Jump the replay to show the bars (or finer steps) that opened before `time`. */
@@ -4211,6 +4255,8 @@ export class Chart {
     this.replayBarUnsub?.();
     this.replayBarUnsub = null;
     this.replayManager.stop();
+    this.replayOffset = 0;
+    this.revealReplayMarks(null);
   }
 
   replaySeek(index: number): void {
@@ -5251,6 +5297,18 @@ function alertPayload(alert: import('@tradecanvas/core').PriceAlert): import('@t
 
 /** At most this many marks per jump go to a paper account (a long jump goes by in chunks). */
 const MAX_REPLAY_CHUNKS = 500;
+
+/** Index of the first bar at or after `time` (the length when none is). */
+function firstAtOrAfter(series: DataSeries, time: number): number {
+  let lo = 0;
+  let hi = series.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (series[mid].time < time) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
 
 /** The first bar of `series` after `time` (its length when none is). */
 function firstAfter(series: DataSeries, time: number): number {

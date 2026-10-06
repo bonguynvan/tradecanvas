@@ -3168,7 +3168,14 @@ export class ChartWidget {
     const seq = ++this.replayStartSeq;
     const go = (steps: DataSeries | null) => {
       if (this.destroyed || this.replayBar !== bar || !bar.isMounted() || seq !== this.replayStartSeq) return;
-      this.chart.replayStart({ speed: this.replaySpeed, interval: 1000, startIndex: start, paused: true, ...(steps ? { steps } : {}) });
+      this.chart.replayStart({
+        speed: this.replaySpeed,
+        interval: 1000,
+        startIndex: start,
+        paused: true,
+        revealMarks: this.options.replayRevealMarks !== false,
+        ...(steps ? { steps } : {}),
+      });
       if (play) this.chart.replayResume();
       bar.setState(play ? 'playing' : 'paused');
       this.syncReplayBar();

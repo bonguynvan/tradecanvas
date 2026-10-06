@@ -168,9 +168,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>自分のアプリでのリプレイ</h3>
+<p>
+  売買のマークと取引ゾーンは、リプレイがそこに届いたときに現れます。マークはその足が表示されたとき、取引はエントリーしたときに現れ、エグジットに届くまでは建玉中として描かれます（<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> ですべて表示）。<code>startTime</code> は足ではなく時刻から始めます。<code>hideHistory</code> はリプレイが止まるまで開始前の足を外します。<code>duration</code> は足の数にかかわらず、ほぼその時間で最後まで再生します。1 フレームに複数の足を進め、遅れたフレームは飛ばさずに再生を遅らせます。
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // バックテスト全体はそのまま
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // 直近 30 日
+  hideHistory: true,                          // チャートにはそれだけ
+  duration: 3500,                             // 約 3.5 秒で
+})
+chart.on('replayComplete', () => chart.replayStop())   // そのあと系列全体に戻す
+chart.replayStart({ startIndex: 100, revealMarks: false })   // 最初からすべてのマークを表示`}</code></pre>
 
 <h3>リプレイ中のペーパー取引</h3>
 <p>

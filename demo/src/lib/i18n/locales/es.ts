@@ -287,6 +287,7 @@ const es: SiteMessages = {
         'Haz clic en cualquier barra ya mostrada para llevar el cursor allí',
         '“Volver al tiempo real” regresa a la serie en vivo',
         'Elige un Paso más fino en la barra de repetición (15m) para ver cómo se forma cada barra',
+        'Las marcas de compra y venta y la operación solo aparecen cuando la reproducción llega a ellas',
       ],
     },
     compare: {

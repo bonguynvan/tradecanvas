@@ -3,6 +3,7 @@ import { DEFAULT_TRADE_ZONE_STYLE } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 import { fillTag } from '../ui/shapes.js';
+import { revealZones } from './replayReveal.js';
 
 interface TradeZoneEvents {
   added: TradeZone;
@@ -18,6 +19,10 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
   private style: TradeZoneStyle = { ...DEFAULT_TRADE_ZONE_STYLE };
   private requestRender: (() => void) | null = null;
   private dataGetter: (() => DataSeries) | null = null;
+  /** During a replay: the time it has shown everything before; later trades wait. */
+  private revealUntil: number | null = null;
+  /** During a replay that leaves the history out: its first bar's time. */
+  private revealFrom = -Infinity;
   private pricePrecision = 2;
 
   setRequestRender(cb: () => void): void {
@@ -78,9 +83,23 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     this.requestRender?.();
   }
 
+  /** Show only the trades entered before `time` (a replay's progress) and from `from` on, open until their exit; `null` shows all. */
+  setRevealUntil(time: number | null, from = -Infinity): void {
+    if (time === this.revealUntil && from === this.revealFrom) return;
+    this.revealUntil = time;
+    this.revealFrom = from;
+    this.requestRender?.();
+  }
+
+  /** The zones drawn: all of them, or those a replay has reached. */
+  shownZones(): TradeZone[] {
+    return [...revealZones(this.zones, this.revealUntil, this.revealFrom)];
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const data = this.dataGetter?.();
-    if (!data || data.length === 0 || this.zones.length === 0) return;
+    const zones = revealZones(this.zones, this.revealUntil, this.revealFrom);
+    if (!data || data.length === 0 || zones.length === 0) return;
 
     const { chartRect } = viewport;
     const style = this.style;
@@ -90,7 +109,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
     ctx.clip();
 
-    for (const zone of this.zones) {
+    for (const zone of zones) {
       this.renderZone(ctx, zone, data, viewport, theme, style);
     }
 

@@ -1,3 +1,9 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>フレームワーク — TradeCanvas ドキュメント</title>
   <meta name="description" content="TradeCanvas 用の React、Vue、Svelte ラッパーパッケージ。各フレームワークに沿った props と ref を備えています。" />
@@ -67,16 +73,41 @@ const adapter = new BinanceAdapter()
 />`}</code></pre>
 
 <h2>共通の props</h2>
+<p>自前の足、入力つきのインジケーター、そして自分からストリームを開かないチャート：</p>
+<pre><code>{'<' + `script lang="ts">
+  import { TradeCanvas } from '@tradecanvas/svelte'
+  import type { Chart } from '@tradecanvas/chart'
+
+  let { bars } = $props()
+  let chart = $state<Chart | null>(null)
+` + '<' + `/script>
+
+<TradeCanvas
+  data={bars}
+  stream={false}
+  indicators={['rsi', { id: 'ema', params: { period: 50 } }]}
+  features={{ replay: true }}
+  bind:chart
+/>`}</code></pre>
 <table>
-  <thead><tr><th>プロパティ</th><th>型</th><th>備考</th></tr></thead>
+  <thead><tr><th>Prop</th><th>型</th><th>説明</th></tr></thead>
   <tbody>
-    <tr><td><code>symbol</code></td><td><code>string</code></td><td>必須。</td></tr>
-    <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td><code>'1m' | '5m' | '15m' | '1h' | '4h' | '1d'</code></td></tr>
-    <tr><td><code>theme</code></td><td><code>ThemeName</code></td><td><code>'dark' | 'light' | 'darkTerminal'</code></td></tr>
-    <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>ライブストリームのデータソース。</td></tr>
-    <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>最初に読み込むバーの本数。</td></tr>
-    <tr><td><code>trading</code></td><td><code>boolean</code></td><td>トレーディングオーバーレイを有効にします。</td></tr>
-    <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>チャートのマウント後に呼ばれます。</td></tr>
+    <tr><td><code>symbol</code></td><td><code>string</code></td><td>ストリームの銘柄。既定は <code>'BTCUSDT'</code>。</td></tr>
+    <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>ストリームの時間足。既定は <code>'5m'</code>。</td></tr>
+    <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>既定は <code>'dark'</code>。</td></tr>
+    <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>既定は <code>'candlestick'</code>。</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>自前の足をそのまま表示します。マウント時にあればストリームは開きません。あとから渡した場合、開いているストリームはそのままです（<code>stream={false}</code> で閉じます）。</td></tr>
+    <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>ストリームの取得元。なければ Binance。</td></tr>
+    <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>：ストリームを一切開かず、<code>data</code> を待ちます。既定は <code>true</code>。</td></tr>
+    <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>ストリームが最初に読み込む足の数。既定は 500。</td></tr>
+    <tr><td><code>indicators</code></td><td><code>IndicatorSpec[]</code></td><td><code>'rsi'</code>、または <code>{'{ id, params, position }'}</code>。入力が変わったものは新しい入力で付け直します。</td></tr>
+    <tr><td><code>features</code></td><td><code>FeaturesConfig</code></td><td>チャート上でユーザーができること。マウント後の変更も反映されます。</td></tr>
+    <tr><td><code>signalMarkers / tradeZones</code></td><td><code>配列</code></td><td>売買のマークと取引。リプレイは届いた時点で表示します。</td></tr>
+    <tr><td><code>signalMarkerStyle / tradeZoneStyle</code></td><td><code>スタイル</code></td><td>色とラベル。</td></tr>
+    <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>キーで指定するチャートの見た目（<a href={href('/docs/styling#overrides')}>スタイル設定</a>を参照）。</td></tr>
+    <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>既定は <code>true</code>。</td></tr>
+    <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>足の背後に出す透かし文字。</td></tr>
+    <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>チャートのマウント後（Vue は <code>ready</code> イベント）。</td></tr>
   </tbody>
 </table>
 

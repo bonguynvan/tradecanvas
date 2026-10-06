@@ -259,9 +259,9 @@ describe('replay events and seeking by time', () => {
     chart.on('replayStep', (e) => steps15.push(e.payload));
     chart.on('replayState', (e) => states.push((e.payload as { state: string }).state));
     chart.replayStart({ steps, startIndex: 2, paused: true });
-    expect(steps15.at(-1)).toEqual({ barIndex: 2, time: hours[2].time, until: hours[3].time });
+    expect(steps15.at(-1)).toEqual({ barIndex: 2, time: hours[2].time, until: hours[3].time, total: hours.length });
     chart.replaySeek(chart.getReplayProgress().current + 1);
-    expect(steps15.at(-1)).toEqual({ barIndex: 3, time: hours[3].time, until: hours[3].time + STEP });
+    expect(steps15.at(-1)).toEqual({ barIndex: 3, time: hours[3].time, until: hours[3].time + STEP, total: hours.length });
     chart.replayStop();
     expect(states).toContain('paused');
     expect(states.at(-1)).toBe('stopped');

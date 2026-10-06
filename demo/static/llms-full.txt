@@ -36,7 +36,7 @@ skills/tradecanvas/SKILL.md
 
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 16 other chart types, 85 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 111 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -217,6 +217,9 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |
+| `replayStep` | `{ barIndex, time, until, total }`: a replay step |
+| `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
+| `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
 
 ## Theming
 
@@ -330,13 +333,19 @@ export function PriceChart({ symbol }: { symbol: string }) {
       symbol={symbol}
       timeframe="15m"
       adapter={adapter}
-      indicators={['ema', 'rsi']}
+      indicators={['rsi', { id: 'ema', params: { period: 50 } }]}
       onReady={(chart) => chart.setIndicatorValueLabelsVisible(true)}
       style={{ height: 480 }}
     />
   );
 }
 ```
+
+`indicators` takes ids or `{ id, params, position }`; one whose inputs change
+is put back with them. With `data` at mount the component shows your bars and
+opens no stream; `stream={false}` never opens one (and closes one it had), so a
+chart mounted before its bars arrive doesn't start the default Binance feed.
+`features` follows its changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the
@@ -372,6 +381,33 @@ chart.on('indicatorUpdate', () => {
   }
 });
 ```
+
+## A backtest replayed on the chart
+
+```ts
+import { Chart, type OHLCBar, type SignalMarker, type TradeZone } from '@tradecanvas/chart';
+
+declare const bars: OHLCBar[];            // the whole lookback
+declare const signals: SignalMarker[];    // the backtest's buys and sells
+declare const trades: TradeZone[];        // and its trades
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+chart.setData(bars);
+chart.setSignalMarkers(signals);
+chart.setTradeZones(trades);
+
+// Sweep the last 30 days in about 3.5 s: only those bars on the chart, each
+// mark appearing as the replay reaches it, each trade open until its exit.
+const DAY = 86_400_000;
+chart.replayStart({ startTime: bars[bars.length - 1].time - 30 * DAY, hideHistory: true, duration: 3500 });
+chart.on('replayStep', (e) => console.log(`${e.payload.barIndex + 1} / ${e.payload.total}`));
+chart.on('replayComplete', () => chart.replayStop());   // the whole series, every mark
+```
+
+`revealMarks: false` shows every mark through the replay. `duration` plays
+several bars a frame when it must; a frame that comes late slows the replay
+rather than skip ahead. The bars before `startTime` come back with
+`replayStop()`.
 
 ## Alerts beyond a price level
 
@@ -1647,6 +1683,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+The chart replays its own series too: `chart.replayStart()`. Signal markers and trade zones show as the replay reaches them (a trade drawn open until its exit), `startTime` starts at a time, `hideHistory` leaves the bars before the start out until the replay stops, and `duration` plays to the end in about that long, however many bars:
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // the last 30 days, only them, in about 3.5 s
+chart.on('replayComplete', () => chart.replayStop())                                              // then the whole series
+```
+
 ### Chart Interaction
 
 Every gesture you'd expect from a desktop trading chart is built in:
@@ -1870,7 +1915,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators` takes ids or `{ id, params, position }` (one whose inputs change is put back with them), `data` shows bars of your own and opens no stream, `stream={false}` never opens one, and `features` follows its changes after mount.
 
 All three share the same prop surface and hand you the underlying `Chart` (for drawings, trading, execution, plugins) via `onReady` / ref / `bind:chart`. See the [frameworks docs](https://bonguynvan.github.io/tradecanvas/docs/frameworks).
 

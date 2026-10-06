@@ -285,6 +285,7 @@ const fr: SiteMessages = {
         'Cliquez sur n’importe quelle barre déjà révélée pour y placer le curseur',
         '« Revenir au temps réel » rebascule sur la série en direct',
         'Choisissez un Pas plus fin dans la barre de relecture (15m) pour voir chaque barre se former',
+        'Les marques d’achat et de vente et la transaction n’apparaissent qu’une fois atteintes par le replay',
       ],
     },
     compare: {

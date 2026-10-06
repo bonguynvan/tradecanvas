@@ -170,9 +170,24 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Phát lại trong ứng dụng của bạn</h3>
+<p>
+  Điểm mua, bán và vùng lệnh hiện ra khi phần phát lại chạy tới: một điểm hiện khi nến của nó hiện, một lệnh hiện khi đã vào và được vẽ mở cho tới khi tới lúc thoát (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> hiện tất cả). <code>startTime</code> bắt đầu từ một thời điểm thay vì một nến; <code>hideHistory</code> bỏ các nến trước điểm bắt đầu cho tới khi dừng phát lại; <code>duration</code> chạy tới cuối trong khoảng thời gian đó dù có bao nhiêu nến, nhiều nến mỗi khung hình, và một khung hình trễ sẽ làm chậm lại thay vì nhảy cóc.
+</p>
+<pre><code>{`chart.setSignalMarkers(signals)          // cả backtest, giữ nguyên
+chart.setTradeZones(trades)
+chart.replayStart({
+  startTime: Date.now() - 30 * 86_400_000,   // 30 ngày gần nhất
+  hideHistory: true,                          // chỉ chúng trên biểu đồ
+  duration: 3500,                             // trong khoảng 3,5 giây
+})
+chart.on('replayComplete', () => chart.replayStop())   // rồi lại cả chuỗi dữ liệu
+chart.replayStart({ startIndex: 100, revealMarks: false })   // mọi điểm ngay từ đầu`}</code></pre>
 
 <h3>Giao dịch giấy trong lúc phát lại</h3>
 <p>

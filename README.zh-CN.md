@@ -758,6 +758,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+图表也能回放自己的序列：`chart.replayStart()`。信号标记和交易区域在回放到达时才出现（交易在出场前画成未平仓），`startTime` 从某个时间开始，`hideHistory` 在回放停止前不显示起点之前的 K 线，`duration` 不论 K 线多少，都在大约这段时间内播放到结尾：
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // 最近 30 天，只显示它们, 大约 3.5 秒
+chart.on('replayComplete', () => chart.replayStop())                                              // 然后恢复整个序列
+```
+
 ### 图表交互
 
 桌面交易图表应有的手势一应俱全：
@@ -980,7 +989,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators` 接受 id 或 `{ id, params, position }`（参数改变的指标会以新参数重新添加），`data` 显示你自己的 K 线且不打开数据流，`stream={false}` 永不打开数据流，`features` 在挂载后的修改也会生效。
 
 三者共享相同的 props 接口，并通过 `onReady` / ref / `bind:chart` 交给你底层的 `Chart`（用于画线、交易、执行、插件）。参见[框架文档](https://bonguynvan.github.io/tradecanvas/docs/frameworks)。
 

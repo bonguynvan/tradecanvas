@@ -2,6 +2,7 @@ import type { ViewportState, Theme, DataSeries, SignalMarker, SignalMarkerStyle 
 import { DEFAULT_SIGNAL_STYLE } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
+import { revealMarkers } from './replayReveal.js';
 
 interface SignalMarkerEvents {
   added: SignalMarker;
@@ -20,6 +21,10 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
   private style: SignalMarkerStyle = { ...DEFAULT_SIGNAL_STYLE };
   private requestRender: (() => void) | null = null;
   private dataGetter: (() => DataSeries) | null = null;
+  /** During a replay: the time it has shown everything before; later markers wait. */
+  private revealUntil: number | null = null;
+  /** During a replay that leaves the history out: its first bar's time. */
+  private revealFrom = -Infinity;
 
   setRequestRender(cb: () => void): void {
     this.requestRender = cb;
@@ -68,6 +73,19 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     this.requestRender?.();
   }
 
+  /** Show only the markers before `time` (a replay's progress), from `from` on; `null` shows them all again. */
+  setRevealUntil(time: number | null, from = -Infinity): void {
+    if (time === this.revealUntil && from === this.revealFrom) return;
+    this.revealUntil = time;
+    this.revealFrom = from;
+    this.requestRender?.();
+  }
+
+  /** The markers drawn: all of them, or those a replay has reached. */
+  shownMarkers(): SignalMarker[] {
+    return [...revealMarkers(this.markers, this.revealUntil, this.revealFrom)];
+  }
+
   /**
    * The marker under `point` (the one drawn last when several overlap), or
    * null. Its arrow and a few pixels around it count.
@@ -78,8 +96,9 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     const { chartRect } = viewport;
     if (point.x < chartRect.x || point.x > chartRect.x + chartRect.width || point.y < chartRect.y || point.y > chartRect.y + chartRect.height) return null;
     const arrowSize = this.style.arrowSize ?? 12;
-    for (let i = this.markers.length - 1; i >= 0; i--) {
-      const marker = this.markers[i];
+    const markers = revealMarkers(this.markers, this.revealUntil, this.revealFrom);
+    for (let i = markers.length - 1; i >= 0; i--) {
+      const marker = markers[i];
       const x = barIndexToX(timestampToBarIndex(marker.time, data), viewport);
       const y = priceToY(marker.price, viewport);
       const size = arrowSize * Math.max(0.6, Math.min(1, marker.confidence));
@@ -93,7 +112,8 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const data = this.dataGetter?.();
-    if (!data || data.length === 0 || this.markers.length === 0) return;
+    const markers = revealMarkers(this.markers, this.revealUntil, this.revealFrom);
+    if (!data || data.length === 0 || markers.length === 0) return;
 
     const { chartRect } = viewport;
     const style = this.style;
@@ -104,7 +124,7 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
     ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
     ctx.clip();
 
-    for (const marker of this.markers) {
+    for (const marker of markers) {
       const barIdx = timestampToBarIndex(marker.time, data);
       // Pixel bounds below decide visibility (markers may sit past the last bar).
 

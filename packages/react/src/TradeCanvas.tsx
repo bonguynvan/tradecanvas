@@ -4,6 +4,7 @@ import {
   BinanceAdapter,
   DARK_THEME,
   LIGHT_THEME,
+  syncIndicators,
 } from '@tradecanvas/chart';
 import type {
   ChartType,
@@ -19,6 +20,7 @@ import type {
   DataAdapter,
   StreamConfig,
   ChartStyleOverrides,
+  IndicatorSpec,
 } from '@tradecanvas/chart';
 
 export interface TradeCanvasRef {
@@ -32,10 +34,15 @@ export interface TradeCanvasProps {
   timeframe?: TimeFrame;
   theme?: 'dark' | 'light' | Theme;
   chartType?: ChartType;
-  indicators?: string[];
+  /** Indicators by id (`'rsi'`), or with their inputs (`{ id: 'ema', params: { period: 50 } }`). */
+  indicators?: IndicatorSpec[];
+  /** Static bars: the chart shows these, and opens no stream of its own when it has them at mount. */
   data?: OHLCBar[];
   adapter?: DataAdapter;
+  /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
+  stream?: boolean;
   historyLimit?: number;
+  /** What users can do on the chart; changes after mount are applied too (the keys given). */
   features?: FeaturesConfig;
   autoScale?: boolean;
   signalMarkers?: SignalMarker[];
@@ -67,6 +74,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       indicators = [],
       data,
       adapter,
+      stream = true,
       historyLimit = 500,
       features,
       autoScale = true,
@@ -85,7 +93,9 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<Chart | null>(null);
     const indicatorIdsRef = useRef<Map<string, string>>(new Map());
-    const prevStreamRef = useRef({ symbol, timeframe });
+    /** The stream open now (`symbol|timeframe`), or null. */
+    const streamKeyRef = useRef<string | null>(null);
+    const featuresRef = useRef(JSON.stringify(features ?? null));
 
     useImperativeHandle(ref, () => ({
       getChart: () => chartRef.current,
@@ -132,9 +142,10 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
 
       if (data) {
         chart.setData(data);
-      } else {
+      } else if (stream) {
         const dataAdapter = adapter ?? new BinanceAdapter();
         chart.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+        streamKeyRef.current = `${symbol}|${timeframe}`;
       }
 
       onReady?.(chart);
@@ -148,12 +159,19 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // A stream of its own while it has no data; `stream={false}` closes it. Data given later leaves it be.
     useEffect(() => {
       const chart = chartRef.current;
-      if (!chart || data) return;
-      const prev = prevStreamRef.current;
-      if (prev.symbol === symbol && prev.timeframe === timeframe) return;
-      prevStreamRef.current = { symbol, timeframe };
+      if (!chart) return;
+      if (!stream) {
+        if (streamKeyRef.current !== null) chart.disconnectStream();
+        streamKeyRef.current = null;
+        return;
+      }
+      if (data) return;
+      const key = `${symbol}|${timeframe}`;
+      if (streamKeyRef.current === key) return;
+      streamKeyRef.current = key;
 
       chart.disconnectStream();
       const dataAdapter = adapter ?? new BinanceAdapter();
@@ -161,7 +179,14 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       if (watermarkText !== undefined) {
         chart.setWatermark(watermarkText);
       }
-    }, [symbol, timeframe, adapter, historyLimit, data, watermarkText]);
+    }, [symbol, timeframe, adapter, historyLimit, data, stream, watermarkText]);
+
+    useEffect(() => {
+      const next = JSON.stringify(features ?? null);
+      if (next === featuresRef.current) return;
+      featuresRef.current = next;
+      if (features) chartRef.current?.setFeatures(features);
+    }, [features]);
 
     useEffect(() => {
       chartRef.current?.setTheme(resolveTheme(theme));
@@ -177,21 +202,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
 
     useEffect(() => {
       const chart = chartRef.current;
-      if (!chart) return;
-      const current = indicatorIdsRef.current;
-      const desired = new Set(indicators);
-      for (const [name, instanceId] of current) {
-        if (!desired.has(name)) {
-          chart.removeIndicator(instanceId);
-          current.delete(name);
-        }
-      }
-      for (const name of indicators) {
-        if (!current.has(name)) {
-          const instanceId = chart.addIndicator(name);
-          if (instanceId) current.set(name, instanceId);
-        }
-      }
+      if (chart) syncIndicators(chart, indicators, indicatorIdsRef.current);
     }, [indicators]);
 
     useEffect(() => {

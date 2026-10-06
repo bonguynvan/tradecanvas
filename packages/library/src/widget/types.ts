@@ -84,6 +84,12 @@ export interface ChartWidgetOptions {
    * leaves only the toolbar's indicator count.
    */
   indicatorLegend?: boolean;
+  /**
+   * In a replay, show the signal markers and trade zones only as it reaches
+   * them (a trade open until its exit). Default `true`; `false` shows them
+   * all through the replay.
+   */
+  replayRevealMarks?: boolean;
   /** Fullscreen button in the toolbar, where the browser allows it. Default `true`. */
   fullscreen?: boolean;
   /**

@@ -759,6 +759,15 @@ replay.start()
 // replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
 ```
 
+Biểu đồ cũng tự phát lại chuỗi dữ liệu của mình: `chart.replayStart()`. Điểm tín hiệu và vùng lệnh hiện ra khi phần phát lại chạy tới (lệnh được vẽ mở cho tới lúc thoát), `startTime` bắt đầu từ một thời điểm, `hideHistory` bỏ các nến trước điểm bắt đầu cho tới khi dừng phát lại, và `duration` chạy tới cuối trong khoảng thời gian đó dù có bao nhiêu nến:
+
+```typescript
+chart.setSignalMarkers(signals)
+chart.setTradeZones(trades)
+chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // 30 ngày gần nhất, chỉ chúng, trong khoảng 3,5 giây
+chart.on('replayComplete', () => chart.replayStop())                                              // rồi lại cả chuỗi dữ liệu
+```
+
 ### Tương tác với biểu đồ
 
 Mọi thao tác bạn mong đợi ở một biểu đồ giao dịch trên máy tính đều có sẵn:
@@ -982,7 +991,10 @@ npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
 import { TradeCanvas } from '@tradecanvas/react'
 
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
+<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
+
+`indicators` nhận id hoặc `{ id, params, position }` (chỉ báo nào đổi tham số sẽ được đặt lại với tham số mới), `data` hiện nến của riêng bạn và không mở luồng nào, `stream={false}` không bao giờ mở luồng, và `features` theo các thay đổi sau khi mount.
 
 Cả ba dùng chung một bộ props và trao cho bạn `Chart` bên dưới (cho hình vẽ, giao dịch, khớp lệnh, plugin) qua `onReady` / ref / `bind:chart`. Xem [tài liệu về framework](https://bonguynvan.github.io/tradecanvas/docs/frameworks).
 

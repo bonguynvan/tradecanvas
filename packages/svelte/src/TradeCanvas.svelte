@@ -5,6 +5,7 @@
     BinanceAdapter,
     DARK_THEME,
     LIGHT_THEME,
+    syncIndicators,
   } from '@tradecanvas/chart';
   import type {
     ChartType,
@@ -18,6 +19,7 @@
     TradeZoneStyle,
     DataAdapter,
     ChartStyleOverrides,
+    IndicatorSpec,
   } from '@tradecanvas/chart';
 
   interface Props {
@@ -25,10 +27,15 @@
     timeframe?: TimeFrame;
     theme?: 'dark' | 'light' | Theme;
     chartType?: ChartType;
-    indicators?: string[];
+    /** Indicators by id (`'rsi'`), or with their inputs (`{ id: 'ema', params: { period: 50 } }`). */
+    indicators?: IndicatorSpec[];
+    /** Static bars: the chart shows these, and opens no stream of its own when it has them at mount. */
     data?: OHLCBar[];
     adapter?: DataAdapter;
+    /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
+    stream?: boolean;
     historyLimit?: number;
+    /** What users can do on the chart; changes after mount are applied too (the keys given). */
     features?: FeaturesConfig;
     autoScale?: boolean;
     signalMarkers?: SignalMarker[];
@@ -47,9 +54,10 @@
     timeframe = '5m' as TimeFrame,
     theme = 'dark' as 'dark' | 'light' | Theme,
     chartType = 'candlestick' as ChartType,
-    indicators = [] as string[],
+    indicators = [] as IndicatorSpec[],
     data = undefined as OHLCBar[] | undefined,
     adapter = undefined as DataAdapter | undefined,
+    stream = true,
     historyLimit = 500,
     features = undefined as FeaturesConfig | undefined,
     autoScale = true,
@@ -72,8 +80,10 @@
   let container: HTMLDivElement;
   let instance: Chart | null = null;
   const indicatorIds = new Map<string, string>();
-  let prevSymbol = symbol;
-  let prevTimeframe = timeframe;
+  /** The stream open now (`symbol|timeframe`), or null. */
+  let streamKey: string | null = null;
+  /** The features last applied, as text. */
+  let featuresKey: string | null = null;
 
   onMount(() => {
     instance = new Chart(container, {
@@ -108,10 +118,12 @@
 
     if (data) {
       instance.setData(data);
-    } else {
+    } else if (stream) {
       const dataAdapter = adapter ?? new BinanceAdapter();
       instance.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+      streamKey = `${symbol}|${timeframe}`;
     }
+    featuresKey = JSON.stringify($state.snapshot(features) ?? null);
 
     onReady?.(instance);
   });
@@ -125,17 +137,31 @@
     }
   });
 
+  // A stream of its own while it has no data; `stream={false}` closes it. Data given later leaves it be.
   $effect(() => {
-    if (!instance || data) return;
-    const _s = symbol;
-    const _tf = timeframe;
-    if (_s === prevSymbol && _tf === prevTimeframe) return;
-    prevSymbol = _s;
-    prevTimeframe = _tf;
+    const key = `${symbol}|${timeframe}`;
+    const on = stream;
+    const hasData = !!data;
+    if (!instance) return;
+    if (!on) {
+      if (streamKey !== null) instance.disconnectStream();
+      streamKey = null;
+      return;
+    }
+    if (hasData || streamKey === key) return;
+    streamKey = key;
     instance.disconnectStream();
     const dataAdapter = adapter ?? new BinanceAdapter();
-    instance.connect({ adapter: dataAdapter, symbol: _s, timeframe: _tf, historyLimit });
+    instance.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
     if (watermarkText) instance.setWatermark(watermarkText);
+  });
+
+  $effect(() => {
+    const next = $state.snapshot(features);
+    const key = JSON.stringify(next ?? null);
+    if (!instance || key === featuresKey) return;
+    featuresKey = key;
+    if (next) instance.setFeatures(next);
   });
 
   $effect(() => { instance?.setTheme(resolveTheme(theme)); });
@@ -143,20 +169,8 @@
   $effect(() => { if (data) instance?.setData(data); });
 
   $effect(() => {
-    if (!instance) return;
-    const desired = new Set(indicators);
-    for (const [name, instanceId] of indicatorIds) {
-      if (!desired.has(name)) {
-        instance.removeIndicator(instanceId);
-        indicatorIds.delete(name);
-      }
-    }
-    for (const name of indicators) {
-      if (!indicatorIds.has(name)) {
-        const instanceId = instance.addIndicator(name);
-        if (instanceId) indicatorIds.set(name, instanceId);
-      }
-    }
+    const specs = $state.snapshot(indicators) as IndicatorSpec[];
+    if (instance) syncIndicators(instance, specs, indicatorIds);
   });
 
   $effect(() => { if (signalMarkers) instance?.setSignalMarkers(signalMarkers); });

@@ -250,7 +250,9 @@ await chart.setTimeframe('7m')`,
 widget.replayFrom(220)            // or start at a bar directly
 chart.replayStart({ startIndex: 220, paused: true, interval: 1000, speed: 5 })
 chart.replayStart({ steps: bars15m, startIndex: 220 })  // each hour forms in 15m steps
-chart.replayStop()                // back to the live series`,
+chart.replayStart({ startTime, hideHistory: true, duration: 3500 })  // only the window, in 3.5 s
+chart.on('replayComplete', () => chart.replayStop())   // back to the live series
+// Signal markers and trade zones show as the replay reaches them`,
     options: () => ({
       symbol: 'DEMO',
       symbols: ['DEMO'],
@@ -260,7 +262,29 @@ chart.replayStop()                // back to the live series`,
     // 15-minute bars shown as hours: the replay bar can step through them.
     data: (symbol) => generateBars(1600, symbol, HOUR / 4, 120),
     setup: (widget, chart) => {
-      widget.replayFrom(Math.floor(chart.getData().length * 0.55));
+      const data = chart.getData();
+      // Buys and sells across the series: the replay shows each as it reaches it.
+      const marks = swings(data, Math.floor(data.length * 0.6), 10, 6, 'low');
+      chart.setSignalMarkers(marks.map((m, i) => ({
+        id: `swing-${i}`,
+        time: m.time,
+        price: m.price,
+        direction: i % 2 === 0 ? 'long' : 'short',
+        confidence: 1,
+        source: 'swing',
+        label: i % 2 === 0 ? 'BUY' : 'SELL',
+      })));
+      const [entry, exit] = [marks[2], marks[3]];
+      chart.setTradeZones([{
+        id: 'trade',
+        entryTime: entry.time,
+        entryPrice: entry.price,
+        exitTime: exit.time,
+        exitPrice: exit.price,
+        direction: 'long',
+        pnl: exit.price - entry.price,
+      }]);
+      widget.replayFrom(Math.floor(data.length * 0.55));
     },
   },
   {
