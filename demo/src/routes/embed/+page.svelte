@@ -30,6 +30,9 @@
     const trading = params.get('trading') === 'true';
     const watchlist = params.get('watchlist') === 'true';
     const locale = params.get('locale') ?? undefined;
+    // `?ui=terminal` / `capsule`: the widget in that look (Studio without it).
+    const uiParam = params.get('ui');
+    const ui = uiParam === 'terminal' || uiParam === 'capsule' || uiParam === 'studio' ? uiParam : undefined;
     const numberLocale = params.get('numberLocale') ?? undefined;
     // `?latency=1500` delays every history request — shows the loading veil
     // a slow network gets on symbol/timeframe switches.
@@ -63,6 +66,7 @@
         trading,
         watchlist,
         locale,
+        ...(ui ? { ui } : {}),
         // ChartWidget takes the starting chart type through chartOptions.
         chartOptions: {
           ...(numberLocale ? { numberLocale } : {}),
