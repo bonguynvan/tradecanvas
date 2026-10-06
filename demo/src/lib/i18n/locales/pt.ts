@@ -346,6 +346,17 @@ const pt: SiteMessages = {
         'Abra as Configurações e escolha uma cor: ela vai para a camada do usuário, guardada com o tema',
       ],
     },
+    parts: {
+      title: 'Seu widget, suas peças',
+      stat: '112 chaves',
+      blurb:
+        'Cada parte do widget tem uma chave, ligada até você desligar e alterável em execução: uma capacidade inteira (alertas, configurações, atalhos) ou um único lugar (um botão da barra, uma entrada de menu, uma seção de ferramentas de desenho). Seus próprios botões, menus e itens de status ficam nas barras do widget. Aqui o replay, duas seções de desenho e o download dos dados estão desligados, e a barra traz um menu de chaves.',
+      tryThis: [
+        'Abra “features” na barra e desligue e ligue partes',
+        'O olho no pé da barra de desenho esconde a barra de ferramentas e a de status, e as traz de volta',
+        'Clique com o botão direito num desenho: a última entrada é da própria página',
+      ],
+    },
     markets: {
       title: 'Listas de observação e mercado',
       stat: 'cotações ao vivo',
@@ -570,6 +581,7 @@ const pt: SiteMessages = {
       embed: 'Widget incorporável',
       api: 'Referência da API',
       styling: 'Aparência',
+      customization: 'Personalização',
       'chart-types': 'Tipos de gráfico',
       indicators: 'Indicadores',
       'drawing-tools': 'Ferramentas de desenho',

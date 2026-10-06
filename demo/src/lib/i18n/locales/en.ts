@@ -353,6 +353,17 @@ const en = {
         'Open Settings and pick a colour: it goes on the user’s layer, kept with the theme',
       ],
     },
+    parts: {
+      title: 'Your widget, your parts',
+      stat: '112 switches',
+      blurb:
+        'Every part of the widget has a switch, on until you turn it off and changeable while running: a whole capability (alerts, settings, the keys) or one place (a toolbar button, a menu entry, a section of drawing tools). Your own buttons, menus and status items sit in the widget’s bars. Here replay, two sections of drawing tools and the data download are off, and the toolbar carries a menu of switches.',
+      tryThis: [
+        'Open “features” on the toolbar and switch parts off and on',
+        'The eye at the foot of the drawing bar hides the toolbar and the status bar, and brings them back',
+        'Right-click a drawing: the last entry is the page’s own',
+      ],
+    },
     markets: {
       title: 'Watchlists and the market',
       stat: 'live quotes',
@@ -578,6 +589,7 @@ const en = {
       embed: 'Embeddable Widget',
       api: 'API Reference',
       styling: 'Styling',
+      customization: 'Customization',
       'chart-types': 'Chart Types',
       indicators: 'Indicators',
       'drawing-tools': 'Drawing Tools',

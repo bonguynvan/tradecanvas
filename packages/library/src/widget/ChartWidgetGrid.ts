@@ -1,6 +1,7 @@
 import type { ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
+import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
 import type { GridLayout } from '../grid/ChartGrid.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { createTranslator, fill, resolveMessages, type MessageKey, type Translator } from './i18n.js';
@@ -147,6 +148,8 @@ export class ChartWidgetGrid {
   private uiTheme: WidgetUIPreset | WidgetUITheme | null = null;
   /** The style overrides given to applyOverrides, for charts added later. */
   private styleOverrides: ChartStyleOverrides = {};
+  /** The switches given to setFeatures, for charts added later. */
+  private featureSwitches: WidgetFeatures = {};
   /** Charts the grid shrank away from, by position: growing again brings them back as they were. */
   private parked = new Map<number, WidgetLayoutContent>();
   private drawingFrame = 0;
@@ -319,6 +322,16 @@ export class ChartWidgetGrid {
     this.styleOverrides = next as ChartStyleOverrides;
   }
 
+  /**
+   * The widget switches of every chart (`ChartWidget.setFeatures`): names
+   * not given stay as they are. Charts added later get them too.
+   */
+  setFeatures(patch: WidgetFeatures): void {
+    const read = readWidgetFeatures(patch);
+    for (const c of this.cells) c.widget.setFeatures(read);
+    this.featureSwitches = { ...this.featureSwitches, ...read };
+  }
+
   /** Every chart's theme. */
   setTheme(theme: ThemeName | Theme): void {
     for (const c of this.cells) c.widget.setTheme(theme);
@@ -446,6 +459,8 @@ export class ChartWidgetGrid {
     cell.widget = widget;
     // Style overrides given to the grid since, for a chart it adds too.
     if (Object.keys(this.styleOverrides).length > 0) widget.getChart().applyOverrides(this.styleOverrides);
+    // And the switches.
+    if (Object.keys(this.featureSwitches).length > 0) widget.setFeatures(this.featureSwitches);
     this.wireCell(cell);
     el.addEventListener('pointerdown', () => this.setActive(this.cells.indexOf(cell)), true);
     el.addEventListener('pointerenter', () => { this.hovered = cell; });

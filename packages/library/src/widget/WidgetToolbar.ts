@@ -5,6 +5,7 @@ import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import { fill, type Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
+import { markPart, partAttr, tidyDividers } from './widgetFeatures.js';
 
 let toolbarCount = 0;
 
@@ -42,6 +43,7 @@ export class WidgetToolbar {
     this.t = t;
     this.el = document.createElement('div');
     this.el.className = 'tcw-toolbar';
+    markPart(this.el, 'toolbar');
     this.build();
     host.appendChild(this.el);
   }
@@ -53,11 +55,13 @@ export class WidgetToolbar {
     const symbolBtn = document.createElement('button');
     symbolBtn.className = 'tcw-toolbar-symbol';
     symbolBtn.dataset.role = 'symbol';
+    markPart(symbolBtn, 'toolbar.symbol');
     symbolBtn.addEventListener('click', callbacks.onSymbolClick);
     el.appendChild(symbolBtn);
     if (callbacks.onSymbolInfo) {
       const infoBtn = this.iconBtn('info', this.t('symbolInfo.title'), callbacks.onSymbolInfo);
       infoBtn.dataset.role = 'symbolInfo';
+      markPart(infoBtn, 'symbolInfo', 'toolbar.symbolInfo');
       el.appendChild(infoBtn);
     }
     el.appendChild(this.sep());
@@ -67,11 +71,13 @@ export class WidgetToolbar {
     this.tfFavorites = [...(config.timeframeFavorites ?? config.timeframes.map((tf) => tf.value))];
     this.tfGroup = document.createElement('div');
     this.tfGroup.className = 'tcw-toolbar-group tcw-tf-group';
+    markPart(this.tfGroup, 'toolbar.timeframes');
     el.appendChild(this.tfGroup);
     if (callbacks.onToggleTimeframeFavorite && config.timeframes.length > 0) {
       const tfWrap = document.createElement('div');
       tfWrap.style.position = 'relative';
       tfWrap.style.display = 'inline-flex';
+      markPart(tfWrap, 'toolbar.timeframeMenu');
       const tfTrigger = document.createElement('button');
       tfTrigger.className = 'tcw-btn tcw-tf-more';
       tfTrigger.dataset.role = 'timeframes';
@@ -89,6 +95,7 @@ export class WidgetToolbar {
     const ctWrap = document.createElement('div');
     ctWrap.style.position = 'relative';
     ctWrap.style.display = 'inline-flex';
+    markPart(ctWrap, 'toolbar.chartType');
 
     const ctTrigger = document.createElement('button');
     ctTrigger.className = 'tcw-dropdown-trigger';
@@ -105,6 +112,7 @@ export class WidgetToolbar {
     const indWrap = document.createElement('div');
     indWrap.style.position = 'relative';
     indWrap.style.display = 'inline-flex';
+    markPart(indWrap, 'toolbar.indicators');
 
     const indTrigger = document.createElement('button');
     indTrigger.className = 'tcw-dropdown-trigger';
@@ -128,6 +136,7 @@ export class WidgetToolbar {
       layoutsBtn.type = 'button';
       layoutsBtn.className = 'tcw-dropdown-trigger tcw-layouts-btn';
       layoutsBtn.dataset.role = 'layouts';
+      markPart(layoutsBtn, 'layouts', 'toolbar.layouts');
       layoutsBtn.setAttribute('aria-haspopup', 'menu');
       layoutsBtn.addEventListener('click', () => onLayouts(layoutsBtn));
       el.appendChild(layoutsBtn);
@@ -140,6 +149,7 @@ export class WidgetToolbar {
     if (callbacks.onToggleReplay) {
       const replayBtn = this.iconBtn('play', this.t('toolbar.replay'), callbacks.onToggleReplay);
       replayBtn.dataset.role = 'replay';
+      markPart(replayBtn, 'replay', 'toolbar.replay');
       el.appendChild(replayBtn);
     }
 
@@ -148,16 +158,19 @@ export class WidgetToolbar {
       const longBtn = this.iconBtn('trendingUp', this.t('toolbar.longBracket'), () => onBracket('buy'));
       longBtn.dataset.role = 'long';
       longBtn.classList.add('tcw-btn-long');
+      markPart(longBtn, 'bracketOrders', 'toolbar.bracketOrders');
       el.appendChild(longBtn);
       const shortBtn = this.iconBtn('trendingDown', this.t('toolbar.shortBracket'), () => onBracket('sell'));
       shortBtn.dataset.role = 'short';
       shortBtn.classList.add('tcw-btn-short');
+      markPart(shortBtn, 'bracketOrders', 'toolbar.bracketOrders');
       el.appendChild(shortBtn);
     }
 
     if (callbacks.onToggleLadder) {
       const ladderBtn = this.iconBtn('ladder', this.t('toolbar.depthLadder'), callbacks.onToggleLadder);
       ladderBtn.dataset.role = 'ladder';
+      markPart(ladderBtn, 'depthLadder', 'toolbar.depthLadder');
       el.appendChild(ladderBtn);
     }
 
@@ -165,34 +178,41 @@ export class WidgetToolbar {
       const accountBtn = this.iconBtn('receipt', this.t('toolbar.account'), callbacks.onToggleAccount);
       accountBtn.dataset.role = 'account';
       accountBtn.setAttribute('aria-pressed', 'false');
+      markPart(accountBtn, 'accountPanel', 'toolbar.accountPanel');
       el.appendChild(accountBtn);
     }
 
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', this.t('toolbar.objects'), callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';
+      markPart(objectsBtn, 'objectTree', 'toolbar.objectTree');
       el.appendChild(objectsBtn);
     }
 
     if (callbacks.onToggleAlerts) {
       const alertsBtn = this.iconBtn('bell', this.t('toolbar.priceAlerts'), callbacks.onToggleAlerts);
       alertsBtn.dataset.role = 'alerts';
+      markPart(alertsBtn, 'alerts', 'toolbar.alerts');
       el.appendChild(alertsBtn);
     }
 
     const screenshotBtn = this.iconBtn('camera', this.t('toolbar.screenshot'), callbacks.onScreenshot);
+    markPart(screenshotBtn, 'screenshot', 'toolbar.screenshot');
     el.appendChild(screenshotBtn);
 
     const settingsBtn = this.iconBtn('settings', this.t('toolbar.settings'), callbacks.onSettings);
+    markPart(settingsBtn, 'settings', 'toolbar.settings');
     el.appendChild(settingsBtn);
 
     this.themeBtn = this.iconBtn('moon', this.t('toolbar.toggleTheme'), callbacks.onToggleTheme);
     this.themeBtn.dataset.role = 'theme';
+    markPart(this.themeBtn, 'themeToggle', 'toolbar.themeToggle');
     el.appendChild(this.themeBtn);
 
     if (callbacks.onToggleFullscreen) {
       this.fullscreenBtn = this.iconBtn('maximize', this.t('toolbar.fullscreen'), callbacks.onToggleFullscreen);
       this.fullscreenBtn.dataset.role = 'fullscreen';
+      markPart(this.fullscreenBtn, 'fullscreen', 'toolbar.fullscreen');
       this.fullscreenBtn.setAttribute('aria-pressed', 'false');
       el.appendChild(this.fullscreenBtn);
     }
@@ -221,10 +241,28 @@ export class WidgetToolbar {
     return btn;
   }
 
+  /** The holder of hosts' own buttons (and anything else of theirs) on one side. */
+  hostSlot(side: 'left' | 'right'): HTMLDivElement | null {
+    return side === 'left' ? this.hostLeft : this.hostRight;
+  }
+
   private hostGroup(): HTMLDivElement {
     const group = document.createElement('div');
     group.className = 'tcw-toolbar-host';
     return group;
+  }
+
+  /** The symbol button opens the symbol search, unless it is switched off: then it only names the symbol. */
+  setSymbolSearch(on: boolean): void {
+    const btn = this.el.querySelector<HTMLButtonElement>('[data-role="symbol"]');
+    if (!btn) return;
+    if (on) btn.removeAttribute('aria-disabled');
+    else btn.setAttribute('aria-disabled', 'true');
+  }
+
+  /** No separator left at an edge or next to another once buttons are switched off. */
+  tidy(): void {
+    tidyDividers(this.el, 'tcw-toolbar-sep', 'tcw-toolbar-spacer');
   }
 
   /** Show a panel button (by its role: 'account', 'objects'…) as on or off. */
@@ -320,7 +358,7 @@ export class WidgetToolbar {
     if (this.callbacks.onAddTimeframe) {
       const custom = esc(this.t('toolbar.timeframes.custom'));
       const add = esc(this.t('toolbar.timeframes.add'));
-      html += `<form class="tcw-tf-custom" novalidate>`
+      html += `<form class="tcw-tf-custom" ${partAttr('customTimeframes')} novalidate>`
         + `<input class="tcw-tf-custom-input" type="text" autocomplete="off" spellcheck="false" maxlength="6"`
         + ` placeholder="7m, 90m, 2h…" aria-label="${custom}" aria-describedby="tcw-tf-hint-${this.uid}">`
         + `<button type="submit" class="tcw-tf-custom-add" title="${add}" aria-label="${add}">${createIcon('plus', 12)}</button>`
@@ -411,7 +449,7 @@ export class WidgetToolbar {
   private templatesMenuHtml(): string {
     if (!this.callbacks.onSaveIndicatorTemplate) return '';
     const remove = this.t('templates.delete');
-    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.templates'))}</div>`;
+    let html = `<div ${partAttr('indicatorTemplates')}><div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.templates'))}</div>`;
     for (const name of this.indicatorTemplates) {
       const n = esc(name);
       html += `<div class="tcw-tf-row">`
@@ -420,7 +458,7 @@ export class WidgetToolbar {
         + `</div>`;
     }
     html += `<button class="tcw-dropdown-item" data-tpl-save>${createIcon('save', 14)}<span>${esc(this.t('templates.save'))}</span></button>`;
-    return html + '<div class="tcw-dropdown-divider"></div>';
+    return `${html}<div class="tcw-dropdown-divider"></div></div>`;
   }
 
   private buildIndicatorMenu(): void {

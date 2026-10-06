@@ -1,6 +1,7 @@
 import type { FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface AccountPanelCallbacks {
   onClosePosition: (id: string) => void;
@@ -99,6 +100,7 @@ export class WidgetAccountPanel {
     const newOrder = document.createElement('button');
     newOrder.type = 'button';
     newOrder.className = 'tcw-account-new';
+    markPart(newOrder, 'orderTicket');
     newOrder.innerHTML = createIcon('plus', 13);
     newOrder.append(this.t('account.newOrder'));
     newOrder.addEventListener('click', () => this.callbacks.onNewOrder());

@@ -343,7 +343,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // công tắc của widget: xem Tùy biến
   onReady: (chart) => { /* ... */ },
 })
 
@@ -665,6 +665,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Công tắc tính năng</h3>
+<p>112 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // một nút, một nhóm công cụ vẽ, mọi phím tắt
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // mọi công tắc, bật hay tắt`}</code></pre>
+
 <h3>Nút và mục menu của riêng bạn</h3>
 <p>
   Thêm nút vào thanh công cụ (một biểu tượng có sẵn hoặc phần tử của bạn, chữ, một công
@@ -686,6 +694,16 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
+<p>Ngoài ra còn nút menu trên toolbar, nút trên thanh công cụ vẽ, mục trên thanh trạng thái, chỗ riêng cho bạn trong từng thanh và trên biểu đồ, và mục ở cuối menu của một hình vẽ hay một chỉ báo (xem <a href={href('/docs/customization#parts')}>Tùy biến</a>):</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // được hỏi lại mỗi lần mở
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // một lớp trên biểu đồ
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
+})`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
 <p>
@@ -706,6 +724,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // đưa các biểu đồ khác về cùng khung với biểu đồ đang chọn
 grid.applyOverrides({ 'grid.vertical.visible': false })   // giao diện của mọi biểu đồ, kể cả biểu đồ thêm sau
+grid.setFeatures({ 'toolbar.replay': false })               // công tắc của mọi biểu đồ, kể cả biểu đồ thêm sau
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

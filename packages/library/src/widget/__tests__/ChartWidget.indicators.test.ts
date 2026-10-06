@@ -312,7 +312,8 @@ describe('on-chart indicator legend', () => {
     widget = new ChartWidget(host, { adapter, symbol: 'AAA', watchlist: false, indicatorLegend: false });
     FakeChart.last.addIndicator('ema');
     await frame();
-    expect(host.querySelector('.tcw-ind-legend')).toBeNull();
+    expect(getComputedStyle(host.querySelector('.tcw-ind-legend')!).display).toBe('none');
+    expect(host.querySelector('.tcw-ind-legend-row')).toBeNull();
   });
 });
 

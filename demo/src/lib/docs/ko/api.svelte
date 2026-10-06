@@ -338,7 +338,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // 위젯의 스위치: 커스터마이징 참고
   onReady: (chart) => { /* ... */ },
 })
 
@@ -653,6 +653,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>기능 스위치</h3>
+<p>스위치 112개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // 모든 스위치의 켜짐/꺼짐`}</code></pre>
+
 <h3>직접 추가하는 버튼과 메뉴 항목</h3>
 <p>
   도구 모음에 버튼(내장 아이콘 또는 직접 만든 요소, 텍스트, 스위치)을, 차트의 오른쪽 클릭 메뉴에
@@ -674,6 +682,16 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
+<p>그 밖에 툴바의 메뉴 버튼, 그리기 사이드바의 버튼, 상태 바의 항목, 각 바와 차트 위의 내 자리, 그림이나 지표 메뉴 끝의 항목도 있습니다(<a href={href('/docs/customization#parts')}>커스터마이징</a> 참고):</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // 열 때마다 새로 가져옴
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // 차트 위의 층
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
+})`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
 <p>
@@ -694,6 +712,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // 나머지 차트를 활성 차트에 맞춤
 grid.applyOverrides({ 'grid.vertical.visible': false })   // 모든 차트의 모양, 나중에 추가하는 차트까지
+grid.setFeatures({ 'toolbar.replay': false })               // 모든 차트의 스위치, 나중에 추가하는 차트까지
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

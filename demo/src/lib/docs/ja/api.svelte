@@ -332,7 +332,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // ウィジェットのスイッチ：「カスタマイズ」を参照
   onReady: (chart) => { /* ... */ },
 })
 
@@ -640,6 +640,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>機能スイッチ</h3>
+<p>112 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // ボタン一つ、描画ツールのグループ一つ、すべてのキー操作
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // すべてのスイッチのオン・オフ`}</code></pre>
+
 <h3>独自のボタンとメニュー項目</h3>
 <p>
   ツールバーにボタン（組み込みのアイコンや独自の要素、テキスト、スイッチ）を、チャートの右クリックメニューに
@@ -661,6 +669,16 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
+<p>ほかにも、ツールバーのメニューボタン、描画サイドバーのボタン、ステータスバーの項目、各バーとチャート上の独自の場所、描画やインジケーターのメニュー末尾の項目があります（<a href={href('/docs/customization#parts')}>カスタマイズ</a>を参照）：</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // 開くたびに取得
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // チャート上のレイヤー
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
+})`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
 <p>
@@ -681,6 +699,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // ほかのチャートをアクティブなチャートにそろえる
 grid.applyOverrides({ 'grid.vertical.visible': false })   // すべてのチャートの見た目と、あとから追加するチャートにも
+grid.setFeatures({ 'toolbar.replay': false })               // すべてのチャートのスイッチと、あとから追加するチャートにも
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

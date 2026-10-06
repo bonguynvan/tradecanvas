@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | Rangos predefinidos (1D … Todo) e ir a fecha (Alt+G) en la barra de estado |
 | `indicatorLegend` | `boolean` | `true` | Indicadores listados en el gráfico (bajo la leyenda OHLCV y encima de sus paneles) con mostrar / configuración / quitar |
 | `fullscreen` | `boolean` | `true` | Botón de pantalla completa en la barra de herramientas |
+| `features` | `WidgetFeatures` | todo encendido | 112 interruptores para las partes del widget, cambiables en marcha — ver **Interruptores del widget y partes propias** |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Catálogo de símbolos con búsqueda |
 | `timeframes` | `TimeFrame[]` | de 1m a 1M | Temporalidades disponibles; fija tus favoritas desde el menú ▾ |
 | `chartTypes` | `ChartType[]` | 18 tipos | Tipos de gráfico disponibles |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 Las etiquetas de precio del gráfico usan las mismas esquinas (`tagRadius`; en un `Chart` sin widget, `chart.setShapes({ tagRadius })`). El widget no carga fuentes: carga tú las que nombre cada aspecto. Consulta [Estilos](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
+### Interruptores del widget y partes propias
+
+Cada parte del widget tiene un interruptor, encendido hasta que lo apagas y cambiable en marcha. Un nombre sin punto es una capacidad entera, apagada allí donde aparezca (`alerts`, `settings`, `hotkeys`); un nombre con punto es un solo lugar (`toolbar.screenshot`, `sidebar.magnet`, `menu.chart.order`). `WIDGET_FEATURES` lista los 112; las opciones anteriores (`toolbar: false`, `drawingTools: false`…) son estos mismos interruptores. Tus propios botones, menús y elementos de estado van en las barras del widget y siguen su tema y su aspecto.
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // un botón, una sección de dibujo, todos los atajos
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // en marcha
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // una capa propia sobre el gráfico
+```
+
+Los interruptores muestran y ocultan las partes del widget; para impedir algo en el propio gráfico (dibujar, operar, hacer zoom), usa `chartOptions.features`. Todas las vías —colores, aspecto, overrides de estilo, interruptores, partes propias, textos, plugins— están en la página de [Personalización](https://bonguynvan.github.io/tradecanvas/docs/customization).
 
 ### Temas del widget
 

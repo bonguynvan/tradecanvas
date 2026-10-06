@@ -1,5 +1,6 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface ObjectTreeIndicator {
   instanceId: string;
@@ -60,6 +61,7 @@ export class WidgetObjectTree {
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-tree-panel';
+    markPart(this.el, 'objectTree');
     this.el.hidden = true;
 
     const header = document.createElement('div');
@@ -83,6 +85,9 @@ export class WidgetObjectTree {
         label: this.t('objects.addCompare'),
         run: () => this.callbacks.onAddCompare?.(),
       });
+      // Its add button goes with the compare switch; compares already on stay listed, to remove.
+      const add = this.compareEl.parentElement?.querySelector<HTMLElement>('.tcw-tree-add');
+      if (add) markPart(add, 'compare');
     }
 
     host.appendChild(this.el);
@@ -167,9 +172,11 @@ export class WidgetObjectTree {
         ));
       }
       if (this.callbacks.onConfigureIndicator) {
-        actions.appendChild(this.iconButton('settings', this.t('objects.indicatorSettings'), '', () =>
+        const gear = this.iconButton('settings', this.t('objects.indicatorSettings'), '', () =>
           this.callbacks.onConfigureIndicator?.(ind.instanceId),
-        ));
+        );
+        markPart(gear, 'indicatorSettings');
+        actions.appendChild(gear);
       }
       actions.appendChild(this.iconButton('trash', this.t('objects.removeIndicator'), 'tcw-tree-del', () =>
         this.callbacks.onRemoveIndicator(ind.instanceId),
@@ -292,9 +299,11 @@ export class WidgetObjectTree {
       () => this.callbacks.onToggleDrawingLocked(d.id, !d.locked),
     ));
     if (this.callbacks.onConfigureDrawing) {
-      actions.appendChild(this.iconButton('settings', this.t('objects.drawingSettings'), '', () =>
+      const gear = this.iconButton('settings', this.t('objects.drawingSettings'), '', () =>
         this.callbacks.onConfigureDrawing?.(d.id),
-      ));
+      );
+      markPart(gear, 'drawingSettings');
+      actions.appendChild(gear);
     }
     actions.appendChild(this.iconButton('trash', this.t('objects.removeDrawing'), 'tcw-tree-del', () =>
       this.callbacks.onRemoveDrawing(d.id),

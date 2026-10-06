@@ -1,7 +1,8 @@
 import type { DrawingToolType } from '@tradecanvas/commons';
-import type { SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
+import type { SidebarButtonSpec, SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon, createToolIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
+import { WIDGET_FEATURES, markPart, tidyDividers, type WidgetFeature } from './widgetFeatures.js';
 
 /** Drawing tool icons carry more detail than interface glyphs: a size up. */
 const TOOL_ICON_PX = 16;
@@ -10,6 +11,12 @@ const TOOL_ICON_PX = 16;
 const FLYOUT_CLOSE_DELAY_MS = 150;
 /** Room kept between a tool menu and the bottom of the chart (px). */
 const FLYOUT_MARGIN = 4;
+
+/** The switch for a section of tools (`sidebar.lines`…), when there is one. */
+function sectionFeature(section: string | undefined): WidgetFeature | null {
+  const name = `sidebar.${section}`;
+  return (WIDGET_FEATURES as readonly string[]).includes(name) ? (name as WidgetFeature) : null;
+}
 
 /** Human label for a tool id, sourced from the configured groups. */
 function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): string {
@@ -37,6 +44,8 @@ export class WidgetDrawingSidebar {
   private flyoutEl: HTMLDivElement | null = null;
   private flyoutIdx = -1;
   private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Where hosts' own buttons go, after the drawing tools' switches. */
+  private hostEl: HTMLDivElement | null = null;
   private favoritesEl: HTMLDivElement | null = null;
   private favoritesDivider: HTMLDivElement | null = null;
   private favorites: string[] = [];
@@ -51,6 +60,7 @@ export class WidgetDrawingSidebar {
     this.callbacks = callbacks;
     this.el = document.createElement('div');
     this.el.className = 'tcw-sidebar';
+    markPart(this.el, 'sidebar');
     this.build();
     // On a short screen the sidebar scrolls; a menu left open would point at the wrong button.
     this.el.addEventListener('scroll', () => this.hideFlyout(), { passive: true });
@@ -66,6 +76,7 @@ export class WidgetDrawingSidebar {
     this.cursorBtn.title = this.t('drawing.cursor');
     this.cursorBtn.innerHTML = createIcon('cursor', 14);
     this.cursorBtn.addEventListener('click', callbacks.onCancelDrawing);
+    markPart(this.cursorBtn, 'sidebar.cursor');
     el.appendChild(this.cursorBtn);
 
     el.appendChild(this.divider());
@@ -75,8 +86,10 @@ export class WidgetDrawingSidebar {
       this.favorites = [...(config.favorites ?? [])];
       this.favoritesEl = document.createElement('div');
       this.favoritesEl.className = 'tcw-sidebar-favorites';
+      markPart(this.favoritesEl, 'sidebar.favorites');
       el.appendChild(this.favoritesEl);
       this.favoritesDivider = this.divider();
+      markPart(this.favoritesDivider, 'sidebar.favorites');
       el.appendChild(this.favoritesDivider);
       this.renderFavorites();
     }
@@ -91,6 +104,8 @@ export class WidgetDrawingSidebar {
       lastSection = group.section;
       const wrap = document.createElement('div');
       wrap.className = 'tcw-tool-group-wrap';
+      const feature = sectionFeature(group.section);
+      if (feature) markPart(wrap, feature);
 
       const btn = document.createElement('button');
       btn.className = 'tcw-sidebar-btn';
@@ -156,6 +171,7 @@ export class WidgetDrawingSidebar {
       styleBtn.className = 'tcw-sidebar-btn';
       styleBtn.title = this.t('drawing.style');
       styleBtn.dataset.role = 'style';
+      markPart(styleBtn, 'sidebar.style');
       styleBtn.innerHTML = createIcon('palette', 14);
       styleBtn.addEventListener('click', callbacks.onToggleStyle);
       el.appendChild(styleBtn);
@@ -167,16 +183,19 @@ export class WidgetDrawingSidebar {
       this.magnetBtn.title = this.t('drawing.magnet');
       this.magnetBtn.innerHTML = createIcon('magnet', 14);
       this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
+      markPart(this.magnetBtn, 'sidebar.magnet');
       el.appendChild(this.magnetBtn);
     }
 
     if (callbacks.onToggleEraser) {
       this.eraserBtn = this.toggleButton('eraser', this.t('drawing.eraser'), callbacks.onToggleEraser);
+      markPart(this.eraserBtn, 'sidebar.eraser');
       el.appendChild(this.eraserBtn);
     }
 
     if (callbacks.onToggleZoomArea) {
       this.zoomBtn = this.toggleButton('zoomIn', this.t('drawing.zoomArea'), callbacks.onToggleZoomArea);
+      markPart(this.zoomBtn, 'sidebar.zoomArea');
       el.appendChild(this.zoomBtn);
     }
 
@@ -188,8 +207,13 @@ export class WidgetDrawingSidebar {
       this.stayBtn.setAttribute('aria-pressed', 'false');
       this.stayBtn.innerHTML = createIcon('repeat', 14);
       this.stayBtn.addEventListener('click', callbacks.onToggleStayInDrawing);
+      markPart(this.stayBtn, 'sidebar.stayInDrawing');
       el.appendChild(this.stayBtn);
     }
+
+    this.hostEl = document.createElement('div');
+    this.hostEl.className = 'tcw-sidebar-host';
+    el.appendChild(this.hostEl);
 
     // History, then the one that clears everything, each apart.
     this.appendDivider();
@@ -198,6 +222,7 @@ export class WidgetDrawingSidebar {
     undoBtn.title = this.t('drawing.undo');
     undoBtn.innerHTML = createIcon('undo', 14);
     undoBtn.addEventListener('click', callbacks.onUndo);
+    markPart(undoBtn, 'sidebar.undo');
     el.appendChild(undoBtn);
 
     const redoBtn = document.createElement('button');
@@ -205,6 +230,7 @@ export class WidgetDrawingSidebar {
     redoBtn.title = this.t('drawing.redo');
     redoBtn.innerHTML = createIcon('redo', 14);
     redoBtn.addEventListener('click', callbacks.onRedo);
+    markPart(redoBtn, 'sidebar.redo');
     el.appendChild(redoBtn);
 
     this.appendDivider();
@@ -213,6 +239,7 @@ export class WidgetDrawingSidebar {
     clearBtn.title = this.t('drawing.clearAll');
     clearBtn.innerHTML = createIcon('trash', 14);
     clearBtn.addEventListener('click', callbacks.onClearDrawings);
+    markPart(clearBtn, 'sidebar.clear');
     el.appendChild(clearBtn);
   }
 
@@ -440,6 +467,33 @@ export class WidgetDrawingSidebar {
       this.stayBtn.classList.toggle('tcw-active', state.stayInDrawing);
       this.stayBtn.setAttribute('aria-pressed', String(state.stayInDrawing));
     }
+  }
+
+  /** A host's own button, after the drawing tools' switches. */
+  addHostButton(spec: SidebarButtonSpec): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tcw-sidebar-btn tcw-host-btn';
+    btn.dataset.hostButton = spec.id;
+    btn.title = spec.label;
+    btn.setAttribute('aria-label', spec.label);
+    if (spec.toggle) btn.setAttribute('aria-pressed', 'false');
+    if (typeof spec.icon === 'string') btn.innerHTML = createIcon(spec.icon, 14);
+    else btn.appendChild(spec.icon);
+    btn.addEventListener('click', () => spec.onClick(btn));
+    this.hostEl?.appendChild(btn);
+    this.tidy();
+    return btn;
+  }
+
+  /** The holder of hosts' own buttons and anything else of theirs. */
+  hostSlot(): HTMLDivElement | null {
+    return this.hostEl;
+  }
+
+  /** No divider left at an end or next to another once buttons are switched off. */
+  tidy(): void {
+    tidyDividers(this.el, 'tcw-sidebar-divider', 'tcw-sidebar-spacer');
   }
 
   /** A sidebar button that is on or off (aria-pressed). */

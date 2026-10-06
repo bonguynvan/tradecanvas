@@ -143,6 +143,8 @@ On connect, the chart:
 
 3. **Style override keys** → **the names in `CHART_STYLE_KEYS` are 1.x contracts.** A key is never renamed or dropped in 1.x without the old name kept working as an alias; new keys are additive. The resolved `theme.style` is read by the built-in renderers; plugins may read it but needn't (a theme without it draws as before). The user's layer is saved per theme name in snapshot version 3. Implemented in `commons/src/types/style.ts` and `commons/src/utils/chartStyle.ts`.
 
+4. **Widget switches** → **the names in `WIDGET_FEATURES` are 1.x contracts.** Every switch is on unless set `false`; a name without a dot is a whole capability, a dotted name one place. A name is never renamed or dropped in 1.x without the old one kept working; new names are additive. The older on/off options (`toolbar`, `drawingTools`, `statusBar`, `rangeBar`…) stand for switches and keep working. Switches hide the widget's UI; what the chart allows stays with `FeaturesConfig`. Implemented in `library/src/widget/widgetFeatures.ts`.
+
 Phases 1–2 build on these frozen contracts:
 - **Phase 1** — `WebSocketAdapter` / `PollingAdapter` base classes + Coinbase/Bybit/Kraken; render-time consumption of `ChartTypePlugin` / `OverlayPlugin`.
 - **Phase 2** — `chart.connectExecution(adapter)` wiring (route intents → adapter, subscribe adapter → `setOrders`/`setPositions`), drag-to-create orders, alerts→automation.

@@ -1,5 +1,6 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { markPart } from './widgetFeatures.js';
 
 /** What the symbol info panel shows, formatted by the widget. */
 export interface SymbolInfoView {
@@ -50,6 +51,7 @@ export class WidgetSymbolInfo {
   ) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-syminfo';
+    markPart(this.el, 'symbolInfo');
     this.el.setAttribute('role', 'dialog');
     this.el.setAttribute('aria-label', t('symbolInfo.title'));
     this.el.hidden = true;

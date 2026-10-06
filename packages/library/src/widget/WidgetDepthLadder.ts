@@ -3,6 +3,7 @@ import { createIcon } from './icons.js';
 import { buildLadderRows, type LadderModel } from './ladderRows.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface DepthLadderCallbacks {
   /** Buy at `price` (clicked an ask cell) or sell at `price` (clicked a bid cell). */
@@ -29,6 +30,7 @@ export class WidgetDepthLadder {
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-ladder';
+    markPart(this.el, 'depthLadder');
     this.el.hidden = true;
 
     const header = document.createElement('div');

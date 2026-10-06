@@ -168,11 +168,11 @@ describe('ChartWidget symbol info', () => {
     expect(FakeChart.last.scrolled).toEqual([-12]);
     widget.destroy();
     widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'], navigation: false });
-    expect(host.querySelector('.tcw-nav')).toBeNull();
+    expect(getComputedStyle(host.querySelector('.tcw-nav')!).display).toBe('none');
   });
 
   it('leaves the button out when asked', () => {
     widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'], symbolInfo: false });
-    expect(host.querySelector('[data-role="symbolInfo"]')).toBeNull();
+    expect(getComputedStyle(host.querySelector('[data-role="symbolInfo"]')!).display).toBe('none');
   });
 });

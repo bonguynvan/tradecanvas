@@ -1,5 +1,6 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { markPart } from './widgetFeatures.js';
 
 export interface ChartNavActions {
   zoomIn: () => void;
@@ -42,21 +43,23 @@ export class WidgetChartNav {
   ) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-nav';
+    markPart(this.el, 'navigation');
     this.el.setAttribute('role', 'toolbar');
     this.el.setAttribute('aria-label', t('nav.label'));
 
-    const buttons: [string, string, string][] = [
-      ['zoomOut', 'minus', t('nav.zoomOut')],
-      ['zoomIn', 'plus', t('nav.zoomIn')],
-      ['scrollLeft', 'chevronLeft', t('nav.scrollLeft')],
-      ['scrollRight', 'chevronRight', t('nav.scrollRight')],
-      ['reset', 'reset', t('nav.reset')],
+    const buttons: [string, string, string, 'navigation.zoom' | 'navigation.scroll' | 'navigation.reset'][] = [
+      ['zoomOut', 'minus', t('nav.zoomOut'), 'navigation.zoom'],
+      ['zoomIn', 'plus', t('nav.zoomIn'), 'navigation.zoom'],
+      ['scrollLeft', 'chevronLeft', t('nav.scrollLeft'), 'navigation.scroll'],
+      ['scrollRight', 'chevronRight', t('nav.scrollRight'), 'navigation.scroll'],
+      ['reset', 'reset', t('nav.reset'), 'navigation.reset'],
     ];
-    for (const [action, icon, label] of buttons) {
+    for (const [action, icon, label, feature] of buttons) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tcw-nav-btn';
       btn.dataset.nav = action;
+      markPart(btn, feature);
       btn.title = label;
       btn.setAttribute('aria-label', label);
       btn.innerHTML = createIcon(icon, 16);

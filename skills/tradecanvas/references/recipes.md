@@ -393,6 +393,69 @@ chart.on('styleChange', (e) => console.log(e.payload.layer));
 theme switches and is never saved. A grid of charts takes them for every
 chart with `grid.applyOverrides(patch)`.
 
+## The widget with only the parts you want, and parts of your own
+
+```ts
+import { ChartWidget, WIDGET_FEATURES, type WidgetFeature } from '@tradecanvas/chart/widget';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  features: {
+    'toolbar.replay': false,          // one button
+    'sidebar.patterns': false,        // a section of drawing tools
+    'menu.chart.exportData': false,   // one menu entry
+    hotkeys: false,                   // every key of the widget's
+  },
+  drawingMenuItems: ({ id, type }) => [{ label: `Copy ${type}`, icon: 'link', onSelect: () => void navigator.clipboard.writeText(id) }],
+  indicatorMenuItems: ({ indicatorId }) => [{ label: 'About', icon: 'info', onSelect: () => console.log(indicatorId) }],
+});
+
+// While it runs: a clean chart, and back
+widget.setFeatures({ sidebar: false, statusBar: false });
+widget.setFeatures({ sidebar: true, statusBar: true });
+
+// A menu of switches of your own on the toolbar
+const parts: WidgetFeature[] = ['sidebar', 'statusBar', 'navigation', 'indicatorLegend'];
+widget.addToolbarDropdown({
+  id: 'parts',
+  label: 'Parts',
+  icon: 'layers',
+  items: () => parts.map((name) => ({
+    label: name,
+    checked: widget.isFeatureOn(name),
+    onSelect: () => widget.setFeatures({ [name]: !widget.isFeatureOn(name) }),
+  })),
+});
+
+const latency = widget.addStatusBarItem({ id: 'latency', text: '— ms', label: 'Latency' });
+latency?.setText('12 ms');
+const focus = widget.addSidebarButton({
+  id: 'focus',
+  label: 'Focus',
+  icon: 'eye',
+  toggle: true,
+  onClick: () => {
+    const on = !widget.isFeatureOn('toolbar');
+    widget.setFeatures({ toolbar: on });
+    focus?.setActive(!on);
+  },
+});
+
+const badge = document.createElement('div');
+badge.textContent = 'Paper account';
+badge.style.cssText = 'position:absolute;right:72px;top:8px;pointer-events:auto';
+widget.getSlot('chart')?.append(badge);       // a layer over the chart the pointer passes through
+
+console.log(WIDGET_FEATURES.length, widget.getFeatures().alerts);
+```
+
+A name without a dot (`alerts`, `settings`, `hotkeys`) turns a capability off
+wherever it shows; a dotted one (`toolbar.alerts`) one place. The older options
+(`toolbar: false`, `drawingTools: false`…) are the same switches. They hide the
+widget's own UI; `chartOptions.features` is what stops drawing, trading or zoom
+on the chart. A `ChartWidgetGrid` takes them for every chart with
+`grid.setFeatures(patch)`.
+
 ## Watchlists with live quotes, and a tick chart
 
 ```ts

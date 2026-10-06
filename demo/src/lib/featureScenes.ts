@@ -396,6 +396,76 @@ chart.getStyleValue('series.bar.upColor')     // '#26a69a'`,
     data: (symbol) => generateBars(900, symbol, HOUR, 120),
   },
   {
+    id: 'parts',
+    code: `new ChartWidget(host, {
+  features: {                       // every switch is on until turned off
+    'toolbar.replay': false,
+    'sidebar.patterns': false,
+    'menu.chart.exportData': false,
+  },
+  drawingMenuItems: ({ id, type }) => [{ label: \`\${type} · \${id}\`, onSelect: copy }],
+})
+widget.setFeatures({ sidebar: false })     // while running: 112 switches
+widget.addToolbarDropdown({ id: 'parts', label: 'Parts', items: () => [...] })
+widget.addSidebarButton({ id: 'focus', label: 'Focus', icon: 'eye', onClick })
+widget.addStatusBarItem({ id: 'on', text: '109/112', label: 'Switches on' })
+widget.getSlot('chart')                    // a layer of your own over the chart`,
+    options: () => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO', 'ALPHA', 'BETA'],
+      timeframe: '1h',
+      features: {
+        'toolbar.replay': false,
+        'sidebar.patterns': false,
+        'sidebar.forecasting': false,
+        'menu.chart.exportData': false,
+      },
+      drawingMenuItems: ({ id, type }) => [{
+        label: `${type} · ${id}`,
+        icon: 'link',
+        onSelect: () => void navigator.clipboard?.writeText(id).catch(() => {}),
+      }],
+      onReady: (chart) => {
+        chart.addIndicator('ema', { period: 21 });
+        chart.addIndicator('rsi', { period: 14 });
+      },
+    }),
+    data: (symbol) => generateBars(900, symbol, HOUR, 120),
+    setup: (widget) => {
+      const all = Object.keys(widget.getFeatures()).length;
+      const counted = () => `${Object.values(widget.getFeatures()).filter(Boolean).length}/${all}`;
+      const status = widget.addStatusBarItem({ id: 'switches', text: counted(), label: 'getFeatures()' });
+      const parts = ['sidebar', 'statusBar', 'navigation', 'indicatorLegend', 'toolbar.timeframes', 'menu.chart'] as const;
+      widget.addToolbarDropdown({
+        id: 'parts',
+        label: 'setFeatures',
+        icon: 'layers',
+        text: 'features',
+        items: () => parts.map((name) => ({
+          label: name,
+          checked: widget.isFeatureOn(name),
+          onSelect: () => {
+            widget.setFeatures({ [name]: !widget.isFeatureOn(name) });
+            status?.setText(counted());
+          },
+        })),
+      });
+      // Focus: the toolbar and the status bar go, and come back.
+      const focus = widget.addSidebarButton({
+        id: 'focus',
+        label: 'toolbar · statusBar',
+        icon: 'eye',
+        toggle: true,
+        onClick: () => {
+          const on = !widget.isFeatureOn('toolbar');
+          widget.setFeatures({ toolbar: on, statusBar: on });
+          focus?.setActive(!on);
+          status?.setText(counted());
+        },
+      });
+    },
+  },
+  {
     id: 'markets',
     code: `new ChartWidget(host, {
   adapter: new BinanceAdapter(),        // quotes for every row

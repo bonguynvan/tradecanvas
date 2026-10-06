@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | Các khoảng có sẵn (1D … All) và đi tới ngày (Alt+G) trên thanh trạng thái |
 | `indicatorLegend` | `boolean` | `true` | Liệt kê chỉ báo trên biểu đồ (dưới chú thích OHLCV và ở đầu bảng của chúng) với các nút hiện / cài đặt / xoá |
 | `fullscreen` | `boolean` | `true` | Nút toàn màn hình trên thanh công cụ |
+| `features` | `WidgetFeatures` | bật hết | 112 công tắc cho các phần của widget, đổi được khi đang chạy — xem **Công tắc của widget và phần của riêng bạn** |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | Danh mục mã có thể tìm kiếm |
 | `timeframes` | `TimeFrame[]` | 1m đến 1M | Các khung thời gian có sẵn; ghim khung yêu thích từ menu ▾ |
 | `chartTypes` | `ChartType[]` | 18 loại | Các loại biểu đồ có sẵn |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 Nhãn giá trên biểu đồ cũng theo cùng góc bo (`tagRadius`; với một `Chart` dùng riêng, gọi `chart.setShapes({ tagRadius })`). Widget không tải font nào: hãy tự tải những font mà giao diện đó dùng. Xem [Giao diện](https://bonguynvan.github.io/tradecanvas/docs/styling).
+
+### Công tắc của widget và phần của riêng bạn
+
+Mỗi phần của widget có một công tắc, bật sẵn cho tới khi bạn tắt và đổi được khi đang chạy. Tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện (`alerts`, `settings`, `hotkeys`); tên có dấu chấm là một chỗ (`toolbar.screenshot`, `sidebar.magnet`, `menu.chart.order`). `WIDGET_FEATURES` liệt kê đủ 112 cái; các option cũ (`toolbar: false`, `drawingTools: false`…) chính là những công tắc này. Nút, menu và mục trạng thái của riêng bạn nằm trong các thanh của widget và theo theme lẫn giao diện của nó.
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // một nút, một nhóm công cụ vẽ, mọi phím tắt
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // ngay khi đang chạy
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // một lớp của riêng bạn trên biểu đồ
+```
+
+Công tắc chỉ ẩn, hiện các phần của widget; muốn chặn một việc trên chính biểu đồ (vẽ, giao dịch, zoom), hãy dùng `chartOptions.features`. Mọi cách tùy biến — màu, giao diện, override style, công tắc, phần của bạn, chữ, plugin — được bày ra ở trang [Tùy biến](https://bonguynvan.github.io/tradecanvas/docs/customization).
 
 ### Tuỳ biến giao diện widget
 

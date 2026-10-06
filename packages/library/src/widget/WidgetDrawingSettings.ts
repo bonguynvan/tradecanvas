@@ -13,6 +13,7 @@ import { keepTabInside } from './focusTrap.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { colorAlpha, colorInput, numberInput, selectInput, settingsRow, toHex, toggleSwitch, withAlpha } from './settingsControls.js';
 import type { DrawingStyleTemplate } from './DrawingTemplateStore.js';
+import { markPart } from './widgetFeatures.js';
 
 /** The drawing a settings dialog edits. */
 export interface DrawingSettingsTarget {
@@ -294,6 +295,7 @@ export class WidgetDrawingSettings {
       const alert = document.createElement('button');
       alert.type = 'button';
       alert.className = 'tcw-reset-link tcw-drawing-alert';
+      markPart(alert, 'alerts');
       alert.innerHTML = `${createIcon('bell', 13)}<span></span>`;
       alert.querySelector('span')!.textContent = this.t('drawingSettings.addAlert');
       alert.addEventListener('click', () => this.callbacks.onAddAlert?.(this.target!.id));

@@ -350,7 +350,7 @@ const widget = new ChartWidget(host, {
   adapter: new BinanceAdapter(),
   historyLimit: 500,
   trading: true,
-  features: { drawings: true, indicators: true },
+  features: { 'toolbar.replay': false },   // los interruptores del widget: ver Personalización
   onReady: (chart) => { /* ... */ },
 })
 
@@ -684,6 +684,14 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
   alertNotifications: { sound: true, desktop: true },
 })`}</code></pre>
 
+<h3>Interruptores de funciones</h3>
+<p>112 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // un botón, una sección de dibujo, todos los atajos
+
+widget.setFeatures({ sidebar: false, statusBar: false })
+widget.isFeatureOn('sidebar')    // false
+widget.getFeatures()             // todos los interruptores, encendidos o apagados`}</code></pre>
+
 <h3>Tus propios botones y entradas de menú</h3>
 <p>
   Añade botones a la barra de herramientas (un icono integrado o un elemento tuyo,
@@ -706,6 +714,16 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
+<p>También un botón de menú en la barra, botones en la barra de dibujo, elementos en la barra de estado, lugares propios en cada barra y sobre el gráfico, y entradas al final del menú de un dibujo o de un indicador (ver <a href={href('/docs/customization#parts')}>Personalización</a>):</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // se piden cada vez que se abre
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')          // una capa sobre el gráfico
+
+new ChartWidget(host, {
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
+  indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
+})`}</code></pre>
 
 <h2>ChartWidgetGrid</h2>
 <p>
@@ -727,6 +745,7 @@ const grid = new ChartWidgetGrid(host, {
 grid.setLayout('1x2')
 grid.setSync({ interval: true })   // alinea los demás con el gráfico activo
 grid.applyOverrides({ 'grid.vertical.visible': false })   // el aspecto de todos los gráficos, y de los que añada después
+grid.setFeatures({ 'toolbar.replay': false })               // los interruptores de todos los gráficos, y de los que añada después
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 

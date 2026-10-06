@@ -244,6 +244,15 @@
   background: var(--tcw-hover-bg);
 }
 
+/* With the symbol search switched off, the button only names the symbol. */
+.tcw-toolbar-symbol[aria-disabled="true"] {
+  cursor: default;
+}
+
+.tcw-toolbar-symbol[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
 .tcw-toolbar-sep {
   width: var(--tcw-sep-w);
   height: 22px;
@@ -3821,6 +3830,28 @@
 .tcw-toolbar-host { display: inline-flex; align-items: center; gap: 2px; }
 .tcw-toolbar-host:empty { display: none; }
 .tcw-host-btn { display: inline-flex; align-items: center; gap: 4px; }
+
+/* --- Host sidebar buttons, status bar items, and the layer over the chart --- */
+.tcw-sidebar-host { display: flex; flex-direction: column; align-items: center; }
+.tcw-sidebar-host:empty { display: none; }
+.tcw-status-host { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tcw-status-host:empty { display: none; }
+.tcw-status-host-item { white-space: nowrap; }
+.tcw-status-host-btn {
+  margin: -4px -6px;
+  padding: 4px 6px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), background var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-status-host-btn:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
+.tcw-status-host-btn:focus-visible { outline: 2px solid var(--tcw-accent); outline-offset: -2px; }
+/* Over the plot and under the widget's own overlays; the pointer reaches the chart unless an element of yours takes it. */
+.tcw-host-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 
 /* --- Pane buttons (move, fold, maximise) --- */
 .tcw-pane-controls {

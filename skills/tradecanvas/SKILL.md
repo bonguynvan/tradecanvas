@@ -193,6 +193,13 @@ One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertica
 is drawn reads back from `getStyleValue(key)`. Each indicator plot's dash and visibility:
 `updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`.
 
+The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
+`widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability
+everywhere, dotted = one place). They hide the widget's UI only; to stop drawing, trading or zoom
+on the chart, use `chartOptions.features`. Your own parts: `addToolbarButton`,
+`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, and the
+`chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options.
+
 ## When something looks wrong
 
 | Symptom | Check |

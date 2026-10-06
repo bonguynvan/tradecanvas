@@ -154,6 +154,7 @@ chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 }
 | `rangeBar` | `boolean` | `true` | 状态栏上的范围预设（1D … All）和跳转到日期（Alt+G） |
 | `indicatorLegend` | `boolean` | `true` | 在图表上列出指标（位于 OHLCV 图例下方及各自副图顶部），可显示 / 设置 / 删除 |
 | `fullscreen` | `boolean` | `true` | 工具栏中的全屏按钮 |
+| `features` | `WidgetFeatures` | 全部开启 | 组件各部分的 112 个开关，运行时可切换——见下文 **组件开关与自定义部件** |
 | `symbols` | `string[]` | BTC/ETH/SOL/BNB | 可搜索的代码列表 |
 | `timeframes` | `TimeFrame[]` | 1m 至 1M | 可选的周期；可在 ▾ 菜单中固定常用周期 |
 | `chartTypes` | `ChartType[]` | 18 种 | 可用的图表类型 |
@@ -220,6 +221,27 @@ widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar
 ```
 
 图表上的价格标签也采用同样的圆角（`tagRadius`；直接使用 `Chart` 时，调用 `chart.setShapes({ tagRadius })`）。组件不会加载任何字体：请自行加载外观中指定的字体。参见[样式](https://bonguynvan.github.io/tradecanvas/docs/styling)。
+
+### 组件开关与自定义部件
+
+组件的每个部分都有开关，默认开启，运行时可随时切换。不带点的名称是一整项功能，在它出现的每个地方关闭（`alerts`、`settings`、`hotkeys`）；带点的名称是一个位置（`toolbar.screenshot`、`sidebar.magnet`、`menu.chart.order`）。`WIDGET_FEATURES` 列出全部 112 个；以前的选项（`toolbar: false`、`drawingTools: false`……）就是这些开关。你自己的按钮、菜单和状态项放在组件的各个栏里，并跟随它的主题和外观。
+
+```ts
+const widget = new ChartWidget(el, {
+  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // 一个按钮、一组绘图工具、所有快捷键
+  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
+})
+widget.setFeatures({ sidebar: false, statusBar: false })   // 运行中切换
+
+widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
+  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
+] })
+widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
+widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
+widget.getSlot('chart')   // 图表上方属于你的一层
+```
+
+开关只负责显示和隐藏组件的部分；要禁止图表本身的某件事（绘图、交易、缩放），请使用 `chartOptions.features`。所有定制方式——颜色、外观、样式覆盖、开关、自定义部件、文字、插件——都在[定制](https://bonguynvan.github.io/tradecanvas/docs/customization)页面中。
 
 ### 组件主题
 

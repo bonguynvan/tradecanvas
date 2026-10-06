@@ -1,4 +1,5 @@
 import widgetCss from './WidgetStyles.css?raw';
+import { widgetFeatureCss } from './widgetFeatures.js';
 
 let refCount = 0;
 const STYLE_ID = 'tcw-styles';
@@ -18,7 +19,9 @@ export function injectWidgetStyles(): void {
 
   const style = document.createElement('style');
   style.id = STYLE_ID;
-  style.textContent = widgetCss;
+  // The parts of switches turned off hide with these (see widgetFeatures).
+  style.textContent = `${widgetCss}
+${widgetFeatureCss()}`;
   document.head.insertBefore(style, document.head.firstChild);
 }
 

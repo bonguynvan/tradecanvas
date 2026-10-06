@@ -1,4 +1,5 @@
 import { timeParts, wallToUtc, type TimeZoneSetting } from '@tradecanvas/commons';
+import { markPart } from './widgetFeatures.js';
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_RE = /^(\d{2}):(\d{2})$/;
@@ -68,6 +69,7 @@ export class WidgetGoToDate {
 
     const form = document.createElement('form');
     form.className = 'tcw-goto';
+    markPart(form, 'goToDate');
     form.setAttribute('role', 'dialog');
     form.setAttribute('aria-label', this.labels.title);
 

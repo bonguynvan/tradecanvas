@@ -303,7 +303,8 @@ describe('ChartWidget range bar', () => {
 
   it('can be left out', () => {
     make({ rangeBar: false });
-    expect(host.querySelector('[data-range]')).toBeNull();
+    expect(getComputedStyle(host.querySelector('[data-range]')!).display).toBe('none');
+    expect(getComputedStyle(host.querySelector('[data-role="goto"]')!).display).toBe('none');
   });
 });
 
