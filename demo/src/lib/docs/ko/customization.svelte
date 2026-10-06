@@ -26,6 +26,8 @@
     <tr><td>위젯의 어떤 부품을 보일지</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">아래</a></td></tr>
     <tr><td>사용자가 차트에서 할 수 있는 일: 그리기, 거래, 확대·축소</td><td>차트 자체의 features: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
     <tr><td>직접 만든 버튼, 메뉴, 상태 항목</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, 메뉴 훅 — <a href="#parts">아래</a></td></tr>
+    <tr><td>직접 만든 키보드 단축키</td><td><code>addHotkey</code> — <a href="#parts">아래</a></td></tr>
+    <tr><td>직접 쓰는 CSS</td><td>안정된 훅: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">아래</a></td></tr>
     <tr><td>위젯의 문구</td><td><code>locale</code>, <code>messages</code> — <a href="#words">아래</a></td></tr>
     <tr><td>직접 만든 지표, 그리기 도구, 차트 유형</td><td><a href={href('/docs/plugins')}>플러그인</a></td></tr>
     <tr><td>UI 전체</td><td>헤드리스 <code>Chart</code>와 그 둘레의 직접 만든 UI — <a href={href('/docs/api')}>API</a></td></tr>
@@ -158,6 +160,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 latency?.setText('15 ms')
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 같은 키의 위젯 단축키를 대신하며, 단축키 목록(?)에도 나옵니다
 
 // 그 밖의 무엇이든: 툴바 조작 버튼 옆, 사이드바 버튼 아래,
 // 상태 바 양 끝, 또는 차트 위에
@@ -173,6 +176,20 @@ widget.getSlot('chart')?.append(myOverlay)   // 포인터가 통과하는 층; �
   drawingMenuItems: ({ id, type, selected }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
+
+<h2 id="css">직접 쓰는 CSS</h2>
+<p>위젯은 iframe이 아니라 페이지의 일부이므로 CSS가 그대로 닿습니다. 다음 훅은 1.x 동안 바뀌지 않습니다:</p>
+<ul>
+  <li><code>.tcw-root</code>의 <code>--tcw-*</code> 변수: 모양의 토큰(<a href={href('/docs/styling')}>스타일링</a> 참고).</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>: 모든 부품이 자기 스위치의 이름을 갖고 있어, 같은 이름으로 규칙에서 찾을 수 있습니다.</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>: 꺼진 스위치들. 위젯의 루트 요소에 붙습니다.</li>
+  <li><code>[data-host-button="id"]</code>, <code>[data-host-item="id"]</code>: 직접 만든 버튼과 상태 항목을, 붙인 id로.</li>
+</ul>
+<p>그 밖의 클래스 이름은 위젯 내부의 것이라 바뀔 수 있습니다. 훅으로 스타일하세요.</p>
+<pre><code>{`/* 직접 만든 툴바 버튼을 강조색으로 */
+.tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
+/* 그리기 도구가 꺼져 있는 동안 내 패널을 더 넓게 */
+.my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
 <h2 id="words">문구</h2>
 <p>

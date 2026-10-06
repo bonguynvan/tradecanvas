@@ -239,6 +239,7 @@ widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: 
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')   // a layer of your own over the chart
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // a shortcut of yours, in the shortcut sheet too
 ```
 
 Switches show and hide the widget's parts; to stop something on the chart itself (drawing, trading, zoom), use `chartOptions.features`. Every route — colours, looks, style overrides, switches, your parts, words, plugins — is laid out on the [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization) page.
@@ -710,7 +711,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop.
+`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop. Orders, positions, signal markers, trade zones and a selected drawing's handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…).
 
 ### Events
 

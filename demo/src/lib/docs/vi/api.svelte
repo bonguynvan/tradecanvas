@@ -699,6 +699,7 @@ new ChartWidget(host, {
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')          // một lớp trên biểu đồ
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // phím tắt của riêng bạn, thay phím tắt của widget nếu trùng phím
 
 new ChartWidget(host, {
   drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],

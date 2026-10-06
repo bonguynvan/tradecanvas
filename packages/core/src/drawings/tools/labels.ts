@@ -1,6 +1,7 @@
-import type { DrawingState, ViewportState } from '@tradecanvas/commons';
+import type { DrawingState, Theme, ViewportState } from '@tradecanvas/commons';
 import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
+import { drawingHandleColor } from '../../style/overlayColors.js';
 
 /** Shared label helpers for the measuring / pattern drawing tools. */
 
@@ -10,15 +11,23 @@ const DEFAULT_HALO = 'rgba(12, 16, 22, 0.85)';
 let labelHalo = DEFAULT_HALO;
 /** The chart's type family, for drawing text. */
 let fontFamily = DEFAULT_FONT_FAMILY;
+/** The fill of a selected drawing's handles. */
+let handleFill = drawingHandleColor(null);
 
 /**
  * The theme the next drawing pass renders in: its background for the text
  * halo, its font family for the text. Set by the drawing renderer right
  * before each (synchronous) pass; none puts the defaults back.
  */
-export function setDrawingTheme(theme: { background: string; font?: { family?: string } } | null): void {
+export function setDrawingTheme(theme: Pick<Theme, 'background' | 'style'> & { font?: { family?: string } } | null): void {
   labelHalo = theme?.background ?? DEFAULT_HALO;
   fontFamily = theme?.font?.family || DEFAULT_FONT_FAMILY;
+  handleFill = drawingHandleColor(theme);
+}
+
+/** The fill of a selected drawing's handles: white, or the `drawings.handleColor` key's. */
+export function drawingHandleFill(): string {
+  return handleFill;
 }
 
 /** The family drawing text is set in: the theme's. */

@@ -340,7 +340,7 @@ const es: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de estilo',
-      stat: '89 claves',
+      stat: '101 claves',
       blurb:
         'Cualquier parte del aspecto del gráfico por clave, aparte del tema: la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último precio, el volumen y los colores de cada tipo de gráfico. Aquí la cuadrícula vertical está apagada, la horizontal punteada, el crosshair continuo, y la línea de señal del MACD discontinua en un panel con su propio separador.',
       tryThis: [
@@ -356,7 +356,7 @@ const es: SiteMessages = {
         'Cada parte del widget tiene un interruptor, encendido hasta que lo apagas y cambiable en marcha: una capacidad entera (alertas, ajustes, atajos) o un solo lugar (un botón de la barra, una entrada de menú, una sección de herramientas de dibujo). Tus propios botones, menús y elementos de estado van en las barras del widget. Aquí la reproducción, dos secciones de dibujo y la descarga de datos están apagadas, y la barra lleva un menú de interruptores.',
       tryThis: [
         'Abre «features» en la barra y apaga y enciende partes',
-        'El ojo al pie de la barra de dibujo oculta la barra de herramientas y la de estado, y las devuelve',
+        'El ojo al pie de la barra de dibujo oculta la barra de herramientas y la de estado, y las devuelve (Alt+X)',
         'Haz clic derecho en un dibujo: la última entrada es de la página',
       ],
     },

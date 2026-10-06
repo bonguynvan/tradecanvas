@@ -162,6 +162,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'لمسی (موبایل / تبلت)',
   'hotkeys.group.keyboard': 'صفحه‌کلید',
   'hotkeys.group.drawing': 'ترسیم',
+  'hotkeys.group.more': 'بیشتر',
 
   // Common
   'common.close': 'بستن',
@@ -182,6 +183,13 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.downWick': 'سایه کندل نزولی',
   'settings.background': 'پس‌زمینه',
   'settings.grid': 'شبکه',
+  'settings.section.lastPrice': 'آخرین قیمت',
+  'settings.horizontal': 'افقی',
+  'settings.vertical': 'عمودی',
+  'settings.scaleLines': 'خطوط',
+  'settings.priceLine': 'خط قیمت',
+  'settings.paneSeparator': 'جداکننده پنل',
+  'settings.legendText': 'متن راهنما',
   'settings.gridLines': 'خطوط شبکه',
   'settings.volume': 'حجم',
   'settings.volumeProfile': 'پروفایل حجم',

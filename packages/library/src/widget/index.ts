@@ -24,6 +24,8 @@ export type {
   StatusBarItemSpec,
   StatusBarItemHandle,
   WidgetSlot,
+  HotkeySpec,
+  HotkeyHandle,
   DrawingMenuItemsContext,
   IndicatorMenuItemsContext,
   WatchlistOptions,

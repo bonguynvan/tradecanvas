@@ -162,6 +162,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'Puuteekraan (telefon / tahvelarvuti)',
   'hotkeys.group.keyboard': 'Klaviatuur',
   'hotkeys.group.drawing': 'Joonistamine',
+  'hotkeys.group.more': 'Muud',
 
   // Common
   'common.close': 'Sulge',
@@ -182,6 +183,13 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.downWick': 'Langeva küünla taht',
   'settings.background': 'Taust',
   'settings.grid': 'Ruudustik',
+  'settings.section.lastPrice': 'Viimane hind',
+  'settings.horizontal': 'Horisontaalsed',
+  'settings.vertical': 'Vertikaalsed',
+  'settings.scaleLines': 'Jooned',
+  'settings.priceLine': 'Hinnajoon',
+  'settings.paneSeparator': 'Paanide eraldaja',
+  'settings.legendText': 'Legendi tekst',
   'settings.gridLines': 'Ruudustiku jooned',
   'settings.volume': 'Maht',
   'settings.volumeProfile': 'Mahuprofiil',

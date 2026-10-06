@@ -188,6 +188,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>出来高のバー。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日・週・月の区切り線。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>高値・安値の線、ウォーターマーク。</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>注文（買い・売り）とポジション（利益・損失・エントリー）。チャート上と価格軸の両方で、取引設定の色より優先されます。</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>シグナルのマーク。それ自身のスタイルより優先されます。</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>取引ゾーン：勝ち、負け、建玉中。</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>選択中の描画のハンドル（未設定なら白）。</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>そのタイプで描かれるときのメイン系列：<code>upColor</code>、<code>downColor</code>、<code>wickUpColor</code>、
       <code>wickDownColor</code>（ローソク足、平均足、出来高ローソク足、エクイボリューム）、<code>color</code> / <code>lineColor</code>
       と <code>lineWidth</code>（ライン、ステップライン、マーカー付きライン、エリア、HLC エリア、ベースライン）、<code>topColor</code> と

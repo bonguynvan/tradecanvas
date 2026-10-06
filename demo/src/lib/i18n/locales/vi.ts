@@ -338,7 +338,7 @@ const vi: SiteMessages = {
     },
     overrides: {
       title: 'Override style',
-      stat: '89 khoá',
+      stat: '101 khoá',
       blurb:
         'Bất kỳ phần nào của biểu đồ theo khoá, riêng khỏi theme: lưới theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume và màu của từng loại biểu đồ. Ở đây lưới dọc tắt, lưới ngang chấm chấm, crosshair nét liền, và đường signal của MACD nét đứt trong một pane có đường phân cách riêng.',
       tryThis: [
@@ -354,7 +354,7 @@ const vi: SiteMessages = {
         'Mỗi phần của widget có một công tắc, bật sẵn cho tới khi bạn tắt và đổi được khi đang chạy: cả một tính năng (cảnh báo, cài đặt, phím tắt) hoặc một chỗ (một nút trên toolbar, một mục menu, một nhóm công cụ vẽ). Nút, menu và mục trạng thái của riêng bạn nằm ngay trong các thanh của widget. Ở đây replay, hai nhóm công cụ vẽ và nút tải dữ liệu đã tắt, còn toolbar có thêm một menu công tắc.',
       tryThis: [
         'Mở “features” trên toolbar rồi tắt, bật từng phần',
-        'Nút con mắt ở cuối thanh công cụ vẽ ẩn toolbar và thanh trạng thái, bấm lần nữa để hiện lại',
+        'Nút con mắt ở cuối thanh công cụ vẽ ẩn toolbar và thanh trạng thái, bấm lần nữa để hiện lại (Alt+X)',
         'Bấm chuột phải vào một hình vẽ: mục cuối cùng là của trang',
       ],
     },

@@ -163,6 +163,7 @@ export const EN_MESSAGES = {
   'hotkeys.group.touch': 'Touch (mobile / tablet)',
   'hotkeys.group.keyboard': 'Keyboard',
   'hotkeys.group.drawing': 'Drawing',
+  'hotkeys.group.more': 'More',
 
   // Common
   'common.close': 'Close',
@@ -183,6 +184,13 @@ export const EN_MESSAGES = {
   'settings.downWick': 'Down wick',
   'settings.background': 'Background',
   'settings.grid': 'Grid',
+  'settings.section.lastPrice': 'Last price',
+  'settings.horizontal': 'Horizontal',
+  'settings.vertical': 'Vertical',
+  'settings.scaleLines': 'Lines',
+  'settings.priceLine': 'Price line',
+  'settings.paneSeparator': 'Pane separator',
+  'settings.legendText': 'Legend text',
   'settings.gridLines': 'Grid lines',
   'settings.volume': 'Volume',
   'settings.volumeProfile': 'Volume profile',

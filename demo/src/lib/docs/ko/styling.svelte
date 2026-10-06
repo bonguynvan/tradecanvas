@@ -187,6 +187,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>거래량 막대.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>일·주·월 구분선.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>고가·저가 선, 워터마크.</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>주문(매수, 매도)과 포지션(이익, 손실, 진입). 차트와 가격 축 모두에서 트레이딩 설정의 색보다 우선합니다.</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>시그널 표시. 자체 스타일보다 우선합니다.</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>거래 영역: 이익, 손실, 진행 중.</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>선택한 그림의 핸들(설정하지 않으면 흰색).</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>그 유형으로 그려질 때의 메인 시리즈: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
       <code>wickDownColor</code>(캔들, 하이킨아시, 거래량 캔들, 이퀴볼륨), <code>color</code> / <code>lineColor</code>
       와 <code>lineWidth</code>(라인, 스텝 라인, 마커 라인, 영역, HLC 영역, 베이스라인), <code>topColor</code> 와

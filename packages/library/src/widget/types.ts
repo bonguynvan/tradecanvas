@@ -328,6 +328,19 @@ export interface ToolbarButtonHandle {
   remove(): void;
 }
 
+/** A keyboard shortcut of yours; see `ChartWidget.addHotkey`. */
+export interface HotkeySpec {
+  /** `'Alt+N'`, `'Shift+R'`, `'Ctrl+Shift+K'` (Ctrl is Cmd on a Mac) or one key (`'F2'`). */
+  keys: string;
+  /** What it does, in the shortcut sheet (`?`). */
+  label: string;
+  onPress: (event: KeyboardEvent) => void;
+}
+
+export interface HotkeyHandle {
+  remove(): void;
+}
+
 /** A menu button of yours on the widget's toolbar; see `ChartWidget.addToolbarDropdown`. */
 export interface ToolbarDropdownSpec {
   /** Tells your buttons apart (`data-host-button` on the element). */
@@ -512,6 +525,20 @@ export interface ChartSettingsState {
   candleDownWick: string;
   backgroundColor: string;
   gridColor: string;
+  /** The grid's lines each way, and their dash. */
+  gridHorizontalVisible: boolean;
+  gridVerticalVisible: boolean;
+  gridStyle: import('@tradecanvas/commons').LineStyle;
+  crosshairColor: string;
+  crosshairStyle: import('@tradecanvas/commons').LineStyle;
+  /** The price and time scales' text and lines. */
+  scaleTextColor: string;
+  scaleLineColor: string;
+  /** The last price's line. */
+  lastPriceVisible: boolean;
+  lastPriceStyle: import('@tradecanvas/commons').LineStyle;
+  paneSeparatorColor: string;
+  legendTextColor: string;
   gridVisible: boolean;
   volumeVisible: boolean;
   volumeProfileVisible: boolean;

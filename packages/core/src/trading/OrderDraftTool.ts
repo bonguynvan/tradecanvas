@@ -116,7 +116,8 @@ export class OrderDraftTool {
     const x1 = chartRect.x + chartRect.width;
     const y = priceToY(d.price, viewport);
     const type = inferOrderType(d.side, d.price, marketPrice);
-    const color = d.side === 'buy' ? theme.candleUp : theme.candleDown;
+    // As the order will draw: the style keys' colours, else the candles'.
+    const color = d.side === 'buy' ? theme.style?.trading.buy ?? theme.candleUp : theme.style?.trading.sell ?? theme.candleDown;
 
     ctx.save();
     drawHLine(ctx, x0, x1, y, color, [6, 3]);

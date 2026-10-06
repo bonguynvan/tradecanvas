@@ -188,6 +188,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Cột volume.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Đường ngắt ngày, tuần và tháng.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Đường cao nhất và thấp nhất, watermark.</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>Lệnh (mua, bán) và vị thế (lãi, lỗ, giá vào), trên biểu đồ và trên trục giá, đè lên màu trong cấu hình giao dịch.</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>Điểm tín hiệu, đè lên style riêng của chúng.</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>Vùng lệnh: thắng, thua và đang mở.</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>Tay nắm của hình vẽ đang chọn (không đặt thì màu trắng).</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>Chuỗi chính khi được vẽ theo loại đó: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
       <code>wickDownColor</code> (nến, Heikin-Ashi, nến volume, equivolume), <code>color</code> / <code>lineColor</code>
       và <code>lineWidth</code> (line, step line, line có điểm, area, HLC area, baseline), <code>topColor</code> và

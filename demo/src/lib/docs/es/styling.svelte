@@ -191,6 +191,10 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Las barras de volumen.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Los cortes de día, semana y mes.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Las líneas de máximo y mínimo, la marca de agua.</td></tr>
+    <tr><td><code>trading.buyColor</code>, <code>.sellColor</code>, <code>.profitColor</code>, <code>.lossColor</code>, <code>.entryColor</code></td><td>Órdenes (compra, venta) y posiciones (beneficio, pérdida, entrada), en el gráfico y en el eje de precios, por encima de los colores de la configuración de trading.</td></tr>
+    <tr><td><code>markers.longColor</code>, <code>.shortColor</code>, <code>.neutralColor</code></td><td>Las marcas de señal, por encima de su propio estilo.</td></tr>
+    <tr><td><code>tradeZones.profitColor</code>, <code>.lossColor</code>, <code>.activeColor</code></td><td>Las zonas de operación: ganadas, perdidas y abiertas.</td></tr>
+    <tr><td><code>drawings.handleColor</code></td><td>Los tiradores del dibujo seleccionado (blancos si no se fija).</td></tr>
     <tr><td><code>series.&lt;type&gt;.*</code></td><td>La serie principal mientras se dibuja con ese tipo: <code>upColor</code>, <code>downColor</code>, <code>wickUpColor</code>,
       <code>wickDownColor</code> (velas, Heikin-Ashi, velas de volumen, equivolumen), <code>color</code> / <code>lineColor</code>
       y <code>lineWidth</code> (línea, línea escalonada, línea con marcadores, área, área HLC, línea base), <code>topColor</code> y

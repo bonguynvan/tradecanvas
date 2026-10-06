@@ -433,6 +433,7 @@ widget.setFeatures({ sidebar: false })     // while running: 112 switches
 widget.addToolbarDropdown({ id: 'parts', label: 'Parts', items: () => [...] })
 widget.addSidebarButton({ id: 'focus', label: 'Focus', icon: 'eye', onClick })
 widget.addStatusBarItem({ id: 'on', text: '109/112', label: 'Switches on' })
+widget.addHotkey({ keys: 'Alt+X', label: 'Focus', onPress })   // in the shortcut sheet (?) too
 widget.getSlot('chart')                    // a layer of your own over the chart`,
     options: () => ({
       symbol: 'DEMO',
@@ -474,19 +475,15 @@ widget.getSlot('chart')                    // a layer of your own over the chart
           },
         })),
       });
-      // Focus: the toolbar and the status bar go, and come back.
-      const focus = widget.addSidebarButton({
-        id: 'focus',
-        label: 'toolbar · statusBar',
-        icon: 'eye',
-        toggle: true,
-        onClick: () => {
-          const on = !widget.isFeatureOn('toolbar');
-          widget.setFeatures({ toolbar: on, statusBar: on });
-          focus?.setActive(!on);
-          status?.setText(counted());
-        },
-      });
+      // Focus: the toolbar and the status bar go, and come back (the eye, or Alt+X).
+      const toggleFocus = (): void => {
+        const on = !widget.isFeatureOn('toolbar');
+        widget.setFeatures({ toolbar: on, statusBar: on });
+        focus?.setActive(!on);
+        status?.setText(counted());
+      };
+      const focus = widget.addSidebarButton({ id: 'focus', label: 'toolbar · statusBar', icon: 'eye', toggle: true, onClick: toggleFocus });
+      widget.addHotkey({ keys: 'Alt+X', label: 'toolbar · statusBar', onPress: toggleFocus });
     },
   },
   {

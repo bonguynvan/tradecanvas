@@ -30,6 +30,24 @@ describe('resolveChartTheme', () => {
     expect(s.sessionBreaks).toEqual({ color: null, style: null, width: null });
     expect(s.highLow.color).toBeNull();
     expect(s.series.lineWidth).toBe(2);
+    expect(s.trading).toEqual({ buy: null, sell: null, profit: null, loss: null, entry: null });
+    expect(s.markers).toEqual({ long: null, short: null, neutral: null });
+    expect(s.tradeZones).toEqual({ profit: null, loss: null, active: null });
+    expect(s.drawings).toEqual({ handle: null });
+  });
+
+  it('colours the orders, positions, markers, trades and drawing handles by key', () => {
+    const s = resolveChartTheme(DARK_THEME, 'candlestick', {
+      'trading.buyColor': '#00aaff',
+      'trading.lossColor': '#ff5500',
+      'markers.longColor': '#11ee11',
+      'tradeZones.activeColor': '#999999',
+      'drawings.handleColor': '#222222',
+    }).style!;
+    expect(s.trading).toEqual({ buy: '#00aaff', sell: null, profit: null, loss: '#ff5500', entry: null });
+    expect(s.markers.long).toBe('#11ee11');
+    expect(s.tradeZones.active).toBe('#999999');
+    expect(s.drawings.handle).toBe('#222222');
   });
 
   it('leaves the theme it was given as it was', () => {
@@ -143,7 +161,7 @@ describe('chartStyleValue', () => {
     for (const key of Object.keys(CHART_STYLE_KEYS) as ChartStyleKey[]) {
       const value = chartStyleValue(DARK_THEME, {}, key);
       // Only the parts that defer to their own settings resolve to null.
-      if (value === null) expect(['watermark.color', 'sessionBreaks.color', 'sessionBreaks.style', 'sessionBreaks.width', 'highLow.color']).toContain(key);
+      if (value === null) expect(key).toMatch(/^(watermark\.color|sessionBreaks\.|highLow\.color|trading\.|markers\.|tradeZones\.|drawings\.)/);
       else expect(typeof value).toBe(CHART_STYLE_KEYS[key] === 'color' || CHART_STYLE_KEYS[key] === 'lineStyle' ? 'string' : CHART_STYLE_KEYS[key] === 'width' ? 'number' : 'boolean');
     }
   });

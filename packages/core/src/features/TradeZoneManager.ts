@@ -4,6 +4,7 @@ import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMap
 import { Emitter } from '../realtime/Emitter.js';
 import { fillTag } from '../ui/shapes.js';
 import { revealZones } from './replayReveal.js';
+import { zoneStyleFor } from '../style/overlayColors.js';
 
 interface TradeZoneEvents {
   added: TradeZone;
@@ -102,7 +103,8 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     if (!data || data.length === 0 || zones.length === 0) return;
 
     const { chartRect } = viewport;
-    const style = this.style;
+    // Their own style, with the chart's style keys over it.
+    const style = zoneStyleFor(this.style, theme);
 
     ctx.save();
     ctx.beginPath();

@@ -338,7 +338,7 @@ const de: SiteMessages = {
     },
     overrides: {
       title: 'Style-Overrides',
-      stat: '89 Schlüssel',
+      stat: '101 Schlüssel',
       blurb:
         'Jeder Teil des Chart-Aussehens per Schlüssel, unabhängig vom Theme: das Raster je Richtung, das Fadenkreuz, die Achsen, die Panes, die Legende, der letzte Kurs, das Volumen und die Farben jedes Charttyps. Hier ist das vertikale Raster aus, das horizontale gepunktet, das Fadenkreuz durchgezogen und die Signallinie des MACD gestrichelt in einem Pane mit eigenem Trenner.',
       tryThis: [
@@ -354,7 +354,7 @@ const de: SiteMessages = {
         'Jeder Teil des Widgets hat einen Schalter, an, bis du ihn ausschaltest, und im Betrieb änderbar: eine ganze Funktion (Alarme, Einstellungen, Tastenkürzel) oder eine Stelle (ein Knopf der Werkzeugleiste, ein Menüeintrag, eine Gruppe von Zeichenwerkzeugen). Eigene Knöpfe, Menüs und Statuseinträge sitzen in den Leisten des Widgets. Hier sind Replay, zwei Zeichengruppen und der Datendownload aus, und die Werkzeugleiste trägt ein Menü der Schalter.',
       tryThis: [
         'Öffne „features“ in der Werkzeugleiste und schalte Teile aus und an',
-        'Das Auge unten in der Zeichenleiste blendet Werkzeug- und Statusleiste aus und wieder ein',
+        'Das Auge unten in der Zeichenleiste blendet Werkzeug- und Statusleiste aus und wieder ein (Alt+X)',
         'Rechtsklick auf eine Zeichnung: Der letzte Eintrag gehört der Seite',
       ],
     },

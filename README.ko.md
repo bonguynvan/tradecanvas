@@ -239,6 +239,7 @@ widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: 
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')   // 차트 위의 내 층
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 직접 만든 단축키, 단축키 목록에도 나옴
 ```
 
 스위치는 위젯의 부품을 보이고 숨깁니다. 차트 자체에서 무언가를 막으려면(그리기, 거래, 확대·축소) `chartOptions.features`를 쓰세요. 색, 모양, 스타일 오버라이드, 스위치, 직접 만든 부품, 문구, 플러그인까지 모든 방법은 [커스터마이징](https://bonguynvan.github.io/tradecanvas/docs/customization) 페이지에 정리되어 있습니다.
@@ -709,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` 에 모든 키가 있습니다. React, Vue, Svelte 컴포넌트는 `overrides` prop 으로 받습니다.
+`CHART_STYLE_KEYS` 에 모든 키가 있습니다. React, Vue, Svelte 컴포넌트는 `overrides` prop 으로 받습니다. 주문, 포지션, 시그널 표시, 거래 영역, 선택한 그림의 핸들에도 키가 있습니다(`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` 등).
 
 ### 이벤트
 

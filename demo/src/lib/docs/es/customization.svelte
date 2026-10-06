@@ -26,6 +26,8 @@
     <tr><td>Qué partes del widget se ven</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">más abajo</a></td></tr>
     <tr><td>Lo que el usuario puede hacer en el gráfico: dibujar, operar, hacer zoom</td><td>Las features del propio gráfico: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
     <tr><td>Botones, menús y elementos de estado propios</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, los ganchos de menú — <a href="#parts">más abajo</a></td></tr>
+    <tr><td>Atajos de teclado propios</td><td><code>addHotkey</code> — <a href="#parts">más abajo</a></td></tr>
+    <tr><td>Tu propio CSS</td><td>Los ganchos estables: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">más abajo</a></td></tr>
     <tr><td>Los textos del widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">más abajo</a></td></tr>
     <tr><td>Indicadores, herramientas de dibujo o tipos de gráfico propios</td><td><a href={href('/docs/plugins')}>Plugins</a></td></tr>
     <tr><td>Toda la interfaz</td><td>El <code>Chart</code> sin interfaz, con la tuya alrededor — <a href={href('/docs/api')}>API</a></td></tr>
@@ -159,6 +161,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 latency?.setText('15 ms')
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // sustituye al atajo del widget con las mismas teclas; también en la hoja de atajos (?)
 
 // Cualquier otra cosa tuya: junto a los controles de la barra, bajo los de la barra lateral,
 // en un extremo u otro de la barra de estado, o sobre el gráfico
@@ -174,6 +177,20 @@ widget.getSlot('chart')?.append(myOverlay)   // la capa deja pasar el puntero; d
   drawingMenuItems: ({ id, type, selected }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
+
+<h2 id="css">Tu propio CSS</h2>
+<p>El widget forma parte de tu página, no de un iframe, así que tu CSS llega a él. Estos ganchos se mantienen durante toda la 1.x:</p>
+<ul>
+  <li>Las variables <code>--tcw-*</code> en <code>.tcw-root</code>: los tokens del aspecto (ver <a href={href('/docs/styling')}>Estilos</a>).</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>: cada parte lleva los nombres de sus interruptores, así que una regla la encuentra por el mismo nombre.</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>: los interruptores apagados, en la raíz del widget.</li>
+  <li><code>[data-host-button="id"]</code>, <code>[data-host-item="id"]</code>: tus propios botones y elementos de estado, por el id que les diste.</li>
+</ul>
+<p>Los demás nombres de clase son del propio widget y pueden cambiar: aplica estilos mediante los ganchos.</p>
+<pre><code>{`/* tu botón de la barra en el color de acento */
+.tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
+/* un panel tuyo más ancho mientras las herramientas de dibujo están apagadas */
+.my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
 <h2 id="words">Textos</h2>
 <p>

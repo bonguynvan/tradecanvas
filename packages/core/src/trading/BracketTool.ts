@@ -133,8 +133,9 @@ export class BracketTool {
     const ySl = priceToY(d.stopLoss, viewport);
     const yTp = priceToY(d.takeProfit, viewport);
 
-    const profit = theme.candleUp;
-    const loss = theme.candleDown;
+    // As the positions will draw: the style keys' colours, else the candles'.
+    const profit = theme.style?.trading.profit ?? theme.candleUp;
+    const loss = theme.style?.trading.loss ?? theme.candleDown;
 
     ctx.save();
 

@@ -105,6 +105,32 @@ describe('ChartWidget colours in the settings', () => {
     expect(FakeChart.last.themes).toEqual([]);
   });
 
+  it('puts the grid each way, the crosshair, the scales and the last price among the user’s overrides', () => {
+    make();
+    inner().changeSettings({ gridVerticalVisible: false, crosshairStyle: 'dotted', scaleTextColor: '#abcdef', lastPriceVisible: false });
+    expect(FakeChart.last.overrideCalls.at(-1)).toEqual([{
+      'grid.vertical.visible': false,
+      'crosshair.horizontal.style': 'dotted',
+      'crosshair.vertical.style': 'dotted',
+      'axis.price.textColor': '#abcdef',
+      'axis.time.textColor': '#abcdef',
+      'lastPrice.visible': false,
+    }, { layer: 'user' }]);
+    FakeChart.last.steps.at(-1)!.undo();
+    expect(FakeChart.last.user).toEqual({});
+  });
+
+  it('shows the chart’s look when the settings open, each of its kind', () => {
+    make();
+    FakeChart.last.user['grid.vertical.visible'] = false;
+    FakeChart.last.user['crosshair.horizontal.style'] = 'dotted';
+    inner().openSettings();
+    expect(inner().settingsState.gridVerticalVisible).toBe(false);
+    expect(inner().settingsState.crosshairStyle).toBe('dotted');
+    // A value of another kind than the setting's is left alone.
+    expect(inner().settingsState.gridHorizontalVisible).toBe(true);
+  });
+
   it('undoes a colour back to no override at all, not to the colour it resolved to', () => {
     make();
     inner().changeSettings({ candleUpColor: '#00ff00' });
@@ -141,6 +167,23 @@ describe('ChartWidget colours in the settings', () => {
     // No dark colours forced onto a light chart.
     expect(FakeChart.last.user).toEqual({});
     expect(FakeChart.last.themes).toEqual([]);
+  });
+
+  it('takes the look that is not a colour to the other theme, and leaves the colours with theirs', () => {
+    make();
+    const chart = FakeChart.last;
+    const buckets = new Map<string, Record<string, unknown>>([['dark', chart.user]]);
+    chart.setTheme = (theme: unknown) => {
+      chart.themes.push(theme);
+      const name = (theme as Theme).name;
+      chart.themeName = name;
+      if (!buckets.has(name)) buckets.set(name, {});
+      chart.user = buckets.get(name)!;
+    };
+    inner().changeSettings({ gridVerticalVisible: false, crosshairStyle: 'dotted', crosshairColor: '#123456' });
+    inner().handleToggleTheme();
+    expect(chart.user).toEqual({ 'grid.vertical.visible': false, 'crosshair.horizontal.style': 'dotted', 'crosshair.vertical.style': 'dotted' });
+    expect(buckets.get('dark')!['crosshair.horizontal.color']).toBe('#123456');
   });
 
   it("brings back the host's own theme when toggled back to it", () => {

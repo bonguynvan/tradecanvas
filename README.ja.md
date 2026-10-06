@@ -239,6 +239,7 @@ widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: 
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')   // チャート上の独自のレイヤー
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 独自のショートカット。ショートカット一覧にも出ます
 ```
 
 スイッチはウィジェットの部品を表示・非表示にします。チャートそのものでの操作（描画、取引、ズーム）を止めるには `chartOptions.features` を使います。色、見た目、スタイルのオーバーライド、スイッチ、独自の部品、文言、プラグインまで、すべての方法は[カスタマイズ](https://bonguynvan.github.io/tradecanvas/docs/customization)のページにまとめています。
@@ -709,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` にすべてのキーがあります。React、Vue、Svelte のコンポーネントは `overrides` プロパティで受け取ります。
+`CHART_STYLE_KEYS` にすべてのキーがあります。React、Vue、Svelte のコンポーネントは `overrides` プロパティで受け取ります。注文、ポジション、シグナルのマーク、取引ゾーン、選択中の描画のハンドルにもキーがあります（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` など）。
 
 ### イベント
 

@@ -239,6 +239,7 @@ widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: 
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')   // 图表上方属于你的一层
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 你自己的快捷键，也会列在快捷键面板中
 ```
 
 开关只负责显示和隐藏组件的部分；要禁止图表本身的某件事（绘图、交易、缩放），请使用 `chartOptions.features`。所有定制方式——颜色、外观、样式覆盖、开关、自定义部件、文字、插件——都在[定制](https://bonguynvan.github.io/tradecanvas/docs/customization)页面中。
@@ -709,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` 列出了所有键。React、Vue 和 Svelte 组件通过 `overrides` 属性接收它们。
+`CHART_STYLE_KEYS` 列出了所有键。React、Vue 和 Svelte 组件通过 `overrides` 属性接收它们。订单、持仓、信号标记、交易区域和选中绘图的控制点也有各自的键（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`……）。
 
 ### 事件
 

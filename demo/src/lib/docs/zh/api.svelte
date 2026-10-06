@@ -656,6 +656,7 @@ new ChartWidget(host, {
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')          // 图表上方的一层
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // 你自己的快捷键，按键相同时取代组件自带的
 
 new ChartWidget(host, {
   drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],

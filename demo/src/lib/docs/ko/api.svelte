@@ -687,6 +687,7 @@ new ChartWidget(host, {
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
 widget.getSlot('chart')          // 차트 위의 층
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // 직접 만든 단축키, 같은 키의 위젯 단축키를 대신함
 
 new ChartWidget(host, {
   drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],

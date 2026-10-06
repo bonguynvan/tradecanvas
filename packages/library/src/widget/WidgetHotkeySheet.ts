@@ -1,4 +1,5 @@
 import type { MessageKey, Translator } from './i18n.js';
+import type { WidgetFeature } from './widgetFeatures.js';
 
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
@@ -17,11 +18,26 @@ const GROUP_TITLE_KEYS: Record<string, MessageKey> = {
   'Touch (mobile / tablet)': 'hotkeys.group.touch',
   'Keyboard': 'hotkeys.group.keyboard',
   'Drawing': 'hotkeys.group.drawing',
+  'More': 'hotkeys.group.more',
 };
 
 interface HotkeyEntry {
   keys: string[];
   label: string;
+  /** The switch it goes with: left out of the sheet while that is off. */
+  feature?: WidgetFeature;
+}
+
+/** A shortcut of the host's, shown as it was given. */
+export interface HostHotkeyEntry {
+  keys: string[];
+  text: string;
+}
+
+/** What else the sheet shows: the switches that are on, and the host's shortcuts. */
+export interface HotkeySheetOptions {
+  isOn?: (feature: WidgetFeature) => boolean;
+  extra?: readonly HostHotkeyEntry[];
 }
 
 interface HotkeyGroup {
@@ -37,13 +53,13 @@ const GROUPS: HotkeyGroup[] = [
   {
     title: 'Search & navigation',
     entries: [
-      { keys: [mod, 'K'], label: 'hotkeys.commandPalette' },
-      { keys: [mod, 'P'], label: 'hotkeys.symbolSearch' },
-      { keys: ['Alt', 'G'], label: 'hotkeys.goToDate' },
-      { keys: ['Alt', 'I'], label: 'hotkeys.invertScale' },
-      { keys: [mod, 'S'], label: 'hotkeys.saveLayout' },
-      { keys: ['0–9'], label: 'hotkeys.typeInterval' },
-      { keys: ['?'], label: 'hotkeys.showSheet' },
+      { keys: [mod, 'K'], label: 'hotkeys.commandPalette', feature: 'hotkeys.commandPalette' },
+      { keys: [mod, 'P'], label: 'hotkeys.symbolSearch', feature: 'hotkeys.symbolSearch' },
+      { keys: ['Alt', 'G'], label: 'hotkeys.goToDate', feature: 'hotkeys.goToDate' },
+      { keys: ['Alt', 'I'], label: 'hotkeys.invertScale', feature: 'hotkeys.invertScale' },
+      { keys: [mod, 'S'], label: 'hotkeys.saveLayout', feature: 'hotkeys.save' },
+      { keys: ['0–9'], label: 'hotkeys.typeInterval', feature: 'intervalTyping' },
+      { keys: ['?'], label: 'hotkeys.showSheet', feature: 'hotkeys.help' },
     ],
   },
   {
@@ -94,12 +110,12 @@ const GROUPS: HotkeyGroup[] = [
       { keys: [mod, ']', '['], label: 'hotkeys.orderStep' },
       { keys: [mod, 'Shift', ']', '['], label: 'hotkeys.orderEnd' },
       { keys: ['Enter'], label: 'hotkeys.finishPath' },
-      { keys: ['Alt', 'T'], label: 'tool.trendLine' },
-      { keys: ['Alt', 'H'], label: 'tool.horizontalLine' },
-      { keys: ['Alt', 'J'], label: 'tool.horizontalRay' },
-      { keys: ['Alt', 'V'], label: 'tool.verticalLine' },
-      { keys: ['Alt', 'C'], label: 'tool.crossLine' },
-      { keys: ['Alt', 'F'], label: 'tool.fibRetracement' },
+      { keys: ['Alt', 'T'], label: 'tool.trendLine', feature: 'hotkeys.tools' },
+      { keys: ['Alt', 'H'], label: 'tool.horizontalLine', feature: 'hotkeys.tools' },
+      { keys: ['Alt', 'J'], label: 'tool.horizontalRay', feature: 'hotkeys.tools' },
+      { keys: ['Alt', 'V'], label: 'tool.verticalLine', feature: 'hotkeys.tools' },
+      { keys: ['Alt', 'C'], label: 'tool.crossLine', feature: 'hotkeys.tools' },
+      { keys: ['Alt', 'F'], label: 'tool.fibRetracement', feature: 'hotkeys.tools' },
     ],
   },
 ];
@@ -127,8 +143,19 @@ export class WidgetHotkeySheet {
     };
   }
 
-  open(): void {
+  open(options: HotkeySheetOptions = {}): void {
     if (this.backdrop) return;
+    const isOn = options.isOn ?? (() => true);
+    // The widget's own, less those switched off (a whole group goes when all its keys do).
+    // A host's shortcut on the same keys replaces the built-in one.
+    const replaced = new Set((options.extra ?? []).map((e) => e.keys.join('+').toLowerCase()));
+    const groups: { title: string; entries: (HotkeyEntry | HostHotkeyEntry)[] }[] = GROUPS
+      .map((group) => ({
+        title: group.title,
+        entries: group.entries.filter((e) => (!e.feature || isOn(e.feature)) && !replaced.has(e.keys.join('+').toLowerCase())) as (HotkeyEntry | HostHotkeyEntry)[],
+      }))
+      .filter((group) => group.entries.length > 0);
+    if (options.extra && options.extra.length > 0) groups.push({ title: 'More', entries: [...options.extra] });
 
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'tcw-modal-backdrop';
@@ -157,7 +184,7 @@ export class WidgetHotkeySheet {
     const grid = document.createElement('div');
     grid.className = 'tcw-hotkey-grid';
 
-    for (const group of GROUPS) {
+    for (const group of groups) {
       const section = document.createElement('section');
       section.className = 'tcw-hotkey-section';
       const title = document.createElement('div');
@@ -189,7 +216,7 @@ export class WidgetHotkeySheet {
 
         const label = document.createElement('span');
         label.className = 'tcw-hotkey-label';
-        label.textContent = this.t(entry.label as MessageKey);
+        label.textContent = 'text' in entry ? entry.text : this.t(entry.label as MessageKey);
         row.appendChild(label);
 
         section.appendChild(row);

@@ -162,6 +162,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'hotkeys.group.touch': 'اللمس (الهاتف / الجهاز اللوحي)',
   'hotkeys.group.keyboard': 'لوحة المفاتيح',
   'hotkeys.group.drawing': 'الرسم',
+  'hotkeys.group.more': 'المزيد',
 
   // Common
   'common.close': 'إغلاق',
@@ -182,6 +183,13 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.downWick': 'ظل الشمعة الهابطة',
   'settings.background': 'الخلفية',
   'settings.grid': 'الشبكة',
+  'settings.section.lastPrice': 'آخر سعر',
+  'settings.horizontal': 'أفقية',
+  'settings.vertical': 'عمودية',
+  'settings.scaleLines': 'الخطوط',
+  'settings.priceLine': 'خط السعر',
+  'settings.paneSeparator': 'فاصل اللوحات',
+  'settings.legendText': 'نص وسيلة الإيضاح',
   'settings.gridLines': 'خطوط الشبكة',
   'settings.volume': 'الحجم',
   'settings.volumeProfile': 'ملف الحجم',
