@@ -3,8 +3,9 @@ import { marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneO
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState } from './types.js';
-import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS, SETTINGS_STYLE_KEYS } from './widgetConfig.js';
+import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch } from './types.js';
+import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
+import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { WidgetToolbar } from './WidgetToolbar.js';
 import { setHostButtonActive, setHostButtonText } from './hostButtons.js';
@@ -145,7 +146,7 @@ const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
 /** `keyCode` of a key press that goes to an IME composing text. */
 const IME_KEY_CODE = 229;
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
-const LOOK_KEYS: readonly ChartStyleKey[] = Object.values(SETTINGS_STYLE_KEYS).flat().filter((key) => CHART_STYLE_KEYS[key] !== 'color');
+const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
@@ -648,9 +649,12 @@ export class ChartWidget {
       onChange: (patch) => this.changeSettings(patch),
       onReset: () => this.resetSettings(),
       onClose: () => {},
+      styleValue: (key) => this.chart.getStyleValue?.(key) ?? null,
+      onStyleChange: (patch) => this.changeStyle(patch),
     }, this.t, {
       barCountdown: features.barCountdown,
       logScale: features.logScale,
+      trading: features.trading !== false,
       exchangeZone: this.adapter?.resolveSymbol ? () => this.chart.getSymbolInfo()?.timezone ?? null : undefined,
     }, this.overlayHost);
 
@@ -1499,7 +1503,6 @@ export class ChartWidget {
     this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     this.keepingLook(() => this.chart.setTheme(resolved));
-    this.syncSettingsColours();
     this.updateUI();
   }
 
@@ -2777,6 +2780,8 @@ export class ChartWidget {
   private applyChartType(type: ChartType): void {
     this.state = { ...this.state, chartType: type };
     this.chart.setChartType(type);
+    // Settings open: their Style tab shows the type's own colours.
+    this.settings?.refresh(this.settingsState, type);
     this.updateUI();
   }
 
@@ -2938,7 +2943,6 @@ export class ChartWidget {
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     // The mode's theme: the host's own, or the built-in one. The user's colours stay with each.
     this.keepingLook(() => this.chart.setTheme(isDark ? this.themeOf.dark : this.themeOf.light));
-    this.syncSettingsColours();
     this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
       fontSize: 48,
       color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
@@ -2950,7 +2954,6 @@ export class ChartWidget {
     if (!this.featureState.settings) return;
     // The chart's own settings of its type (a layout may have brought them).
     this.settingsState = { ...this.settingsState, chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {} };
-    this.syncSettingsColours();
     this.settings?.open(this.settingsState, this.state.chartType);
   }
 
@@ -3440,44 +3443,40 @@ export class ChartWidget {
       // Every type: one left out goes back to its defaults (a reset).
       this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
     }
-
-    // The look (colours, lines shown, dashes): the user's style overrides, kept with the theme they
-    // were picked on. Volume follows the candles' colours by itself.
-    const style: Record<string, string | boolean> = {};
-    for (const [setting, keys] of Object.entries(SETTINGS_STYLE_KEYS)) {
-      const value = patch[setting as keyof typeof SETTINGS_STYLE_KEYS];
-      if (value !== undefined) for (const key of keys) style[key] = value;
-    }
-    if (Object.keys(style).length > 0) this.chart.applyOverrides(style, { layer: 'user' });
-  }
-
-  /** The settings' look as the chart draws it now (it shows in the settings panel). */
-  private syncSettingsColours(): void {
-    const look: Record<string, unknown> = {};
-    for (const [setting, keys] of Object.entries(SETTINGS_STYLE_KEYS)) {
-      const value = this.chart.getStyleValue?.(keys[0]);
-      // Of the setting's kind only (a colour, a switch, a dash).
-      if (value !== null && typeof value === typeof DEFAULT_SETTINGS[setting as keyof typeof SETTINGS_STYLE_KEYS]) look[setting] = value;
-    }
-    this.settingsState = { ...this.settingsState, ...(look as Partial<ChartSettingsState>) };
   }
 
   private resetSettings(): void {
-    // The colours go back to the theme's (not to a theme's of their own); the rest to the defaults.
-    const colourSettings = Object.keys(SETTINGS_STYLE_KEYS);
-    const plain = (state: ChartSettingsState): Partial<ChartSettingsState> =>
-      Object.fromEntries(Object.entries(state).filter(([k]) => !colourSettings.includes(k))) as Partial<ChartSettingsState>;
-    const before = plain(this.settingsState);
+    // The look goes back to the theme's (not to a theme's of its own); the rest to the defaults.
+    const before = { ...this.settingsState };
     const beforeStyle = this.settingsStyle();
-    const defaults = plain(this.settingsDefaults);
-    this.settingsState = { ...this.settingsState, ...defaults };
+    const defaults = { ...this.settingsDefaults };
     this.applySettings(defaults);
-    this.chart.resetOverrides(Object.values(SETTINGS_STYLE_KEYS).flat(), { layer: 'user' });
-    this.syncSettingsColours();
-    const after = plain(this.settingsState);
+    this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
+    const after = { ...this.settingsState };
     const afterStyle = this.settingsStyle();
+    this.settings?.refresh(this.settingsState);
     if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
     this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
+  }
+
+  /**
+   * A change to the look in the settings: style keys on the user's layer (null
+   * takes one away), kept with the theme they were picked on, and in the
+   * chart's undo history. A burst on the same keys (a colour dragged across
+   * the picker) is one step.
+   */
+  private changeStyle(patch: SettingsStylePatch): void {
+    // Only the keys it touched: an undo leaves the rest (the host's own user overrides) as they are.
+    const keys = Object.keys(patch) as ChartStyleKey[];
+    const before = this.settingsStyle(keys);
+    this.chart.applyOverrides(patch, { layer: 'user' });
+    const after = this.settingsStyle(keys);
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    this.chart.recordUndo({
+      subject: `style:${Object.keys(patch).sort().join(',')}`,
+      undo: () => this.restoreSettings({}, before),
+      redo: () => this.restoreSettings({}, after),
+    });
   }
 
   /**
@@ -3491,46 +3490,37 @@ export class ChartWidget {
     if (keys.includes('scaleMode') || keys.includes('logScale')) {
       for (const k of ['scaleMode', 'logScale'] as const) if (!keys.includes(k)) keys.push(k);
     }
-    // Colours are undone as the user's overrides they set (or none), not as the colours they resolve to.
-    const colourSettings = Object.keys(SETTINGS_STYLE_KEYS);
-    const colours = keys.some((k) => colourSettings.includes(k));
-    const plainKeys = keys.filter((k) => !colourSettings.includes(k));
-    const pick = (): Partial<ChartSettingsState> => Object.fromEntries(plainKeys.map((k) => [k, this.settingsState[k]]));
+    const pick = (): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, this.settingsState[k]]));
     const before = pick();
-    const beforeStyle = colours ? this.settingsStyle() : null;
     this.applySettings(patch);
-    if (colours) this.syncSettingsColours();
     const after = pick();
-    const afterStyle = colours ? this.settingsStyle() : null;
-    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
     this.chart.recordUndo({
       subject: `settings:${Object.keys(patch).sort().join(',')}`,
-      undo: () => this.restoreSettings(before, beforeStyle),
-      redo: () => this.restoreSettings(after, afterStyle),
+      undo: () => this.restoreSettings(before),
+      redo: () => this.restoreSettings(after),
     });
   }
 
   /**
-   * The user's overrides on the settings' colours (null: none set), with the
-   * theme they go with: what an undo of a colour puts back.
+   * The user's overrides on `keys` (null: none set), with the theme they go
+   * with: what an undo of the look puts back.
    */
-  private settingsStyle(): { theme: string; overrides: Record<string, string | boolean | null> } {
+  private settingsStyle(keys: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS): { theme: string; overrides: SettingsStylePatch } {
     const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
-    const overrides: Record<string, string | boolean | null> = {};
-    for (const key of Object.values(SETTINGS_STYLE_KEYS).flat()) {
+    const overrides = Object.fromEntries(keys.map((key) => {
       const value = user[key];
-      overrides[key] = typeof value === 'string' || typeof value === 'boolean' ? value : null;
-    }
+      return [key, typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number' ? value : null];
+    })) as SettingsStylePatch;
     return { theme: this.chart.getTheme()?.name ?? '', overrides };
   }
 
   /** Settings back as they were (an undo or redo), shown in the settings if they're open. */
-  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: Record<string, string | boolean | null> } | null = null): void {
+  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: SettingsStylePatch } | null = null): void {
     this.applySettings(values);
-    // Colours picked on another theme stay with that theme.
+    // The look picked on another theme stays with that theme.
     if (style && style.theme === (this.chart.getTheme()?.name ?? '')) {
       this.chart.applyOverrides(style.overrides, { layer: 'user' });
-      this.syncSettingsColours();
     }
     this.settings?.refresh(this.settingsState);
   }

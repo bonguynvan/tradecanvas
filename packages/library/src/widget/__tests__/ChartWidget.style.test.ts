@@ -66,6 +66,7 @@ const { ChartWidget } = await import('../ChartWidget.js');
 type Internals = {
   openSettings(): void;
   changeSettings(patch: Record<string, unknown>): void;
+  changeStyle(patch: Record<string, unknown>): void;
   resetSettings(): void;
   handleToggleTheme(): void;
   settingsState: Record<string, unknown>;
@@ -92,81 +93,84 @@ afterEach(() => {
 });
 
 describe('ChartWidget colours in the settings', () => {
-  it("puts a colour picked in the settings among the user's overrides, not into the theme", () => {
+  it("puts the look picked in the settings among the user's overrides, not into the theme", () => {
     make();
-    inner().changeSettings({ candleUpColor: '#00ff00', candleDownWick: '#ff0000', gridColor: '#222222', backgroundColor: '#010101' });
+    inner().changeStyle({ 'series.heikinAshi.upColor': '#00ff00', 'grid.horizontal.width': 2, 'trading.buyColor': '#0000ff' });
     expect(FakeChart.last.overrideCalls).toEqual([[{
-      'series.candlestick.upColor': '#00ff00',
-      'series.candlestick.wickDownColor': '#ff0000',
-      'grid.horizontal.color': '#222222',
-      'grid.vertical.color': '#222222',
-      'background.color': '#010101',
+      'series.heikinAshi.upColor': '#00ff00',
+      'grid.horizontal.width': 2,
+      'trading.buyColor': '#0000ff',
     }, { layer: 'user' }]]);
     expect(FakeChart.last.themes).toEqual([]);
   });
 
-  it('puts the grid each way, the crosshair, the scales and the last price among the user’s overrides', () => {
-    make();
-    inner().changeSettings({ gridVerticalVisible: false, crosshairStyle: 'dotted', scaleTextColor: '#abcdef', lastPriceVisible: false });
-    expect(FakeChart.last.overrideCalls.at(-1)).toEqual([{
-      'grid.vertical.visible': false,
-      'crosshair.horizontal.style': 'dotted',
-      'crosshair.vertical.style': 'dotted',
-      'axis.price.textColor': '#abcdef',
-      'axis.time.textColor': '#abcdef',
-      'lastPrice.visible': false,
-    }, { layer: 'user' }]);
-    FakeChart.last.steps.at(-1)!.undo();
-    expect(FakeChart.last.user).toEqual({});
-  });
-
-  it('shows the chart’s look when the settings open, each of its kind', () => {
-    make();
-    FakeChart.last.user['grid.vertical.visible'] = false;
-    FakeChart.last.user['crosshair.horizontal.style'] = 'dotted';
-    inner().openSettings();
-    expect(inner().settingsState.gridVerticalVisible).toBe(false);
-    expect(inner().settingsState.crosshairStyle).toBe('dotted');
-    // A value of another kind than the setting's is left alone.
-    expect(inner().settingsState.gridHorizontalVisible).toBe(true);
-  });
-
   it('undoes a colour back to no override at all, not to the colour it resolved to', () => {
     make();
-    inner().changeSettings({ candleUpColor: '#00ff00' });
+    inner().changeStyle({ 'series.candlestick.upColor': '#00ff00' });
     FakeChart.last.steps.at(-1)!.undo();
     expect(FakeChart.last.user).toEqual({});
     FakeChart.last.steps.at(-1)!.redo();
     expect(FakeChart.last.user).toEqual({ 'series.candlestick.upColor': '#00ff00' });
   });
 
+  it('undoes only the keys it changed, leaving what the host set on the user’s layer since', () => {
+    make();
+    inner().changeStyle({ 'background.color': '#010101' });
+    widget.getChart().applyOverrides({ 'grid.horizontal.color': '#222222' }, { layer: 'user' });
+    FakeChart.last.steps.at(-1)!.undo();
+    expect(FakeChart.last.user).toEqual({ 'grid.horizontal.color': '#222222' });
+  });
+
+  it('takes a key back to the part’s own with null, as one more step', () => {
+    make();
+    inner().changeStyle({ 'markers.longColor': '#00ff00' });
+    inner().changeStyle({ 'markers.longColor': null });
+    expect(FakeChart.last.user).toEqual({});
+    FakeChart.last.steps.at(-1)!.undo();
+    expect(FakeChart.last.user).toEqual({ 'markers.longColor': '#00ff00' });
+  });
+
+  it('makes a colour dragged across the picker one step', () => {
+    make();
+    inner().changeStyle({ 'background.color': '#010101' });
+    inner().changeStyle({ 'background.color': '#020202' });
+    const [a, b] = FakeChart.last.steps.slice(-2);
+    expect(a.subject).toBeDefined();
+    expect(a.subject).toBe(b.subject);
+  });
+
   it('leaves the colours of another theme alone on an undo', () => {
     make();
-    inner().changeSettings({ backgroundColor: '#010101' });
+    inner().changeStyle({ 'background.color': '#010101' });
     FakeChart.last.themeName = 'light';
     const calls = FakeChart.last.overrideCalls.length;
     FakeChart.last.steps.at(-1)!.undo();
     expect(FakeChart.last.overrideCalls).toHaveLength(calls);
   });
 
-  it("shows the chart's colours when the settings open", () => {
+  it("shows the chart's look when the settings open", () => {
     make();
     FakeChart.last.user['series.candlestick.upColor'] = '#123456';
     inner().openSettings();
-    expect(inner().settingsState.candleUpColor).toBe('#123456');
-    expect(inner().settingsState.gridColor).toBe('theme:grid.horizontal.color');
+    const up = document.querySelector<HTMLInputElement>('.tcw-modal input[aria-label="Up body"]')!;
+    expect(up.closest('.tcw-settings-row')!.querySelector('.tcw-color-hex')!.textContent).toBe('#123456');
   });
 
-  it("resets the colours to the theme's, whatever theme it is", () => {
+  it("resets the look to the theme's, whatever theme it is, every chart type's too", () => {
     make({ theme: 'light' });
-    inner().changeSettings({ backgroundColor: '#010101' });
+    inner().changeStyle({ 'background.color': '#010101', 'series.kagi.upColor': '#00ff00', 'tradeZones.activeColor': '#0000ff' });
     inner().resetSettings();
     const [keys, options] = FakeChart.last.resets.at(-1)!;
-    expect(keys).toEqual(expect.arrayContaining(['background.color', 'series.candlestick.upColor', 'grid.vertical.color']));
+    expect(keys).toEqual(expect.arrayContaining([
+      'background.color', 'series.candlestick.upColor', 'series.kagi.upColor', 'grid.vertical.width',
+      'trading.buyColor', 'markers.neutralColor', 'tradeZones.activeColor', 'drawings.handleColor', 'sessionBreaks.style',
+    ]));
     expect(options).toEqual({ layer: 'user' });
     // No dark colours forced onto a light chart.
     expect(FakeChart.last.user).toEqual({});
     expect(FakeChart.last.themes).toEqual([]);
+    FakeChart.last.steps.at(-1)!.undo();
+    expect(FakeChart.last.user).toEqual({ 'background.color': '#010101', 'series.kagi.upColor': '#00ff00', 'tradeZones.activeColor': '#0000ff' });
   });
 
   it('takes the look that is not a colour to the other theme, and leaves the colours with theirs', () => {
@@ -180,9 +184,14 @@ describe('ChartWidget colours in the settings', () => {
       if (!buckets.has(name)) buckets.set(name, {});
       chart.user = buckets.get(name)!;
     };
-    inner().changeSettings({ gridVerticalVisible: false, crosshairStyle: 'dotted', crosshairColor: '#123456' });
+    inner().changeStyle({
+      'grid.vertical.visible': false,
+      'crosshair.horizontal.style': 'dotted',
+      'series.line.lineWidth': 3,
+      'crosshair.horizontal.color': '#123456',
+    });
     inner().handleToggleTheme();
-    expect(chart.user).toEqual({ 'grid.vertical.visible': false, 'crosshair.horizontal.style': 'dotted', 'crosshair.vertical.style': 'dotted' });
+    expect(chart.user).toEqual({ 'grid.vertical.visible': false, 'crosshair.horizontal.style': 'dotted', 'series.line.lineWidth': 3 });
     expect(buckets.get('dark')!['crosshair.horizontal.color']).toBe('#123456');
   });
 

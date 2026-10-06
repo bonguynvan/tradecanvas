@@ -344,7 +344,7 @@ const fr: SiteMessages = {
       tryThis: [
         'Changez de type de graphique : les barres et le Heikin-Ashi prennent les couleurs des bougies s’ils n’ont pas les leurs',
         'Changez le thème du site : ce qui n’est pas surchargé le suit',
-        'Ouvrez les réglages et choisissez une couleur : elle va dans la couche de l’utilisateur, gardée avec le thème',
+        'Ouvrez les Paramètres : l’onglet Style règle chaque clé, couleurs du type de graphique affiché comprises ; l’onglet Trading règle les couleurs des ordres, marqueurs et zones, en Auto tant que vous n’en choisissez pas',
       ],
     },
     parts: {

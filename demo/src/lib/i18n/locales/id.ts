@@ -344,7 +344,7 @@ const id: SiteMessages = {
       tryThis: [
         'Ganti jenis grafik: bar dan Heikin-Ashi memakai warna candle kalau tidak punya warna sendiri',
         'Ganti tema situs: yang tidak di-override mengikutinya',
-        'Buka Pengaturan dan pilih warna: masuk ke lapisan pengguna, disimpan bersama temanya',
+        'Buka Settings: tab Gaya mengatur setiap kunci, termasuk warna jenis chart yang tampil; tab Trading mengatur warna order, penanda, dan zona, Otomatis sampai Anda memilih satu',
       ],
     },
     parts: {

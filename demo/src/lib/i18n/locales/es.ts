@@ -346,7 +346,7 @@ const es: SiteMessages = {
       tryThis: [
         'Cambia el tipo de gráfico: las barras y Heikin-Ashi toman los colores de las velas si no tienen los suyos',
         'Cambia el tema del sitio: lo que no tiene override lo sigue',
-        'Abre los Ajustes y elige un color: va a la capa del usuario, guardado con el tema',
+        'Abre los Ajustes: la pestaña Estilo fija cada clave, incluidos los colores del tipo de gráfico a la vista; la pestaña Trading, los colores de órdenes, marcas y zonas, en Auto hasta que elijas uno',
       ],
     },
     parts: {

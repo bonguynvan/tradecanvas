@@ -344,7 +344,7 @@ const tr: SiteMessages = {
       tryThis: [
         'Grafik türünü değiştirin: barlar ve Heikin-Ashi kendi renkleri yoksa mumların renklerini alır',
         'Sitenin temasını değiştirin: geçersiz kılınmayan her şey onu izler',
-        'Ayarları açıp bir renk seçin: kullanıcının katmanına gider, temayla birlikte saklanır',
+        'Ayarlar’ı açın: Stil sekmesi görünen grafik türünün renkleri dahil her anahtarı ayarlar; İşlem sekmesi emirlerin, işaretlerin ve bölgelerin renklerini ayarlar, siz seçene kadar Otomatik',
       ],
     },
     parts: {

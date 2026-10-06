@@ -4,6 +4,13 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Every key of the look in the widget's Settings
+
+- **The Style tab sets every key**, on the user's layer: the chart type on view gets a section of its own with its colours and widths (Heikin-Ashi's bodies and wicks, Kagi's up and down, a line's colour and width, an area's fills, Baseline's above and below), next to its settings (Renko's box, Kagi's reversal…). Then the background, panes and legend, the watermark, the grid and crosshair each way with their widths, the crosshair's labels, the scales, the last price's colours and width, the volume, the session breaks and the high and low lines.
+- **A Trading tab** for the colours of orders and positions (buy, sell, profit, loss, entry), signal markers and trade zones, and a selected drawing's handles on the Style tab. They keep their own colours until one is picked: the row shows Auto, its picker starts from the colour drawn, and Auto takes it back. The orders' colours are left out on a chart without trading.
+- Undo, Reset and the theme switch cover every key, every chart type's included: Reset takes them all back to the theme's, and widths and dashes go with the user to the other theme as the rest of the look that isn't a colour. An undo puts back only the keys its change touched, so overrides set since on the user's layer stay. Rows a change moves (a wick with its body) show it at once, the Style tab follows the chart type, the tabs scroll on a narrow screen and read as tabs, and a colour in `hsl()`, `oklch()`, a name or with transparency shows in its swatch.
+- Docs: the Settings' tabs on the Styling page, six languages; 21 new widget strings in 30 languages. The agent skill now covers WebGL, the 30 languages, signals, trade zones and replay, the Settings' tabs, and the `styleChange` and `rendererChange` events.
+
 ### More of the look by key, the Settings to change it, and your own shortcuts
 
 - **Orders, positions, signal markers, trade zones and drawing handles by key**: 12 more style keys, 101 in all. `trading.buyColor`, `.sellColor`, `.profitColor`, `.lossColor` and `.entryColor` colour the orders and positions on the chart and their tags on the price axis, over the trading config's colours. `markers.longColor`, `.shortColor` and `.neutralColor` colour the signal markers, and `tradeZones.profitColor`, `.lossColor` and `.activeColor` the trade zones, over their own styles. `drawings.handleColor` fills a selected drawing's handles, white without it. The order ticket's and the bracket tool's previews take the trading colours too. Like the rest, they come on the host's layer or the user's, and read back with `getStyleValue`.

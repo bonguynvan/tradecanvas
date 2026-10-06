@@ -344,7 +344,7 @@ const pt: SiteMessages = {
       tryThis: [
         'Troque o tipo de gráfico: barras e Heikin-Ashi usam as cores dos candles se não tiverem as suas',
         'Troque o tema do site: o que não tem override o acompanha',
-        'Abra as Configurações e escolha uma cor: ela vai para a camada do usuário, guardada com o tema',
+        'Abra as Configurações: a aba Estilo define cada chave, inclusive as cores do tipo de gráfico em exibição; a aba Trading define as cores de ordens, marcadores e zonas, em Auto até você escolher uma',
       ],
     },
     parts: {

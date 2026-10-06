@@ -211,6 +211,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   lưu. Của người dùng (<code>layer: 'user'</code>) thắng của bạn, được giữ theo theme mà họ đặt — màu chọn trên theme tối
   quay lại cùng theme tối — và được lưu bằng <code>saveState()</code>. Phần Settings của widget ghi vào lớp người dùng,
   và nút Reset đưa về màu của theme, theme nào cũng vậy.
+  Tab Giao diện chỉnh mọi phần của chart theo các khoá này, kể cả màu của loại chart đang xem; tab Giao dịch chỉnh
+  màu lệnh, vị thế, điểm tín hiệu và vùng lệnh. Màu để phần đó tự quyết hiện là Tự động, và nút Tự động đưa màu về
+  như vậy.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // của người dùng, cho theme hiện tại

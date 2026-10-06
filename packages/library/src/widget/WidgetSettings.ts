@@ -1,14 +1,18 @@
-import type { ChartType, ChartTypeOptions, LineStyle } from '@tradecanvas/commons';
-import type { ChartSettingsState, SettingsCallbacks } from './types.js';
+import { CHART_STYLE_KEYS, type ChartType, type ChartTypeOptions, type LineStyle } from '@tradecanvas/commons';
+import type { ChartSettingsState, SettingsCallbacks, SettingsStylePatch } from './types.js';
 import { CHART_TYPES } from './widgetConfig.js';
+import { STYLE_SECTIONS, TRADING_SECTIONS, seriesRows, type LookRow, type LookSection } from './widgetSettingsLook.js';
+import { toHex } from './settingsControls.js';
 import { chartTypeLabel } from './widgetLocales.js';
 import { createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
 import { numberLocaleOptions } from './widgetLocales.js';
 import type { Translator } from './i18n.js';
 
-type Tab = 'style' | 'display' | 'scale';
-const TABS: Tab[] = ['style', 'display', 'scale'];
+type Tab = 'style' | 'display' | 'scale' | 'trading';
+const TABS: Tab[] = ['style', 'display', 'scale', 'trading'];
+/** The widths a line takes in the settings, in pixels. */
+const LINE_WIDTHS = [1, 2, 3, 4];
 
 export class WidgetSettings {
   private callbacks: SettingsCallbacks;
@@ -21,6 +25,8 @@ export class WidgetSettings {
   private tabButtons: HTMLButtonElement[] = [];
   /** The chart's type, whose settings the Style tab offers. */
   private chartType: ChartType | null = null;
+  /** The look's rows on view, each showing the chart's value again (a change to one moves others: a wick with its body). */
+  private lookRows: { el: HTMLElement; sync: () => void }[] = [];
 
   /**
    * `barCountdown` / `logScale` false leave out the controls for features the
@@ -34,6 +40,8 @@ export class WidgetSettings {
       logScale?: boolean;
       /** Offer the exchange's time zone; returns it (null while unknown). */
       exchangeZone?: () => string | null;
+      /** false: the chart doesn't trade, so the orders' colours aren't offered. */
+      trading?: boolean;
     } = {},
     /** Where the panel mounts (the widget's portal: themed, and inside it when fullscreen). */
     private readonly host: () => HTMLElement = () => document.body,
@@ -53,10 +61,11 @@ export class WidgetSettings {
     return this.modal !== null;
   }
 
-  /** The settings as they are now (after an undo), on the tab that's open. */
-  refresh(settings: ChartSettingsState): void {
+  /** The settings as they are now (after an undo), on the tab that's open; `chartType` when it changed. */
+  refresh(settings: ChartSettingsState, chartType?: ChartType | null): void {
     if (!this.modal) return;
     this.currentSettings = { ...settings };
+    if (chartType !== undefined) this.chartType = chartType;
     this.renderTabContent();
   }
 
@@ -102,16 +111,23 @@ export class WidgetSettings {
     // Tabs
     const tabsEl = document.createElement('div');
     tabsEl.className = 'tcw-modal-tabs';
+    tabsEl.setAttribute('role', 'tablist');
     this.tabButtons = [];
     for (const tab of TABS) {
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.className = 'tcw-modal-tab';
+      btn.setAttribute('role', 'tab');
       btn.textContent = this.t(`settings.tab.${tab}` as Parameters<Translator>[0]);
       btn.dataset.tab = tab;
+      btn.setAttribute('aria-selected', String(tab === this.currentTab));
       if (tab === this.currentTab) btn.classList.add('tcw-active');
       btn.addEventListener('click', () => {
         this.currentTab = tab;
-        this.tabButtons.forEach(b => b.classList.toggle('tcw-active', b.dataset.tab === tab));
+        this.tabButtons.forEach((b) => {
+          b.classList.toggle('tcw-active', b.dataset.tab === tab);
+          b.setAttribute('aria-selected', String(b.dataset.tab === tab));
+        });
         this.renderTabContent();
       });
       tabsEl.appendChild(btn);
@@ -159,6 +175,7 @@ export class WidgetSettings {
   private renderTabContent(): void {
     if (!this.bodyEl || !this.currentSettings) return;
     this.bodyEl.innerHTML = '';
+    this.lookRows = [];
 
     switch (this.currentTab) {
       case 'style':
@@ -170,59 +187,86 @@ export class WidgetSettings {
       case 'scale':
         this.renderScaleTab();
         break;
+      case 'trading':
+        for (const section of TRADING_SECTIONS) {
+          if (!section.trading || this.available.trading !== false) this.renderLookSection(section);
+        }
+        break;
     }
   }
 
   private renderStyleTab(): void {
     if (!this.bodyEl || !this.currentSettings) return;
-    const s = this.currentSettings;
-
     this.renderChartTypeSection();
+    for (const section of STYLE_SECTIONS) this.renderLookSection(section);
+  }
 
-    // Candle Colors
-    const candleSection = this.section(this.t('settings.section.candleColors'));
-    candleSection.appendChild(this.colorRow(this.t('settings.upBody'), s.candleUpColor, (v) => this.patch({ candleUpColor: v })));
-    candleSection.appendChild(this.colorRow(this.t('settings.downBody'), s.candleDownColor, (v) => this.patch({ candleDownColor: v })));
-    candleSection.appendChild(this.colorRow(this.t('settings.upWick'), s.candleUpWick, (v) => this.patch({ candleUpWick: v })));
-    candleSection.appendChild(this.colorRow(this.t('settings.downWick'), s.candleDownWick, (v) => this.patch({ candleDownWick: v })));
-    this.bodyEl.appendChild(candleSection);
+  private renderLookSection(section: LookSection): void {
+    if (!this.bodyEl) return;
+    const el = this.section(this.t(section.title));
+    for (const row of section.rows) el.appendChild(this.lookRow(row));
+    this.bodyEl.appendChild(el);
+  }
 
-    // Background
-    const bgSection = this.section(this.t('settings.section.background'));
-    bgSection.appendChild(this.colorRow(this.t('settings.background'), s.backgroundColor, (v) => this.patch({ backgroundColor: v })));
-    bgSection.appendChild(this.colorRow(this.t('settings.paneSeparator'), s.paneSeparatorColor, (v) => this.patch({ paneSeparatorColor: v })));
-    bgSection.appendChild(this.colorRow(this.t('settings.legendText'), s.legendTextColor, (v) => this.patch({ legendTextColor: v })));
-    this.bodyEl.appendChild(bgSection);
+  /** A row of the look: a colour, a switch, a dash or a width, as its key takes it, on the user's layer. */
+  private lookRow(row: LookRow): HTMLDivElement {
+    const label = this.t(row.label);
+    const read = () => this.callbacks.styleValue(row.keys[0]);
+    /** The keys' value, or '' when they differ (the host set each way apart): any pick then sets them all. */
+    const shared = (): string => {
+      const values = row.keys.map((key) => this.callbacks.styleValue(key));
+      return values.every((v) => v === values[0]) && values[0] !== null ? String(values[0]) : '';
+    };
+    let el: HTMLDivElement;
+    const set = (v: string | number | boolean | null) => {
+      this.callbacks.onStyleChange(Object.fromEntries(row.keys.map((key) => [key, v])) as SettingsStylePatch);
+      for (const other of this.lookRows) if (other.el !== el) other.sync();
+    };
+    const auto = row.auto ? [{ value: '', label: this.t('settings.auto') }] : [];
+    let sync: () => void;
+    switch (CHART_STYLE_KEYS[row.keys[0]]) {
+      case 'boolean': {
+        el = this.toggleRow(label, read() === true, set);
+        const toggle = el.querySelector('button')!;
+        sync = () => {
+          const on = read() === true;
+          toggle.classList.toggle('tcw-on', on);
+          toggle.setAttribute('aria-checked', String(on));
+        };
+        break;
+      }
+      case 'lineStyle':
+        el = this.selectRow(label, shared(), [...auto, ...this.lineStyles()], (v) => set(v === '' ? null : asLineStyle(v)));
+        sync = () => { el.querySelector('select')!.value = shared(); };
+        break;
+      case 'width': {
+        const value = read();
+        const widths = typeof value === 'number' && !LINE_WIDTHS.includes(value) ? [...LINE_WIDTHS, value].sort((a, b) => a - b) : LINE_WIDTHS;
+        el = this.selectRow(label, shared(), [...auto, ...widths.map((w) => ({ value: String(w), label: `${w}px` }))],
+          (v) => set(v === '' ? null : Number(v)));
+        sync = () => { el.querySelector('select')!.value = shared(); };
+        break;
+      }
+      default: {
+        const value = read();
+        const colour = this.colorRow(label, typeof value === 'string' ? value : null, set, {
+          read: () => { const v = read(); return typeof v === 'string' ? v : null; },
+          start: row.auto ? () => (row.auto?.from ? this.callbacks.styleValue(row.auto.from) : row.auto?.hint) ?? null : undefined,
+        });
+        el = colour.row;
+        sync = colour.sync;
+      }
+    }
+    this.lookRows.push({ el, sync });
+    return el;
+  }
 
-    const lineStyles = (): { value: string; label: string }[] => [
+  private lineStyles(): { value: string; label: string }[] {
+    return [
       { value: 'solid', label: this.t('drawingSettings.lineStyle.solid') },
       { value: 'dashed', label: this.t('drawingSettings.lineStyle.dashed') },
       { value: 'dotted', label: this.t('drawingSettings.lineStyle.dotted') },
     ];
-    const asLineStyle = (v: string): LineStyle => (v === 'dashed' || v === 'dotted' ? v : 'solid');
-
-    // The grid, each way
-    const gridSection = this.section(this.t('settings.gridLines'));
-    gridSection.appendChild(this.toggleRow(this.t('settings.horizontal'), s.gridHorizontalVisible, (v) => this.patch({ gridHorizontalVisible: v })));
-    gridSection.appendChild(this.toggleRow(this.t('settings.vertical'), s.gridVerticalVisible, (v) => this.patch({ gridVerticalVisible: v })));
-    gridSection.appendChild(this.colorRow(this.t('drawingSettings.color'), s.gridColor, (v) => this.patch({ gridColor: v })));
-    gridSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.gridStyle, lineStyles(), (v) => this.patch({ gridStyle: asLineStyle(v) })));
-    this.bodyEl.appendChild(gridSection);
-
-    const crosshairSection = this.section(this.t('settings.crosshairMode'));
-    crosshairSection.appendChild(this.colorRow(this.t('drawingSettings.color'), s.crosshairColor, (v) => this.patch({ crosshairColor: v })));
-    crosshairSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.crosshairStyle, lineStyles(), (v) => this.patch({ crosshairStyle: asLineStyle(v) })));
-    this.bodyEl.appendChild(crosshairSection);
-
-    const scaleSection = this.section(this.t('settings.tab.scale'));
-    scaleSection.appendChild(this.colorRow(this.t('drawingSettings.text'), s.scaleTextColor, (v) => this.patch({ scaleTextColor: v })));
-    scaleSection.appendChild(this.colorRow(this.t('settings.scaleLines'), s.scaleLineColor, (v) => this.patch({ scaleLineColor: v })));
-    this.bodyEl.appendChild(scaleSection);
-
-    const lastPriceSection = this.section(this.t('settings.section.lastPrice'));
-    lastPriceSection.appendChild(this.toggleRow(this.t('settings.priceLine'), s.lastPriceVisible, (v) => this.patch({ lastPriceVisible: v })));
-    lastPriceSection.appendChild(this.selectRow(this.t('drawingSettings.lineStyle'), s.lastPriceStyle, lineStyles(), (v) => this.patch({ lastPriceStyle: asLineStyle(v) })));
-    this.bodyEl.appendChild(lastPriceSection);
   }
 
   private renderDisplayTab(): void {
@@ -297,7 +341,7 @@ export class WidgetSettings {
     this.bodyEl.appendChild(section);
   }
 
-  /** The settings of the chart's type, when it has any (Renko's box, Kagi's reversal…). */
+  /** The chart's type: its settings (Renko's box, Kagi's reversal…) and its colours and widths. */
   private renderChartTypeSection(): void {
     if (!this.bodyEl || !this.currentSettings || !this.chartType) return;
     const type = this.chartType;
@@ -339,8 +383,9 @@ export class WidgetSettings {
           (v) => set('rangeBars', { range: v ?? 'auto' })));
         break;
       default:
-        return;
+        break;
     }
+    for (const row of seriesRows(type)) section.appendChild(this.lookRow(row));
     this.bodyEl.appendChild(section);
   }
 
@@ -398,7 +443,17 @@ export class WidgetSettings {
     return div;
   }
 
-  private colorRow(label: string, value: string, onChange: (v: string) => void): HTMLDivElement {
+  /**
+   * A colour of the look, shown again from `look.read()`. With `look.start`,
+   * null is the part's own colour: shown as Auto, the picker starting from
+   * `start()`, and once set a button takes it back.
+   */
+  private colorRow(
+    label: string,
+    value: string | null,
+    onChange: (v: string | null) => void,
+    look: { read: () => string | null; start?: () => string | number | boolean | null },
+  ): { row: HTMLDivElement; sync: () => void } {
     const row = document.createElement('div');
     row.className = 'tcw-settings-row';
 
@@ -412,22 +467,48 @@ export class WidgetSettings {
 
     const input = document.createElement('input');
     input.type = 'color';
-    input.value = value;
     input.setAttribute('aria-label', label);
 
+    // What the swatch can't say (Auto, a colour with transparency) is read with it.
     const hex = document.createElement('span');
     hex.className = 'tcw-color-hex';
-    hex.textContent = value;
+    hex.id = `tcw-color-${++colorRowCount}`;
+    input.setAttribute('aria-describedby', hex.id);
+
+    let back: HTMLButtonElement | null = null;
+    const show = (v: string | null) => {
+      input.value = toHex(v ?? look.start?.());
+      hex.textContent = v ?? this.t('settings.auto');
+      row.classList.toggle('tcw-color-auto', v === null);
+      if (v !== null && look.start && !back) {
+        back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'tcw-color-auto-btn';
+        back.textContent = this.t('settings.auto');
+        back.setAttribute('aria-label', `${label}: ${this.t('settings.auto')}`);
+        back.addEventListener('click', () => {
+          onChange(null);
+          // Focus stays in the row as the button goes; the chart may still draw a colour the host set.
+          input.focus();
+          show(look.read());
+        });
+        wrap.appendChild(back);
+      } else if (v === null && back) {
+        back.remove();
+        back = null;
+      }
+    };
 
     input.addEventListener('input', () => {
-      hex.textContent = input.value;
       onChange(input.value);
+      show(input.value);
     });
 
     wrap.appendChild(input);
     wrap.appendChild(hex);
     row.appendChild(wrap);
-    return row;
+    show(value);
+    return { row, sync: () => show(look.read()) };
   }
 
   private toggleRow(label: string, value: boolean, onChange: (v: boolean) => void): HTMLDivElement {
@@ -479,6 +560,8 @@ export class WidgetSettings {
       if (opt.value === value) o.selected = true;
       select.appendChild(o);
     }
+    // A value none of the options has (two keys that differ): nothing chosen, so any pick is a change.
+    if (!options.some((opt) => opt.value === value)) select.selectedIndex = -1;
     select.addEventListener('change', () => onChange(select.value));
     row.appendChild(select);
     return row;
@@ -538,4 +621,11 @@ function withValue<T extends object, K extends string>(settings: T | undefined, 
   if (value === null) delete next[key];
   else next[key] = value;
   return next as T;
+}
+
+/** Ids for the colour rows' descriptions. */
+let colorRowCount = 0;
+
+function asLineStyle(v: string): LineStyle {
+  return v === 'dashed' || v === 'dotted' ? v : 'solid';
 }

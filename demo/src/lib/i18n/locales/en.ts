@@ -351,7 +351,7 @@ const en = {
       tryThis: [
         'Switch the chart type: bars and Heikin-Ashi take the candles’ colours unless they have their own',
         'Switch the site’s theme: what isn’t overridden follows it',
-        'Open Settings and pick a colour: it goes on the user’s layer, kept with the theme',
+        'Open Settings: the Style tab sets every key, the colours of the chart type on view included; the Trading tab sets the orders’, markers’ and zones’ colours, Auto until you pick one',
       ],
     },
     parts: {

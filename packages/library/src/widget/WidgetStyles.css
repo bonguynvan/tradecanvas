@@ -1348,9 +1348,18 @@
   gap: 4px;
   padding: var(--tcw-tabs-pad-block) 18px;
   border-bottom: 1px solid var(--tcw-divider);
+  /* Four tabs in a long language on a phone: they scroll rather than clip. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tcw-modal-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tcw-modal-tab {
+  flex-shrink: 0;
+  white-space: nowrap;
   height: var(--tcw-tab-h);
   padding: var(--tcw-tab-pad);
   font-size: var(--tcw-font-size-sm);
@@ -1451,6 +1460,36 @@
   color: var(--tcw-text-muted);
   min-width: 64px;
   letter-spacing: 0.01em;
+}
+
+/* A colour left to the part itself: the swatch shows where the picker starts, faded. */
+.tcw-color-auto input[type='color'] {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.tcw-color-auto .tcw-color-hex {
+  font-family: inherit;
+  font-style: italic;
+}
+
+.tcw-color-auto-btn {
+  height: 24px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+  background: transparent;
+  border: 1px solid var(--tcw-border-strong);
+  border-radius: var(--tcw-radius-sm);
+  cursor: pointer;
+  transition: color var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-color-auto-btn:hover,
+.tcw-color-auto-btn:focus-visible {
+  color: var(--tcw-text);
+  border-color: var(--tcw-accent);
 }
 
 .tcw-toggle {

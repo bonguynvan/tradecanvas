@@ -512,33 +512,20 @@ export interface SidebarCallbacks {
   onToggleStayInDrawing?: () => void;
 }
 
+/** Style keys to set on the user's layer; null takes one away (back to the theme's, or the part's own). */
+export type SettingsStylePatch = import('@tradecanvas/commons').ChartStyleOverridesPatch;
+
 export interface SettingsCallbacks {
   onChange: (patch: Partial<ChartSettingsState>) => void;
+  /** What a style key reads back now (null: not set, left to the part itself). */
+  styleValue: (key: import('@tradecanvas/commons').ChartStyleKey) => string | number | boolean | null;
+  onStyleChange: (patch: SettingsStylePatch) => void;
   onReset: () => void;
   onClose: () => void;
 }
 
+/** The settings that aren't the look: the look (colours, lines, dashes) is the chart's style keys, on the user's layer. */
 export interface ChartSettingsState {
-  candleUpColor: string;
-  candleDownColor: string;
-  candleUpWick: string;
-  candleDownWick: string;
-  backgroundColor: string;
-  gridColor: string;
-  /** The grid's lines each way, and their dash. */
-  gridHorizontalVisible: boolean;
-  gridVerticalVisible: boolean;
-  gridStyle: import('@tradecanvas/commons').LineStyle;
-  crosshairColor: string;
-  crosshairStyle: import('@tradecanvas/commons').LineStyle;
-  /** The price and time scales' text and lines. */
-  scaleTextColor: string;
-  scaleLineColor: string;
-  /** The last price's line. */
-  lastPriceVisible: boolean;
-  lastPriceStyle: import('@tradecanvas/commons').LineStyle;
-  paneSeparatorColor: string;
-  legendTextColor: string;
   gridVisible: boolean;
   volumeVisible: boolean;
   volumeProfileVisible: boolean;

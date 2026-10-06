@@ -1,13 +1,15 @@
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 111 indicators, drawing tools, live exchange data, orders and positions on the chart, alerts, replay. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 111 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
 
-TradeCanvas draws trading charts on two stacked Canvas2D layers, in TypeScript,
-with no runtime dependencies. One package, `@tradecanvas/chart`, holds both the
-chart engine and a complete trading UI around it.
+TradeCanvas draws trading charts in TypeScript, with no runtime dependencies:
+on Canvas 2D by default, or with the series, indicators and panes on WebGL 2
+(`renderer: 'webgl'`, or `'auto'` where the GPU is a real one). One package,
+`@tradecanvas/chart`, holds both the chart engine and a complete trading UI
+around it.
 
 ## Pick the entry point
 
@@ -53,7 +55,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   timeframe: '5m',
   theme: 'dark',
   adapter: new BinanceAdapter(),
-  locale: 'en', // or 'vi'
+  locale: 'en', // 'vi' too; 28 more from '@tradecanvas/chart/widget/locales' (`messages`)
   onReady: (chart) => {
     chart.addIndicator('ema', { period: 50 });
     chart.addIndicator('rsi', { period: 14 });
@@ -147,6 +149,26 @@ chart.on('positionModify', (e) => console.log('stop or target dragged', e.payloa
 and drawings can be grouped (`groupDrawings`), reordered (`moveDrawing`) and erased
 (`setEraserMode`). `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
 
+## Signals, trades and replay
+
+```ts
+import type { Chart } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+declare const t1: number, t2: number; // bar times
+
+chart.setSignalMarkers([{ id: 's1', time: t1, price: 62_000, direction: 'long', confidence: 0.8, source: 'my-strategy' }]);
+chart.setTradeZones([{ id: 'z1', direction: 'long', entryTime: t1, entryPrice: 62_000, exitTime: t2, exitPrice: 63_500 }]);
+
+// Replay from a time, only the replayed bars on the chart, the whole run in about 3.5 s.
+// Markers and zones appear as the replay reaches them.
+chart.replayStart({ startTime: t1, hideHistory: true, duration: 3500 });
+chart.on('replayComplete', () => chart.replayStop());   // every bar and mark back
+```
+
+`replayPause`, `replayResume`, `replaySeekToTime` and `replaySeekToBar` steer it;
+`revealMarks: false` shows every mark from the start.
+
 ## Saving layouts
 
 ```ts
@@ -184,6 +206,8 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `replayStep` | `{ barIndex, time, until, total }`: a replay step |
 | `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
 | `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
+| `styleChange` | `{ layer }`: `'host'` or `'user'` overrides changed |
+| `rendererChange` | `{ renderer, reason? }`: WebGL fell back to Canvas 2D, or came back |
 
 ## Theming
 
@@ -196,7 +220,9 @@ One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertica
 is drawn reads back from `getStyleValue(key)`. Orders, positions, signal markers, trade zones and
 drawing handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`,
 `drawings.handleColor`). Each indicator plot's dash and visibility:
-`updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`.
+`updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`. The widget's Settings
+edit these keys on the user's layer: the Style tab the chart's parts and the colours of the chart
+type on view, the Trading tab the orders', markers' and zones' colours (Auto until one is picked).
 
 The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
 `widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability
@@ -216,6 +242,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 | `addIndicator` returns `null` | `features.indicators` is off, or `features.indicatorIds` leaves it out |
 | Indicator line missing at the start | Warm-up: no value until its period has enough bars |
 | Chart stutters on a fast feed | `setData` called per tick instead of `updateLastBar` / `appendBar` |
+| A React/Vue/Svelte chart shows Binance bars before yours | Pass `data` at mount, or `stream={false}` |
 
 ## References
 
