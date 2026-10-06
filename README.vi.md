@@ -711,7 +711,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` liệt kê mọi khoá. Component React, Vue và Svelte nhận chúng qua prop `overrides`. Lệnh, vị thế, điểm tín hiệu, vùng lệnh và tay nắm của hình vẽ đang chọn cũng có khoá (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…).
+`CHART_STYLE_KEYS` liệt kê mọi khoá. Component React, Vue và Svelte nhận chúng qua prop `overrides`. Lệnh, vị thế, điểm tín hiệu, vùng lệnh và tay nắm của hình vẽ đang chọn cũng có khoá (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…). Trong widget, Settings → Giao diện chỉnh mọi khoá, kể cả màu của loại chart đang xem, còn Settings → Giao dịch chỉnh màu lệnh, vị thế, điểm tín hiệu và vùng lệnh (Tự động cho tới khi chọn một màu).
 
 ### Sự kiện
 

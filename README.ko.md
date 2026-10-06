@@ -710,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` 에 모든 키가 있습니다. React, Vue, Svelte 컴포넌트는 `overrides` prop 으로 받습니다. 주문, 포지션, 시그널 표시, 거래 영역, 선택한 그림의 핸들에도 키가 있습니다(`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` 등).
+`CHART_STYLE_KEYS` 에 모든 키가 있습니다. React, Vue, Svelte 컴포넌트는 `overrides` prop 으로 받습니다. 주문, 포지션, 시그널 표시, 거래 영역, 선택한 그림의 핸들에도 키가 있습니다(`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor` 등). 위젯에서는 설정 → 스타일에서 지금 보는 차트 유형의 색을 포함한 모든 키를, 설정 → 거래에서 주문, 포지션, 시그널 표시, 거래 영역의 색을 설정합니다(고르기 전에는 자동).
 
 ### 이벤트
 

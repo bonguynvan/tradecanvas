@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-Collected on `main` for the next release. Not on npm yet.
+Collected on `main` for the next release. Nothing yet: everything on `main` is in 1.16.0.
+
+## 1.16.0 (2026-10-06)
+
+React, Vue and Svelte components: 1.2.2. 1.15.0 was versioned but never published on its own; its changes (the second section below) ship in 1.16.0.
 
 ### Every key of the look in the widget's Settings
 

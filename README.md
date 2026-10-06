@@ -711,7 +711,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop. Orders, positions, signal markers, trade zones and a selected drawing's handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…).
+`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop. Orders, positions, signal markers, trade zones and a selected drawing's handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…). In the widget, Settings → Style sets every key, the colours of the chart type on view included, and Settings → Trading the colours of orders, positions, signal markers and trade zones (Auto until one is picked).
 
 ### Events
 

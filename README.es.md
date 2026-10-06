@@ -711,7 +711,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` enumera todas las claves. Los componentes de React, Vue y Svelte las reciben en la prop `overrides`. Las órdenes, las posiciones, las marcas de señal, las zonas de operación y los tiradores del dibujo seleccionado también tienen claves (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…).
+`CHART_STYLE_KEYS` enumera todas las claves. Los componentes de React, Vue y Svelte las reciben en la prop `overrides`. Las órdenes, las posiciones, las marcas de señal, las zonas de operación y los tiradores del dibujo seleccionado también tienen claves (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…). En el widget, Ajustes → Estilo fija cada clave, incluidos los colores del tipo de gráfico a la vista, y Ajustes → Trading los colores de órdenes, posiciones, marcas de señal y zonas de operación (Auto hasta que se elige uno).
 
 ### Eventos
 

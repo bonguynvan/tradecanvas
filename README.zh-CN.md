@@ -710,7 +710,7 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
 chart.setPaneStyle(rsiId, { background: '#101418' })
 ```
 
-`CHART_STYLE_KEYS` 列出了所有键。React、Vue 和 Svelte 组件通过 `overrides` 属性接收它们。订单、持仓、信号标记、交易区域和选中绘图的控制点也有各自的键（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`……）。
+`CHART_STYLE_KEYS` 列出了所有键。React、Vue 和 Svelte 组件通过 `overrides` 属性接收它们。订单、持仓、信号标记、交易区域和选中绘图的控制点也有各自的键（`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`……）。在组件中，设置 → 样式可设置每个键（包括当前图表类型的颜色），设置 → 交易可设置订单、持仓、信号标记和交易区域的颜色（选择前为“自动”）。
 
 ### 事件
 

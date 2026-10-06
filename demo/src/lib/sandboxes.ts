@@ -1,8 +1,8 @@
 import sdk from '@stackblitz/sdk';
 
 // Caret ranges from the release the sandboxes' code needs: each installs the latest published 1.x.
-const CHART_VERSION = '^1.14.0';
-const WRAPPER_VERSION = '^1.2.0';
+const CHART_VERSION = '^1.16.0';
+const WRAPPER_VERSION = '^1.2.2';
 const VITE_VERSION = '^6.0.0';
 const TS_VERSION = '~5.7.0';
 
