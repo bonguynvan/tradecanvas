@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 1.17.0
+
+### Minor Changes
+
+- 5fc5782: The price scale writes its labels in the symbol's or market's price precision, as the legend and price tags already did, with its ticks on whole price steps (`minTick`). An adapter can send a `symbolInfo` event when it learns the symbol's details after the chart asked `resolveSymbol`; the chart applies them. `PollingAdapter`'s `emitEvent` is protected, for subclasses.
+
+### Patch Changes
+
+- Updated dependencies [5fc5782]
+  - @tradecanvas/commons@1.17.0
+  - @tradecanvas/core@1.17.0
+
 ## 1.16.1
 
 ### Patch Changes
