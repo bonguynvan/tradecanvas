@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/core",
-  "version": "1.16.1",
+  "version": "1.17.0",
   "type": "module",
   "description": "Canvas rendering engine for @tradecanvas/chart",
   "license": "MIT",
