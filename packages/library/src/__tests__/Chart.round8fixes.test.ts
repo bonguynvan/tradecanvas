@@ -192,3 +192,89 @@ describe('second review', () => {
     expect(lines.priceText?.(1.23456)).toBe(chart.formatPrice(1.23456));
   });
 });
+
+describe('the symbol’s precision on the price scale', () => {
+  const dong: OHLCBar[] = Array.from({ length: 60 }, (_, i) => {
+    const p = 21_500 + Math.round(Math.sin(i / 4) * 30) * 10;
+    return { time: T0 + i * HOUR, open: p, high: p + 100, low: p - 100, close: p + 50, volume: 1000 };
+  });
+  /** The price scale's labels: numbers in the 20 thousands, as the axis writes them. */
+  const scaleLabels = () => texts.filter((t) => /^2\d,\d{3}(\.\d+)?$/.test(t));
+
+  it('writes the scale in the symbol’s decimals, as the legend and tags are', async () => {
+    chart.setData(dong);
+    chart.setSymbolInfo({ symbol: 'VND1', pricePrecision: 0, minTick: 10 });
+    texts.length = 0;
+    chart.resize();
+    await frame();
+    expect(scaleLabels().length).toBeGreaterThan(0);
+    expect(scaleLabels().filter((t) => t.includes('.'))).toEqual([]);
+  });
+
+  /** A feed whose events the test sends; with trades, the stream wraps it for tick charts. */
+  function feed(handlers: Map<string, (e: { data: unknown }) => void>, extra: Partial<DataAdapter> = {}): DataAdapter {
+    return {
+      name: 'feed',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => dong,
+      on: ((type: string, cb: (e: { data: unknown }) => void) => { handlers.set(type, cb); }) as DataAdapter['on'],
+      off: () => {},
+      dispose: () => {},
+      ...extra,
+    };
+  }
+
+  it('takes it from a feed with trades too', async () => {
+    const handlers = new Map<string, (e: { data: unknown }) => void>();
+    const adapter = feed(handlers, { fetchTrades: async () => [], subscribeTrades: () => () => {} });
+    await chart.connect({ adapter, symbol: 'VND1', timeframe: '1h', historyLimit: 60 });
+    handlers.get('symbolInfo')?.({ data: { symbol: 'VND1', pricePrecision: 0 } });
+    expect(chart.getSymbolInfo()?.pricePrecision).toBe(0);
+  });
+
+  it('adds what the feed learns to what is known, any case, and ignores the same again', async () => {
+    const handlers = new Map<string, (e: { data: unknown }) => void>();
+    await chart.connect({ adapter: feed(handlers), symbol: 'VND1', timeframe: '1h', historyLimit: 60 });
+    chart.setSymbolInfo({ symbol: 'VND1', timezone: 'Asia/Ho_Chi_Minh', sessions: [{ start: '09:00', end: '15:00' }] });
+    const changes: unknown[] = [];
+    chart.on('symbolInfoChange', (e) => changes.push(e.payload));
+    handlers.get('symbolInfo')?.({ data: { symbol: 'vnd1', pricePrecision: 0 } });
+    handlers.get('symbolInfo')?.({ data: { symbol: 'vnd1', pricePrecision: 0 } });
+    expect(chart.getSymbolInfo()).toMatchObject({ timezone: 'Asia/Ho_Chi_Minh', pricePrecision: 0 });
+    expect(changes).toHaveLength(1);
+  });
+
+  it('drops the last symbol’s details on a switch, though the feed can’t be asked', async () => {
+    chart.setSymbolInfo({ symbol: 'VND1', pricePrecision: 0, minTick: 10 });
+    await chart.connect({ adapter: feed(new Map()), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 60 });
+    expect(chart.getSymbolInfo()).toBeNull();
+  });
+
+  it('takes what the feed learns about the symbol after it connected', async () => {
+    const handlers = new Map<string, (e: { data: unknown }) => void>();
+    const adapter: DataAdapter = {
+      name: 'late-info',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => dong,
+      // Not known yet when the chart asks.
+      resolveSymbol: async () => null,
+      on: ((type: string, cb: (e: { data: unknown }) => void) => { handlers.set(type, cb); }) as DataAdapter['on'],
+      off: () => {},
+      dispose: () => {},
+    };
+    await chart.connect({ adapter, symbol: 'VND1', timeframe: '1h', historyLimit: 60 });
+    handlers.get('symbolInfo')?.({ data: { symbol: 'VND1', pricePrecision: 0, minTick: 10, currency: 'VND' } });
+    expect(chart.getSymbolInfo()).toMatchObject({ symbol: 'VND1', pricePrecision: 0, minTick: 10 });
+    // About another symbol: not this chart's.
+    handlers.get('symbolInfo')?.({ data: { symbol: 'OTHER', pricePrecision: 4 } });
+    expect(chart.getSymbolInfo()?.symbol).toBe('VND1');
+    texts.length = 0;
+    chart.resize();
+    await frame();
+    expect(scaleLabels().filter((t) => t.includes('.'))).toEqual([]);
+  });
+});

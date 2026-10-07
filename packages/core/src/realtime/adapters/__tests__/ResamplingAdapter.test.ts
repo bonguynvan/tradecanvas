@@ -185,6 +185,14 @@ describe('ResamplingAdapter live bars', () => {
     expect(seen).toEqual(['tick', 'connected']);
   });
 
+  it('passes on what the feed learns about the symbol', () => {
+    const { feed, adapter } = setup();
+    const seen: unknown[] = [];
+    adapter.on('symbolInfo', (e) => seen.push(e.data));
+    feed.emit('symbolInfo', { symbol: 'X', pricePrecision: 0, minTick: 10 });
+    expect(seen).toEqual([{ symbol: 'X', pricePrecision: 0, minTick: 10 }]);
+  });
+
   it('starts a fresh bucket after a reconnect', () => {
     const { feed, adapter, bars } = setup();
     adapter.connect({ symbol: 'X', timeframe: '7m' });

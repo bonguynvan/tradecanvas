@@ -4,6 +4,12 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The price scale in the symbol's decimals, and symbol details learned later
+
+- **The price scale follows the symbol's precision**: its labels took the decimals of the visible range ("22,000.00") while the legend, price tags and crosshair took the symbol's `pricePrecision` or the market's ("22,000"). They all agree now, and the axis width is measured in those decimals. With a `minTick`, the scale's ticks stay on whole price steps: a stock that moves in 10 dong never shows 21,705.
+- **Symbol details the feed learns later**: a chart asks `resolveSymbol` once when it connects. An adapter that learns the symbol's details afterwards (on its first message, say) sends a `symbolInfo` event with the `SymbolInfo`, and the chart applies it: decimals, price step, hours. No need to remount a framework component to pass them. `PollingAdapter` subclasses can send it with `emitEvent`, as `WebSocketAdapter` ones already could.
+- Docs: the event on the Realtime page, six languages; the agent skill's recipe.
+
 ### Fixes
 
 - **The Settings' tabs keep their height** (broken in 1.16.0): with the Style tab's longer list, the tab bar was squashed to half its height. A dialog's tab bar now keeps its height and wraps on a narrow screen rather than scroll; the indicator and drawing settings, which share it, too.

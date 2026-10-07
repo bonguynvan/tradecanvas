@@ -28,7 +28,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -41,6 +41,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
+<p>
+  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: trục giá, legend và nhãn giá theo số lẻ của mã (<code>pricePrecision</code>), vạch chia trục theo bước giá (<code>minTick</code>), giờ giao dịch của sàn.
+</p>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
 
 <h2>Nguồn dữ liệu bất kỳ trong ~20 dòng</h2>
 <p>

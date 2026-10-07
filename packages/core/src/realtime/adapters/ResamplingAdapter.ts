@@ -31,7 +31,7 @@ export const MAX_BASE_REQUESTS = 10;
 /** Most base bars one target bar may take (1440 = a day from minutes). */
 export const MAX_BASE_RATIO = 1440;
 
-const FORWARDED: DataAdapterEventType[] = ['tick', 'barClose', 'snapshot', 'connectionChange', 'error'];
+const FORWARDED: DataAdapterEventType[] = ['tick', 'barClose', 'snapshot', 'connectionChange', 'error', 'symbolInfo'];
 
 const wrapped = new WeakMap<DataAdapter, ResamplingAdapter>();
 

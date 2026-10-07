@@ -158,7 +158,7 @@ export class PollingAdapter implements DataAdapter {
     }
   }
 
-  private emitEvent(type: DataAdapterEventType, data: unknown): void {
+  protected emitEvent(type: DataAdapterEventType, data: unknown): void {
     const set = this.listeners.get(type);
     if (set) {
       const event = { type, data, timestamp: Date.now() };

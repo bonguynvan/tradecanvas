@@ -16,6 +16,18 @@ describe('autoPricePrecision', () => {
 });
 
 describe('requiredPriceAxisWidth', () => {
+  it('measures the scale’s labels in the market’s decimals too', () => {
+    // With 0 decimals every label is "123,456,789": 11 chars → 66px + 22px crosshair-pill chrome = 88.
+    // ("123,456,789.00" on the scale would need 14 chars: 84px + 14px label chrome = 98 → 100.)
+    expect(requiredPriceAxisWidth({ ...base, min: 123_456_000, max: 123_456_789, tagPrecision: 0 })).toBe(88);
+  });
+
+  it('measures the scale’s labels as the axis writes them, in percent too', () => {
+    const w = requiredPriceAxisWidth({ ...base, min: 25_000, max: 26_000, tagPrecision: 0, scaleLabel: () => '+1,234.56%' });
+    // "+1,234.56%" = 10 chars → 60px + 14px label chrome = 74 → 76.
+    expect(w).toBeGreaterThanOrEqual(74);
+  });
+
   it('keeps the default width when labels are short', () => {
     expect(requiredPriceAxisWidth({ ...base, min: 10, max: 20 })).toBe(PRICE_AXIS_WIDTH);
   });

@@ -28,7 +28,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -41,6 +41,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="symbol-info">数据源稍后才得知的品种信息</h2>
+<p>
+  已连接的图表只调用一次 <code>resolveSymbol</code>。若数据源要稍后（例如收到第一条消息时）才得知品种信息，可通过 <code>symbolInfo</code> 事件发送，图表随即应用：价格轴、图例和价格标签按品种的小数位（<code>pricePrecision</code>）显示，价格轴刻度落在最小变动价位（<code>minTick</code>）上，并采用交易所的交易时段。
+</p>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 与适配器发送其他事件的方式相同`}</code></pre>
 
 <h2>约 20 行代码接入任意数据源</h2>
 <p>

@@ -58,7 +58,13 @@ export type DataAdapterEventType =
   | 'barClose'
   | 'snapshot'        // initial historical data loaded
   | 'connectionChange'
-  | 'error';
+  | 'error'
+  /**
+   * The feed learned about the connected symbol after the chart asked
+   * (`resolveSymbol`), for instance on its first message: `data` is the
+   * `SymbolInfo`. The chart applies it (precision, price step, hours).
+   */
+  | 'symbolInfo';
 
 export interface DataAdapterEvent<T = unknown> {
   type: DataAdapterEventType;
