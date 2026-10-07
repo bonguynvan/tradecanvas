@@ -15,11 +15,13 @@ export interface PriceAxisWidthInput {
   min: number;
   max: number;
   lastPrice: number | null;
-  /** Decimals for the price tags (a market's `pricePrecision`), or null to follow the axis. */
+  /** Decimals for the scale and its tags (a market's or symbol's `pricePrecision`), or null to fit the range. */
   tagPrecision: number | null;
   locale: string;
   /** The chart's price format, when it has one: labels and tags print with it. */
   format?: ((price: number) => string) | null;
+  /** The scale's label for a price as the axis writes it (its decimals, percent, a fraction), when known. */
+  scaleLabel?: ((price: number) => string) | null;
   fontFamily: string;
   fontSizeSmall: number;
   measure: (text: string, font: string) => number;
@@ -32,14 +34,14 @@ export interface PriceAxisWidthInput {
  */
 export function requiredPriceAxisWidth(input: PriceAxisWidthInput): number {
   const { min, max, lastPrice, locale, fontFamily, fontSizeSmall, measure } = input;
-  const axisPrecision = autoPricePrecision(min, max);
-  const tagPrecision = input.tagPrecision ?? axisPrecision;
+  const axisPrecision = input.tagPrecision ?? autoPricePrecision(min, max);
+  const tagPrecision = axisPrecision;
   const prices = lastPrice !== null ? [min, max, lastPrice] : [min, max];
 
   let need = PRICE_AXIS_WIDTH;
   for (const price of prices) {
     if (!Number.isFinite(price)) continue;
-    const label = input.format ? input.format(price) : formatPrice(price, axisPrecision, locale);
+    const label = input.scaleLabel ? input.scaleLabel(price) : input.format ? input.format(price) : formatPrice(price, axisPrecision, locale);
     const tag = input.format ? label : formatPrice(price, tagPrecision, locale);
     need = Math.max(
       need,

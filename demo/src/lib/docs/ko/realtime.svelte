@@ -28,7 +28,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -41,6 +41,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="symbol-info">피드가 나중에 알게 되는 종목 정보</h2>
+<p>
+  연결된 차트는 <code>resolveSymbol</code> 을 한 번만 호출합니다. 종목 정보를 나중에(예: 첫 메시지에서) 알게 되는 피드는 <code>symbolInfo</code> 이벤트로 보내면 차트가 바로 적용합니다. 가격 축, 범례, 가격 태그가 종목의 소수 자릿수(<code>pricePrecision</code>)로 표시되고, 가격 축 눈금은 호가 단위(<code>minTick</code>)에 맞춰지며, 거래소의 거래 시간이 쓰입니다.
+</p>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 어댑터가 다른 이벤트를 보내는 방식 그대로`}</code></pre>
 
 <h2>약 20줄로 어떤 피드든 연결하기</h2>
 <p>

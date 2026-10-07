@@ -6,6 +6,7 @@ import type {
   OHLCBar,
   RawTick,
   AggregatedBar,
+  SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
 import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT } from '@tradecanvas/commons';
@@ -33,6 +34,8 @@ export interface StreamEvents {
   connectionChange: ConnectionInfo;
   /** Error occurred */
   error: { message: string; code?: string };
+  /** The feed learned about the symbol (its adapter's `symbolInfo` event) */
+  symbolInfo: SymbolInfo;
   [key: string]: unknown;
 }
 
@@ -285,6 +288,17 @@ export class StreamManager extends Emitter<StreamEvents> {
     };
     adapter.on('error', onError as any);
     this.unsubscribers.push(() => adapter.off('error', onError as any));
+
+    // What the feed learned about the symbol
+    const onSymbolInfo = (e: any) => {
+      if (e?.data && typeof e.data === 'object') this.emit('symbolInfo', e.data as SymbolInfo);
+    };
+    try {
+      adapter.on('symbolInfo', onSymbolInfo as any);
+      this.unsubscribers.push(() => adapter.off('symbolInfo', onSymbolInfo as any));
+    } catch {
+      // An adapter with a fixed list of events: it sends none of this one either.
+    }
   }
 
   private updatePrice(price: number): void {

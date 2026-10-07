@@ -55,6 +55,12 @@ const chart = new Chart(document.getElementById('chart')!, {});
 await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
 ```
 
+A feed that learns the symbol's details only after connecting (its decimals,
+price step or hours, say on its first message) sends a `symbolInfo` event with
+the `SymbolInfo`, as it sends its other events (`emitEvent('symbolInfo', info)`
+in a subclass of these adapters). The chart applies it: the price scale,
+legend and tags take the symbol's decimals, the scale's ticks its price step.
+
 ## React, Vue, Svelte
 
 The wrapper packages give a component with reactive props:

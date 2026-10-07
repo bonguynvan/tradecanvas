@@ -13,6 +13,21 @@ export function priceScaleText(price: number, viewport: ViewportState, precision
   return viewport.formatPrice ? viewport.formatPrice(price) : formatPriceScaleLabel(price, 'regular', undefined, precision, locale);
 }
 
+/**
+ * A tick step a price can be: a whole number of the smallest price step
+ * (`tick`, 10 dong), else no finer than the decimals shown (1 at 0 decimals).
+ */
+function onPriceGrid(step: number, precision: number | null, tick: number | null): number {
+  if (tick !== null && tick > 0) return Math.max(1, Math.ceil(step / tick - 1e-9)) * tick;
+  if (precision !== null) return Math.max(step, 10 ** -precision);
+  return step;
+}
+
+/** How many multiples of `step` lie in the range. */
+function stepsIn(min: number, max: number, step: number): number {
+  return Math.floor(max / step + 1e-9) - Math.ceil(min / step - 1e-9) + 1;
+}
+
 /** A tick step below 1 made a whole number of `unit`s, doubling (32nds: 1/32, 1/16, 1/8, 1/4, 1/2). */
 function onUnits(step: number, unit: number | undefined): number {
   if (!unit || !(unit > 0) || step >= 1) return step;
@@ -30,6 +45,39 @@ const AVOID_CLEARANCE_PX = 14;
 export class PriceAxis {
   private locale = 'en-US';
   private reservedPrice: (() => number | null) | null = null;
+  private precision: number | null = null;
+  private tick: number | null = null;
+
+  /** Decimals the labels show (the market's or the symbol's), or null to fit them to the range. */
+  setPricePrecision(precision: number | null): void {
+    this.precision = precision !== null && Number.isInteger(precision) && precision >= 0 ? precision : null;
+  }
+
+  /** The smallest price step (a symbol's `minTick`): ticks stay on whole numbers of it. Null: none. */
+  setPriceTick(tick: number | null): void {
+    this.tick = tick !== null && Number.isFinite(tick) && tick > 0 ? tick : null;
+  }
+
+  /**
+   * The scale's step and the decimals its labels show, for the range on view:
+   * on the symbol's price grid in its decimals; a fraction's steps with a
+   * fraction format; and where fewer than two prices of the grid are on view
+   * (a flat or deeply zoomed range), the plain step in the decimals it needs.
+   */
+  private scale(viewport: ViewportState): { step: number; precision: number } {
+    const { min, max } = viewport.priceRange;
+    const raw = computeTickStep(min, max, 8);
+    const auto = autoPricePrecision(min, max);
+    if (viewport.priceUnit) return { step: onUnits(raw, viewport.priceUnit), precision: this.precision ?? auto };
+    const grid = onPriceGrid(raw, this.precision, this.tick);
+    if (stepsIn(min, max, grid) < 2) return { step: raw, precision: Math.max(this.precision ?? 0, auto) };
+    return { step: grid, precision: this.precision ?? auto };
+  }
+
+  /** A price as this scale writes it now (to measure the axis by). */
+  labelText(price: number, viewport: ViewportState): string {
+    return priceScaleText(price, viewport, this.scale(viewport).precision, this.locale);
+  }
 
   /**
    * Price whose tag sits on the axis (the last-price tag). Tick labels it
@@ -73,16 +121,17 @@ export class PriceAxis {
     ctx.globalAlpha = 1;
 
     // Compute labels
-    const step = onUnits(computeTickStep(priceRange.min, priceRange.max, 8), viewport.priceUnit);
-    const firstPrice = Math.ceil(priceRange.min / step) * step;
-    const precision = autoPricePrecision(priceRange.min, priceRange.max);
+    const { step, precision } = this.scale(viewport);
+    const firstPrice = Math.ceil(priceRange.min / step - 1e-9) * step;
     const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
     const labels: { y: number; text: string }[] = [];
     const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
-    for (let price = firstPrice; price <= priceRange.max; price += step) {
+    // By index, not by adding the step up: 0.1 + 0.1 + 0.1 would pass 0.3 and drop it.
+    for (let i = 0; firstPrice + i * step <= priceRange.max + step * 1e-9; i++) {
+      const price = firstPrice + i * step;
       const y = toY(price);
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       if (avoid.some((a) => Math.abs(y - a) < AVOID_CLEARANCE_PX)) continue;

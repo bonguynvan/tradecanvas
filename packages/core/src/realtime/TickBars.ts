@@ -19,7 +19,7 @@ import { tickBarCount } from '@tradecanvas/commons';
 const HISTORY_TRADES = 1000;
 /** How often a tick stream says it is still there, under the stream's 60 s heartbeat. */
 const KEEP_ALIVE_MS = 15_000;
-const EVENT_TYPES: readonly DataAdapterEventType[] = ['tick', 'bar', 'barClose', 'snapshot', 'connectionChange', 'error'];
+const EVENT_TYPES: readonly DataAdapterEventType[] = ['tick', 'bar', 'barClose', 'snapshot', 'connectionChange', 'error', 'symbolInfo'];
 
 /**
  * Bars of N trades each: a bar opens with its first trade (and is stamped

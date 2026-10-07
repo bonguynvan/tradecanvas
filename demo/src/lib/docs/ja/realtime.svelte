@@ -28,7 +28,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -41,6 +41,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="symbol-info">データフィードが後から知る銘柄情報</h2>
+<p>
+  接続済みのチャートは <code>resolveSymbol</code> を一度だけ呼びます。銘柄の情報を後から（たとえば最初のメッセージで）知るフィードは <code>symbolInfo</code> イベントで送れば、チャートがすぐ適用します。価格軸・凡例・価格タグは銘柄の小数桁（<code>pricePrecision</code>）で表示され、価格軸の目盛りは呼値（<code>minTick</code>）に揃い、取引所の取引時間も使われます。
+</p>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // アダプターが他のイベントを送るのと同じ方法で`}</code></pre>
 
 <h2>約 20 行で任意のフィードに対応</h2>
 <p>

@@ -28,7 +28,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error'
+  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -41,6 +41,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="symbol-info">Datos del símbolo que el feed conoce más tarde</h2>
+<p>
+  Un gráfico conectado llama a <code>resolveSymbol</code> una vez. Un feed que conoce los datos del símbolo solo más tarde (en su primer mensaje, por ejemplo) los envía con un evento <code>symbolInfo</code>, y el gráfico los aplica: la escala de precios, la leyenda y las etiquetas con los decimales del símbolo (<code>pricePrecision</code>), las marcas de la escala en su paso de precio (<code>minTick</code>) y el horario de la bolsa.
+</p>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // como tu adaptador envía sus otros eventos`}</code></pre>
 
 <h2>Cualquier fuente de datos en ~20 líneas</h2>
 <p>

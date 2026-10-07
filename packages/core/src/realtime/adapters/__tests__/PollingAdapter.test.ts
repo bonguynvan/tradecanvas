@@ -125,3 +125,18 @@ describe('PollingAdapter', () => {
     expect(fetchHistoryBefore).toHaveBeenCalledWith('BTC-USD', '1m', 60, 10);
   });
 });
+
+describe('PollingAdapter subclasses', () => {
+  it('can send what they learn about the symbol', () => {
+    class Feed extends PollingAdapter {
+      learned(info: { symbol: string; pricePrecision: number }): void {
+        this.emitEvent('symbolInfo', info);
+      }
+    }
+    const feed = new Feed({ name: 'feed', intervalMs: 1000, fetchBars: async () => [] });
+    const seen: unknown[] = [];
+    feed.on('symbolInfo', (e) => seen.push(e.data));
+    feed.learned({ symbol: 'X', pricePrecision: 0 });
+    expect(seen).toEqual([{ symbol: 'X', pricePrecision: 0 }]);
+  });
+});

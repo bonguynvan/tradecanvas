@@ -54,3 +54,75 @@ describe('PriceAxis — other tags on the axis', () => {
     expect(texts).toContain('84,600.00');
   });
 });
+
+function labelsOn(axis: PriceAxis, priceRange: { min: number; max: number }): string[] {
+  const texts: string[] = [];
+  const ctx = new Proxy({} as Record<string, unknown>, {
+    get: (_t, key) => (key === 'fillText' ? (t: string) => texts.push(t) : vi.fn()),
+    set: () => true,
+  }) as unknown as CanvasRenderingContext2D;
+  axis.render(ctx, { ...viewport, priceRange }, DARK_THEME);
+  return texts;
+}
+
+describe('PriceAxis — the symbol’s precision and price step', () => {
+  it('writes the labels in the symbol’s decimals', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(0);
+    const texts = labelsOn(axis, { min: 21_200, max: 22_100 });
+    expect(texts).toContain('22,000');
+    expect(texts.every((t) => !t.includes('.'))).toBe(true);
+    axis.setPricePrecision(null);
+    expect(labelsOn(axis, { min: 21_200, max: 22_100 })).toContain('22,000.00');
+  });
+
+  it('puts the labels on the price step, never between two prices that can trade', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(0);
+    axis.setPriceTick(10);
+    // 8 ticks over 30 dong would be every 5: a price this stock never trades at.
+    const texts = labelsOn(axis, { min: 21_700, max: 21_730 });
+    expect(texts.length).toBeGreaterThan(0);
+    for (const t of texts) expect(Number(t.replace(/,/g, '')) % 10).toBe(0);
+  });
+
+  it('still labels a range narrower than the price step (flat bars, a deep zoom)', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(0);
+    axis.setPriceTick(10);
+    const texts = labelsOn(axis, { min: 25_003, max: 25_003.16 });
+    expect(texts.length).toBeGreaterThan(1);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
+  it('keeps a fraction’s steps with a fraction format', () => {
+    const axis = new PriceAxis();
+    axis.setPriceTick(0.01);
+    const texts: string[] = [];
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (_t, key) => (key === 'fillText' ? (t: string) => texts.push(t) : vi.fn()),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    axis.render(ctx, { ...viewport, priceRange: { min: 100, max: 101 }, priceUnit: 1 / 32, formatPrice: (p) => String(p) }, DARK_THEME);
+    expect(texts.length).toBeGreaterThan(0);
+    for (const t of texts) expect(Number.isInteger(Number(t) * 32)).toBe(true);
+  });
+
+  it('keeps the top label a sum of steps would pass by a hair', () => {
+    expect(labelsOn(new PriceAxis(), { min: 0.1, max: 0.3 })).toContain('0.300');
+  });
+
+  it('writes a price as the scale does, for measuring it', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(0);
+    expect(axis.labelText(21_700, { ...viewport, priceRange: { min: 21_200, max: 22_100 } })).toBe('21,700');
+  });
+
+  it('writes each label once when the range is finer than the decimals', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(0);
+    const texts = labelsOn(axis, { min: 100.1, max: 103.9 });
+    expect(new Set(texts).size).toBe(texts.length);
+    expect(texts).toEqual(['101', '102', '103']);
+  });
+});

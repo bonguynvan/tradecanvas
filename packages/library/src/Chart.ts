@@ -2905,6 +2905,9 @@ export class Chart {
       this.eventBus.emit('dataUpdate', { error: err.message });
     });
 
+    // The feed learned more about the symbol (after it was asked, or later): this chart's, it applies.
+    this.streamManager.on('symbolInfo', (info) => this.applyFeedSymbolInfo(info));
+
     this.autoScrollOnNewBar = config.autoScroll !== false;
     this.setStreamTarget(config.symbol, config.timeframe);
     this.streamAdapter = config.adapter;
@@ -3591,6 +3594,7 @@ export class Chart {
    */
   setSymbolInfo(info: SymbolInfo | null): void {
     this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    this.priceAxis.setPriceTick(this.symbolInfo?.minTick ?? null);
     if (this.marketConfig?.pricePrecision === undefined) {
       this.applyPricePrecision(this.symbolInfo?.pricePrecision ?? null);
     }
@@ -3614,12 +3618,31 @@ export class Chart {
     return this.symbolInfo;
   }
 
+  /**
+   * What the feed says about the symbol after it was asked: this chart's
+   * (any case), over what is known of it, so a partial message keeps the rest.
+   * The same again changes nothing.
+   */
+  private applyFeedSymbolInfo(info: Partial<SymbolInfo> | null | undefined): void {
+    if (!info || typeof info !== 'object') return;
+    const symbol = this.currentSymbol;
+    const sameSymbol = (s: string | undefined) => !s || s.toUpperCase() === symbol.toUpperCase();
+    if (!sameSymbol(info.symbol)) return;
+    const known = this.symbolInfo && sameSymbol(this.symbolInfo.symbol) ? this.symbolInfo : null;
+    const next: SymbolInfo = { ...known, ...info, symbol: info.symbol || known?.symbol || symbol };
+    if (known && JSON.stringify(next) === JSON.stringify(known)) return;
+    // An answer to resolveSymbol still on its way is older than this.
+    this.symbolInfoSeq++;
+    this.setSymbolInfo(next);
+  }
+
   /** Ask the stream's adapter about `symbol`, if it can tell; a late answer about another symbol is dropped. */
   private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
+    // Another symbol's details go, whether or not the feed can be asked (it may send them later).
+    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
     const resolve = adapter.resolveSymbol?.bind(adapter);
     if (!resolve) return;
     const seq = ++this.symbolInfoSeq;
-    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
     // Taken as a promise: an adapter may throw, or answer without one.
     Promise.resolve().then(() => resolve(symbol)).then(
       (info) => {
@@ -4669,6 +4692,7 @@ export class Chart {
   /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */
   private applyPricePrecision(precision: number | null): void {
     this.marketPricePrecision = precision;
+    this.priceAxis.setPricePrecision(precision);
     this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
     this.alertManager.setPricePrecision(precision ?? DEFAULT_ORDER_PRECISION);
     this.streamManager?.priceLine.setPricePrecision(precision);
@@ -4971,6 +4995,7 @@ export class Chart {
       tagPrecision: this.marketPricePrecision,
       locale: this.numberLocale,
       format: this.priceFormatter,
+      scaleLabel: (price) => this.priceAxis.labelText(price, this.viewport.getState()),
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: (text, font) => this.measureText(text, font),
