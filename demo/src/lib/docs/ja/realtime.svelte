@@ -93,6 +93,7 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   履歴には直近の約定（<code>fetchTrades</code>）、その後はライブの約定（<code>subscribeTrades</code>）を使います。
   <code>BinanceAdapter</code> は集約約定（aggregate trades）をストリーミングします。ティックチャートにはカウントダウンがなく、
   さらに古い履歴も読み込みません。約定を提供しないフィードはティックの時間足を受け付けません。
+  ティックのバーは時間的に等間隔ではないため、時間軸とクロスヘアはバーにだけ時刻を表示し、その横の空白には表示しません。
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')

@@ -259,3 +259,30 @@ describe('Chart history paging, edge cases', () => {
     await expect(chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '30s' })).rejects.toThrow(/30s/);
   });
 });
+
+describe('times past the data', () => {
+  type AxisProbe = { timeAxis: { getTimesPastData(): boolean }; crosshairHandler: { getTimesPastData(): boolean } };
+  const pastData = () => {
+    const probe = chart as unknown as AxisProbe;
+    return [probe.timeAxis.getTimesPastData(), probe.crosshairHandler.getTimesPastData()];
+  };
+
+  it('are given on a time timeframe, and not on a tick one or a chart that redraws its bars', async () => {
+    expect(pastData()).toEqual([true, true]);
+    const trades = Array.from({ length: 1200 }, (_, i) => ({ time: T0 + i * 1000, price: 100, volume: 1 }));
+    const adapter = { ...fakeAdapter(false), fetchTrades: async () => trades, subscribeTrades: () => () => {} };
+    await chart.connect({ adapter, symbol: 'X', timeframe: '100T', historyLimit: 50 });
+    expect(pastData()).toEqual([false, false]);
+    chart.disconnectStream();
+    expect(pastData()).toEqual([true, true]);
+    await chart.connect({ adapter, symbol: 'X', timeframe: '100T', historyLimit: 50 });
+    expect(pastData()).toEqual([false, false]);
+    await chart.switchStream('X', '1m');
+    expect(pastData()).toEqual([true, true]);
+    chart.setChartType('renko');
+    expect(pastData()).toEqual([false, false]);
+    chart.setChartType('candlestick');
+    expect(pastData()).toEqual([true, true]);
+  });
+});
+

@@ -91,6 +91,7 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   Tick 周期——<code>'100T'</code>——每 100 笔成交画一根K线。它由数据源的成交构建：历史部分用最近的成交
   （<code>fetchTrades</code>），之后接入实时成交（<code>subscribeTrades</code>）。<code>BinanceAdapter</code> 推送归集成交
   （aggregate trades）。Tick 图没有倒计时，也不会向前分页加载更早的历史；不提供成交的数据源会拒绝 tick 周期。
+  Tick K 线在时间上并不等距，因此时间轴和十字光标只为 K 线标注时间，不在旁边的空白处标注。
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')

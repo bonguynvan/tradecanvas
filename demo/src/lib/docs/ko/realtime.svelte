@@ -93,6 +93,7 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   최근 체결(<code>fetchTrades</code>)을, 그 뒤로는 실시간 체결(<code>subscribeTrades</code>)을 씁니다.
   <code>BinanceAdapter</code>는 집계 체결(aggregate trades)을 스트리밍합니다. 틱 차트에는 카운트다운이 없고 더 이전의
   과거 데이터도 불러오지 않으며, 체결을 제공하지 않는 피드는 틱 시간 단위를 거부합니다.
+  틱 봉은 시간 간격이 일정하지 않으므로, 시간 축과 크로스헤어는 봉에만 시간을 표시하고 옆의 빈 공간에는 표시하지 않습니다.
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')

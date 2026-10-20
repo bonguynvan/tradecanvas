@@ -81,4 +81,26 @@ describe('TimeAxis date labels', () => {
   it('gives daily bars their year', () => {
     expect(ticks(series(DAY)).every((t) => /^\d+\/\d+\/\d{4}$/.test(t))).toBe(true);
   });
+
+  describe('slots past the data', () => {
+    // Twelve bars at the right of the plot: bar 0 is centred at x = 284.
+    const few = data.slice(0, 12);
+    const ticks = (axis: TimeAxis) => {
+      const { ctx, drawn } = recordingCtx();
+      axis.render(ctx, viewport(-280), DARK_THEME, few);
+      return drawn.filter((d) => d.align === 'center');
+    };
+
+    it('are labelled with times extrapolated from the bars by default', () => {
+      expect(ticks(new TimeAxis()).some((t) => t.x < 280)).toBe(true);
+    });
+
+    it('stay blank when bars are not evenly spaced in time, as tick bars are', () => {
+      const axis = new TimeAxis();
+      axis.setTimesPastData(false);
+      const labels = ticks(axis);
+      expect(labels.length).toBeGreaterThan(0);
+      expect(labels.every((t) => t.x >= 284)).toBe(true);
+    });
+  });
 });

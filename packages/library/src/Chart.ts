@@ -328,6 +328,8 @@ export class Chart {
   private currentSymbol: string = '';
   /** Timeframe and adapter of the connected stream, for paging its history. */
   private streamTimeframe: TimeFrame | null = null;
+  /** The stream draws tick bars ('100T'), which are not evenly spaced in time. */
+  private tickStream = false;
   /** The symbol and timeframe last told (symbolChange, timeframeChange). */
   private announcedSymbol: string | null = null;
   private announcedTimeframe: TimeFrame | null = null;
@@ -520,6 +522,8 @@ export class Chart {
     // Crosshair
     this.crosshairHandler = new CrosshairHandler();
     this.crosshairHandler.setLocale(this.numberLocale);
+    // A Renko-like chart type from the options has no times past its bricks.
+    this.applyTimeSpacing();
     if (options.crosshair?.mode) {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
@@ -1312,9 +1316,20 @@ export class Chart {
     this.chartRenderer = this.createChartRenderer(type);
     this.chartLegend.setChartType(type as ChartType);
     this.displayDataCache = null;
+    this.applyTimeSpacing();
     this.updateViewportAndRender(true);
     this.markStateChanged();
     if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
+  }
+
+  /**
+   * Times for the empty slots past the data only when bars are evenly spaced
+   * in time: not for tick bars, nor for Renko-like charts that redraw them.
+   */
+  private applyTimeSpacing(): void {
+    const even = !this.tickStream && !isReshapedChartType(this.options.chartType);
+    this.timeAxis.setTimesPastData(even);
+    this.crosshairHandler.setTimesPastData(even);
   }
 
   /**
@@ -2952,6 +2967,8 @@ export class Chart {
     const previousTimeframe = this.announcedTimeframe;
     this.currentSymbol = symbol;
     this.streamTimeframe = timeframe;
+    this.tickStream = tickBarCount(timeframe) !== null;
+    this.applyTimeSpacing();
     if (symbol !== previousSymbol) {
       this.announcedSymbol = symbol;
       this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
@@ -3012,6 +3029,9 @@ export class Chart {
       this.historyFromStream = false;
     }
     this.streamAdapter = null;
+    // Bars set by hand after this aren't tick bars.
+    this.tickStream = false;
+    this.applyTimeSpacing();
   }
 
   /**

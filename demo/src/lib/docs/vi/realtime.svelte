@@ -93,6 +93,8 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   của nguồn dữ liệu: các giao dịch gần đây cho phần lịch sử (<code>fetchTrades</code>), rồi các giao dịch trực tiếp
   (<code>subscribeTrades</code>). <code>BinanceAdapter</code> stream các giao dịch gộp (aggregate trades). Biểu đồ tick
   không có đồng hồ đếm ngược và không tải thêm lịch sử cũ hơn; nguồn không có giao dịch sẽ từ chối khung thời gian tick.
+  Nến tick không cách đều nhau theo thời gian, nên trục thời gian và crosshair chỉ ghi giờ cho các nến, không ghi
+  vào khoảng trống bên cạnh.
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')

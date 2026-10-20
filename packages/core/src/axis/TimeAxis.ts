@@ -11,6 +11,7 @@ export class TimeAxis {
   /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
   private tz: TimeZoneSetting = null;
   private timeFormatter: TimeFormatter | null = null;
+  private timesPastData = true;
 
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
@@ -19,6 +20,19 @@ export class TimeAxis {
   /** Labels in your words, or null for its own. */
   setTimeFormatter(formatter: TimeFormatter | null): void {
     this.timeFormatter = formatter;
+  }
+
+  /**
+   * Whether the empty slots past either end of the data get times extrapolated
+   * from the bars' spacing. Off for bars not evenly spaced in time (tick bars,
+   * Renko bricks): there, a slot has no time of its own.
+   */
+  setTimesPastData(on: boolean): void {
+    this.timesPastData = on;
+  }
+
+  getTimesPastData(): boolean {
+    return this.timesPastData;
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
@@ -42,8 +56,12 @@ export class TimeAxis {
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
     // Label every slot on screen — including the empty future right of the
     // newest bar, which the chart can be panned into — not just loaded bars.
-    const from = Math.floor(viewport.offset / barUnit);
-    const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
+    let from = Math.floor(viewport.offset / barUnit);
+    let to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
+    if (!this.timesPastData) {
+      from = Math.max(from, 0);
+      to = Math.min(to, data.length - 1);
+    }
 
     // The timezone tag sits at the right end: measure it first so a tick
     // label never draws on top of it (they used to merge into "UTC10/2").

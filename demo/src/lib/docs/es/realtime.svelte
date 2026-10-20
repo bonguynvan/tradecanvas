@@ -94,6 +94,8 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   operaciones de la fuente: las recientes para el historial (<code>fetchTrades</code>) y después las que llegan en vivo
   (<code>subscribeTrades</code>). <code>BinanceAdapter</code> transmite operaciones agregadas. Un gráfico de ticks no
   tiene cuenta atrás ni carga historial más antiguo; una fuente sin operaciones rechaza las temporalidades de ticks.
+  Las barras de ticks no están espaciadas por igual en el tiempo, así que el eje de tiempo y la cruz solo dan hora
+  a las barras, no al espacio vacío a su lado.
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')
