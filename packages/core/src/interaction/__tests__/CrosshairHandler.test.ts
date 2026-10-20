@@ -119,3 +119,32 @@ describe('CrosshairHandler over indicator panes', () => {
     expect((await hover(new CrosshairHandler(), 360)).callback).not.toHaveBeenCalled();
   });
 });
+
+describe('CrosshairHandler past the data', () => {
+  // Bar 49 is centred at x = 394; the pointer at x = 454 is six slots past it.
+  const shifted = { ...viewport, offset: 100 } as ViewportState;
+
+  it('labels a slot past the newest bar with an extrapolated time by default', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.onPointerMove({ x: 454, y: 150 });
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, shifted, theme, bars);
+    expect(texts).toHaveLength(2);
+  });
+
+  it('gives no time there when bars are not evenly spaced in time', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setTimesPastData(false);
+    handler.onPointerMove({ x: 454, y: 150 });
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, shifted, theme, bars);
+    expect(texts).toHaveLength(1);
+
+    handler.onPointerMove({ x: 384, y: 150 });
+    const onBar = recorder();
+    handler.renderAxisLabels(onBar.ctx, shifted, theme, bars);
+    expect(onBar.texts).toHaveLength(2);
+  });
+});

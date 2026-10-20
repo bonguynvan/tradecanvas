@@ -4,6 +4,14 @@
 
 React, Vue and Svelte components: 1.2.5.
 
+### Fixes
+
+- **No made-up times beside tick bars**: on a tick timeframe (`'100T'`) with a few bars, the empty space left of the first bar was labelled with times extrapolated from the bars' spacing ("01:44, 03:02…" before a market that opens at 9:00), and the crosshair showed one there too. Tick bars are not evenly spaced in time, so the time axis and the crosshair now give times to the bars only. The same holds on Renko, Kagi, point & figure, line break and range-bar charts. Time timeframes still label the empty future right of the newest bar. The Realtime page says so, in six languages.
+
+## 1.18.0 (2026-10-20)
+
+React, Vue and Svelte components: 1.2.5.
+
 ### Prices on the market's grid, and a scale for plugins
 
 - **The drawing settings' Coordinates tab shows prices on the market's grid**: a point dragged to 534.86074226 reads 534.75 with a step of 0.25, or 22,000 on a stock that moves in 10 dong, and an edited price lands on the grid. A point you don't edit keeps its exact place. The field's arrows move by the price step.

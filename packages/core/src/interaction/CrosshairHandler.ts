@@ -16,13 +16,27 @@ export class CrosshairHandler {
   private data: DataSeries = [];
   private tz: TimeZoneSetting = null;
   private timeFormatter: TimeFormatter | null = null;
+  private timesPastData = true;
 
-  /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
+  /**
+   * Whether a slot past either end of the data gets a time on the axis,
+   * extrapolated from the bars' spacing. Off for bars not evenly spaced in
+   * time (tick bars, Renko bricks).
+   */
+  setTimesPastData(on: boolean): void {
+    this.timesPastData = on;
+  }
+
+  getTimesPastData(): boolean {
+    return this.timesPastData;
+  }
+
   /** Times in your words (the crosshair's label), or null for its own. */
   setTimeFormatter(formatter: TimeFormatter | null): void {
     this.timeFormatter = formatter;
   }
 
+  /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
   }
@@ -259,6 +273,7 @@ export class CrosshairHandler {
     timeAxisY?: number,
   ): void {
     if (data.length === 0) return;
+    if (!this.timesPastData && (slot < 0 || slot >= data.length)) return;
     // Past either end of the data the time is extrapolated.
     const time = barIndexToTime(slot, data);
     const timeText = this.timeFormatter

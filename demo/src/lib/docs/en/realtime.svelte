@@ -93,6 +93,8 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
   trades: its recent ones for the history (<code>fetchTrades</code>), then its live ones
   (<code>subscribeTrades</code>). <code>BinanceAdapter</code> streams aggregate trades. A tick chart
   has no countdown and pages in no older history; a feed without trades refuses tick timeframes.
+  Tick bars are not evenly spaced in time, so the time axis and the crosshair give times only to
+  bars, not to the empty space beside them.
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')
