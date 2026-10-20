@@ -180,6 +180,10 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)**: a small, fast Svelte 5 data grid for fintech interfaces, the table half of a trading desk. [Live demo](https://bonguynvan.github.io/bo-grid/)
 
+## For businesses
+
+Putting TradeCanvas in front of your customers? There is no logo to show and nothing to apply for. The [For businesses](https://bonguynvan.github.io/tradecanvas/business/) page answers what an IT review asks, with sources, and describes the first-partner programme. Write to business@tradingdek.com.
+
 ## Contributing
 
 Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`) and what a pull request needs. Found a security issue? Please follow [SECURITY.md](./SECURITY.md) instead of opening an issue.

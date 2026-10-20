@@ -14,6 +14,7 @@ const ko: SiteMessages = {
     playground: '플레이그라운드',
     changelog: '변경 내역',
     audit: '점검',
+    business: '기업용',
     toLight: '라이트 테마로 전환',
     toDark: '다크 테마로 전환',
     github: 'GitHub의 TradeCanvas',
@@ -35,6 +36,7 @@ const ko: SiteMessages = {
     examples: '예제',
     changelog: '변경 내역',
     audit: '시스템 점검',
+    business: '기업 고객',
     issues: '이슈',
     boGrid: 'bo-grid (데이터 그리드)',
     builtWith: 'TradeCanvas로 제작',
@@ -740,6 +742,91 @@ const ko: SiteMessages = {
       '틱 시간 단위는 피드가 돌려주는 최근 체결로 만들어지며, 그보다 오래된 틱 기록은 불러올 수 없습니다.',
       '거래량 델타와 CVD는 체결마다의 매수·매도 방향이 아니라 봉에서 추정합니다.',
       '한 페이지에서 동시에 WebGL로 그리는 차트는 최대 8개이며, 나머지는 Canvas 2D로 그립니다.',
+    ],
+  },
+
+  business: {
+    metaTitle: '기업 고객 — TradeCanvas',
+    description:
+      '상용 제품 속의 TradeCanvas: MIT 라이선스, 차트에 로고 없음, 가입 없음, 외부 전송 없음. IT 검토에서 묻는 내용과 근거, 그리고 첫 파트너 프로그램.',
+    eyebrow: '기업 고객',
+    title: '귀사의 브랜드를 단 트레이딩 차트.',
+    lede: 'TradeCanvas는 MIT 라이선스입니다. 상용 제품에 넣고, 고치고, 직접 호스팅하세요. 고객에게는 귀사의 브랜드만 보이고, 데이터는 귀사의 서버에 머뭅니다.',
+    ctaContact: '문의하기',
+    ctaAudit: '시스템 점검 보기',
+
+    freeTitle: '어떤 용도든 무료',
+    free: [
+      {
+        title: '차트에 로고 없음',
+        body: 'TradeCanvas는 차트나 위젯에 자신의 것을 아무것도 그리지 않습니다. MIT 라이선스가 요구하는 것은 라이선스 문구를 코드와 함께 두는 것뿐입니다.',
+      },
+      {
+        title: '외부 전송 없음',
+        body: '라이브러리에는 텔레메트리가 없습니다. 연결은 귀사가 시작한 데이터 어댑터를 통해서만 열립니다. 내장된 거래소 피드 중 하나이거나 직접 만든 것입니다.',
+      },
+      {
+        title: '신청도 승인도 필요 없음',
+        body: 'npm install 한 번이면 시스템 점검에 나온 모든 기능을 쓸 수 있습니다. 호가창 래더, 호가 깊이 차트, 히트맵도 포함됩니다.',
+      },
+      {
+        title: '소스 코드 전체',
+        body: '읽고, 고치고, 포크하세요. MIT는 귀사의 코드에 아무것도 요구하지 않습니다. 코드는 귀사의 것이며, 원한다면 비공개로 유지할 수 있습니다.',
+      },
+    ],
+
+    reviewTitle: 'IT 검토 준비 완료',
+    reviewLede: '보안 검토나 공급업체 검토에서 흔히 묻는 항목과, 각 답을 확인할 수 있는 곳입니다.',
+    reviewHtml: [
+      '서드파티 런타임 의존성 없음: 차트 패키지는 TradeCanvas 자체의 core와 commons에만 의존합니다.',
+      '<code>eval</code>도 <code>new Function</code>도 쓰지 않으므로 <code>unsafe-eval</code> 없는 Content Security Policy에서 동작합니다.',
+      "위젯은 <code>&lt;style&gt;</code> 요소 하나를 추가하므로 해당 페이지에는 <code>style-src 'unsafe-inline'</code>이 필요합니다. 헤드리스 <code>Chart</code>는 아무것도 추가하지 않습니다.",
+      '보안 문제는 비공개로 제보받으며 일주일 안에 답합니다.',
+      '모든 풀 리퀘스트는 CI에서 빌드, 타입 검사, 테스트를 거칩니다. 단위 테스트는 3,000개가 넘습니다.',
+      '릴리스는 개발자의 컴퓨터가 아니라 저장소에서 GitHub Actions로 배포됩니다.',
+      'Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.',
+      '라이선스: MIT, 한 페이지.',
+    ],
+    source: '출처',
+
+    dataTitle: '귀사의 데이터, 귀사의 서버',
+    dataHtml:
+      '차트는 넘겨받은 봉, 틱, 주문을 그릴 뿐입니다. 자체 백엔드는 <code>DataAdapter</code>로 연결하거나, URL과 히스토리 함수, 메시지 파서를 넘긴 <code>WebSocketAdapter</code>로 연결합니다. 주문은 귀사의 실행 어댑터를 통해 나갑니다. 방법은 Realtime 문서와 Trading 문서에 있습니다.',
+    dataDocs: 'Realtime 문서',
+    tradingDocs: 'Trading 문서',
+
+    partnerTitle: '첫 파트너',
+    partnerLede:
+      'TradeCanvas를 고객에게 선보일 첫 증권사·브로커, 트레이딩 플랫폼, 핀테크 팀을 찾고 있습니다.',
+    partnerGetTitle: '제공하는 것',
+    partnerGet: [
+      '데이터 피드와 주문 연동 지원',
+      '겪으신 문제를 우선 해결',
+      '다음에 만들 기능에 대한 의견 반영',
+    ],
+    partnerGiveTitle: '부탁드리는 것',
+    partnerGive: ['개발하시는 동안의 피드백', '서비스 출시 후 사용 기업으로 이름을 밝혀도 된다는 허락'],
+    partnerNote:
+      '계약으로 응답 시간을 보장하는 유료 지원, 메이저 버전 장기 지원, 귀사를 위한 맞춤 모듈은 추후 제공됩니다. 지금 필요하시다면 알려 주세요.',
+
+    contactTitle: '문의하기',
+    contactLede: '어떤 회사인지, 무엇을 만들고 있는지, 어느 시장을 위한 것인지 알려 주세요.',
+    contactPublic: '코드에 관한 질문은 GitHub 이슈에서 공개적으로 하시는 것이 가장 좋습니다.',
+
+    faqTitle: '자주 묻는 질문',
+    faq: [
+      {
+        q: 'TradeCanvas 이름이나 로고를 표시해야 하나요?',
+        a: '아니요. 라이선스 문구를 코드와 함께 두기만 하면 되며, node_modules에는 이미 들어 있습니다. 화면에 표시할 것은 없습니다.',
+      },
+      {
+        q: '우리 코드를 공개해야 하나요?',
+        a: '아니요. MIT는 주변 코드에 아무런 조건도 두지 않습니다.',
+      },
+      {
+        q: '라이선스가 갑자기 바뀔 수도 있나요?',
+        a: '이미 릴리스된 모든 버전은 MIT이며 앞으로도 MIT입니다. 공개된 릴리스의 라이선스는 철회할 수 없습니다.',
+      },
     ],
   },
 

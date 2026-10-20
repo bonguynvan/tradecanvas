@@ -14,6 +14,7 @@ const tr: SiteMessages = {
     playground: 'Deneme alanı',
     changelog: 'Değişiklik günlüğü',
     audit: 'Denetim',
+    business: 'Kurumsal',
     toLight: 'Açık temaya geç',
     toDark: 'Koyu temaya geç',
     github: 'GitHub’da TradeCanvas',
@@ -35,6 +36,7 @@ const tr: SiteMessages = {
     examples: 'Örnekler',
     changelog: 'Değişiklik günlüğü',
     audit: 'Sistem denetimi',
+    business: 'İşletmeler için',
     issues: 'Sorun bildirimleri',
     boGrid: 'bo-grid (veri tablosu)',
     builtWith: 'TradeCanvas ile yapıldı',
@@ -740,6 +742,91 @@ const tr: SiteMessages = {
       'Tick zaman dilimleri, akışın döndürdüğü son işlemlerden oluşturulur; daha eski tick geçmişi yüklenemez.',
       'Hacim deltası ve CVD, her işlemin yönünden değil barlardan tahmin edilir.',
       'Bir sayfada aynı anda en fazla 8 grafik WebGL ile çizer; diğerleri Canvas 2D ile çizer.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'İşletmeler için — TradeCanvas',
+    description:
+      'Ticari bir üründe TradeCanvas: MIT lisanslı, grafikte logo yok, kayıt yok, hiçbir yere veri gönderilmez. BT incelemesinin sorduğu sorular, kaynaklarıyla, ve ilk iş ortakları programı.',
+    eyebrow: 'İşletmeler için',
+    title: 'Alım satım grafiğiniz, kendi markanızla.',
+    lede: 'TradeCanvas MIT lisanslıdır. Ticari bir ürüne koyun, değiştirin, kendiniz barındırın: müşterileriniz sizin markanızı görür, verileriniz de sizin sunucularınızda kalır.',
+    ctaContact: 'Bizimle görüşün',
+    ctaAudit: 'Sistem denetimini okuyun',
+
+    freeTitle: 'Her kullanım için ücretsiz',
+    free: [
+      {
+        title: 'Grafikte logo yok',
+        body: 'TradeCanvas grafiğe ya da widget’a kendine ait hiçbir şey çizmez. MIT lisansı yalnızca metninin kodla birlikte kalmasını ister.',
+      },
+      {
+        title: 'Hiçbir yere bir şey gönderilmez',
+        body: 'Kütüphanede telemetri yoktur. Bağlantıyı yalnızca sizin başlattığınız bir veri adaptörü üzerinden açar: yerleşik borsa akışlarından biri ya da kendi akışınız.',
+      },
+      {
+        title: 'Başvuru yok, onay yok',
+        body: 'npm install yeterli; sistem denetimindeki her yetenek sizin, piyasa derinliği merdiveni, derinlik grafiği ve ısı haritası dahil.',
+      },
+      {
+        title: 'Kaynak kodun tamamı',
+        body: 'Okuyun, düzeltin, fork’layın. MIT kendi kodunuzdan hiçbir şey istemez: kod sizin kalır ve isterseniz kapalı kalır.',
+      },
+    ],
+
+    reviewTitle: 'BT incelemesine hazır',
+    reviewLede: 'Bir güvenlik ya da tedarikçi incelemesinin genellikle sorduğu sorular ve her yanıtın nerede doğrulanacağı.',
+    reviewHtml: [
+      'Üçüncü taraf çalışma zamanı bağımlılığı yok: grafik paketi yalnızca TradeCanvas’ın kendi core ve commons paketlerine bağlıdır.',
+      '<code>eval</code> ve <code>new Function</code> kullanılmaz; bu yüzden <code>unsafe-eval</code> içermeyen bir Content Security Policy altında çalışır.',
+      "Widget tek bir <code>&lt;style&gt;</code> öğesi ekler, bu yüzden bulunduğu sayfalarda <code>style-src 'unsafe-inline'</code> gerekir; headless <code>Chart</code> hiçbir şey eklemez.",
+      'Güvenlik sorunları gizli olarak bildirilir ve bir hafta içinde yanıtlanır.',
+      'Her pull request CI’da derlenir, tür denetiminden geçer ve test edilir: 3.000’den fazla birim testi.',
+      'Sürümler bir geliştiricinin bilgisayarından değil, depodan GitHub Actions ile yayımlanır.',
+      'Chrome 80+, Firefox 80+, Safari 14+ ve Edge 80+.',
+      'Lisans: MIT, tek sayfa.',
+    ],
+    source: 'Kaynak',
+
+    dataTitle: 'Verileriniz, sunucularınız',
+    dataHtml:
+      'Grafik, ona verdiğiniz barları, tick’leri ve emirleri çizer. Kendi arka ucunuzu bir <code>DataAdapter</code> ile ya da URL, geçmiş fonksiyonu ve mesaj ayrıştırıcısı verilmiş bir <code>WebSocketAdapter</code> ile bağlayın; emirler size ait bir yürütme adaptörü üzerinden gider. Realtime ve Trading belgeleri nasıl yapılacağını gösterir.',
+    dataDocs: 'Realtime belgeleri',
+    tradingDocs: 'Trading belgeleri',
+
+    partnerTitle: 'İlk iş ortakları',
+    partnerLede:
+      'TradeCanvas’ı müşterilerine sunacak ilk aracı kurumları, alım satım platformlarını ve fintech ekiplerini arıyoruz.',
+    partnerGetTitle: 'Size sunduklarımız',
+    partnerGet: [
+      'Veri akışınızı ve emirlerinizi bağlamada yardım',
+      'Karşılaştığınız sorunlar önce çözülür',
+      'Sırada ne geliştirileceği konusunda söz hakkı',
+    ],
+    partnerGiveTitle: 'Sizden istediklerimiz',
+    partnerGive: ['Geliştirme sürecinde geri bildirim', 'Yayına geçtiğinizde sizi kullanıcı olarak anma izni'],
+    partnerNote:
+      'Yanıt süreleri sözleşmeyle güvence altına alınan ücretli destek, bir ana sürüm için uzun süreli destek ve size özel geliştirilen modüller daha sonra gelecek. Şimdi ihtiyacınız varsa bize söyleyin.',
+
+    contactTitle: 'Bizimle görüşün',
+    contactLede: 'Kim olduğunuzu, ne geliştirdiğinizi ve hangi piyasalar için olduğunu anlatın.',
+    contactPublic: 'Kodla ilgili sorular en iyi herkese açık olarak, GitHub issues’ta sorulur.',
+
+    faqTitle: 'Sorular',
+    faq: [
+      {
+        q: 'TradeCanvas adını ya da logosunu göstermemiz gerekiyor mu?',
+        a: 'Hayır. Lisans metnini kodla birlikte tutmanız yeterli, zaten node_modules içinde öyle duruyor; ekranda hiçbir şey görünmek zorunda değil.',
+      },
+      {
+        q: 'Kendi kodumuzu yayımlamamız gerekiyor mu?',
+        a: 'Hayır. MIT, çevresindeki koda hiçbir koşul koymaz.',
+      },
+      {
+        q: 'Lisans bir gün aniden değişebilir mi?',
+        a: 'Yayımlanmış her sürüm MIT’tir ve MIT olarak kalır: yayımlanmış bir sürümün lisansı geri alınamaz.',
+      },
     ],
   },
 

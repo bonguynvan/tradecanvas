@@ -19,6 +19,9 @@ export const LINKS = {
   sponsor: 'https://github.com/sponsors/bonguynvan',
 } as const;
 
+/** Where businesses write to: the For businesses page and the READMEs. */
+export const BUSINESS_EMAIL = 'business@tradingdek.com';
+
 export function isLightPage(): boolean {
   return typeof document !== 'undefined' && document.body.classList.contains('light');
 }

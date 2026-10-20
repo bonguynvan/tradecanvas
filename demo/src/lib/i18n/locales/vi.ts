@@ -14,6 +14,7 @@ const vi: SiteMessages = {
     playground: 'Playground',
     changelog: 'Nhật ký thay đổi',
     audit: 'Audit',
+    business: 'Doanh nghiệp',
     toLight: 'Chuyển sang giao diện sáng',
     toDark: 'Chuyển sang giao diện tối',
     github: 'TradeCanvas trên GitHub',
@@ -35,6 +36,7 @@ const vi: SiteMessages = {
     examples: 'Ví dụ',
     changelog: 'Nhật ký thay đổi',
     audit: 'Audit hệ thống',
+    business: 'Cho doanh nghiệp',
     issues: 'Báo lỗi',
     boGrid: 'bo-grid (bảng dữ liệu)',
     builtWith: 'Xây dựng bằng TradeCanvas',
@@ -740,6 +742,91 @@ const vi: SiteMessages = {
       'Khung tick được dựng từ các giao dịch gần đây mà nguồn dữ liệu trả về; không tải được lịch sử tick cũ hơn.',
       'Volume delta và CVD được ước tính từ nến, không theo chiều của từng giao dịch.',
       'Tối đa 8 biểu đồ trên một trang vẽ bằng WebGL cùng lúc; các biểu đồ còn lại vẽ bằng Canvas 2D.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'Cho doanh nghiệp — TradeCanvas',
+    description:
+      'TradeCanvas trong sản phẩm thương mại: giấy phép MIT, không logo trên chart, không cần đăng ký, không gửi dữ liệu đi đâu. Những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và chương trình đối tác đầu tiên.',
+    eyebrow: 'Cho doanh nghiệp',
+    title: 'Chart giao dịch mang thương hiệu của chính bạn.',
+    lede: 'TradeCanvas dùng giấy phép MIT. Đưa vào sản phẩm thương mại, sửa theo ý, tự host: khách hàng của bạn chỉ thấy thương hiệu của bạn, và dữ liệu nằm trên máy chủ của bạn.',
+    ctaContact: 'Liên hệ',
+    ctaAudit: 'Xem báo cáo audit',
+
+    freeTitle: 'Miễn phí, cho mọi mục đích',
+    free: [
+      {
+        title: 'Không logo trên chart',
+        body: 'TradeCanvas không vẽ gì của mình lên chart hay widget. Giấy phép MIT chỉ yêu cầu giữ văn bản giấy phép đi kèm mã nguồn.',
+      },
+      {
+        title: 'Không gửi gì đi đâu',
+        body: 'Thư viện không có telemetry. Nó chỉ mở kết nối qua một bộ kết nối dữ liệu do bạn khởi động: một trong các nguồn sàn có sẵn, hoặc của chính bạn.',
+      },
+      {
+        title: 'Không xin phép, không chờ duyệt',
+        body: 'npm install là xong, mọi tính năng trong báo cáo audit đều dùng được, kể cả bảng lệnh, biểu đồ độ sâu và heatmap.',
+      },
+      {
+        title: 'Toàn bộ mã nguồn',
+        body: 'Đọc, sửa, fork tuỳ ý. MIT không đặt điều kiện gì lên mã của bạn: mã đó vẫn là của bạn, và vẫn đóng nếu bạn muốn.',
+      },
+    ],
+
+    reviewTitle: 'Sẵn sàng cho kiểm toán IT',
+    reviewLede: 'Những gì một đợt đánh giá bảo mật hay đánh giá nhà cung cấp thường hỏi, và nơi kiểm chứng từng câu trả lời.',
+    reviewHtml: [
+      'Không có thư viện bên thứ ba khi chạy: gói chart chỉ phụ thuộc vào core và commons của chính TradeCanvas.',
+      'Không dùng <code>eval</code> hay <code>new Function</code>, nên chạy được dưới Content Security Policy không có <code>unsafe-eval</code>.',
+      "Widget chèn một thẻ <code>&lt;style&gt;</code>, nên trang chứa nó cần <code>style-src 'unsafe-inline'</code>; <code>Chart</code> không giao diện thì không chèn gì.",
+      'Lỗi bảo mật được báo riêng tư và được phản hồi trong vòng một tuần.',
+      'Mọi pull request đều được build, kiểm tra kiểu và chạy test trên CI: hơn 3.000 unit test.',
+      'Các bản phát hành được GitHub Actions publish từ repository, không phải từ máy của lập trình viên.',
+      'Chrome 80+, Firefox 80+, Safari 14+ và Edge 80+.',
+      'Giấy phép: MIT, một trang.',
+    ],
+    source: 'Nguồn',
+
+    dataTitle: 'Dữ liệu của bạn, máy chủ của bạn',
+    dataHtml:
+      'Chart vẽ những nến, tick và lệnh mà bạn đưa vào. Kết nối backend của bạn bằng một <code>DataAdapter</code>, hoặc một <code>WebSocketAdapter</code> với URL, hàm lấy lịch sử và hàm đọc tin nhắn; lệnh được gửi đi qua execution adapter của bạn. Tài liệu Realtime và Trading hướng dẫn cách làm.',
+    dataDocs: 'Tài liệu Realtime',
+    tradingDocs: 'Tài liệu Trading',
+
+    partnerTitle: 'Đối tác đầu tiên',
+    partnerLede:
+      'Chúng tôi đang tìm những công ty chứng khoán, nền tảng giao dịch và đội fintech đầu tiên đưa TradeCanvas đến khách hàng của họ.',
+    partnerGetTitle: 'Bạn nhận được',
+    partnerGet: [
+      'Hỗ trợ kết nối nguồn dữ liệu và luồng lệnh của bạn',
+      'Lỗi bạn gặp được ưu tiên sửa trước',
+      'Tiếng nói trong việc làm gì tiếp theo',
+    ],
+    partnerGiveTitle: 'Chúng tôi cần ở bạn',
+    partnerGive: ['Góp ý trong lúc bạn xây dựng', 'Cho phép nêu tên bạn là người dùng khi sản phẩm đã chạy'],
+    partnerNote:
+      'Hỗ trợ trả phí, với thời gian phản hồi ghi trong hợp đồng, hỗ trợ dài hạn cho một phiên bản lớn và module làm riêng, sẽ có sau. Nếu bạn cần ngay, cứ nói với chúng tôi.',
+
+    contactTitle: 'Liên hệ',
+    contactLede: 'Cho chúng tôi biết bạn là ai, đang xây dựng gì và cho thị trường nào.',
+    contactPublic: 'Câu hỏi về mã nguồn nên hỏi công khai, trong mục issues trên GitHub.',
+
+    faqTitle: 'Câu hỏi thường gặp',
+    faq: [
+      {
+        q: 'Chúng tôi có phải hiển thị tên hay logo TradeCanvas không?',
+        a: 'Không. Chỉ cần giữ văn bản giấy phép đi kèm mã nguồn, như nó vốn có sẵn trong node_modules; không có gì phải hiện trên màn hình.',
+      },
+      {
+        q: 'Chúng tôi có phải công khai mã nguồn của mình không?',
+        a: 'Không. MIT không đặt điều kiện gì lên phần mã xung quanh nó.',
+      },
+      {
+        q: 'Giấy phép có thể bị đổi ngang không?',
+        a: 'Mọi phiên bản đã phát hành đều là MIT và giữ nguyên MIT: giấy phép của một bản đã phát hành không thể bị thu hồi.',
+      },
     ],
   },
 

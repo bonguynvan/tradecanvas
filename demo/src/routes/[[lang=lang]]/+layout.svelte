@@ -85,6 +85,7 @@
     { label: m.nav.examples, href: i18n.href('/examples'), match: '/examples' },
     { label: m.nav.playground, href: i18n.href('/playground'), match: '/playground' },
     { label: m.nav.audit, href: i18n.href('/audit'), match: '/audit' },
+    { label: m.nav.business, href: i18n.href('/business'), match: '/business' },
     { label: m.nav.changelog, href: i18n.href('/changelog'), match: '/changelog' },
   ]);
 
@@ -114,6 +115,7 @@
         { label: 'GitHub', href: LINKS.github },
         { label: m.footer.issues, href: LINKS.issues },
         { label: m.footer.boGrid, href: LINKS.boGrid },
+        { label: m.footer.business, href: i18n.href('/business') },
         { label: m.nav.sponsor, href: LINKS.sponsor },
       ],
     },

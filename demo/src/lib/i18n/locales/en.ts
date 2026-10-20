@@ -20,6 +20,7 @@ const en = {
     playground: 'Playground',
     changelog: 'Changelog',
     audit: 'Audit',
+    business: 'Business',
     toLight: 'Switch to light theme',
     toDark: 'Switch to dark theme',
     github: 'TradeCanvas on GitHub',
@@ -41,6 +42,7 @@ const en = {
     examples: 'Examples',
     changelog: 'Changelog',
     audit: 'System audit',
+    business: 'For businesses',
     issues: 'Issues',
     boGrid: 'bo-grid (data grid)',
     builtWith: 'Built with TradeCanvas',
@@ -748,6 +750,91 @@ const en = {
       'Tick timeframes are built from the recent trades a feed returns; older tick history cannot be loaded.',
       'Volume delta and CVD are estimated from the bars, not from each trade’s side.',
       'At most 8 charts on a page draw with WebGL at once; the others draw with Canvas 2D.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'For businesses — TradeCanvas',
+    description:
+      'TradeCanvas in a commercial product: MIT licensed, no logo on the chart, no sign-up, nothing sent anywhere. What an IT review asks, with sources, and the first-partner programme.',
+    eyebrow: 'For businesses',
+    title: 'Your trading chart, under your own brand.',
+    lede: 'TradeCanvas is MIT licensed. Put it in a commercial product, change it, host it yourself: your customers see your brand, and your data stays on your servers.',
+    ctaContact: 'Talk to us',
+    ctaAudit: 'Read the system audit',
+
+    freeTitle: 'Free, for any use',
+    free: [
+      {
+        title: 'No logo on the chart',
+        body: 'Nothing from TradeCanvas is drawn on the chart or in the widget. The MIT license asks only that its text stays with the code.',
+      },
+      {
+        title: 'Nothing sent anywhere',
+        body: 'The library has no telemetry. It opens a connection only through a data adapter you start: one of the built-in exchange feeds, or your own.',
+      },
+      {
+        title: 'No application, no approval',
+        body: 'npm install, and every capability in the system audit is yours, the order book ladder, depth chart and heatmap included.',
+      },
+      {
+        title: 'The whole source',
+        body: 'Read it, fix it, fork it. MIT asks nothing of your own code: it stays yours and stays closed if you want it so.',
+      },
+    ],
+
+    reviewTitle: 'Ready for an IT review',
+    reviewLede: 'What a security or vendor review usually asks, and where to check each answer.',
+    reviewHtml: [
+      'No third-party runtime dependencies: the chart package depends only on TradeCanvas’s own core and commons.',
+      'No <code>eval</code> and no <code>new Function</code>, so it runs under a Content Security Policy without <code>unsafe-eval</code>.',
+      "The widget adds one <code>&lt;style&gt;</code> element, so its pages need <code>style-src 'unsafe-inline'</code>; the headless <code>Chart</code> adds none.",
+      'Security problems are reported privately and answered within a week.',
+      'Every pull request is built, type-checked and tested in CI: more than 3,000 unit tests.',
+      'Releases are published by GitHub Actions from the repository, not from a developer’s machine.',
+      'Chrome 80+, Firefox 80+, Safari 14+ and Edge 80+.',
+      'The license: MIT, one page.',
+    ],
+    source: 'Source',
+
+    dataTitle: 'Your data, your servers',
+    dataHtml:
+      'The chart draws the bars, ticks and orders you hand it. Connect your own backend with a <code>DataAdapter</code>, or a <code>WebSocketAdapter</code> given a URL, a history function and a message parser; orders go out through an execution adapter of yours. The Realtime and Trading docs show how.',
+    dataDocs: 'Realtime docs',
+    tradingDocs: 'Trading docs',
+
+    partnerTitle: 'First partners',
+    partnerLede:
+      'We are looking for the first brokers, trading platforms and fintech teams putting TradeCanvas in front of their customers.',
+    partnerGetTitle: 'What you get',
+    partnerGet: [
+      'Help wiring in your data feed and your orders',
+      'The problems you hit, fixed first',
+      'A say in what is built next',
+    ],
+    partnerGiveTitle: 'What we ask',
+    partnerGive: ['Feedback while you build', 'Permission to name you as a user once you are live'],
+    partnerNote:
+      'Paid support, with response times in a contract, long-term support for a major version and modules built for you, comes later. If you need it now, say so.',
+
+    contactTitle: 'Talk to us',
+    contactLede: 'Tell us who you are, what you are building and for which markets.',
+    contactPublic: 'Questions about the code are best asked in public, in the GitHub issues.',
+
+    faqTitle: 'Questions',
+    faq: [
+      {
+        q: 'Do we have to show the TradeCanvas name or logo?',
+        a: 'No. Keep the license text with the code, as it already is in node_modules; nothing has to appear on screen.',
+      },
+      {
+        q: 'Do we have to publish our own code?',
+        a: 'No. MIT puts no conditions on the code around it.',
+      },
+      {
+        q: 'Could the license change under us?',
+        a: 'Every version already released is MIT and stays MIT: the license of a published release cannot be taken back.',
+      },
     ],
   },
 
