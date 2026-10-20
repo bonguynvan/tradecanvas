@@ -1,14 +1,18 @@
 # Changelog
 
-## Unreleased
+## 1.17.0 (2026-10-07)
 
-Collected on `main` for the next release. Not on npm yet.
+React, Vue and Svelte components: 1.2.4.
 
 ### The price scale in the symbol's decimals, and symbol details learned later
 
 - **The price scale follows the symbol's precision**: its labels took the decimals of the visible range ("22,000.00") while the legend, price tags and crosshair took the symbol's `pricePrecision` or the market's ("22,000"). They all agree now, and the axis width is measured in those decimals. With a `minTick`, the scale's ticks stay on whole price steps: a stock that moves in 10 dong never shows 21,705.
 - **Symbol details the feed learns later**: a chart asks `resolveSymbol` once when it connects. An adapter that learns the symbol's details afterwards (on its first message, say) sends a `symbolInfo` event with the `SymbolInfo`, and the chart applies it: decimals, price step, hours. No need to remount a framework component to pass them. `PollingAdapter` subclasses can send it with `emitEvent`, as `WebSocketAdapter` ones already could.
 - Docs: the event on the Realtime page, six languages; the agent skill's recipe.
+
+## 1.16.1 (2026-10-06)
+
+React, Vue and Svelte components: 1.2.3.
 
 ### Fixes
 
@@ -97,7 +101,7 @@ React, Vue and Svelte components: 1.2.0.
 
 ## 1.12.0 (2026-10-05)
 
-### Indicators and languages: the rest of the gap
+### Indicators and languages: 111 indicators, 30 languages
 
 - **16 more indicators, 111 in all**: Average Price, Median Price and Typical Price; Moving Average Channel, Hamming, Double and Triple; Volatility Index (Wilder's stop and reverse on the average true range); Accumulative Swing Index, Advance/Decline, Majority Rule, Chop Zone, SMI Ergodic and Price Oscillator; Volatility O-H-L-C and Zero Trend Close-to-Close.
 - **Correlation with another symbol**: Correlation Coefficient and Correlation Log (of returns), beside Compare and Spread/Ratio among the indicators that read a second symbol; the widget offers them when you compare with one.
@@ -344,7 +348,7 @@ Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look 
 
 ## 1.2.0 (2026-10-01)
 
-Advanced-charting parity and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
+More indicators and drawing tools, and a performance pass measured in a live browser profiler. Wrappers (`@tradecanvas/react` / `vue` / `svelte`) 1.0.5 pick up the new core.
 
 ### Drawing tools — 26 → 40
 

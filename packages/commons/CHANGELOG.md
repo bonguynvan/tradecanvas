@@ -804,8 +804,7 @@ limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
   doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
   renderers and plugins.
 
-- 14 new drawing tools (26 → 40), the next step toward
-  advanced drawing-tool parity:
+- 14 new drawing tools (26 → 40):
 
   - **Lines:** `infoLine` (trend line with a stats box: price change and %,
     bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
