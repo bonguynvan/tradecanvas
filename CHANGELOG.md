@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.19.0 (2026-10-20)
 
-Collected on `main` for the next release. Not on npm yet.
+React, Vue and Svelte components: 1.3.0.
 
 ### A frame on request, and overlays switched off
 
