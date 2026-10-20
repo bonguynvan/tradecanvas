@@ -38,6 +38,7 @@ const vi: SiteMessages = {
     audit: 'Audit hệ thống',
     business: 'Cho doanh nghiệp',
     issues: 'Báo lỗi',
+    discussions: 'Thảo luận',
     boGrid: 'bo-grid (bảng dữ liệu)',
     builtWith: 'Xây dựng bằng TradeCanvas',
   },

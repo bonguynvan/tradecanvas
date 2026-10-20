@@ -186,7 +186,7 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## 参与贡献
 
-欢迎提交 bug 报告、想法和 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 报告，不要公开提 issue。
+问题、想法以及你用 TradeCanvas 做的作品，请发到 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)；bug 请提 issue，也欢迎 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 报告，不要公开提 issue。
 
 ## 赞助
 

@@ -38,6 +38,7 @@ const de: SiteMessages = {
     audit: 'Systemaudit',
     business: 'Für Unternehmen',
     issues: 'Issues',
+    discussions: 'Diskussionen',
     boGrid: 'bo-grid (Datentabelle)',
     builtWith: 'Erstellt mit TradeCanvas',
   },

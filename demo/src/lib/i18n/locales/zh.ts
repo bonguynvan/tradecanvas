@@ -39,6 +39,7 @@ const zh: SiteMessages = {
     audit: '系统审计',
     business: '面向企业',
     issues: '问题反馈',
+    discussions: '讨论区',
     boGrid: 'bo-grid（数据表格）',
     builtWith: '基于 TradeCanvas 构建',
   },

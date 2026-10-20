@@ -11,6 +11,7 @@ export const SITE_URL = 'https://bonguynvan.github.io/tradecanvas';
 export const LINKS = {
   github: 'https://github.com/bonguynvan/tradecanvas',
   issues: 'https://github.com/bonguynvan/tradecanvas/issues',
+  discussions: 'https://github.com/bonguynvan/tradecanvas/discussions',
   npm: 'https://www.npmjs.com/package/@tradecanvas/chart',
   npmReact: 'https://www.npmjs.com/package/@tradecanvas/react',
   npmVue: 'https://www.npmjs.com/package/@tradecanvas/vue',

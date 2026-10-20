@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Questions and ideas
+    url: https://github.com/bonguynvan/tradecanvas/discussions
+    about: Ask how to do something, suggest an idea, or show what you built. Bugs stay here, in issues.
   - name: Docs
     url: https://bonguynvan.github.io/tradecanvas/docs/getting-started/
     about: Guides and the full API, in six languages.

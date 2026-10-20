@@ -4,6 +4,7 @@ Thanks for helping. Bug reports, ideas, docs fixes and pull requests are all wel
 
 ## Before you start
 
+- **Questions and ideas**: ask in [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); a question there helps the next person who searches for it.
 - **Bugs**: open an [issue](https://github.com/bonguynvan/tradecanvas/issues/new/choose) with the smallest setup that shows it: the options you passed, the data (a few bars is often enough), what you expected and what happened. A fork of one of the [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) is the quickest way to share one.
 - **Features**: open an issue first for anything larger than a small fix, so we can agree on the API before you build it.
 - **Security issues**: don't open an issue; see [SECURITY.md](./SECURITY.md).
@@ -50,6 +51,7 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
    If `docs:check` fails, run `pnpm docs:gen` and commit what it writes.
    For a change to how the chart draws, `pnpm build && pnpm bench:render` measures frames in Chrome on your GPU; put the numbers before and after in the pull request.
 4. **Add a changeset** for anything users of the packages will notice: `pnpm changeset`, pick the packages, and describe the change from the user's side. Docs-only and site-only changes don't need one.
+   The root `CHANGELOG.md` follows the same rule: it records changes to the packages and their docs. Changes to the website, funding or the project's own news stay out of it.
 5. **Docs**: a new option or method belongs in the README and the docs pages. Write the English; translations into the other languages can follow in a later pull request.
 
 ## Pull requests

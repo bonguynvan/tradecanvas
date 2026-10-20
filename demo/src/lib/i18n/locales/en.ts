@@ -44,6 +44,7 @@ const en = {
     audit: 'System audit',
     business: 'For businesses',
     issues: 'Issues',
+    discussions: 'Discussions',
     boGrid: 'bo-grid (data grid)',
     builtWith: 'Built with TradeCanvas',
   },

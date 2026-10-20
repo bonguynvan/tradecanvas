@@ -38,6 +38,7 @@ const id: SiteMessages = {
     audit: 'Audit sistem',
     business: 'Untuk bisnis',
     issues: 'Laporan masalah',
+    discussions: 'Diskusi',
     boGrid: 'bo-grid (tabel data)',
     builtWith: 'Dibuat dengan TradeCanvas',
   },

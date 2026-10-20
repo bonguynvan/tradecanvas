@@ -38,6 +38,7 @@ const th: SiteMessages = {
     audit: 'การตรวจสอบระบบ',
     business: 'สำหรับธุรกิจ',
     issues: 'แจ้งปัญหา',
+    discussions: 'กระดานสนทนา',
     boGrid: 'bo-grid (ตารางข้อมูล)',
     builtWith: 'สร้างด้วย TradeCanvas',
   },

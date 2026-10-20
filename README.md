@@ -186,7 +186,7 @@ Putting TradeCanvas in front of your customers? There is no logo to show and not
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`) and what a pull request needs. Found a security issue? Please follow [SECURITY.md](./SECURITY.md) instead of opening an issue.
+Questions, ideas and what you built with TradeCanvas go to [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); bugs go to the issues, and pull requests are welcome. [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`) and what a pull request needs. Found a security issue? Please follow [SECURITY.md](./SECURITY.md) instead of opening an issue.
 
 ## Sponsor
 

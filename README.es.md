@@ -186,7 +186,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## Contribuir
 
-Los reportes de errores, las ideas y los pull requests son bienvenidos. [CONTRIBUTING.md](./CONTRIBUTING.md) explica la configuración (`pnpm install && pnpm build && pnpm test`) y lo que necesita un pull request. ¿Encontraste un problema de seguridad? Sigue [SECURITY.md](./SECURITY.md) en lugar de abrir un issue.
+Las preguntas, las ideas y lo que construyas con TradeCanvas van a [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); los errores, a los issues, y los pull requests son bienvenidos. [CONTRIBUTING.md](./CONTRIBUTING.md) explica la configuración (`pnpm install && pnpm build && pnpm test`) y lo que necesita un pull request. ¿Encontraste un problema de seguridad? Sigue [SECURITY.md](./SECURITY.md) en lugar de abrir un issue.
 
 ## Patrocinio
 

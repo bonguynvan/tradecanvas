@@ -38,6 +38,7 @@ const ja: SiteMessages = {
     audit: 'システム監査',
     business: '法人のお客様へ',
     issues: 'Issue',
+    discussions: 'ディスカッション',
     boGrid: 'bo-grid（データグリッド）',
     builtWith: 'TradeCanvas で構築',
   },

@@ -38,6 +38,7 @@ const zhHant: SiteMessages = {
     audit: '系統稽核',
     business: '企業專區',
     issues: '問題回報',
+    discussions: '討論區',
     boGrid: 'bo-grid（資料表格）',
     builtWith: '以 TradeCanvas 打造',
   },

@@ -38,6 +38,7 @@ const tr: SiteMessages = {
     audit: 'Sistem denetimi',
     business: 'İşletmeler için',
     issues: 'Sorun bildirimleri',
+    discussions: 'Tartışmalar',
     boGrid: 'bo-grid (veri tablosu)',
     builtWith: 'TradeCanvas ile yapıldı',
   },

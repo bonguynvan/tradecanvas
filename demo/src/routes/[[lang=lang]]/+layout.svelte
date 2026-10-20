@@ -114,6 +114,7 @@
       links: [
         { label: 'GitHub', href: LINKS.github },
         { label: m.footer.issues, href: LINKS.issues },
+        { label: m.footer.discussions, href: LINKS.discussions },
         { label: m.footer.boGrid, href: LINKS.boGrid },
         { label: m.footer.business, href: i18n.href('/business') },
         { label: m.nav.sponsor, href: LINKS.sponsor },
