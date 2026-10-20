@@ -1,5 +1,11 @@
 # @tradecanvas/core
 
+## 1.19.1
+
+### Patch Changes
+
+- @tradecanvas/commons@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

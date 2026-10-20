@@ -1,5 +1,13 @@
 # @tradecanvas/react
 
+## 1.3.1
+
+### Patch Changes
+
+- db48daa: A `funding` field pointing at GitHub Sponsors, so `npm fund` lists it.
+- Updated dependencies [db48daa]
+  - @tradecanvas/chart@1.19.1
+
 ## 1.3.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 1.19.1
+
+### Patch Changes
+
+- db48daa: A `funding` field pointing at GitHub Sponsors, so `npm fund` lists it.
+  - @tradecanvas/commons@1.19.1
+  - @tradecanvas/core@1.19.1
+
 ## 1.19.0
 
 ### Minor Changes
