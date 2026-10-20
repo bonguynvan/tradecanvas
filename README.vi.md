@@ -17,6 +17,7 @@
   <a href="https://bonguynvan.github.io/tradecanvas/vi/docs/getting-started/">Tài liệu</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/vi/examples/">Ví dụ</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/vi/playground/">Playground</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/vi/audit/">Audit hệ thống</a> ·
   <a href="./CHANGELOG.md">Nhật ký thay đổi</a>
 </p>
 

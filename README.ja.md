@@ -17,6 +17,7 @@
   <a href="https://bonguynvan.github.io/tradecanvas/ja/docs/getting-started/">ドキュメント</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/ja/examples/">サンプル</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/ja/playground/">Playground</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/ja/audit/">システム監査</a> ·
   <a href="./CHANGELOG.md">変更履歴</a>
 </p>
 

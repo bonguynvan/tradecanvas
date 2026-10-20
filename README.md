@@ -17,6 +17,7 @@
   <a href="https://bonguynvan.github.io/tradecanvas/docs/getting-started/">Docs</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/examples/">Examples</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/playground/">Playground</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/audit/">System audit</a> ·
   <a href="./CHANGELOG.md">Changelog</a>
 </p>
 

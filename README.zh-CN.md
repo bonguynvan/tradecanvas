@@ -17,6 +17,7 @@
   <a href="https://bonguynvan.github.io/tradecanvas/zh/docs/getting-started/">文档</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/zh/examples/">示例</a> ·
   <a href="https://bonguynvan.github.io/tradecanvas/zh/playground/">Playground</a> ·
+  <a href="https://bonguynvan.github.io/tradecanvas/zh/audit/">系统审计</a> ·
   <a href="./CHANGELOG.md">更新日志</a>
 </p>
 
