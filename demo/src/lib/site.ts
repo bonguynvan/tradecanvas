@@ -16,6 +16,7 @@ export const LINKS = {
   npmVue: 'https://www.npmjs.com/package/@tradecanvas/vue',
   npmSvelte: 'https://www.npmjs.com/package/@tradecanvas/svelte',
   boGrid: 'https://bonguynvan.github.io/bo-grid/',
+  sponsor: 'https://github.com/sponsors/bonguynvan',
 } as const;
 
 export function isLightPage(): boolean {

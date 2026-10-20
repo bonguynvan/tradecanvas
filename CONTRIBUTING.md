@@ -58,5 +58,6 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `fix: …`, `feat: …`, `docs: …`, `test: …`, `refactor: …`, `perf: …`, `chore: …`.
 - Describe what changed and how you checked it. A screenshot or a short clip helps for anything visual.
 - CI must pass before a review.
+- Each pull request is published to [pkg.pr.new](https://pkg.pr.new); a bot comments the install commands, so reviewers and users can try the change in their own app (`npm install https://pkg.pr.new/@tradecanvas/chart@<pull request number>`).
 
 By contributing you agree that your work is released under the [MIT License](./LICENSE), and to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).

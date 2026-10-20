@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Collected on `main` for the next release. Not on npm yet.
+
+- **Sponsor**: TradeCanvas has a [GitHub Sponsors](https://github.com/sponsors/bonguynvan) page. The packages carry a `funding` field (`npm fund` lists it), and the repository, the READMEs and the site link to it.
+- **Preview builds**: every pull request and every commit on `main` is published to [pkg.pr.new](https://pkg.pr.new) (`npm install https://pkg.pr.new/@tradecanvas/chart@<pull request or commit>`), so a change can be tried before it is released.
+- **Shorter READMEs**, in all six languages: what the library does, install, a quick start, frameworks, and links into the docs, which keep the API in detail. The npm page follows.
+- The site's home page counts "third-party runtime dependencies", as the audit page does: the chart package depends on TradeCanvas's own core and commons.
+
 ## 1.19.0 (2026-10-20)
 
 React, Vue and Svelte components: 1.3.0.

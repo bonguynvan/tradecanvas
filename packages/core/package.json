@@ -4,6 +4,10 @@
   "type": "module",
   "description": "Canvas rendering engine for @tradecanvas/chart",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/bonguynvan"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/bonguynvan/tradecanvas.git",
