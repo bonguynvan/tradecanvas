@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- db48daa: A `funding` field pointing at GitHub Sponsors, so `npm fund` lists it.
+- db48daa: Package metadata only; no change to the code.
 - Updated dependencies [db48daa]
   - @tradecanvas/chart@1.19.1
 

@@ -38,6 +38,7 @@ const ko: SiteMessages = {
     audit: '시스템 점검',
     business: '기업 고객',
     issues: '이슈',
+    discussions: '토론',
     boGrid: 'bo-grid (데이터 그리드)',
     builtWith: 'TradeCanvas로 제작',
   },

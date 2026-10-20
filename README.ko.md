@@ -186,7 +186,7 @@ TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 
 
 ## 기여하기
 
-버그 보고, 아이디어, 풀 리퀘스트를 환영합니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에 개발 환경 설정(`pnpm install && pnpm build && pnpm test`)과 풀 리퀘스트에 필요한 것을 정리해 두었습니다. 보안 문제를 발견했다면 이슈를 열지 말고 [SECURITY.md](./SECURITY.md)를 따라 주세요.
+질문, 아이디어, TradeCanvas로 만든 것은 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)에, 버그는 이슈에 남겨 주세요. 풀 리퀘스트도 환영합니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에 개발 환경 설정(`pnpm install && pnpm build && pnpm test`)과 풀 리퀘스트에 필요한 것을 정리해 두었습니다. 보안 문제를 발견했다면 이슈를 열지 말고 [SECURITY.md](./SECURITY.md)를 따라 주세요.
 
 ## 후원
 

@@ -186,7 +186,7 @@ TradeCanvas をお客様向けの製品に組み込みますか？表示が必�
 
 ## コントリビュート
 
-バグ報告、アイデア、プルリクエストを歓迎します。[CONTRIBUTING.md](./CONTRIBUTING.md) にセットアップ（`pnpm install && pnpm build && pnpm test`）とプルリクエストに必要なことをまとめています。セキュリティ上の問題を見つけた場合は、issue を開かずに [SECURITY.md](./SECURITY.md) の手順に従ってください。
+質問やアイデア、TradeCanvas で作ったものは [Discussions](https://github.com/bonguynvan/tradecanvas/discussions) へ、バグは issue へどうぞ。プルリクエストも歓迎します。[CONTRIBUTING.md](./CONTRIBUTING.md) にセットアップ（`pnpm install && pnpm build && pnpm test`）とプルリクエストに必要なことをまとめています。セキュリティ上の問題を見つけた場合は、issue を開かずに [SECURITY.md](./SECURITY.md) の手順に従ってください。
 
 ## スポンサー
 

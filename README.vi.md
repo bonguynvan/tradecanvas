@@ -186,7 +186,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## Đóng góp
 
-Báo lỗi, ý tưởng và pull request đều được hoan nghênh. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`) và những gì một pull request cần có. Phát hiện lỗi bảo mật? Hãy làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.
+Câu hỏi, ý tưởng và sản phẩm bạn làm bằng TradeCanvas xin gửi vào [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); lỗi gửi vào issues, và pull request luôn được hoan nghênh. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`) và những gì một pull request cần có. Phát hiện lỗi bảo mật? Hãy làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.
 
 ## Tài trợ
 

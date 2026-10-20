@@ -38,6 +38,7 @@ const ru: SiteMessages = {
     audit: 'Аудит системы',
     business: 'Для бизнеса',
     issues: 'Задачи и ошибки',
+    discussions: 'Обсуждения',
     boGrid: 'bo-grid (таблица данных)',
     builtWith: 'Сделано на TradeCanvas',
   },

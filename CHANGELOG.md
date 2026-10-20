@@ -4,7 +4,6 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
-- **A page for businesses** on the site, in fourteen languages: what the MIT license allows (no logo on the chart, nothing to apply for, your own code stays yours), what an IT review usually asks with a source for each answer, how your own data and orders connect, and the first-partner programme, with an address to write to. The READMEs link to it.
 - **npm provenance**: releases are published with provenance, so npm shows the workflow run that built each version.
 - SECURITY.md names the supported releases as the latest 1.x of each package, instead of version numbers that went stale.
 
@@ -12,10 +11,8 @@ Collected on `main` for the next release. Not on npm yet.
 
 React, Vue and Svelte components: 1.3.1.
 
-- **Sponsor**: TradeCanvas has a [GitHub Sponsors](https://github.com/sponsors/bonguynvan) page. The packages carry a `funding` field (`npm fund` lists it), and the repository, the READMEs and the site link to it.
 - **Preview builds**: every pull request and every commit on `main` is published to [pkg.pr.new](https://pkg.pr.new) (`npm install https://pkg.pr.new/@tradecanvas/chart@<pull request or commit>`), so a change can be tried before it is released.
 - **Shorter READMEs**, in all six languages: what the library does, install, a quick start, frameworks, and links into the docs, which keep the API in detail. The npm page follows.
-- The site's home page counts "third-party runtime dependencies", as the audit page does: the chart package depends on TradeCanvas's own core and commons.
 
 ## 1.19.0 (2026-10-20)
 
@@ -137,14 +134,6 @@ React, Vue and Svelte components: 1.2.0.
   - loading a save that names a theme of its own leaves the chart's theme as it is; it used to break it;
   - a pane's crosshair value pill takes the crosshair label colours, as the price axis's does.
 - **Feature Lab**: a style overrides scene; the Styling docs explain every key, in six languages.
-
-### The site: a new front page
-
-- **Live from the first line**: a tape of live Binance prices along the top, a large headline, and the live chart across the page under it, drawn with WebGL where there is a GPU and saying which renderer draws it.
-- **One chart for the whole trade**: four numbered chapters, each with its own live chart: reading the market (bands, averages, RSI, a Fibonacci retracement and a trend line), trading on the chart (a paper position with its stop-loss and take-profit, an order waiting), replaying the past (a replay that runs round), and scale (200,000 bars panning on their own, with a frame-time meter and a WebGL / Canvas 2D switch). Each starts only when it comes near the screen.
-- **Scrolling past a chart scrolls the page**: the wheel, and on a touch screen a swipe, go to a chart on the front page only once it has been clicked or tapped ("Click to use the chart"). It lets go when the mouse leaves it, on a press elsewhere, on Escape, and when it scrolls out of view. Smooth scrolling carries on over the charts.
-- **The key numbers brought up to date**: 111 indicators, 69 drawing tools, 18 chart types, 30 widget languages, a million bars at 60 fps with WebGL, no runtime dependencies; and an open-source band with the npm downloads a month, the licence and the GitHub stars.
-- The tape pauses on hover, on focus and with its own button; with reduced motion it stays still (it scrolls by hand), the replay waits at its start and nothing pans on its own. Off screen, the replay and the panning wait. In all 14 languages of the site.
 - The README and `llms.txt` say the charts draw with Canvas 2D or WebGL.
 
 ## 1.12.0 (2026-10-05)
@@ -388,11 +377,6 @@ Dragging that never sticks, a lighter two-canvas renderer, the TradeCanvas look 
 ### Replay
 
 - **Replay follows the newest bar again**: the first step and every seek show the replay position; each new bar keeps the view at the latest bar while it rests there, and panning back into history pauses the follow.
-
-### Site
-
-- Redesigned demo and docs site with the new mark (a candle between code brackets), a dark terminal look with a designed light theme, and the library's default themes on every live chart.
-- Landing page: smooth scrolling and scroll-driven reveals, count-ups and a parallax hero grid; charts keep the wheel for zooming; nothing moves under reduced motion.
 
 ## 1.2.0 (2026-10-01)
 
