@@ -157,6 +157,9 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   dừng lỗ và chốt lời (tuỳ chọn), và hiệu lực của lệnh. Phiếu kiểm tra lệnh ngay khi bạn nhập
   (mua giới hạn phải nằm dưới giá thị trường, dừng lỗ phải nằm ở phía lỗ so với điểm vào…)
   và hiện tỷ lệ lời:lỗ. Đặt lệnh sẽ gửi đi một ý định <code>orderPlace</code>.
+  Khi đã đặt thị trường (<code>chart.setMarket</code>), phiếu còn giữ các mức giá theo bước giá
+  của thị trường và giá đặt lệnh trong khoảng giá trần, giá sàn của ngày, bắt đầu với một lô, và trên một
+  lô thì chỉ nhận lô chẵn (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

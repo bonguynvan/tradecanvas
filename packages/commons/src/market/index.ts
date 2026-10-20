@@ -1,14 +1,23 @@
-export type { MarketType, StockExchange, MarketConfig, TradingSession, MarketColorScheme, PriceLimitInfo } from './types.js';
+export type { MarketType, StockExchange, MarketConfig, PriceStepBand, TradingSession, MarketColorScheme, PriceLimitInfo, VN30FContract } from './types.js';
 export {
   VN_COLORS,
   HOSE_SESSIONS,
   HNX_SESSIONS,
+  UPCOM_SESSIONS,
+  VN30F_SESSIONS,
   MARKET_HOSE,
+  MARKET_HOSE_ETF,
   MARKET_HNX,
   MARKET_UPCOM,
+  MARKET_VN30F,
   MARKET_CRYPTO,
   MARKET_NYSE,
   createVNTheme,
+  priceStepAt,
+  roundToPriceStep,
   computePriceLimits,
+  scaleMarketPrices,
   getCurrentSession,
+  vn30fLastTradingDay,
+  vn30fContracts,
 } from './presets.js';

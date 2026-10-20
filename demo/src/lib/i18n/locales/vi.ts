@@ -319,6 +319,18 @@ const vi: SiteMessages = {
         'Vẽ một đường ngang: nhãn của nó cũng theo 1/32',
       ],
     },
+    vnmarket: {
+      title: 'Thị trường Việt Nam',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE và hợp đồng tương lai VN30 đúng như sàn vận hành: giá theo bước 10, 50 hoặc 100 đồng tuỳ vùng giá, giá trần, giá sàn và giá tham chiếu của ngày, lô 100 cổ phiếu, các phiên giao dịch theo giờ Việt Nam, và màu của bảng giá.',
+      tryThis: [
+        'Nhấp chuột phải vào biểu đồ: các mức giá được gợi ý đều nằm trên bước giá, 50 đồng với HPG',
+        'Mở lệnh mới từ bảng tài khoản: phiếu bắt đầu với 100 cổ phiếu, và giá vượt trần sẽ bị từ chối',
+        'Chuyển sang FPT (bước 100 đồng) hoặc hợp đồng VN30F (mở cửa 8:45)',
+        'Các đường tím, xanh lam và vàng là giá trần, giá sàn và giá tham chiếu',
+      ],
+    },
     subcent: {
       title: '30 ngôn ngữ, giá dưới một xu',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const vi: SiteMessages = {
         { name: 'Sổ lệnh dạng thang', detail: 'Khối lượng mua và bán theo mức giá; bấm để đặt lệnh' },
         { name: 'Giá trực tiếp cho watchlist', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Tin tức và trạng thái thị trường', detail: 'fetchNews; đếm ngược tới giờ mở hay đóng cửa' },
+        { name: 'Quy định của sàn', detail: 'setMarket: bước giá theo vùng giá, giá trần và giá sàn trong ngày, lô, phiên giao dịch; HOSE, HNX, UPCoM và hợp đồng tương lai VN30' },
       ],
       trading: [
         { name: 'Lệnh và vị thế trên biểu đồ', detail: 'Kéo để sửa; huỷ, đóng và đảo vị thế ngay trên đường' },
         { name: 'Dấu khớp lệnh', detail: 'Lý do và lãi/lỗ trong executionFill' },
-        { name: 'Phiếu đặt lệnh', detail: 'Khối lượng, loại lệnh, cắt lỗ và chốt lời, hiệu lực, kiểm tra ngay khi nhập' },
+        { name: 'Phiếu đặt lệnh', detail: 'Khối lượng, loại lệnh, cắt lỗ và chốt lời, hiệu lực, kiểm tra ngay khi nhập; bước giá, giá trần, giá sàn và lô của sàn' },
         { name: 'Bảng tài khoản', detail: 'Vị thế có lãi/lỗ trực tiếp, lệnh chờ, lịch sử khớp' },
         { name: 'Tín hiệu và vùng lệnh', detail: 'Khoá style markers.*, tradeZones.*' },
         { name: 'Backtest và chỉ số rủi ro', detail: '@tradecanvas/analytics: phí, trượt giá, Sharpe, Sortino, Calmar, sụt giảm' },

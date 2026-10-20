@@ -319,6 +319,18 @@ const fr: SiteMessages = {
         'Tracez une ligne horizontale : son étiquette s’affiche aussi en 32es',
       ],
     },
+    vnmarket: {
+      title: 'Marchés vietnamiens',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE et les contrats à terme sur le VN30 tels que leurs bourses les gèrent : des prix au pas de 10, 50 ou 100 dongs selon la tranche de prix, le prix plafond, le prix plancher et le prix de référence du jour, des lots de 100 actions, les séances de négociation à l’heure du Vietnam et les couleurs du tableau des cours.',
+      tryThis: [
+        'Faites un clic droit sur le graphique : les prix proposés tombent sur le pas de cotation, 50 dongs pour HPG',
+        'Ouvrez un nouvel ordre depuis le panneau du compte : il commence à 100 actions, et un prix au-delà du plafond est refusé',
+        'Passez à FPT (pas de 100 dongs) ou au contrat VN30F (dès 8 h 45)',
+        'Les lignes violette, cyan et jaune sont le prix plafond, le prix plancher et le prix de référence',
+      ],
+    },
     subcent: {
       title: '30 langues, des prix sous le centime',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const fr: SiteMessages = {
         { name: 'Échelle de profondeur de marché', detail: 'Taille à l’achat et à la vente par prix ; cliquez pour trader' },
         { name: 'Cours en direct pour les listes de suivi', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Actualités et état du marché', detail: 'fetchNews ; un compte à rebours jusqu’à l’ouverture ou la clôture' },
+        { name: 'Règles de la bourse', detail: 'setMarket : pas de cotation par tranche de prix, plafond et plancher du jour, lots, séances ; HOSE, HNX, UPCoM et contrats à terme sur le VN30' },
       ],
       trading: [
         { name: 'Ordres et positions sur le graphique', detail: 'Faites glisser pour modifier ; annulez, clôturez et inversez depuis la ligne' },
         { name: 'Marques d’exécution', detail: 'Motif et gain ou perte dans executionFill' },
-        { name: 'Ticket d’ordre', detail: 'Quantité, type, stop-loss et take-profit, durée de validité, vérifiés pendant la saisie' },
+        { name: 'Ticket d’ordre', detail: 'Quantité, type, stop-loss et take-profit, durée de validité, vérifiés pendant la saisie ; le pas de cotation, le plafond, le plancher et les lots de la bourse' },
         { name: 'Panneau du compte', detail: 'Positions avec gains et pertes en direct, ordres en attente, exécutions' },
         { name: 'Signaux et zones de trade', detail: 'Clés de style markers.*, tradeZones.*' },
         { name: 'Backtesting et mesures de risque', detail: '@tradecanvas/analytics : commission, glissement, Sharpe, Sortino, Calmar, drawdown' },

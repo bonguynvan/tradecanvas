@@ -8,6 +8,8 @@ import {
   orderTicketProblems,
   orderTicketRiskReward,
   type OrderTicketDraft,
+  type OrderTicketProblem,
+  type OrderTicketRules,
 } from './orderTicket.js';
 
 export interface OrderTicketCallbacks {
@@ -20,6 +22,8 @@ export interface OrderTicketStart {
   side?: OrderSide;
   price?: number;
   lastPrice: number | null;
+  /** The market's price step, the day's limits and its lot; a lot is the first quantity. */
+  rules?: OrderTicketRules;
 }
 
 let ticketSeq = 0;
@@ -37,6 +41,7 @@ export class WidgetOrderTicket {
   private submit: HTMLButtonElement;
   private draft: OrderTicketDraft | null = null;
   private lastPrice: number | null = null;
+  private rules: OrderTicketRules = {};
   private returnFocus: HTMLElement | null = null;
   private readonly uid = ++ticketSeq;
 
@@ -105,6 +110,7 @@ export class WidgetOrderTicket {
   open(start: OrderTicketStart): void {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.lastPrice = start.lastPrice;
+    this.rules = start.rules ?? {};
     const price = start.price ?? start.lastPrice ?? 0;
     const side = start.side ?? 'buy';
     // A price away from the market starts as the order that waits there.
@@ -112,7 +118,8 @@ export class WidgetOrderTicket {
     if (start.price !== undefined && start.lastPrice !== null && start.price !== start.lastPrice) {
       type = (start.price < start.lastPrice) === (side === 'buy') ? 'limit' : 'stop';
     }
-    this.draft = { side, type, quantity: 1, price, stopLoss: null, takeProfit: null, timeInForce: 'gtc' };
+    const quantity = this.rules.lot !== undefined && this.rules.lot > 1 ? this.rules.lot : 1;
+    this.draft = { side, type, quantity, price, stopLoss: null, takeProfit: null, timeInForce: 'gtc' };
     this.render();
     this.backdrop.hidden = false;
     this.body.querySelector<HTMLElement>('button, input, select')?.focus();
@@ -144,7 +151,7 @@ export class WidgetOrderTicket {
 
   private place(): void {
     const draft = this.draft;
-    if (!draft || orderTicketProblems(draft, this.lastPrice).length > 0) return;
+    if (!draft || orderTicketProblems(draft, this.lastPrice, this.rules).length > 0) return;
     this.callbacks.onSubmit(orderTicketIntent(draft, this.lastPrice));
     this.close();
   }
@@ -245,8 +252,8 @@ export class WidgetOrderTicket {
   private check(): void {
     const draft = this.draft;
     if (!draft) return;
-    const problems = orderTicketProblems(draft, this.lastPrice);
-    const lines = problems.map((p) => this.t(`ticket.problem.${p}` as MessageKey));
+    const problems = orderTicketProblems(draft, this.lastPrice, this.rules);
+    const lines = problems.map((p) => this.problemText(p));
     const rr = orderTicketRiskReward(draft, this.lastPrice);
     if (problems.length === 0 && rr !== null) lines.push(fill(this.t('ticket.riskReward'), { rr: rr.toFixed(2) }));
     this.problemsEl.replaceChildren(...lines.map((text) => {
@@ -258,6 +265,15 @@ export class WidgetOrderTicket {
     this.submit.disabled = problems.length > 0;
     this.submit.classList.toggle('tcw-ticket-sell', draft.side === 'sell');
     this.submit.textContent = this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
+  }
+
+  private problemText(problem: OrderTicketProblem): string {
+    const text = this.t(`ticket.problem.${problem}` as MessageKey);
+    const { limits, lot } = this.rules;
+    if (problem === 'priceLimits' && limits) {
+      return fill(text, { floor: this.callbacks.formatPrice(limits.floor), ceiling: this.callbacks.formatPrice(limits.ceiling) });
+    }
+    return problem === 'lot' ? fill(text, { lot: lot ?? 1 }) : text;
   }
 }
 

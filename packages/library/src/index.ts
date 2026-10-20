@@ -172,9 +172,12 @@ export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, forma
 
 // Re-export market presets
 export {
-  MARKET_HOSE, MARKET_HNX, MARKET_UPCOM, MARKET_CRYPTO, MARKET_NYSE,
+  MARKET_HOSE, MARKET_HOSE_ETF, MARKET_HNX, MARKET_UPCOM, MARKET_VN30F, MARKET_CRYPTO, MARKET_NYSE,
+  HOSE_SESSIONS, HNX_SESSIONS, UPCOM_SESSIONS, VN30F_SESSIONS,
   VN_COLORS, createVNTheme, computePriceLimits, getCurrentSession,
+  priceStepAt, roundToPriceStep, scaleMarketPrices, vn30fLastTradingDay, vn30fContracts,
 } from '@tradecanvas/commons';
+export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
 
 // Re-export base classes for custom indicators and drawing tools
 export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';

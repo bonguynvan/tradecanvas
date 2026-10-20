@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
 import { TimeAxis } from '@tradecanvas/core';
+import { MARKET_HOSE } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -44,6 +45,33 @@ describe('a chart’s price step', () => {
     chart.setSymbolInfo(null);
     chart.setPriceFormat({ denominator: 32 });
     expect(chart.getPriceStep()).toBe(1 / 32);
+  });
+});
+
+describe('a chart on a market with price bands', () => {
+  it('rounds to the step of the price’s band, and gives the step at a price', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket(MARKET_HOSE);
+    expect(chart.roundPrice(9.987)).toBe(9.99);
+    expect(chart.roundPrice(25.37)).toBe(25.35);
+    expect(chart.roundPrice(120.47)).toBe(120.5);
+    expect(chart.getPriceStep(9.5)).toBe(0.01);
+    expect(chart.getPriceStep(25)).toBe(0.05);
+    // Without a price: the step at the last close (about 110 here).
+    expect(chart.getPriceStep()).toBe(0.1);
+    // A symbol's own step still comes first.
+    chart.setSymbolInfo({ symbol: 'FPT', minTick: 0.01 });
+    expect(chart.roundPrice(25.37)).toBe(25.37);
+  });
+
+  it('keeps the market it was given, and draws limits from a copy', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket(MARKET_HOSE);
+    chart.setPriceLimits(108);
+    expect(chart.getMarket()?.priceLimits?.referencePrice).toBe(108);
+    expect(MARKET_HOSE.priceLimits?.referencePrice).toBeUndefined();
   });
 });
 

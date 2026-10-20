@@ -130,6 +130,50 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>Thị trường: bước giá, biên độ và phiên giao dịch</h3>
+<p>
+  <code>setMarket</code> cho biểu đồ biết quy định của một sàn: màu nến, số chữ số thập
+  phân, bước giá (có thể đổi theo vùng giá), giá trần và giá sàn trong ngày, và lô giao
+  dịch. <code>roundPrice</code> và <code>getPriceStep</code> theo bước giá của vùng giá, nên
+  giá lấy từ menu của biểu đồ luôn là giá hợp lệ, và phiếu đặt lệnh của widget kiểm tra
+  lệnh theo bước giá, biên độ trong ngày và lô chẵn. Preset còn mang các phiên và múi giờ
+  của sàn, dùng cho <code>getCurrentSession</code> và code của bạn; vùng tô phiên và giờ mở
+  rộng trên biểu đồ lấy từ <code>setSymbolInfo</code>. Có sẵn
+  preset cho các sàn Việt Nam theo quy định tháng 5/2025: HOSE (bước 10, 50 hoặc 100 đồng
+  theo vùng giá, ±7%), chứng chỉ quỹ ETF và chứng quyền trên HOSE (10 đồng), HNX (±10%, có
+  phiên sau giờ), UPCoM (±15%) và hợp đồng tương lai VN30 (bước 0,1 điểm, ±7%, mở cửa
+  8:45); cổ phiếu giao dịch theo lô 100, xanh tăng, đỏ giảm, tím trần, xanh lam sàn, vàng
+  tham chiếu. Giá trong các preset tính bằng nghìn đồng như trên bảng giá;
+  <code>scaleMarketPrices(preset, 1000)</code> dùng cho giá tính bằng đồng.
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // hoặc scaleMarketPrices(MARKET_HOSE, 1000) cho giá 25350
+chart.setPriceLimits(25.35)                  // giá tham chiếu: giá đóng cửa hôm trước
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35, bước 50 đồng
+chart.getPriceStep(9.5)                      // 0.01 dưới 10.000 đồng
+
+// Dùng riêng các quy tắc
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, chỉ theo giờ
+
+// Hợp đồng tương lai VN30: bốn hợp đồng đang niêm yết và ngày giao dịch cuối cùng
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba, lùi lại nếu là ngày nghỉ`}</code></pre>
+<p>
+  Thị trường của riêng bạn là một <code>MarketConfig</code>: <code>priceStep</code>, hoặc
+  <code>priceSteps: [{'{'} from, step {'}'}]</code> cho các vùng giá, <code>priceLimits</code>,
+  <code>volumeUnit</code> (lô), <code>sessions</code>, <code>timeZone</code> và
+  <code>colorScheme</code>. <code>minTick</code> của mã đi trước bước giá của thị trường.
+  Các sàn thỉnh thoảng đổi quy định; hãy đối chiếu preset với quy định hiện hành của sàn
+  trước khi dựa vào nó.
+</p>
+
 <h3>So sánh các mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của

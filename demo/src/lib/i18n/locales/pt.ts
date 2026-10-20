@@ -319,6 +319,18 @@ const pt: SiteMessages = {
         'Desenhe uma linha horizontal: o rótulo dela também aparece em 32 avos',
       ],
     },
+    vnmarket: {
+      title: 'Mercados do Vietnã',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE e os futuros do VN30 do jeito que as bolsas os operam: preços em variações de 10, 50 ou 100 dongs conforme a faixa de preço, o preço-teto, o preço-piso e o preço de referência do dia, lotes de 100 ações, as sessões de negociação no fuso horário do Vietnã e as cores do painel de cotações.',
+      tryThis: [
+        'Clique com o botão direito no gráfico: os preços oferecidos respeitam a variação mínima, 50 dongs para HPG',
+        'Abra uma nova ordem no painel da conta: ela começa com 100 ações, e um preço acima do teto é recusado',
+        'Mude para FPT (variações de 100 dongs) ou para o contrato VN30F (a partir das 8h45)',
+        'As linhas roxa, ciano e amarela são o preço-teto, o preço-piso e o preço de referência',
+      ],
+    },
     subcent: {
       title: '30 idiomas, preços abaixo de um centavo',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const pt: SiteMessages = {
         { name: 'Book de ofertas em escada', detail: 'Volume de compra e de venda por preço; clique para operar' },
         { name: 'Cotações ao vivo para listas de observação', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Notícias e status do mercado', detail: 'fetchNews; uma contagem regressiva até a abertura ou o fechamento' },
+        { name: 'Regras da bolsa', detail: 'setMarket: variação mínima por faixa de preço, teto e piso diários, lotes, sessões; HOSE, HNX, UPCoM e futuros do VN30' },
       ],
       trading: [
         { name: 'Ordens e posições no gráfico', detail: 'Arraste para modificar; cancele, feche e inverta pela linha' },
         { name: 'Marcas de execução', detail: 'Motivo e lucro ou prejuízo em executionFill' },
-        { name: 'Boleta', detail: 'Quantidade, tipo, stop-loss e take-profit, validade, verificados enquanto você digita' },
+        { name: 'Boleta', detail: 'Quantidade, tipo, stop-loss e take-profit, validade, verificados enquanto você digita; a variação mínima, o teto, o piso e os lotes da bolsa' },
         { name: 'Painel da conta', detail: 'Posições com lucro e prejuízo ao vivo, ordens em aberto, execuções' },
         { name: 'Sinais e zonas de trade', detail: 'Chaves de estilo markers.*, tradeZones.*' },
         { name: 'Backtesting e métricas de risco', detail: '@tradecanvas/analytics: comissão, slippage, Sharpe, Sortino, Calmar, drawdown' },

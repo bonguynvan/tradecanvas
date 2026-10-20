@@ -155,6 +155,9 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   시장가·지정가·스톱, 수량, 가격, 선택 사항인 손절과 익절, 주문 유효 기간을 정합니다.
   입력하는 동안 주문을 검사하고(매수 지정가는 시장가보다 아래, 손절은 진입가 기준 손실 쪽…)
   손익비를 보여 줍니다. 주문을 넣으면 <code>orderPlace</code> 의도가 전송됩니다.
+  시장을 설정하면(<code>chart.setMarket</code>) 각 가격을 시장의 호가 단위에 맞추고 주문 가격을 그날의 상한가와 하한가 안에
+  두며, 수량은 1매매 단위에서 시작하고 1매매 단위를 넘으면 그 배수만 받습니다(그보다 적은 주식은 별도의 단주
+  주문입니다).
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

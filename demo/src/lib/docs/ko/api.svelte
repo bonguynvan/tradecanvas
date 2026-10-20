@@ -129,6 +129,46 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>시장: 호가 단위, 가격 제한, 거래 세션</h3>
+<p>
+  <code>setMarket</code>은 차트에 거래소의 규칙을 알려 줍니다. 캔들 색상, 소수 자릿수, 호가 단위(가격에 따라
+  달라질 수 있음), 그날의 상한가와 하한가, 매매 단위가 여기에 해당합니다.
+  <code>roundPrice</code>와 <code>getPriceStep</code>은 가격이 속한 가격대의 호가 단위를 따르므로 차트 메뉴에서
+  고른 가격은 항상 유효한 가격이 되고, 위젯의 주문 티켓은 호가 단위, 그날의 가격 제한, 매매 단위를 기준으로 주문을
+  검사합니다. 프리셋에는 거래소의 거래 세션과 시간대도 들어 있어 <code>getCurrentSession</code>과 직접 작성한
+  코드에서 쓸 수 있습니다. 차트의 세션 음영과 시간외 거래는 <code>setSymbolInfo</code>에서 정합니다. 프리셋은 2025년 5월 기준 베트남 거래소를 다룹니다. HOSE(가격에 따라 10, 50, 100동 단위, ±7%),
+  HOSE의 ETF와 커버드 워런트(10동), HNX(±10%, 장 마감 후 세션), UPCoM(±15%), VN30 지수 선물(0.1포인트
+  단위, ±7%, 8:45 개장)이며, 주식은 100주 단위, 상승은 초록, 하락은 빨강, 상한가는 보라, 하한가는 청록, 기준가는
+  노랑입니다. 프리셋의 가격은 시세판처럼 1,000동 단위이며, <code>scaleMarketPrices(preset, 1000)</code>을 쓰면
+  동 단위 가격을 읽습니다.
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // 25350 같은 가격이면 scaleMarketPrices(MARKET_HOSE, 1000)
+chart.setPriceLimits(25.35)                  // 기준가: 전일 종가
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35, 50동 단위
+chart.getPriceStep(9.5)                      // 10,000동 미만은 0.01
+
+// 규칙만 따로 쓰기
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, 시각만으로 판단
+
+// VN30 선물: 상장된 네 개 계약과 각각의 최종 거래일
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, 휴일이면 앞당김`}</code></pre>
+<p>
+  직접 만드는 시장은 <code>MarketConfig</code>입니다. <code>priceStep</code>(가격대별로는
+  <code>priceSteps: [{'{'} from, step {'}'}]</code>), <code>priceLimits</code>,
+  <code>volumeUnit</code>(매매 단위), <code>sessions</code>, <code>timeZone</code>,
+  <code>colorScheme</code>를 지정합니다. 종목 자체의 <code>minTick</code>이 시장의 호가 단위보다 우선합니다.
+  거래소 규칙은 때때로 바뀌므로, 프리셋을 사용하기 전에 해당 거래소의 현행 규칙과 대조해 보세요.
+</p>
+
 <h3>종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나

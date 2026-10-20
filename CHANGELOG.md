@@ -4,6 +4,31 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Vietnamese markets
+
+Checked against the exchanges' rules of May 2025: the HOSE trading rules of 26 April 2025 and the HNX, UPCoM and VN30 futures rules.
+
+- **Price steps by price band**: `MarketConfig.priceSteps: [{ from, step }]`. HOSE shares step 10 dong below 10,000, 50 dong to 49,950 and 100 dong from 50,000; `priceStepAt(price, market)` and `roundToPriceStep(price, market, 'nearest' | 'down' | 'up')` read them.
+- **Ceiling and floor as the exchanges set them**: `computePriceLimits` rounds the ceiling down and the floor up to a valid price; a limit that would land on the reference moves one step off it, and a reference of one step keeps the floor there. `chart.getPriceLimits()` gives the day's prices.
+- **Presets**: `MARKET_HOSE` (±7%, lots of 100, sessions from the 9:00 opening auction to the 14:30 closing one), `MARKET_HOSE_ETF` (ETFs and covered warrants, 10 dong at every price), `MARKET_HNX` (±10%, a closing auction and a post-close session to 15:00), `MARKET_UPCOM` (±15%, continuous trading 9:15–11:30 and 13:00–14:30) and `MARKET_VN30F` (VN30 index futures: 0.1 a point, ±7%, 100,000 dong a point, from the 8:45 opening auction). Each names `timeZone: 'Asia/Ho_Chi_Minh'`. Prices are in thousands of dong, as price boards show them; `scaleMarketPrices(MARKET_HOSE, 1000)` reads them in dong.
+- **VN30 futures**: `vn30fLastTradingDay(year, month, isHoliday?)` (the third Thursday, earlier when that is a holiday) and `vn30fContracts(now)` (this month's, the next, and the last months of the two quarters after: `VN30F2611`…).
+- **Sessions on the exchange's clock**: `getCurrentSession(sessions, now, timeZone)`, by the time of day (weekends and holidays are the caller's); without a zone it reads this computer's clock, as before, and a zone it doesn't know gives null. Sessions can be `postClose`, and markets `futures`. The chart's session shading still comes from `setSymbolInfo`.
+- **The chart follows the band**: with a market set, `chart.roundPrice` and `chart.getPriceStep(price?)` use the step of the price's band (at the last close without a price), so prices from the chart's menus and the "+" by the price axis are valid ones. A symbol's `minTick` still comes first.
+- **Order ticket**: with a market set, the widget's ticket keeps the price, stop-loss and take-profit on the market's step and the order's price between the day's floor and ceiling, starts at one lot, and above one lot takes whole lots (fewer shares are an odd-lot order of their own). The three messages are in the widget's 30 languages.
+- Docs: the API page's Markets section and the Trading page, six languages; a Feature Lab scene with HPG, FPT and a VN30F contract.
+
+### Looks different after the update
+
+- `VN_COLORS` and `createVNTheme` use the price board's colours: green up, red down, purple ceiling, cyan floor, yellow reference. They were red up and blue down.
+- `MARKET_HOSE` trades in lots of 100 (it said 10), HNX and UPCoM start continuous trading at 9:15, and UPCoM has no closing auction.
+- `MARKET_NYSE`'s after-hours session is `postClose` (it was `preClose`), and the preset names `timeZone: 'America/New_York'`.
+
+### Fixes
+
+- `chart.setPriceLimits` changed the market object it was given, so every chart sharing a preset got the same reference price. It now keeps its own copy.
+
+### Project
+
 - **npm provenance**: releases are published with provenance, so npm shows the workflow run that built each version.
 - SECURITY.md names the supported releases as the latest 1.x of each package, instead of version numbers that went stale.
 

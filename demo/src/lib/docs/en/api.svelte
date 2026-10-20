@@ -130,6 +130,49 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>Markets: price steps, limits and sessions</h3>
+<p>
+  <code>setMarket</code> gives the chart an exchange's rules: candle colours, decimals, the
+  price step (which can depend on the price), the daily ceiling and floor, and the lot.
+  <code>roundPrice</code> and <code>getPriceStep</code> follow the step of the price's band, so
+  prices from the chart's menus land on valid prices, and the widget's order ticket checks
+  an order against the step, the day's limits and whole lots. A preset also carries the
+  exchange's sessions and time zone, for <code>getCurrentSession</code> and your own code; the
+  chart's session shading and extended hours come from <code>setSymbolInfo</code>. Presets cover the Vietnamese exchanges as of May 2025: HOSE (10, 50 or
+  100 dong a step by price, ±7%), its ETFs and covered warrants (10 dong), HNX (±10%, a
+  post-close session), UPCoM (±15%) and VN30 index futures (0.1 a point, ±7%, from 8:45);
+  shares and lots of 100, green up and red down, purple ceiling, cyan floor and yellow
+  reference. Their prices are in thousands of dong, as price boards show them;
+  <code>scaleMarketPrices(preset, 1000)</code> reads prices in dong.
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // or scaleMarketPrices(MARKET_HOSE, 1000) for 25350
+chart.setPriceLimits(25.35)                  // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35, a 50-dong step
+chart.getPriceStep(9.5)                      // 0.01 below 10,000 dong
+
+// The rules on their own
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, by the clock only
+
+// VN30 futures: the four listed contracts and their last trading days
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday, earlier on a holiday`}</code></pre>
+<p>
+  A market of your own is a <code>MarketConfig</code>: <code>priceStep</code>, or
+  <code>priceSteps: [{'{'} from, step {'}'}]</code> for bands, <code>priceLimits</code>,
+  <code>volumeUnit</code> (the lot), <code>sessions</code>, <code>timeZone</code> and
+  <code>colorScheme</code>. A symbol's own <code>minTick</code> comes before the market's
+  step. Exchanges change their rules from time to time; check a preset against your
+  exchange's current rules before you rely on it.
+</p>
+
 <h3>Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or

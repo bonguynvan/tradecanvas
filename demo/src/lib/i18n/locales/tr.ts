@@ -319,6 +319,18 @@ const tr: SiteMessages = {
         'Yatay bir çizgi çizin: etiketi de 1/32’lik kesirlerle okunur',
       ],
     },
+    vnmarket: {
+      title: 'Vietnam piyasaları',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE ve VN30 vadeli işlemleri, borsalarının işlettiği gibi: fiyat aralığına göre 10, 50 ya da 100 dongluk fiyat adımları, günün tavan, taban ve baz fiyatı, 100 hisselik lotlar, Vietnam saatiyle işlem seansları ve fiyat ekranının renkleri.',
+      tryThis: [
+        'Grafiğe sağ tıklayın: önerilen fiyatlar fiyat adımına oturur, HPG için 50 dong',
+        'Hesap panelinden yeni bir emir açın: 100 hisseyle başlar ve tavanı aşan bir fiyat reddedilir',
+        'FPT’ye (100 dongluk adımlar) ya da VN30F kontratına (08.45’ten itibaren) geçin',
+        'Mor, camgöbeği ve sarı çizgiler tavan, taban ve baz fiyattır',
+      ],
+    },
     subcent: {
       title: '30 dil, sent altı fiyatlar',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const tr: SiteMessages = {
         { name: 'Piyasa derinliği merdiveni', detail: 'Fiyata göre bid ve ask miktarı; işlem için tıklayın' },
         { name: 'İzleme listeleri için canlı kotasyonlar', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Haberler ve piyasa durumu', detail: 'fetchNews; açılışa veya kapanışa geri sayım' },
+        { name: 'Borsa kuralları', detail: 'setMarket: fiyat aralığına göre fiyat adımları, günlük tavan ve taban, lotlar, seanslar; HOSE, HNX, UPCoM ve VN30 vadeli işlemleri' },
       ],
       trading: [
         { name: 'Grafikte emirler ve pozisyonlar', detail: 'Değiştirmek için sürükleyin; çizgiden iptal edin, kapatın, ters çevirin' },
         { name: 'Gerçekleşme işaretleri', detail: 'executionFill içinde neden ve kâr ya da zarar' },
-        { name: 'Emir formu', detail: 'Miktar, tür, zarar durdur ve kâr al, geçerlilik süresi, yazarken denetlenir' },
+        { name: 'Emir formu', detail: 'Miktar, tür, zarar durdur ve kâr al, geçerlilik süresi, yazarken denetlenir; borsanın fiyat adımı, tavan, taban ve lotları' },
         { name: 'Hesap paneli', detail: 'Canlı kâr-zararıyla pozisyonlar, bekleyen emirler, gerçekleşmeler' },
         { name: 'Sinyaller ve işlem bölgeleri', detail: 'markers.*, tradeZones.* stil anahtarları' },
         { name: 'Backtest ve risk metrikleri', detail: '@tradecanvas/analytics: komisyon, kayma, Sharpe, Sortino, Calmar, düşüş' },

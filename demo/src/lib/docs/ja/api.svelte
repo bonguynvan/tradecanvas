@@ -128,6 +128,46 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>マーケット：呼値の単位、値幅制限、取引セッション</h3>
+<p>
+  <code>setMarket</code> はチャートに取引所のルールを与えます。ローソク足の色、小数点以下の桁数、呼値の単位
+  （価格によって変わることもあります）、当日の上限価格と下限価格、売買単位です。
+  <code>roundPrice</code> と <code>getPriceStep</code> は価格が属する価格帯の呼値の単位に従うので、チャートの
+  メニューから選んだ価格は常に有効な価格になり、ウィジェットの注文チケットは呼値の単位、当日の値幅、売買単位で注文を
+  チェックします。プリセットには取引所の取引セッションとタイムゾーンも含まれ、<code>getCurrentSession</code>
+  や独自のコードで使えます。チャートのセッションの塗りつぶしや時間外取引は <code>setSymbolInfo</code> から設定します。プリセットは 2025 年 5 月時点のベトナムの取引所に対応しています。HOSE（価格に応じて 10、50、
+  100 ドン刻み、±7%）、その ETF とカバードワラント（10 ドン）、HNX（±10%、引け後のセッションあり）、UPCoM
+  （±15%）、VN30 指数先物（0.1 ポイント刻み、±7%、8:45 開始）です。株式の売買単位は 100 株で、上昇は緑、
+  下落は赤、上限価格は紫、下限価格はシアン、基準価格は黄色です。価格は株価ボードと同じく 1,000 ドン単位で、
+  <code>scaleMarketPrices(preset, 1000)</code> を使うとドン単位の価格を扱えます。
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // 25350 のような価格には scaleMarketPrices(MARKET_HOSE, 1000)
+chart.setPriceLimits(25.35)                  // 基準価格：前日の終値
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35（50 ドン刻み）
+chart.getPriceStep(9.5)                      // 10,000 ドン未満は 0.01
+
+// ルールを単体で使う
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }、時刻だけで判定
+
+// VN30 先物：上場中の 4 限月とその最終取引日
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。祝日なら前倒し`}</code></pre>
+<p>
+  独自のマーケットは <code>MarketConfig</code> です。<code>priceStep</code>（価格帯ごとなら
+  <code>priceSteps: [{'{'} from, step {'}'}]</code>）、<code>priceLimits</code>、
+  <code>volumeUnit</code>（売買単位）、<code>sessions</code>、<code>timeZone</code>、
+  <code>colorScheme</code> を指定します。シンボル自身の <code>minTick</code> はマーケットの呼値の単位より優先されます。
+  取引所のルールは随時変わるため、プリセットに頼る前に、その取引所の現行ルールと照らし合わせてください。
+</p>
+
 <h3>シンボルの比較</h3>
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の

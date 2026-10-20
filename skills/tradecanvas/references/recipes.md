@@ -234,6 +234,27 @@ const chart = new Chart(document.getElementById('chart')!, {
 chart.setSymbolInfo({ symbol: 'ZN', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
 ```
 
+## A Vietnamese stock, and VN30 futures
+
+HOSE's rules on the chart: steps by price band, the day's ceiling and floor,
+lots of 100 in the order ticket, the price board's colours. Preset prices are
+in thousands of dong; `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong.
+
+```ts
+import { Chart, MARKET_HOSE, MARKET_VN30F, priceStepAt, vn30fContracts } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { extendedHours: false });
+chart.setMarket(MARKET_HOSE);
+chart.setPriceLimits(25.35);                       // the reference: yesterday's close
+console.log(chart.getPriceLimits());               // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.01
+
+// VN30 futures: the front contract and its last trading day
+const [front] = vn30fContracts(Date.now());
+chart.setMarket(MARKET_VN30F);
+console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

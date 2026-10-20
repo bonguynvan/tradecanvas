@@ -319,6 +319,18 @@ const de: SiteMessages = {
         'Zeichnen Sie eine horizontale Linie: Auch ihre Beschriftung zeigt 32stel',
       ],
     },
+    vnmarket: {
+      title: 'Vietnamesische Märkte',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE und VN30-Futures so, wie ihre Börsen sie führen: Preise in Schritten von 10, 50 oder 100 Dong je nach Preisband, Tagesobergrenze, Tagesuntergrenze und Referenzkurs, Lots zu 100 Stück, die Handelssitzungen in vietnamesischer Zeit und die Farben der Kurstafel.',
+      tryThis: [
+        'Rechtsklick auf den Chart: Die angebotenen Preise liegen auf der Tick-Größe, bei HPG 50 Dong',
+        'Öffnen Sie im Kontopanel eine neue Order: Sie beginnt bei 100 Stück, und ein Preis über der Obergrenze wird abgelehnt',
+        'Wechseln Sie zu FPT (Schritte von 100 Dong) oder zum VN30F-Kontrakt (ab 8:45 Uhr)',
+        'Die violette, die cyanfarbene und die gelbe Linie sind Obergrenze, Untergrenze und Referenzkurs',
+      ],
+    },
     subcent: {
       title: '30 Sprachen, Preise unter einem Cent',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const de: SiteMessages = {
         { name: 'Markttiefe-Leiter', detail: 'Bid- und Ask-Größe je Preis; Klick zum Handeln' },
         { name: 'Live-Kurse für Beobachtungslisten', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'News und Marktstatus', detail: 'fetchNews; ein Countdown bis zur Eröffnung oder zum Handelsschluss' },
+        { name: 'Börsenregeln', detail: 'setMarket: Tick-Größen nach Preisband, tägliche Ober- und Untergrenze, Lots, Handelssitzungen; HOSE, HNX, UPCoM und VN30-Futures' },
       ],
       trading: [
         { name: 'Orders und Positionen im Chart', detail: 'Zum Ändern ziehen; über die Linie stornieren, schließen und umkehren' },
         { name: 'Ausführungsmarken', detail: 'Grund und Gewinn oder Verlust in executionFill' },
-        { name: 'Ordermaske', detail: 'Menge, Typ, Stop-Loss und Take-Profit, Gültigkeit, schon beim Tippen geprüft' },
+        { name: 'Ordermaske', detail: 'Menge, Typ, Stop-Loss und Take-Profit, Gültigkeit, schon beim Tippen geprüft; Tick-Größe, Ober- und Untergrenze und Lots der Börse' },
         { name: 'Kontopanel', detail: 'Positionen mit Live-Gewinn und -Verlust, offene Orders, Ausführungen' },
         { name: 'Signale und Trade-Zonen', detail: 'Style-Schlüssel markers.*, tradeZones.*' },
         { name: 'Backtesting und Risikokennzahlen', detail: '@tradecanvas/analytics: Kommission, Slippage, Sharpe, Sortino, Calmar, Drawdown' },

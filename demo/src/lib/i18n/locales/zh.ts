@@ -320,6 +320,18 @@ const zh: SiteMessages = {
         '画一条水平线：它的标签同样以 1/32 显示',
       ],
     },
+    vnmarket: {
+      title: '越南市场',
+      stat: 'HOSE · VN30F',
+      blurb:
+        '按交易所的实际规则呈现 HOSE 和 VN30 期货：按价格区间以 10、50 或 100 越南盾为最小变动价位，当日的涨停价、跌停价和参考价，每手 100 股，越南时区的交易时段，以及行情报价板的配色。',
+      tryThis: [
+        '右键点击图表：给出的价格都落在最小变动价位上，HPG 为 50 越南盾',
+        '从账户面板新建委托：数量从 100 股起，超过涨停价的价格会被拒绝',
+        '切换到 FPT（最小变动价位 100 越南盾）或 VN30F 合约（8:45 开盘）',
+        '紫色、青色和黄色的线分别是涨停价、跌停价和参考价',
+      ],
+    },
     subcent: {
       title: '30 种语言，低于一美分的价格',
       stat: 'i18n',
@@ -693,11 +705,12 @@ const zh: SiteMessages = {
         { name: '深度报价阶梯', detail: '按价格显示买卖挂单量；点击即可交易' },
         { name: '自选列表的实时报价', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: '新闻与市场状态', detail: 'fetchNews；距离开盘或收盘的倒计时' },
+        { name: '交易所规则', detail: 'setMarket：按价格区间的最小变动价位、每日涨跌停价、每手股数、交易时段；HOSE、HNX、UPCoM 和 VN30 期货' },
       ],
       trading: [
         { name: '图表上的订单与持仓', detail: '拖动即可修改；直接在线上撤单、平仓和反手' },
         { name: '成交标记', detail: 'executionFill 中带有原因和盈亏' },
-        { name: '下单面板', detail: '数量、类型、止损与止盈、有效期，输入时即时校验' },
+        { name: '下单面板', detail: '数量、类型、止损与止盈、有效期，输入时即时校验；以及交易所的最小变动价位、涨停价、跌停价和每手股数' },
         { name: '账户面板', detail: '带实时盈亏的持仓、挂单、成交记录' },
         { name: '信号与交易区域', detail: 'markers.*、tradeZones.* 样式键' },
         { name: '回测与风险指标', detail: '@tradecanvas/analytics：手续费、滑点、Sharpe、Sortino、Calmar、回撤' },

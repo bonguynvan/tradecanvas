@@ -126,6 +126,46 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>市场：最小变动价位、涨跌停与交易时段</h3>
+<p>
+  <code>setMarket</code> 把交易所的规则交给图表：K线颜色、小数位数、最小变动价位（可随价格变化）、
+  当日涨停价和跌停价，以及每手股数。<code>roundPrice</code> 和
+  <code>getPriceStep</code> 遵循价格所在区间的最小变动价位，因此从图表菜单得到的价格都是有效价格；组件的下单窗口
+  也会按最小变动价位、当日涨跌停价和整手检查订单。预设还带有交易所的交易时段和时区，供
+  <code>getCurrentSession</code> 和你自己的代码使用；图表的交易时段着色和延长交易时段则来自
+  <code>setSymbolInfo</code>。内置预设覆盖截至 2025 年 5 月的越南交易所规则：HOSE（按价格每档
+  10、50 或 100 越南盾，±7%）、其 ETF 和备兑权证（10 越南盾）、HNX（±10%，设有收盘后交易时段）、UPCoM（±15%）
+  以及 VN30 指数期货（每档 0.1 点，±7%，8:45 开盘）；股票每手 100 股，绿涨红跌，紫色为涨停价、青色为跌停价、
+  黄色为参考价。预设中的价格以千越南盾为单位，与行情报价板一致；<code>scaleMarketPrices(preset, 1000)</code>
+  则按越南盾读取价格。
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // 或用 scaleMarketPrices(MARKET_HOSE, 1000) 处理 25350 这样的价格
+chart.setPriceLimits(25.35)                  // 参考价：前一交易日的收盘价
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35，最小变动 50 越南盾
+chart.getPriceStep(9.5)                      // 低于 10,000 越南盾时为 0.01
+
+// 单独使用这些规则
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }，仅按时钟判断
+
+// VN30 期货：四个挂牌合约及其最后交易日
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四，遇节假日则提前`}</code></pre>
+<p>
+  自定义市场是一个 <code>MarketConfig</code>：<code>priceStep</code>（按价格区间分档时用
+  <code>priceSteps: [{'{'} from, step {'}'}]</code>）、<code>priceLimits</code>、
+  <code>volumeUnit</code>（每手数量）、<code>sessions</code>、<code>timeZone</code> 和
+  <code>colorScheme</code>。品种自身的 <code>minTick</code> 优先于市场的最小变动价位。交易所会不时调整规则；
+  在依赖某个预设之前，请先对照你所在交易所的现行规则进行核实。
+</p>
+
 <h3>品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，

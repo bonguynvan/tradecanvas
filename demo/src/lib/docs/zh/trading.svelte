@@ -151,6 +151,8 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   买入或卖出，市价、限价或止损，数量、价格、可选的止损和止盈，以及有效期。填写时它会实时检查订单
   （限价买单应低于市价，止损应位于入场价亏损的一侧……），并显示盈亏比。
   下单时会发出 <code>orderPlace</code> 意图。
+  设置了市场（<code>chart.setMarket</code>）后，它还会让各个价格落在市场的最小变动价位上，并让委托价格处于当日涨停价与
+  跌停价之间；数量从一手起，超过一手时只接受整手（不足一手的股数应作为单独的零股委托）。
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

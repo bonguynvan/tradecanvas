@@ -132,6 +132,51 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
+<h3>Mercados: fluctuación mínima, límites y sesiones</h3>
+<p>
+  <code>setMarket</code> le da al gráfico las reglas de una bolsa: colores de las velas, decimales, la
+  fluctuación mínima (que puede depender del precio), el precio techo y el precio suelo del día, y el
+  lote. <code>roundPrice</code> y <code>getPriceStep</code>
+  siguen la fluctuación del tramo de cada precio, así que los precios de los menús del gráfico son
+  siempre válidos, y el ticket de orden del widget comprueba la orden según la fluctuación, los límites
+  del día y los lotes completos. Un preajuste también lleva las sesiones y la zona horaria de la
+  bolsa, para <code>getCurrentSession</code> y tu propio código; el sombreado de sesión y el horario
+  extendido del gráfico vienen de <code>setSymbolInfo</code>. Hay preajustes para las bolsas de Vietnam según sus reglas de mayo de
+  2025: HOSE (pasos de 10, 50 o 100 dongs según el precio, ±7%), sus ETF y warrants cubiertos
+  (10 dongs), HNX (±10%, con una sesión posterior al cierre), UPCoM (±15%) y los futuros sobre el
+  índice VN30 (0,1 puntos por paso, ±7%, desde las 8:45); acciones en lotes de 100, verde al alza y
+  rojo a la baja, techo morado, suelo cian y referencia amarilla. Sus precios están en miles de dongs,
+  como los muestran las pizarras de precios; <code>scaleMarketPrices(preset, 1000)</code> lee los
+  precios en dongs.
+</p>
+<pre><code>{`import {
+  MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
+  vn30fContracts, vn30fLastTradingDay,
+} from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)                 // o scaleMarketPrices(MARKET_HOSE, 1000) para 25350
+chart.setPriceLimits(25.35)                  // la referencia: el cierre de ayer
+chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
+chart.roundPrice(25.37)                      // 25.35, un paso de 50 dongs
+chart.getPriceStep(9.5)                      // 0.01 por debajo de 10.000 dongs
+
+// Las reglas por separado
+priceStepAt(25.35, MARKET_HOSE)              // 0.05
+roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, solo por la hora
+
+// Futuros del VN30: los cuatro contratos listados y su último día de negociación
+vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, antes si es festivo`}</code></pre>
+<p>
+  Un mercado propio es un <code>MarketConfig</code>: <code>priceStep</code>, o
+  <code>priceSteps: [{'{'} from, step {'}'}]</code> por tramos, <code>priceLimits</code>,
+  <code>volumeUnit</code> (el lote), <code>sessions</code>, <code>timeZone</code> y
+  <code>colorScheme</code>. El <code>minTick</code> propio de un símbolo va por delante de la
+  fluctuación del mercado. Las bolsas cambian sus reglas de vez en cuando; contrasta un preajuste con
+  las reglas vigentes de tu bolsa antes de confiar en él.
+</p>
+
 <h3>Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su

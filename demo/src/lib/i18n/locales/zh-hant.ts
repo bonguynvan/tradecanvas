@@ -319,6 +319,18 @@ const zhHant: SiteMessages = {
         '畫一條水平線：它的標籤同樣以 1/32 顯示',
       ],
     },
+    vnmarket: {
+      title: '越南市場',
+      stat: 'HOSE · VN30F',
+      blurb:
+        '依交易所的實際規則呈現 HOSE 與 VN30 期貨：依價格區間以 10、50 或 100 越南盾為升降單位，當日的漲停價、跌停價與參考價，每張 100 股，越南時區的交易時段，以及報價看板的配色。',
+      tryThis: [
+        '在圖表上按右鍵：提供的價格都落在升降單位上，HPG 為 50 越南盾',
+        '從帳戶面板新增委託：數量從 100 股起，超過漲停價的價格會被拒絕',
+        '切換到 FPT（升降單位 100 越南盾）或 VN30F 契約（8:45 開盤）',
+        '紫色、青色與黃色的線分別是漲停價、跌停價與參考價',
+      ],
+    },
     subcent: {
       title: '30 種語言，不到一美分的價格',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const zhHant: SiteMessages = {
         { name: '深度報價階梯', detail: '依價格顯示買賣掛單量；點擊即可交易' },
         { name: '自選清單的即時報價', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: '新聞與市場狀態', detail: 'fetchNews；距離開盤或收盤的倒數' },
+        { name: '交易所規則', detail: 'setMarket：依價格區間的升降單位、每日漲跌停價、交易單位、交易時段；HOSE、HNX、UPCoM 與 VN30 期貨' },
       ],
       trading: [
         { name: '圖表上的委託與部位', detail: '拖曳即可修改；直接在線上刪單、平倉與反手' },
         { name: '成交標記', detail: 'executionFill 中附有原因與損益' },
-        { name: '下單面板', detail: '數量、類型、停損與停利、有效期限，輸入時即時檢查' },
+        { name: '下單面板', detail: '數量、類型、停損與停利、有效期限，輸入時即時檢查；以及交易所的升降單位、漲停價、跌停價與交易單位' },
         { name: '帳戶面板', detail: '附即時損益的部位、未成交委託、成交紀錄' },
         { name: '訊號與交易區域', detail: 'markers.*、tradeZones.* 樣式鍵' },
         { name: '回測與風險指標', detail: '@tradecanvas/analytics：手續費、滑價、Sharpe、Sortino、Calmar、回撤' },

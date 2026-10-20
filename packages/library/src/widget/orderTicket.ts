@@ -23,7 +23,25 @@ export type OrderTicketProblem =
   | 'stopLossSide'
   | 'takeProfitSide'
   | 'limitSide'
-  | 'stopSide';
+  | 'stopSide'
+  /** A price off the market's step (HOSE: 0.05 between 10 and 50 thousand dong). */
+  | 'priceStep'
+  /** A limit or stop price beyond the day's ceiling or floor. */
+  | 'priceLimits'
+  /** More than a lot, but not whole lots. */
+  | 'lot';
+
+/** A market's own rules for a ticket: its price step, the day's limits, its lot. */
+export interface OrderTicketRules {
+  /** A price on the market's step; a price it changes is off the step. */
+  roundPrice?: (price: number) => number;
+  limits?: { ceiling: number; floor: number } | null;
+  /** Shares in a lot. Fewer is an odd lot, an order of its own; more must be whole lots. */
+  lot?: number;
+}
+
+/** Prices that differ by less than this are the same price (float dust). */
+const PRICE_EPSILON = 1e-9;
 
 /**
  * Where the position would start: the limit or stop price, or the market for
@@ -38,7 +56,7 @@ function entryOf(draft: OrderTicketDraft, lastPrice: number | null): number | nu
  * or take-profit on the wrong side of the entry, a limit or stop on the wrong side
  * of the market (it would fill at once).
  */
-export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number | null): OrderTicketProblem[] {
+export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number | null, rules: OrderTicketRules = {}): OrderTicketProblem[] {
   const problems: OrderTicketProblem[] = [];
   if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity)) problems.push('quantity');
   if (draft.type !== 'market' && (!(draft.price > 0) || !Number.isFinite(draft.price))) problems.push('price');
@@ -58,6 +76,19 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
     if (draft.stopLoss !== null && valid(draft.stopLoss) && (buy ? draft.stopLoss >= entry : draft.stopLoss <= entry)) problems.push('stopLossSide');
     if (draft.takeProfit !== null && valid(draft.takeProfit) && (buy ? draft.takeProfit <= entry : draft.takeProfit >= entry)) problems.push('takeProfitSide');
   }
+  return [...problems, ...marketProblems(draft, rules)];
+}
+
+/** What a market's rules find: prices off its step or beyond the day's limits, broken lots. */
+function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): OrderTicketProblem[] {
+  const problems: OrderTicketProblem[] = [];
+  const limitPrice = draft.type === 'market' ? null : draft.price;
+  const priced = [limitPrice, draft.stopLoss, draft.takeProfit].filter((p): p is number => p !== null && Number.isFinite(p) && p > 0);
+  const { roundPrice, limits, lot } = rules;
+  if (roundPrice && priced.some((p) => Math.abs(roundPrice(p) - p) > PRICE_EPSILON)) problems.push('priceStep');
+  if (limits && limitPrice !== null && limitPrice > 0
+    && (limitPrice > limits.ceiling + PRICE_EPSILON || limitPrice < limits.floor - PRICE_EPSILON)) problems.push('priceLimits');
+  if (lot !== undefined && lot > 1 && draft.quantity > lot && draft.quantity % lot !== 0) problems.push('lot');
   return problems;
 }
 

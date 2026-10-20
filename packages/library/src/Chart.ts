@@ -26,6 +26,7 @@ import type {
   DepthData,
   TradingConfig,
   MarketConfig,
+  PriceLimitInfo,
   Locale,
   StreamConfig,
   ConnectionState,
@@ -40,7 +41,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
@@ -2070,21 +2071,35 @@ export class Chart {
    */
   roundPrice(price: number): number {
     if (!Number.isFinite(price)) return price;
-    const tick = this.symbolInfo?.minTick ?? this.priceUnit ?? undefined;
-    if (tick !== undefined && tick > 0) return Number((Math.round(price / tick) * tick).toFixed(stepDecimals(tick)));
+    const tick = this.stepAt(price);
+    if (tick !== undefined) return Number((Math.round(price / tick) * tick).toFixed(stepDecimals(tick)));
     const { min, max } = this.viewport.getState().priceRange;
     return Number(price.toFixed(this.marketPricePrecision ?? autoPricePrecision(min, max)));
   }
 
-  /**
-   * The smallest step prices move in: the symbol's `minTick`, a fraction's
-   * unit (`priceFormat: { denominator: 32 }`), else one unit of the decimals
-   * prices show. `roundPrice` puts prices on it; a plugin can size price rows
-   * by it.
-   */
-  getPriceStep(): number {
+  /** The newest bar's close, 0 without bars. */
+  private lastClose(): number {
+    const bars = this.dataManager.getData();
+    return bars[bars.length - 1]?.close ?? 0;
+  }
+
+  /** The symbol's `minTick`, a fraction's unit, or the market's step at `price` (its band). */
+  private stepAt(price: number): number | undefined {
     const tick = this.symbolInfo?.minTick ?? this.priceUnit ?? undefined;
     if (tick !== undefined && tick > 0) return tick;
+    return this.marketConfig ? priceStepAt(price, this.marketConfig) : undefined;
+  }
+
+  /**
+   * The smallest step prices move in: the symbol's `minTick`, a fraction's
+   * unit (`priceFormat: { denominator: 32 }`), the market's step at `price`
+   * (at the last close without one: HOSE's step depends on the price), else
+   * one unit of the decimals prices show. `roundPrice` puts prices on it; a
+   * plugin can size price rows by it.
+   */
+  getPriceStep(price?: number): number {
+    const tick = this.stepAt(price ?? this.lastClose());
+    if (tick !== undefined) return tick;
     const { min, max } = this.viewport.getState().priceRange;
     const decimals = this.marketPricePrecision ?? autoPricePrecision(min, max);
     return Number((10 ** -decimals).toFixed(decimals));
@@ -4740,15 +4755,24 @@ export class Chart {
     return this.marketConfig;
   }
 
+  /**
+   * The day's ceiling, floor and reference prices, from the market's limits
+   * and the reference `setPriceLimits` gave; null without them.
+   */
+  getPriceLimits(): PriceLimitInfo | null {
+    const market = this.marketConfig;
+    if (!market?.priceLimits?.enabled || !market.priceLimits.referencePrice) return null;
+    return computePriceLimits(market.priceLimits.referencePrice, market);
+  }
+
+  /** The day's reference price, for the limits; a later `setMarket` starts without one. */
   setPriceLimits(referencePrice: number): void {
-    if (!this.marketConfig) return;
-    const limits = computePriceLimits(referencePrice, this.marketConfig);
-    if (limits) {
-      this.marketConfig.priceLimits = {
-        ...this.marketConfig.priceLimits!,
-        referencePrice,
-      };
-    }
+    if (!this.marketConfig?.priceLimits) return;
+    // A copy: the market given may be a preset other charts share.
+    this.marketConfig = {
+      ...this.marketConfig,
+      priceLimits: { ...this.marketConfig.priceLimits, referencePrice },
+    };
     this.engine.requestRender();
   }
 
@@ -5281,9 +5305,8 @@ export class Chart {
   }
 
   private buildPriceLimits() {
-    if (!this.marketConfig?.priceLimits?.enabled || !this.marketConfig.priceLimits.referencePrice) return null;
-    const limits = computePriceLimits(this.marketConfig.priceLimits.referencePrice, this.marketConfig);
-    if (!limits) return null;
+    const limits = this.getPriceLimits();
+    if (!limits || !this.marketConfig) return null;
     return {
       ...limits,
       colors: this.marketConfig.colorScheme ? {
