@@ -120,14 +120,29 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>自定义叠加层</h2>
 <p><code>OverlayPlugin</code> 每一帧都在你选择的图层上绘制，并接收实时的视口、数据和主题：</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code> 按图表自身的方式定位：<code>timeToX</code> / <code>xToTime</code> 按 K 线时间（两根 K 线之间及最新 K 线之后按比例），
+  <code>indexToX</code> / <code>xToIndex</code>，<code>priceToY</code> / <code>yToPrice</code>（对数坐标与反转坐标同样适用），
+  <code>barWidth</code>，以及屏幕上可见的 K 线范围 <code>visible</code>。要按价格网格划分行，用 <code>chart.getPriceStep()</code>：
+  品种的最小变动价位（<code>minTick</code>）、分数单位，或当前显示小数位的一个单位。指标和图表类型的渲染器只拿到 viewport，
+  为此导出了 <code>priceToY</code>、<code>barIndexToX</code>、<code>timeToX</code> 及其反函数。这里的 K 线是屏幕上绘制的序列：
+  在 Renko 或 Kagi 图上就是它的砖块（<code>chart.isTimeAligned()</code> 表示它们是否就是数据源的 K 线）。
+</p>
 
 <p>完整的插件类型签名请参见 <a href={href('/docs/api')}>API 参考</a>。</p>

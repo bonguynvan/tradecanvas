@@ -335,7 +335,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <p>
   Los precios que vienen del puntero se pueden ajustar a la cuadrícula del mercado con
   <code>chart.roundPrice(price)</code>: a un múltiplo del <code>minTick</code> del símbolo o,
-  si no lo tiene, a su precisión. Los menús y el ticket de orden de ChartWidget lo hacen.
+  si no lo tiene, a su precisión. Los menús, el ticket de orden y la pestaña Coordinates de los ajustes de dibujo de ChartWidget lo hacen.
+  <code>chart.getPriceStep()</code> devuelve ese paso.
 </p>
 
 <h2>ChartWidget</h2>

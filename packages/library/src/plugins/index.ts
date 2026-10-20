@@ -7,6 +7,8 @@ export {
   clearGlobalPlugins,
 } from './registry.js';
 export { PLUGIN_API_VERSION, pluginKey, overlaysForLayer } from './contracts.js';
+export { overlayScale } from './overlayScale.js';
+export type { FrameScale } from './overlayScale.js';
 export type {
   ChartPlugin,
   ChartTypePlugin,

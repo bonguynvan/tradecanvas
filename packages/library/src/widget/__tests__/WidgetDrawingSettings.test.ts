@@ -107,6 +107,32 @@ describe('WidgetDrawingSettings', () => {
     expect(calls.change.at(-1)).toEqual({ options: { levels: [{ value: 0, visible: true }, { value: 0.5, visible: true }], extendLeft: false, labelPosition: 'left' } });
   });
 
+  it('shows anchor prices on the market’s grid, and puts an edited one on it', () => {
+    const changes: unknown[] = [];
+    const grid = new WidgetDrawingSettings(host, {
+      onBegin: () => {},
+      onChange: (_id, patch) => changes.push(patch),
+      onEnd: () => {},
+      toWallTime: () => ({ date: '2026-01-02', time: '00:00' }),
+      fromWallTime: () => null,
+      roundPrice: (price) => Number((Math.round(price / 0.25) * 0.25).toFixed(2)),
+      priceStep: () => 0.25,
+    });
+    grid.open({ ...target(), anchors: [{ time: 1000, price: 534.86074226 }, { time: 2000, price: 20 }] });
+    tab('Coordinates').click();
+    const prices = [...host.querySelectorAll<HTMLInputElement>('input[type=number]')];
+    expect(prices.map((p) => p.value)).toEqual(['534.75', '20']);
+    expect(prices[0].step).toBe('0.25');
+
+    change(prices[1], '20.1');
+    expect(prices[1].value).toBe('20');
+    // Only the edited point moves: the other keeps its exact price.
+    expect(changes).toEqual([{ anchors: [{ time: 1000, price: 534.86074226 }, { time: 2000, price: 20 }] }]);
+    change(prices[0], '534.9');
+    expect(changes.at(-1)).toEqual({ anchors: [{ time: 1000, price: 535 }, { time: 2000, price: 20 }] });
+    grid.destroy();
+  });
+
   it('moves anchors by date, time and price', () => {
     dialog.open(target());
     tab('Coordinates').click();

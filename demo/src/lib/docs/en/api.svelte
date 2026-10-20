@@ -328,7 +328,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <p>
   Prices from the pointer can be put on the market's grid with
   <code>chart.roundPrice(price)</code>: a multiple of the symbol's <code>minTick</code>, else
-  its precision. ChartWidget's menus and order ticket do this.
+  its precision. ChartWidget's menus, order ticket and the drawing settings' Coordinates tab do this.
+  <code>chart.getPriceStep()</code> is that step itself.
 </p>
 
 <h2>ChartWidget</h2>

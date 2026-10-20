@@ -49,6 +49,10 @@ export interface DrawingSettingsCallbacks {
   /** An anchor's time as the date and time fields show it (the chart's zone), and back. */
   toWallTime: (time: number) => { date: string; time: string };
   fromWallTime: (date: string, time: string) => number | null;
+  /** A price on the market's grid; the Coordinates tab shows and takes prices on it. */
+  roundPrice?: (price: number) => number;
+  /** The market's smallest price step, for the price fields' arrows. */
+  priceStep?: () => number;
   /** Alert when the price crosses the drawing. */
   onAddAlert?: (id: string) => void;
   /** Make these the options new drawings of the tool start with. */
@@ -581,8 +585,23 @@ export class WidgetDrawingSettings {
       time.addEventListener('change', onTime);
       section.appendChild(settingsRow(this.t('drawingSettings.date'), date));
       section.appendChild(settingsRow(this.t('drawingSettings.time'), time));
-      section.appendChild(settingsRow(this.t('drawingSettings.price'), numberInput(anchor.price, { step: 'any' }, (price) => this.setAnchor(index, { price }))));
+      section.appendChild(settingsRow(this.t('drawingSettings.price'), this.priceInput(anchor.price, (price) => this.setAnchor(index, { price }))));
     });
+  }
+
+  /**
+   * A price field on the market's grid. It shows the price rounded, and leaves
+   * the point where it is until the field is edited.
+   */
+  private priceInput(price: number, onChange: (price: number) => void): HTMLInputElement {
+    const round = this.callbacks.roundPrice ?? ((p: number) => p);
+    const step = this.callbacks.priceStep?.();
+    const input = numberInput(round(price), { step: step !== undefined && step > 0 ? step : 'any' }, (typed) => {
+      const onGrid = round(typed);
+      input.value = String(onGrid);
+      onChange(onGrid);
+    });
+    return input;
   }
 
   private setAnchor(index: number, patch: Partial<AnchorPoint>): void {

@@ -128,14 +128,31 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>Capa personalizada</h2>
 <p>Un <code>OverlayPlugin</code> dibuja cada fotograma en la capa que elijas y recibe la vista, los datos y el tema actuales:</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code> coloca las cosas donde las dibuja el gráfico: <code>timeToX</code> / <code>xToTime</code>
+  por la hora de la vela (entre velas y más allá de la última, en proporción), <code>indexToX</code> / <code>xToIndex</code>,
+  <code>priceToY</code> / <code>yToPrice</code> (también en escala logarítmica o invertida), <code>barWidth</code> y
+  <code>visible</code>, las velas en pantalla. Para filas en la cuadrícula de precios, <code>chart.getPriceStep()</code> es el
+  paso mínimo del símbolo (<code>minTick</code>), la unidad de una fracción o una unidad de los decimales que se muestran.
+  Los renderizadores de indicadores y tipos de gráfico solo reciben el viewport: para ellos se exportan
+  <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> y sus inversas. Las velas son las que están en
+  pantalla: en un gráfico Renko o Kagi, sus ladrillos (<code>chart.isTimeAligned()</code> indica cuándo son las velas del feed).
+</p>
 
 <p>Consulta la <a href={href('/docs/api')}>referencia de la API</a> para ver las firmas de tipos completas de los plugins.</p>
