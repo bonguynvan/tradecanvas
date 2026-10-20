@@ -144,5 +144,10 @@ registerPlugin({
   为此导出了 <code>priceToY</code>、<code>barIndexToX</code>、<code>timeToX</code> 及其反函数。这里的 K 线是屏幕上绘制的序列：
   在 Renko 或 Kagi 图上就是它的砖块（<code>chart.isTimeAligned()</code> 表示它们是否就是数据源的 K 线）。
 </p>
+<p>
+  带有自身设置（显示模式、开关）的叠加层可以立即显示变化，即使没有新的 tick 触发重绘：在插件上设置
+  <code>enabled: false</code> 可在保持注册的同时隐藏它；修改设置或开关后调用 <code>chart.requestRender()</code>。
+  下一帧之前的多次请求只绘制一帧。
+</p>
 
 <p>完整的插件类型签名请参见 <a href={href('/docs/api')}>API 参考</a>。</p>

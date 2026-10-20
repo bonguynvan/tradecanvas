@@ -1,8 +1,18 @@
 # Changelog
 
-## 1.18.0 (2026-10-20)
+## Unreleased
 
-React, Vue and Svelte components: 1.2.5.
+Collected on `main` for the next release. Not on npm yet.
+
+### A frame on request, and overlays switched off
+
+- **`chart.requestRender()`** draws a frame soon, though nothing the chart knows of changed: after a plugin's own setting changed (an overlay's display mode, say), in a quiet market with no ticks to redraw it. The frame refits the scales to the data as a tick's would; requests before it make one frame, and a destroyed chart ignores them.
+- **`enabled: false` on an overlay plugin** leaves it registered but undrawn; it is read every frame, so switching it and calling `requestRender()` shows the change at once.
+- Docs: the Plugins page, six languages; the agent skill's overlay recipe.
+
+## 1.18.1 (2026-10-20)
+
+React, Vue and Svelte components: 1.2.6.
 
 ### Fixes
 

@@ -4888,12 +4888,24 @@ export class Chart {
     });
   }
 
+  /**
+   * Draw a frame soon, though nothing the chart knows of changed: after a
+   * plugin's own settings changed, say (an overlay's display mode), in a
+   * quiet market with no ticks to redraw it. The frame refits the scales to
+   * the data as a tick's would. Requests before the frame make one frame; a
+   * destroyed chart ignores them.
+   */
+  requestRender(): void {
+    this.scheduleRender();
+  }
+
   /** Lightweight render for streaming updates. No layout resolve, no indicator recalc. */
   private scheduleRender(): void {
-    if (this.renderScheduled) return;
+    if (this.renderScheduled || this.disposed) return;
     this.renderScheduled = true;
     requestAnimationFrame(() => {
       this.renderScheduled = false;
+      if (this.disposed) return;
       // A tick moves indicator values: refit the panes' scales.
       this.panelInfoCache = null;
       this.fitDataAndAxes();

@@ -151,5 +151,10 @@ registerPlugin({
   nến đang vẽ: trên chart Renko hay Kagi là các viên gạch của nó (<code>chart.isTimeAligned()</code> cho biết khi nào
   chúng trùng với nến của nguồn dữ liệu).
 </p>
+<p>
+  Overlay có cài đặt riêng (kiểu hiển thị, công tắc) có thể hiện thay đổi ngay, kể cả khi không có tick nào
+  tới để vẽ lại chart: đặt <code>enabled: false</code> trên plugin để ẩn nó mà vẫn giữ đăng ký, và gọi
+  <code>chart.requestRender()</code> sau khi đổi một trong hai. Nhiều lần gọi trước khung hình kế tiếp chỉ vẽ một khung.
+</p>
 
 <p>Xem <a href={href('/docs/api')}>Tham chiếu API</a> để biết đầy đủ chữ ký kiểu của plugin.</p>

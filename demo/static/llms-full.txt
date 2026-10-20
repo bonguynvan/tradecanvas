@@ -606,6 +606,11 @@ const closeBands: OverlayPlugin = {
   },
 };
 chart.plugins.register({ kind: 'overlay', plugin: closeBands });
+
+// A switch of the overlay's own: hide it without unregistering, and show the
+// change at once, even with no tick coming to redraw the chart.
+closeBands.enabled = false;
+chart.requestRender();
 ```
 
 An indicator's own `render` gets the viewport alone: `priceToY`, `barIndexToX`,

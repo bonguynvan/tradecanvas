@@ -154,5 +154,11 @@ registerPlugin({
   <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> y sus inversas. Las velas son las que están en
   pantalla: en un gráfico Renko o Kagi, sus ladrillos (<code>chart.isTimeAligned()</code> indica cuándo son las velas del feed).
 </p>
+<p>
+  Un overlay con ajustes propios (un modo de visualización, un interruptor) puede mostrar un cambio al instante,
+  aunque no llegue ningún tick que redibuje el gráfico: pon <code>enabled: false</code> en el plugin para ocultarlo
+  sin quitar su registro, y llama a <code>chart.requestRender()</code> tras cambiar cualquiera de los dos. Varias
+  peticiones antes del siguiente fotograma dibujan uno solo.
+</p>
 
 <p>Consulta la <a href={href('/docs/api')}>referencia de la API</a> para ver las firmas de tipos completas de los plugins.</p>
