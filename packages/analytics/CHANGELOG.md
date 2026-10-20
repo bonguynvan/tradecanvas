@@ -1,5 +1,11 @@
 # @tradecanvas/analytics
 
+## 1.19.0
+
+### Patch Changes
+
+- @tradecanvas/commons@1.19.0
+
 ## 1.18.1
 
 ### Patch Changes
