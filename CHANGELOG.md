@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.18.0 (2026-10-20)
 
-Collected on `main` for the next release. Not on npm yet.
+React, Vue and Svelte components: 1.2.5.
 
 ### Prices on the market's grid, and a scale for plugins
 
