@@ -1,5 +1,16 @@
 # @tradecanvas/chart
 
+## 1.18.0
+
+### Minor Changes
+
+- a77354c: The drawing settings' Coordinates tab shows and takes prices on the market's grid. New `chart.getPriceStep()`, `overlayScale(context)` for overlay plugins, and the scale functions (`priceToY`, `barIndexToX`, `timeToX` and their inverses) exported from `@tradecanvas/chart`.
+
+### Patch Changes
+
+- @tradecanvas/commons@1.18.0
+- @tradecanvas/core@1.18.0
+
 ## 1.17.0
 
 ### Minor Changes
