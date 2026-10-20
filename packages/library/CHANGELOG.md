@@ -1,5 +1,14 @@
 # @tradecanvas/chart
 
+## 1.18.1
+
+### Patch Changes
+
+- d163d46: On a tick timeframe, and on Renko-like charts, the time axis and the crosshair no longer label the empty space beside the bars with extrapolated times.
+- Updated dependencies [d163d46]
+  - @tradecanvas/core@1.18.1
+  - @tradecanvas/commons@1.18.1
+
 ## 1.18.0
 
 ### Minor Changes
