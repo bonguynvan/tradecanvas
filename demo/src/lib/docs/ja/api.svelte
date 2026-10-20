@@ -317,7 +317,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   ポインターの位置から得た価格は、<code>chart.roundPrice(price)</code> で市場の価格刻みに合わせられます。
-  シンボルの <code>minTick</code> の倍数に、それがなければシンボルの精度に丸めます。ChartWidget のメニューと注文チケットはこれを使っています。
+  シンボルの <code>minTick</code> の倍数に、それがなければシンボルの精度に丸めます。ChartWidget のメニュー、注文チケット、描画設定の Coordinates タブはこれを使っています。
+  <code>chart.getPriceStep()</code> はその刻みそのものを返します。
 </p>
 
 <h2>ChartWidget</h2>

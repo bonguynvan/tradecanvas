@@ -2062,6 +2062,20 @@ export class Chart {
   }
 
   /**
+   * The smallest step prices move in: the symbol's `minTick`, a fraction's
+   * unit (`priceFormat: { denominator: 32 }`), else one unit of the decimals
+   * prices show. `roundPrice` puts prices on it; a plugin can size price rows
+   * by it.
+   */
+  getPriceStep(): number {
+    const tick = this.symbolInfo?.minTick ?? this.priceUnit ?? undefined;
+    if (tick !== undefined && tick > 0) return tick;
+    const { min, max } = this.viewport.getState().priceRange;
+    const decimals = this.marketPricePrecision ?? autoPricePrecision(min, max);
+    return Number((10 ** -decimals).toFixed(decimals));
+  }
+
+  /**
    * How prices read on the price scale and everything that prints one: a
    * function of yours, fractions of a point (`{ denominator: 32 }` prints
    * `101'16`), or null for decimals. Indicator panes keep their own numbers.

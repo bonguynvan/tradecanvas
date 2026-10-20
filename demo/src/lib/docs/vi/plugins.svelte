@@ -124,14 +124,32 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>Lớp phủ tuỳ chỉnh</h2>
 <p>Một <code>OverlayPlugin</code> vẽ mỗi khung hình trên lớp bạn chọn, nhận khung nhìn, dữ liệu và giao diện (theme) hiện tại:</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code> đặt mọi thứ đúng chỗ chart vẽ: <code>timeToX</code> / <code>xToTime</code>
+  theo thời gian nến (giữa hai nến và sau nến mới nhất thì theo tỉ lệ), <code>indexToX</code> / <code>xToIndex</code>,
+  <code>priceToY</code> / <code>yToPrice</code> (cả thang log và thang đảo ngược), <code>barWidth</code>, và
+  <code>visible</code> là các nến đang hiện trên màn hình. Muốn chia hàng theo lưới giá thì dùng
+  <code>chart.getPriceStep()</code>: bước giá nhỏ nhất của mã (<code>minTick</code>), đơn vị phân số, hoặc một
+  đơn vị của số lẻ đang hiển thị. Renderer của chỉ báo và loại chart chỉ nhận viewport; cho chúng,
+  <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> và các hàm ngược được export sẵn. Các nến là
+  nến đang vẽ: trên chart Renko hay Kagi là các viên gạch của nó (<code>chart.isTimeAligned()</code> cho biết khi nào
+  chúng trùng với nến của nguồn dữ liệu).
+</p>
 
 <p>Xem <a href={href('/docs/api')}>Tham chiếu API</a> để biết đầy đủ chữ ký kiểu của plugin.</p>

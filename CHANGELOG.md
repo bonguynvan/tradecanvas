@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Collected on `main` for the next release. Not on npm yet.
+
+### Prices on the market's grid, and a scale for plugins
+
+- **The drawing settings' Coordinates tab shows prices on the market's grid**: a point dragged to 534.86074226 reads 534.75 with a step of 0.25, or 22,000 on a stock that moves in 10 dong, and an edited price lands on the grid. A point you don't edit keeps its exact place. The field's arrows move by the price step.
+- **`chart.getPriceStep()`**: the smallest step prices move in, the one `roundPrice` rounds to: the symbol's `minTick`, a fraction's unit (`priceFormat: { denominator: 32 }`), else one unit of the decimals prices show.
+- **`overlayScale(context)` for overlay plugins**: in `render(ctx, context)`, it places things where the chart draws them: `timeToX` / `xToTime` by bar time (between bars and past the newest in proportion), `indexToX` / `xToIndex`, `priceToY` / `yToPrice` on a log or inverted scale too, `barWidth`, and `visible`, the bars on screen (type `FrameScale`). Its bars are those of `context.data`, the series on screen: a Renko or Kagi chart's bricks, not the feed's bars. The plugin contracts don't change.
+- **The scale functions are exported** from `@tradecanvas/chart` for renderers that get the viewport alone (an indicator's own `render`, a chart type's renderer): `priceToY`, `priceToYMapper`, `yToPrice`, `barIndexToX`, `xToBarIndex`, `timeToX`, `xToTime`, `timestampToBarIndex`.
+- Docs: the Plugins page shows an overlay drawn with `overlayScale`, and the API page `getPriceStep`, six languages; a recipe in the agent skill.
+
 ## 1.17.0 (2026-10-07)
 
 React, Vue and Svelte components: 1.2.4.

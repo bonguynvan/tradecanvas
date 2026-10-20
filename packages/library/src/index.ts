@@ -178,6 +178,8 @@ export {
 
 // Re-export base classes for custom indicators and drawing tools
 export { IndicatorBase, IndicatorValueMap, DrawingBase } from '@tradecanvas/core';
+// Screen geometry of a frame, for plugins that draw (indicators, overlays, chart types).
+export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 
 // Re-export realtime module
 export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';

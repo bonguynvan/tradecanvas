@@ -308,7 +308,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   来自指针的价格可以用 <code>chart.roundPrice(price)</code> 对齐到市场的价格刻度：
-  取品种 <code>minTick</code> 的整数倍，未设置时按品种的价格精度取整。ChartWidget 的菜单和下单窗口都会这样做。
+  取品种 <code>minTick</code> 的整数倍，未设置时按品种的价格精度取整。ChartWidget 的菜单、下单窗口和画线设置的 Coordinates 标签页都会这样做。
+  <code>chart.getPriceStep()</code> 返回这个步长本身。
 </p>
 
 <h2>ChartWidget</h2>

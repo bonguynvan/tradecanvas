@@ -322,8 +322,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
   포인터 위치에서 얻은 가격은 <code>chart.roundPrice(price)</code>로 시장의 가격 단위에 맞출 수 있습니다.
-  종목의 <code>minTick</code> 배수로, 그 값이 없으면 종목의 정밀도에 맞춥니다. ChartWidget의 메뉴와 주문 티켓도
-  이렇게 합니다.
+  종목의 <code>minTick</code> 배수로, 그 값이 없으면 종목의 정밀도에 맞춥니다. ChartWidget의 메뉴, 주문 티켓과
+  그리기 설정의 Coordinates 탭도 이렇게 합니다. <code>chart.getPriceStep()</code>은 그 단위 자체를 돌려줍니다.
 </p>
 
 <h2>ChartWidget</h2>

@@ -328,7 +328,8 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <p>
   Giá lấy từ con trỏ chuột có thể được làm tròn theo bước giá của thị trường bằng
   <code>chart.roundPrice(price)</code>: về bội số của <code>minTick</code> của mã, nếu không có thì theo
-  độ chính xác của mã. Các menu và phiếu đặt lệnh của ChartWidget đều làm như vậy.
+  độ chính xác của mã. Các menu, phiếu đặt lệnh và tab Coordinates trong cài đặt hình vẽ của ChartWidget đều làm như vậy.
+  <code>chart.getPriceStep()</code> trả về chính bước giá đó.
 </p>
 
 <h2>ChartWidget</h2>

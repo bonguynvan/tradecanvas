@@ -32,6 +32,21 @@ type Probe = {
   buildPanelRenderInfos(): { viewport: ViewportState }[];
 };
 
+describe('a chart’s price step', () => {
+  it('is the symbol’s smallest step, a fraction’s unit, or one unit of the decimals shown', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    expect(chart.getPriceStep()).toBe(0.01);
+    chart.setSymbolInfo({ symbol: 'VNM', pricePrecision: 0 });
+    expect(chart.getPriceStep()).toBe(1);
+    chart.setSymbolInfo({ symbol: 'VNM', pricePrecision: 0, minTick: 10 });
+    expect(chart.getPriceStep()).toBe(10);
+    chart.setSymbolInfo(null);
+    chart.setPriceFormat({ denominator: 32 });
+    expect(chart.getPriceStep()).toBe(1 / 32);
+  });
+});
+
 describe('a chart’s price format', () => {
   it('prints prices in fractions of a point, and rounds them to the fraction', () => {
     chart = new Chart(host, { priceFormat: { denominator: 32 } });

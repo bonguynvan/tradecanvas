@@ -123,14 +123,31 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>Custom overlay</h2>
 <p>An <code>OverlayPlugin</code> draws each frame on the layer you choose, receiving the live viewport, data, and theme:</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code> places things where the chart draws them: <code>timeToX</code> / <code>xToTime</code>
+  by bar time (between bars and past the newest, in proportion), <code>indexToX</code> / <code>xToIndex</code>,
+  <code>priceToY</code> / <code>yToPrice</code> (on a log or inverted scale too), <code>barWidth</code>, and
+  <code>visible</code>, the bars on screen. For rows on the price grid, <code>chart.getPriceStep()</code> is the
+  symbol's smallest step (<code>minTick</code>), a fraction's unit, or one unit of the decimals prices show.
+  Indicator and chart-type renderers get the viewport alone: <code>priceToY</code>, <code>barIndexToX</code>,
+  <code>timeToX</code> and their inverses are exported for them. The bars are those on screen: on a Renko or
+  Kagi chart, its bricks (<code>chart.isTimeAligned()</code> says when they are the feed's bars).
+</p>
 
 <p>See the <a href={href('/docs/api')}>API reference</a> for the full plugin type signatures.</p>

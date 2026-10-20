@@ -123,14 +123,30 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>カスタムオーバーレイ</h2>
 <p><code>OverlayPlugin</code> は選んだレイヤーに毎フレーム描画し、現在のビューポート、データ、テーマを受け取ります：</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code> はチャート自身と同じ位置に配置します：<code>timeToX</code> / <code>xToTime</code> はバーの時刻で
+  （バーの間や最新バーの先は比例で）、<code>indexToX</code> / <code>xToIndex</code>、<code>priceToY</code> / <code>yToPrice</code>
+  （対数・反転スケールにも対応）、<code>barWidth</code>、画面に見えているバーの範囲 <code>visible</code>。価格グリッドで行を分けるには
+  <code>chart.getPriceStep()</code> を使います：銘柄の最小刻み（<code>minTick</code>）、分数の単位、または表示中の小数桁の 1 単位です。
+  インジケーターとチャートタイプのレンダラーは viewport だけを受け取るため、<code>priceToY</code>、<code>barIndexToX</code>、
+  <code>timeToX</code> とその逆関数もエクスポートしています。バーは画面に描かれている系列のもので、練行足や
+  Kagi ではそのブロックです（<code>chart.isTimeAligned()</code> でデータのバーと一致するかが分かります）。
+</p>
 
 <p>プラグインの型シグネチャの全体は、<a href={href('/docs/api')}>API リファレンス</a>を参照してください。</p>

@@ -782,6 +782,8 @@ export class ChartWidget {
         const ms = wallTimeToUtc(date, time, this.displayTimezone());
         return ms === null ? null : ms / barTimeUnit(this.chart.getData());
       },
+      roundPrice: (price) => this.chart.roundPrice(price),
+      priceStep: () => this.chart.getPriceStep(),
       onAddAlert: (id) => this.addDrawingAlert(id),
       onSaveDefault: (type, toolOptions) => {
         this.chart.setDrawingToolDefaults(type, toolOptions);

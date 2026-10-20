@@ -122,14 +122,29 @@ chart.setChartType('my-bricks')`}</code></pre>
 
 <h2>사용자 지정 오버레이</h2>
 <p><code>OverlayPlugin</code>은 선택한 레이어에 매 프레임 그리며, 실시간 뷰포트, 데이터, 테마를 전달받습니다.</p>
-<pre><code>{`registerPlugin({
+<pre><code>{`import { overlayScale, registerPlugin } from '@tradecanvas/chart'
+
+registerPlugin({
   kind: 'overlay',
   plugin: {
-    descriptor: { id: 'vwap-band', name: 'VWAP Band', layer: 'main' },
-    render(ctx, { viewport, data, theme }) {
-      // draw onto the main layer with the current viewport + data
+    descriptor: { id: 'high-marks', name: 'High marks', layer: 'main' },
+    render(ctx, context) {
+      const s = overlayScale(context)
+      ctx.fillStyle = '#f2a93b'
+      for (let i = s.visible.from; i <= s.visible.to; i++) {
+        const bar = context.data[i]
+        ctx.fillRect(s.indexToX(i) - s.barWidth / 2, s.priceToY(bar.high) - 1, s.barWidth, 2)
+      }
     },
   },
 })`}</code></pre>
+<p>
+  <code>overlayScale(context)</code>는 차트가 그리는 위치 그대로 배치합니다: <code>timeToX</code> / <code>xToTime</code>는 봉 시간 기준
+  (봉 사이와 최신 봉 이후는 비례), <code>indexToX</code> / <code>xToIndex</code>, <code>priceToY</code> / <code>yToPrice</code>
+  (로그·반전 스케일 포함), <code>barWidth</code>, 그리고 화면에 보이는 봉 범위 <code>visible</code>. 가격 격자로 행을 나누려면
+  <code>chart.getPriceStep()</code>을 쓰세요: 종목의 최소 호가 단위(<code>minTick</code>), 분수 단위, 또는 표시 중인 소수 자릿수의 한 단위입니다.
+  지표와 차트 타입 렌더러는 viewport만 받으므로 <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code>와 그 역함수도 export됩니다.
+  봉은 화면에 그려진 시리즈의 봉입니다: Renko나 Kagi 차트에서는 그 벽돌입니다(<code>chart.isTimeAligned()</code>로 데이터 봉과 같은지 알 수 있습니다).
+</p>
 
 <p>플러그인 타입 시그니처 전체는 <a href={href('/docs/api')}>API 레퍼런스</a>를 참고하세요.</p>

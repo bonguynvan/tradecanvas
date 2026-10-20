@@ -285,6 +285,40 @@ chart.addIndicator('rangePosition', { period: 30 });
 Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
 users run it on another price or another indicator's line.
 
+## An overlay of your own, on the price grid
+
+An overlay plugin draws on a layer each frame. `overlayScale(context)` places
+bars by time or index and prices by value exactly where the chart draws them
+(log and inverted scales too); `chart.getPriceStep()` is the symbol's price
+step, for rows on its grid.
+
+```ts
+import { Chart, overlayScale } from '@tradecanvas/chart';
+import type { OverlayPlugin } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {});
+
+/** A band one price step high around each bar's close. */
+const closeBands: OverlayPlugin = {
+  descriptor: { id: 'closeBands', name: 'Close bands', layer: 'main' },
+  render(ctx, context) {
+    const s = overlayScale(context);
+    const step = chart.getPriceStep();
+    ctx.fillStyle = 'rgba(242, 169, 59, 0.35)';
+    for (let i = s.visible.from; i <= s.visible.to; i++) {
+      const close = chart.roundPrice(context.data[i].close);
+      const top = s.priceToY(close + step / 2);
+      const bottom = s.priceToY(close - step / 2);
+      ctx.fillRect(s.indexToX(i) - s.barWidth / 2, Math.min(top, bottom), s.barWidth, Math.abs(bottom - top));
+    }
+  },
+};
+chart.plugins.register({ kind: 'overlay', plugin: closeBands });
+```
+
+An indicator's own `render` gets the viewport alone: `priceToY`, `barIndexToX`,
+`timeToX` and their inverses are exported for it.
+
 ## Several charts in a grid
 
 ```ts
