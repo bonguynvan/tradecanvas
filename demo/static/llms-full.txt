@@ -1014,6 +1014,7 @@ packages/library/README.md
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bonguynvan/tradecanvas/ci.yml?branch=main&style=flat-square&labelColor=0b0e13&label=CI" alt="CI status"></a>
+  <a href="https://pkg.pr.new/~/bonguynvan/tradecanvas"><img src="https://pkg.pr.new/badge/bonguynvan/tradecanvas" alt="pkg.pr.new previews"></a>
   <img src="https://img.shields.io/badge/third--party%20deps-0-3ccf91?style=flat-square&labelColor=0b0e13" alt="No third-party dependencies">
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
@@ -1034,25 +1035,38 @@ packages/library/README.md
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**A complete trading chart for the web.** Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full `ChartWidget`, or build your own UI on the headless `Chart`, in plain TypeScript, React, Vue or Svelte.
+**A complete trading chart for the web.** Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL and free of third-party dependencies. Drop in the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
 </p>
 
-## Quick Start
+## Highlights
+
+- **18 chart types**, from candles and Heikin-Ashi to Renko, Kagi, point & figure and Equivolume, plus six finance charts (sparkline, depth, equity, heatmap, waterfall, gauge).
+- **111 indicators and 69 drawing tools**: indicators on indicators, alerts on trend lines, templates, groups, undo and redo.
+- **Trading on the chart**: positions with live P&L, orders and stop-loss/take-profit you drag, an order ticket, an account panel, and a paper broker or your own execution adapter.
+- **Live data**: Binance, Bybit, Coinbase and Kraken built in, any other feed in about twenty lines; older history while scrolling back, any interval, tick charts.
+- **Canvas 2D or WebGL**: a million bars panned at 60 fps, crisp at every screen scale.
+- **A full workspace**: multi-chart grids, named layouts, bar replay with paper trading, and a backtester in `@tradecanvas/analytics`.
+- **Yours to shape**: 101 style keys, 112 feature switches, three looks, and plugins for indicators, drawing tools, chart types and overlays.
+- **For everyone**: the widget in 30 languages, right to left included, with screen reader and keyboard support.
+
+## Install
 
 ```bash
-npm install @tradecanvas/chart     # or: pnpm add / yarn add
+npm install @tradecanvas/chart
 ```
 
-`ChartWidget` is the whole trading UI in one component: toolbar, drawing sidebar, settings dialog and status bar.
+## Quick start
+
+`ChartWidget` is the whole trading interface in one call: toolbar, drawing sidebar, settings, status bar.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
 import { BinanceAdapter } from '@tradecanvas/chart'
 
-const widget = new ChartWidget(document.getElementById('chart')!, {
+new ChartWidget(document.getElementById('chart')!, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
@@ -1061,1129 +1075,126 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-That's it. Live data, all 111 indicators, all 69 drawing tools, command palette (`Ctrl+K`), symbol search (`Ctrl+P`), hotkey sheet (`?`), shift-drag measure, alt-click tooltip pin, and drag-drop CSV/JSON loading.
+To own the interface, use the headless `Chart` and its API:
 
-Using a framework? [`@tradecanvas/react`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/react/), [`@tradecanvas/vue`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/vue/) and [`@tradecanvas/svelte`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/svelte/) wrap the headless `Chart` as a component, and the widget above mounts the same way in any framework; see [Framework Integration](#framework-integration). Or fork a [StackBlitz sandbox](https://bonguynvan.github.io/tradecanvas/examples/) and start from there.
+```typescript
+import { Chart } from '@tradecanvas/chart'
 
-## A Look Around
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
+chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
+chart.addIndicator('ema', { period: 50 })
+chart.addIndicator('rsi')
+```
+
+Your own feed plugs in through `WebSocketAdapter` or `PollingAdapter`; see [Realtime](https://bonguynvan.github.io/tradecanvas/docs/realtime/).
+
+## Frameworks
+
+```bash
+npm install @tradecanvas/react    # or @tradecanvas/vue, @tradecanvas/svelte
+```
+
+```tsx
+import { TradeCanvas } from '@tradecanvas/react'
+
+<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
+```
+
+The three components share the same props and hand you the underlying `Chart`. See [Frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks/).
+
+## A look around
 
 <table>
   <tr>
     <td width="50%" valign="top">
       <a href="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/drawings.png"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/drawings.png" alt="Drawing tools: a Fibonacci retracement with a note, a trend line, an Elliott impulse wave and a long position"></a>
       <br><b>69 drawing tools</b><br>
-      Fibonacci, Gann, pitchforks, Elliott waves, harmonic patterns, notes and brushes, and a Long/Short position that sizes the trade. Alerts on trend lines, groups, undo and redo.
+      Fibonacci, Gann, pitchforks, Elliott waves, harmonic patterns, notes, and a long/short position that sizes the trade.
     </td>
     <td width="50%" valign="top">
       <a href="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/trading.png"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/trading.png" alt="Trading on the chart: a long position with stop-loss and take-profit, a buy stop and a sell limit, and the account panel"></a>
       <br><b>Trading on the chart</b><br>
-      Positions with live P&amp;L, orders you drag to a new price, SL and TP, reverse and close buttons, an order ticket and an account panel. A paper broker is built in; connect your own.
+      Positions with live P&amp;L, orders you drag to a new price, an order ticket and an account panel.
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <a href="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/grid.png"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/grid.png" alt="A two-by-two workspace of BTC, ETH, SOL and BNB charts on mixed intervals"></a>
       <br><b>Multi-chart workspace</b><br>
-      Up to six full charts side by side, linked by symbol, interval, crosshair, time or drawings, and saved as one layout.
+      Up to six charts side by side, linked by symbol, interval, crosshair, time or drawings.
     </td>
     <td width="50%" valign="top">
       <a href="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/looks.png"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/looks.png" alt="One chart in three looks: studio, terminal, and capsule on the light theme"></a>
       <br><b>Your own look</b><br>
-      Three presets (studio, terminal, capsule) or your own corner radius, density, fonts, toolbar and price tags, on light and dark themes.
+      Three presets or your own corners, density, fonts and price tags, on light and dark themes.
     </td>
   </tr>
 </table>
 
-## Why TradeCanvas?
+## Documentation
 
-Most chart libraries make you choose: pretty charts with no trading features, or trading features with an ugly API. TradeCanvas gives you both.
-
-- **111 built-in indicators** — SMA, EMA, TEMA, VWMA, Hull MA, RSI, MACD, Bollinger, Envelope, Ichimoku, Pivot Points, Anchored VWAP, ZigZag, Linear Regression Channel, Awesome / Chaikin Oscillator, and more. Any indicator can read another one's line (an SMA of RSI). No separate calculation library needed.
-- **69 drawing tools** — Trendlines (info line, trend angle, cross line), Fibonacci (retracement, extension, channel, time zones, speed resistance fan and arcs, circles, spiral, wedge), horizontal/vertical lines, channels, pitchforks and pitchfan, Gann fan / box / square, cycles, harmonic patterns (XABCD, cypher, ABCD, three drives, head and shoulders), Elliott waves, notes, callouts and marks, brush and path, forecast and projection, Long/Short Position with position sizing, Volume Profile range. Each with its own settings, alerts on trend lines, groups and layers, undo/redo and full serialization.
-- **18 chart types** — Candlestick, line, area, bar, hollow candle, baseline, High-Low, Heikin-Ashi, Renko, Kagi, Line Break, Point & Figure, Range Bars, Volume Candles, **Equivolume**, HLC Area, Step Line, Line+Markers. Renko's box, Kagi's reversal and the like are yours to set.
-- **Pro-grade interaction** — pan freely past the last bar into empty future space (drawings can go there too), drag the price/time axes to scale, double-click to auto-fit, `Ctrl/⌘+drag` to select several drawings (then move, restyle or delete them together), `Shift+drag` to measure (bars × price Δ × %), `Alt+click` to pin a comparison tooltip, context cursors (crosshair, grabbing hand, resize arrows), axis-following price/time pill labels under the cursor, bar-hover highlight.
-- **Trading overlay** — Render open positions with entry line, P&L zone, and SL/TP markers. Orders as dashed lines. Drag SL/TP to modify, cancel / close / reverse from the buttons on each line, and see every fill marked on its bar. ChartWidget adds an order ticket that checks the order as you fill it in, and an account panel with positions, working orders and history. Cleanly opt-out via `features.trading: false` for non-trading projects.
-- **Real-time streaming** — Built-in Binance, Coinbase, Bybit, and Kraken adapters, plus generic `WebSocketAdapter` / `PollingAdapter` bases so any feed plugs in with ~20 lines. Older bars load as you scroll back, any interval (`7m`, `90m`, `2d`) is built from the feed's own, tick charts (`100T`) from its trades, and symbol search and quotes come from the feed.
-- **Time zones** — any IANA zone with daylight saving time (`'America/New_York'`), a fixed offset, or the exchange's own zone, for the axis, crosshair, day breaks and session hours.
-- **30 languages** — `ChartWidget` in English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian, Estonian, Russian, Turkish, Indonesian, Malay, Thai, Arabic, Hebrew and Persian; Arabic, Hebrew and Persian mirror right to left.
-- **Accessible** — keyboard navigation, zoom and scroll buttons over the chart, and a screen-reader summary that reads the view and the bars one at a time.
-- **Live execution** — connect an `ExecutionAdapter` to turn the trading overlay into a real trading surface, drag on the chart to create orders, and reconcile fills. Ships a `PaperExecutionAdapter` sandbox.
-- **Plugin SDK** — register custom indicators, drawing tools, chart types, and overlays — globally or per-chart.
-- **Strategy backtester** — `@tradecanvas/analytics` ships a bar-by-bar `Backtester` with virtual fills, commission/slippage models, portfolio tracking, and risk metrics (Sharpe, Sortino, Calmar, max drawdown). **Now with 4 ready-to-use reference strategies + Monte Carlo path-dependence analysis.**
-- **Replay mode** — replay the chart's own bars from any point, in finer steps if you like (an hourly chart forming from 5-minute bars), with play / pause / step / seek / speed, and paper-trade on the replayed prices. The widget has a replay bar for it; `ReplayController` drives bars headless too.
-- **Alerts** — on a price level, an indicator line, a drawing, or one line crossing another; on a move of some percent within some bars; only on closed bars; with an expiry. The widget's alerts panel sets all of them.
-- **Compare and spread** — other symbols in percent on the price scale, on a scale or pane of their own, or as a spread or ratio, lined up with the chart by time.
-- **Price formats** — prices in your own format or in fractions of a point (a bond in 32nds: 110'165) on every label; times your way; extended hours on or off; data export with the indicator lines.
-- **Volume Profile** — optional horizontal histogram of traded volume bucketed by price over the visible range, with point-of-control highlighting.
-- **Watchlists and symbol info** — lists of symbols to switch between, edit and reorder, with live quotes; a symbol panel with price, the market's status, the day's numbers, hours and news.
-- **CSV / JSON drag-and-drop** — drop a file onto the chart, it parses and loads instantly. Detects header layouts, ISO/unix-s/unix-ms timestamps, and array-vs-object JSON shapes.
-- **Named layouts** — save the chart under a name (symbol, interval, scale, indicators, drawings, alerts), open, rename, delete, auto-save the open one, `Ctrl/⌘+S`. Kept in the browser, or on your server through a four-call `LayoutStorage`. Per-symbol auto-persistence (`persistLayouts`) is there too.
-- **Multi-chart** — `ChartWidgetGrid` puts up to six full widgets side by side, linked by symbol, interval, crosshair, time or drawings as you choose, and saves them as one layout. `ChartGrid` does the same for bare charts.
-- **Signal markers & trade zones** — render bot/algorithm output (directional arrows, entry→exit rectangles) as a first-class chart layer.
-- **Hotkey sheet** — press `?` in the widget to open a categorized keyboard-shortcut reference.
-- **Extensible widget** — add your own toolbar buttons and right-click menu entries (`addToolbarButton`, `chartMenuItems`).
-- **Save/load chart state** — Persist drawings, indicators, theme, and chart type to JSON. Restore with one call.
-- **Zero dependencies** — The entire library is self-contained. No `d3`, no `chart.js`, no `fancy-canvas`.
-
-## Headless Chart
-
-For projects that want to own the surrounding UI (custom toolbar, framework-specific controls), use the lower-level `Chart` class directly:
-
-```typescript
-import { Chart, BinanceAdapter } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, {
-  theme: 'dark',
-  autoScale: true,
-  features: {
-    drawings: true,
-    indicators: true,
-    trading: true,           // set false to disable orders/positions entirely
-    tradingContextMenu: true, // opt-in right-click order menu (off by default)
-    volume: true,
-  },
-})
-
-const adapter = new BinanceAdapter()
-chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '5m', historyLimit: 300 })
-```
-
-### Widget Options
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `symbol` | `string` | `'BTCUSDT'` | Initial trading symbol |
-| `timeframe` | `TimeFrame` | `'5m'` | Initial timeframe |
-| `theme` | `'dark' \| 'light' \| Theme` | `'dark'` | Chart theme |
-| `adapter` | `DataAdapter` | — | Data source adapter |
-| `toolbar` | `boolean` | `true` | Show top toolbar |
-| `drawingTools` | `boolean` | `true` | Show left drawing sidebar |
-| `settings` | `boolean` | `true` | Show settings button |
-| `trading` | `boolean` | `true` | Enable trading overlay |
-| `statusBar` | `boolean` | `true` | Show bottom status bar |
-| `rangeBar` | `boolean` | `true` | Range presets (1D … All) and go to date (Alt+G) on the status bar |
-| `indicatorLegend` | `boolean` | `true` | Indicators listed on the chart (under the OHLCV legend and atop their panes) with show / settings / remove |
-| `fullscreen` | `boolean` | `true` | Fullscreen button in the toolbar |
-| `features` | `WidgetFeatures` | all on | 112 switches for the widget's parts, changeable while running — see **Widget switches and your own parts** |
-| `symbols` | `string[]` | BTC/ETH/SOL/BNB | Searchable symbol catalog |
-| `timeframes` | `TimeFrame[]` | 1m to 1M | Timeframes on offer; pin favourites from the ▾ menu |
-| `chartTypes` | `ChartType[]` | 18 types | Available chart types |
-| `watchlist` | `boolean` | `false` | Right-side watchlist sidebar |
-| `dragDropImport` | `boolean` | `true` | Drop CSV / JSON files onto the chart to load data |
-| `persistLayouts` | `boolean \| { keyPrefix, debounceMs }` | `false` | Save per-symbol indicators / drawings / chart type to localStorage |
-| `onSymbolChange` | `(symbol) => void` | — | Symbol change callback |
-| `onTimeframeChange` | `(tf) => void` | — | Timeframe change callback |
-| `onReady` | `(chart) => void` | — | Fired when chart is ready |
-| `locale` | `string` | `'en'` | UI language — `'en'` and `'vi'` built in, 12 more from the locales entry, see **Widget i18n** below |
-| `messages` | `Partial<Record<MessageKey, string>>` | — | Override or add individual UI strings on top of `locale` |
-
-### Icons
-
-The widget's icon set is exported for your own UI: `createIcon(name)`,
-`createToolIcon(drawingTool)`, `createChartTypeIcon(chartType)` return inline
-SVG strings drawn in `currentColor` (24 px grid, 1.75 px strokes).
-
-```ts
-import { createToolIcon } from '@tradecanvas/chart/widget'
-button.innerHTML = createToolIcon('fibRetracement', 16)
-```
-
-### Widget i18n
-
-`ChartWidget` speaks 30 languages: English, Vietnamese, Simplified and Traditional Chinese, Japanese, Korean, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Greek, Swedish, Danish, Norwegian, Estonian, Russian, Turkish, Indonesian, Malay, Thai, Arabic, Hebrew and Persian (the last three right to left; `dir` sets the direction yourself). Every string it shows is translated: toolbar, settings, drawing tools, alerts, dialogs, the command palette, the hotkey sheet and notices. Indicator names (SMA, RSI…) stay as they are. Set at construction.
-
-English and Vietnamese are built in. The others load from `@tradecanvas/chart/widget/locales`, so a page ships only the languages it imports:
-
-```ts
-import { ja } from '@tradecanvas/chart/widget/locales'
-
-new ChartWidget(el, {
-  locale: 'ja',
-  messages: ja,                               // or registerWidgetLocales() for all of them
-  chartOptions: { numberLocale: 'ja-JP' },    // separate: number/date formatting (see below)
-});
-```
-
-`messages` also overrides single keys on top of `locale` (`{ 'watchlist.title': 'Theo dõi' }`). A locale with a region falls back to its language (`ja-JP` → `ja`; `zh-TW` → Traditional Chinese).
-
-`locale`/`messages` cover the **text**; `chartOptions.numberLocale` controls number and date **formatting** (price axis, legend, watchlist prices, current-price tag, session-break dates) via `Intl`.
-
-See `packages/library/src/widget/locales/en.ts` for the full key list (`MessageKey`).
-
-### Widget vs Headless
-
-| | `Chart` (headless) | `ChartWidget` |
-|---|---|---|
-| Import | `@tradecanvas/chart` | `@tradecanvas/chart/widget` |
-| UI included | None — build your own | Complete toolbar, sidebar, settings |
-| Bundle impact | ~50 KB gzip | ~65 KB gzip (includes UI) |
-| Framework | Any (React, Vue, Svelte, vanilla) | Vanilla JS DOM (works everywhere) |
-| Customization | Full control | Toggle sections on/off |
-| Advanced access | Direct API | `widget.getChart()` for direct API |
-
-### Widget Look
-
-The widget's shapes and sizes — corners, control heights, type, borders, shadows, how a chosen button shows, bars docked or floating — are a look of their own, apart from the colours. Three presets: **Studio** (the default), **Terminal** (dense and square) and **Capsule** (pills, floating bars). Start from one and change what you like:
-
-```ts
-const widget = new ChartWidget(host, { ui: 'terminal' });
-widget.setUI({ preset: 'studio', radius: { md: 10 }, density: 'compact', toolbar: 'floating', active: 'solid' });
-```
-
-The chart's price tags take the same corners (`tagRadius`; on a bare `Chart`, `chart.setShapes({ tagRadius })`). The widget loads no fonts: load the ones a look names. See [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling).
-
-### Widget switches and your own parts
-
-Every part of the widget has a switch, on until you turn it off and changeable while it runs. A name without a dot is a whole capability, off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name is one place (`toolbar.screenshot`, `sidebar.magnet`, `menu.chart.order`). `WIDGET_FEATURES` lists all 112; the older options (`toolbar: false`, `drawingTools: false`…) are the same switches. Your own buttons, menus and status items go into the widget's bars and follow its theme and look.
-
-```ts
-const widget = new ChartWidget(el, {
-  features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false },   // one button, a section of drawing tools, every key
-  drawingMenuItems: ({ id, type }) => [{ label: 'Share', icon: 'link', onSelect: () => share(id) }],
-})
-widget.setFeatures({ sidebar: false, statusBar: false })   // while running
-
-widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [
-  { label: 'Breakouts', onSelect: () => runScan('breakouts') },
-] })
-widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', onClick: () => toggleRuler() })
-widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-widget.getSlot('chart')   // a layer of your own over the chart
-widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // a shortcut of yours, in the shortcut sheet too
-```
-
-Switches show and hide the widget's parts; to stop something on the chart itself (drawing, trading, zoom), use `chartOptions.features`. Every route — colours, looks, style overrides, switches, your parts, words, plugins — is laid out on the [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization) page.
-
-### Widget Theming
-
-`ChartWidget`'s own chrome (toolbar, sidebars, settings panel, watchlist — everything *outside* the canvas) is styled entirely through CSS custom properties on `.tcw-root`, the widget's own root element. These are a **stable, documented contract**: additive-only across minor/patch releases — a property is never renamed or removed without a major version bump. Override them from the host page; no build step or theme object needed.
-
-```css
-/* Dark is the default (no attribute needed); light sets data-tcw-theme="light" */
-.my-app .tcw-root:not([data-tcw-theme="light"]) {
-  --tcw-bg: #0a0a0f;
-  --tcw-accent: #7c5cff;
-  --tcw-radius: 0px;
-  --tcw-radius-lg: 0px;
-}
-```
-
-| Variable | Default (dark) | Purpose |
-|---|---|---|
-| `--tcw-bg` | `#080b10` | Root background |
-| `--tcw-bg-surface` | `#0c1016` | Panel / toolbar surface |
-| `--tcw-bg-elevated` | `#141922` | Popovers, dropdowns, modals |
-| `--tcw-bg-overlay` | `rgba(20,25,34,.5)` | Backdrop behind overlays |
-| `--tcw-border` | `#1f2630` | Default border |
-| `--tcw-border-strong` | `#2a323e` | Emphasized border (focus rings, dividers) |
-| `--tcw-text` | `#e7e9ee` | Primary text |
-| `--tcw-text-dim` | `#aab1bd` | Secondary text |
-| `--tcw-text-muted` | `#758091` | Tertiary / placeholder text |
-| `--tcw-accent` | `#f2a93b` | Primary accent (active tab, focus, links) |
-| `--tcw-accent-ink` | `#1a1204` | Text and icons on an accent fill |
-| `--tcw-accent-hover` | `#f5b95c` | Accent hover state |
-| `--tcw-accent-soft` | `rgba(242,169,59,.14)` | Accent tint (selected row background) |
-| `--tcw-accent-glow` | `rgba(242,169,59,.22)` | Accent glow (focus halo) |
-| `--tcw-accent-line` | `rgba(242,169,59,.55)` | Accent border/underline |
-| `--tcw-red` / `--tcw-red-soft` | `#e8505b` / tint | Down/sell/negative |
-| `--tcw-green` / `--tcw-green-soft` | `#1fa874` / tint | Up/buy/positive |
-| `--tcw-amber` | `#ff9f43` | Warning |
-| `--tcw-hover-bg` | `rgba(255,255,255,.05)` | Row/button hover background |
-| `--tcw-active-bg` | `rgba(255,255,255,.08)` | Row/button pressed background |
-| `--tcw-divider` | `rgba(255,255,255,.06)` | Hairline dividers |
-| `--tcw-ease` / `--tcw-ease-out` | cubic-bezier | Transition easing |
-| `--tcw-dur-fast` / `-normal` / `-slow` | `120ms` / `180ms` / `260ms` | Transition durations |
-| `--tcw-radius-xs` / `-sm` / `--tcw-radius` / `-lg` / `-xl` | `3px` / `5px` / `7px` / `11px` / `16px` | The corner scale — set to `0` for a square look |
-| `--tcw-control-radius` / `--tcw-input-radius` / `--tcw-menu-radius` / `--tcw-dialog-radius` / `--tcw-panel-radius` / `--tcw-tooltip-radius` / `--tcw-tag-radius` / `--tcw-toast-radius` | from the scale | Each kind of part's corners |
-| `--tcw-toolbar-h` / `--tcw-control-h` / `--tcw-control-h-sm` / `--tcw-icon` / `--tcw-sidebar-w` / `--tcw-menu-item-h` | `46px` / `30px` / `24px` / `18px` / `48px` / `30px` | Sizes |
-| `--tcw-font` / `--tcw-font-size` / `--tcw-weight` / `--tcw-weight-strong` | `'Manrope', 'Inter', …` / `13px` / `500` / `600` | Type |
-| `--tcw-label-case` / `--tcw-label-tracking` | `none` / `0em` | Small labels (section titles) |
-| `--tcw-border-w` / `--tcw-sep-w` | `1px` / `0px` | Border width; rules between toolbar groups |
-| `--tcw-menu-shadow` / `--tcw-dialog-shadow` / `--tcw-tooltip-shadow` | the elevation shadows | Shadows of menus, dialogs, tooltips |
-| `--tcw-blur` / `--tcw-surface-opacity` | `0px` / `100%` | Frosted menus |
-| `--tcw-shadow-sm` / `-md` / `-lg` / `-xl` | box-shadow values | Elevation |
-| `--tcw-ring` | `0 0 0 2px rgba(242,169,59,.45)` | Focus ring |
-| `--tcw-font-mono` | `'JetBrains Mono', …` | Monospace font stack (price ladder, code) |
-
-Light theme (`[data-tcw-theme="light"]`) redefines the color group (`--tcw-bg*`, `--tcw-border*`, `--tcw-text*`, `--tcw-accent*`, `--tcw-hover-bg`, `--tcw-active-bg`, `--tcw-divider`, `--tcw-shadow*`) with its own defaults — override both selectors if you support both themes. With the `ui` option set, the widget writes its look's variables on the element, so they win over your CSS; without it they stay yours to set.
-
-## Features
-
-### Chart Types
-
-| Type | Description |
+| Topic | |
 |---|---|
-| Candlestick | Standard OHLC candles |
-| Hollow Candle | Open/close determines fill |
-| Bar (OHLC) | Classic open-high-low-close bars |
-| Line | Close price line |
-| Area | Filled area below close |
-| Baseline | Two-tone area split at a reference price |
-| Heikin-Ashi | Smoothed candles for trend identification |
-| Renko | Fixed-size bricks that ignore time |
-| Kagi | Reversal-based line chart |
-| Point & Figure | X/O columns for supply/demand analysis |
-| Line Break | Three-line break charts |
-| Range Bars | Fixed price-range bars — each bar's high − low equals a configured range |
-| Volume Candles | Candlesticks with width proportional to volume |
-| Equivolume | Full-range boxes with width proportional to volume share (Richard Arms style) |
-| HLC Area | High-low-close area band with close line |
-| Step Line | Staircase/step pattern from close prices |
-| Line with Markers | Close line with circular markers at each data point |
-
-### Multi-Chart Grid
-
-Display multiple synchronized charts side-by-side with linked crosshairs and time axis:
-
-```typescript
-import { ChartGrid, BinanceAdapter } from '@tradecanvas/chart'
-
-const grid = new ChartGrid(document.getElementById('grid')!, {
-  layout: '2x2',
-  syncCrosshair: true,
-  syncTimeAxis: true,
-})
-
-// An adapter keeps one stream: give each chart its own
-grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'], '5m')
-```
-
-With the full widget on each chart, a bar to pick the arrangement and sync, and the whole grid saved as a named layout:
-
-```typescript
-import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
-
-const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
-  layout: '1x2',
-  adapter: () => new BinanceAdapter(),
-  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
-  sync: { crosshair: true, interval: false, symbol: false, time: false, drawings: false },
-})
-workspace.setSync({ time: true })
-```
-
-Supported layouts: `'1x1'`, `'1x2'`, `'2x1'`, `'2x2'`, `'1x3'`, `'3x1'`, `'2x3'`, `'3x2'`.
-
-### Command Palette
-
-Press `Ctrl+K` (or `Cmd+K`) inside ChartWidget to open a searchable command palette. Quickly find and toggle indicators, change chart types, activate drawing tools, switch timeframes, or trigger actions (screenshot, theme toggle, settings).
-
-### Finance Charts
-
-| Chart | Description |
-|---|---|
-| SparklineChart | Tiny inline line/area chart from a number array — for dashboards and KPI cards |
-| DepthChart | Bid/ask order book visualization with cumulative volume areas |
-| EquityCurveChart | Portfolio equity line with drawdown shading and benchmark comparison |
-| HeatmapChart | Colored cell grid with treemap layout — for sector/market performance |
-| WaterfallChart | Running cumulative bars — P&L attribution, revenue bridge, cash flow |
-| GaugeChart | Speedometer-style gauge — KPIs, risk scores, Fear & Greed index |
-
-```typescript
-import {
-  SparklineChart, DepthChart, EquityCurveChart, HeatmapChart,
-  WaterfallChart, GaugeChart,
-} from '@tradecanvas/chart'
-
-// Sparkline in a 120x48 container
-new SparklineChart(el, { data: [100, 102, 98, 105, 103], mode: 'area', color: '#1fa874' })
-
-// Equity curve with drawdown
-new EquityCurveChart(el, { data: equityPoints, drawdown: true, benchmark: spyData })
-
-// Order book depth
-new DepthChart(el, { data: { bids, asks }, crosshair: true })
-
-// Market heatmap (treemap weighted by market cap)
-new HeatmapChart(el, { data: cells, weighted: true })
-
-// P&L waterfall
-new WaterfallChart(el, {
-  data: [
-    { label: 'Start', value: 10000, type: 'total' },
-    { label: 'Gain', value: 1850 },
-    { label: 'Loss', value: -620 },
-    { label: 'End', value: 11230, type: 'total' },
-  ],
-})
-
-// Fear & Greed gauge: zones light up to the value, the label shows the current zone
-const gauge = new GaugeChart(el, {
-  value: 72,
-  label: 'Fear & Greed',
-  zones: [
-    { from: 0, to: 25, color: '#e8505b', label: 'Extreme fear' },
-    { from: 25, to: 45, color: '#f2a93b', label: 'Fear' },
-    { from: 45, to: 55, color: '#8a93a3', label: 'Neutral' },
-    { from: 55, to: 75, color: '#62c895', label: 'Greed' },
-    { from: 75, to: 100, color: '#1fa874', label: 'Extreme greed' },
-  ],
-  // pointer: 'needle',  // classic needle instead of the ring marker
-})
-gauge.setValue(85) // animates smoothly
-```
-
-### Indicators (built-in)
-
-111 indicators — moving averages (SMA, EMA, WMA, Hull, DEMA, TEMA, ALMA, KAMA,
-LSMA, McGinley, SMMA, MA Cross, MTF MA, Hamming, MA Double/Triple), bands and channels (Bollinger,
-Keltner, Donchian, Envelope, Linear Regression, MA Channel), trend and stops (Ichimoku,
-Supertrend, Parabolic SAR, Chandelier, Chande Kroll Stop, Alligator, ZigZag,
-Fractals, Pivot Points, Volatility Index), VWAPs and Volume Profile on the price pane; RSI, MACD,
-Stochastic, ATR, ADX, CCI, OBV, MFI, Bollinger %B and BandWidth, Historical
-Volatility, Ulcer Index and 48 more oscillators, volume and volatility
-indicators in panes. The [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators)
-lists every id with its inputs, lines and levels.
-
-```typescript
-import { indicatorSource } from '@tradecanvas/chart'
-
-const rsi = chart.addIndicator('rsi', { period: 14 })!
-chart.addIndicator('ema', { period: 21, source: 'hlc3' })                     // another price
-chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') }) // RSI's own average, in RSI's pane
-chart.setIndicatorLevels(rsi, [20, 50, 80])
-```
-
-- **Sources**: close, open, high, low, hl2, hlc3, ohlc4, hlcc4, or another indicator's line.
-- **Panes**: one value scale per pane for lines, levels, axis and crosshair; move an indicator into another pane, a new one or back to the price pane; fold, maximise and reorder panes (`moveIndicatorToPane`, `setPaneCollapsed`, `setMaximizedPane`, `movePane`).
-- **Undo and templates**: Ctrl/Cmd+Z undoes indicator changes, in the same history as drawings; ChartWidget saves the indicators as named templates (`getIndicatorSetup` / `applyIndicatorSetup`).
-- **Levels**: editable per instance (RSI 30/70, CCI ±100 …), kept in saved layouts.
-- **Value tags**: each line's latest value on its axis, in its colour.
-- **Custom indicators** declare their lines (`plots`), scale, levels and inputs; the chart draws and labels them.
-
-Invalid parameters (NaN, Infinity, non-numeric strings, missing keys) fall back
-to the defaults instead of reaching the calculations.
-
-### Drawing Tools
-
-Trendline, Horizontal Line, Vertical Line, Ray, Extended Line, Parallel Channel, Fibonacci Retracement, Fibonacci Extension, **Fibonacci Time Zones**, Rectangle, Ellipse, Triangle, Arrow, Pitchfork, Gann Fan, Gann Box, Elliott Wave, Regression Channel, Date Range, Price Range, Measure, Anchored VWAP, Volume Profile Range, Text Annotation
-
-All drawing tools support:
-- Click-to-place with magnet snapping to OHLC values
-- Undo / redo (Ctrl+Z / Ctrl+Y)
-- Serialization for save/load
-- Custom styles (color, width, dash pattern)
-
-### Trading Overlay
-
-Render open positions and pending orders directly on the chart, like MT4/MT5.
-
-```typescript
-import type { TradingPosition, TradingOrder } from '@tradecanvas/chart'
-
-chart.setPositions([{
-  id: 'pos-1',
-  side: 'buy',
-  entryPrice: 3500,
-  quantity: 1.5,
-  closedQuantity: 0.5,   // partial close — visualized as a left-edge dim band
-  stopLoss: 3400,
-  takeProfit: 3700,
-}])
-
-chart.setOrders([{
-  id: 'order-1',
-  side: 'sell',
-  type: 'limit',
-  price: 3800,
-  quantity: 0.5,
-  label: 'TP',
-  draggable: true,
-}])
-
-// Customize the position zone color via P&L thresholds
-chart.setTradingConfig({
-  pnlThresholds: [
-    { pnl: -Infinity, color: '#b91c1c' },
-    { pnl: 0,         color: '#94a3b8' },
-    { pnl: 50,        color: '#16a34a' },
-    { pnl: 200,       color: '#15803d' },
-  ],
-  // Custom label template — tokens: {side} {qty} {openQty} {closedQty} {entry} {price} {pnl} {pnlPct} {pnlSign}
-  positionLabel: '{side} {openQty}/{qty} @ {entry} | {pnlSign}{pnl} ({pnlPct})',
-})
-
-// Listen for user drag-to-modify
-chart.on('positionModify', (e) => console.log('SL/TP moved:', e.payload))
-chart.on('orderModify', (e) => console.log('Order moved:', e.payload))
-
-// The × and ⇅ buttons on the lines raise these; so can your own UI
-chart.cancelOrderIntent('order-1')
-chart.reversePositionIntent('pos-1')
-chart.on('executionFill', (e) => console.log(e.payload.reason, e.payload.pnl))
-```
-
-### Signal Markers
-
-Visualize buy/sell signals from bots, indicators, or manual analysis.
-
-```typescript
-chart.addSignalMarker({
-  time: 1715692800000,
-  price: 62500,
-  direction: 'long',
-  confidence: 0.85,
-  source: 'ema-crossover',
-  label: 'EMA Cross',
-})
-
-// Color-code by source
-chart.setSignalMarkerStyle({
-  sourceColors: {
-    'ema-crossover': '#4c8dff',
-    'rsi-divergence': '#f2a93b',
-    'whale-flow': '#9C27B0',
-  },
-})
-```
-
-### Trade Zones
-
-Render entry→exit rectangles with P&L coloring for executed trades.
-
-```typescript
-const zoneId = chart.addTradeZone({
-  entryTime: 1715692800000,
-  entryPrice: 62500,
-  exitTime: 1715700000000,
-  exitPrice: 63200,
-  direction: 'long',
-  pnl: 140,
-  pnlPercent: 1.12,
-})
-
-// Update a live trade when it closes
-chart.updateTradeZone(zoneId, {
-  exitTime: Date.now(),
-  exitPrice: 63500,
-  pnl: 200,
-})
-```
-
-### Real-Time Streaming
-
-```typescript
-// Built-in Binance adapter (free, no API key)
-chart.connect({
-  adapter: new BinanceAdapter(),
-  symbol: 'ETHUSDT',
-  timeframe: '1m',
-  historyLimit: 500,
-})
-
-// Or manual data feed
-chart.setData(historicalBars)
-chart.appendBar(newBar)
-chart.updateLastBar(updatedBar)
-chart.setCurrentPrice(3500.42)
-```
-
-**Built-in adapters** (all free, no API key): `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`, `KrakenAdapter`, plus `MockAdapter` for offline/testing.
-
-```typescript
-import { BybitAdapter, KrakenAdapter, CoinbaseAdapter } from '@tradecanvas/chart'
-
-chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
-chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
-```
-
-**Any feed in ~20 lines.** Extend `WebSocketAdapter` (live + REST history) or `PollingAdapter` (REST-only feeds) — the base handles the connection lifecycle, reconnect, decoding, and event emission. You supply a URL and a parse function:
-
-```typescript
-import { WebSocketAdapter } from '@tradecanvas/chart'
-
-const myAdapter = new WebSocketAdapter({
-  name: 'myexchange',
-  wsUrl: (c) => `wss://api.myexchange.com/ws/${c.symbol}@kline_${c.timeframe}`,
-  fetchHistory: (symbol, tf, limit) => fetch(`/candles?...`).then((r) => r.json()),
-  parseMessage: (raw) => ({ bar: toBar(raw), closed: raw.k.x }),
-})
-```
-
-### Live Execution
-
-Connect an `ExecutionAdapter` to turn the display-only trading overlay into a real trading surface. The chart routes its order/position intents into the adapter, and renders the authoritative `orders` / `positions` the adapter emits back — the **adapter is the single source of truth**. With no adapter connected, those intents stay plain events (backward-compatible).
-
-```typescript
-import { PaperExecutionAdapter } from '@tradecanvas/chart'
-
-chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64000 }))
-
-// Drag-to-create an order, then confirm:
-chart.startOrderDraft('buy')   // draggable line at the latest close
-chart.confirmOrderDraft()      // emits orderPlace → adapter fills → chart renders the position
-// chart.cancelOrderDraft()
-
-// One channel for failures (adapter-reported or a failed command):
-chart.on('executionError', (e) => toast(e.payload.message))
-```
-
-Implement `ExecutionAdapter` (it mirrors `DataAdapter`) to wire a real broker / OMS: `placeOrder`, `modifyOrder`, `cancelOrder`, `modifyPosition`, `closePosition`, plus `orders` / `positions` / `fill` / `error` events. `PaperExecutionAdapter` is a virtual-fill sandbox for demos and tests. The order type of a drag-to-create order (limit vs stop) is inferred from where you drop the line relative to the current price.
-
-### Plugins — extend the chart
-
-Register custom **indicators**, **drawing tools**, **chart types**, and **overlays** — globally (every chart created afterward inherits) or per-chart.
-
-```typescript
-import { Chart, registerPlugin, IndicatorBase } from '@tradecanvas/chart'
-
-class MyIndicator extends IndicatorBase { /* descriptor, calculate(), render() */ }
-
-// 1) Global — available to every chart created afterward:
-registerPlugin({ kind: 'indicator', plugin: new MyIndicator() })
-
-// 2) Per-chart at construction:
-const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] })
-
-// 3) Imperative on an instance:
-chart.plugins.register({ kind: 'chartType', plugin: myCustomCandles })
-chart.setChartType('my-custom-candles')   // custom chart types render via the plugin
-```
-
-| Plugin kind | Contract |
-|---|---|
-| `indicator` | `IndicatorPlugin` — `calculate()` + `render()` |
-| `drawing` | `DrawingPlugin` — `render()` + `hitTest()` |
-| `chartType` | `ChartTypePlugin` — `createRenderer()` + optional `transform()` |
-| `overlay` | `OverlayPlugin` — `render(ctx, { viewport, data, theme })` on the `main` / `overlay` / `ui` layer |
-
-### Indicators outside the chart
-
-`IndicatorWorkerHost` computes an indicator from bars with the same messages a
-Web Worker would use. The worker script is not part of the published packages
-yet; pass `null` and register the plugins to compute in place (SSR, tests,
-scripts):
-
-```typescript
-import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
-
-const host = new IndicatorWorkerHost(null)
-host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)
-```
-
-### Save / Load
-
-```typescript
-const json = chart.saveState()
-localStorage.setItem('my-chart', json!)
-
-chart.loadState(localStorage.getItem('my-chart')!)
-
-// Download / upload files
-chart.downloadState('my-chart.json')
-await chart.loadStateFromFile()
-
-// Or keep a layout saved as it changes (debounced)
-chart.setAutoSave('my-chart', 1500)
-```
-
-A saved layout holds the chart type, theme, drawings, indicators (inputs, pane,
-colours, visibility) and alerts, including alerts on indicator lines.
-
-### Themes
-
-```typescript
-import { DARK_THEME, LIGHT_THEME, DARK_TERMINAL, volumeColor } from '@tradecanvas/chart'
-
-// Built-in presets: DARK_THEME, LIGHT_THEME, DARK_TERMINAL
-chart.setTheme(DARK_TERMINAL)  // fintech terminal: #0E0E0E bg, #00FF87/#FF3B4D candles, monospace
-
-// Or customize any preset
-chart.setTheme({
-  ...DARK_THEME,
-  candleUp: '#1fa874',
-  candleDown: '#e8505b',
-  volumeUp: volumeColor('#1fa874'),    // volume bars: the candle colour, see-through
-  volumeDown: volumeColor('#e8505b'),
-  background: '#0a0a0f',
-})
-```
-
-### Style overrides
-
-Any one part of what the chart draws can be set apart from the theme, by key — the grid's lines each way, the crosshair, the axes, the panes, the legend, the last price, the volume and the main series as each chart type draws it. Keys left alone follow the theme. Your app's overrides stay through theme switches; the user's (`layer: 'user'`, what the widget's Settings write) are kept per theme and saved with `saveState()`.
-
-```typescript
-chart.applyOverrides({
-  'series.candlestick.upColor': '#26a69a',   // every up/down chart type falls back to it
-  'grid.vertical.visible': false,
-  'grid.horizontal.style': 'dotted',
-  'crosshair.vertical.style': 'solid',
-  'panes.background': '#0d1117',
-})
-chart.getStyleValue('series.bar.upColor')    // '#26a69a'
-
-// Indicator plots and panes
-chart.updateIndicatorStyle(macdId, { plots: { signal: { lineStyle: 'dashed' } } })
-chart.setIndicatorDefaults('ema', { colors: ['#f5a623'] })
-chart.setPaneStyle(rsiId, { background: '#101418' })
-```
-
-`CHART_STYLE_KEYS` lists every key. The React, Vue and Svelte components take them as an `overrides` prop. Orders, positions, signal markers, trade zones and a selected drawing's handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`, `drawings.handleColor`…). In the widget, Settings → Style sets every key, the colours of the chart type on view included, and Settings → Trading the colours of orders, positions, signal markers and trade zones (Auto until one is picked).
-
-### Events
-
-```typescript
-chart.on('crosshairMove', (e) => { /* { point, bar, barIndex, indicatorValues } — also over indicator panes */ })
-chart.on('crosshairLeave', () => { /* the pointer left the plot */ })
-chart.on('drawingToolChange', (e) => { /* { tool } — null once a drawing is finished or cancelled */ })
-chart.on('indicatorUpdate', (e) => { /* { from } — indicator values recomputed from this bar on */ })
-chart.on('paneResize', (e) => { /* { instanceId, size } — an indicator pane was resized */ })
-chart.on('indicatorChange', (e) => { /* { instanceId, change } — shown/hidden, restyled, levels, inputs or pane changed */ })
-chart.on('barClick', (e) => { /* { bar, barIndex, point } */ })
-chart.on('visibleRangeChange', (e) => { /* { from, to } — bar indices, not timestamps */ })
-chart.on('priceRangeChange', (e) => { /* { min, max } — visible price bounds */ })
-chart.on('zoomChange', (e) => { /* { barWidth } — pixels per bar */ })
-chart.on('drawingCreate', (e) => { /* ... */ })
-chart.on('orderModify', (e) => { /* ... */ })
-chart.on('positionModify', (e) => { /* ... */ })
-```
-
-`visibleRangeChange`, `priceRangeChange`, and `zoomChange` fire on every pan,
-zoom, resize, and data update — but only when that piece of viewport state
-actually changed. Resolve a `visibleRangeChange` index to time with
-`chart.getData()[e.payload.from].time`.
-
-### Replay Mode
-
-`ReplayController` plays a historical `DataSeries` forward at controlled speed. Decoupled from `Chart` — wire it into any sink (chart for UI playback, or a strategy fn for headless backtests).
-
-```typescript
-import { ReplayController } from '@tradecanvas/chart'
-
-const replay = new ReplayController({
-  data: historicalBars,
-  speed: 10,        // bars per second
-  startIndex: 0,
-})
-
-// Seed the chart with the prefix before replay starts
-chart.setData(replay.getPrefix())
-
-// Each emitted bar drives the chart forward
-replay.on('bar', ({ bar }) => chart.appendBar(bar))
-replay.on('finished', () => console.log('done'))
-
-replay.start()
-// replay.pause(); replay.resume(); replay.step(5); replay.seek(200); replay.setSpeed(20)
-```
-
-The chart replays its own series too: `chart.replayStart()`. Signal markers and trade zones show as the replay reaches them (a trade drawn open until its exit), `startTime` starts at a time, `hideHistory` leaves the bars before the start out until the replay stops, and `duration` plays to the end in about that long, however many bars:
-
-```typescript
-chart.setSignalMarkers(signals)
-chart.setTradeZones(trades)
-chart.replayStart({ startTime: Date.now() - 30 * 86_400_000, hideHistory: true, duration: 3500 })   // the last 30 days, only them, in about 3.5 s
-chart.on('replayComplete', () => chart.replayStop())                                              // then the whole series
-```
-
-### Chart Interaction
-
-Every gesture you'd expect from a desktop trading chart is built in:
-
-| Gesture | Result |
-|---|---|
-| Drag chart body left/right | Pan through time |
-| Drag chart body up/down | Pan the price scale (freezes auto-scale; double-click price axis to restore) |
-| Drag price axis up/down | Compress / expand vertical scale (freezes auto-scale) |
-| Drag time axis left/right | Zoom time axis |
-| Double-click price axis | Re-enable auto-scale |
-| Double-click time axis | Fit all data to viewport |
-| Wheel | Zoom around cursor |
-| Drag a pane divider | Resize the indicator pane (`ns-resize` cursor on hover) |
-| `Shift` + drag | Measure ruler (bars × time × price Δ × %) |
-| `Alt` + click | Pin OHLC tooltip; live crosshair shows Δ to pinned bar |
-| Hover | Price + time pill labels follow on both axes |
-| `Esc` | Unpin tooltip / cancel drawing |
-| `?` | Show keyboard-shortcut sheet *(widget)* |
-| `Ctrl/⌘ + K` | Command palette *(widget)* |
-| `Ctrl/⌘ + P` | Symbol search *(widget)* |
-| `Ctrl/⌘ + Z` / `Shift + Z` | Undo / redo drawings |
-
-### Data import — drag-and-drop or programmatic
-
-```typescript
-import { parseOHLCV } from '@tradecanvas/chart'
-
-const { data, rowCount, skipped } = parseOHLCV(csvText)
-chart.setData(data)
-```
-
-Drop a CSV or JSON file onto the widget and it loads instantly. Auto-detects
-delimiter (`,` / `;` / tab / `|`), header vs. headerless, ISO 8601 timestamps,
-and array-of-arrays vs. array-of-objects JSON.
-
-### Backtesting (`@tradecanvas/analytics`)
-
-Bar-by-bar strategy backtester with virtual fills, commission/slippage models, and a full risk-metrics report.
-
-```typescript
-import { Backtester, PercentCommission, PercentSlippage } from '@tradecanvas/analytics'
-
-const bt = new Backtester({
-  initialCash: 10_000,
-  commission: new PercentCommission(0.0005),
-  slippage: new PercentSlippage(0.0003),
-})
-
-const result = bt.run(historicalBars, (ctx) => {
-  // Strategy fn runs at close of each bar; orders fill on the NEXT bar.
-  if (!ctx.position && smaFast > smaSlow) {
-    ctx.placeOrder({ side: 'long', type: 'market', quantity: 1 })
-  } else if (ctx.position && smaFast < smaSlow) {
-    ctx.close()
-  }
-})
-
-console.log(result.metrics.sharpe)         // 1.42
-console.log(result.metrics.maxDrawdownPct) // 0.087
-console.log(result.equityCurve)            // → feed into the chart via EquityCurveRenderer
-```
-
-Returns: `fills`, closed `trades`, `equityCurve`, `metrics` (Sharpe, Sortino, Calmar, CAGR, max drawdown, win rate, profit factor, expectancy). See the [live backtest demo](https://bonguynvan.github.io/tradecanvas/docs/analytics/).
-
-#### Strategy library
-Four drop-in reference strategies — each returns a `StrategyFn` ready to feed
-`Backtester.run()`:
-
-```typescript
-import {
-  Backtester,
-  smaCrossStrategy,
-  rsiReversionStrategy,
-  donchianBreakoutStrategy,
-  bollingerReversionStrategy,
-} from '@tradecanvas/analytics'
-
-const bt = new Backtester({ initialCash: 10_000 })
-bt.run(bars, smaCrossStrategy({ fastPeriod: 10, slowPeriod: 30 }))
-bt.run(bars, donchianBreakoutStrategy({ entryPeriod: 20, exitPeriod: 10 }))
-```
-
-#### Monte Carlo path-dependence
-Shuffle realised trade order N times to expose whether a strategy depends on
-lucky sequencing. Tight P5/P95 band = robust edge; wide band = path-dependent.
-
-```typescript
-import { runMonteCarlo } from '@tradecanvas/analytics'
-
-const result = bt.run(bars, smaCrossStrategy())
-const mc = runMonteCarlo(10_000, result.trades, { simulations: 1000, seed: 42 })
-
-mc.equityBands              // [{ step, p5, p25, p50, p75, p95 }, …]
-mc.finalEquityPercentiles   // { p5, p25, p50, p75, p95 }
-mc.probabilityProfitable    // 0..1
-mc.worstMaxDrawdownPct
-```
-
-## Comparison
-
-| Feature | @tradecanvas/chart | lightweight-charts | chart.js | Highcharts Stock |
-|---|---|---|---|---|
-| Chart types | 18 + 6 finance | 4 | 8 (non-financial) | 10+ |
-| Finance charts | Sparkline, Depth, Equity, Heatmap, Waterfall, Gauge | None | None | Some |
-| Built-in indicators | 111 | 0 | 0 | ~30 |
-| Drawing tools | 69 | 0 | 0 | Some |
-| Trading overlay | Full (pos + orders + drag) | None | None | None |
-| Real-time streaming | Built-in (Binance) | Manual | Manual | Built-in |
-| Save/load state | Yes | No | No | Yes |
-| Replay mode | Yes (`ReplayController`) | No | No | No |
-| Backtester | Yes (`@tradecanvas/analytics`) | No | No | No |
-| Multi-chart grid | Yes (`ChartGrid`) | No | No | Yes |
-| Bundle (gzip) | ~100 KB core | ~45 KB | ~70 KB | ~200 KB |
-| Dependencies | 0 | 1 | 0 | 0 |
-| Widget (complete UI) | Yes (`ChartWidget`) | No | No | No |
-| License | MIT | Apache 2.0 | MIT | Commercial |
-
-## API Overview
-
-### `new Chart(container, options)`
-
-```typescript
-const chart = new Chart(element, {
-  chartType: 'candlestick',
-  theme: DARK_THEME,
-  autoScale: true,
-  rightMargin: 5,
-  numberLocale: 'en-US',  // or 'de-DE', 'vi-VN', etc. — BCP 47 locale
-  crosshair: { mode: 'magnet' },
-  features: { drawings: true, indicators: true, trading: true, volume: true },
-})
-
-// Change locale at runtime
-chart.setNumberLocale('de-DE')  // 65.234,00
-```
-
-### Key Methods
-
-| Method | Description |
-|---|---|
-| `setData(bars)` | Load historical OHLCV data |
-| `appendBar(bar)` | Append a new candle |
-| `appendBars(bars)` | Bulk append (reconnect catch-up) |
-| `updateLastBar(bar)` | Update the in-progress candle |
-| `setCurrentPrice(price, pulseColor?)` | Show a live price line |
-| `connect(config)` | Connect to a real-time data source |
-| `setTimeframe(tf)` | Switch timeframe on active stream |
-| `setChartType(type)` | Switch chart type |
-| `setTheme(theme)` | Apply a theme (DARK_THEME, LIGHT_THEME, DARK_TERMINAL) |
-| `setNumberLocale(locale)` | Set number format locale (en-US, de-DE, vi-VN) |
-| `setStatusText(text)` | Show status in legend area ("LIVE · 8ms") |
-| `addIndicator(id, params?)` | Add a technical indicator |
-| `removeIndicator(instanceId)` | Remove an indicator |
-| `setDrawingTool(tool)` | Activate a drawing tool |
-| `setPositions(positions)` | Render trading positions |
-| `setOrders(orders)` | Render pending orders |
-| `setVolumeProfileVisible(v)` | Toggle the horizontal volume-profile overlay |
-| `setVolumeProfileConfig({ buckets, widthRatio, opacity, highlightPoC })` | Tune the volume profile |
-| `setAutoScale(v)` / `setLogScale(v)` | Lock or change price-scale mode |
-| `setInvertScale(v)` | Turn the price scale upside down |
-| `fitContent()` / `scrollToEnd()` | Fit all data / jump to live edge |
-| `setVisibleRangePreset(p)` | Show `1D`, `5D`, `1M`, `3M`, `6M`, `YTD`, `1Y`, `5Y` or `All` |
-| `goToTime(time)` | Centre the bar at a time |
-| `setCrosshairTime(time)` | Mirror another chart's crosshair (vertical line only) |
-| `copyDrawings()` / `pasteDrawings()` | Copy the selection, paste into this or another chart |
-| `setStayInDrawingMode(v)` | Keep the drawing tool after each drawing |
-| `saveState(key?)` | Serialize chart state |
-| `loadState(json)` | Restore chart state |
-| `screenshot()` | Download chart as image |
-| `setRenderer(mode)` | Draw with `'canvas'` (default), `'webgl'` or `'auto'`; resolves to what draws now |
-| `getRenderer()` | `'canvas'` or `'webgl'` |
-| `on(event, handler)` | Subscribe to events |
-| `destroy()` | Clean up all resources |
-
-### Data Format
-
-```typescript
-interface OHLCBar {
-  time: number    // Unix time in ms or seconds (up to 1e12 is read as seconds); ascending
-  open: number
-  high: number
-  low: number
-  close: number
-  volume: number
-}
-```
-
-## Examples
-
-| Example | Description |
-|---|---|
-| [Live demo](https://bonguynvan.github.io/tradecanvas/) | Feature Lab: drawing tools, indicators, trading, ranges, paged history, replay, 30 languages with sub-cent prices, watchlists with live quotes, 200k bars, slow-network switching — each on a live chart. The site and docs are also in Vietnamese, Chinese, Japanese, Korean and Spanish |
-| [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) | One-click, forkable: vanilla `Chart`, `ChartWidget`, React / Vue / Svelte wrappers, finance charts |
-| [`@tradecanvas/react`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/react/) · [`/vue`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/vue/) · [`/svelte`](https://github.com/bonguynvan/tradecanvas/tree/main/packages/svelte/) | Framework components — reactive props, typed, zero boilerplate |
-
-## AI coding tools
-
-- [`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) and
-  [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) give
-  assistants the docs in one place.
-- An agent skill, [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md), teaches
-  coding agents to build with TradeCanvas: the entry points, the rules that
-  avoid most bugs, and worked examples that CI type-checks against the library.
-  Copy the folder into your project's `.claude/skills/` (or your agent's skills
-  folder) to use it.
-
-## Browser Support
-
-Chrome 80+, Firefox 80+, Safari 14+, Edge 80+
-
-## Framework Integration
-
-Official wrapper components — reactive props, refs, zero boilerplate. Published at `1.x` alongside the core:
-
-```bash
-npm install @tradecanvas/react    # or @tradecanvas/vue · @tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" theme="dark" indicators={['rsi', 'macd']} />
-<TradeCanvas data={bars} stream={false} indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-`indicators` takes ids or `{ id, params, position }` (one whose inputs change is put back with them), `data` shows bars of your own and opens no stream, `stream={false}` never opens one, and `features` follows its changes after mount.
-
-All three share the same prop surface and hand you the underlying `Chart` (for drawings, trading, execution, plugins) via `onReady` / ref / `bind:chart`. See the [frameworks docs](https://bonguynvan.github.io/tradecanvas/docs/frameworks).
-
-### Headless (own the lifecycle)
-
-The `Chart` class also takes a DOM element directly — framework-agnostic:
-
-**React:**
-
-```tsx
-import { useEffect, useRef } from 'react'
-import { Chart, BinanceAdapter } from '@tradecanvas/chart'
-
-function TradingChart() {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const chart = new Chart(ref.current!, {
-      theme: 'dark',
-      features: { indicators: true, drawings: true },
-    })
-    chart.connect({
-      adapter: new BinanceAdapter(),
-      symbol: 'BTCUSDT',
-      timeframe: '5m',
-    })
-    return () => chart.destroy()
-  }, [])
-
-  return <div ref={ref} style={{ width: '100%', height: 500 }} />
-}
-```
-
-**Svelte:**
-
-```svelte
-<script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
-  import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart'
-  import type { TimeFrame } from '@tradecanvas/chart'
-
-  interface Props { symbol?: string; timeframe?: TimeFrame }
-  let { symbol = 'BTCUSDT', timeframe = '5m' }: Props = $props()
-
-  let container: HTMLDivElement
-  let chart: Chart | null = null
-
-  onMount(() => {
-    chart = new Chart(container, {
-      chartType: 'candlestick',
-      theme: DARK_THEME,
-      autoScale: true,
-      features: { indicators: true, drawings: true, volume: true },
-    })
-    chart.connect({ adapter: new BinanceAdapter(), symbol, timeframe })
-  })
-
-  onDestroy(() => chart?.destroy())
-
-  $effect(() => {
-    if (!chart) return
-    chart.disconnectStream()
-    chart.connect({ adapter: new BinanceAdapter(), symbol, timeframe })
-  })
-</script>
-
-<div bind:this={container} style="width: 100%; height: 600px" />
-```
-
-**Vue:**
-
-```vue
-<template>
-  <div ref="chartContainer" style="width: 100%; height: 600px" />
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Chart, BinanceAdapter, DARK_THEME } from '@tradecanvas/chart'
-
-const chartContainer = ref<HTMLDivElement>()
-let chart: Chart | null = null
-
-onMounted(() => {
-  if (!chartContainer.value) return
-  chart = new Chart(chartContainer.value, {
-    chartType: 'candlestick',
-    theme: DARK_THEME,
-    autoScale: true,
-    features: { indicators: true, drawings: true, volume: true },
-  })
-  chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '5m' })
-})
-
-onUnmounted(() => chart?.destroy())
-</script>
-```
+| [Getting started](https://bonguynvan.github.io/tradecanvas/docs/getting-started/) | Install, the widget, the headless chart |
+| [Chart types](https://bonguynvan.github.io/tradecanvas/docs/chart-types/) · [Indicators](https://bonguynvan.github.io/tradecanvas/docs/indicators/) · [Drawing tools](https://bonguynvan.github.io/tradecanvas/docs/drawing-tools/) | What the chart draws, and the settings of each |
+| [Realtime](https://bonguynvan.github.io/tradecanvas/docs/realtime/) | Built-in feeds, your own adapter, history, tick charts |
+| [Trading](https://bonguynvan.github.io/tradecanvas/docs/trading/) | Orders, positions, execution adapters, replay |
+| [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling/) · [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization/) | Themes, style keys, looks, feature switches, your own parts |
+| [Plugins](https://bonguynvan.github.io/tradecanvas/docs/plugins/) | Your own indicators, drawing tools, chart types and overlays |
+| [Analytics](https://bonguynvan.github.io/tradecanvas/docs/analytics/) · [Finance charts](https://bonguynvan.github.io/tradecanvas/docs/finance/) | Backtesting and risk metrics; depth, equity and other charts |
+| [Performance](https://bonguynvan.github.io/tradecanvas/docs/performance/) · [API reference](https://bonguynvan.github.io/tradecanvas/docs/api/) | Measurements and the full API |
+
+The docs are also in Tiếng Việt, 简体中文, 日本語, 한국어 and Español.
 
 ## Performance
 
-A two-canvas Canvas2D pipeline: a hover repaints only the thin top canvas, never the scene. Five things keep large data fast:
+Measured in Chrome on integrated graphics (Intel UHD); the [system audit](https://bonguynvan.github.io/tradecanvas/audit/) has the full table.
 
-- **LTTB downsampling** — line / area charts automatically downsample the visible range to ~2 points per pixel using Largest-Triangle-Three-Buckets when there are far more bars than pixels. The line stays visually identical while drawing dozens of times fewer points; a no-op at normal zoom. The `lttbDownsample` utility is exported for your own use.
-- **Indicators zoomed out** — below a pixel per bar, indicator lines, bands and histograms draw one span per pixel column instead of a stroke through thousands of points: much the same look for a fraction of the raster work (about 54 → 21 ms a frame zoomed out on 200,000 bars with four indicators, on integrated graphics). `node scripts/bench-render.mjs` measures it on your machine.
-- **Visible-range rendering** — every renderer iterates only the bars in view, never the whole series. Hover and pan frame cost stays flat from 500 to 100,000 loaded bars.
-- **Incremental indicators on live ticks** — a tick only changes the forming bar, so built-in indicators that implement `update()` (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic) recompute just that bar instead of the whole history. Others fall back to a full recalculation. Custom plugins can opt in via `IndicatorPlugin.update`.
-- **Cheap full loads** — a symbol/timeframe switch recomputes every indicator once. Their per-bar `values` lookup is an `IndicatorValueMap` (array-backed while bars arrive in time order, ~3x cheaper to build than a `Map` keyed by timestamps), and `setData` reuses already well-formed bars instead of copying each one.
+| | |
+|---|---|
+| 1,000,000 bars + 4 indicators, zoomed out, WebGL | 16.7 ms a frame (60 fps) |
+| A live tick on 100,000 bars with four indicators | ~0.001 ms |
+| `Chart` / `ChartWidget`, minified and gzipped | 176 KB / 315 KB |
 
-BB + EMA + RSI + MACD (`pnpm bench`, single core):
+## Packages
 
-| History | Full recalculation (switch / `setData`) | Incremental `update()` (live tick) |
-|---|---|---|
-| 20,000 bars | ~5 ms | ~0.0005 ms |
-| 100,000 bars | ~27 ms | ~0.001 ms |
+| Package | |
+|---|---|
+| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | The chart and `ChartWidget` (`/widget`) |
+| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | Framework components |
+| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | Backtester and risk metrics |
+| `@tradecanvas/core` · `@tradecanvas/commons` | The engine and shared types, installed with the chart |
 
-Downsampling throughput (`pnpm bench`, single core):
+## Preview builds
 
-| Visible points → 1600 | Time / frame | Throughput |
-|---|---|---|
-| 10,000 | ~0.025 ms | 39,600 / s |
-| 100,000 | ~0.32 ms | 3,100 / s |
-| 1,000,000 | ~2.6 ms | 380 / s |
+Every pull request and every commit on `main` is published to [pkg.pr.new](https://pkg.pr.new), so a fix or feature can be tried before it is released. Install a preview by pull request number or commit:
 
-A 100k-bar line chart downsamples in ~0.3 ms — well inside a 16.6 ms frame budget — then draws ~62× fewer points (100k → 1600).
-
-### WebGL renderer (preview)
-
-`renderer: 'webgl'` draws the plot and indicator panes with WebGL 2, on a canvas under the 2D scene: the grid, sessions, candles and volume directly, and the Canvas 2D drawing of indicators, compare lines and most chart types recorded as GPU strokes, fills and rectangles, antialiased at their edges as Canvas 2D is. The depth heatmap and the volume and market profiles are recorded the same way, under the bars; a market profile showing its stats readout or letters stays with Canvas 2D. Text, drawings, orders, axes and the crosshair stay on Canvas 2D, as does anything the GPU wouldn't draw the same (left to Canvas 2D in order, so the stacking doesn't change); custom indicator plugins come along without changes. Candles land on the same device pixels as with Canvas 2D; lines and fills differ only on a few antialiased edge pixels. The WebGL code is a chunk of its own (about 17 KB gzipped), loaded on first use; where WebGL 2 is missing, or its context is lost, the chart carries on with Canvas 2D. If the context comes back, WebGL does too. At most 8 charts on a page draw with WebGL at once (`setMaxWebGLCharts`), as Chrome and Safari keep only about 16 WebGL contexts a page and drop the oldest past that; a chart past the limit draws with Canvas 2D until one is let go. Checked in Chrome, Firefox and WebKit.
-
-```typescript
-const chart = new Chart(el, { renderer: 'webgl' })   // or 'auto': WebGL on a hardware GPU only
-
-chart.on('rendererChange', (e) => console.log(e.payload))
-// { renderer: 'webgl', reason?: 'contextRestored' }, or { renderer: 'canvas', reason: 'unsupported' | 'contextLost' | 'limit' }
-
-await chart.setRenderer('canvas')   // resolves to what draws now
-
-setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the page draw with WebGL (8 by default)
+```bash
+npm install https://pkg.pr.new/@tradecanvas/chart@123      # pull request #123
+npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # a commit on main
 ```
 
-Frame time while panning, on integrated graphics (Intel UHD; 16.7 ms is 60 fps):
+Each pull request gets a comment with the exact commands for every package.
 
-| Chart | Pixel ratio | Canvas 2D | WebGL |
-|---|---|---|---|
-| 1600×900, 500 candles + 4 indicators | 2 | 27.4 ms | 19.6 ms |
-| 1600×900, zoomed out on 200,000 bars + 4 indicators | 2 | 34.5 ms | 20.2 ms |
-| 1600×900, zoomed out on 1,000,000 bars + 4 indicators | 2 | 34.5 ms | 16.7 ms |
-| 1600×900, depth heatmap, 240 snapshots × 80 levels | 2 | 25.5 ms | 16.8 ms |
-| Six charts, 500 candles and two indicators each | 2 | 23.5 ms | 17.2 ms |
-| 2560×1400, 2,000 candles + 4 indicators | 1 | 41.6 ms | 17.7 ms |
-| 2560×1400, 2,000 candles + 4 indicators | 1.5 | 70.8 ms | 17.6 ms |
-| 2560×1400, 2,000 candles + 4 indicators | 2 | 114.5 ms | 29.1 ms |
-| 2560×1400, 2,000 candles | 2 | 33.1 ms | 20.9 ms |
+## Browser support
 
-Most WebGL frames above land on 16.7 ms; the averages carry a few longer ones. At a pixel ratio of 2 on a 2560×1400 chart, the browser's compositing of the full-size layers alone takes about 23 ms on this GPU. `node scripts/bench-render.mjs --renderer=webgl` runs these numbers on your own machine.
+Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
-## Architecture
+## AI coding tools
 
-Two stacked canvases — a hover repaints only the thin top one:
-
-```
-  Top canvas    (crosshair + axis pills, legend, countdown, measure)   z=1
-  Scene canvas  (grid, candles, indicators, drawings, orders, axes)    z=0
-```
+[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) and [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) give assistants the docs in one file, and the agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md) teaches coding agents the API with examples that CI type-checks.
 
 ## Related projects
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)** — tiny, fast **Svelte 5** data grid for fintech UIs: canvas sparklines, batched realtime cell updates, virtual scrolling, grouping / pivot / tree data, and Excel export, with a core that gzips to ~32 KB. The table half of the same toolkit — pair it with TradeCanvas for a full trading desk. **[Live demo](https://bonguynvan.github.io/bo-grid/)**
+- **[bo-grid](https://github.com/bonguynvan/bo-grid)**: a small, fast Svelte 5 data grid for fintech interfaces, the table half of a trading desk. [Live demo](https://bonguynvan.github.io/bo-grid/)
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](https://github.com/bonguynvan/tradecanvas/blob/main/CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`), how the repo is laid out and what a pull request needs. Found a security issue? Please follow [SECURITY.md](https://github.com/bonguynvan/tradecanvas/blob/main/SECURITY.md) instead of opening an issue.
-
-If TradeCanvas saves you time, a star on GitHub helps other developers find it.
+Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](https://github.com/bonguynvan/tradecanvas/blob/main/CONTRIBUTING.md) covers the setup (`pnpm install && pnpm build && pnpm test`) and what a pull request needs. Found a security issue? Please follow [SECURITY.md](https://github.com/bonguynvan/tradecanvas/blob/main/SECURITY.md) instead of opening an issue.
 
 ## Sponsor
 
-TradeCanvas is free and MIT-licensed, built and maintained in the open. If it helps your product, you can support its development on [GitHub Sponsors](https://github.com/sponsors/bonguynvan): sponsorship pays for the time that goes into new chart types, performance work, docs in six languages and quick fixes for the apps that depend on it.
+TradeCanvas is free and MIT-licensed, built and maintained in the open. If it helps your product, you can support its development on [GitHub Sponsors](https://github.com/sponsors/bonguynvan).
 
 ## License
 

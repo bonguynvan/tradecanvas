@@ -1,0 +1,38 @@
+name: Preview packages
+
+# Every pull request and every commit on main is published to pkg.pr.new, so
+# a change can be installed and tried before it is released:
+#   npm i https://pkg.pr.new/@tradecanvas/chart@<pull request number or commit>
+# Needs the pkg.pr.new GitHub App installed on the repository.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # The seven published packages, in dependency order; the site isn't needed.
+      - run: pnpm --filter "./packages/*" build
+      # One call for all of them: links between them (workspace:*) are rewritten
+      # to their own previews. --pnpm packs as the release does.
+      - run: pnpm exec pkg-pr-new publish --pnpm --packageManager=npm,pnpm './packages/*'
