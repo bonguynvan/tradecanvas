@@ -146,5 +146,10 @@ registerPlugin({
   지표와 차트 타입 렌더러는 viewport만 받으므로 <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code>와 그 역함수도 export됩니다.
   봉은 화면에 그려진 시리즈의 봉입니다: Renko나 Kagi 차트에서는 그 벽돌입니다(<code>chart.isTimeAligned()</code>로 데이터 봉과 같은지 알 수 있습니다).
 </p>
+<p>
+  자체 설정(표시 방식, 스위치)이 있는 오버레이는 차트를 다시 그릴 틱이 오지 않아도 변경을 바로 보여 줄 수 있습니다.
+  플러그인에 <code>enabled: false</code>를 설정하면 등록은 유지한 채 숨겨지고, 둘 중 하나를 바꾼 뒤
+  <code>chart.requestRender()</code>를 호출합니다. 다음 프레임 전의 여러 요청은 한 프레임으로 묶입니다.
+</p>
 
 <p>플러그인 타입 시그니처 전체는 <a href={href('/docs/api')}>API 레퍼런스</a>를 참고하세요.</p>

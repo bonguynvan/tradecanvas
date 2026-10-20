@@ -148,5 +148,10 @@ registerPlugin({
   <code>timeToX</code> とその逆関数もエクスポートしています。バーは画面に描かれている系列のもので、練行足や
   Kagi ではそのブロックです（<code>chart.isTimeAligned()</code> でデータのバーと一致するかが分かります）。
 </p>
+<p>
+  独自の設定（表示モードやスイッチ）を持つオーバーレイは、チャートを再描画する tick が来なくても変更をすぐに反映できます。
+  プラグインに <code>enabled: false</code> を設定すると登録したまま非表示になり、どちらかを変えたら
+  <code>chart.requestRender()</code> を呼びます。次のフレームまでの複数の要求は 1 フレームにまとめられます。
+</p>
 
 <p>プラグインの型シグネチャの全体は、<a href={href('/docs/api')}>API リファレンス</a>を参照してください。</p>

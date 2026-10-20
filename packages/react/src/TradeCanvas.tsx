@@ -52,6 +52,13 @@ export interface TradeCanvasProps {
   /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
   overrides?: ChartStyleOverrides;
   watermarkText?: string;
+  /**
+   * Chart options the props don't cover (`maxBarSpacing`, `rightMargin`,
+   * `renderer`…), merged over the component's defaults at mount; later
+   * changes are not applied. `chartType`, `theme` and `autoScale` always come
+   * from their props.
+   */
+  options?: Partial<ChartOptions>;
   onReady?: (chart: Chart) => void;
   onCrosshairMove?: (payload: unknown) => void;
   className?: string;
@@ -84,6 +91,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       tradeZoneStyle,
       overrides,
       watermarkText,
+      options,
       onReady,
       onCrosshairMove,
       className,
@@ -108,11 +116,12 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       if (!container) return;
 
       const opts: ChartOptions = {
+        rightMargin: 5,
+        crosshair: { mode: 'magnet' },
+        ...options,
         chartType,
         theme: resolveTheme(theme),
         autoScale,
-        rightMargin: 5,
-        crosshair: { mode: 'magnet' },
         features: {
           drawings: true,
           drawingMagnet: true,
@@ -128,6 +137,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
           barCountdown: true,
           logScale: true,
           watermark: true,
+          ...options?.features,
           ...features,
         },
       };

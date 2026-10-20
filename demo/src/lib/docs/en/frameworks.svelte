@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>The chart's look by key (see <a href={href('/docs/styling#overrides')}>Styling</a>).</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>Default <code>true</code>.</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>Text behind the bars.</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>Chart options the props don't cover (<code>maxBarSpacing</code>, <code>rightMargin</code>, <code>renderer</code>…), merged over the component's defaults at mount. Later changes are not applied; <code>chartType</code>, <code>theme</code> and <code>autoScale</code> always come from their props.</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>After the chart mounts (Vue: the <code>ready</code> event).</td></tr>
   </tbody>
 </table>

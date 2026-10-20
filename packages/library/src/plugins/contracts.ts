@@ -34,6 +34,11 @@ export interface OverlayRenderContext {
 /** A custom data overlay (e.g. a volume-profile-style layer). */
 export interface OverlayPlugin {
   descriptor: { id: string; name: string; layer?: 'main' | 'overlay' | 'ui' };
+  /**
+   * False: the overlay stays registered but isn't drawn. Read on every frame:
+   * after switching it, call `chart.requestRender()` to show the change at once.
+   */
+  enabled?: boolean;
   render(ctx: CanvasRenderingContext2D, context: OverlayRenderContext): void;
   hitTest?(point: Point, context: OverlayRenderContext): boolean;
 }
@@ -45,12 +50,12 @@ export type ChartPlugin =
   | { kind: 'chartType'; plugin: ChartTypePlugin }
   | { kind: 'overlay'; plugin: OverlayPlugin };
 
-/** Overlays whose target layer matches `layer` (the default layer is `overlay`). */
+/** Overlays drawn on `layer` (the default layer is `overlay`), leaving out those switched off. */
 export function overlaysForLayer(
   overlays: OverlayPlugin[],
   layer: 'main' | 'overlay' | 'ui',
 ): OverlayPlugin[] {
-  return overlays.filter((o) => (o.descriptor.layer ?? 'overlay') === layer);
+  return overlays.filter((o) => o.enabled !== false && (o.descriptor.layer ?? 'overlay') === layer);
 }
 
 /** Stable identity for a plugin, used for registry de-duplication and `list()`. */

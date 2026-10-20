@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>El aspecto del gráfico por clave (ver <a href={href('/docs/styling#overrides')}>Estilos</a>).</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>Por defecto <code>true</code>.</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>Texto detrás de las velas.</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>Opciones del gráfico que las props no cubren (<code>maxBarSpacing</code>, <code>rightMargin</code>, <code>renderer</code>…), combinadas sobre los valores por defecto del componente al montarlo. Los cambios posteriores no se aplican; <code>chartType</code>, <code>theme</code> y <code>autoScale</code> siempre salen de sus props.</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>Tras montar el gráfico (Vue: el evento <code>ready</code>).</td></tr>
   </tbody>
 </table>

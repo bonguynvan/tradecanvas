@@ -149,5 +149,11 @@ registerPlugin({
   <code>timeToX</code> and their inverses are exported for them. The bars are those on screen: on a Renko or
   Kagi chart, its bricks (<code>chart.isTimeAligned()</code> says when they are the feed's bars).
 </p>
+<p>
+  An overlay with settings of its own (a display mode, a switch) can show a change at once, even when no
+  tick is coming to redraw the chart: set <code>enabled: false</code> on the plugin to hide it while it stays
+  registered, and call <code>chart.requestRender()</code> after changing either. Requests before the next
+  frame make one frame.
+</p>
 
 <p>See the <a href={href('/docs/api')}>API reference</a> for the full plugin type signatures.</p>

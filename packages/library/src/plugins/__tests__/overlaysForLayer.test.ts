@@ -21,6 +21,12 @@ describe('overlaysForLayer', () => {
     expect(overlaysForLayer(all, 'ui').map((o) => o.descriptor.id)).toEqual(['d']);
   });
 
+  it('leaves out an overlay switched off', () => {
+    const off = { ...ov('e', 'main'), enabled: false };
+    const on = { ...ov('f', 'main'), enabled: true };
+    expect(overlaysForLayer([...all, off, on], 'main').map((o) => o.descriptor.id)).toEqual(['a', 'f']);
+  });
+
   it('handles empty input', () => {
     expect(overlaysForLayer([], 'main')).toEqual([]);
   });

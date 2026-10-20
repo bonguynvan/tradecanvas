@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>キーで指定するチャートの見た目（<a href={href('/docs/styling#overrides')}>スタイル設定</a>を参照）。</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>既定は <code>true</code>。</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>足の背後に出す透かし文字。</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>props でカバーされないチャートのオプション（<code>maxBarSpacing</code>、<code>rightMargin</code>、<code>renderer</code>…）。マウント時にコンポーネントの既定値に重ねてマージされます。マウント後の変更は反映されません。<code>chartType</code>、<code>theme</code>、<code>autoScale</code> は常にそれぞれの props から取られます。</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>チャートのマウント後（Vue は <code>ready</code> イベント）。</td></tr>
   </tbody>
 </table>

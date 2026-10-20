@@ -23,6 +23,7 @@ import type {
   TradeZoneStyle,
   DataAdapter,
   ChartStyleOverrides,
+  ChartOptions,
   IndicatorSpec,
 } from '@tradecanvas/chart';
 
@@ -50,6 +51,13 @@ const props = withDefaults(
     /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
     overrides?: ChartStyleOverrides;
     watermarkText?: string;
+    /**
+     * Chart options the props don't cover (`maxBarSpacing`, `rightMargin`,
+     * `renderer`…), merged over the component's defaults at mount; later
+     * changes are not applied. `chartType`, `theme` and `autoScale` always come
+     * from their props.
+     */
+    options?: Partial<ChartOptions>;
   }>(),
   {
     symbol: 'BTCUSDT',
@@ -125,14 +133,15 @@ onMounted(() => {
   if (!containerEl.value) return;
 
   chart = new Chart(containerEl.value, {
+    rightMargin: 5,
+    crosshair: { mode: 'magnet' },
+    ...props.options,
     chartType: props.chartType,
     theme: resolveTheme(props.theme),
     autoScale: props.autoScale,
-    rightMargin: 5,
-    crosshair: { mode: 'magnet' },
-    watermark: props.watermarkText
-      ? { text: props.watermarkText, fontSize: 48, color: 'rgba(255,255,255,0.03)' }
-      : undefined,
+    ...(props.watermarkText
+      ? { watermark: { text: props.watermarkText, fontSize: 48, color: 'rgba(255,255,255,0.03)' } }
+      : {}),
     features: {
       drawings: true,
       drawingMagnet: true,
@@ -148,6 +157,7 @@ onMounted(() => {
       barCountdown: true,
       logScale: true,
       watermark: true,
+      ...props.options?.features,
       ...props.features,
     },
   });
