@@ -319,6 +319,18 @@ const ko: SiteMessages = {
         '수평선을 그려 보세요. 라벨도 32분의 1 단위로 표시됩니다',
       ],
     },
+    vnmarket: {
+      title: '베트남 시장',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE와 VN30 선물을 거래소가 운영하는 그대로 보여 줍니다. 가격대별 10, 50, 100동 호가 단위, 그날의 상한가·하한가·기준가, 100주 매매 단위, 베트남 시간 기준 거래 세션, 시세판 색상까지 담았습니다.',
+      tryThis: [
+        '차트를 오른쪽 클릭하세요. 제시되는 가격은 모두 호가 단위에 맞습니다(HPG는 50동)',
+        '계좌 패널에서 새 주문을 여세요. 수량은 100주에서 시작하고, 상한가를 넘는 가격은 거부됩니다',
+        'FPT(100동 단위)나 VN30F 계약(8:45 개장)으로 바꿔 보세요',
+        '보라색, 청록색, 노란색 선이 상한가, 하한가, 기준가입니다',
+      ],
+    },
     subcent: {
       title: '30개 언어, 1센트 미만 가격',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const ko: SiteMessages = {
         { name: '호가창 래더', detail: '가격별 매수·매도 잔량, 클릭해 주문' },
         { name: '관심 종목용 실시간 시세', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: '뉴스와 시장 상태', detail: 'fetchNews, 개장이나 마감까지의 카운트다운' },
+        { name: '거래소 규칙', detail: 'setMarket: 가격대별 호가 단위, 일일 상한가와 하한가, 매매 단위, 거래 세션, HOSE·HNX·UPCoM·VN30 선물' },
       ],
       trading: [
         { name: '차트 위의 주문과 포지션', detail: '드래그로 수정하고, 선에서 바로 취소·청산·반전' },
         { name: '체결 표시', detail: 'executionFill에 사유와 손익' },
-        { name: '주문 티켓', detail: '수량, 유형, 손절과 익절, 유효 기간, 입력하는 동안 검사' },
+        { name: '주문 티켓', detail: '수량, 유형, 손절과 익절, 유효 기간, 입력하는 동안 검사, 거래소의 호가 단위·상한가·하한가·매매 단위까지' },
         { name: '계좌 패널', detail: '실시간 손익이 있는 포지션, 미체결 주문, 체결 내역' },
         { name: '신호와 거래 구간', detail: 'markers.*, tradeZones.* 스타일 키' },
         { name: '백테스트와 리스크 지표', detail: '@tradecanvas/analytics: 수수료, 슬리피지, Sharpe, Sortino, Calmar, 낙폭' },

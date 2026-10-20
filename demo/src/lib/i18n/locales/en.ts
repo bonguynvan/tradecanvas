@@ -326,6 +326,18 @@ const en = {
         'Draw a horizontal line: its label reads in 32nds too',
       ],
     },
+    vnmarket: {
+      title: 'Vietnamese markets',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE and VN30 futures as their exchanges run them: prices in 10, 50 or 100 dong steps by price band, the day’s ceiling, floor and reference price, lots of 100, the trading sessions in Vietnam’s time zone, and the price board’s colours.',
+      tryThis: [
+        'Right-click the chart: the prices it offers sit on the step, 50 dong for HPG',
+        'Open a new order from the account panel: it starts at 100 shares, and a price past the ceiling is refused',
+        'Switch to FPT (100-dong steps) or to the VN30F contract (from 8:45)',
+        'The purple, cyan and yellow lines are the ceiling, floor and reference price',
+      ],
+    },
     subcent: {
       title: '30 languages, sub-cent prices',
       stat: 'i18n',
@@ -700,11 +712,12 @@ const en = {
         { name: 'Depth-of-market ladder', detail: 'Bid and ask size by price; click to trade' },
         { name: 'Live quotes for watchlists', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'News and market status', detail: 'fetchNews; a countdown to the open or close' },
+        { name: 'Exchange rules', detail: 'setMarket: steps by price band, daily ceiling and floor, lots, sessions; HOSE, HNX, UPCoM and VN30 futures' },
       ],
       trading: [
         { name: 'Orders and positions on the chart', detail: 'Drag to modify; cancel, close and reverse from the line' },
         { name: 'Fill marks', detail: 'Reason and profit or loss in executionFill' },
-        { name: 'Order ticket', detail: 'Quantity, type, stop-loss and take-profit, time in force, checked as you type' },
+        { name: 'Order ticket', detail: 'Quantity, type, stop-loss and take-profit, time in force, checked as you type; the exchange’s price step, ceiling, floor and lots' },
         { name: 'Account panel', detail: 'Positions with live profit and loss, working orders, fills' },
         { name: 'Signals and trade zones', detail: 'markers.*, tradeZones.* style keys' },
         { name: 'Backtesting and risk metrics', detail: '@tradecanvas/analytics: commission, slippage, Sharpe, Sortino, Calmar, drawdown' },

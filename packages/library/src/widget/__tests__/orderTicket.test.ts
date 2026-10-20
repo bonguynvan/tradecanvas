@@ -35,6 +35,26 @@ describe('order ticket rules', () => {
     expect(orderTicketProblems(draft({ side: 'sell', type: 'market', stopLoss: 101, takeProfit: 99 }), 100)).toEqual([]);
   });
 
+  it('keeps prices on the market’s step, inside the day’s limits, and lots whole', () => {
+    // HOSE in thousands of dong: 0.05 a step from 10 to 50, ceiling 27.1, floor 23.6.
+    const rules = {
+      roundPrice: (p: number) => Number((Math.round(p / 0.05) * 0.05).toFixed(2)),
+      limits: { ceiling: 27.1, floor: 23.6 },
+      lot: 100,
+    };
+    const hose = (over: Partial<OrderTicketDraft>) => draft({ price: 25.35, quantity: 100, ...over });
+    expect(orderTicketProblems(hose({ stopLoss: 24.5, takeProfit: 26 }), 25.5, rules)).toEqual([]);
+    expect(orderTicketProblems(hose({ price: 25.37 }), 25.5, rules)).toEqual(['priceStep']);
+    expect(orderTicketProblems(hose({ stopLoss: 24.52 }), 25.5, rules)).toEqual(['priceStep']);
+    expect(orderTicketProblems(hose({ price: 23.5 }), 25.5, rules)).toEqual(['priceLimits']);
+    expect(orderTicketProblems(hose({ type: 'stop', price: 27.15 }), 25.5, rules)).toEqual(['priceLimits']);
+    // Odd lots (under 100) are orders of their own; above a lot, whole lots only.
+    expect(orderTicketProblems(hose({ quantity: 40 }), 25.5, rules)).toEqual([]);
+    expect(orderTicketProblems(hose({ quantity: 250 }), 25.5, rules)).toEqual(['lot']);
+    // A market order's price is the market's.
+    expect(orderTicketProblems(hose({ type: 'market', price: 0 }), 25.5, rules)).toEqual([]);
+  });
+
   it('asks for the order the draft describes', () => {
     expect(orderTicketIntent(draft({ type: 'stop', price: 105, stopLoss: 100 }), 100)).toEqual({
       side: 'buy', type: 'stop', price: 105, stopPrice: 105, quantity: 1, timeInForce: 'gtc', stopLoss: 100,

@@ -165,6 +165,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   va por debajo del mercado, un stop-loss en el lado perdedor de la entrada…) y
   muestra la relación beneficio:riesgo. Al enviarla se emite una intención
   <code>orderPlace</code>.
+  Con un mercado definido (<code>chart.setMarket</code>), además mantiene sus precios en la
+  fluctuación mínima del mercado y el precio de la orden dentro del techo y el suelo del día, empieza en un lote y, por
+  encima de uno, acepta solo lotes completos (las acciones sueltas van en una orden de lote
+  incompleto aparte).
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

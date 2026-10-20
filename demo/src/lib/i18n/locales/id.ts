@@ -319,6 +319,18 @@ const id: SiteMessages = {
         'Gambar garis horizontal: labelnya juga tampil dalam 1/32',
       ],
     },
+    vnmarket: {
+      title: 'Pasar Vietnam',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE dan kontrak berjangka VN30 sebagaimana bursanya menjalankannya: harga dalam fraksi 10, 50, atau 100 dong menurut rentang harga, harga batas atas, batas bawah, dan harga acuan hari itu, lot berisi 100 saham, sesi perdagangan dalam zona waktu Vietnam, serta warna papan harga.',
+      tryThis: [
+        'Klik kanan grafik: harga yang ditawarkan selalu tepat di fraksi harga, 50 dong untuk HPG',
+        'Buka order baru dari panel akun: dimulai dari 100 saham, dan harga di atas batas atas ditolak',
+        'Beralih ke FPT (fraksi 100 dong) atau ke kontrak VN30F (mulai pukul 08.45)',
+        'Garis ungu, sian, dan kuning adalah batas atas, batas bawah, dan harga acuan',
+      ],
+    },
     subcent: {
       title: '30 bahasa, harga di bawah satu sen',
       stat: 'i18n',
@@ -692,11 +704,12 @@ const id: SiteMessages = {
         { name: 'Tangga depth-of-market', detail: 'Ukuran bid dan ask per harga; klik untuk trading' },
         { name: 'Kuotasi langsung untuk daftar pantauan', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Berita dan status pasar', detail: 'fetchNews; hitung mundur ke pembukaan atau penutupan' },
+        { name: 'Aturan bursa', detail: 'setMarket: fraksi harga per rentang harga, batas atas dan batas bawah harian, lot, sesi; HOSE, HNX, UPCoM, dan kontrak berjangka VN30' },
       ],
       trading: [
         { name: 'Order dan posisi di grafik', detail: 'Seret untuk mengubah; batalkan, tutup, dan balik dari garisnya' },
         { name: 'Tanda eksekusi', detail: 'Alasan serta untung atau rugi di executionFill' },
-        { name: 'Tiket order', detail: 'Kuantitas, tipe, stop-loss dan take-profit, masa berlaku, diperiksa saat Anda mengetik' },
+        { name: 'Tiket order', detail: 'Kuantitas, tipe, stop-loss dan take-profit, masa berlaku, diperiksa saat Anda mengetik; fraksi harga, batas atas, batas bawah, dan lot bursa' },
         { name: 'Panel akun', detail: 'Posisi dengan untung dan rugi langsung, order aktif, eksekusi' },
         { name: 'Sinyal dan zona trading', detail: 'Kunci gaya markers.*, tradeZones.*' },
         { name: 'Backtesting dan metrik risiko', detail: '@tradecanvas/analytics: komisi, slippage, Sharpe, Sortino, Calmar, drawdown' },

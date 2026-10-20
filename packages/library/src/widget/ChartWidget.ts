@@ -34,6 +34,7 @@ import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
+import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
@@ -2125,7 +2126,19 @@ export class ChartWidget {
   private openOrderTicket(price?: number): void {
     if (!this.featureState.orderTicket) return;
     const data = this.chart.getData();
-    this.orderTicket?.open({ price, lastPrice: data.length > 0 ? data[data.length - 1].close : null });
+    this.orderTicket?.open({ price, lastPrice: data.length > 0 ? data[data.length - 1].close : null, rules: this.orderRules() });
+  }
+
+  /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
+  private orderRules(): OrderTicketRules {
+    const market = this.chart.getMarket();
+    if (!market) return {};
+    const stepped = market.priceStep !== undefined || (market.priceSteps?.length ?? 0) > 0;
+    return {
+      roundPrice: stepped ? (p) => this.chart.roundPrice(p) : undefined,
+      limits: this.chart.getPriceLimits(),
+      lot: market.volumeUnit,
+    };
   }
 
   /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */

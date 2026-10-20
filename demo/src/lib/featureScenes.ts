@@ -81,6 +81,71 @@ function swings(data: OHLCBar[], span: number, endOffset: number, count: number,
   });
 }
 
+
+/** Vietnamese symbols in the markets scene: a price in thousands of dong (index points for VN30F). */
+const VN_SYMBOLS: Record<string, { start: number; name: string }> = {
+  HPG: { start: 27, name: 'Hoa Phat Group · HOSE' },
+  FPT: { start: 118, name: 'FPT Corporation · HOSE' },
+  VN30F2611: { start: 1350, name: 'VN30 futures, November 2026 · HNX' },
+};
+const isVN30F = (symbol: string) => symbol.startsWith('VN30F');
+
+/** HOSE's steps in thousands of dong (10, 50, 100 dong); 0.1 a point for VN30F. */
+const vnStep = (symbol: string, price: number) => (isVN30F(symbol) || price >= 50 ? 0.1 : price >= 10 ? 0.05 : 0.01);
+const onStep = (symbol: string, price: number) => {
+  const step = vnStep(symbol, price);
+  return Number((Math.round(price / step) * step).toFixed(2));
+};
+
+/** Vietnam's clock: UTC+7 all year. */
+const VN_OFFSET = 7 * HOUR;
+const MINUTE = 60_000;
+/** A bar in the trading day: Monday to Friday, in the morning or afternoon session. */
+const inSession = (symbol: string, time: number) => {
+  const local = new Date(time + VN_OFFSET);
+  const day = local.getUTCDay();
+  const minute = local.getUTCHours() * 60 + local.getUTCMinutes();
+  const open = isVN30F(symbol) ? 8 * 60 + 45 : 9 * 60;
+  return day !== 0 && day !== 6 && ((minute >= open && minute < 11 * 60 + 30) || (minute >= 13 * 60 && minute < 14 * 60 + 45));
+};
+
+/** 15-minute bars on valid prices, in the sessions only, as a Vietnamese feed sends them. */
+function vnBars(symbol: string): OHLCBar[] {
+  // A walk over session bars only: no jumps where the night was.
+  const all = generateBars(12_000, symbol, 15 * MINUTE, VN_SYMBOLS[symbol]?.start ?? 27);
+  const times = all.map((b) => b.time).filter((t) => inSession(symbol, t));
+  return generateBars(times.length, symbol, 15 * MINUTE, VN_SYMBOLS[symbol]?.start ?? 27).map((b, i) => ({
+    ...b,
+    time: times[i],
+    open: onStep(symbol, b.open),
+    high: onStep(symbol, b.high),
+    low: onStep(symbol, b.low),
+    close: onStep(symbol, b.close),
+    volume: Math.round(b.volume) * 100,
+  }));
+}
+
+/** The markets scene's chart and library, so a symbol switch can set its market. */
+const vnScene: { chart: Chart | null; lib: SceneEnv['lib'] | null } = { chart: null, lib: null };
+
+function applyVNMarket(symbol: string): void {
+  const { chart, lib } = vnScene;
+  if (!chart || !lib) return;
+  const futures = isVN30F(symbol);
+  chart.setMarket(futures ? lib.MARKET_VN30F : lib.MARKET_HOSE);
+  chart.setSymbolInfo({
+    symbol,
+    description: VN_SYMBOLS[symbol]?.name,
+    timezone: 'Asia/Ho_Chi_Minh',
+    sessions: [{ start: futures ? '08:45' : '09:00', end: '11:30' }, { start: '13:00', end: '14:45' }],
+  });
+  // The reference: the close a day of bars back (22 a day), about yesterday's.
+  const bars = vnBars(symbol);
+  chart.setPriceLimits(bars[bars.length - 26].close);
+  // Three weeks of sessions: room for the ceiling and floor lines.
+  chart.setVisibleRange(bars[Math.max(0, bars.length - 330)].time, bars[bars.length - 1].time);
+}
+
 export const FEATURE_SCENES: FeatureScene[] = [
   {
     id: 'drawings',
@@ -327,6 +392,30 @@ chart.setExtendedHours(false)   // the regular session only`,
     data: (symbol) => generateBars(1500, symbol, HOUR / 2, 110),
     setup: (_widget, chart) => {
       chart.setSymbolInfo({ symbol: 'TNOTE', description: '10-year note', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
+    },
+  },
+  {
+    id: 'vnmarket',
+    code: `import { MARKET_HOSE, MARKET_VN30F } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_HOSE)      // steps by price, ±7%, lots of 100, green up and red down
+chart.setPriceLimits(27.05)       // the reference price: ceiling 28.9, floor 25.2
+chart.roundPrice(27.37)           // 27.35: a 50-dong step between 10,000 and 50,000
+
+chart.setMarket(MARKET_VN30F)     // VN30 futures: 0.1 a point, ±7%, from 8:45
+vn30fContracts(Date.now())        // the four listed contracts and their last days`,
+    options: () => ({
+      symbol: 'HPG',
+      symbols: Object.keys(VN_SYMBOLS),
+      timeframe: '15m',
+      chartOptions: { extendedHours: false },
+      onSymbolChange: (symbol) => applyVNMarket(symbol),
+    }),
+    data: (symbol) => vnBars(symbol),
+    setup: (_widget, chart, env) => {
+      vnScene.chart = chart;
+      vnScene.lib = env.lib;
+      applyVNMarket('HPG');
     },
   },
   {

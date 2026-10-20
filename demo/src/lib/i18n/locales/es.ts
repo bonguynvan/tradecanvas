@@ -321,6 +321,18 @@ const es: SiteMessages = {
         'Dibuja una línea horizontal: su etiqueta también se lee en 32avos',
       ],
     },
+    vnmarket: {
+      title: 'Mercados de Vietnam',
+      stat: 'HOSE · VN30F',
+      blurb:
+        'HOSE y los futuros del VN30 tal como los operan sus bolsas: precios en pasos de 10, 50 o 100 dongs según el tramo de precio, el precio techo, el precio suelo y el precio de referencia del día, lotes de 100 acciones, las sesiones de negociación en la hora de Vietnam y los colores de la pizarra de precios.',
+      tryThis: [
+        'Haz clic derecho en el gráfico: los precios que ofrece respetan la fluctuación mínima, 50 dongs para HPG',
+        'Abre una nueva orden desde el panel de cuenta: empieza con 100 acciones, y un precio por encima del techo se rechaza',
+        'Cambia a FPT (pasos de 100 dongs) o al contrato VN30F (desde las 8:45)',
+        'Las líneas morada, cian y amarilla son el precio techo, el precio suelo y el precio de referencia',
+      ],
+    },
     subcent: {
       title: '30 idiomas, precios por debajo del centavo',
       stat: 'i18n',
@@ -697,11 +709,12 @@ const es: SiteMessages = {
         { name: 'Escalera de profundidad de mercado', detail: 'Tamaño de compra y de venta por precio; haz clic para operar' },
         { name: 'Cotizaciones en vivo para listas de seguimiento', detail: 'subscribeQuotes, setQuotes, getQuote' },
         { name: 'Noticias y estado del mercado', detail: 'fetchNews; una cuenta atrás hasta la apertura o el cierre' },
+        { name: 'Reglas de la bolsa', detail: 'setMarket: fluctuación mínima por tramo de precio, techo y suelo diarios, lotes, sesiones; HOSE, HNX, UPCoM y futuros del VN30' },
       ],
       trading: [
         { name: 'Órdenes y posiciones en el gráfico', detail: 'Arrastra para modificar; cancela, cierra o invierte desde la línea' },
         { name: 'Marcas de ejecución', detail: 'Motivo y ganancia o pérdida en executionFill' },
-        { name: 'Ticket de orden', detail: 'Cantidad, tipo, stop-loss y take-profit, vigencia, validados mientras escribes' },
+        { name: 'Ticket de orden', detail: 'Cantidad, tipo, stop-loss y take-profit, vigencia, validados mientras escribes; la fluctuación mínima, el techo, el suelo y los lotes de la bolsa' },
         { name: 'Panel de cuenta', detail: 'Posiciones con ganancias y pérdidas en vivo, órdenes pendientes, ejecuciones' },
         { name: 'Señales y zonas de operación', detail: 'Claves de estilo markers.*, tradeZones.*' },
         { name: 'Backtesting y métricas de riesgo', detail: '@tradecanvas/analytics: comisión, deslizamiento, Sharpe, Sortino, Calmar, drawdown' },

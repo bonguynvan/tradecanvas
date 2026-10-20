@@ -150,6 +150,9 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   任意の損切りと利確、有効期限を指定します。入力中に注文をチェックし（買いの指値は市場価格より下、
   損切りはエントリーに対して損失側に置く…）、リスクリワード比を表示します。発注すると
   <code>orderPlace</code> の意図が送られます。
+  マーケットを設定している場合（<code>chart.setMarket</code>）は、各価格をマーケットの呼値の単位に合わせ、注文価格を当日の
+  上限価格と下限価格の範囲内に収め、数量は 1 単位から始まり、1 単位を超えると売買単位の整数倍だけを受け付けます
+  （それより少ない株数は、別の単元未満株の注文になります）。
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
