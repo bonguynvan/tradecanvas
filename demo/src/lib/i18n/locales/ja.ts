@@ -14,6 +14,7 @@ const ja: SiteMessages = {
     playground: 'プレイグラウンド',
     changelog: '変更履歴',
     audit: '監査',
+    business: '法人向け',
     toLight: 'ライトテーマに切り替え',
     toDark: 'ダークテーマに切り替え',
     github: 'GitHub の TradeCanvas',
@@ -35,6 +36,7 @@ const ja: SiteMessages = {
     examples: 'サンプル',
     changelog: '変更履歴',
     audit: 'システム監査',
+    business: '法人のお客様へ',
     issues: 'Issue',
     boGrid: 'bo-grid（データグリッド）',
     builtWith: 'TradeCanvas で構築',
@@ -740,6 +742,91 @@ const ja: SiteMessages = {
       'ティックの時間足は、フィードが返す直近の約定から作成します。それより古いティック履歴は読み込めません。',
       'ボリュームデルタと CVD はバーから推定しており、約定ごとの売買方向にもとづくものではありません。',
       '1 ページで同時に WebGL で描画できるチャートは最大 8 つで、残りは Canvas 2D で描画します。',
+    ],
+  },
+
+  business: {
+    metaTitle: '法人向け — TradeCanvas',
+    description:
+      '商用製品で使う TradeCanvas：MIT ライセンス、チャートにロゴなし、登録不要、外部への送信なし。IT 審査でよく聞かれる項目とその根拠、そして初期パートナープログラム。',
+    eyebrow: '法人向け',
+    title: '自社ブランドで届ける、トレーディングチャート。',
+    lede: 'TradeCanvas は MIT ライセンスです。商用製品に組み込み、改変し、自社でホストできます。お客様に見えるのは貴社のブランドだけで、データは貴社のサーバーにとどまります。',
+    ctaContact: 'お問い合わせ',
+    ctaAudit: 'システム監査を読む',
+
+    freeTitle: 'あらゆる用途で無料',
+    free: [
+      {
+        title: 'チャートにロゴなし',
+        body: 'TradeCanvas はチャートにもウィジェットにも、自身の表示を一切描きません。MIT ライセンスが求めるのは、ライセンス文をコードに添えておくことだけです。',
+      },
+      {
+        title: '外部への送信なし',
+        body: 'ライブラリにテレメトリはありません。接続を開くのは、貴社が起動したデータアダプター（組み込みの取引所フィード、または独自のもの）を通じてだけです。',
+      },
+      {
+        title: '申請も承認も不要',
+        body: 'npm install するだけで、システム監査に載っている機能はすべて使えます。板（DOM）ラダー、板の厚みチャート、ヒートマップも含みます。',
+      },
+      {
+        title: 'ソースコードのすべて',
+        body: '読むのも、直すのも、フォークするのも自由です。MIT は貴社のコードに何も求めません。コードは貴社のものであり、望むなら非公開のままにできます。',
+      },
+    ],
+
+    reviewTitle: 'IT 審査に対応',
+    reviewLede: 'セキュリティ審査やベンダー審査でよく聞かれる項目と、それぞれの答えを確かめられる場所です。',
+    reviewHtml: [
+      'サードパーティのランタイム依存関係なし：チャートパッケージが依存するのは TradeCanvas 自身の core と commons だけです。',
+      '<code>eval</code> も <code>new Function</code> も使っていないため、<code>unsafe-eval</code> を許可しない Content Security Policy の下で動作します。',
+      "ウィジェットは <code>&lt;style&gt;</code> 要素を 1 つ追加するため、そのページには <code>style-src 'unsafe-inline'</code> が必要です。ヘッドレスの <code>Chart</code> は何も追加しません。",
+      'セキュリティ上の問題は非公開で報告でき、1 週間以内に回答します。',
+      'すべてのプルリクエストは CI でビルド、型チェック、テストされます。ユニットテストは 3,000 件超です。',
+      'リリースは開発者の手元のマシンからではなく、リポジトリから GitHub Actions で公開されます。',
+      'Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。',
+      'ライセンス：MIT、1 ページ。',
+    ],
+    source: '出典',
+
+    dataTitle: 'データも、サーバーも、貴社のもの',
+    dataHtml:
+      'チャートは、渡されたバー、ティック、注文を描くだけです。独自のバックエンドは <code>DataAdapter</code> で、あるいは URL、履歴取得関数、メッセージパーサーを渡した <code>WebSocketAdapter</code> で接続します。注文は貴社の執行アダプターを通じて送られます。方法は Realtime と Trading のドキュメントにあります。',
+    dataDocs: 'Realtime ドキュメント',
+    tradingDocs: 'Trading ドキュメント',
+
+    partnerTitle: '初期パートナー',
+    partnerLede:
+      'TradeCanvas を自社のお客様に届ける、最初の証券会社・ブローカー、取引プラットフォーム、フィンテックチームを募集しています。',
+    partnerGetTitle: '提供するもの',
+    partnerGet: [
+      'データフィードと注文の接続をサポート',
+      '直面した問題を優先して修正',
+      '次に何を作るかへの意見反映',
+    ],
+    partnerGiveTitle: 'お願いしたいこと',
+    partnerGive: ['開発中のフィードバック', '本番稼働後、利用企業として社名を挙げる許可'],
+    partnerNote:
+      '契約で応答時間を定めた有償サポート、メジャーバージョンの長期サポート、貴社向けのモジュール開発は今後提供する予定です。今すぐ必要な場合は、お知らせください。',
+
+    contactTitle: 'お問い合わせ',
+    contactLede: '貴社について、何を開発しているか、どの市場向けかをお聞かせください。',
+    contactPublic: 'コードに関する質問は、GitHub の Issues で公開の場でお寄せいただくのが最適です。',
+
+    faqTitle: 'よくある質問',
+    faq: [
+      {
+        q: 'TradeCanvas の名前やロゴを表示する必要はありますか？',
+        a: 'いいえ。ライセンス文をコードに添えておけば十分で、node_modules にはすでに含まれています。画面に何かを表示する必要はありません。',
+      },
+      {
+        q: '自社のコードを公開する必要はありますか？',
+        a: 'いいえ。MIT は周囲のコードに何の条件も課しません。',
+      },
+      {
+        q: 'ライセンスが後から変わることはありますか？',
+        a: 'リリース済みのバージョンはすべて MIT であり、今後も MIT のままです。公開されたリリースのライセンスを取り消すことはできません。',
+      },
     ],
   },
 

@@ -180,6 +180,10 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)**: 핀테크 UI를 위한 작고 빠른 Svelte 5 데이터 그리드로, 트레이딩 데스크의 테이블 담당입니다. [라이브 데모](https://bonguynvan.github.io/bo-grid/)
 
+## 기업 고객
+
+TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://bonguynvan.github.io/tradecanvas/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradingdek.com.
+
 ## 기여하기
 
 버그 보고, 아이디어, 풀 리퀘스트를 환영합니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에 개발 환경 설정(`pnpm install && pnpm build && pnpm test`)과 풀 리퀘스트에 필요한 것을 정리해 두었습니다. 보안 문제를 발견했다면 이슈를 열지 말고 [SECURITY.md](./SECURITY.md)를 따라 주세요.

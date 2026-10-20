@@ -14,6 +14,7 @@ const id: SiteMessages = {
     playground: 'Playground',
     changelog: 'Catatan perubahan',
     audit: 'Audit',
+    business: 'Bisnis',
     toLight: 'Beralih ke tema terang',
     toDark: 'Beralih ke tema gelap',
     github: 'TradeCanvas di GitHub',
@@ -35,6 +36,7 @@ const id: SiteMessages = {
     examples: 'Contoh',
     changelog: 'Catatan perubahan',
     audit: 'Audit sistem',
+    business: 'Untuk bisnis',
     issues: 'Laporan masalah',
     boGrid: 'bo-grid (tabel data)',
     builtWith: 'Dibuat dengan TradeCanvas',
@@ -740,6 +742,91 @@ const id: SiteMessages = {
       'Kerangka waktu tick dibangun dari transaksi terbaru yang dikembalikan feed; riwayat tick yang lebih lama tidak bisa dimuat.',
       'Volume delta dan CVD diperkirakan dari bar, bukan dari sisi setiap transaksi.',
       'Paling banyak 8 grafik dalam satu halaman yang menggambar dengan WebGL sekaligus; sisanya menggambar dengan Canvas 2D.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'Untuk bisnis — TradeCanvas',
+    description:
+      'TradeCanvas dalam produk komersial: lisensi MIT, tanpa logo di grafik, tanpa pendaftaran, tidak ada yang dikirim ke mana pun. Hal-hal yang ditanyakan tinjauan TI, lengkap dengan sumbernya, serta program mitra pertama.',
+    eyebrow: 'Untuk bisnis',
+    title: 'Grafik trading Anda, dengan merek Anda sendiri.',
+    lede: 'TradeCanvas berlisensi MIT. Pakai di produk komersial, ubah sesuai kebutuhan, host sendiri: pelanggan Anda melihat merek Anda, dan data Anda tetap di server Anda.',
+    ctaContact: 'Hubungi kami',
+    ctaAudit: 'Baca audit sistem',
+
+    freeTitle: 'Gratis, untuk penggunaan apa pun',
+    free: [
+      {
+        title: 'Tanpa logo di grafik',
+        body: 'Tidak ada apa pun dari TradeCanvas yang digambar di grafik atau di widget. Lisensi MIT hanya meminta agar teksnya tetap menyertai kode.',
+      },
+      {
+        title: 'Tidak ada yang dikirim ke mana pun',
+        body: 'Pustaka ini tidak memiliki telemetri. Koneksi hanya dibuka lewat adapter data yang Anda jalankan: salah satu feed bursa bawaan, atau milik Anda sendiri.',
+      },
+      {
+        title: 'Tanpa pengajuan, tanpa persetujuan',
+        body: 'Cukup npm install, dan semua kemampuan dalam audit sistem menjadi milik Anda, termasuk tangga depth-of-market, grafik kedalaman, dan heatmap.',
+      },
+      {
+        title: 'Seluruh kode sumber',
+        body: 'Baca, perbaiki, fork. MIT tidak menuntut apa pun dari kode Anda sendiri: kode itu tetap milik Anda dan tetap tertutup jika Anda menginginkannya.',
+      },
+    ],
+
+    reviewTitle: 'Siap untuk tinjauan TI',
+    reviewLede: 'Hal-hal yang biasanya ditanyakan dalam tinjauan keamanan atau tinjauan vendor, dan tempat memeriksa setiap jawabannya.',
+    reviewHtml: [
+      'Tanpa dependensi runtime pihak ketiga: paket chart hanya bergantung pada core dan commons milik TradeCanvas sendiri.',
+      'Tanpa <code>eval</code> dan tanpa <code>new Function</code>, sehingga berjalan di bawah Content Security Policy tanpa <code>unsafe-eval</code>.',
+      "Widget menambahkan satu elemen <code>&lt;style&gt;</code>, sehingga halamannya memerlukan <code>style-src 'unsafe-inline'</code>; <code>Chart</code> headless tidak menambahkan apa pun.",
+      'Masalah keamanan dilaporkan secara privat dan ditanggapi dalam satu minggu.',
+      'Setiap pull request di-build, diperiksa tipenya, dan diuji di CI: lebih dari 3.000 uji unit.',
+      'Rilis diterbitkan oleh GitHub Actions dari repositori, bukan dari mesin seorang developer.',
+      'Chrome 80+, Firefox 80+, Safari 14+, dan Edge 80+.',
+      'Lisensinya: MIT, satu halaman.',
+    ],
+    source: 'Sumber',
+
+    dataTitle: 'Data Anda, server Anda',
+    dataHtml:
+      'Grafik menggambar bar, tick, dan order yang Anda berikan. Hubungkan backend Anda sendiri dengan <code>DataAdapter</code>, atau <code>WebSocketAdapter</code> yang diberi URL, fungsi riwayat, dan parser pesan; order dikirim melalui execution adapter milik Anda. Dokumentasi Realtime dan Trading menunjukkan caranya.',
+    dataDocs: 'Dokumentasi Realtime',
+    tradingDocs: 'Dokumentasi Trading',
+
+    partnerTitle: 'Mitra pertama',
+    partnerLede:
+      'Kami mencari broker, platform trading, dan tim fintech pertama yang menghadirkan TradeCanvas kepada pelanggan mereka.',
+    partnerGetTitle: 'Yang Anda dapatkan',
+    partnerGet: [
+      'Bantuan menghubungkan feed data dan order Anda',
+      'Masalah yang Anda temui diperbaiki lebih dulu',
+      'Suara dalam menentukan apa yang dibangun berikutnya',
+    ],
+    partnerGiveTitle: 'Yang kami minta',
+    partnerGive: ['Masukan selama Anda membangun', 'Izin menyebut Anda sebagai pengguna setelah produk Anda live'],
+    partnerNote:
+      'Dukungan berbayar, dengan waktu respons yang dijamin kontrak, dukungan jangka panjang untuk satu versi mayor, dan modul yang dibuat khusus untuk Anda, menyusul nanti. Jika Anda membutuhkannya sekarang, beri tahu kami.',
+
+    contactTitle: 'Hubungi kami',
+    contactLede: 'Ceritakan siapa Anda, apa yang sedang Anda bangun, dan untuk pasar mana.',
+    contactPublic: 'Pertanyaan tentang kode sebaiknya diajukan secara publik, di GitHub issues.',
+
+    faqTitle: 'Pertanyaan',
+    faq: [
+      {
+        q: 'Apakah kami harus menampilkan nama atau logo TradeCanvas?',
+        a: 'Tidak. Cukup simpan teks lisensi bersama kode, seperti yang sudah ada di node_modules; tidak ada yang harus tampil di layar.',
+      },
+      {
+        q: 'Apakah kami harus memublikasikan kode kami sendiri?',
+        a: 'Tidak. MIT tidak memberi syarat apa pun pada kode di sekitarnya.',
+      },
+      {
+        q: 'Bisakah lisensinya berubah sewaktu-waktu?',
+        a: 'Setiap versi yang sudah dirilis berlisensi MIT dan tetap MIT: lisensi sebuah rilis yang sudah diterbitkan tidak dapat ditarik kembali.',
+      },
     ],
   },
 

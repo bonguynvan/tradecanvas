@@ -14,6 +14,7 @@ const de: SiteMessages = {
     playground: 'Playground',
     changelog: 'Changelog',
     audit: 'Audit',
+    business: 'Unternehmen',
     toLight: 'Zum hellen Design wechseln',
     toDark: 'Zum dunklen Design wechseln',
     github: 'TradeCanvas auf GitHub',
@@ -35,6 +36,7 @@ const de: SiteMessages = {
     examples: 'Beispiele',
     changelog: 'Changelog',
     audit: 'Systemaudit',
+    business: 'Für Unternehmen',
     issues: 'Issues',
     boGrid: 'bo-grid (Datentabelle)',
     builtWith: 'Erstellt mit TradeCanvas',
@@ -740,6 +742,91 @@ const de: SiteMessages = {
       'Tick-Zeiteinheiten werden aus den jüngsten Trades gebaut, die ein Feed liefert; ältere Tick-Historie lässt sich nicht laden.',
       'Volumen-Delta und CVD werden aus den Kerzen geschätzt, nicht aus der Seite jedes einzelnen Trades.',
       'Höchstens 8 Charts pro Seite zeichnen gleichzeitig mit WebGL; die übrigen zeichnen mit Canvas 2D.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'Für Unternehmen — TradeCanvas',
+    description:
+      'TradeCanvas in einem kommerziellen Produkt: MIT-lizenziert, kein Logo im Chart, keine Registrierung, keine Datenübertragung. Was eine IT-Prüfung fragt, mit Quellen, und das Programm für erste Partner.',
+    eyebrow: 'Für Unternehmen',
+    title: 'Ihr Trading-Chart, unter Ihrer eigenen Marke.',
+    lede: 'TradeCanvas ist MIT-lizenziert. Bauen Sie es in ein kommerzielles Produkt ein, passen Sie es an, hosten Sie es selbst: Ihre Kunden sehen Ihre Marke, und Ihre Daten bleiben auf Ihren Servern.',
+    ctaContact: 'Sprechen Sie mit uns',
+    ctaAudit: 'Zum Systemaudit',
+
+    freeTitle: 'Kostenlos, für jeden Zweck',
+    free: [
+      {
+        title: 'Kein Logo im Chart',
+        body: 'TradeCanvas zeichnet nichts Eigenes in den Chart oder ins Widget. Die MIT-Lizenz verlangt nur, dass ihr Text beim Code bleibt.',
+      },
+      {
+        title: 'Keine Daten nach außen',
+        body: 'Die Bibliothek enthält keine Telemetrie. Verbindungen öffnet sie nur über einen Datenadapter, den Sie starten: einen der eingebauten Börsen-Feeds oder Ihren eigenen.',
+      },
+      {
+        title: 'Kein Antrag, keine Freigabe',
+        body: 'npm install, und jede Funktion aus dem Systemaudit gehört Ihnen, einschließlich Markttiefe-Leiter, Tiefenchart und Heatmap.',
+      },
+      {
+        title: 'Der gesamte Quellcode',
+        body: 'Lesen, korrigieren, forken. MIT stellt keine Bedingungen an Ihren eigenen Code: Er bleibt Ihrer und bleibt geschlossen, wenn Sie es so wollen.',
+      },
+    ],
+
+    reviewTitle: 'Bereit für die IT-Prüfung',
+    reviewLede: 'Was eine Sicherheits- oder Lieferantenprüfung üblicherweise fragt, und wo Sie jede Antwort nachprüfen können.',
+    reviewHtml: [
+      'Keine Laufzeitabhängigkeiten von Drittanbietern: Das Chart-Paket hängt nur von core und commons aus TradeCanvas selbst ab.',
+      'Kein <code>eval</code> und kein <code>new Function</code>, daher läuft es unter einer Content Security Policy ohne <code>unsafe-eval</code>.',
+      "Das Widget fügt ein <code>&lt;style&gt;</code>-Element ein, seine Seiten brauchen daher <code>style-src 'unsafe-inline'</code>; der Headless-<code>Chart</code> fügt keines ein.",
+      'Sicherheitsprobleme werden vertraulich gemeldet und innerhalb einer Woche beantwortet.',
+      'Jeder Pull Request wird in der CI gebaut, typgeprüft und getestet: mehr als 3.000 Unit-Tests.',
+      'Releases veröffentlicht GitHub Actions aus dem Repository, nicht vom Rechner eines Entwicklers.',
+      'Chrome 80+, Firefox 80+, Safari 14+ und Edge 80+.',
+      'Die Lizenz: MIT, eine Seite.',
+    ],
+    source: 'Quelle',
+
+    dataTitle: 'Ihre Daten, Ihre Server',
+    dataHtml:
+      'Der Chart zeichnet die Bars, Ticks und Orders, die Sie ihm übergeben. Binden Sie Ihr eigenes Backend mit einem <code>DataAdapter</code> an, oder mit einem <code>WebSocketAdapter</code>, dem Sie eine URL, eine History-Funktion und einen Nachrichtenparser mitgeben; Orders gehen über einen eigenen Execution-Adapter hinaus. Die Doku zu Realtime und Trading zeigt, wie.',
+    dataDocs: 'Realtime-Doku',
+    tradingDocs: 'Trading-Doku',
+
+    partnerTitle: 'Erste Partner',
+    partnerLede:
+      'Wir suchen die ersten Broker, Handelsplattformen und Fintech-Teams, die TradeCanvas ihren Kunden anbieten.',
+    partnerGetTitle: 'Was Sie bekommen',
+    partnerGet: [
+      'Hilfe bei der Anbindung Ihres Datenfeeds und Ihrer Orders',
+      'Probleme, auf die Sie stoßen, werden zuerst behoben',
+      'Mitsprache dabei, was als Nächstes entsteht',
+    ],
+    partnerGiveTitle: 'Worum wir bitten',
+    partnerGive: ['Feedback, während Sie entwickeln', 'Die Erlaubnis, Sie nach dem Livegang als Nutzer zu nennen'],
+    partnerNote:
+      'Bezahlter Support mit vertraglich zugesicherten Reaktionszeiten, Langzeitsupport für eine Hauptversion und eigens für Sie gebaute Module folgen später. Wenn Sie das schon jetzt brauchen, sagen Sie es uns.',
+
+    contactTitle: 'Sprechen Sie mit uns',
+    contactLede: 'Erzählen Sie uns, wer Sie sind, was Sie bauen und für welche Märkte.',
+    contactPublic: 'Fragen zum Code stellen Sie am besten öffentlich, in den GitHub-Issues.',
+
+    faqTitle: 'Fragen',
+    faq: [
+      {
+        q: 'Müssen wir den Namen oder das Logo von TradeCanvas zeigen?',
+        a: 'Nein. Der Lizenztext bleibt beim Code, wie er es in node_modules ohnehin tut; auf dem Bildschirm muss nichts erscheinen.',
+      },
+      {
+        q: 'Müssen wir unseren eigenen Code veröffentlichen?',
+        a: 'Nein. MIT stellt keine Bedingungen an den Code drumherum.',
+      },
+      {
+        q: 'Kann sich die Lizenz nachträglich ändern?',
+        a: 'Jede bereits veröffentlichte Version steht unter MIT und bleibt es: Die Lizenz eines veröffentlichten Releases lässt sich nicht zurücknehmen.',
+      },
     ],
   },
 

@@ -6,9 +6,9 @@ Fixes go into the latest release of each `@tradecanvas/*` package. Please check 
 
 | Packages | Supported |
 |---|---|
-| `chart`, `core`, `commons`, `analytics` 1.7.x | Yes |
-| `react`, `vue`, `svelte` 1.0.x | Yes |
-| Older versions | No, please upgrade |
+| The latest 1.x release of `chart`, `core`, `commons` and `analytics` | Yes |
+| The latest 1.x release of `react`, `vue` and `svelte` | Yes |
+| Earlier releases | No, please upgrade |
 
 ## Reporting a vulnerability
 

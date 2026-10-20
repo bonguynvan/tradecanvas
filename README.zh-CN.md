@@ -180,6 +180,10 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)**：面向金融科技界面的小巧、快速的 Svelte 5 数据表格，是交易台中的表格部分。[在线演示](https://bonguynvan.github.io/bo-grid/)
 
+## 企业使用
+
+要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://bonguynvan.github.io/tradecanvas/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradingdek.com。
+
 ## 参与贡献
 
 欢迎提交 bug 报告、想法和 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 报告，不要公开提 issue。

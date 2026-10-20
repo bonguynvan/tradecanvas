@@ -180,6 +180,10 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 - **[bo-grid](https://github.com/bonguynvan/bo-grid)**: bảng dữ liệu Svelte 5 nhỏ và nhanh cho giao diện fintech, nửa còn lại của một bàn giao dịch. [Demo trực tiếp](https://bonguynvan.github.io/bo-grid/)
 
+## Cho doanh nghiệp
+
+Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://bonguynvan.github.io/tradecanvas/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradingdek.com.
+
 ## Đóng góp
 
 Báo lỗi, ý tưởng và pull request đều được hoan nghênh. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`) và những gì một pull request cần có. Phát hiện lỗi bảo mật? Hãy làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.

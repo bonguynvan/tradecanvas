@@ -14,6 +14,7 @@ const fr: SiteMessages = {
     playground: 'Bac à sable',
     changelog: 'Notes de version',
     audit: 'Audit',
+    business: 'Entreprises',
     toLight: 'Passer au thème clair',
     toDark: 'Passer au thème sombre',
     github: 'TradeCanvas sur GitHub',
@@ -35,6 +36,7 @@ const fr: SiteMessages = {
     examples: 'Exemples',
     changelog: 'Notes de version',
     audit: 'Audit du système',
+    business: 'Pour les entreprises',
     issues: 'Tickets',
     boGrid: 'bo-grid (grille de données)',
     builtWith: 'Réalisé avec TradeCanvas',
@@ -740,6 +742,91 @@ const fr: SiteMessages = {
       'Les unités de temps en ticks sont construites à partir des transactions récentes que renvoie un flux ; un historique de ticks plus ancien ne peut pas être chargé.',
       'Le delta de volume et le CVD sont estimés à partir des barres, pas du sens de chaque transaction.',
       'Au plus 8 graphiques d’une page dessinent en WebGL en même temps ; les autres dessinent en Canvas 2D.',
+    ],
+  },
+
+  business: {
+    metaTitle: 'Pour les entreprises — TradeCanvas',
+    description:
+      'TradeCanvas dans un produit commercial : licence MIT, aucun logo sur le graphique, aucune inscription, rien n’est envoyé nulle part. Ce que demande une revue informatique, sources à l’appui, et le programme des premiers partenaires.',
+    eyebrow: 'Pour les entreprises',
+    title: 'Votre graphique de trading, sous votre propre marque.',
+    lede: 'TradeCanvas est sous licence MIT. Intégrez-le à un produit commercial, modifiez-le, hébergez-le vous-même : vos clients voient votre marque, et vos données restent sur vos serveurs.',
+    ctaContact: 'Nous contacter',
+    ctaAudit: 'Lire l’audit du système',
+
+    freeTitle: 'Gratuit, pour tout usage',
+    free: [
+      {
+        title: 'Aucun logo sur le graphique',
+        body: 'TradeCanvas ne dessine rien de son cru sur le graphique ni dans le widget. La licence MIT demande seulement que son texte accompagne le code.',
+      },
+      {
+        title: 'Rien n’est envoyé nulle part',
+        body: 'La bibliothèque n’a aucune télémétrie. Elle n’ouvre de connexion que par un adaptateur de données que vous démarrez : l’un des flux de marché intégrés, ou le vôtre.',
+      },
+      {
+        title: 'Ni demande, ni validation',
+        body: 'Un npm install, et toutes les fonctionnalités de l’audit du système sont à vous, y compris l’échelle de profondeur de marché, le graphique de profondeur et la heatmap.',
+      },
+      {
+        title: 'Tout le code source',
+        body: 'Lisez-le, corrigez-le, forkez-le. La licence MIT n’exige rien de votre propre code : il reste le vôtre, et reste fermé si vous le souhaitez.',
+      },
+    ],
+
+    reviewTitle: 'Prêt pour une revue informatique',
+    reviewLede: 'Ce que demande généralement une revue de sécurité ou une évaluation fournisseur, et où vérifier chaque réponse.',
+    reviewHtml: [
+      'Aucune dépendance tierce à l’exécution : le paquet du graphique ne dépend que du core et des commons de TradeCanvas lui-même.',
+      'Ni <code>eval</code> ni <code>new Function</code> : il fonctionne donc sous une Content Security Policy sans <code>unsafe-eval</code>.',
+      "Le widget ajoute un élément <code>&lt;style&gt;</code>, ses pages ont donc besoin de <code>style-src 'unsafe-inline'</code> ; le <code>Chart</code> headless n’en ajoute aucun.",
+      'Les problèmes de sécurité se signalent en privé et reçoivent une réponse sous une semaine.',
+      'Chaque pull request est compilée, son typage vérifié et ses tests exécutés en CI : plus de 3 000 tests unitaires.',
+      'Les versions sont publiées par GitHub Actions depuis le dépôt, pas depuis la machine d’un développeur.',
+      'Chrome 80+, Firefox 80+, Safari 14+ et Edge 80+.',
+      'La licence : MIT, une page.',
+    ],
+    source: 'Source',
+
+    dataTitle: 'Vos données, vos serveurs',
+    dataHtml:
+      'Le graphique dessine les barres, les ticks et les ordres que vous lui fournissez. Branchez votre propre backend avec un <code>DataAdapter</code>, ou avec un <code>WebSocketAdapter</code> auquel vous donnez une URL, une fonction d’historique et un parseur de messages ; les ordres partent par un adaptateur d’exécution qui vous appartient. La doc Realtime et la doc Trading expliquent comment.',
+    dataDocs: 'Doc Realtime',
+    tradingDocs: 'Doc Trading',
+
+    partnerTitle: 'Premiers partenaires',
+    partnerLede:
+      'Nous cherchons les premiers courtiers, plateformes de trading et équipes fintech qui mettront TradeCanvas entre les mains de leurs clients.',
+    partnerGetTitle: 'Ce que vous obtenez',
+    partnerGet: [
+      'De l’aide pour brancher votre flux de données et vos ordres',
+      'Les problèmes que vous rencontrez, corrigés en priorité',
+      'Votre mot à dire sur la suite',
+    ],
+    partnerGiveTitle: 'Ce que nous demandons',
+    partnerGive: ['Vos retours pendant que vous développez', 'L’autorisation de vous citer comme utilisateur une fois en production'],
+    partnerNote:
+      'Le support payant, avec des délais de réponse contractuels, un support à long terme d’une version majeure et des modules développés pour vous, viendra plus tard. Si vous en avez besoin dès maintenant, dites-le-nous.',
+
+    contactTitle: 'Nous contacter',
+    contactLede: 'Dites-nous qui vous êtes, ce que vous construisez et pour quels marchés.',
+    contactPublic: 'Les questions sur le code ont leur place en public, dans les issues GitHub.',
+
+    faqTitle: 'Questions',
+    faq: [
+      {
+        q: 'Devons-nous afficher le nom ou le logo de TradeCanvas ?',
+        a: 'Non. Gardez le texte de la licence avec le code, comme c’est déjà le cas dans node_modules ; rien ne doit apparaître à l’écran.',
+      },
+      {
+        q: 'Devons-nous publier notre propre code ?',
+        a: 'Non. La licence MIT n’impose aucune condition au code qui l’entoure.',
+      },
+      {
+        q: 'La licence pourrait-elle changer du jour au lendemain ?',
+        a: 'Chaque version déjà publiée est sous MIT et le restera : la licence d’une version publiée ne peut pas être retirée.',
+      },
     ],
   },
 

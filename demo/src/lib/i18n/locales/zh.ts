@@ -15,6 +15,7 @@ const zh: SiteMessages = {
     playground: '演练场',
     changelog: '更新日志',
     audit: '审计',
+    business: '企业',
     toLight: '切换到浅色主题',
     toDark: '切换到深色主题',
     github: 'GitHub 上的 TradeCanvas',
@@ -36,6 +37,7 @@ const zh: SiteMessages = {
     examples: '示例',
     changelog: '更新日志',
     audit: '系统审计',
+    business: '面向企业',
     issues: '问题反馈',
     boGrid: 'bo-grid（数据表格）',
     builtWith: '基于 TradeCanvas 构建',
@@ -741,6 +743,91 @@ const zh: SiteMessages = {
       'tick 周期由行情源返回的近期成交合成；无法加载更早的 tick 历史。',
       '成交量差和 CVD 根据K线估算，而非依据每笔成交的买卖方向。',
       '一个页面上最多 8 个图表同时用 WebGL 绘制；其余用 Canvas 2D 绘制。',
+    ],
+  },
+
+  business: {
+    metaTitle: '面向企业 — TradeCanvas',
+    description:
+      '在商业产品中使用 TradeCanvas：MIT 许可，图表上没有标志，无需注册，不向任何地方发送数据。IT 审查会问的问题及其出处，以及首批合作伙伴计划。',
+    eyebrow: '面向企业',
+    title: '你的交易图表，打上你自己的品牌。',
+    lede: 'TradeCanvas 采用 MIT 许可。可以放进商业产品、自行修改、自行托管：你的客户看到的是你的品牌，你的数据留在你自己的服务器上。',
+    ctaContact: '联系我们',
+    ctaAudit: '阅读系统审计',
+
+    freeTitle: '免费，任何用途',
+    free: [
+      {
+        title: '图表上没有标志',
+        body: 'TradeCanvas 不会在图表或组件中绘制任何自己的内容。MIT 许可只要求许可文本随代码一同保留。',
+      },
+      {
+        title: '不向任何地方发送数据',
+        body: '库中没有任何遥测。它只通过你启动的数据适配器建立连接：内置的交易所数据源之一，或你自己的。',
+      },
+      {
+        title: '无需申请，无需审批',
+        body: '执行 npm install，系统审计中的每项功能都归你使用，包括深度报价阶梯、深度图和热力图。',
+      },
+      {
+        title: '全部源代码',
+        body: '阅读、修改、fork 均可。MIT 对你自己的代码没有任何要求：代码仍归你所有，你愿意的话也可以保持闭源。',
+      },
+    ],
+
+    reviewTitle: '为 IT 审查做好准备',
+    reviewLede: '安全审查或供应商审查通常会问的问题，以及每个答案可以在哪里核实。',
+    reviewHtml: [
+      '无第三方运行时依赖：图表包只依赖 TradeCanvas 自己的 core 和 commons。',
+      '不使用 <code>eval</code> 和 <code>new Function</code>，因此可以在不含 <code>unsafe-eval</code> 的 Content Security Policy 下运行。',
+      "组件会添加一个 <code>&lt;style&gt;</code> 元素，因此其所在页面需要 <code>style-src 'unsafe-inline'</code>；无界面的 <code>Chart</code> 不添加任何元素。",
+      '安全问题通过私密渠道报告，一周内答复。',
+      '每个拉取请求都会在 CI 中构建、类型检查和测试：超过 3,000 个单元测试。',
+      '版本由 GitHub Actions 从代码仓库发布，而不是从开发者的电脑发布。',
+      'Chrome 80+、Firefox 80+、Safari 14+ 和 Edge 80+。',
+      '许可：MIT，一页纸。',
+    ],
+    source: '出处',
+
+    dataTitle: '你的数据，你的服务器',
+    dataHtml:
+      '图表只绘制你交给它的 K 线、tick 和订单。用 <code>DataAdapter</code> 接入你自己的后端，或用 <code>WebSocketAdapter</code>，只需提供 URL、历史数据函数和消息解析函数；订单通过你自己的执行适配器发出。Realtime 和 Trading 文档介绍了具体做法。',
+    dataDocs: 'Realtime 文档',
+    tradingDocs: 'Trading 文档',
+
+    partnerTitle: '首批合作伙伴',
+    partnerLede:
+      '我们正在寻找首批将 TradeCanvas 提供给客户的券商、交易平台和金融科技团队。',
+    partnerGetTitle: '你将获得',
+    partnerGet: [
+      '协助接入你的数据源和订单',
+      '你遇到的问题优先修复',
+      '参与决定接下来开发什么',
+    ],
+    partnerGiveTitle: '我们希望你',
+    partnerGive: ['在开发过程中提供反馈', '上线后允许我们将你列为用户'],
+    partnerNote:
+      '付费支持（合同约定响应时间、大版本长期支持、为你定制的模块）将在之后推出。如果你现在就需要，请告诉我们。',
+
+    contactTitle: '联系我们',
+    contactLede: '告诉我们你是谁、在构建什么、面向哪些市场。',
+    contactPublic: '关于代码的问题，最好在 GitHub issues 中公开提问。',
+
+    faqTitle: '常见问题',
+    faq: [
+      {
+        q: '我们必须显示 TradeCanvas 的名称或标志吗？',
+        a: '不必。只需让许可文本随代码保留，它本来就在 node_modules 里；屏幕上无需显示任何内容。',
+      },
+      {
+        q: '我们必须公开自己的代码吗？',
+        a: '不必。MIT 对周围的代码没有任何条件。',
+      },
+      {
+        q: '许可会不会突然改变？',
+        a: '每个已发布的版本都是 MIT，并且始终是 MIT：已发布版本的许可无法收回。',
+      },
     ],
   },
 

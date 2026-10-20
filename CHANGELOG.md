@@ -4,6 +4,14 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+- **A page for businesses** on the site, in fourteen languages: what the MIT license allows (no logo on the chart, nothing to apply for, your own code stays yours), what an IT review usually asks with a source for each answer, how your own data and orders connect, and the first-partner programme, with an address to write to. The READMEs link to it.
+- **npm provenance**: releases are published with provenance, so npm shows the workflow run that built each version.
+- SECURITY.md names the supported releases as the latest 1.x of each package, instead of version numbers that went stale.
+
+## 1.19.1 (2026-10-20)
+
+React, Vue and Svelte components: 1.3.1.
+
 - **Sponsor**: TradeCanvas has a [GitHub Sponsors](https://github.com/sponsors/bonguynvan) page. The packages carry a `funding` field (`npm fund` lists it), and the repository, the READMEs and the site link to it.
 - **Preview builds**: every pull request and every commit on `main` is published to [pkg.pr.new](https://pkg.pr.new) (`npm install https://pkg.pr.new/@tradecanvas/chart@<pull request or commit>`), so a change can be tried before it is released.
 - **Shorter READMEs**, in all six languages: what the library does, install, a quick start, frameworks, and links into the docs, which keep the API in detail. The npm page follows.
