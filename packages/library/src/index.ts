@@ -228,7 +228,8 @@ export type { LayoutStorage, SavedLayout, SavedLayoutSummary } from './state/lay
 export type { GridLayout, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts
-export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard } from './finance/index.js';
+export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart } from './finance/index.js';
+export { histogramBins, niceScale } from '@tradecanvas/core';
 export {
   toEquityPoints,
   computeDrawdownCurve,
@@ -254,4 +255,15 @@ export type {
   WaterfallOptions,
   GaugeZone,
   GaugeOptions,
+  ChartSeries,
+  BarHit,
+  BarChartOptions,
+  DonutSlice,
+  DonutChartOptions,
+  ScatterPoint,
+  ScatterSeries,
+  ScatterChartOptions,
+  HistogramMarker,
+  HistogramBin,
+  HistogramOptions,
 } from '@tradecanvas/commons';

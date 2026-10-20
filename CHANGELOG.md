@@ -4,6 +4,15 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Charts for dashboards
+
+- **`BarChart`**: values by category, series side by side (`mode: 'grouped'`) or stacked with positives up and negatives down from zero, upright or sideways (`orientation: 'horizontal'`), coloured by sign for net flows (`colorBySign`), values on the bars (`showValues`). Hovering a category shows each series' value; `onBarClick` gets the category, series, value and index. Labels that don't fit along the bottom show every few categories.
+- **`DonutChart`**: parts of a whole clockwise from twelve o'clock, a pie with `innerRadius: 0`, a caption and figure in the hole, each slice's share where it has room, a legend beside or under the ring; `onSliceClick`.
+- **`ScatterChart`**: points on two value axes, bubbles whose area follows `size`, axis titles, labels, lines at zero; the axes leave room for the largest bubble; `onPointClick`.
+- **`HistogramChart`**: values counted into bins (`bins`, `binWidth` on a grid from 0, or Sturges' rule), coloured by sign, with labelled marker lines (a mean, a VaR) that move a row down when they would overlap. `histogramBins(values, options)` is exported, and `niceScale(min, max)` for axes of your own.
+- All four follow the pointer with a tooltip, describe themselves to screen readers (an image role and a label, `ariaLabel` in your words) and draw in the dark or light theme; `setOptions`, `update`, `setTheme`, `destroy`. The other finance charts' canvases get the image role and `setLabel` too.
+- Docs: the Finance charts page rewritten in six languages with the classes as they are (it showed renderer classes that don't exist); the site's finance section shows the four new charts.
+
 ### Vietnamese markets
 
 Checked against the exchanges' rules of May 2025: the HOSE trading rules of 26 April 2025 and the HNX, UPCoM and VN30 futures rules.

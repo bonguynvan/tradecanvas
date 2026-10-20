@@ -4,6 +4,10 @@ export { EquityCurveChart } from './EquityCurveChart.js';
 export { HeatmapChart } from './HeatmapChart.js';
 export { WaterfallChart } from './WaterfallChart.js';
 export { GaugeChart } from './GaugeChart.js';
+export { BarChart } from './BarChart.js';
+export { DonutChart } from './DonutChart.js';
+export { ScatterChart } from './ScatterChart.js';
+export { HistogramChart } from './HistogramChart.js';
 export { PerformanceDashboard } from './PerformanceDashboard.js';
 export type { PerformanceDashboardOptions, PerformanceResult } from './PerformanceDashboard.js';
 export {

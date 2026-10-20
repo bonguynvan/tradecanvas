@@ -547,6 +547,34 @@ chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
 ```
 
+## A dashboard: net flows, allocation and returns
+
+The finance charts take an element and their options, and size themselves to it.
+
+```ts
+import { BarChart, DonutChart, HistogramChart } from '@tradecanvas/chart';
+
+new BarChart(document.getElementById('flows')!, {
+  categories: ['6/10', '7/10', '8/10'],
+  series: [{ name: 'Net', values: [-660, 860, -280] }],
+  colorBySign: true,
+  onBarClick: ({ category, value }) => console.log(category, value),
+});
+
+new DonutChart(document.getElementById('allocation')!, {
+  data: [{ label: 'Stocks', value: 52 }, { label: 'Bonds', value: 23 }, { label: 'Cash', value: 25 }],
+  centerLabel: 'Total',
+  centerValue: '1.2B',
+});
+
+new HistogramChart(document.getElementById('returns')!, {
+  values: [-1.2, 0.4, 0.8, -0.3, 1.5, 0.2],
+  binWidth: 0.5,
+  colorBySign: true,
+  markers: [{ value: 0.23, label: 'Mean' }],
+});
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

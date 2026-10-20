@@ -26,6 +26,8 @@ export abstract class BaseFinanceChart {
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
     this.canvas.style.display = 'block';
+    // A picture to assistive technology; setLabel says what it shows.
+    this.canvas.setAttribute('role', 'img');
     container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d')!;
 
@@ -71,6 +73,11 @@ export abstract class BaseFinanceChart {
     height: number,
     theme: Theme,
   ): void;
+
+  /** What the chart shows, for screen readers (the canvas's aria-label). */
+  setLabel(label: string): void {
+    this.canvas.setAttribute('aria-label', label);
+  }
 
   setTheme(theme: ThemeName | Theme): void {
     this.theme = resolveTheme(theme);

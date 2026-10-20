@@ -10,6 +10,10 @@
     HeatmapChart,
     WaterfallChart,
     GaugeChart,
+    BarChart,
+    DonutChart,
+    ScatterChart,
+    HistogramChart,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -154,6 +158,44 @@
     ],
   };
 
+  // --- Foreign net buying over ten sessions, bn dong ---
+  const flowRng = seededRandom(4242);
+  const flowDays = Array.from({ length: 10 }, (_, i) => {
+    const d = new Date(Date.UTC(2026, 9, 6) + i * 86_400_000 * 1.4);
+    return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+  });
+  const flowValues = flowDays.map(() => Math.round((flowRng() - 0.45) * 1600));
+
+  // --- Allocation ---
+  const allocation = [
+    { label: i18n.m.finance.assets.stocks, value: 52 },
+    { label: i18n.m.finance.assets.bonds, value: 23 },
+    { label: i18n.m.finance.assets.cash, value: 15 },
+    { label: i18n.m.finance.assets.gold, value: 10 },
+  ];
+
+  // --- Banks: volatility against return, bubbles by market value (trillion dong) ---
+  const banks = [
+    { label: 'VCB', x: 21, y: 9, size: 480 },
+    { label: 'BID', x: 26, y: 12, size: 250 },
+    { label: 'CTG', x: 29, y: 18, size: 190 },
+    { label: 'TCB', x: 34, y: 24, size: 170 },
+    { label: 'MBB', x: 31, y: 21, size: 130 },
+    { label: 'ACB', x: 24, y: 14, size: 110 },
+    { label: 'VPB', x: 38, y: 6, size: 150 },
+    { label: 'HDB', x: 36, y: 27, size: 80 },
+  ];
+
+  // --- Daily returns, % ---
+  const returnRng = seededRandom(777);
+  const dailyReturns = Array.from({ length: 500 }, () => {
+    // A rough bell: the mean of a few uniforms, scaled to about ±4%.
+    const u = (returnRng() + returnRng() + returnRng() + returnRng()) / 4;
+    return (u - 0.48) * 9;
+  });
+  const meanReturn = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
+  const var95 = [...dailyReturns].sort((a, b) => a - b)[Math.floor(dailyReturns.length * 0.05)];
+
   // --- Container refs ---
   let sparkGridEl: HTMLDivElement | undefined = $state();
   let equityContainer: HTMLDivElement | undefined = $state();
@@ -161,6 +203,10 @@
   let heatmapContainer: HTMLDivElement | undefined = $state();
   let waterfallContainer: HTMLDivElement | undefined = $state();
   let gaugeContainer: HTMLDivElement | undefined = $state();
+  let flowsContainer: HTMLDivElement | undefined = $state();
+  let allocationContainer: HTMLDivElement | undefined = $state();
+  let scatterContainer: HTMLDivElement | undefined = $state();
+  let returnsContainer: HTMLDivElement | undefined = $state();
 
   // --- Chart instances ---
   let sparkCharts: SparklineChart[] = [];
@@ -169,6 +215,7 @@
   let heatmapChart: HeatmapChart | null = null;
   let waterfallChart: WaterfallChart | null = null;
   let gaugeChart: GaugeChart | null = null;
+  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart)[] = [];
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
 
@@ -189,6 +236,7 @@
     heatmapChart?.setTheme(theme);
     waterfallChart?.setTheme(theme);
     gaugeChart?.setTheme(theme);
+    for (const chart of newCharts) chart.setTheme(theme);
   }
 
   onMount(async () => {
@@ -239,6 +287,53 @@
         crosshair: true,
         theme,
       });
+    }
+
+    const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    if (flowsContainer) {
+      newCharts.push(new BarChart(flowsContainer, {
+        categories: flowDays,
+        series: [{ name: i18n.m.finance.flowSeries, values: flowValues }],
+        ariaLabel: i18n.m.finance.flows,
+        colorBySign: true,
+        theme,
+      }));
+    }
+    if (allocationContainer) {
+      newCharts.push(new DonutChart(allocationContainer, {
+        data: allocation,
+        ariaLabel: i18n.m.finance.allocation,
+        centerLabel: i18n.m.finance.allocationTotal,
+        centerValue: '1.2B ₫',
+        theme,
+      }));
+    }
+    if (scatterContainer) {
+      newCharts.push(new ScatterChart(scatterContainer, {
+        series: [{ name: i18n.m.finance.banks, points: banks }],
+        ariaLabel: i18n.m.finance.riskReturn,
+        xLabel: i18n.m.finance.volatility,
+        yLabel: i18n.m.finance.yearReturn,
+        xFormat: (v) => `${v}%`,
+        yFormat: (v) => `${v}%`,
+        showLabels: true,
+        maxRadius: 22,
+        theme,
+      }));
+    }
+    if (returnsContainer) {
+      newCharts.push(new HistogramChart(returnsContainer, {
+        values: dailyReturns,
+        ariaLabel: i18n.m.finance.returns,
+        binWidth: 0.5,
+        colorBySign: true,
+        valueFormat: pct,
+        markers: [
+          { value: meanReturn, label: i18n.m.finance.mean },
+          { value: var95, label: i18n.m.finance.var, color: '#e8505b' },
+        ],
+        theme,
+      }));
     }
 
     // Heatmap
@@ -300,6 +395,8 @@
     waterfallChart = null;
     gaugeChart?.destroy();
     gaugeChart = null;
+    for (const chart of newCharts) chart.destroy();
+    newCharts = [];
     if (gaugeInterval) {
       clearInterval(gaugeInterval);
       gaugeInterval = null;
@@ -365,6 +462,28 @@
     <div class="chart-card">
       <div class="card-label">{m.finance.fearGreed}</div>
       <div class="card-chart card-chart--300" bind:this={gaugeContainer}></div>
+    </div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.flows}</div>
+      <div class="card-chart card-chart--300" bind:this={flowsContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.allocation}</div>
+      <div class="card-chart card-chart--300" bind:this={allocationContainer}></div>
+    </div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.riskReturn}</div>
+      <div class="card-chart card-chart--300" bind:this={scatterContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.returns}</div>
+      <div class="card-chart card-chart--300" bind:this={returnsContainer}></div>
     </div>
   </div>
 </section>
