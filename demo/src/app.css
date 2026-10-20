@@ -29,6 +29,7 @@
   --accent-dim: color-mix(in srgb, var(--accent) 22%, transparent);
   --green: #3ccf91;
   --red: #f0616d;
+  --sponsor: #db61a2;
 
   --shadow-lg: 0 30px 80px -40px rgba(0, 0, 0, 0.7);
   --radius: 6px;
@@ -64,6 +65,7 @@ body.light {
   /* Darker than the light chart theme's candles: these are used as text. */
   --green: #0b7d50;
   --red: #c42f3e;
+  --sponsor: #bf3989;
   color-scheme: light;
 }
 
@@ -246,6 +248,8 @@ kbd {
 }
 
 .site-nav-icon-btn:hover { color: var(--text); border-color: var(--text-muted); }
+/* GitHub Sponsors' own pink, on the heart only. */
+.site-nav-sponsor svg { color: var(--sponsor); }
 
 /* Buttons */
 .cta-row {
@@ -728,5 +732,7 @@ body.no-scroll { overflow: hidden; }
 
 @media (max-width: 480px) {
   .site-nav { gap: 12px; }
+  /* Too narrow for every button: the drawer lists Sponsor. */
+  .site-nav-sponsor { display: none; }
   .site-nav-version { display: none; }
 }

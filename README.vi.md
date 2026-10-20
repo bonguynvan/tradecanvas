@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+  <a href="https://github.com/sponsors/bonguynvan"><img src="https://img.shields.io/github/sponsors/bonguynvan?style=flat-square&labelColor=0b0e13&color=db61a2&label=sponsors&logo=githubsponsors&logoColor=db61a2" alt="GitHub Sponsors"></a>
 </p>
 
 <p align="center">
@@ -1171,6 +1172,10 @@ Hai lớp canvas chồng lên nhau — rê chuột chỉ vẽ lại lớp mỏng
 Mọi báo lỗi, ý tưởng và pull request đều được chào đón. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`), cấu trúc repo và những gì một pull request cần có. Phát hiện lỗ hổng bảo mật? Vui lòng làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.
 
 Nếu TradeCanvas giúp bạn tiết kiệm thời gian, một ngôi sao trên GitHub sẽ giúp nhiều lập trình viên khác tìm thấy nó.
+
+## Tài trợ
+
+TradeCanvas miễn phí, giấy phép MIT, được xây dựng và duy trì công khai. Nếu thư viện giúp ích cho sản phẩm của bạn, bạn có thể ủng hộ việc phát triển qua [GitHub Sponsors](https://github.com/sponsors/bonguynvan): tiền tài trợ trả cho thời gian làm loại biểu đồ mới, tối ưu hiệu năng, tài liệu sáu ngôn ngữ và sửa lỗi nhanh cho các ứng dụng đang dùng nó.
 
 ## Giấy phép
 

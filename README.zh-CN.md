@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+  <a href="https://github.com/sponsors/bonguynvan"><img src="https://img.shields.io/github/sponsors/bonguynvan?style=flat-square&labelColor=0b0e13&color=db61a2&label=sponsors&logo=githubsponsors&logoColor=db61a2" alt="GitHub Sponsors"></a>
 </p>
 
 <p align="center">
@@ -1169,6 +1170,10 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 欢迎提交 bug 报告、想法和 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）、仓库结构以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 私下报告，不要公开提 issue。
 
 如果 TradeCanvas 帮你节省了时间，在 GitHub 上点个 star，能让更多开发者发现它。
+
+## 赞助
+
+TradeCanvas 免费、采用 MIT 许可，公开开发和维护。如果它对你的产品有帮助，可以通过 [GitHub Sponsors](https://github.com/sponsors/bonguynvan) 支持它的开发：赞助用于新图表类型、性能优化、六种语言的文档，以及为依赖它的应用快速修复问题。
 
 ## 许可证
 

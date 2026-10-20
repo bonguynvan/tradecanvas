@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+  <a href="https://github.com/sponsors/bonguynvan"><img src="https://img.shields.io/github/sponsors/bonguynvan?style=flat-square&labelColor=0b0e13&color=db61a2&label=sponsors&logo=githubsponsors&logoColor=db61a2" alt="GitHub Sponsors"></a>
 </p>
 
 <p align="center">
@@ -1171,6 +1172,10 @@ Dos canvas superpuestos: al pasar el cursor solo se repinta el fino canvas super
 Los reportes de errores, las ideas y los pull requests son bienvenidos. [CONTRIBUTING.md](./CONTRIBUTING.md) explica la configuración (`pnpm install && pnpm build && pnpm test`), la estructura del repositorio y lo que necesita un pull request. ¿Encontraste un problema de seguridad? Sigue [SECURITY.md](./SECURITY.md) en lugar de abrir un issue.
 
 Si TradeCanvas te ahorra tiempo, una estrella en GitHub ayuda a que otros desarrolladores lo encuentren.
+
+## Patrocinio
+
+TradeCanvas es gratuito, con licencia MIT, y se desarrolla y mantiene en abierto. Si te ayuda en tu producto, puedes apoyar su desarrollo en [GitHub Sponsors](https://github.com/sponsors/bonguynvan): el patrocinio paga el tiempo que llevan los nuevos tipos de gráfico, el trabajo de rendimiento, la documentación en seis idiomas y las correcciones rápidas para las apps que dependen de él.
 
 ## Licencia
 

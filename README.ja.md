@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+  <a href="https://github.com/sponsors/bonguynvan"><img src="https://img.shields.io/github/sponsors/bonguynvan?style=flat-square&labelColor=0b0e13&color=db61a2&label=sponsors&logo=githubsponsors&logoColor=db61a2" alt="GitHub Sponsors"></a>
 </p>
 
 <p align="center">
@@ -1170,6 +1171,10 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 バグ報告、アイデア、プルリクエストを歓迎します。[CONTRIBUTING.md](./CONTRIBUTING.md) にセットアップ（`pnpm install && pnpm build && pnpm test`）、リポジトリの構成、プルリクエストに必要なことをまとめています。セキュリティ上の問題を見つけた場合は、issue を開かずに [SECURITY.md](./SECURITY.md) の手順に従ってください。
 
 TradeCanvas が時間の節約に役立ったら、GitHub でスターを付けていただけると、ほかの開発者が見つけやすくなります。
+
+## スポンサー
+
+TradeCanvas は無料の MIT ライセンスで、オープンに開発・保守されています。あなたのプロダクトの役に立っているなら、[GitHub Sponsors](https://github.com/sponsors/bonguynvan) で開発を支援できます。スポンサーの資金は、新しいチャートタイプ、パフォーマンス改善、6 言語のドキュメント、そして利用中のアプリへの素早い修正に使われます。
 
 ## ライセンス
 

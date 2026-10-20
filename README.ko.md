@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-4c8dff?style=flat-square&labelColor=0b0e13" alt="TypeScript">
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=a9b0bd" alt="MIT license"></a>
   <a href="https://github.com/bonguynvan/tradecanvas/stargazers"><img src="https://img.shields.io/github/stars/bonguynvan/tradecanvas?style=flat-square&labelColor=0b0e13&color=f2a93b" alt="GitHub stars"></a>
+  <a href="https://github.com/sponsors/bonguynvan"><img src="https://img.shields.io/github/sponsors/bonguynvan?style=flat-square&labelColor=0b0e13&color=db61a2&label=sponsors&logo=githubsponsors&logoColor=db61a2" alt="GitHub Sponsors"></a>
 </p>
 
 <p align="center">
@@ -1169,6 +1170,10 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 버그 보고, 아이디어, 풀 리퀘스트를 환영합니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에 개발 환경 설정(`pnpm install && pnpm build && pnpm test`), 저장소 구조, 풀 리퀘스트에 필요한 것을 정리해 두었습니다. 보안 문제를 발견했다면 이슈를 열지 말고 [SECURITY.md](./SECURITY.md)를 따라 주세요.
 
 TradeCanvas가 시간을 아껴 주었다면, GitHub 스타 하나가 다른 개발자들이 이 프로젝트를 찾는 데 도움이 됩니다.
+
+## 후원
+
+TradeCanvas는 무료이며 MIT 라이선스로 공개적으로 개발·유지되고 있습니다. 여러분의 제품에 도움이 된다면 [GitHub Sponsors](https://github.com/sponsors/bonguynvan)에서 개발을 후원할 수 있습니다. 후원금은 새로운 차트 타입, 성능 개선, 6개 언어 문서, 그리고 이를 사용하는 앱을 위한 빠른 수정에 쓰입니다.
 
 ## 라이선스
 

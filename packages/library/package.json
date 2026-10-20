@@ -4,6 +4,10 @@
   "type": "module",
   "description": "High-performance canvas trading chart with built-in indicators, drawing tools, and real-time streaming. Zero external dependencies.",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/bonguynvan"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/bonguynvan/tradecanvas.git",
