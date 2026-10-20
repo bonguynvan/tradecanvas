@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>키로 지정하는 차트 모양(<a href={href('/docs/styling#overrides')}>스타일링</a> 참고).</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>기본값 <code>true</code>.</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>봉 뒤의 워터마크 글자.</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>props가 다루지 않는 차트 옵션(<code>maxBarSpacing</code>, <code>rightMargin</code>, <code>renderer</code>…)으로, 마운트할 때 컴포넌트 기본값 위에 병합됩니다. 마운트 후의 변경은 적용되지 않으며, <code>chartType</code>, <code>theme</code>, <code>autoScale</code>은 항상 각자의 props에서 가져옵니다.</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>차트가 마운트된 뒤(Vue: <code>ready</code> 이벤트).</td></tr>
   </tbody>
 </table>

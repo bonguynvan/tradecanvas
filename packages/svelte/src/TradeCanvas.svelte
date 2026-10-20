@@ -19,6 +19,7 @@
     TradeZoneStyle,
     DataAdapter,
     ChartStyleOverrides,
+    ChartOptions,
     IndicatorSpec,
   } from '@tradecanvas/chart';
 
@@ -45,6 +46,13 @@
     /** Style overrides, by key: all of your app's (`chart.setOverrides`). */
     overrides?: ChartStyleOverrides;
     watermarkText?: string;
+    /**
+     * Chart options the props don't cover (`maxBarSpacing`, `rightMargin`,
+     * `renderer`…), merged over the component's defaults at mount; later
+     * changes are not applied. `chartType`, `theme` and `autoScale` always come
+     * from their props.
+     */
+    options?: Partial<ChartOptions>;
     onReady?: (chart: Chart) => void;
     chart?: Chart | null;
   }
@@ -67,6 +75,7 @@
     tradeZoneStyle = undefined as TradeZoneStyle | undefined,
     overrides = undefined as ChartStyleOverrides | undefined,
     watermarkText = undefined as string | undefined,
+    options = undefined as Partial<ChartOptions> | undefined,
     onReady = undefined as ((chart: Chart) => void) | undefined,
     chart = $bindable(null) as Chart | null,
   }: Props = $props();
@@ -87,14 +96,13 @@
 
   onMount(() => {
     instance = new Chart(container, {
+      rightMargin: 5,
+      crosshair: { mode: 'magnet' },
+      ...options,
       chartType,
       theme: resolveTheme(theme),
       autoScale,
-      rightMargin: 5,
-      crosshair: { mode: 'magnet' },
-      watermark: watermarkText
-        ? { text: watermarkText, fontSize: 48, color: 'rgba(255,255,255,0.03)' }
-        : undefined,
+      ...(watermarkText ? { watermark: { text: watermarkText, fontSize: 48, color: 'rgba(255,255,255,0.03)' } } : {}),
       features: {
         drawings: true,
         drawingMagnet: true,
@@ -110,6 +118,7 @@
         barCountdown: true,
         logScale: true,
         watermark: true,
+        ...options?.features,
         ...features,
       },
     });

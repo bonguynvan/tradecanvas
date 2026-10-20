@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>按键名设置图表外观（见<a href={href('/docs/styling#overrides')}>样式</a>）。</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>默认 <code>true</code>。</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>K 线后面的水印文字。</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>props 未涵盖的图表选项（<code>maxBarSpacing</code>、<code>rightMargin</code>、<code>renderer</code>…），挂载时合并到组件默认值之上。挂载后的修改不会生效；<code>chartType</code>、<code>theme</code> 和 <code>autoScale</code> 始终取自各自的 props。</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>图表挂载之后（Vue：<code>ready</code> 事件）。</td></tr>
   </tbody>
 </table>

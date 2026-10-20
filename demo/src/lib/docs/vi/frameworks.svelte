@@ -107,6 +107,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>Giao diện biểu đồ theo khoá (xem <a href={href('/docs/styling#overrides')}>Giao diện</a>).</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>Mặc định <code>true</code>.</td></tr>
     <tr><td><code>watermarkText</code></td><td><code>string</code></td><td>Chữ chìm phía sau các nến.</td></tr>
+    <tr><td><code>options</code></td><td><code>Partial&lt;ChartOptions&gt;</code></td><td>Tuỳ chọn của chart mà các prop không có (<code>maxBarSpacing</code>, <code>rightMargin</code>, <code>renderer</code>…), gộp đè lên mặc định của component khi mount. Đổi sau khi mount không được áp dụng; <code>chartType</code>, <code>theme</code> và <code>autoScale</code> luôn lấy từ prop của chúng.</td></tr>
     <tr><td><code>onReady</code></td><td><code>(chart) =&gt; void</code></td><td>Sau khi biểu đồ mount (Vue: sự kiện <code>ready</code>).</td></tr>
   </tbody>
 </table>

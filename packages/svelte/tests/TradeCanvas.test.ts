@@ -42,6 +42,31 @@ afterEach(() => cleanup());
 const BAR = { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 };
 
 describe('<TradeCanvas> (svelte)', () => {
+  it('passes options through to the Chart, under its own props', () => {
+    render(TradeCanvas, {
+      props: {
+        chartType: 'line',
+        features: { trading: false },
+        options: { maxBarSpacing: 160, rightMargin: 1, chartType: 'bar', features: { alerts: false, trading: true } },
+      },
+    });
+    const opts = (ChartCtor.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(opts).toMatchObject({ maxBarSpacing: 160, rightMargin: 1, chartType: 'line' });
+    expect(opts.features).toMatchObject({ alerts: false, trading: false, drawings: true });
+  });
+
+  it('keeps a watermark from options when there is no watermarkText', () => {
+    render(TradeCanvas, { props: { options: { watermark: { text: 'VN30F1M' } } } });
+    const opts = (ChartCtor.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(opts.watermark).toEqual({ text: 'VN30F1M' });
+  });
+
+  it('keeps its own defaults without options', () => {
+    render(TradeCanvas);
+    const opts = (ChartCtor.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(opts).toMatchObject({ rightMargin: 5, crosshair: { mode: 'magnet' } });
+  });
+
   it('constructs a Chart and connects with the symbol/timeframe', () => {
     render(TradeCanvas, { props: { symbol: 'ETHUSDT', timeframe: '1m' } });
     expect(ChartCtor).toHaveBeenCalledTimes(1);
