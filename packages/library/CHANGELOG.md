@@ -1,5 +1,16 @@
 # @tradecanvas/chart
 
+## 1.19.0
+
+### Minor Changes
+
+- 16baf3a: `chart.requestRender()` draws a frame on request (after a plugin's own setting changed), and an overlay plugin with `enabled: false` stays registered but isn't drawn.
+
+### Patch Changes
+
+- @tradecanvas/commons@1.19.0
+- @tradecanvas/core@1.19.0
+
 ## 1.18.1
 
 ### Patch Changes

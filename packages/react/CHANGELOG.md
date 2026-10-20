@@ -1,5 +1,16 @@
 # @tradecanvas/react
 
+## 1.3.0
+
+### Minor Changes
+
+- 36e43f8: An `options` prop: chart options the props don't cover (`maxBarSpacing`, `rightMargin`, `renderer`…), merged over the component's defaults at mount.
+
+### Patch Changes
+
+- Updated dependencies [16baf3a]
+  - @tradecanvas/chart@1.19.0
+
 ## 1.2.6
 
 ### Patch Changes
