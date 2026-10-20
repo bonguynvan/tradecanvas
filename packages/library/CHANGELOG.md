@@ -1015,8 +1015,7 @@ limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
   doesn't make it twitch. `ViewportState.priceAxisWidth` exposes the width to
   renderers and plugins.
 
-- 14 new drawing tools (26 → 40), the next step toward
-  advanced drawing-tool parity:
+- 14 new drawing tools (26 → 40):
 
   - **Lines:** `infoLine` (trend line with a stats box: price change and %,
     bars and time spanned, angle), `trendAngle` (shows its angle in degrees),
@@ -1149,7 +1148,7 @@ limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
   switches); `/embed?bars=200000&timeframe=1m` loads a large static series
   whose timeframe switches resample locally.
 
-- 6cf12af: Add three new built-in indicators toward advanced-charting parity:
+- 6cf12af: Add three new built-in indicators:
 
   - `vwma` — Volume Weighted Moving Average
   - `envelope` — Moving Average Envelope (SMA ± a fixed % band)
@@ -1159,7 +1158,7 @@ limit)`. Binance, Bybit and Mock implement it; `WebSocketAdapter` and
   READMEs and demo docs — the registry actually has 69 registered indicators
   (69 after this change); the count had drifted out of sync for a while.
 
-- edbdb56: Second increment of advanced drawing-tool parity:
+- edbdb56: Second increment of new drawing tools:
 
   - `horizontalRay` — like `horizontalLine`, but only extends forward in time
     from the anchor instead of spanning the full chart width.
