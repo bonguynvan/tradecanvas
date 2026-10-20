@@ -5,7 +5,7 @@ import { SITE_URL } from '$lib/site';
 
 export const prerender = true;
 
-const PAGES = ['/', '/examples/', '/playground/', '/changelog/'];
+const PAGES = ['/', '/examples/', '/playground/', '/audit/', '/changelog/'];
 
 /** Each page in every language it has; docs only where they are translated. */
 function urls(): { loc: string; alternates: { tag: string; href: string }[] }[] {

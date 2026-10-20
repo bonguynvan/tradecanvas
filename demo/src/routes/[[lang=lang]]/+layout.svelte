@@ -84,6 +84,7 @@
     { label: m.nav.docs, href: i18n.href('/docs/getting-started'), match: '/docs' },
     { label: m.nav.examples, href: i18n.href('/examples'), match: '/examples' },
     { label: m.nav.playground, href: i18n.href('/playground'), match: '/playground' },
+    { label: m.nav.audit, href: i18n.href('/audit'), match: '/audit' },
     { label: m.nav.changelog, href: i18n.href('/changelog'), match: '/changelog' },
   ]);
 
@@ -94,6 +95,7 @@
         { label: m.footer.gettingStarted, href: i18n.href('/docs/getting-started') },
         { label: m.footer.apiReference, href: i18n.href('/docs/api') },
         { label: m.footer.examples, href: i18n.href('/examples') },
+        { label: m.footer.audit, href: i18n.href('/audit') },
         { label: m.footer.changelog, href: i18n.href('/changelog') },
       ],
     },
