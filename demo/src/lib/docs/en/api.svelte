@@ -328,8 +328,17 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
     <tr><td>2-finger pinch</td><td>Zoom around the midpoint</td></tr>
     <tr><td>Long-press (~500 ms)</td><td>Pin OHLC tooltip at the bar (mobile equivalent of Alt-click)</td></tr>
     <tr><td>1-finger drag inside price / time axis strip</td><td>Scale the corresponding axis</td></tr>
+    <tr><td>Tap</td><td>Click: <code>click</code>, <code>barClick</code>, a signal marker; on a drawing, select it</td></tr>
+    <tr><td>Double tap</td><td>Double-click: on an axis, reset it; on a drawing, open its settings</td></tr>
+    <tr><td>1-finger drag on a drawing</td><td>Move it, or reshape it by a handle of the selected one</td></tr>
+    <tr><td>With a drawing tool: tap, tap — or press, drag, lift</td><td>Place its points; press, drag and lift draws a two-point line in one go</td></tr>
+    <tr><td>Long-press on a drawing</td><td>Its menu (as a right-click)</td></tr>
+    <tr><td>1-finger drag on an alert, order or bracket line, or a pane divider</td><td>Drag it</td></tr>
   </tbody>
 </table>
+<p>
+  A finger reaches further than a mouse: about 16 px to a line and 22 px to a handle, against 8. On a page that scrolls, <code>pageScroll: true</code> leaves vertical swipes and the plain mouse wheel to the page: the chart pans with a sideways swipe and zooms with two fingers or Ctrl + wheel (a trackpad pinch), while presses on drawings, lines and axes stay the chart's. <code>chart.setPageScroll(on)</code> switches it while running.
+</p>
 <p>
   Modals (settings, hotkey sheet, command palette, symbol search) automatically
   switch to a bottom-sheet pattern with a grab handle and safe-area-aware

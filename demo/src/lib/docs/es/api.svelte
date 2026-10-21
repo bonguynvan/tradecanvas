@@ -337,8 +337,17 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
     <tr><td>Pellizcar con 2 dedos</td><td>Zoom alrededor del punto medio</td></tr>
     <tr><td>Mantener pulsado (~500 ms)</td><td>Fija la información OHLC en la barra (el equivalente móvil de Alt + clic)</td></tr>
     <tr><td>Arrastrar con 1 dedo dentro de la franja del eje de precio / tiempo</td><td>Escala el eje correspondiente</td></tr>
+    <tr><td>Tocar</td><td>Clic: <code>click</code>, <code>barClick</code>, un marcador de señal; sobre un dibujo, lo selecciona</td></tr>
+    <tr><td>Doble toque</td><td>Doble clic: sobre un eje, lo restablece; sobre un dibujo, abre sus ajustes</td></tr>
+    <tr><td>Arrastrar con 1 dedo sobre un dibujo</td><td>Moverlo, o cambiar su forma con un tirador del seleccionado</td></tr>
+    <tr><td>Con una herramienta de dibujo: tocar, tocar — o pulsar, arrastrar, soltar</td><td>Colocar sus puntos; pulsar, arrastrar y soltar dibuja una línea de dos puntos de una vez</td></tr>
+    <tr><td>Mantener pulsado sobre un dibujo</td><td>Su menú (como un clic derecho)</td></tr>
+    <tr><td>Arrastrar con 1 dedo una línea de alerta, orden o bracket, o un divisor de panel</td><td>Arrastrarla</td></tr>
   </tbody>
 </table>
+<p>
+  Un dedo alcanza más lejos que un ratón: unos 16 px hasta una línea y 22 px hasta un tirador, frente a 8. En una página que se desplaza, <code>pageScroll: true</code> deja a la página los deslizamientos verticales y la rueda del ratón: el gráfico se desplaza con un deslizamiento lateral y hace zoom con dos dedos o Ctrl + rueda (un pellizco del trackpad), mientras que las pulsaciones sobre dibujos, líneas y ejes siguen siendo del gráfico. <code>chart.setPageScroll(on)</code> lo cambia en marcha.
+</p>
 <p>
   Los cuadros modales (configuración, hoja de atajos, paleta de comandos,
   búsqueda de símbolos) pasan automáticamente a una hoja inferior con asa de

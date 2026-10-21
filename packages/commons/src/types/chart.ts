@@ -192,6 +192,14 @@ export interface ChartOptions {
    */
   pauseWhenHidden?: boolean;
   /**
+   * For a chart on a page that scrolls (an article, a phone screen): a
+   * one-finger vertical swipe and the plain mouse wheel scroll the page; a
+   * sideways swipe pans the chart, and two fingers or Ctrl + wheel (a trackpad
+   * pinch) zoom it. Presses on drawings, lines and axes stay the chart's.
+   * Default false: the chart takes every gesture over it.
+   */
+  pageScroll?: boolean;
+  /**
    * How narrow a bar slot may get to fit a long series on screen (zooming
    * out, `fitContent`, the 'All' range), px. Default 0.25: four bars a pixel,
    * so 26 years of daily bars don't all fit on a laptop screen. Down to 0.02

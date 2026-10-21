@@ -1,3 +1,4 @@
+import type { PointerReach } from '../interaction/pointerReach.js';
 import type {
   TradingOrder,
   TradingPosition,
@@ -243,24 +244,28 @@ export class TradingManager {
 
   // --- Pointer events ---
 
-  onPointerDown(pos: Point, viewport: ViewportState): boolean {
+  /**
+   * A press at `pos`. `reach` widens what it takes for a finger: the handles
+   * of a bracket or order draft, the lines' buttons, the lines.
+   */
+  onPointerDown(pos: Point, viewport: ViewportState, reach?: Pick<PointerReach, 'handle' | 'order' | 'button'>): boolean {
     if (!this.config.enabled) return false;
     // Bracket handles take priority over order/position drags while placing.
-    if (this.bracket.isActive() && this.bracket.beginDrag(pos, viewport)) {
+    if (this.bracket.isActive() && this.bracket.beginDrag(pos, viewport, reach?.handle)) {
       this.requestRender?.();
       return true;
     }
-    if (this.orderDraft.isActive() && this.orderDraft.beginDrag(pos, viewport)) {
+    if (this.orderDraft.isActive() && this.orderDraft.beginDrag(pos, viewport, reach?.handle)) {
       this.requestRender?.();
       return true;
     }
     // A button on a line before the line itself (an SL line is draggable too).
-    const button = buttonAt(this.buttons, pos);
+    const button = buttonAt(this.buttons, pos, reach?.button);
     if (button) {
       this.armed = button.action;
       return true;
     }
-    return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, 8);
+    return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, reach?.order ?? 8);
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
@@ -318,6 +323,30 @@ export class TradingManager {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Call the press off (the browser took a touch back, a second finger
+   * landed): a dragged line or handle goes back where it was, a pressed
+   * button does nothing, and nothing is reported. True when there was one.
+   */
+  cancelPointer(): boolean {
+    let had = false;
+    if (this.armed) {
+      this.armed = null;
+      had = true;
+    }
+    if (this.bracket.isDragging()) {
+      this.bracket.cancelDrag();
+      had = true;
+    }
+    if (this.orderDraft.isDragging()) {
+      this.orderDraft.cancelDrag();
+      had = true;
+    }
+    if (this.dragHandler.cancel()) had = true;
+    if (had) this.requestRender?.();
+    return had;
   }
 
   onContextMenu(pos: Point, viewport: ViewportState): boolean {

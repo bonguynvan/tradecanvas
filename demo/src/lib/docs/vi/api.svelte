@@ -329,8 +329,17 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
     <tr><td>Chụm 2 ngón</td><td>Phóng to quanh điểm giữa</td></tr>
     <tr><td>Nhấn giữ (~500 ms)</td><td>Ghim chú thích OHLC tại nến (bản di động của Alt+bấm)</td></tr>
     <tr><td>Kéo 1 ngón trong dải trục giá / thời gian</td><td>Co giãn trục tương ứng</td></tr>
+    <tr><td>Chạm</td><td>Bấm: <code>click</code>, <code>barClick</code>, một signal marker; chạm lên hình vẽ thì chọn nó</td></tr>
+    <tr><td>Chạm đúp</td><td>Bấm đúp: trên trục thì đặt lại trục; trên hình vẽ thì mở cài đặt của nó</td></tr>
+    <tr><td>Kéo 1 ngón trên hình vẽ</td><td>Di chuyển nó, hoặc đổi dạng bằng một tay nắm của hình đang chọn</td></tr>
+    <tr><td>Khi đang chọn công cụ vẽ: chạm, chạm — hoặc nhấn, kéo, nhấc</td><td>Đặt các điểm; nhấn, kéo rồi nhấc ngón vẽ xong đường hai điểm trong một lần</td></tr>
+    <tr><td>Nhấn giữ trên hình vẽ</td><td>Menu của nó (như bấm chuột phải)</td></tr>
+    <tr><td>Kéo 1 ngón trên đường cảnh báo, lệnh, bracket hoặc đường chia pane</td><td>Kéo nó</td></tr>
   </tbody>
 </table>
+<p>
+  Ngón tay với xa hơn chuột: khoảng 16 px tới một đường và 22 px tới một tay nắm, so với 8. Trên trang có cuộn, <code>pageScroll: true</code> để vuốt dọc và con lăn chuột thường cho trang: biểu đồ kéo theo vuốt ngang và phóng to bằng hai ngón hoặc Ctrl + con lăn (chụm trên touchpad), còn nhấn lên hình vẽ, các đường và trục vẫn thuộc về biểu đồ. <code>chart.setPageScroll(on)</code> bật tắt khi đang chạy.
+</p>
 <p>
   Các hộp thoại (cài đặt, bảng phím tắt, bảng lệnh, tìm mã) tự động
   chuyển sang dạng bảng trượt từ dưới lên, có tay nắm để kéo và phần đệm tính đến vùng an toàn

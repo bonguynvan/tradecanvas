@@ -311,8 +311,17 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
     <tr><td>双指捏合</td><td>以中点为中心缩放</td></tr>
     <tr><td>长按（约 500 ms）</td><td>在K线上固定 OHLC 提示（相当于移动端的 Alt+点击）</td></tr>
     <tr><td>在价格轴 / 时间轴区域内单指拖动</td><td>缩放对应的坐标轴</td></tr>
+    <tr><td>轻点</td><td>点击：<code>click</code>、<code>barClick</code>、信号标记；点在绘图上则选中它</td></tr>
+    <tr><td>双击轻点</td><td>双击：在坐标轴上则重置该轴；在绘图上则打开其设置</td></tr>
+    <tr><td>在绘图上单指拖动</td><td>移动它，或拖动所选绘图的控制点改变形状</td></tr>
+    <tr><td>选中绘图工具时：点、点——或按下、拖动、抬起</td><td>放置各点；按下、拖动再抬起，一次画出两点线</td></tr>
+    <tr><td>在绘图上长按</td><td>打开它的菜单（相当于右键）</td></tr>
+    <tr><td>在提醒线、订单线、括号单线或窗格分隔线上单指拖动</td><td>拖动它</td></tr>
   </tbody>
 </table>
+<p>
+  手指的触及范围比鼠标大：到线约 16 px，到控制点约 22 px，鼠标为 8 px。在可滚动的页面上，<code>pageScroll: true</code> 会把竖直滑动和普通鼠标滚轮留给页面：图表随横向滑动平移，用双指或 Ctrl + 滚轮（触控板捏合）缩放，而按在绘图、线和坐标轴上的操作仍归图表。<code>chart.setPageScroll(on)</code> 可在运行时切换。
+</p>
 <p>
   当视口宽度小于 640 px 时，弹窗（设置、快捷键列表、命令面板、代码搜索）
   会自动切换为底部抽屉样式，带拖动手柄，并适配安全区域的内边距。

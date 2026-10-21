@@ -107,3 +107,35 @@ describe('fill marks', () => {
     expect(fills[0].time).toBe(5);
   });
 });
+
+describe('TradingManager — a press called off (the browser took the touch back)', () => {
+  it('puts a dragged order line back and reports nothing', () => {
+    // The order at 30 is at y 70.
+    expect(manager.onPointerDown({ x: 500, y: 70 }, unitViewport)).toBe(true);
+    manager.onPointerMove({ x: 500, y: 40 }, unitViewport);
+    expect(manager.cancelPointer()).toBe(true);
+    expect(manager.onPointerUp({ x: 500, y: 40 })).toBe(false);
+    expect(events).toEqual([]);
+  });
+
+  it('puts a bracket handle back where the press found it', () => {
+    manager.startBracket('buy', 50);
+    const before = (manager as unknown as { bracket: { getDraft(): unknown } }).bracket.getDraft();
+    expect(manager.onPointerDown({ x: 500, y: 50 }, unitViewport)).toBe(true);
+    manager.onPointerMove({ x: 500, y: 20 }, unitViewport);
+    manager.cancelPointer();
+    expect((manager as unknown as { bracket: { getDraft(): unknown } }).bracket.getDraft()).toEqual(before);
+  });
+
+  it('lets a pressed button go without running it', () => {
+    const at = buttonCentre('cancelOrder');
+    manager.onPointerDown(at, unitViewport);
+    manager.cancelPointer();
+    manager.onPointerUp(at);
+    expect(events).toEqual([]);
+  });
+
+  it('is false with nothing pressed', () => {
+    expect(manager.cancelPointer()).toBe(false);
+  });
+});

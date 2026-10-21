@@ -54,6 +54,8 @@ const HANDLE_TOLERANCE = 6;
  */
 export class BracketTool {
   private draft: BracketDraft | null = null;
+  /** The draft as the drag found it, to put back if the drag is called off. */
+  private dragStart: BracketDraft | null = null;
   private dragging: BracketHandle | null = null;
   private defaults: BracketDefaultsOptions;
 
@@ -80,11 +82,11 @@ export class BracketTool {
   }
 
   /** Which handle (if any) is under the pointer. */
-  hitTest(pos: Point, viewport: ViewportState): BracketHandle | null {
+  hitTest(pos: Point, viewport: ViewportState, tolerance = HANDLE_TOLERANCE): BracketHandle | null {
     if (!this.draft) return null;
     const handles: BracketHandle[] = ['entry', 'sl', 'tp'];
     let best: BracketHandle | null = null;
-    let bestDist = HANDLE_TOLERANCE;
+    let bestDist = tolerance;
     for (const h of handles) {
       const y = priceToY(this.priceOf(h), viewport);
       const dist = Math.abs(y - pos.y);
@@ -96,11 +98,19 @@ export class BracketTool {
     return best;
   }
 
-  beginDrag(pos: Point, viewport: ViewportState): boolean {
-    const handle = this.hitTest(pos, viewport);
+  beginDrag(pos: Point, viewport: ViewportState, tolerance?: number): boolean {
+    const handle = this.hitTest(pos, viewport, tolerance);
     if (!handle) return false;
     this.dragging = handle;
+    this.dragStart = this.draft;
     return true;
+  }
+
+  /** Call the drag off: the handle goes back to where it was. */
+  cancelDrag(): void {
+    if (this.dragging && this.dragStart) this.draft = this.dragStart;
+    this.dragging = null;
+    this.dragStart = null;
   }
 
   drag(pos: Point, viewport: ViewportState): boolean {
@@ -112,6 +122,7 @@ export class BracketTool {
 
   endDrag(): void {
     this.dragging = null;
+    this.dragStart = null;
   }
 
   isDragging(): boolean {

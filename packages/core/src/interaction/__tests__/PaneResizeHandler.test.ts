@@ -81,3 +81,12 @@ describe('PaneResizeHandler', () => {
     expect(h.computeSize({ x: 230, y: 260 })).toEqual({ panelId: 'side', size: 230 }); // right 30
   });
 });
+
+describe('PaneResizeHandler — a finger’s reach', () => {
+  it('takes a divider from farther off when given a wider tolerance', () => {
+    const h = new PaneResizeHandler();
+    h.configure(() => bottomLayout, () => {});
+    expect(h.tryBegin({ x: 400, y: 388 })).toBe(false);
+    expect(h.tryBegin({ x: 400, y: 388 }, 12)).toBe(true);
+  });
+});
