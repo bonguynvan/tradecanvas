@@ -1,6 +1,12 @@
 import type { ViewportState, Theme, Point } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
+import { UI_ICONS } from '@tradecanvas/commons';
+import { drawIcon } from '../ui/drawIcon.js';
+
+/** The bell beside an alert line's price, px, and the space between them. */
+const LABEL_ICON_SIZE = 12;
+const LABEL_ICON_GAP = 3;
 
 /**
  * When an alert fires: the value crosses the level (or the other line, with
@@ -583,13 +589,17 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Bell icon + price label
+      // The bell of the icon set, then the price (and the alert's message).
       ctx.font = `10px ${theme.font.family}`;
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'right';
-      const label = `🔔 ${viewport.formatPrice?.(alert.price) ?? alert.price.toFixed(this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
-      ctx.fillText(label, chartRect.x + chartRect.width - 4, y - 2);
+      const label = `${viewport.formatPrice?.(alert.price) ?? alert.price.toFixed(this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
+      const right = chartRect.x + chartRect.width - 4;
+      ctx.fillText(label, right, y - 2);
+      const iconX = right - ctx.measureText(label).width - LABEL_ICON_GAP - LABEL_ICON_SIZE;
+      // A long message leaves no room for the bell on the plot: the text alone.
+      if (iconX >= chartRect.x) drawIcon(ctx, UI_ICONS.bell, iconX, y - 2 - LABEL_ICON_SIZE, LABEL_ICON_SIZE, color);
     }
   }
 }

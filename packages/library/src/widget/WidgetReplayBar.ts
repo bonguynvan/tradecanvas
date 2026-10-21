@@ -1,5 +1,6 @@
 import { escapeHtml } from './escapeHtml.js';
 import { markPart } from './widgetFeatures.js';
+import { createIcon } from './icons.js';
 /**
  * Replay control bar. Surfaces the chart's replay engine as a floating
  * bottom-of-chart control and reports user intent through callbacks (no
@@ -239,18 +240,9 @@ export class WidgetReplayBar {
 }
 
 
-function svgPlay(): string {
-  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg>';
-}
-function svgPause(): string {
-  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
-}
-function svgStepBack(): string {
-  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 6h2v12H6zM20 6L9 12l11 6V6z"/></svg>';
-}
-function svgStepForward(): string {
-  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6l11 6L4 18V6zM16 6h2v12h-2z"/></svg>';
-}
-function svgCursor(): string {
-  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>';
-}
+// The replay's controls, from the icon set.
+const svgPlay = () => createIcon('play', 14);
+const svgPause = () => createIcon('pause', 14);
+const svgStepBack = () => createIcon('stepBack', 14);
+const svgStepForward = () => createIcon('stepForward', 14);
+const svgCursor = () => createIcon('cursor', 14);

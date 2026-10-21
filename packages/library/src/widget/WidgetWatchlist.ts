@@ -1,5 +1,6 @@
 import type { WatchlistList } from './WatchlistStore.js';
 import { fill } from './i18n.js';
+import { createIcon } from './icons.js';
 
 /**
  * Watchlist sidebar: the shown list's symbols, each with last price, % change
@@ -213,7 +214,7 @@ export class WidgetWatchlist {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'tcw-watchlist-remove';
-      remove.textContent = '×';
+      remove.innerHTML = createIcon('x', 12);
       remove.tabIndex = -1;
       const text = fill(this.labels.remove, { symbol });
       remove.title = text;

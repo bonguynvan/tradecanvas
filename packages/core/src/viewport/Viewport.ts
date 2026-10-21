@@ -8,6 +8,8 @@ import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEI
  * fit every loaded bar, and never past this.
  */
 export const MIN_BAR_UNIT = 0.25;
+/** The narrowest `setMinBarUnit` allows: 50 bars a pixel. */
+export const MIN_BAR_UNIT_LIMIT = 0.02;
 
 export class Viewport {
   private state: ViewportState;
@@ -30,6 +32,7 @@ export class Viewport {
   private rightMarginBars: number;
   private freePan = true;
   private minVisibleBars = 3;
+  private minBarUnit = MIN_BAR_UNIT;
 
   constructor(
     containerWidth: number,
@@ -196,14 +199,31 @@ export class Viewport {
 
   /**
    * The narrowest slot right now: the usual floor, or less when the loaded
-   * bars only fit below it — down to `MIN_BAR_UNIT`.
+   * bars only fit below it — down to `minBarUnit` (`MIN_BAR_UNIT` unless set).
    */
   private minUnit(): number {
     const floor = this.floorUnit();
     const width = this.state.chartRect.width;
     const slots = this.dataLength + this.rightMarginBars;
     if (width <= 0 || slots <= 0) return floor;
-    return Math.max(MIN_BAR_UNIT, Math.min(floor, width / slots));
+    return Math.max(this.minBarUnit, Math.min(floor, width / slots));
+  }
+
+  /**
+   * How narrow a slot may get to fit a long series, px: `MIN_BAR_UNIT` (four
+   * bars a pixel) by default, down to `MIN_BAR_UNIT_LIMIT`. Below a pixel the
+   * bars are drawn a pixel column at a time. Anything else sets the default.
+   */
+  setMinBarUnit(px: number): void {
+    this.minBarUnit = Number.isFinite(px) ? Math.max(MIN_BAR_UNIT_LIMIT, Math.min(px, this.floorUnit())) : MIN_BAR_UNIT;
+    this.clampUnit();
+    this.clampOffset();
+    this.updateVisibleRange();
+    this.invalidate();
+  }
+
+  getMinBarUnit(): number {
+    return this.minBarUnit;
   }
 
   private maxUnit(): number {

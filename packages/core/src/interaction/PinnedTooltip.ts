@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /**
@@ -78,7 +78,11 @@ export class PinnedTooltip {
 
     // Small "pin" badge so the user knows what they're looking at.
     const pinBadge = document.createElement('div');
-    pinBadge.textContent = '📌 pinned';
+    // The pin of the icon set, then the word: no emoji, which draws differently on every system.
+    pinBadge.innerHTML = `${iconSvg(UI_ICONS.pin, 10)}<span>pinned</span>`;
+    pinBadge.style.display = 'flex';
+    pinBadge.style.alignItems = 'center';
+    pinBadge.style.gap = '3px';
     pinBadge.style.fontSize = '9px';
     pinBadge.style.opacity = '0.6';
     pinBadge.style.marginBottom = '2px';

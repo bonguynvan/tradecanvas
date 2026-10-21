@@ -214,6 +214,15 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(FakeChart.last.paneTitles.at(-1)).toBe(false);
   });
 
+  it('tells a fired alert with the bell of the icon set, not an emoji', () => {
+    make();
+    FakeChart.last.emit('alertTriggered', { price: 100, condition: 'crossing', message: 'hi' });
+    const toast = host.querySelector<HTMLElement>('.tcw-toast')!;
+    expect(toast.querySelector('.tcw-toast-icon svg')).not.toBeNull();
+    expect(toast.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+    expect(toast.textContent).toContain('hi');
+  });
+
   it('keeps quiet with the toasts off', () => {
     make({ features: { toasts: false } });
     FakeChart.last.emit('alertTriggered', { price: 100, condition: 'crossing', message: 'hi' });

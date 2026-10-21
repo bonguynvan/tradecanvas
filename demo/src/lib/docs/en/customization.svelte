@@ -108,7 +108,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
     </td></tr>
     <tr><td>Status bar</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>On the chart</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -136,7 +136,14 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   takes the add button of the object tree, and comparisons already on stay listed; <code>toasts</code> silences the
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
   <code>selectionToolbar</code> off hides the toolbar over a selected drawing; the right-click menu stays.
+  <code>statusBar.rangeTimeframe</code> off keeps the timeframe when a range on the range bar is longer than its bars fit; on, it switches to weeks or months and back.
 </p>
+
+<p id="toast-icons">
+  Your own notices can carry an icon of the widget's set, by name (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), as the widget's alert notice carries the bell. The widget draws no emoji anywhere: every icon, the chart's own labels included, comes from one set.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 
 <h2 id="parts">Your own parts</h2>
 <p>

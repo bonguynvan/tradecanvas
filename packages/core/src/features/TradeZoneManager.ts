@@ -5,6 +5,11 @@ import { Emitter } from '../realtime/Emitter.js';
 import { fillTag } from '../ui/shapes.js';
 import { revealZones } from './replayReveal.js';
 import { zoneStyleFor } from '../style/overlayColors.js';
+import { UI_ICONS } from '@tradecanvas/commons';
+import { drawIcon } from '../ui/drawIcon.js';
+
+/** The long / short icon before a zone's entry price, px. */
+const ZONE_ICON_SIZE = 12;
 
 interface TradeZoneEvents {
   added: TradeZone;
@@ -187,12 +192,13 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
       ctx.setLineDash([]);
     }
 
-    const dirIcon = zone.direction === 'long' ? '▲' : '▼';
+    // The long or short icon of the icon set, then the entry price.
+    drawIcon(ctx, zone.direction === 'long' ? UI_ICONS.trendingUp : UI_ICONS.trendingDown, left + 4, entryY - 3 - ZONE_ICON_SIZE, ZONE_ICON_SIZE, fillColor);
     ctx.font = `bold 10px ${theme.font.family}`;
     ctx.fillStyle = fillColor;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
-    ctx.fillText(`${dirIcon} ${viewport.formatPrice?.(zone.entryPrice) ?? zone.entryPrice.toFixed(this.pricePrecision)}`, left + 4, entryY - 3);
+    ctx.fillText(viewport.formatPrice?.(zone.entryPrice) ?? zone.entryPrice.toFixed(this.pricePrecision), left + 4 + ZONE_ICON_SIZE + 3, entryY - 3);
 
     if (style.showPnl && !isActive && zone.pnl != null) {
       const pnlSign = zone.pnl >= 0 ? '+' : '';

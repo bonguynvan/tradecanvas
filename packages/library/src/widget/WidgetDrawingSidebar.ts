@@ -308,7 +308,13 @@ export class WidgetDrawingSidebar {
         this.hideFlyout();
       });
       if (this.callbacks.onToggleFavorite) {
-        if (this.favorites.includes(tool.value)) item.classList.add('tcw-flyout-faved');
+        if (this.favorites.includes(tool.value)) {
+          item.classList.add('tcw-flyout-faved');
+          const star = document.createElement('span');
+          star.className = 'tcw-flyout-star';
+          star.innerHTML = createIcon('star', 12);
+          item.appendChild(star);
+        }
         item.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           this.callbacks.onToggleFavorite?.(tool.value);

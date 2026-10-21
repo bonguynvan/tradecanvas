@@ -108,7 +108,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
     </td></tr>
     <tr><td>ステータスバー</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>チャート上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -136,7 +136,14 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   ツリーの追加ボタンを取り除き、表示中の比較は一覧に残ります。<code>toasts</code> はウィジェット自身の通知を止めます（エラーは表示されます）。
   <code>widget.toast()</code> による通知も表示されます。
   <code>selectionToolbar</code> をオフにすると選択した描画の上のツールバーが隠れます。右クリックメニューは残ります。
+  <code>statusBar.rangeTimeframe</code> をオフにすると、レンジバーの期間がバーに収まらなくても時間足を保ちます。オンでは週足や月足に切り替え、また戻します。
 </p>
+
+<p id="toast-icons">
+  独自の通知にも、ウィジェットのアイコンセットのアイコンを名前で付けられます（<code>'bell'</code>、<code>'check'</code>、<code>'info'</code>…）。ウィジェットのアラート通知がベルを付けるのと同じです。ウィジェットはどこにも絵文字を使いません。チャート自身のラベルを含め、すべてのアイコンは一つのセットから来ています。
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 
 <h2 id="parts">独自の部品</h2>
 <p>

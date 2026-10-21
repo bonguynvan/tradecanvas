@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ViewportState } from '@tradecanvas/commons';
 import { AlertManager } from '../AlertManager.js';
+import { DARK_THEME, UI_ICONS } from '@tradecanvas/commons';
 
 // Linear price scale: y = top + height * (1 - (price-min)/(max-min)).
 // With min=0, max=100, chartRect y=0 height=100 → price 100 → y 0, price 0 → y 100.
@@ -163,5 +164,38 @@ describe('AlertManager.updateAlertPrice', () => {
     am.updateAlertPrice(id, Number.NaN);
     expect(am.getAlerts()[0].price).toBe(50);
     am.updateAlertPrice('nope', 10); // no throw
+  });
+});
+
+describe('AlertManager — the line’s label', () => {
+  it('draws the bell from the icon set beside the price, not an emoji', () => {
+    class FakePath { constructor(public d?: string) {} }
+    const g = globalThis as { Path2D?: unknown };
+    const saved = g.Path2D;
+    g.Path2D = FakePath;
+    try {
+      const texts: string[] = [];
+      const strokes: string[] = [];
+      const ctx = new Proxy({} as Record<string, unknown>, {
+        get: (t, p) => {
+          if (p === 'fillText') return (s: string) => texts.push(s);
+          if (p === 'measureText') return (s: string) => ({ width: s.length * 6 });
+          if (p === 'stroke') return (path?: FakePath) => { if (path?.d) strokes.push(path.d); };
+          return p in t ? t[p as string] : () => {};
+        },
+        set: (t, p, v) => { t[p as string] = v; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      const manager = new AlertManager();
+      manager.addAlert(105, 'crossing');
+      manager.render(ctx, {
+        visibleRange: { from: 0, to: 10 }, priceRange: { min: 100, max: 110 }, barWidth: 8, barSpacing: 2, offset: 0,
+        chartRect: { x: 0, y: 0, width: 400, height: 200 },
+      }, DARK_THEME);
+      expect(texts.join(' ')).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+      expect(texts.some((t) => t.startsWith('105'))).toBe(true);
+      expect(strokes).toContain(UI_ICONS.bell.d);
+    } finally {
+      g.Path2D = saved;
+    }
   });
 });

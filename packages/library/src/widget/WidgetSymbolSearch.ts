@@ -1,6 +1,8 @@
 import type { SymbolInfo } from '@tradecanvas/commons';
 import { escapeHtml } from './escapeHtml.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
+import { createIcon } from './icons.js';
+import { footerHints } from './footerHints.js';
 /**
  * Symbol picker. Reuses the command-palette CSS for visual consistency.
  *
@@ -80,7 +82,7 @@ export class WidgetSymbolSearch {
 
     const icon = document.createElement('span');
     icon.className = 'tcw-cmd-icon';
-    icon.innerHTML = svgSearch();
+    icon.innerHTML = createIcon('search', 16);
     header.appendChild(icon);
 
     this.input = document.createElement('input');
@@ -105,9 +107,7 @@ export class WidgetSymbolSearch {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-cmd-footer';
-    footer.innerHTML = `<span>↑↓ ${escapeHtml(this.t('common.navigate'))}</span>`
-      + `<span>⏎ ${escapeHtml(this.t('common.open'))}</span>`
-      + `<span>Esc ${escapeHtml(this.t('common.close'))}</span>`;
+    footer.innerHTML = footerHints(this.t('common.navigate'), this.t('common.open'), this.t('common.close'));
     this.modal.appendChild(footer);
 
     this.host().append(this.backdrop, this.modal);
@@ -259,7 +259,7 @@ export class WidgetSymbolSearch {
       if (symbol === this.current) {
         const check = document.createElement('span');
         check.className = 'tcw-cmd-check';
-        check.textContent = '✓';
+        check.innerHTML = createIcon('check', 14);
         row.appendChild(check);
       }
 
@@ -366,6 +366,4 @@ function highlight(symbol: string, query: string): string {
 }
 
 
-function svgSearch(): string {
-  return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
-}
+

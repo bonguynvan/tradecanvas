@@ -108,7 +108,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
     </td></tr>
     <tr><td>Thanh trạng thái</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>Trên biểu đồ</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -136,7 +136,14 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   trong cây đối tượng, còn các so sánh đang có vẫn nằm trong danh sách; <code>toasts</code> tắt thông báo của chính
   widget (thông báo lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
   Tắt <code>selectionToolbar</code> sẽ ẩn thanh công cụ trên hình được chọn; menu chuột phải vẫn còn.
+  Tắt <code>statusBar.rangeTimeframe</code> sẽ giữ nguyên khung thời gian khi một khoảng trên thanh khoảng thời gian dài hơn số nến vừa màn hình; bật thì chuyển sang tuần hoặc tháng rồi quay về.
 </p>
+
+<p id="toast-icons">
+  Thông báo của bạn có thể kèm một icon trong bộ icon của widget, theo tên (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), như thông báo alert của widget kèm icon chuông. Widget không dùng emoji ở đâu cả: mọi icon, kể cả nhãn trên biểu đồ, đều từ cùng một bộ.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 
 <h2 id="parts">Phần của riêng bạn</h2>
 <p>

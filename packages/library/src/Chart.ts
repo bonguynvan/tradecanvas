@@ -496,6 +496,7 @@ export class Chart {
       freePan: options.freePan ?? true,
       minVisibleBars: options.panLimits?.minVisibleBars ?? 3,
     });
+    if (options.minBarUnit !== undefined) this.viewport.setMinBarUnit(options.minBarUnit);
     this.layoutManager.resize(size.width, size.height);
 
     // Sync viewport + layout when the container resizes. Without this hook
@@ -3287,6 +3288,19 @@ export class Chart {
     // requested range was not actually what ended up on screen.
     this.viewport.zoomToBarRange(a, b);
     this.updateViewportAndRender();
+  }
+
+  /**
+   * How narrow a bar slot may get to fit a long series, px (see
+   * `ChartOptions.minBarUnit`): 0.25 by default, down to 0.02.
+   */
+  setMinBarUnit(px: number): void {
+    this.viewport.setMinBarUnit(px);
+    this.updateViewportAndRender();
+  }
+
+  getMinBarUnit(): number {
+    return this.viewport.getMinBarUnit();
   }
 
   /** Change free-panning bounds at runtime — see `ChartOptions.freePan` / `panLimits`. */

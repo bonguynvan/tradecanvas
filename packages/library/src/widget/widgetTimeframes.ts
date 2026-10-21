@@ -96,3 +96,58 @@ export function withExtraTimeframes(list: TimeFrame[], extra: TimeFrame[], white
   const added = extra.filter((tf) => isKnown(tf) && (!allowed || allowed.includes(tf)));
   return [...new Set([...list, ...added])].sort(byLength);
 }
+
+/** A range should give each bar at least this many pixels, to read as a candle. */
+export const RANGE_MIN_BAR_PX = 2;
+
+const DAY_MS = 86_400_000;
+/** Weekdays in a week: a guess at a daily series' share of the calendar from intraday bars. */
+const TRADING_DAY_SHARE = 5 / 7;
+
+export interface RangeTimeframeQuery {
+  /** The range's span, ms. */
+  spanMs: number;
+  /** Bars of the current timeframe in that span. */
+  barsInSpan: number;
+  /** The plot's width, px. */
+  width: number;
+  current: TimeFrame;
+  /** The timeframe the user picked: a range never goes finer than it. */
+  chosen: TimeFrame;
+  /** The timeframes on offer. */
+  available: readonly TimeFrame[];
+  /** The share of calendar days a daily series has bars on: 5/7 (weekdays) unless said. */
+  dayShare?: number;
+}
+
+/**
+ * The timeframe a range on the range bar shows in: the finest, from the
+ * user's own up, whose bars for the span get `RANGE_MIN_BAR_PX` each. Five
+ * years of days go to weeks, decades to months; a short range afterwards
+ * comes back to the user's. Bars are counted from the current ones: scaled
+ * for intraday steps (sessions stay the same), from the calendar for days
+ * and longer (days the market trades: `dayShare`). Only the bars loaded
+ * count, so 'All' is the history on hand. None fits: the coarsest. Tick
+ * timeframes stay as they are.
+ */
+export function timeframeForRange(q: RangeTimeframeQuery): TimeFrame {
+  const currentMs = timeframeToMs(q.current);
+  const chosenMs = timeframeToMs(q.chosen);
+  if (!Number.isFinite(currentMs) || !Number.isFinite(chosenMs) || !(q.width > 0) || !(q.spanMs > 0)) return q.current;
+  const estimate = (ms: number): number => {
+    if (ms === currentMs) return q.barsInSpan;
+    if (ms < DAY_MS) return (q.barsInSpan * currentMs) / ms;
+    const days = q.spanMs / ms;
+    return ms === DAY_MS ? days * (q.dayShare ?? TRADING_DAY_SHARE) : days;
+  };
+  const candidates = [...new Set([...q.available, q.current])]
+    .filter((tf) => {
+      const ms = timeframeToMs(tf);
+      return Number.isFinite(ms) && ms >= chosenMs;
+    })
+    .sort(byLength);
+  for (const tf of candidates) {
+    if (estimate(timeframeToMs(tf)) * RANGE_MIN_BAR_PX <= q.width) return tf;
+  }
+  return candidates[candidates.length - 1] ?? q.current;
+}

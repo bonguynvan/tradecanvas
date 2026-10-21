@@ -102,7 +102,11 @@ chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
 chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+<p id="long-ranges">
+  <strong>긴 기간.</strong> 봉 하나의 자리는 0.25 px보다 좁아지지 않으므로, 그보다 긴 기간(노트북에서 26년치 일봉)은 가장 최근 부분만 보입니다. 위젯에서는 기간 막대의 긴 기간이 봉당 2 px 이상으로 들어가는 시간 단위로 바뀝니다: 5Y 일봉은 주봉으로, All은 월봉으로. 짧은 기간은 고른 시간 단위로 돌아오며, 그보다 촘촘해지지 않습니다. 데이터 피드가 제공하는(또는 가진 봉을 모아 만들 수 있는) 시간 단위로만 바뀝니다. <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code>는 시간 단위를 유지합니다. <code>Chart</code>를 직접 쓸 때는 <code>minBarUnit</code>(옵션, 또는 <code>setMinBarUnit</code>)으로 0.02 px까지 좁힐 수 있고, 픽셀 열 단위로 그립니다.
+</p>
 
 <p>
   <strong>가격 눈금 모드.</strong> 일반 눈금과 로그 눈금 외에도, 축 라벨을 첫 번째로
