@@ -13,6 +13,10 @@ Collected on `main` for the next release. Not on npm yet.
 - All four follow the pointer with a tooltip, describe themselves to screen readers (an image role and a label, `ariaLabel` in your words) and draw in the dark or light theme; `setOptions`, `update`, `setTheme`, `destroy`. The other finance charts' canvases get the image role and `setLabel` too.
 - Docs: the Finance charts page rewritten in six languages with the classes as they are (it showed renderer classes that don't exist); the site's finance section shows the four new charts.
 
+## 1.20.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.2.
+
 ### Vietnamese markets
 
 Checked against the exchanges' rules of May 2025: the HOSE trading rules of 26 April 2025 and the HNX, UPCoM and VN30 futures rules.
