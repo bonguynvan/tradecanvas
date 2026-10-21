@@ -169,7 +169,7 @@ const th: SiteMessages = {
       {
         label: 'การวิเคราะห์',
         title: 'แบ็กเทสต์ข้างกราฟ',
-        text: 'Backtester แบบทีละแท่งพร้อมแถบ Monte Carlo และไปป์ไลน์อินดิเคเตอร์บน Web Worker ที่ไม่ทำให้เธรดหลักติดขัด',
+        text: 'Backtester แบบทีละแท่งพร้อมแถบ Monte Carlo',
       },
     ],
     quickstart: {

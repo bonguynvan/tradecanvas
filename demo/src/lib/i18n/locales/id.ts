@@ -169,7 +169,7 @@ const id: SiteMessages = {
       {
         label: 'Analitik',
         title: 'Backtest di samping grafik',
-        text: 'Backtester bar demi bar dengan pita Monte Carlo dan pipeline indikator di Web Worker yang menjaga thread utama tetap lega.',
+        text: 'Backtester bar demi bar dengan pita Monte Carlo.',
       },
     ],
     quickstart: {

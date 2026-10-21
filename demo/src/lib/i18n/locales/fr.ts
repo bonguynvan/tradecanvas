@@ -169,7 +169,7 @@ const fr: SiteMessages = {
       {
         label: 'Analyse',
         title: 'Des backtests à côté du graphique',
-        text: 'Un Backtester barre par barre avec bandes de Monte-Carlo, et un pipeline d’indicateurs dans un Web Worker qui laisse le thread principal libre.',
+        text: 'Un Backtester barre par barre avec bandes de Monte-Carlo.',
       },
     ],
     quickstart: {

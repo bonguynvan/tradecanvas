@@ -169,7 +169,7 @@ const ja: SiteMessages = {
       {
         label: '分析',
         title: 'チャートの隣でバックテスト',
-        text: 'モンテカルロのバンドを備えたバー単位の Backtester と、メインスレッドを空けておく Web Worker のインジケーターパイプライン。',
+        text: 'モンテカルロのバンドを備えたバー単位の Backtester。',
       },
     ],
     quickstart: {

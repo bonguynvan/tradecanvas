@@ -26,9 +26,7 @@
 
 <h2>实时 tick：增量计算指标</h2>
 <p>
-  一次 tick 只会改变正在形成的K线，因此实现了 <code>update()</code> 的指标只需重新计算这一根K线
-  （SMA、EMA、WMA、VWMA、Bollinger、Envelope、RSI、MACD、ATR、OBV、Stochastic）。
-  其他指标会回退为完整重算。BB + EMA + RSI + MACD 的数据如下：
+  一次 tick 只会改变正在形成的K线，因此自带 <code>update()</code> 的指标只需重新计算这一根K线：ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA。另有 31 个指标基于 <code>PointwiseIndicator</code>，同样从最后一根K线继续计算；读取其他指标线的指标也会继续计算。当指标记住的K线不再一致时，会回退为完整重算。BB + EMA + RSI + MACD 的数据如下：
 </p>
 <table>
   <thead><tr><th>历史数据</th><th>完整重算</th><th>增量 <code>update()</code></th></tr></thead>
@@ -104,9 +102,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   上表中 WebGL 的大多数帧都在 16.7 ms；平均值包含了少数较长的帧。像素比 2、2560×1400 的图表上，仅浏览器合成全尺寸图层就要在这块 GPU 上花约 23 ms。<code>node scripts/bench-render.mjs --renderer=webgl</code> 可在你的机器上测出这些数字。
 </p>
-
-<h2>脱离主线程</h2>
 <p>
-  <code>IndicatorWorkerHost</code> 在 Web Worker 中运行指标计算，提供基于 Promise 的
-  <code>calculate()</code>、按请求设置的超时，以及用于 SSR 和测试的同步回退方案。
+  一根K线的宽度不会小于四分之一个 CSS 像素，因此“在 1,000,000 根K线上缩小”时每个像素约显示四根K线（1600 px 宽的图表约 6,400 根）；测试场景会平移浏览其余的K线。
+</p>
+
+<h2>主线程</h2>
+<p>
+  图表在主线程上计算指标。<code>@tradecanvas/core</code> 中的 <code>IndicatorWorkerHost</code> 可以在你提供的 worker 中运行 <code>calculate()</code>，提供基于 Promise 的 API、按请求设置的超时，以及用于 SSR 和测试的同步回退，但图表目前还没有让其指标经由它计算，各个包也没有附带 worker 脚本。
 </p>

@@ -27,9 +27,7 @@
 
 <h2>Live ticks: incremental indicators</h2>
 <p>
-  A tick only moves the forming bar, so indicators that implement <code>update()</code> recompute
-  just that bar (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic). Others
-  fall back to a full recalculation. BB + EMA + RSI + MACD:
+  A tick only moves the forming bar, so an indicator with its own <code>update()</code> recomputes just that bar: ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA. Another 31 are built on <code>PointwiseIndicator</code> and resume from the last bar the same way, and an indicator that reads another indicator’s line resumes too. When the bars an indicator remembers no longer match, it recalculates in full. BB + EMA + RSI + MACD:
 </p>
 <table>
   <thead><tr><th>History</th><th>Full recalculation</th><th>Incremental <code>update()</code></th></tr></thead>
@@ -105,9 +103,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   Most WebGL frames above land on 16.7 ms; the averages carry a few longer ones. At a pixel ratio of 2 on a 2560×1400 chart, the browser's compositing of the full-size layers alone takes about 23 ms on this GPU. <code>node scripts/bench-render.mjs --renderer=webgl</code> runs these numbers on your own machine.
 </p>
-
-<h2>Off the main thread</h2>
 <p>
-  <code>IndicatorWorkerHost</code> runs indicator math in a Web Worker with a Promise-based
-  <code>calculate()</code>, a per-request timeout, and a synchronous fallback for SSR and tests.
+  A bar never gets narrower than a quarter of a CSS pixel, so “zoomed out on 1,000,000 bars” shows about four bars per pixel (about 6,400 bars on a 1600 px chart); the scene pans through the rest of the million.
+</p>
+
+<h2>The main thread</h2>
+<p>
+  The chart computes indicators on the main thread. <code>IndicatorWorkerHost</code> from <code>@tradecanvas/core</code> can run <code>calculate()</code> in a worker you provide, with a Promise-based API, a per-request timeout and a synchronous fallback for SSR and tests, but the chart does not route its indicators through it yet, and the packages do not ship a worker script.
 </p>

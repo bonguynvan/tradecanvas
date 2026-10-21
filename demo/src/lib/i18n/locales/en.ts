@@ -176,7 +176,7 @@ const en = {
       {
         label: 'Analytics',
         title: 'Backtests next to the chart',
-        text: 'A bar-by-bar Backtester with Monte Carlo bands and a Web Worker indicator pipeline that keeps the main thread free.',
+        text: 'A bar-by-bar Backtester with Monte Carlo bands.',
       },
     ],
     quickstart: {

@@ -27,9 +27,7 @@
 
 <h2>Tick trực tiếp: chỉ báo tính tăng dần</h2>
 <p>
-  Một tick chỉ làm thay đổi nến đang hình thành, nên các chỉ báo có cài đặt <code>update()</code> chỉ tính lại
-  đúng nến đó (SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic). Các chỉ báo khác
-  quay về tính lại toàn bộ. BB + EMA + RSI + MACD:
+  Một tick chỉ làm thay đổi nến đang hình thành, nên chỉ báo có <code>update()</code> riêng chỉ tính lại đúng nến đó: ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA. Thêm 31 chỉ báo dựng trên <code>PointwiseIndicator</code> cũng tính tiếp từ nến cuối theo cách đó, và chỉ báo đọc đường của chỉ báo khác cũng vậy. Khi các nến mà chỉ báo ghi nhớ không còn khớp, nó tính lại toàn bộ. BB + EMA + RSI + MACD:
 </p>
 <table>
   <thead><tr><th>Lịch sử</th><th>Tính lại toàn bộ</th><th><code>update()</code> tăng dần</th></tr></thead>
@@ -105,9 +103,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   Phần lớn khung hình WebGL ở trên đạt 16.7 ms; số trung bình gồm cả vài khung dài hơn. Ở tỉ lệ 2 với biểu đồ 2560×1400, riêng việc trình duyệt ghép các lớp full-size đã mất khoảng 23 ms trên GPU này. <code>node scripts/bench-render.mjs --renderer=webgl</code> chạy các số đo này trên máy của bạn.
 </p>
-
-<h2>Ngoài luồng chính</h2>
 <p>
-  <code>IndicatorWorkerHost</code> chạy phần tính toán chỉ báo trong một Web Worker với <code>calculate()</code>
-  trả về Promise, thời gian chờ tối đa cho từng yêu cầu, và phương án chạy đồng bộ dự phòng cho SSR và test.
+  Một nến không bao giờ hẹp hơn một phần tư pixel CSS, nên “thu nhỏ trên 1,000,000 nến” hiện khoảng bốn nến mỗi pixel (khoảng 6.400 nến trên biểu đồ rộng 1600 px); cảnh đo kéo qua phần còn lại của một triệu nến.
+</p>
+
+<h2>Luồng chính</h2>
+<p>
+  Biểu đồ tính chỉ báo trên luồng chính. <code>IndicatorWorkerHost</code> trong <code>@tradecanvas/core</code> có thể chạy <code>calculate()</code> trong một worker do bạn cung cấp, với API trả về Promise, thời gian chờ cho từng yêu cầu và phương án đồng bộ dự phòng cho SSR và test, nhưng biểu đồ chưa đưa chỉ báo của nó qua đây, và các gói chưa kèm script worker.
 </p>

@@ -27,9 +27,7 @@
 
 <h2>ライブのティック：インジケーターの差分計算</h2>
 <p>
-  ティックで動くのは形成中のバーだけなので、<code>update()</code> を実装したインジケーター
-  （SMA、EMA、WMA、VWMA、Bollinger、Envelope、RSI、MACD、ATR、OBV、Stochastic）はそのバーだけを再計算します。
-  それ以外は全体の再計算にフォールバックします。BB + EMA + RSI + MACD の場合：
+  ティックで動くのは形成中のバーだけなので、独自の <code>update()</code> を持つインジケーターはそのバーだけを再計算します：ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA。さらに 31 個が <code>PointwiseIndicator</code> の上に作られ、同じように最後のバーから続きを計算します。他のインジケーターの線を読むインジケーターも続きから計算します。覚えているバーが一致しなくなったときは全体を再計算します。BB + EMA + RSI + MACD の場合：
 </p>
 <table>
   <thead><tr><th>履歴</th><th>全体の再計算</th><th>差分計算の <code>update()</code></th></tr></thead>
@@ -105,9 +103,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   上の WebGL のフレームの大半は 16.7 ms に収まり、平均値には少し長いフレームが含まれます。ピクセル比 2 の 2560×1400 のチャートでは、この GPU だとブラウザーがフルサイズのレイヤーを合成するだけで約 23 ms かかります。<code>node scripts/bench-render.mjs --renderer=webgl</code> で手元のマシンでも計測できます。
 </p>
-
-<h2>メインスレッドの外で計算</h2>
 <p>
-  <code>IndicatorWorkerHost</code> は、Promise ベースの <code>calculate()</code>、リクエストごとのタイムアウト、
-  SSR やテスト向けの同期フォールバックを備え、インジケーターの計算を Web Worker で実行します。
+  バーは CSS ピクセルの 4 分の 1 より細くならないため、「1,000,000 本を縮小表示」でもピクセルあたり約 4 本（1600 px のチャートで約 6,400 本）が表示され、計測シーンは残りの足をパンして通過します。
+</p>
+
+<h2>メインスレッド</h2>
+<p>
+  チャートはメインスレッドでインジケーターを計算します。<code>@tradecanvas/core</code> の <code>IndicatorWorkerHost</code> は、Promise ベースの API、リクエストごとのタイムアウト、SSR やテスト向けの同期フォールバックを備え、あなたが用意したワーカーで <code>calculate()</code> を実行できますが、チャートはまだインジケーターをこれ経由で計算しておらず、パッケージにワーカースクリプトは含まれていません。
 </p>

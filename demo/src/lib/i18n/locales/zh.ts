@@ -170,7 +170,7 @@ const zh: SiteMessages = {
       {
         label: '分析',
         title: '回测就在图表旁',
-        text: '逐K线运行的 Backtester，带蒙特卡洛区间带；Web Worker 指标计算管线让主线程保持空闲。',
+        text: '逐K线运行的 Backtester，带蒙特卡洛区间带。',
       },
     ],
     quickstart: {
