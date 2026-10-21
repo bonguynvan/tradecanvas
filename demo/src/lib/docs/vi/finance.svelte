@@ -26,6 +26,7 @@
     <tr><td><code>HistogramChart</code></td><td>Giá trị phân bố ra sao: lợi nhuận theo ngày, kết quả các lệnh, có đường kẻ tại giá trị trung bình hoặc một mức VaR.</td></tr>
     <tr><td><code>CalendarChart</code></td><td>Mỗi ngày một giá trị trên lịch: lợi nhuận ngày, lãi lỗ, nhật ký giao dịch.</td></tr>
     <tr><td><code>MatrixChart</code></td><td>Một giá trị cho mỗi cặp hàng và cột: tương quan, khối lượng theo giờ và thứ.</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>Giá trung bình theo khối lượng trung bình, từng nến: chu kỳ ngược chiều kim đồng hồ của một cổ phiếu.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>Một đường nhỏ trong hàng của danh mục theo dõi hoặc trong ô KPI.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>Một giá trị so với các dải: tâm lý thị trường, rủi ro, mức dùng ký quỹ.</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>Các ô tô màu theo mức thay đổi, xếp thành lưới hoặc thành treemap theo tỷ trọng (vốn hoá). Với <code>grouped</code>, thành bản đồ theo ngành.</td></tr>
@@ -185,6 +186,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Mỗi nhóm chiếm phần diện tích bằng tổng tỷ trọng các mã của nó, tên nhóm và biến động bình quân theo tỷ trọng nằm ở đầu ô khi vừa chỗ. Màu của heatmap chạy từ -5 đến 5, trừ khi <code>colorScale</code> cho <code>min</code> và <code>max</code>.
+</p>
+
+<h2>Đường ngược chiều kim đồng hồ</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // nến OHLCV, cũ nhất trước
+  period: 25,                           // số nến trong mỗi trung bình
+  points: 120,                          // số điểm mới nhất được vẽ
+  xLabel: 'Khối lượng, trung bình', yLabel: 'Giá, trung bình',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1–8: hướng của bước cuối`}</code></pre>
+<p>
+  Mỗi điểm là trung bình 25 nến của khối lượng (trục ngang) và giá đóng cửa (trục dọc), nối theo thứ tự thời gian, điểm càng cũ càng mờ. Một chu kỳ lành mạnh quay ngược chiều kim đồng hồ. <code>getPhase()</code> (và <code>counterClockPhase(points)</code>) cho biết bước cuối: 1 khối lượng tăng, 2 cả hai tăng, 3 giá tăng, 4 giá tăng khi khối lượng giảm, 5 khối lượng giảm, 6 cả hai giảm, 7 giá giảm, 8 giá giảm khi khối lượng tăng.
 </p>
 
 <h2>Sparkline, đồng hồ đo, bản đồ nhiệt, thác nước, độ sâu và đường vốn</h2>

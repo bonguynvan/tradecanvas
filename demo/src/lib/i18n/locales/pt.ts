@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 133 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const pt: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 111 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 133 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -71,7 +71,7 @@ const pt: SiteMessages = {
           title: 'Ler o mercado',
           text: 'Bandas, médias e osciladores sobre os candles, níveis de Fibonacci e linhas de tendência por cima, cada um com suas configurações e alertas.',
           points: [
-            '111 indicadores, um sobre o outro, como uma média do RSI',
+            '133 indicadores, um sobre o outro, como uma média do RSI',
             '69 ferramentas de desenho com ímã, grupos e desfazer',
             'Alertas de preço, de linhas e de cruzamentos de indicadores',
           ],
@@ -218,11 +218,11 @@ const pt: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '111 integrados',
+      stat: '133 integrados',
       blurb:
         'Sobrepostos e em painéis, calculados internamente, sem dependências matemáticas. Ticks ao vivo recalculam só a barra em formação — 0,001 ms por tick com quatro indicadores em 100k barras.',
       tryThis: [
-        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 111',
+        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 133',
         'Clique no nome de um indicador na legenda: parâmetros, cores e níveis',
         'Defina o campo “Source” de uma média móvel como a linha de outro indicador',
         'Arraste a linha entre os painéis para redimensioná-los; os botões no canto superior direito de um painel o movem, recolhem ou maximizam',
@@ -466,6 +466,9 @@ const pt: SiteMessages = {
     sectorMap: 'Mapa do mercado por setor',
     sectors: { banks: 'Bancos', realEstate: 'Imobiliário', steel: 'Siderurgia', retail: 'Varejo', energy: 'Energia', tech: 'Tecnologia' },
     correlation: 'Ações de bancos: correlação dos retornos diários',
+    counterClock: 'Curva anti-horária: preço contra volume, médias de 25 dias',
+    avgVolume: 'Volume, média',
+    avgPrice: 'Preço, média',
     waterfall: {
       start: 'Início',
       btcLong: 'BTC comprado',
@@ -665,7 +668,7 @@ const pt: SiteMessages = {
         { name: 'Renko, line break, Kagi, ponto e figura, barras de range', detail: 'Tamanho da caixa ou ATR, linhas para o rompimento, reversão em porcentagem ou em preço, range por barra' },
         { name: 'Candles de volume, Equivolume, área HLC, linha em degraus, linha com marcadores, máxima-mínima', detail: '18 tipos de gráfico no total' },
         { name: 'A série principal oculta', detail: 'Só ficam os indicadores e os desenhos' },
-        { name: 'Gráficos para dashboards', detail: 'Barras (agrupadas, empilhadas, horizontais), rosca e pizza, dispersão e bolhas, histogramas, calendários, matrizes de correlação, mapas por setor, sparklines, medidores, mapas de calor e treemaps, cascatas, profundidade, curvas de patrimônio' },
+        { name: 'Gráficos para dashboards', detail: 'Barras (agrupadas, empilhadas, horizontais), rosca e pizza, dispersão e bolhas, histogramas, calendários, matrizes de correlação, mapas por setor, curvas anti-horárias, sparklines, medidores, mapas de calor e treemaps, cascatas, profundidade, curvas de patrimônio' },
       ],
       rendering: [
         { name: 'Canvas 2D ou WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, o evento rendererChange" },
@@ -677,7 +680,7 @@ const pt: SiteMessages = {
         { name: 'Sem dependências de terceiros em runtime', detail: 'Nada mais para instalar ou auditar' },
       ],
       indicators: [
-        { name: '111 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
+        { name: '133 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
         { name: 'Fonte de preço', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Um indicador sobre outro indicador', detail: 'Como uma média móvel do RSI, atualizada a cada tick' },
         { name: 'Vários indicadores em um painel, movidos entre painéis', detail: 'moveIndicatorToPane' },

@@ -61,3 +61,19 @@ export class TypicalPriceIndicator extends BarPriceIndicator {
     return (b.high + b.low + b.close) / 3;
   }
 }
+
+/** Weighted Close: (high + low + 2 × close) / 4, the bar's price leaning to its close. */
+export class WeightedCloseIndicator extends BarPriceIndicator {
+  descriptor: IndicatorDescriptor = {
+    id: 'wclose',
+    name: 'Weighted Close',
+    placement: 'overlay',
+    defaultConfig: {},
+    shortName: 'HLCC4',
+    plots: [{ key: 'value', title: 'Weighted', color: 0 }],
+  };
+
+  protected price(b: OHLCBar): number {
+    return (b.high + b.low + 2 * b.close) / 4;
+  }
+}

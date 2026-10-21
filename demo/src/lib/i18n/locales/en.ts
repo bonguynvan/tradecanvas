@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 111 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 133 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -53,7 +53,7 @@ const en = {
     release: 'WebGL renderer, 30 languages',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 111 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 133 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -77,7 +77,7 @@ const en = {
           title: 'Read the market',
           text: 'Bands, averages and oscillators over the bars, Fibonacci levels and trend lines on top, each with its own settings and alerts.',
           points: [
-            '111 indicators, any one on another, such as an average of the RSI',
+            '133 indicators, any one on another, such as an average of the RSI',
             '69 drawing tools with magnet, groups and undo',
             'Alerts on prices, lines and indicator crossings',
           ],
@@ -225,11 +225,11 @@ const en = {
     },
     indicators: {
       title: 'Indicators',
-      stat: '111 built-in',
+      stat: '133 built-in',
       blurb:
         'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
       tryThis: [
-        'Press the Indicators button (or Ctrl+K) and search any of the 111',
+        'Press the Indicators button (or Ctrl+K) and search any of the 133',
         'Click an indicator name in the legend: inputs, colours and levels',
         'Set a moving average’s Source to another indicator’s line',
         'Drag the line between panes to resize them; the buttons at a pane’s top right move, fold or maximise it',
@@ -473,6 +473,9 @@ const en = {
     sectorMap: 'Market map by sector',
     sectors: { banks: 'Banks', realEstate: 'Real estate', steel: 'Steel', retail: 'Retail', energy: 'Energy', tech: 'Technology' },
     correlation: 'Bank stocks: correlation of daily returns',
+    counterClock: 'Counter-clock: price against volume, 25-day averages',
+    avgVolume: 'Volume, average',
+    avgPrice: 'Price, average',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC long',
@@ -673,7 +676,7 @@ const en = {
         { name: 'Renko, line break, Kagi, point & figure, range bars', detail: 'Box size or ATR, lines to break, reversal in percent or price, range per bar' },
         { name: 'Volume candles, Equivolume, HLC area, step line, line with markers, high-low', detail: '18 chart types in all' },
         { name: 'The main series hidden', detail: 'Only the indicators and drawings stay' },
-        { name: 'Charts for dashboards', detail: 'Bars (grouped, stacked, sideways), donut and pie, scatter and bubbles, histograms, calendars, correlation matrices, sector maps, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves' },
+        { name: 'Charts for dashboards', detail: 'Bars (grouped, stacked, sideways), donut and pie, scatter and bubbles, histograms, calendars, correlation matrices, sector maps, counter-clock charts, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves' },
       ],
       rendering: [
         { name: 'Canvas 2D or WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, the rendererChange event" },
@@ -685,7 +688,7 @@ const en = {
         { name: 'No third-party runtime dependencies', detail: 'Nothing else to install or audit' },
       ],
       indicators: [
-        { name: '111 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
+        { name: '133 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
         { name: 'Price source', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'An indicator on an indicator', detail: 'Such as a moving average of RSI, updated on every tick' },
         { name: 'Several indicators in one pane, moved between panes', detail: 'moveIndicatorToPane' },

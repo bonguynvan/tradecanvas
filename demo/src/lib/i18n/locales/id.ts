@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 111 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 133 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const id: SiteMessages = {
     release: 'perender WebGL, 30 bahasa',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 111 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 133 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
@@ -71,7 +71,7 @@ const id: SiteMessages = {
           title: 'Membaca pasar',
           text: 'Band, rata-rata, dan osilator di atas bar, level Fibonacci dan garis tren di atasnya, masing-masing dengan pengaturan dan peringatannya sendiri.',
           points: [
-            '111 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
+            '133 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
             '69 alat gambar dengan magnet, grup, dan undo',
             'Peringatan pada harga, garis, dan persilangan indikator',
           ],
@@ -218,11 +218,11 @@ const id: SiteMessages = {
     },
     indicators: {
       title: 'Indikator',
-      stat: '111 bawaan',
+      stat: '133 bawaan',
       blurb:
         'Overlay dan panel dihitung sendiri oleh pustaka, tanpa dependensi matematika. Tick langsung hanya menghitung ulang bar yang sedang terbentuk — 0.001 ms per tick dengan empat indikator pada 100k bar.',
       tryThis: [
-        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 111 indikator',
+        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 133 indikator',
         'Klik nama indikator di legenda: parameter, warna, dan level',
         'Atur Sumber sebuah moving average ke garis indikator lain',
         'Seret garis di antara panel untuk mengubah ukurannya; tombol di kanan atas panel memindahkan, menciutkan, atau memaksimalkannya',
@@ -466,6 +466,9 @@ const id: SiteMessages = {
     sectorMap: 'Peta pasar per sektor',
     sectors: { banks: 'Perbankan', realEstate: 'Properti', steel: 'Baja', retail: 'Ritel', energy: 'Energi', tech: 'Teknologi' },
     correlation: 'Saham bank: korelasi imbal hasil harian',
+    counterClock: 'Kurva berlawanan jarum jam: harga terhadap volume, rata-rata 25 hari',
+    avgVolume: 'Volume, rata-rata',
+    avgPrice: 'Harga, rata-rata',
     waterfall: {
       start: 'Awal',
       btcLong: 'BTC long',
@@ -665,7 +668,7 @@ const id: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, range bar', detail: 'Ukuran kotak atau ATR, jumlah garis untuk break, pembalikan dalam persen atau harga, rentang per bar' },
         { name: 'Candle volume, Equivolume, area HLC, garis tangga, garis dengan penanda, high-low', detail: 'Total 18 jenis grafik' },
         { name: 'Seri utama disembunyikan', detail: 'Hanya indikator dan gambar yang tetap tampil' },
-        { name: 'Grafik untuk dasbor', detail: 'Batang (berkelompok, bertumpuk, mendatar), donat dan pai, sebar dan gelembung, histogram, kalender, matriks korelasi, peta per sektor, sparkline, meteran, peta panas dan treemap, air terjun, kedalaman, kurva ekuitas' },
+        { name: 'Grafik untuk dasbor', detail: 'Batang (berkelompok, bertumpuk, mendatar), donat dan pai, sebar dan gelembung, histogram, kalender, matriks korelasi, peta per sektor, kurva berlawanan jarum jam, sparkline, meteran, peta panas dan treemap, air terjun, kedalaman, kurva ekuitas' },
       ],
       rendering: [
         { name: 'Canvas 2D atau WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, event rendererChange" },
@@ -677,7 +680,7 @@ const id: SiteMessages = {
         { name: 'Tanpa dependensi runtime pihak ketiga', detail: 'Tidak ada lagi yang perlu dipasang atau diaudit' },
       ],
       indicators: [
-        { name: '111 indikator bawaan', detail: 'Pivot point dalam enam jenis, MA Cross, korelasi dengan simbol lain' },
+        { name: '133 indikator bawaan', detail: 'Pivot point dalam enam jenis, MA Cross, korelasi dengan simbol lain' },
         { name: 'Sumber harga', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Indikator di atas indikator', detail: 'Misalnya rata-rata bergerak dari RSI, diperbarui di setiap tick' },
         { name: 'Beberapa indikator dalam satu panel, dipindahkan antarpanel', detail: 'moveIndicatorToPane' },

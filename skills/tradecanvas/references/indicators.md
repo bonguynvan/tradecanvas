@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-111 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+133 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (43)
+## On the price pane (47)
 
 Drawn over the candles, on the price scale.
 
@@ -55,8 +55,12 @@ Drawn over the candles, on the price scale.
 | `madouble` | Moving Average Double | first: 20, second: 50, type: "sma", source: "close" | ma1: MA 1, ma2: MA 2 | — | ✓ |
 | `matriple` | Moving Average Triple | first: 10, second: 20, third: 50, type: "sma", source: "close" | ma1: MA 1, ma2: MA 2, ma3: MA 3 | — | ✓ |
 | `volindex` | Volatility Index | period: 7, mult: 3 | sar: Stop | — | |
+| `tsf` | Time Series Forecast | period: 14 | value: TSF | — | |
+| `wclose` | Weighted Close | — | value: Weighted | — | |
+| `demark` | DeMark Projected Range | — | high: Projected high, low: Projected low | — | |
+| `rainbow` | Moving Average Rainbow | first: 10, step: 10, count: 10, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4, ma5: MA 5, ma6: MA 6, ma7: MA 7, ma8: MA 8, ma9: MA 9, ma10: MA 10, ma11: MA 11, ma12: MA 12, ma13: MA 13, ma14: MA 14, ma15: MA 15, ma16: MA 16, ma17: MA 17, ma18: MA 18, ma19: MA 19, ma20: MA 20 | — | |
 
-## In a pane of their own (68)
+## In a pane of their own (86)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -130,3 +134,21 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `po` | Price Oscillator | short: 10, long: 21, source: "close" | value: PO | — | ✓ |
 | `volohlc` | Volatility O-H-L-C | period: 10, annual: 365 | value: Volatility | — | |
 | `volzt` | Volatility Zero Trend Close-to-Close | period: 10, annual: 365 | value: Volatility | — | |
+| `psy` | Psychological Line | period: 10 | value: PSY | 25, 75 | |
+| `newpsy` | New Psychological Line | period: 10 | value: New PSY | -50, 0, 50 | |
+| `vr` | Volume Ratio | period: 20 | value: VR | 70, 150, 450 | |
+| `abratio` | AB Ratio | period: 26 | a: A, b: B | 100 | |
+| `sonar` | Sonar | period: 20, lookback: 9, signal: 9 | sonar: Sonar, signal: Signal | 0 | |
+| `sigma` | Sigma | period: 20 | value: Sigma | -2, 0, 2 | |
+| `vhf` | Vertical Horizontal Filter | period: 28 | value: VHF | — | |
+| `rsquared` | R-Squared | period: 14 | value: R² | — | |
+| `rwi` | Random Walk Index | period: 14 | high: RWI High, low: RWI Low | 1 | |
+| `nvi` | Negative Volume Index | signal: 255 | value: NVI, signal: Signal | — | |
+| `pvi` | Positive Volume Index | signal: 255 | value: PVI, signal: Signal | — | |
+| `tr` | True Range | — | value: TR | — | |
+| `iii` | Intraday Intensity | period: 21 | value: III % | 0 | |
+| `volpct` | Volume vs Average | period: 20 | value: Vol % | 0 | |
+| `volchange` | Volume Change | — | value: Volume | — | |
+| `tradevalue` | Trade Value | — | value: Value | — | |
+| `binarywave` | Binary Wave | ma: 20, fast: 12, slow: 26, signal: 9, roc: 12, stoch: 14 | value: Wave | 0 | |
+| `sroc` | Smoothed Rate of Change | ema: 13, roc: 21 | value: S-ROC | 0 | |

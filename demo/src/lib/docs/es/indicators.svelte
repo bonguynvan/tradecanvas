@@ -109,6 +109,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   de compra/venta de cada operación, que una serie OHLCV no incluye).
 </p>
 
+<h2>Indicadores de las pantallas de cotización asiáticas</h2>
+<p>
+  Indicadores que los operadores de Corea, Japón y Vietnam esperan en sus pantallas de cotización: la Psychological Line (<code>psy</code>) y la New Psychological Line (<code>newpsy</code>), Volume Ratio (<code>vr</code>), AB Ratio (<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave (<code>binarywave</code>), Trade Value (<code>tradevalue</code>) con Volume Change (<code>volchange</code>), el rango proyectado de DeMark (<code>demark</code>) y un arcoíris de medias (<code>rainbow</code>) de hasta 20 líneas. Trade Value es una estimación, cierre × volumen en cada barra; la cifra oficial de la bolsa llega en su feed.
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // proporción de cierres al alza; marca 25 y 75
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // volumen de días al alza frente a días a la baja
+chart.addIndicator('tradevalue', {}, 'bottom')                    // cierre × volumen, en cada barra
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // diez medias, de 10 a 100 barras`}</code></pre>
+
 <h2>Tu propio indicador</h2>
 <p>
   Extiende <code>IndicatorBase</code> y declara lo que dibuja (<code>plots</code>),

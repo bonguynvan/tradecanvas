@@ -104,6 +104,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   而 OHLCV 序列并不包含这些信息。）
 </p>
 
+<h2>亚洲行情软件常见的指标</h2>
+<p>
+  韩国、日本和越南的交易者在行情软件上常用的指标：心理线（<code>psy</code>）与新心理线（<code>newpsy</code>）、成交量比率（<code>vr</code>）、AB 比率（<code>abratio</code>）、<code>sonar</code>、<code>sigma</code>、二元波（<code>binarywave</code>）、成交额（<code>tradevalue</code>）与成交量变化（<code>volchange</code>）、DeMark 预测区间（<code>demark</code>），以及最多 20 条线的均线彩虹（<code>rainbow</code>）。成交额是估算值，即每根 K 线的收盘价 × 成交量；交易所的官方数字来自其行情源。
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // 上涨收盘的占比；标出 25 和 75
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // 上涨日与下跌日的成交量之比
+chart.addIndicator('tradevalue', {}, 'bottom')                    // 每根 K 线的收盘价 × 成交量
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 十条均线，10 到 100 根`}</code></pre>
+
 <h2>自定义指标</h2>
 <p>
   继承 <code>IndicatorBase</code>，声明它要绘制的内容（<code>plots</code>）、窗格坐标、

@@ -26,6 +26,7 @@
     <tr><td><code>HistogramChart</code></td><td>Cómo se reparten los valores: rentabilidades diarias, resultados de operaciones, con líneas en la media o en un VaR.</td></tr>
     <tr><td><code>CalendarChart</code></td><td>Un valor por día en un calendario: rendimientos diarios, P&amp;L, un diario de operaciones.</td></tr>
     <tr><td><code>MatrixChart</code></td><td>Un valor por cada par de fila y columna: correlaciones, volumen por hora y día de la semana.</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>Precio medio frente a volumen medio, barra a barra: el ciclo antihorario de un valor.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>Una línea pequeña en una fila de la lista de seguimiento o en una tarjeta de KPI.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>Un valor frente a unas bandas: sentimiento, riesgo, uso del margen.</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>Celdas coloreadas según la variación, en una cuadrícula o en un treemap con tamaño según el peso (capitalización). Con <code>grouped</code>, un mapa por sectores.</td></tr>
@@ -185,6 +186,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Cada grupo ocupa el espacio de la suma de los pesos de sus acciones, y su nombre y su variación ponderada encabezan su mosaico cuando caben. Los colores del mapa de calor van de -5 a 5 salvo que <code>colorScale</code> indique <code>min</code> y <code>max</code>.
+</p>
+
+<h2>Curva antihoraria</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // barras OHLCV, la más antigua primero
+  period: 25,                           // barras de cada media
+  points: 120,                          // los puntos más recientes que se dibujan
+  xLabel: 'Volumen, media', yLabel: 'Precio, media',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1–8: la dirección del último movimiento`}</code></pre>
+<p>
+  Cada punto es la media de 25 barras del volumen (en horizontal) y del cierre (en vertical), unidos en orden temporal y más tenues cuanto más antiguos. Un ciclo sano gira en sentido antihorario. <code>getPhase()</code> (y <code>counterClockPhase(points)</code>) nombran el último movimiento: 1 sube el volumen, 2 suben ambos, 3 sube el precio, 4 sube el precio con volumen a la baja, 5 baja el volumen, 6 bajan ambos, 7 baja el precio, 8 baja el precio con volumen al alza.
 </p>
 
 <h2>Minigráfico, indicador de aguja, mapa de calor, cascada, profundidad y curva de capital</h2>

@@ -25,6 +25,7 @@
     <tr><td><code>HistogramChart</code></td><td>数值如何分布：日收益、交易结果，可在均值或 VaR 处画线。</td></tr>
     <tr><td><code>CalendarChart</code></td><td>日历上每天一个值：日收益、盈亏、交易日志。</td></tr>
     <tr><td><code>MatrixChart</code></td><td>每对行与列一个值：相关性、按小时和星期的成交量。</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>逐根 K 线的平均价格对平均成交量：个股的逆时钟循环。</td></tr>
     <tr><td><code>SparklineChart</code></td><td>自选列表行或 KPI 卡片中的小线图。</td></tr>
     <tr><td><code>GaugeChart</code></td><td>一个数值与若干区间对照：市场情绪、风险、保证金占用。</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>按涨跌着色的单元格，排成网格，或排成按权重（市值）确定大小的矩形树图。使用 <code>grouped</code> 时即为板块地图。</td></tr>
@@ -180,6 +181,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   每个板块所占面积等于其个股权重之和，放得下时板块名称和加权涨跌显示在其顶部。热力图的颜色范围为 -5 到 5，除非 <code>colorScale</code> 给出 <code>min</code> 和 <code>max</code>。
+</p>
+
+<h2>逆时钟曲线</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // OHLCV K 线，最早的在前
+  period: 25,                           // 每个均值包含的 K 线数
+  points: 120,                          // 绘制最新的点数
+  xLabel: '成交量，均值', yLabel: '价格，均值',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1–8：最后一步的方向`}</code></pre>
+<p>
+  每个点是成交量（横轴）和收盘价（纵轴）的 25 根均值，按时间顺序相连，越早越淡。健康的循环按逆时针方向转动。<code>getPhase()</code>（以及 <code>counterClockPhase(points)</code>）给出最后一步：1 量增，2 量价齐升，3 价升，4 价升量缩，5 量减，6 量价齐跌，7 价跌，8 价跌量增。
 </p>
 
 <h2>迷你走势图、仪表图、热力图、瀑布图、深度图和权益曲线</h2>

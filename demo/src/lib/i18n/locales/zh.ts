@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、111 个指标、69 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
+      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、133 个指标、69 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -48,7 +48,7 @@ const zh: SiteMessages = {
     release: 'WebGL 渲染器，30 种语言',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，111 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，133 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
@@ -72,7 +72,7 @@ const zh: SiteMessages = {
           title: '读懂行情',
           text: 'K线上叠加通道、均线和振荡指标，再在上面画斐波那契和趋势线，每一项都有自己的设置和提醒。',
           points: [
-            '111 个指标，可以互相叠加，比如 RSI 的均线',
+            '133 个指标，可以互相叠加，比如 RSI 的均线',
             '69 种画线工具，带磁吸、分组和撤销',
             '价格、画线和指标交叉都能提醒',
           ],
@@ -219,11 +219,11 @@ const zh: SiteMessages = {
     },
     indicators: {
       title: '指标',
-      stat: '111 个内置',
+      stat: '133 个内置',
       blurb:
         '叠加指标和副图指标全部自行计算，数学运算零依赖。实时 tick 只重算正在形成的K线——10 万根K线、四个指标下，每个 tick 仅需 0.001 ms。',
       tryThis: [
-        '点击“指标”按钮（或按 Ctrl+K），搜索 111 个指标中的任意一个',
+        '点击“指标”按钮（或按 Ctrl+K），搜索 133 个指标中的任意一个',
         '点击图例中的指标名称：参数、颜色和水平线',
         '把移动平均线的数据源设为另一个指标的线',
         '拖动副图之间的分隔线来调整大小；副图右上角的按钮可以移动、收起或最大化副图',
@@ -467,6 +467,9 @@ const zh: SiteMessages = {
     sectorMap: '按板块的市场地图',
     sectors: { banks: '银行', realEstate: '房地产', steel: '钢铁', retail: '零售', energy: '能源', tech: '科技' },
     correlation: '银行股：日收益相关性',
+    counterClock: '逆时钟曲线：价格对成交量，25 日均值',
+    avgVolume: '成交量，均值',
+    avgPrice: '价格，均值',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多单',
@@ -666,7 +669,7 @@ const zh: SiteMessages = {
         { name: 'Renko、新价线、Kagi、点数图、区间K线', detail: '砖块大小或 ATR、突破所需的线数、按百分比或价格的反转幅度、每根K线的区间' },
         { name: '成交量蜡烛图、等量图、HLC 面积图、阶梯线、带标记的折线、高低图', detail: '共 18 种图表类型' },
         { name: '隐藏主序列', detail: '只保留指标和画线' },
-        { name: '仪表盘图表', detail: '柱状图（分组、堆叠、横向）、环形图和饼图、散点图和气泡图、直方图、日历图、相关矩阵、板块地图、迷你走势图、仪表图、热力图和矩形树图、瀑布图、深度图、权益曲线' },
+        { name: '仪表盘图表', detail: '柱状图（分组、堆叠、横向）、环形图和饼图、散点图和气泡图、直方图、日历图、相关矩阵、板块地图、逆时钟曲线、迷你走势图、仪表图、热力图和矩形树图、瀑布图、深度图、权益曲线' },
       ],
       rendering: [
         { name: 'Canvas 2D 或 WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto'、setRenderer、rendererChange 事件" },
@@ -678,7 +681,7 @@ const zh: SiteMessages = {
         { name: '无第三方运行时依赖', detail: '无需额外安装或审计任何东西' },
       ],
       indicators: [
-        { name: '111 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
+        { name: '133 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
         { name: '价格来源', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '基于指标的指标', detail: '例如 RSI 的移动平均，每个 tick 都会更新' },
         { name: '一个副图中放多个指标，并可在副图间移动', detail: 'moveIndicatorToPane' },

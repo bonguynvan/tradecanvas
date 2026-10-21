@@ -105,6 +105,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   OHLCV の系列にはその情報が含まれていません。）
 </p>
 
+<h2>アジアの相場ソフトでおなじみの指標</h2>
+<p>
+  韓国、日本、ベトナムのトレーダーが相場ソフトで使い慣れた指標：サイコロジカルライン（<code>psy</code>）と新サイコロジカルライン（<code>newpsy</code>）、ボリュームレシオ（<code>vr</code>）、AB レシオ（<code>abratio</code>）、<code>sonar</code>、<code>sigma</code>、バイナリーウェーブ（<code>binarywave</code>）、売買代金（<code>tradevalue</code>）と出来高増減（<code>volchange</code>）、DeMark の予測レンジ（<code>demark</code>）、最大 20 本の移動平均レインボー（<code>rainbow</code>）。売買代金は各足の終値 × 出来高による推定値で、取引所の公式値はそのデータフィードにあります。
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // 上昇引けの割合。25 と 75 を表示
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // 上昇日と下落日の出来高の比
+chart.addIndicator('tradevalue', {}, 'bottom')                    // 各足の終値 × 出来高
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 10〜100 本の 10 本の平均線`}</code></pre>
+
 <h2>独自のインジケーター</h2>
 <p>
   <code>IndicatorBase</code> を継承し、描画する内容（<code>plots</code>）、ペインのスケール、レベル、

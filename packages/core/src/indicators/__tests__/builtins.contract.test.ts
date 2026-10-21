@@ -22,6 +22,8 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
   ac: ['up'],
   voldelta: ['up'],
   netvolume: ['up'],
+  volchange: ['up'],
+  tradevalue: ['up'],
   chaikinOsc: ['adl'],
   adx: ['dx'],
   lrc: ['slope'],

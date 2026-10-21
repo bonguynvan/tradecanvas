@@ -313,6 +313,23 @@ new HeatmapChart(document.getElementById('sectors')!, {
 });
 ```
 
+Price against volume as a counter-clock cycle, and indicators from Asian price boards:
+
+```ts
+import { Chart, CounterClockChart } from '@tradecanvas/chart';
+import type { OHLCBar } from '@tradecanvas/chart';
+
+declare const bars: OHLCBar[];
+declare const chart: Chart;
+
+const clock = new CounterClockChart(document.getElementById('clock')!, { data: bars, period: 25, points: 120 });
+console.log(clock.getPhase()); // 1–8, counter-clockwise from volume rising
+
+chart.addIndicator('psy', { period: 10 }, 'bottom');
+chart.addIndicator('vr', { period: 20 }, 'bottom');
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 });
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

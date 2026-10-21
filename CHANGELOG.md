@@ -4,6 +4,23 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Indicators from Asian price boards
+
+22 more indicators, 133 in all, in the widget's indicator list too:
+
+- **Sentiment and volume**: Psychological Line (`psy`, with 25 and 75 marked) and New Psychological Line (`newpsy`), Volume Ratio (`vr`), AB Ratio (`abratio`, A and B lines), Intraday Intensity in percent (`iii`), Volume vs Average (`volpct`), Volume Change (`volchange`, each bar coloured against the one before), Trade Value (`tradevalue`, close × volume as an estimate of the value traded), Negative and Positive Volume Index (`nvi`, `pvi`, with an EMA signal).
+- **Trend and momentum**: Sonar with its signal (`sonar`), Sigma, the close in standard deviations from its average (`sigma`), Binary Wave, four trend votes from −4 to 4 (`binarywave`), Smoothed Rate of Change (`sroc`), Vertical Horizontal Filter (`vhf`), R-Squared (`rsquared`), Random Walk Index (`rwi`), True Range (`tr`).
+- **On the price pane**: Time Series Forecast (`tsf`), Weighted Close (`wclose`), the DeMark projected high and low for each bar (`demark`), and a moving-average Rainbow of up to 20 lines from a first period by a step (`rainbow`).
+
+### Counter-clock chart
+
+- **`CounterClockChart`**: average price against average volume, bar by bar, joined in time order and fading with age, with no time axis. `getPhase()` and `counterClockPhase(points)` name the last move's direction in eight phases, counter-clockwise from volume rising; `counterClockPoints(bars, period)` gives the points. Tooltip, `onPointClick`, a screen-reader label, dark and light themes.
+- Docs: the Finance charts page and the Indicators page in six languages; the site's finance section shows the chart.
+
+## 1.21.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.3.
+
 ### Charts for dashboards
 
 - **`BarChart`**: values by category, series side by side (`mode: 'grouped'`) or stacked with positives up and negatives down from zero, upright or sideways (`orientation: 'horizontal'`), coloured by sign for net flows (`colorBySign`), values on the bars (`showValues`). Hovering a category shows each series' value; `onBarClick` gets the category, series, value and index. Labels that don't fit along the bottom show every few categories.

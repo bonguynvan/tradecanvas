@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、111 個指標、69 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
+      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、133 個指標、69 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const zhHant: SiteMessages = {
     release: 'WebGL 渲染器，30 種語言',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，111 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，133 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
@@ -71,7 +71,7 @@ const zhHant: SiteMessages = {
           title: '解讀行情',
           text: 'K線上疊加通道、均線與震盪指標，再在上面畫斐波那契與趨勢線，每一項都有自己的設定與警示。',
           points: [
-            '111 個指標，可以互相疊加，例如 RSI 的均線',
+            '133 個指標，可以互相疊加，例如 RSI 的均線',
             '69 種繪圖工具，具備磁吸、群組與復原',
             '價格、線條與指標交叉都能警示',
           ],
@@ -218,11 +218,11 @@ const zhHant: SiteMessages = {
     },
     indicators: {
       title: '指標',
-      stat: '內建 111 個',
+      stat: '內建 133 個',
       blurb:
         '疊加與副圖指標皆自行計算，不依賴任何數學套件。即時 tick 只重算正在形成的那根K線——10 萬根K線、四個指標下，每個 tick 僅需 0.001 ms。',
       tryThis: [
-        '按下「指標」按鈕（或 Ctrl+K），從 111 個指標中搜尋',
+        '按下「指標」按鈕（或 Ctrl+K），從 133 個指標中搜尋',
         '點擊圖例中的指標名稱：參數、顏色與水平線',
         '把移動平均線的「Source」設為另一個指標的線',
         '拖曳副圖之間的分隔線來調整大小；副圖右上角的按鈕可以移動、收合或最大化副圖',
@@ -466,6 +466,9 @@ const zhHant: SiteMessages = {
     sectorMap: '依類股的市場地圖',
     sectors: { banks: '銀行', realEstate: '不動產', steel: '鋼鐵', retail: '零售', energy: '能源', tech: '科技' },
     correlation: '銀行股：日報酬相關性',
+    counterClock: '逆時鐘曲線：價格對成交量，25 日均值',
+    avgVolume: '成交量，均值',
+    avgPrice: '價格，均值',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多單',
@@ -665,7 +668,7 @@ const zhHant: SiteMessages = {
         { name: 'Renko、新價線、Kagi、點數圖、區間K線', detail: '磚塊大小或 ATR、突破所需的線數、以百分比或價格計的反轉幅度、每根K線的區間' },
         { name: '成交量蠟燭圖、等量圖、HLC 面積圖、階梯線、帶標記的折線、高低圖', detail: '共 18 種圖表類型' },
         { name: '隱藏主序列', detail: '只保留指標與繪圖' },
-        { name: '儀表板圖表', detail: '長條圖（分組、堆疊、橫向）、環圈圖與圓餅圖、散布圖與泡泡圖、直方圖、日曆圖、相關矩陣、類股地圖、迷你走勢圖、儀表圖、熱力圖與矩形樹狀圖、瀑布圖、深度圖、權益曲線' },
+        { name: '儀表板圖表', detail: '長條圖（分組、堆疊、橫向）、環圈圖與圓餅圖、散布圖與泡泡圖、直方圖、日曆圖、相關矩陣、類股地圖、逆時鐘曲線、迷你走勢圖、儀表圖、熱力圖與矩形樹狀圖、瀑布圖、深度圖、權益曲線' },
       ],
       rendering: [
         { name: 'Canvas 2D 或 WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto'、setRenderer、rendererChange 事件" },
@@ -677,7 +680,7 @@ const zhHant: SiteMessages = {
         { name: '無第三方執行期相依套件', detail: '不必另外安裝或稽核任何東西' },
       ],
       indicators: [
-        { name: '111 個內建指標', detail: '六種樞紐點、MA Cross、與另一商品的相關性' },
+        { name: '133 個內建指標', detail: '六種樞紐點、MA Cross、與另一商品的相關性' },
         { name: '價格來源', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '以指標為基礎的指標', detail: '例如 RSI 的移動平均，每筆 tick 都會更新' },
         { name: '一個副圖中放多個指標，並可在副圖間移動', detail: 'moveIndicatorToPane' },

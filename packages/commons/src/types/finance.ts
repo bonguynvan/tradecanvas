@@ -1,5 +1,6 @@
 import type { Theme, ThemeName } from './theme.js';
 import type { DepthData } from './trading.js';
+import type { OHLCBar } from './ohlc.js';
 
 export interface BaseFinanceChartOptions {
   width?: number;
@@ -338,4 +339,32 @@ export interface MatrixChartOptions extends BaseFinanceChartOptions {
   legend?: boolean;
   crosshair?: boolean;
   onCellClick?: (cell: MatrixCell) => void;
+}
+
+/** A point of a counter-clock chart: the averages of the `period` bars ending at `time`. */
+export interface CounterClockPoint {
+  time: number;
+  /** Average volume. */
+  volume: number;
+  /** Average close. */
+  price: number;
+}
+
+export interface CounterClockOptions extends BaseFinanceChartOptions {
+  /** The bars, oldest first. */
+  data: OHLCBar[];
+  /** Bars in each average. Default `25`. */
+  period?: number;
+  /** The newest points drawn. Default `60`. */
+  points?: number;
+  /** Axis titles. */
+  xLabel?: string;
+  yLabel?: string;
+  /** The line's colour; default the palette's first. */
+  color?: string;
+  timeFormat?: (time: number) => string;
+  priceFormat?: (value: number) => string;
+  volumeFormat?: (value: number) => string;
+  crosshair?: boolean;
+  onPointClick?: (point: CounterClockPoint) => void;
 }
