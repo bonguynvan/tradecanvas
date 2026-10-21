@@ -124,6 +124,8 @@ describe('TimeAxis date labels', () => {
     const few = data.slice(0, 12);
     const ticks = (axis: TimeAxis) => {
       const { ctx, drawn } = recordingCtx();
+      // A fixed zone: the timezone tag's width, and so what fits beside it, mustn't depend on the machine's.
+      axis.setTimezoneOffset(420);
       axis.render(ctx, viewport(-280), DARK_THEME, few);
       return drawn.filter((d) => d.align === 'center');
     };
