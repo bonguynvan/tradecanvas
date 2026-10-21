@@ -4,6 +4,10 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+## 1.30.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.12.
+
 ### The widget on a phone
 
 On a phone the widget's toolbar ran off the screen: past the intervals, the chart type, indicators, alerts, settings, replay and the order buttons could not be reached, and their menus opened off the side. Now the widget lays itself out for its own width.
@@ -17,6 +21,10 @@ On a phone the widget's toolbar ran off the screen: past the intervals, the char
 - Menus now close on a tap on the chart, which makes no mouse events.
 - A chart with no size (a grid's tab not shown, a collapsed panel) no longer pages back through the whole history of its feed.
 - **Docs: in a phone app.** The viewport, the app's lifecycle (React Native, Capacitor), `pageScroll`, Tauri's content security policy and the chart's memory.
+
+## 1.29.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.11. 1.28.0 was not published on its own: its changes, "Lighter on phones" below, came out in 1.29.0.
 
 ### Everything by finger
 
