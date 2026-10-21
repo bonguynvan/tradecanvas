@@ -66,11 +66,11 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   reset: { d: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9' }, // Reset the view
   calendar: { d: 'M5.5 5h13a2 2 0 0 1 2 2v11.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3.5 10H20.5M8 3V7M16 3V7' }, // Go to date
   star: { d: 'M12 3.5L14.6 9L20.5 9.6L16 13.6L17.3 19.5L12 16.5L6.7 19.5L8 13.6L3.5 9.6L9.4 9z' }, // Favourite
-  pin: { d: 'M9 3.5h6M10 3.5v6l-3.5 4.5h11L14 9.5v-6M12 14v6.5' }, // Pinned
+  pin: { d: 'M8 3.5h8M9.5 3.5v5.5L5.5 14h13l-4-5v-5.5M12 14v6.5' }, // Pinned
   search: { d: 'M16.5 10.5a6 6 0 1 1-12 0 6 6 0 0 1 12 0zM15 15L20.5 20.5' }, // Search
   enter: { d: 'M19 5v6.5a3 3 0 0 1-3 3H5.5M9.5 10L5 14.5L9.5 19' }, // Enter (select)
-  stepBack: { d: 'M6.5 5.5v13M18 6v12l-8.5-6z' }, // Replay: one bar back
-  stepForward: { d: 'M17.5 5.5v13M6 6v12l8.5-6z' }, // Replay: one bar on
+  stepBack: { d: 'M6 5v14M18.5 5.5v13L8.5 12z' }, // Replay: one bar back
+  stepForward: { d: 'M18 5v14M5.5 5.5v13l10-6.5z' }, // Replay: one bar on
   ladder: { d: 'M4 6H11M13 6H17M6 10H11M13 10H20M8 14H11M13 14H15M5 18H11M13 18H19' }, // Depth ladder
   save: { d: 'M5.5 3.5h10.5l4.5 4.5v10.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2zM8 3.5v5h7v-5M7.5 20.5v-6h9v6' }, // Save layout
   folder: { d: 'M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z' }, // Open layout
