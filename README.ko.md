@@ -27,7 +27,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 111개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 133개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>
@@ -36,7 +36,7 @@
 ## 주요 특징
 
 - **18가지 차트 유형**: 캔들과 하이킨아시부터 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨까지, 그리고 여섯 가지 금융 차트(스파크라인, 호가 깊이, 자산 곡선, 히트맵, 워터폴, 게이지).
-- **111개 지표와 69개 그리기 도구**: 지표 위의 지표, 추세선 알림, 템플릿, 그룹, 실행 취소와 다시 실행.
+- **133개 지표와 69개 그리기 도구**: 지표 위의 지표, 추세선 알림, 템플릿, 그룹, 실행 취소와 다시 실행.
 - **차트 위에서 거래**: 실시간 손익이 표시되는 포지션, 드래그로 옮기는 주문과 손절/익절, 주문 티켓, 계좌 패널, 그리고 모의 거래 브로커 또는 직접 만든 실행 어댑터.
 - **실시간 데이터**: Binance, Bybit, Coinbase, Kraken이 내장되어 있고 다른 피드도 약 20줄이면 연결됩니다. 뒤로 스크롤하면 이전 과거 데이터를 불러오며, 어떤 시간 단위든, 틱 차트도 지원합니다.
 - **Canvas 2D 또는 WebGL**: 100만 개 봉을 60 fps로 이동하며, 어떤 화면 배율에서도 선명합니다.

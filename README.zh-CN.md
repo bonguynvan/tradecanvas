@@ -27,7 +27,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），111 个指标、69 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
+**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），133 个指标、69 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
@@ -36,7 +36,7 @@
 ## 亮点
 
 - **18 种图表类型**，从蜡烛图和平均K线（Heikin-Ashi）到 Renko、Kagi、Point & Figure 和等量图（Equivolume），另有六种金融图表（迷你走势图、深度图、权益曲线、热力图、瀑布图、仪表盘）。
-- **111 个指标和 69 种画线工具**：指标可叠加在指标上，趋势线可设警报，支持模板、分组、撤销与重做。
+- **133 个指标和 69 种画线工具**：指标可叠加在指标上，趋势线可设警报，支持模板、分组、撤销与重做。
 - **在图表上交易**：实时盈亏的持仓，可拖动的订单和止损/止盈，下单面板、账户面板，以及模拟交易经纪商或你自己的执行适配器。
 - **实时数据**：内置 Binance、Bybit、Coinbase 和 Kraken，其他数据源约二十行代码即可接入；回看时自动加载更早的历史，支持任意周期和 Tick 图。
 - **Canvas 2D 或 WebGL**：一百万根K线以 60 fps 平移，在任何屏幕缩放比例下都清晰锐利。

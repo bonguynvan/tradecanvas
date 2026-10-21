@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 133 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ WebGL, 30 ngôn ngữ',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 111 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 133 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -71,7 +71,7 @@ const vi: SiteMessages = {
           title: 'Đọc thị trường',
           text: 'Dải băng, đường trung bình và dao động trên các cây nến, mức Fibonacci và đường xu hướng vẽ lên trên, mỗi thứ có cài đặt và cảnh báo riêng.',
           points: [
-            '111 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
+            '133 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
             '69 công cụ vẽ, có nam châm, nhóm và hoàn tác',
             'Cảnh báo theo giá, theo đường vẽ và khi chỉ báo cắt nhau',
           ],
@@ -218,11 +218,11 @@ const vi: SiteMessages = {
     },
     indicators: {
       title: 'Chỉ báo',
-      stat: '111 có sẵn',
+      stat: '133 có sẵn',
       blurb:
         'Chỉ báo phủ lên giá và chỉ báo ở bảng riêng, đều tự tính trong thư viện, không phụ thuộc thư viện toán nào. Tick trực tiếp chỉ tính lại nến đang hình thành — 0.001 ms mỗi tick với bốn chỉ báo trên 100k nến.',
       tryThis: [
-        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 111 chỉ báo',
+        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 133 chỉ báo',
         'Bấm vào tên chỉ báo trên chú thích: thông số, màu sắc và các mức',
         'Đặt Nguồn của một đường trung bình động là đường của một chỉ báo khác',
         'Kéo đường phân cách giữa các bảng để đổi kích thước; các nút ở góc phải trên của bảng để di chuyển, thu gọn hoặc phóng to',
@@ -464,6 +464,9 @@ const vi: SiteMessages = {
     sectorMap: 'Bản đồ thị trường theo ngành',
     sectors: { banks: 'Ngân hàng', realEstate: 'Bất động sản', steel: 'Thép', retail: 'Bán lẻ', energy: 'Năng lượng', tech: 'Công nghệ' },
     correlation: 'Cổ phiếu ngân hàng: tương quan lợi nhuận ngày',
+    counterClock: 'Đường ngược chiều kim đồng hồ: giá theo khối lượng, trung bình 25 ngày',
+    avgVolume: 'Khối lượng, trung bình',
+    avgPrice: 'Giá, trung bình',
     pnl: 'Phân bổ lãi/lỗ',
     fearGreed: 'Chỉ số Sợ hãi & Tham lam',
     waterfall: {
@@ -665,7 +668,7 @@ const vi: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, range bars', detail: 'Cỡ ô hoặc ATR, số đường để đảo chiều, đảo chiều theo % hoặc theo giá, biên độ mỗi thanh' },
         { name: 'Volume candles, Equivolume, HLC area, step line, đường có điểm, high-low', detail: '18 loại biểu đồ tất cả' },
         { name: 'Ẩn chuỗi giá chính', detail: 'Chỉ giữ lại chỉ báo và hình vẽ' },
-        { name: 'Biểu đồ cho dashboard', detail: 'Cột (nhóm, chồng, nằm ngang), donut và tròn, scatter và bong bóng, histogram, lịch, ma trận tương quan, bản đồ theo ngành, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường cong vốn' },
+        { name: 'Biểu đồ cho dashboard', detail: 'Cột (nhóm, chồng, nằm ngang), donut và tròn, scatter và bong bóng, histogram, lịch, ma trận tương quan, bản đồ theo ngành, đường ngược chiều kim đồng hồ, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường cong vốn' },
       ],
       rendering: [
         { name: 'Canvas 2D hoặc WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, sự kiện rendererChange" },
@@ -677,7 +680,7 @@ const vi: SiteMessages = {
         { name: 'Không phụ thuộc thư viện bên thứ ba khi chạy', detail: 'Không có gì khác phải cài hay rà soát' },
       ],
       indicators: [
-        { name: '111 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
+        { name: '133 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
         { name: 'Chọn nguồn giá', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Chỉ báo chồng lên chỉ báo', detail: 'Như đường trung bình của RSI, cập nhật theo từng tick' },
         { name: 'Nhiều chỉ báo trong một pane, chuyển giữa các pane', detail: 'moveIndicatorToPane' },

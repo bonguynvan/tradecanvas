@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 111 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 133 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const fr: SiteMessages = {
     release: 'moteur de rendu WebGL, 30 langues',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 111 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 133 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -71,7 +71,7 @@ const fr: SiteMessages = {
           title: 'Lire le marché',
           text: 'Bandes, moyennes et oscillateurs sur les bougies, niveaux de Fibonacci et lignes de tendance par-dessus, chacun avec ses réglages et ses alertes.',
           points: [
-            '111 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
+            '133 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
             '69 outils de dessin avec aimant, groupes et annulation',
             'Alertes sur les prix, les lignes et les croisements d’indicateurs',
           ],
@@ -218,11 +218,11 @@ const fr: SiteMessages = {
     },
     indicators: {
       title: 'Indicateurs',
-      stat: '111 intégrés',
+      stat: '133 intégrés',
       blurb:
         'Superpositions et panneaux calculés en interne, sans aucune dépendance mathématique. En direct, seule la barre en formation est recalculée — 0,001 ms par tick avec quatre indicateurs sur 100k barres.',
       tryThis: [
-        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 111',
+        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 133',
         'Cliquez sur le nom d’un indicateur dans la légende : paramètres, couleurs et niveaux',
         'Réglez le champ « Source » d’une moyenne mobile sur la ligne d’un autre indicateur',
         'Faites glisser la ligne entre deux panneaux pour les redimensionner ; les boutons en haut à droite d’un panneau le déplacent, le replient ou l’agrandissent',
@@ -466,6 +466,9 @@ const fr: SiteMessages = {
     sectorMap: 'Carte du marché par secteur',
     sectors: { banks: 'Banques', realEstate: 'Immobilier', steel: 'Acier', retail: 'Distribution', energy: 'Énergie', tech: 'Technologie' },
     correlation: 'Valeurs bancaires : corrélation des rendements quotidiens',
+    counterClock: 'Courbe anti-horaire : prix contre volume, moyennes sur 25 jours',
+    avgVolume: 'Volume, moyenne',
+    avgPrice: 'Prix, moyenne',
     waterfall: {
       start: 'Début',
       btcLong: 'BTC long',
@@ -665,7 +668,7 @@ const fr: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, barres de range', detail: 'Taille de boîte ou ATR, lignes à casser, retournement en pourcentage ou en prix, amplitude par barre' },
         { name: 'Bougies de volume, Equivolume, aire HLC, ligne en escalier, ligne avec marqueurs, haut-bas', detail: '18 types de graphiques au total' },
         { name: 'La série principale masquée', detail: 'Seuls les indicateurs et les dessins restent' },
-        { name: 'Graphiques pour tableaux de bord', detail: 'Barres (groupées, empilées, horizontales), anneau et camembert, nuages de points et bulles, histogrammes, calendriers, matrices de corrélation, cartes par secteur, sparklines, jauges, cartes de chaleur et treemaps, cascades, profondeur, courbes de capital' },
+        { name: 'Graphiques pour tableaux de bord', detail: 'Barres (groupées, empilées, horizontales), anneau et camembert, nuages de points et bulles, histogrammes, calendriers, matrices de corrélation, cartes par secteur, courbes anti-horaires, sparklines, jauges, cartes de chaleur et treemaps, cascades, profondeur, courbes de capital' },
       ],
       rendering: [
         { name: 'Canvas 2D ou WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, l’événement rendererChange" },
@@ -677,7 +680,7 @@ const fr: SiteMessages = {
         { name: 'Aucune dépendance tierce à l’exécution', detail: 'Rien d’autre à installer ni à auditer' },
       ],
       indicators: [
-        { name: '111 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
+        { name: '133 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
         { name: 'Source de prix', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Un indicateur appliqué à un indicateur', detail: 'Comme une moyenne mobile du RSI, mise à jour à chaque tick' },
         { name: 'Plusieurs indicateurs dans un panneau, déplacés d’un panneau à l’autre', detail: 'moveIndicatorToPane' },

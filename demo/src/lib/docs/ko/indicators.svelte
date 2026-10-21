@@ -105,6 +105,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   OHLCV 시리즈에는 그 정보가 없습니다.)
 </p>
 
+<h2>아시아 HTS에서 익숙한 지표</h2>
+<p>
+  한국, 일본, 베트남의 투자자가 시세 화면에서 익숙하게 쓰는 지표: 심리도(<code>psy</code>)와 신심리도(<code>newpsy</code>), VR(<code>vr</code>), AB Ratio(<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave(<code>binarywave</code>), 거래대금(<code>tradevalue</code>)과 전일 대비 거래량(<code>volchange</code>), 디마크 목표가(<code>demark</code>), 최대 20개 선의 이동평균 그물망(<code>rainbow</code>). 거래대금은 봉마다 종가 × 거래량으로 추정한 값이며, 거래소의 공식 수치는 시세 데이터에 있습니다.
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // 상승 마감 비율, 25와 75 표시
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // 상승일과 하락일의 거래량 비율
+chart.addIndicator('tradevalue', {}, 'bottom')                    // 봉마다 종가 × 거래량
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 10~100봉의 이동평균 10개`}</code></pre>
+
 <h2>나만의 지표</h2>
 <p>
   <code>IndicatorBase</code>를 상속하고 그릴 대상(<code>plots</code>), 패널 눈금,

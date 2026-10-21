@@ -25,6 +25,7 @@
     <tr><td><code>HistogramChart</code></td><td>値の分布：日次リターン、トレードの結果。平均や VaR の位置に線を引けます。</td></tr>
     <tr><td><code>CalendarChart</code></td><td>カレンダー上に 1 日 1 つの値：日次リターン、損益、取引日誌。</td></tr>
     <tr><td><code>MatrixChart</code></td><td>行と列の組ごとに 1 つの値：相関、時間帯と曜日ごとの出来高。</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>平均価格と平均出来高を足ごとに結んだ、銘柄の逆ウォッチ曲線。</td></tr>
     <tr><td><code>SparklineChart</code></td><td>ウォッチリストの行や KPI タイルに置く小さなライン。</td></tr>
     <tr><td><code>GaugeChart</code></td><td>帯と照らし合わせて見る 1 つの値：センチメント、リスク、証拠金の使用率。</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>変化率で色分けしたセル。グリッド、またはウェイト（時価総額）で大きさを決めたツリーマップ。<code>grouped</code> を指定するとセクターマップになります。</td></tr>
@@ -181,6 +182,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   各セクターは銘柄のウェイトの合計に応じた広さを占め、収まるときはタイルの上部にセクター名と加重平均の騰落を表示します。ヒートマップの色は <code>colorScale</code> で <code>min</code> と <code>max</code> を指定しない限り -5 から 5 です。
+</p>
+
+<h2>逆ウォッチ曲線</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // OHLCV の足、古い順
+  period: 25,                           // 各平均に含める足の数
+  points: 120,                          // 描く最新の点の数
+  xLabel: '出来高（平均）', yLabel: '価格（平均）',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1〜8：最後の動きの方向`}</code></pre>
+<p>
+  各点は出来高（横）と終値（縦）の 25 本平均で、時間順に結ばれ、古いほど薄くなります。健全な循環は反時計回りに回ります。<code>getPhase()</code>（と <code>counterClockPhase(points)</code>）は最後の動きを返します：1 出来高増、2 価格と出来高がともに上昇、3 価格上昇、4 出来高減の中の価格上昇、5 出来高減、6 ともに下落、7 価格下落、8 出来高増の中の価格下落。
 </p>
 
 <h2>スパークライン、ゲージ、ヒートマップ、ウォーターフォール、板の厚み、エクイティカーブ</h2>

@@ -25,3 +25,5 @@ export { renderCalendar, computeCalendarLayout, hitDay, parseDay, dayToIso } fro
 export type { CalendarLayout, CalendarCell } from './CalendarRenderer.js';
 export { renderMatrix, computeMatrixLayout, hitMatrixCell, correlationMatrix } from './MatrixRenderer.js';
 export type { MatrixLayout, MatrixCellRect } from './MatrixRenderer.js';
+export { renderCounterClock, computeCounterClockLayout, nearestCounterClockPoint, counterClockPoints, counterClockPhase, shownCount } from './CounterClockRenderer.js';
+export type { CounterClockLayout, PlacedClockPoint } from './CounterClockRenderer.js';

@@ -105,6 +105,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   một chuỗi OHLCV không có.)
 </p>
 
+<h2>Chỉ báo quen thuộc trên bảng giá châu Á</h2>
+<p>
+  Những chỉ báo mà nhà đầu tư ở Hàn Quốc, Nhật Bản và Việt Nam quen thấy trên bảng giá: Psychological Line (<code>psy</code>, tâm lý) và New Psychological Line (<code>newpsy</code>), Volume Ratio (<code>vr</code>), AB Ratio (<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave (<code>binarywave</code>), Trade Value (<code>tradevalue</code>, giá trị giao dịch) cùng Volume Change (<code>volchange</code>), vùng giá dự phóng DeMark (<code>demark</code>) và dải đường trung bình <code>rainbow</code> tới 20 đường. Trade Value là ước tính, giá đóng cửa × khối lượng mỗi nến; con số chính thức của sở giao dịch có trong nguồn dữ liệu của họ.
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // tỷ lệ phiên tăng; đánh dấu 25 và 75
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // khối lượng phiên tăng so với phiên giảm
+chart.addIndicator('tradevalue', {}, 'bottom')                    // giá đóng cửa × khối lượng, mỗi nến
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // mười đường trung bình, 10 đến 100 nến`}</code></pre>
+
 <h2>Chỉ báo của riêng bạn</h2>
 <p>
   Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của bảng,

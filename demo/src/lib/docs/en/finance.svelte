@@ -26,6 +26,7 @@
     <tr><td><code>HistogramChart</code></td><td>How values spread: daily returns, trade results, with lines at the mean or a VaR.</td></tr>
     <tr><td><code>CalendarChart</code></td><td>A value a day on a calendar: daily returns, P&amp;L, a trading journal.</td></tr>
     <tr><td><code>MatrixChart</code></td><td>A value for each pair of rows and columns: correlations, volume by hour and weekday.</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>Average price against average volume, bar by bar: the counter-clock cycle of a stock.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>A small line in a watchlist row or a KPI tile.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>One value against bands: sentiment, risk, margin use.</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>Cells coloured by change, in a grid or a treemap sized by weight (market cap). With <code>grouped</code>, a sector map.</td></tr>
@@ -185,6 +186,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Each group takes the room of its stocks' weights, and its name and weighted change head its tile where they fit. The heatmap's colours run from -5 to 5 unless <code>colorScale</code> gives a <code>min</code> and <code>max</code>.
+</p>
+
+<h2>Counter-clock chart</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // OHLCV bars, oldest first
+  period: 25,                           // bars in each average
+  points: 120,                          // the newest points drawn
+  xLabel: 'Volume, average', yLabel: 'Price, average',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1–8: the direction of the last move`}</code></pre>
+<p>
+  Each point is the 25-bar average of volume (across) and of the close (up), joined in time order and fading with age. A healthy cycle turns counter-clockwise. <code>getPhase()</code> (and <code>counterClockPhase(points)</code>) name the last move: 1 volume rising, 2 both rising, 3 price rising, 4 price rising on falling volume, 5 volume falling, 6 both falling, 7 price falling, 8 price falling on rising volume.
 </p>
 
 <h2>Sparkline, gauge, heatmap, waterfall, depth and equity curve</h2>

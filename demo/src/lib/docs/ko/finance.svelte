@@ -25,6 +25,7 @@
     <tr><td><code>HistogramChart</code></td><td>값의 분포: 일별 수익률, 거래 결과. 평균이나 VaR 위치에 선을 표시합니다.</td></tr>
     <tr><td><code>CalendarChart</code></td><td>달력 위에 하루 하나의 값: 일간 수익률, 손익, 매매 일지.</td></tr>
     <tr><td><code>MatrixChart</code></td><td>행과 열의 쌍마다 하나의 값: 상관관계, 시간대와 요일별 거래량.</td></tr>
+    <tr><td><code>CounterClockChart</code></td><td>봉마다 평균 가격과 평균 거래량을 이은 종목의 역시계곡선.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>관심 종목 행이나 KPI 타일 속의 작은 선.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>구간과 비교해 보는 하나의 값: 시장 심리, 리스크, 증거금 사용률.</td></tr>
     <tr><td><code>HeatmapChart</code></td><td>등락으로 색칠한 셀. 격자 또는 비중(시가총액)으로 크기를 정한 트리맵. <code>grouped</code>를 쓰면 섹터 맵이 됩니다.</td></tr>
@@ -181,6 +182,22 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   각 섹터는 종목 비중의 합만큼 자리를 차지하고, 들어갈 때 타일 위쪽에 섹터 이름과 가중 평균 등락을 표시합니다. 히트맵의 색은 <code>colorScale</code>에 <code>min</code>과 <code>max</code>를 주지 않으면 -5에서 5까지입니다.
+</p>
+
+<h2>역시계곡선</h2>
+<pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
+
+const clock = new CounterClockChart(el, {
+  data: bars,                           // OHLCV 봉, 오래된 것부터
+  period: 25,                           // 평균에 넣을 봉 수
+  points: 120,                          // 그릴 최신 점의 수
+  xLabel: '거래량, 평균', yLabel: '가격, 평균',
+  onPointClick: (p) => goTo(p.time),
+})
+
+clock.getPhase()                        // 1~8: 마지막 움직임의 방향`}</code></pre>
+<p>
+  각 점은 거래량(가로)과 종가(세로)의 25봉 평균이며, 시간 순서로 이어지고 오래될수록 흐려집니다. 건강한 순환은 시계 반대 방향으로 돕니다. <code>getPhase()</code>(와 <code>counterClockPhase(points)</code>)는 마지막 움직임을 알려 줍니다: 1 거래량 증가, 2 가격과 거래량 동반 상승, 3 가격 상승, 4 거래량 감소 속 가격 상승, 5 거래량 감소, 6 동반 하락, 7 가격 하락, 8 거래량 증가 속 가격 하락.
 </p>
 
 <h2>스파크라인, 게이지, 히트맵, 워터폴, 시장 심도, 자산 곡선</h2>

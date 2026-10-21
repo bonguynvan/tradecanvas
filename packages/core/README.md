@@ -34,7 +34,7 @@ Two stacked canvases — a hover repaints only the thin top one:
 
 Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars`
 
-### Indicators (111 built-in)
+### Indicators (133 built-in)
 
 Moving averages, bands and channels, trend and stops, VWAPs and profiles on the price pane; oscillators, volume and volatility indicators in panes of their own. Every id with its inputs, lines and levels is in the [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators). Four more read a second symbol's bars (`compareSymbol`, `spread`, `correlation`, `correlationlog`); `@tradecanvas/chart`'s `Chart` registers them with its symbol store.
 

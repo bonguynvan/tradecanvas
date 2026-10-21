@@ -17,6 +17,7 @@
     CalendarChart,
     MatrixChart,
     correlationMatrix,
+    CounterClockChart,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -233,6 +234,13 @@
   const bankReturns = exposure.map((beta) => market.map((mv) => beta * mv + (corrRng() - 0.5) * 0.6));
   const correlations = correlationMatrix(bankReturns);
 
+  // --- A year of daily bars whose volume turns a quarter cycle before price ---
+  const clockBars = Array.from({ length: 300 }, (_, i) => {
+    const t = (i / 300) * Math.PI * 4;
+    const close = 60 + 8 * Math.sin(t) + i * 0.01;
+    return { time: Date.UTC(2025, 0, 1) + i * 86_400_000, open: close, high: close + 0.5, low: close - 0.5, close, volume: Math.round(2_000_000 + 800_000 * Math.cos(t)) };
+  });
+
   // --- Container refs ---
   let sparkGridEl: HTMLDivElement | undefined = $state();
   let equityContainer: HTMLDivElement | undefined = $state();
@@ -247,6 +255,7 @@
   let calendarContainer: HTMLDivElement | undefined = $state();
   let sectorContainer: HTMLDivElement | undefined = $state();
   let matrixContainer: HTMLDivElement | undefined = $state();
+  let clockContainer: HTMLDivElement | undefined = $state();
 
   // --- Chart instances ---
   let sparkCharts: SparklineChart[] = [];
@@ -255,7 +264,7 @@
   let heatmapChart: HeatmapChart | null = null;
   let waterfallChart: WaterfallChart | null = null;
   let gaugeChart: GaugeChart | null = null;
-  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart)[] = [];
+  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart | CounterClockChart)[] = [];
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
 
@@ -438,6 +447,19 @@
       }));
     }
 
+    if (clockContainer) {
+      newCharts.push(new CounterClockChart(clockContainer, {
+        data: clockBars,
+        period: 25,
+        points: 120,
+        ariaLabel: i18n.m.finance.counterClock,
+        xLabel: i18n.m.finance.avgVolume,
+        yLabel: i18n.m.finance.avgPrice,
+        timeFormat: (t) => new Date(t).toLocaleDateString(i18n.language.tag, { timeZone: 'UTC' }),
+        theme,
+      }));
+    }
+
     // Gauge
     if (gaugeContainer) {
       gaugeChart = new GaugeChart(gaugeContainer, {
@@ -579,6 +601,11 @@
       <div class="card-chart card-chart--300" bind:this={matrixContainer}></div>
     </div>
   </div>
+
+  <div class="chart-card chart-card--spaced" data-reveal>
+    <div class="card-label">{m.finance.counterClock}</div>
+    <div class="card-chart card-chart--320" bind:this={clockContainer}></div>
+  </div>
 </section>
 
 <style>
@@ -690,6 +717,10 @@
 
   .card-chart--300 {
     height: 300px;
+  }
+
+  .card-chart--320 {
+    height: 320px;
   }
 
   .card-chart--350 {

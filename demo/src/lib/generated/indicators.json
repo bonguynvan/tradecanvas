@@ -2988,5 +2988,567 @@
     "scale": {
       "min": 0
     }
+  },
+  {
+    "id": "psy",
+    "name": "Psychological Line",
+    "shortName": "PSY",
+    "placement": "panel",
+    "params": {
+      "period": 10
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "PSY",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      25,
+      75
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "newpsy",
+    "name": "New Psychological Line",
+    "shortName": "New PSY",
+    "placement": "panel",
+    "params": {
+      "period": 10
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "New PSY",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -50,
+      0,
+      50
+    ],
+    "scale": {
+      "min": -100,
+      "max": 100
+    }
+  },
+  {
+    "id": "vr",
+    "name": "Volume Ratio",
+    "shortName": "VR",
+    "placement": "panel",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "VR",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      70,
+      150,
+      450
+    ]
+  },
+  {
+    "id": "abratio",
+    "name": "AB Ratio",
+    "shortName": "AB Ratio",
+    "placement": "panel",
+    "params": {
+      "period": 26
+    },
+    "plots": [
+      {
+        "key": "a",
+        "title": "A",
+        "kind": "line"
+      },
+      {
+        "key": "b",
+        "title": "B",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      100
+    ]
+  },
+  {
+    "id": "sonar",
+    "name": "Sonar",
+    "shortName": "Sonar",
+    "placement": "panel",
+    "params": {
+      "period": 20,
+      "lookback": 9,
+      "signal": 9
+    },
+    "plots": [
+      {
+        "key": "sonar",
+        "title": "Sonar",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "sigma",
+    "name": "Sigma",
+    "shortName": "Sigma",
+    "placement": "panel",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Sigma",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      -2,
+      0,
+      2
+    ]
+  },
+  {
+    "id": "vhf",
+    "name": "Vertical Horizontal Filter",
+    "shortName": "VHF",
+    "placement": "panel",
+    "params": {
+      "period": 28
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "VHF",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "rsquared",
+    "name": "R-Squared",
+    "shortName": "R²",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "R²",
+        "kind": "line"
+      }
+    ],
+    "scale": {
+      "min": 0,
+      "max": 1
+    }
+  },
+  {
+    "id": "rwi",
+    "name": "Random Walk Index",
+    "shortName": "RWI",
+    "placement": "panel",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "high",
+        "title": "RWI High",
+        "kind": "line"
+      },
+      {
+        "key": "low",
+        "title": "RWI Low",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      1
+    ]
+  },
+  {
+    "id": "nvi",
+    "name": "Negative Volume Index",
+    "shortName": "NVI",
+    "placement": "panel",
+    "params": {
+      "signal": 255
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "NVI",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "pvi",
+    "name": "Positive Volume Index",
+    "shortName": "PVI",
+    "placement": "panel",
+    "params": {
+      "signal": 255
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "PVI",
+        "kind": "line"
+      },
+      {
+        "key": "signal",
+        "title": "Signal",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "tr",
+    "name": "True Range",
+    "shortName": "TR",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "TR",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "iii",
+    "name": "Intraday Intensity",
+    "shortName": "III",
+    "placement": "panel",
+    "params": {
+      "period": 21
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "III %",
+        "kind": "histogram"
+      }
+    ],
+    "levels": [
+      0
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "volpct",
+    "name": "Volume vs Average",
+    "shortName": "Vol %",
+    "placement": "panel",
+    "params": {
+      "period": 20
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Vol %",
+        "kind": "histogram"
+      }
+    ],
+    "levels": [
+      0
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "volchange",
+    "name": "Volume Change",
+    "shortName": "Vol Δ",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Volume",
+        "kind": "histogram"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "tradevalue",
+    "name": "Trade Value",
+    "shortName": "Value",
+    "placement": "panel",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Value",
+        "kind": "histogram"
+      }
+    ],
+    "scale": {
+      "zero": true
+    }
+  },
+  {
+    "id": "binarywave",
+    "name": "Binary Wave",
+    "shortName": "Binary Wave",
+    "placement": "panel",
+    "params": {
+      "ma": 20,
+      "fast": 12,
+      "slow": 26,
+      "signal": 9,
+      "roc": 12,
+      "stoch": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "Wave",
+        "kind": "step"
+      }
+    ],
+    "levels": [
+      0
+    ],
+    "scale": {
+      "min": -4,
+      "max": 4
+    }
+  },
+  {
+    "id": "sroc",
+    "name": "Smoothed Rate of Change",
+    "shortName": "S-ROC",
+    "placement": "panel",
+    "params": {
+      "ema": 13,
+      "roc": 21
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "S-ROC",
+        "kind": "line"
+      }
+    ],
+    "levels": [
+      0
+    ]
+  },
+  {
+    "id": "tsf",
+    "name": "Time Series Forecast",
+    "shortName": "TSF",
+    "placement": "overlay",
+    "params": {
+      "period": 14
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "TSF",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "wclose",
+    "name": "Weighted Close",
+    "shortName": "HLCC4",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "value",
+        "title": "Weighted",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "demark",
+    "name": "DeMark Projected Range",
+    "shortName": "DeMark",
+    "placement": "overlay",
+    "params": {},
+    "plots": [
+      {
+        "key": "high",
+        "title": "Projected high",
+        "kind": "step"
+      },
+      {
+        "key": "low",
+        "title": "Projected low",
+        "kind": "step"
+      }
+    ]
+  },
+  {
+    "id": "rainbow",
+    "name": "Moving Average Rainbow",
+    "shortName": "Rainbow",
+    "placement": "overlay",
+    "params": {
+      "first": 10,
+      "step": 10,
+      "count": 10,
+      "exponential": 0
+    },
+    "inputs": {
+      "first": {
+        "min": 1
+      },
+      "step": {
+        "min": 1
+      },
+      "count": {
+        "min": 1,
+        "max": 20
+      },
+      "exponential": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "ma1",
+        "title": "MA 1",
+        "kind": "line"
+      },
+      {
+        "key": "ma2",
+        "title": "MA 2",
+        "kind": "line"
+      },
+      {
+        "key": "ma3",
+        "title": "MA 3",
+        "kind": "line"
+      },
+      {
+        "key": "ma4",
+        "title": "MA 4",
+        "kind": "line"
+      },
+      {
+        "key": "ma5",
+        "title": "MA 5",
+        "kind": "line"
+      },
+      {
+        "key": "ma6",
+        "title": "MA 6",
+        "kind": "line"
+      },
+      {
+        "key": "ma7",
+        "title": "MA 7",
+        "kind": "line"
+      },
+      {
+        "key": "ma8",
+        "title": "MA 8",
+        "kind": "line"
+      },
+      {
+        "key": "ma9",
+        "title": "MA 9",
+        "kind": "line"
+      },
+      {
+        "key": "ma10",
+        "title": "MA 10",
+        "kind": "line"
+      },
+      {
+        "key": "ma11",
+        "title": "MA 11",
+        "kind": "line"
+      },
+      {
+        "key": "ma12",
+        "title": "MA 12",
+        "kind": "line"
+      },
+      {
+        "key": "ma13",
+        "title": "MA 13",
+        "kind": "line"
+      },
+      {
+        "key": "ma14",
+        "title": "MA 14",
+        "kind": "line"
+      },
+      {
+        "key": "ma15",
+        "title": "MA 15",
+        "kind": "line"
+      },
+      {
+        "key": "ma16",
+        "title": "MA 16",
+        "kind": "line"
+      },
+      {
+        "key": "ma17",
+        "title": "MA 17",
+        "kind": "line"
+      },
+      {
+        "key": "ma18",
+        "title": "MA 18",
+        "kind": "line"
+      },
+      {
+        "key": "ma19",
+        "title": "MA 19",
+        "kind": "line"
+      },
+      {
+        "key": "ma20",
+        "title": "MA 20",
+        "kind": "line"
+      }
+    ]
   }
 ]

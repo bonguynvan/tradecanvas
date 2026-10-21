@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { computeBarLayout, computeDonutLayout, computeCalendarLayout, computeMatrixLayout, layoutGroupedTreemap, GROUP_HEADER } from '@tradecanvas/core';
+import { computeBarLayout, computeDonutLayout, computeCalendarLayout, computeMatrixLayout, layoutGroupedTreemap, GROUP_HEADER, computeCounterClockLayout } from '@tradecanvas/core';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { BarChart } from '../BarChart.js';
 import { DonutChart } from '../DonutChart.js';
@@ -9,6 +9,7 @@ import { HistogramChart } from '../HistogramChart.js';
 import { CalendarChart } from '../CalendarChart.js';
 import { MatrixChart } from '../MatrixChart.js';
 import { HeatmapChart } from '../HeatmapChart.js';
+import { CounterClockChart } from '../CounterClockChart.js';
 import { installChartStubs, sizedHost } from '../../__tests__/chartTestEnv.js';
 
 let host: HTMLDivElement;
@@ -123,6 +124,22 @@ describe('the newer finance charts', () => {
     const hpg = cells.find((c) => c.id === 'hpg')!.rect;
     click(canvas, hpg.x + hpg.width / 2, hpg.y + hpg.height / 2);
     expect(onCellClick).toHaveBeenCalledWith(data[1]);
+    chart.destroy();
+  });
+
+  it('tell a counter-clock chart’s click which point it was, and give the phase', () => {
+    const onPointClick = vi.fn();
+    const data = Array.from({ length: 80 }, (_, i) => ({ time: i, open: 100, high: 101, low: 99, close: 100 + i, volume: 1000 + 10 * i }));
+    const options = { data, period: 5, points: 30, onPointClick };
+    const chart = new CounterClockChart(host, options);
+    vi.advanceTimersByTime(20);
+    const canvas = host.querySelector('canvas')!;
+    expect(canvas.getAttribute('aria-label')).toBe('Counter-clock chart of price against volume, 5-bar averages');
+    // Price and volume both rising: phase 2.
+    expect(chart.getPhase()).toBe(2);
+    const p = computeCounterClockLayout(options, 400, 300, DARK_THEME, measure).points[10];
+    click(canvas, p.px, p.py);
+    expect(onPointClick).toHaveBeenCalledWith(p.point);
     chart.destroy();
   });
 });

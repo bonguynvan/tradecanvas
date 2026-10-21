@@ -105,6 +105,15 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   OHLCV series doesn't carry.)
 </p>
 
+<h2>Indicators from Asian price boards</h2>
+<p>
+  Indicators that traders in Korea, Japan and Vietnam expect on their price boards: the Psychological Line (<code>psy</code>) and the New Psychological Line (<code>newpsy</code>), Volume Ratio (<code>vr</code>), AB Ratio (<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave (<code>binarywave</code>), Trade Value (<code>tradevalue</code>) with Volume Change (<code>volchange</code>), the DeMark projected range (<code>demark</code>) and a moving-average <code>rainbow</code> of up to 20 lines. Trade Value is an estimate, close × volume per bar; the exchange's own figure comes from its feed.
+</p>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // share of up closes; 25 and 75 marked
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // volume of up days against down days
+chart.addIndicator('tradevalue', {}, 'bottom')                    // close × volume, each bar
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // ten averages, 10 to 100 bars`}</code></pre>
+
 <h2>Your own indicator</h2>
 <p>
   Extend <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,
