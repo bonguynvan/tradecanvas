@@ -10,6 +10,10 @@ Collected on `main` for the next release. Not on npm yet.
 - **The `candlepatterns` indicator** (134 indicators in all) draws an arrow under each bullish pattern and over each bearish one, with its short name once the bars are wide enough; a live bar recomputes only the last bars. Reversals, continuations and indecision can be turned on and off.
 - Docs: the Indicators page in six languages; a Feature Lab scene on Vietnamese stocks with the patterns, the Psychological Line and Volume Ratio.
 
+## 1.22.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.4.
+
 ### Indicators from Asian price boards
 
 22 more indicators, 133 in all, in the widget's indicator list too:
