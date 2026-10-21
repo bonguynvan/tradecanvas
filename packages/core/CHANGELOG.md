@@ -1,5 +1,18 @@
 # @tradecanvas/core
 
+## 1.27.0
+
+### Minor Changes
+
+- 49d0da6: No more emoji or symbol characters as icons: the alert line's bell, the alert notice, the pinned tooltip, trade zones' direction, the drawing favourites' star, the palette's search, checks, keys and close buttons, and the replay controls all come from the TradeCanvas icon set, which moves to commons (`UI_ICONS`, `iconSvg`) so the chart's canvas draws it too (`drawIcon` in core). New icons: pin, search, enter, step back, step forward. `widget.toast(message, kind, icon)` takes an icon's name.
+- e429018: Long ranges show all of their span: in the widget a range on the range bar that the bars can't fit switches to the timeframe that can (5Y of days to weeks, All to months, 2 px a bar or more) and a short one goes back to the timeframe the user picked; `features['statusBar.rangeTimeframe']` turns it off. On a bare chart, `minBarUnit` (an option, or `setMinBarUnit`) lets bar slots go from 0.25 px down to 0.02 px so `fitContent` and the 'All' range fit a long series.
+
+### Patch Changes
+
+- Updated dependencies [49d0da6]
+- Updated dependencies [e429018]
+  - @tradecanvas/commons@1.27.0
+
 ## 1.26.0
 
 ### Minor Changes
