@@ -4,6 +4,10 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+## 1.21.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.3.
+
 ### Charts for dashboards
 
 - **`BarChart`**: values by category, series side by side (`mode: 'grouped'`) or stacked with positives up and negatives down from zero, upright or sideways (`orientation: 'horizontal'`), coloured by sign for net flows (`colorBySign`), values on the bars (`showValues`). Hovering a category shows each series' value; `onBarClick` gets the category, series, value and index. Labels that don't fit along the bottom show every few categories.
