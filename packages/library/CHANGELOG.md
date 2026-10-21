@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 1.24.0
+
+### Minor Changes
+
+- caef172: A toolbar over the drawing a user selects in the widget (colour, width, line style, settings, alert, lock, more, delete), so its options no longer hide behind a right-click; `features.selectionToolbar: false` turns it off. `chart.getDrawingRect(id)` gives the box a drawing covers on screen. The OHLCV legend takes a `fontFamily`, draws its volume row at the OHLC size, keeps each value's place as digits change, and follows the widget look's font.
+
+### Patch Changes
+
+- Updated dependencies [caef172]
+  - @tradecanvas/core@1.24.0
+  - @tradecanvas/commons@1.24.0
+
 ## 1.23.0
 
 ### Minor Changes
