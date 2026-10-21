@@ -182,7 +182,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## 기업 고객
 
-TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://bonguynvan.github.io/tradecanvas/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradingdek.com.
+TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://bonguynvan.github.io/tradecanvas/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradecanvas.dev.
 
 ## 기여하기
 
