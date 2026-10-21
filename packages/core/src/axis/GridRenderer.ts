@@ -1,6 +1,6 @@
 import type { ViewportState, Theme, ResolvedLineLook } from '@tradecanvas/commons';
 import { lineDash } from '@tradecanvas/commons';
-import { gridLines } from './gridLines.js';
+import { gridLines, type GridMarks } from './gridLines.js';
 
 /** The grid's dashes, as its lines are drawn when `dashed`. */
 const GRID_DASH = [4, 4];
@@ -11,10 +11,11 @@ export class GridRenderer {
   setVisible(v: boolean): void { this.visible = v; }
   isVisible(): boolean { return this.visible; }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+  /** `marks`: where the axes put their labels, for the lines to agree with them. */
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, marks?: GridMarks): void {
     if (!this.visible) return;
     const { chartRect } = viewport;
-    const { horizontal, vertical } = gridLines(viewport);
+    const { horizontal, vertical } = gridLines(viewport, marks);
     const looks = gridLooks(theme);
     const h = looks.horizontal;
     const v = looks.vertical;

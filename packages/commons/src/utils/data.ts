@@ -68,11 +68,29 @@ export function findBarIndex(data: DataSeries, timestamp: number): number {
   return lo;
 }
 
+/**
+ * `min`..`max` with room above and below: `padding` of the span on each side,
+ * or on a log scale the same share of its log span, so the range stays above
+ * zero and the room looks the same top and bottom.
+ */
+export function padPriceRange(min: number, max: number, padding: number, log = false): { min: number; max: number } {
+  const logSpan = log && min > 0 && max > 0 ? Math.log(max / min) : Number.NaN;
+  if (Number.isFinite(logSpan)) {
+    const span = logSpan || Math.log(1 + 2 * padding);
+    const factor = Math.exp(span * padding);
+    return { min: min / factor, max: max * factor };
+  }
+  const range = max - min || 1;
+  return { min: min - range * padding, max: max + range * padding };
+}
+
 export function computePriceRange(
   data: DataSeries,
   from: number,
   to: number,
   padding = 0.05,
+  /** Pad as a log scale shows it (`padPriceRange`). */
+  log = false,
 ): { min: number; max: number } {
   if (data.length === 0) return { min: 0, max: 1 };
   const startIdx = Math.max(0, from);
@@ -84,11 +102,7 @@ export function computePriceRange(
     if (data[i].high > max) max = data[i].high;
   }
   if (min === Infinity) return { min: 0, max: 1 };
-  const range = max - min || 1;
-  return {
-    min: min - range * padding,
-    max: max + range * padding,
-  };
+  return padPriceRange(min, max, padding, log);
 }
 
 export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: number; time: number }): OHLCBar {

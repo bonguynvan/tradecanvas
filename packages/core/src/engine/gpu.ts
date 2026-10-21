@@ -1,3 +1,4 @@
+import type { GridMarks } from '../axis/gridLines.js';
 import type { ChartOptions, DataSeries, Rect, Theme, ViewportState } from '@tradecanvas/commons';
 
 /** Which renderer draws the chart: Canvas 2D, WebGL, or WebGL where it's fast and Canvas 2D otherwise. */
@@ -18,6 +19,8 @@ export interface GpuRect {
 /** What goes under the bars, unclipped: the grid, then filled rectangles (session shading, break lines). */
 export interface GpuBackground {
   grid: boolean;
+  /** Where the axes label: the grid's lines go there. */
+  marks?: GridMarks;
   rects: readonly GpuRect[];
 }
 

@@ -127,8 +127,16 @@ chart.setPriceFormat((p) => '$' + p.toFixed(2))
 chart.setPriceFormat(null)                                              // decimals again
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
-  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3 id="axis-labels">坐标轴如何选择标签</h3>
+<p>
+  时间轴为开启最大日历步长的 K 线标注：一年（粗体）、一个月、一天、一个整点，彼此至少相隔 80 px。因此在 5Y 时显示 <code>2022 · Jul · 2023</code>，一个月时 <code>Oct · 8 · 15</code>，一天之内 <code>12:00 · 18:00</code>。标签属于 K 线而非屏幕：平移时随 K 线移动，前面加载更多历史时保持原位。最早一根 K 线左侧没有标签。月份名称遵循 <code>setNumberLocale</code>，网格线与标签位置一致。
+</p>
+<p>
+  价格轴按其高度放置尽可能多的标签，彼此至少相隔 30 px，并落在市场的最小变动价位上。对数坐标下步长随价格增大，因此底部与顶部一样有标签；百分比或指数坐标下，标签是从基准起算的整百分比或整指数点。指标窗格也按自身高度确定标签数量。
+</p>
 
 <h3>市场：最小变动价位、涨跌停与交易时段</h3>
 <p>

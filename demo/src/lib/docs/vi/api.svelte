@@ -131,8 +131,16 @@ chart.setPriceFormat((p) => '$' + p.toFixed(2))
 chart.setPriceFormat(null)                                              // decimals again
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
-  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3 id="axis-labels">Cách các trục chọn nhãn</h3>
+<p>
+  Trục thời gian gắn nhãn cho những nến mở đầu bước lịch lớn nhất: một năm (chữ đậm), một tháng, một ngày, một giờ tròn, cách nhau ít nhất 80 px. Vì vậy ở 5Y trục đọc <code>2022 · Jul · 2023</code>, ở một tháng <code>Oct · 8 · 15</code>, trong ngày <code>12:00 · 18:00</code>. Nhãn thuộc về nến chứ không thuộc về màn hình: kéo biểu đồ thì nhãn đi theo nến, nạp thêm lịch sử phía trước thì nhãn vẫn ở chỗ cũ. Bên trái nến cũ nhất không có nhãn. Tên tháng theo <code>setNumberLocale</code>, và các đường lưới nằm đúng chỗ nhãn.
+</p>
+<p>
+  Thang giá đặt số nhãn vừa với chiều cao của nó, cách nhau ít nhất 30 px, theo bước giá của thị trường. Ở thang log bước tăng theo giá, nên phần dưới cũng có nhãn như phần trên; ở thang phần trăm hay chỉ số, nhãn là phần trăm hoặc điểm chỉ số tròn tính từ mốc. Các pane chỉ báo cũng đếm nhãn theo chiều cao của chúng.
+</p>
 
 <h3>Thị trường: bước giá, biên độ và phiên giao dịch</h3>
 <p>

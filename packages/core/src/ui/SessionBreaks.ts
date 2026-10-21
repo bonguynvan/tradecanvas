@@ -29,6 +29,34 @@ interface BreakMark {
   width: number;
   alpha: number;
   label: string | null;
+  /** How significant: a year 3, a month 2, a week 1, a day 0. Zoomed out, the lesser give way. */
+  rank: number;
+}
+
+/** Break lines at least this far apart (px): zoomed out, the lesser ones are left out. */
+const MIN_LINE_GAP_PX = 6;
+/** Space kept between one break label and the next (px). */
+const LABEL_GAP_PX = 8;
+
+/** The marks, most significant first, each kept unless one already kept is closer than `gap`. */
+function thinByRank(marks: readonly BreakMark[], gap: number): BreakMark[] {
+  const order = [...marks].sort((a, b) => b.rank - a.rank || a.px - b.px);
+  const kept: number[] = [];
+  const out: BreakMark[] = [];
+  for (const m of order) {
+    // Kept xs are sorted: the nearest ones are either side of the insertion point.
+    let lo = 0;
+    let hi = kept.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (kept[mid] < m.px) lo = mid + 1;
+      else hi = mid;
+    }
+    if ((lo > 0 && m.px - kept[lo - 1] < gap) || (lo < kept.length && kept[lo] - m.px < gap)) continue;
+    kept.splice(lo, 0, m.px);
+    out.push(m);
+  }
+  return out.sort((a, b) => a.px - b.px);
 }
 
 /** A day, week, month or year boundary at bar `idx`. */
@@ -136,7 +164,7 @@ export class SessionBreaks {
     theme: Theme,
     data: DataSeries,
   ): void {
-    const marks = this.marks(viewport, data, theme);
+    const marks = this.lineMarks(viewport, data, theme);
     if (marks.length === 0) return;
     const { chartRect } = viewport;
     const look = this.look(theme);
@@ -163,7 +191,7 @@ export class SessionBreaks {
     theme: Theme,
     data: DataSeries,
   ): void {
-    const marks = this.marks(viewport, data, theme).filter((m): m is BreakMark & { label: string } => m.label !== null);
+    const marks = this.lineMarks(viewport, data, theme).filter((m): m is BreakMark & { label: string } => m.label !== null);
     if (marks.length === 0) return;
     const { chartRect } = viewport;
 
@@ -172,16 +200,23 @@ export class SessionBreaks {
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     ctx.fillStyle = theme.textSecondary;
-    for (const m of marks) {
+    // Years first, then months, then weeks, each where the text fits clear of those kept.
+    const kept: { left: number; right: number }[] = [];
+    const order = [...marks].sort((a, b) => b.rank - a.rank || a.px - b.px);
+    for (const m of order) {
+      const left = m.px + 4;
+      const right = left + ctx.measureText(m.label).width;
+      if (kept.some((k) => left < k.right + LABEL_GAP_PX && right + LABEL_GAP_PX > k.left)) continue;
+      kept.push({ left, right });
       ctx.globalAlpha = Math.min(1, m.alpha + 0.35);
-      ctx.fillText(m.label, m.px + 4, chartRect.y + 4);
+      ctx.fillText(m.label, left, chartRect.y + 4);
     }
     ctx.restore();
   }
 
   /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */
   lineRects(viewport: ViewportState, theme: Theme, data: DataSeries): GpuRect[] {
-    const marks = this.marks(viewport, data, theme);
+    const marks = this.lineMarks(viewport, data, theme);
     if (marks.length === 0) return [];
     const { color, style } = this.look(theme);
     const dash = DASHES[style] ?? undefined;
@@ -197,6 +232,11 @@ export class SessionBreaks {
       style: style?.style ?? this.config.lineStyle ?? 'dashed',
       width: style?.width ?? this.config.lineWidth ?? 1,
     };
+  }
+
+  /** The breaks drawn: those on screen, the lesser left out where they would crowd. */
+  private lineMarks(viewport: ViewportState, data: DataSeries, theme: Theme): BreakMark[] {
+    return thinByRank(this.marks(viewport, data, theme), MIN_LINE_GAP_PX);
   }
 
   /** The breaks on screen, each with its line and label, heavier as the boundary is more significant. */
@@ -222,13 +262,17 @@ export class SessionBreaks {
       let alpha = 0.25;
       let width = lineWidth;
       let label: string | null = null;
+      let rank = 3;
       if (brk.kind === 'day') {
         alpha = 0.22;
+        rank = 0;
       } else if (brk.kind === 'week') {
         alpha = 0.34;
+        rank = 1;
         label = zonedDateFormatter(this.locale, MONTH_DAY, this.tz)(brk.time);
       } else if (brk.kind === 'month') {
         alpha = 0.5;
+        rank = 2;
         width = lineWidth + 0.5;
         label = zonedDateFormatter(this.locale, MONTH_YEAR, this.tz)(brk.time);
       } else {
@@ -236,7 +280,7 @@ export class SessionBreaks {
         width = lineWidth + 1;
         label = String(brk.year);
       }
-      out.push({ px, width, alpha, label });
+      out.push({ px, width, alpha, label, rank });
     }
     return out;
   }

@@ -325,7 +325,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
     const { viewport, theme } = frame;
     // The ways shown: the engine hands the GPU a grid only when they are solid, 1 px and one colour.
     const looks = gridLooks(theme);
-    const all = background.grid ? gridLines(viewport) : { horizontal: [], vertical: [] };
+    const all = background.grid ? gridLines(viewport, background.marks) : { horizontal: [], vertical: [] };
     const lines = { horizontal: looks.horizontal.visible ? all.horizontal : [], vertical: looks.vertical.visible ? all.vertical : [] };
     const gridCount = lines.horizontal.length + lines.vertical.length;
     const total = gridCount + background.rects.length;

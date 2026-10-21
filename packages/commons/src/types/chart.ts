@@ -234,11 +234,15 @@ export interface PriceFraction {
 /** Where a time is printed, for a `TimeFormatter`. */
 export interface TimeFormatContext {
   /**
-   * `'date'`: an axis label of a bar a day or longer; `'day'`: an axis label
-   * where a new day starts; `'time'`: an axis label within a day;
-   * `'crosshair'`: the crosshair's label and the tooltip.
+   * Axis labels, by the calendar step their bar starts: `'year'` (a new
+   * year), `'month'`, `'day'` (a new day), `'time'` (within a day).
+   * `'crosshair'`: the crosshair's label and the tooltip. `'date'` (a bar a
+   * day or longer) is no longer given by the axis, which says `'day'`,
+   * `'month'` or `'year'` instead.
    */
-  kind: 'date' | 'day' | 'time' | 'crosshair';
+  kind: 'year' | 'month' | 'day' | 'time' | 'crosshair'
+    /** @deprecated No longer given: the axis says `'year'`, `'month'` or `'day'` where it said `'date'`. */
+    | 'date';
   /** The chart's time zone: an IANA name, minutes east of UTC, or null for the browser's. */
   timeZone: string | number | null;
 }

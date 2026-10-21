@@ -4,6 +4,19 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Axes that read at every zoom
+
+- **Time axis labels by the calendar.** The axis labels the bars that start the largest calendar steps: a new year (in bold), a quarter or month, a day, a round hour or minute, at least 80 px apart, as `2024`, `Mar`, `15`, `13:00`. At 5Y it reads `2022 · Jul · 2023 · Jul`; on hourly bars over years it still shows the years, which it never did. The labels belong to bars, not to the screen: they move with their bars when panning and stay where they were when history is loaded in front, where they used to jump. Month names follow `setNumberLocale`; bars within a minute show their seconds (`13:05:30`), and labels wider than the spacing (a long month name, a formatter's own text) give way instead of running together. A time formatter now hears `kind: 'year' | 'month' | 'day' | 'time'`; `'date'` is no longer given by the axis (deprecated): a daily bar's label is `'day'`, `'month'` or `'year'` by the step it starts.
+- **The grid follows the labels.** Its vertical lines are at the time axis's labels and its horizontal lines at the price scale's, on the 2D grid and the GPU's alike; they could fall between them before.
+- **Price labels fit the height.** The price scale and the indicator panes fit as many labels as their height does, at least 30 px apart: a short pane no longer stacks eleven labels, a tall chart no longer shows eight.
+- **Log scale.** Its labels step with the price, so the lower part of the scale is labelled as well as the top (from 100 to 120,000 only the top quarter was, with labels overlapping). Autoscale pads a log scale by ratio (`padPriceRange`), so a series that rose more than about 13 times no longer drops to a linear scale when the padding went below zero.
+- **Percent and indexed scales** label round percents (`-5.00%`, `0.00%`, `+5.00%`) and round index points from the baseline, not prices turned into odd percents.
+- **Session breaks zoomed out.** Their lines keep 6 px apart, the less significant giving way, and their labels (years, then months, then weeks) no longer pile up into a smear.
+
+## 1.25.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.7.
+
 ### Dates on the time axis
 
 - **Right dates far back in history.** A series' time unit, milliseconds or seconds, is now decided once from its newest bar (`barTimeUnit(data)`) instead of guessed for each time. Millisecond bars before September 2001 are below 1e12 and were read as seconds, so after a 5Y view a scroll back dated them around the year 32,000: on the time axis, the crosshair, the tooltips, the measure tool, session breaks, data export and CSV import. `barTimeUnit` and `MS_TIME_THRESHOLD` are exported, and `normalizeBarTime(time, unit)` takes the series' unit.

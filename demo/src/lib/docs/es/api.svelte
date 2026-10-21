@@ -133,8 +133,16 @@ chart.setPriceFormat((p) => '$' + p.toFixed(2))
 chart.setPriceFormat(null)                                              // decimals again
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
-  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3 id="axis-labels">Cómo eligen sus etiquetas los ejes</h3>
+<p>
+  El eje de tiempo etiqueta las barras que empiezan los mayores pasos del calendario: un año (en negrita), un mes, un día, una hora redonda, a 80 px como mínimo unas de otras. Así a 5Y se lee <code>2022 · Jul · 2023</code>, en un mes <code>Oct · 8 · 15</code>, dentro de un día <code>12:00 · 18:00</code>. Las etiquetas pertenecen a las barras, no a la pantalla: al desplazarse se mueven con ellas, y el historial cargado delante las deja donde estaban. A la izquierda de la barra más antigua no hay ninguna. Los nombres de mes siguen <code>setNumberLocale</code> y las líneas de la cuadrícula van donde están las etiquetas.
+</p>
+<p>
+  La escala de precios pone tantas etiquetas como caben en su altura, a 30 px como mínimo, en la fluctuación mínima del mercado. En escala logarítmica su paso crece con el precio, así que abajo hay etiquetas igual que arriba; en una escala de porcentaje o indexada son porcentajes o puntos de índice redondos desde la base. Los paneles de indicadores también cuentan sus etiquetas según su altura.
+</p>
 
 <h3>Mercados: fluctuación mínima, límites y sesiones</h3>
 <p>

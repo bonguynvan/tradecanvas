@@ -129,8 +129,16 @@ chart.setPriceFormat((p) => '$' + p.toFixed(2))
 chart.setPriceFormat(null)                                              // decimals again
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
-  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3 id="axis-labels">軸がラベルを選ぶ仕組み</h3>
+<p>
+  時間軸は最も大きな暦の区切りを始めるバーにラベルを付けます：年（太字）、月、日、きりのよい時刻で、互いに少なくとも 80 px 離れます。そのため 5Y では <code>2022 · Jul · 2023</code>、1 か月では <code>Oct · 8 · 15</code>、1 日の中では <code>12:00 · 18:00</code> と読めます。ラベルは画面ではなくバーに属します：パンするとバーと一緒に動き、前に履歴を読み込んでも位置は変わりません。最も古いバーの左にはありません。月名は <code>setNumberLocale</code> に従い、グリッド線はラベルの位置に引かれます。
+</p>
+<p>
+  価格軸は高さに収まるだけのラベルを、少なくとも 30 px 離して、市場の呼値の単位に置きます。対数軸では刻みが価格とともに大きくなるので、上と同じように下にもラベルが付きます。パーセントや指数の軸では、基準からのきりのよいパーセントや指数ポイントになります。インジケーターのペインも自分の高さでラベル数を決めます。
+</p>
 
 <h3>マーケット：呼値の単位、値幅制限、取引セッション</h3>
 <p>
