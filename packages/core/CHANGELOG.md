@@ -1,5 +1,16 @@
 # @tradecanvas/core
 
+## 1.23.0
+
+### Minor Changes
+
+- f020b7a: Candlestick pattern recognition: `detectCandlePatterns` finds 64 patterns of one to five bars (reversals only after the trend they reverse), `CANDLE_PATTERNS` lists them, and the `candlepatterns` indicator marks them on the chart with arrows and short names.
+
+### Patch Changes
+
+- Updated dependencies [f020b7a]
+  - @tradecanvas/commons@1.23.0
+
 ## 1.22.0
 
 ### Minor Changes
