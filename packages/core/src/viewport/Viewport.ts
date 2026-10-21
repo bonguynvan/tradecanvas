@@ -258,6 +258,7 @@ export class Viewport {
         this.state.visibleRange.from,
         Math.min(this.state.visibleRange.to, this.dataLength - 1),
         0.08, // 8% padding for more breathing room
+        this.isLogScale(),
       );
       this.invalidate();
     }

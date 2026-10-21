@@ -131,8 +131,16 @@ chart.setPriceFormat((p) => '$' + p.toFixed(2))
 chart.setPriceFormat(null)                                              // decimals again
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
-  // kind: 'date' (a daily bar), 'day' (a new day), 'time' (within a day), 'crosshair'
+  // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
   new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+
+<h3 id="axis-labels">How the axes choose their labels</h3>
+<p>
+  The time axis labels the bars that start the largest calendar steps: a year (in bold), a month, a day, a round hour, at least 80 px apart. So at 5Y it reads <code>2022 · Jul · 2023</code>, at a month <code>Oct · 8 · 15</code>, within a day <code>12:00 · 18:00</code>. The labels belong to bars, not to the screen: panning moves them with their bars, and history loaded in front leaves them where they were. Left of the oldest bar there are none. Month names follow <code>setNumberLocale</code>, and the grid's lines go where the labels are.
+</p>
+<p>
+  The price scale fits as many labels as its height does, at least 30 px apart, on the market's price step. On a log scale its step grows with the price, so the bottom is labelled as well as the top; on a percent or indexed scale its labels are round percents or index points from the baseline. Indicator panes count their labels by their height too.
+</p>
 
 <h3>Markets: price steps, limits and sessions</h3>
 <p>

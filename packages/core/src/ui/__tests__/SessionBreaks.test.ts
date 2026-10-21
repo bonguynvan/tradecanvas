@@ -24,6 +24,7 @@ function mockCtx() {
       save: vi.fn(),
       restore: vi.fn(),
       fillText: vi.fn((text: string) => fillTextCalls.push(text)),
+      measureText: (text: string) => ({ width: text.length * 6 }),
       beginPath: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
@@ -151,5 +152,57 @@ describe('SessionBreaks — lines under the bars, labels over them', () => {
     const sb = breaks();
     sb.setVisible(false);
     expect(sb.lineRects(viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary())).toEqual([]);
+  });
+});
+
+describe('SessionBreaks — zoomed far out', () => {
+  // Hourly bars, seven a day on weekdays, for three years, at a quarter pixel a bar.
+  const bars: DataSeries = [];
+  for (let t = Date.UTC(2023, 0, 2); t < Date.UTC(2026, 0, 1); t += 3_600_000) {
+    const d = new Date(t);
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6 || d.getUTCHours() < 2 || d.getUTCHours() > 8) continue;
+    bars.push({ time: t, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+  }
+  const vp: ViewportState = {
+    visibleRange: { from: 0, to: bars.length - 1 },
+    priceRange: { min: 0, max: 2 },
+    barWidth: 0.2,
+    barSpacing: 0.05,
+    offset: 0,
+    chartRect: { x: 0, y: 0, width: bars.length * 0.25, height: 300 },
+  };
+
+  function drawn() {
+    const texts: { text: string; x: number }[] = [];
+    const lines: number[] = [];
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (_t, key) => {
+        if (key === 'fillText') return (text: string, x: number) => texts.push({ text, x });
+        if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
+        if (key === 'moveTo') return (x: number) => lines.push(x);
+        return vi.fn();
+      },
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const breaks = new SessionBreaks();
+    breaks.setVisible(true);
+    breaks.setTimezone(0);
+    breaks.render(ctx, vp, DARK_THEME, bars);
+    return { texts, lines };
+  }
+
+  it('keeps its labels apart, the years among them', () => {
+    const { texts } = drawn();
+    expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['2024', '2025']));
+    const sorted = [...texts].sort((a, b) => a.x - b.x);
+    for (let i = 1; i < sorted.length; i++) {
+      expect(sorted[i].x, `${sorted[i - 1].text} / ${sorted[i].text}`).toBeGreaterThanOrEqual(sorted[i - 1].x + sorted[i - 1].text.length * 6);
+    }
+  });
+
+  it('draws no lines closer than a few pixels', () => {
+    const xs = [...new Set(drawn().lines)].sort((a, b) => a - b);
+    expect(xs.length).toBeGreaterThan(10);
+    for (let i = 1; i < xs.length; i++) expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(6);
   });
 });

@@ -44,7 +44,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, padPriceRange, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -523,6 +523,7 @@ export class Chart {
     this.priceAxis.setLocale(this.numberLocale);
     this.leftPriceAxis.setLocale(this.numberLocale);
     this.timeAxis = new TimeAxis();
+    this.timeAxis.setLocale(this.numberLocale);
 
     // Crosshair
     this.crosshairHandler = new CrosshairHandler();
@@ -4733,7 +4734,7 @@ export class Chart {
 
   /**
    * Update the BCP 47 locale used for number formatting
-   * (e.g. price axis labels, crosshair value badges).
+   * (e.g. price axis labels, crosshair value badges, month names on the time axis).
    * Defaults to 'en-US'. Example values: 'de-DE', 'vi-VN', 'fr-FR'.
    */
   setNumberLocale(locale: string): void {
@@ -4741,6 +4742,7 @@ export class Chart {
     this.priceAxis.setLocale(locale);
     this.leftPriceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);
+    this.timeAxis.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
     this.sessionBreaks.setLocale(locale);
@@ -5033,11 +5035,8 @@ export class Chart {
         const expandedMin = Math.min(current.min, overlayRange.min);
         const expandedMax = Math.max(current.max, overlayRange.max);
         if (expandedMin < current.min || expandedMax > current.max) {
-          const range = expandedMax - expandedMin || 1;
-          this.viewport.setPriceRange(
-            expandedMin - range * 0.02,
-            expandedMax + range * 0.02,
-          );
+          const padded = padPriceRange(expandedMin, expandedMax, 0.02, this.viewport.isLogScale());
+          this.viewport.setPriceRange(padded.min, padded.max);
         }
       }
     }

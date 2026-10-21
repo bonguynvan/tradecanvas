@@ -1,8 +1,8 @@
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, computeTickStep, formatPrice, lineDash } from '@tradecanvas/commons';
-import { priceScaleText } from '../axis/PriceAxis.js';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
+import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
@@ -13,6 +13,7 @@ import { canvasPlan, recordSteps, type DrawStep, type PaneSteps, type StepPlan }
 import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
 import { gridFitsGpu, type GridRenderer } from '../axis/GridRenderer.js';
+import type { GridMarks } from '../axis/gridLines.js';
 import { crosshairLooks } from '../interaction/crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import type { PriceAxis } from '../axis/PriceAxis.js';
@@ -376,6 +377,7 @@ export class RenderEngine {
     const gridOn2d = !!ctx.gridRenderer?.isVisible() && !gridFitsGpu(theme);
     const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack || gridOn2d ? null : {
       grid: ctx.gridRenderer?.isVisible() ?? false,
+      marks: ctx.gridRenderer?.isVisible() ? gridMarks(ctx) : undefined,
       rects: [...(ctx.sessionShading?.rects(data, viewport, theme) ?? []), ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? [])],
     };
     // With a profile, volume goes under it, among the steps under the bars.
@@ -424,7 +426,7 @@ export class RenderEngine {
   /** The background: grid, session shading and breaks, watermark. */
   private renderBackground(c: CanvasRenderingContext2D, ctx: RenderContext): void {
     const { viewport, theme, data } = ctx;
-    ctx.gridRenderer?.render(c, viewport, theme);
+    if (ctx.gridRenderer?.isVisible()) ctx.gridRenderer.render(c, viewport, theme, gridMarks(ctx));
     ctx.sessionShading?.render(c, data, viewport, theme);
     ctx.sessionBreaks?.renderLines(c, viewport, theme, data);
     ctx.watermark?.render(c, viewport, theme);
@@ -628,17 +630,14 @@ export class RenderEngine {
       c.lineTo(axisX + 0.5, pr.y + pr.height);
       c.stroke();
 
-      const step = computeTickStep(min, max, 4);
-      const firstVal = Math.ceil(min / step) * step;
+      const step = roundStep(min, max, insetRect.height);
       const precision = panelPrecision(step);
 
       c.font = panelFont;
       c.textBaseline = 'middle';
       c.textAlign = 'left';
 
-      for (let tick = firstVal; tick <= max; tick += step) {
-        // Accumulated steps leave -1e-17 where zero is meant: "-0.0".
-        const val = Math.abs(tick) < step * 1e-6 ? 0 : tick;
+      for (const val of stepTicks(min, max, step)) {
         const y = priceToY(val, pv);
         if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
         c.strokeStyle = axisLine;
@@ -734,7 +733,7 @@ export class RenderEngine {
       const { min, max } = pv.priceRange;
       if (max - min <= 0 || pr.height <= 0 || pv.chartRect.height < MIN_PANE_PLOT_HEIGHT) continue;
       const axisX = pr.x + pr.width;
-      const precision = panelPrecision(computeTickStep(min, max, 4));
+      const precision = panelPrecision(roundStep(min, max, pv.chartRect.height));
 
       if (cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
         const valText = priceScaleText(yToPrice(cursorPos.y, pv), pv, precision, locale);
@@ -840,4 +839,12 @@ export class RenderEngine {
     this.dprManager.destroy();
     this.layerManager.destroy();
   }
+}
+
+/** Where the axes label, for the grid's lines: the price axis's ticks and the time axis's marks. */
+function gridMarks(ctx: RenderContext): GridMarks {
+  return {
+    prices: ctx.priceAxis?.ticks(ctx.viewport),
+    slots: ctx.timeAxis?.marks(ctx.viewport, ctx.data).map((m) => m.index),
+  };
 }

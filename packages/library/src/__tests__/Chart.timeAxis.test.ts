@@ -44,6 +44,9 @@ function axisLabels(chart: Chart): string[] {
   return drawn.filter((d) => d.align === 'center').map((d) => d.text);
 }
 
+/** The years among the labels. */
+const years = (labels: string[]) => labels.filter((l) => /^\d{4}$/.test(l)).map(Number);
+
 let host: HTMLDivElement;
 let chart: Chart;
 
@@ -65,12 +68,15 @@ describe('Chart time axis over decades of daily bars', () => {
     it(`dates bars from 2000 right after 5Y and a scroll back, in ${unit}`, () => {
       chart.setData(weekdays(Date.UTC(2000, 6, 28), Date.UTC(2026, 9, 21), div));
       chart.setVisibleRangePreset('5Y');
-      expect(axisLabels(chart).every((l) => /\/20(2[1-6])$/.test(l)), axisLabels(chart).join(' ')).toBe(true);
+      const recent = years(axisLabels(chart));
+      expect(recent.length, axisLabels(chart).join(' ')).toBeGreaterThanOrEqual(3);
+      expect(recent.every((y) => y >= 2021 && y <= 2026), recent.join(' ')).toBe(true);
       chart.scrollBars(-6000);
       const labels = axisLabels(chart);
       expect(labels.length).toBeGreaterThan(0);
-      for (const label of labels) expect(label, labels.join(' ')).toMatch(/\/(19|20)\d\d$/);
-      expect(labels.some((l) => /\/200[01]$/.test(l)), labels.join(' ')).toBe(true);
+      // Years, months and days only: no five-digit year.
+      for (const label of labels) expect(label, labels.join(' ')).toMatch(/^(\d{1,2}|[A-Z][a-z]{2}|(19|20)\d\d)$/);
+      expect(years(labels).some((y) => y <= 2002), labels.join(' ')).toBe(true);
     });
   }
 
@@ -83,8 +89,8 @@ describe('Chart time axis over decades of daily bars', () => {
     expect((chart as unknown as Inside).getDisplayData()[0].time).toBe(all[0].time);
     chart.setVisibleRange(all[0].time, all[2000].time);
     const labels = axisLabels(chart);
-    expect(labels.length).toBeGreaterThan(0);
-    for (const label of labels) expect(label, labels.join(' ')).toMatch(/\/(199[89]|20\d\d)$/);
+    expect(years(labels)).toEqual(expect.arrayContaining([1999, 2000, 2001]));
+    for (const label of labels) expect(label, labels.join(' ')).toMatch(/^(\d{1,2}|[A-Z][a-z]{2}|(19|20)\d\d)$/);
   });
 });
 

@@ -413,7 +413,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ candles: true, volume: { heightRatio: 0.15 }, background: { grid: true, rects: [] } }));
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ candles: true, volume: { heightRatio: 0.15 }, background: expect.objectContaining({ grid: true, rects: [] }) }));
     expect(series).not.toHaveBeenCalled();
     expect(volume).not.toHaveBeenCalled();
     expect(grid).not.toHaveBeenCalled();
@@ -434,7 +434,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: { grid: true, rects: [shade, dash] } }));
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: expect.objectContaining({ grid: true, rects: [shade, dash] }) }));
     expect(lines).not.toHaveBeenCalled();
     expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
     expect((labels.mock.calls[0][0] as CanvasRenderingContext2D).canvas).toBe(engine.layerManager.getLayer(LayerType.Main)!.canvas);
@@ -494,7 +494,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.start();
     runFrame();
     expect(heat.mock.calls[0][0]).toBe(rec.recording);
-    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: rec.recorder, background: { grid: true, rects: [] } }));
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: rec.recorder, background: expect.objectContaining({ grid: true, rects: [] }) }));
     expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
     // Clipped to the plot, as on the background canvas, and with no text:
     // nothing could put it between the GPU's background and its bars.

@@ -4,19 +4,20 @@ import { DARK_THEME } from '@tradecanvas/commons';
 import { TimeAxis, TZ_LABEL_GAP_PX } from '../TimeAxis.js';
 
 /** Records each fillText with the font it was drawn in; text is 6 px a character. */
-function recordingCtx(): { ctx: CanvasRenderingContext2D; drawn: { text: string; x: number; align: string }[] } {
+function recordingCtx(): { ctx: CanvasRenderingContext2D; drawn: { text: string; x: number; align: string }[]; fonts: string[] } {
   const drawn: { text: string; x: number; align: string }[] = [];
+  const fonts: string[] = [];
   const state: Record<string, unknown> = { font: '', textAlign: 'start' };
   const ctx = new Proxy(state, {
     get: (t, p) => {
-      if (p === 'fillText') return (text: string, x: number) => drawn.push({ text, x, align: String(t.textAlign) });
+      if (p === 'fillText') return (text: string, x: number) => { drawn.push({ text, x, align: String(t.textAlign) }); fonts.push(String(t.font)); };
       if (p === 'measureText') return (text: string) => ({ width: text.length * 6 });
       if (p in t) return t[p as string];
       return () => {};
     },
     set: (t, p, v) => { t[p as string] = v; return true; },
   }) as unknown as CanvasRenderingContext2D;
-  return { ctx, drawn };
+  return { ctx, drawn, fonts };
 }
 
 const HOUR = 3_600_000;
@@ -72,14 +73,50 @@ describe('TimeAxis date labels', () => {
     return drawn.filter((d) => d.align === 'center').map((d) => d.text);
   };
 
-  it('labels an hourly bar at midnight with its day, not its year', () => {
+  it('labels hourly bars with the day where it starts and round hours between', () => {
     const labels = ticks(series(HOUR));
-    expect(labels.some((t) => /^\d+\/\d+$/.test(t))).toBe(true);
-    expect(labels.filter((t) => /\/\d{4}$/.test(t))).toEqual([]);
+    expect(labels).toContain('26');
+    expect(labels.some((t) => /^(06|12|18):00$/.test(t))).toBe(true);
+    expect(labels.filter((t) => /^\d{4}$/.test(t))).toEqual([]);
   });
 
-  it('gives daily bars their year', () => {
-    expect(ticks(series(DAY)).every((t) => /^\d+\/\d+\/\d{4}$/.test(t))).toBe(true);
+  it('labels daily bars with the month where it starts and days between, no times', () => {
+    const labels = ticks(series(DAY));
+    expect(labels).toContain('Oct');
+    expect(labels.some((t) => /^\d{1,2}$/.test(t))).toBe(true);
+    expect(labels.filter((t) => t.includes(':'))).toEqual([]);
+  });
+
+  it('labels the year where it starts, in bold', () => {
+    const { ctx, drawn, fonts } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    const bars = Array.from({ length: 100 }, (_, i) => ({ time: Date.UTC(2025, 11, 1) + i * DAY, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    axis.render(ctx, viewport(0), DARK_THEME, bars);
+    const year = drawn.findIndex((d) => d.text === '2026');
+    expect(year).toBeGreaterThanOrEqual(0);
+    expect(fonts[year]).toMatch(/^600 /);
+  });
+
+  it('writes month names in its locale', () => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    axis.setLocale('vi-VN');
+    axis.render(ctx, viewport(0), DARK_THEME, series(DAY));
+    const october = new Intl.DateTimeFormat('vi-VN', { month: 'short', timeZone: 'UTC' }).format(Date.UTC(2026, 9, 15));
+    expect(drawn.map((d) => d.text)).toContain(october);
+  });
+
+  it('hands its own formatter the kind of step each label starts', () => {
+    const kinds: string[] = [];
+    const { ctx } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    axis.setTimeFormatter((_t, c) => { kinds.push(c.kind); return c.kind; });
+    axis.render(ctx, viewport(0), DARK_THEME, series(DAY));
+    expect(kinds).toContain('month');
+    expect(kinds).toContain('day');
   });
 
   describe('slots past the data', () => {
@@ -119,7 +156,9 @@ describe('TimeAxis date labels', () => {
     new TimeAxis().render(ctx, { ...viewport(0), visibleRange: { from: 0, to: 39 } } as ViewportState, DARK_THEME, daily);
     const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
     expect(labels.length).toBeGreaterThan(0);
-    for (const label of labels) expect(label, label).toMatch(/\/(2000|2001)$/);
+    // No year 32,000: months of 2000, and days between.
+    expect(labels).toContain('Aug');
+    for (const label of labels) expect(label, label).toMatch(/^([A-Z][a-z]{2}|\d{1,2}|2000|2001)$/);
   });
 
   it('labels no slot left of the oldest bar, where it has no date to give', () => {
@@ -142,7 +181,31 @@ describe('TimeAxis date labels', () => {
     new TimeAxis().render(ctx, vp, DARK_THEME, bars);
     const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
     expect(labels.length).toBeGreaterThan(1);
-    for (const label of labels) expect(label, labels.join(' | ')).toMatch(/\//);
+    // A label a month on is a month (or the year), never a bare time.
+    for (const label of labels) expect(label, labels.join(' | ')).not.toMatch(/^\d\d:\d\d$/);
+  });
+
+  it('keeps wide labels from running into each other', () => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    axis.setTimeFormatter((t, c) => `${c.kind} ${new Date(t).toISOString().slice(0, 16)}`);
+    axis.render(ctx, viewport(0), DARK_THEME, series(HOUR));
+    const ticks = drawn.filter((d) => d.align === 'center').sort((a, b) => a.x - b.x);
+    expect(ticks.length).toBeGreaterThan(0);
+    for (let i = 1; i < ticks.length; i++) {
+      const prevRight = ticks[i - 1].x + (ticks[i - 1].text.length * 6) / 2;
+      expect(ticks[i].x - (ticks[i].text.length * 6) / 2).toBeGreaterThanOrEqual(prevRight);
+    }
+  });
+
+  it('shows seconds on bars within a minute', () => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    const secs = Array.from({ length: 100 }, (_, i) => ({ time: Date.UTC(2026, 0, 5, 9, 30) + i * 5_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    axis.render(ctx, viewport(0), DARK_THEME, secs);
+    expect(drawn.some((d) => /^\d\d:\d\d:\d\d$/.test(d.text))).toBe(true);
   });
 });
 
