@@ -27,9 +27,7 @@
 
 <h2>실시간 틱: 증분 지표 계산</h2>
 <p>
-  틱은 형성 중인 봉만 바꾸므로, <code>update()</code>를 구현한 지표는 그 봉만 다시
-  계산합니다(SMA, EMA, WMA, VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic). 나머지는
-  전체 재계산을 사용합니다. BB + EMA + RSI + MACD 기준:
+  틱은 형성 중인 봉만 바꾸므로, 자체 <code>update()</code>를 가진 지표는 그 봉만 다시 계산합니다: ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA. 이 밖에 31개가 <code>PointwiseIndicator</code> 위에 만들어져 같은 방식으로 마지막 봉부터 이어서 계산하고, 다른 지표의 선을 읽는 지표도 이어서 계산합니다. 기억하는 봉이 더 이상 맞지 않으면 전체를 다시 계산합니다. BB + EMA + RSI + MACD 기준:
 </p>
 <table>
   <thead><tr><th>과거 데이터</th><th>전체 재계산</th><th>증분 <code>update()</code></th></tr></thead>
@@ -105,9 +103,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   위 WebGL 프레임 대부분은 16.7 ms이며, 평균에는 몇몇 긴 프레임이 포함됩니다. 픽셀 비율 2의 2560×1400 차트에서는 이 GPU에서 브라우저가 전체 크기 레이어를 합성하는 데만 약 23 ms가 걸립니다. <code>node scripts/bench-render.mjs --renderer=webgl</code>로 내 컴퓨터에서 측정할 수 있습니다.
 </p>
-
-<h2>메인 스레드 밖에서 계산</h2>
 <p>
-  <code>IndicatorWorkerHost</code>는 Promise 기반 <code>calculate()</code>, 요청별 타임아웃,
-  SSR과 테스트를 위한 동기식 대체 경로를 갖추고 Web Worker에서 지표 계산을 실행합니다.
+  봉은 CSS 픽셀의 4분의 1보다 좁아지지 않으므로, “봉 1,000,000개를 축소”해도 픽셀당 약 4개(1600 px 차트에서 약 6,400개)가 보이며, 측정 장면은 나머지 봉을 이동하며 지나갑니다.
+</p>
+
+<h2>메인 스레드</h2>
+<p>
+  차트는 메인 스레드에서 지표를 계산합니다. <code>@tradecanvas/core</code>의 <code>IndicatorWorkerHost</code>는 Promise 기반 API, 요청별 타임아웃, SSR과 테스트를 위한 동기식 대체 경로를 갖추고 여러분이 제공한 워커에서 <code>calculate()</code>를 실행할 수 있지만, 차트는 아직 지표를 이를 통해 계산하지 않으며 패키지에 워커 스크립트도 포함되어 있지 않습니다.
 </p>

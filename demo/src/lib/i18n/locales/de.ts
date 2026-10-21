@@ -169,7 +169,7 @@ const de: SiteMessages = {
       {
         label: 'Analyse',
         title: 'Backtests direkt neben dem Chart',
-        text: 'Ein Backtester, der Kerze für Kerze rechnet, mit Monte-Carlo-Bändern, dazu eine Indikator-Pipeline im Web Worker, die den Hauptthread frei hält.',
+        text: 'Ein Backtester, der Kerze für Kerze rechnet, mit Monte-Carlo-Bändern.',
       },
     ],
     quickstart: {

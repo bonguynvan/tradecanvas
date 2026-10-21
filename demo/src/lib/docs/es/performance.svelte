@@ -29,10 +29,7 @@
 
 <h2>Ticks en vivo: indicadores incrementales</h2>
 <p>
-  Un tick solo mueve la barra en formación, así que los indicadores que
-  implementan <code>update()</code> recalculan únicamente esa barra (SMA, EMA, WMA,
-  VWMA, Bollinger, Envelope, RSI, MACD, ATR, OBV, Stochastic). Los demás recurren a
-  un recálculo completo. BB + EMA + RSI + MACD:
+  Un tick solo mueve la barra en formación, así que un indicador con su propio <code>update()</code> recalcula únicamente esa barra: ATR, Bollinger Bands, Chande Kroll Stop, DEMA, EMA, Envelope, KAMA, MACD, MA Cross, McGinley Dynamic, OBV, RSI, SMA, SMMA, Stochastic, Ulcer Index, Volume Oscillator, VWMA, WMA. Otros 31 se construyen sobre <code>PointwiseIndicator</code> y continúan desde la última barra del mismo modo, y un indicador que lee la línea de otro también continúa. Cuando las barras que recuerda un indicador ya no coinciden, recalcula todo. BB + EMA + RSI + MACD:
 </p>
 <table>
   <thead><tr><th>Historial</th><th>Recálculo completo</th><th><code>update()</code> incremental</th></tr></thead>
@@ -109,10 +106,11 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
 <p>
   La mayoría de los fotogramas WebGL de arriba se quedan en 16.7 ms; las medias incluyen algunos más largos. Con densidad 2 en un gráfico de 2560×1400, solo la composición de las capas a tamaño completo ya le cuesta al navegador unos 23 ms en esta GPU. <code>node scripts/bench-render.mjs --renderer=webgl</code> mide estas cifras en tu equipo.
 </p>
-
-<h2>Fuera del hilo principal</h2>
 <p>
-  <code>IndicatorWorkerHost</code> ejecuta los cálculos de los indicadores en un
-  Web Worker con un <code>calculate()</code> basado en Promise, un tiempo de
-  espera por solicitud y una alternativa síncrona para SSR y tests.
+  Una barra nunca es más estrecha que un cuarto de píxel CSS, así que «zoom alejado sobre 1,000,000 barras» muestra unas cuatro barras por píxel (unas 6,400 en un gráfico de 1600 px); la escena recorre el resto del millón al desplazarse.
+</p>
+
+<h2>El hilo principal</h2>
+<p>
+  El gráfico calcula los indicadores en el hilo principal. <code>IndicatorWorkerHost</code> de <code>@tradecanvas/core</code> puede ejecutar <code>calculate()</code> en un worker que tú proporciones, con una API basada en Promise, un tiempo de espera por solicitud y una alternativa síncrona para SSR y tests, pero el gráfico todavía no pasa sus indicadores por él y los paquetes no incluyen un script de worker.
 </p>

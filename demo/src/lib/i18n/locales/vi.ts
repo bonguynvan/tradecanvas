@@ -169,7 +169,7 @@ const vi: SiteMessages = {
       {
         label: 'Phân tích',
         title: 'Backtest ngay cạnh biểu đồ',
-        text: 'Backtester chạy theo từng nến, kèm dải Monte Carlo, và quy trình tính chỉ báo trong Web Worker để luồng chính luôn rảnh.',
+        text: 'Backtester chạy theo từng nến, kèm dải Monte Carlo.',
       },
     ],
     quickstart: {

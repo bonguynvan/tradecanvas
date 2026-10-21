@@ -169,7 +169,7 @@ const tr: SiteMessages = {
       {
         label: 'Analitik',
         title: 'Grafiğin yanında geriye dönük testler',
-        text: 'Monte Carlo bantlarına sahip, bar bar ilerleyen bir Backtester ve ana iş parçacığını serbest bırakan bir Web Worker gösterge hattı.',
+        text: 'Monte Carlo bantlarına sahip, bar bar ilerleyen bir Backtester.',
       },
     ],
     quickstart: {

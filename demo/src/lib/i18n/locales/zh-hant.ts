@@ -169,7 +169,7 @@ const zhHant: SiteMessages = {
       {
         label: '分析',
         title: '回測就在圖表旁',
-        text: '逐根K線執行的 Backtester，附蒙地卡羅區間帶；指標在 Web Worker 管線中運算，讓主執行緒保持空閒。',
+        text: '逐根K線執行的 Backtester，附蒙地卡羅區間帶。',
       },
     ],
     quickstart: {

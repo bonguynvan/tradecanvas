@@ -42,19 +42,20 @@ Indicator parameters are read through `getNumberParam` / `getIntParam` helpers, 
 
 Extensible via `IndicatorBase` for custom indicators.
 
-### Web Worker offload
+### Indicator math in a worker
 
-`IndicatorWorkerHost` wraps a `Worker` and exposes a Promise-based `calculate()` so heavy charts can run indicator math off the main thread:
+`IndicatorWorkerHost` wraps a `Worker` you create and exposes a Promise-based `calculate()`, with a per-request timeout and a `ping()` health check:
 
 ```ts
 import { IndicatorWorkerHost } from '@tradecanvas/core'
 
-const worker = new Worker(new URL('./dist/indicator.worker.js', import.meta.url), { type: 'module' })
+// Your own worker, built from src/indicators/worker/indicator.worker.ts in the repository
+const worker = new Worker(new URL('./indicator.worker.ts', import.meta.url), { type: 'module' })
 const host = new IndicatorWorkerHost(worker)
 const output = await host.calculate('rsi', config, bars)
 ```
 
-Pass `null` instead of a worker for synchronous fallback (SSR, tests). The shipped `indicator.worker.js` registers all 33 built-in indicators and supports `calculate` and `ping` requests.
+Pass `null` instead of a worker to calculate synchronously (SSR, tests). The package does not ship a built worker script, and the chart computes its own indicators on the main thread; it does not route them through this host yet.
 
 ### Drawing Tools (24)
 

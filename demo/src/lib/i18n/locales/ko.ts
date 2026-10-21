@@ -169,7 +169,7 @@ const ko: SiteMessages = {
       {
         label: '분석',
         title: '차트 옆에서 백테스트',
-        text: '몬테카를로 밴드를 갖춘 봉 단위 Backtester와, 메인 스레드를 비워 두는 Web Worker 지표 파이프라인.',
+        text: '몬테카를로 밴드를 갖춘 봉 단위 Backtester.',
       },
     ],
     quickstart: {
