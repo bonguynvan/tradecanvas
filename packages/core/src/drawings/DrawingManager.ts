@@ -1,3 +1,4 @@
+import type { PointerReach } from '../interaction/pointerReach.js';
 import type {
   DrawingPlugin,
   DrawingState,
@@ -48,6 +49,10 @@ const clipboard: { drawings: DrawingState[]; pastes: number } = { drawings: [], 
 
 /** Anchor times below this, on bars timed by timestamps, are bar indices from old saves. */
 const LEGACY_INDEX_LIMIT = 1e7;
+
+/** How far, px, a press may land from a drawing's line and from a handle of the selected one. */
+export type DrawingReach = Pick<PointerReach, 'line' | 'handle'>;
+const MOUSE_REACH: DrawingReach = { line: 8, handle: 8 };
 
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
@@ -499,17 +504,45 @@ export class DrawingManager {
 
   // --- Pointer events (returns true if consumed) ---
 
-  onPointerDown(pos: Point, viewport: ViewportState): boolean {
-    if (this.eraser) return this.erase(pos, viewport);
+  /**
+   * A press at `pos`. `reach` is how far from a line or a handle it still
+   * takes it, px: a finger's is wider than the mouse's 8.
+   */
+  onPointerDown(pos: Point, viewport: ViewportState, reach: DrawingReach = MOUSE_REACH): boolean {
+    if (this.eraser) return this.erase(pos, viewport, reach.line);
     if (this.state === 'creating' && this.activeTool) {
       return this.handleCreationClick(pos, viewport);
     }
 
     if (this.state === 'idle' || this.state === 'selected') {
-      return this.handleSelectionClick(pos, viewport);
+      return this.handleSelectionClick(pos, viewport, reach);
     }
 
     return false;
+  }
+
+  /**
+   * A finger lifted at `pos` after dragging from the first point of a drawing
+   * being made: the next point goes there, so press, drag, lift draws a line
+   * as two taps do. False (nothing placed) otherwise, and for freehand strokes.
+   */
+  placeAt(pos: Point, viewport: ViewportState): boolean {
+    const making = this.state === 'creating' ? this.creator.current : null;
+    if (!making || making.anchors.length !== 1) return false;
+    if (this.registry.get(making.type)?.descriptor.creation === 'freehand') return false;
+    return this.handleCreationClick(pos, viewport);
+  }
+
+  /**
+   * Take back the point the last press placed on the drawing being made (a
+   * second finger landed: the press was the start of a pinch). The tool
+   * stays picked. False when nothing is being made.
+   */
+  takeBackPoint(): boolean {
+    if (this.state !== 'creating' || !this.creator.current) return false;
+    this.creator.undoPoint();
+    this.requestRender?.();
+    return true;
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
@@ -1096,19 +1129,19 @@ export class DrawingManager {
   }
 
   /** The eraser at `pos`: remove the drawing there. A press off any drawing is left to the chart (a pan). */
-  private erase(pos: Point, viewport: ViewportState): boolean {
-    const id = this.erasableAt(pos, viewport);
+  private erase(pos: Point, viewport: ViewportState, tolerance: number): boolean {
+    const id = this.erasableAt(pos, viewport, tolerance);
     if (!id) return false;
     this.removeDrawing(id);
     return true;
   }
 
   /** The topmost drawing the eraser would take at `pos`: locked ones are passed over. */
-  private erasableAt(pos: Point, viewport: ViewportState): string | null {
+  private erasableAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
       if (!d.visible || d.locked) continue;
-      if (this.registry.get(d.type)?.hitTest(pos, d, viewport, 8)) return d.id;
+      if (this.registry.get(d.type)?.hitTest(pos, d, viewport, tolerance)) return d.id;
     }
     return null;
   }
@@ -1152,7 +1185,7 @@ export class DrawingManager {
    * while a drawing tool is active (the chart keeps its crosshair).
    */
   /** The topmost visible drawing under `pos` (locked ones too), or null. */
-  drawingAt(pos: Point, viewport: ViewportState, tolerance = 8): string | null {
+  drawingAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
       if (!d.visible) continue;
@@ -1164,7 +1197,7 @@ export class DrawingManager {
   hoverCursorAt(pos: Point, viewport: ViewportState): 'move' | 'pointer' | null {
     if (this.eraser) return this.erasableAt(pos, viewport) ? 'pointer' : null;
     if (this.activeTool || this.state === 'creating') return null;
-    const tolerance = 8;
+    const tolerance = MOUSE_REACH.line;
     if (this.selection.primary) {
       const selected = this.drawings.find((d) => d.id === this.selection.primary);
       const plugin = selected && selected.visible && !selected.locked ? this.registry.get(selected.type) : undefined;
@@ -1179,8 +1212,8 @@ export class DrawingManager {
     return null;
   }
 
-  private handleSelectionClick(pos: Point, viewport: ViewportState): boolean {
-    const tolerance = 8;
+  private handleSelectionClick(pos: Point, viewport: ViewportState, reach: DrawingReach): boolean {
+    const tolerance = reach.line;
 
     // If already selected, check for anchor drag
     if (this.selection.primary) {
@@ -1188,7 +1221,7 @@ export class DrawingManager {
       if (drawing && drawing.visible && !drawing.locked) {
         const plugin = this.registry.get(drawing.type);
         if (plugin) {
-          const anchorIdx = plugin.hitTestAnchor(pos, drawing, viewport, tolerance);
+          const anchorIdx = plugin.hitTestAnchor(pos, drawing, viewport, reach.handle);
           if (anchorIdx >= 0) {
             this.state = 'resizing';
             this.drag.beginResize(pos, drawing, anchorIdx);

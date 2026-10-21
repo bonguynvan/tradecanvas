@@ -88,3 +88,15 @@ describe('BracketTool', () => {
     expect(t.getDraft()).toBeNull();
   });
 });
+
+describe('BracketTool — a finger’s reach', () => {
+  it('grabs a handle farther off when given a wider reach', () => {
+    const t = new BracketTool({ riskFraction: 0.1, riskReward: 1 });
+    t.start('buy', 50); // entry at y 50
+    // The take-profit line is at y 45: 10px off is beyond the mouse's 6.
+    expect(t.beginDrag({ x: 10, y: 35 }, viewport())).toBe(false);
+    expect(t.beginDrag({ x: 10, y: 28 }, viewport(), 16)).toBe(false); // 17 off
+    expect(t.beginDrag({ x: 10, y: 35 }, viewport(), 16)).toBe(true);
+    expect(t.isDragging()).toBe(true);
+  });
+});

@@ -1032,6 +1032,7 @@ export class Chart {
     this.interactionManager.setOverlayDirtyCallback((hoverOnly) => {
       this.engine.requestRender(hoverOnly ? LayerType.Hover : LayerType.Overlay);
     });
+    this.interactionManager.setPageScroll(options.pageScroll ?? false);
     this.interactionManager.attach();
 
     if (options.timeZone !== undefined && options.timeZone !== null) this.setTimezone(options.timeZone);
@@ -3365,6 +3366,20 @@ export class Chart {
       stops.push(() => window.removeEventListener('online', onOnline));
     }
     this.stopWatchingVisibility = () => stops.forEach((stop) => stop());
+  }
+
+  /**
+   * Leave vertical swipes and the plain wheel to the page (see
+   * `ChartOptions.pageScroll`); the chart pans sideways and zooms with two
+   * fingers or Ctrl + wheel.
+   */
+  setPageScroll(on: boolean): void {
+    this.options.pageScroll = on;
+    this.interactionManager.setPageScroll(on);
+  }
+
+  getPageScroll(): boolean {
+    return this.options.pageScroll ?? false;
   }
 
   /**

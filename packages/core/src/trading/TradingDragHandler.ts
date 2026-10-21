@@ -104,6 +104,14 @@ export class TradingDragHandler {
     };
   }
 
+  /** Drop the drag: the line goes back to where it was, nothing to report. */
+  cancel(): boolean {
+    if (!this.dragState) return false;
+    this.dragState = null;
+    this.dragging = false;
+    return true;
+  }
+
   getDragState(): DragState | null {
     return this.dragState;
   }

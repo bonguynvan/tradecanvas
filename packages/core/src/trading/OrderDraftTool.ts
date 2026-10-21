@@ -40,6 +40,8 @@ const HANDLE_TOLERANCE = 6;
  */
 export class OrderDraftTool {
   private draft: OrderDraft | null = null;
+  /** The draft as the drag found it, to put back if the drag is called off. */
+  private dragStart: OrderDraft | null = null;
   private dragging = false;
 
   start(side: OrderSide, price: number, quantity = 1): void {
@@ -82,15 +84,23 @@ export class OrderDraftTool {
     };
   }
 
-  hitTest(pos: Point, viewport: ViewportState): boolean {
+  hitTest(pos: Point, viewport: ViewportState, tolerance = HANDLE_TOLERANCE): boolean {
     if (!this.draft) return false;
-    return Math.abs(priceToY(this.draft.price, viewport) - pos.y) <= HANDLE_TOLERANCE;
+    return Math.abs(priceToY(this.draft.price, viewport) - pos.y) <= tolerance;
   }
 
-  beginDrag(pos: Point, viewport: ViewportState): boolean {
-    if (!this.hitTest(pos, viewport)) return false;
+  beginDrag(pos: Point, viewport: ViewportState, tolerance?: number): boolean {
+    if (!this.hitTest(pos, viewport, tolerance)) return false;
     this.dragging = true;
+    this.dragStart = this.draft;
     return true;
+  }
+
+  /** Call the drag off: the line goes back to where it was. */
+  cancelDrag(): void {
+    if (this.dragging && this.dragStart) this.draft = this.dragStart;
+    this.dragging = false;
+    this.dragStart = null;
   }
 
   drag(pos: Point, viewport: ViewportState): boolean {
@@ -100,6 +110,7 @@ export class OrderDraftTool {
 
   endDrag(): void {
     this.dragging = false;
+    this.dragStart = null;
   }
 
   render(

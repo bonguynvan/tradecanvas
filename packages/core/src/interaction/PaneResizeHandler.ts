@@ -35,9 +35,9 @@ export class PaneResizeHandler {
   }
 
   /** The divider hit at `pos`, with its panel's position + current size, or null. Pure. */
-  hitTest(pos: Point, layout: ResolvedLayout): DividerHit | null {
+  hitTest(pos: Point, layout: ResolvedLayout, tolerance = this.tolerance): DividerHit | null {
     for (const d of layout.dividers) {
-      if (within(pos, d.rect, this.tolerance)) {
+      if (within(pos, d.rect, tolerance)) {
         const panel = layout.panels.find((p) => p.config.id === d.panelId);
         if (panel) {
           return {
@@ -62,11 +62,11 @@ export class PaneResizeHandler {
     return hit.orientation === 'horizontal' ? 'ns-resize' : 'ew-resize';
   }
 
-  /** Begin a resize if `pos` is on a divider. Returns true if the drag started. */
-  tryBegin(pos: Point): boolean {
+  /** Begin a resize if `pos` is on a divider, or within `tolerance` px (a finger's). Returns true if the drag started. */
+  tryBegin(pos: Point, tolerance?: number): boolean {
     const layout = this.layoutGetter?.();
     if (!layout) return false;
-    const hit = this.hitTest(pos, layout);
+    const hit = this.hitTest(pos, layout, Math.max(tolerance ?? 0, this.tolerance));
     if (!hit) return false;
     this.state = {
       panelId: hit.panelId,

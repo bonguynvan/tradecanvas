@@ -4,6 +4,18 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Everything by finger
+
+A finger now does on the chart what the mouse does, and a chart on a scrolling page can leave the scroll to the page.
+
+- **Drawings by touch.** With a tool picked, tap its points, or press, drag and lift to draw a two-point line in one go. A drawing is selected, moved and reshaped by its handles with a finger, and a long press on one opens its menu, as a right-click does. The eraser takes drawings by touch too.
+- **Taps and double taps.** A tap is a click (`click`, `barClick`, signal markers); a double tap is a double-click: it resets an axis, or opens a drawing's settings.
+- **Lines by touch:** price alerts, order and position lines, a bracket's or an order draft's handles, and pane dividers drag with a finger.
+- **A finger reaches further** than a mouse: about 16 px to a line and 22 px to a handle, against 8 (`TOUCH_REACH`).
+- **`pageScroll`** (option and `setPageScroll`): a one-finger vertical swipe and the plain mouse wheel scroll the page; the chart pans with a sideways swipe and zooms with two fingers or Ctrl + wheel (a trackpad pinch). Presses on drawings, lines and axes stay the chart's.
+- A chart that neither pans nor zooms leaves page scrolling and zooming alone, and the wheel too.
+- A touch the browser takes back (`touchcancel`), or a second finger landing for a pinch, calls the press off: no click, no coast, a dragged order or bracket line goes back where it was without an `orderModify`, and a drawing's point the press just placed is taken back. The browser's own long-press menu stays shut over the chart.
+
 ### Lighter on phones
 
 Measured with the new phone run of the render benchmark (`node scripts/bench-render.mjs --mobile`: 390 × 844 at 3x, the CPU slowed 4x, an integrated GPU), one chart with four indicators: drawing the scene 34 → 25 ms, a live feed at two ticks a frame 18.5 → 11–13 ms, canvas memory 17.1 → 7.6 MB.

@@ -26,11 +26,11 @@ export function sameLineAction(a: LineButtonAction, b: LineButtonAction): boolea
   return a.positionId === (b as typeof a).positionId;
 }
 
-export function buttonAt(buttons: readonly LineButton[], pos: Point): LineButton | null {
+export function buttonAt(buttons: readonly LineButton[], pos: Point, slop = SLOP): LineButton | null {
   // The last drawn is on top.
   for (let i = buttons.length - 1; i >= 0; i--) {
     const b = buttons[i];
-    if (pos.x >= b.x - SLOP && pos.x <= b.x + b.size + SLOP && pos.y >= b.y - SLOP && pos.y <= b.y + b.size + SLOP) return b;
+    if (pos.x >= b.x - slop && pos.x <= b.x + b.size + slop && pos.y >= b.y - slop && pos.y <= b.y + b.size + slop) return b;
   }
   return null;
 }

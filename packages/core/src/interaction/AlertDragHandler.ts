@@ -22,11 +22,11 @@ export class AlertDragHandler {
     return this.alerts.getAlertAtPoint(pos, vp) !== null;
   }
 
-  /** Begin a drag if an alert line is under the pointer. Returns true if consumed. */
-  tryBegin(pos: Point): boolean {
+  /** Begin a drag if an alert line is within `reach` px of the pointer (a finger's is wider). Returns true if consumed. */
+  tryBegin(pos: Point, reach?: number): boolean {
     const vp = this.viewportGetter();
     if (!vp) return false;
-    const hit = this.alerts.getAlertAtPoint(pos, vp);
+    const hit = this.alerts.getAlertAtPoint(pos, vp, reach);
     if (!hit) return false;
     this.draggingId = hit.id;
     return true;
