@@ -21,7 +21,7 @@ export const LINKS = {
 } as const;
 
 /** Where businesses write to: the For businesses page and the READMEs. */
-export const BUSINESS_EMAIL = 'business@tradingdek.com';
+export const BUSINESS_EMAIL = 'business@tradecanvas.dev';
 
 export function isLightPage(): boolean {
   return typeof document !== 'undefined' && document.body.classList.contains('light');

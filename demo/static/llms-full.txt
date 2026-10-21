@@ -1324,7 +1324,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## For businesses
 
-Putting TradeCanvas in front of your customers? There is no logo to show and nothing to apply for. The [For businesses](https://bonguynvan.github.io/tradecanvas/business/) page answers what an IT review asks, with sources, and describes the first-partner programme. Write to business@tradingdek.com.
+Putting TradeCanvas in front of your customers? There is no logo to show and nothing to apply for. The [For businesses](https://bonguynvan.github.io/tradecanvas/business/) page answers what an IT review asks, with sources, and describes the first-partner programme. Write to business@tradecanvas.dev.
 
 ## Contributing
 
