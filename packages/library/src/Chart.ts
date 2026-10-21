@@ -112,6 +112,8 @@ import {
   xToBarIndex,
   xToTime,
   yToPrice,
+  timeToX,
+  priceToY,
   PriceAxisAddButton,
   findDominantSwing,
   readAlertOptions,
@@ -161,6 +163,10 @@ const HISTORY_AHEAD_MIN_BARS = 20;
 
 /** Narrowest box (px) the zoom-area tool zooms into. */
 const MIN_ZOOM_BOX_PX = 8;
+
+/** Drawings drawn across the whole plot's width, or its height, whatever their anchors. */
+const FULL_WIDTH_DRAWINGS = new Set(['horizontalLine', 'crossLine']);
+const FULL_HEIGHT_DRAWINGS = new Set(['verticalLine', 'crossLine']);
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -4315,6 +4321,41 @@ export class Chart {
   getPlotRect(): { x: number; y: number; width: number; height: number } {
     const { x, y, width, height } = this.viewport.getState().chartRect;
     return { x, y, width, height };
+  }
+
+  /**
+   * The box a drawing covers on screen, in CSS pixels relative to the chart
+   * container, cut to the plot: where a host puts a toolbar or a note over
+   * it. Lines that run across the whole plot (horizontal, vertical, cross)
+   * span it on that side. Null for an unknown or hidden drawing, or one
+   * that is all off screen.
+   */
+  getDrawingRect(id: string): { x: number; y: number; width: number; height: number } | null {
+    const drawing = this.drawingManager.getDrawings().find((d) => d.id === id);
+    if (!drawing || !drawing.visible || drawing.anchors.length === 0) return null;
+    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    const plot = vs.chartRect;
+    let left = Infinity;
+    let right = -Infinity;
+    let top = Infinity;
+    let bottom = -Infinity;
+    for (const anchor of drawing.anchors) {
+      const x = timeToX(anchor.time, vs);
+      const y = priceToY(anchor.price, vs);
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+    }
+    if (FULL_WIDTH_DRAWINGS.has(drawing.type)) [left, right] = [plot.x, plot.x + plot.width];
+    else if (drawing.type === 'horizontalRay') right = plot.x + plot.width;
+    if (FULL_HEIGHT_DRAWINGS.has(drawing.type)) [top, bottom] = [plot.y, plot.y + plot.height];
+    left = Math.max(left, plot.x);
+    right = Math.min(right, plot.x + plot.width);
+    top = Math.max(top, plot.y);
+    bottom = Math.min(bottom, plot.y + plot.height);
+    if (!(left <= right && top <= bottom)) return null;
+    return { x: left, y: top, width: right - left, height: bottom - top };
   }
 
   /** Stop the replay clock and drop the session without touching the data. */

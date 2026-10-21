@@ -251,6 +251,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">The OHLCV legend</h2>
+<p>
+  The legend at the top of the chart shows the bar under the pointer (the last bar otherwise): open, high, low, close, the change and the volume. Each value keeps its place while its digits change, so it doesn't jitter on live ticks. It can be turned off, or trimmed to the rows you want. In the widget it takes the look's font, at the size of the indicator rows listed under it; <code>setUI</code> sets that again, after a <code>setLegend</code> of your own.
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>Volume colours</h2>
 <p>
   Volume bars take the theme's <code>volumeUp</code> and <code>volumeDown</code> (or the <code>volume.*</code> keys). <code>volumeColor(candleColor)</code> gives the candle colour at the volume's opacity, so in a theme of your own the bars stay a backdrop under the candles. The widget does this itself when its settings change the candle colours, and a theme spread from a preset that only changes <code>candleUp</code> / <code>candleDown</code> gets volume in those colours too.

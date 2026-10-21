@@ -350,6 +350,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Dela upp grupp',
   'drawingMenu.duplicate': 'Duplicera',
   'drawingMenu.delete': 'Ta bort',
+  'selectionToolbar.label': 'Verktygsfält för ritning',
   'chartMenu.label': 'Diagram',
   'chartMenu.addAlert': 'Lägg till larm vid {price}',
   'chartMenu.alertAdded': 'Larm tillagt vid {price}',

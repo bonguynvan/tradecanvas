@@ -362,6 +362,7 @@ export const EN_MESSAGES = {
   'drawingMenu.ungroup': 'Ungroup',
   'drawingMenu.duplicate': 'Duplicate',
   'drawingMenu.delete': 'Delete',
+  'selectionToolbar.label': 'Drawing toolbar',
   'chartMenu.label': 'Chart',
   'chartMenu.addAlert': 'Add alert at {price}',
   'chartMenu.alertAdded': 'Alert added at {price}',

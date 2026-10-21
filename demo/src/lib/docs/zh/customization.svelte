@@ -110,7 +110,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
     <tr><td>图表上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
       <code>indicatorLegend.remove</code> <code>indicatorLegend.more</code> <code>pane.move</code> <code>pane.collapse</code>
-      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code>
+      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code> <code>selectionToolbar</code>
     </td></tr>
     <tr><td>菜单</td><td>
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
@@ -131,6 +131,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   有几个开关的作用比名字多：关闭 <code>indicatorLegend</code> 后，窗格会显示回自己的标题；<code>menu.chart.*</code>
   同时作用于价格轴旁的 "+" 和右键菜单；<code>compare</code> 去掉对象树里的添加按钮，已有的对比仍保留在列表中；
   <code>toasts</code> 关闭组件自身的提示（错误提示仍会显示），你通过 <code>widget.toast()</code> 发出的提示也照常显示。
+  关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。
 </p>
 
 <h2 id="parts">你自己的部件</h2>

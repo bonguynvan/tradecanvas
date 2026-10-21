@@ -253,6 +253,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">La leyenda OHLCV</h2>
+<p>
+  La leyenda en la parte superior del gráfico muestra la barra bajo el puntero (si no, la última): apertura, máximo, mínimo, cierre, el cambio y el volumen. Cada valor conserva su sitio mientras cambian sus dígitos, así que no tiembla con los ticks en vivo. Se puede apagar o dejar solo las filas que quiera. En el widget toma la fuente del aspecto, al tamaño de las filas de indicadores que lista debajo; <code>setUI</code> la vuelve a poner, después de un <code>setLegend</code> suyo.
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>Colores del volumen</h2>
 <p>
   Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> (o las claves <code>volume.*</code>) del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas, y un tema basado en un preajuste que solo cambia <code>candleUp</code> / <code>candleDown</code> también tiene el volumen en esos colores.

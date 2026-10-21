@@ -63,6 +63,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>La configuración de un diseño guardado o de un dibujo pegado se comprueba contra la herramienta; los valores que esta no admite se descartan.</p>
 
+<h2 id="selection-toolbar">La barra sobre la selección</h2>
+<p>
+  En el widget, al hacer clic en un dibujo aparece una pequeña barra justo encima: color, grosor y estilo de línea, y luego ajustes, una alerta en su línea, bloqueo, el menú completo del dibujo (el mismo que con el botón derecho) y borrar. Con varios dibujos seleccionados se sitúa sobre todos y sus cambios van a cada uno. Sigue al dibujo cuando se mueve, se desplaza o se hace zoom, se aparta mientras hay una herramienta de dibujo, la goma o el zoom de área activos, y es una sola parada de tabulación que las flechas recorren.
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>Posición larga/corta</h2>
 <p>
   <code>riskReward</code>: arrastra desde la entrada hasta el stop. El objetivo se

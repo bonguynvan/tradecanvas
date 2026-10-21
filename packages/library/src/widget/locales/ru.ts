@@ -350,6 +350,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Разгруппировать',
   'drawingMenu.duplicate': 'Дублировать',
   'drawingMenu.delete': 'Удалить',
+  'selectionToolbar.label': 'Панель рисунка',
   'chartMenu.label': 'График',
   'chartMenu.addAlert': 'Добавить оповещение на {price}',
   'chartMenu.alertAdded': 'Оповещение добавлено на {price}',

@@ -350,6 +350,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Anulare grupare',
   'drawingMenu.duplicate': 'Duplicare',
   'drawingMenu.delete': 'Ștergere',
+  'selectionToolbar.label': 'Bara de instrumente a desenului',
   'chartMenu.label': 'Grafic',
   'chartMenu.addAlert': 'Adăugare alertă la {price}',
   'chartMenu.alertAdded': 'Alertă adăugată la {price}',

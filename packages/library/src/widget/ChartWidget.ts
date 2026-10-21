@@ -27,6 +27,7 @@ import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPre
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
+import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
@@ -197,6 +198,8 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
+  private selectionToolbar: WidgetSelectionToolbar | null = null;
+  private selectionToolbarFrame: number | null = null;
   private chartMenu: WidgetContextMenu | null = null;
   /** The pane a chart menu was opened on (its scale switches act on it). */
   private menuPane: string | null = null;
@@ -570,6 +573,7 @@ export class ChartWidget {
     });
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
+    this.applyLegendFont();
 
     // Navigation over the chart; a scroll step is a tenth of the bars on screen.
     this.chart.on('visibleRangeChange', (e) => {
@@ -813,6 +817,51 @@ export class ChartWidget {
       const { id, x, y } = e.payload as { id: string; x: number; y: number };
       this.openDrawingMenu(id, x, y);
     });
+
+    // A click on a drawing: its toolbar right over it, no right-click needed.
+    this.selectionToolbar = new WidgetSelectionToolbar(this.root, {
+      onStyle: (patch) => {
+        for (const id of this.chart.getSelectedDrawingIds()) this.chart.setSelectedDrawingStyle(patch, id);
+        this.updateSelectionToolbar();
+      },
+      onSettings: () => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (id) this.openDrawingSettings(id);
+      },
+      onAlert: () => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (id) this.addDrawingAlert(id);
+      },
+      onLock: (locked) => {
+        this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
+        this.refreshObjects();
+        this.updateSelectionToolbar();
+      },
+      onMore: (x, y) => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (!id) return;
+        const offset = this.chartOffset();
+        this.openDrawingMenu(id, x - offset.x, y - offset.y);
+      },
+      onDelete: () => {
+        // Locked drawings stay, and stay selected.
+        this.chart.removeDrawings(this.chart.getSelectedDrawingIds());
+        this.refreshObjects();
+        this.updateSelectionToolbar();
+      },
+    }, this.t);
+    // Selecting, or picking a tool, the eraser or the zoom area: at once.
+    for (const event of ['drawingSelect', 'drawingToolChange', 'toolModeChange'] as const) {
+      this.chart.on(event, () => this.updateSelectionToolbar());
+    }
+    // While it shows, it follows the drawing through edits, undo, pans, zooms,
+    // rescales and replay steps, once a frame.
+    for (const event of [
+      'drawingUpdate', 'drawingRemove', 'historyChange', 'visibleRangeChange', 'priceRangeChange', 'zoomChange',
+      'resize', 'paneResize', 'paneChange', 'dataUpdate', 'replayStep', 'chartTypeChange',
+    ] as const) {
+      this.chart.on(event, () => this.scheduleSelectionToolbar());
+    }
 
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
@@ -1522,11 +1571,20 @@ export class ChartWidget {
     applyWidgetUI(this.root, this.ui);
     applyWidgetUI(this.portal, this.ui);
     this.applyChartShapes();
+    this.applyLegendFont();
   }
 
   /** The widget's look, every token set. */
   getUI(): ResolvedWidgetUI {
     return resolveWidgetUI({ ...this.ui });
+  }
+
+  /**
+   * The OHLCV legend on the chart takes the look's font, at the size of the
+   * indicator rows the widget lists under it, so the two read as one block.
+   */
+  private applyLegendFont(): void {
+    this.chart.setLegend({ fontFamily: this.ui.font.family, fontSize: this.ui.font.size - 2 });
   }
 
   /** The chart's own tags and pills take the look's corners. */
@@ -1562,6 +1620,8 @@ export class ChartWidget {
     this.drawingStyle?.destroy();
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
+    this.selectionToolbar?.destroy();
+    if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
     this.chartMenu?.destroy();
     this.legendMenu?.destroy();
     for (const menu of this.hostMenus) menu.destroy();
@@ -1635,6 +1695,59 @@ export class ChartWidget {
     const key = `tool.${type}` as MessageKey;
     const name = this.t(key);
     return name === key ? this.chart.getDrawingToolDescriptor(type)?.name ?? type : name;
+  }
+
+  /** The chart container's top-left in the widget root's coordinates. */
+  private chartOffset(): { x: number; y: number } {
+    const chartRect = this.chartContainer.getBoundingClientRect();
+    const rootRect = this.root.getBoundingClientRect();
+    return { x: chartRect.left - rootRect.left, y: chartRect.top - rootRect.top };
+  }
+
+  /** `updateSelectionToolbar` on the next frame, once, while the toolbar shows. */
+  private scheduleSelectionToolbar(): void {
+    if (this.selectionToolbarFrame !== null || !this.selectionToolbar?.isOpen()) return;
+    this.selectionToolbarFrame = requestAnimationFrame(() => {
+      this.selectionToolbarFrame = null;
+      this.updateSelectionToolbar();
+    });
+  }
+
+  /**
+   * Show the selection toolbar over the selected drawings, or hide it: when
+   * nothing is selected, or while a tool, the eraser or the zoom area is on.
+   */
+  private updateSelectionToolbar(): void {
+    const toolbar = this.selectionToolbar;
+    if (!toolbar || this.destroyed) return;
+    const selected = this.chart.getSelectedDrawingIds();
+    if (!this.featureState.selectionToolbar || !selected?.length) {
+      toolbar.hide();
+      return;
+    }
+    const ids = new Set(selected);
+    const drawings = this.chart.getDrawings().filter((d) => ids.has(d.id) && d.visible);
+    const busy = this.chart.getDrawingTool() !== null || this.chart.isEraserMode() || this.chart.isZoomAreaMode();
+    if (busy || drawings.length === 0) {
+      toolbar.hide();
+      return;
+    }
+    const offset = this.chartOffset();
+    const plot = this.chart.getPlotRect();
+    // Over all of them; at the top of the plot when none is on screen (an
+    // extended line crossing it far from its anchors).
+    const rect = unionRects(drawings.map((d) => this.chart.getDrawingRect(d.id)))
+      ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
+    const primary = drawings[0];
+    toolbar.show({
+      rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
+      bounds: { x: plot.x + offset.x, y: plot.y + offset.y, width: plot.width, height: plot.height },
+      style: primary.style,
+      locked: drawings.every((d) => d.locked),
+      canDelete: drawings.some((d) => !d.locked),
+      canSettings: this.drawingSettings !== null && this.featureState.drawingSettings && drawings.length === 1,
+      canAlert: this.featureState.alerts && drawings.length === 1 && this.chart.canAddDrawingAlert(primary.id),
+    });
   }
 
   /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
@@ -1791,6 +1904,7 @@ export class ChartWidget {
     const changed = (name: WidgetFeature): boolean => before[name] !== this.featureState[name];
     this.markSwitchedOff();
     this.closeSwitchedOff((name) => before[name] && !this.featureState[name]);
+    if (changed('selectionToolbar')) this.updateSelectionToolbar();
     if (changed('indicatorLegend')) {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
       this.scheduleLegend();
@@ -3889,6 +4003,19 @@ function sessionsText(info: SymbolInfo | null, locale: string): string | undefin
 }
 
 /** Languages written right to left. */
+type Box = { x: number; y: number; width: number; height: number };
+
+/** The box around all the given boxes (nulls skipped); null when there are none. */
+function unionRects(rects: (Box | null)[]): Box | null {
+  const boxes = rects.filter((r): r is Box => r !== null);
+  if (boxes.length === 0) return null;
+  const x = Math.min(...boxes.map((r) => r.x));
+  const y = Math.min(...boxes.map((r) => r.y));
+  const right = Math.max(...boxes.map((r) => r.x + r.width));
+  const bottom = Math.max(...boxes.map((r) => r.y + r.height));
+  return { x, y, width: right - x, height: bottom - y };
+}
+
 function isRtlLocale(locale: string | undefined): boolean {
   return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
 }

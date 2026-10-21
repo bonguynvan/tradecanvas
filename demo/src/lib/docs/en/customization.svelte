@@ -113,7 +113,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
     <tr><td>On the chart</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
       <code>indicatorLegend.remove</code> <code>indicatorLegend.more</code> <code>pane.move</code> <code>pane.collapse</code>
-      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code>
+      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code> <code>selectionToolbar</code>
     </td></tr>
     <tr><td>Menus</td><td>
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
@@ -135,6 +135,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>menu.chart.*</code> covers the "+" by the price axis as well as the right-click menu; <code>compare</code>
   takes the add button of the object tree, and comparisons already on stay listed; <code>toasts</code> silences the
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
+  <code>selectionToolbar</code> off hides the toolbar over a selected drawing; the right-click menu stays.
 </p>
 
 <h2 id="parts">Your own parts</h2>

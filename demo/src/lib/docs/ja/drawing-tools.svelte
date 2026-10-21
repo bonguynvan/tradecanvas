@@ -61,6 +61,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>保存したレイアウトや貼り付けた描画の設定はツールに照らして検証され、ツールが受け付けない値は取り除かれます。</p>
 
+<h2 id="selection-toolbar">選択した描画の上のツールバー</h2>
+<p>
+  ウィジェットで描画をクリックすると、そのすぐ上に小さなツールバーが表示されます：色、線の太さと線種、続いて設定、その線へのアラート、ロック、描画の完全なメニュー（右クリックと同じ）、削除。複数選択時はすべての上に置かれ、変更はそれぞれに適用されます。描画の移動、パン、ズームに追従し、描画ツール・消しゴム・範囲ズームが有効な間は退き、矢印キーで移動できる 1 つのタブストップです。
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>ロング/ショートポジション</h2>
 <p>
   <code>riskReward</code>：エントリーからストップまでドラッグします。ターゲットはリスクリワード比に

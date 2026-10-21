@@ -350,6 +350,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'เลิกจัดกลุ่ม',
   'drawingMenu.duplicate': 'ทำสำเนา',
   'drawingMenu.delete': 'ลบ',
+  'selectionToolbar.label': 'แถบเครื่องมือภาพวาด',
   'chartMenu.label': 'กราฟ',
   'chartMenu.addAlert': 'เพิ่มการแจ้งเตือนที่ {price}',
   'chartMenu.alertAdded': 'เพิ่มการแจ้งเตือนที่ {price} แล้ว',

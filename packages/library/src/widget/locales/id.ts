@@ -350,6 +350,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Pisahkan kelompok',
   'drawingMenu.duplicate': 'Duplikat',
   'drawingMenu.delete': 'Hapus',
+  'selectionToolbar.label': 'Bilah alat gambar',
   'chartMenu.label': 'Grafik',
   'chartMenu.addAlert': 'Tambah peringatan di {price}',
   'chartMenu.alertAdded': 'Peringatan ditambahkan di {price}',

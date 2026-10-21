@@ -9,6 +9,8 @@ export interface LegendConfig {
   showVolume: boolean;
   position: 'top-left' | 'top-right';
   fontSize: number;
+  /** The legend's font family; null follows the theme's (`theme.font.family`). */
+  fontFamily: string | null;
 }
 
 export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
@@ -19,6 +21,7 @@ export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
   showVolume: true,
   position: 'top-left',
   fontSize: 12,
+  fontFamily: null,
 };
 
 /**
@@ -99,6 +102,7 @@ export class ChartLegend {
     const prevBar = data.length > 1 ? data[data.length - 2] : bar;
     const { chartRect } = viewport;
     const fs = this.config.fontSize;
+    const family = this.config.fontFamily ?? theme.font.family;
     // Values in the legend's text colour, their labels in its label colour.
     const text = theme.style?.legend.text ?? theme.text;
     const label = theme.style?.legend.label ?? theme.textSecondary;
@@ -112,14 +116,14 @@ export class ChartLegend {
 
     // Symbol + timeframe + chart type + status text
     if (this.config.showSymbol) {
-      ctx.font = `bold ${fs + 2}px ${theme.font.family}`;
+      ctx.font = `bold ${fs + 2}px ${family}`;
       ctx.fillStyle = text;
       const symbolText = [this.symbol, this.timeframe].filter(Boolean).join(' · ');
       const displayText = this.statusText ? `${symbolText}  ${this.statusText}` : symbolText;
       ctx.fillText(displayText, x, y);
       y += fs + 6;
     } else if (this.statusText) {
-      ctx.font = `${fs}px ${theme.font.family}`;
+      ctx.font = `${fs}px ${family}`;
       ctx.fillStyle = label;
       ctx.fillText(this.statusText, x, y);
       y += fs + 4;
@@ -127,7 +131,7 @@ export class ChartLegend {
 
     // OHLC values
     if (this.config.showOHLC) {
-      ctx.font = `${fs}px ${theme.font.family}`;
+      ctx.font = `${fs}px ${family}`;
       const isUp = bar.close >= bar.open;
       // A market's explicit precision wins; otherwise match the price axis so
       // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
@@ -154,31 +158,35 @@ export class ChartLegend {
         });
       }
 
-      // Render inline
-      let cx = x;
-      if (isLeft) {
-        for (const item of items) {
-          if (item.label) {
-            ctx.fillStyle = label;
-            ctx.fillText(item.label, cx, y);
-            cx += ctx.measureText(item.label + ' ').width;
-          }
-          ctx.fillStyle = item.color;
-          ctx.fillText(item.value, cx, y);
-          cx += ctx.measureText(item.value + '  ').width;
+      // Inline, each value in a slot as wide as it would be in zeros (and in
+      // either sign), so with a proportional font nothing shifts as digits
+      // change. Right-aligned, the row is laid out from where it has to start.
+      const gap = ctx.measureText('  ').width;
+      const cells = items.map((item) => ({
+        ...item,
+        labelWidth: item.label ? ctx.measureText(item.label + ' ').width : 0,
+        width: valueSlot(ctx, item.value),
+      }));
+      const total = cells.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
+      let cx = isLeft ? x : x - total;
+      ctx.textAlign = 'left';
+      for (const cell of cells) {
+        if (cell.label) {
+          ctx.fillStyle = label;
+          ctx.fillText(cell.label, cx, y);
+          cx += cell.labelWidth;
         }
-      } else {
-        // Right-aligned: build full string and measure
-        const fullText = items.map((i) => `${i.label} ${i.value}`).join('  ');
-        ctx.fillStyle = text;
-        ctx.fillText(fullText, x, y);
+        ctx.fillStyle = cell.color;
+        ctx.fillText(cell.value, cx, y);
+        cx += cell.width + gap;
       }
+      ctx.textAlign = isLeft ? 'left' : 'right';
       y += fs + 3;
     }
 
     // Volume
     if (this.config.showVolume) {
-      ctx.font = `${fs - 1}px ${theme.font.family}`;
+      ctx.font = `${fs}px ${family}`;
       ctx.fillStyle = label;
       const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
       ctx.fillText(`Vol ${vol}`, x, y);
@@ -187,14 +195,33 @@ export class ChartLegend {
 
     // Active indicator values
     if (this.indicators.length > 0) {
-      ctx.font = `${fs - 1}px ${theme.font.family}`;
-      let ix = x;
-      for (const ind of this.indicators) {
-        ctx.fillStyle = ind.color;
+      ctx.font = `${fs}px ${family}`;
+      const gap = ctx.measureText('  ').width;
+      const entries = this.indicators.map((ind) => {
         const entry = `${ind.name} ${ind.value}`;
+        return { entry, color: ind.color, width: valueSlot(ctx, entry) };
+      });
+      const total = entries.reduce((sum, e) => sum + e.width + gap, -gap);
+      let ix = isLeft ? x : x - total;
+      ctx.textAlign = 'left';
+      for (const { entry, color, width } of entries) {
+        ctx.fillStyle = color;
         ctx.fillText(entry, ix, y);
-        ix += ctx.measureText(entry + '  ').width;
+        ix += width + gap;
       }
     }
   }
+}
+
+/**
+ * The width `value` takes in the legend: its widest form with every digit a
+ * zero and either sign, so a ticking value keeps its place.
+ */
+function valueSlot(ctx: CanvasRenderingContext2D, value: string): number {
+  const zeros = value.replace(/\d/g, '0');
+  return Math.max(
+    ctx.measureText(value).width,
+    ctx.measureText(zeros.replace(/[-−]/g, '+')).width,
+    ctx.measureText(zeros.replace(/\+/g, '-')).width,
+  );
 }

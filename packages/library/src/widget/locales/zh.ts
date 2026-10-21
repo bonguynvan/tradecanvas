@@ -350,6 +350,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': '取消分组',
   'drawingMenu.duplicate': '创建副本',
   'drawingMenu.delete': '删除',
+  'selectionToolbar.label': '绘图工具栏',
   'chartMenu.label': '图表',
   'chartMenu.addAlert': '在 {price} 添加提醒',
   'chartMenu.alertAdded': '已在 {price} 添加提醒',

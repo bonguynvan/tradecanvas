@@ -36,7 +36,8 @@ class FakeChart {
   inverted: boolean[] = [];
   setInvertScale(on: boolean): void { this.inverted.push(on); }
   display: string[] = [];
-  setLegend(config: { visible?: boolean }): void { this.display.push(`legend:${config.visible}`); }
+  // The widget also sets the legend's font; only its visibility is recorded here.
+  setLegend(config: { visible?: boolean }): void { if ('visible' in config) this.display.push(`legend:${config.visible}`); }
   setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
   setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
   timezones: unknown[] = [];

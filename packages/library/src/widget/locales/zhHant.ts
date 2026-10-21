@@ -350,6 +350,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': '取消群組',
   'drawingMenu.duplicate': '建立副本',
   'drawingMenu.delete': '刪除',
+  'selectionToolbar.label': '繪圖工具列',
   'chartMenu.label': '圖表',
   'chartMenu.addAlert': '在 {price} 新增警示',
   'chartMenu.alertAdded': '已在 {price} 新增警示',

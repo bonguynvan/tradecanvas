@@ -350,6 +350,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Bỏ nhóm',
   'drawingMenu.duplicate': 'Nhân bản',
   'drawingMenu.delete': 'Xoá',
+  'selectionToolbar.label': 'Thanh công cụ hình vẽ',
   'chartMenu.label': 'Biểu đồ',
   'chartMenu.addAlert': 'Thêm cảnh báo tại {price}',
   'chartMenu.alertAdded': 'Đã thêm cảnh báo tại {price}',

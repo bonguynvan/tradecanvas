@@ -113,7 +113,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
     <tr><td>Trên biểu đồ</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
       <code>indicatorLegend.remove</code> <code>indicatorLegend.more</code> <code>pane.move</code> <code>pane.collapse</code>
-      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code>
+      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code> <code>selectionToolbar</code>
     </td></tr>
     <tr><td>Menu</td><td>
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
@@ -135,6 +135,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   <code>menu.chart.*</code> áp cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code> bỏ nút thêm
   trong cây đối tượng, còn các so sánh đang có vẫn nằm trong danh sách; <code>toasts</code> tắt thông báo của chính
   widget (thông báo lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
+  Tắt <code>selectionToolbar</code> sẽ ẩn thanh công cụ trên hình được chọn; menu chuột phải vẫn còn.
 </p>
 
 <h2 id="parts">Phần của riêng bạn</h2>

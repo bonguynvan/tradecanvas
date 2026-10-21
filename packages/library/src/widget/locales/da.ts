@@ -361,6 +361,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Ophæv gruppering',
   'drawingMenu.duplicate': 'Duplikér',
   'drawingMenu.delete': 'Slet',
+  'selectionToolbar.label': 'Værktøjslinje for tegning',
   'chartMenu.label': 'Graf',
   'chartMenu.addAlert': 'Tilføj alarm ved {price}',
   'chartMenu.alertAdded': 'Alarm tilføjet ved {price}',

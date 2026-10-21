@@ -361,6 +361,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'فك التجميع',
   'drawingMenu.duplicate': 'تكرار',
   'drawingMenu.delete': 'حذف',
+  'selectionToolbar.label': 'شريط أدوات الرسم',
   'chartMenu.label': 'الرسم البياني',
   'chartMenu.addAlert': 'إضافة تنبيه عند {price}',
   'chartMenu.alertAdded': 'تمت إضافة تنبيه عند {price}',

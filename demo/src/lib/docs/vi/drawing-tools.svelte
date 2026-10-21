@@ -62,6 +62,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>Cài đặt lấy từ bố cục đã lưu hoặc từ hình vẽ được dán vào sẽ được kiểm tra theo công cụ; giá trị mà công cụ không nhận sẽ bị bỏ.</p>
 
+<h2 id="selection-toolbar">Thanh công cụ trên hình được chọn</h2>
+<p>
+  Trong widget, bấm vào một hình vẽ là một thanh công cụ nhỏ hiện ngay trên nó: màu, độ dày và kiểu nét, rồi đến cài đặt, cảnh báo trên đường của nó, khoá, menu đầy đủ của hình (giống chuột phải) và xoá. Khi chọn nhiều hình, thanh nằm trên tất cả và thay đổi áp cho từng hình. Nó đi theo hình khi hình được kéo, khi cuộn hay zoom, tạm ẩn khi đang bật công cụ vẽ, cục tẩy hoặc zoom vùng, và là một điểm dừng Tab, di chuyển bằng phím mũi tên.
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>Vị thế Long/Short</h2>
 <p>
   <code>riskReward</code>: kéo từ điểm vào lệnh đến điểm dừng lỗ. Mục tiêu nằm cách
