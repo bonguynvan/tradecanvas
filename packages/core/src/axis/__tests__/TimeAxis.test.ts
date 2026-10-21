@@ -91,8 +91,13 @@ describe('TimeAxis date labels', () => {
       return drawn.filter((d) => d.align === 'center');
     };
 
-    it('are labelled with times extrapolated from the bars by default', () => {
-      expect(ticks(new TimeAxis()).some((t) => t.x < 280)).toBe(true);
+    it('are labelled with times extrapolated from the bars by default, in the future only', () => {
+      // Panned so the twelve bars sit at the left and the future fills the rest.
+      const { ctx, drawn } = recordingCtx();
+      new TimeAxis().render(ctx, viewport(0), DARK_THEME, few);
+      expect(drawn.filter((d) => d.align === 'center').some((t) => t.x > 12 * 10)).toBe(true);
+      // Left of the oldest bar: nothing.
+      expect(ticks(new TimeAxis()).every((t) => t.x >= 284)).toBe(true);
     });
 
     it('stay blank when bars are not evenly spaced in time, as tick bars are', () => {
@@ -103,4 +108,41 @@ describe('TimeAxis date labels', () => {
       expect(labels.every((t) => t.x >= 284)).toBe(true);
     });
   });
+
+  it('dates millisecond bars from before 2001 by their real year', () => {
+    // Daily bars from 2000-07-28: in milliseconds these are below 1e12.
+    const DAY = 24 * HOUR;
+    const daily = Array.from({ length: 300 }, (_, i) => ({
+      time: Date.UTC(2000, 6, 28) + i * DAY, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const { ctx, drawn } = recordingCtx();
+    new TimeAxis().render(ctx, { ...viewport(0), visibleRange: { from: 0, to: 39 } } as ViewportState, DARK_THEME, daily);
+    const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) expect(label, label).toMatch(/\/(2000|2001)$/);
+  });
+
+  it('labels no slot left of the oldest bar, where it has no date to give', () => {
+    const { ctx, drawn } = recordingCtx();
+    // Panned 200 px past the oldest bar.
+    new TimeAxis().render(ctx, viewport(-200), DARK_THEME, data);
+    for (const tick of drawn.filter((d) => d.align === 'center')) {
+      expect(tick.x, tick.text).toBeGreaterThanOrEqual(200 + 4 - 0.001);
+    }
+  });
+
+  it('shows the date where the day changes, a new month on the same day of the month too', () => {
+    // 4h bars, one label every 30 days: each lands on the same day of a new month.
+    const FOUR = 4 * HOUR;
+    const bars = Array.from({ length: 1200 }, (_, i) => ({
+      time: Date.UTC(2025, 10, 9) + i * FOUR, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const { ctx, drawn } = recordingCtx();
+    const vp = { ...viewport(0), barWidth: 0.4, barSpacing: 0.045, visibleRange: { from: 0, to: 898 } } as ViewportState;
+    new TimeAxis().render(ctx, vp, DARK_THEME, bars);
+    const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
+    expect(labels.length).toBeGreaterThan(1);
+    for (const label of labels) expect(label, labels.join(' | ')).toMatch(/\//);
+  });
 });
+

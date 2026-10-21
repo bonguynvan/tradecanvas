@@ -1,4 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /**
@@ -119,8 +120,7 @@ export class MeasureOverlay {
 
 function barTime(barIdx: number, data: DataSeries): number | null {
   if (barIdx < 0 || barIdx >= data.length) return null;
-  const t = data[barIdx].time;
-  return t > 1e12 ? t : t * 1000;
+  return data[barIdx].time * barTimeUnit(data);
 }
 
 function formatPrice(v: number): string {

@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="bar-times">
+  Bar times are epoch milliseconds or seconds, one unit for the whole series. The chart reads it once, from the newest bar: <code>barTimeUnit(data)</code> gives 1 (milliseconds, from 1e11 up) or 1000 (seconds). So a series in milliseconds keeps its dates before 2001 too, though they are below 1e12. Keep a series in one unit; the times the chart hands back (events, <code>getData()</code>) are in it.
+</p>
+
 <h3>Chart type &amp; theme</h3>
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>

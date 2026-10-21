@@ -1,4 +1,5 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 
 export class BarCountdown {
@@ -15,8 +16,7 @@ export class BarCountdown {
     if (!this.visible || !(this.timeframeMs > 0) || data.length === 0) return;
 
     const lastBar = data[data.length - 1];
-    // Handle both ms and s timestamps
-    const timeMs = lastBar.time > 1e12 ? lastBar.time : lastBar.time * 1000;
+    const timeMs = lastBar.time * barTimeUnit(data);
     const nextBarTime = timeMs + this.timeframeMs;
     const remainingMs = nextBarTime - Date.now();
     if (remainingMs <= 0) return;

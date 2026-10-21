@@ -1,5 +1,6 @@
 import type { KnownTimeFrame, TimeFrame, TimeFrameUnit } from '../types/ohlc.js';
 import { offsetAt, type TimeZoneSetting } from './timezone.js';
+import { barTimeUnit } from './data.js';
 
 const TIMEFRAME_MS: Record<KnownTimeFrame, number> = {
   '1s': 1_000,
@@ -149,10 +150,10 @@ const DAILY_GAP_MS = 20 * 3_600_000;
 export function barsAreDaily(data: ArrayLike<{ time: number }>): boolean | undefined {
   const n = Math.min(data.length, 64);
   if (n < 2) return undefined;
-  const ms = (t: number) => (t > 1e12 ? t : t * 1000);
+  const unit = barTimeUnit(data);
   let gap = Infinity;
   for (let i = 1; i < n; i++) {
-    const d = Math.abs(ms(data[i].time) - ms(data[i - 1].time));
+    const d = Math.abs(data[i].time - data[i - 1].time) * unit;
     if (d > 0 && d < gap) gap = d;
   }
   return gap === Infinity ? undefined : gap >= DAILY_GAP_MS;

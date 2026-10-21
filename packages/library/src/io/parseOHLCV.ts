@@ -1,4 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { normalizeBarTime } from '@tradecanvas/commons';
 
 /**
  * Best-effort parser for OHLCV CSV / JSON drops.
@@ -174,9 +175,9 @@ function coerceArrayRow(row: unknown[]): OHLCBar | null {
 }
 
 /**
- * Returns milliseconds since epoch, or null if unparseable. Heuristic:
- *   - numeric < 1e12 → seconds, multiply by 1000
- *   - numeric >= 1e12 → already ms
+ * Returns milliseconds since epoch, or null if unparseable:
+ *   - numeric from 1e11 up → already ms (March 1973 on)
+ *   - numeric below → seconds, multiplied by 1000
  *   - non-numeric → Date.parse fallback (handles ISO, RFC 2822, etc.)
  */
 function numCell(raw: string | undefined): number {
@@ -189,7 +190,7 @@ function parseTimeCell(raw: string): number | null {
   if (!trimmed) return null;
   const asNum = Number(trimmed);
   if (Number.isFinite(asNum) && asNum > 0) {
-    return asNum < 1e12 ? asNum * 1000 : asNum;
+    return normalizeBarTime(asNum);
   }
   const parsed = Date.parse(trimmed);
   return Number.isFinite(parsed) ? parsed : null;

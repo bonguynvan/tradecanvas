@@ -146,6 +146,22 @@ describe('DrawingManager legacy anchor migration', () => {
     expect(after.anchors[0].time).toBe(t0);
     expect(after.anchors[1].time).toBe(t1);
   });
+
+  it('leaves anchors in seconds from before 2001 where they are', () => {
+    // Daily bars in seconds from 2000-07-28: below 1e9, yet times, not bar indices.
+    const daily = Array.from({ length: 300 }, (_, i) => ({
+      time: Date.UTC(2000, 6, 28) / 1000 + i * 86_400,
+      open: 100, high: 101, low: 99, close: 100, volume: 1,
+    }));
+    manager.setDataGetter(() => daily);
+    const old = drawing('trendLine', [
+      { time: daily[10].time, price: 100 },
+      { time: daily[40].time, price: 101 },
+    ], { id: 'y2000' });
+    manager.setDrawings([old]);
+    const after = manager.getDrawings()[0];
+    expect(after.anchors.map((a) => a.time)).toEqual([daily[10].time, daily[40].time]);
+  });
 });
 
 describe('DrawingManager — pressing a drawing grabs it', () => {

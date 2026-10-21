@@ -103,3 +103,33 @@ describe('DataManager.prependBars', () => {
     expect(dm.getData().map((b) => b.time)).toEqual([1, 2]);
   });
 });
+
+describe('DataManager — one time unit per series', () => {
+  const S = 1_790_000_000; // seconds
+  const seconds = () => {
+    const dm = new DataManager();
+    dm.setData([bar(S, 1, 2, 0.5, 1.5, 1), bar(S + 60, 1, 2, 0.5, 1.5, 1)]);
+    return dm;
+  };
+
+  it('stores bars that come in milliseconds in the series’ seconds', () => {
+    const dm = seconds();
+    dm.appendBar(bar((S + 120) * 1000, 1, 2, 0.5, 1.5, 1));
+    dm.updateLastBar(bar((S + 120) * 1000, 1, 3, 0.5, 2, 1));
+    dm.updateLastBarFromTick({ price: 2.5, time: (S + 120) * 1000 });
+    expect(dm.getData().map((b) => b.time)).toEqual([S, S + 60, S + 120]);
+  });
+
+  it('stores older bars in the series’ unit, so a page in milliseconds lands before the first', () => {
+    const dm = seconds();
+    expect(dm.prependBars([bar((S - 60) * 1000, 1, 2, 0.5, 1.5, 1)])).toBe(1);
+    expect(dm.getData()[0].time).toBe(S - 60);
+  });
+
+  it('stores bars in seconds in a series in milliseconds', () => {
+    const dm = new DataManager();
+    dm.setData([bar(S * 1000, 1, 2, 0.5, 1.5, 1)]);
+    dm.appendBar(bar(S + 60, 1, 2, 0.5, 1.5, 1));
+    expect(dm.getData()[1].time).toBe((S + 60) * 1000);
+  });
+});

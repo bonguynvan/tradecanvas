@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
-import { timeParts, zonedDateFormatter } from '@tradecanvas/commons';
+import { barTimeUnit, timeParts, zonedDateFormatter } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 import type { GpuRect } from '../engine/gpu.js';
 
@@ -93,10 +93,11 @@ export class SessionBreaks {
     }
 
     const out: SessionBreak[] = [];
-    let prev = timeParts(this.toMs(data[0].time), this.tz);
+    const unit = barTimeUnit(data);
+    let prev = timeParts(data[0].time * unit, this.tz);
 
     for (let i = 1; i < data.length; i++) {
-      const time = this.toMs(data[i].time);
+      const time = data[i].time * unit;
       const d = timeParts(time, this.tz);
       if (d.year !== prev.year) {
         out.push({ idx: i, kind: 'year', time, year: d.year });
@@ -115,10 +116,6 @@ export class SessionBreaks {
     this.cachedMedianStep = medianBarInterval(data);
     this.cacheValid = true;
     return out;
-  }
-
-  private toMs(timestamp: number): number {
-    return timestamp > 1e12 ? timestamp : timestamp * 1000;
   }
 
   /** The break lines and their labels. */
@@ -271,13 +268,10 @@ const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric'
 function medianBarInterval(data: { time: number }[]): number {
   if (data.length < 2) return 0;
   const sample = Math.min(50, data.length - 1);
+  const unit = barTimeUnit(data);
   const diffs: number[] = [];
   for (let i = 1; i <= sample; i++) {
-    const a = data[i - 1].time;
-    const b = data[i].time;
-    const ams = a > 1e12 ? a : a * 1000;
-    const bms = b > 1e12 ? b : b * 1000;
-    diffs.push(bms - ams);
+    diffs.push((data[i].time - data[i - 1].time) * unit);
   }
   diffs.sort((x, y) => x - y);
   return diffs[Math.floor(diffs.length / 2)];

@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="bar-times">
+  Thời gian của nến là epoch mili-giây hoặc giây, một đơn vị cho cả chuỗi. Biểu đồ đọc đơn vị một lần, từ nến mới nhất: <code>barTimeUnit(data)</code> trả về 1 (mili-giây, từ 1e11 trở lên) hoặc 1000 (giây). Vì vậy một chuỗi mili-giây giữ đúng ngày cả trước năm 2001, dù các giá trị đó nhỏ hơn 1e12. Hãy giữ một chuỗi ở một đơn vị; thời gian biểu đồ trả lại (sự kiện, <code>getData()</code>) dùng đơn vị đó.
+</p>
+
 <h3>Loại biểu đồ &amp; giao diện</h3>
 <table>
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>

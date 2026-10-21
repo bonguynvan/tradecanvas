@@ -25,12 +25,28 @@ describe('time ↔ index beyond the data', () => {
   it('extrapolates times past the newest and before the oldest bar', () => {
     expect(barIndexToTime(9, data)).toBe(13 * MIN);
     expect(barIndexToTime(12, data)).toBe(16 * MIN); // 3 bars into the future
-    expect(barIndexToTime(-2, data)).toBe(-2 * MIN);
+    // Back in time, by the average spacing of the first bars, gaps included:
+    // 13 minutes over 9 intervals.
+    expect(barIndexToTime(-9, data)).toBeCloseTo(-13 * MIN, 6);
+  });
+
+  it('steps back over weekends as daily bars do, not a calendar day a slot', () => {
+    const DAY = 86_400_000;
+    const weekdays: { time: number }[] = [];
+    for (let t = Date.UTC(2025, 0, 6); weekdays.length < 100; t += DAY) {
+      const dow = new Date(t).getUTCDay();
+      if (dow !== 0 && dow !== 6) weekdays.push({ time: t });
+    }
+    // 50 weekday bars back is about ten weeks: 70 days, not 50.
+    const back = (weekdays[0].time - barIndexToTime(-50, weekdays)) / DAY;
+    expect(back).toBeGreaterThan(65);
+    expect(back).toBeLessThan(75);
+    expect(timestampToBarIndex(barIndexToTime(-37.5, weekdays), weekdays)).toBeCloseTo(-37.5, 6);
   });
 
   it('maps future timestamps back to future indices instead of clamping to the last bar', () => {
     expect(timestampToBarIndex(16 * MIN, data)).toBe(12);
-    expect(timestampToBarIndex(-2 * MIN, data)).toBe(-2);
+    expect(timestampToBarIndex(-13 * MIN, data)).toBeCloseTo(-9, 6);
     expect(timestampToBarIndex(13 * MIN, data)).toBe(9);
   });
 

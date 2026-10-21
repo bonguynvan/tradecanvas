@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
 
 /** Gap between the pointer and the card. */
 const POINTER_GAP = 16;
@@ -17,6 +17,8 @@ export interface CrosshairTooltipContext {
   plot?: { x: number; y: number; width: number; height: number };
   /** Spacing of the bars in ms: daily-or-larger shows a date, sub-minute adds seconds. */
   barStepMs?: number;
+  /** Milliseconds in one unit of the bars' times (`barTimeUnit(data)`); by each time's size otherwise. */
+  timeUnit?: BarTimeUnit;
 }
 
 const MONTH_DAY: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
@@ -41,8 +43,9 @@ export function formatTooltipTime(
   tz: TimeZoneSetting,
   barStepMs?: number,
   locale = 'en-US',
+  unit?: BarTimeUnit,
 ): string {
-  const ms = normalizeBarTime(rawTime);
+  const ms = normalizeBarTime(rawTime, unit);
   const parts = timeParts(ms, tz);
   const daily = barStepMs !== undefined && barStepMs > 0 ? barStepMs >= DAY_MS : isDateOnly(parts);
   if (daily) return formatDate(ms, tz, locale, true);
@@ -200,8 +203,8 @@ export class CrosshairTooltip {
     const sign = up ? '+' : '−';
 
     this.timeEl.textContent = this.timeFormatter
-      ? this.timeFormatter(normalizeBarTime(bar.time), { kind: 'crosshair', timeZone: this.tz })
-      : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale);
+      ? this.timeFormatter(normalizeBarTime(bar.time, context.timeUnit), { kind: 'crosshair', timeZone: this.tz })
+      : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale, context.timeUnit);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);

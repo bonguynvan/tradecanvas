@@ -1,4 +1,5 @@
 import type { ViewportState } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 
 export function barIndexToX(index: number, viewport: ViewportState): number {
   const barUnit = viewport.barWidth + viewport.barSpacing;
@@ -104,26 +105,46 @@ export function barTimeStep(data: TimedSeries): number {
   return step;
 }
 
+/** Bars the spacing before the oldest bar is averaged over. */
+const PAST_STEP_SAMPLE = 100;
+
+const pastStepCache = new WeakMap<TimedSeries, { length: number; first: number; end: number; step: number }>();
+
 /**
- * `barTimeStep` in milliseconds whatever unit the series uses: bar times
- * below 1e12 are seconds (the same rule as `normalizeBarTime`).
+ * The average spacing of the first bars, weekends, nights and halts
+ * included: how far back in time a slot before the oldest bar goes, so an
+ * extrapolated date lands about where the bars, once loaded, would put it.
+ * Cached per series; `barTimeStep` when the first bars share one time, 0
+ * when there are fewer than two bars.
  */
+export function pastTimeStep(data: TimedSeries): number {
+  const n = data.length;
+  if (n < 2) return 0;
+  const k = Math.min(n - 1, PAST_STEP_SAMPLE);
+  const cached = pastStepCache.get(data);
+  if (cached && cached.length === n && cached.first === data[0].time && cached.end === data[k].time) return cached.step;
+  const average = (data[k].time - data[0].time) / k;
+  const step = average > 0 ? average : barTimeStep(data);
+  pastStepCache.set(data, { length: n, first: data[0].time, end: data[k].time, step });
+  return step;
+}
+
+/** `barTimeStep` in milliseconds whatever unit the series uses (`barTimeUnit`). */
 export function barTimeStepMs(data: TimedSeries): number {
-  const step = barTimeStep(data);
-  const last = data.length > 0 ? data[data.length - 1].time : 0;
-  return last > 1e12 ? step : step * 1000;
+  return barTimeStep(data) * barTimeUnit(data);
 }
 
 /**
- * Time at bar index `index`, extrapolated by `barTimeStep` past either end of
- * the data — e.g. the future area right of the newest bar.
+ * Time at bar index `index`, extrapolated past either end of the data: by
+ * `barTimeStep` into the future right of the newest bar, by `pastTimeStep`
+ * before the oldest.
  */
 export function barIndexToTime(index: number, data: TimedSeries): number {
   const n = data.length;
   if (n === 0) return index;
   const last = n - 1;
   if (index > last) return data[last].time + (index - last) * barTimeStep(data);
-  if (index < 0) return data[0].time + index * barTimeStep(data);
+  if (index < 0) return data[0].time + index * pastTimeStep(data);
   const lo = Math.floor(index);
   if (lo === index || lo >= last) return data[lo].time;
   return data[lo].time + (index - lo) * (data[lo + 1].time - data[lo].time);
@@ -132,7 +153,7 @@ export function barIndexToTime(index: number, data: TimedSeries): number {
 /**
  * Convert a bar timestamp to its data-array index via binary search.
  * Falls back to fractional interpolation when the timestamp falls between bars,
- * and extrapolates (by `barTimeStep`) for times beyond either end — so a drawing
+ * and extrapolates (as `barIndexToTime` does) for times beyond either end — so a drawing
  * anchored in the future keeps its place instead of collapsing onto the last bar.
  * Returns -1 if data is empty.
  */
@@ -144,7 +165,7 @@ export function timestampToBarIndex(timestamp: number, data: TimedSeries): numbe
   if (timestamp <= first || timestamp >= lastTime) {
     if (timestamp === first) return 0;
     if (timestamp === lastTime) return lastIdx;
-    const step = barTimeStep(data);
+    const step = timestamp < first ? pastTimeStep(data) : barTimeStep(data);
     if (step <= 0) return timestamp < first ? 0 : lastIdx;
     return timestamp < first ? (timestamp - first) / step : lastIdx + (timestamp - lastTime) / step;
   }

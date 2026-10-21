@@ -46,6 +46,9 @@ export type { MagnetMode } from './magnetSnap.js';
 const clipboard: { drawings: DrawingState[]; pastes: number } = { drawings: [], pastes: 0 };
 
 
+/** Anchor times below this, on bars timed by timestamps, are bar indices from old saves. */
+const LEGACY_INDEX_LIMIT = 1e7;
+
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
   private drawings: DrawingState[] = [];
@@ -898,19 +901,23 @@ export class DrawingManager {
 
   /**
    * Auto-migrate legacy bar-index anchors to real timestamps when data is
-   * available. Heuristic: anchors with `time < 1e9` are treated as bar indices
-   * (timestamps in seconds are > 1e9 for any date after 2001-09-09), and
-   * upgraded by looking up the corresponding bar's timestamp. Anchors that
-   * already look like timestamps are passed through untouched. Idempotent.
+   * available. Heuristic: anchors below `LEGACY_INDEX_LIMIT` (ten million)
+   * are bar indices, as long as the bars carry timestamps; a time in seconds
+   * passes that from April 1970 on, so old dates (a 2000 bar is below 1e9
+   * seconds) stay times. Upgraded by looking up the bar's timestamp; anchors
+   * that already look like timestamps pass through untouched. Idempotent.
    */
   private upgradeLegacyAnchors(states: DrawingState[]): DrawingState[] {
     const data = this.dataGetter?.();
     if (!data || data.length === 0) return states;
-    const TIMESTAMP_THRESHOLD = 1e9;
+    const TIMESTAMP_THRESHOLD = LEGACY_INDEX_LIMIT;
+    // Bars timed by index themselves (tests, synthetic series): nothing to upgrade.
+    if (data[data.length - 1].time < TIMESTAMP_THRESHOLD) return states;
     return states.map(d => ({
       ...d,
       anchors: d.anchors.map(a => {
-        if (a.time >= TIMESTAMP_THRESHOLD) return a;
+        // Only a finite, non-negative small number is an old bar index.
+        if (!Number.isFinite(a.time) || a.time < 0 || a.time >= TIMESTAMP_THRESHOLD) return a;
         const idx = Math.max(0, Math.min(data.length - 1, Math.round(a.time)));
         return { ...a, time: data[idx].time };
       }),

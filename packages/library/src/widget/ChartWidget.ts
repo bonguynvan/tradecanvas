@@ -1,5 +1,5 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -152,9 +152,6 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
-/** 1 when bar times are milliseconds, 1000 when they are seconds. */
-const barTimeUnit = (data: ReadonlyArray<{ time: number }>): number =>
-  (data[data.length - 1]?.time ?? 0) > 1e12 ? 1 : 1000;
 
 
 export class ChartWidget {
@@ -3939,8 +3936,9 @@ function sessionDay(
 ): { open: number; high: number; low: number; close: number; volume: number; prevClose?: number } | null {
   if (bars.length === 0) return null;
   const tz = zone && isValidTimeZone(zone) ? zone : null;
+  const unit = barTimeUnit(bars);
   const dayOf = (t: number) => {
-    const ms = t < 1e11 ? t * 1000 : t; // bars timed in seconds
+    const ms = t * unit;
     return Math.floor((ms + (tz ? zoneOffsetMinutes(tz, ms) * 60_000 : 0)) / DAY_MS);
   };
   const last = bars[bars.length - 1];

@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeFormatContext, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { timeParts, tzLabel, isDateOnly, barsAreDaily } from '@tradecanvas/commons';
+import { timeParts, tzLabel, isDateOnly, barsAreDaily, barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
@@ -54,20 +54,22 @@ export class TimeAxis {
     const minLabelSpacing = 80;
     const barsPerLabel = Math.max(1, Math.ceil(minLabelSpacing / barUnit));
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
-    // Label every slot on screen — including the empty future right of the
-    // newest bar, which the chart can be panned into — not just loaded bars.
-    let from = Math.floor(viewport.offset / barUnit);
+    // Label every slot on screen from the oldest bar on, including the empty
+    // future right of the newest bar, which the chart can be panned into.
+    // Left of the oldest bar there is no date to give: history not loaded
+    // yet, whose bars would not fall on calendar steps from it.
+    const from = Math.max(Math.floor(viewport.offset / barUnit), 0);
     let to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
-    if (!this.timesPastData) {
-      from = Math.max(from, 0);
-      to = Math.min(to, data.length - 1);
-    }
+    if (!this.timesPastData) to = Math.min(to, data.length - 1);
+    // Seconds or milliseconds, decided once for the series: an old
+    // millisecond bar must not pass for seconds.
+    const unit = barTimeUnit(data);
 
     // The timezone tag sits at the right end: measure it first so a tick
     // label never draws on top of it (they used to merge into "UTC10/2").
     // The offset in force at the right edge: it changes with daylight saving.
     const rightTime = data.length > 0 ? barIndexToTime(Math.min(to, data.length - 1), data) : Date.now();
-    const tzText = tzLabel(this.tz, rightTime > 1e12 ? rightTime : rightTime * 1000);
+    const tzText = tzLabel(this.tz, rightTime * unit);
     const tzFont = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
     const tzRight = chartRect.x + chartRect.width - 4;
     ctx.font = tzFont;
@@ -81,15 +83,13 @@ export class TimeAxis {
     // Daily-or-larger bars carry dates (with the year); intraday ones show the
     // day where it changes and the time elsewhere, a midnight bar included.
     const daily = barsAreDaily(data);
-    let prevDay = -1;
+    let prevDay = '';
 
     for (let i = from; i <= to && data.length > 0; i++) {
       if (i % barsPerLabel !== 0) continue;
       const x = i * barUnit + offsetX;
 
-      // Handle both milliseconds and seconds timestamps
-      const rawTime = barIndexToTime(i, data);
-      const timeMs = rawTime > 1e12 ? rawTime : rawTime * 1000;
+      const timeMs = barIndexToTime(i, data) * unit;
       const parts = timeParts(timeMs, this.tz);
       const { year, day, month, hours, minutes } = parts;
 
@@ -100,9 +100,10 @@ export class TimeAxis {
       let kind: TimeFormatContext['kind'];
       if (daily ?? isDateOnly(parts)) {
         kind = 'date';
-      } else if (day !== prevDay) {
+      } else if (`${year}-${month}-${day}` !== prevDay) {
+        // The whole date: a label a month on can fall on the same day.
         kind = 'day';
-        prevDay = day;
+        prevDay = `${year}-${month}-${day}`;
       } else {
         kind = 'time';
       }
