@@ -361,6 +361,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'ביטול קיבוץ',
   'drawingMenu.duplicate': 'שכפול',
   'drawingMenu.delete': 'מחיקה',
+  'selectionToolbar.label': 'סרגל כלים של השרטוט',
   'chartMenu.label': 'גרף',
   'chartMenu.addAlert': 'הוספת התראה ב-{price}',
   'chartMenu.alertAdded': 'נוספה התראה ב-{price}',

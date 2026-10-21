@@ -350,6 +350,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Desagrupar',
   'drawingMenu.duplicate': 'Duplicar',
   'drawingMenu.delete': 'Excluir',
+  'selectionToolbar.label': 'Barra do desenho',
   'chartMenu.label': 'Gráfico',
   'chartMenu.addAlert': 'Adicionar alerta em {price}',
   'chartMenu.alertAdded': 'Alerta adicionado em {price}',

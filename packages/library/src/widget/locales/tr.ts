@@ -350,6 +350,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Grubu çöz',
   'drawingMenu.duplicate': 'Çoğalt',
   'drawingMenu.delete': 'Sil',
+  'selectionToolbar.label': 'Çizim araç çubuğu',
   'chartMenu.label': 'Grafik',
   'chartMenu.addAlert': '{price} fiyatına alarm ekle',
   'chartMenu.alertAdded': '{price} fiyatına alarm eklendi',

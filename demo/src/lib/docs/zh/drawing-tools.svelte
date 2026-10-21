@@ -61,6 +61,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>来自已保存布局或粘贴画线的设置会按工具进行校验；工具不接受的值会被丢弃。</p>
 
+<h2 id="selection-toolbar">选中画线上方的工具栏</h2>
+<p>
+  在组件中点击一个画线，其上方会出现一个小工具栏：颜色、线宽和线型，然后是设置、在其线上加提醒、锁定、完整的画线菜单（与右键相同）和删除。选中多个画线时，工具栏位于它们全部之上，修改作用于每一个。画线被移动、平移或缩放时它会跟随；画线工具、橡皮擦或区域缩放开启时它会让开；它是一个 Tab 停靠点，可用方向键在其中移动。
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>多/空仓位</h2>
 <p>
   <code>riskReward</code>：从入场价拖动到止损价。目标位按盈亏比放在相应的距离处，

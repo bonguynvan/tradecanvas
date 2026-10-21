@@ -361,6 +361,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Del opp gruppe',
   'drawingMenu.duplicate': 'Dupliser',
   'drawingMenu.delete': 'Slett',
+  'selectionToolbar.label': 'Verktøylinje for tegning',
   'chartMenu.label': 'Graf',
   'chartMenu.addAlert': 'Legg til varsel ved {price}',
   'chartMenu.alertAdded': 'Varsel lagt til ved {price}',

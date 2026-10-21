@@ -350,6 +350,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': '그룹 해제',
   'drawingMenu.duplicate': '복제',
   'drawingMenu.delete': '삭제',
+  'selectionToolbar.label': '드로잉 도구 모음',
   'chartMenu.label': '차트',
   'chartMenu.addAlert': '{price}에 알림 추가',
   'chartMenu.alertAdded': '{price}에 알림을 추가했습니다',

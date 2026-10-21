@@ -361,6 +361,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'لغو گروه',
   'drawingMenu.duplicate': 'تکثیر',
   'drawingMenu.delete': 'حذف',
+  'selectionToolbar.label': 'نوار ابزار ترسیم',
   'chartMenu.label': 'نمودار',
   'chartMenu.addAlert': 'افزودن هشدار در {price}',
   'chartMenu.alertAdded': 'هشدار در {price} اضافه شد',

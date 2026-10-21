@@ -4,6 +4,16 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Drawings and the legend
+
+- **A toolbar over the selected drawing.** Clicking a drawing in the widget shows a small toolbar right over it: colour, line width and line style, then settings, an alert on its line, lock, the full drawing menu and delete. Nothing hides behind a right-click any more. With several drawings selected it sits over all of them and changes each. It follows the drawing while it is moved, panned, zoomed or rescaled, steps aside while a drawing tool, the eraser or the zoom area is on, goes when nothing is selected, and works with the keyboard (one tab stop, arrow keys along it and through the pickers, Escape back to it). Colours, widths and line styles from saved layouts are checked before they are shown. `features: { selectionToolbar: false }` turns it off.
+- **`chart.getDrawingRect(id)`** gives the box a drawing covers on screen, cut to the plot (lines across the whole plot span it), or null when it is hidden or off screen: for hosts that put their own controls or notes over a drawing.
+- **The OHLCV legend** takes a `fontFamily` (`chart.setLegend({ fontFamily })`, the theme's font by default). Its volume and indicator rows are drawn at the OHLC size, and each value keeps its place while its digits change width, so the row no longer jitters on live ticks. In the widget the legend follows the look's font, at the size of the indicator rows listed under it.
+
+## 1.23.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.5.
+
 ### Candlestick patterns
 
 - **`detectCandlePatterns(bars, options)`** finds 64 patterns of one to five bars, each on the bar it ends on: dojis, hammers, shooting stars, marubozu and belt holds; engulfing, harami, piercing line and dark cloud cover, tweezers, kicking, counterattack, necks and separating lines; morning and evening stars, abandoned babies, three white soldiers and black crows, three inside and outside, two crows, tri-stars, tasuki gaps, stick sandwich, advance block; three-line strikes, rising and falling three methods, mat hold, breakaways, concealing baby swallow, ladder bottom. Reversals count only after the trend they reverse; bodies are long or short against the average body before. `CANDLE_PATTERNS` lists them with names, short labels, direction and kind.

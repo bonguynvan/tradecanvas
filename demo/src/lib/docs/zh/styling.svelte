@@ -239,6 +239,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">OHLCV 图例</h2>
+<p>
+  图表顶部的图例显示指针下的 K 线（否则为最后一根）：开、高、低、收、涨跌和成交量。每个数值在数字变化时保持位置，实时跳动时不会抖动。可以整个关闭，也可以只保留需要的行。在组件中它使用外观的字体，与其下方列出的指标行同样大小；<code>setUI</code> 会在你自己的 <code>setLegend</code> 之后再次设置它。
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>成交量颜色</h2>
 <p>
   成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code> （或 <code>volume.*</code> 键）。<code>volumeColor(candleColor)</code> 返回带成交量透明度的K线颜色，这样在你自己的主题里，成交量柱依然只是K线背后的衬底。在 widget 的设置里修改K线颜色时，它会自动这样处理；基于预设、只改了 <code>candleUp</code> / <code>candleDown</code> 的主题，成交量也会跟随这些颜色。

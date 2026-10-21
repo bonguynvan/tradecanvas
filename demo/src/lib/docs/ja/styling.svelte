@@ -249,6 +249,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">OHLCV 凡例</h2>
+<p>
+  チャート上部の凡例はポインタ下のバー（なければ最後のバー）を表示します：始値、高値、安値、終値、変化と出来高。各値は桁が変わっても位置を保つので、リアルタイムの更新でちらつきません。まるごと消すことも、必要な行だけにすることもできます。ウィジェットではルックのフォントを、その下に並ぶインジケーター行と同じサイズで使います。<code>setUI</code> は自前の <code>setLegend</code> の後でもそれを設定し直します。
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>出来高の色</h2>
 <p>
   出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> （または <code>volume.*</code> キー） を使います。<code>volumeColor(candleColor)</code> はローソク足の色を出来高用の透明度にした色を返すので、独自のテーマでもバーはローソク足の背景にとどまります。widget の設定でローソク足の色を変えたときは、widget が自動でこれを行います。プリセットを元に <code>candleUp</code> / <code>candleDown</code> だけを変えたテーマでも、出来高はその色になります。

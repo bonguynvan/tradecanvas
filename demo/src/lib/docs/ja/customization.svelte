@@ -113,7 +113,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
     <tr><td>チャート上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
       <code>indicatorLegend.remove</code> <code>indicatorLegend.more</code> <code>pane.move</code> <code>pane.collapse</code>
-      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code>
+      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code> <code>selectionToolbar</code>
     </td></tr>
     <tr><td>メニュー</td><td>
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
@@ -135,6 +135,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   <code>menu.chart.*</code> は右クリックメニューと価格軸の横の "+" の両方に効きます。<code>compare</code> はオブジェクト
   ツリーの追加ボタンを取り除き、表示中の比較は一覧に残ります。<code>toasts</code> はウィジェット自身の通知を止めます（エラーは表示されます）。
   <code>widget.toast()</code> による通知も表示されます。
+  <code>selectionToolbar</code> をオフにすると選択した描画の上のツールバーが隠れます。右クリックメニューは残ります。
 </p>
 
 <h2 id="parts">独自の部品</h2>

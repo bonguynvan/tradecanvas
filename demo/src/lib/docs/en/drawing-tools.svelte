@@ -62,6 +62,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>Settings from a saved layout or a pasted drawing are checked against the tool; values it does not take are dropped.</p>
 
+<h2 id="selection-toolbar">The toolbar over a selection</h2>
+<p>
+  In the widget, clicking a drawing shows a small toolbar right over it: colour, line width and line style, then settings, an alert on its line, lock, the full drawing menu (the same as a right-click) and delete. With several drawings selected it sits over all of them, and its changes go to each. It follows the drawing while it is moved, panned or zoomed, steps aside while a drawing tool, the eraser or the zoom area is on, and is one tab stop that the arrow keys move along.
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>Long/Short Position</h2>
 <p>
   <code>riskReward</code>: drag from the entry to the stop. The target sits the

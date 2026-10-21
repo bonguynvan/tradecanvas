@@ -113,7 +113,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
     <tr><td>Sobre el gráfico</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
       <code>indicatorLegend.remove</code> <code>indicatorLegend.more</code> <code>pane.move</code> <code>pane.collapse</code>
-      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code>
+      <code>pane.maximize</code> <code>navigation.zoom</code> <code>navigation.scroll</code> <code>navigation.reset</code> <code>selectionToolbar</code>
     </td></tr>
     <tr><td>Menús</td><td>
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
@@ -136,6 +136,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   <code>compare</code> quita el botón de añadir del árbol de objetos, y las comparaciones ya puestas siguen en la lista;
   <code>toasts</code> calla los avisos del propio widget (sus errores se siguen mostrando), y los tuyos con
   <code>widget.toast()</code> también se muestran.
+  <code>selectionToolbar</code> apagado oculta la barra sobre un dibujo seleccionado; el menú del botón derecho sigue.
 </p>
 
 <h2 id="parts">Tus propias partes</h2>

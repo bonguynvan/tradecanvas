@@ -350,6 +350,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'グループ解除',
   'drawingMenu.duplicate': '複製',
   'drawingMenu.delete': '削除',
+  'selectionToolbar.label': '描画ツールバー',
   'chartMenu.label': 'チャート',
   'chartMenu.addAlert': '{price} にアラートを追加',
   'chartMenu.alertAdded': '{price} にアラートを追加しました',

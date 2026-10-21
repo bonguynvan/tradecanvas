@@ -361,6 +361,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Tühista rühmitus',
   'drawingMenu.duplicate': 'Dubleeri',
   'drawingMenu.delete': 'Kustuta',
+  'selectionToolbar.label': 'Joonise tööriistariba',
   'chartMenu.label': 'Graafik',
   'chartMenu.addAlert': 'Lisa teavitus hinnal {price}',
   'chartMenu.alertAdded': 'Teavitus lisatud hinnal {price}',

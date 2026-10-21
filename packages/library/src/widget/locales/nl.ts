@@ -350,6 +350,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Groep opheffen',
   'drawingMenu.duplicate': 'Dupliceren',
   'drawingMenu.delete': 'Verwijderen',
+  'selectionToolbar.label': 'Werkbalk tekening',
   'chartMenu.label': 'Grafiek',
   'chartMenu.addAlert': 'Alarm toevoegen op {price}',
   'chartMenu.alertAdded': 'Alarm toegevoegd op {price}',

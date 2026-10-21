@@ -61,6 +61,19 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>저장된 레이아웃이나 붙여넣은 그림의 설정은 도구에 맞게 검사되며, 도구가 받지 않는 값은 버려집니다.</p>
 
+<h2 id="selection-toolbar">선택한 그림 위의 도구 모음</h2>
+<p>
+  위젯에서 그림을 클릭하면 바로 위에 작은 도구 모음이 나타납니다: 색, 선 두께와 선 모양, 이어서 설정, 그 선에 거는 알림, 잠금, 그림의 전체 메뉴(오른쪽 클릭과 같음), 삭제. 여러 그림을 선택하면 모두의 위에 놓이고 변경은 각각에 적용됩니다. 그림을 옮기거나 이동·확대할 때 따라가고, 그리기 도구·지우개·영역 확대가 켜져 있으면 비켜나며, 화살표 키로 이동하는 하나의 탭 정지점입니다.
+</p>
+<pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
+widget.setFeatures({ selectionToolbar: true })
+
+// Your own controls over a drawing, on a bare Chart:
+chart.on('drawingSelect', ({ payload }) => {
+  const rect = payload.primary ? chart.getDrawingRect(payload.primary) : null
+  // { x, y, width, height } in px from the chart container's top-left, or null
+})`}</code></pre>
+
 <h2>롱/숏 포지션</h2>
 <p>
   <code>riskReward</code>: 진입가에서 손절가까지 드래그합니다. 목표가는 손익비만큼 떨어진

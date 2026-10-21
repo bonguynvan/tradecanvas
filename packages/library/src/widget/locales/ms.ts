@@ -361,6 +361,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Nyahkumpulkan',
   'drawingMenu.duplicate': 'Pendua',
   'drawingMenu.delete': 'Padam',
+  'selectionToolbar.label': 'Bar alat lukisan',
   'chartMenu.label': 'Carta',
   'chartMenu.addAlert': 'Tambah amaran pada {price}',
   'chartMenu.alertAdded': 'Amaran ditambah pada {price}',

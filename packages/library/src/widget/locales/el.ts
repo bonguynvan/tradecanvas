@@ -350,6 +350,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Κατάργηση ομαδοποίησης',
   'drawingMenu.duplicate': 'Δημιουργία αντιγράφου',
   'drawingMenu.delete': 'Διαγραφή',
+  'selectionToolbar.label': 'Γραμμή εργαλείων σχεδίου',
   'chartMenu.label': 'Γράφημα',
   'chartMenu.addAlert': 'Προσθήκη ειδοποίησης στο {price}',
   'chartMenu.alertAdded': 'Προστέθηκε ειδοποίηση στο {price}',

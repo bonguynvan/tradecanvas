@@ -38,6 +38,8 @@ export const WIDGET_FEATURES = [
   'menu.chart.scale', 'menu.chart.goToDate', 'menu.chart.paneScale', 'menu.priceAxisAdd',
   'menu.drawing', 'menu.drawing.settings', 'menu.drawing.alert', 'menu.drawing.order', 'menu.drawing.group',
   'menu.drawing.lock', 'menu.drawing.hide', 'menu.drawing.duplicate', 'menu.drawing.delete',
+  // The toolbar that appears over a selected drawing.
+  'selectionToolbar',
   // Keys.
   'hotkeys.commandPalette', 'hotkeys.symbolSearch', 'hotkeys.save', 'hotkeys.tools', 'hotkeys.invertScale',
   'hotkeys.goToDate', 'hotkeys.help',

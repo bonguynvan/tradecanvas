@@ -350,6 +350,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Csoportbontás',
   'drawingMenu.duplicate': 'Duplikálás',
   'drawingMenu.delete': 'Törlés',
+  'selectionToolbar.label': 'Rajz eszköztár',
   'chartMenu.label': 'Grafikon',
   'chartMenu.addAlert': 'Riasztás hozzáadása: {price}',
   'chartMenu.alertAdded': 'Riasztás hozzáadva: {price}',

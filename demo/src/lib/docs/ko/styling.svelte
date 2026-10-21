@@ -248,6 +248,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">OHLCV 범례</h2>
+<p>
+  차트 위쪽의 범례는 포인터 아래의 봉(없으면 마지막 봉)을 보여 줍니다: 시가, 고가, 저가, 종가, 변동과 거래량. 각 값은 자릿수가 바뀌어도 자리를 지키므로 실시간 틱에 흔들리지 않습니다. 아예 끄거나 원하는 줄만 남길 수 있습니다. 위젯에서는 룩의 글꼴을 그 아래 지표 줄과 같은 크기로 씁니다. <code>setUI</code>는 직접 호출한 <code>setLegend</code> 뒤에도 이를 다시 설정합니다.
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>거래량 색</h2>
 <p>
   거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code> (또는 <code>volume.*</code> 키)을 씁니다. <code>volumeColor(candleColor)</code>는 캔들 색을 거래량의 투명도로 돌려주므로, 직접 만든 테마에서도 막대가 캔들 뒤의 배경으로 남습니다. widget의 설정에서 캔들 색을 바꾸면 widget이 알아서 이렇게 하고, 프리셋을 바탕으로 <code>candleUp</code> / <code>candleDown</code>만 바꾼 테마도 거래량이 그 색을 따릅니다.

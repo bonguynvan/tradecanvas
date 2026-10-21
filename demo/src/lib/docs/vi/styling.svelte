@@ -250,6 +250,22 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 chart.setShapes({ tagRadius: 999 })   // pill price tags, axis pills and order badges
 chart.getShapes()`}</code></pre>
 
+<h2 id="legend">Chú giải OHLCV</h2>
+<p>
+  Chú giải ở đầu biểu đồ hiện nến dưới con trỏ (không thì nến cuối): mở, cao, thấp, đóng, thay đổi và volume. Mỗi giá trị giữ nguyên chỗ khi chữ số thay đổi nên không bị giật khi giá chạy. Có thể tắt hẳn, hoặc chỉ giữ các dòng bạn cần. Trong widget nó dùng font của giao diện, cùng cỡ với các dòng chỉ báo bên dưới; <code>setUI</code> đặt lại điều đó, sau một <code>setLegend</code> của bạn.
+</p>
+<pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
+chart.setLegend({ visible: false })                  // or at any time
+chart.setLegend({
+  showSymbol: false, showOHLC: true, showChange: true, showVolume: false,
+  position: 'top-right',
+  fontSize: 11,
+  fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+})
+
+// The widget: start with it off (the user can still turn it on in Settings)
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
 <h2>Màu volume</h2>
 <p>
   Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> (hoặc các khoá <code>volume.*</code>) của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến, và một theme dựa trên preset chỉ đổi <code>candleUp</code> / <code>candleDown</code> cũng có volume theo màu đó.

@@ -350,6 +350,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'drawingMenu.ungroup': 'Zrušiť zoskupenie',
   'drawingMenu.duplicate': 'Duplikovať',
   'drawingMenu.delete': 'Odstrániť',
+  'selectionToolbar.label': 'Panel nástrojov kresby',
   'chartMenu.label': 'Graf',
   'chartMenu.addAlert': 'Pridať upozornenie na úrovni {price}',
   'chartMenu.alertAdded': 'Upozornenie pridané na úrovni {price}',
