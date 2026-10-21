@@ -182,7 +182,7 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## 法人の方へ
 
-TradeCanvas をお客様向けの製品に組み込みますか？表示が必要なロゴも、申請手続きもありません。[法人向けページ](https://bonguynvan.github.io/tradecanvas/ja/business/)では、IT 審査でよく聞かれる項目に出典つきで答え、最初のパートナー向けプログラムを紹介しています。お問い合わせは business@tradingdek.com まで。
+TradeCanvas をお客様向けの製品に組み込みますか？表示が必要なロゴも、申請手続きもありません。[法人向けページ](https://bonguynvan.github.io/tradecanvas/ja/business/)では、IT 審査でよく聞かれる項目に出典つきで答え、最初のパートナー向けプログラムを紹介しています。お問い合わせは business@tradecanvas.dev まで。
 
 ## コントリビュート
 

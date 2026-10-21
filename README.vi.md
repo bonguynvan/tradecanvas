@@ -182,7 +182,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## Cho doanh nghiệp
 
-Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://bonguynvan.github.io/tradecanvas/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradingdek.com.
+Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://bonguynvan.github.io/tradecanvas/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradecanvas.dev.
 
 ## Đóng góp
 

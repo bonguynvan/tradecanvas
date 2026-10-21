@@ -182,7 +182,7 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## 企业使用
 
-要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://bonguynvan.github.io/tradecanvas/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradingdek.com。
+要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://bonguynvan.github.io/tradecanvas/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradecanvas.dev。
 
 ## 参与贡献
 
