@@ -1,5 +1,6 @@
 import type { Theme, ThemeName } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import { cappedPixelRatio } from '../engine/DPRManager.js';
 
 function resolveTheme(theme?: ThemeName | Theme): Theme {
   if (!theme || theme === 'dark') return DARK_THEME;
@@ -31,7 +32,7 @@ export abstract class BaseFinanceChart {
     container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d')!;
 
-    this.dpr = window.devicePixelRatio || 1;
+    this.dpr = cappedPixelRatio();
     this.updateSize();
 
     this.resizeObserver = new ResizeObserver(() => {
@@ -42,7 +43,7 @@ export abstract class BaseFinanceChart {
   }
 
   private updateSize(): void {
-    this.dpr = window.devicePixelRatio || 1;
+    this.dpr = cappedPixelRatio();
     const rect = this.container.getBoundingClientRect();
     this.width = rect.width || this.container.clientWidth;
     this.height = rect.height || this.container.clientHeight;
@@ -87,6 +88,8 @@ export abstract class BaseFinanceChart {
   destroy(): void {
     if (this.frameId !== null) cancelAnimationFrame(this.frameId);
     this.resizeObserver.disconnect();
+    this.canvas.width = 0;
+    this.canvas.height = 0;
     this.canvas.remove();
   }
 }

@@ -5,6 +5,8 @@ export type RenderCallback = (dirtyLayers: ReadonlySet<LayerType>) => void;
 export class RenderLoop {
   private animFrameId = 0;
   private running = false;
+  /** Off screen or in the background: changes are kept, no frame is asked for. */
+  private paused = false;
   private dirtyLayers = new Set<LayerType>();
   // Swap set — avoids allocation per frame
   private swapLayers = new Set<LayerType>();
@@ -16,7 +18,7 @@ export class RenderLoop {
 
   markDirty(layer: LayerType): void {
     this.dirtyLayers.add(layer);
-    if (this.running && !this.animFrameId) {
+    if (this.running && !this.paused && !this.animFrameId) {
       this.scheduleFrame();
     }
   }
@@ -27,7 +29,7 @@ export class RenderLoop {
     this.dirtyLayers.add(LayerType.Overlay);
     this.dirtyLayers.add(LayerType.UI);
     this.dirtyLayers.add(LayerType.Hover);
-    if (this.running && !this.animFrameId) {
+    if (this.running && !this.paused && !this.animFrameId) {
       this.scheduleFrame();
     }
   }
@@ -35,6 +37,26 @@ export class RenderLoop {
   start(): void {
     this.running = true;
     this.markAllDirty();
+  }
+
+  /** Stop asking for frames (the chart is off screen, or the page hidden); what changes meanwhile is kept. */
+  pause(): void {
+    this.paused = true;
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = 0;
+    }
+  }
+
+  /** Ask for frames again: one draws what changed while paused. */
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.running && this.dirtyLayers.size > 0 && !this.animFrameId) this.scheduleFrame();
+  }
+
+  isPaused(): boolean {
+    return this.paused;
   }
 
   stop(): void {

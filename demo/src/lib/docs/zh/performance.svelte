@@ -106,6 +106,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   一根K线的宽度不会小于四分之一个 CSS 像素，因此“在 1,000,000 根K线上缩小”时每个像素约显示四根K线（1600 px 宽的图表约 6,400 根）；测试场景会平移浏览其余的K线。
 </p>
 
+<h2 id="mobile">手机与应用</h2>
+<p>
+  手机屏幕为 3 倍，CPU 更慢，还靠电池运行。图表最多以 2 的像素比绘制（<code>maxPixelRatio</code>）：像素比 3 倍少 56%，线条几乎不变软。图表移出屏幕或页面隐藏时停止绘制（<code>pauseWhenHidden</code>），在 WebView 中嵌入它的应用可以用 <code>suspend()</code> 暂停。实时数据的 tick 比帧更快时，指标每帧只在被读取前重算一次。页面回到前台或网络恢复时，沉默太久的数据流会立即重连，而不是等待心跳；销毁的图表会立即归还画布内存。
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>在手机屏幕上测量（390 × 844、3 倍、CPU 减慢 4 倍、集成显卡），一个带四个指标的图表：</p>
+<table>
+  <thead><tr><th></th><th>之前</th><th>现在</th></tr></thead>
+  <tbody>
+    <tr><td>绘制画面，300 根 K 线</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>实时，每帧 2 个 tick</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>画布内存</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  触摸屏上的组件：输入框为 16 px，获得焦点时页面不会缩放；面板位于屏幕键盘之上；高度使用动态视口单位。在自己的机器上测量：<code>node scripts/bench-render.mjs --mobile</code>。
+</p>
+
 <h2>主线程</h2>
 <p>
   图表在主线程上计算指标。<code>@tradecanvas/core</code> 中的 <code>IndicatorWorkerHost</code> 可以在你提供的 worker 中运行 <code>calculate()</code>，提供基于 Promise 的 API、按请求设置的超时，以及用于 SSR 和测试的同步回退，但图表目前还没有让其指标经由它计算，各个包也没有附带 worker 脚本。

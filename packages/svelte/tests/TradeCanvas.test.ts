@@ -6,6 +6,8 @@ const { chart, ChartCtor } = vi.hoisted(() => {
   const chart = {
     connect: vi.fn(),
     setData: vi.fn(),
+    updateLastBar: vi.fn(),
+    appendBar: vi.fn(),
     setChartType: vi.fn(),
     setTheme: vi.fn(),
     addIndicator: vi.fn((id: string) => `iid-${id}`),
@@ -143,4 +145,37 @@ describe('<TradeCanvas> (svelte)', () => {
     unmount();
     expect(chart.destroy).toHaveBeenCalled();
   });
+
+  it('feeds bars pushed onto $state data as ticks, as plain copies, not the state', async () => {
+    const { default: DataHost } = await import('./DataHost.svelte');
+    type Host = { push: (bar: typeof BAR) => void; setClose: (close: number) => void };
+    let host: Host | null = null;
+    render(DataHost, { props: { onHost: (h: Host) => { host = h; } } });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    const given = chart.setData.mock.calls[0][0] as unknown[];
+    // A bar pushed: the one before it settles, the new one goes on the end.
+    host!.push({ ...BAR, time: 2 });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
+    expect(chart.updateLastBar).toHaveBeenCalledWith(BAR);
+    // A copy: what the chart was given doesn't change with the state.
+    expect(given).toHaveLength(1);
+    // The forming bar changed in place: an update of the last bar.
+    host!.setClose(3);
+    flushSync();
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...BAR, time: 2, close: 3 });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a new array as a new series', async () => {
+    const { rerender } = render(TradeCanvas, { props: { data: [BAR], stream: false } });
+    flushSync();
+    await rerender({ data: [BAR, { ...BAR, time: 2 }], stream: false });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(2);
+    expect(chart.appendBar).not.toHaveBeenCalled();
+  });
 });
+

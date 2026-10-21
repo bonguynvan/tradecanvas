@@ -156,3 +156,107 @@ describe('StreamManager — timeframes the feed lacks', () => {
     expect(connects.at(-1)?.timeframe).toBe('5m');
   });
 });
+
+describe('StreamManager.wake — back from sleep', () => {
+  /** A connected stream whose adapter can say it is connected and send ticks. */
+  async function connected() {
+    const made = controlledAdapter();
+    const listeners = new Map<string, Set<DataAdapterListener>>();
+    const on = made.adapter.on.bind(made.adapter);
+    made.adapter.on = (event, listener) => {
+      if (!listeners.has(event)) listeners.set(event, new Set());
+      listeners.get(event)!.add(listener as DataAdapterListener);
+      on(event, listener);
+    };
+    const emit = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type, data, timestamp: Date.now() } as never); };
+    const sm = new StreamManager();
+    const p = sm.connect({ adapter: made.adapter, symbol: 'AAA', timeframe: '1m' });
+    made.pending[0].resolve(bars(1));
+    await p;
+    emit('connectionChange', 'connected');
+    return { ...made, sm, emit };
+  }
+
+  it('reconnects at once, once, when the page comes back to a connection silent too long', async () => {
+    vi.useFakeTimers();
+    const { sm, pending } = await connected();
+    expect(sm.getConnectionState()).toBe('connected');
+    // A reconnect asks for the history again first.
+    const before = pending.length;
+    vi.setSystemTime(Date.now() + 45_000);
+    sm.wake('visible');
+    expect(pending.length).toBe(before + 1);
+    // The adapter's own 'disconnected' doesn't queue a second one.
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(pending.length).toBe(before + 1);
+    sm.dispose();
+  });
+
+  it('leaves a connection that just spoke alone when the page comes back', async () => {
+    vi.useFakeTimers();
+    const { sm, pending, emit } = await connected();
+    // A reconnect asks for the history again first.
+    const before = pending.length;
+    emit('tick', { price: 2, volume: 1, time: Date.now() });
+    sm.wake('visible');
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(pending.length).toBe(before);
+    sm.dispose();
+  });
+
+  it('reconnects when the network comes back, however recent the last message', async () => {
+    vi.useFakeTimers();
+    const { sm, pending } = await connected();
+    // A reconnect asks for the history again first.
+    const before = pending.length;
+    sm.wake('online');
+    expect(pending.length).toBe(before + 1);
+    sm.dispose();
+  });
+
+  it('skips the backoff of a retry waiting after a failed connect', async () => {
+    vi.useFakeTimers();
+    const { sm, pending } = await connected();
+    sm.wake('online');
+    pending[pending.length - 1].reject(new Error('offline'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sm.getConnectionState()).not.toBe('connected');
+    const before = pending.length;
+    sm.wake('online');
+    expect(pending.length).toBe(before + 1);
+    sm.dispose();
+  });
+
+  it('leaves a connect under way alone (a symbol switch)', async () => {
+    vi.useFakeTimers();
+    const { sm, pending } = await connected();
+    void sm.switchTo('BBB', '1m');
+    const before = pending.length;
+    sm.wake('online');
+    expect(pending.length).toBe(before);
+    expect(pending[pending.length - 1].symbol).toBe('BBB');
+    sm.dispose();
+  });
+
+  it('tries again with a fresh round of retries after giving up', async () => {
+    vi.useFakeTimers();
+    const made = controlledAdapter();
+    const sm = new StreamManager();
+    void sm.connect({ adapter: made.adapter, symbol: 'AAA', timeframe: '1m', reconnect: { maxRetries: 0 } });
+    made.pending[0].reject(new Error('offline'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sm.getConnectionState()).toBe('error');
+    sm.wake('online');
+    expect(made.pending.length).toBe(2);
+    sm.dispose();
+  });
+
+  it('does nothing once disconnected', () => {
+    const { adapter, pending } = controlledAdapter();
+    const sm = new StreamManager();
+    void sm.connect({ adapter, symbol: 'AAA', timeframe: '1m' });
+    sm.disconnect();
+    sm.wake('online');
+    expect(pending.length).toBe(1);
+  });
+});

@@ -5,6 +5,8 @@ const { chart, ChartCtor } = vi.hoisted(() => {
   const chart = {
     connect: vi.fn(),
     setData: vi.fn(),
+    updateLastBar: vi.fn(),
+    appendBar: vi.fn(),
     setChartType: vi.fn(),
     setTheme: vi.fn(),
     addIndicator: vi.fn((id: string) => `iid-${id}`),
@@ -139,4 +141,35 @@ describe('<TradeCanvas> (vue)', () => {
     wrapper.unmount();
     expect(chart.destroy).toHaveBeenCalled();
   });
+
+  it('feeds bars pushed onto reactive data as ticks, as plain bars, not proxies', async () => {
+    const { reactive, isProxy, nextTick } = await import('vue');
+    const data = reactive([{ ...BAR }]);
+    mount(TradeCanvas, { props: { data, stream: false } });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(isProxy(chart.setData.mock.calls[0][0])).toBe(false);
+    // A bar pushed: the one before it settles, the new one goes on the end.
+    data.push({ ...BAR, time: 2 });
+    await nextTick();
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.updateLastBar).toHaveBeenCalledWith(BAR);
+    expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
+    expect(isProxy(chart.appendBar.mock.calls[0][0])).toBe(false);
+    // The forming bar changed in place, or replaced: an update of the last bar.
+    data[1].close = 3;
+    await nextTick();
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...BAR, time: 2, close: 3 });
+    data[1] = { ...BAR, time: 2, close: 4 };
+    await nextTick();
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...BAR, time: 2, close: 4 });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a new array as a new series', async () => {
+    const wrapper = mount(TradeCanvas, { props: { data: [BAR], stream: false } });
+    await wrapper.setProps({ data: [BAR, { ...BAR, time: 2 }] });
+    expect(chart.setData).toHaveBeenCalledTimes(2);
+    expect(chart.appendBar).not.toHaveBeenCalled();
+  });
 });
+

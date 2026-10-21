@@ -195,6 +195,8 @@ export class Chart {
   /** The background last put on the container (setTheme, a style change), so a host's own stays. */
   private lastBackground: string | null = null;
   private renderScheduled = false;
+  /** A live tick's refit left for when the chart draws again (it is paused). */
+  private renderDeferred = false;
   /** Current price-axis width; grows to fit long (e.g. sub-cent) labels. */
   private priceAxisWidth = PRICE_AXIS_WIDTH;
   private measureCtx: CanvasRenderingContext2D | null | undefined;
@@ -237,6 +239,10 @@ export class Chart {
   private hostSessionHours: SessionHoursConfig = { ...DEFAULT_SESSION_HOURS };
   private compareRenderer: CompareRenderer;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
+  /** Why drawing is paused: the host's `suspend()`, a hidden page, the chart off screen. */
+  private pausedFor = { host: false, page: false, offscreen: false };
+  /** Undoes the page listeners `watchVisibility` set. */
+  private stopWatchingVisibility: (() => void) | null = null;
   private volumeRenderer: VolumeRenderer;
   private volumeProfile: VolumeProfileRenderer;
   private marketProfile: MarketProfileRenderer;
@@ -483,7 +489,7 @@ export class Chart {
     });
 
     // Rendering
-    this.engine = new RenderEngine(container);
+    this.engine = new RenderEngine(container, options.maxPixelRatio);
     const size = this.engine.dprManager.getContainerSize();
     this.viewport = new Viewport(
       size.width,
@@ -1034,6 +1040,7 @@ export class Chart {
     // Set render context
     this.syncRenderContext();
     this.engine.start();
+    this.watchVisibility(container, options.pauseWhenHidden !== false);
     // A lost GPU context: the engine is back on Canvas 2D, until it comes back.
     this.engine.onGpuLost = () => this.eventBus.emit('rendererChange', { renderer: 'canvas', reason: 'contextLost' });
     this.engine.onGpuRestored = () => this.eventBus.emit('rendererChange', { renderer: 'webgl', reason: 'contextRestored' });
@@ -2922,11 +2929,13 @@ export class Chart {
         this.scheduleRender();
         return;
       }
-      // Recalculate indicators so panel/overlay series track the forming bar
-      // instead of freezing until bar close — incrementally, since only the
-      // last bar changed.
+      // Indicators follow the forming bar instead of freezing until it
+      // closes — incrementally, since only the last bar changed, and once
+      // before the next read (the frame, an alert, the legend) for all the
+      // ticks that came since, not once a tick.
       const data = this.dataManager.getData();
-      this.recalcIndicatorsFrom(data, data.length - 1);
+      this.indicatorEngine.deferRecalculateFrom(data, data.length - 1);
+      this.announceIndicatorUpdate(data.length - 1);
       this.scheduleRender();
     });
 
@@ -3288,6 +3297,86 @@ export class Chart {
     // requested range was not actually what ended up on screen.
     this.viewport.zoomToBarRange(a, b);
     this.updateViewportAndRender();
+  }
+
+  /**
+   * Pause drawing, for a host that knows better than the page: a WebView
+   * whose app went to the background, a tab of its own UI out of view. Data,
+   * indicators and alerts keep up; `resume()` draws what changed.
+   */
+  suspend(): void {
+    this.setPaused('host', true);
+  }
+
+  resume(): void {
+    this.setPaused('host', false);
+  }
+
+  /** Whether the chart isn't drawing now: suspended, scrolled off screen, or on a hidden page. */
+  isSuspended(): boolean {
+    return this.pausedFor.host || this.pausedFor.page || this.pausedFor.offscreen;
+  }
+
+  private setPaused(reason: keyof Chart['pausedFor'], on: boolean): void {
+    const was = this.isSuspended();
+    this.pausedFor = { ...this.pausedFor, [reason]: on };
+    const now = this.isSuspended();
+    if (was === now || this.disposed) return;
+    if (now) {
+      this.engine.renderLoop.pause();
+      return;
+    }
+    if (this.renderDeferred) {
+      this.renderDeferred = false;
+      this.scheduleRender();
+    }
+    this.engine.renderLoop.resume();
+  }
+
+  /**
+   * With `pause`, stop drawing while the chart is off screen or the page
+   * hidden: no frames for no one, which on a phone is battery, and in a page
+   * of many charts, the frames of those in view. Either way, a page back in
+   * view or a network back wakes the stream (a phone asleep leaves a dead
+   * socket behind).
+   */
+  private watchVisibility(container: HTMLElement, pause: boolean): void {
+    const stops: (() => void)[] = [];
+    if (pause && typeof IntersectionObserver !== 'undefined') {
+      const observer = new IntersectionObserver((entries) => {
+        const last = entries[entries.length - 1];
+        if (last) this.setPaused('offscreen', !last.isIntersecting);
+      });
+      observer.observe(container);
+      stops.push(() => observer.disconnect());
+    }
+    if (typeof document !== 'undefined') {
+      const onVisibility = () => {
+        if (pause) this.setPaused('page', document.hidden);
+        if (!document.hidden) this.streamManager?.wake('visible');
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      stops.push(() => document.removeEventListener('visibilitychange', onVisibility));
+      if (pause && document.hidden) this.setPaused('page', true);
+    }
+    if (typeof window !== 'undefined') {
+      const onOnline = () => this.streamManager?.wake('online');
+      window.addEventListener('online', onOnline);
+      stops.push(() => window.removeEventListener('online', onOnline));
+    }
+    this.stopWatchingVisibility = () => stops.forEach((stop) => stop());
+  }
+
+  /**
+   * The highest device pixel ratio to draw at (see `ChartOptions.maxPixelRatio`):
+   * 2 by default, `Infinity` for the screen's own. The canvases resize at once.
+   */
+  setMaxPixelRatio(max: number): void {
+    this.engine.dprManager.setMaxPixelRatio(max);
+  }
+
+  getMaxPixelRatio(): number {
+    return this.engine.dprManager.getMaxPixelRatio();
   }
 
   /**
@@ -3862,8 +3951,19 @@ export class Chart {
     if (now !== before || reason) this.eventBus.emit('rendererChange', reason ? { renderer: now, reason } : { renderer: now });
   }
 
-  /** The GPU canvas is cleared once shown: draw it again right before reading it. */
+  /**
+   * Draw right before reading the canvases: the GPU canvas is cleared once
+   * shown, and a paused chart hasn't drawn what changed since.
+   */
   private freshFrame(): void {
+    if (this.isSuspended()) {
+      if (this.renderDeferred) {
+        this.renderDeferred = false;
+        this.refitForTick();
+      }
+      this.engine.renderNow();
+      return;
+    }
     if (this.engine.getGpu()) this.engine.renderNow();
   }
 
@@ -4890,6 +4990,8 @@ export class Chart {
 
   destroy(): void {
     this.disposed = true;
+    this.stopWatchingVisibility?.();
+    this.stopWatchingVisibility = null;
     this.waitForGpu(null);
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     // A loader of the host's own: no page lands in, or is asked for by, a destroyed chart.
@@ -4993,17 +5095,30 @@ export class Chart {
   /** Lightweight render for streaming updates. No layout resolve, no indicator recalc. */
   private scheduleRender(): void {
     if (this.renderScheduled || this.disposed) return;
+    // Paused: nothing draws, so the refit waits for resume (or a screenshot).
+    if (this.isSuspended()) {
+      this.renderDeferred = true;
+      return;
+    }
     this.renderScheduled = true;
     requestAnimationFrame(() => {
       this.renderScheduled = false;
       if (this.disposed) return;
-      // A tick moves indicator values: refit the panes' scales.
-      this.panelInfoCache = null;
-      this.fitDataAndAxes();
-      this.syncRenderContext();
-      this.engine.requestRender();
-      this.emitViewportEvents();
+      if (this.isSuspended()) {
+        this.renderDeferred = true;
+        return;
+      }
+      this.refitForTick();
     });
+  }
+
+  private refitForTick(): void {
+    // A tick moves indicator values: refit the panes' scales.
+    this.panelInfoCache = null;
+    this.fitDataAndAxes();
+    this.syncRenderContext();
+    this.engine.requestRender();
+    this.emitViewportEvents();
   }
 
   /**

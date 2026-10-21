@@ -111,3 +111,62 @@ describe('PanHandler — release momentum', () => {
     expect(frames.length).toBe(0);
   });
 });
+
+describe('PanHandler — momentum by the clock', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** How far and how long a flick coasts when frames come every `frameMs`. */
+  function coast(frameMs: number): { distance: number; ms: number } {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    let frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', () => { frames = []; });
+    let distance = 0;
+    const h = new PanHandler((dx) => { distance += dx; });
+    h.onPointerDown({ x: 500, y: 100 });
+    for (let i = 1; i <= 6; i++) {
+      vi.advanceTimersByTime(16);
+      h.onPointerMove({ x: 500 - 10 * i, y: 100 });
+    }
+    distance = 0;
+    h.onPointerUp();
+    let t = 1000;
+    let ms = 0;
+    for (let i = 0; i < 2000 && frames.length > 0; i++) {
+      const next = frames.shift()!;
+      t += frameMs;
+      ms += frameMs;
+      next(t);
+    }
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    return { distance, ms };
+  }
+
+  it('coasts as far and as long on a 120 Hz screen as on a 60 Hz one', () => {
+    const at60 = coast(1000 / 60);
+    const at120 = coast(1000 / 120);
+    expect(at60.distance).toBeGreaterThan(50);
+    expect(Math.abs(at120.distance - at60.distance) / at60.distance).toBeLessThan(0.1);
+    expect(Math.abs(at120.ms - at60.ms) / at60.ms).toBeLessThan(0.15);
+  });
+
+  it('does not coast for someone who asked for less motion', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce') }));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+    const h = new PanHandler(vi.fn());
+    h.onPointerDown({ x: 500, y: 100 });
+    for (let i = 1; i <= 6; i++) {
+      vi.advanceTimersByTime(16);
+      h.onPointerMove({ x: 500 - 10 * i, y: 100 });
+    }
+    h.onPointerUp();
+    expect(frames).toHaveLength(0);
+  });
+});
+

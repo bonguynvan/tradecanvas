@@ -107,6 +107,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   Một nến không bao giờ hẹp hơn một phần tư pixel CSS, nên “thu nhỏ trên 1,000,000 nến” hiện khoảng bốn nến mỗi pixel (khoảng 6.400 nến trên biểu đồ rộng 1600 px); cảnh đo kéo qua phần còn lại của một triệu nến.
 </p>
 
+<h2 id="mobile">Điện thoại và ứng dụng</h2>
+<p>
+  Điện thoại có màn hình 3x, CPU chậm hơn và chạy pin. Biểu đồ vẽ ở mật độ điểm ảnh tối đa 2 (<code>maxPixelRatio</code>): ít hơn 56% điểm ảnh so với 3x, nét gần như không mềm đi. Nó ngừng vẽ khi ra khỏi màn hình hoặc khi trang bị ẩn (<code>pauseWhenHidden</code>), và ứng dụng nhúng nó trong WebView có thể tạm dừng bằng <code>suspend()</code>. Luồng dữ liệu gửi tick nhanh hơn số khung hình thì chỉ báo được tính lại một lần mỗi khung, trước khi có ai đọc. Khi trang hiện lại hoặc có mạng lại, luồng im lặng quá lâu sẽ kết nối lại ngay thay vì chờ heartbeat; biểu đồ bị huỷ trả lại bộ nhớ canvas ngay.
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>Đo trên màn hình điện thoại (390 × 844 ở 3x, CPU chậm 4 lần, GPU tích hợp), một biểu đồ với bốn chỉ báo:</p>
+<table>
+  <thead><tr><th></th><th>Trước</th><th>Nay</th></tr></thead>
+  <tbody>
+    <tr><td>Vẽ khung cảnh, 300 nến</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>Realtime, 2 tick mỗi khung</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>Bộ nhớ canvas</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  Widget trên màn hình cảm ứng: ô nhập 16 px để trang không tự zoom khi chạm vào, bảng trượt nằm trên bàn phím ảo, chiều cao theo đơn vị viewport động. Để tự đo trên máy: <code>node scripts/bench-render.mjs --mobile</code>.
+</p>
+
 <h2>Luồng chính</h2>
 <p>
   Biểu đồ tính chỉ báo trên luồng chính. <code>IndicatorWorkerHost</code> trong <code>@tradecanvas/core</code> có thể chạy <code>calculate()</code> trong một worker do bạn cung cấp, với API trả về Promise, thời gian chờ cho từng yêu cầu và phương án đồng bộ dự phòng cho SSR và test, nhưng biểu đồ chưa đưa chỉ báo của nó qua đây, và các gói chưa kèm script worker.

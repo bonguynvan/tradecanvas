@@ -243,7 +243,10 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
     useEffect(() => {
       const chart = chartRef.current;
       if (!chart || !onCrosshairMove) return;
-      chart.on('crosshairMove', onCrosshairMove as (e: unknown) => void);
+      const handler = onCrosshairMove as (e: unknown) => void;
+      chart.on('crosshairMove', handler);
+      // A new handler (an inline one is new each render) replaces this one.
+      return () => chart.off('crosshairMove', handler);
     }, [onCrosshairMove]);
 
     return (

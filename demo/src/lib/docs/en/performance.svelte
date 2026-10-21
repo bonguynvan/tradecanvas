@@ -107,6 +107,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   A bar never gets narrower than a quarter of a CSS pixel, so “zoomed out on 1,000,000 bars” shows about four bars per pixel (about 6,400 bars on a 1600 px chart); the scene pans through the rest of the million.
 </p>
 
+<h2 id="mobile">Phones and apps</h2>
+<p>
+  A phone has a 3x screen, a slower CPU and a battery. The chart draws at a pixel ratio of 2 at most (<code>maxPixelRatio</code>): 56% fewer pixels than 3x, for lines barely softer. It stops drawing while it is off screen or the page is hidden (<code>pauseWhenHidden</code>), and an app embedding it in a WebView pauses it with <code>suspend()</code>. A live feed sending ticks faster than frames recalculates indicators once a frame, before anything reads them. When the page comes back or the network does, a stream silent too long reconnects at once instead of waiting for its heartbeat; a destroyed chart gives its canvas memory back at once.
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>Measured on a phone screen (390 × 844 at 3x, the CPU slowed 4x, an integrated GPU), one chart with four indicators:</p>
+<table>
+  <thead><tr><th></th><th>Before</th><th>Now</th></tr></thead>
+  <tbody>
+    <tr><td>Draw the scene, 300 bars</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>Live, 2 ticks a frame</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>Canvas memory</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  The widget on a touch screen: inputs at 16 px so the page doesn’t zoom when one takes focus, sheets above the on-screen keyboard, heights in dynamic viewport units. To measure on your machine: <code>node scripts/bench-render.mjs --mobile</code>.
+</p>
+
 <h2>The main thread</h2>
 <p>
   The chart computes indicators on the main thread. <code>IndicatorWorkerHost</code> from <code>@tradecanvas/core</code> can run <code>calculate()</code> in a worker you provide, with a Promise-based API, a per-request timeout and a synchronous fallback for SSR and tests, but the chart does not route its indicators through it yet, and the packages do not ship a worker script.

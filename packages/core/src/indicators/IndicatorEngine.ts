@@ -65,6 +65,8 @@ export class IndicatorEngine {
   private styleDefaults = new Map<string, IndicatorStyleConfig>();
   /** Instances in computing order (each after the indicators it reads); null = recompute. */
   private order: IndicatorInstance[] | null = null;
+  /** A recalculation waiting for the next read (`deferRecalculateFrom`). */
+  private pending: { data: DataSeries; from: number } | null = null;
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -107,6 +109,7 @@ export class IndicatorEngine {
       ...(Object.keys(plots).length > 0 ? { plots: copyPlots(plots) } : {}),
     };
 
+    this.flush();
     const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0 };
     this.instances.set(instanceId, instance);
     this.order = null;
@@ -125,6 +128,7 @@ export class IndicatorEngine {
    * instance itself is ignored (the old source stays).
    */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>, data?: DataSeries): void {
+    this.flush();
     const instance = this.instances.get(instanceId);
     if (!instance) return;
     const name = sourceParam(instance.plugin.descriptor);
@@ -144,7 +148,34 @@ export class IndicatorEngine {
   }
 
   recalculateAll(data: DataSeries): void {
+    // Everything is computed again: a tick waiting is part of it.
+    this.pending = null;
     for (const instance of this.ordered()) this.compute(instance, data);
+  }
+
+  /**
+   * `recalculateFrom`, later: before the next read of a value (a frame, an
+   * alert check, the legend), once for all the ticks that came since, from
+   * the earliest bar they touched. A live feed sending ticks faster than
+   * frames then costs one recalculation a frame, not one a tick.
+   */
+  deferRecalculateFrom(data: DataSeries, from: number): void {
+    const pending = this.pending;
+    if (pending && pending.data === data) {
+      pending.from = Math.min(pending.from, from);
+      return;
+    }
+    // Another series than the one waiting: that one first.
+    this.flush();
+    this.pending = { data, from };
+  }
+
+  /** Run a deferred recalculation now, if one is waiting. */
+  flush(): void {
+    const pending = this.pending;
+    if (!pending) return;
+    this.pending = null;
+    for (const instance of this.ordered()) this.compute(instance, pending.data, pending.from);
   }
 
   /**
@@ -158,7 +189,9 @@ export class IndicatorEngine {
    * without `update`, or whose `update` declines, are fully recalculated.
    */
   recalculateFrom(data: DataSeries, from: number): void {
-    for (const instance of this.ordered()) this.compute(instance, data, from);
+    // A tick waiting joins this one, from the earlier of the two bars.
+    this.deferRecalculateFrom(data, from);
+    this.flush();
   }
 
   /**
@@ -390,6 +423,7 @@ export class IndicatorEngine {
   }
 
   getOutput(instanceId: string): IndicatorOutput | null {
+    this.flush();
     return this.instances.get(instanceId)?.output ?? null;
   }
 
@@ -400,6 +434,7 @@ export class IndicatorEngine {
 
   /** The visible overlays as one drawing each, in order, for any 2D context (the chart's, or one recording for the GPU). */
   overlayDraws(viewport: ViewportState, leftViewport?: ViewportState): ((ctx: CanvasRenderingContext2D) => void)[] {
+    this.flush();
     const draws: ((ctx: CanvasRenderingContext2D) => void)[] = [];
     for (const instance of this.instances.values()) {
       const output = instance.output;
@@ -436,6 +471,7 @@ export class IndicatorEngine {
     instanceId: string,
     viewport: ViewportState,
   ): void {
+    this.flush();
     const instance = this.instances.get(instanceId);
     if (!instance?.output || !instance.config.visible) return;
     instance.plugin.render(ctx, instance.output, viewport, instance.style);
@@ -446,12 +482,14 @@ export class IndicatorEngine {
    * the tags on the value axis. Empty while hidden or still warming up.
    */
   getLatestValues(instanceId: string): { value: number; color: string }[] {
+    this.flush();
     const instance = this.instances.get(instanceId);
     return instance ? latestValues(instance) : [];
   }
 
   /** `getLatestValues` of every visible price-pane indicator on one scale. */
   getLatestOverlayValues(scale: OverlayScale = 'right'): { value: number; color: string }[] {
+    this.flush();
     const out: { value: number; color: string }[] = [];
     for (const instance of this.instances.values()) {
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
@@ -509,6 +547,7 @@ export class IndicatorEngine {
    * nothing visible yet is left out, as on a linear scale.
    */
   getPaneValueRange(instanceId: string, from: number, to: number, log = false): { min: number; max: number } | null {
+    this.flush();
     let range: { min: number; max: number } | null = null;
     // The pane's own indicator and those drawn in it share one scale.
     for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
@@ -603,6 +642,7 @@ export class IndicatorEngine {
    * `output.values` Map and discarding everything outside the range.
    */
   getOverlayPriceRange(from: number, to: number, scale: OverlayScale = 'right'): { min: number; max: number } | null {
+    this.flush();
     let gMin = Infinity;
     let gMax = -Infinity;
 

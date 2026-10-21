@@ -75,7 +75,12 @@ export class LayerManager {
   /** Take the GPU and background canvases away: back to two. */
   detachGpu(): void {
     this.dropBackLayer();
-    this.gpuCanvas?.remove();
+    if (this.gpuCanvas) {
+      // Its backing store back at once, as the 2D layers do.
+      this.gpuCanvas.width = 0;
+      this.gpuCanvas.height = 0;
+      this.gpuCanvas.remove();
+    }
     this.gpuCanvas = null;
   }
 
