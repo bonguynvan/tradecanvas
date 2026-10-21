@@ -96,7 +96,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>ストリームの時間足。既定は <code>'5m'</code>。</td></tr>
     <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>既定は <code>'dark'</code>。</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>既定は <code>'candlestick'</code>。</td></tr>
-    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>自前の足をそのまま表示します。マウント時にあればストリームは開きません。あとから渡した場合、開いているストリームはそのままです（<code>stream={false}</code> で閉じます）。</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>自前の足をそのまま表示します。マウント時にあればストリームは開きません。あとから渡した場合、開いているストリームはそのままです（<code>stream={false}</code> で閉じます）。Vue と Svelte では、同じ配列に追加した足や最後の足の変更はライブの tick として入り、表示位置はそのままです。新しい配列は新しい系列になります。</td></tr>
     <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>ストリームの取得元。なければ Binance。</td></tr>
     <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>：ストリームを一切開かず、<code>data</code> を待ちます。既定は <code>true</code>。</td></tr>
     <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>ストリームが最初に読み込む足の数。既定は 500。</td></tr>

@@ -56,6 +56,9 @@ export interface StreamEvents {
  *   stream.on('barUpdate', (bar) => chart.updateLastBar(bar));
  *   stream.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1m' });
  */
+/** Silence after which a connection the page comes back to is taken for dead (a quiet market still sends a heartbeat or a tick). */
+const RESUME_STALE_MS = 20_000;
+
 export class StreamManager extends Emitter<StreamEvents> {
   private config: StreamConfig | null = null;
   private adapter: DataAdapter | null = null;
@@ -317,6 +320,27 @@ export class StreamManager extends Emitter<StreamEvents> {
       reconnectAttempt: this.reconnector.getAttempt(),
       lastMessageTime: this.lastMessageTime,
     });
+  }
+
+  /**
+   * The page came back into view, or the network came back: don't wait up to
+   * a minute and a half for the heartbeat. A phone asleep stops a socket
+   * without closing it, so a connection silent longer than
+   * `RESUME_STALE_MS` reconnects now; after a network change any does. A
+   * retry waiting out its backoff goes now, and one that gave up gets a fresh
+   * round. A connect under way (a symbol switch) is left alone.
+   */
+  wake(reason: 'visible' | 'online'): void {
+    if (!this.adapter || !this.config) return;
+    if (this.state === 'connecting' || this.state === 'disconnected') return;
+    if (this.state === 'connected' && reason === 'visible'
+        && Date.now() - this.lastMessageTime <= RESUME_STALE_MS) return;
+    // As switchTo: the reconnector stopped around the disconnect, so the
+    // adapter's 'disconnected' doesn't queue a retry behind this connect.
+    this.reconnector.stop();
+    this.adapter.disconnect();
+    this.reconnector.start();
+    void this.doConnect();
   }
 
   private startHeartbeat(): void {

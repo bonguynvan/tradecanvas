@@ -96,7 +96,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>스트림의 시간 단위. 기본값 <code>'5m'</code>.</td></tr>
     <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>기본값 <code>'dark'</code>.</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>기본값 <code>'candlestick'</code>.</td></tr>
-    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>직접 가진 봉을 그대로 보여 줍니다. 마운트할 때 있으면 스트림을 열지 않고, 나중에 주면 열려 있는 스트림은 그대로 둡니다(<code>stream={false}</code>로 닫음).</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>직접 가진 봉을 그대로 보여 줍니다. 마운트할 때 있으면 스트림을 열지 않고, 나중에 주면 열려 있는 스트림은 그대로 둡니다(<code>stream={false}</code>로 닫음). Vue와 Svelte에서는 같은 배열에 추가한 봉이나 마지막 봉의 변경이 실시간 틱으로 들어가고 보는 위치는 그대로입니다. 새 배열은 새 시리즈입니다.</td></tr>
     <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>스트림의 출처. 없으면 Binance.</td></tr>
     <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>: 스트림을 전혀 열지 않고 <code>data</code>를 기다립니다. 기본값 <code>true</code>.</td></tr>
     <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>스트림이 처음 불러오는 봉 수. 기본값 500.</td></tr>

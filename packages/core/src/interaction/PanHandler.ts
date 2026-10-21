@@ -20,6 +20,11 @@ const MIN_FLICK_SPEED = 0.1;
 const MAX_MOMENTUM_PX_PER_FRAME = 60;
 const FRAME_MS = 16;
 
+/** Whether the user asked the system for less motion. */
+function prefersReducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 interface Sample {
   t: number;
   x: number;
@@ -81,6 +86,8 @@ export class PanHandler {
 
     const v = this.releaseVelocity(Date.now());
     this.samples = [];
+    // Someone who asked for less motion gets the chart where they let go.
+    if (prefersReducedMotion()) return;
     if (v && Math.hypot(v.x, v.y) > MIN_FLICK_SPEED) {
       this.startMomentum(v.x, v.y);
     }
@@ -116,14 +123,20 @@ export class PanHandler {
       vy *= MAX_MOMENTUM_PX_PER_FRAME / speed;
     }
 
-    const tick = () => {
-      vx *= this.friction;
-      vy *= this.friction;
+    // By the clock, not the frame: friction per 16 ms, so a 120 Hz screen
+    // coasts as far and as long as a 60 Hz one, in twice the steps.
+    let last: number | null = null;
+    const tick = (now: number) => {
+      const steps = last === null ? 1 : Math.min(4, Math.max(0, (now - last) / FRAME_MS));
+      last = now;
+      const decay = this.friction ** steps;
+      vx *= decay;
+      vy *= decay;
       if (Math.hypot(vx, vy) < 0.5) {
         this.momentumId = 0;
         return;
       }
-      this.callback(vx, vy);
+      this.callback(vx * steps, vy * steps);
       this.momentumId = requestAnimationFrame(tick);
     };
 

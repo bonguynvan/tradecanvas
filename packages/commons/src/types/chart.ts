@@ -179,6 +179,19 @@ export interface ChartOptions {
   /** Bounds for free panning. */
   panLimits?: { minVisibleBars?: number };
   /**
+   * The highest device pixel ratio the chart draws at. Default 2: a 3x phone
+   * screen is drawn at 2x, 56% fewer pixels and less than half the canvas
+   * memory for lines barely softer. `Infinity` draws at the screen's own.
+   */
+  maxPixelRatio?: number;
+  /**
+   * Stop drawing while no one can see the chart: scrolled off screen, or the
+   * page hidden (another tab, the app in the background). Data, indicators
+   * and alerts keep up; the frame missed is drawn on return. Default true.
+   * `suspend()` / `resume()` pause it from the host (a WebView's app paused).
+   */
+  pauseWhenHidden?: boolean;
+  /**
    * How narrow a bar slot may get to fit a long series on screen (zooming
    * out, `fitContent`, the 'All' range), px. Default 0.25: four bars a pixel,
    * so 26 years of daily bars don't all fit on a laptop screen. Down to 0.02

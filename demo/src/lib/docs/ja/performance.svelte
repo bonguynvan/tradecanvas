@@ -107,6 +107,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   バーは CSS ピクセルの 4 分の 1 より細くならないため、「1,000,000 本を縮小表示」でもピクセルあたり約 4 本（1600 px のチャートで約 6,400 本）が表示され、計測シーンは残りの足をパンして通過します。
 </p>
 
+<h2 id="mobile">スマートフォンとアプリ</h2>
+<p>
+  スマートフォンは 3 倍の画面、遅い CPU、そしてバッテリーで動きます。チャートはピクセル比 2 までで描画します（<code>maxPixelRatio</code>）。3 倍より 56% 少ないピクセルで、線はほとんど柔らかくなりません。画面外にあるときやページが隠れているときは描画を止め（<code>pauseWhenHidden</code>）、WebView に埋め込むアプリは <code>suspend()</code> で一時停止できます。フレームより速く tick が来るライブフィードでは、インジケーターは読まれる前にフレームごとに一度だけ再計算されます。ページやネットワークが戻ると、長く沈黙したストリームはハートビートを待たずにすぐ再接続し、破棄されたチャートはキャンバスのメモリをすぐ返します。
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>スマートフォンの画面で計測（390 × 844、3 倍、CPU を 4 倍遅く、内蔵 GPU）、インジケーター 4 つのチャート 1 つ：</p>
+<table>
+  <thead><tr><th></th><th>以前</th><th>現在</th></tr></thead>
+  <tbody>
+    <tr><td>シーンの描画、300 本</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>ライブ、1 フレームに 2 tick</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>キャンバスのメモリ</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  タッチ画面のウィジェット：入力欄は 16 px でフォーカス時にページがズームしない、シートは画面キーボードの上、高さは動的ビューポート単位。手元で計測するには <code>node scripts/bench-render.mjs --mobile</code>。
+</p>
+
 <h2>メインスレッド</h2>
 <p>
   チャートはメインスレッドでインジケーターを計算します。<code>@tradecanvas/core</code> の <code>IndicatorWorkerHost</code> は、Promise ベースの API、リクエストごとのタイムアウト、SSR やテスト向けの同期フォールバックを備え、あなたが用意したワーカーで <code>calculate()</code> を実行できますが、チャートはまだインジケーターをこれ経由で計算しておらず、パッケージにワーカースクリプトは含まれていません。

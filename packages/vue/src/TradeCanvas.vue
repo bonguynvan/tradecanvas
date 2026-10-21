@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, toRaw } from 'vue';
 import {
   Chart,
   BinanceAdapter,
@@ -35,7 +35,12 @@ const props = withDefaults(
     chartType?: ChartType;
     /** Indicators by id (`'rsi'`), or with their inputs (`{ id: 'ema', params: { period: 50 } }`). */
     indicators?: IndicatorSpec[];
-    /** Static bars: the chart shows these, and opens no stream of its own when it has them at mount. */
+    /**
+     * Bars: the chart shows these, and opens no stream of its own when it has
+     * them at mount. A bar pushed onto the same array, or its last bar changed,
+     * goes in as a live tick (the view stays where it is); a new array is a new
+     * series. An older bar changed in place needs a new array.
+     */
     data?: OHLCBar[];
     adapter?: DataAdapter;
     /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
@@ -162,7 +167,7 @@ onMounted(() => {
     },
   });
 
-  if (props.data) chart.setData(props.data);
+  if (props.data) feed(chart, props.data);
   else syncStream();
 
   // Apply initial reactive collections not covered by the constructor options.
@@ -187,6 +192,37 @@ onUnmounted(() => {
 });
 
 watch(() => [props.symbol, props.timeframe, !props.data, props.stream] as const, syncStream);
+/** The bars last given to the chart: the array, how many, and the last one as text. */
+let fed: { bars: readonly OHLCBar[]; length: number; last: string } | null = null;
+const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume}` : '');
+const plain = (b: OHLCBar): OHLCBar => ({ ...toRaw(b) });
+
+/**
+ * Bars into the chart: on the same array, a bar pushed or the last one
+ * changed goes in as a tick, so the view stays put and only the end is
+ * recalculated; anything else is a new series. The chart gets plain bars, not
+ * Vue's proxies, to read in its frames.
+ */
+function feed(target: Chart, data: readonly OHLCBar[]): void {
+  const bars = toRaw(data);
+  const n = bars.length;
+  const last = barKey(bars[n - 1]);
+  const prev = fed;
+  fed = { bars, length: n, last };
+  if (prev && prev.bars === bars && prev.length > 0) {
+    if (n === prev.length) {
+      if (last !== prev.last) target.updateLastBar(plain(bars[n - 1]));
+      return;
+    }
+    if (n === prev.length + 1) {
+      target.updateLastBar(plain(bars[n - 2]));
+      target.appendBar(plain(bars[n - 1]));
+      return;
+    }
+  }
+  target.setData(bars.map(plain));
+}
+
 watch(() => props.features, (f) => {
   const key = JSON.stringify(f ?? null);
   if (key === featuresKey) return;
@@ -196,7 +232,12 @@ watch(() => props.features, (f) => {
 
 watch(() => props.theme, (t) => { chart?.setTheme(resolveTheme(t)); });
 watch(() => props.chartType, (ct) => { chart?.setChartType(ct); });
-watch(() => props.data, (d) => { if (d) chart?.setData(d); }, { deep: true });
+// The array, its length and the last bar's fields: a bar pushed or the
+// forming bar changed, without walking every bar as a deep watch does.
+watch(
+  () => [props.data, props.data?.length, barKey(props.data?.[props.data.length - 1])],
+  () => { if (props.data && chart) feed(chart, props.data); },
+);
 
 watch(
   () => props.indicators,

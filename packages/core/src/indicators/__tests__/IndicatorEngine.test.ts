@@ -128,3 +128,61 @@ describe('IndicatorEngine colours', () => {
     expect(colour(third)).toBe(usual); // the freed colour comes back
   });
 });
+
+describe('IndicatorEngine.deferRecalculateFrom', () => {
+  /** A plugin that counts its calculations; its value is the close. */
+  function counting() {
+    const counts = { calculate: 0 };
+    const plugin: IndicatorPlugin = {
+      descriptor: { id: 'close', name: 'close', placement: 'panel', defaultConfig: {} },
+      calculate(data) {
+        counts.calculate++;
+        const values = new Map<number, IndicatorValue>();
+        const series = data.map((bar) => {
+          const v = { value: bar.close };
+          values.set(bar.time, v);
+          return v;
+        });
+        return { values, series };
+      },
+      render() {},
+    };
+    return { plugin, counts };
+  }
+
+  it('makes many ticks before a read one calculation, and the read sees the last tick', () => {
+    const { plugin, counts } = counting();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(50);
+    const id = engine.addIndicator('close', {}, data);
+    counts.calculate = 0;
+    for (let tick = 1; tick <= 5; tick++) {
+      data[49] = { ...data[49], close: tick };
+      engine.deferRecalculateFrom(data, 49);
+    }
+    expect(counts.calculate).toBe(0);
+    expect(engine.getOutput(id)!.series[49]?.value).toBe(5);
+    expect(counts.calculate).toBe(1);
+    // Read again: nothing left to do.
+    engine.getOutput(id);
+    expect(counts.calculate).toBe(1);
+  });
+
+  it('takes the earliest bar of the ticks that came, and a full recalculation drops what was waiting', () => {
+    const { plugin, counts } = counting();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(50);
+    const id = engine.addIndicator('close', {}, data);
+    data[48] = { ...data[48], close: 7 };
+    engine.deferRecalculateFrom(data, 49);
+    engine.deferRecalculateFrom(data, 48);
+    expect(engine.getOutput(id)!.series[48]?.value).toBe(7);
+    counts.calculate = 0;
+    engine.deferRecalculateFrom(data, 49);
+    engine.recalculateAll(data);
+    engine.getOutput(id);
+    expect(counts.calculate).toBe(1);
+  });
+});

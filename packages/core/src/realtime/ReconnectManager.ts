@@ -31,6 +31,9 @@ export class ReconnectManager extends Emitter<ReconnectEvents> {
 
   schedule(connectFn: () => void): void {
     if (!this.config.enabled || !this.active) return;
+    // One retry pending at a time: the adapter's 'disconnected' and the
+    // heartbeat can both ask for one, and the first must not run as well.
+    this.cancel();
 
     this.attempt++;
 

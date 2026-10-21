@@ -147,10 +147,11 @@ export class RenderEngine {
    */
   onContainerResize: ((size: Size) => void) | null = null;
 
-  constructor(container: HTMLElement) {
+  /** `maxPixelRatio`: the highest device pixel ratio the canvases are drawn at (see `DEFAULT_MAX_PIXEL_RATIO`). */
+  constructor(container: HTMLElement, maxPixelRatio?: number) {
     this.layerManager = new LayerManager(container);
     this.renderLoop = new RenderLoop();
-    this.dprManager = new DPRManager(container);
+    this.dprManager = new DPRManager(container, maxPixelRatio);
 
     this.layerManager.createLayers();
     this.cacheLayerRefs();

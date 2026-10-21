@@ -13,6 +13,16 @@ afterEach(() => {
 });
 
 describe('ReconnectManager.schedule', () => {
+  it('keeps one retry pending: a second schedule replaces the first', () => {
+    const mgr = new ReconnectManager({ baseDelay: 100 });
+    const connectFn = vi.fn();
+    mgr.start();
+    mgr.schedule(connectFn);
+    mgr.schedule(connectFn);
+    vi.advanceTimersByTime(10_000);
+    expect(connectFn).toHaveBeenCalledTimes(1);
+  });
+
   it('is a no-op until start() flips it active', () => {
     const mgr = new ReconnectManager({ baseDelay: 100 });
     const connectFn = vi.fn();

@@ -107,6 +107,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   봉은 CSS 픽셀의 4분의 1보다 좁아지지 않으므로, “봉 1,000,000개를 축소”해도 픽셀당 약 4개(1600 px 차트에서 약 6,400개)가 보이며, 측정 장면은 나머지 봉을 이동하며 지나갑니다.
 </p>
 
+<h2 id="mobile">휴대폰과 앱</h2>
+<p>
+  휴대폰은 3배 화면, 느린 CPU, 그리고 배터리를 씁니다. 차트는 픽셀 비율 최대 2로 그립니다(<code>maxPixelRatio</code>). 3배보다 픽셀이 56% 적고, 선은 거의 부드러워지지 않습니다. 화면 밖에 있거나 페이지가 숨겨지면 그리기를 멈추고(<code>pauseWhenHidden</code>), WebView에 넣은 앱은 <code>suspend()</code>로 멈출 수 있습니다. 틱이 프레임보다 빨리 오는 실시간 피드에서는 지표를 읽기 전에 프레임마다 한 번만 다시 계산합니다. 페이지나 네트워크가 돌아오면 너무 오래 조용한 스트림은 하트비트를 기다리지 않고 바로 다시 연결하고, 제거된 차트는 캔버스 메모리를 바로 돌려줍니다.
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>휴대폰 화면에서 측정(390 × 844, 3배, CPU 4배 느리게, 내장 GPU), 지표 4개가 있는 차트 하나:</p>
+<table>
+  <thead><tr><th></th><th>이전</th><th>현재</th></tr></thead>
+  <tbody>
+    <tr><td>장면 그리기, 봉 300개</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>실시간, 프레임당 틱 2개</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>캔버스 메모리</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  터치 화면의 위젯: 입력 칸은 16 px라 포커스될 때 페이지가 확대되지 않고, 시트는 화면 키보드 위에 있으며, 높이는 동적 뷰포트 단위입니다. 직접 측정하려면 <code>node scripts/bench-render.mjs --mobile</code>.
+</p>
+
 <h2>메인 스레드</h2>
 <p>
   차트는 메인 스레드에서 지표를 계산합니다. <code>@tradecanvas/core</code>의 <code>IndicatorWorkerHost</code>는 Promise 기반 API, 요청별 타임아웃, SSR과 테스트를 위한 동기식 대체 경로를 갖추고 여러분이 제공한 워커에서 <code>calculate()</code>를 실행할 수 있지만, 차트는 아직 지표를 이를 통해 계산하지 않으며 패키지에 워커 스크립트도 포함되어 있지 않습니다.

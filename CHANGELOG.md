@@ -4,6 +4,23 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Lighter on phones
+
+Measured with the new phone run of the render benchmark (`node scripts/bench-render.mjs --mobile`: 390 × 844 at 3x, the CPU slowed 4x, an integrated GPU), one chart with four indicators: drawing the scene 34 → 25 ms, a live feed at two ticks a frame 18.5 → 11–13 ms, canvas memory 17.1 → 7.6 MB.
+
+- **A pixel ratio of 2 at most** (`maxPixelRatio`, `setMaxPixelRatio`, `getMaxPixelRatio`; `Infinity` for the screen's own): a 3x phone screen has 56% fewer pixels to draw, for lines barely softer. A change of ratio with the size the same (a window moved to another screen, the page zoomed) now resizes the canvases too. The finance charts take the same cap.
+- **No frames no one sees.** The chart stops drawing while it is off screen or the page is hidden, and its live ticks stop refitting the scales; it draws once what changed when it comes back, and a screenshot taken meanwhile draws first. Data, indicators and alerts keep up (`pauseWhenHidden`, on by default). An app embedding it in a WebView pauses it with `suspend()` and `resume()`; `isSuspended()` says whether it draws.
+- **Indicators once a frame on a busy feed.** A live tick recalculates the indicators before the next read of a value (the frame, an alert, the legend) rather than at once, so two ticks a frame cost one recalculation (`IndicatorEngine.deferRecalculateFrom`, `flush`).
+- **Back from sleep.** When the page comes back into view or the network comes back, a stream silent for more than 20 seconds reconnects at once instead of waiting up to a minute and a half for its heartbeat; a retry waiting out its backoff goes now, and one that gave up gets a fresh round (`StreamManager.wake`). A connection that drops schedules one retry, where the adapter's own disconnect and the heartbeat could each start one.
+- A destroyed chart gives its canvas memory back at once, which keeps charts mounted and unmounted in an app from adding up on iOS.
+- Momentum after a flick keeps time, so it coasts as far and as long on a 120 Hz screen as on a 60 Hz one, and stops where the finger left for someone who asked for less motion.
+- **The widget on a phone:** its watchlist and market timers skip a hidden page; bottom sheets sit above the on-screen keyboard (and stay at the bottom of a pinch-zoomed page); inputs are 16 px on touch screens, so iOS doesn't zoom the page; heights use dynamic viewport units; taps lose the grey flash; phone sheets fit the screen's width, borders included (they ran 2 px over); the connected dot pulses three times, not for ever.
+- **React, Vue and Svelte:** React swaps its crosshair listener instead of adding one on every render; Vue and Svelte feed a bar pushed onto the same array, or a change to its last bar, as a live tick (`appendBar`, `updateLastBar`) rather than reloading the series, so the view stays where the user left it and only the end is recalculated; a new array is still a new series. Vue no longer walks every bar on each change, Svelte now sees bars pushed onto `$state` data, and both pass plain bars rather than their proxies.
+
+## 1.27.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.9.
+
 ### One icon set, no emoji
 
 - **Icons, not emoji.** The alert line's label and the alert notice drew a bell emoji, the pinned tooltip a pushpin, trade zones ▲ and ▼, a favourite drawing tool ★, the palettes ⌕, ✓ and ⏎, close buttons ×, and the replay bar its own filled glyphs (now outlined, as the rest of the set). Emoji and symbol characters look different on every system and font; all of these now come from the TradeCanvas icon set, drawn the same everywhere at 1.75 px strokes on its 24 px grid.

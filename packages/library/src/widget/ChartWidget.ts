@@ -46,6 +46,7 @@ import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { createIcon } from './icons.js';
+import { watchKeyboardInset } from './keyboardInset.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
@@ -156,6 +157,9 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 
 
+/** Whether the page is hidden: another tab, the app in the background. */
+const pageHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
+
 /** Recent bars looked at to tell a market open on weekends. */
 const WEEKDAY_SAMPLE = 200;
 
@@ -178,6 +182,7 @@ export class ChartWidget {
    * the widget is fullscreen, where nothing outside it is shown.
    */
   private readonly portal = document.createElement('div');
+  private stopKeyboardInset: (() => void) | null = null;
   private readonly overlayHost = (): HTMLElement => {
     const host = document.fullscreenElement === this.root ? this.root : document.body;
     if (this.portal.parentElement !== host) host.appendChild(this.portal);
@@ -258,6 +263,7 @@ export class ChartWidget {
   /** Headlines per symbol, kept a few minutes. */
   private newsCache = new Map<string, { at: number; items: NewsItem[] }>();
   private marketTimer: ReturnType<typeof setInterval> | null = null;
+  private onPageShown: (() => void) | null = null;
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
@@ -444,6 +450,8 @@ export class ChartWidget {
     this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
+    // Sheets on a phone keep above the on-screen keyboard.
+    this.stopKeyboardInset = watchKeyboardInset([this.root, this.portal]);
     // The look: tokens and layout switches on the root and the modal portal
     // alike. Without `ui` the tokens stay the stylesheet's (Studio's), so a
     // host's CSS can still set them.
@@ -623,6 +631,9 @@ export class ChartWidget {
       },
     });
     this.marketTimer = setInterval(() => this.refreshMarket(), 30_000);
+    // Back in view: the market's state now, not at the next tick of the timer.
+    this.onPageShown = () => { if (!pageHidden()) this.refreshMarket(); };
+    document.addEventListener('visibilitychange', this.onPageShown);
 
     // Drag-and-drop CSV / JSON onto the chart container — instant data load.
     // Opt-out via `dragDropImport: false`. The adapter (live stream) keeps
@@ -1261,6 +1272,7 @@ export class ChartWidget {
 
   /** The market's status in the status bar, and the panel when it's open. */
   private refreshMarket(): void {
+    if (pageHidden()) return;
     const status = marketStatus(this.chart.getSymbolInfo(), Date.now());
     this.statusBar?.setMarket(status.state, this.t(status.state === 'open' ? 'symbolInfo.open' : 'symbolInfo.closed'));
     this.refreshSymbolInfo();
@@ -1506,6 +1518,8 @@ export class ChartWidget {
   private tickWatchlist(): void {
     // A symbol with quotes shows them (the day's move), not the loaded bars'.
     if (!this.watchlist || this.quotes.has(this.state.symbol)) return;
+    // No one sees it: a hidden page, the app in the background.
+    if (pageHidden()) return;
     const data = this.chart.getData();
     if (data.length === 0) return;
     const last = data[data.length - 1];
@@ -1615,6 +1629,8 @@ export class ChartWidget {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.stopKeyboardInset?.();
+    this.stopKeyboardInset = null;
 
     if (this.boundGlobalKeydown) {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
@@ -1660,6 +1676,8 @@ export class ChartWidget {
     this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
+    if (this.onPageShown) document.removeEventListener('visibilitychange', this.onPageShown);
+    this.onPageShown = null;
     this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
     this.stopQuotes?.();

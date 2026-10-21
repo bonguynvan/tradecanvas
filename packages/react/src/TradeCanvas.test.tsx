@@ -17,6 +17,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     setOverrides: vi.fn(),
     setFeatures: vi.fn(),
     on: vi.fn(),
+    off: vi.fn(),
     disconnectStream: vi.fn(),
     destroy: vi.fn(),
     screenshot: vi.fn(),
@@ -139,4 +140,18 @@ describe('<TradeCanvas> (react)', () => {
     unmount();
     expect(chart.destroy).toHaveBeenCalled();
   });
+
+  it('swaps its crosshair listener when the handler changes, instead of adding one each render', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender, unmount } = render(<TradeCanvas onCrosshairMove={first} />);
+    rerender(<TradeCanvas onCrosshairMove={second} />);
+    const onCalls = chart.on.mock.calls.filter(([e]) => e === 'crosshairMove').map(([, h]) => h);
+    const offCalls = chart.off.mock.calls.filter(([e]) => e === 'crosshairMove').map(([, h]) => h);
+    expect(onCalls).toEqual([first, second]);
+    expect(offCalls).toEqual([first]);
+    unmount();
+    expect(chart.off.mock.calls.filter(([e]) => e === 'crosshairMove').map(([, h]) => h)).toEqual([first, second]);
+  });
 });
+

@@ -47,7 +47,14 @@ export class CanvasLayer {
     };
   }
 
+  /**
+   * Remove the canvas and give its backing store back at once: a canvas
+   * waits for garbage collection otherwise, and on a phone the canvases of
+   * charts mounted and unmounted add up toward the browser's canvas memory.
+   */
   destroy(): void {
+    this.canvas.width = 0;
+    this.canvas.height = 0;
     this.canvas.remove();
   }
 }

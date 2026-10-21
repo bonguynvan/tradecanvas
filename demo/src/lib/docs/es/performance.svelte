@@ -110,6 +110,29 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
   Una barra nunca es más estrecha que un cuarto de píxel CSS, así que «zoom alejado sobre 1,000,000 barras» muestra unas cuatro barras por píxel (unas 6,400 en un gráfico de 1600 px); la escena recorre el resto del millón al desplazarse.
 </p>
 
+<h2 id="mobile">Móviles y apps</h2>
+<p>
+  Un móvil tiene una pantalla 3x, una CPU más lenta y una batería. El gráfico dibuja como mucho a una densidad de píxeles de 2 (<code>maxPixelRatio</code>): un 56% menos de píxeles que a 3x, con líneas apenas más suaves. Deja de dibujar mientras está fuera de la pantalla o la página está oculta (<code>pauseWhenHidden</code>), y una app que lo integra en un WebView lo pausa con <code>suspend()</code>. Con un feed en vivo que manda ticks más rápido que los fotogramas, los indicadores se recalculan una vez por fotograma, antes de que algo los lea. Cuando vuelven la página o la red, un flujo callado demasiado tiempo se reconecta enseguida en vez de esperar al latido; un gráfico destruido devuelve enseguida la memoria de sus lienzos.
+</p>
+<pre><code>{`new Chart(host, {
+  maxPixelRatio: 2,       // the default; Infinity draws at the screen's own
+  pauseWhenHidden: true,  // the default: no frames off screen or on a hidden page
+})
+chart.suspend()   // your app went to the background (a WebView): stop drawing
+chart.resume()    // back: one frame draws what changed`}</code></pre>
+<p>Medido en una pantalla de móvil (390 × 844 a 3x, la CPU 4 veces más lenta, una GPU integrada), un gráfico con cuatro indicadores:</p>
+<table>
+  <thead><tr><th></th><th>Antes</th><th>Ahora</th></tr></thead>
+  <tbody>
+    <tr><td>Dibujar la escena, 300 barras</td><td>34 ms</td><td>25 ms</td></tr>
+    <tr><td>En vivo, 2 ticks por fotograma</td><td>18.5 ms</td><td>11–13 ms</td></tr>
+    <tr><td>Memoria de los lienzos</td><td>17.1 MB</td><td>7.6 MB</td></tr>
+  </tbody>
+</table>
+<p>
+  El widget en una pantalla táctil: campos a 16 px para que la página no haga zoom al enfocarlos, paneles por encima del teclado en pantalla, alturas en unidades de viewport dinámicas. Para medir en su equipo: <code>node scripts/bench-render.mjs --mobile</code>.
+</p>
+
 <h2>El hilo principal</h2>
 <p>
   El gráfico calcula los indicadores en el hilo principal. <code>IndicatorWorkerHost</code> de <code>@tradecanvas/core</code> puede ejecutar <code>calculate()</code> en un worker que tú proporciones, con una API basada en Promise, un tiempo de espera por solicitud y una alternativa síncrona para SSR y tests, pero el gráfico todavía no pasa sus indicadores por él y los paquetes no incluyen un script de worker.

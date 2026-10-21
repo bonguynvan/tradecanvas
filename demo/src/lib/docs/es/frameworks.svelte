@@ -96,7 +96,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>La temporalidad del flujo. Por defecto <code>'5m'</code>.</td></tr>
     <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>Por defecto <code>'dark'</code>.</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>Por defecto <code>'candlestick'</code>.</td></tr>
-    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>Velas propias, tal cual. Si están al montar, no se abre ningún flujo; si llegan después, un flujo ya abierto sigue (<code>stream={false}</code> lo cierra).</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>Velas propias, tal cual. Si están al montar, no se abre ningún flujo; si llegan después, un flujo ya abierto sigue (<code>stream={false}</code> lo cierra). En Vue y Svelte, una vela añadida al mismo array, o un cambio en la última, entra como un tick en vivo y la vista se queda donde está; un array nuevo es una serie nueva.</td></tr>
     <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>El origen del flujo; Binance si no se da.</td></tr>
     <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>: ningún flujo, el gráfico espera a <code>data</code>. Por defecto <code>true</code>.</td></tr>
     <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>Velas que el flujo carga primero. Por defecto 500.</td></tr>
