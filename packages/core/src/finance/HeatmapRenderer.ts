@@ -1,6 +1,7 @@
 import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
 import { lerpColor } from '@tradecanvas/commons';
-import type { LayoutRect } from './HeatmapLayout.js';
+import type { GroupRect, LayoutRect } from './HeatmapLayout.js';
+import { fitText } from './chartKit.js';
 
 function defaultValueFormat(value: number): string {
   const sign = value >= 0 ? '+' : '';
@@ -13,7 +14,7 @@ function defaultLabelFormat(cell: HeatmapCell): string {
 
 function computeCellColor(
   value: number,
-  colorScale: NonNullable<HeatmapOptions['colorScale']>,
+  colorScale: { negative: string; zero: string; positive: string; min?: number; max?: number },
 ): string {
   const min = colorScale.min ?? -5;
   const max = colorScale.max ?? 5;
@@ -155,13 +156,17 @@ export function renderHeatmap(
   options: HeatmapOptions,
   theme: Theme,
   crosshairPos: { x: number; y: number } | null,
+  groups: readonly GroupRect[] = [],
 ): HeatmapHitResult | null {
   if (cells.length === 0 || layoutRects.length === 0 || width <= 0 || height <= 0) return null;
 
-  const colorScale = options.colorScale ?? {
-    negative: '#e8505b',
-    zero: '#424242',
-    positive: '#1fa874',
+  const given = options.colorScale;
+  const colorScale = {
+    negative: given?.negative ?? '#e8505b',
+    zero: given?.zero ?? '#424242',
+    positive: given?.positive ?? '#1fa874',
+    min: given?.min,
+    max: given?.max,
   };
   const cellRadius = options.cellRadius ?? 4;
   const showLabels = options.showLabels !== false;
@@ -219,9 +224,55 @@ export function renderHeatmap(
     }
   }
 
+  const hoveredGroup = crosshairPos && !hitResult ? groups.find((g) => g.header > 0 && inHeader(g, crosshairPos)) : undefined;
+  drawGroupHeaders(ctx, groups, theme, formatValue, hoveredGroup);
+
   if (hitResult && crosshairPos) {
     drawTooltip(ctx, hitResult.cell, crosshairPos, width, height, theme, formatLabel, formatValue);
+  } else if (hoveredGroup && crosshairPos) {
+    drawTooltip(ctx, { id: '', label: hoveredGroup.name, value: hoveredGroup.value }, crosshairPos, width, height, theme, (c) => c.label, formatValue);
   }
 
   return hitResult;
+}
+
+function inHeader(g: GroupRect, p: { x: number; y: number }): boolean {
+  const r = g.rect;
+  return p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + g.header;
+}
+
+/** Each group's name and its weighted change, in the strip above its cells. */
+function drawGroupHeaders(
+  ctx: CanvasRenderingContext2D,
+  groups: readonly GroupRect[],
+  theme: Theme,
+  formatValue: (v: number) => string,
+  hovered: GroupRect | undefined,
+): void {
+  if (groups.length === 0) return;
+  ctx.save();
+  ctx.textBaseline = 'middle';
+  const size = theme.font.sizeSmall;
+  const measure = (t: string) => ctx.measureText(t).width;
+  for (const g of groups) {
+    if (g.header <= 0) continue;
+    const { x, y, width } = g.rect;
+    const cy = y + g.header / 2 + 1;
+    ctx.font = size + 'px ' + theme.font.family;
+    const valueText = formatValue(g.value);
+    const valueWidth = measure(valueText);
+    const showValue = width >= valueWidth * 2 + 24;
+    if (showValue) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = g.value < 0 ? theme.candleDown : g.value > 0 ? theme.candleUp : theme.textSecondary;
+      ctx.fillText(valueText, x + width - 5, cy);
+    }
+    ctx.font = '600 ' + size + 'px ' + theme.font.family;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = g === hovered ? theme.text : theme.textSecondary;
+    const room = width - 10 - (showValue ? valueWidth + 8 : 0);
+    const name = fitText(g.name, room, (t) => measure(t), size);
+    if (name) ctx.fillText(name, x + 5, cy);
+  }
+  ctx.restore();
 }

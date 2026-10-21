@@ -255,6 +255,64 @@ chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
 ```
 
+## A dashboard: net flows, allocation and returns
+
+The finance charts take an element and their options, and size themselves to it.
+
+```ts
+import { BarChart, DonutChart, HistogramChart } from '@tradecanvas/chart';
+
+new BarChart(document.getElementById('flows')!, {
+  categories: ['6/10', '7/10', '8/10'],
+  series: [{ name: 'Net', values: [-660, 860, -280] }],
+  colorBySign: true,
+  onBarClick: ({ category, value }) => console.log(category, value),
+});
+
+new DonutChart(document.getElementById('allocation')!, {
+  data: [{ label: 'Stocks', value: 52 }, { label: 'Bonds', value: 23 }, { label: 'Cash', value: 25 }],
+  centerLabel: 'Total',
+  centerValue: '1.2B',
+});
+
+new HistogramChart(document.getElementById('returns')!, {
+  values: [-1.2, 0.4, 0.8, -0.3, 1.5, 0.2],
+  binWidth: 0.5,
+  colorBySign: true,
+  markers: [{ value: 0.23, label: 'Mean' }],
+});
+```
+
+Days on a calendar, correlations in a matrix, and a market map by sector:
+
+```ts
+import { CalendarChart, MatrixChart, HeatmapChart, correlationMatrix } from '@tradecanvas/chart';
+
+new CalendarChart(document.getElementById('sessions')!, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],
+  weekdays: 5,
+  colorScale: { min: -2, max: 2 },
+  onDayClick: (day) => console.log(day.date, day.value),
+});
+
+// Daily returns (not prices), one array per stock, the same days in each.
+const returns = [[0.4, -1.1, 0.8, 0.2], [0.6, -0.9, 1.1, -0.1], [-0.2, 0.5, -0.4, 0.3]];
+new MatrixChart(document.getElementById('correlation')!, {
+  rows: ['VCB', 'BID', 'HPG'],
+  values: correlationMatrix(returns),
+  triangle: 'lower',
+  colorScale: { min: -1, max: 1 },
+});
+
+new HeatmapChart(document.getElementById('sectors')!, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
+  ],
+  grouped: true,
+});
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

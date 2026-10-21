@@ -4,6 +4,23 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Charts for dashboards
+
+- **`BarChart`**: values by category, series side by side (`mode: 'grouped'`) or stacked with positives up and negatives down from zero, upright or sideways (`orientation: 'horizontal'`), coloured by sign for net flows (`colorBySign`), values on the bars (`showValues`). Hovering a category shows each series' value; `onBarClick` gets the category, series, value and index. Labels that don't fit along the bottom show every few categories.
+- **`DonutChart`**: parts of a whole clockwise from twelve o'clock, a pie with `innerRadius: 0`, a caption and figure in the hole, each slice's share where it has room, a legend beside or under the ring; `onSliceClick`.
+- **`ScatterChart`**: points on two value axes, bubbles whose area follows `size`, axis titles, labels, lines at zero; the axes leave room for the largest bubble; `onPointClick`.
+- **`HistogramChart`**: values counted into bins (`bins`, `binWidth` on a grid from 0, or Sturges' rule), coloured by sign, with labelled marker lines (a mean, a VaR) that move a row down when they would overlap. `histogramBins(values, options)` is exported, and `niceScale(min, max)` for axes of your own.
+- All four follow the pointer with a tooltip, describe themselves to screen readers (an image role and a label, `ariaLabel` in your words) and draw in the dark or light theme; `setOptions`, `update`, `setTheme`, `destroy`. The other finance charts' canvases get the image role and `setLabel` too.
+- **`CalendarChart`**: a value a day, `YYYY-MM-DD`, in week columns and weekday rows, a calendar year to a band and ten years at most (the oldest give way on a short chart); Monday to Friday with `weekdays: 5`, weeks from Sunday with `weekStart: 0`, month and day names in `locale`, a colour bar under it; `onDayClick`.
+- **`MatrixChart`**: a coloured value for each row and column, square cells with the value printed where it fits, column names turned when they don't fit, half of a square matrix with `triangle: 'lower' | 'upper'`; `onCellClick`. `correlationMatrix(series)` gives Pearson correlations, pairing the positions both series have.
+- **Market map by sector**: `HeatmapChart`'s `grouped: true` gathers cells by `group`, each group in a tile sized by its weights under its name and weighted change. The heatmap now describes itself to screen readers too (`ariaLabel` in your words).
+- `ColorScale` is a type of its own, shared by the heatmap, calendar and matrix; a colour left out keeps the chart's default (the theme's up and down colours on the newer charts).
+- Docs: the Finance charts page rewritten in six languages with the classes as they are (it showed renderer classes that don't exist), with the calendar, the matrix and the sector map; the site's finance section shows all seven new charts.
+
+## 1.20.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.2.
+
 ### Vietnamese markets
 
 Checked against the exchanges' rules of May 2025: the HOSE trading rules of 26 April 2025 and the HNX, UPCoM and VN30 futures rules.
