@@ -115,6 +115,7 @@ import { SmoothedROCIndicator } from './panel/SmoothedROC.js';
 import { TimeSeriesForecastIndicator } from './overlay/TimeSeriesForecast.js';
 import { DeMarkRangeIndicator } from './overlay/DeMarkRange.js';
 import { MARainbowIndicator } from './overlay/MARainbow.js';
+import { CandlePatternsIndicator } from './overlay/CandlePatterns.js';
 import { MAChannelIndicator } from './overlay/MAChannel.js';
 import { HammingMAIndicator } from './overlay/HammingMA.js';
 import { MADoubleIndicator, MATripleIndicator } from './overlay/MovingAverageSets.js';
@@ -263,4 +264,5 @@ export function registerBuiltInIndicators(engine: IndicatorEngine): void {
   engine.register(new WeightedCloseIndicator());
   engine.register(new DeMarkRangeIndicator());
   engine.register(new MARainbowIndicator());
+  engine.register(new CandlePatternsIndicator());
 }

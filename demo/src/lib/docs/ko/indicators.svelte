@@ -114,6 +114,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // 상승일�
 chart.addIndicator('tradevalue', {}, 'bottom')                    // 봉마다 종가 × 거래량
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 10~100봉의 이동평균 10개`}</code></pre>
 
+<h2>캔들 패턴</h2>
+<p>
+  1~5봉으로 이뤄진 64개 패턴: 도지, 망치형과 유성형, 장대양봉·음봉(마루보주)과 샅바형; 장악형, 잉태형, 관통형과 먹구름형, 집게형, 박차형; 샛별형과 석별형, 버려진 아기형, 적삼병과 흑삼병, 상승·하락 삼내부형과 삼외부형, 타스키 갭; 삼선타격형, 삼법형, 매트홀드, 탈출형, 사다리 바닥형. 반전 패턴은 뒤집을 추세가 있을 때만 세며(패턴 직전 종가가 10봉 평균과 10봉 전 종가를 모두 넘어설 때, <code>trendPeriod</code>), 몸통의 길고 짧음은 앞선 봉들의 평균 몸통과 비교합니다. 지표는 상승 패턴 아래, 하락 패턴 위에 화살표를 그리고 봉이 충분히 넓으면 짧은 이름을 붙입니다. 여러 패턴이 끝나는 봉에는 가장 긴 패턴을 보여 줍니다. <code>reversal</code>, <code>continuation</code>, <code>indecision</code>(1 또는 0)으로 종류를 고릅니다.
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // 패턴이 끝나는 봉마다 화살표와 이름
+chart.addIndicator('candlepatterns', { indecision: 1 }) // 도지와 팽이형도 표시
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>나만의 지표</h2>
 <p>
   <code>IndicatorBase</code>를 상속하고 그릴 대상(<code>plots</code>), 패널 눈금,

@@ -114,6 +114,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // khối lư�
 chart.addIndicator('tradevalue', {}, 'bottom')                    // giá đóng cửa × khối lượng, mỗi nến
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // mười đường trung bình, 10 đến 100 nến`}</code></pre>
 
+<h2>Mẫu nến</h2>
+<p>
+  64 mẫu từ một đến năm nến: doji, búa và sao băng, marubozu và belt hold; nhấn chìm, harami, đường xuyên và mây đen, nhíp, kicking; sao mai và sao hôm, em bé bị bỏ rơi, ba chàng lính và ba con quạ, ba nến trong và ngoài, khoảng trống tasuki; three-line strike, ba phương pháp, mat hold, breakaway và ladder bottom. Mẫu đảo chiều chỉ được tính khi có xu hướng trước đó để đảo (giá đóng cửa trước mẫu vượt cả trung bình 10 nến lẫn giá đóng cửa 10 nến trước, <code>trendPeriod</code>), và thân nến dài hay ngắn được so với thân trung bình của các nến trước. Chỉ báo vẽ mũi tên dưới mẫu tăng và trên mẫu giảm, kèm tên viết tắt khi nến đủ rộng; nến kết thúc nhiều mẫu thì hiện mẫu dài nhất. <code>reversal</code>, <code>continuation</code> và <code>indecision</code> (1 hoặc 0) chọn loại mẫu.
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // mũi tên và tên mẫu trên mỗi nến kết thúc một mẫu
+chart.addIndicator('candlepatterns', { indecision: 1 }) // hiện cả doji và con xoay
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>Chỉ báo của riêng bạn</h2>
 <p>
   Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của bảng,

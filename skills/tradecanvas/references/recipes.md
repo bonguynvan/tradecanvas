@@ -330,6 +330,21 @@ chart.addIndicator('vr', { period: 20 }, 'bottom');
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 });
 ```
 
+Candlestick patterns, on the chart or as data:
+
+```ts
+import { Chart, detectCandlePatterns } from '@tradecanvas/chart';
+import type { OHLCBar } from '@tradecanvas/chart';
+
+declare const bars: OHLCBar[];
+declare const chart: Chart;
+
+chart.addIndicator('candlepatterns'); // arrows and short names on the bars that end a pattern
+for (const m of detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer', 'morningStar'] })) {
+  console.log(new Date(m.time).toISOString(), m.pattern.name, m.pattern.direction);
+}
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 133 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 134 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const tr: SiteMessages = {
     release: 'WebGL oluşturucu, 30 dil',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 133 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 134 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -71,7 +71,7 @@ const tr: SiteMessages = {
           title: 'Piyasayı okuyun',
           text: 'Mumların üzerinde bantlar, ortalamalar ve osilatörler, onların üstünde Fibonacci seviyeleri ve trend çizgileri; her birinin kendi ayarları ve alarmları var.',
           points: [
-            '133 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
+            '134 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
             'Mıknatıs, gruplar ve geri almayla 69 çizim aracı',
             'Fiyatlar, çizgiler ve gösterge kesişimleri için alarmlar',
           ],
@@ -218,11 +218,11 @@ const tr: SiteMessages = {
     },
     indicators: {
       title: 'Göstergeler',
-      stat: '133 yerleşik',
+      stat: '134 yerleşik',
       blurb:
         'Grafik üstü katmanlar ve paneller kütüphanenin kendi içinde hesaplanır, sıfır matematik bağımlılığı. Canlı tick’ler yalnızca oluşmakta olan barı yeniden hesaplar: 100k barda dört göstergeyle tick başına 0.001 ms.',
       tryThis: [
-        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 133 göstergeden herhangi birini arayın',
+        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 134 göstergeden herhangi birini arayın',
         'Açıklamadaki bir gösterge adına tıklayın: parametreler, renkler ve seviyeler',
         'Bir hareketli ortalamanın kaynağını başka bir göstergenin çizgisi yapın',
         'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin; bir panelin sağ üstündeki düğmeler onu taşır, daraltır veya büyütür',
@@ -329,6 +329,17 @@ const tr: SiteMessages = {
         'Hesap panelinden yeni bir emir açın: 100 hisseyle başlar ve tavanı aşan bir fiyat reddedilir',
         'FPT’ye (100 dongluk adımlar) ya da VN30F kontratına (08.45’ten itibaren) geçin',
         'Mor, camgöbeği ve sarı çizgiler tavan, taban ve baz fiyattır',
+      ],
+    },
+    priceboard: {
+      title: 'Fiyat ekranı göstergeleri',
+      stat: '64 formasyon',
+      blurb:
+        'Mum formasyonları bittikleri mumun üzerinde adlarıyla işaretlenir: yutan, çekiç, yıldızlar, üç asker, üç karga, toplam 64; dönüş formasyonları yalnızca döndürdükleri trendden sonra sayılır. Grafiğin altında, Asya fiyat ekranlarındaki gibi Psychological Line ve Volume Ratio.',
+      tryThis: [
+        'Yakınlaştırın: her okta formasyonun kısa adı görünür',
+        'Doji ve topaçları da göstermek için göstergenin ayarlarını açın',
+        'HPG’ye veya VN30F kontratına geçin',
       ],
     },
     subcent: {
@@ -680,7 +691,7 @@ const tr: SiteMessages = {
         { name: 'Üçüncü taraf çalışma zamanı bağımlılığı yok', detail: 'Kurulacak ya da denetlenecek başka bir şey yok' },
       ],
       indicators: [
-        { name: '133 yerleşik gösterge', detail: 'Altı türde pivot noktaları, MA Cross, başka bir sembolle korelasyon' },
+        { name: '134 yerleşik gösterge', detail: 'Altı türde pivot noktaları, MA Cross, başka bir sembolle korelasyon' },
         { name: 'Fiyat kaynağı', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Gösterge üzerinde gösterge', detail: 'Örneğin RSI’ın hareketli ortalaması, her tick’te güncellenir' },
         { name: 'Tek panelde birden çok gösterge, paneller arasında taşıma', detail: 'moveIndicatorToPane' },

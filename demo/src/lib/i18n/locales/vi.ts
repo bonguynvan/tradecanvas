@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 133 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 134 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ WebGL, 30 ngôn ngữ',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 133 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 134 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -71,7 +71,7 @@ const vi: SiteMessages = {
           title: 'Đọc thị trường',
           text: 'Dải băng, đường trung bình và dao động trên các cây nến, mức Fibonacci và đường xu hướng vẽ lên trên, mỗi thứ có cài đặt và cảnh báo riêng.',
           points: [
-            '133 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
+            '134 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
             '69 công cụ vẽ, có nam châm, nhóm và hoàn tác',
             'Cảnh báo theo giá, theo đường vẽ và khi chỉ báo cắt nhau',
           ],
@@ -218,11 +218,11 @@ const vi: SiteMessages = {
     },
     indicators: {
       title: 'Chỉ báo',
-      stat: '133 có sẵn',
+      stat: '134 có sẵn',
       blurb:
         'Chỉ báo phủ lên giá và chỉ báo ở bảng riêng, đều tự tính trong thư viện, không phụ thuộc thư viện toán nào. Tick trực tiếp chỉ tính lại nến đang hình thành — 0.001 ms mỗi tick với bốn chỉ báo trên 100k nến.',
       tryThis: [
-        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 133 chỉ báo',
+        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 134 chỉ báo',
         'Bấm vào tên chỉ báo trên chú thích: thông số, màu sắc và các mức',
         'Đặt Nguồn của một đường trung bình động là đường của một chỉ báo khác',
         'Kéo đường phân cách giữa các bảng để đổi kích thước; các nút ở góc phải trên của bảng để di chuyển, thu gọn hoặc phóng to',
@@ -329,6 +329,17 @@ const vi: SiteMessages = {
         'Mở lệnh mới từ bảng tài khoản: phiếu bắt đầu với 100 cổ phiếu, và giá vượt trần sẽ bị từ chối',
         'Chuyển sang FPT (bước 100 đồng) hoặc hợp đồng VN30F (mở cửa 8:45)',
         'Các đường tím, xanh lam và vàng là giá trần, giá sàn và giá tham chiếu',
+      ],
+    },
+    priceboard: {
+      title: 'Chỉ báo trên bảng giá',
+      stat: '64 mẫu nến',
+      blurb:
+        'Mẫu nến được đánh dấu ngay trên nến kết thúc mẫu, kèm tên: nhấn chìm, búa, sao, ba chàng lính, ba con quạ, tổng cộng 64 mẫu; mẫu đảo chiều chỉ tính khi có xu hướng trước đó để đảo. Bên dưới là Psychological Line và Volume Ratio, như trên bảng giá châu Á.',
+      tryThis: [
+        'Phóng to: mỗi mũi tên hiện tên viết tắt của mẫu',
+        'Mở cài đặt của chỉ báo mẫu nến để hiện cả doji và con xoay',
+        'Chuyển sang HPG hoặc hợp đồng VN30F',
       ],
     },
     subcent: {
@@ -680,7 +691,7 @@ const vi: SiteMessages = {
         { name: 'Không phụ thuộc thư viện bên thứ ba khi chạy', detail: 'Không có gì khác phải cài hay rà soát' },
       ],
       indicators: [
-        { name: '133 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
+        { name: '134 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
         { name: 'Chọn nguồn giá', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Chỉ báo chồng lên chỉ báo', detail: 'Như đường trung bình của RSI, cập nhật theo từng tick' },
         { name: 'Nhiều chỉ báo trong một pane, chuyển giữa các pane', detail: 'moveIndicatorToPane' },

@@ -17,3 +17,4 @@ export * from './symbol.js';
 export * from './quote.js';
 export * from './news.js';
 export * from './a11y.js';
+export * from './candlePatterns.js';

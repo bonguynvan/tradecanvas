@@ -4,6 +4,12 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Candlestick patterns
+
+- **`detectCandlePatterns(bars, options)`** finds 64 patterns of one to five bars, each on the bar it ends on: dojis, hammers, shooting stars, marubozu and belt holds; engulfing, harami, piercing line and dark cloud cover, tweezers, kicking, counterattack, necks and separating lines; morning and evening stars, abandoned babies, three white soldiers and black crows, three inside and outside, two crows, tri-stars, tasuki gaps, stick sandwich, advance block; three-line strikes, rising and falling three methods, mat hold, breakaways, concealing baby swallow, ladder bottom. Reversals count only after the trend they reverse; bodies are long or short against the average body before. `CANDLE_PATTERNS` lists them with names, short labels, direction and kind.
+- **The `candlepatterns` indicator** (134 indicators in all) draws an arrow under each bullish pattern and over each bearish one, with its short name once the bars are wide enough; a live bar recomputes only the last bars. Reversals, continuations and indecision can be turned on and off.
+- Docs: the Indicators page in six languages; a Feature Lab scene on Vietnamese stocks with the patterns, the Psychological Line and Volume Ratio.
+
 ### Indicators from Asian price boards
 
 22 more indicators, 133 in all, in the widget's indicator list too:

@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 133 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 134 indicators, 69 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -53,7 +53,7 @@ const en = {
     release: 'WebGL renderer, 30 languages',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 133 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 134 indicators, 69 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -77,7 +77,7 @@ const en = {
           title: 'Read the market',
           text: 'Bands, averages and oscillators over the bars, Fibonacci levels and trend lines on top, each with its own settings and alerts.',
           points: [
-            '133 indicators, any one on another, such as an average of the RSI',
+            '134 indicators, any one on another, such as an average of the RSI',
             '69 drawing tools with magnet, groups and undo',
             'Alerts on prices, lines and indicator crossings',
           ],
@@ -225,11 +225,11 @@ const en = {
     },
     indicators: {
       title: 'Indicators',
-      stat: '133 built-in',
+      stat: '134 built-in',
       blurb:
         'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
       tryThis: [
-        'Press the Indicators button (or Ctrl+K) and search any of the 133',
+        'Press the Indicators button (or Ctrl+K) and search any of the 134',
         'Click an indicator name in the legend: inputs, colours and levels',
         'Set a moving average’s Source to another indicator’s line',
         'Drag the line between panes to resize them; the buttons at a pane’s top right move, fold or maximise it',
@@ -336,6 +336,17 @@ const en = {
         'Open a new order from the account panel: it starts at 100 shares, and a price past the ceiling is refused',
         'Switch to FPT (100-dong steps) or to the VN30F contract (from 8:45)',
         'The purple, cyan and yellow lines are the ceiling, floor and reference price',
+      ],
+    },
+    priceboard: {
+      title: 'Price board indicators',
+      stat: '64 patterns',
+      blurb:
+        'Candlestick patterns marked on the bars they end on, with their names: engulfing bars, hammers, stars, soldiers and crows, 64 in all, reversals only after the trend they reverse. Under the chart, the Psychological Line and Volume Ratio, as Asian price boards show them.',
+      tryThis: [
+        'Zoom in: each arrow gets its pattern’s short name',
+        'Open the pattern indicator’s settings to show dojis and spinning tops too',
+        'Switch to HPG or the VN30F contract',
       ],
     },
     subcent: {
@@ -688,7 +699,7 @@ const en = {
         { name: 'No third-party runtime dependencies', detail: 'Nothing else to install or audit' },
       ],
       indicators: [
-        { name: '133 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
+        { name: '134 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
         { name: 'Price source', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'An indicator on an indicator', detail: 'Such as a moving average of RSI, updated on every tick' },
         { name: 'Several indicators in one pane, moved between panes', detail: 'moveIndicatorToPane' },

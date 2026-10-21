@@ -27,7 +27,7 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 133 chỉ báo, 69 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
+**Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 134 chỉ báo, 69 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/vi/"><img src=".github/assets/hero.png" alt="ChartWidget với giá BTCUSDT trực tiếp từ Binance: EMA 21 và 55, RSI, một đường xu hướng, một vị thế mua và watchlist có giá trực tiếp" width="100%"></a>
@@ -36,7 +36,7 @@
 ## Điểm nổi bật
 
 - **18 loại biểu đồ**, từ nến và Heikin-Ashi tới Renko, Kagi, point & figure và Equivolume, cùng sáu biểu đồ tài chính (sparkline, độ sâu, equity, heatmap, waterfall, gauge).
-- **133 chỉ báo và 69 công cụ vẽ**: chỉ báo chồng chỉ báo, cảnh báo theo đường xu hướng, template, nhóm, hoàn tác và làm lại.
+- **134 chỉ báo và 69 công cụ vẽ**: chỉ báo chồng chỉ báo, cảnh báo theo đường xu hướng, template, nhóm, hoàn tác và làm lại.
 - **Giao dịch ngay trên biểu đồ**: vị thế có lãi/lỗ trực tiếp, kéo để sửa lệnh, cắt lỗ và chốt lời, phiếu đặt lệnh, bảng tài khoản, sàn giấy có sẵn hoặc adapter khớp lệnh của riêng bạn.
 - **Dữ liệu trực tiếp**: có sẵn Binance, Bybit, Coinbase và Kraken, nguồn khác chỉ cần khoảng hai mươi dòng; tải lịch sử cũ khi kéo về trái, khung thời gian bất kỳ, biểu đồ tick.
 - **Canvas 2D hoặc WebGL**: một triệu nến kéo ở 60 khung hình/giây, sắc nét ở mọi tỉ lệ màn hình.

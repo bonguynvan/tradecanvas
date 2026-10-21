@@ -114,6 +114,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // volume of u
 chart.addIndicator('tradevalue', {}, 'bottom')                    // close × volume, each bar
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // ten averages, 10 to 100 bars`}</code></pre>
 
+<h2>Candlestick patterns</h2>
+<p>
+  64 patterns from one to five bars: dojis, hammers and shooting stars, marubozu and belt holds; engulfing bars, harami, piercing lines and dark clouds, tweezers, kicking; morning and evening stars, abandoned babies, three soldiers and crows, three inside and outside, tasuki gaps; three-line strikes, three methods, mat holds, breakaways and ladder bottoms. A reversal counts only after the trend it reverses (the close before it past both its 10-bar average and the close 10 bars back, <code>trendPeriod</code>), and a body is long or short against the average body of the bars before. The indicator draws an arrow under a bullish pattern and over a bearish one, with its short name once the bars are wide enough; a bar that ends several shows the longest. <code>reversal</code>, <code>continuation</code> and <code>indecision</code> (1 or 0) choose the kinds.
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // an arrow and the name on each bar that ends one
+chart.addIndicator('candlepatterns', { indecision: 1 }) // dojis and spinning tops too
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>Your own indicator</h2>
 <p>
   Extend <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,

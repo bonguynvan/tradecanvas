@@ -123,3 +123,4 @@ export { PriceOscillatorIndicator } from './panel/PriceOscillator.js';
 export { VolatilityOHLCIndicator, VolatilityZeroTrendIndicator } from './panel/VolatilityEstimators.js';
 export { SymbolSeriesStore } from './symbols/SymbolSeriesStore.js';
 export { CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator } from './symbols/symbolIndicators.js';
+export { detectCandlePatterns, CANDLE_PATTERNS } from './candles/detect.js';

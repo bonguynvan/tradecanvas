@@ -24,6 +24,7 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
   netvolume: ['up'],
   volchange: ['up'],
   tradevalue: ['up'],
+  candlepatterns: ['code', 'count'],
   chaikinOsc: ['adl'],
   adx: ['dx'],
   lrc: ['slope'],
@@ -35,6 +36,9 @@ const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 } };
 
 /** Not drawn bar by bar: a profile over price. */
 const NOT_PER_BAR = new Set(['volumeProfile']);
+
+/** Marks drawn beside their value, px: a candle pattern's arrow sits off the bar's high or low. */
+const BESIDE: Record<string, number> = { candlepatterns: 12 };
 
 /** Coloured by value, whatever the style: Chop Zone's zones are what it shows. */
 const OWN_COLOURS = new Set(['chopzone']);
@@ -156,7 +160,7 @@ describe('built-in indicators keep to their declarations', () => {
             const mid = (lo + hi) >> 1;
             if (expected[mid] < y) lo = mid + 1; else hi = mid;
           }
-          return Math.min(Math.abs(expected[lo] - y), lo > 0 ? Math.abs(expected[lo - 1] - y) : Infinity) <= 1.01;
+          return Math.min(Math.abs(expected[lo] - y), lo > 0 ? Math.abs(expected[lo - 1] - y) : Infinity) <= (BESIDE[descriptor.id] ?? 1.01);
         };
         const off = ys.filter((y) => !near(y));
         expect(off.length, `points off the scale, e.g. ${off.slice(0, 3).join(', ')}`).toBe(0);

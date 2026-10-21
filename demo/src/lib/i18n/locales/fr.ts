@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 133 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 134 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const fr: SiteMessages = {
     release: 'moteur de rendu WebGL, 30 langues',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 133 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 134 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -71,7 +71,7 @@ const fr: SiteMessages = {
           title: 'Lire le marché',
           text: 'Bandes, moyennes et oscillateurs sur les bougies, niveaux de Fibonacci et lignes de tendance par-dessus, chacun avec ses réglages et ses alertes.',
           points: [
-            '133 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
+            '134 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
             '69 outils de dessin avec aimant, groupes et annulation',
             'Alertes sur les prix, les lignes et les croisements d’indicateurs',
           ],
@@ -218,11 +218,11 @@ const fr: SiteMessages = {
     },
     indicators: {
       title: 'Indicateurs',
-      stat: '133 intégrés',
+      stat: '134 intégrés',
       blurb:
         'Superpositions et panneaux calculés en interne, sans aucune dépendance mathématique. En direct, seule la barre en formation est recalculée — 0,001 ms par tick avec quatre indicateurs sur 100k barres.',
       tryThis: [
-        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 133',
+        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 134',
         'Cliquez sur le nom d’un indicateur dans la légende : paramètres, couleurs et niveaux',
         'Réglez le champ « Source » d’une moyenne mobile sur la ligne d’un autre indicateur',
         'Faites glisser la ligne entre deux panneaux pour les redimensionner ; les boutons en haut à droite d’un panneau le déplacent, le replient ou l’agrandissent',
@@ -329,6 +329,17 @@ const fr: SiteMessages = {
         'Ouvrez un nouvel ordre depuis le panneau du compte : il commence à 100 actions, et un prix au-delà du plafond est refusé',
         'Passez à FPT (pas de 100 dongs) ou au contrat VN30F (dès 8 h 45)',
         'Les lignes violette, cyan et jaune sont le prix plafond, le prix plancher et le prix de référence',
+      ],
+    },
+    priceboard: {
+      title: 'Indicateurs des écrans de cotation',
+      stat: '64 figures',
+      blurb:
+        'Les figures en chandeliers marquées sur la bougie où elles s’achèvent, avec leur nom : avalements, marteaux, étoiles, trois soldats, trois corbeaux, 64 en tout ; les figures de retournement ne comptent qu’après la tendance qu’elles retournent. Sous le graphique, la Psychological Line et le Volume Ratio, comme sur les écrans asiatiques.',
+      tryThis: [
+        'Zoomez : chaque flèche porte le nom court de la figure',
+        'Ouvrez les réglages de l’indicateur pour afficher aussi dojis et toupies',
+        'Passez à HPG ou au contrat VN30F',
       ],
     },
     subcent: {
@@ -680,7 +691,7 @@ const fr: SiteMessages = {
         { name: 'Aucune dépendance tierce à l’exécution', detail: 'Rien d’autre à installer ni à auditer' },
       ],
       indicators: [
-        { name: '133 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
+        { name: '134 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
         { name: 'Source de prix', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Un indicateur appliqué à un indicateur', detail: 'Comme une moyenne mobile du RSI, mise à jour à chaque tick' },
         { name: 'Plusieurs indicateurs dans un panneau, déplacés d’un panneau à l’autre', detail: 'moveIndicatorToPane' },

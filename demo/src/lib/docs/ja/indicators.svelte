@@ -114,6 +114,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // 上昇日�
 chart.addIndicator('tradevalue', {}, 'bottom')                    // 各足の終値 × 出来高
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 10〜100 本の 10 本の平均線`}</code></pre>
 
+<h2>ローソク足パターン</h2>
+<p>
+  1〜5 本の足からなる 64 パターン：十字線、カラカサと流れ星、丸坊主と寄り付き坊主；包み足、はらみ線、切り込み線とかぶせ線、毛抜き、キッキング；明けの明星と宵の明星、捨て子線、赤三兵と三羽烏、スリーインサイドとスリーアウトサイド、タスキ；スリーラインストライク、三法、マットホールド、ブレイクアウェイ、ラダーボトム。反転パターンは反転する対象のトレンドの後でのみ数え（パターン前の終値が 10 本平均と 10 本前の終値の両方を超えていること、<code>trendPeriod</code>）、実体の長短はそれ以前の足の平均実体と比べます。指標は強気パターンの下、弱気パターンの上に矢印を描き、足の幅が十分なら略称を添えます。複数のパターンが終わる足では最も長いものを表示します。<code>reversal</code>、<code>continuation</code>、<code>indecision</code>（1 か 0）で種類を選びます。
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // パターンが終わる足ごとに矢印と名前
+chart.addIndicator('candlepatterns', { indecision: 1 }) // 十字線やコマも表示
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>独自のインジケーター</h2>
 <p>
   <code>IndicatorBase</code> を継承し、描画する内容（<code>plots</code>）、ペインのスケール、レベル、

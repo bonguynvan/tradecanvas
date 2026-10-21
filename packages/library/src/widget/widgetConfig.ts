@@ -310,6 +310,7 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'wclose', name: 'Weighted Close', type: 'overlay' },
   { id: 'demark', name: 'DeMark Projected Range', type: 'overlay' },
   { id: 'rainbow', name: 'Moving Average Rainbow', type: 'overlay' },
+  { id: 'candlepatterns', name: 'Candlestick Patterns', type: 'overlay' },
 ];
 
 export const POPULAR_INDICATORS = [
