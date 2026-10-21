@@ -1,6 +1,7 @@
 import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/commons';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
-import { escapeHtml } from './escapeHtml.js';
+import { createIcon } from './icons.js';
+import { footerHints } from './footerHints.js';
 
 export interface CommandItem {
   id: string;
@@ -58,7 +59,7 @@ export class WidgetCommandPalette {
 
     const searchIcon = document.createElement('span');
     searchIcon.className = 'tcw-cmd-icon';
-    searchIcon.textContent = '⌕';
+    searchIcon.innerHTML = createIcon('search', 16);
     header.appendChild(searchIcon);
 
     this.input = document.createElement('input');
@@ -81,9 +82,7 @@ export class WidgetCommandPalette {
 
     const footer = document.createElement('div');
     footer.className = 'tcw-cmd-footer';
-    footer.innerHTML = `<span>↑↓ ${escapeHtml(this.t('common.navigate'))}</span>`
-      + `<span>⏎ ${escapeHtml(this.t('common.select'))}</span>`
-      + `<span>Esc ${escapeHtml(this.t('common.close'))}</span>`;
+    footer.innerHTML = footerHints(this.t('common.navigate'), this.t('common.select'), this.t('common.close'));
     this.modal.appendChild(footer);
 
     this.host().append(this.backdrop, this.modal);
@@ -161,7 +160,7 @@ export class WidgetCommandPalette {
       if (item.active) {
         const check = document.createElement('span');
         check.className = 'tcw-cmd-check';
-        check.textContent = '✓';
+        check.innerHTML = createIcon('check', 14);
         row.appendChild(check);
       }
 

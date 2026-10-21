@@ -139,6 +139,12 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   <code>selectionToolbar</code> apagado oculta la barra sobre un dibujo seleccionado; el menú del botón derecho sigue.
 </p>
 
+<p id="toast-icons">
+  Sus propios avisos pueden llevar un icono del conjunto del widget, por nombre (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), como el aviso de alerta del widget lleva la campana. El widget no usa emoji en ningún sitio: todos los iconos, también las etiquetas del propio gráfico, vienen de un mismo conjunto.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">Tus propias partes</h2>
 <p>
   Tus botones, menús y elementos van en las barras del widget, se ven como los suyos y siguen su tema y su aspecto. Cada

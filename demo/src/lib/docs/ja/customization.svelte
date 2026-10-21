@@ -138,6 +138,12 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   <code>selectionToolbar</code> をオフにすると選択した描画の上のツールバーが隠れます。右クリックメニューは残ります。
 </p>
 
+<p id="toast-icons">
+  独自の通知にも、ウィジェットのアイコンセットのアイコンを名前で付けられます（<code>'bell'</code>、<code>'check'</code>、<code>'info'</code>…）。ウィジェットのアラート通知がベルを付けるのと同じです。ウィジェットはどこにも絵文字を使いません。チャート自身のラベルを含め、すべてのアイコンは一つのセットから来ています。
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">独自の部品</h2>
 <p>
   独自のボタン、メニュー、項目はウィジェットの各バーに収まり、ウィジェット自身のものと同じに見え、テーマと見た目に

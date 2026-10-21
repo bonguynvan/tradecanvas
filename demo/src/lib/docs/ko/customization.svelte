@@ -138,6 +138,12 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   <code>selectionToolbar</code>를 끄면 선택한 그림 위의 도구 모음이 숨겨집니다. 오른쪽 클릭 메뉴는 그대로입니다.
 </p>
 
+<p id="toast-icons">
+  직접 띄우는 알림에도 위젯 아이콘 세트의 아이콘을 이름으로 붙일 수 있습니다(<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…). 위젯의 알림 통지가 종을 붙이는 것과 같습니다. 위젯은 어디에도 이모지를 쓰지 않습니다. 차트 자체의 라벨을 포함해 모든 아이콘이 한 세트에서 옵니다.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">직접 만든 부품</h2>
 <p>
   직접 만든 버튼, 메뉴, 항목은 위젯의 바 안에 들어가 위젯의 것과 똑같이 보이고, 테마와 모양을 따릅니다. 모두 바꾸거나

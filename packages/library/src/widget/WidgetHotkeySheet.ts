@@ -1,5 +1,6 @@
 import type { MessageKey, Translator } from './i18n.js';
 import type { WidgetFeature } from './widgetFeatures.js';
+import { createIcon } from './icons.js';
 
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
@@ -173,7 +174,7 @@ export class WidgetHotkeySheet {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'tcw-modal-close';
     closeBtn.setAttribute('aria-label', this.t('hotkeys.close'));
-    closeBtn.innerHTML = '×';
+    closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(closeBtn);
     this.modal.appendChild(header);

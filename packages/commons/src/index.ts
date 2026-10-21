@@ -4,3 +4,4 @@ export * from './utils/index.js';
 export * from './constants/index.js';
 export * from './i18n/index.js';
 export * from './market/index.js';
+export * from './icons/index.js';

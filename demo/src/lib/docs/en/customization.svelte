@@ -138,6 +138,12 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>selectionToolbar</code> off hides the toolbar over a selected drawing; the right-click menu stays.
 </p>
 
+<p id="toast-icons">
+  Your own notices can carry an icon of the widget's set, by name (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), as the widget's alert notice carries the bell. The widget draws no emoji anywhere: every icon, the chart's own labels included, comes from one set.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">Your own parts</h2>
 <p>
   Your buttons, menus and items go into the widget's bars, look like its own and follow its theme and look. Each

@@ -134,6 +134,12 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。
 </p>
 
+<p id="toast-icons">
+  你自己的提示可以带上组件图标集中的图标，按名称指定（<code>'bell'</code>、<code>'check'</code>、<code>'info'</code>…），就像组件的提醒提示带着铃铛一样。组件任何地方都不使用 emoji：所有图标，包括图表自身的标签，都来自同一套图标。
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">你自己的部件</h2>
 <p>
   你的按钮、菜单和状态项放在组件的各个栏里，看起来和组件自带的一样，并跟随它的主题和外观。每个方法都返回一个句柄，

@@ -1238,14 +1238,13 @@
   font-weight: var(--tcw-weight-strong);
 }
 
-/* Pinned (favorited) flyout item — a star marker on the right. */
-.tcw-flyout-item.tcw-flyout-faved::after {
-  content: '★';
-  float: right;
+/* Pinned (favorited) flyout item — the icon set's star, filled, on the right. */
+.tcw-flyout-star {
+  display: inline-flex;
+  margin-inline-start: auto;
   color: var(--tcw-accent);
-  font-size: var(--tcw-font-size-xs);
-  line-height: 1.4;
 }
+.tcw-flyout-star svg path { fill: currentColor; }
 
 /* Favorites strip — pinned drawing tools above the tool groups. */
 .tcw-sidebar-favorites {
@@ -1856,7 +1855,6 @@
 }
 
 .tcw-cmd-icon {
-  font-size: calc(var(--tcw-font-size) + 5px);
   color: var(--tcw-text-muted);
   flex-shrink: 0;
   display: inline-flex;
@@ -1946,9 +1944,8 @@
 }
 
 .tcw-cmd-check {
+  display: inline-flex;
   color: var(--tcw-accent);
-  font-size: calc(var(--tcw-font-size) + 1px);
-  font-weight: calc(var(--tcw-weight-strong) + 100);
 }
 
 .tcw-cmd-kbd {
@@ -1967,6 +1964,21 @@
   text-align: center;
   color: var(--tcw-text-muted);
   font-size: var(--tcw-font-size);
+}
+
+/* A key and what it does, in a list dialog's footer: keys in the shortcut chips (.tcw-cmd-kbd). */
+.tcw-cmd-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.tcw-cmd-help-text { margin-inline-start: 3px; }
+.tcw-cmd-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  font-style: normal;
 }
 
 .tcw-cmd-footer {
@@ -2216,6 +2228,14 @@
 }
 
 /* === Toast === */
+
+.tcw-toast-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-inline-end: 7px;
+  color: var(--tcw-accent);
+}
+.tcw-toast-error .tcw-toast-icon { color: var(--tcw-red); }
 
 .tcw-toast {
   position: absolute;

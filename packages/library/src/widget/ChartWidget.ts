@@ -45,6 +45,7 @@ import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutC
 import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
+import { createIcon } from './icons.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
@@ -1000,7 +1001,7 @@ export class ChartWidget {
       this.refreshAlerts();
       if (!this.featureState.alerts) return;
       const text = `${this.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
-      this.say(`🔔 ${fill(this.t('alerts.fired'), { text })}`, 'info');
+      this.say(fill(this.t('alerts.fired'), { text }), 'info', 'bell');
       this.alertNotifier?.notify(text);
     });
 
@@ -3089,11 +3090,21 @@ export class ChartWidget {
    * Show a transient toast inside the widget. Auto-dismisses after 3.5s.
    * Used by the drag-drop importer for success / failure feedback, but
    * exposed so apps can post their own (e.g. "alert triggered at 64,200").
+   * `icon`: one of the widget's icons (`'bell'`, `'check'`, `'info'`…) before the text.
    */
-  toast(message: string, kind: 'info' | 'error' = 'info'): void {
+  toast(message: string, kind: 'info' | 'error' = 'info', icon?: string): void {
     const el = document.createElement('div');
     el.className = `tcw-toast ${kind === 'error' ? 'tcw-toast-error' : ''}`;
-    el.textContent = message;
+    el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    // An icon name the set doesn't have shows no icon.
+    const svg = icon ? createIcon(icon, 14) : '';
+    if (svg) {
+      const mark = document.createElement('span');
+      mark.className = 'tcw-toast-icon';
+      mark.innerHTML = svg;
+      el.appendChild(mark);
+    }
+    el.appendChild(document.createTextNode(message));
     this.root.appendChild(el);
     // Trigger CSS transition on next frame
     requestAnimationFrame(() => el.classList.add('tcw-toast-in'));
@@ -3109,8 +3120,8 @@ export class ChartWidget {
    * The widget's own notices, unless the `toasts` switch is off; its errors
    * show either way (yours, through `toast`, always show).
    */
-  private say(message: string, kind: 'info' | 'error' = 'info'): void {
-    if (this.featureState.toasts || kind === 'error') this.toast(message, kind);
+  private say(message: string, kind: 'info' | 'error' = 'info', icon?: string): void {
+    if (this.featureState.toasts || kind === 'error') this.toast(message, kind, icon);
   }
 
   // --- Named layouts ---

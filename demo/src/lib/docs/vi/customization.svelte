@@ -138,6 +138,12 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   Tắt <code>selectionToolbar</code> sẽ ẩn thanh công cụ trên hình được chọn; menu chuột phải vẫn còn.
 </p>
 
+<p id="toast-icons">
+  Thông báo của bạn có thể kèm một icon trong bộ icon của widget, theo tên (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), như thông báo alert của widget kèm icon chuông. Widget không dùng emoji ở đâu cả: mọi icon, kể cả nhãn trên biểu đồ, đều từ cùng một bộ.
+</p>
+<pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
+widget.toast('Feed lost', 'error', 'info')`}</code></pre>
+
 <h2 id="parts">Phần của riêng bạn</h2>
 <p>
   Nút, menu và mục của bạn nằm trong các thanh của widget, trông như của widget và theo theme lẫn giao diện của

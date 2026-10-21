@@ -4,6 +4,13 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### One icon set, no emoji
+
+- **Icons, not emoji.** The alert line's label and the alert notice drew a bell emoji, the pinned tooltip a pushpin, trade zones ▲ and ▼, a favourite drawing tool ★, the palettes ⌕, ✓ and ⏎, close buttons ×, and the replay bar its own filled glyphs (now outlined, as the rest of the set). Emoji and symbol characters look different on every system and font; all of these now come from the TradeCanvas icon set, drawn the same everywhere at 1.75 px strokes on its 24 px grid.
+- **The icon set moves to commons** (`UI_ICONS`, `DRAWING_TOOL_ICONS`, `CHART_TYPE_ICONS`, `iconSvg`), so the chart's own canvas draws it too: `drawIcon(ctx, icon, x, y, size, color)` in core. New icons: pin, search, enter, step back and step forward.
+- **`widget.toast(message, kind, icon)`** takes an icon's name, shown before the text.
+- A test keeps emoji and symbol characters out of the sources.
+
 ### Axes that read at every zoom
 
 - **Time axis labels by the calendar.** The axis labels the bars that start the largest calendar steps: a new year (in bold), a quarter or month, a day, a round hour or minute, at least 80 px apart, as `2024`, `Mar`, `15`, `13:00`. At 5Y it reads `2022 · Jul · 2023 · Jul`; on hourly bars over years it still shows the years, which it never did. The labels belong to bars, not to the screen: they move with their bars when panning and stay where they were when history is loaded in front, where they used to jump. Month names follow `setNumberLocale`; bars within a minute show their seconds (`13:05:30`), and labels wider than the spacing (a long month name, a formatter's own text) give way instead of running together. A time formatter now hears `kind: 'year' | 'month' | 'day' | 'time'`; `'date'` is no longer given by the axis (deprecated): a daily bar's label is `'day'`, `'month'` or `'year'` by the step it starts.
