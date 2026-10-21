@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-133 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+134 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (47)
+## On the price pane (48)
 
 Drawn over the candles, on the price scale.
 
@@ -59,6 +59,7 @@ Drawn over the candles, on the price scale.
 | `wclose` | Weighted Close | — | value: Weighted | — | |
 | `demark` | DeMark Projected Range | — | high: Projected high, low: Projected low | — | |
 | `rainbow` | Moving Average Rainbow | first: 10, step: 10, count: 10, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4, ma5: MA 5, ma6: MA 6, ma7: MA 7, ma8: MA 8, ma9: MA 9, ma10: MA 10, ma11: MA 11, ma12: MA 12, ma13: MA 13, ma14: MA 14, ma15: MA 15, ma16: MA 16, ma17: MA 17, ma18: MA 18, ma19: MA 19, ma20: MA 20 | — | |
+| `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
 
 ## In a pane of their own (86)
 

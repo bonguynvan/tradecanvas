@@ -118,6 +118,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // volumen de 
 chart.addIndicator('tradevalue', {}, 'bottom')                    // cierre × volumen, en cada barra
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // diez medias, de 10 a 100 barras`}</code></pre>
 
+<h2>Patrones de velas</h2>
+<p>
+  64 patrones de una a cinco barras: dojis, martillos y estrellas fugaces, marubozu y belt hold; envolventes, harami, líneas penetrantes y nubes oscuras, pinzas, kicking; estrellas de la mañana y de la tarde, bebés abandonados, tres soldados y tres cuervos, tres dentro y tres fuera, huecos tasuki; three-line strike, tres métodos, mat hold, breakaway y ladder bottom. Un patrón de giro solo cuenta tras la tendencia que gira (el cierre anterior más allá de su media de 10 barras y del cierre de 10 barras antes, <code>trendPeriod</code>), y un cuerpo es largo o corto frente al cuerpo medio de las barras anteriores. El indicador dibuja una flecha bajo un patrón alcista y sobre uno bajista, con su nombre corto cuando las barras son lo bastante anchas; una barra que termina varios muestra el más largo. <code>reversal</code>, <code>continuation</code> e <code>indecision</code> (1 o 0) eligen los tipos.
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // una flecha y el nombre en cada barra que termina uno
+chart.addIndicator('candlepatterns', { indecision: 1 }) // también dojis y peonzas
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>Tu propio indicador</h2>
 <p>
   Extiende <code>IndicatorBase</code> y declara lo que dibuja (<code>plots</code>),

@@ -27,7 +27,7 @@
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**A complete trading chart for the web.** Candlesticks to Renko, 133 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL and free of third-party dependencies. Drop in the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**A complete trading chart for the web.** Candlesticks to Renko, 134 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL and free of third-party dependencies. Drop in the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://bonguynvan.github.io/tradecanvas/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
@@ -36,7 +36,7 @@
 ## Highlights
 
 - **18 chart types**, from candles and Heikin-Ashi to Renko, Kagi, point & figure and Equivolume, plus six finance charts (sparkline, depth, equity, heatmap, waterfall, gauge).
-- **133 indicators and 69 drawing tools**: indicators on indicators, alerts on trend lines, templates, groups, undo and redo.
+- **134 indicators and 69 drawing tools**: indicators on indicators, alerts on trend lines, templates, groups, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stop-loss/take-profit you drag, an order ticket, an account panel, and a paper broker or your own execution adapter.
 - **Live data**: Binance, Bybit, Coinbase and Kraken built in, any other feed in about twenty lines; older history while scrolling back, any interval, tick charts.
 - **Canvas 2D or WebGL**: a million bars panned at 60 fps, crisp at every screen scale.

@@ -113,6 +113,19 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')                // 上涨日�
 chart.addIndicator('tradevalue', {}, 'bottom')                    // 每根 K 线的收盘价 × 成交量
 chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // 十条均线，10 到 100 根`}</code></pre>
 
+<h2>K 线形态</h2>
+<p>
+  64 种 1 到 5 根 K 线的形态：十字星、锤子线与流星线、光头光脚线与捉腰带线；吞没、孕线、刺透与乌云盖顶、平头、反冲；早晨之星与黄昏之星、弃婴、三白兵与三只乌鸦、三内与三外、跳空并列；三线打击、上升与下降三法、铺垫、脱离和梯底。反转形态只在其要反转的趋势之后才计入（形态之前的收盘价同时越过其 10 根均值和 10 根之前的收盘价，<code>trendPeriod</code>），实体长短与之前 K 线的平均实体比较。指标在看涨形态下方、看跌形态上方画箭头，K 线够宽时附上简称；一根 K 线结束多个形态时显示最长的那个。<code>reversal</code>、<code>continuation</code> 和 <code>indecision</code>（1 或 0）选择类型。
+</p>
+<pre><code>{`chart.addIndicator('candlepatterns')                  // 在每个形态结束的 K 线上画箭头和名称
+chart.addIndicator('candlepatterns', { indecision: 1 }) // 也显示十字星和纺锤线
+
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
+
+const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
+// [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
+CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+
 <h2>自定义指标</h2>
 <p>
   继承 <code>IndicatorBase</code>，声明它要绘制的内容（<code>plots</code>）、窗格坐标、

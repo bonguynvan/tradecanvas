@@ -419,6 +419,27 @@ vn30fContracts(Date.now())        // the four listed contracts and their last da
     },
   },
   {
+    id: 'priceboard',
+    code: `import { detectCandlePatterns } from '@tradecanvas/chart'
+
+chart.addIndicator('candlepatterns')                // arrows and names on the bars
+chart.addIndicator('psy', { period: 10 }, 'bottom') // the share of up closes: 25 and 75
+chart.addIndicator('vr', { period: 20 }, 'bottom')  // volume of up days against down days
+detectCandlePatterns(bars)                          // every pattern found, by name`,
+    options: () => ({
+      symbol: 'FPT',
+      symbols: Object.keys(VN_SYMBOLS),
+      timeframe: '15m',
+      chartOptions: { extendedHours: false },
+    }),
+    data: (symbol) => vnBars(symbol),
+    setup: (_widget, chart) => {
+      chart.addIndicator('candlepatterns', {});
+      chart.addIndicator('psy', {}, 'bottom');
+      chart.addIndicator('vr', {}, 'bottom');
+    },
+  },
+  {
     id: 'subcent',
     code: `import { ChartWidget } from '@tradecanvas/chart/widget'
 import { ja } from '@tradecanvas/chart/widget/locales'

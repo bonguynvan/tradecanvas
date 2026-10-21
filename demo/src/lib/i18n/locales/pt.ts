@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 133 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 134 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const pt: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 133 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 134 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -71,7 +71,7 @@ const pt: SiteMessages = {
           title: 'Ler o mercado',
           text: 'Bandas, médias e osciladores sobre os candles, níveis de Fibonacci e linhas de tendência por cima, cada um com suas configurações e alertas.',
           points: [
-            '133 indicadores, um sobre o outro, como uma média do RSI',
+            '134 indicadores, um sobre o outro, como uma média do RSI',
             '69 ferramentas de desenho com ímã, grupos e desfazer',
             'Alertas de preço, de linhas e de cruzamentos de indicadores',
           ],
@@ -218,11 +218,11 @@ const pt: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '133 integrados',
+      stat: '134 integrados',
       blurb:
         'Sobrepostos e em painéis, calculados internamente, sem dependências matemáticas. Ticks ao vivo recalculam só a barra em formação — 0,001 ms por tick com quatro indicadores em 100k barras.',
       tryThis: [
-        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 133',
+        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 134',
         'Clique no nome de um indicador na legenda: parâmetros, cores e níveis',
         'Defina o campo “Source” de uma média móvel como a linha de outro indicador',
         'Arraste a linha entre os painéis para redimensioná-los; os botões no canto superior direito de um painel o movem, recolhem ou maximizam',
@@ -329,6 +329,17 @@ const pt: SiteMessages = {
         'Abra uma nova ordem no painel da conta: ela começa com 100 ações, e um preço acima do teto é recusado',
         'Mude para FPT (variações de 100 dongs) ou para o contrato VN30F (a partir das 8h45)',
         'As linhas roxa, ciano e amarela são o preço-teto, o preço-piso e o preço de referência',
+      ],
+    },
+    priceboard: {
+      title: 'Indicadores de tela de cotação',
+      stat: '64 padrões',
+      blurb:
+        'Padrões de candles marcados no candle em que terminam, com o nome: engolfo, martelo, estrelas, três soldados, três corvos, 64 ao todo; os de reversão só contam depois da tendência que revertem. Abaixo do gráfico, a Psychological Line e o Volume Ratio, como as telas asiáticas mostram.',
+      tryThis: [
+        'Aproxime: cada seta mostra o nome curto do padrão',
+        'Abra as configurações do indicador para ver também dojis e piões',
+        'Mude para HPG ou para o contrato VN30F',
       ],
     },
     subcent: {
@@ -680,7 +691,7 @@ const pt: SiteMessages = {
         { name: 'Sem dependências de terceiros em runtime', detail: 'Nada mais para instalar ou auditar' },
       ],
       indicators: [
-        { name: '133 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
+        { name: '134 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
         { name: 'Fonte de preço', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Um indicador sobre outro indicador', detail: 'Como uma média móvel do RSI, atualizada a cada tick' },
         { name: 'Vários indicadores em um painel, movidos entre painéis', detail: 'moveIndicatorToPane' },

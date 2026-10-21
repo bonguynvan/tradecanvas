@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、133 个指标、69 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
+      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、134 个指标、69 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -48,7 +48,7 @@ const zh: SiteMessages = {
     release: 'WebGL 渲染器，30 种语言',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，133 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，134 个指标、69 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
@@ -72,7 +72,7 @@ const zh: SiteMessages = {
           title: '读懂行情',
           text: 'K线上叠加通道、均线和振荡指标，再在上面画斐波那契和趋势线，每一项都有自己的设置和提醒。',
           points: [
-            '133 个指标，可以互相叠加，比如 RSI 的均线',
+            '134 个指标，可以互相叠加，比如 RSI 的均线',
             '69 种画线工具，带磁吸、分组和撤销',
             '价格、画线和指标交叉都能提醒',
           ],
@@ -219,11 +219,11 @@ const zh: SiteMessages = {
     },
     indicators: {
       title: '指标',
-      stat: '133 个内置',
+      stat: '134 个内置',
       blurb:
         '叠加指标和副图指标全部自行计算，数学运算零依赖。实时 tick 只重算正在形成的K线——10 万根K线、四个指标下，每个 tick 仅需 0.001 ms。',
       tryThis: [
-        '点击“指标”按钮（或按 Ctrl+K），搜索 133 个指标中的任意一个',
+        '点击“指标”按钮（或按 Ctrl+K），搜索 134 个指标中的任意一个',
         '点击图例中的指标名称：参数、颜色和水平线',
         '把移动平均线的数据源设为另一个指标的线',
         '拖动副图之间的分隔线来调整大小；副图右上角的按钮可以移动、收起或最大化副图',
@@ -330,6 +330,17 @@ const zh: SiteMessages = {
         '从账户面板新建委托：数量从 100 股起，超过涨停价的价格会被拒绝',
         '切换到 FPT（最小变动价位 100 越南盾）或 VN30F 合约（8:45 开盘）',
         '紫色、青色和黄色的线分别是涨停价、跌停价和参考价',
+      ],
+    },
+    priceboard: {
+      title: '行情软件常用指标',
+      stat: '64 种形态',
+      blurb:
+        'K 线形态标在形态结束的那根 K 线上并附名称：吞没、锤子线、星线、三白兵、三只乌鸦，共 64 种；反转形态只在其要反转的趋势之后才计入。图表下方是亚洲行情软件常见的心理线和成交量比率。',
+      tryThis: [
+        '放大：每个箭头都会显示形态的简称',
+        '打开形态指标的设置，也显示十字星和纺锤线',
+        '切换到 HPG 或 VN30F 合约',
       ],
     },
     subcent: {
@@ -681,7 +692,7 @@ const zh: SiteMessages = {
         { name: '无第三方运行时依赖', detail: '无需额外安装或审计任何东西' },
       ],
       indicators: [
-        { name: '133 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
+        { name: '134 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
         { name: '价格来源', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '基于指标的指标', detail: '例如 RSI 的移动平均，每个 tick 都会更新' },
         { name: '一个副图中放多个指标，并可在副图间移动', detail: 'moveIndicatorToPane' },

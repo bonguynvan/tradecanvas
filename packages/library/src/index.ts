@@ -126,7 +126,13 @@ export type {
   TradeZone,
   TradeZoneDirection,
   TradeZoneStyle,
+  CandlePatternInfo,
+  CandlePatternMatch,
+  CandlePatternOptions,
+  CandlePatternDirection,
+  CandlePatternKind,
 } from '@tradecanvas/commons';
+export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {

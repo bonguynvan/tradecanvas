@@ -3550,5 +3550,51 @@
         "kind": "line"
       }
     ]
+  },
+  {
+    "id": "candlepatterns",
+    "name": "Candlestick Patterns",
+    "shortName": "Patterns",
+    "placement": "overlay",
+    "params": {
+      "trendPeriod": 10,
+      "reversal": 1,
+      "continuation": 1,
+      "indecision": 0
+    },
+    "inputs": {
+      "trendPeriod": {
+        "min": 2
+      },
+      "reversal": {
+        "min": 0,
+        "max": 1
+      },
+      "continuation": {
+        "min": 0,
+        "max": 1
+      },
+      "indecision": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "bull",
+        "title": "Bullish",
+        "kind": "dots"
+      },
+      {
+        "key": "bear",
+        "title": "Bearish",
+        "kind": "dots"
+      },
+      {
+        "key": "neutral",
+        "title": "Indecision",
+        "kind": "dots"
+      }
+    ]
   }
 ]

@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 133 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 134 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const id: SiteMessages = {
     release: 'perender WebGL, 30 bahasa',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 133 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 134 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
@@ -71,7 +71,7 @@ const id: SiteMessages = {
           title: 'Membaca pasar',
           text: 'Band, rata-rata, dan osilator di atas bar, level Fibonacci dan garis tren di atasnya, masing-masing dengan pengaturan dan peringatannya sendiri.',
           points: [
-            '133 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
+            '134 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
             '69 alat gambar dengan magnet, grup, dan undo',
             'Peringatan pada harga, garis, dan persilangan indikator',
           ],
@@ -218,11 +218,11 @@ const id: SiteMessages = {
     },
     indicators: {
       title: 'Indikator',
-      stat: '133 bawaan',
+      stat: '134 bawaan',
       blurb:
         'Overlay dan panel dihitung sendiri oleh pustaka, tanpa dependensi matematika. Tick langsung hanya menghitung ulang bar yang sedang terbentuk — 0.001 ms per tick dengan empat indikator pada 100k bar.',
       tryThis: [
-        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 133 indikator',
+        'Tekan tombol Indikator (atau Ctrl+K) dan cari salah satu dari 134 indikator',
         'Klik nama indikator di legenda: parameter, warna, dan level',
         'Atur Sumber sebuah moving average ke garis indikator lain',
         'Seret garis di antara panel untuk mengubah ukurannya; tombol di kanan atas panel memindahkan, menciutkan, atau memaksimalkannya',
@@ -329,6 +329,17 @@ const id: SiteMessages = {
         'Buka order baru dari panel akun: dimulai dari 100 saham, dan harga di atas batas atas ditolak',
         'Beralih ke FPT (fraksi 100 dong) atau ke kontrak VN30F (mulai pukul 08.45)',
         'Garis ungu, sian, dan kuning adalah batas atas, batas bawah, dan harga acuan',
+      ],
+    },
+    priceboard: {
+      title: 'Indikator papan harga',
+      stat: '64 pola',
+      blurb:
+        'Pola candlestick ditandai pada candle tempat pola berakhir, lengkap dengan namanya: engulfing, hammer, bintang, tiga prajurit, tiga gagak, 64 semuanya; pola pembalikan hanya dihitung setelah tren yang dibaliknya. Di bawah grafik, Psychological Line dan Volume Ratio, seperti di papan harga Asia.',
+      tryThis: [
+        'Perbesar: setiap panah menampilkan nama pendek polanya',
+        'Buka pengaturan indikator pola untuk menampilkan doji dan spinning top juga',
+        'Beralih ke HPG atau kontrak VN30F',
       ],
     },
     subcent: {
@@ -680,7 +691,7 @@ const id: SiteMessages = {
         { name: 'Tanpa dependensi runtime pihak ketiga', detail: 'Tidak ada lagi yang perlu dipasang atau diaudit' },
       ],
       indicators: [
-        { name: '133 indikator bawaan', detail: 'Pivot point dalam enam jenis, MA Cross, korelasi dengan simbol lain' },
+        { name: '134 indikator bawaan', detail: 'Pivot point dalam enam jenis, MA Cross, korelasi dengan simbol lain' },
         { name: 'Sumber harga', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Indikator di atas indikator', detail: 'Misalnya rata-rata bergerak dari RSI, diperbarui di setiap tick' },
         { name: 'Beberapa indikator dalam satu panel, dipindahkan antarpanel', detail: 'moveIndicatorToPane' },
