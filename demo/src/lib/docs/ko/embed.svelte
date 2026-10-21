@@ -34,6 +34,34 @@
   </tbody>
 </table>
 
+<h2 id="mobile-app">휴대폰 앱 안에서</h2>
+<p>
+  차트와 위젯은 어떤 WebView에서도 동작합니다: React Native(<code>react-native-webview</code>), Capacitor, Tauri, 네이티브 앱 자체의 WebView. 너비가 641 px 미만이면 위젯이 휴대폰에 맞게 배치됩니다: 툴바에는 종목, 주기, 차트 종류, 지표가 남고 나머지는 “더보기” 안으로 들어갑니다. 드로잉 도구는 차트 위 버튼 뒤에 있고, 메뉴는 아래에서 올라오는 시트로 열리며, 그리드는 차트를 하나씩 탭으로 보여 줍니다. 더 넓어도 들어가지 않는 툴바는 똑같이 합니다. 손가락으로 마우스가 하는 일을 모두 할 수 있습니다.
+</p>
+<p>페이지에 화면 전체를 덮는 viewport를 지정하세요. 위젯은 시트를 노치와 홈 바에서 떨어뜨리고 화면 키보드 위에 둡니다.</p>
+<pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
+<p>대부분의 WebView는 앱이 백그라운드로 가면 페이지가 숨겨졌다고 알립니다. 그러면 차트는 스스로 그리기를 멈추고(<code>pauseWhenHidden</code>), 너무 오래 조용한 스트림은 앱이 돌아올 때 다시 연결됩니다. 알리지 않는 WebView라면 앱에서 일시 정지하세요.</p>
+<pre><code>{`// React Native (react-native-webview): the app tells the page
+AppState.addEventListener('change', (state) => {
+  webview.current?.injectJavaScript(state === 'active' ? 'chart.resume(); true;' : 'chart.suspend(); true;');
+});
+
+// Capacitor
+import { App } from '@capacitor/app';
+App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
+<p>스크롤되는 화면 안의 차트는 세로 스와이프를 화면에 맡깁니다.</p>
+<pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
+<p>Tauri의 콘텐츠 보안 정책이 페이지가 데이터 피드의 호스트에 연결하도록 허용해야 합니다.</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+"app": {
+  "security": {
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+  }
+}`}</code></pre>
+<p>
+  차트는 픽셀 비율 최대 2로 그립니다(<code>maxPixelRatio</code>). 화면을 닫을 때 제거하면(<code>chart.destroy()</code>) 캔버스 메모리가 바로 반환됩니다.
+</p>
+
 <h2>실제 페이지</h2>
 <p>
   문서 화면의 틀 없이 미리 보려면 <a href="{base}/embed">임베드 경로</a>를

@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Deutsch */
 export const DE_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikatoren',
+  'toolbar.more': 'Mehr',
   'toolbar.indicators.popular': 'Beliebt',
   'toolbar.indicators.all': 'Alle',
   'indicatorType.overlay': 'Overlay',
@@ -285,6 +286,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Vergleich entfernen',
 
   'drawing.cursor': 'Cursor',
+  'drawing.tools': 'Zeichenwerkzeuge',
   'drawing.style': 'Zeichenstil und Vorlagen',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet an',
@@ -461,6 +463,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'grid.single': 'Ein Chart',
   'grid.layoutOption': '{count} Charts, {cols} nebeneinander und {rows} untereinander',
   'grid.chart': 'Chart {n}',
+  'grid.charts': 'Charts',
   'grid.sync': 'Sync',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Zeiteinheit',

@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** 日本語 */
 export const JA_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'インジケーター',
+  'toolbar.more': 'その他',
   'toolbar.indicators.popular': '人気',
   'toolbar.indicators.all': 'すべて',
   'indicatorType.overlay': 'オーバーレイ',
@@ -285,6 +286,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '比較を削除',
 
   'drawing.cursor': 'カーソル',
+  'drawing.tools': '描画ツール',
   'drawing.style': '描画スタイルとテンプレート',
   'drawing.magnet': 'マグネット',
   'drawing.magnetOn': 'マグネット オン',
@@ -461,6 +463,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'grid.single': '単一チャート',
   'grid.layoutOption': '{count} 個のチャート（横 {cols} 列、縦 {rows} 行）',
   'grid.chart': 'チャート {n}',
+  'grid.charts': 'チャート',
   'grid.sync': '同期',
   'grid.sync.symbol': 'シンボル',
   'grid.sync.interval': '時間足',

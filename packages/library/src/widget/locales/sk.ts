@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Slovenčina */
 export const SK_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikátory',
+  'toolbar.more': 'Ďalšie',
   'toolbar.indicators.popular': 'Populárne',
   'toolbar.indicators.all': 'Všetky',
   'indicatorType.overlay': 'v grafe',
@@ -285,6 +286,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Odobrať porovnanie',
 
   'drawing.cursor': 'Kurzor',
+  'drawing.tools': 'Kresliace nástroje',
   'drawing.style': 'Štýl kreslenia a šablóny',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet zapnutý',
@@ -461,6 +463,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'grid.single': 'Jeden graf',
   'grid.layoutOption': 'Grafy: {count}, {cols} vodorovne a {rows} zvisle',
   'grid.chart': 'Graf {n}',
+  'grid.charts': 'Grafy',
   'grid.sync': 'Synchronizácia',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Interval',

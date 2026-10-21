@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const AR_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'المؤشرات',
+  'toolbar.more': 'المزيد',
   'toolbar.indicators.popular': 'الشائعة',
   'toolbar.indicators.all': 'الكل',
   'indicatorType.overlay': 'متراكب',
@@ -296,6 +297,7 @@ export const AR_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'مؤشر الماوس',
+  'drawing.tools': 'أدوات الرسم',
   'drawing.style': 'نمط الرسم والقوالب',
   'drawing.magnet': 'المغناطيس',
   'drawing.magnetOn': 'المغناطيس مفعّل',
@@ -472,6 +474,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'grid.single': 'رسم بياني واحد',
   'grid.layoutOption': 'عدد الرسوم البيانية {count}: {cols} أفقيًا و{rows} رأسيًا',
   'grid.chart': 'الرسم البياني {n}',
+  'grid.charts': 'الرسوم البيانية',
   'grid.sync': 'مزامنة',
   'grid.sync.symbol': 'الرمز',
   'grid.sync.interval': 'الإطار الزمني',

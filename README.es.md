@@ -43,6 +43,7 @@
 - **Un espacio de trabajo completo**: cuadrículas de varios gráficos, diseños con nombre, repetición de barras con trading simulado y un backtester en `@tradecanvas/analytics`.
 - **A tu medida**: 101 claves de estilo, 112 interruptores de funciones, tres estilos y plugins para indicadores, herramientas de dibujo, tipos de gráfico y capas.
 - **Para todos**: el widget en 30 idiomas, incluidos los de derecha a izquierda, con soporte para lectores de pantalla y teclado.
+- **En móviles y apps**: un dedo hace lo que hace un ratón, dibujos, órdenes y alertas incluidos; el widget se organiza para un móvil; el gráfico cuida la batería y funciona en un WebView, React Native, Capacitor o Tauri.
 
 ## Instalación
 
@@ -134,6 +135,7 @@ Los tres componentes comparten las mismas props y te dan el `Chart` subyacente. 
 | [Estilos](https://bonguynvan.github.io/tradecanvas/es/docs/styling/) · [Personalización](https://bonguynvan.github.io/tradecanvas/es/docs/customization/) | Temas, claves de estilo, estilos visuales, interruptores de funciones, tus propias piezas |
 | [Plugins](https://bonguynvan.github.io/tradecanvas/es/docs/plugins/) | Tus propios indicadores, herramientas de dibujo, tipos de gráfico y capas |
 | [Analítica](https://bonguynvan.github.io/tradecanvas/es/docs/analytics/) · [Gráficos financieros](https://bonguynvan.github.io/tradecanvas/es/docs/finance/) | Backtesting y métricas de riesgo; profundidad, curva de capital y otros gráficos |
+| [Móviles y apps](https://bonguynvan.github.io/tradecanvas/es/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; táctil y desplazamiento de página |
 | [Rendimiento](https://bonguynvan.github.io/tradecanvas/es/docs/performance/) · [Referencia de la API](https://bonguynvan.github.io/tradecanvas/es/docs/api/) | Mediciones y la API completa |
 
 La documentación también está en English, Tiếng Việt, 简体中文, 日本語 y 한국어.

@@ -34,6 +34,34 @@
   </tbody>
 </table>
 
+<h2 id="mobile-app">En una app de móvil</h2>
+<p>
+  El gráfico y el widget funcionan en cualquier WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri o el de una app nativa. Por debajo de 641 px de ancho, el widget se organiza para un móvil: la barra conserva el símbolo, el intervalo, el tipo de gráfico y los indicadores y deja el resto bajo «más»; las herramientas de dibujo esperan tras un botón sobre el gráfico; los menús se abren como hojas desde abajo; una cuadrícula muestra un gráfico a la vez, con una pestaña para cada uno. Más ancho, una barra que no cabe hace lo mismo. Un dedo hace lo que hace un ratón.
+</p>
+<p>Dé a la página un viewport que cubra la pantalla. El widget mantiene sus hojas lejos de la muesca y la barra de inicio, y por encima del teclado en pantalla.</p>
+<pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
+<p>La mayoría de los WebView avisan de que la página está oculta cuando la app pasa a segundo plano: el gráfico deja de dibujar por sí solo (<code>pauseWhenHidden</code>) y un flujo callado demasiado tiempo se reconecta cuando la app vuelve. Si el suyo no avisa, páuselo desde la app.</p>
+<pre><code>{`// React Native (react-native-webview): the app tells the page
+AppState.addEventListener('change', (state) => {
+  webview.current?.injectJavaScript(state === 'active' ? 'chart.resume(); true;' : 'chart.suspend(); true;');
+});
+
+// Capacitor
+import { App } from '@capacitor/app';
+App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
+<p>Un gráfico dentro de una pantalla que se desplaza deja los deslizamientos verticales a la pantalla.</p>
+<pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
+<p>La política de seguridad de contenido de Tauri debe permitir que la página llegue a los hosts del feed de datos.</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+"app": {
+  "security": {
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+  }
+}`}</code></pre>
+<p>
+  El gráfico dibuja como mucho a una densidad de píxeles de 2 (<code>maxPixelRatio</code>); destrúyalo (<code>chart.destroy()</code>) cuando se cierre su pantalla y la memoria de sus lienzos vuelve enseguida.
+</p>
+
 <h2>Página en vivo</h2>
 <p>
   Abre directamente la <a href="{base}/embed">ruta de incrustación</a> para

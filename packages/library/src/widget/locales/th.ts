@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** ภาษาไทย */
 export const TH_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'อินดิเคเตอร์',
+  'toolbar.more': 'เพิ่มเติม',
   'toolbar.indicators.popular': 'ยอดนิยม',
   'toolbar.indicators.all': 'ทั้งหมด',
   'indicatorType.overlay': 'ซ้อนบนกราฟ',
@@ -285,6 +286,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'ลบการเปรียบเทียบ',
 
   'drawing.cursor': 'เคอร์เซอร์',
+  'drawing.tools': 'เครื่องมือวาด',
   'drawing.style': 'รูปแบบการวาดและเทมเพลต',
   'drawing.magnet': 'แม่เหล็ก',
   'drawing.magnetOn': 'เปิดแม่เหล็ก',
@@ -461,6 +463,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'grid.single': 'กราฟเดียว',
   'grid.layoutOption': '{count} กราฟ เรียง {cols} คอลัมน์ {rows} แถว',
   'grid.chart': 'กราฟ {n}',
+  'grid.charts': 'กราฟ',
   'grid.sync': 'ซิงค์',
   'grid.sync.symbol': 'สัญลักษณ์',
   'grid.sync.interval': 'กรอบเวลา',

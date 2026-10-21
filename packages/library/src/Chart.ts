@@ -1199,7 +1199,12 @@ export class Chart {
     queueMicrotask(() => {
       this.historyCheckQueued = false;
       if (this.replaySession || !this.history.hasLoader() || isReshapedChartType(this.options.chartType)) return;
-      const { from, to } = this.viewport.getState().visibleRange;
+      const { visibleRange, chartRect } = this.viewport.getState();
+      // No size (hidden: a grid's tab not shown, a collapsed panel), no view to
+      // fill: a chart 0 wide would page back through the whole history. The
+      // check comes again when it gets one.
+      if (chartRect.width <= 0) return;
+      const { from, to } = visibleRange;
       this.history.maybeLoad(Math.max(0, Math.floor(from)), Math.max(HISTORY_AHEAD_MIN_BARS, to - from));
     });
   }

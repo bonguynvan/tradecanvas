@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** 繁體中文 */
 export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toolbar.indicators': '指標',
+  'toolbar.more': '更多',
   'toolbar.indicators.popular': '常用',
   'toolbar.indicators.all': '全部',
   'indicatorType.overlay': '疊加',
@@ -285,6 +286,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '移除比較',
 
   'drawing.cursor': '游標',
+  'drawing.tools': '繪圖工具',
   'drawing.style': '繪圖樣式與範本',
   'drawing.magnet': '磁吸',
   'drawing.magnetOn': '磁吸已開啟',
@@ -461,6 +463,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'grid.single': '單一圖表',
   'grid.layoutOption': '{count} 個圖表，橫向 {cols} 個、縱向 {rows} 個',
   'grid.chart': '圖表 {n}',
+  'grid.charts': '圖表',
   'grid.sync': '同步',
   'grid.sync.symbol': '代碼',
   'grid.sync.interval': '週期',

@@ -4,6 +4,20 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The widget on a phone
+
+On a phone the widget's toolbar ran off the screen: past the intervals, the chart type, indicators, alerts, settings, replay and the order buttons could not be reached, and their menus opened off the side. Now the widget lays itself out for its own width.
+
+- **A narrow widget** (below 641 px wide: a phone, or a narrow column of a wide page) keeps the symbol, the interval, the chart type and the indicators in its toolbar, as icons, the interval as one button naming it. Everything else goes under a **"more"** button, in order, with what is switched off left out.
+- **A toolbar that doesn't fit** at any width (a tablet, a window pulled narrower) folds its right-hand buttons under "more" one at a time, from the right, only as many as it must; when even that isn't enough, the menus show their icons and the interval buttons give way to the interval menu. It fits itself again as the width changes, and "more" lists just what is folded. A host's own buttons on the right fold with them.
+- **The toolbar's menus open over the page.** The interval, chart type and indicator menus used to open inside the widget, so a short widget cut them at its bottom edge and its own panels (replay, alerts, the ladder) could cover them. They now open in the widget's overlay layer, below their button or above it when there is more room, and close when the page scrolls.
+- **The drawing tools** wait behind a round button over the chart, which shows the tool picked. It opens the sidebar over the chart; a tap on a group opens its tools, and picking one (or the eraser, the zoom tool, the style panel) closes the sidebar for the chart.
+- **Menus open as sheets from the bottom** on a phone screen (a window under 641 px wide): the toolbar's menus, the "more" menu, a drawing's or the chart's menu (a long press), in reach of a thumb, never off screen, above the on-screen keyboard, with 44 px rows.
+- **A grid** shows one chart at a time when narrow, with a tab for each naming its symbol and interval.
+- Menus now close on a tap on the chart, which makes no mouse events.
+- A chart with no size (a grid's tab not shown, a collapsed panel) no longer pages back through the whole history of its feed.
+- **Docs: in a phone app.** The viewport, the app's lifecycle (React Native, Capacitor), `pageScroll`, Tauri's content security policy and the chart's memory.
+
 ### Everything by finger
 
 A finger now does on the chart what the mouse does, and a chart on a scrolling page can leave the scroll to the page.

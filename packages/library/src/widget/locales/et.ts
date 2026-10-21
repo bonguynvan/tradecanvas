@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const ET_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Indikaatorid',
+  'toolbar.more': 'Veel',
   'toolbar.indicators.popular': 'Populaarsed',
   'toolbar.indicators.all': 'Kõik',
   'indicatorType.overlay': 'graafikul',
@@ -296,6 +297,7 @@ export const ET_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Kursor',
+  'drawing.tools': 'Joonistusvahendid',
   'drawing.style': 'Joonise stiil ja mallid',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet sees',
@@ -472,6 +474,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'grid.single': 'Üks graafik',
   'grid.layoutOption': '{count} graafikut: veerge {cols}, ridu {rows}',
   'grid.chart': 'Graafik {n}',
+  'grid.charts': 'Graafikud',
   'grid.sync': 'Sünkrooni',
   'grid.sync.symbol': 'Sümbol',
   'grid.sync.interval': 'Intervall',

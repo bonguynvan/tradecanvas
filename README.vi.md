@@ -43,6 +43,7 @@
 - **Không gian làm việc đầy đủ**: lưới nhiều biểu đồ, layout có tên, replay kèm giao dịch giấy, và bộ backtest trong `@tradecanvas/analytics`.
 - **Tuỳ biến theo ý bạn**: 101 khoá style, 112 công tắc tính năng, ba kiểu giao diện, và plugin cho chỉ báo, công cụ vẽ, loại biểu đồ và overlay.
 - **Cho mọi người**: widget bằng 30 ngôn ngữ, có cả viết phải sang trái, hỗ trợ trình đọc màn hình và bàn phím.
+- **Trên điện thoại và trong ứng dụng**: ngón tay làm được mọi việc của chuột, kể cả hình vẽ, lệnh và cảnh báo; widget tự bố trí cho điện thoại; biểu đồ tiết kiệm pin, và chạy trong WebView, React Native, Capacitor hay Tauri.
 
 ## Cài đặt
 
@@ -134,6 +135,7 @@ Ba component dùng chung một bộ prop và trao cho bạn `Chart` bên dưới
 | [Giao diện](https://bonguynvan.github.io/tradecanvas/vi/docs/styling/) · [Tuỳ biến](https://bonguynvan.github.io/tradecanvas/vi/docs/customization/) | Theme, khoá style, kiểu giao diện, công tắc tính năng, thành phần của riêng bạn |
 | [Plugin](https://bonguynvan.github.io/tradecanvas/vi/docs/plugins/) | Chỉ báo, công cụ vẽ, loại biểu đồ và overlay của riêng bạn |
 | [Phân tích](https://bonguynvan.github.io/tradecanvas/vi/docs/analytics/) · [Biểu đồ tài chính](https://bonguynvan.github.io/tradecanvas/vi/docs/finance/) | Backtest và chỉ số rủi ro; biểu đồ độ sâu, equity và các loại khác |
+| [Điện thoại và ứng dụng](https://bonguynvan.github.io/tradecanvas/vi/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; cảm ứng và cuộn trang |
 | [Hiệu năng](https://bonguynvan.github.io/tradecanvas/vi/docs/performance/) · [Tham chiếu API](https://bonguynvan.github.io/tradecanvas/vi/docs/api/) | Số đo và toàn bộ API |
 
 Tài liệu còn có bằng English, 简体中文, 日本語, 한국어 và Español.

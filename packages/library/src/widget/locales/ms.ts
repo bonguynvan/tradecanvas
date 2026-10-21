@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const MS_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Penunjuk',
+  'toolbar.more': 'Lagi',
   'toolbar.indicators.popular': 'Popular',
   'toolbar.indicators.all': 'Semua',
   'indicatorType.overlay': 'tindanan',
@@ -296,6 +297,7 @@ export const MS_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Kursor',
+  'drawing.tools': 'Alat lukisan',
   'drawing.style': 'Gaya lukisan & templat',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet hidup',
@@ -472,6 +474,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'grid.single': 'Satu carta',
   'grid.layoutOption': '{count} carta, {cols} lajur dan {rows} baris',
   'grid.chart': 'Carta {n}',
+  'grid.charts': 'Carta',
   'grid.sync': 'Segerakkan',
   'grid.sync.symbol': 'Simbol',
   'grid.sync.interval': 'Jangka masa',

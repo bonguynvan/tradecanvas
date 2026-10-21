@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Tiếng Việt. */
 export const VI_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Chỉ báo',
+  'toolbar.more': 'Thêm',
   'toolbar.indicators.popular': 'Phổ biến',
   'toolbar.indicators.all': 'Tất cả',
   'indicatorType.overlay': 'phủ lên',
@@ -285,6 +286,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Bỏ so sánh',
 
   'drawing.cursor': 'Con trỏ',
+  'drawing.tools': 'Công cụ vẽ',
   'drawing.style': 'Kiểu vẽ & mẫu',
   'drawing.magnet': 'Hút vào giá',
   'drawing.magnetOn': 'Đang hút vào giá',
@@ -461,6 +463,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'grid.single': 'Một biểu đồ',
   'grid.layoutOption': '{count} biểu đồ, {cols} cột và {rows} hàng',
   'grid.chart': 'Biểu đồ {n}',
+  'grid.charts': 'Biểu đồ',
   'grid.sync': 'Đồng bộ',
   'grid.sync.symbol': 'Mã',
   'grid.sync.interval': 'Khung',

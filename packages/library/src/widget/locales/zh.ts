@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** 简体中文 */
 export const ZH_MESSAGES: WidgetMessages = {
   'toolbar.indicators': '指标',
+  'toolbar.more': '更多',
   'toolbar.indicators.popular': '常用',
   'toolbar.indicators.all': '全部',
   'indicatorType.overlay': '叠加',
@@ -285,6 +286,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '移除对比',
 
   'drawing.cursor': '光标',
+  'drawing.tools': '绘图工具',
   'drawing.style': '画线样式与模板',
   'drawing.magnet': '磁吸',
   'drawing.magnetOn': '磁吸已开启',
@@ -461,6 +463,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'grid.single': '单个图表',
   'grid.layoutOption': '{count} 个图表，横向 {cols} 个、纵向 {rows} 个',
   'grid.chart': '图表 {n}',
+  'grid.charts': '图表',
   'grid.sync': '同步',
   'grid.sync.symbol': '代码',
   'grid.sync.interval': '周期',

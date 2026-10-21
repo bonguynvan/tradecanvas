@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Română */
 export const RO_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indicatori',
+  'toolbar.more': 'Mai mult',
   'toolbar.indicators.popular': 'Populari',
   'toolbar.indicators.all': 'Toți',
   'indicatorType.overlay': 'suprapus',
@@ -285,6 +286,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Eliminare comparație',
 
   'drawing.cursor': 'Cursor',
+  'drawing.tools': 'Instrumente de desen',
   'drawing.style': 'Stil de desen și șabloane',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet activat',
@@ -461,6 +463,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'grid.single': 'Un grafic',
   'grid.layoutOption': 'Grafice: {count} ({cols} pe orizontală, {rows} pe verticală)',
   'grid.chart': 'Graficul {n}',
+  'grid.charts': 'Grafice',
   'grid.sync': 'Sincronizare',
   'grid.sync.symbol': 'Simbol',
   'grid.sync.interval': 'Interval',

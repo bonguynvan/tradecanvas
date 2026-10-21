@@ -49,6 +49,18 @@ export class WidgetDrawingSidebar {
   private favoritesEl: HTMLDivElement | null = null;
   private favoritesDivider: HTMLDivElement | null = null;
   private favorites: string[] = [];
+  /** Narrow (a phone): the button over the chart that opens the sidebar, which then lies over the chart. */
+  private fab: HTMLButtonElement;
+  /** The tool the drawing button shows ('' for the pen). */
+  private fabShows = '';
+  private readonly onPressAway = (e: Event) => {
+    const target = e.target as Node | null;
+    if (target && (this.el.contains(target) || this.fab.contains(target) || this.flyoutEl?.contains(target))) return;
+    this.setOpen(false);
+  };
+  private readonly onEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !this.flyoutEl) this.setOpen(false);
+  };
 
   constructor(
     private readonly host: HTMLElement,
@@ -65,6 +77,58 @@ export class WidgetDrawingSidebar {
     // On a short screen the sidebar scrolls; a menu left open would point at the wrong button.
     this.el.addEventListener('scroll', () => this.hideFlyout(), { passive: true });
     host.appendChild(this.el);
+
+    this.fab = document.createElement('button');
+    this.fab.type = 'button';
+    this.fab.className = 'tcw-sidebar-fab';
+    this.fab.setAttribute('aria-label', this.t('drawing.tools'));
+    this.fab.setAttribute('aria-expanded', 'false');
+    this.fab.innerHTML = createIcon('penLine', 18);
+    markPart(this.fab, 'sidebar');
+    this.fab.addEventListener('click', () => this.setOpen(!this.isOpen()));
+    host.appendChild(this.fab);
+  }
+
+  /** Laid out as on a phone: the sidebar hides behind the drawing button. */
+  private isNarrow(): boolean {
+    return this.el.closest('[data-tcw-narrow]') !== null;
+  }
+
+  private isOpen(): boolean {
+    return this.el.classList.contains('tcw-sidebar-open');
+  }
+
+  /** Narrow: show or hide the sidebar over the chart. */
+  private setOpen(open: boolean): void {
+    if (open === this.isOpen()) return;
+    this.el.classList.toggle('tcw-sidebar-open', open);
+    this.fab.setAttribute('aria-expanded', String(open));
+    if (open) {
+      document.addEventListener('pointerdown', this.onPressAway, true);
+      document.addEventListener('keydown', this.onEscape);
+    } else {
+      // Focus in the sidebar going out of sight goes back to the button that opened it.
+      const hadFocus = this.el.contains(document.activeElement) || !!this.flyoutEl?.contains(document.activeElement);
+      this.hideFlyout();
+      document.removeEventListener('pointerdown', this.onPressAway, true);
+      document.removeEventListener('keydown', this.onEscape);
+      if (hadFocus && this.isNarrow()) this.fab.focus({ preventScroll: true });
+    }
+  }
+
+  /** Close the sidebar laid over the chart (the widget grew out of narrow). */
+  closeOverlay(): void {
+    this.setOpen(false);
+  }
+
+  /** Narrow, a tool picked (or a mode for the chart) closes the sidebar: the chart is where it is used. */
+  private closeForChart(): void {
+    if (this.isNarrow()) this.setOpen(false);
+  }
+
+  private pick(tool: DrawingToolType): void {
+    this.callbacks.onDrawingTool(tool);
+    this.closeForChart();
   }
 
   private build(): void {
@@ -75,7 +139,10 @@ export class WidgetDrawingSidebar {
     this.cursorBtn.className = 'tcw-sidebar-btn';
     this.cursorBtn.title = this.t('drawing.cursor');
     this.cursorBtn.innerHTML = createIcon('cursor', 14);
-    this.cursorBtn.addEventListener('click', callbacks.onCancelDrawing);
+    this.cursorBtn.addEventListener('click', () => {
+      callbacks.onCancelDrawing();
+      this.closeForChart();
+    });
     markPart(this.cursorBtn, 'sidebar.cursor');
     el.appendChild(this.cursorBtn);
 
@@ -127,13 +194,21 @@ export class WidgetDrawingSidebar {
         btn.appendChild(dot);
       }
 
-      btn.addEventListener('click', () => callbacks.onDrawingTool(this.groupTools[idx]));
+      btn.addEventListener('click', () => {
+        // Narrow there is no hover: a tap on a group opens its menu.
+        if (this.isNarrow() && group.tools.length > 1) {
+          if (this.flyoutEl && this.flyoutIdx === idx) this.hideFlyout();
+          else this.showFlyout(idx);
+          return;
+        }
+        this.pick(this.groupTools[idx]);
+      });
       wrap.appendChild(btn);
 
       // Flyout events via JS (not CSS hover). From the keyboard, the arrow
       // keys open a group's menu and go into it.
-      wrap.addEventListener('mouseenter', () => this.showFlyout(idx));
-      wrap.addEventListener('mouseleave', () => this.scheduleHideFlyout());
+      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.showFlyout(idx); });
+      wrap.addEventListener('mouseleave', () => { if (!this.isNarrow()) this.scheduleHideFlyout(); });
       if (group.tools.length > 1) {
         btn.setAttribute('aria-haspopup', 'menu');
         btn.setAttribute('aria-expanded', 'false');
@@ -173,7 +248,11 @@ export class WidgetDrawingSidebar {
       styleBtn.dataset.role = 'style';
       markPart(styleBtn, 'sidebar.style');
       styleBtn.innerHTML = createIcon('palette', 14);
-      styleBtn.addEventListener('click', callbacks.onToggleStyle);
+      const onToggleStyle = callbacks.onToggleStyle;
+      styleBtn.addEventListener('click', () => {
+        onToggleStyle();
+        this.closeForChart();
+      });
       el.appendChild(styleBtn);
     }
 
@@ -188,13 +267,21 @@ export class WidgetDrawingSidebar {
     }
 
     if (callbacks.onToggleEraser) {
-      this.eraserBtn = this.toggleButton('eraser', this.t('drawing.eraser'), callbacks.onToggleEraser);
+      const onToggleEraser = callbacks.onToggleEraser;
+      this.eraserBtn = this.toggleButton('eraser', this.t('drawing.eraser'), () => {
+        onToggleEraser();
+        this.closeForChart();
+      });
       markPart(this.eraserBtn, 'sidebar.eraser');
       el.appendChild(this.eraserBtn);
     }
 
     if (callbacks.onToggleZoomArea) {
-      this.zoomBtn = this.toggleButton('zoomIn', this.t('drawing.zoomArea'), callbacks.onToggleZoomArea);
+      const onToggleZoomArea = callbacks.onToggleZoomArea;
+      this.zoomBtn = this.toggleButton('zoomIn', this.t('drawing.zoomArea'), () => {
+        onToggleZoomArea();
+        this.closeForChart();
+      });
       markPart(this.zoomBtn, 'sidebar.zoomArea');
       el.appendChild(this.zoomBtn);
     }
@@ -262,7 +349,7 @@ export class WidgetDrawingSidebar {
       btn.title = fill(this.t('sidebar.unpinHint'), { tool: toolLabel(this.config.drawingToolGroups, tool) });
       btn.dataset.toolValue = tool;
       btn.innerHTML = createToolIcon(tool, TOOL_ICON_PX);
-      btn.addEventListener('click', () => this.callbacks.onDrawingTool(tool as never));
+      btn.addEventListener('click', () => this.pick(tool as DrawingToolType));
       btn.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         this.callbacks.onToggleFavorite?.(tool as never);
@@ -304,8 +391,8 @@ export class WidgetDrawingSidebar {
       item.appendChild(name);
       item.dataset.toolValue = tool.value;
       item.addEventListener('click', () => {
-        this.callbacks.onDrawingTool(tool.value);
         this.hideFlyout();
+        this.pick(tool.value);
       });
       if (this.callbacks.onToggleFavorite) {
         if (this.favorites.includes(tool.value)) {
@@ -432,6 +519,14 @@ export class WidgetDrawingSidebar {
       this.cursorBtn.classList.toggle('tcw-active', state.activeTool === null);
     }
 
+    // The drawing button shows the tool picked (or a pen), lit while one is.
+    const shows = state.activeTool ?? '';
+    if (shows !== this.fabShows) {
+      this.fabShows = shows;
+      this.fab.innerHTML = state.activeTool ? createToolIcon(state.activeTool, 18) : createIcon('penLine', 18);
+    }
+    this.fab.classList.toggle('tcw-active', state.activeTool !== null || state.eraser || state.zoomArea);
+
     // Group buttons: the active group lights up and takes on the picked tool's icon.
     const { drawingToolGroups } = this.config;
     for (let i = 0; i < drawingToolGroups.length; i++) {
@@ -527,7 +622,9 @@ export class WidgetDrawingSidebar {
   }
 
   destroy(): void {
+    this.setOpen(false);
     this.hideFlyout();
+    this.fab.remove();
     this.el.remove();
   }
 }

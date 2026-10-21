@@ -47,6 +47,7 @@ import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { createIcon } from './icons.js';
 import { watchKeyboardInset } from './keyboardInset.js';
+import { watchNarrow } from './narrowMode.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
@@ -183,6 +184,8 @@ export class ChartWidget {
    */
   private readonly portal = document.createElement('div');
   private stopKeyboardInset: (() => void) | null = null;
+  /** Keeps `data-tcw-narrow` on the root while the widget is phone-narrow. */
+  private stopNarrow: (() => void) | null = null;
   private readonly overlayHost = (): HTMLElement => {
     const host = document.fullscreenElement === this.root ? this.root : document.body;
     if (this.portal.parentElement !== host) host.appendChild(this.portal);
@@ -452,6 +455,12 @@ export class ChartWidget {
     this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     // Sheets on a phone keep above the on-screen keyboard.
     this.stopKeyboardInset = watchKeyboardInset([this.root, this.portal]);
+    // Narrow (a phone, a narrow column): a compact toolbar, the drawing tools behind a button.
+    this.stopNarrow = watchNarrow(this.root, (narrow) => {
+      // The toolbar's own width may not change as the switch flips: fit it again.
+      this.toolbar?.fit();
+      if (!narrow) this.sidebar?.closeOverlay();
+    });
     // The look: tokens and layout switches on the root and the modal portal
     // alike. Without `ui` the tokens stay the stylesheet's (Studio's), so a
     // host's CSS can still set them.
@@ -504,6 +513,7 @@ export class ChartWidget {
           : undefined,
       },
       this.t,
+      this.overlayHost,
     );
 
     // 4. Create body
@@ -1631,6 +1641,8 @@ export class ChartWidget {
     this.destroyed = true;
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
+    this.stopNarrow?.();
+    this.stopNarrow = null;
 
     if (this.boundGlobalKeydown) {
       document.removeEventListener('keydown', this.boundGlobalKeydown);

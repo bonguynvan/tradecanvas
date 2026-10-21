@@ -84,8 +84,8 @@ const barButtons = (): string[] =>
 const activeButton = (): string | undefined =>
   host.querySelector<HTMLElement>('.tcw-tf-group [data-tf].tcw-active')?.dataset.tf;
 const menuItems = (): string[] =>
-  [...host.querySelectorAll<HTMLElement>('[data-tf-pick]')].map((b) => b.dataset.tfPick!);
-const star = (tf: string): HTMLButtonElement => host.querySelector(`[data-tf-star="${tf}"]`)!;
+  [...document.querySelectorAll<HTMLElement>('[data-tf-pick]')].map((b) => b.dataset.tfPick!);
+const star = (tf: string): HTMLButtonElement => document.querySelector(`[data-tf-star="${tf}"]`)!;
 
 beforeEach(() => {
   localStorage.clear();
@@ -149,7 +149,7 @@ describe('ChartWidget timeframes', () => {
 });
 
 describe('ChartWidget custom timeframes', () => {
-  const input = () => host.querySelector<HTMLInputElement>('.tcw-tf-custom-input')!;
+  const input = () => document.querySelector<HTMLInputElement>('.tcw-tf-custom-input')!;
   const submit = (text: string) => {
     input().value = text;
     input().form!.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
@@ -172,7 +172,7 @@ describe('ChartWidget custom timeframes', () => {
 
     make({ timeframe: '5m' });
     expect(menuItems()).toContain('90m');
-    host.querySelector<HTMLButtonElement>('[data-tf-remove="90m"]')!.click();
+    document.querySelector<HTMLButtonElement>('[data-tf-remove="90m"]')!.click();
     expect(menuItems()).not.toContain('90m');
     expect(barButtons()).not.toContain('90m');
   });
@@ -182,7 +182,7 @@ describe('ChartWidget custom timeframes', () => {
     submit('60');
     expect(FakeChart.last.connects.at(-1)?.timeframe).toBe('1h');
     expect(menuItems().filter((tf) => tf === '1h')).toHaveLength(1);
-    expect(host.querySelector('[data-tf-remove="1h"]')).toBeNull();
+    expect(document.querySelector('[data-tf-remove="1h"]')).toBeNull();
   });
 
   it('marks text that is not an interval and keeps it for fixing', () => {
@@ -190,7 +190,7 @@ describe('ChartWidget custom timeframes', () => {
     submit('abc');
     expect(input().getAttribute('aria-invalid')).toBe('true');
     expect(input().value).toBe('abc');
-    const hint = host.querySelector<HTMLElement>('.tcw-tf-custom-hint')!;
+    const hint = document.querySelector<HTMLElement>('.tcw-tf-custom-hint')!;
     expect(input().getAttribute('aria-describedby')).toBe(hint.id);
     expect(hint.textContent).toMatch(/7m/);
     input().value = 'abcd';

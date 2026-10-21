@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** 한국어 */
 export const KO_MESSAGES: WidgetMessages = {
   'toolbar.indicators': '지표',
+  'toolbar.more': '더보기',
   'toolbar.indicators.popular': '인기',
   'toolbar.indicators.all': '전체',
   'indicatorType.overlay': '오버레이',
@@ -285,6 +286,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '비교 삭제',
 
   'drawing.cursor': '커서',
+  'drawing.tools': '드로잉 도구',
   'drawing.style': '그리기 스타일 및 템플릿',
   'drawing.magnet': '자석',
   'drawing.magnetOn': '자석 켜짐',
@@ -461,6 +463,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'grid.single': '차트 1개',
   'grid.layoutOption': '차트 {count}개, 가로 {cols}개 세로 {rows}개',
   'grid.chart': '차트 {n}',
+  'grid.charts': '차트',
   'grid.sync': '동기화',
   'grid.sync.symbol': '종목',
   'grid.sync.interval': '시간 단위',

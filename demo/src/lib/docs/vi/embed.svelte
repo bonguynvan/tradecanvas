@@ -34,6 +34,34 @@
   </tbody>
 </table>
 
+<h2 id="mobile-app">Trong ứng dụng điện thoại</h2>
+<p>
+  Biểu đồ và widget chạy trong mọi WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri, hay WebView riêng của ứng dụng native. Hẹp hơn 641 px, widget tự bố trí cho điện thoại: thanh công cụ giữ mã, khung thời gian, loại biểu đồ và chỉ báo, phần còn lại nằm trong nút “thêm”; công cụ vẽ nằm sau một nút trên biểu đồ; menu mở thành bảng trượt từ dưới lên; lưới chỉ hiện một biểu đồ mỗi lúc, mỗi biểu đồ một tab. Rộng hơn, thanh công cụ không vừa cũng làm như vậy. Ngón tay làm được mọi việc của chuột.
+</p>
+<p>Cho trang một viewport phủ cả màn hình. Widget giữ các bảng trượt tránh tai thỏ và thanh home, và nằm trên bàn phím ảo.</p>
+<pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
+<p>Phần lớn WebView báo trang bị ẩn khi ứng dụng xuống nền: biểu đồ tự ngừng vẽ (<code>pauseWhenHidden</code>), và luồng dữ liệu im lặng quá lâu sẽ kết nối lại khi ứng dụng trở lại. Nếu WebView của bạn không báo, hãy tạm dừng từ phía ứng dụng.</p>
+<pre><code>{`// React Native (react-native-webview): the app tells the page
+AppState.addEventListener('change', (state) => {
+  webview.current?.injectJavaScript(state === 'active' ? 'chart.resume(); true;' : 'chart.suspend(); true;');
+});
+
+// Capacitor
+import { App } from '@capacitor/app';
+App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
+<p>Biểu đồ nằm trong một màn hình có cuộn thì để vuốt dọc cho màn hình.</p>
+<pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
+<p>Chính sách bảo mật nội dung (CSP) của Tauri phải cho trang kết nối tới máy chủ của nguồn dữ liệu.</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+"app": {
+  "security": {
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+  }
+}`}</code></pre>
+<p>
+  Biểu đồ vẽ ở mật độ điểm ảnh tối đa 2 (<code>maxPixelRatio</code>); huỷ nó (<code>chart.destroy()</code>) khi màn hình đóng, bộ nhớ canvas được trả lại ngay.
+</p>
+
 <h2>Trang trực tiếp</h2>
 <p>
   Mở thẳng <a href="{base}/embed">trang embed</a> để xem trước mà không có

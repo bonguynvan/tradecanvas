@@ -58,6 +58,8 @@ export class WidgetContextMenu {
     const hostRect = this.host.getBoundingClientRect();
     const right = Math.min(this.host.clientWidth, window.innerWidth - hostRect.left) - MENU_MARGIN;
     const bottom = Math.min(this.host.clientHeight, window.innerHeight - hostRect.top) - MENU_MARGIN;
+    // Taller than the room (a short widget), it scrolls.
+    this.el.style.maxHeight = `${Math.max(0, bottom)}px`;
     this.el.style.left = `${place(x, this.el.offsetWidth, right)}px`;
     this.el.style.top = `${place(y, this.el.offsetHeight, bottom)}px`;
     document.addEventListener('pointerdown', this.onDocPointer, true);

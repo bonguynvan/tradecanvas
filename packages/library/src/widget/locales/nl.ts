@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Nederlands */
 export const NL_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indicatoren',
+  'toolbar.more': 'Meer',
   'toolbar.indicators.popular': 'Populair',
   'toolbar.indicators.all': 'Alle',
   'indicatorType.overlay': 'overlay',
@@ -285,6 +286,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Vergelijking verwijderen',
 
   'drawing.cursor': 'Cursor',
+  'drawing.tools': 'Tekengereedschap',
   'drawing.style': 'Tekenstijl en sjablonen',
   'drawing.magnet': 'Magneet',
   'drawing.magnetOn': 'Magneet aan',
@@ -461,6 +463,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'grid.single': 'Eén grafiek',
   'grid.layoutOption': '{count} grafieken, {cols} naast elkaar en {rows} onder elkaar',
   'grid.chart': 'Grafiek {n}',
+  'grid.charts': 'Grafieken',
   'grid.sync': 'Synchroniseren',
   'grid.sync.symbol': 'Symbool',
   'grid.sync.interval': 'Interval',
