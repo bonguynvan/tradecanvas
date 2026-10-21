@@ -1,5 +1,16 @@
 # @tradecanvas/core
 
+## 1.22.0
+
+### Minor Changes
+
+- e0886bf: 22 indicators, 133 in all: Psychological Line and New Psychological Line, Volume Ratio, AB Ratio, Sonar, Sigma, Binary Wave, Smoothed ROC, Vertical Horizontal Filter, R-Squared, Random Walk Index, True Range, Intraday Intensity, Volume vs Average, Volume Change, Trade Value, Negative and Positive Volume Index, Time Series Forecast, Weighted Close, the DeMark projected range and a moving-average Rainbow. A `CounterClockChart` plots average price against average volume and names the cycle's phase (`getPhase`, `counterClockPhase`, `counterClockPoints`).
+
+### Patch Changes
+
+- Updated dependencies [e0886bf]
+  - @tradecanvas/commons@1.22.0
+
 ## 1.21.0
 
 ### Minor Changes
