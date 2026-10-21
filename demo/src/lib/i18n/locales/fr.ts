@@ -444,7 +444,7 @@ const fr: SiteMessages = {
   finance: {
     eyebrow: 'Graphiques financiers',
     title: 'Au-delà des chandeliers',
-    subtitle: 'Sparklines, courbes de capital, profondeur du carnet d’ordres, cartes de chaleur sectorielles, cascades, jauges, barres, anneaux, nuages de points et histogrammes pour les portefeuilles et les KPI.',
+    subtitle: 'Sparklines, courbes de capital, profondeur du carnet d’ordres, cartes du marché par secteur, cascades, jauges, barres, anneaux, nuages de points, histogrammes, calendriers et matrices de corrélation pour les portefeuilles et les KPI.',
     portfolio: 'Performance du portefeuille',
     depth: 'Profondeur du carnet d’ordres',
     heatmap: 'Carte de chaleur du marché crypto',
@@ -462,6 +462,10 @@ const fr: SiteMessages = {
     returns: 'Rendements quotidiens',
     mean: 'Moyenne',
     var: 'VaR 95 %',
+    calendar: 'Variation par séance',
+    sectorMap: 'Carte du marché par secteur',
+    sectors: { banks: 'Banques', realEstate: 'Immobilier', steel: 'Acier', retail: 'Distribution', energy: 'Énergie', tech: 'Technologie' },
+    correlation: 'Valeurs bancaires : corrélation des rendements quotidiens',
     waterfall: {
       start: 'Début',
       btcLong: 'BTC long',
@@ -661,7 +665,7 @@ const fr: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, barres de range', detail: 'Taille de boîte ou ATR, lignes à casser, retournement en pourcentage ou en prix, amplitude par barre' },
         { name: 'Bougies de volume, Equivolume, aire HLC, ligne en escalier, ligne avec marqueurs, haut-bas', detail: '18 types de graphiques au total' },
         { name: 'La série principale masquée', detail: 'Seuls les indicateurs et les dessins restent' },
-        { name: 'Graphiques pour tableaux de bord', detail: 'Barres (groupées, empilées, horizontales), anneau et camembert, nuages de points et bulles, histogrammes, sparklines, jauges, cartes de chaleur et treemaps, cascades, profondeur, courbes de capital' },
+        { name: 'Graphiques pour tableaux de bord', detail: 'Barres (groupées, empilées, horizontales), anneau et camembert, nuages de points et bulles, histogrammes, calendriers, matrices de corrélation, cartes par secteur, sparklines, jauges, cartes de chaleur et treemaps, cascades, profondeur, courbes de capital' },
       ],
       rendering: [
         { name: 'Canvas 2D ou WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, l’événement rendererChange" },

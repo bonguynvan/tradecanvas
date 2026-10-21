@@ -4,14 +4,17 @@ import {
   FinanceCrosshair,
   layoutUniformGrid,
   layoutSquarifiedTreemap,
+  layoutGroupedTreemap,
   renderHeatmap,
+  GROUP_HEADER,
 } from '@tradecanvas/core';
-import type { LayoutRect } from '@tradecanvas/core';
+import type { GroupRect, LayoutRect } from '@tradecanvas/core';
 
 export class HeatmapChart extends BaseFinanceChart {
   private options: HeatmapOptions;
   private crosshair: FinanceCrosshair | null = null;
   private cachedRects: LayoutRect[] = [];
+  private cachedGroups: GroupRect[] = [];
   private currentData: HeatmapCell[] = [];
   private lastLayoutWidth = 0;
   private lastLayoutHeight = 0;
@@ -36,8 +39,18 @@ export class HeatmapChart extends BaseFinanceChart {
       this.canvas.addEventListener('click', this.handleClick);
     }
 
+    this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
+  }
+
+  /** What screen readers hear: `ariaLabel`, else the cells and groups it has. */
+  private applyLabel(): void {
+    const groups = new Set(this.currentData.map((c) => c.group).filter(Boolean)).size;
+    const described = this.options.grouped && groups > 0
+      ? `Market map of ${this.currentData.length} cells in ${groups} groups`
+      : `Heatmap of ${this.currentData.length} cells`;
+    this.setLabel(this.options.ariaLabel ?? described);
   }
 
   private recomputeLayout(): void {
@@ -46,7 +59,18 @@ export class HeatmapChart extends BaseFinanceChart {
     this.lastLayoutWidth = this.width;
     this.lastLayoutHeight = this.height;
 
-    if (this.options.weighted) {
+    this.cachedGroups = [];
+    if (this.options.grouped) {
+      const weighted = this.currentData.map(c => ({
+        id: c.id,
+        weight: c.weight ?? (Math.abs(c.value) || 1),
+        group: c.group,
+        value: c.value,
+      }));
+      const { groups, cells } = layoutGroupedTreemap(weighted, bounds, padding, GROUP_HEADER);
+      this.cachedRects = cells;
+      this.cachedGroups = groups;
+    } else if (this.options.weighted) {
       const weighted = this.currentData.map(c => ({
         id: c.id,
         weight: c.weight ?? (Math.abs(c.value) || 1),
@@ -85,12 +109,13 @@ export class HeatmapChart extends BaseFinanceChart {
     }
 
     const pos = this.crosshair?.getPosition() ?? null;
-    renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos);
+    renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos, this.cachedGroups);
   }
 
   update(data: HeatmapCell[]): void {
     this.currentData = data;
     this.options = { ...this.options, data };
+    this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
   }
@@ -100,6 +125,7 @@ export class HeatmapChart extends BaseFinanceChart {
     if (opts.data) {
       this.currentData = opts.data;
     }
+    this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
   }

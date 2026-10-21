@@ -180,3 +180,65 @@ export function layoutSquarifiedTreemap(
   squarify(areas, ids, { ...bounds }, padding, results);
   return results;
 }
+
+export interface GroupRect {
+  name: string;
+  /** The group's whole tile, its name strip included. */
+  rect: { x: number; y: number; width: number; height: number };
+  /** The height of the name strip at the top of `rect`, px: 0 where it doesn't fit. */
+  header: number;
+  /** The cells' values averaged by weight. */
+  value: number;
+  count: number;
+}
+
+/** Space between groups, px. */
+const GROUP_GAP = 2;
+/** The strip a group's name takes at the top of its tile, px. */
+export const GROUP_HEADER = 18;
+
+/**
+ * Groups as tiles sized by their cells' weights, and each group's cells
+ * squarified inside its tile, under a `header`-px strip for the group's name
+ * where the tile is tall enough. Cells with no group make one named ''.
+ */
+export function layoutGroupedTreemap(
+  cells: readonly { id: string; weight: number; group?: string; value: number }[],
+  bounds: Bounds,
+  padding: number,
+  header = GROUP_HEADER,
+): { groups: GroupRect[]; cells: LayoutRect[] } {
+  const byGroup = new Map<string, { id: string; weight: number; value: number }[]>();
+  for (const c of cells) {
+    if (!(c.weight > 0)) continue;
+    const key = c.group ?? '';
+    const list = byGroup.get(key);
+    if (list) list.push(c);
+    else byGroup.set(key, [c]);
+  }
+  const names = [...byGroup.keys()];
+  const tiles = layoutSquarifiedTreemap(
+    names.map((name, i) => ({ id: String(i), weight: byGroup.get(name)!.reduce((s, c) => s + c.weight, 0) })),
+    bounds,
+    0,
+  );
+  const groups: GroupRect[] = [];
+  const placed: LayoutRect[] = [];
+  for (const tile of tiles) {
+    const name = names[Number(tile.id)];
+    const members = byGroup.get(name)!;
+    const total = members.reduce((s, c) => s + c.weight, 0);
+    const weighted = members.reduce((s, c) => s + (Number.isFinite(c.value) ? c.value * c.weight : 0), 0);
+    const r = tile.rect;
+    const strip = name !== '' && r.height >= header * 2.5 && r.width >= 40 ? header : 0;
+    const inner = {
+      x: r.x + GROUP_GAP / 2,
+      y: r.y + GROUP_GAP / 2 + strip,
+      width: Math.max(0, r.width - GROUP_GAP),
+      height: Math.max(0, r.height - GROUP_GAP - strip),
+    };
+    groups.push({ name, rect: { ...r }, header: strip, value: total > 0 ? weighted / total : 0, count: members.length });
+    placed.push(...layoutSquarifiedTreemap(members, inner, padding));
+  }
+  return { groups, cells: placed };
+}

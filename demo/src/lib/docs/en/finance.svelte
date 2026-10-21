@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Finance charts — TradeCanvas docs</title>
-  <meta name="description" content="Charts for finance dashboards beside the candle chart: bars, donuts, scatter and bubbles, histograms, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves and a performance report." />
+  <meta name="description" content="Charts for finance dashboards beside the candle chart: bars, donuts, scatter and bubbles, histograms, calendars, correlation matrices, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves and a performance report." />
 </svelte:head>
 
 <h1>Finance charts</h1>
@@ -24,9 +24,11 @@
     <tr><td><code>DonutChart</code></td><td>Parts of a whole: allocation, exposure by sector. A pie with <code>innerRadius: 0</code>.</td></tr>
     <tr><td><code>ScatterChart</code></td><td>Two values per item: risk against return, valuation against growth; bubbles when a point has a size.</td></tr>
     <tr><td><code>HistogramChart</code></td><td>How values spread: daily returns, trade results, with lines at the mean or a VaR.</td></tr>
+    <tr><td><code>CalendarChart</code></td><td>A value a day on a calendar: daily returns, P&amp;L, a trading journal.</td></tr>
+    <tr><td><code>MatrixChart</code></td><td>A value for each pair of rows and columns: correlations, volume by hour and weekday.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>A small line in a watchlist row or a KPI tile.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>One value against bands: sentiment, risk, margin use.</td></tr>
-    <tr><td><code>HeatmapChart</code></td><td>Cells coloured by change, in a grid or a treemap sized by weight (market cap).</td></tr>
+    <tr><td><code>HeatmapChart</code></td><td>Cells coloured by change, in a grid or a treemap sized by weight (market cap). With <code>grouped</code>, a sector map.</td></tr>
     <tr><td><code>WaterfallChart</code></td><td>Steps from a start to an end: P&amp;L attribution, cash flows.</td></tr>
     <tr><td><code>DepthChart</code></td><td>Cumulative bids and asks of an order book.</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>An account's value over time, with drawdowns and a benchmark.</td></tr>
@@ -42,7 +44,7 @@ chart.setTheme('light')                 // 'dark' | 'light' | a Theme
 chart.destroy()                         // removes the canvas and its listeners`}</code></pre>
 <p>
   Each chart fills its element and redraws when the element resizes. Where a chart has a hover
-  tooltip, <code>crosshair: false</code> turns it off. Bar, donut, scatter and histogram charts tell screen readers
+  tooltip, <code>crosshair: false</code> turns it off. Bar, donut, scatter, histogram, calendar and matrix charts tell screen readers
   what they show (the canvas has an image role and a label); <code>ariaLabel</code> puts it in
   your words, for instance in your page's language. Numbers read with
   <code>valueFormat</code> (or <code>xFormat</code> / <code>yFormat</code>), else as
@@ -134,6 +136,56 @@ new HistogramChart(el, {
 
 histogramBins([1, 2, 2, 3, 10], { bins: 3 })
 // [{ from: 1, to: 4, count: 4 }, { from: 4, to: 7, count: 0 }, { from: 7, to: 10, count: 1 }]`}</code></pre>
+
+<h2>Calendar</h2>
+<pre><code>{`import { CalendarChart } from '@tradecanvas/chart'
+
+// A year of sessions, Monday to Friday, coloured by the day's change.
+new CalendarChart(el, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],   // YYYY-MM-DD
+  weekdays: 5,                          // 7 (default) every day; weekStart: 0 starts weeks on Sunday
+  locale: 'vi-VN',                      // month and day names
+  colorScale: { min: -2, max: 2 },      // the theme's red and green, full at ±2
+  valueFormat: (v) => v.toFixed(2) + '%',
+  onDayClick: (day) => openSession(day.date),
+})`}</code></pre>
+<p>
+  Weeks run left to right and weekdays top to bottom, one band a calendar year and ten years at most; when the chart is too short for all of them, the oldest give way. Days without a value are drawn empty, and the colour bar underneath shows the scale (<code>legend: false</code> hides it).
+</p>
+
+<h2>Correlation matrix</h2>
+<pre><code>{`import { MatrixChart, correlationMatrix } from '@tradecanvas/chart'
+
+// Daily returns, not prices: one array per stock, the same days in each.
+const names = ['VCB', 'BID', 'CTG', 'TCB']
+const values = correlationMatrix(returnsByStock)
+
+new MatrixChart(el, {
+  rows: names,                          // columns: [...] for a matrix that isn't square
+  values,                               // values[row][column]
+  triangle: 'lower',                    // half is enough for correlations
+  colorScale: { min: -1, max: 1 },
+  onCellClick: ({ row, column, value }) => compare(row, column),
+})`}</code></pre>
+<p>
+  Cells stay square and print their value where it fits (two decimals unless <code>valueFormat</code>); column names that don't fit across their cells are turned. <code>correlationMatrix</code> pairs the days both series have and gives NaN for fewer than three, which leaves the cell empty. A matrix suits other tables of values too, such as volume by hour and weekday.
+</p>
+
+<h2>Sector map</h2>
+<pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'
+
+new HeatmapChart(el, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
+    { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: 'Real estate' },
+  ],
+  grouped: true,                        // tiles by group, then by stock
+  valueFormat: (v) => v.toFixed(1) + '%',
+})`}</code></pre>
+<p>
+  Each group takes the room of its stocks' weights, and its name and weighted change head its tile where they fit. The heatmap's colours run from -5 to 5 unless <code>colorScale</code> gives a <code>min</code> and <code>max</code>.
+</p>
 
 <h2>Sparkline, gauge, heatmap, waterfall, depth and equity curve</h2>
 <pre><code>{`import { SparklineChart, GaugeChart, HeatmapChart, WaterfallChart, DepthChart, EquityCurveChart } from '@tradecanvas/chart'

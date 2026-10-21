@@ -444,7 +444,7 @@ const id: SiteMessages = {
   finance: {
     eyebrow: 'Grafik keuangan',
     title: 'Lebih dari sekadar candlestick',
-    subtitle: 'Sparkline, kurva ekuitas, kedalaman buku order, peta panas sektor, grafik air terjun, meteran, grafik batang, donat, sebar, dan histogram untuk portofolio dan KPI.',
+    subtitle: 'Sparkline, kurva ekuitas, kedalaman buku order, peta pasar per sektor, grafik air terjun, meteran, grafik batang, donat, sebar, histogram, kalender, dan matriks korelasi untuk portofolio dan KPI.',
     portfolio: 'Kinerja portofolio',
     depth: 'Kedalaman buku order',
     heatmap: 'Peta panas pasar kripto',
@@ -462,6 +462,10 @@ const id: SiteMessages = {
     returns: 'Imbal hasil harian',
     mean: 'Rata-rata',
     var: 'VaR 95%',
+    calendar: 'Perubahan harian per sesi',
+    sectorMap: 'Peta pasar per sektor',
+    sectors: { banks: 'Perbankan', realEstate: 'Properti', steel: 'Baja', retail: 'Ritel', energy: 'Energi', tech: 'Teknologi' },
+    correlation: 'Saham bank: korelasi imbal hasil harian',
     waterfall: {
       start: 'Awal',
       btcLong: 'BTC long',
@@ -661,7 +665,7 @@ const id: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, range bar', detail: 'Ukuran kotak atau ATR, jumlah garis untuk break, pembalikan dalam persen atau harga, rentang per bar' },
         { name: 'Candle volume, Equivolume, area HLC, garis tangga, garis dengan penanda, high-low', detail: 'Total 18 jenis grafik' },
         { name: 'Seri utama disembunyikan', detail: 'Hanya indikator dan gambar yang tetap tampil' },
-        { name: 'Grafik untuk dasbor', detail: 'Batang (berkelompok, bertumpuk, mendatar), donat dan pai, sebar dan gelembung, histogram, sparkline, meteran, peta panas dan treemap, air terjun, kedalaman, kurva ekuitas' },
+        { name: 'Grafik untuk dasbor', detail: 'Batang (berkelompok, bertumpuk, mendatar), donat dan pai, sebar dan gelembung, histogram, kalender, matriks korelasi, peta per sektor, sparkline, meteran, peta panas dan treemap, air terjun, kedalaman, kurva ekuitas' },
       ],
       rendering: [
         { name: 'Canvas 2D atau WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, event rendererChange" },

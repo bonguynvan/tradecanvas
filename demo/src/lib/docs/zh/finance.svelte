@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>金融图表 — TradeCanvas 文档</title>
-  <meta name="description" content="与K线图并列、用于金融仪表盘的图表：柱状图、环形图、散点图和气泡图、直方图、迷你走势图、仪表图、热力图和矩形树图、瀑布图、深度图、权益曲线，以及绩效报告。" />
+  <meta name="description" content="与K线图并列、用于金融仪表盘的图表：柱状图、环形图、散点图和气泡图、直方图、日历图、相关矩阵、迷你走势图、仪表图、热力图和矩形树图、瀑布图、深度图、权益曲线，以及绩效报告。" />
 </svelte:head>
 
 <h1>金融图表</h1>
@@ -23,9 +23,11 @@
     <tr><td><code>DonutChart</code></td><td>整体中的各部分：资产配置、按行业的敞口。<code>innerRadius: 0</code> 即为饼图。</td></tr>
     <tr><td><code>ScatterChart</code></td><td>每项两个数值：风险与收益、估值与增长；点带有大小时即为气泡图。</td></tr>
     <tr><td><code>HistogramChart</code></td><td>数值如何分布：日收益、交易结果，可在均值或 VaR 处画线。</td></tr>
+    <tr><td><code>CalendarChart</code></td><td>日历上每天一个值：日收益、盈亏、交易日志。</td></tr>
+    <tr><td><code>MatrixChart</code></td><td>每对行与列一个值：相关性、按小时和星期的成交量。</td></tr>
     <tr><td><code>SparklineChart</code></td><td>自选列表行或 KPI 卡片中的小线图。</td></tr>
     <tr><td><code>GaugeChart</code></td><td>一个数值与若干区间对照：市场情绪、风险、保证金占用。</td></tr>
-    <tr><td><code>HeatmapChart</code></td><td>按涨跌着色的单元格，排成网格，或排成按权重（市值）确定大小的矩形树图。</td></tr>
+    <tr><td><code>HeatmapChart</code></td><td>按涨跌着色的单元格，排成网格，或排成按权重（市值）确定大小的矩形树图。使用 <code>grouped</code> 时即为板块地图。</td></tr>
     <tr><td><code>WaterfallChart</code></td><td>从起点到终点的各个步骤：盈亏归因、现金流。</td></tr>
     <tr><td><code>DepthChart</code></td><td>订单簿的累计买单和卖单。</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>账户价值随时间的变化，带回撤和基准。</td></tr>
@@ -41,7 +43,7 @@ chart.setTheme('light')                 // 'dark' | 'light' | 一个 Theme
 chart.destroy()                         // 移除画布及其监听器`}</code></pre>
 <p>
   每种图表都会填满其元素，并在元素尺寸变化时重绘。带悬停提示框的图表可用 <code>crosshair: false</code> 关闭提示框。
-  柱状图、环形图、散点图和直方图会告诉屏幕阅读器它们显示的内容（画布带有 image 角色和一个标签）；
+  柱状图、环形图、散点图、直方图、日历图和矩阵图会告诉屏幕阅读器它们显示的内容（画布带有 image 角色和一个标签）；
   <code>ariaLabel</code> 可以换成你自己的表述，例如用页面的语言。数字按 <code>valueFormat</code>（或
   <code>xFormat</code> / <code>yFormat</code>）显示，否则显示为 1,234.5，超过一万时显示为 12.3K。
 </p>
@@ -129,6 +131,56 @@ new HistogramChart(el, {
 
 histogramBins([1, 2, 2, 3, 10], { bins: 3 })
 // [{ from: 1, to: 4, count: 4 }, { from: 4, to: 7, count: 0 }, { from: 7, to: 10, count: 1 }]`}</code></pre>
+
+<h2>日历图</h2>
+<pre><code>{`import { CalendarChart } from '@tradecanvas/chart'
+
+// 一年的交易日，周一至周五，按当日涨跌着色。
+new CalendarChart(el, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],   // YYYY-MM-DD
+  weekdays: 5,                          // 7（默认）为每天；weekStart: 0 让每周从周日开始
+  locale: 'vi-VN',                      // 月份和星期的名称
+  colorScale: { min: -2, max: 2 },      // 主题的红色和绿色，±2 时最深
+  valueFormat: (v) => v.toFixed(2) + '%',
+  onDayClick: (day) => openSession(day.date),
+})`}</code></pre>
+<p>
+  周从左到右排列，星期从上到下排列，每个日历年一条，最多十年；图表高度不够时，最早的年份先被省去。没有值的日子画成空格，下方的色条显示色阶（<code>legend: false</code> 可隐藏）。
+</p>
+
+<h2>相关矩阵</h2>
+<pre><code>{`import { MatrixChart, correlationMatrix } from '@tradecanvas/chart'
+
+// 传入日收益而不是价格：每只股票一个数组，各数组的日期相同。
+const names = ['VCB', 'BID', 'CTG', 'TCB']
+const values = correlationMatrix(returnsByStock)
+
+new MatrixChart(el, {
+  rows: names,                          // 非方阵时使用 columns: [...]
+  values,                               // values[row][column]
+  triangle: 'lower',                    // 相关性只需一半
+  colorScale: { min: -1, max: 1 },
+  onCellClick: ({ row, column, value }) => compare(row, column),
+})`}</code></pre>
+<p>
+  单元格保持正方形，放得下时显示数值（未设 <code>valueFormat</code> 时保留两位小数）；列名放不下时会倾斜显示。<code>correlationMatrix</code> 只配对两个序列都有的日期，少于三天时返回 NaN，该单元格留空。矩阵也适用于其他数值表，例如按小时和星期的成交量。
+</p>
+
+<h2>板块地图</h2>
+<pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'
+
+new HeatmapChart(el, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '银行' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '钢铁' },
+    { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '房地产' },
+  ],
+  grouped: true,                        // 先按板块、再按个股排列
+  valueFormat: (v) => v.toFixed(1) + '%',
+})`}</code></pre>
+<p>
+  每个板块所占面积等于其个股权重之和，放得下时板块名称和加权涨跌显示在其顶部。热力图的颜色范围为 -5 到 5，除非 <code>colorScale</code> 给出 <code>min</code> 和 <code>max</code>。
+</p>
 
 <h2>迷你走势图、仪表图、热力图、瀑布图、深度图和权益曲线</h2>
 <pre><code>{`import { SparklineChart, GaugeChart, HeatmapChart, WaterfallChart, DepthChart, EquityCurveChart } from '@tradecanvas/chart'

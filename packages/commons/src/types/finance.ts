@@ -64,16 +64,29 @@ export interface HeatmapCell {
   meta?: Record<string, unknown>;
 }
 
+/**
+ * Colours from low values through zero to high ones. `min` and `max` are
+ * where the end colours are reached; values past them keep the end colour.
+ * A colour left out is the chart's default. Hex and rgb() colours blend;
+ * others (names, hsl()) switch half-way instead.
+ */
+export interface ColorScale {
+  negative?: string;
+  zero?: string;
+  positive?: string;
+  min?: number;
+  max?: number;
+}
+
 export interface HeatmapOptions extends BaseFinanceChartOptions {
   data: HeatmapCell[];
-  colorScale?: {
-    negative: string;
-    zero: string;
-    positive: string;
-    min?: number;
-    max?: number;
-  };
+  colorScale?: ColorScale;
   weighted?: boolean;
+  /**
+   * Cells with the same `group` sit together under its name (a sector map):
+   * each group takes the room of its cells' weights, as `weighted` does.
+   */
+  grouped?: boolean;
   cellPadding?: number;
   cellRadius?: number;
   labelFormat?: (cell: HeatmapCell) => string;
@@ -263,4 +276,66 @@ export interface HistogramOptions extends BaseFinanceChartOptions {
   markers?: HistogramMarker[];
   valueFormat?: (value: number) => string;
   crosshair?: boolean;
+}
+
+/** One day's value; `date` is the calendar day, `YYYY-MM-DD`. */
+export interface CalendarDay {
+  date: string;
+  value: number;
+  meta?: Record<string, unknown>;
+}
+
+export interface CalendarChartOptions extends BaseFinanceChartOptions {
+  data: CalendarDay[];
+  /** The first and last days shown, `YYYY-MM-DD`; default: the data's. */
+  from?: string;
+  to?: string;
+  /** `7` (default) every day; `5` Monday to Friday, for trading days. */
+  weekdays?: 5 | 7;
+  /** The day a week starts on with `weekdays: 7`: `1` Monday (default), `0` Sunday. */
+  weekStart?: 0 | 1;
+  /** Default: the theme's down and up colours either side of zero, over the data's range. */
+  colorScale?: ColorScale;
+  /** Month and day names, `'vi-VN'`; default: the browser's. */
+  locale?: string;
+  valueFormat?: (value: number) => string;
+  /** How a day reads in the tooltip; default: the locale's long date. */
+  dateFormat?: (date: string) => string;
+  /** The colour scale's bar under the calendar. Default `true`. */
+  legend?: boolean;
+  crosshair?: boolean;
+  onDayClick?: (day: CalendarDay) => void;
+}
+
+/** A cell of a matrix chart. */
+export interface MatrixCell {
+  row: string;
+  column: string;
+  value: number;
+  rowIndex: number;
+  columnIndex: number;
+}
+
+export interface MatrixChartOptions extends BaseFinanceChartOptions {
+  /** The rows' names, top to bottom. */
+  rows: string[];
+  /** The columns' names, left to right; default: the rows' (a square matrix). */
+  columns?: string[];
+  /** `values[row][column]`; a missing or non-finite value leaves its cell empty. */
+  values: number[][];
+  /**
+   * Default: the theme's down and up colours either side of zero, over the
+   * values' range. For correlations give `{ min: -1, max: 1 }`.
+   */
+  colorScale?: ColorScale;
+  /** Only half of a square matrix, the diagonal included: a correlation matrix needs no more. */
+  triangle?: 'lower' | 'upper';
+  /** Print each value in its cell when it fits. Default `true`. */
+  showValues?: boolean;
+  /** Default: two decimals. */
+  valueFormat?: (value: number) => string;
+  /** The colour scale's bar under the matrix. Default `true`. */
+  legend?: boolean;
+  crosshair?: boolean;
+  onCellClick?: (cell: MatrixCell) => void;
 }

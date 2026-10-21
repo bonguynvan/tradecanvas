@@ -444,7 +444,7 @@ const de: SiteMessages = {
   finance: {
     eyebrow: 'Finanzcharts',
     title: 'Mehr als Kerzen',
-    subtitle: 'Sparklines, Equity-Kurven, Orderbuchtiefe, Sektor-Heatmaps, Wasserfall- und Tachodiagramme, Balken- und Donutdiagramme, Streudiagramme und Histogramme für Portfolios und KPIs.',
+    subtitle: 'Sparklines, Equity-Kurven, Orderbuchtiefe, Marktkarten nach Sektor, Wasserfall- und Tachodiagramme, Balken- und Donutdiagramme, Streudiagramme, Histogramme, Kalender und Korrelationsmatrizen für Portfolios und KPIs.',
     portfolio: 'Portfolio-Performance',
     depth: 'Orderbuchtiefe',
     heatmap: 'Krypto-Markt-Heatmap',
@@ -462,6 +462,10 @@ const de: SiteMessages = {
     returns: 'Tagesrenditen',
     mean: 'Mittelwert',
     var: 'VaR 95 %',
+    calendar: 'Tagesveränderung je Handelstag',
+    sectorMap: 'Marktkarte nach Sektor',
+    sectors: { banks: 'Banken', realEstate: 'Immobilien', steel: 'Stahl', retail: 'Einzelhandel', energy: 'Energie', tech: 'Technologie' },
+    correlation: 'Bankaktien: Korrelation der Tagesrenditen',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC Long',
@@ -661,7 +665,7 @@ const de: SiteMessages = {
         { name: 'Renko, Line Break, Kagi, Point & Figure, Range-Balken', detail: 'Boxgröße oder ATR, Linien bis zum Durchbruch, Umkehr in Prozent oder Preis, Spanne pro Balken' },
         { name: 'Volumenkerzen, Equivolume, HLC-Fläche, Stufenlinie, Linie mit Markern, Hoch-Tief', detail: '18 Charttypen insgesamt' },
         { name: 'Hauptserie ausgeblendet', detail: 'Nur Indikatoren und Zeichnungen bleiben' },
-        { name: 'Charts für Dashboards', detail: 'Balken (gruppiert, gestapelt, waagerecht), Donut- und Kreisdiagramme, Streu- und Blasendiagramme, Histogramme, Sparklines, Tachos, Heatmaps und Treemaps, Wasserfälle, Orderbuchtiefe, Equity-Kurven' },
+        { name: 'Charts für Dashboards', detail: 'Balken (gruppiert, gestapelt, waagerecht), Donut- und Kreisdiagramme, Streu- und Blasendiagramme, Histogramme, Kalender, Korrelationsmatrizen, Sektorkarten, Sparklines, Tachos, Heatmaps und Treemaps, Wasserfälle, Orderbuchtiefe, Equity-Kurven' },
       ],
       rendering: [
         { name: 'Canvas 2D oder WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, das Event rendererChange" },

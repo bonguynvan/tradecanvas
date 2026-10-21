@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Biểu đồ tài chính — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Biểu đồ cho dashboard tài chính, đặt cạnh biểu đồ nến: biểu đồ cột, donut, scatter và bong bóng, histogram, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường vốn và báo cáo hiệu suất." />
+  <meta name="description" content="Biểu đồ cho dashboard tài chính, đặt cạnh biểu đồ nến: biểu đồ cột, donut, scatter và bong bóng, histogram, lịch, ma trận tương quan, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường vốn và báo cáo hiệu suất." />
 </svelte:head>
 
 <h1>Biểu đồ tài chính</h1>
@@ -24,9 +24,11 @@
     <tr><td><code>DonutChart</code></td><td>Các phần của một tổng thể: phân bổ tài sản, mức phơi nhiễm theo ngành. Thành biểu đồ tròn với <code>innerRadius: 0</code>.</td></tr>
     <tr><td><code>ScatterChart</code></td><td>Hai giá trị cho mỗi mục: rủi ro so với lợi nhuận, định giá so với tăng trưởng; thành bong bóng khi điểm có kích thước.</td></tr>
     <tr><td><code>HistogramChart</code></td><td>Giá trị phân bố ra sao: lợi nhuận theo ngày, kết quả các lệnh, có đường kẻ tại giá trị trung bình hoặc một mức VaR.</td></tr>
+    <tr><td><code>CalendarChart</code></td><td>Mỗi ngày một giá trị trên lịch: lợi nhuận ngày, lãi lỗ, nhật ký giao dịch.</td></tr>
+    <tr><td><code>MatrixChart</code></td><td>Một giá trị cho mỗi cặp hàng và cột: tương quan, khối lượng theo giờ và thứ.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>Một đường nhỏ trong hàng của danh mục theo dõi hoặc trong ô KPI.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>Một giá trị so với các dải: tâm lý thị trường, rủi ro, mức dùng ký quỹ.</td></tr>
-    <tr><td><code>HeatmapChart</code></td><td>Các ô tô màu theo mức thay đổi, xếp thành lưới hoặc thành treemap theo tỷ trọng (vốn hoá).</td></tr>
+    <tr><td><code>HeatmapChart</code></td><td>Các ô tô màu theo mức thay đổi, xếp thành lưới hoặc thành treemap theo tỷ trọng (vốn hoá). Với <code>grouped</code>, thành bản đồ theo ngành.</td></tr>
     <tr><td><code>WaterfallChart</code></td><td>Các bước từ điểm đầu đến điểm cuối: phân bổ lãi/lỗ (P&amp;L), dòng tiền.</td></tr>
     <tr><td><code>DepthChart</code></td><td>Bid và ask luỹ kế của sổ lệnh.</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>Giá trị tài khoản theo thời gian, kèm các đợt sụt giảm (drawdown) và một chỉ số tham chiếu (benchmark).</td></tr>
@@ -42,7 +44,7 @@ chart.setTheme('light')                 // 'dark' | 'light' | một Theme
 chart.destroy()                         // gỡ canvas và các listener của nó`}</code></pre>
 <p>
   Mỗi biểu đồ lấp đầy phần tử của nó và vẽ lại khi phần tử đổi kích thước. Biểu đồ nào có tooltip khi
-  rê chuột thì <code>crosshair: false</code> sẽ tắt tooltip. Biểu đồ cột, donut, scatter và histogram cho
+  rê chuột thì <code>crosshair: false</code> sẽ tắt tooltip. Biểu đồ cột, donut, scatter, histogram, lịch và ma trận cho
   trình đọc màn hình biết chúng đang hiển thị gì (canvas có role image và một nhãn); <code>ariaLabel</code>
   diễn đạt điều đó bằng lời của bạn, chẳng hạn bằng ngôn ngữ của trang. Số được hiển thị bằng
   <code>valueFormat</code> (hoặc <code>xFormat</code> / <code>yFormat</code>), nếu không thì theo dạng
@@ -134,6 +136,56 @@ new HistogramChart(el, {
 
 histogramBins([1, 2, 2, 3, 10], { bins: 3 })
 // [{ from: 1, to: 4, count: 4 }, { from: 4, to: 7, count: 0 }, { from: 7, to: 10, count: 1 }]`}</code></pre>
+
+<h2>Lịch</h2>
+<pre><code>{`import { CalendarChart } from '@tradecanvas/chart'
+
+// Một năm phiên giao dịch, thứ Hai đến thứ Sáu, tô màu theo biến động trong ngày.
+new CalendarChart(el, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],   // YYYY-MM-DD
+  weekdays: 5,                          // 7 (mặc định) là mọi ngày; weekStart: 0 để tuần bắt đầu từ Chủ nhật
+  locale: 'vi-VN',                      // tên tháng và tên thứ
+  colorScale: { min: -2, max: 2 },      // màu đỏ và xanh của theme, đậm nhất ở ±2
+  valueFormat: (v) => v.toFixed(2) + '%',
+  onDayClick: (day) => openSession(day.date),
+})`}</code></pre>
+<p>
+  Tuần chạy từ trái sang phải, các thứ từ trên xuống dưới, mỗi năm dương lịch một dải, tối đa mười năm; khi biểu đồ không đủ cao cho tất cả, các năm cũ nhất bị bỏ trước. Ngày không có giá trị được vẽ trống, và thanh màu bên dưới cho biết thang màu (<code>legend: false</code> để ẩn).
+</p>
+
+<h2>Ma trận tương quan</h2>
+<pre><code>{`import { MatrixChart, correlationMatrix } from '@tradecanvas/chart'
+
+// Lợi nhuận ngày, không phải giá: mỗi mã một mảng, cùng các ngày như nhau.
+const names = ['VCB', 'BID', 'CTG', 'TCB']
+const values = correlationMatrix(returnsByStock)
+
+new MatrixChart(el, {
+  rows: names,                          // columns: [...] cho ma trận không vuông
+  values,                               // values[row][column]
+  triangle: 'lower',                    // với tương quan, một nửa là đủ
+  colorScale: { min: -1, max: 1 },
+  onCellClick: ({ row, column, value }) => compare(row, column),
+})`}</code></pre>
+<p>
+  Ô luôn vuông và in giá trị khi vừa chỗ (hai chữ số thập phân nếu không có <code>valueFormat</code>); tên cột không vừa bề ngang ô thì được xoay nghiêng. <code>correlationMatrix</code> ghép các ngày mà cả hai chuỗi đều có, và trả về NaN khi có ít hơn ba ngày, khi đó ô để trống. Ma trận cũng hợp với các bảng giá trị khác, như khối lượng theo giờ và thứ.
+</p>
+
+<h2>Bản đồ theo ngành</h2>
+<pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'
+
+new HeatmapChart(el, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Ngân hàng' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Thép' },
+    { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: 'Bất động sản' },
+  ],
+  grouped: true,                        // xếp ô theo nhóm, rồi theo mã
+  valueFormat: (v) => v.toFixed(1) + '%',
+})`}</code></pre>
+<p>
+  Mỗi nhóm chiếm phần diện tích bằng tổng tỷ trọng các mã của nó, tên nhóm và biến động bình quân theo tỷ trọng nằm ở đầu ô khi vừa chỗ. Màu của heatmap chạy từ -5 đến 5, trừ khi <code>colorScale</code> cho <code>min</code> và <code>max</code>.
+</p>
 
 <h2>Sparkline, đồng hồ đo, bản đồ nhiệt, thác nước, độ sâu và đường vốn</h2>
 <pre><code>{`import { SparklineChart, GaugeChart, HeatmapChart, WaterfallChart, DepthChart, EquityCurveChart } from '@tradecanvas/chart'

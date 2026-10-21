@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>금융 차트 — TradeCanvas 문서</title>
-  <meta name="description" content="캔들 차트와 함께 쓰는 금융 대시보드용 차트: 막대, 도넛, 산점도와 버블, 히스토그램, 스파크라인, 게이지, 히트맵과 트리맵, 워터폴, 시장 심도, 자산 곡선, 성과 보고서." />
+  <meta name="description" content="캔들 차트와 함께 쓰는 금융 대시보드용 차트: 막대, 도넛, 산점도와 버블, 히스토그램, 캘린더, 상관 행렬, 스파크라인, 게이지, 히트맵과 트리맵, 워터폴, 시장 심도, 자산 곡선, 성과 보고서." />
 </svelte:head>
 
 <h1>금융 차트</h1>
@@ -23,9 +23,11 @@
     <tr><td><code>DonutChart</code></td><td>전체 중 부분: 자산 배분, 섹터별 익스포저. <code>innerRadius: 0</code>이면 파이 차트입니다.</td></tr>
     <tr><td><code>ScatterChart</code></td><td>항목마다 두 값: 리스크 대비 수익률, 밸류에이션 대비 성장률. 점에 크기가 있으면 버블이 됩니다.</td></tr>
     <tr><td><code>HistogramChart</code></td><td>값의 분포: 일별 수익률, 거래 결과. 평균이나 VaR 위치에 선을 표시합니다.</td></tr>
+    <tr><td><code>CalendarChart</code></td><td>달력 위에 하루 하나의 값: 일간 수익률, 손익, 매매 일지.</td></tr>
+    <tr><td><code>MatrixChart</code></td><td>행과 열의 쌍마다 하나의 값: 상관관계, 시간대와 요일별 거래량.</td></tr>
     <tr><td><code>SparklineChart</code></td><td>관심 종목 행이나 KPI 타일 속의 작은 선.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>구간과 비교해 보는 하나의 값: 시장 심리, 리스크, 증거금 사용률.</td></tr>
-    <tr><td><code>HeatmapChart</code></td><td>등락으로 색칠한 셀. 격자 또는 비중(시가총액)으로 크기를 정한 트리맵.</td></tr>
+    <tr><td><code>HeatmapChart</code></td><td>등락으로 색칠한 셀. 격자 또는 비중(시가총액)으로 크기를 정한 트리맵. <code>grouped</code>를 쓰면 섹터 맵이 됩니다.</td></tr>
     <tr><td><code>WaterfallChart</code></td><td>시작부터 끝까지의 단계: 손익 기여도 분석, 현금 흐름.</td></tr>
     <tr><td><code>DepthChart</code></td><td>호가창의 누적 매수/매도 잔량.</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>시간에 따른 계좌 가치, 낙폭과 벤치마크 포함.</td></tr>
@@ -41,7 +43,7 @@ chart.setTheme('light')                 // 'dark' | 'light' | Theme
 chart.destroy()                         // 캔버스와 리스너를 제거`}</code></pre>
 <p>
   각 차트는 요소를 가득 채우고, 요소 크기가 바뀌면 다시 그립니다. 마우스를 올렸을 때 툴팁이 나오는 차트는
-  <code>crosshair: false</code>로 끌 수 있습니다. 막대, 도넛, 산점도, 히스토그램 차트는 무엇을 보여 주는지 스크린 리더에
+  <code>crosshair: false</code>로 끌 수 있습니다. 막대, 도넛, 산점도, 히스토그램, 캘린더, 행렬 차트는 무엇을 보여 주는지 스크린 리더에
   알립니다(캔버스에 image 역할과 라벨이 붙습니다). <code>ariaLabel</code>을 쓰면 이를 직접 고른 말로, 예를 들어 페이지의
   언어로 바꿀 수 있습니다. 숫자는 <code>valueFormat</code>(또는 <code>xFormat</code> / <code>yFormat</code>)으로
   표시되며, 지정하지 않으면 1,234.5 형식, 1만을 넘으면 12.3K 형식입니다.
@@ -130,6 +132,56 @@ new HistogramChart(el, {
 
 histogramBins([1, 2, 2, 3, 10], { bins: 3 })
 // [{ from: 1, to: 4, count: 4 }, { from: 4, to: 7, count: 0 }, { from: 7, to: 10, count: 1 }]`}</code></pre>
+
+<h2>캘린더</h2>
+<pre><code>{`import { CalendarChart } from '@tradecanvas/chart'
+
+// 1년 치 거래일(월~금)을 그날의 등락으로 색칠합니다.
+new CalendarChart(el, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],   // YYYY-MM-DD
+  weekdays: 5,                          // 7(기본값)은 매일, weekStart: 0이면 주가 일요일에 시작
+  locale: 'vi-VN',                      // 월과 요일 이름
+  colorScale: { min: -2, max: 2 },      // 테마의 빨강과 초록, ±2에서 가장 진하게
+  valueFormat: (v) => v.toFixed(2) + '%',
+  onDayClick: (day) => openSession(day.date),
+})`}</code></pre>
+<p>
+  주는 왼쪽에서 오른쪽으로, 요일은 위에서 아래로 놓이며, 한 해에 한 줄씩 최대 10년입니다. 차트 높이가 모자라면 가장 오래된 해부터 빠집니다. 값이 없는 날은 빈 칸으로 그리고, 아래의 색상 막대가 색 척도를 보여 줍니다(<code>legend: false</code>로 숨김).
+</p>
+
+<h2>상관 행렬</h2>
+<pre><code>{`import { MatrixChart, correlationMatrix } from '@tradecanvas/chart'
+
+// 가격이 아닌 일간 수익률을 넘깁니다. 종목마다 배열 하나, 날짜는 같게.
+const names = ['VCB', 'BID', 'CTG', 'TCB']
+const values = correlationMatrix(returnsByStock)
+
+new MatrixChart(el, {
+  rows: names,                          // 정사각이 아닌 행렬은 columns: [...]
+  values,                               // values[row][column]
+  triangle: 'lower',                    // 상관관계는 절반이면 충분
+  colorScale: { min: -1, max: 1 },
+  onCellClick: ({ row, column, value }) => compare(row, column),
+})`}</code></pre>
+<p>
+  셀은 정사각형을 유지하고 들어갈 때 값을 표시합니다(<code>valueFormat</code>이 없으면 소수 둘째 자리). 셀 너비에 맞지 않는 열 이름은 기울입니다. <code>correlationMatrix</code>는 두 시계열 모두 값이 있는 날만 짝지으며, 3일 미만이면 NaN을 돌려주고 그 셀은 비워 둡니다. 시간대와 요일별 거래량 같은 다른 수치 표에도 맞습니다.
+</p>
+
+<h2>섹터 맵</h2>
+<pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'
+
+new HeatmapChart(el, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '은행' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '철강' },
+    { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '부동산' },
+  ],
+  grouped: true,                        // 섹터별로, 그다음 종목별로 타일 배치
+  valueFormat: (v) => v.toFixed(1) + '%',
+})`}</code></pre>
+<p>
+  각 섹터는 종목 비중의 합만큼 자리를 차지하고, 들어갈 때 타일 위쪽에 섹터 이름과 가중 평균 등락을 표시합니다. 히트맵의 색은 <code>colorScale</code>에 <code>min</code>과 <code>max</code>를 주지 않으면 -5에서 5까지입니다.
+</p>
 
 <h2>스파크라인, 게이지, 히트맵, 워터폴, 시장 심도, 자산 곡선</h2>
 <pre><code>{`import { SparklineChart, GaugeChart, HeatmapChart, WaterfallChart, DepthChart, EquityCurveChart } from '@tradecanvas/chart'

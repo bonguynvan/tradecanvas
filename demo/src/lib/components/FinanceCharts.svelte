@@ -14,6 +14,9 @@
     DonutChart,
     ScatterChart,
     HistogramChart,
+    CalendarChart,
+    MatrixChart,
+    correlationMatrix,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -196,6 +199,40 @@
   const meanReturn = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
   const var95 = [...dailyReturns].sort((a, b) => a - b)[Math.floor(dailyReturns.length * 0.05)];
 
+  // --- A year of sessions' changes, %, Monday to Friday ---
+  const dayRng = seededRandom(2025);
+  const sessionDays: { date: string; value: number }[] = [];
+  for (let t = Date.UTC(2025, 0, 2); t <= Date.UTC(2025, 11, 31); t += 86_400_000) {
+    const weekday = new Date(t).getUTCDay();
+    if (weekday === 0 || weekday === 6) continue;
+    const u = (dayRng() + dayRng() + dayRng()) / 3;
+    sessionDays.push({ date: new Date(t).toISOString().slice(0, 10), value: Math.round((u - 0.47) * 500) / 100 });
+  }
+
+  // --- Sectors: tiles sized by market value (trillion dong), coloured by the day's change ---
+  const sectorCells: HeatmapCell[] = [
+    ['VCB', 'banks', 480, 0.8], ['BID', 'banks', 250, 1.2], ['CTG', 'banks', 190, 2.1], ['TCB', 'banks', 170, -0.6], ['MBB', 'banks', 130, 1.5], ['ACB', 'banks', 110, 0.4],
+    ['VHM', 'realEstate', 170, -2.4], ['VIC', 'realEstate', 160, -1.1], ['VRE', 'realEstate', 50, 0.9], ['NVL', 'realEstate', 30, -3.6],
+    ['HPG', 'steel', 160, 1.9], ['HSG', 'steel', 12, 3.2], ['NKG', 'steel', 7, 2.5],
+    ['MWG', 'retail', 90, -0.8], ['MSN', 'retail', 100, 0.3], ['PNJ', 'retail', 30, 1.1],
+    ['GAS', 'energy', 170, -0.4], ['PLX', 'energy', 50, -1.3], ['POW', 'energy', 30, 0.6],
+    ['FPT', 'tech', 190, 2.7], ['CMG', 'tech', 8, 1.4],
+  ].map(([label, sector, weight, value]) => ({
+    id: String(label),
+    label: String(label),
+    value: Number(value),
+    weight: Number(weight),
+    group: i18n.m.finance.sectors[sector as keyof typeof i18n.m.finance.sectors],
+  }));
+
+  // --- Bank stocks' daily returns: a shared market move and each bank's own ---
+  const corrRng = seededRandom(31);
+  const corrNames = ['VCB', 'BID', 'CTG', 'TCB', 'MBB', 'VPB'];
+  const exposure = [0.6, 0.8, 0.9, 1, 1.1, 0.7];
+  const market = Array.from({ length: 250 }, () => corrRng() - 0.5);
+  const bankReturns = exposure.map((beta) => market.map((mv) => beta * mv + (corrRng() - 0.5) * 0.6));
+  const correlations = correlationMatrix(bankReturns);
+
   // --- Container refs ---
   let sparkGridEl: HTMLDivElement | undefined = $state();
   let equityContainer: HTMLDivElement | undefined = $state();
@@ -207,6 +244,9 @@
   let allocationContainer: HTMLDivElement | undefined = $state();
   let scatterContainer: HTMLDivElement | undefined = $state();
   let returnsContainer: HTMLDivElement | undefined = $state();
+  let calendarContainer: HTMLDivElement | undefined = $state();
+  let sectorContainer: HTMLDivElement | undefined = $state();
+  let matrixContainer: HTMLDivElement | undefined = $state();
 
   // --- Chart instances ---
   let sparkCharts: SparklineChart[] = [];
@@ -215,7 +255,7 @@
   let heatmapChart: HeatmapChart | null = null;
   let waterfallChart: WaterfallChart | null = null;
   let gaugeChart: GaugeChart | null = null;
-  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart)[] = [];
+  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart)[] = [];
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
 
@@ -289,7 +329,11 @@
       });
     }
 
-    const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    // Rounded first, so a tiny loss doesn't read -0.0%.
+    const pct = (v: number) => {
+      const r = Math.round(v * 10) / 10 || 0;
+      return `${r > 0 ? '+' : ''}${r.toFixed(1)}%`;
+    };
     if (flowsContainer) {
       newCharts.push(new BarChart(flowsContainer, {
         categories: flowDays,
@@ -359,6 +403,39 @@
         crosshair: true,
         theme,
       });
+    }
+
+    if (calendarContainer) {
+      newCharts.push(new CalendarChart(calendarContainer, {
+        data: sessionDays,
+        // A phone shows the last six months, at a size that can be read.
+        from: calendarContainer.clientWidth < 600 ? '2025-07-01' : undefined,
+        ariaLabel: i18n.m.finance.calendar,
+        weekdays: 5,
+        locale: i18n.language.tag,
+        valueFormat: (v) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`,
+        colorScale: { min: -2, max: 2 },
+        theme,
+      }));
+    }
+    if (sectorContainer) {
+      newCharts.push(new HeatmapChart(sectorContainer, {
+        data: sectorCells,
+        grouped: true,
+        ariaLabel: i18n.m.finance.sectorMap,
+        valueFormat: pct,
+        theme,
+      }));
+    }
+    if (matrixContainer) {
+      newCharts.push(new MatrixChart(matrixContainer, {
+        rows: corrNames,
+        values: correlations,
+        triangle: 'lower',
+        ariaLabel: i18n.m.finance.correlation,
+        colorScale: { negative: '#e8505b', positive: '#2f81f7', min: -1, max: 1 },
+        theme,
+      }));
     }
 
     // Gauge
@@ -486,6 +563,22 @@
       <div class="card-chart card-chart--300" bind:this={returnsContainer}></div>
     </div>
   </div>
+
+  <div class="chart-card chart-card--spaced" data-reveal>
+    <div class="card-label">{m.finance.calendar}</div>
+    <div class="card-chart card-chart--200" bind:this={calendarContainer}></div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.sectorMap}</div>
+      <div class="card-chart card-chart--300" bind:this={sectorContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.correlation}</div>
+      <div class="card-chart card-chart--300" bind:this={matrixContainer}></div>
+    </div>
+  </div>
 </section>
 
 <style>
@@ -589,6 +682,10 @@
 
   .card-chart {
     width: 100%;
+  }
+
+  .card-chart--200 {
+    height: 200px;
   }
 
   .card-chart--300 {

@@ -11,7 +11,11 @@ Collected on `main` for the next release. Not on npm yet.
 - **`ScatterChart`**: points on two value axes, bubbles whose area follows `size`, axis titles, labels, lines at zero; the axes leave room for the largest bubble; `onPointClick`.
 - **`HistogramChart`**: values counted into bins (`bins`, `binWidth` on a grid from 0, or Sturges' rule), coloured by sign, with labelled marker lines (a mean, a VaR) that move a row down when they would overlap. `histogramBins(values, options)` is exported, and `niceScale(min, max)` for axes of your own.
 - All four follow the pointer with a tooltip, describe themselves to screen readers (an image role and a label, `ariaLabel` in your words) and draw in the dark or light theme; `setOptions`, `update`, `setTheme`, `destroy`. The other finance charts' canvases get the image role and `setLabel` too.
-- Docs: the Finance charts page rewritten in six languages with the classes as they are (it showed renderer classes that don't exist); the site's finance section shows the four new charts.
+- **`CalendarChart`**: a value a day, `YYYY-MM-DD`, in week columns and weekday rows, a calendar year to a band and ten years at most (the oldest give way on a short chart); Monday to Friday with `weekdays: 5`, weeks from Sunday with `weekStart: 0`, month and day names in `locale`, a colour bar under it; `onDayClick`.
+- **`MatrixChart`**: a coloured value for each row and column, square cells with the value printed where it fits, column names turned when they don't fit, half of a square matrix with `triangle: 'lower' | 'upper'`; `onCellClick`. `correlationMatrix(series)` gives Pearson correlations, pairing the positions both series have.
+- **Market map by sector**: `HeatmapChart`'s `grouped: true` gathers cells by `group`, each group in a tile sized by its weights under its name and weighted change. The heatmap now describes itself to screen readers too (`ariaLabel` in your words).
+- `ColorScale` is a type of its own, shared by the heatmap, calendar and matrix; a colour left out keeps the chart's default (the theme's up and down colours on the newer charts).
+- Docs: the Finance charts page rewritten in six languages with the classes as they are (it showed renderer classes that don't exist), with the calendar, the matrix and the sector map; the site's finance section shows all seven new charts.
 
 ## 1.20.0 (2026-10-21)
 

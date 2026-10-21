@@ -283,6 +283,36 @@ new HistogramChart(document.getElementById('returns')!, {
 });
 ```
 
+Days on a calendar, correlations in a matrix, and a market map by sector:
+
+```ts
+import { CalendarChart, MatrixChart, HeatmapChart, correlationMatrix } from '@tradecanvas/chart';
+
+new CalendarChart(document.getElementById('sessions')!, {
+  data: [{ date: '2025-01-02', value: 1.2 }, { date: '2025-01-03', value: -0.8 }],
+  weekdays: 5,
+  colorScale: { min: -2, max: 2 },
+  onDayClick: (day) => console.log(day.date, day.value),
+});
+
+// Daily returns (not prices), one array per stock, the same days in each.
+const returns = [[0.4, -1.1, 0.8, 0.2], [0.6, -0.9, 1.1, -0.1], [-0.2, 0.5, -0.4, 0.3]];
+new MatrixChart(document.getElementById('correlation')!, {
+  rows: ['VCB', 'BID', 'HPG'],
+  values: correlationMatrix(returns),
+  triangle: 'lower',
+  colorScale: { min: -1, max: 1 },
+});
+
+new HeatmapChart(document.getElementById('sectors')!, {
+  data: [
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
+  ],
+  grouped: true,
+});
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

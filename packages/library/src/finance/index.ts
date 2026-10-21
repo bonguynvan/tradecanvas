@@ -8,6 +8,8 @@ export { BarChart } from './BarChart.js';
 export { DonutChart } from './DonutChart.js';
 export { ScatterChart } from './ScatterChart.js';
 export { HistogramChart } from './HistogramChart.js';
+export { CalendarChart } from './CalendarChart.js';
+export { MatrixChart } from './MatrixChart.js';
 export { PerformanceDashboard } from './PerformanceDashboard.js';
 export type { PerformanceDashboardOptions, PerformanceResult } from './PerformanceDashboard.js';
 export {

@@ -444,7 +444,7 @@ const pt: SiteMessages = {
   finance: {
     eyebrow: 'Gráficos financeiros',
     title: 'Além dos candles',
-    subtitle: 'Sparklines, curvas de patrimônio, profundidade do livro de ofertas, mapas de calor por setor, cascatas, medidores, barras, roscas, gráficos de dispersão e histogramas para portfólios e KPIs.',
+    subtitle: 'Sparklines, curvas de patrimônio, profundidade do livro de ofertas, mapas de mercado por setor, cascatas, medidores, barras, roscas, gráficos de dispersão, histogramas, calendários e matrizes de correlação para portfólios e KPIs.',
     portfolio: 'Desempenho do portfólio',
     depth: 'Profundidade do livro de ofertas',
     heatmap: 'Mapa de calor do mercado cripto',
@@ -462,6 +462,10 @@ const pt: SiteMessages = {
     returns: 'Retornos diários',
     mean: 'Média',
     var: 'VaR 95%',
+    calendar: 'Variação diária por pregão',
+    sectorMap: 'Mapa do mercado por setor',
+    sectors: { banks: 'Bancos', realEstate: 'Imobiliário', steel: 'Siderurgia', retail: 'Varejo', energy: 'Energia', tech: 'Tecnologia' },
+    correlation: 'Ações de bancos: correlação dos retornos diários',
     waterfall: {
       start: 'Início',
       btcLong: 'BTC comprado',
@@ -661,7 +665,7 @@ const pt: SiteMessages = {
         { name: 'Renko, line break, Kagi, ponto e figura, barras de range', detail: 'Tamanho da caixa ou ATR, linhas para o rompimento, reversão em porcentagem ou em preço, range por barra' },
         { name: 'Candles de volume, Equivolume, área HLC, linha em degraus, linha com marcadores, máxima-mínima', detail: '18 tipos de gráfico no total' },
         { name: 'A série principal oculta', detail: 'Só ficam os indicadores e os desenhos' },
-        { name: 'Gráficos para dashboards', detail: 'Barras (agrupadas, empilhadas, horizontais), rosca e pizza, dispersão e bolhas, histogramas, sparklines, medidores, mapas de calor e treemaps, cascatas, profundidade, curvas de patrimônio' },
+        { name: 'Gráficos para dashboards', detail: 'Barras (agrupadas, empilhadas, horizontais), rosca e pizza, dispersão e bolhas, histogramas, calendários, matrizes de correlação, mapas por setor, sparklines, medidores, mapas de calor e treemaps, cascatas, profundidade, curvas de patrimônio' },
       ],
       rendering: [
         { name: 'Canvas 2D ou WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, o evento rendererChange" },

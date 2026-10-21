@@ -444,7 +444,7 @@ const ko: SiteMessages = {
   finance: {
     eyebrow: '금융 차트',
     title: '캔들스틱 그 너머',
-    subtitle: '포트폴리오와 KPI를 위한 스파크라인, 자산 곡선, 호가 깊이, 섹터 히트맵, 워터폴, 게이지, 막대, 도넛, 산점도, 히스토그램.',
+    subtitle: '포트폴리오와 KPI를 위한 스파크라인, 자산 곡선, 호가 깊이, 섹터 맵, 워터폴, 게이지, 막대, 도넛, 산점도, 히스토그램, 캘린더, 상관 행렬.',
     portfolio: '포트폴리오 성과',
     depth: '호가 깊이',
     heatmap: '암호화폐 시장 히트맵',
@@ -462,6 +462,10 @@ const ko: SiteMessages = {
     returns: '일별 수익률',
     mean: '평균',
     var: 'VaR 95%',
+    calendar: '거래일별 등락',
+    sectorMap: '섹터별 시장 지도',
+    sectors: { banks: '은행', realEstate: '부동산', steel: '철강', retail: '소매', energy: '에너지', tech: '기술' },
+    correlation: '은행주: 일간 수익률 상관관계',
     waterfall: {
       start: '시작',
       btcLong: 'BTC 롱',
@@ -661,7 +665,7 @@ const ko: SiteMessages = {
         { name: '렌코, 라인 브레이크, 카기, 포인트 앤 피겨, 레인지 바', detail: '박스 크기 또는 ATR, 돌파할 선 수, 퍼센트나 가격 단위의 반전 폭, 봉당 범위' },
         { name: '거래량 캔들, 이퀴볼륨, HLC 영역, 계단선, 마커가 있는 라인, 고가-저가', detail: '모두 18가지 차트 유형' },
         { name: '메인 시리즈 숨기기', detail: '지표와 그림만 남김' },
-        { name: '대시보드용 차트', detail: '막대(묶음, 누적, 가로), 도넛과 파이, 산점도와 버블, 히스토그램, 스파크라인, 게이지, 히트맵과 트리맵, 워터폴, 호가 깊이, 자산 곡선' },
+        { name: '대시보드용 차트', detail: '막대(묶음, 누적, 가로), 도넛과 파이, 산점도와 버블, 히스토그램, 캘린더, 상관 행렬, 섹터 맵, 스파크라인, 게이지, 히트맵과 트리맵, 워터폴, 호가 깊이, 자산 곡선' },
       ],
       rendering: [
         { name: 'Canvas 2D 또는 WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, rendererChange 이벤트" },

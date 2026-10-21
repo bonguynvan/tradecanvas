@@ -444,7 +444,7 @@ const vi: SiteMessages = {
   finance: {
     eyebrow: 'Biểu đồ tài chính',
     title: 'Không chỉ có nến',
-    subtitle: 'Sparkline, đường cong vốn, độ sâu sổ lệnh, bản đồ nhiệt theo ngành, biểu đồ thác nước, đồng hồ đo, biểu đồ cột, donut, scatter và histogram cho danh mục đầu tư và KPI.',
+    subtitle: 'Sparkline, đường cong vốn, độ sâu sổ lệnh, bản đồ thị trường theo ngành, biểu đồ thác nước, đồng hồ đo, biểu đồ cột, donut, scatter, histogram, lịch nhiệt và ma trận tương quan cho danh mục đầu tư và KPI.',
     portfolio: 'Hiệu suất danh mục',
     depth: 'Độ sâu sổ lệnh',
     heatmap: 'Bản đồ nhiệt thị trường crypto',
@@ -460,6 +460,10 @@ const vi: SiteMessages = {
     returns: 'Lợi nhuận theo ngày',
     mean: 'Trung bình',
     var: 'VaR 95%',
+    calendar: 'Biến động theo từng phiên',
+    sectorMap: 'Bản đồ thị trường theo ngành',
+    sectors: { banks: 'Ngân hàng', realEstate: 'Bất động sản', steel: 'Thép', retail: 'Bán lẻ', energy: 'Năng lượng', tech: 'Công nghệ' },
+    correlation: 'Cổ phiếu ngân hàng: tương quan lợi nhuận ngày',
     pnl: 'Phân bổ lãi/lỗ',
     fearGreed: 'Chỉ số Sợ hãi & Tham lam',
     waterfall: {
@@ -661,7 +665,7 @@ const vi: SiteMessages = {
         { name: 'Renko, line break, Kagi, point & figure, range bars', detail: 'Cỡ ô hoặc ATR, số đường để đảo chiều, đảo chiều theo % hoặc theo giá, biên độ mỗi thanh' },
         { name: 'Volume candles, Equivolume, HLC area, step line, đường có điểm, high-low', detail: '18 loại biểu đồ tất cả' },
         { name: 'Ẩn chuỗi giá chính', detail: 'Chỉ giữ lại chỉ báo và hình vẽ' },
-        { name: 'Biểu đồ cho dashboard', detail: 'Cột (nhóm, chồng, nằm ngang), donut và tròn, scatter và bong bóng, histogram, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường cong vốn' },
+        { name: 'Biểu đồ cho dashboard', detail: 'Cột (nhóm, chồng, nằm ngang), donut và tròn, scatter và bong bóng, histogram, lịch, ma trận tương quan, bản đồ theo ngành, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường cong vốn' },
       ],
       rendering: [
         { name: 'Canvas 2D hoặc WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, sự kiện rendererChange" },

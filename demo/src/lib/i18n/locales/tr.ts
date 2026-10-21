@@ -444,7 +444,7 @@ const tr: SiteMessages = {
   finance: {
     eyebrow: 'Finans grafikleri',
     title: 'Mum grafiklerinin ötesinde',
-    subtitle: 'Portföyler ve KPI’lar için sparkline’lar, sermaye eğrileri, emir defteri derinliği, sektör ısı haritaları, şelale grafikleri, kadranlar, çubuk, halka ve dağılım grafikleri ile histogramlar.',
+    subtitle: 'Portföyler ve KPI’lar için sparkline’lar, sermaye eğrileri, emir defteri derinliği, sektörlere göre piyasa haritaları, şelale grafikleri, kadranlar, çubuk, halka ve dağılım grafikleri, histogramlar, takvimler ve korelasyon matrisleri.',
     portfolio: 'Portföy performansı',
     depth: 'Emir defteri derinliği',
     heatmap: 'Kripto piyasası ısı haritası',
@@ -462,6 +462,10 @@ const tr: SiteMessages = {
     returns: 'Günlük getiriler',
     mean: 'Ortalama',
     var: 'VaR %95',
+    calendar: 'Seans başına günlük değişim',
+    sectorMap: 'Sektörlere göre piyasa haritası',
+    sectors: { banks: 'Bankacılık', realEstate: 'Gayrimenkul', steel: 'Çelik', retail: 'Perakende', energy: 'Enerji', tech: 'Teknoloji' },
+    correlation: 'Banka hisseleri: günlük getirilerin korelasyonu',
     waterfall: {
       start: 'Başlangıç',
       btcLong: 'BTC uzun',
@@ -661,7 +665,7 @@ const tr: SiteMessages = {
         { name: 'Renko, çizgi kırılımı, Kagi, nokta ve şekil, aralık barları', detail: 'Kutu boyutu veya ATR, kırılım için çizgi sayısı, yüzde ya da fiyat olarak dönüş, bar başına aralık' },
         { name: 'Hacim mumları, Equivolume, HLC alanı, basamaklı çizgi, işaretçili çizgi, yüksek-düşük', detail: 'Toplam 18 grafik türü' },
         { name: 'Ana seri gizli', detail: 'Yalnızca göstergeler ve çizimler kalır' },
-        { name: 'Gösterge panoları için grafikler', detail: 'Çubuklar (gruplu, yığılmış, yatay), halka ve pasta, dağılım ve kabarcık, histogramlar, sparkline’lar, kadranlar, ısı haritaları ve ağaç haritaları, şelaleler, derinlik, sermaye eğrileri' },
+        { name: 'Gösterge panoları için grafikler', detail: 'Çubuklar (gruplu, yığılmış, yatay), halka ve pasta, dağılım ve kabarcık, histogramlar, takvimler, korelasyon matrisleri, sektör haritaları, sparkline’lar, kadranlar, ısı haritaları ve ağaç haritaları, şelaleler, derinlik, sermaye eğrileri' },
       ],
       rendering: [
         { name: 'Canvas 2D veya WebGL 2', detail: "renderer: 'canvas' | 'webgl' | 'auto', setRenderer, rendererChange olayı" },
