@@ -1,4 +1,5 @@
 import type { DataSeries, IndicatorConfig, IndicatorDescriptor, IndicatorValue } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 import { PointwiseIndicator } from '../PointwiseIndicator.js';
 import type { SymbolSeriesStore } from './SymbolSeriesStore.js';
 
@@ -38,7 +39,7 @@ export class CompareSymbolIndicator extends PointwiseIndicator<SymbolParams> {
 
   protected pointAt(data: DataSeries, i: number, { symbol }: SymbolParams): IndicatorValue | null {
     if (!symbol) return null;
-    const value = this.store.closeAt(symbol, data[i].time);
+    const value = this.store.closeAt(symbol, data[i].time, barTimeUnit(data));
     return value === undefined ? null : { value };
   }
 }
@@ -68,7 +69,7 @@ export class SpreadIndicator extends PointwiseIndicator<SpreadParams> {
 
   protected pointAt(data: DataSeries, i: number, { symbol, ratio }: SpreadParams): IndicatorValue | null {
     if (!symbol) return null;
-    const other = this.store.closeAt(symbol, data[i].time);
+    const other = this.store.closeAt(symbol, data[i].time, barTimeUnit(data));
     if (other === undefined) return null;
     if (!ratio) return { value: data[i].close - other };
     return other === 0 ? null : { value: data[i].close / other };
@@ -141,7 +142,7 @@ export class CorrelationCoefficientIndicator extends PointwiseIndicator<Correlat
     const xs: number[] = [];
     const ys: number[] = [];
     for (let j = i - length + 1; j <= i; j++) {
-      const other = this.store.closeAt(symbol, data[j].time);
+      const other = this.store.closeAt(symbol, data[j].time, barTimeUnit(data));
       if (other === undefined) return null;
       xs.push(data[j].close);
       ys.push(other);
@@ -171,9 +172,9 @@ export class CorrelationLogIndicator extends PointwiseIndicator<CorrelationParam
     if (!symbol || i < length) return null;
     const xs: number[] = [];
     const ys: number[] = [];
-    let before = this.store.closeAt(symbol, data[i - length].time);
+    let before = this.store.closeAt(symbol, data[i - length].time, barTimeUnit(data));
     for (let j = i - length + 1; j <= i; j++) {
-      const other = this.store.closeAt(symbol, data[j].time);
+      const other = this.store.closeAt(symbol, data[j].time, barTimeUnit(data));
       const a = data[j - 1].close;
       const b = data[j].close;
       if (other === undefined || before === undefined || !(a > 0 && b > 0 && other > 0 && before > 0)) return null;

@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="bar-times">
+  K 线时间为纪元毫秒或秒，整个序列使用同一单位。图表从最新一根 K 线读取一次单位：<code>barTimeUnit(data)</code> 返回 1（毫秒，1e11 及以上）或 1000（秒）。因此毫秒序列中 2001 年以前的日期也保持正确，即使这些值小于 1e12。请让一个序列只用一种单位；图表返回的时间（事件、<code>getData()</code>）使用该单位。
+</p>
+
 <h3>图表类型与主题</h3>
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>

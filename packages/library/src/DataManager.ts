@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { mergeBar } from '@tradecanvas/commons';
+import { barTimeUnit, mergeBar, normalizeBarTime } from '@tradecanvas/commons';
 
 /** Validate a single OHLC bar. Returns true if bar is usable. */
 function isValidBar(bar: OHLCBar): boolean {
@@ -36,6 +36,24 @@ function sanitizeBar(bar: OHLCBar): OHLCBar {
 export class DataManager {
   private data: DataSeries = [];
 
+  /**
+   * `time` in the series' unit. A series has one unit, read off its newest
+   * bar; a bar or tick arriving in the other (a stream in milliseconds on a
+   * series in seconds) is converted, or the series would read as that unit
+   * and date every other bar wrong. A time on its own tells its unit by its
+   * size (milliseconds from 1973 on).
+   */
+  private inSeriesUnit(time: number): number {
+    if (this.data.length === 0) return time;
+    const ms = normalizeBarTime(time);
+    return barTimeUnit(this.data) === 1 ? ms : ms / 1000;
+  }
+
+  private withSeriesTime<T extends { time: number }>(item: T): T {
+    const time = this.inSeriesUnit(item.time);
+    return time === item.time ? item : { ...item, time };
+  }
+
   getData(): DataSeries {
     return this.data;
   }
@@ -63,8 +81,9 @@ export class DataManager {
     const first = this.data.length > 0 ? this.data[0].time : Infinity;
     const older: OHLCBar[] = [];
     for (let i = 0; i < bars.length; i++) {
-      const bar = bars[i];
-      if (!isValidBar(bar) || bar.time >= first) continue;
+      if (!isValidBar(bars[i])) continue;
+      const bar = this.withSeriesTime(bars[i]);
+      if (bar.time >= first) continue;
       older.push(isSanitized(bar) ? bar : sanitizeBar(bar));
     }
     if (older.length === 0) return 0;
@@ -81,12 +100,12 @@ export class DataManager {
 
   appendBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
-    this.data.push(sanitizeBar(bar));
+    this.data.push(sanitizeBar(this.withSeriesTime(bar)));
   }
 
   updateLastBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
-    const sanitized = sanitizeBar(bar);
+    const sanitized = sanitizeBar(this.withSeriesTime(bar));
     if (this.data.length === 0) {
       this.data.push(sanitized);
       return;
@@ -98,7 +117,7 @@ export class DataManager {
     if (this.data.length === 0) return;
     if (!isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && (!isFinite(tick.volume) || tick.volume < 0)) return;
-    this.data[this.data.length - 1] = mergeBar(this.data[this.data.length - 1], tick);
+    this.data[this.data.length - 1] = mergeBar(this.data[this.data.length - 1], this.withSeriesTime(tick));
   }
 
   getLength(): number {

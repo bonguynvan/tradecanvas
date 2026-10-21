@@ -91,4 +91,13 @@ describe('parseOHLCV', () => {
   it('throws on invalid JSON', () => {
     expect(() => parseOHLCV('{ not json')).toThrow();
   });
+
+  it('keeps epoch milliseconds from before 2001 as milliseconds', () => {
+    // 2000-07-28 in ms is below 1e12; it must not be read as seconds.
+    const t = Date.UTC(2000, 6, 28);
+    const { data } = parseOHLCV(`time,open,high,low,close,volume
+${t},1,2,0.5,1.5,10
+${t + 86_400_000},1,2,0.5,1.5,10`);
+    expect(data.map((b) => b.time)).toEqual([t, t + 86_400_000]);
+  });
 });

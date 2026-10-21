@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { timeParts } from '@tradecanvas/commons';
+import { normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /**
@@ -89,7 +89,8 @@ export class PinnedTooltip {
     container.appendChild(this.el);
   }
 
-  pin(bar: OHLCBar, barIndex: number, theme: Theme): void {
+  /** `unit`: milliseconds in one unit of the series' bar times (`barTimeUnit(data)`). */
+  pin(bar: OHLCBar, barIndex: number, theme: Theme, unit?: BarTimeUnit): void {
     if (!this.el || !this.timeEl || !this.ohlcEl) return;
     this.pinnedBar = bar;
     this.pinnedIndex = barIndex;
@@ -97,7 +98,7 @@ export class PinnedTooltip {
     const isUp = bar.close >= bar.open;
     const color = isUp ? theme.candleUp : theme.candleDown;
 
-    const d = timeParts(bar.time > 1e12 ? bar.time : bar.time * 1000, this.tz);
+    const d = timeParts(normalizeBarTime(bar.time, unit), this.tz);
     this.timeEl.textContent = `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 

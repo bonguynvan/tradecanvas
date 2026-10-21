@@ -44,7 +44,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, normalizeBarTime, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -140,8 +140,6 @@ declare const __TC_VERSION__: string;
 /** The scale of an indicator pane with nothing to fit yet. */
 const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
-/** Bar times at or below this are seconds, not milliseconds (as `normalizeBarTime`). */
-const SECONDS_TIME_LIMIT = 1e12;
 /** `setTimezone(EXCHANGE_TIMEZONE)` shows the time zone of the symbol's exchange. */
 export const EXCHANGE_TIMEZONE = 'exchange';
 /** Throws a RangeError for a time zone the browser doesn't know or an offset that isn't a number. */
@@ -537,13 +535,14 @@ export class Chart {
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
+    this.crosshairHandler.setDataSource(() => this.crosshairSeries());
     this.crosshairHandler.setCallback((barIndex, point) => {
       if (barIndex !== null && point) {
-        const data = this.dataManager.getData();
-        const bar = barIndex < data.length ? data[barIndex] : undefined;
+        const data = this.crosshairSeries();
+        const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
 
         // Update legend (canvas-rendered, will show on next UI paint)
-        this.chartLegend.setHoverBar(bar ?? null);
+        this.chartLegend.setHoverBar(bar ?? null, barIndex > 0 ? data[barIndex - 1] ?? null : null);
 
         // Update tooltip (DOM, lightweight update only when bar changes).
         // Over an indicator pane there is no price crosshair to sit beside.
@@ -555,6 +554,7 @@ export class Chart {
             priceRange: vs.priceRange,
             plot: vs.chartRect,
             barStepMs: barTimeStepMs(data),
+            timeUnit: barTimeUnit(data),
           });
         } else {
           this.crosshairTooltip.hide();
@@ -672,7 +672,7 @@ export class Chart {
         visibleRange: () => this.viewport.getState().visibleRange,
         formatPrice: (price) => this.formatPrice(price),
         formatTime: (time) => zonedDateFormatter(this.numberLocale || 'en-US', { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(
-          time > SECONDS_TIME_LIMIT ? time : time * 1000,
+          time * barTimeUnit(this.getDisplayData()),
         ),
         showBar: (time) => this.setCrosshairTime(time),
       }, options.a11y?.labels);
@@ -910,7 +910,7 @@ export class Chart {
       if (this.pinnedTooltip.isPinned() && this.pinnedTooltip.getPinnedIndex() === idx) {
         this.pinnedTooltip.unpin();
       } else {
-        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme());
+        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme(), barTimeUnit(data));
       }
       this.pinnedTooltip.reposition(
         this.viewport.getState(),
@@ -3243,7 +3243,7 @@ export class Chart {
     if (data.length === 0) return;
     const last = data.length - 1;
     // Bars may carry seconds rather than milliseconds; the calendar works in ms.
-    const unit = data[last].time > SECONDS_TIME_LIMIT ? 1 : 1000;
+    const unit = barTimeUnit(data);
     const startMs = rangePresetStart(preset, data[last].time * unit, this.displayTz);
     const start = startMs === null ? null : startMs / unit;
     if (start === null || start < data[0].time) {
@@ -3277,7 +3277,8 @@ export class Chart {
    * of the data are allowed (they map into the empty future / past).
    */
   setVisibleRange(fromTimestamp: number, toTimestamp: number): void {
-    const data = this.dataManager.getData();
+    // The series on screen: bricks, not the bars under them, on Renko and the like.
+    const data = this.getDisplayData();
     if (data.length === 0) return;
     const a = timestampToBarIndex(Math.min(fromTimestamp, toTimestamp), data);
     const b = timestampToBarIndex(Math.max(fromTimestamp, toTimestamp), data);
@@ -3311,7 +3312,7 @@ export class Chart {
    * the minimum bar width, the newest ones are shown.
    */
   fitContent(): void {
-    const n = this.dataManager.getLength();
+    const n = this.getDisplayData().length;
     if (n === 0) return;
     this.viewport.zoomToBarRange(0, n - 1 + this.viewport.getRightMargin());
     this.viewport.scrollToEnd();
@@ -4910,6 +4911,15 @@ export class Chart {
   }
 
   /** Cached display data. Invalidated when raw data or chart type changes. */
+  /**
+   * The bars the crosshair reports: the data bars where each drawn bar is one
+   * (candles, Heikin-Ashi: the real prices), the series drawn where it isn't
+   * (Renko bricks, Kagi lines), whose slots are not data indices.
+   */
+  private crosshairSeries(): DataSeries {
+    return this.isTimeAligned() ? this.dataManager.getData() : this.getDisplayData();
+  }
+
   private getDisplayData(): DataSeries {
     if (this.displayDataCache) return this.displayDataCache;
     const raw = this.dataManager.getData();
@@ -5556,6 +5566,8 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
 function barPlacement(series: readonly OHLCBar[], bar: OHLCBar): 'append' | 'update' | 'stale' {
   const last = series[series.length - 1];
   if (!last) return 'append';
+  // Live bars are recent, so each time's own size tells its unit (a stream
+  // in ms may feed a series in seconds).
   const at = normalizeBarTime(bar.time);
   const lastAt = normalizeBarTime(last.time);
   return at > lastAt ? 'append' : at === lastAt ? 'update' : 'stale';

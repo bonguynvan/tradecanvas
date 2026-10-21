@@ -34,6 +34,8 @@ export class ChartLegend {
   private symbol = '';
   private timeframe = '';
   private hoverBar: OHLCBar | null = null;
+  /** The bar before the hovered one, its change measured from; null for the first bar. */
+  private hoverPrev: OHLCBar | null = null;
   private indicators: { name: string; color: string; value: string }[] = [];
   private statusText: string | null = null;
   private locale = 'en-US';
@@ -67,8 +69,10 @@ export class ChartLegend {
     // reserved for future use
   }
 
-  setHoverBar(bar: OHLCBar | null): void {
+  /** The bar under the pointer and the one before it (null for the first); null for none. */
+  setHoverBar(bar: OHLCBar | null, prev: OHLCBar | null = null): void {
     this.hoverBar = bar;
+    this.hoverPrev = bar ? prev : null;
   }
 
   setIndicatorValues(values: { name: string; color: string; value: string }[]): void {
@@ -99,7 +103,10 @@ export class ChartLegend {
     if (!this.config.visible || data.length === 0) return;
 
     const bar = this.hoverBar ?? data[data.length - 1];
-    const prevBar = data.length > 1 ? data[data.length - 2] : bar;
+    // The change is from the bar before the one shown, hovered or last.
+    const prevBar = this.hoverBar
+      ? this.hoverPrev ?? bar
+      : data.length > 1 ? data[data.length - 2] : bar;
     const { chartRect } = viewport;
     const fs = this.config.fontSize;
     const family = this.config.fontFamily ?? theme.font.family;

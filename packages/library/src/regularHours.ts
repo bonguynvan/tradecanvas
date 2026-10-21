@@ -1,5 +1,5 @@
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { isValidTimeZone, normalizeBarTime, sessionMinute } from '@tradecanvas/commons';
+import { barTimeUnit, isValidTimeZone, sessionMinute } from '@tradecanvas/commons';
 import { isRegularSession } from '@tradecanvas/core';
 
 const DAY_MS = 86_400_000;
@@ -23,12 +23,13 @@ export function regularHoursFilter(
     return startMinute === null || endMinute === null ? [] : [{ startMinute, endMinute }];
   });
   if (windows.length === 0) return null;
+  const unit = barTimeUnit(data);
   let spacing = Infinity;
   for (let i = Math.max(1, data.length - SPACING_SAMPLE); i < data.length; i++) {
-    const gap = normalizeBarTime(data[i].time) - normalizeBarTime(data[i - 1].time);
+    const gap = (data[i].time - data[i - 1].time) * unit;
     if (gap > 0 && gap < spacing) spacing = gap;
   }
   if (!(spacing < DAY_MS)) return null;
   const config = { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute };
-  return (time) => isRegularSession(normalizeBarTime(time), config);
+  return (time) => isRegularSession(time * unit, config);
 }

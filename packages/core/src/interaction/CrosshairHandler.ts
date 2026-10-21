@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
-import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily, lineDash } from '@tradecanvas/commons';
+import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
@@ -14,6 +14,7 @@ export class CrosshairHandler {
   private position: Point | null = null;
   private callback: CrosshairCallback | null = null;
   private data: DataSeries = [];
+  private source: (() => DataSeries) | null = null;
   private tz: TimeZoneSetting = null;
   private timeFormatter: TimeFormatter | null = null;
   private timesPastData = true;
@@ -63,6 +64,19 @@ export class CrosshairHandler {
   setData(data: DataSeries): void {
     this.data = data;
   }
+  /**
+   * Where the bars under the crosshair come from, read when it moves: the
+   * series on screen when that is not one bar per data bar (Renko bricks),
+   * so its slots index the right series. Null goes back to `setData`'s.
+   */
+  setDataSource(source: (() => DataSeries) | null): void {
+    this.source = source;
+  }
+
+  private series(): DataSeries {
+    return this.source?.() ?? this.data;
+  }
+
 
   setMagnetMode(enabled: boolean): void {
     this.magnetMode = enabled;
@@ -146,8 +160,9 @@ export class CrosshairHandler {
     // space the chart can be panned into). Magnet snaps to slots there too,
     // instead of welding the line to the last bar.
     const slot = xToBarIndex(x, viewport);
-    const barIndex = Math.max(0, Math.min(this.data.length - 1, slot));
-    const onBar = slot >= 0 && slot < this.data.length;
+    const length = this.series().length;
+    const barIndex = Math.max(0, Math.min(length - 1, slot));
+    const onBar = slot >= 0 && slot < length;
 
     if (this.magnetMode) {
       x = barIndexToX(slot, viewport);
@@ -245,7 +260,7 @@ export class CrosshairHandler {
     const { chartRect } = viewport;
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
     const looks = crosshairLooks(theme);
-    if (this.magnetMode && slot >= 0 && slot < this.data.length) drawBarTint(ctx, x, viewport, looks.vertical.color);
+    if (this.magnetMode && slot >= 0 && slot < this.series().length) drawBarTint(ctx, x, viewport, looks.vertical.color);
     drawVerticalLine(ctx, x, chartRect, looks.vertical);
   }
 
@@ -277,8 +292,8 @@ export class CrosshairHandler {
     // Past either end of the data the time is extrapolated.
     const time = barIndexToTime(slot, data);
     const timeText = this.timeFormatter
-      ? this.timeFormatter(time > 1e12 ? time : time * 1000, { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time, this.tz, barsAreDaily(data));
+      ? this.timeFormatter(time * barTimeUnit(data), { kind: 'crosshair', timeZone: this.tz })
+      : formatBarTime(time * barTimeUnit(data), this.tz, barsAreDaily(data));
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,
@@ -390,8 +405,8 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.restore();
 }
 
-function formatBarTime(rawTime: number, tz: TimeZoneSetting, daily?: boolean): string {
-  const ms = rawTime > 1e12 ? rawTime : rawTime * 1000;
+/** `ms` is in milliseconds: the caller knows its series' unit. */
+function formatBarTime(ms: number, tz: TimeZoneSetting, daily?: boolean): string {
   const parts = timeParts(ms, tz);
   const { year, month: m, day, hours: h, minutes: mm } = parts;
   // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the

@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="bar-times">
+  Los tiempos de las barras son milisegundos o segundos de época, una sola unidad para toda la serie. El gráfico la lee una vez, de la barra más reciente: <code>barTimeUnit(data)</code> da 1 (milisegundos, desde 1e11) o 1000 (segundos). Así una serie en milisegundos conserva también sus fechas anteriores a 2001, aunque queden por debajo de 1e12. Mantenga cada serie en una unidad; los tiempos que el gráfico devuelve (eventos, <code>getData()</code>) están en ella.
+</p>
+
 <h3>Tipo de gráfico y tema</h3>
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>

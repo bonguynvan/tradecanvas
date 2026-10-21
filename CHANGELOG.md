@@ -4,6 +4,20 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Dates on the time axis
+
+- **Right dates far back in history.** A series' time unit, milliseconds or seconds, is now decided once from its newest bar (`barTimeUnit(data)`) instead of guessed for each time. Millisecond bars before September 2001 are below 1e12 and were read as seconds, so after a 5Y view a scroll back dated them around the year 32,000: on the time axis, the crosshair, the tooltips, the measure tool, session breaks, data export and CSV import. `barTimeUnit` and `MS_TIME_THRESHOLD` are exported, and `normalizeBarTime(time, unit)` takes the series' unit.
+- **The time axis** leaves the space before the oldest bar unlabelled (the bars there are not loaded yet), and shows the date wherever the date changes: a label a month later on the same day of the month showed only a time.
+- **Times before the oldest bar** (the crosshair, drawings placed there) follow the average spacing of the first bars, weekends and nights included, so 50 daily bars back is about ten weeks, not 50 days.
+- **Renko, Kagi, Point & Figure and Line Break**: `setVisibleRange`, the zoom area and `fitContent` work on the bricks shown, not on the bars under them, and the crosshair reads the brick under it: on these types `crosshairMove` now gives the brick and its index in the series drawn (it gave the data bar at that index, which was another bar). Heikin-Ashi and the other one-bar-per-bar types still give the data bar.
+- **The legend's change on hover** is from the bar before the hovered one; it was from the series' last bars.
+- Drawings saved in seconds before 2001 no longer pass for old bar-index anchors.
+- A bar or tick in the other unit than its series (a stream in milliseconds on bars in seconds) is stored in the series' unit, so it can't make the series read as that unit.
+
+## 1.24.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.6.
+
 ### Drawings and the legend
 
 - **A toolbar over the selected drawing.** Clicking a drawing in the widget shows a small toolbar right over it: colour, line width and line style, then settings, an alert on its line, lock, the full drawing menu and delete. Nothing hides behind a right-click any more. With several drawings selected it sits over all of them and changes each. It follows the drawing while it is moved, panned, zoomed or rescaled, steps aside while a drawing tool, the eraser or the zoom area is on, goes when nothing is selected, and works with the keyboard (one tab stop, arrow keys along it and through the pickers, Escape back to it). Colours, widths and line styles from saved layouts are checked before they are shown. `features: { selectionToolbar: false }` turns it off.

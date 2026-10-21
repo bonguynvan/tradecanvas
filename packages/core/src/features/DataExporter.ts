@@ -1,5 +1,5 @@
 import type { OHLCBar } from '@tradecanvas/commons';
-import { normalizeBarTime } from '@tradecanvas/commons';
+import { barTimeUnit, normalizeBarTime, type BarTimeUnit } from '@tradecanvas/commons';
 
 /** One more column next to the bars: an indicator line, one value per bar. */
 export interface ExportColumn {
@@ -9,9 +9,9 @@ export interface ExportColumn {
 
 const BAR_COLUMNS = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'];
 
-/** A bar's time as an ISO date (bars timed in seconds as well as milliseconds). */
-function isoTime(time: number): string {
-  return new Date(normalizeBarTime(time)).toISOString();
+/** A bar's time as an ISO date, in its series' unit (`barTimeUnit`). */
+function isoTime(time: number, unit: BarTimeUnit): string {
+  return new Date(normalizeBarTime(time, unit)).toISOString();
 }
 
 /**
@@ -28,17 +28,19 @@ const valueText = (v: number | null | undefined): string => (v === null || v ===
 export class DataExporter {
   static toCSV(data: ReadonlyArray<OHLCBar>, columns: readonly ExportColumn[] = []): string {
     const header = [...BAR_COLUMNS, ...columns.map((c) => csvCell(c.name))].join(',');
+    const unit = barTimeUnit(data);
     const rows = data.map((bar, i) => [
-      isoTime(bar.time), bar.open, bar.high, bar.low, bar.close, bar.volume,
+      isoTime(bar.time, unit), bar.open, bar.high, bar.low, bar.close, bar.volume,
       ...columns.map((c) => valueText(c.values[i])),
     ].join(','));
     return [header, ...rows].join('\n');
   }
 
   static toJSON(data: ReadonlyArray<OHLCBar>, columns: readonly ExportColumn[] = []): string {
+    const unit = barTimeUnit(data);
     return JSON.stringify(data.map((bar, i) => {
       const row: Record<string, string | number | null> = {
-        time: isoTime(bar.time),
+        time: isoTime(bar.time, unit),
         open: bar.open,
         high: bar.high,
         low: bar.low,

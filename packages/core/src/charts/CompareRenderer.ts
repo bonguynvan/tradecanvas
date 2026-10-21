@@ -1,4 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
 
@@ -120,7 +121,8 @@ export class CompareRenderer {
       return cached.closes;
     }
     const closes = new Float64Array(main.length);
-    for (let i = 0; i < main.length; i++) closes[i] = this.store.closeAt(sym.id, main[i].time) ?? Number.NaN;
+    const unit = barTimeUnit(main);
+    for (let i = 0; i < main.length; i++) closes[i] = this.store.closeAt(sym.id, main[i].time, unit) ?? Number.NaN;
     this.aligned.set(sym.id, { main, data: sym.data, length: main.length, lastTime, closes });
     return closes;
   }

@@ -1,11 +1,33 @@
 import type { OHLCBar, DataSeries } from '../types/ohlc.js';
 
 /**
- * Normalize bar timestamp to milliseconds.
- * Auto-detects: time > 1e12 is already ms, otherwise treats as seconds.
+ * Bar times at or above this are milliseconds (from March 1973 on), below it
+ * seconds (up to the year 5138).
  */
-export function normalizeBarTime(time: number): number {
-  return time > 1e12 ? time : time * 1000;
+export const MS_TIME_THRESHOLD = 1e11;
+
+/** Milliseconds in one unit of a series' bar times: 1 for milliseconds, 1000 for seconds. */
+export type BarTimeUnit = 1 | 1000;
+
+/**
+ * The unit of a series' bar times, decided once from its newest bar, so its
+ * old bars keep the series' unit: a millisecond bar from 2000 is below 1e12
+ * and would pass for seconds on its own. Milliseconds when there are no bars.
+ */
+export function barTimeUnit(data: ArrayLike<{ time: number }>): BarTimeUnit {
+  const last = data.length > 0 ? data[data.length - 1].time : NaN;
+  if (!Number.isFinite(last)) return 1;
+  return Math.abs(last) >= MS_TIME_THRESHOLD ? 1 : 1000;
+}
+
+/**
+ * Normalize bar timestamp to milliseconds. Pass the series' unit
+ * (`barTimeUnit(data)`) when there is one; on its own a time is taken as
+ * milliseconds from `MS_TIME_THRESHOLD` (1973) up, seconds below.
+ */
+export function normalizeBarTime(time: number, unit?: BarTimeUnit): number {
+  if (unit !== undefined) return time * unit;
+  return Math.abs(time) >= MS_TIME_THRESHOLD ? time : time * 1000;
 }
 
 /**

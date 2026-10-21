@@ -1,4 +1,5 @@
 import type { FillEvent, TradingConfig, ViewportState } from '@tradecanvas/commons';
+import { barTimeUnit } from '@tradecanvas/commons';
 import { priceToY, timeToX } from '../viewport/ScaleMapping.js';
 
 /** Half the width of a fill mark, and how far it stands off its price (px). */
@@ -12,8 +13,7 @@ const GAP = 2;
  */
 export function fillBarTime(timeMs: number, viewport: ViewportState): number {
   const data = viewport.data;
-  const last = data && data.length > 0 ? data[data.length - 1].time : 0;
-  return last > 0 && last < 1e12 ? timeMs / 1000 : timeMs;
+  return data && data.length > 0 ? timeMs / barTimeUnit(data) : timeMs;
 }
 
 /**
