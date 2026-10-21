@@ -105,7 +105,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
     </td></tr>
     <tr><td>状态栏</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>图表上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -132,6 +132,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   同时作用于价格轴旁的 "+" 和右键菜单；<code>compare</code> 去掉对象树里的添加按钮，已有的对比仍保留在列表中；
   <code>toasts</code> 关闭组件自身的提示（错误提示仍会显示），你通过 <code>widget.toast()</code> 发出的提示也照常显示。
   关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。
+  关闭 <code>statusBar.rangeTimeframe</code> 时，区间栏上的区间长于 K 线能放下的范围也保持周期；开启时切换为周线或月线并在之后切回。
 </p>
 
 <h2 id="parts">你自己的部件</h2>

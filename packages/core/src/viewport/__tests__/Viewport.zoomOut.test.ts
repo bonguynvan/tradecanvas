@@ -112,3 +112,28 @@ describe('Viewport.prependBars', () => {
     expect(vp.isAtEnd()).toBe(true);
   });
 });
+
+describe('Viewport.setMinBarUnit', () => {
+  it('lets a long series fit narrower than the default floor, and no narrower than asked', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(20_000), false);
+    vp.scrollToEnd();
+    zoomOutFully(vp);
+    expect(unitOf(vp)).toBeCloseTo(MIN_BAR_UNIT, 6);
+    vp.setMinBarUnit(0.02);
+    zoomOutFully(vp);
+    const width = vp.getState().chartRect.width;
+    expect(unitOf(vp)).toBeCloseTo(width / (20_000 + 5), 6);
+    expect(vp.getState().visibleRange.from).toBe(0);
+  });
+
+  it('keeps the floor within reason', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.updateData(bars(200_000), false);
+    vp.setMinBarUnit(0);
+    zoomOutFully(vp);
+    expect(unitOf(vp)).toBeGreaterThanOrEqual(0.02);
+    vp.setMinBarUnit(Number.NaN);
+    expect(vp.getMinBarUnit()).toBe(MIN_BAR_UNIT);
+  });
+});

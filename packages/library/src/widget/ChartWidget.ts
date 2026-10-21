@@ -1,5 +1,5 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -49,6 +49,7 @@ import {
   availableTimeframes,
   initialTimeframeFavorites,
   parseTimeframeInput,
+  timeframeForRange,
   timeframeLabel,
   withExtraTimeframes,
 } from './widgetTimeframes.js';
@@ -56,7 +57,7 @@ import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.j
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS, servesTimeframe, sourceParam, withResampling } from '@tradecanvas/core';
+import { RANGE_PRESETS, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -153,6 +154,9 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
 
+
+/** Recent bars looked at to tell a market open on weekends. */
+const WEEKDAY_SAMPLE = 200;
 
 export class ChartWidget {
   private chart: Chart;
@@ -293,6 +297,12 @@ export class ChartWidget {
   // instead of refetching. See `setData` / `applyTimeframeData`.
   private baseSeries: DataSeries | null = null;
   private baseTimeframeMs = 0;
+  /** The timeframe the user (or the host) picked: ranges never show finer than it, layouts keep it. */
+  private chosenTimeframe: TimeFrame | null = null;
+  /** Counts range clicks and the user's own picks: a range waiting behind a newer one gives way. */
+  private rangeSeq = 0;
+  /** Ranges apply one at a time, each reading the bars the last one brought. */
+  private rangeQueue: Promise<void> = Promise.resolve();
   private compares: { id: string; symbol: string; color: string }[] = [];
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
@@ -635,7 +645,7 @@ export class ChartWidget {
       presetLabels: { All: this.t('range.all') },
       groupLabel: this.t('range.presets'),
       goToLabel: this.t('range.goTo'),
-      onPreset: (preset) => this.chart.setVisibleRangePreset(preset),
+      onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
     });
     this.goToDate = new WidgetGoToDate(this.root, {
@@ -1522,6 +1532,18 @@ export class ChartWidget {
   /** Ignored when the chart's `features.timeframes` whitelist leaves `tf` out. */
   async setTimeframe(tf: TimeFrame): Promise<void> {
     if (!this.chart.isTimeframeAllowed(tf)) return;
+    // The user's pick: it bounds the range bar from now on, and wins over a range on its way.
+    this.chosenTimeframe = tf;
+    this.rangeSeq++;
+    await this.switchTimeframe(tf);
+  }
+
+  /**
+   * Show `tf`: refetch from the feed, or resample the bars on hand. A range's
+   * switch comes here directly and leaves the user's pick as it was; the
+   * host still hears `onTimeframeChange`, as the timeframe showing changed.
+   */
+  private async switchTimeframe(tf: TimeFrame): Promise<void> {
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
@@ -1674,6 +1696,77 @@ export class ChartWidget {
 
   private handleTimeframe(tf: TimeFrame): void {
     void this.setTimeframe(tf);
+  }
+
+  /**
+   * A range from the range bar. A long one switches to the timeframe whose
+   * bars it fits (five years of days in weeks, decades in months), a short
+   * one back toward the user's own (`timeframeForRange`); then the range is
+   * shown. Off with `features: { 'statusBar.rangeTimeframe': false }`.
+   */
+  private applyRangePreset(preset: RangePreset): Promise<void> {
+    const seq = ++this.rangeSeq;
+    // One at a time; a newer click, or the user's own pick, skips one still waiting.
+    this.rangeQueue = this.rangeQueue
+      .then(() => this.runRangePreset(preset, seq))
+      .catch((err: unknown) => {
+        this.say(err instanceof Error ? err.message : String(err), 'error');
+      });
+    return this.rangeQueue;
+  }
+
+  private async runRangePreset(preset: RangePreset, seq: number): Promise<void> {
+    const current = () => seq === this.rangeSeq && !this.destroyed;
+    if (!current()) return;
+    // The timeframe the widget started on counts as the user's until they pick one.
+    this.chosenTimeframe ??= this.state.timeframe;
+    const tf = this.featureState['statusBar.rangeTimeframe'] ? this.timeframeForPreset(preset) : this.state.timeframe;
+    if (tf !== this.state.timeframe) {
+      await this.switchTimeframe(tf);
+      // Superseded while loading, or the load failed: the bars aren't the range's.
+      if (!current() || (this.adapter && this.state.connectionState === 'error')) return;
+    }
+    this.chart.setVisibleRangePreset(preset);
+  }
+
+  /** The timeframe `preset` shows in, from the bars on the chart now. */
+  private timeframeForPreset(preset: RangePreset): TimeFrame {
+    const current = this.state.timeframe;
+    const data = this.chart.getData();
+    if (data.length < 2) return current;
+    const unit = barTimeUnit(data);
+    const end = data[data.length - 1].time * unit;
+    const start = preset === 'All' ? data[0].time * unit : rangePresetStart(preset, end, this.displayTimezone());
+    if (start === null) return current;
+    let first = data.length - 1;
+    while (first > 0 && data[first - 1].time * unit >= start) first--;
+    // Days a market trades in a week: all seven if any recent bar falls on a weekend.
+    const tz = this.displayTimezone();
+    const weekend = data.slice(-WEEKDAY_SAMPLE).some((bar) => {
+      const ms = bar.time * unit;
+      const day = new Date(ms + offsetAt(tz, ms) * 60_000).getUTCDay();
+      return day === 0 || day === 6;
+    });
+    return timeframeForRange({
+      dayShare: weekend ? 1 : 5 / 7,
+      spanMs: end - start,
+      barsInSpan: data.length - first,
+      width: this.chart.getPlotRect().width,
+      current,
+      chosen: this.chosenTimeframe ?? current,
+      available: this.timeframes.filter((tf) => this.chart.isTimeframeAllowed(tf) && this.canShowTimeframe(tf)),
+    });
+  }
+
+  /** Whether a switch to `tf` brings bars: the feed serves it, or the bars here resample to it. */
+  private canShowTimeframe(tf: TimeFrame): boolean {
+    if (this.adapter) return servesTimeframe(this.adapter, tf);
+    if (this.options.resampleTimeframes === false) return false;
+    const data = this.chart.getData();
+    if (data.length < 2) return false;
+    // Resampling only makes bars coarser than those it starts from.
+    const base = this.baseSeries ? this.baseTimeframeMs : inferTimeframeMs(data);
+    return !(base > 0) || timeframeToMs(tf) >= base;
   }
 
   /** Fill the screen with the widget, or leave fullscreen. */
@@ -3139,7 +3232,8 @@ export class ChartWidget {
     return {
       v: 1,
       symbol: this.state.symbol,
-      timeframe: this.state.timeframe,
+      // The user's timeframe, not one a long range switched to.
+      timeframe: this.chosenTimeframe ?? this.state.timeframe,
       scaleMode: this.settingsState.scaleMode,
       invertScale: this.settingsState.invertScale,
       chart,
@@ -3176,7 +3270,7 @@ export class ChartWidget {
 
   private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
     const session = new LayoutSession(cfg.storage ?? localStorageLayouts(), {
-      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.state.timeframe }),
+      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.chosenTimeframe ?? this.state.timeframe }),
       apply: async (layout: SavedLayout) => {
         if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a widget layout');
       },

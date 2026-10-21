@@ -244,11 +244,13 @@ describe('ChartWidget range bar', () => {
   const T_FIRST = Date.UTC(2026, 0, 1);
   const T_LAST = Date.UTC(2026, 2, 1, 12);
 
-  it('shows the presets and passes the choice to the chart', () => {
+  it('shows the presets and passes the choice to the chart', async () => {
     make();
     const labels = [...host.querySelectorAll<HTMLElement>('[data-range]')].map((b) => b.textContent);
     expect(labels).toEqual(['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All']);
     host.querySelector<HTMLButtonElement>('[data-range="3M"]')!.click();
+    // Ranges apply in turn, a tick after the click.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(FakeChart.last.presets).toEqual(['3M']);
   });
 

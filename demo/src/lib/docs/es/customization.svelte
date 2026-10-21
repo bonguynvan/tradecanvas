@@ -108,7 +108,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
     </td></tr>
     <tr><td>Barra de estado</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>Sobre el gráfico</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -137,6 +137,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   <code>toasts</code> calla los avisos del propio widget (sus errores se siguen mostrando), y los tuyos con
   <code>widget.toast()</code> también se muestran.
   <code>selectionToolbar</code> apagado oculta la barra sobre un dibujo seleccionado; el menú del botón derecho sigue.
+  <code>statusBar.rangeTimeframe</code> apagado mantiene la temporalidad cuando un rango de la barra de rangos es más largo de lo que caben sus barras; encendido, cambia a semanal o mensual y vuelve.
 </p>
 
 <h2 id="parts">Tus propias partes</h2>

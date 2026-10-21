@@ -34,6 +34,8 @@ export class LineWithMarkersRenderer implements ChartRendererInterface {
     ctx.stroke();
 
     const markerRadius = Math.max(2, Math.min(4, viewport.barWidth * 0.3));
+    // Zoomed out past a marker a bar, they'd only cover the line: the line alone.
+    if (barUnit < markerRadius * 2) return;
     const markerPath = new Path2D();
     for (const { x, y } of points) {
       markerPath.moveTo(x + markerRadius, y);

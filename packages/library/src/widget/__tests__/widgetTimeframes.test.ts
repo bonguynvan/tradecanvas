@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { availableTimeframes, initialTimeframeFavorites, timeframeLabel, WIDGET_TIMEFRAMES, WIDGET_TIMEFRAME_FAVORITES, parseTimeframeInput, withExtraTimeframes } from '../widgetTimeframes.js';
+import type { TimeFrame } from '@tradecanvas/commons';
+import { availableTimeframes, initialTimeframeFavorites, timeframeForRange, timeframeLabel, WIDGET_TIMEFRAMES, WIDGET_TIMEFRAME_FAVORITES, parseTimeframeInput, withExtraTimeframes } from '../widgetTimeframes.js';
 
 describe('timeframeLabel', () => {
   it('upper-cases hours, days and weeks, and keeps minutes apart from months', () => {
@@ -89,3 +90,49 @@ describe('withExtraTimeframes', () => {
     expect(withExtraTimeframes(['1m', '1h'], ['100T', '10T', '5m'])).toEqual(['10T', '100T', '1m', '5m', '1h']);
   });
 });
+
+describe('timeframeForRange', () => {
+  const DAY = 86_400_000;
+  const YEAR = 365.25 * DAY;
+  const all: TimeFrame[] = ['1m', '5m', '15m', '1h', '2h', '4h', '1d', '1w', '1M'];
+  const pick = (spanMs: number, barsInSpan: number, current: TimeFrame, chosen: TimeFrame = current) =>
+    timeframeForRange({ spanMs, barsInSpan, width: 1100, current, chosen, available: all });
+
+  it('keeps the timeframe when the range fits it', () => {
+    expect(pick(YEAR, 252, '1d')).toBe('1d');
+    expect(pick(30 * DAY, 154, '1h')).toBe('1h');
+  });
+
+  it('goes to weeks for five years of days, months for decades', () => {
+    expect(pick(5 * YEAR, 1260, '1d')).toBe('1w');
+    expect(pick(26 * YEAR, 6800, '1d')).toBe('1M');
+  });
+
+  it('goes as coarse as it has to on intraday bars, and no further', () => {
+    expect(pick(182 * DAY, 900, '1h')).toBe('2h');
+    expect(pick(5 * YEAR, 9100, '1h')).toBe('1w');
+  });
+
+  it('comes back to the timeframe the user chose once the range is short again', () => {
+    // On weeks after 5Y, 1Y shows days again; never finer than the user's days.
+    expect(pick(YEAR, 52, '1w', '1d')).toBe('1d');
+    expect(pick(DAY, 1, '1w', '1d')).toBe('1d');
+  });
+
+  it('keeps timeframes it can’t reason about', () => {
+    expect(pick(5 * YEAR, 99_999, '100T' as TimeFrame)).toBe('100T');
+    expect(timeframeForRange({ spanMs: 5 * YEAR, barsInSpan: 1260, width: 0, current: '1d', chosen: '1d', available: all })).toBe('1d');
+  });
+
+  it('takes the coarsest it has when none fits', () => {
+    expect(timeframeForRange({ spanMs: 26 * YEAR, barsInSpan: 6800, width: 1100, current: '1d', chosen: '1d', available: ['1d', '1w'] })).toBe('1w');
+  });
+
+  it('counts trading days, not calendar days, when it comes back to days', () => {
+    // Two years: about 520 weekdays fit at 2 px; 730 calendar days wouldn't.
+    expect(timeframeForRange({ spanMs: 2 * YEAR, barsInSpan: 104, width: 1100, current: '1w', chosen: '1d', available: all })).toBe('1d');
+    // A market open every day keeps its weekends in the count.
+    expect(timeframeForRange({ spanMs: 2 * YEAR, barsInSpan: 104, width: 1100, current: '1w', chosen: '1d', available: all, dayShare: 1 })).toBe('1w');
+  });
+});
+

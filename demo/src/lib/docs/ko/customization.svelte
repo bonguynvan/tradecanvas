@@ -108,7 +108,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
     </td></tr>
     <tr><td>상태 바</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
-      <code>statusBar.connection</code> <code>statusBar.symbol</code>
+      <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
     </td></tr>
     <tr><td>차트 위</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -136,6 +136,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   추가 버튼을 없애고, 이미 켜진 비교는 목록에 남습니다. <code>toasts</code>는 위젯 자체의 알림을 끄고(오류는 계속 보입니다),
   <code>widget.toast()</code>로 띄운 알림은 그대로 보입니다.
   <code>selectionToolbar</code>를 끄면 선택한 그림 위의 도구 모음이 숨겨집니다. 오른쪽 클릭 메뉴는 그대로입니다.
+  <code>statusBar.rangeTimeframe</code>를 끄면 기간 막대의 기간이 봉에 비해 길어도 시간 단위를 유지하고, 켜면 주봉이나 월봉으로 바꿨다가 되돌립니다.
 </p>
 
 <h2 id="parts">직접 만든 부품</h2>

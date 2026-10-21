@@ -102,7 +102,11 @@ chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
 chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+<p id="long-ranges">
+  <strong>Long ranges.</strong> A bar slot is never narrower than 0.25 px, so a range longer than that allows (26 years of days on a laptop) shows its newest part. In the widget a long range on the range bar switches to the timeframe whose bars fit, at 2 px a bar or more: 5Y of days goes to weeks, All to months; a short range goes back to the timeframe you picked, never finer. It switches only to timeframes your feed serves (or the bars here resample to). <code>features: { 'statusBar.rangeTimeframe': false }</code> keeps the timeframe. On a bare <code>Chart</code>, <code>minBarUnit</code> (an option, or <code>setMinBarUnit</code>) lets slots go down to 0.02 px, drawn a pixel column at a time.
+</p>
 
 <p>
   <strong>Price scale modes.</strong> Beyond regular and logarithmic, the axis

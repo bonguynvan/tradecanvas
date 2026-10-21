@@ -102,7 +102,11 @@ chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
+chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
 chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+<p id="long-ranges">
+  <strong>長い期間。</strong>バーの幅は 0.25 px より狭くならないため、それを超える期間（ノート PC での 26 年分の日足）は最新の部分だけが表示されます。ウィジェットでは、レンジバーの長い期間はバーが 1 本 2 px 以上で収まる時間足に切り替わります：5Y の日足は週足に、All は月足に。短い期間では選んだ時間足に戻り、それより細かくはなりません。切り替わるのはデータフィードが提供する（または手元のバーから集計できる）時間足だけです。<code>features: { 'statusBar.rangeTimeframe': false }</code> で時間足を保ちます。<code>Chart</code> を直接使う場合は <code>minBarUnit</code>（オプション、または <code>setMinBarUnit</code>）で 0.02 px まで狭められ、ピクセル列ごとに描画されます。
+</p>
 
 <p>
   <strong>価格スケールのモード。</strong> 標準と対数のほかに、表示中の最初のバーを基準に
