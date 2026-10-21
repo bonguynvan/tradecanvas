@@ -43,6 +43,7 @@
 - **本格的なワークスペース**：マルチチャートのグリッド、名前付きレイアウト、ペーパートレードができるバーリプレイ、そして `@tradecanvas/analytics` のバックテスター。
 - **思いどおりにカスタマイズ**：101 個のスタイルキー、112 個の機能スイッチ、3 つの見た目、そしてインジケーター、描画ツール、チャートタイプ、オーバーレイのためのプラグイン。
 - **誰にでも使える**：ウィジェットは右から左に書く言語を含む 30 言語に対応し、スクリーンリーダーとキーボード操作もサポートしています。
+- **スマートフォンとアプリで**：描画、注文、アラートまで、指でマウスと同じことができます。ウィジェットはスマートフォン向けに自動で並び、チャートはバッテリーに配慮しながら WebView、React Native、Capacitor、Tauri で動きます。
 
 ## インストール
 
@@ -134,6 +135,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 | [スタイル](https://bonguynvan.github.io/tradecanvas/ja/docs/styling/) · [カスタマイズ](https://bonguynvan.github.io/tradecanvas/ja/docs/customization/) | テーマ、スタイルキー、見た目、機能スイッチ、独自の部品 |
 | [プラグイン](https://bonguynvan.github.io/tradecanvas/ja/docs/plugins/) | 独自のインジケーター、描画ツール、チャートタイプ、オーバーレイ |
 | [アナリティクス](https://bonguynvan.github.io/tradecanvas/ja/docs/analytics/) · [金融チャート](https://bonguynvan.github.io/tradecanvas/ja/docs/finance/) | バックテストとリスク指標、板の深さ・資産曲線などのチャート |
+| [スマートフォンとアプリ](https://bonguynvan.github.io/tradecanvas/ja/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri。タッチとページのスクロール |
 | [パフォーマンス](https://bonguynvan.github.io/tradecanvas/ja/docs/performance/) · [API リファレンス](https://bonguynvan.github.io/tradecanvas/ja/docs/api/) | 計測結果と API の全体 |
 
 ドキュメントは English、Tiếng Việt、简体中文、한국어、Español でも読めます。

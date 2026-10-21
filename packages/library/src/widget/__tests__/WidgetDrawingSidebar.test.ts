@@ -191,3 +191,52 @@ describe('dividers', () => {
     });
   });
 });
+
+describe('drawing sidebar — narrow (a phone)', () => {
+  const fab = () => host.querySelector<HTMLButtonElement>('.tcw-sidebar-fab')!;
+  const bar = () => host.querySelector<HTMLElement>('.tcw-sidebar')!;
+  const narrow = () => host.setAttribute('data-tcw-narrow', '');
+
+  it('opens and closes from the drawing button over the chart', () => {
+    narrow();
+    expect(fab()).not.toBeNull();
+    fab().click();
+    expect(bar().classList.contains('tcw-sidebar-open')).toBe(true);
+    expect(fab().getAttribute('aria-expanded')).toBe('true');
+    fab().click();
+    expect(bar().classList.contains('tcw-sidebar-open')).toBe(false);
+  });
+
+  it('a tap on a group of tools opens its menu; a pick there closes the sidebar for the chart', () => {
+    narrow();
+    fab().click();
+    const lines = wraps()[0].querySelector('button')!;
+    lines.click();
+    expect(picked).toEqual([]);
+    expect(flyout()).not.toBeNull();
+    flyout()!.querySelectorAll<HTMLButtonElement>('.tcw-flyout-item')[1].click();
+    expect(picked).toHaveLength(1);
+    expect(bar().classList.contains('tcw-sidebar-open')).toBe(false);
+  });
+
+  it('closes on a press outside it', () => {
+    narrow();
+    fab().click();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(bar().classList.contains('tcw-sidebar-open')).toBe(false);
+  });
+
+  it('the drawing button shows the tool picked, lit', () => {
+    narrow();
+    sidebar.update({ activeTool: 'trendLine', magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
+    expect(fab().classList.contains('tcw-active')).toBe(true);
+    const same = document.createElement('div');
+    same.innerHTML = createToolIcon('trendLine', 18);
+    expect(fab().innerHTML).toBe(same.innerHTML);
+  });
+
+  it('wide, a tap on a group still picks its tool', () => {
+    wraps()[0].querySelector('button')!.click();
+    expect(picked).toHaveLength(1);
+  });
+});

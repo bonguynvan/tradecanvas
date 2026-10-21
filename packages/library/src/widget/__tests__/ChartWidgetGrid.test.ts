@@ -324,3 +324,30 @@ describe('ChartWidgetGrid look', () => {
     expect(grid.getUI().preset).toBe('terminal');
   });
 });
+
+describe('ChartWidgetGrid — narrow (a phone)', () => {
+  const tabs = () => [...host.querySelectorAll<HTMLButtonElement>('.tcw-grid-tabs button')];
+
+  it('has a tab per chart naming its symbol and interval, the active one pressed', () => {
+    make({ layout: '2x2' });
+    expect(tabs().map((t) => t.textContent)).toEqual(['AAA · 5m', 'BBB · 5m', 'CCC · 5m', 'DDD · 5m']);
+    expect(tabs().map((t) => t.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false']);
+  });
+
+  it('a tab makes its chart the active one, the one a narrow grid shows', () => {
+    make({ layout: '2x2' });
+    tabs()[2].click();
+    expect(grid.getActiveIndex()).toBe(2);
+    expect(tabs()[2].getAttribute('aria-pressed')).toBe('true');
+    const cells = [...host.querySelectorAll('.tcw-grid-cell')];
+    expect(cells.map((c) => c.classList.contains('tcw-grid-cell-current'))).toEqual([false, false, true, false]);
+  });
+
+  it('follows a chart’s symbol and the grid’s shape', async () => {
+    make({ layout: '1x2' });
+    await grid.getWidget(1)!.setSymbol('ZZZ');
+    expect(tabs()[1].textContent).toBe('ZZZ · 5m');
+    grid.setLayout('1x3');
+    expect(tabs()).toHaveLength(3);
+  });
+});

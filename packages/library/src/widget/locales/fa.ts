@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const FA_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'اندیکاتورها',
+  'toolbar.more': 'بیشتر',
   'toolbar.indicators.popular': 'محبوب',
   'toolbar.indicators.all': 'همه',
   'indicatorType.overlay': 'روی نمودار',
@@ -296,6 +297,7 @@ export const FA_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'مکان‌نما',
+  'drawing.tools': 'ابزارهای ترسیم',
   'drawing.style': 'سبک ترسیم و قالب‌ها',
   'drawing.magnet': 'آهنربا',
   'drawing.magnetOn': 'آهنربا روشن',
@@ -472,6 +474,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'grid.single': 'یک نمودار',
   'grid.layoutOption': '{count} نمودار، {cols} ستون و {rows} ردیف',
   'grid.chart': 'نمودار {n}',
+  'grid.charts': 'نمودارها',
   'grid.sync': 'همگام‌سازی',
   'grid.sync.symbol': 'نماد',
   'grid.sync.interval': 'تایم‌فریم',

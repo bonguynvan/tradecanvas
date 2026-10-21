@@ -43,6 +43,7 @@
 - **完整的工作区**：多图表网格、命名布局、可模拟交易的K线回放，以及 `@tradecanvas/analytics` 中的回测器。
 - **按你的需要定制**：101 个样式键、112 个功能开关、三种外观，以及用于指标、画线工具、图表类型和叠加层的插件。
 - **人人可用**：组件支持 30 种语言（包括从右到左的语言），并支持屏幕阅读器和键盘操作。
+- **手机与应用中**：手指能做鼠标能做的一切，包括绘图、订单和提醒；组件按手机自动布局；图表顾及电量，可在 WebView、React Native、Capacitor 或 Tauri 中运行。
 
 ## 安装
 
@@ -134,6 +135,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 | [样式](https://bonguynvan.github.io/tradecanvas/zh/docs/styling/) · [自定义](https://bonguynvan.github.io/tradecanvas/zh/docs/customization/) | 主题、样式键、外观、功能开关、自定义部件 |
 | [插件](https://bonguynvan.github.io/tradecanvas/zh/docs/plugins/) | 自定义指标、画线工具、图表类型和叠加层 |
 | [分析](https://bonguynvan.github.io/tradecanvas/zh/docs/analytics/) · [金融图表](https://bonguynvan.github.io/tradecanvas/zh/docs/finance/) | 回测与风险指标；深度图、权益曲线等图表 |
+| [手机与应用](https://bonguynvan.github.io/tradecanvas/zh/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri；触摸与页面滚动 |
 | [性能](https://bonguynvan.github.io/tradecanvas/zh/docs/performance/) · [API 参考](https://bonguynvan.github.io/tradecanvas/zh/docs/api/) | 性能测量与完整 API |
 
 文档也提供 English、Tiếng Việt、日本語、한국어 和 Español 版本。

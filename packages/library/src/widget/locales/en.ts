@@ -5,6 +5,7 @@
 export const EN_MESSAGES = {
   // Toolbar
   'toolbar.indicators': 'Indicators',
+  'toolbar.more': 'More',
   'toolbar.indicators.popular': 'Popular',
   'toolbar.indicators.all': 'All',
   'indicatorType.overlay': 'overlay',
@@ -297,6 +298,7 @@ export const EN_MESSAGES = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Cursor',
+  'drawing.tools': 'Drawing tools',
   'drawing.style': 'Drawing style & templates',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet on',
@@ -473,6 +475,7 @@ export const EN_MESSAGES = {
   'grid.single': 'One chart',
   'grid.layoutOption': '{count} charts, {cols} across and {rows} down',
   'grid.chart': 'Chart {n}',
+  'grid.charts': 'Charts',
   'grid.sync': 'Sync',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Interval',

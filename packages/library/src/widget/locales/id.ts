@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Bahasa Indonesia */
 export const ID_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikator',
+  'toolbar.more': 'Lainnya',
   'toolbar.indicators.popular': 'Populer',
   'toolbar.indicators.all': 'Semua',
   'indicatorType.overlay': 'tumpang',
@@ -285,6 +286,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Hapus perbandingan',
 
   'drawing.cursor': 'Kursor',
+  'drawing.tools': 'Alat gambar',
   'drawing.style': 'Gaya gambar & templat',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet aktif',
@@ -461,6 +463,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'grid.single': 'Satu grafik',
   'grid.layoutOption': '{count} grafik, {cols} kolom dan {rows} baris',
   'grid.chart': 'Grafik {n}',
+  'grid.charts': 'Grafik',
   'grid.sync': 'Sinkronkan',
   'grid.sync.symbol': 'Simbol',
   'grid.sync.interval': 'Kerangka waktu',

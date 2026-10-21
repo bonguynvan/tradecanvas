@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Ελληνικά */
 export const EL_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Δείκτες',
+  'toolbar.more': 'Περισσότερα',
   'toolbar.indicators.popular': 'Δημοφιλείς',
   'toolbar.indicators.all': 'Όλοι',
   'indicatorType.overlay': 'επικάλυψη',
@@ -285,6 +286,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Αφαίρεση σύγκρισης',
 
   'drawing.cursor': 'Δρομέας',
+  'drawing.tools': 'Εργαλεία σχεδίασης',
   'drawing.style': 'Στυλ σχεδίου και πρότυπα',
   'drawing.magnet': 'Μαγνήτης',
   'drawing.magnetOn': 'Μαγνήτης ενεργός',
@@ -461,6 +463,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'grid.single': 'Ένα γράφημα',
   'grid.layoutOption': 'Γραφήματα: {count}, {cols} οριζόντια και {rows} κάθετα',
   'grid.chart': 'Γράφημα {n}',
+  'grid.charts': 'Γραφήματα',
   'grid.sync': 'Συγχρονισμός',
   'grid.sync.symbol': 'Σύμβολο',
   'grid.sync.interval': 'Χρονικό πλαίσιο',

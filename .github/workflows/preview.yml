@@ -35,4 +35,7 @@ jobs:
       - run: pnpm --filter "./packages/*" build
       # One call for all of them: links between them (workspace:*) are rewritten
       # to their own previews. --pnpm packs as the release does.
+      # Previews are a convenience from an outside service: when it is down or
+      # can't see the run, the pull request isn't held up (the step shows a warning).
       - run: pnpm exec pkg-pr-new publish --pnpm --packageManager=npm,pnpm './packages/*'
+        continue-on-error: true

@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Magyar */
 export const HU_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikátorok',
+  'toolbar.more': 'Továbbiak',
   'toolbar.indicators.popular': 'Népszerű',
   'toolbar.indicators.all': 'Összes',
   'indicatorType.overlay': 'árgrafikonon',
@@ -285,6 +286,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Összehasonlítás eltávolítása',
 
   'drawing.cursor': 'Kurzor',
+  'drawing.tools': 'Rajzeszközök',
   'drawing.style': 'Rajzstílus és sablonok',
   'drawing.magnet': 'Mágnes',
   'drawing.magnetOn': 'Mágnes be',
@@ -461,6 +463,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'grid.single': 'Egy grafikon',
   'grid.layoutOption': '{count} grafikon: {cols} egymás mellett, {rows} egymás alatt',
   'grid.chart': '{n}. grafikon',
+  'grid.charts': 'Grafikonok',
   'grid.sync': 'Szinkron',
   'grid.sync.symbol': 'Szimbólum',
   'grid.sync.interval': 'Idősík',

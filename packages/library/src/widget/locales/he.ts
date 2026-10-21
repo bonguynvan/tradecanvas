@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const HE_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'אינדיקטורים',
+  'toolbar.more': 'עוד',
   'toolbar.indicators.popular': 'פופולריים',
   'toolbar.indicators.all': 'הכול',
   'indicatorType.overlay': 'על הגרף',
@@ -296,6 +297,7 @@ export const HE_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'סמן',
+  'drawing.tools': 'כלי שרטוט',
   'drawing.style': 'סגנון ציור ותבניות',
   'drawing.magnet': 'מגנט',
   'drawing.magnetOn': 'מגנט מופעל',
@@ -472,6 +474,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'grid.single': 'גרף אחד',
   'grid.layoutOption': '{count} גרפים, {cols} לרוחב ו-{rows} לגובה',
   'grid.chart': 'גרף {n}',
+  'grid.charts': 'גרפים',
   'grid.sync': 'סנכרון',
   'grid.sync.symbol': 'סימול',
   'grid.sync.interval': 'טווח זמן',

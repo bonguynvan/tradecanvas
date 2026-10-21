@@ -34,6 +34,34 @@
   </tbody>
 </table>
 
+<h2 id="mobile-app">スマートフォンアプリの中で</h2>
+<p>
+  チャートとウィジェットはどの WebView でも動きます：React Native（<code>react-native-webview</code>）、Capacitor、Tauri、ネイティブアプリ独自のもの。幅が 641 px 未満ではウィジェットがスマートフォン向けに並びます：ツールバーにはシンボル、時間足、チャートの種類、インジケーターが残り、残りは「その他」の中へ。描画ツールはチャート上のボタンの奥に、メニューは下からのシートで開き、グリッドはチャートを 1 つずつタブで切り替えて表示します。幅が広くても、収まらないツールバーは同じようにします。指でマウスと同じことができます。
+</p>
+<p>画面全体を覆う viewport をページに指定してください。ウィジェットはシートをノッチやホームバーから離し、画面キーボードの上に保ちます。</p>
+<pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
+<p>多くの WebView はアプリがバックグラウンドに回るとページを非表示と報告します。するとチャートは自ら描画を止め（<code>pauseWhenHidden</code>）、長く沈黙したストリームはアプリが戻ると再接続します。報告しない WebView では、アプリ側から一時停止してください。</p>
+<pre><code>{`// React Native (react-native-webview): the app tells the page
+AppState.addEventListener('change', (state) => {
+  webview.current?.injectJavaScript(state === 'active' ? 'chart.resume(); true;' : 'chart.suspend(); true;');
+});
+
+// Capacitor
+import { App } from '@capacitor/app';
+App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
+<p>スクロールする画面の中のチャートは、縦のスワイプを画面に任せます。</p>
+<pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
+<p>Tauri のコンテンツセキュリティポリシーで、データフィードのホストへの接続を許可する必要があります。</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+"app": {
+  "security": {
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+  }
+}`}</code></pre>
+<p>
+  チャートはピクセル比 2 までで描画します（<code>maxPixelRatio</code>）。画面を閉じるときに破棄（<code>chart.destroy()</code>）すると、キャンバスのメモリはすぐに返されます。
+</p>
+
 <h2>ライブページ</h2>
 <p>
   ドキュメントの枠なしでプレビューするには、<a href="{base}/embed">埋め込み用のルート</a>に直接アクセスしてください。

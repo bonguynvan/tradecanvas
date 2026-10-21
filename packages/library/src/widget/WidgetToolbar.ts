@@ -3,6 +3,7 @@ import type { ToolbarButtonSpec, ToolbarConfig, ToolbarCallbacks, WidgetState } 
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
+import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { fill, type Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
 import { markPart, partAttr, tidyDividers } from './widgetFeatures.js';
@@ -36,8 +37,25 @@ export class WidgetToolbar {
   /** Where hosts' own buttons go: after the chart controls, and before the panel buttons. */
   private hostLeft: HTMLDivElement | null = null;
   private hostRight: HTMLDivElement | null = null;
+  /** The "more" menu of a narrow toolbar: the buttons it hides. */
+  private moreMenu: WidgetContextMenu | null = null;
+  private tfCurrent: HTMLSpanElement | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private moreBtn: HTMLButtonElement | null = null;
+  private fitFrame = 0;
 
-  constructor(host: HTMLElement, config: ToolbarConfig, callbacks: ToolbarCallbacks, t: Translator) {
+  /**
+   * `layer`: where the toolbar's menus open, over the page (the widget's
+   * overlay layer), so no box around the widget clips them. Without one they
+   * open inside their buttons.
+   */
+  constructor(
+    private readonly host: HTMLElement,
+    config: ToolbarConfig,
+    callbacks: ToolbarCallbacks,
+    t: Translator,
+    private readonly layer?: () => HTMLElement,
+  ) {
     this.config = config;
     this.callbacks = callbacks;
     this.t = t;
@@ -46,6 +64,58 @@ export class WidgetToolbar {
     markPart(this.el, 'toolbar');
     this.build();
     host.appendChild(this.el);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.fit());
+      this.resizeObserver.observe(this.el);
+    }
+    // A web font arriving late changes the labels' widths.
+    void document.fonts?.ready.then(() => this.scheduleFit());
+  }
+
+  /** Fit once before the next frame, however many changes came first. */
+  private scheduleFit(): void {
+    if (this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
+    this.fitFrame = requestAnimationFrame(() => {
+      this.fitFrame = 0;
+      this.fit();
+    });
+  }
+
+  /**
+   * What a menu opened from `btn` hangs from: the button, or "more" while the
+   * button is folded under it.
+   */
+  private anchorOf(btn: HTMLElement): HTMLElement {
+    const folded = btn.hasAttribute('data-tcw-folded') || this.el.closest('[data-tcw-narrow]') !== null;
+    return folded && this.moreBtn ? this.moreBtn : btn;
+  }
+
+  /**
+   * Fit the toolbar to its width. When everything doesn't fit, the buttons
+   * on the right fold under "more" one at a time, from the right, until the
+   * rest does; when even that isn't enough, the menus show their icons only
+   * and the interval buttons give way to the interval menu, and as many
+   * buttons as then fit come back.
+   */
+  fit(): void {
+    const { el } = this;
+    const fits = () => el.scrollWidth <= el.clientWidth + 1;
+    const items = [...el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')];
+    for (const item of items) item.removeAttribute('data-tcw-folded');
+    el.classList.remove('tcw-toolbar--collapsed', 'tcw-toolbar--icons');
+    if (el.clientWidth === 0 || fits()) return;
+    el.classList.add('tcw-toolbar--collapsed');
+    for (let i = items.length - 1; i >= 0; i--) {
+      items[i].setAttribute('data-tcw-folded', '');
+      if (fits()) return;
+    }
+    el.classList.add('tcw-toolbar--icons');
+    for (const item of items) {
+      item.removeAttribute('data-tcw-folded');
+      if (fits()) continue;
+      item.setAttribute('data-tcw-folded', '');
+      break;
+    }
   }
 
   private build(): void {
@@ -60,6 +130,7 @@ export class WidgetToolbar {
     el.appendChild(symbolBtn);
     if (callbacks.onSymbolInfo) {
       const infoBtn = this.iconBtn('info', this.t('symbolInfo.title'), callbacks.onSymbolInfo);
+      infoBtn.classList.remove('tcw-toolbar-overflow');
       infoBtn.dataset.role = 'symbolInfo';
       markPart(infoBtn, 'symbolInfo', 'toolbar.symbolInfo');
       el.appendChild(infoBtn);
@@ -83,10 +154,16 @@ export class WidgetToolbar {
       tfTrigger.dataset.role = 'timeframes';
       tfTrigger.title = this.t('toolbar.timeframes');
       tfTrigger.setAttribute('aria-label', this.t('toolbar.timeframes'));
-      tfTrigger.innerHTML = createIcon('chevronDown', 12);
+      // A narrow toolbar hides the timeframe buttons: this one then names the current one.
+      this.tfCurrent = document.createElement('span');
+      this.tfCurrent.className = 'tcw-tf-current';
+      tfTrigger.appendChild(this.tfCurrent);
+      tfTrigger.insertAdjacentHTML('beforeend', createIcon('chevronDown', 12));
       tfWrap.appendChild(tfTrigger);
       el.appendChild(tfWrap);
-      this.tfDropdown = new WidgetDropdown(tfWrap, { width: '150px' });
+      this.tfDropdown = new WidgetDropdown(tfWrap, { width: '150px', layer: this.layer });
+      // Fitting, the interval buttons may give way to this menu.
+      el.classList.add('tcw-toolbar--tf-menu');
       this.buildTimeframeMenu();
     }
     el.appendChild(this.sep());
@@ -103,7 +180,7 @@ export class WidgetToolbar {
     ctWrap.appendChild(ctTrigger);
     el.appendChild(ctWrap);
 
-    this.chartTypeDropdown = new WidgetDropdown(ctWrap, { width: '160px' });
+    this.chartTypeDropdown = new WidgetDropdown(ctWrap, { width: '160px', layer: this.layer });
     this.buildChartTypeMenu();
 
     el.appendChild(this.sep());
@@ -120,7 +197,7 @@ export class WidgetToolbar {
     indWrap.appendChild(indTrigger);
     el.appendChild(indWrap);
 
-    this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px' });
+    this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px', layer: this.layer });
     this.buildIndicatorMenu();
 
     this.hostLeft = this.hostGroup();
@@ -134,11 +211,12 @@ export class WidgetToolbar {
       const onLayouts = callbacks.onLayouts;
       const layoutsBtn = document.createElement('button');
       layoutsBtn.type = 'button';
-      layoutsBtn.className = 'tcw-dropdown-trigger tcw-layouts-btn';
+      layoutsBtn.className = 'tcw-dropdown-trigger tcw-layouts-btn tcw-toolbar-overflow';
       layoutsBtn.dataset.role = 'layouts';
+      layoutsBtn.dataset.icon = 'save';
       markPart(layoutsBtn, 'layouts', 'toolbar.layouts');
       layoutsBtn.setAttribute('aria-haspopup', 'menu');
-      layoutsBtn.addEventListener('click', () => onLayouts(layoutsBtn));
+      layoutsBtn.addEventListener('click', () => onLayouts(this.anchorOf(layoutsBtn)));
       el.appendChild(layoutsBtn);
       this.setLayout(null, false);
     }
@@ -216,6 +294,49 @@ export class WidgetToolbar {
       this.fullscreenBtn.setAttribute('aria-pressed', 'false');
       el.appendChild(this.fullscreenBtn);
     }
+
+    // A narrow toolbar keeps the chart's own controls and puts the rest here.
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'tcw-btn-icon tcw-toolbar-more';
+    moreBtn.title = this.t('toolbar.more');
+    moreBtn.setAttribute('aria-haspopup', 'menu');
+    moreBtn.setAttribute('aria-expanded', 'false');
+    moreBtn.innerHTML = createIcon('more', 16);
+    moreBtn.addEventListener('click', () => this.toggleMore(moreBtn));
+    el.appendChild(moreBtn);
+    this.moreBtn = moreBtn;
+  }
+
+  /** The buttons a narrow toolbar hides, as a menu under `anchor`: those switched off left out. */
+  private toggleMore(anchor: HTMLButtonElement): void {
+    if (this.moreMenu?.isOpen()) {
+      this.moreMenu.close();
+      return;
+    }
+    const root = this.el.closest<HTMLElement>('.tcw-root') ?? this.host;
+    const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
+    const isOff = (el: HTMLElement) => (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name));
+    // Narrow, every button on the right is under "more"; else those folded to fit.
+    const narrow = this.el.closest('[data-tcw-narrow]') !== null;
+    const buttons: HTMLButtonElement[] = [];
+    for (const item of this.el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')) {
+      if (isOff(item) || (!narrow && !item.hasAttribute('data-tcw-folded'))) continue;
+      const found = item instanceof HTMLButtonElement ? [item] : [...item.querySelectorAll<HTMLButtonElement>('button')];
+      buttons.push(...found.filter((btn) => !btn.hidden && !isOff(btn)));
+    }
+    if (buttons.length === 0) return;
+    const entries: ContextMenuEntry[] = buttons.map((btn, i) => {
+      const label = btn.title || btn.getAttribute('aria-label') || btn.textContent?.trim() || '';
+      // A switch that is on shows its tick; one that is off, its icon.
+      return btn.getAttribute('aria-pressed') === 'true'
+        ? { id: String(i), label, checked: true }
+        : { id: String(i), label, icon: btn.dataset.icon };
+    });
+    this.moreMenu ??= new WidgetContextMenu(root, this.t('toolbar.more'));
+    const at = anchor.getBoundingClientRect();
+    const box = root.getBoundingClientRect();
+    this.moreMenu.open(entries, at.right - box.left, at.bottom - box.top + 2, (id) => buttons[Number(id)]?.click(), anchor);
   }
 
   /** A host's own button, on the left or the right of the toolbar. */
@@ -224,6 +345,7 @@ export class WidgetToolbar {
     btn.type = 'button';
     btn.className = spec.text || !spec.icon ? 'tcw-btn tcw-host-btn' : 'tcw-btn-icon tcw-host-btn';
     btn.dataset.hostButton = spec.id;
+    if (typeof spec.icon === 'string') btn.dataset.icon = spec.icon;
     btn.title = spec.label;
     if (spec.toggle) btn.setAttribute('aria-pressed', 'false');
     if (typeof spec.icon === 'string') btn.innerHTML = createIcon(spec.icon, 14);
@@ -237,7 +359,10 @@ export class WidgetToolbar {
     }
     setHostButtonName(btn, spec.label);
     btn.addEventListener('click', () => spec.onClick(btn));
+    // On the right, a host's button folds under "more" like the toolbar's own.
+    if (spec.side !== 'left') btn.classList.add('tcw-toolbar-overflow');
     (spec.side === 'left' ? this.hostLeft : this.hostRight)?.appendChild(btn);
+    this.scheduleFit();
     return btn;
   }
 
@@ -263,6 +388,7 @@ export class WidgetToolbar {
   /** No separator left at an edge or next to another once buttons are switched off. */
   tidy(): void {
     tidyDividers(this.el, 'tcw-toolbar-sep', 'tcw-toolbar-spacer');
+    this.scheduleFit();
   }
 
   /** Show a panel button (by its role: 'account', 'objects'…) as on or off. */
@@ -420,6 +546,7 @@ export class WidgetToolbar {
     if (key === this.tfRendered) return;
     this.tfRendered = key;
 
+    if (this.tfCurrent) this.tfCurrent.textContent = this.config.timeframes.find((tf) => tf.value === current)?.label ?? current;
     this.tfGroup.replaceChildren(...shown.map((tf) => {
       const btn = document.createElement('button');
       btn.className = 'tcw-btn';
@@ -519,14 +646,16 @@ export class WidgetToolbar {
     if (ctTrigger) {
       const ct = this.config.chartTypes.find(ct => ct.value === state.chartType);
       const label = ct ? this.chartTypeLabel(ct) : state.chartType;
-      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} ${esc(label)} ${createIcon('chevronDown', 12)}`;
+      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} <span class="tcw-trigger-label">${esc(label)}</span> ${createIcon('chevronDown', 12)}`;
+      ctTrigger.setAttribute('aria-label', label);
     }
 
     // Indicator trigger + badge
     const indTrigger = this.el.querySelector('[data-role="indicators"]') as HTMLElement | null;
     if (indTrigger) {
       const count = state.activeIndicators.size;
-      let inner = `${createIcon('trendingUp', 14)} ${this.t('toolbar.indicators')}`;
+      let inner = `${createIcon('trendingUp', 14)} <span class="tcw-trigger-label">${esc(this.t('toolbar.indicators'))}</span>`;
+      indTrigger.setAttribute('aria-label', this.t('toolbar.indicators'));
       if (count > 0) {
         inner += ` <span class="tcw-badge-count">${count}</span>`;
       }
@@ -535,8 +664,12 @@ export class WidgetToolbar {
 
     // Theme toggle icon
     if (this.themeBtn) {
-      this.themeBtn.innerHTML = state.isDark ? createIcon('moon', 14) : createIcon('sun', 14);
+      const icon = state.isDark ? 'moon' : 'sun';
+      this.themeBtn.innerHTML = createIcon(icon, 14);
+      this.themeBtn.dataset.icon = icon;
     }
+    // Labels change width (another symbol, a longer chart type's name).
+    this.scheduleFit();
   }
 
   private sep(): HTMLSpanElement {
@@ -551,9 +684,11 @@ export class WidgetToolbar {
     return s;
   }
 
+  /** A button on the right: a narrow toolbar shows it in the "more" menu instead. */
   private iconBtn(icon: string, title: string, onClick: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.className = 'tcw-btn-icon';
+    btn.className = 'tcw-btn-icon tcw-toolbar-overflow';
+    btn.dataset.icon = icon;
     btn.title = title;
     btn.innerHTML = createIcon(icon, 14);
     btn.addEventListener('click', onClick);
@@ -561,8 +696,12 @@ export class WidgetToolbar {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect();
+    if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.chartTypeDropdown?.destroy();
     this.indicatorDropdown?.destroy();
+    this.tfDropdown?.destroy();
+    this.moreMenu?.destroy();
     this.el.remove();
   }
 }

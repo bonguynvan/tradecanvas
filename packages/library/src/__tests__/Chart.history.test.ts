@@ -99,6 +99,18 @@ describe('Chart.prependBars', () => {
 });
 
 describe('Chart history paging', () => {
+  it('pages nothing while the chart has no size (hidden: a grid tab not shown, a collapsed panel)', async () => {
+    const hidden = sizedHost(0, 0);
+    const still = new Chart(hidden, { chartType: 'candlestick' });
+    still.setData(hourly(1000, 50));
+    const loader = vi.fn(async (before: number, limit: number) => pageBefore(before, limit));
+    still.setHistoryLoader(loader, { pageSize: 300 });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(loader).not.toHaveBeenCalled();
+    still.destroy();
+    hidden.remove();
+  });
+
   it('loads a page when the view reaches the oldest bars', async () => {
     const events: HistoryLoadPayload[] = [];
     chart.on('historyLoad', (e) => events.push(e.payload as HistoryLoadPayload));

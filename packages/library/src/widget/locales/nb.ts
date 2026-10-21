@@ -4,6 +4,7 @@ import type { WidgetMessages } from './en.js';
 export const NB_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Indikatorer',
+  'toolbar.more': 'Mer',
   'toolbar.indicators.popular': 'Populære',
   'toolbar.indicators.all': 'Alle',
   'indicatorType.overlay': 'på grafen',
@@ -296,6 +297,7 @@ export const NB_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Markør',
+  'drawing.tools': 'Tegneverktøy',
   'drawing.style': 'Tegnestil og maler',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet på',
@@ -472,6 +474,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'grid.single': 'Én graf',
   'grid.layoutOption': '{count} grafer, {cols} i bredden og {rows} i høyden',
   'grid.chart': 'Graf {n}',
+  'grid.charts': 'Diagrammer',
   'grid.sync': 'Synk',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Tidsramme',

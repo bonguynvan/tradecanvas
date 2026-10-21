@@ -4523,3 +4523,161 @@
 .tcw-cmd-list {
   overscroll-behavior: contain;
 }
+
+/* --- A narrow widget (a phone, or a narrow column): data-tcw-narrow ---
+   Set from the widget's own width, below 641px. The toolbar keeps the
+   chart's own controls (symbol, interval, type, indicators) and puts the
+   rest under "more"; the drawing tools wait behind a button over the chart;
+   a grid shows one chart at a time, picked by its tab. */
+
+.tcw-toolbar-more,
+.tcw-sidebar-fab,
+.tcw-tf-current,
+.tcw-grid-tabs {
+  display: none;
+}
+
+/* The toolbar fits itself too (on a tablet, a window half a screen wide):
+   the right-hand buttons that don't fit fold under "more" (`--collapsed`
+   shows it), and `--icons` drops the menus' labels and the interval buttons.
+   Narrow folds them all. */
+.tcw-toolbar [data-tcw-folded],
+.tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-toolbar-overflow {
+  display: none;
+}
+.tcw-toolbar--collapsed > .tcw-toolbar-more,
+.tcw-root[data-tcw-narrow] > .tcw-toolbar > .tcw-toolbar-more {
+  display: inline-flex;
+  margin-inline-start: auto;
+}
+.tcw-toolbar--icons.tcw-toolbar--tf-menu > .tcw-tf-group,
+.tcw-root[data-tcw-narrow] > .tcw-toolbar.tcw-toolbar--tf-menu > .tcw-tf-group {
+  display: none;
+}
+.tcw-toolbar--icons .tcw-tf-more,
+.tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-tf-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+}
+.tcw-toolbar--icons .tcw-tf-current,
+.tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-tf-current {
+  display: inline;
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-accent);
+}
+.tcw-toolbar--icons .tcw-trigger-label,
+.tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-trigger-label {
+  display: none;
+}
+
+/* The drawing tools lie over the chart when opened, from its edge. */
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  /* Under the toolbar (20), whose menus open over it. */
+  z-index: 18;
+  box-shadow: var(--tcw-menu-shadow);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform var(--tcw-dur-normal) var(--tcw-ease-out), visibility 0s linear var(--tcw-dur-normal);
+}
+.tcw-root[data-tcw-narrow][dir='rtl'] > .tcw-body > .tcw-sidebar {
+  transform: translateX(100%);
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar.tcw-sidebar-open {
+  transform: none;
+  visibility: visible;
+  transition: transform var(--tcw-dur-normal) var(--tcw-ease-out), visibility 0s;
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-flyout {
+  z-index: 19;
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset-inline-start: 10px;
+  /* Clear of the time axis. */
+  bottom: 44px;
+  z-index: 17;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: 999px;
+  background: var(--tcw-bg-elevated);
+  color: var(--tcw-text);
+  box-shadow: var(--tcw-menu-shadow);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast), color var(--tcw-dur-fast), border-color var(--tcw-dur-fast);
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab.tcw-active {
+  background: var(--tcw-accent);
+  border-color: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+.tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab[aria-expanded='true'] {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar,
+  .tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar.tcw-sidebar-open {
+    transition: none;
+  }
+}
+
+/* A narrow grid: one chart at a time, a tab for each. */
+.tcw-grid[data-tcw-narrow] > .tcw-grid-bar > .tcw-grid-tabs {
+  display: flex;
+}
+.tcw-grid-tab {
+  white-space: nowrap;
+}
+.tcw-grid-has-tabs[data-tcw-narrow] > .tcw-grid-cells {
+  display: flex;
+  flex-direction: column;
+}
+.tcw-grid-has-tabs[data-tcw-narrow] > .tcw-grid-cells > .tcw-grid-cell {
+  flex: 1;
+}
+.tcw-grid-has-tabs[data-tcw-narrow] > .tcw-grid-cells > .tcw-grid-cell:not(.tcw-grid-cell-current) {
+  display: none;
+}
+.tcw-grid-has-tabs[data-tcw-narrow] > .tcw-grid-cells > .tcw-grid-cell-active::after {
+  display: none;
+}
+
+/* Phones: menus open as sheets from the bottom, in reach of a thumb and
+   never off screen (a menu's own place may be off the side of a phone). */
+@media (max-width: 640px) {
+  .tcw-dropdown,
+  .tcw-context-menu {
+    position: fixed !important;
+    /* Above the on-screen keyboard (the indicators' search). */
+    inset: auto 0 var(--tcw-keyboard-inset, 0px) 0 !important;
+    margin: 0 !important;
+    width: auto;
+    max-width: none;
+    max-height: 70vh !important;
+    max-height: 70dvh !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 80;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
+    border-bottom: none;
+  }
+  .tcw-dropdown-item,
+  .tcw-context-item {
+    min-height: 44px;
+  }
+}

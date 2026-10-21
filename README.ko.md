@@ -43,6 +43,7 @@
 - **완전한 작업 공간**: 멀티 차트 그리드, 이름을 붙인 레이아웃, 모의 거래가 가능한 봉 리플레이, 그리고 `@tradecanvas/analytics`의 백테스터.
 - **원하는 대로**: 101개 스타일 키, 112개 기능 스위치, 세 가지 외관, 그리고 지표, 그리기 도구, 차트 유형, 오버레이를 위한 플러그인.
 - **모두를 위해**: 위젯은 오른쪽에서 왼쪽으로 쓰는 언어를 포함한 30개 언어로 제공되며, 스크린 리더와 키보드를 지원합니다.
+- **휴대폰과 앱에서**: 드로잉, 주문, 알림까지 손가락으로 마우스가 하는 일을 모두 할 수 있습니다. 위젯은 휴대폰에 맞게 스스로 배치되고, 차트는 배터리를 아끼며 WebView, React Native, Capacitor, Tauri에서 동작합니다.
 
 ## 설치
 
@@ -134,6 +135,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 | [스타일](https://bonguynvan.github.io/tradecanvas/ko/docs/styling/) · [사용자 정의](https://bonguynvan.github.io/tradecanvas/ko/docs/customization/) | 테마, 스타일 키, 외관, 기능 스위치, 직접 만든 부품 |
 | [플러그인](https://bonguynvan.github.io/tradecanvas/ko/docs/plugins/) | 직접 만든 지표, 그리기 도구, 차트 유형, 오버레이 |
 | [분석](https://bonguynvan.github.io/tradecanvas/ko/docs/analytics/) · [금융 차트](https://bonguynvan.github.io/tradecanvas/ko/docs/finance/) | 백테스트와 리스크 지표, 호가 깊이·자산 곡선 등의 차트 |
+| [휴대폰과 앱](https://bonguynvan.github.io/tradecanvas/ko/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; 터치와 페이지 스크롤 |
 | [성능](https://bonguynvan.github.io/tradecanvas/ko/docs/performance/) · [API 레퍼런스](https://bonguynvan.github.io/tradecanvas/ko/docs/api/) | 측정 결과와 전체 API |
 
 문서는 English, Tiếng Việt, 简体中文, 日本語, Español으로도 제공됩니다.

@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Русский */
 export const RU_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Индикаторы',
+  'toolbar.more': 'Ещё',
   'toolbar.indicators.popular': 'Популярные',
   'toolbar.indicators.all': 'Все',
   'indicatorType.overlay': 'на графике',
@@ -285,6 +286,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Удалить сравнение',
 
   'drawing.cursor': 'Курсор',
+  'drawing.tools': 'Инструменты рисования',
   'drawing.style': 'Стиль рисования и шаблоны',
   'drawing.magnet': 'Магнит',
   'drawing.magnetOn': 'Магнит включён',
@@ -461,6 +463,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'grid.single': 'Один график',
   'grid.layoutOption': 'Графиков: {count}, {cols} по горизонтали и {rows} по вертикали',
   'grid.chart': 'График {n}',
+  'grid.charts': 'Графики',
   'grid.sync': 'Синхронизация',
   'grid.sync.symbol': 'Символ',
   'grid.sync.interval': 'Таймфрейм',

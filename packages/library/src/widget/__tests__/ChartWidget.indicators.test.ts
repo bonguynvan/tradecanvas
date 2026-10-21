@@ -127,7 +127,7 @@ const names = () => rows().map((r) => r.querySelector('.tcw-ind-legend-name')!.t
 const values = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('.tcw-ind-legend-values > span')];
 const act = (row: HTMLElement, a: string) => row.querySelector<HTMLButtonElement>(`[data-act="${a}"]`)!.click();
 const pick = (id: string): void =>
-  (host.querySelector(`.tcw-dropdown-item[data-ind="${id}"]`) as HTMLButtonElement).click();
+  (document.querySelector(`.tcw-dropdown-item[data-ind="${id}"]`) as HTMLButtonElement).click();
 
 beforeEach(() => {
   host = document.createElement('div');

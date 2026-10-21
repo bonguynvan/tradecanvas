@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Türkçe */
 export const TR_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Göstergeler',
+  'toolbar.more': 'Daha fazla',
   'toolbar.indicators.popular': 'Popüler',
   'toolbar.indicators.all': 'Tümü',
   'indicatorType.overlay': 'grafik üstü',
@@ -285,6 +286,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Karşılaştırmayı kaldır',
 
   'drawing.cursor': 'İmleç',
+  'drawing.tools': 'Çizim araçları',
   'drawing.style': 'Çizim stili ve şablonlar',
   'drawing.magnet': 'Mıknatıs',
   'drawing.magnetOn': 'Mıknatıs açık',
@@ -461,6 +463,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'grid.single': 'Tek grafik',
   'grid.layoutOption': '{count} grafik, yatayda {cols} ve dikeyde {rows}',
   'grid.chart': 'Grafik {n}',
+  'grid.charts': 'Grafikler',
   'grid.sync': 'Eşitle',
   'grid.sync.symbol': 'Sembol',
   'grid.sync.interval': 'Zaman dilimi',

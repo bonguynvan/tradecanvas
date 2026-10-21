@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Svenska */
 export const SV_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikatorer',
+  'toolbar.more': 'Mer',
   'toolbar.indicators.popular': 'Populära',
   'toolbar.indicators.all': 'Alla',
   'indicatorType.overlay': 'i grafen',
@@ -285,6 +286,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Ta bort jämförelse',
 
   'drawing.cursor': 'Markör',
+  'drawing.tools': 'Ritverktyg',
   'drawing.style': 'Ritstil och mallar',
   'drawing.magnet': 'Magnet',
   'drawing.magnetOn': 'Magnet på',
@@ -461,6 +463,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'grid.single': 'Ett diagram',
   'grid.layoutOption': '{count} diagram, {cols} bredvid varandra och {rows} under varandra',
   'grid.chart': 'Diagram {n}',
+  'grid.charts': 'Diagram',
   'grid.sync': 'Synka',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Intervall',

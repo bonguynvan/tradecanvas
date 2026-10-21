@@ -3,6 +3,7 @@ import type { WidgetMessages } from './en.js';
 /** Polski */
 export const PL_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Wskaźniki',
+  'toolbar.more': 'Więcej',
   'toolbar.indicators.popular': 'Popularne',
   'toolbar.indicators.all': 'Wszystkie',
   'indicatorType.overlay': 'na wykresie',
@@ -285,6 +286,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Usuń porównanie',
 
   'drawing.cursor': 'Kursor',
+  'drawing.tools': 'Narzędzia rysowania',
   'drawing.style': 'Styl rysunku i szablony',
   'drawing.magnet': 'Magnes',
   'drawing.magnetOn': 'Magnes włączony',
@@ -461,6 +463,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'grid.single': 'Jeden wykres',
   'grid.layoutOption': 'Wykresy: {count}, {cols} w poziomie i {rows} w pionie',
   'grid.chart': 'Wykres {n}',
+  'grid.charts': 'Wykresy',
   'grid.sync': 'Synchronizacja',
   'grid.sync.symbol': 'Symbol',
   'grid.sync.interval': 'Interwał',

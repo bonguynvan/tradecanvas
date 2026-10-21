@@ -14,6 +14,7 @@ import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './w
 import { utcToWallTime } from './WidgetGoToDate.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
 import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
+import { watchNarrow } from './narrowMode.js';
 
 /** What the charts of a grid follow from each other. */
 export interface WidgetGridSync {
@@ -157,6 +158,9 @@ export class ChartWidgetGrid {
   private layoutButtons = new Map<GridLayout, HTMLButtonElement>();
   private syncButtons = new Map<keyof WidgetGridSync, HTMLButtonElement>();
   private layoutsButton: HTMLButtonElement | null = null;
+  /** A tab per chart: a narrow grid (a phone) shows one chart at a time. */
+  private tabsEl: HTMLDivElement | null = null;
+  private stopNarrow: () => void = () => {};
   private session: LayoutSession | null = null;
   private layoutsUI: WidgetLayoutsUI | null = null;
   private readonly t: Translator;
@@ -185,6 +189,8 @@ export class ChartWidgetGrid {
     this.cellsEl.className = 'tcw-grid-cells';
     this.root.appendChild(this.cellsEl);
     container.appendChild(this.root);
+    // Narrow, one chart at a time, picked by its tab.
+    this.stopNarrow = watchNarrow(this.root);
 
     this.applyShape();
     for (let i = 0; i < this.shapeCount(); i++) this.cells.push(this.createCell(i));
@@ -377,6 +383,7 @@ export class ChartWidgetGrid {
     }
     if (this.destroyed) return;
     this.setActive(Math.min(Math.max(0, content.active), this.cells.length - 1));
+    this.renderTabs();
     const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
     if (failed) throw failed.reason;
   }
@@ -398,6 +405,7 @@ export class ChartWidgetGrid {
     this.destroyed = true;
     document.removeEventListener('keydown', this.onKeyDown);
     this.unregisterKeys();
+    this.stopNarrow();
     if (this.drawingFrame) cancelAnimationFrame(this.drawingFrame);
     this.session?.destroy();
     this.layoutsUI?.destroy();
@@ -446,12 +454,14 @@ export class ChartWidgetGrid {
         own.onSymbolChange?.(symbol);
         shared.onSymbolChange?.(symbol);
         if (this.sync.symbol) this.relay(cell, (w) => void w.setSymbol(symbol));
+        this.renderTabs();
         this.session?.changed();
       },
       onTimeframeChange: (tf) => {
         own.onTimeframeChange?.(tf);
         shared.onTimeframeChange?.(tf);
         if (this.sync.interval) this.relay(cell, (w) => void w.setTimeframe(tf));
+        this.renderTabs();
         this.session?.changed();
       },
     });
@@ -608,7 +618,35 @@ export class ChartWidgetGrid {
   }
 
   private markActive(): void {
-    this.cells.forEach((c, i) => c.el.classList.toggle('tcw-grid-cell-active', i === this.active && this.cells.length > 1));
+    this.cells.forEach((c, i) => {
+      c.el.classList.toggle('tcw-grid-cell-active', i === this.active && this.cells.length > 1);
+      // The one a narrow grid shows.
+      c.el.classList.toggle('tcw-grid-cell-current', i === this.active);
+    });
+    this.renderTabs();
+  }
+
+  /** A tab per chart, its symbol and interval: the active one pressed. */
+  private renderTabs(): void {
+    const tabs = this.tabsEl;
+    if (!tabs) return;
+    const want = this.cells.map((c) => `${c.widget.getSymbol()} · ${c.widget.getTimeframe()}`);
+    while (tabs.children.length > want.length) tabs.lastElementChild?.remove();
+    while (tabs.children.length < want.length) {
+      const index = tabs.children.length;
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tcw-btn tcw-grid-tab';
+      tab.addEventListener('click', () => this.setActive(index));
+      tabs.appendChild(tab);
+    }
+    want.forEach((label, i) => {
+      const tab = tabs.children[i] as HTMLButtonElement;
+      if (tab.textContent !== label) tab.textContent = label;
+      const on = i === this.active;
+      tab.classList.toggle('tcw-active', on);
+      tab.setAttribute('aria-pressed', String(on));
+    });
   }
 
   // --- Bar ---
@@ -618,6 +656,14 @@ export class ChartWidgetGrid {
     bar.className = 'tcw-grid-bar';
     bar.setAttribute('role', 'toolbar');
     bar.setAttribute('aria-label', this.t('grid.bar'));
+
+    this.tabsEl = document.createElement('div');
+    this.tabsEl.className = 'tcw-grid-group tcw-grid-tabs';
+    // Narrow, only a grid with tabs shows one chart at a time (one without could reach no other).
+    this.root.classList.add('tcw-grid-has-tabs');
+    this.tabsEl.setAttribute('role', 'group');
+    this.tabsEl.setAttribute('aria-label', this.t('grid.charts'));
+    bar.appendChild(this.tabsEl);
 
     const shapes = document.createElement('div');
     shapes.className = 'tcw-grid-group';
