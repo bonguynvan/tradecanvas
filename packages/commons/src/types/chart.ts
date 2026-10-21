@@ -179,6 +179,13 @@ export interface ChartOptions {
   /** Bounds for free panning. */
   panLimits?: { minVisibleBars?: number };
   /**
+   * How narrow a bar slot may get to fit a long series on screen (zooming
+   * out, `fitContent`, the 'All' range), px. Default 0.25: four bars a pixel,
+   * so 26 years of daily bars don't all fit on a laptop screen. Down to 0.02
+   * (50 bars a pixel); below a pixel bars are drawn a pixel column at a time.
+   */
+  minBarUnit?: number;
+  /**
    * How prices read on the price scale and everything that prints one (axis,
    * crosshair, last-price tag, legend, tooltip, orders, alerts, drawings): a
    * function of yours, or fractions of a point (a bond in 32nds: `101'16`).

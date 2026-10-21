@@ -11,6 +11,16 @@ Collected on `main` for the next release. Not on npm yet.
 - **`widget.toast(message, kind, icon)`** takes an icon's name, shown before the text.
 - A test keeps emoji and symbol characters out of the sources.
 
+### Long ranges
+
+- **The range bar shows all of a long range.** A bar slot is never narrower than 0.25 px, so 5Y of daily bars, or All on decades of them, showed only the newest part. In the widget, a range the bars can't fit at 2 px each now switches to the timeframe they can: 5Y of days to weeks, All to months, a year of hourly bars to days. A short range goes back to the timeframe the user picked, and never finer. It only switches to timeframes the feed serves, or the bars on hand resample to; `features: { 'statusBar.rangeTimeframe': false }` keeps the timeframe.
+- **`minBarUnit`** (a chart option, or `setMinBarUnit` / `getMinBarUnit`) lets bar slots go from 0.25 px down to 0.02 px, so on a bare chart `fitContent`, zooming out and the 'All' range fit a long series, drawn a pixel column at a time. `MIN_BAR_UNIT_LIMIT` is exported.
+- The Vietnamese price limits are checked against integer arithmetic for every reference price from 1,000 to 300,000 dong on HOSE, HNX and UPCOM, and the VN30 futures, so a limit that falls exactly on a price step can't be rounded a step off.
+
+## 1.26.0 (2026-10-21)
+
+React, Vue and Svelte components: 1.3.8.
+
 ### Axes that read at every zoom
 
 - **Time axis labels by the calendar.** The axis labels the bars that start the largest calendar steps: a new year (in bold), a quarter or month, a day, a round hour or minute, at least 80 px apart, as `2024`, `Mar`, `15`, `13:00`. At 5Y it reads `2022 · Jul · 2023 · Jul`; on hourly bars over years it still shows the years, which it never did. The labels belong to bars, not to the screen: they move with their bars when panning and stay where they were when history is loaded in front, where they used to jump. Month names follow `setNumberLocale`; bars within a minute show their seconds (`13:05:30`), and labels wider than the spacing (a long month name, a formatter's own text) give way instead of running together. A time formatter now hears `kind: 'year' | 'month' | 'day' | 'time'`; `'date'` is no longer given by the axis (deprecated): a daily bar's label is `'day'`, `'month'` or `'year'` by the step it starts.

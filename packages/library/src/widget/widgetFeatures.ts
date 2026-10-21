@@ -28,6 +28,8 @@ export const WIDGET_FEATURES = [
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
+  // A long range on the range bar switches to weeks or months, a short one back.
+  'statusBar.rangeTimeframe',
   // On the chart: the indicators' rows, the panes' buttons, the navigation.
   'indicatorLegend.values', 'indicatorLegend.visibility', 'indicatorLegend.settings', 'indicatorLegend.remove',
   'indicatorLegend.more', 'pane.move', 'pane.collapse', 'pane.maximize',
@@ -59,7 +61,7 @@ export const LEGACY_FEATURE_OPTIONS = {
   drawingTools: ['sidebar', 'drawingSettings', 'hotkeys.tools', 'menu.chart.horizontalLine'],
   settings: ['settings'],
   statusBar: ['statusBar', 'goToDate'],
-  rangeBar: ['statusBar.range', 'goToDate'],
+  rangeBar: ['statusBar.range', 'statusBar.rangeTimeframe', 'goToDate'],
   indicatorLegend: ['indicatorLegend'],
   fullscreen: ['fullscreen'],
   alerts: ['alerts'],
