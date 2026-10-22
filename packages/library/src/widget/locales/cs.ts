@@ -64,6 +64,9 @@ export const CS_MESSAGES: WidgetMessages = {
   'range.date': 'Datum',
   'range.time': 'Čas',
   'range.cancel': 'Zrušit',
+  'calendar.prevMonth': 'Předchozí měsíc',
+  'calendar.nextMonth': 'Další měsíc',
+  'calendar.today': 'Dnes',
   'range.beforeData': 'Zobrazena je nejstarší načtená svíčka',
 
   'chartType.candlestick': 'Svíčky',

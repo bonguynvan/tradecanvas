@@ -142,6 +142,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code>, <code>data-tcw-separators</code>(<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="controls">입력란, 목록, 달력</h2>
+<p>
+  위젯의 모든 입력란(알림, 설정, 주문 티켓, 날짜로 이동, 지표 파라미터)은 같은 모양입니다. 옅은 채움과 가는 선, 마우스를 올리면 선이 조금 진해지고, 포커스되면 선이 강조색으로 바뀝니다. 둘레에 링은 생기지 않습니다. 셀렉트는 위젯 자체 목록을 엽니다. 선택된 행에 체크 표시, 그룹은 제목으로 보이며, 화살표 키·Enter·Escape·첫 글자 입력을 지원합니다. 날짜 입력란은 위젯 자체 달력을 엽니다. 주의 시작은 언어를 따르고, 오늘에는 밑줄, 입력란의 <code>min</code>·<code>max</code> 밖의 날은 흐리게 표시됩니다. 체크박스, 라디오, 슬라이더, 스위치도 같은 토큰을 따르고, 스크롤바도 마찬가지로 가늘고 둥글며 트랙 없이 손잡이만 보입니다.
+</p>
+<p>
+  입력란은 브라우저 기본 <code>&lt;select&gt;</code>와 <code>&lt;input&gt;</code> 그대로입니다. 값, 이벤트, 폼은 전과 같이 동작하고, 터치 화면에서는 손가락에 더 잘 맞는 휴대폰 자체의 휠과 달력이 열립니다.
+</p>
+<p>모양은 다음 변수에서 오며, 다크와 라이트 테마에 각각 값이 있습니다:</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">차트의 모양: 스타일 오버라이드</h2>
 <p>
   테마는 차트 전체의 색을 정합니다. 차트가 그리는 어떤 부분이든 키로 따로 정할 수 있습니다: 방향별 격자선,

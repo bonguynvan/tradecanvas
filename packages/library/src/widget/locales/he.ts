@@ -65,6 +65,9 @@ export const HE_MESSAGES: WidgetMessages = {
   'range.date': 'תאריך',
   'range.time': 'שעה',
   'range.cancel': 'ביטול',
+  'calendar.prevMonth': 'החודש הקודם',
+  'calendar.nextMonth': 'החודש הבא',
+  'calendar.today': 'היום',
   'range.beforeData': 'מוצג הנר המוקדם ביותר שנטען',
 
   // Chart types

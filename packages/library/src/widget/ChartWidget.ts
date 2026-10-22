@@ -1,6 +1,7 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, readNews, readQuote, isValidTimeZone, tickBarCount, zoneOffsetMinutes, type NewsItem } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
+import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch } from './types.js';
@@ -186,6 +187,8 @@ export class ChartWidget {
   private stopKeyboardInset: (() => void) | null = null;
   /** Keeps `data-tcw-narrow` on the root while the widget is phone-narrow. */
   private stopNarrow: (() => void) | null = null;
+  /** The widget's own lists and calendar for its selects and date fields. */
+  private stopFormControls: (() => void) | null = null;
   private readonly overlayHost = (): HTMLElement => {
     const host = document.fullscreenElement === this.root ? this.root : document.body;
     if (this.portal.parentElement !== host) host.appendChild(this.portal);
@@ -469,6 +472,11 @@ export class ChartWidget {
     applyWidgetUI(this.root, this.ui, { variables });
     applyWidgetUI(this.portal, this.ui, { variables });
     this.markSwitchedOff();
+    this.stopFormControls = installFormControls([this.root, this.portal], {
+      layer: this.overlayHost,
+      labels: () => ({ prevMonth: this.t('calendar.prevMonth'), nextMonth: this.t('calendar.nextMonth'), today: this.t('calendar.today') }),
+      locale: () => this.intlLocale(),
+    });
 
     // 3. Create toolbar
     this.toolbar = new WidgetToolbar(
@@ -1643,6 +1651,8 @@ export class ChartWidget {
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
     this.stopNarrow = null;
+    this.stopFormControls?.();
+    this.stopFormControls = null;
 
     if (this.boundGlobalKeydown) {
       document.removeEventListener('keydown', this.boundGlobalKeydown);
@@ -2998,7 +3008,8 @@ export class ChartWidget {
   /** Latest value for an alert source channel (price or indicator line). */
   private getAlertChannelValue(channel: string): number | null {
     const data = this.chart.getData();
-    if (channel === 'price') return data.length > 0 ? data[data.length - 1].close : null;
+    // The price as the chart shows it: on its tick grid, or at its precision.
+    if (channel === 'price') return data.length > 0 ? this.chart.roundPrice(data[data.length - 1].close) : null;
     const sep = channel.indexOf(':');
     if (sep < 0 || data.length === 0) return null;
     const instanceId = channel.slice(0, sep);

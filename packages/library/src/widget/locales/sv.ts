@@ -64,6 +64,9 @@ export const SV_MESSAGES: WidgetMessages = {
   'range.date': 'Datum',
   'range.time': 'Tid',
   'range.cancel': 'Avbryt',
+  'calendar.prevMonth': 'Föregående månad',
+  'calendar.nextMonth': 'Nästa månad',
+  'calendar.today': 'I dag',
   'range.beforeData': 'Visar den äldsta inlästa stapeln',
 
   'chartType.candlestick': 'Ljusstakar',

@@ -64,6 +64,9 @@ export const JA_MESSAGES: WidgetMessages = {
   'range.date': '日付',
   'range.time': '時刻',
   'range.cancel': 'キャンセル',
+  'calendar.prevMonth': '前の月',
+  'calendar.nextMonth': '次の月',
+  'calendar.today': '今日',
   'range.beforeData': '読み込まれた最も古いバーを表示しています',
 
   'chartType.candlestick': 'ローソク足',

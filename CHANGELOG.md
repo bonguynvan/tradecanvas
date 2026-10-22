@@ -4,6 +4,19 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### Form controls, one quiet look
+
+The widget's fields, lists and pickers were the browser's own: heavy boxes, a thick ring on focus, a plain grey list under every select and the system calendar under every date. They now share one look, drawn from tokens.
+
+- **Fields** (alerts, settings, the order ticket, go to date, an indicator's inputs) have a faint fill and a hairline, a firmer line on hover, and on focus the line takes the accent, with no ring around it. A wrong value stays red under the pointer and in focus. Number steppers show only on a field in use.
+- **Selects open the widget's own list**, in its overlay layer above any dialog: a check on the chosen row, groups as headings, disabled rows greyed, the arrow keys, Home, End, Enter, Escape and typing a few letters (spaces too). The select stays the browser's `<select>`, so values, events and forms work as before.
+- **Date fields open the widget's own calendar**: a month with arrows, weeks from the day the language starts them, today underlined, days outside a field's `min` and `max` greyed and out of the keys' reach, and a Today button. Typing the date stays. Firefox keeps its own calendar.
+- **Checkboxes, radios, sliders and switches** are drawn to match, and **scrollbars** are thin and rounded, a thumb on no track, in both themes.
+- **On a touch screen** the phone's own wheel and calendar open, which suit a thumb better.
+- The look comes from `--tcw-field-*`, `--tcw-check-line` and `--tcw-scroll-*` variables, set for the dark and the light theme (Styling docs).
+- A list that opens above its button (one near the bottom of the window) no longer lands off screen.
+- A new price alert starts at the price as the chart shows it, not every digit of the last close.
+
 ## 1.30.0 (2026-10-21)
 
 React, Vue and Svelte components: 1.3.12.

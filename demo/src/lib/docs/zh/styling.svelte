@@ -138,6 +138,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>、<code>data-tcw-intervals</code> 和 <code>data-tcw-separators</code>（<code>on</code> / <code>off</code>）。
 </p>
 
+<h2 id="controls">输入框、列表与日历</h2>
+<p>
+  组件中的每个输入框（提醒、设置、下单面板、跳转到日期、指标参数）都是同一种外观：淡淡的底色和细线边框，悬停时线条更清晰，聚焦时线条变为强调色，周围没有光圈。下拉框打开组件自带的列表：选中的行带勾号，分组显示为标题，支持方向键、Enter、Escape 和首字母输入；日期框打开组件自带的日历：每周从该语言习惯的那一天开始，今天带下划线，超出 <code>min</code> 和 <code>max</code> 的日期变灰。复选框、单选框、滑块和开关使用同一套变量，滚动条也一样：细而圆润，只有滑块，没有轨道。
+</p>
+<p>
+  这些输入框仍然是浏览器原生的 <code>&lt;select&gt;</code> 和 <code>&lt;input&gt;</code>：取值、事件和表单照常工作；在触屏上会打开手机自带的滚轮和日历，更适合手指操作。
+</p>
+<p>外观来自以下变量，深色和浅色主题各有一套取值：</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">图表的外观：样式覆盖</h2>
 <p>
   主题决定整个图表的颜色。图表所画的任何一部分都可以按键单独设置：每个方向的网格线、十字光标、坐标轴、

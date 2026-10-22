@@ -143,6 +143,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> và <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="controls">Ô nhập, danh sách và lịch</h2>
+<p>
+  Mọi ô nhập trong widget (cảnh báo, cài đặt, phiếu lệnh, đi tới ngày, tham số chỉ báo) có chung một kiểu: nền mờ và đường viền mảnh, viền rõ hơn khi rê chuột, và khi focus thì viền chuyển sang màu nhấn, không có vòng sáng bao quanh. Select mở danh sách riêng của widget, có dấu tích ở dòng đang chọn, nhóm hiện thành tiêu đề, dùng được phím mũi tên, Enter, Escape và gõ chữ cái đầu; ô ngày mở lịch riêng của widget, tuần bắt đầu theo ngôn ngữ, hôm nay có gạch chân, ngày ngoài <code>min</code> và <code>max</code> của ô bị mờ đi. Checkbox, radio, thanh trượt và công tắc theo cùng bộ token, thanh cuộn cũng vậy: mảnh, bo tròn, chỉ có thanh kéo, không có rãnh.
+</p>
+<p>
+  Các ô vẫn là <code>&lt;select&gt;</code> và <code>&lt;input&gt;</code> gốc của trình duyệt: giá trị, sự kiện và form chạy như cũ, và trên màn hình cảm ứng thì bánh xe chọn và lịch của điện thoại sẽ mở, hợp với ngón tay hơn.
+</p>
+<p>Kiểu dáng lấy từ các biến sau, có giá trị riêng cho theme tối và sáng:</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">Giao diện của biểu đồ: override style</h2>
 <p>
   Theme đặt màu cho cả biểu đồ. Bất kỳ phần nào biểu đồ vẽ cũng có thể đặt riêng, theo khoá: các đường lưới

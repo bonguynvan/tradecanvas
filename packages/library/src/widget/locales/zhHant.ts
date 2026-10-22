@@ -64,6 +64,9 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'range.date': '日期',
   'range.time': '時間',
   'range.cancel': '取消',
+  'calendar.prevMonth': '上個月',
+  'calendar.nextMonth': '下個月',
+  'calendar.today': '今天',
   'range.beforeData': '已顯示最早載入的K線',
 
   'chartType.candlestick': '蠟燭圖',

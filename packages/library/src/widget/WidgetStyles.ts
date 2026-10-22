@@ -1,4 +1,5 @@
 import widgetCss from './WidgetStyles.css?raw';
+import controlsCss from './WidgetControls.css?raw';
 import { widgetFeatureCss } from './widgetFeatures.js';
 
 let refCount = 0;
@@ -21,6 +22,7 @@ export function injectWidgetStyles(): void {
   style.id = STYLE_ID;
   // The parts of switches turned off hide with these (see widgetFeatures).
   style.textContent = `${widgetCss}
+${controlsCss}
 ${widgetFeatureCss()}`;
   document.head.insertBefore(style, document.head.firstChild);
 }

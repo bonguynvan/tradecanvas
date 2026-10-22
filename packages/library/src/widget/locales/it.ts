@@ -64,6 +64,9 @@ export const IT_MESSAGES: WidgetMessages = {
   'range.date': 'Data',
   'range.time': 'Ora',
   'range.cancel': 'Annulla',
+  'calendar.prevMonth': 'Mese precedente',
+  'calendar.nextMonth': 'Mese successivo',
+  'calendar.today': 'Oggi',
   'range.beforeData': 'Questa è la barra più vecchia caricata',
 
   'chartType.candlestick': 'Candele',

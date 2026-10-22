@@ -64,6 +64,9 @@ export const TR_MESSAGES: WidgetMessages = {
   'range.date': 'Tarih',
   'range.time': 'Saat',
   'range.cancel': 'İptal',
+  'calendar.prevMonth': 'Önceki ay',
+  'calendar.nextMonth': 'Sonraki ay',
+  'calendar.today': 'Bugün',
   'range.beforeData': 'Yüklenen en eski bar gösteriliyor',
 
   'chartType.candlestick': 'Mum',

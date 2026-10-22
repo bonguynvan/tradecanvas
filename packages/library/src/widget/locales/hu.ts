@@ -64,6 +64,9 @@ export const HU_MESSAGES: WidgetMessages = {
   'range.date': 'Dátum',
   'range.time': 'Időpont',
   'range.cancel': 'Mégse',
+  'calendar.prevMonth': 'Előző hónap',
+  'calendar.nextMonth': 'Következő hónap',
+  'calendar.today': 'Ma',
   'range.beforeData': 'A legkorábbi betöltött gyertya látható',
 
   'chartType.candlestick': 'Gyertyák',

@@ -279,6 +279,13 @@ describe('ChartWidget switches after review', () => {
     expect(getComputedStyle(host.querySelector('.tcw-syminfo')!).display).toBe('none');
   });
 
+  it('fills a new alert with the price on the chart’s grid, not every digit of the last close', () => {
+    make();
+    FakeChart.last.getData = () => [{ close: 35217.052956, time: 0 }];
+    inner().toggleAlerts();
+    expect(host.querySelector<HTMLInputElement>('.tcw-alerts-form input[type="number"]')!.value).toBe('35217');
+  });
+
   it('leaves Ctrl+K to the page without a command palette', () => {
     make({ features: { commandPalette: false } });
     press();

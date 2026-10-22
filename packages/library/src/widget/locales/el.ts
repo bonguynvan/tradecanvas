@@ -64,6 +64,9 @@ export const EL_MESSAGES: WidgetMessages = {
   'range.date': 'Ημερομηνία',
   'range.time': 'Ώρα',
   'range.cancel': 'Άκυρο',
+  'calendar.prevMonth': 'Προηγούμενος μήνας',
+  'calendar.nextMonth': 'Επόμενος μήνας',
+  'calendar.today': 'Σήμερα',
   'range.beforeData': 'Εμφανίζεται το παλαιότερο φορτωμένο κερί',
 
   'chartType.candlestick': 'Κεριά',

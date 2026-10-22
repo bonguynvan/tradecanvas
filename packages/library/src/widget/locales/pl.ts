@@ -64,6 +64,9 @@ export const PL_MESSAGES: WidgetMessages = {
   'range.date': 'Data',
   'range.time': 'Godzina',
   'range.cancel': 'Anuluj',
+  'calendar.prevMonth': 'Poprzedni miesiąc',
+  'calendar.nextMonth': 'Następny miesiąc',
+  'calendar.today': 'Dziś',
   'range.beforeData': 'Widoczna jest najstarsza wczytana świeca',
 
   'chartType.candlestick': 'Świece',

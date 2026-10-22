@@ -143,6 +143,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>、<code>data-tcw-intervals</code>、<code>data-tcw-separators</code>（<code>on</code> / <code>off</code>）。
 </p>
 
+<h2 id="controls">入力欄、リスト、カレンダー</h2>
+<p>
+  ウィジェットのすべての入力欄（アラート、設定、注文チケット、日付へ移動、インジケーターのパラメーター）は同じ見た目です。薄い塗りと細い線、ホバーで線が少し濃くなり、フォーカスすると線がアクセント色になります。周りにリングは付きません。セレクトはウィジェット独自のリストを開きます。選択中の行にチェック、グループは見出し、矢印キー・Enter・Escape・頭文字入力に対応します。日付欄はウィジェット独自のカレンダーを開きます。週の始まりは言語に従い、今日には下線、欄の <code>min</code>／<code>max</code> の外の日はグレーになります。チェックボックス、ラジオ、スライダー、スイッチも同じトークンに従い、スクロールバーも同様です。細く角が丸く、トラックはなくつまみだけです。
+</p>
+<p>
+  入力欄はブラウザー標準の <code>&lt;select&gt;</code> と <code>&lt;input&gt;</code> のままです。値、イベント、フォームはこれまでどおり動き、タッチ画面では指に合ったスマートフォン標準のホイールとカレンダーが開きます。
+</p>
+<p>見た目は次の変数で決まり、ダークとライトのテーマでそれぞれ値を持ちます：</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">チャートの見た目：スタイルのオーバーライド</h2>
 <p>
   テーマはチャート全体の色を決めます。チャートが描くどの部分も、キーで個別に設定できます：方向ごとのグリッド線、
