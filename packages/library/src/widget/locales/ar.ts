@@ -65,6 +65,9 @@ export const AR_MESSAGES: WidgetMessages = {
   'range.date': 'التاريخ',
   'range.time': 'الوقت',
   'range.cancel': 'إلغاء',
+  'calendar.prevMonth': 'الشهر السابق',
+  'calendar.nextMonth': 'الشهر التالي',
+  'calendar.today': 'اليوم',
   'range.beforeData': 'عرض أقدم شمعة محمّلة',
 
   // Chart types

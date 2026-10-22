@@ -64,6 +64,9 @@ export const ID_MESSAGES: WidgetMessages = {
   'range.date': 'Tanggal',
   'range.time': 'Waktu',
   'range.cancel': 'Batal',
+  'calendar.prevMonth': 'Bulan sebelumnya',
+  'calendar.nextMonth': 'Bulan berikutnya',
+  'calendar.today': 'Hari ini',
   'range.beforeData': 'Menampilkan bar paling awal yang dimuat',
 
   'chartType.candlestick': 'Candlestick',

@@ -64,6 +64,9 @@ export const RU_MESSAGES: WidgetMessages = {
   'range.date': 'Дата',
   'range.time': 'Время',
   'range.cancel': 'Отмена',
+  'calendar.prevMonth': 'Предыдущий месяц',
+  'calendar.nextMonth': 'Следующий месяц',
+  'calendar.today': 'Сегодня',
   'range.beforeData': 'Показан самый ранний загруженный бар',
 
   'chartType.candlestick': 'Свечи',

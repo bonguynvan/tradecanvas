@@ -1,6 +1,4 @@
-/** Room kept between a menu in a layer and its button, and the window's edges (px). */
-const GAP_PX = 6;
-const EDGE_PX = 8;
+import { placeMenu } from './placeMenu.js';
 
 export class WidgetDropdown {
   private trigger: HTMLElement;
@@ -122,26 +120,6 @@ export class WidgetDropdown {
 
   /** Fixed beside the button: below it, or above when there is more room; inside the window. */
   private place(): void {
-    const s = this.panel.style;
-    const at = this.trigger.getBoundingClientRect();
-    s.position = 'fixed';
-    s.margin = '0';
-    s.top = s.bottom = s.left = s.right = '';
-    const below = window.innerHeight - at.bottom - GAP_PX - EDGE_PX;
-    const above = at.top - GAP_PX - EDGE_PX;
-    const natural = this.panel.scrollHeight;
-    if (natural <= below || below >= above) {
-      s.top = `${at.bottom + GAP_PX}px`;
-      s.maxHeight = `${Math.max(120, below)}px`;
-    } else {
-      s.bottom = `${window.innerHeight - at.top + GAP_PX}px`;
-      s.maxHeight = `${Math.max(120, above)}px`;
-    }
-    // From the button's start edge (its right in a right-to-left widget), kept in the window.
-    const rtl = getComputedStyle(this.trigger).direction === 'rtl';
-    const fromEnd = (this.align === 'right') !== rtl;
-    const width = this.panel.offsetWidth;
-    const start = fromEnd ? at.right - width : at.left;
-    s.left = `${Math.max(EDGE_PX, Math.min(start, window.innerWidth - width - EDGE_PX))}px`;
+    placeMenu(this.panel, this.trigger, this.align);
   }
 }

@@ -65,6 +65,9 @@ export const FA_MESSAGES: WidgetMessages = {
   'range.date': 'تاریخ',
   'range.time': 'زمان',
   'range.cancel': 'لغو',
+  'calendar.prevMonth': 'ماه قبل',
+  'calendar.nextMonth': 'ماه بعد',
+  'calendar.today': 'امروز',
   'range.beforeData': 'نمایش قدیمی‌ترین کندل بارگذاری‌شده',
 
   // Chart types

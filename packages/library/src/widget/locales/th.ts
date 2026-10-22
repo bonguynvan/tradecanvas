@@ -64,6 +64,9 @@ export const TH_MESSAGES: WidgetMessages = {
   'range.date': 'วันที่',
   'range.time': 'เวลา',
   'range.cancel': 'ยกเลิก',
+  'calendar.prevMonth': 'เดือนก่อนหน้า',
+  'calendar.nextMonth': 'เดือนถัดไป',
+  'calendar.today': 'วันนี้',
   'range.beforeData': 'กำลังแสดงแท่งเทียนแรกสุดที่โหลดไว้',
 
   'chartType.candlestick': 'แท่งเทียน',

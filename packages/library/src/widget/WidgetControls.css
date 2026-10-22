@@ -1,0 +1,573 @@
+/* === Base controls: fields, selects, checks, sliders, calendar, scrollbars ===
+ *
+ * One look for every form control in the widget, from tokens. Fields are
+ * quiet until used: a faint fill and hairline, a firmer line on hover, and
+ * on focus the line turns accent (no ring). Selects and date fields open
+ * the widget's own list and calendar (formControls.ts).
+ */
+
+.tcw-root {
+  color-scheme: dark;
+
+  --tcw-field-bg: rgba(255, 255, 255, 0.035);
+  --tcw-field-bg-hover: rgba(255, 255, 255, 0.055);
+  --tcw-field-bg-focus: rgba(255, 255, 255, 0.025);
+  --tcw-field-line: rgba(255, 255, 255, 0.07);
+  --tcw-field-line-hover: rgba(255, 255, 255, 0.15);
+  --tcw-field-line-focus: var(--tcw-accent-line);
+  --tcw-field-placeholder: var(--tcw-text-muted);
+  --tcw-check-line: rgba(255, 255, 255, 0.28);
+  --tcw-scroll-thumb: rgba(255, 255, 255, 0.12);
+  --tcw-scroll-thumb-hover: rgba(255, 255, 255, 0.24);
+  /* Glyphs drawn in a field's background (a background image takes no currentColor). */
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%238b94a3' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%238b94a3' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%231a1204' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.tcw-root[data-tcw-theme='light'] {
+  color-scheme: light;
+
+  --tcw-field-bg: #f3f4f6;
+  --tcw-field-bg-hover: #eef0f3;
+  --tcw-field-bg-focus: #ffffff;
+  --tcw-field-line: rgba(12, 16, 22, 0.06);
+  --tcw-field-line-hover: rgba(12, 16, 22, 0.16);
+  --tcw-check-line: rgba(12, 16, 22, 0.3);
+  --tcw-scroll-thumb: rgba(12, 16, 22, 0.14);
+  --tcw-scroll-thumb-hover: rgba(12, 16, 22, 0.28);
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%23626a77' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23626a77' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* --- Text, number, date and time fields, and selects --- */
+
+/* Fields speak the widget's type, not the browser's (a part's own font still wins). */
+:where(.tcw-root) :where(input, select, textarea, button) {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.tcw-root :is(
+  .tcw-tf-custom-input,
+  .tcw-settings-select,
+  .tcw-settings-number,
+  .tcw-goto-input,
+  .tcw-watchlist-input,
+  .tcw-indi-input,
+  .tcw-style-name,
+  .tcw-drawing-text,
+  .tcw-replay-speed,
+  .tcw-alerts-form input:not([type='checkbox']),
+  .tcw-alerts-form select
+) {
+  border: 1px solid var(--tcw-field-line);
+  border-radius: var(--tcw-input-radius);
+  background-color: var(--tcw-field-bg);
+  color: var(--tcw-text);
+  outline: none;
+  box-shadow: none;
+  transition:
+    border-color var(--tcw-dur-fast) var(--tcw-ease),
+    background-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-root :is(
+  .tcw-tf-custom-input,
+  .tcw-settings-select,
+  .tcw-settings-number,
+  .tcw-goto-input,
+  .tcw-watchlist-input,
+  .tcw-indi-input,
+  .tcw-style-name,
+  .tcw-drawing-text,
+  .tcw-replay-speed,
+  .tcw-alerts-form input:not([type='checkbox']),
+  .tcw-alerts-form select
+):hover:not(:disabled, :focus) {
+  border-color: var(--tcw-field-line-hover);
+  background-color: var(--tcw-field-bg-hover);
+}
+
+.tcw-root :is(
+  .tcw-tf-custom-input,
+  .tcw-settings-select,
+  .tcw-settings-number,
+  .tcw-goto-input,
+  .tcw-watchlist-input,
+  .tcw-indi-input,
+  .tcw-style-name,
+  .tcw-drawing-text,
+  .tcw-replay-speed,
+  .tcw-alerts-form input:not([type='checkbox']),
+  .tcw-alerts-form select
+):is(:focus, :focus-visible, [aria-expanded='true']) {
+  border-color: var(--tcw-field-line-focus);
+  background-color: var(--tcw-field-bg-focus);
+  outline: none;
+  box-shadow: none;
+}
+
+.tcw-root :is(
+  .tcw-tf-custom-input,
+  .tcw-indi-input,
+  .tcw-watchlist-input,
+  .tcw-alerts-form input
+):is([aria-invalid='true'], [aria-invalid='']):is(*, :hover, :focus) {
+  /* As specific as the hover rule and later, so a wrong value stays red under the pointer and in focus. */
+  border-color: var(--tcw-red);
+  box-shadow: none;
+}
+
+.tcw-root :is(input, textarea)::placeholder {
+  color: var(--tcw-field-placeholder);
+  opacity: 1;
+}
+
+.tcw-root :is(input, select, textarea):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Selects: the browser's arrow gives way to a fine chevron. */
+.tcw-root select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--tcw-field-chevron);
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+  background-position: right 8px center;
+  padding-inline-end: 26px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.tcw-root[dir='rtl'] select:not([multiple]):not([size]),
+.tcw-root [dir='rtl'] select:not([multiple]):not([size]) {
+  background-position: left 8px center;
+}
+
+/* Number fields: the steppers show only on a field in use. */
+.tcw-root input[type='number']::-webkit-inner-spin-button,
+.tcw-root input[type='number']::-webkit-outer-spin-button {
+  opacity: 0;
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-root input[type='number']:is(:hover, :focus)::-webkit-inner-spin-button {
+  opacity: 0.55;
+}
+
+/* Date and time: the widget's calendar icon where the browser's own can be hidden. */
+@supports selector(::-webkit-calendar-picker-indicator) {
+  .tcw-root input[type='date'] {
+    background-image: var(--tcw-field-calendar);
+    background-repeat: no-repeat;
+    background-size: 15px 15px;
+    background-position: right 8px center;
+    padding-inline-end: 30px;
+    cursor: text;
+  }
+
+  .tcw-root[dir='rtl'] input[type='date'],
+  .tcw-root [dir='rtl'] input[type='date'] {
+    background-position: left 8px center;
+  }
+}
+
+.tcw-root input:is([type='date'], [type='time'])::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.tcw-root input:is([type='date'], [type='time'])::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+/* --- Checkboxes and radios --- */
+
+.tcw-root input:is([type='checkbox'], [type='radio']) {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--tcw-check-line);
+  border-radius: 4px;
+  background: transparent center / 14px 14px no-repeat;
+  cursor: pointer;
+  vertical-align: middle;
+  transition:
+    border-color var(--tcw-dur-fast) var(--tcw-ease),
+    background-color var(--tcw-dur-fast) var(--tcw-ease),
+    box-shadow var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-root input[type='radio'] {
+  border-radius: 50%;
+}
+
+.tcw-root input:is([type='checkbox'], [type='radio']):hover:not(:disabled) {
+  border-color: var(--tcw-text-dim);
+}
+
+.tcw-root input[type='checkbox']:checked {
+  border-color: var(--tcw-accent);
+  background-color: var(--tcw-accent);
+  background-image: var(--tcw-check-mark);
+}
+
+.tcw-root input[type='radio']:checked {
+  border-color: var(--tcw-accent);
+  background-image: radial-gradient(circle, var(--tcw-accent) 0 3.5px, transparent 4px);
+}
+
+.tcw-root input:is([type='checkbox'], [type='radio']):focus {
+  outline: none;
+}
+
+.tcw-root input:is([type='checkbox'], [type='radio']):focus-visible {
+  box-shadow: 0 0 0 3px var(--tcw-accent-soft);
+}
+
+/* --- Sliders --- */
+
+.tcw-root input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--tcw-field-line-hover);
+  outline: none;
+  cursor: pointer;
+}
+
+.tcw-root input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tcw-accent);
+  border: 2px solid var(--tcw-bg-elevated);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-root input[type='range']::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tcw-accent);
+  border: 2px solid var(--tcw-bg-elevated);
+}
+
+.tcw-root input[type='range']:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.tcw-root input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--tcw-accent-soft);
+}
+
+/* --- The select list --- */
+
+.tcw-select-menu {
+  z-index: 120;
+  padding: 4px;
+  max-width: min(360px, calc(100vw - 16px));
+  font-size: var(--tcw-font-size-sm);
+}
+
+.tcw-select-group {
+  padding: 8px 10px 4px;
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text-muted);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+.tcw-select-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tcw-menu-item-h);
+  padding-block: 0;
+  padding-inline: 6px 12px;
+  border-radius: var(--tcw-radius-sm);
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tcw-select-option-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tcw-select-check {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.tcw-select-option.tcw-active {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-select-option[aria-selected='true'] {
+  color: var(--tcw-text);
+  font-weight: var(--tcw-weight-strong);
+}
+
+.tcw-select-option[aria-selected='true'] .tcw-select-check {
+  background: var(--tcw-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.25l3 3L12.5 5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.25l3 3L12.5 5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.tcw-select-option[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+  background: none;
+}
+
+/* --- The calendar --- */
+
+.tcw-calendar {
+  z-index: 120;
+  width: 268px;
+  padding: 10px;
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-menu-radius);
+  box-shadow: var(--tcw-menu-shadow);
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
+  backdrop-filter: blur(var(--tcw-blur));
+  -webkit-backdrop-filter: blur(var(--tcw-blur));
+  animation: tcw-pop-in var(--tcw-dur-normal) var(--tcw-ease-out);
+}
+
+.tcw-calendar-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tcw-calendar-title {
+  flex: 1;
+  text-align: center;
+  font-size: var(--tcw-font-size);
+  font-weight: var(--tcw-weight-strong);
+  letter-spacing: -0.01em;
+}
+
+.tcw-calendar-nav {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-calendar-nav svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tcw-calendar[dir='rtl'] .tcw-calendar-nav svg,
+[dir='rtl'] .tcw-calendar-nav svg {
+  transform: scaleX(-1);
+}
+
+.tcw-calendar-nav:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-calendar-weekdays,
+.tcw-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.tcw-calendar-weekdays {
+  margin-bottom: 4px;
+  padding: 3px 0;
+  border-radius: var(--tcw-radius-sm);
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-calendar-weekday {
+  text-align: center;
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  color: var(--tcw-text-muted);
+  line-height: 20px;
+}
+
+.tcw-calendar-grid {
+  row-gap: 2px;
+}
+
+.tcw-calendar-week {
+  display: contents;
+}
+
+.tcw-calendar-day {
+  position: relative;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-calendar-day:hover:not(:disabled) {
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-calendar-day.tcw-outside {
+  color: var(--tcw-text-muted);
+  opacity: 0.55;
+}
+
+/* Today: accent figures over a short line. */
+.tcw-calendar-day.tcw-today {
+  color: var(--tcw-accent);
+  font-weight: var(--tcw-weight-strong);
+}
+
+.tcw-calendar-day.tcw-today::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 12px;
+  height: 2px;
+  margin-left: -6px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.tcw-calendar-day[aria-selected='true'] {
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+  font-weight: var(--tcw-weight-strong);
+  opacity: 1;
+}
+
+.tcw-calendar-day:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.tcw-calendar-day:focus {
+  outline: none;
+}
+
+.tcw-calendar-day:focus-visible {
+  box-shadow: inset 0 0 0 1.5px var(--tcw-accent);
+}
+
+.tcw-calendar-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--tcw-divider);
+}
+
+.tcw-calendar-today {
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--tcw-radius-sm);
+  background: transparent;
+  color: var(--tcw-accent);
+  font: inherit;
+  font-weight: var(--tcw-weight-strong);
+  cursor: pointer;
+}
+
+.tcw-calendar-today:hover {
+  background: var(--tcw-accent-soft);
+}
+
+.tcw-calendar-today:focus-visible,
+.tcw-calendar-nav:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--tcw-accent);
+}
+
+/* --- Scrollbars: thin and rounded, a thumb on no track. Low specificity:
+   a part that hides its bar keeps it hidden. --- */
+
+:where(.tcw-root) ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+:where(.tcw-root) ::-webkit-scrollbar-track,
+:where(.tcw-root) ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+:where(.tcw-root) ::-webkit-scrollbar-thumb {
+  background: var(--tcw-scroll-thumb);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+
+:where(.tcw-root) ::-webkit-scrollbar-thumb:hover {
+  background: var(--tcw-scroll-thumb-hover);
+  background-clip: padding-box;
+  border: 2.5px solid transparent;
+}
+
+/* Engines without the pseudo-elements take the standard properties. */
+@supports not selector(::-webkit-scrollbar) {
+  :where(.tcw-root, .tcw-root *) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--tcw-scroll-thumb) transparent;
+  }
+}
+
+/* --- Switches: flat, no glow --- */
+
+.tcw-root .tcw-toggle.tcw-on {
+  box-shadow: none;
+}
+
+.tcw-root .tcw-toggle::after {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.tcw-root .tcw-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--tcw-accent-soft);
+}

@@ -65,6 +65,9 @@ export const ET_MESSAGES: WidgetMessages = {
   'range.date': 'Kuupäev',
   'range.time': 'Kellaaeg',
   'range.cancel': 'Loobu',
+  'calendar.prevMonth': 'Eelmine kuu',
+  'calendar.nextMonth': 'Järgmine kuu',
+  'calendar.today': 'Täna',
   'range.beforeData': 'Kuvatakse vanim laaditud küünal',
 
   // Chart types

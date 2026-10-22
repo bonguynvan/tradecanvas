@@ -66,6 +66,9 @@ export const EN_MESSAGES = {
   'range.date': 'Date',
   'range.time': 'Time',
   'range.cancel': 'Cancel',
+  'calendar.prevMonth': 'Previous month',
+  'calendar.nextMonth': 'Next month',
+  'calendar.today': 'Today',
   'range.beforeData': 'Showing the earliest loaded bar',
 
   // Chart types

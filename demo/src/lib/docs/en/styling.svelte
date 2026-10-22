@@ -142,6 +142,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> and <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="controls">Fields, lists and the calendar</h2>
+<p>
+  Every field in the widget (alerts, settings, the order ticket, go to date, an indicator's inputs) has one look: a faint fill and a hairline, a firmer line on hover, and on focus the line takes the accent, with no ring around it. A select opens the widget's own list, with a check on the chosen row, groups as headings, the arrow keys, Enter, Escape and typing a letter; a date field opens the widget's calendar, weeks from the day the language starts them, today underlined, days outside a field's <code>min</code> and <code>max</code> greyed out. Checkboxes, radios, sliders and switches follow the same tokens, and so do the scrollbars: thin and rounded, a thumb on no track.
+</p>
+<p>
+  The fields stay the browser's own <code>&lt;select&gt;</code> and <code>&lt;input&gt;</code>: values, events and forms work as before, and on a touch screen the phone's own wheel and calendar open, which suit a thumb better.
+</p>
+<p>The look comes from these variables, set for the dark and the light theme:</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">The chart's look: style overrides</h2>
 <p>
   The theme sets the chart's colours as a whole. Any one part of what the chart draws can be set apart from it, by

@@ -111,7 +111,7 @@ describe('WidgetDropdown — over the page (a layer)', () => {
     // Taller than the room below.
     Object.defineProperty((dd as unknown as { panel: HTMLElement }).panel, 'scrollHeight', { value: 300 });
     dd.open();
-    expect(panel().style.top).toBe('');
+    expect(panel().style.top).toBe('auto'); // outright: the stylesheet's top (under the button) must not win
     expect(panel().style.bottom).toBe('106px');
     done();
     vi.unstubAllGlobals();

@@ -64,6 +64,9 @@ export const DE_MESSAGES: WidgetMessages = {
   'range.date': 'Datum',
   'range.time': 'Uhrzeit',
   'range.cancel': 'Abbrechen',
+  'calendar.prevMonth': 'Vorheriger Monat',
+  'calendar.nextMonth': 'Nächster Monat',
+  'calendar.today': 'Heute',
   'range.beforeData': 'Die älteste geladene Kerze wird angezeigt',
 
   'chartType.candlestick': 'Kerzen',

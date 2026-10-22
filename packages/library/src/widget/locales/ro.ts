@@ -64,6 +64,9 @@ export const RO_MESSAGES: WidgetMessages = {
   'range.date': 'Data',
   'range.time': 'Ora',
   'range.cancel': 'Anulare',
+  'calendar.prevMonth': 'Luna anterioară',
+  'calendar.nextMonth': 'Luna următoare',
+  'calendar.today': 'Astăzi',
   'range.beforeData': 'Se afișează cea mai veche bară încărcată',
 
   'chartType.candlestick': 'Lumânări',

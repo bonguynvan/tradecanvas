@@ -2511,37 +2511,6 @@
   }
 }
 
-/* === Scrollbar (subtle, premium feel) === */
-
-.tcw-dropdown::-webkit-scrollbar,
-.tcw-modal-body::-webkit-scrollbar,
-.tcw-cmd-list::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.tcw-dropdown::-webkit-scrollbar-track,
-.tcw-modal-body::-webkit-scrollbar-track,
-.tcw-cmd-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tcw-dropdown::-webkit-scrollbar-thumb,
-.tcw-modal-body::-webkit-scrollbar-thumb,
-.tcw-cmd-list::-webkit-scrollbar-thumb {
-  background: var(--tcw-border-strong);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.tcw-dropdown::-webkit-scrollbar-thumb:hover,
-.tcw-modal-body::-webkit-scrollbar-thumb:hover,
-.tcw-cmd-list::-webkit-scrollbar-thumb:hover {
-  background: var(--tcw-text-muted);
-  background-clip: padding-box;
-  border: 2px solid transparent;
-}
 
 /* === Responsive === */
 

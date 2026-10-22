@@ -64,6 +64,9 @@ export const VI_MESSAGES: WidgetMessages = {
   'range.date': 'Ngày',
   'range.time': 'Giờ',
   'range.cancel': 'Huỷ',
+  'calendar.prevMonth': 'Tháng trước',
+  'calendar.nextMonth': 'Tháng sau',
+  'calendar.today': 'Hôm nay',
   'range.beforeData': 'Đang hiện nến sớm nhất đã tải',
 
   'chartType.candlestick': 'Nến',

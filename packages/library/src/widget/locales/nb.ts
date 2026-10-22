@@ -65,6 +65,9 @@ export const NB_MESSAGES: WidgetMessages = {
   'range.date': 'Dato',
   'range.time': 'Klokkeslett',
   'range.cancel': 'Avbryt',
+  'calendar.prevMonth': 'Forrige måned',
+  'calendar.nextMonth': 'Neste måned',
+  'calendar.today': 'I dag',
   'range.beforeData': 'Viser det eldste innlastede lyset',
 
   // Chart types

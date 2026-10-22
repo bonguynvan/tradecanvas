@@ -65,6 +65,9 @@ export const DA_MESSAGES: WidgetMessages = {
   'range.date': 'Dato',
   'range.time': 'Klokkeslæt',
   'range.cancel': 'Annuller',
+  'calendar.prevMonth': 'Forrige måned',
+  'calendar.nextMonth': 'Næste måned',
+  'calendar.today': 'I dag',
   'range.beforeData': 'Viser det ældste indlæste lys',
 
   // Chart types

@@ -65,6 +65,9 @@ export const MS_MESSAGES: WidgetMessages = {
   'range.date': 'Tarikh',
   'range.time': 'Masa',
   'range.cancel': 'Batal',
+  'calendar.prevMonth': 'Bulan sebelumnya',
+  'calendar.nextMonth': 'Bulan seterusnya',
+  'calendar.today': 'Hari ini',
   'range.beforeData': 'Memaparkan bar terawal yang dimuatkan',
 
   // Chart types

@@ -64,6 +64,9 @@ export const NL_MESSAGES: WidgetMessages = {
   'range.date': 'Datum',
   'range.time': 'Tijd',
   'range.cancel': 'Annuleren',
+  'calendar.prevMonth': 'Vorige maand',
+  'calendar.nextMonth': 'Volgende maand',
+  'calendar.today': 'Vandaag',
   'range.beforeData': 'Dit is de oudste geladen bar',
 
   'chartType.candlestick': 'Candlesticks',

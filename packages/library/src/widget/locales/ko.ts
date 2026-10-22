@@ -64,6 +64,9 @@ export const KO_MESSAGES: WidgetMessages = {
   'range.date': '날짜',
   'range.time': '시간',
   'range.cancel': '취소',
+  'calendar.prevMonth': '이전 달',
+  'calendar.nextMonth': '다음 달',
+  'calendar.today': '오늘',
   'range.beforeData': '불러온 가장 오래된 봉을 표시하고 있습니다',
 
   'chartType.candlestick': '캔들',

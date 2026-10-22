@@ -145,6 +145,21 @@ grid.getUI()`}</code></pre>
   <code>data-tcw-sidebar</code>, <code>data-tcw-intervals</code> y <code>data-tcw-separators</code> (<code>on</code> / <code>off</code>).
 </p>
 
+<h2 id="controls">Campos, listas y el calendario</h2>
+<p>
+  Todos los campos del widget (alertas, ajustes, el ticket de orden, ir a fecha, los parámetros de un indicador) tienen un mismo aspecto: un relleno tenue y una línea fina, una línea más firme al pasar el ratón y, con el foco, la línea toma el color de acento, sin anillo alrededor. Un select abre la lista propia del widget, con una marca en la fila elegida, los grupos como títulos, las flechas, Enter, Escape y la búsqueda por letra; un campo de fecha abre el calendario del widget, con las semanas desde el día en que las empieza el idioma, hoy subrayado y los días fuera del <code>min</code> y el <code>max</code> del campo en gris. Las casillas, los botones de opción, los deslizadores y los interruptores siguen los mismos tokens, igual que las barras de desplazamiento: finas y redondeadas, solo el pulgar, sin pista.
+</p>
+<p>
+  Los campos siguen siendo el <code>&lt;select&gt;</code> y el <code>&lt;input&gt;</code> del navegador: valores, eventos y formularios funcionan como antes, y en una pantalla táctil se abren la rueda y el calendario del propio teléfono, más cómodos para el dedo.
+</p>
+<p>El aspecto sale de estas variables, con valores para el tema oscuro y el claro:</p>
+<p><code>--tcw-field-bg</code>, <code>--tcw-field-bg-hover</code>, <code>--tcw-field-bg-focus</code>, <code>--tcw-field-line</code>, <code>--tcw-field-line-hover</code>, <code>--tcw-field-line-focus</code>, <code>--tcw-field-placeholder</code>, <code>--tcw-check-line</code>, <code>--tcw-scroll-thumb</code>, <code>--tcw-scroll-thumb-hover</code>.</p>
+<pre><code>{`.tcw-root {
+  --tcw-field-bg: transparent;            /* fields as lines, no fill */
+  --tcw-field-line: rgba(255, 255, 255, 0.12);
+  --tcw-field-line-focus: #5b8cff;        /* focus in your brand colour */
+}`}</code></pre>
+
 <h2 id="overrides">El aspecto del gráfico: overrides de estilo</h2>
 <p>
   El tema fija los colores del gráfico en conjunto. Cualquier parte de lo que dibuja el gráfico se puede fijar aparte,

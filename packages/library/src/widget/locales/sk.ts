@@ -64,6 +64,9 @@ export const SK_MESSAGES: WidgetMessages = {
   'range.date': 'Dátum',
   'range.time': 'Čas',
   'range.cancel': 'Zrušiť',
+  'calendar.prevMonth': 'Predchádzajúci mesiac',
+  'calendar.nextMonth': 'Nasledujúci mesiac',
+  'calendar.today': 'Dnes',
   'range.beforeData': 'Zobrazuje sa najstaršia načítaná sviečka',
 
   'chartType.candlestick': 'Sviečky',
