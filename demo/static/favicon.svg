@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#0b0e13"/>
-  <path d="M10.5 6.5H7v19h3.5M21.5 6.5H25v19h-3.5" fill="none" stroke="#e7e9ee" stroke-width="2.4" stroke-linecap="square"/>
-  <path d="M16 8v16" stroke="#f2a93b" stroke-width="2" stroke-linecap="round"/>
-  <rect x="13.25" y="11.25" width="5.5" height="9" rx="0.8" fill="#f2a93b"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>TradeCanvas</title><style>.b{stroke:#0B1020}@media (prefers-color-scheme:dark){.b{stroke:#FFFFFF}}</style><g transform="translate(-52.1 -52.1) scale(1.407)"><path d="M82 88L42 128L82 168M174 88L214 128L174 168" class="b" fill="none" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/><path fill="#F2A93B" transform="rotate(15 128 128)" d="M119.0 40H137.0V72H144.0a10 10 0 0 1 10 10V174a10 10 0 0 1-10 10H137.0V216H119.0V184H112.0a10 10 0 0 1-10-10V82a10 10 0 0 1 10-10H119.0Z"/></g></svg>
