@@ -392,7 +392,7 @@ export class Chart {
       timeAxis: f.timeAxis ?? true,
       grid: f.grid ?? (options.grid?.visible ?? true),
       legend: f.legend ?? true,
-      indicatorValueLabels: f.indicatorValueLabels ?? true,
+      indicatorValueLabels: f.indicatorValueLabels ?? false,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,

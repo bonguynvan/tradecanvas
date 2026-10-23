@@ -89,7 +89,7 @@ export interface FeaturesConfig {
   grid?: boolean;
   /** Show OHLCV legend overlay */
   legend?: boolean;
-  /** Tag each indicator line's latest value on its value axis. Default true. */
+  /** Tag each indicator line's latest value on its value axis. Default false: the legend shows the values. */
   indicatorValueLabels?: boolean;
   /** Show volume bars below candles */
   volume?: boolean;

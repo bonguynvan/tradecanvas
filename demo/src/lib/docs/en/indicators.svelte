@@ -56,8 +56,8 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  Each line's latest value is tagged on its axis in the line's colour; turn the tags off with
-  <code>features.indicatorValueLabels: false</code> or <code>setIndicatorValueLabelsVisible(false)</code>.
+  The legend shows each line's latest value. To tag it on the axis as well, in the line's colour, turn on
+  <code>features.indicatorValueLabels: true</code> or <code>setIndicatorValueLabelsVisible(true)</code> (off by default).
   A pane's lines, levels, axis and crosshair share one scale.
 </p>
 

@@ -403,7 +403,7 @@ export class ChartWidget {
       ...this.settingsState,
       legendVisible: features.legend !== false,
       barCountdown: features.barCountdown !== false,
-      indicatorValueLabels: features.indicatorValueLabels !== false,
+      indicatorValueLabels: features.indicatorValueLabels === true,
     };
     this.settingsState = { ...this.settingsDefaults };
 
