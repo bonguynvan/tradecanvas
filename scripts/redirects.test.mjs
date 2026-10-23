@@ -21,14 +21,18 @@ test('the playground, a sandbox launcher, goes to the examples', () => {
   assert.equal(targetFor('/tradecanvas/vi/playground'), 'https://tradecanvas.dev/vi/examples/');
 });
 
-test('a language the site has keeps its prefix; the others read the English page', () => {
+test('every old language keeps its prefix: the site has all fourteen', () => {
   assert.equal(targetFor('/tradecanvas/vi/docs/api/'), 'https://tradecanvas.dev/vi/docs/api/');
   assert.equal(targetFor('/tradecanvas/ja/'), 'https://tradecanvas.dev/ja/');
   assert.equal(targetFor('/tradecanvas/ko/examples/'), 'https://tradecanvas.dev/ko/examples/');
   assert.equal(targetFor('/tradecanvas/zh/docs/api/'), 'https://tradecanvas.dev/zh/docs/api/');
   assert.equal(targetFor('/tradecanvas/es/changelog/'), 'https://tradecanvas.dev/es/changelog/');
-  assert.equal(targetFor('/tradecanvas/zh-hant/docs/api/'), 'https://tradecanvas.dev/zh/docs/api/');
-  assert.equal(targetFor('/tradecanvas/de/docs/api/'), 'https://tradecanvas.dev/docs/api/');
+  assert.equal(targetFor('/tradecanvas/zh-hant/docs/api/'), 'https://tradecanvas.dev/zh-hant/docs/api/');
+  assert.equal(targetFor('/tradecanvas/de/docs/api/'), 'https://tradecanvas.dev/de/docs/api/');
+  assert.equal(targetFor('/tradecanvas/th/business/'), 'https://tradecanvas.dev/th/business/');
+  for (const lang of ['pt', 'fr', 'ru', 'tr', 'id']) {
+    assert.equal(targetFor(`/tradecanvas/${lang}/audit/`), `https://tradecanvas.dev/${lang}/audit/`, lang);
+  }
 });
 
 test('the embed keeps its query and hash, which carry the chart it shows', () => {
@@ -56,7 +60,7 @@ test('every old page gets a file of its own, in every old language', () => {
   assert.ok(!files.includes('en/index.html'), 'English never had a prefix');
   assert.equal(new Set(files).size, files.length);
   assert.equal(pages.find((p) => p.file === 'zh/docs/api/index.html').to, 'https://tradecanvas.dev/zh/docs/api/');
-  assert.equal(pages.find((p) => p.file === 'th/docs/api/index.html').to, 'https://tradecanvas.dev/docs/api/');
+  assert.equal(pages.find((p) => p.file === 'th/docs/api/index.html').to, 'https://tradecanvas.dev/th/docs/api/');
 });
 
 test('404.html maps an address it was not written for, in the browser', () => {

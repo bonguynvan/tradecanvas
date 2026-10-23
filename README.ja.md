@@ -29,30 +29,54 @@
 **Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、134 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
-  <a href="https://tradecanvas.dev/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>
+  <a href="https://tradecanvas.dev/ja/chart/"><img src=".github/assets/clips/hero.webp" alt="ライブ相場上の ChartWidget：EMA 21 と 55、RSI、クロスヘア、マウスで描いたトレンドライン" width="100%"></a>
 </p>
 
 ## 特長
 
-- **18 種類のチャートタイプ**：ローソク足や平均足から Renko、Kagi、Point & Figure、エクイボリュームまで。さらに 6 種類の金融チャート（スパークライン、板の深さ、資産曲線、ヒートマップ、ウォーターフォール、ゲージ）。
-- **134 種類のインジケーターと 69 種類の描画ツール**：インジケーターの上にインジケーター、トレンドラインのアラート、テンプレート、グループ、元に戻す / やり直す。
-- **チャート上で取引**：損益がリアルタイムに動くポジション、ドラッグで動かせる注文と損切り / 利確、注文チケット、口座パネル、そしてペーパートレードのブローカーまたは独自の執行アダプター。
-- **ライブデータ**：Binance、Bybit、Coinbase、Kraken を内蔵し、その他のフィードも約 20 行で接続できます。過去へスクロールすると古い履歴を読み込み、任意の時間足とティックチャートに対応します。
-- **Canvas 2D または WebGL**：100 万本のバーを 60 fps でパンでき、どの画面倍率でもくっきり表示されます。
-- **本格的なワークスペース**：マルチチャートのグリッド、名前付きレイアウト、ペーパートレードができるバーリプレイ、そして `@tradecanvas/analytics` のバックテスター。
-- **思いどおりにカスタマイズ**：101 個のスタイルキー、112 個の機能スイッチ、3 つの見た目、そしてインジケーター、描画ツール、チャートタイプ、オーバーレイのためのプラグイン。
-- **誰にでも使える**：ウィジェットは右から左に書く言語を含む 30 言語に対応し、スクリーンリーダーとキーボード操作もサポートしています。
-- **スマートフォンとアプリで**：描画、注文、アラートまで、指でマウスと同じことができます。ウィジェットはスマートフォン向けに自動で並び、チャートはバッテリーに配慮しながら WebView、React Native、Capacitor、Tauri で動きます。
+- **18 種類のチャート、134 のインジケーター、69 の描画ツール**。インジケーターの重ね掛け、ラインへのアラート、元に戻す・やり直し。
+- **チャート上で取引**：損益がリアルタイムに動くポジション、ドラッグできる注文と損切り、ペーパーブローカーまたは自前の接続。
+- **ライブデータ**：Binance、Bybit、Coinbase、Kraken を内蔵。独自のフィードも約 20 行で。
+- **速い**：WebGL で 100 万本のバーを 60 fps でパン。ライブのティックは約 1 マイクロ秒。
+- **ワークスペース**：チャートのグリッド、レイアウト、バーリプレイ、バックテスト。
+- **自由にカスタマイズ**：テーマ、3 つのルック、112 のスイッチ、プラグイン。30 言語。スマートフォンとアプリ。
 
-## インストール
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/trading.webp" alt="ロングポジションの利確と損切りをドラッグ。価格に合わせて損益が更新される">
+      <br><b>ドラッグできる注文</b>：損切り、目標、指値がマウスで動きます。
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/replay.webp" alt="ボリンジャーバンド付きの相場をリプレイ">
+      <br><b>バーリプレイ</b>：相場を再生し、その上でペーパートレード。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/grid.webp" alt="時間足の異なる 4 つのチャートを 2×2 のグリッドに並べ、クロスヘアが全チャートに追従">
+      <br><b>グリッド</b>：最大 6 チャートを銘柄、時間足、クロスヘア、時刻で連動。
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/looks.webp" alt="1 つのチャートが Terminal、Capsule、Studio のルックとダーク・ライトを切り替える">
+      <br><b>あなたのルック</b>：Studio、Terminal、Capsule、ライトかダーク、または独自のトークン。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src=".github/assets/clips/phone.webp" alt="スマートフォン上のウィジェット：指でチャートをパンし、トレンドラインを描く" width="46%">
+    </td>
+    <td width="50%" valign="top">
+      <br><b>スマートフォンで</b>：指でパン、ズーム、描画、注文のドラッグができ、ウィジェットは小さな画面に合わせて配置を変えます。WebView、React Native、Capacitor、Tauri でも動きます。
+    </td>
+  </tr>
+</table>
+
+## クイックスタート
 
 ```bash
 npm install @tradecanvas/chart
 ```
-
-## クイックスタート
-
-`ChartWidget` は、ツールバー、描画サイドバー、設定、ステータスバーを備えたトレーディング UI 一式を一度の呼び出しで用意します。
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -67,111 +91,13 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-UI を自分で作るなら、ヘッドレスな `Chart` とその API を使います。
-
-```typescript
-import { Chart } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
-chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
-chart.addIndicator('ema', { period: 50 })
-chart.addIndicator('rsi')
-```
-
-独自のフィードは `WebSocketAdapter` または `PollingAdapter` で接続できます。[リアルタイム](https://tradecanvas.dev/ja/docs/realtime/)を参照してください。
-
-## フレームワーク
-
-```bash
-npm install @tradecanvas/react    # または @tradecanvas/vue、@tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-3 つのコンポーネントは同じ props を持ち、内部の `Chart` を渡します。[フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/)を参照してください。
-
-## 機能ツアー
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="描画ツール：ノート付きのフィボナッチ・リトレースメント、トレンドライン、エリオット推進波、ロングポジション"></a>
-      <br><b>69 種類の描画ツール</b><br>
-      フィボナッチ、ギャン、ピッチフォーク、エリオット波動、ハーモニックパターン、ノート、そして取引サイズを計算するロング／ショートポジション。
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="チャート上の取引：損切りと利確付きのロングポジション、買いの逆指値と売りの指値、口座パネル"></a>
-      <br><b>チャート上で取引</b><br>
-      損益がリアルタイムに動くポジション、ドラッグで価格を変えられる注文、注文チケットと口座パネル。
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="BTC、ETH、SOL、BNB を複数の時間足で並べた 2×2 のワークスペース"></a>
-      <br><b>マルチチャートのワークスペース</b><br>
-      最大 6 つのチャートを並べ、シンボル、時間足、クロスヘア、時間、描画で連動させられます。
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="ひとつのチャートを 3 つの見た目で：studio、terminal、ライトテーマの capsule"></a>
-      <br><b>自分だけの見た目</b><br>
-      3 つのプリセット、または角の丸み、密度、フォント、価格タグを自由に設定。ライトとダークの両テーマで使えます。
-    </td>
-  </tr>
-</table>
+ヘッドレスの `Chart` は自前のバー（`chart.setData(bars)`）を受け取り、画面づくりはあなたに任せます。React、Vue、Svelte では `@tradecanvas/react`、`/vue`、`/svelte` が同じ props のコンポーネントとして包みます。
 
 ## ドキュメント
 
-| トピック | |
-|---|---|
-| [はじめに](https://tradecanvas.dev/ja/docs/getting-started/) | インストール、ウィジェット、ヘッドレスチャート |
-| [チャートタイプ](https://tradecanvas.dev/ja/docs/chart-types/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) | チャートが描けるものと、それぞれの設定 |
-| [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) | 内蔵フィード、独自のアダプター、履歴、ティックチャート |
-| [トレーディング](https://tradecanvas.dev/ja/docs/trading/) | 注文、ポジション、執行アダプター、リプレイ |
-| [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [カスタマイズ](https://tradecanvas.dev/ja/docs/customization/) | テーマ、スタイルキー、見た目、機能スイッチ、独自の部品 |
-| [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) | 独自のインジケーター、描画ツール、チャートタイプ、オーバーレイ |
-| [アナリティクス](https://tradecanvas.dev/ja/docs/analytics/) · [金融チャート](https://tradecanvas.dev/ja/docs/finance/) | バックテストとリスク指標、板の深さ・資産曲線などのチャート |
-| [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri。タッチとページのスクロール |
-| [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/) · [API リファレンス](https://tradecanvas.dev/ja/docs/api/) | 計測結果と API の全体 |
+[はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)
 
-ドキュメントは English、Tiếng Việt、简体中文、한국어、Español でも読めます。
-
-## パフォーマンス
-
-内蔵グラフィックス（Intel UHD）の Chrome で計測しました。全体の表は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
-
-| | |
-|---|---|
-| 1,000,000 本のバー + 4 つのインジケーター、ズームアウト、WebGL | 1 フレーム 16.7 ms（60 fps） |
-| 4 つのインジケーターを載せた 100,000 本のバーでのライブティック 1 回 | ~0.001 ms |
-| `Chart` / `ChartWidget`、minify と gzip 後 | 176 KB / 315 KB |
-
-## パッケージ
-
-| パッケージ | |
-|---|---|
-| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | チャートと `ChartWidget`（`/widget`） |
-| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | フレームワーク用コンポーネント |
-| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | バックテスターとリスク指標 |
-| `@tradecanvas/core` · `@tradecanvas/commons` | エンジンと共有の型。チャートと一緒にインストールされます |
-
-## プレビュービルド
-
-すべてのプルリクエストと `main` へのすべてのコミットは [pkg.pr.new](https://pkg.pr.new) に公開されるので、修正や機能をリリース前に試せます。プルリクエスト番号かコミットを指定してプレビューをインストールします。
-
-```bash
-npm install https://pkg.pr.new/@tradecanvas/chart@123      # プルリクエスト #123
-npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # main へのコミット
-```
-
-各プルリクエストには、すべてのパッケージの正確なコマンドを載せたコメントが付きます。
-
-## 対応ブラウザー
-
-Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
+ドキュメントは English、Tiếng Việt、简体中文、日本語、한국어、Español で読めます。計測値、制限、テストの方法は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
 
 ## AI コーディングツール
 
@@ -184,22 +110,14 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ほかのエージェント（Cursor、Codex、Copilot など）: `npx skills add bonguynvan/tradecanvas`。スキルを使わない場合は、[`llms.txt`](https://tradecanvas.dev/llms.txt) と [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) がドキュメントを 1 ファイルでアシスタントに渡します。エージェントで TradeCanvas 自体を変更するなら、リポジトリのルールは [AGENTS.md](AGENTS.md) にあります。
 
-## 関連プロジェクト
+## その他
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)**：フィンテック UI 向けの小さく高速な Svelte 5 データグリッド。トレーディングデスクのテーブル担当です。[ライブデモ](https://bonguynvan.github.io/bo-grid/)
-
-## 法人の方へ
-
-TradeCanvas をお客様向けの製品に組み込みますか？表示が必要なロゴも、申請手続きもありません。[法人向けページ](https://tradecanvas.dev/ja/business/)では、IT 審査でよく聞かれる項目に出典つきで答え、最初のパートナー向けプログラムを紹介しています。お問い合わせは business@tradecanvas.dev まで。
-
-## コントリビュート
-
-質問やアイデア、TradeCanvas で作ったものは [Discussions](https://github.com/bonguynvan/tradecanvas/discussions) へ、バグは issue へどうぞ。プルリクエストも歓迎します。[CONTRIBUTING.md](./CONTRIBUTING.md) にセットアップ（`pnpm install && pnpm build && pnpm test`）とプルリクエストに必要なことをまとめています。セキュリティ上の問題を見つけた場合は、issue を開かずに [SECURITY.md](./SECURITY.md) の手順に従ってください。
-
-## スポンサー
-
-TradeCanvas は無料の MIT ライセンスで、オープンに開発・保守されています。あなたのプロダクトの役に立っているなら、[GitHub Sponsors](https://github.com/sponsors/bonguynvan) で開発を支援できます。
-
-## ライセンス
+- **パッケージ**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（チャートとウィジェット）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)、バックテスト用の [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)。
+- **プレビュー**：すべての pull request と `main` のコミットが [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas) に公開され、リリース前にインストールできます。
+- **ブラウザー**：Chrome 80 以降、Edge 80 以降、Firefox 80 以降、Safari 14 以降。
+- **法人の方へ**：表示すべきロゴも申請もありません。[法人の方へ](https://tradecanvas.dev/ja/business/)のページが IT 審査の質問に答えます。business@tradecanvas.dev
+- **関連プロジェクト**：[bo-grid](https://github.com/bonguynvan/bo-grid)、トレーディングデスクの表を担う高速な Svelte データグリッド。
+- **コントリビュート**：質問は [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)、バグは issue へ。pull request は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照。セキュリティの問題は [SECURITY.md](./SECURITY.md)。
+- **スポンサー**：TradeCanvas は無料で、オープンに開発しています。[GitHub Sponsors](https://github.com/sponsors/bonguynvan) が開発を支えます。
 
 [MIT](./LICENSE)

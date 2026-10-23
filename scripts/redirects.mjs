@@ -24,7 +24,6 @@ export const OLD_LANGS = [...readFileSync(join(ROOT, 'demo/src/lib/i18n/language
 /** The new address for an old one. Self-contained: 404.html runs it in the browser. */
 export function targetFor(pathname, search = '', hash = '', slugs = DOC_SLUGS) {
   const SITE = 'https://tradecanvas.dev';
-  const SITE_LANGS = ['vi', 'zh', 'ja', 'ko', 'es'];
   const OLD_LANG = /^(vi|zh|zh-hant|ja|ko|es|pt|fr|de|ru|tr|id|th)$/;
   const PAGES = ['examples', 'audit', 'business', 'changelog'];
   const parts = pathname.split('/').filter(Boolean);
@@ -32,9 +31,8 @@ export function targetFor(pathname, search = '', hash = '', slugs = DOC_SLUGS) {
   parts.shift();
   if (parts[0] === 'embed') return SITE + '/embed/' + search + hash;
   const lang = parts[0] && OLD_LANG.test(parts[0]) ? parts.shift() : '';
-  // Traditional Chinese had no docs of its own; Simplified reads closer than English.
-  const site = lang === 'zh-hant' ? 'zh' : lang;
-  const prefix = SITE_LANGS.includes(site) ? '/' + site : '';
+  // The new site speaks every language the old one did, under the same prefix.
+  const prefix = lang ? '/' + lang : '';
   let page = '';
   if (parts[0] === 'playground') page = 'examples';
   else if (PAGES.includes(parts[0])) page = parts[0];

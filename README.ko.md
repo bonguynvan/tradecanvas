@@ -29,30 +29,54 @@
 **웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 134개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
-  <a href="https://tradecanvas.dev/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>
+  <a href="https://tradecanvas.dev/ko/chart/"><img src=".github/assets/clips/hero.webp" alt="실시간 시장의 ChartWidget: EMA 21과 55, RSI, 십자선, 마우스로 그린 추세선" width="100%"></a>
 </p>
 
 ## 주요 특징
 
-- **18가지 차트 유형**: 캔들과 하이킨아시부터 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨까지, 그리고 여섯 가지 금융 차트(스파크라인, 호가 깊이, 자산 곡선, 히트맵, 워터폴, 게이지).
-- **134개 지표와 69개 그리기 도구**: 지표 위의 지표, 추세선 알림, 템플릿, 그룹, 실행 취소와 다시 실행.
-- **차트 위에서 거래**: 실시간 손익이 표시되는 포지션, 드래그로 옮기는 주문과 손절/익절, 주문 티켓, 계좌 패널, 그리고 모의 거래 브로커 또는 직접 만든 실행 어댑터.
-- **실시간 데이터**: Binance, Bybit, Coinbase, Kraken이 내장되어 있고 다른 피드도 약 20줄이면 연결됩니다. 뒤로 스크롤하면 이전 과거 데이터를 불러오며, 어떤 시간 단위든, 틱 차트도 지원합니다.
-- **Canvas 2D 또는 WebGL**: 100만 개 봉을 60 fps로 이동하며, 어떤 화면 배율에서도 선명합니다.
-- **완전한 작업 공간**: 멀티 차트 그리드, 이름을 붙인 레이아웃, 모의 거래가 가능한 봉 리플레이, 그리고 `@tradecanvas/analytics`의 백테스터.
-- **원하는 대로**: 101개 스타일 키, 112개 기능 스위치, 세 가지 외관, 그리고 지표, 그리기 도구, 차트 유형, 오버레이를 위한 플러그인.
-- **모두를 위해**: 위젯은 오른쪽에서 왼쪽으로 쓰는 언어를 포함한 30개 언어로 제공되며, 스크린 리더와 키보드를 지원합니다.
-- **휴대폰과 앱에서**: 드로잉, 주문, 알림까지 손가락으로 마우스가 하는 일을 모두 할 수 있습니다. 위젯은 휴대폰에 맞게 스스로 배치되고, 차트는 배터리를 아끼며 WebView, React Native, Capacitor, Tauri에서 동작합니다.
+- **18가지 차트, 134개 지표, 69가지 드로잉 도구**, 지표 위의 지표, 선에 거는 알림, 실행 취소와 다시 실행.
+- **차트 위 거래**: 손익이 실시간으로 바뀌는 포지션, 끌어서 옮기는 주문과 손절, 모의 브로커 또는 직접 연결.
+- **실시간 데이터**: Binance, Bybit, Coinbase, Kraken 내장, 직접 만든 피드는 스무 줄 남짓.
+- **빠름**: WebGL로 봉 100만 개를 60 fps로 이동, 실시간 틱 하나에 약 1마이크로초.
+- **작업 공간**: 차트 그리드, 레이아웃, 봉 리플레이, 백테스트.
+- **원하는 대로**: 테마, 세 가지 룩, 112개 스위치, 플러그인; 30개 언어; 휴대폰과 앱.
 
-## 설치
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/trading.webp" alt="롱 포지션의 익절과 손절을 끌어서 옮기면 가격에 따라 손익이 바뀜">
+      <br><b>끌어서 옮기는 주문</b>: 손절, 목표가, 지정가가 마우스를 따라 움직입니다.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/replay.webp" alt="볼린저 밴드와 함께 시장을 다시 재생">
+      <br><b>봉 리플레이</b>: 시장을 다시 재생하고 그 위에서 모의 거래.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/grid.webp" alt="2×2 그리드에 시간 단위가 다른 차트 네 개, 십자선이 모두를 따라감">
+      <br><b>그리드</b>: 차트 최대 여섯 개를 종목, 시간 단위, 십자선, 시간으로 연동.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/looks.webp" alt="한 차트가 Terminal, Capsule, Studio 룩과 다크·라이트를 오감">
+      <br><b>나만의 룩</b>: Studio, Terminal, Capsule, 라이트 또는 다크, 또는 직접 만든 토큰.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src=".github/assets/clips/phone.webp" alt="휴대폰의 위젯: 손가락으로 차트를 옮기고 추세선을 그림" width="46%">
+    </td>
+    <td width="50%" valign="top">
+      <br><b>휴대폰에서</b>: 손가락으로 이동, 확대, 그리기, 주문 끌기를 하고, 위젯은 작은 화면에 맞게 배치를 바꿉니다. WebView, React Native, Capacitor, Tauri에서도 동작합니다.
+    </td>
+  </tr>
+</table>
+
+## 빠른 시작
 
 ```bash
 npm install @tradecanvas/chart
 ```
-
-## 빠른 시작
-
-`ChartWidget`은 도구 모음, 그리기 사이드바, 설정, 상태 표시줄을 갖춘 트레이딩 UI 전체를 한 번의 호출로 만듭니다.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -67,111 +91,13 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-UI를 직접 만들려면 헤드리스 `Chart`와 그 API를 사용하세요.
-
-```typescript
-import { Chart } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
-chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
-chart.addIndicator('ema', { period: 50 })
-chart.addIndicator('rsi')
-```
-
-직접 가진 피드는 `WebSocketAdapter` 또는 `PollingAdapter`로 연결합니다. [실시간](https://tradecanvas.dev/ko/docs/realtime/)을 참고하세요.
-
-## 프레임워크
-
-```bash
-npm install @tradecanvas/react    # 또는 @tradecanvas/vue, @tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-세 컴포넌트는 같은 props를 공유하며 내부 `Chart`를 넘겨줍니다. [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/)를 참고하세요.
-
-## 둘러보기
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="그리기 도구: 메모가 달린 피보나치 되돌림, 추세선, 엘리엇 충격 파동, 롱 포지션"></a>
-      <br><b>69개 그리기 도구</b><br>
-      피보나치, 갠, 피치포크, 엘리엇 파동, 하모닉 패턴, 메모, 그리고 거래 규모를 계산하는 롱/숏 포지션.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="차트 위 거래: 손절과 익절이 걸린 롱 포지션, 매수 스톱과 매도 지정가 주문, 계좌 패널"></a>
-      <br><b>차트 위에서 거래</b><br>
-      실시간 손익이 표시되는 포지션, 드래그로 가격을 바꾸는 주문, 주문 티켓과 계좌 패널.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="여러 시간 단위의 BTC, ETH, SOL, BNB 차트로 된 2×2 작업 공간"></a>
-      <br><b>멀티 차트 작업 공간</b><br>
-      최대 여섯 개의 차트를 나란히 두고 종목, 시간 단위, 십자선, 시간, 그림으로 연동합니다.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="하나의 차트, 세 가지 외관: studio, terminal, 라이트 테마의 capsule"></a>
-      <br><b>나만의 외관</b><br>
-      세 가지 프리셋 또는 모서리 둥글기, 밀도, 글꼴, 가격 라벨을 직접 정할 수 있으며, 라이트와 다크 테마를 모두 지원합니다.
-    </td>
-  </tr>
-</table>
+헤드리스 `Chart`는 직접 준비한 봉 데이터(`chart.setData(bars)`)를 받고 화면은 여러분에게 맡깁니다. React, Vue, Svelte에서는 `@tradecanvas/react`, `/vue`, `/svelte`가 같은 props의 컴포넌트로 감쌉니다.
 
 ## 문서
 
-| 주제 | |
-|---|---|
-| [시작하기](https://tradecanvas.dev/ko/docs/getting-started/) | 설치, 위젯, 헤드리스 차트 |
-| [차트 유형](https://tradecanvas.dev/ko/docs/chart-types/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [그리기 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) | 차트가 그리는 것과 각각의 설정 |
-| [실시간](https://tradecanvas.dev/ko/docs/realtime/) | 내장 피드, 직접 만든 어댑터, 과거 데이터, 틱 차트 |
-| [트레이딩](https://tradecanvas.dev/ko/docs/trading/) | 주문, 포지션, 실행 어댑터, 리플레이 |
-| [스타일](https://tradecanvas.dev/ko/docs/styling/) · [사용자 정의](https://tradecanvas.dev/ko/docs/customization/) | 테마, 스타일 키, 외관, 기능 스위치, 직접 만든 부품 |
-| [플러그인](https://tradecanvas.dev/ko/docs/plugins/) | 직접 만든 지표, 그리기 도구, 차트 유형, 오버레이 |
-| [분석](https://tradecanvas.dev/ko/docs/analytics/) · [금융 차트](https://tradecanvas.dev/ko/docs/finance/) | 백테스트와 리스크 지표, 호가 깊이·자산 곡선 등의 차트 |
-| [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; 터치와 페이지 스크롤 |
-| [성능](https://tradecanvas.dev/ko/docs/performance/) · [API 레퍼런스](https://tradecanvas.dev/ko/docs/api/) | 측정 결과와 전체 API |
+[시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)
 
-문서는 English, Tiếng Việt, 简体中文, 日本語, Español으로도 제공됩니다.
-
-## 성능
-
-내장 그래픽(Intel UHD)의 Chrome에서 측정했습니다. 전체 표는 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
-
-| | |
-|---|---|
-| 1,000,000개 봉 + 지표 4개, 축소 화면, WebGL | 프레임당 16.7 ms (60 fps) |
-| 지표 네 개가 있는 100,000개 봉에서 실시간 틱 한 번 | ~0.001 ms |
-| `Chart` / `ChartWidget`, minify 및 gzip 후 | 176 KB / 315 KB |
-
-## 패키지
-
-| 패키지 | |
-|---|---|
-| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | 차트와 `ChartWidget` (`/widget`) |
-| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | 프레임워크 컴포넌트 |
-| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | 백테스터와 리스크 지표 |
-| `@tradecanvas/core` · `@tradecanvas/commons` | 엔진과 공유 타입, 차트와 함께 설치됨 |
-
-## 미리 보기 빌드
-
-모든 풀 리퀘스트와 `main`의 모든 커밋은 [pkg.pr.new](https://pkg.pr.new)에 게시되므로, 수정이나 기능을 릴리스 전에 써 볼 수 있습니다. 풀 리퀘스트 번호나 커밋으로 미리 보기를 설치하세요.
-
-```bash
-npm install https://pkg.pr.new/@tradecanvas/chart@123      # 풀 리퀘스트 #123
-npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # main의 커밋
-```
-
-각 풀 리퀘스트에는 모든 패키지의 정확한 명령이 담긴 댓글이 달립니다.
-
-## 브라우저 지원
-
-Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
+문서는 English, Tiếng Việt, 简体中文, 日本語, 한국어, Español으로 제공됩니다. 측정값, 한계, 테스트 방법은 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
 
 ## AI 코딩 도구
 
@@ -184,22 +110,14 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 다른 에이전트(Cursor, Codex, Copilot 등): `npx skills add bonguynvan/tradecanvas`. 스킬 없이 쓸 때는 [`llms.txt`](https://tradecanvas.dev/llms.txt)와 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt)가 문서를 한 파일로 어시스턴트에게 제공합니다. 에이전트로 TradeCanvas 자체를 고친다면 저장소 규칙은 [AGENTS.md](AGENTS.md)에 있습니다.
 
-## 관련 프로젝트
+## 더 보기
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)**: 핀테크 UI를 위한 작고 빠른 Svelte 5 데이터 그리드로, 트레이딩 데스크의 테이블 담당입니다. [라이브 데모](https://bonguynvan.github.io/bo-grid/)
-
-## 기업 고객
-
-TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://tradecanvas.dev/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradecanvas.dev.
-
-## 기여하기
-
-질문, 아이디어, TradeCanvas로 만든 것은 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)에, 버그는 이슈에 남겨 주세요. 풀 리퀘스트도 환영합니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에 개발 환경 설정(`pnpm install && pnpm build && pnpm test`)과 풀 리퀘스트에 필요한 것을 정리해 두었습니다. 보안 문제를 발견했다면 이슈를 열지 말고 [SECURITY.md](./SECURITY.md)를 따라 주세요.
-
-## 후원
-
-TradeCanvas는 무료이며 MIT 라이선스로 공개적으로 개발·유지되고 있습니다. 여러분의 제품에 도움이 된다면 [GitHub Sponsors](https://github.com/sponsors/bonguynvan)에서 개발을 후원할 수 있습니다.
-
-## 라이선스
+- **패키지**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)(차트와 위젯), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), 백테스트용 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics).
+- **미리 보기**: 모든 pull request와 `main`의 모든 커밋이 [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas)에 올라가 릴리스 전에 설치할 수 있습니다.
+- **브라우저**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
+- **기업 고객**: 표시할 로고도, 신청할 것도 없습니다. [기업 고객](https://tradecanvas.dev/ko/business/) 페이지가 IT 검토의 질문에 답합니다. business@tradecanvas.dev
+- **관련 프로젝트**: [bo-grid](https://github.com/bonguynvan/bo-grid), 트레이딩 데스크의 표를 맡는 빠른 Svelte 데이터 그리드.
+- **기여하기**: 질문은 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), 버그는 issue로, pull request는 [CONTRIBUTING.md](./CONTRIBUTING.md)를 보세요. 보안 문제: [SECURITY.md](./SECURITY.md).
+- **후원**: TradeCanvas는 무료이며 공개적으로 개발됩니다. [GitHub Sponsors](https://github.com/sponsors/bonguynvan)가 개발을 이어 갑니다.
 
 [MIT](./LICENSE)
