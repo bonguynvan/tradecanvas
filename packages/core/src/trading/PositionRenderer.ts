@@ -1,6 +1,6 @@
 import type { TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, priceTagText } from '@tradecanvas/commons';
 import {
   buildPositionLabelContext,
   pickPnLColor,
@@ -52,7 +52,9 @@ export class PositionRenderer {
       // P&L zone
       if (currentPrice !== null) {
         const currentY = priceToY(currentPrice, viewport);
-        const labelCtx = buildPositionLabelContext(pos, currentPrice, precision, viewport.formatPrice);
+        const labelCtx = buildPositionLabelContext(
+          pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale,
+        );
         const pnl = labelCtx.pnl;
         const isProfit = pnl >= 0;
         const fallbackZone = isProfit ? profitColor : lossColor;
@@ -198,7 +200,6 @@ export class PositionRenderer {
   ): void {
     const { chartRect } = viewport;
     const entryColor = config.positionColors?.entry ?? '#4c8dff';
-    const precision = config.pricePrecision ?? 2;
     const axisX = chartRect.x + chartRect.width + 1;
 
     for (const pos of positions) {
@@ -210,7 +211,7 @@ export class PositionRenderer {
       ctx.font = `11px ${theme.font.family}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(viewport.formatPrice?.(pos.entryPrice) ?? pos.entryPrice.toFixed(precision), axisX + 5, entryY);
+      ctx.fillText(priceTagText(pos.entryPrice, viewport, config.pricePrecision), axisX + 5, entryY);
     }
   }
 }

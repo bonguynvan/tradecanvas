@@ -49,6 +49,8 @@ export interface ViewportState {
    * it unset.
    */
   formatPrice?: (price: number) => string;
+  /** The number locale prices on this scale are grouped in (`'vi-VN'`: 72.202,13). Unset: en-US. */
+  numberLocale?: string;
   /**
    * The step prices move in under that format (a 32nd): the axis puts its
    * ticks on whole numbers of it.

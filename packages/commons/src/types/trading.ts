@@ -54,6 +54,8 @@ export interface PositionLabelContext {
   precision: number;
   /** The chart's price format, for `{entry}` and `{price}` (decimals at `precision` without one). */
   formatPrice?: (price: number) => string;
+  /** The number locale `{pnl}` (and prices without a format) are grouped in. Unset: en-US. */
+  locale?: string;
 }
 
 export interface DepthLevel {

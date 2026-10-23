@@ -1,7 +1,7 @@
 import type { ViewportState, Theme, Point } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
-import { UI_ICONS } from '@tradecanvas/commons';
+import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import { drawIcon } from '../ui/drawIcon.js';
 
 /** The bell beside an alert line's price, px, and the space between them. */
@@ -594,7 +594,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'right';
-      const label = `${viewport.formatPrice?.(alert.price) ?? alert.price.toFixed(this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
+      const label = `${priceTagText(alert.price, viewport, this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
       const right = chartRect.x + chartRect.width - 4;
       ctx.fillText(label, right, y - 2);
       const iconX = right - ctx.measureText(label).width - LABEL_ICON_GAP - LABEL_ICON_SIZE;

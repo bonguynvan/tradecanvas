@@ -534,6 +534,8 @@ export class Chart {
     this.priceAxis = new PriceAxis();
     this.priceAxis.setLocale(this.numberLocale);
     this.leftPriceAxis.setLocale(this.numberLocale);
+    // Tags beside the axis (orders, positions, alerts) group prices as it does.
+    this.viewport.setNumberLocale(this.numberLocale);
     this.timeAxis = new TimeAxis();
     this.timeAxis.setLocale(this.numberLocale);
 
@@ -4879,6 +4881,7 @@ export class Chart {
    */
   setNumberLocale(locale: string): void {
     this.numberLocale = locale;
+    this.viewport.setNumberLocale(locale);
     this.priceAxis.setLocale(locale);
     this.leftPriceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);

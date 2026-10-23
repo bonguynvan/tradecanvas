@@ -6,6 +6,7 @@ import type {
   ViewportState,
   Theme,
 } from '@tradecanvas/commons';
+import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { fillTag } from '../ui/shapes.js';
 
@@ -137,7 +138,7 @@ export class OrderDraftTool {
       ctx,
       x0 + 6,
       y,
-      `${sideLabel} ${type.toUpperCase()} ${viewport.formatPrice?.(d.price) ?? d.price.toFixed(pricePrecision)}`,
+      `${sideLabel} ${type.toUpperCase()} ${priceTagText(d.price, viewport, pricePrecision)}`,
       color,
       theme,
     );

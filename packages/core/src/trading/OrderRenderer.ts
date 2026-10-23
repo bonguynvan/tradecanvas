@@ -1,6 +1,6 @@
 import type { TradingOrder, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, priceTagText } from '@tradecanvas/commons';
 import { drawCloseButton, type LineButton } from './lineButtons.js';
 import { fillTag } from '../ui/shapes.js';
 
@@ -48,8 +48,8 @@ export class OrderRenderer {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Order type label (left side)
-      const label = order.label ?? order.type.toUpperCase();
+      // Order type and quantity (left side); the axis tag carries the price.
+      const label = order.label ?? `${order.type.toUpperCase()} ${order.quantity}`;
       ctx.font = `bold 10px ${theme.font.family}`;
       const labelWidth = ctx.measureText(label).width + 8;
       ctx.fillStyle = color;
@@ -114,7 +114,6 @@ export class OrderRenderer {
   ): void {
     const buyColor = config.orderColors?.buy ?? '#1fa874';
     const sellColor = config.orderColors?.sell ?? '#e8505b';
-    const precision = config.pricePrecision ?? 2;
     const { chartRect } = viewport;
     const axisX = chartRect.x + chartRect.width + 1;
 
@@ -125,7 +124,7 @@ export class OrderRenderer {
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 
       const color = order.side === 'buy' ? buyColor : sellColor;
-      const priceText = `${viewport.formatPrice?.(price) ?? price.toFixed(precision)} x ${order.quantity}`;
+      const priceText = priceTagText(price, viewport, config.pricePrecision);
       ctx.font = `11px ${theme.font.family}`;
       const badgeWidth = ctx.measureText(priceText).width + 10;
       ctx.fillStyle = color;

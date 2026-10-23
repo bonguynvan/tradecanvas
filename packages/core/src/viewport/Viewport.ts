@@ -80,6 +80,7 @@ export class Viewport {
         invertScale: this.state.invertScale,
         priceAxisWidth: this.state.priceAxisWidth,
         formatPrice: this.state.formatPrice,
+        numberLocale: this.state.numberLocale,
         priceUnit: this.state.priceUnit,
       };
     }
@@ -118,6 +119,12 @@ export class Viewport {
 
   isInvertScale(): boolean {
     return this.state.invertScale === true;
+  }
+
+  /** The number locale prices on the scale are grouped in. */
+  setNumberLocale(locale: string): void {
+    this.state.numberLocale = locale;
+    this.invalidate();
   }
 
   /** How prices on the scale read (null: decimals), and the step they move in (a fraction's). */

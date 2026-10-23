@@ -3,6 +3,7 @@ import type {
   PositionLabelContext,
   TradingPosition,
 } from '@tradecanvas/commons';
+import { formatPrice as groupedNumber } from '@tradecanvas/commons';
 
 /**
  * Compute live P&L context for a position. Pure — no canvas, no side effects.
@@ -13,6 +14,7 @@ export function buildPositionLabelContext(
   currentPrice: number,
   precision: number,
   formatPrice?: (price: number) => string,
+  locale?: string,
 ): PositionLabelContext {
   const closed = Math.min(Math.max(pos.closedQuantity ?? 0, 0), pos.quantity);
   const open = pos.quantity - closed;
@@ -33,6 +35,7 @@ export function buildPositionLabelContext(
     pnlPct,
     precision,
     formatPrice,
+    locale,
   };
 }
 
@@ -53,11 +56,11 @@ export function formatPositionLabel(
       case 'openQty':
         return String(ctx.openQuantity);
       case 'entry':
-        return ctx.formatPrice?.(ctx.entryPrice) ?? ctx.entryPrice.toFixed(ctx.precision);
+        return ctx.formatPrice?.(ctx.entryPrice) ?? groupedNumber(ctx.entryPrice, ctx.precision, ctx.locale);
       case 'price':
-        return ctx.formatPrice?.(ctx.currentPrice) ?? ctx.currentPrice.toFixed(ctx.precision);
+        return ctx.formatPrice?.(ctx.currentPrice) ?? groupedNumber(ctx.currentPrice, ctx.precision, ctx.locale);
       case 'pnl':
-        return ctx.pnl.toFixed(ctx.precision);
+        return groupedNumber(ctx.pnl, ctx.precision, ctx.locale);
       case 'pnlPct':
         return `${ctx.pnlPct.toFixed(2)}%`;
       case 'pnlSign':
