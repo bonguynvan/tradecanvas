@@ -105,7 +105,19 @@ export interface IndicatorConfig {
    * to its values (volume-like lines over price). Unset: the price scale.
    */
   scale?: 'left';
+  /** The intervals it shows on; unset: all of them. */
+  intervals?: IndicatorIntervals;
 }
+
+/** The kinds of interval an indicator's visibility is set for. */
+export type IntervalUnit = 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
+
+/**
+ * The intervals an indicator shows on, by unit: `false` hides it on every
+ * interval of that unit, `[from, to]` shows it on those counts only
+ * (`hours: [1, 4]`: 1h to 4h). A unit left out shows it on all.
+ */
+export type IndicatorIntervals = Partial<Record<IntervalUnit, false | readonly [number, number]>>;
 
 /** Which price scale an overlay is drawn on. */
 export type OverlayScale = 'right' | 'left';

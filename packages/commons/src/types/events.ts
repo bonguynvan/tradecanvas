@@ -289,7 +289,7 @@ export interface HistoryLoadPayload {
 /** What changed on an indicator (`indicatorChange`). */
 export interface IndicatorSettingsChangePayload {
   instanceId: string;
-  change: 'visible' | 'style' | 'levels' | 'params' | 'pane' | 'scale';
+  change: 'visible' | 'style' | 'levels' | 'params' | 'pane' | 'scale' | 'intervals';
 }
 
 export interface ChartEventMap {

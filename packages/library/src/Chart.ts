@@ -43,7 +43,7 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
+import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
@@ -2642,6 +2642,28 @@ export class Chart {
     }
   }
 
+  /**
+   * The intervals an indicator shows on (null: all of them): `{ minutes:
+   * false }` hides it on every minute chart, `{ hours: [1, 4] }` shows it on
+   * 1h to 4h only. The chart reads them against the interval of the stream
+   * it is connected to; with no stream it shows the indicator.
+   */
+  setIndicatorIntervals(instanceId: string, intervals: IndicatorIntervals | null): void {
+    this.recordIndicators(instanceId, () => this.setIndicatorIntervalsNow(instanceId, intervals));
+  }
+
+  private setIndicatorIntervalsNow(instanceId: string, intervals: IndicatorIntervals | null): void {
+    if (!this.indicatorEngine.setIntervals(instanceId, intervals)) return;
+    this.updateViewportAndRender();
+    this.markStateChanged();
+    this.eventBus.emit('indicatorChange', { instanceId, change: 'intervals' });
+  }
+
+  /** The intervals an indicator shows on; null when all of them. */
+  getIndicatorIntervals(instanceId: string): IndicatorIntervals | null {
+    return this.indicatorEngine.getIntervals(instanceId);
+  }
+
   /** Get current config for a specific indicator instance */
   getIndicatorConfig(instanceId: string): { id: string; params: Record<string, unknown> } | null {
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
@@ -3015,6 +3037,8 @@ export class Chart {
     // The legend's title line names them (a name set with setSymbolName stands until the symbol changes).
     if (symbol !== previousSymbol) this.chartLegend.setSymbol(symbol);
     this.chartLegend.setTimeframe(timeframe);
+    // Indicators kept to some intervals come and go with it.
+    if (this.indicatorEngine.setTimeframe(timeframe)) this.updateViewportAndRender();
     if (symbol !== previousSymbol) {
       this.announcedSymbol = symbol;
       this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
@@ -4641,6 +4665,8 @@ export class Chart {
     if ((ind.visible ?? true) !== (config?.visible ?? true)) this.setIndicatorVisible(instanceId, ind.visible ?? true);
     const levels = ind.levels ?? null;
     if (JSON.stringify(levels) !== JSON.stringify(config?.levels ?? null)) this.setIndicatorLevels(instanceId, levels);
+    const intervals = ind.intervals ?? null;
+    if (JSON.stringify(intervals) !== JSON.stringify(config?.intervals ?? null)) this.setIndicatorIntervalsNow(instanceId, intervals);
     this.setPaneStyleNow(instanceId, ind.paneStyle ? readPaneStyle(ind.paneStyle) : null);
   }
 
@@ -4681,6 +4707,7 @@ export class Chart {
           levels: config?.levels?.slice(),
           pane: ind.pane,
           scale: config?.scale,
+          ...(config?.intervals ? { intervals: config.intervals } : {}),
           ...(panel && this.paneStyles.has(ind.instanceId) ? { paneStyle: { ...this.paneStyles.get(ind.instanceId) } } : {}),
           ...(panel
             ? {

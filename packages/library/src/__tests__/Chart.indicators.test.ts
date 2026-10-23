@@ -192,3 +192,41 @@ describe('indicator review fixes', () => {
     expect(range().max).toBeGreaterThan(before.max);
   });
 });
+
+describe('indicators shown on some intervals only', () => {
+  const adapter = {
+    name: 'fake',
+    connect: () => {},
+    disconnect: () => {},
+    getConnectionState: () => 'connected' as const,
+    fetchHistory: async () => bars(300),
+    on: () => {},
+    off: () => {},
+    dispose: () => {},
+  };
+
+  it('follow the stream’s interval, and come back on one they allow', async () => {
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 300 });
+    const sma = chart.addIndicator('sma')!;
+    chart.setIndicatorIntervals(sma, { hours: [4, 24] });
+    expect(chart.getActiveIndicators()[0]).toMatchObject({ visible: true, shown: false });
+    await chart.switchStream('AAA', '4h');
+    expect(chart.getActiveIndicators()[0].shown).toBe(true);
+    expect(chart.getIndicatorIntervals(sma)).toEqual({ hours: [4, 24] });
+  });
+
+  it('keep their intervals in a saved layout, and are one undo step', () => {
+    const sma = chart.addIndicator('sma')!;
+    const changes: string[] = [];
+    chart.on('indicatorChange', (e) => changes.push((e.payload as { change: string }).change));
+    chart.setIndicatorIntervals(sma, { minutes: false });
+    expect(changes).toEqual(['intervals']);
+    chart.loadState(chart.saveState()!);
+    const restored = chart.getActiveIndicators()[0].instanceId;
+    expect(chart.getIndicatorIntervals(restored)).toEqual({ minutes: false });
+    chart.setIndicatorIntervals(restored, null);
+    expect(chart.getIndicatorIntervals(restored)).toBeNull();
+    chart.undo();
+    expect(chart.getIndicatorIntervals(chart.getActiveIndicators()[0].instanceId)).toEqual({ minutes: false });
+  });
+});

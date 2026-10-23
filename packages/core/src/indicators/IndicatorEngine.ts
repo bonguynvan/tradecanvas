@@ -6,6 +6,7 @@ import type {
   ResolvedIndicatorStyle,
   IndicatorStyleConfig,
   IndicatorPlotStyle,
+  IndicatorIntervals,
   DataSeries,
   OHLCBar,
   ViewportState,
@@ -14,6 +15,7 @@ import type {
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
+import { cleanIntervals, shownOnInterval } from './intervals.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -30,6 +32,8 @@ interface IndicatorInstance {
    * computation.
    */
   changedFrom: number;
+  /** Not shown on the chart's interval (its `intervals` leave it out). */
+  offInterval: boolean;
 }
 
 interface LineInput {
@@ -54,6 +58,10 @@ export interface ActiveIndicatorInfo {
   params: Record<string, unknown>;
   descriptor: IndicatorDescriptor;
   visible: boolean;
+  /** Whether it is drawn now: visible, and on the chart's interval. */
+  shown: boolean;
+  /** The intervals it shows on, when not all. */
+  intervals?: IndicatorIntervals;
   /** The instance whose pane it is drawn in, when not its own. */
   pane?: string;
 }
@@ -67,6 +75,8 @@ export class IndicatorEngine {
   private order: IndicatorInstance[] | null = null;
   /** A recalculation waiting for the next read (`deferRecalculateFrom`). */
   private pending: { data: DataSeries; from: number } | null = null;
+  /** The chart's interval, which the instances' `intervals` are read against (null: not known). */
+  private timeframe: string | null = null;
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -110,7 +120,7 @@ export class IndicatorEngine {
     };
 
     this.flush();
-    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0 };
+    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false };
     this.instances.set(instanceId, instance);
     this.order = null;
     if (data) this.compute(instance, data);
@@ -438,7 +448,7 @@ export class IndicatorEngine {
     const draws: ((ctx: CanvasRenderingContext2D) => void)[] = [];
     for (const instance of this.instances.values()) {
       const output = instance.output;
-      if (!output || !instance.config.visible) continue;
+      if (!output || !isShown(instance)) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
       const vp = instance.config.scale === 'left' ? leftViewport ?? viewport : viewport;
       draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style));
@@ -449,7 +459,7 @@ export class IndicatorEngine {
   /** Whether any visible overlay is drawn on the left scale. */
   hasLeftScaleOverlays(): boolean {
     for (const instance of this.instances.values()) {
-      if (instance.config.scale === 'left' && instance.config.visible) return true;
+      if (instance.config.scale === 'left' && isShown(instance)) return true;
     }
     return false;
   }
@@ -473,7 +483,7 @@ export class IndicatorEngine {
   ): void {
     this.flush();
     const instance = this.instances.get(instanceId);
-    if (!instance?.output || !instance.config.visible) return;
+    if (!instance?.output || !isShown(instance)) return;
     instance.plugin.render(ctx, instance.output, viewport, instance.style);
   }
 
@@ -516,6 +526,50 @@ export class IndicatorEngine {
     return this.instances.get(instanceId)?.config.visible ?? false;
   }
 
+  /** Whether the instance is drawn now: visible, and on the chart's interval. */
+  isShown(instanceId: string): boolean {
+    const instance = this.instances.get(instanceId);
+    return instance ? isShown(instance) : false;
+  }
+
+  /**
+   * The chart's interval (`'4h'`, `'100T'`), against which each instance's
+   * `intervals` are read. True when that changed what is shown.
+   */
+  setTimeframe(timeframe: string | null): boolean {
+    this.timeframe = timeframe;
+    let changed = false;
+    for (const instance of this.instances.values()) changed = this.placeOnInterval(instance) || changed;
+    return changed;
+  }
+
+  /**
+   * The intervals the instance shows on (null: all of them), checked as
+   * `cleanIntervals` checks them. False when not found.
+   */
+  setIntervals(instanceId: string, intervals: IndicatorIntervals | null): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance) return false;
+    const clean = intervals ? cleanIntervals(intervals) : null;
+    if (clean) instance.config.intervals = clean;
+    else delete instance.config.intervals;
+    this.placeOnInterval(instance);
+    return true;
+  }
+
+  /** The intervals the instance shows on; null when all of them (or not found). */
+  getIntervals(instanceId: string): IndicatorIntervals | null {
+    return this.instances.get(instanceId)?.config.intervals ?? null;
+  }
+
+  /** Mark the instance on or off the chart's interval; true when that changed. */
+  private placeOnInterval(instance: IndicatorInstance): boolean {
+    const off = !shownOnInterval(instance.config.intervals, this.timeframe);
+    if (off === instance.offInterval) return false;
+    instance.offInterval = off;
+    return true;
+  }
+
   /** The instance's reference levels: its own, else its indicator's defaults. */
   getLevels(instanceId: string): number[] {
     const instance = this.instances.get(instanceId);
@@ -552,7 +606,7 @@ export class IndicatorEngine {
     // The pane's own indicator and those drawn in it share one scale.
     for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
       const instance = this.instances.get(id);
-      if (!instance || instance.config.visible === false) continue;
+      if (!instance || !isShown(instance)) continue;
       const descriptor = instance.plugin.descriptor;
       const options = {
         keys: shownKeys(instance),
@@ -582,6 +636,8 @@ export class IndicatorEngine {
         params: { ...instance.config.params },
         descriptor: instance.plugin.descriptor,
         visible: instance.config.visible ?? true,
+        shown: isShown(instance),
+        ...(instance.config.intervals ? { intervals: instance.config.intervals } : {}),
         ...(instance.config.pane ? { pane: instance.config.pane } : {}),
       });
     }
@@ -647,7 +703,7 @@ export class IndicatorEngine {
     let gMax = -Infinity;
 
     for (const instance of this.instances.values()) {
-      if (!instance.output || !instance.config.visible) continue;
+      if (!instance.output || !isShown(instance)) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
       // Overlays on the left scale have a range of their own.
       if ((instance.config.scale === 'left') !== (scale === 'left')) continue;
@@ -697,6 +753,11 @@ export class IndicatorEngine {
   }
 }
 
+/** Whether an instance is drawn: switched on, and on the chart's interval. */
+function isShown(instance: IndicatorInstance): boolean {
+  return instance.config.visible !== false && !instance.offInterval;
+}
+
 /** The fields an instance draws and shows: a hidden plot stretches no scale. */
 function shownKeys(instance: IndicatorInstance): readonly string[] | null {
   const keys = drawnKeys(instance.plugin.descriptor);
@@ -712,7 +773,7 @@ function copyPlots(plots: Record<string, IndicatorPlotStyle>): Record<string, In
 function latestValues(instance: IndicatorInstance): { value: number; color: string }[] {
   const series = instance.output?.series;
   const plots = instance.plugin.descriptor.plots;
-  if (!series || !plots || instance.config.visible === false) return [];
+  if (!series || !plots || !isShown(instance)) return [];
   const point = series[series.length - 1];
   if (!point) return [];
   const out: { value: number; color: string }[] = [];
