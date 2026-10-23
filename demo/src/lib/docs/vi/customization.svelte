@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Tùy biến — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 112 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
+  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 114 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
 </svelte:head>
 
 <h1>Tùy biến</h1>

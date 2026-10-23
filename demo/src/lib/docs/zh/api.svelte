@@ -689,7 +689,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>功能开关</h3>
-<p>112 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<p>114 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
 
 widget.setFeatures({ sidebar: false, statusBar: false })

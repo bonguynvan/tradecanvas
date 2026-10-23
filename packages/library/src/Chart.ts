@@ -356,7 +356,10 @@ export class Chart {
   private historyCheckQueued = false;
 
 
-  constructor(container: HTMLElement, options: ChartOptions & { plugins?: ChartPlugin[] }) {
+  constructor(container: HTMLElement, options: ChartOptions & {
+    /** Plugins to install with the chart: indicators, drawing tools, chart types and overlays of your own. */
+    plugins?: ChartPlugin[];
+  }) {
     // Checked before anything is built: a throw later would leave the DOM and listeners behind.
     if (options.timeZone != null) assertTimezone(options.timeZone);
     this.container = container;

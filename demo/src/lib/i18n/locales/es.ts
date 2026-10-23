@@ -381,7 +381,7 @@ const es: SiteMessages = {
     },
     parts: {
       title: 'Tu widget, tus piezas',
-      stat: '112 interruptores',
+      stat: '114 interruptores',
       blurb:
         'Cada parte del widget tiene un interruptor, encendido hasta que lo apagas y cambiable en marcha: una capacidad entera (alertas, ajustes, atajos) o un solo lugar (un botón de la barra, una entrada de menú, una sección de herramientas de dibujo). Tus propios botones, menús y elementos de estado van en las barras del widget. Aquí la reproducción, dos secciones de dibujo y la descarga de datos están apagadas, y la barra lleva un menú de interruptores.',
       tryThis: [
@@ -768,7 +768,7 @@ const es: SiteMessages = {
         { name: 'Tres aspectos para el widget', detail: 'Studio, Terminal, Capsule; ui y setUI; variables CSS --tcw-*' },
         { name: 'El aspecto del gráfico por clave', detail: 'applyOverrides sobre 101 claves tipadas, en una capa de la aplicación y otra del usuario' },
         { name: 'Una configuración que llega a cada clave', detail: 'Una pestaña de estilo para el tipo de gráfico visible, una pestaña de trading' },
-        { name: '112 interruptores de funciones', detail: 'features, setFeatures, isFeatureOn; se cambian en marcha' },
+        { name: '114 interruptores de funciones', detail: 'features, setFeatures, isFeatureOn; se cambian en marcha' },
         { name: 'Tus propias piezas en el widget', detail: 'Botones y desplegables en la barra de herramientas, botones laterales, elementos de estado, slots, entradas de menú' },
         { name: 'Tus propios atajos', detail: 'addHotkey según la distribución del teclado' },
       ],

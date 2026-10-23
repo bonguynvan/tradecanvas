@@ -111,6 +111,16 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  packages/mcp:
+    dependencies:
+      '@tradecanvas/commons':
+        specifier: workspace:*
+        version: link:../commons
+    devDependencies:
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(jsdom@25.0.1)(lightningcss@1.32.0)
+
   packages/react:
     dependencies:
       '@tradecanvas/chart':

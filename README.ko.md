@@ -39,7 +39,7 @@
 - **실시간 데이터**: Binance, Bybit, Coinbase, Kraken 내장, 직접 만든 피드는 스무 줄 남짓.
 - **빠름**: WebGL로 봉 100만 개를 60 fps로 이동, 실시간 틱 하나에 약 1마이크로초.
 - **작업 공간**: 차트 그리드, 레이아웃, 봉 리플레이, 백테스트.
-- **원하는 대로**: 테마, 세 가지 룩, 112개 스위치, 플러그인; 30개 언어; 휴대폰과 앱.
+- **원하는 대로**: 테마, 세 가지 룩, 114개 스위치, 플러그인; 30개 언어; 휴대폰과 앱.
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ new ChartWidget(document.getElementById('chart')!, {
 ```
 
 다른 에이전트(Cursor, Codex, Copilot 등): `npx skills add bonguynvan/tradecanvas`. 스킬 없이 쓸 때는 [`llms.txt`](https://tradecanvas.dev/llms.txt)와 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt)가 문서를 한 파일로 어시스턴트에게 제공합니다. 에이전트로 TradeCanvas 자체를 고친다면 저장소 규칙은 [AGENTS.md](AGENTS.md)에 있습니다.
+
+MCP 서버 `@tradecanvas/mcp`는 지표, 드로잉 도구, 옵션, 기능 스위치, 스타일 키를 라이브러리 자체의 카탈로그에서 찾고, 옵션 객체를 쓰기 전에 검사합니다 ([다른 클라이언트 설정](https://tradecanvas.dev/ko/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## 더 보기
 

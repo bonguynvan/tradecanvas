@@ -379,7 +379,7 @@ const zhHant: SiteMessages = {
     },
     parts: {
       title: '你的元件，部件由你決定',
-      stat: '112 個開關',
+      stat: '114 個開關',
       blurb:
         '元件的每個部分都有開關，預設開啟，執行時可隨時切換：可以是整項功能（警示、設定、快捷鍵），也可以是一個位置（工具列上的某個按鈕、某個選單項目、某組繪圖工具）。你自己的按鈕、選單和狀態項目就放在元件的各個列中。這裡關閉了重播、兩組繪圖工具和資料下載，工具列上多了一個開關選單。',
       tryThis: [
@@ -764,7 +764,7 @@ const zhHant: SiteMessages = {
         { name: '元件的三種外觀', detail: 'Studio、Terminal、Capsule；ui 與 setUI；--tcw-* CSS 變數' },
         { name: '依鍵自訂圖表外觀', detail: 'applyOverrides 涵蓋 101 個具型別的鍵，分為宿主層與使用者層' },
         { name: '涵蓋每個鍵的設定', detail: '目前圖表類型的樣式分頁，以及交易分頁' },
-        { name: '112 個功能開關', detail: 'features、setFeatures、isFeatureOn；執行中即可變更' },
+        { name: '114 個功能開關', detail: 'features、setFeatures、isFeatureOn；執行中即可變更' },
         { name: '在元件中加入你自己的部件', detail: '工具列按鈕與下拉選單、側邊欄按鈕、狀態列項目、插槽、選單項目' },
         { name: '自訂快速鍵', detail: 'addHotkey，依鍵盤配置辨識' },
       ],

@@ -13,7 +13,7 @@
     "typecheck": "pnpm --filter \"./packages/*\" exec tsc --noEmit",
     "docs:gen": "node scripts/gen-ai-docs.mjs",
     "docs:check": "node scripts/gen-ai-docs.mjs --check && node scripts/check-skill-examples.mjs",
-    "test:scripts": "node --test scripts/redirects.test.mjs",
+    "test:scripts": "node --test scripts/redirects.test.mjs scripts/mcp-catalog.test.mjs",
     "bench": "pnpm --filter @tradecanvas/core exec vitest bench --run",
     "bench:render": "node scripts/bench-render.mjs",
     "changeset": "changeset",

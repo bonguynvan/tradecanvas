@@ -43,6 +43,11 @@ also works on a widget.
    everything.
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
+8. **Look names up when the TradeCanvas MCP server is connected** (tools named
+   `get_indicator`, `validate_options`…, from `@tradecanvas/mcp`): an
+   indicator's params and line keys with `get_indicator`, drawing types with
+   `list_drawing_tools`, and an options object through `validate_options`
+   before it goes to `new ChartWidget` or `new Chart`.
 
 ## Quick start: the widget with live data
 

@@ -73,6 +73,21 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
   <a href={href('/docs/frameworks')}>框架</a>一节。
 </p>
 
+<h2 id="ai">配合编程 agent 使用</h2>
+<p>编程 agent 可以学会 TradeCanvas，而不必靠猜。<strong>agent 技能</strong>通过经过类型检查的示例讲解 API；在 Claude Code 中用两条命令安装：</p>
+<pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas`}</code></pre>
+<p><strong>MCP 服务器</strong> <code>@tradecanvas/mcp</code> 依据库自身的目录作答：指标 id、参数及各条线的 key；画线工具及每种需要的点数；<code>ChartWidget</code>、<code>Chart</code> 和 <code>ChartWidgetGrid</code> 的选项；功能开关和样式 key。其中 <code>validate_options</code> 工具会在使用前检查选项对象，并指出本意要写的选项。在 Claude Code 中：</p>
+<pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
+<p>Cursor、Claude Desktop 和大多数其他客户端在 MCP 设置中使用同样的命令：</p>
+<pre><code>{`{
+  "mcpServers": {
+    "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
+  }
+}`}</code></pre>
+<p>在 Windows 上（不经过 WSL），npx 需要通过 <code>cmd</code> 启动：<code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>，或在设置中写 <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>。</p>
+<p>两者都不用时，<a href="https://tradecanvas.dev/llms.txt">llms.txt</a> 和 <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> 把文档集中在一个文件里提供给 AI 助手。</p>
+
 <h2>下一步</h2>
 <ul>
   <li><a href={href('/docs/api')}>API 参考</a> — <code>Chart</code> 与 <code>ChartWidget</code> 的完整接口</li>

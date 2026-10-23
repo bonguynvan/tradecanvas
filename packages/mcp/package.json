@@ -1,0 +1,59 @@
+{
+  "name": "@tradecanvas/mcp",
+  "version": "1.31.0",
+  "type": "module",
+  "description": "An MCP server for TradeCanvas: coding agents look up its indicators, drawing tools, options, feature switches and style keys, and check an options object before they use it.",
+  "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/bonguynvan"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bonguynvan/tradecanvas.git",
+    "directory": "packages/mcp"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "trading",
+    "charts",
+    "tradecanvas"
+  ],
+  "homepage": "https://tradecanvas.dev/",
+  "bin": {
+    "tradecanvas-mcp": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@tradecanvas/commons": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}

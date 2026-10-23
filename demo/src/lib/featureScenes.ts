@@ -539,10 +539,10 @@ chart.getStyleValue('series.bar.upColor')     // '#26a69a'`,
   },
   drawingMenuItems: ({ id, type }) => [{ label: \`\${type} · \${id}\`, onSelect: copy }],
 })
-widget.setFeatures({ sidebar: false })     // while running: 112 switches
+widget.setFeatures({ sidebar: false })     // while running: 114 switches
 widget.addToolbarDropdown({ id: 'parts', label: 'Parts', items: () => [...] })
 widget.addSidebarButton({ id: 'focus', label: 'Focus', icon: 'eye', onClick })
-widget.addStatusBarItem({ id: 'on', text: '109/112', label: 'Switches on' })
+widget.addStatusBarItem({ id: 'on', text: '111/114', label: 'Switches on' })
 widget.addHotkey({ keys: 'Alt+X', label: 'Focus', onPress })   // in the shortcut sheet (?) too
 widget.getSlot('chart')                    // a layer of your own over the chart`,
     options: () => ({

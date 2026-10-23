@@ -719,7 +719,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>기능 스위치</h3>
-<p>스위치 112개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
+<p>스위치 114개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
 
 widget.setFeatures({ sidebar: false, statusBar: false })

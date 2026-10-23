@@ -386,7 +386,7 @@ const en = {
     },
     parts: {
       title: 'Your widget, your parts',
-      stat: '112 switches',
+      stat: '114 switches',
       blurb:
         'Every part of the widget has a switch, on until you turn it off and changeable while running: a whole capability (alerts, settings, the keys) or one place (a toolbar button, a menu entry, a section of drawing tools). Your own buttons, menus and status items sit in the widget’s bars. Here replay, two sections of drawing tools and the data download are off, and the toolbar carries a menu of switches.',
       tryThis: [
@@ -772,7 +772,7 @@ const en = {
         { name: 'Three looks for the widget', detail: 'Studio, Terminal, Capsule; ui and setUI; --tcw-* CSS variables' },
         { name: 'The chart’s look by key', detail: 'applyOverrides over 101 typed keys, on a host layer and a user layer' },
         { name: 'Settings that reach every key', detail: 'A style tab for the chart type on view, a trading tab' },
-        { name: '112 feature switches', detail: 'features, setFeatures, isFeatureOn; changed while running' },
+        { name: '114 feature switches', detail: 'features, setFeatures, isFeatureOn; changed while running' },
         { name: 'Your own parts in the widget', detail: 'Toolbar buttons and dropdowns, sidebar buttons, status items, slots, menu items' },
         { name: 'Your own shortcuts', detail: 'addHotkey by the keyboard layout' },
       ],

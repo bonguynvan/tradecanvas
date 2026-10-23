@@ -39,7 +39,7 @@
 - **ライブデータ**：Binance、Bybit、Coinbase、Kraken を内蔵。独自のフィードも約 20 行で。
 - **速い**：WebGL で 100 万本のバーを 60 fps でパン。ライブのティックは約 1 マイクロ秒。
 - **ワークスペース**：チャートのグリッド、レイアウト、バーリプレイ、バックテスト。
-- **自由にカスタマイズ**：テーマ、3 つのルック、112 のスイッチ、プラグイン。30 言語。スマートフォンとアプリ。
+- **自由にカスタマイズ**：テーマ、3 つのルック、114 のスイッチ、プラグイン。30 言語。スマートフォンとアプリ。
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ new ChartWidget(document.getElementById('chart')!, {
 ```
 
 ほかのエージェント（Cursor、Codex、Copilot など）: `npx skills add bonguynvan/tradecanvas`。スキルを使わない場合は、[`llms.txt`](https://tradecanvas.dev/llms.txt) と [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) がドキュメントを 1 ファイルでアシスタントに渡します。エージェントで TradeCanvas 自体を変更するなら、リポジトリのルールは [AGENTS.md](AGENTS.md) にあります。
+
+MCP サーバー `@tradecanvas/mcp` は、インジケーター、描画ツール、オプション、機能スイッチ、スタイルキーをライブラリ自身のカタログから調べ、使う前にオプションのオブジェクトを確かめます ([ほかのクライアントでの設定](https://tradecanvas.dev/ja/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## その他
 

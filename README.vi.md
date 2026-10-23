@@ -39,7 +39,7 @@
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
 - **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây.
 - **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, tua lại nến, backtest.
-- **Tùy biến theo ý bạn**: theme, ba phong cách, 112 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
+- **Tùy biến theo ý bạn**: theme, ba phong cách, 114 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ Agent skill trong [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) dạy codi
 ```
 
 Agent khác (Cursor, Codex, Copilot…): `npx skills add bonguynvan/tradecanvas`. Không dùng skill thì [`llms.txt`](https://tradecanvas.dev/llms.txt) và [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) gom tài liệu vào một file cho trợ lý AI. Sửa chính TradeCanvas bằng agent? Quy tắc của repo nằm trong [AGENTS.md](AGENTS.md).
+
+MCP server `@tradecanvas/mcp` tra chỉ báo, công cụ vẽ, tùy chọn, công tắc tính năng và style key trong chính catalog của thư viện, và kiểm tra một object tùy chọn trước khi dùng ([cài cho các client khác](https://tradecanvas.dev/vi/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## Thêm
 

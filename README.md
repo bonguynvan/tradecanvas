@@ -39,7 +39,7 @@
 - **Live data** from Binance, Bybit, Coinbase and Kraken, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond.
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
-- **Yours to shape**: themes, three looks, 112 switches, plugins; 30 languages; phones and apps.
+- **Yours to shape**: themes, three looks, 114 switches, plugins; 30 languages; phones and apps.
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ The agent skill in [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) teaches c
 ```
 
 Other agents (Cursor, Codex, Copilot and more): `npx skills add bonguynvan/tradecanvas`. Without a skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) and [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) give an assistant the docs in one file. Changing TradeCanvas itself with an agent? [AGENTS.md](AGENTS.md) holds the repo's rules.
+
+The MCP server `@tradecanvas/mcp` looks up indicators, drawing tools, options, feature switches and style keys in the library's own catalog, and checks an options object before it is used ([set it up in other clients](https://tradecanvas.dev/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## More
 

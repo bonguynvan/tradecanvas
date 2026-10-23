@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>定制 — TradeCanvas 文档</title>
-  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 112 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
+  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 114 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
 </svelte:head>
 
 <h1>定制</h1>

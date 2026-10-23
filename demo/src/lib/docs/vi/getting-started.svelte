@@ -74,6 +74,21 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
   <a href={href('/docs/frameworks')}>framework</a>.
 </p>
 
+<h2 id="ai">Dùng với coding agent</h2>
+<p>Coding agent có thể học TradeCanvas thay vì đoán. <strong>Agent skill</strong> dạy API qua các ví dụ được kiểm kiểu; trong Claude Code, cài bằng hai lệnh:</p>
+<pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas`}</code></pre>
+<p><strong>MCP server</strong> <code>@tradecanvas/mcp</code> trả lời từ chính catalog của thư viện: id của chỉ báo, tham số và key của từng đường; công cụ vẽ và số điểm mỗi công cụ cần; tùy chọn của <code>ChartWidget</code>, <code>Chart</code> và <code>ChartWidgetGrid</code>; công tắc tính năng và style key. Công cụ <code>validate_options</code> kiểm tra một object tùy chọn trước khi dùng và chỉ ra tùy chọn đúng. Trong Claude Code:</p>
+<pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
+<p>Cursor, Claude Desktop và hầu hết các client khác nhận cùng lệnh đó trong phần cài đặt MCP:</p>
+<pre><code>{`{
+  "mcpServers": {
+    "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
+  }
+}`}</code></pre>
+<p>Trên Windows (không qua WSL), npx chạy qua <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, hoặc trong phần cài đặt <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>.</p>
+<p>Không dùng cả hai thì <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> và <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> gom tài liệu vào một file cho trợ lý AI.</p>
+
 <h2>Bước tiếp theo</h2>
 <ul>
   <li><a href={href('/docs/api')}>Tham chiếu API</a> — toàn bộ API của <code>Chart</code> và <code>ChartWidget</code></li>

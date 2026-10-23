@@ -16,6 +16,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `packages/core` | The engine: viewport, renderers (Canvas 2D and WebGL), indicators, drawings, trading, data adapters. |
 | `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), and `ChartWidget` with its UI in `src/widget`. |
 | `packages/analytics` | Backtester, strategies, risk metrics. |
+| `packages/mcp` | `@tradecanvas/mcp`: the MCP server for coding agents. Its catalog is generated from the other packages (`scripts/mcp-catalog.mjs`). |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |
 | `demo` | The Feature Lab you run locally, and the source of the docs in six languages, which [tradecanvas.dev](https://tradecanvas.dev/) publishes. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
@@ -29,7 +30,7 @@ pnpm build                     # every package; run it before typecheck, tests o
 pnpm typecheck
 TZ=UTC pnpm test               # CI runs in UTC; date and session tests assume it
 pnpm docs:check                # generated docs are current, skill examples type-check
-pnpm test:scripts              # the redirects from the old GitHub Pages addresses
+pnpm test:scripts              # after pnpm build: the GitHub Pages redirects and the MCP catalog
 pnpm --filter @tradecanvas/demo check   # when you touched demo/
 pnpm --filter @tradecanvas/demo test
 ```
@@ -67,9 +68,12 @@ These fail CI, often far from the line that caused them.
 
 - **Generated files.** `pnpm docs:gen` (after `pnpm build`) writes
   `demo/static/llms.txt`, `llms-full.txt`, `demo/src/lib/generated/indicators.json`,
-  `skills/tradecanvas/references/indicators.md` and
-  `packages/library/README.md`. Never edit those by hand: change the source
-  (the indicator registry, the docs, the root `README.md`) and regenerate.
+  `skills/tradecanvas/references/indicators.md`, `packages/library/README.md`
+  and `packages/mcp/src/catalog.json`. Never edit those by hand: change the
+  source (the indicator registry, the docs, the root `README.md`, the option
+  types and their doc comments) and regenerate. A new or renamed option,
+  feature switch, style key or drawing tool shows up in the MCP catalog this
+  way, so `docs:check` fails until it is regenerated.
 - **Widget strings.** A new string is a key in `EN_MESSAGES`
   (`packages/library/src/widget/locales/en.ts`) and in each of the other 29
   language files beside it, with the same `{placeholders}`.

@@ -379,7 +379,7 @@ const tr: SiteMessages = {
     },
     parts: {
       title: 'Sizin widget’ınız, sizin parçalarınız',
-      stat: '112 anahtar',
+      stat: '114 anahtar',
       blurb:
         'Widget’ın her parçasının bir anahtarı var; siz kapatana dek açık ve çalışırken değiştirilebilir: bütün bir yetenek (uyarılar, ayarlar, kısayollar) ya da tek bir yer (bir araç çubuğu düğmesi, bir menü girişi, bir çizim aracı bölümü). Kendi düğmeleriniz, menüleriniz ve durum öğeleriniz widget’ın çubuklarına yerleşir. Burada yeniden oynatma, iki çizim bölümü ve veri indirme kapalı; araç çubuğunda bir anahtar menüsü var.',
       tryThis: [
@@ -764,7 +764,7 @@ const tr: SiteMessages = {
         { name: 'Widget için üç görünüm', detail: 'Studio, Terminal, Capsule; ui ve setUI; --tcw-* CSS değişkenleri' },
         { name: 'Anahtar anahtar grafik görünümü', detail: 'Ana uygulama katmanı ve kullanıcı katmanında, 101 tipli anahtar üzerinde applyOverrides' },
         { name: 'Her anahtara ulaşan ayarlar', detail: 'Görüntülenen grafik türü için stil sekmesi, alım satım sekmesi' },
-        { name: 'Açılıp kapatılabilen 112 özellik', detail: 'features, setFeatures, isFeatureOn; çalışırken değiştirilebilir' },
+        { name: 'Açılıp kapatılabilen 114 özellik', detail: 'features, setFeatures, isFeatureOn; çalışırken değiştirilebilir' },
         { name: 'Widget’ta kendi parçalarınız', detail: 'Araç çubuğu düğmeleri ve açılır menüler, kenar çubuğu düğmeleri, durum öğeleri, yuvalar, menü öğeleri' },
         { name: 'Kendi kısayollarınız', detail: 'Klavye düzenine göre addHotkey' },
       ],

@@ -379,7 +379,7 @@ const de: SiteMessages = {
     },
     parts: {
       title: 'Dein Widget, deine Teile',
-      stat: '112 Schalter',
+      stat: '114 Schalter',
       blurb:
         'Jeder Teil des Widgets hat einen Schalter, an, bis du ihn ausschaltest, und im Betrieb änderbar: eine ganze Funktion (Alarme, Einstellungen, Tastenkürzel) oder eine Stelle (ein Knopf der Werkzeugleiste, ein Menüeintrag, eine Gruppe von Zeichenwerkzeugen). Eigene Knöpfe, Menüs und Statuseinträge sitzen in den Leisten des Widgets. Hier sind Replay, zwei Zeichengruppen und der Datendownload aus, und die Werkzeugleiste trägt ein Menü der Schalter.',
       tryThis: [
@@ -764,7 +764,7 @@ const de: SiteMessages = {
         { name: 'Drei Erscheinungsbilder für das Widget', detail: 'Studio, Terminal, Capsule; ui und setUI; CSS-Variablen --tcw-*' },
         { name: 'Das Aussehen des Charts per Schlüssel', detail: 'applyOverrides über 101 typisierte Schlüssel, auf einer Host- und einer Nutzerebene' },
         { name: 'Einstellungen, die jeden Schlüssel erreichen', detail: 'Ein Stil-Tab für den gezeigten Charttyp, ein Trading-Tab' },
-        { name: '112 Feature-Schalter', detail: 'features, setFeatures, isFeatureOn; im laufenden Betrieb änderbar' },
+        { name: '114 Feature-Schalter', detail: 'features, setFeatures, isFeatureOn; im laufenden Betrieb änderbar' },
         { name: 'Eigene Teile im Widget', detail: 'Buttons und Dropdowns in der Werkzeugleiste, Buttons in der Seitenleiste, Statuseinträge, Slots, Menüeinträge' },
         { name: 'Eigene Tastenkürzel', detail: 'addHotkey nach Tastaturbelegung' },
       ],

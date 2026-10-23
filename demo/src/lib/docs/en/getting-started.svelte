@@ -74,6 +74,21 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
   <a href={href('/docs/frameworks')}>frameworks</a> section.
 </p>
 
+<h2 id="ai">With a coding agent</h2>
+<p>Coding agents can learn TradeCanvas instead of guessing it. The <strong>agent skill</strong> teaches the API with examples that are type-checked; in Claude Code it installs with two commands:</p>
+<pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas`}</code></pre>
+<p>The <strong>MCP server</strong>, <code>@tradecanvas/mcp</code>, answers from the library's own catalog: indicator ids, their params and the keys of their lines; drawing tools and the points each takes; the options of <code>ChartWidget</code>, <code>Chart</code> and <code>ChartWidgetGrid</code>; feature switches and style keys. Its <code>validate_options</code> tool checks an options object before it is used and names the option that was meant. In Claude Code:</p>
+<pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
+<p>Cursor, Claude Desktop and most other clients take the same command in their MCP settings:</p>
+<pre><code>{`{
+  "mcpServers": {
+    "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
+  }
+}`}</code></pre>
+<p>On Windows outside WSL, npx starts through <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, or in the settings <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>.</p>
+<p>Without either, <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> and <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> hand an assistant the docs in one file.</p>
+
 <h2>Next steps</h2>
 <ul>
   <li><a href={href('/docs/api')}>API reference</a> — full surface of <code>Chart</code> and <code>ChartWidget</code></li>
