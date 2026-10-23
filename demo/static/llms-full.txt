@@ -1267,7 +1267,7 @@ On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanva
 
 ## More
 
-- **Packages**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (the chart and the widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), and [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) for backtests.
+- **Packages**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (the chart and the widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), and [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) for backtests, and [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) for coding agents.
 - **Previews**: every pull request and commit on `main` is on [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), installable before a release.
 - **Browsers**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
 - **For businesses**: no logo to show, nothing to apply for; the [For businesses](https://tradecanvas.dev/business/) page answers an IT review. business@tradecanvas.dev

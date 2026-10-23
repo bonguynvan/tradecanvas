@@ -4,6 +4,8 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+## 1.32.0 (2026-10-23)
+
 ### An MCP server for coding agents
 
 - **`@tradecanvas/mcp`**, a new package: an MCP server that a coding agent (Claude Code, Cursor, Claude Desktop and others) starts with `npx -y @tradecanvas/mcp`, so it looks TradeCanvas names up instead of guessing them. Seven read-only tools answer from a catalog generated from the library's own code: the indicators with their params and line keys, the drawing tools with the points each takes, the options of `ChartWidget`, `Chart` and `ChartWidgetGrid`, the feature switches and the style keys.

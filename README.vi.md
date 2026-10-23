@@ -120,7 +120,7 @@ Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tr
 
 ## Thêm
 
-- **Các gói**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (biểu đồ và widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), và [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) cho backtest.
+- **Các gói**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (biểu đồ và widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), và [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) cho backtest, và [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) cho coding agent.
 - **Bản xem trước**: mỗi pull request và mỗi commit trên `main` có trên [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), cài được trước khi phát hành.
 - **Trình duyệt**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
 - **Cho doanh nghiệp**: không có logo phải hiển thị, không cần xin phép; trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì một buổi thẩm định IT hỏi. business@tradecanvas.dev
