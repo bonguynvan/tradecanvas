@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>定制 — TradeCanvas 文档</title>
-  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 114 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
+  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 123 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
 </svelte:head>
 
 <h1>定制</h1>
@@ -95,17 +95,20 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
       <code>toolbar.layouts</code> <code>toolbar.replay</code> <code>toolbar.bracketOrders</code>
       <code>toolbar.depthLadder</code> <code>toolbar.accountPanel</code> <code>toolbar.objectTree</code>
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
-      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code>
+      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
+      <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
     <tr><td>绘图侧栏</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
-      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code>
+      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code> <code>sidebar.lockAll</code>
+      <code>sidebar.hideAll</code>
     </td></tr>
     <tr><td>状态栏</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
       <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
+      <code>statusBar.clock</code> <code>statusBar.scale</code>
     </td></tr>
     <tr><td>图表上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Personalización — Documentación de TradeCanvas</title>
-  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 114 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
+  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 123 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
 </svelte:head>
 
 <h1>Personalización</h1>
@@ -98,17 +98,20 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
       <code>toolbar.layouts</code> <code>toolbar.replay</code> <code>toolbar.bracketOrders</code>
       <code>toolbar.depthLadder</code> <code>toolbar.accountPanel</code> <code>toolbar.objectTree</code>
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
-      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code>
+      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
+      <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
     <tr><td>Barra de dibujo</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
-      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code>
+      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code> <code>sidebar.lockAll</code>
+      <code>sidebar.hideAll</code>
     </td></tr>
     <tr><td>Barra de estado</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
       <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
+      <code>statusBar.clock</code> <code>statusBar.scale</code>
     </td></tr>
     <tr><td>Sobre el gráfico</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>

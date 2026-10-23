@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>カスタマイズ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 114 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
+  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 123 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
 </svelte:head>
 
 <h1>カスタマイズ</h1>
@@ -98,17 +98,20 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
       <code>toolbar.layouts</code> <code>toolbar.replay</code> <code>toolbar.bracketOrders</code>
       <code>toolbar.depthLadder</code> <code>toolbar.accountPanel</code> <code>toolbar.objectTree</code>
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
-      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code>
+      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
+      <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
     <tr><td>描画サイドバー</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
-      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code>
+      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code> <code>sidebar.lockAll</code>
+      <code>sidebar.hideAll</code>
     </td></tr>
     <tr><td>ステータスバー</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
       <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
+      <code>statusBar.clock</code> <code>statusBar.scale</code>
     </td></tr>
     <tr><td>チャート上</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>

@@ -4,6 +4,20 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The widget's bars, rearranged
+
+The toolbar, the drawing tools, the status bar and the toolbar over a selected drawing are laid out as a trader expects to find them, in the Print look.
+
+- **The interval menu** lists each unit under its heading (ticks, seconds, minutes, hours, days, weeks, months); the pinned intervals stay as buttons, and the star on each row still pins.
+- **The chart type** shows as its icon, its name in the tooltip.
+- **Compare** sits beside Indicators: it asks for a symbol, then how to compare it.
+- **Undo and redo** move from the drawing tools to the toolbar, each off while there is nothing for it. `sidebar.undo` and `sidebar.redo` still switch them off.
+- **One Trade menu** gathers a new order, the long and short brackets, the depth ladder and the account panel, the open panels ticked; each entry keeps its own switches, and the menu goes when nothing is left in it. The ladder now says when its own × closes it.
+- **The drawing tools' menus** name each tool's shortcut (Alt+T) and have a star on each row to pin it, in place of the right-click hint (right-click and the menu key still pin). **Lock all** and **hide all** join clear all, each showing whether every drawing is and undoing it next. The tool shortcuts live in `drawingHotkeys.ts`.
+- **The status bar** has a clock in the display time zone that opens the zones to pick from (the one in use ticked), and **%**, **log** and **auto** switches for the price scale, which go through the settings and follow a drag on the axis. It no longer repeats the symbol and interval: the legend's title line names them.
+- **The toolbar over a selected drawing** has a grip: dragged, it stays where it is dropped for the next drawing; a double-click on the grip puts it back.
+- New switches: `toolbar.compare`, `toolbar.undo`, `toolbar.redo`, `toolbar.trade`, `sidebar.lockAll`, `sidebar.hideAll`, `statusBar.clock`, `statusBar.scale` (123 in all). `statusBar.symbol` has nothing left to switch.
+
 ### A calmer chart: room for volume, tidy figures, fewer tags
 
 The chart keeps out of its own way: the candles stay clear of the volume, the axis writes no more digits than it needs, and the tags that used to pile up on the price axis are off or out of the way.

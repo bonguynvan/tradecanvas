@@ -421,6 +421,34 @@ const widget = new ChartWidget(host, {
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
 
+<h3 id="bars">The bars</h3>
+<table>
+  <thead><tr><th>Bar</th><th>What it holds</th></tr></thead>
+  <tbody>
+    <tr><td>Toolbar</td><td>
+      The symbol and its info; the intervals (the pinned ones as buttons, and a menu of them all by unit, minutes to
+      months, a star on each to pin it); the chart type as its icon; Indicators and Compare; undo and redo. On the
+      right: layouts, bar replay, alerts, the object tree, a Trade menu (a new order, long and short brackets, the
+      depth ladder and the account panel), then screenshot, settings, the theme and fullscreen. What doesn't fit
+      folds under “more”.
+    </td></tr>
+    <tr><td>Drawing tools</td><td>
+      Each group's menu names its tools' shortcuts (Alt+T a trend line) and has a star on each row to pin it to the
+      top. At the bottom: the drawing style, the magnet, the eraser, the zoom area, staying in drawing mode, lock
+      all, hide all and clear all.
+    </td></tr>
+    <tr><td>Status bar</td><td>
+      Range presets and go to date; the market's status, the connection, a clock in the display time zone (it
+      opens the zones to pick from) and the price scale's <code>%</code> · <code>log</code> · <code>auto</code>
+      switches.
+    </td></tr>
+    <tr><td>Over a selected drawing</td><td>
+      Its colour, width and line style, settings, an alert, lock, more and delete. Drag it by its grip and it stays
+      there for the next drawing; double-click the grip to put it back over the drawing.
+    </td></tr>
+  </tbody>
+</table>
+
 <h3>Widget keyboard shortcuts</h3>
 <table>
   <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
@@ -736,7 +764,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>114 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>123 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })

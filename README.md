@@ -39,7 +39,7 @@
 - **Live data** from Binance, Bybit, Coinbase and Kraken, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond.
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
-- **Yours to shape**: themes, three looks, 114 switches, plugins; 30 languages; phones and apps.
+- **Yours to shape**: themes, four looks, 123 switches, plugins; 30 languages; phones and apps.
 
 <table>
   <tr>

@@ -709,7 +709,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>機能スイッチ</h3>
-<p>114 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
+<p>123 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // ボタン一つ、描画ツールのグループ一つ、すべてのキー操作
 
 widget.setFeatures({ sidebar: false, statusBar: false })
