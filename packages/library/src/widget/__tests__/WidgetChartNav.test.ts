@@ -23,9 +23,9 @@ afterEach(() => {
 
 const el = () => host.querySelector<HTMLElement>('.tcw-nav')!;
 const button = (action: string) => el().querySelector<HTMLButtonElement>(`[data-nav="${action}"]`)!;
-/** jsdom has no PointerEvent: a mouse event with a pointer type. */
-const pointer = (type: string, pointerType = 'mouse', bubbles = true) => {
-  const e = new MouseEvent(type, { bubbles, button: 0 });
+/** jsdom has no PointerEvent: a mouse event with a pointer type, near the plot's bottom unless told. */
+const pointer = (type: string, pointerType = 'mouse', bubbles = true, clientY = 290) => {
+  const e = new MouseEvent(type, { bubbles, button: 0, clientX: 300, clientY });
   Object.defineProperty(e, 'pointerType', { value: pointerType });
   return e;
 };
@@ -41,6 +41,21 @@ describe('WidgetChartNav', () => {
     expect(el().style.top).toBe('300px');
     host.dispatchEvent(pointer('pointerleave', 'mouse', false));
     expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+  });
+
+  it('shows only while the pointer is near the plot’s bottom, out of the way of the data', () => {
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 260));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(true);
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 120));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+  });
+
+  it('stays shown while a button has focus, wherever the pointer is', () => {
+    button('zoomIn').focus();
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(true);
   });
 
   it('stays hidden for a touch', () => {
