@@ -1,9 +1,11 @@
 // Records the README clips: each scene of scripts/clips/stage.html played in
 // headless Chromium with a scripted mouse, then cut and encoded by ffmpeg as
 // an animated WebP (GitHub and npm show it; it is a fraction of a GIF's size).
+// With `--web <dir>`, the same recording also becomes an MP4 and a poster for
+// a web page, where video plays lighter and sharper than an animated image.
 //
 //   pnpm build
-//   node scripts/record-clips.mjs [scene…]       (all scenes when none is named)
+//   node scripts/record-clips.mjs [scene…] [--web <dir>]   (all scenes when none is named)
 //
 // Needs Playwright where this script can import it: installed next to the repo
 // (outside the lockfile), or named by PLAYWRIGHT=<path to its index.mjs>, since
@@ -29,6 +31,13 @@ const FPS = 15;
  */
 const WIDTHS = { hero: 960, phone: 300 };
 const GALLERY_WIDTH = 640;
+/** Web video widths: room for a high-density screen at the size a page shows them. */
+const WEB_WIDTHS = { phone: 390 };
+const WEB_WIDTH = 960;
+/** H.264 quality for the web videos (lower is better and larger); UI on a dark ground holds up at this. */
+const WEB_CRF = 27;
+/** Where in a clip its poster comes from: past the middle, where each scene shows what it is about. */
+const POSTER_AT = 0.65;
 const DESKTOP = { width: 1200, height: 675 };
 const PHONE = { width: 390, height: 760 };
 
@@ -212,17 +221,49 @@ function encode(name, { webm, start, end, size }) {
   return { out, kb: Math.round(statSync(out).size / 1024) };
 }
 
-const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(SCENES);
+/** The MP4 (no sound, playable while it loads) and the poster of a scene, in `dir`. */
+function encodeWeb(dir, name, { webm, start, end, size }) {
+  const width = Math.min(WEB_WIDTHS[name] ?? WEB_WIDTH, size.width);
+  const scale = `scale=${width}:-2:flags=lanczos`;
+  const mp4 = join(dir, `${name}.mp4`);
+  execFileSync('ffmpeg', [
+    '-y', '-loglevel', 'error', '-ss', start.toFixed(2), '-to', end.toFixed(2), '-i', webm,
+    '-vf', scale, '-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', String(WEB_CRF),
+    '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', mp4,
+  ]);
+  const poster = join(dir, `${name}.webp`);
+  const at = start + (end - start) * POSTER_AT;
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', at.toFixed(2), '-i', webm, '-frames:v', '1', '-vf', scale, '-c:v', 'libwebp', '-quality', '82', poster]);
+  return { kb: Math.round((statSync(mp4).size + statSync(poster).size) / 1024) };
+}
+
+/** `--web <dir>` or `--web=<dir>`, and the scene names around it. */
+function readArgs(argv) {
+  const args = [...argv];
+  const at = args.findIndex((a) => a === '--web' || a.startsWith('--web='));
+  if (at < 0) return { names: args, webDir: null };
+  const inline = args[at].startsWith('--web=');
+  const dir = inline ? args[at].slice('--web='.length) : args[at + 1];
+  if (!dir) throw new Error('--web needs a directory');
+  args.splice(at, inline ? 1 : 2);
+  return { names: args, webDir: resolve(dir) };
+}
+
+const { names: named, webDir } = readArgs(process.argv.slice(2));
+const names = named.length ? named : Object.keys(SCENES);
 const unknown = names.filter((n) => !SCENES[n]);
 if (unknown.length) throw new Error(`no such scene: ${unknown.join(', ')}`);
 mkdirSync(OUT, { recursive: true });
+if (webDir) mkdirSync(webDir, { recursive: true });
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 try {
   for (const name of names) {
-    const { out, kb } = encode(name, await record(browser, base, name));
-    console.log(`${name}: ${out.slice(ROOT.length + 1)} (${kb} KB)`);
+    const recording = await record(browser, base, name);
+    const { out, kb } = encode(name, recording);
+    const web = webDir ? `, web ${encodeWeb(webDir, name, recording).kb} KB` : '';
+    console.log(`${name}: ${out.slice(ROOT.length + 1)} (${kb} KB${web})`);
   }
 } finally {
   await browser.close();
