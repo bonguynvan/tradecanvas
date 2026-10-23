@@ -4,6 +4,20 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### A calmer chart: room for volume, tidy figures, fewer tags
+
+The chart keeps out of its own way: the candles stay clear of the volume, the axis writes no more digits than it needs, and the tags that used to pile up on the price axis are off or out of the way.
+
+- **The volume band.** Volume keeps to a band along the bottom of the plot, φ^-4.5 (about 11.5%) of its height, and the fitted price scale keeps the candles above it, with a gap of φ^-7; above the highest high it leaves φ^-5 (9%). With no volume on view, turned off (`features.volume: false` too) or none in the bars, the candles take the band back; on an upside-down scale the band stays at the screen's bottom. The scale fits the bars, the overlay indicators and the compare lines in one pass. `fitPriceRange` in commons; `Viewport.setScaleMargins` and `fitToPrices` in core.
+- **Tick labels in the decimals their step needs**: ticks on a 500 step read 73,500 rather than 73,500.00, and one column of ticks shares one count of decimals. The last price, the crosshair and the tags beside the axis keep every decimal.
+- **Order, position and alert prices are written as the axis writes them**: grouped in the chart's number locale (72,202.13 where they read 72202.13), at the market's or symbol's precision, else the axis's own, so a sub-cent coin's tags read 0.00000435, not 0.00 (`priceTagText` in commons; `DEFAULT_TRADING_CONFIG` no longer sets `pricePrecision: 2`). Trade zones' entry prices too. An order's axis tag carries the price alone, so it no longer runs off the axis; its line label names the kind and quantity (`LIMIT 3`). P&L in the position label is grouped too.
+- **Indicator value tags are off by default** (`features.indicatorValueLabels: true` or the widget's settings turn them on): the legend shows the values.
+- **The bar countdown hangs under the last-price tag**, in its colour, where it used to sit at the bottom of the plot; the scale's labels and the value tags keep clear of it, and the crosshair's pill draws over it. It shows with the tag (`BarCountdown.render` takes the tag as a last argument). Tag text takes a dark or light ink to suit the tag's colour.
+- **The crosshair's price and time pills clear the axis labels they would half cover**, so a pill reads alone instead of over a cut-off number.
+- **A title line in the legend**: the symbol, interval and exchange (from the stream and the symbol's details; `setSymbolName` still names it yourself) open the line that carries O, H, L, C and the change. On a narrow plot, as on a phone, the line wraps instead of running off the chart, and without a title it leaves no blank line.
+- **The zoom and scroll buttons show only near the plot's bottom edge** (or while one has the keyboard's focus), out of the way of the data; a held scroll keeps going if the pointer drifts.
+- The symbol info panel's view and its news loading moved out of `ChartWidget.ts` into a module of their own; every news load is now the latest one.
+
 ### A new default look: Print, kept to the golden ratio
 
 The chart and the widget start in a new look, Print: paper and ink, a quiet ground with colour only where it means something, and proportions taken from the golden ratio.

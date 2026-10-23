@@ -129,7 +129,9 @@ chart.getScaleMode()`}</code></pre>
   escala de precio: eje, cruz, etiqueta del último precio, leyenda, información emergente, órdenes,
   alertas y etiquetas de los dibujos; el eje coloca sus marcas en fracciones enteras y
   <code>roundPrice</code> redondea a ellas. Los paneles de indicadores conservan sus propios números.
-  Las horas también pueden mostrarse a tu manera; al formateador se le indica qué tipo de etiqueta es.
+  Sin un formato propio, los precios se agrupan según la configuración regional de números; las etiquetas de las marcas
+  del eje muestran solo los decimales que pide su paso (73,500), mientras que el último precio, la cruz y las etiquetas
+  junto al eje muestran todos los decimales. Las horas también pueden mostrarse a tu manera; al formateador se le indica qué tipo de etiqueta es.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
@@ -617,7 +619,8 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <h3>Navegación, deshacer y dirección</h3>
 <p>
   Los botones sobre el gráfico (alejar y acercar, desplazarse hacia atrás y hacia delante, que siguen mientras los
-  mantienes pulsados, y restablecer) aparecen mientras el ratón está encima (<code>navigation: false</code> los quita).
+  mantienes pulsados, y restablecer) aparecen mientras el ratón está cerca del borde inferior del área del gráfico, lejos de los datos, o
+  mientras uno tiene el foco (<code>navigation: false</code> los quita).
   Los cambios de configuración y de tipo de gráfico se deshacen con Ctrl/Cmd+Z, junto con los dibujos y los indicadores.
   En árabe, hebreo, persa o urdu el widget se refleja (<code>dir: 'auto'</code>; o <code>'rtl'</code> / <code>'ltr'</code>);
   el gráfico mantiene el tiempo de izquierda a derecha.

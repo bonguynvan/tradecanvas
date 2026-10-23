@@ -33,6 +33,17 @@ type Probe = {
   buildPanelRenderInfos(): { viewport: ViewportState }[];
 };
 
+describe('the tags beside the price axis', () => {
+  it('group prices in the chart’s number locale, as the axis does', () => {
+    chart = new Chart(host, { numberLocale: 'vi-VN' });
+    chart.setData(bars);
+    const state = () => (chart as unknown as Probe).viewport.getState();
+    expect(state().numberLocale).toBe('vi-VN');
+    chart.setNumberLocale('de-DE');
+    expect(state().numberLocale).toBe('de-DE');
+  });
+});
+
 describe('a chart’s price step', () => {
   it('is the symbol’s smallest step, a fraction’s unit, or one unit of the decimals shown', () => {
     chart = new Chart(host, {});

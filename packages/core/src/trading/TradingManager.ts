@@ -9,7 +9,7 @@ import type {
   Point,
   FillEvent,
 } from '@tradecanvas/commons';
-import { DEFAULT_TRADING_CONFIG } from '@tradecanvas/commons';
+import { DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
 import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { OrderRenderer } from './OrderRenderer.js';
@@ -352,7 +352,7 @@ export class TradingManager {
   onContextMenu(pos: Point, viewport: ViewportState): boolean {
     if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container) return false;
     const price = yToPrice(pos.y, viewport);
-    this.contextMenu.show(pos, price, this.container, this.config, viewport.formatPrice);
+    this.contextMenu.show(pos, price, this.container, this.config, (p) => priceTagText(p, viewport, this.config.pricePrecision));
     return true;
   }
 
@@ -397,12 +397,12 @@ export class TradingManager {
 
     // Bracket placement preview (frontmost)
     if (this.bracket.isActive()) {
-      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision ?? 2);
+      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision);
     }
 
     // Single-order draft preview
     if (this.orderDraft.isActive()) {
-      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision ?? 2);
+      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision);
     }
   }
 

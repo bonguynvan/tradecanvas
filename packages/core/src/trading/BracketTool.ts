@@ -1,4 +1,5 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
+import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { fillTag } from '../ui/shapes.js';
 
@@ -134,7 +135,7 @@ export class BracketTool {
     return handle === 'entry' ? d.entry : handle === 'sl' ? d.stopLoss : d.takeProfit;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision = 2): void {
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision?: number): void {
     const d = this.draft;
     if (!d) return;
     const { chartRect } = viewport;
@@ -164,7 +165,7 @@ export class BracketTool {
 
     const rr = bracketRiskReward(d);
     const sideLabel = d.side === 'buy' ? 'LONG' : 'SHORT';
-    const fmt = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(pricePrecision);
+    const fmt = (p: number) => priceTagText(p, viewport, pricePrecision);
     label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${fmt(d.entry)}`, theme.text, theme);
     label(ctx, x0 + 6, yTp, `TP ${fmt(d.takeProfit)}  ·  ${rr.toFixed(2)}R`, profit, theme);
     label(ctx, x0 + 6, ySl, `SL ${fmt(d.stopLoss)}`, loss, theme);

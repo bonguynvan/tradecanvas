@@ -48,7 +48,7 @@ describe('market colours', () => {
 type Internals = {
   sessionShading: { getConfig(): Record<string, unknown> };
   tradingManager: { config: { pricePrecision?: number } };
-  alertManager: { pricePrecision: number };
+  alertManager: { pricePrecision: number | null };
 };
 const shading = () => (chart as unknown as Internals).sessionShading.getConfig();
 
@@ -124,13 +124,13 @@ describe('Chart.setSymbolInfo', () => {
     expect(shading().windows).toBeUndefined();
   });
 
-  it('puts order and alert prices back on the default precision after a symbol without one', () => {
+  it('lets order and alert prices follow the axis again after a symbol without decimals of its own', () => {
     const internals = chart as unknown as Internals;
     chart.setSymbolInfo({ symbol: 'A', pricePrecision: 8 });
     expect(internals.alertManager.pricePrecision).toBe(8);
     chart.setSymbolInfo({ symbol: 'B' });
     expect(internals.tradingManager.config.pricePrecision).toBeUndefined();
-    expect(internals.alertManager.pricePrecision).toBe(2);
+    expect(internals.alertManager.pricePrecision).toBeNull();
   });
 
   it('widens the price scale for the symbol’s decimals', () => {

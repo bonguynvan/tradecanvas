@@ -25,7 +25,7 @@ import type { TradingRenderer } from '../trading/TradingRenderer.js';
 import type { CurrentPriceLine } from '../realtime/CurrentPriceLine.js';
 import type { ChartLegend } from '../ui/ChartLegend.js';
 import type { Watermark } from '../ui/Watermark.js';
-import type { BarCountdown } from '../ui/BarCountdown.js';
+import { COUNTDOWN_HEIGHT, type BarCountdown } from '../ui/BarCountdown.js';
 import type { SessionBreaks } from '../ui/SessionBreaks.js';
 import type { VolumeRenderer } from '../charts/VolumeRenderer.js';
 import type { CompareRenderer } from '../charts/CompareRenderer.js';
@@ -460,11 +460,11 @@ export class RenderEngine {
     // when every pointer move repainted the overlay layer.
     ctx.renderOverlayPlugins?.(c, 'overlay');
     this.renderPanelCrosshair(c, ctx);
-    // Crosshair axis hover pills sit on top of the static price/time labels.
-    ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY);
+    // The countdown under the last-price tag, then the crosshair's pills over it and the static labels.
+    ctx.barCountdown?.render(c, viewport, theme, data, ctx.currentPriceLine?.getTag() ?? null);
+    ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY, ctx.priceAxis?.labelRows(), ctx.timeAxis?.labelColumns());
     ctx.priceAxisAddButton?.render(c, viewport, theme, ctx.crosshairHandler?.getPosition() ?? null);
     ctx.chartLegend?.render(c, viewport, theme, data);
-    ctx.barCountdown?.render(c, viewport, theme, data);
     ctx.renderOverlayPlugins?.(c, 'ui');
     this.renderPanelHoverValues(c, ctx);
   }
@@ -553,7 +553,13 @@ export class RenderEngine {
     const { chartRect } = viewport;
     const tags: FixedAxisTag[] = [];
     const last = ctx.currentPriceLine?.isVisible() && ctx.theme.style?.lastPrice.visible !== false ? ctx.currentPriceLine.getPrice() : null;
-    if (last !== null && last !== undefined) tags.push({ y: priceToY(last, viewport), half: 10 });
+    if (last !== null && last !== undefined) {
+      const y = priceToY(last, viewport);
+      tags.push({ y, half: 10 });
+      // The countdown's strip under the tag: the scale's labels and value tags keep clear of it too.
+      const onPlot = y >= chartRect.y && y <= chartRect.y + chartRect.height;
+      if (onPlot && ctx.barCountdown?.isShown(data)) tags.push({ y: y + 10 + COUNTDOWN_HEIGHT / 2, half: COUNTDOWN_HEIGHT / 2 });
+    }
     for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
     for (const y of ctx.tradingRenderer?.axisTagYs(viewport) ?? []) tags.push({ y, half: 9 });
     return tags.filter((t) => t.y >= chartRect.y && t.y <= chartRect.y + chartRect.height);

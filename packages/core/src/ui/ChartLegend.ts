@@ -38,11 +38,15 @@ export class ChartLegend {
   private hoverPrev: OHLCBar | null = null;
   private indicators: { name: string; color: string; value: string }[] = [];
   private statusText: string | null = null;
+  private exchange = '';
+  /** The height the top rows took on the last draw; null before the first. */
+  private drawnHeight: number | null = null;
   private locale = 'en-US';
   private pricePrecision: number | null = null;
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
+    this.drawnHeight = null;
   }
 
   /**
@@ -59,10 +63,12 @@ export class ChartLegend {
 
   setSymbol(symbol: string): void {
     this.symbol = symbol;
+    this.drawnHeight = null;
   }
 
   setTimeframe(tf: string): void {
     this.timeframe = tf;
+    this.drawnHeight = null;
   }
 
   setChartType(_type: string): void {
@@ -81,20 +87,100 @@ export class ChartLegend {
 
   setStatusText(text: string | null): void {
     this.statusText = text;
+    this.drawnHeight = null;
+  }
+
+  /** The exchange the symbol trades on, named in the title line. */
+  setExchange(exchange: string): void {
+    this.exchange = exchange;
+    this.drawnHeight = null;
+  }
+
+  /** Symbol · interval · exchange, as far as they are known ('' with none or `showSymbol` off). */
+  private title(): string {
+    if (!this.config.showSymbol) return '';
+    return [this.symbol, this.timeframe, this.exchange].filter(Boolean).join(' · ');
+  }
+
+  private titleCells(ctx: CanvasRenderingContext2D, fs: number, family: string, text: string, label: string): LegendCell[] {
+    const cells: LegendCell[] = [];
+    const title = this.title();
+    if (title) {
+      const font = `600 ${fs}px ${family}`;
+      ctx.font = font;
+      cells.push({ label: '', labelWidth: 0, value: title, width: ctx.measureText(title).width, color: text, font });
+    }
+    if (this.statusText) {
+      const font = `${fs}px ${family}`;
+      ctx.font = font;
+      cells.push({ label: '', labelWidth: 0, value: this.statusText, width: ctx.measureText(this.statusText).width, color: label, font });
+    }
+    return cells;
   }
 
   /**
-   * How far below the plot's top edge the symbol, OHLC and volume rows reach
-   * (the indicator row excluded), so other content can stack under them.
-   * 0 when hidden or drawn in the top-right corner.
+   * O, H, L, C and the change, each value in a slot as wide as it would be
+   * in zeros (and in either sign), so with a proportional font nothing
+   * shifts as digits change.
+   */
+  private priceCells(
+    ctx: CanvasRenderingContext2D,
+    viewport: ViewportState,
+    theme: Theme,
+    bar: OHLCBar,
+    prevBar: OHLCBar,
+    fs: number,
+    family: string,
+    text: string,
+  ): LegendCell[] {
+    const font = `${fs}px ${family}`;
+    ctx.font = font;
+    const isUp = bar.close >= bar.open;
+    // A market's explicit precision wins; otherwise match the price axis so
+    // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
+    const precision = this.pricePrecision
+      ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+    const fmt = (v: number) => viewport.formatPrice?.(v) ?? formatPrice(v, precision, this.locale);
+
+    const items = [
+      { label: 'O', value: fmt(bar.open), color: text },
+      { label: 'H', value: fmt(bar.high), color: text },
+      { label: 'L', value: fmt(bar.low), color: text },
+      { label: 'C', value: fmt(bar.close), color: isUp ? theme.candleUp : theme.candleDown },
+    ];
+
+    if (this.config.showChange) {
+      const change = bar.close - prevBar.close;
+      const changePct = prevBar.close !== 0 ? (change / prevBar.close) * 100 : 0;
+      const sign = change >= 0 ? '+' : '';
+      const pctText = formatPrice(changePct, 2, this.locale);
+      items.push({
+        label: '',
+        value: `${sign}${fmt(change)} (${sign}${pctText}%)`,
+        color: change >= 0 ? theme.candleUp : theme.candleDown,
+      });
+    }
+
+    return items.map((item) => ({
+      ...item,
+      labelWidth: item.label ? ctx.measureText(item.label + ' ').width : 0,
+      width: valueSlot(ctx, item.value),
+      font,
+    }));
+  }
+
+  /**
+   * How far below the plot's top edge the title, price and volume rows reach
+   * (the indicator row excluded), so other content can stack under them: as
+   * last drawn, wrapped lines included. 0 when hidden or drawn in the
+   * top-right corner.
    */
   getHeight(): number {
     if (!this.config.visible || this.config.position !== 'top-left') return 0;
+    if (this.drawnHeight !== null) return this.drawnHeight;
     const fs = this.config.fontSize;
-    let h = 6;
-    if (this.config.showSymbol) h += fs + 6;
-    else if (this.statusText) h += fs + 4;
-    if (this.config.showOHLC) h += fs + 3;
+    let h = LEGEND_TOP;
+    if (this.config.showOHLC || this.title() || this.statusText) h += fs + LINE_GAP;
     if (this.config.showVolume) h += fs + 2;
     return h;
   }
@@ -115,80 +201,37 @@ export class ChartLegend {
     const label = theme.style?.legend.label ?? theme.textSecondary;
     const isLeft = this.config.position === 'top-left';
 
-    let x = isLeft ? chartRect.x + 8 : chartRect.x + chartRect.width - 8;
-    let y = chartRect.y + 6;
+    const x = isLeft ? chartRect.x + LEGEND_INSET : chartRect.x + chartRect.width - LEGEND_INSET;
+    let y = chartRect.y + LEGEND_TOP;
 
     ctx.textAlign = isLeft ? 'left' : 'right';
     ctx.textBaseline = 'top';
 
-    // Symbol + timeframe + chart type + status text
-    if (this.config.showSymbol) {
-      ctx.font = `bold ${fs + 2}px ${family}`;
-      ctx.fillStyle = text;
-      const symbolText = [this.symbol, this.timeframe].filter(Boolean).join(' · ');
-      const displayText = this.statusText ? `${symbolText}  ${this.statusText}` : symbolText;
-      ctx.fillText(displayText, x, y);
-      y += fs + 6;
-    } else if (this.statusText) {
+    // The title (symbol · interval · exchange, and a status) and the prices,
+    // one line that wraps where the plot is too narrow for it.
+    const cells = this.titleCells(ctx, fs, family, text, label);
+    if (this.config.showOHLC) cells.push(...this.priceCells(ctx, viewport, theme, bar, prevBar, fs, family, text));
+    if (cells.length > 0) {
       ctx.font = `${fs}px ${family}`;
-      ctx.fillStyle = label;
-      ctx.fillText(this.statusText, x, y);
-      y += fs + 4;
-    }
-
-    // OHLC values
-    if (this.config.showOHLC) {
-      ctx.font = `${fs}px ${family}`;
-      const isUp = bar.close >= bar.open;
-      // A market's explicit precision wins; otherwise match the price axis so
-      // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
-      const precision = this.pricePrecision
-        ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-      const fmt = (v: number) => viewport.formatPrice?.(v) ?? formatPrice(v, precision, this.locale);
-
-      const items = [
-        { label: 'O', value: fmt(bar.open), color: text },
-        { label: 'H', value: fmt(bar.high), color: text },
-        { label: 'L', value: fmt(bar.low), color: text },
-        { label: 'C', value: fmt(bar.close), color: isUp ? theme.candleUp : theme.candleDown },
-      ];
-
-      if (this.config.showChange) {
-        const change = bar.close - prevBar.close;
-        const changePct = prevBar.close !== 0 ? (change / prevBar.close) * 100 : 0;
-        const sign = change >= 0 ? '+' : '';
-        const pctText = formatPrice(changePct, 2, this.locale);
-        items.push({
-          label: '',
-          value: `${sign}${fmt(change)} (${sign}${pctText}%)`,
-          color: change >= 0 ? theme.candleUp : theme.candleDown,
-        });
-      }
-
-      // Inline, each value in a slot as wide as it would be in zeros (and in
-      // either sign), so with a proportional font nothing shifts as digits
-      // change. Right-aligned, the row is laid out from where it has to start.
       const gap = ctx.measureText('  ').width;
-      const cells = items.map((item) => ({
-        ...item,
-        labelWidth: item.label ? ctx.measureText(item.label + ' ').width : 0,
-        width: valueSlot(ctx, item.value),
-      }));
-      const total = cells.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
-      let cx = isLeft ? x : x - total;
-      ctx.textAlign = 'left';
-      for (const cell of cells) {
-        if (cell.label) {
-          ctx.fillStyle = label;
-          ctx.fillText(cell.label, cx, y);
-          cx += cell.labelWidth;
+      for (const line of wrapCells(cells, gap, chartRect.width - 2 * LEGEND_INSET)) {
+        const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
+        let cx = isLeft ? x : x - total;
+        ctx.textAlign = 'left';
+        for (const cell of line) {
+          ctx.font = cell.font;
+          if (cell.label) {
+            ctx.fillStyle = label;
+            ctx.fillText(cell.label, cx, y);
+            cx += cell.labelWidth;
+          }
+          ctx.fillStyle = cell.color;
+          ctx.fillText(cell.value, cx, y);
+          cx += cell.width + gap;
         }
-        ctx.fillStyle = cell.color;
-        ctx.fillText(cell.value, cx, y);
-        cx += cell.width + gap;
+        y += fs + LINE_GAP;
       }
       ctx.textAlign = isLeft ? 'left' : 'right';
-      y += fs + 3;
     }
 
     // Volume
@@ -199,6 +242,7 @@ export class ChartLegend {
       ctx.fillText(`Vol ${vol}`, x, y);
       y += fs + 2;
     }
+    this.drawnHeight = isLeft ? y - chartRect.y : null;
 
     // Active indicator values
     if (this.indicators.length > 0) {
@@ -218,6 +262,41 @@ export class ChartLegend {
       }
     }
   }
+}
+
+/** One item on the legend's top line: a label (O, H…) and its value, with their widths. */
+interface LegendCell {
+  label: string;
+  labelWidth: number;
+  value: string;
+  width: number;
+  color: string;
+  font: string;
+}
+
+/** Room above the legend's first line, and to the plot's side edge (px). */
+const LEGEND_TOP = 6;
+const LEGEND_INSET = 8;
+/** Space under each of its lines (px). */
+const LINE_GAP = 3;
+
+/** `cells` in lines no wider than `width`, a cell that can't fit on a line of its own going on one anyway. */
+function wrapCells(cells: readonly LegendCell[], gap: number, width: number): LegendCell[][] {
+  const lines: LegendCell[][] = [];
+  let line: LegendCell[] = [];
+  let used = 0;
+  for (const cell of cells) {
+    const w = cell.labelWidth + cell.width;
+    if (line.length > 0 && used + gap + w > width) {
+      lines.push(line);
+      line = [];
+      used = 0;
+    }
+    used += (line.length > 0 ? gap : 0) + w;
+    line.push(cell);
+  }
+  if (line.length > 0) lines.push(line);
+  return lines;
 }
 
 /**

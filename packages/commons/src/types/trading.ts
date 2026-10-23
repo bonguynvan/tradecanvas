@@ -54,6 +54,8 @@ export interface PositionLabelContext {
   precision: number;
   /** The chart's price format, for `{entry}` and `{price}` (decimals at `precision` without one). */
   formatPrice?: (price: number) => string;
+  /** The number locale `{pnl}` (and prices without a format) are grouped in. Unset: en-US. */
+  locale?: string;
 }
 
 export interface DepthLevel {
@@ -97,6 +99,7 @@ export interface TradingConfig {
   lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean };
   /** Marks where orders filled (from the execution adapter's fills). On by default. */
   fillMarks?: boolean;
+  /** Decimals of the prices on the trading tags; unset, the price axis's (the market's or the range's). */
   pricePrecision?: number;
   dragThreshold?: number;
 }
@@ -150,6 +153,5 @@ export const DEFAULT_TRADING_CONFIG: TradingConfig = {
   contextMenu: { enabled: true },
   lineButtons: { cancel: true, close: true, reverse: true, removeStops: true },
   fillMarks: true,
-  pricePrecision: 2,
   dragThreshold: 3,
 };

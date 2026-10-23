@@ -1,7 +1,17 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { barTimeUnit } from '@tradecanvas/commons';
-import { barIndexToX } from '../viewport/ScaleMapping.js';
+import { fillTag } from './shapes.js';
+import { labelTextColor } from './axisValueLabels.js';
+import type { LastPriceTag } from '../realtime/CurrentPriceLine.js';
 
+/** Height (px) of the strip the countdown takes under the last-price tag. */
+export const COUNTDOWN_HEIGHT = 16;
+
+/**
+ * The time left in the forming bar, on the price axis: a strip hung under
+ * the last-price tag, in its colour, where the eye already is. It shows
+ * only with that tag, for bars that close on the clock, while time is left.
+ */
 export class BarCountdown {
   private visible = true;
   private timeframeMs = 0;
@@ -11,30 +21,31 @@ export class BarCountdown {
 
   setTimeframeMs(ms: number): void { this.timeframeMs = ms; }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
-    // Tick bars close on a count, not a clock: no countdown.
-    if (!this.visible || !(this.timeframeMs > 0) || data.length === 0) return;
+  /** Whether the countdown has something to show for `data` now (the tag aside). */
+  isShown(data: DataSeries): boolean {
+    return this.remaining(data) > 0;
+  }
 
-    const lastBar = data[data.length - 1];
-    const timeMs = lastBar.time * barTimeUnit(data);
-    const nextBarTime = timeMs + this.timeframeMs;
-    const remainingMs = nextBarTime - Date.now();
-    if (remainingMs <= 0) return;
+  render(ctx: CanvasRenderingContext2D, _viewport: ViewportState, theme: Theme, data: DataSeries, tag: LastPriceTag | null = null): void {
+    const remainingMs = this.remaining(data);
+    if (tag === null || remainingMs <= 0) return;
 
-    const text = this.formatRemaining(remainingMs);
-
-    // Position: below the last bar's X, at the bottom of the chart area (above time axis)
-    const x = barIndexToX(data.length - 1, viewport);
-    const y = viewport.chartRect.y + viewport.chartRect.height - 4;
-
-    // Only render if X is within visible area
-    if (x < viewport.chartRect.x || x > viewport.chartRect.x + viewport.chartRect.width) return;
-
+    const top = tag.y + tag.height;
+    ctx.fillStyle = tag.color;
+    fillTag(ctx, tag.x, top, tag.width, COUNTDOWN_HEIGHT, theme);
     ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-    ctx.textBaseline = 'bottom';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = theme.textSecondary;
-    ctx.fillText(text, x, y);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = labelTextColor(tag.color);
+    ctx.fillText(this.formatRemaining(remainingMs), tag.x + 5, top + COUNTDOWN_HEIGHT / 2);
+  }
+
+  /** Milliseconds left in the last bar; 0 for tick bars (they close on a count) and closed bars. */
+  private remaining(data: DataSeries): number {
+    if (!this.visible || !(this.timeframeMs > 0) || data.length === 0) return 0;
+    const lastBar = data[data.length - 1];
+    const left = lastBar.time * barTimeUnit(data) + this.timeframeMs - Date.now();
+    return left > 0 ? left : 0;
   }
 
   private formatRemaining(ms: number): string {

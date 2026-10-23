@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
-import { autoPricePrecision, timeParts, isDateOnly, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
@@ -216,10 +216,14 @@ export class CrosshairHandler {
     theme: Theme,
     data: DataSeries,
     timeAxisY?: number,
+    /** Where the price scale wrote its labels: the pill clears those it would half cover. */
+    priceRows: readonly number[] = [],
+    /** Where the time axis wrote its labels: the time pill clears those it would half cover. */
+    timeColumns: readonly TimeColumn[] = [],
   ): void {
     if (this.mode === 'hidden') return;
     if (!this.position) {
-      if (this.syncedSlot !== null) this.renderSyncedTimeLabel(ctx, viewport, theme, data, this.syncedSlot, timeAxisY);
+      if (this.syncedSlot !== null) this.renderSyncedTimeLabel(ctx, viewport, theme, data, this.syncedSlot, timeAxisY, timeColumns);
       return;
     }
     const { chartRect } = viewport;
@@ -239,6 +243,7 @@ export class CrosshairHandler {
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
     const priceText = priceScaleText(price, viewport, precision, this.locale);
     const priceAxisX = chartRect.x + chartRect.width;
+    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme);
     drawAxisPill(ctx, {
       text: priceText,
       anchorX: priceAxisX,
@@ -251,7 +256,7 @@ export class CrosshairHandler {
     });
 
     // ── Time pill (bottom axis) ──
-    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY);
+    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
   }
 
   /** The mirrored crosshair: only the time is shared, so only the vertical line. */
@@ -271,11 +276,12 @@ export class CrosshairHandler {
     data: DataSeries,
     slot: number,
     timeAxisY?: number,
+    timeColumns: readonly TimeColumn[] = [],
   ): void {
     const x = barIndexToX(slot, viewport);
     const { chartRect } = viewport;
     if (x < chartRect.x || x > chartRect.x + chartRect.width) return;
-    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY);
+    this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
   }
 
   private drawTimePill(
@@ -286,6 +292,7 @@ export class CrosshairHandler {
     slot: number,
     x: number,
     timeAxisY?: number,
+    timeColumns: readonly TimeColumn[] = [],
   ): void {
     if (data.length === 0) return;
     if (!this.timesPastData && (slot < 0 || slot >= data.length)) return;
@@ -294,15 +301,20 @@ export class CrosshairHandler {
     const timeText = this.timeFormatter
       ? this.timeFormatter(time * barTimeUnit(data), { kind: 'crosshair', timeZone: this.tz })
       : formatBarTime(time * barTimeUnit(data), this.tz, barsAreDaily(data));
+    const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
+    const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
+    ctx.font = font;
+    const half = Math.ceil(ctx.measureText(timeText).width) / 2 + PILL_PAD_X;
+    clearCoveredColumns(ctx, timeColumns, x - half, x + half, axisY, theme);
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,
-      anchorY: timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height),
+      anchorY: axisY,
       orientation: 'bottom',
       bg: crosshairLooks(theme).labelBackground,
       fg: crosshairLooks(theme).labelText,
       theme,
-      font: `600 ${theme.font.sizeSmall}px ${theme.font.family}`,
+      font,
     });
   }
 
@@ -363,14 +375,45 @@ interface AxisPillOptions {
  * notch pointing toward the crosshair line, painted in inverted theme
  * colors so it always pops against the axis strip.
  */
+/** Height (px) of the crosshair's axis pills, and the room each side of their text. */
+const PILL_HEIGHT = 20;
+const PILL_PAD_X = 8;
+
+/** A label's span along the time axis (px). */
+type TimeColumn = { left: number; right: number };
+
+/** Paint the axis's ground over each time label the pill from `left` to `right` would half cover. */
+function clearCoveredColumns(ctx: CanvasRenderingContext2D, columns: readonly TimeColumn[], left: number, right: number, axisY: number, theme: Theme): void {
+  const covered = columns.filter((c) => c.right > left - 2 && c.left < right + 2);
+  if (covered.length === 0) return;
+  ctx.save();
+  ctx.fillStyle = theme.background;
+  for (const c of covered) ctx.fillRect(c.left - 2, axisY + 1, c.right - c.left + 4, theme.font.sizeSmall + 12);
+  ctx.restore();
+}
+
+/**
+ * Paint the axis's ground over each tick label the price pill at `y` would
+ * half cover, so the pill reads alone instead of over a cut-off number.
+ */
+function clearCoveredRows(ctx: CanvasRenderingContext2D, rows: readonly number[], y: number, axisX: number, axisWidth: number, theme: Theme): void {
+  const half = Math.ceil(theme.font.sizeSmall / 2) + 1;
+  const covered = rows.filter((row) => Math.abs(row - y) < PILL_HEIGHT / 2 + half);
+  if (covered.length === 0) return;
+  ctx.save();
+  ctx.fillStyle = theme.background;
+  for (const row of covered) ctx.fillRect(axisX + 1, row - half, axisWidth - 1, half * 2);
+  ctx.restore();
+}
+
 function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): void {
   ctx.save();
   ctx.font = opts.font;
-  const padX = 8;
+  const padX = PILL_PAD_X;
   const notch = 5;
   const textW = Math.ceil(ctx.measureText(opts.text).width);
   const w = textW + padX * 2;
-  const h = 20;
+  const h = PILL_HEIGHT;
   ctx.fillStyle = opts.bg;
   ctx.textBaseline = 'middle';
   if (opts.orientation === 'right') {

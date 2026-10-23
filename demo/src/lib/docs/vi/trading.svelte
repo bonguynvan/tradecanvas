@@ -50,7 +50,11 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>Kéo đường giá để sửa lệnh; đăng ký nghe thay đổi qua <code>chart.on('orderModify', ...)</code>.</p>
+<p>
+  Nhãn trên đường lệnh ghi loại lệnh và khối lượng (<code>LIMIT 0.25</code>); nhãn của lệnh trên trục giá mang giá, viết
+  theo đúng cách trục viết giá. Kéo đường giá để sửa lệnh; đăng ký nghe thay đổi qua
+  <code>chart.on('orderModify', ...)</code>.
+</p>
 
 <h2>Khớp lệnh thật (kết nối một adapter)</h2>
 <p>

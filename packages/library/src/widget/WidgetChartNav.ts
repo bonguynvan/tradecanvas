@@ -1,3 +1,4 @@
+import { PHI } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -16,18 +17,33 @@ export interface ChartNavActions {
 /** A held scroll button repeats after this, every REPEAT_MS. */
 const HOLD_MS = 300;
 const REPEAT_MS = 80;
+/** The strip along the plot's bottom where the buttons show: φ⁻³ (24%) of its height, at least this many px. */
+const ZONE_SHARE = PHI ** -3;
+const MIN_ZONE_PX = 80;
 
 /**
  * Navigation over the chart: zoom out and in, scroll earlier and later
- * (held, it keeps going), reset. It shows while a mouse or pen is over the
- * chart; touch has its own gestures.
+ * (held, it keeps going), reset. It shows while a mouse or pen is near the
+ * plot's bottom edge, out of the way of the data above, or while one of
+ * its buttons has focus; touch has its own gestures.
  */
 export class WidgetChartNav {
   private el: HTMLDivElement;
   private holdTimer: ReturnType<typeof setTimeout> | null = null;
   private repeatTimer: ReturnType<typeof setInterval> | null = null;
+  /** A pointer is pressing on the bar: the focus that follows is the pointer's, not the keyboard's. */
+  private pressed = false;
+  /** A button has the keyboard's focus: the bar stays up wherever the pointer is. */
+  private keyboardFocus = false;
   private readonly onMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') return;
+    // A held scroll button keeps going wherever the pointer drifts.
+    if (this.holdTimer || this.repeatTimer) return;
+    if (!this.nearBottom(e) && !this.keyboardFocus) {
+      this.el.classList.remove('tcw-nav-shown');
+      this.stopHold();
+      return;
+    }
     if (!this.el.classList.contains('tcw-nav-shown')) this.place();
     this.el.classList.add('tcw-nav-shown');
   };
@@ -92,13 +108,21 @@ export class WidgetChartNav {
       this.el.addEventListener(type, (e) => e.stopPropagation());
     }
 
-    // Shown with the keyboard too, while a button has focus.
+    // Shown with the keyboard too, while a button has focus. A click focuses a
+    // button as well; that focus doesn't keep the bar over the chart.
+    this.el.addEventListener('pointerdown', () => { this.pressed = true; }, { capture: true });
+    // Focus comes with the press: by the release it has, or the press was on no button.
+    this.el.addEventListener('pointerup', () => { this.pressed = false; }, { capture: true });
     this.el.addEventListener('focusin', () => {
+      this.keyboardFocus = !this.pressed;
+      this.pressed = false;
       this.place();
       this.el.classList.add('tcw-nav-shown');
     });
     this.el.addEventListener('focusout', (e) => {
-      if (!this.el.contains(e.relatedTarget as Node | null)) this.el.classList.remove('tcw-nav-shown');
+      if (this.el.contains(e.relatedTarget as Node | null)) return;
+      this.keyboardFocus = false;
+      this.el.classList.remove('tcw-nav-shown');
     });
 
     host.appendChild(this.el);
@@ -111,6 +135,16 @@ export class WidgetChartNav {
     this.host.removeEventListener('pointermove', this.onMove);
     this.host.removeEventListener('pointerleave', this.onLeave);
     this.el.remove();
+  }
+
+  /** Whether the pointer is over the plot, in the strip along its bottom. */
+  private nearBottom(e: PointerEvent): boolean {
+    const r = this.actions.plotRect();
+    const box = this.host.getBoundingClientRect();
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    const zone = Math.max(MIN_ZONE_PX, r.height * ZONE_SHARE);
+    return x >= r.x && x <= r.x + r.width && y <= r.y + r.height && y >= r.y + r.height - zone;
   }
 
   private place(): void {

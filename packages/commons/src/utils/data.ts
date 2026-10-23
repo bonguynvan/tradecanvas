@@ -84,6 +84,28 @@ export function padPriceRange(min: number, max: number, padding: number, log = f
   return { min: min - range * padding, max: max + range * padding };
 }
 
+/** Room above and below the prices on a scale, as shares of its height (0.1: a tenth). */
+export interface ScaleMargins {
+  top: number;
+  bottom: number;
+}
+
+/**
+ * The range that shows `min`..`max` with `margins` of the scale's height
+ * above and below them; on a log scale, shares of its log span. A flat price
+ * gets a span of 1 (a hundredth of itself on a log scale) to sit in.
+ */
+export function fitPriceRange(min: number, max: number, margins: ScaleMargins, log = false): { min: number; max: number } {
+  const share = Math.max(1 - margins.top - margins.bottom, Number.EPSILON);
+  const logSpan = log && min > 0 && max > 0 ? Math.log(max / min) : Number.NaN;
+  if (Number.isFinite(logSpan)) {
+    const total = (logSpan || Math.log(1.01)) / share;
+    return { min: min / Math.exp(total * margins.bottom), max: max * Math.exp(total * margins.top) };
+  }
+  const total = (max - min || 1) / share;
+  return { min: min - total * margins.bottom, max: max + total * margins.top };
+}
+
 export function computePriceRange(
   data: DataSeries,
   from: number,

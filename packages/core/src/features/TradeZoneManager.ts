@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TradeZone, TradeZoneStyle } from '@tradecanvas/commons';
-import { DEFAULT_TRADE_ZONE_STYLE } from '@tradecanvas/commons';
+import { DEFAULT_TRADE_ZONE_STYLE, priceTagText } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 import { fillTag } from '../ui/shapes.js';
@@ -29,7 +29,8 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
   private revealUntil: number | null = null;
   /** During a replay that leaves the history out: its first bar's time. */
   private revealFrom = -Infinity;
-  private pricePrecision = 2;
+  /** Decimals of the entry's price; null follows the axis. */
+  private pricePrecision: number | null = null;
 
   setRequestRender(cb: () => void): void {
     this.requestRender = cb;
@@ -39,7 +40,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     this.dataGetter = getter;
   }
 
-  setPricePrecision(precision: number): void {
+  setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }
 
@@ -198,7 +199,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
     ctx.fillStyle = fillColor;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
-    ctx.fillText(viewport.formatPrice?.(zone.entryPrice) ?? zone.entryPrice.toFixed(this.pricePrecision), left + 4 + ZONE_ICON_SIZE + 3, entryY - 3);
+    ctx.fillText(priceTagText(zone.entryPrice, viewport, this.pricePrecision ?? undefined), left + 4 + ZONE_ICON_SIZE + 3, entryY - 3);
 
     if (style.showPnl && !isActive && zone.pnl != null) {
       const pnlSign = zone.pnl >= 0 ? '+' : '';

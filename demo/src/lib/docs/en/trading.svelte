@@ -50,7 +50,11 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>Drag the price line to modify; subscribe via <code>chart.on('orderModify', ...)</code>.</p>
+<p>
+  The line's label names the order's kind and quantity (<code>LIMIT 0.25</code>); its tag on the price axis
+  carries the price, written as the axis writes it. Drag the price line to modify; subscribe via
+  <code>chart.on('orderModify', ...)</code>.
+</p>
 
 <h2>Live execution (connect an adapter)</h2>
 <p>

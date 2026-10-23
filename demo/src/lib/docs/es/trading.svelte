@@ -51,7 +51,11 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>Arrastra la línea de precio para modificarla; suscríbete con <code>chart.on('orderModify', ...)</code>.</p>
+<p>
+  La etiqueta de la línea indica el tipo y la cantidad de la orden (<code>LIMIT 0.25</code>); su etiqueta en el eje de precio
+  lleva el precio, escrito como lo escribe el eje. Arrastra la línea de precio para modificarla; suscríbete con
+  <code>chart.on('orderModify', ...)</code>.
+</p>
 
 <h2>Ejecución en vivo (conecta un adaptador)</h2>
 <p>

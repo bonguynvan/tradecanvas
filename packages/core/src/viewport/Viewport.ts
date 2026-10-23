@@ -1,5 +1,5 @@
-import type { ViewportState, Rect, DataSeries, PriceScaleMode } from '@tradecanvas/commons';
-import { clamp, computePriceRange } from '@tradecanvas/commons';
+import type { ViewportState, Rect, DataSeries, PriceScaleMode, ScaleMargins } from '@tradecanvas/commons';
+import { PHI, clamp, computePriceRange, fitPriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
 /**
@@ -10,6 +10,11 @@ import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEI
 export const MIN_BAR_UNIT = 0.25;
 /** The narrowest `setMinBarUnit` allows: 50 bars a pixel. */
 export const MIN_BAR_UNIT_LIMIT = 0.02;
+
+/** Room above the highest high and below the lowest low: φ⁻⁵ (9%) of the scale's height. */
+export const PRICE_SCALE_MARGIN = PHI ** -5;
+/** Margins must leave the prices at least this share of the height. */
+const MIN_PRICE_SHARE = 0.2;
 
 export class Viewport {
   private state: ViewportState;
@@ -27,6 +32,7 @@ export class Viewport {
    */
   private stateCache: ViewportState | null = null;
   private dataLength = 0;
+  private margins: ScaleMargins = { top: PRICE_SCALE_MARGIN, bottom: PRICE_SCALE_MARGIN };
   private minBarWidth: number;
   private maxBarWidth: number;
   private rightMarginBars: number;
@@ -74,6 +80,7 @@ export class Viewport {
         invertScale: this.state.invertScale,
         priceAxisWidth: this.state.priceAxisWidth,
         formatPrice: this.state.formatPrice,
+        numberLocale: this.state.numberLocale,
         priceUnit: this.state.priceUnit,
       };
     }
@@ -112,6 +119,12 @@ export class Viewport {
 
   isInvertScale(): boolean {
     return this.state.invertScale === true;
+  }
+
+  /** The number locale prices on the scale are grouped in. */
+  setNumberLocale(locale: string): void {
+    this.state.numberLocale = locale;
+    this.invalidate();
   }
 
   /** How prices on the scale read (null: decimals), and the step they move in (a fraction's). */
@@ -273,15 +286,30 @@ export class Viewport {
     this.updateVisibleRange();
 
     if (autoScale) {
-      this.state.priceRange = computePriceRange(
-        data,
-        this.state.visibleRange.from,
-        Math.min(this.state.visibleRange.to, this.dataLength - 1),
-        0.08, // 8% padding for more breathing room
-        this.isLogScale(),
-      );
-      this.invalidate();
+      const { min, max } = computePriceRange(data, this.state.visibleRange.from, Math.min(this.state.visibleRange.to, this.dataLength - 1), 0);
+      this.fitToPrices(min, max);
     }
+  }
+
+  /**
+   * Room the fitted scale leaves above the highest price and below the
+   * lowest, as shares of its height. Margins that leave the prices less than
+   * a fifth of it are refused.
+   */
+  setScaleMargins(margins: ScaleMargins): void {
+    const ok = (v: number) => Number.isFinite(v) && v >= 0;
+    if (!ok(margins.top) || !ok(margins.bottom) || 1 - margins.top - margins.bottom < MIN_PRICE_SHARE) return;
+    this.margins = { top: margins.top, bottom: margins.bottom };
+  }
+
+  getScaleMargins(): ScaleMargins {
+    return { ...this.margins };
+  }
+
+  /** Fit the scale to `min`..`max` with its margins. */
+  fitToPrices(min: number, max: number): void {
+    this.state.priceRange = fitPriceRange(min, max, this.margins, this.isLogScale());
+    this.invalidate();
   }
 
   /**

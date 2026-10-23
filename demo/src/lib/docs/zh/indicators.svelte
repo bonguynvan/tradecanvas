@@ -56,8 +56,8 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  每条线的最新值会以该线的颜色标注在坐标轴上；可通过
-  <code>features.indicatorValueLabels: false</code> 或 <code>setIndicatorValueLabelsVisible(false)</code> 关闭这些标签。
+  图例显示每条线的最新值。若还要以该线的颜色把它标注在坐标轴上，可通过
+  <code>features.indicatorValueLabels: true</code> 或 <code>setIndicatorValueLabelsVisible(true)</code> 开启这些标签（默认关闭）。
   同一窗格中的线、水平线、坐标轴和十字光标共用一套坐标。
 </p>
 

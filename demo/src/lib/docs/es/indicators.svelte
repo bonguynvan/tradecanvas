@@ -57,9 +57,9 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  El último valor de cada línea se marca en su eje con el color de la línea;
-  desactiva estas etiquetas con <code>features.indicatorValueLabels: false</code> o
-  <code>setIndicatorValueLabelsVisible(false)</code>. Las líneas, los niveles, el
+  La leyenda muestra el último valor de cada línea. Para marcarlo también en su eje, con el color de la línea,
+  activa <code>features.indicatorValueLabels: true</code> o
+  <code>setIndicatorValueLabelsVisible(true)</code> (desactivado por defecto). Las líneas, los niveles, el
   eje y la cruz de un panel comparten una misma escala.
 </p>
 

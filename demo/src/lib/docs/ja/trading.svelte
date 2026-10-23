@@ -50,7 +50,10 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>価格ラインをドラッグして変更します。変更は <code>chart.on('orderModify', ...)</code> で購読できます。</p>
+<p>
+  ラインのラベルには注文の種類と数量（<code>LIMIT 0.25</code>）が表示され、価格軸のタグには軸と同じ書き方で価格が表示されます。
+  価格ラインをドラッグして変更します。変更は <code>chart.on('orderModify', ...)</code> で購読できます。
+</p>
 
 <h2>ライブ執行（アダプターの接続）</h2>
 <p>

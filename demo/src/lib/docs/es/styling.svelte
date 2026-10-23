@@ -238,7 +238,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Las etiquetas de precio y hora en los ejes, y en las escalas de los paneles.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>La línea y las etiquetas de cada eje (las escalas de los paneles siguen al eje de precios).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Los valores de la leyenda, y sus etiquetas (O, H, L, Vol).</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>La línea y la etiqueta del último precio; sus colores siguen a la serie si no se fijan.</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>La línea y la etiqueta del último precio; sus colores siguen a la serie si no se fijan. El tiempo que le queda a la barra (<code>features.barCountdown</code>) cuelga bajo la etiqueta.</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Las barras de volumen.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Los cortes de día, semana y mes.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Las líneas de máximo y mínimo, la marca de agua.</td></tr>
@@ -306,7 +306,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">La leyenda OHLCV</h2>
 <p>
-  La leyenda en la parte superior del gráfico muestra la barra bajo el puntero (si no, la última): apertura, máximo, mínimo, cierre, el cambio y el volumen. Cada valor conserva su sitio mientras cambian sus dígitos, así que no tiembla con los ticks en vivo. Se puede apagar o dejar solo las filas que quiera. En el widget toma la fuente del aspecto, al tamaño de las filas de indicadores que lista debajo; <code>setUI</code> la vuelve a poner, después de un <code>setLegend</code> suyo.
+  La leyenda en la parte superior del gráfico empieza con una línea de título: el símbolo, la temporalidad y la bolsa, y en esa misma línea la barra bajo el puntero (si no, la última): apertura, máximo, mínimo, cierre y el cambio. El volumen va en una línea aparte. Si el área del gráfico es demasiado estrecha para la línea de título, como en un teléfono, esta pasa a varias líneas. El gráfico toma el símbolo y la temporalidad de su flujo de datos, y la bolsa de los datos del símbolo; <code>setSymbolName('Bitcoin')</code> fija un nombre propio hasta que cambie el símbolo, y <code>showSymbol: false</code> quita el título. Cada valor conserva su sitio mientras cambian sus dígitos, así que no tiembla con los ticks en vivo. Se puede apagar o dejar solo las filas que quiera. En el widget toma la fuente de cifras del aspecto, al tamaño de las filas de indicadores que lista debajo; <code>setUI</code> la vuelve a poner, después de un <code>setLegend</code> suyo.
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -319,6 +319,14 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">La escala de precio y la banda del volumen</h2>
+<p>
+  Las barras de volumen se quedan en una banda a lo largo de la parte inferior del área del gráfico, de φ^-4.5 (alrededor
+  del 11.5%) de su altura, y la escala de precio ajustada mantiene las velas por encima, con un hueco de φ^-7 (3%). Por
+  encima del máximo más alto deja φ^-5 (9%). Sin volumen a la vista (desactivado, o barras que no lo traen) las velas
+  recuperan la banda. La escala también se ajusta a los indicadores superpuestos y a las líneas de comparación a la vista.
+</p>
 
 <h2>Colores del volumen</h2>
 <p>

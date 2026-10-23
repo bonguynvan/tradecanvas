@@ -56,9 +56,9 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  各ラインの最新値は、そのラインの色で軸上にタグ表示されます。タグは
-  <code>features.indicatorValueLabels: false</code> または <code>setIndicatorValueLabelsVisible(false)</code> で
-  非表示にできます。ペインのライン、レベル、軸、クロスヘアは 1 つのスケールを共有します。
+  各ラインの最新値は凡例に表示されます。ラインの色で軸上にもタグ表示するには、
+  <code>features.indicatorValueLabels: true</code> または <code>setIndicatorValueLabelsVisible(true)</code> で
+  オンにします（既定ではオフ）。ペインのライン、レベル、軸、クロスヘアは 1 つのスケールを共有します。
 </p>
 
 <h2>価格ペインに表示 ({overlays.length})</h2>

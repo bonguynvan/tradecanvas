@@ -23,6 +23,22 @@ function onPriceGrid(step: number, precision: number | null, tick: number | null
   return step;
 }
 
+/** Float noise in a tick's price, relative to it (a sum of steps is off by about 1e-16). */
+const TICK_NOISE = 1e-9;
+
+/**
+ * The fewest decimals, up to `max`, that write every one of `prices` exactly:
+ * ticks on a 500 step read 73,500 rather than 73,500.00, and one column of
+ * ticks shares one count, so the figures line up.
+ */
+function tickDecimals(prices: readonly number[], max: number): number {
+  for (let d = 0; d < max; d++) {
+    const scale = 10 ** d;
+    if (prices.every((p) => Math.abs(p * scale - Math.round(p * scale)) <= TICK_NOISE * Math.max(1, Math.abs(p * scale)))) return d;
+  }
+  return max;
+}
+
 /** How many multiples of `step` lie in the range. */
 function stepsIn(min: number, max: number, step: number): number {
   return Math.floor(max / step + 1e-9) - Math.ceil(min / step - 1e-9) + 1;
@@ -100,6 +116,8 @@ export class PriceAxis {
   private reservedPrice: (() => number | null) | null = null;
   private precision: number | null = null;
   private tick: number | null = null;
+  /** Where the right-hand scale wrote its labels on the last draw. */
+  private rows: number[] = [];
 
   /** Decimals the labels show (the market's or the symbol's), or null to fit them to the range. */
   setPricePrecision(precision: number | null): void {
@@ -208,6 +226,11 @@ export class PriceAxis {
     this.locale = locale;
   }
 
+  /** The heights (px) of the labels the scale wrote last: the crosshair's pill clears those it covers. */
+  labelRows(): readonly number[] {
+    return this.rows;
+  }
+
   /**
    * Draw the scale beside the plot: on the right (the price scale), or on the
    * left — labels right-aligned against the plot, no last-price tag to avoid.
@@ -237,19 +260,23 @@ export class PriceAxis {
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Compute labels
+    // Compute labels: on a price scale, in the decimals the ticks need (a
+    // rebased scale writes its percents or points as it always has).
     const { precision } = this.scale(viewport);
+    const ticks = this.ticks(viewport);
+    const mode = viewport.scaleMode ?? (viewport.logScale ? 'logarithmic' : 'regular');
+    const decimals = mode === 'regular' || mode === 'logarithmic' ? tickDecimals(ticks, precision) : precision;
     const font = `500 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // Collect label positions
     const labels: { y: number; text: string }[] = [];
     const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
-    for (const price of this.ticks(viewport)) {
+    for (const price of ticks) {
       const y = toY(price);
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       if (avoid.some((a) => Math.abs(y - a) < AVOID_CLEARANCE_PX)) continue;
-      labels.push({ y, text: priceScaleText(price, viewport, precision, this.locale) });
+      labels.push({ y, text: priceScaleText(price, viewport, decimals, this.locale) });
     }
 
     ctx.font = font;
@@ -274,5 +301,6 @@ export class PriceAxis {
     for (const { y, text } of labels) {
       ctx.fillText(text, axisX + 8 * tick, y);
     }
+    if (!left) this.rows = labels.map((l) => l.y);
   }
 }

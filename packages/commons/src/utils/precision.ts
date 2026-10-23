@@ -22,6 +22,22 @@ function numberFormat(locale: string, precision: number): Intl.NumberFormat {
   return nf;
 }
 
+/**
+ * A price on a tag beside the axis (an order, a position, an alert) as the
+ * axis writes one: the chart's price format when it has one, else grouped in
+ * its number locale at `precision` decimals, or at the axis's own for the
+ * range on view when none is given.
+ */
+export function priceTagText(
+  price: number,
+  viewport: Pick<ViewportState, 'formatPrice' | 'numberLocale' | 'priceRange'>,
+  precision?: number,
+): string {
+  if (viewport.formatPrice) return viewport.formatPrice(price);
+  const decimals = precision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+  return formatPrice(price, decimals, viewport.numberLocale ?? 'en-US');
+}
+
 export function formatPrice(value: number, precision = 2, locale = 'en-US'): string {
   return numberFormat(locale, precision).format(value);
 }
@@ -38,7 +54,7 @@ export function autoPricePrecision(min: number, max: number): number {
   return step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
 }
 
-import type { PriceScaleMode } from '../types/rendering.js';
+import type { PriceScaleMode, ViewportState } from '../types/rendering.js';
 import type { PriceFormatter, PriceFraction } from '../types/chart.js';
 import { computeTickStep } from './math.js';
 

@@ -2,6 +2,19 @@ import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
 import { fillTag } from '../ui/shapes.js';
+import { labelTextColor } from '../ui/axisValueLabels.js';
+
+/** Where the last-price tag went on the axis, and its colour: the countdown hangs under it. */
+export interface LastPriceTag {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+/** Height (px) of the last-price tag. */
+const TAG_HEIGHT = 20;
 
 /**
  * Renders the current (last) price as a horizontal line with a badge.
@@ -15,6 +28,7 @@ export class CurrentPriceLine {
   /** Fixed decimals for the tag; `null` follows the price axis. */
   private pricePrecision: number | null = null;
   private locale = 'en-US';
+  private tag: LastPriceTag | null = null;
 
   setLocale(locale: string): void {
     this.locale = locale;
@@ -44,7 +58,13 @@ export class CurrentPriceLine {
     return this.price;
   }
 
+  /** The tag as last drawn; null when the last draw showed none. */
+  getTag(): LastPriceTag | null {
+    return this.tag;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    this.tag = null;
     const look = theme.style?.lastPrice;
     if (!this.visible || this.price === null || look?.visible === false) return;
 
@@ -80,7 +100,8 @@ export class CurrentPriceLine {
     const badgeWidth = Math.min(textWidth + 12, axisWidth - 2);
 
     ctx.fillStyle = color;
-    fillTag(ctx, axisX, y - 10, badgeWidth, 20, theme);
+    fillTag(ctx, axisX, y - TAG_HEIGHT / 2, badgeWidth, TAG_HEIGHT, theme);
+    this.tag = { x: axisX, y: y - TAG_HEIGHT / 2, width: badgeWidth, height: TAG_HEIGHT, color };
 
     // Arrow indicator
     const arrowX = axisX - 5;
@@ -91,7 +112,7 @@ export class CurrentPriceLine {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = labelTextColor(color);
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillText(text, axisX + 5, y);

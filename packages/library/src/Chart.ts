@@ -44,8 +44,8 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, padPriceRange, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -150,10 +150,10 @@ function assertTimezone(tz: TimeZoneSetting): void {
   if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
 }
 
-/** Decimals of order and alert prices when neither the market nor the symbol sets them. */
-const DEFAULT_ORDER_PRECISION = 2;
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
+/** Between the lowest candle and the volume bars: φ⁻⁷ (3%) of the plot's height. */
+const VOLUME_GAP = PHI ** -7;
 /** Changes to one indicator closer together than this are one undo step (a colour dragged, a period typed). */
 const INDICATOR_EDIT_MERGE_MS = 800;
 /** Fewest bars ahead of the view that trigger the next history page. */
@@ -390,7 +390,7 @@ export class Chart {
       timeAxis: f.timeAxis ?? true,
       grid: f.grid ?? (options.grid?.visible ?? true),
       legend: f.legend ?? true,
-      indicatorValueLabels: f.indicatorValueLabels ?? true,
+      indicatorValueLabels: f.indicatorValueLabels ?? false,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,
@@ -532,6 +532,8 @@ export class Chart {
     this.priceAxis = new PriceAxis();
     this.priceAxis.setLocale(this.numberLocale);
     this.leftPriceAxis.setLocale(this.numberLocale);
+    // Tags beside the axis (orders, positions, alerts) group prices as it does.
+    this.viewport.setNumberLocale(this.numberLocale);
     this.timeAxis = new TimeAxis();
     this.timeAxis.setLocale(this.numberLocale);
 
@@ -3010,6 +3012,9 @@ export class Chart {
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
     this.applyTimeSpacing();
+    // The legend's title line names them (a name set with setSymbolName stands until the symbol changes).
+    if (symbol !== previousSymbol) this.chartLegend.setSymbol(symbol);
+    this.chartLegend.setTimeframe(timeframe);
     if (symbol !== previousSymbol) {
       this.announcedSymbol = symbol;
       this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
@@ -3629,7 +3634,8 @@ export class Chart {
 
   setVolumeVisible(visible: boolean): void {
     this.volumeRenderer.setVisible(visible);
-    this.engine.requestRender(LayerType.Main);
+    // The scale gives the band back to the candles, or takes it again.
+    this.updateViewportAndRender();
   }
 
   // --- Volume Profile ---
@@ -3777,6 +3783,8 @@ export class Chart {
    */
   setSymbolInfo(info: SymbolInfo | null): void {
     this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
+    this.engine.requestRender(LayerType.Hover);
     this.priceAxis.setPriceTick(this.symbolInfo?.minTick ?? null);
     if (this.marketConfig?.pricePrecision === undefined) {
       this.applyPricePrecision(this.symbolInfo?.pricePrecision ?? null);
@@ -4876,6 +4884,7 @@ export class Chart {
    */
   setNumberLocale(locale: string): void {
     this.numberLocale = locale;
+    this.viewport.setNumberLocale(locale);
     this.priceAxis.setLocale(locale);
     this.leftPriceAxis.setLocale(locale);
     this.crosshairHandler.setLocale(locale);
@@ -4922,7 +4931,8 @@ export class Chart {
     this.marketPricePrecision = precision;
     this.priceAxis.setPricePrecision(precision);
     this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
-    this.alertManager.setPricePrecision(precision ?? DEFAULT_ORDER_PRECISION);
+    this.alertManager.setPricePrecision(precision);
+    this.tradeZoneManager.setPricePrecision(precision);
     this.streamManager?.priceLine.setPricePrecision(precision);
     this.currentPriceLine.setPricePrecision(precision);
     this.crosshairHandler.setPricePrecision(precision);
@@ -4975,7 +4985,7 @@ export class Chart {
     }
     if (patch.volume !== undefined) {
       this.volumeRenderer.setVisible(patch.volume);
-      this.engine.requestRender(LayerType.Main);
+      this.updateViewportAndRender();
     }
     if (patch.drawings === false) {
       this.drawingManager.setActiveTool(null);
@@ -5158,10 +5168,10 @@ export class Chart {
     // fit the price range once the FINAL visible window is known. Fitting
     // before scrollToEnd measured the old window (e.g. deep history) and left
     // every bar of a freshly loaded series off-screen.
-    this.viewport.updateData(displayData, autoScale && !scrollToEnd);
+    this.viewport.updateData(displayData, false);
     if (scrollToEnd) {
       this.viewport.scrollToEnd();
-      if (autoScale) this.viewport.updateData(displayData, true);
+      this.viewport.updateData(displayData, false);
     }
 
     const vs = this.viewport.getState();
@@ -5173,24 +5183,30 @@ export class Chart {
       this.viewport.setScaleBaseline(displayData[baseIdx]?.close);
     }
 
-    // Expand the fitted range to include overlay indicator values (BB, Ichimoku, etc.)
-    // and the compare lines on the price scale.
-    if (autoScale) {
-      const overlayRange = joinRanges(
-        this.indicatorEngine.getOverlayPriceRange(vs.visibleRange.from, Math.min(vs.visibleRange.to, displayData.length - 1)),
-        this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
-      );
-      if (overlayRange) {
-        const current = vs.priceRange;
-        const expandedMin = Math.min(current.min, overlayRange.min);
-        const expandedMax = Math.max(current.max, overlayRange.max);
-        if (expandedMin < current.min || expandedMax > current.max) {
-          const padded = padPriceRange(expandedMin, expandedMax, 0.02, this.viewport.isLogScale());
-          this.viewport.setPriceRange(padded.min, padded.max);
-        }
-      }
-    }
+    if (autoScale) this.fitPriceScale(displayData, vs);
     return displayData;
+  }
+
+  /**
+   * Fit the price scale to the bars on view, the overlay indicators (BB,
+   * Ichimoku…) and the compare lines, in margins of φ⁻⁵ above and below;
+   * with volume on view, the band at the bottom is left to it.
+   */
+  private fitPriceScale(displayData: DataSeries, vs: ViewportState): void {
+    if (displayData.length === 0) return;
+    const from = Math.max(0, vs.visibleRange.from);
+    const to = Math.min(vs.visibleRange.to, displayData.length - 1);
+    const range = joinRanges(
+      joinRanges(computePriceRange(displayData, from, to, 0), this.indicatorEngine.getOverlayPriceRange(from, to)),
+      this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
+    )!;
+    const volume = this.features.volume && this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
+    const band = volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN;
+    // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
+    this.viewport.setScaleMargins(this.viewport.isInvertScale()
+      ? { top: band, bottom: PRICE_SCALE_MARGIN }
+      : { top: PRICE_SCALE_MARGIN, bottom: band });
+    this.viewport.fitToPrices(range.min, range.max);
   }
 
   /** Full update: resolve layout, update viewport, sync context, request render. */
@@ -5561,6 +5577,12 @@ function readShapes(shapes: ShapeConfig): ShapeConfig {
 
 /** The indicators that read another symbol's bars (`params.symbol`). */
 const SYMBOL_INDICATORS: ReadonlySet<string> = new Set(['compareSymbol', 'spread', 'correlation', 'correlationlog']);
+
+/** Whether any bar from `from` to `to` traded. */
+function hasVolume(data: DataSeries, from: number, to: number): boolean {
+  for (let i = from; i <= to; i++) if (data[i].volume > 0) return true;
+  return false;
+}
 
 /** Both ranges in one (either may be null). */
 function joinRanges(
