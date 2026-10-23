@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### The chart's right-click menus
+
+The menus on the plot, the price axis and the time axis are rebuilt in the Print look, grouped as a trader looks for them, with submenus and the widget's shortcuts.
+
+- **The plot's menu** adds **Paste**, for the drawings copied here or on another chart of the page, and **Remove indicators** (a comparison with another symbol stays: it has its own dialog). Its entries come in groups: what to do at the price, the view, the drawings and indicators, then export and the settings.
+- **The price axis's menu**: reset the price scale, auto scale, invert, the scale on the left; the four modes (regular, logarithmic, percentage, indexed to 100) as one choice, where log and percentage were switches back to regular; **Labels** (indicator values, the bar countdown) and **Lines** (high and low, the last price line) in submenus; an alert at the price; and the settings, open on their Scales tab.
+- **The time axis's menu** adds the **time zone**, a submenu that opens at the zone in use.
+- **Shortcuts in the menus.** An entry names the widget's key for it while that key is on: Alt+R reset view, Alt+I invert, Alt+G go to date. **Alt+R** is new: every bar in sight and the price scale fitted to them; the shortcuts sheet lists it.
+- **Context menus** take radio entries, a shortcut written at the row's end, and submenus: a click, Enter, the right arrow or a pointer resting on the entry opens one beside it (on the other side when there is no room), the left arrow or Escape closes it, Tab closes every menu. In a right-to-left widget they open to the left, and the arrows swap. On a phone, where menus open from the bottom, a submenu's first row leads back. The wheel scrolls a long menu instead of closing it.
+- New switches: `menu.chart.indicators`, `menu.chart.timezone`, `hotkeys.resetView` (125 in all).
+- `chart.canPasteDrawings()` says whether `pasteDrawings()` would paste; `DrawingManager.canPaste()` in `@tradecanvas/core`.
+- `chart.removeIndicators(ids)` removes several indicators as one undo step.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.36.0 (2026-10-23)
+
+React, Vue and Svelte components: 1.3.18.
+
 ### The chart settings, rewritten
 
 The widget's settings dialog is laid out as the indicators dialog is, in the Print look: 776 by 610, half a step of φ wider than the indicators dialog, its tabs 233 wide down the side.
@@ -11,8 +30,6 @@ The widget's settings dialog is laid out as the indicators dialog is, in the Pri
 - **The Template menu** saves the chart's look under a name (its switches and the colours that are set; not the time zone, the number format or auto-scale), applies or deletes a saved one, and resets to the defaults. Templates are kept in this browser.
 - A context menu's entries can now be removable: a remove button on the row, and the Delete key. A context menu taller than the room scrolls.
 - **Fixed:** a drag that began in a dialog and ended outside it (a slider, a text selection) closed the indicator settings, which now cancels; it doesn't any more. A toast raised over an open dialog shows above it.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.35.0 (2026-10-23)
 

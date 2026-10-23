@@ -106,7 +106,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // one undo step
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // the selected ones (Ctrl+C)
+chart.pasteDrawings()                // Ctrl+V, here or on another chart of the page
+chart.canPasteDrawings()             // whether there is something to paste`}</code></pre>
 <p>Clicking one drawing of a group selects the whole group.</p>
 
 <h2>Eraser, zoom and magnet</h2>

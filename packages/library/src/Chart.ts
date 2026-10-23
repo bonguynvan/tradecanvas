@@ -1763,6 +1763,13 @@ export class Chart {
     this.recordIndicators(undefined, () => this.removeIndicatorNow(instanceId));
   }
 
+  /** Remove several indicators, each as `removeIndicator` does, in one undo step. */
+  removeIndicators(instanceIds: readonly string[]): void {
+    this.recordIndicators(undefined, () => {
+      for (const id of instanceIds) this.removeIndicatorNow(id);
+    });
+  }
+
   private removeIndicatorNow(instanceId: string): void {
     if (!this.indicatorEngine.getIndicatorConfig(instanceId)) return;
     // It and everything computed from its lines, the last readers first.
@@ -2215,6 +2222,11 @@ export class Chart {
   pasteDrawings(): string[] {
     if (!this.features.drawings) return [];
     return this.drawingManager.paste();
+  }
+
+  /** Whether `pasteDrawings()` would paste: drawings copied (here or on another chart of the page). */
+  canPasteDrawings(): boolean {
+    return this.features.drawings !== false && this.drawingManager.canPaste();
   }
 
   setDrawingStyle(style: Partial<DrawingStyle>): void {

@@ -437,6 +437,15 @@ export class DrawingManager {
     return selected.length;
   }
 
+  /** Whether `paste()` would paste: something copied that this chart's tools take, and no drawing under way. */
+  canPaste(): boolean {
+    return this.state !== 'creating' && clipboard.drawings.some((d) => this.canPasteType(d.type));
+  }
+
+  private canPasteType(type: DrawingToolType): boolean {
+    return this.registry.has(type) && this.toolAllowed(type);
+  }
+
   /**
    * Paste the copied drawings as new, unlocked, selected drawings — one undo
    * step. Pasted back into the chart they came from, each paste is offset by
@@ -450,7 +459,7 @@ export class DrawingManager {
     const ids: string[] = [];
     this.batchUndo(() => {
       for (const source of clipboard.drawings) {
-        if (!this.registry.has(source.type) || !this.toolAllowed(source.type)) continue;
+        if (!this.canPasteType(source.type)) continue;
         ids.push(this.addDrawing({
           type: source.type,
           anchors: source.anchors.map((a) => ({ ...a, time: a.time + shift })),

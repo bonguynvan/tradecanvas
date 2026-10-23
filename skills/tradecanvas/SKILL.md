@@ -126,6 +126,7 @@ const series = chart.getIndicatorOutput(rsi)?.series ?? [];
 const latestRsi = series[series.length - 1]?.value;
 
 chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
+chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); // several, one undo step
 ```
 
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
@@ -157,8 +158,10 @@ chart.on('positionModify', (e) => console.log('stop or target dragged', e.payloa
 ```
 
 69 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
-and drawings can be grouped (`groupDrawings`), reordered (`moveDrawing`) and erased
-(`setEraserMode`). `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+and drawings can be grouped (`groupDrawings`), reordered (`moveDrawing`), erased
+(`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then
+`pasteDrawings` there; `canPasteDrawings()` says whether there is something to paste).
+`riskReward` is a Long/Short position sized from `accountSize` and `risk`.
 
 ## Signals, trades and replay
 

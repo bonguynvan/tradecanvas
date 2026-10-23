@@ -4887,6 +4887,8 @@
     "menu.chart.goToDate",
     "menu.chart.paneScale",
     "menu.priceAxisAdd",
+    "menu.chart.indicators",
+    "menu.chart.timezone",
     "menu.drawing",
     "menu.drawing.settings",
     "menu.drawing.alert",
@@ -4903,7 +4905,8 @@
     "hotkeys.tools",
     "hotkeys.invertScale",
     "hotkeys.goToDate",
-    "hotkeys.help"
+    "hotkeys.help",
+    "hotkeys.resetView"
   ],
   "styleKeys": {
     "background.color": "color",

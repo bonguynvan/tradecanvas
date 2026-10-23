@@ -220,6 +220,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'common.navigate': 'پیمایش',
   'common.open': 'باز کردن',
   'common.select': 'انتخاب',
+  'common.back': 'بازگشت',
 
   // Settings rows
   'settings.upBody': 'بدنه کندل صعودی',
@@ -587,6 +588,12 @@ export const FA_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'معکوس کردن مقیاس',
   'chartMenu.panePercent': 'مقیاس درصدی',
   'chartMenu.exportData': 'خروجی گرفتن از داده‌ها (CSV)',
+  'chartMenu.paste': 'جای‌گذاری',
+  'chartMenu.removeIndicators': 'حذف اندیکاتورها',
+  'chartMenu.resetPriceScale': 'بازنشانی مقیاس قیمت',
+  'chartMenu.labels': 'برچسب‌ها',
+  'chartMenu.lines': 'خطوط',
+  'chartMenu.lastPriceLine': 'خط آخرین قیمت',
   'compare.percent': 'درصد تغییر، روی همین مقیاس',
   'compare.ownScale': 'قیمت، روی مقیاس جداگانه',
   'compare.ownPane': 'قیمت، در پنل جداگانه',

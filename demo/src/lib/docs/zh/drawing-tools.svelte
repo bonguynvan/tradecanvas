@@ -103,7 +103,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 一次撤销
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // 选中的画线（Ctrl+C）
+chart.pasteDrawings()                // Ctrl+V，粘贴到此处或页面上的其他图表
+chart.canPasteDrawings()             // 是否有可粘贴的内容`}</code></pre>
 <p>点击分组中的任意一条画线，会选中整个分组。</p>
 
 <h2>橡皮擦、缩放与磁吸</h2>

@@ -103,7 +103,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 실행 취소 한 단계
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // 선택한 그림(Ctrl+C)
+chart.pasteDrawings()                // Ctrl+V, 이 차트나 페이지의 다른 차트에
+chart.canPasteDrawings()             // 붙여넣을 것이 있는지`}</code></pre>
 <p>그룹에 속한 그림 하나를 클릭하면 그룹 전체가 선택됩니다.</p>
 
 <h2>지우개, 확대, 자석</h2>

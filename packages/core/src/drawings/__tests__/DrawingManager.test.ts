@@ -325,6 +325,15 @@ describe('DrawingManager — copy and paste', () => {
     expect(manager.getDrawings()).toHaveLength(5);
   });
 
+  it('says whether there is something to paste', () => {
+    manager.setDrawings([line('a', 0)]);
+    manager.selectInRect({ x0: 0, y0: 0, x1: 50, y1: 100 }, unitViewport);
+    manager.copySelection();
+    expect(manager.canPaste()).toBe(true);
+    // A chart without the copied drawings' tool would paste nothing.
+    expect(new DrawingManager().canPaste()).toBe(false);
+  });
+
   it('pastes into another chart at the same place', () => {
     manager.setDrawings([line('a', 0)]);
     manager.selectInRect({ x0: 0, y0: 0, x1: 50, y1: 100 }, unitViewport);

@@ -220,6 +220,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'common.navigate': 'Navigasi',
   'common.open': 'Buka',
   'common.select': 'Pilih',
+  'common.back': 'Kembali',
 
   // Settings rows
   'settings.upBody': 'Badan candle naik',
@@ -587,6 +588,12 @@ export const MS_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'Songsangkan skala',
   'chartMenu.panePercent': 'Skala peratusan',
   'chartMenu.exportData': 'Eksport data (CSV)',
+  'chartMenu.paste': 'Tampal',
+  'chartMenu.removeIndicators': 'Alih keluar penunjuk',
+  'chartMenu.resetPriceScale': 'Tetapkan semula skala harga',
+  'chartMenu.labels': 'Label',
+  'chartMenu.lines': 'Garisan',
+  'chartMenu.lastPriceLine': 'Garisan harga terakhir',
   'compare.percent': 'Perubahan peratus, pada skala ini',
   'compare.ownScale': 'Harga, pada skalanya sendiri',
   'compare.ownPane': 'Harga, dalam panelnya sendiri',

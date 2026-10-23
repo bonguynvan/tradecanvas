@@ -244,6 +244,19 @@ describe('indicators shown on some intervals only', () => {
   });
 });
 
+describe('removing several indicators', () => {
+  it('removes them as one undo step, and leaves the others as they are', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const sma = chart.addIndicator('sma')!;
+    const ema = chart.addIndicator('ema')!;
+    chart.removeIndicators([rsi, sma]);
+    expect(chart.getActiveIndicators().map((i) => i.instanceId)).toEqual([ema]);
+    chart.undo();
+    expect(chart.getActiveIndicators().map((i) => i.id).sort()).toEqual(['ema', 'rsi', 'sma']);
+    expect(chart.getActiveIndicators().some((i) => i.instanceId === ema)).toBe(true);
+  });
+});
+
 describe('an indicator edit (its settings dialog open)', () => {
   const period = (id: string) => chart.getActiveIndicators().find((i) => i.instanceId === id)?.params.period;
 

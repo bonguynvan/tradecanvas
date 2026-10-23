@@ -152,9 +152,26 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   ChartWidget construye sus menús sobre estos eventos. Haz clic derecho en el área del
   gráfico para una alerta, una compra y una venta a ese precio (una orden límite en el
   lado del mercado donde quedaría a la espera, una stop en el otro), un ticket de
-  orden, una línea horizontal, restablecer la vista y los dibujos; en el eje de precio,
-  para cambiar la escala; en el eje de tiempo, para restablecer la vista e ir a una
-  fecha. Añade tus propias entradas con <code>chartMenuItems</code> (consulta la
+  orden y una línea horizontal; después, restablecer la vista, pegar los dibujos que
+  copiaste, ocultar o eliminar los dibujos, eliminar los indicadores (una comparación
+  con otro símbolo se queda), exportar los datos y abrir la configuración.
+</p>
+<p>
+  Haz clic derecho en el eje de precio para restablecerlo y para la escala automática,
+  la escala invertida y la de la izquierda, uno de sus cuatro modos (normal,
+  logarítmica, porcentaje, indexada a 100), las etiquetas sobre el eje y las líneas que
+  cruzan el gráfico en dos submenús, una alerta a ese precio y la configuración abierta
+  en su pestaña Escalas. El eje de tiempo ofrece restablecerlo, ir a una fecha y la
+  zona horaria.
+</p>
+<p>
+  Una entrada muestra el atajo del widget que le corresponde mientras esa tecla está
+  activada: <kbd>Alt</kbd> + <kbd>R</kbd> restablece la vista, <kbd>Alt</kbd> +
+  <kbd>I</kbd> invierte la escala, <kbd>Alt</kbd> + <kbd>G</kbd> va a una fecha. Un
+  submenú se abre con un clic, <kbd>Enter</kbd>, <kbd>→</kbd> o el puntero detenido
+  sobre él, y <kbd>←</kbd> o <kbd>Escape</kbd> vuelve atrás; en un móvil, donde los
+  menús se abren desde abajo, su primera fila lleva de vuelta. Añade tus propias
+  entradas con <code>chartMenuItems</code> (consulta la
   <a href={href('/docs/api')}>referencia de la API</a>).
 </p>
 

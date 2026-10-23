@@ -220,6 +220,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'common.navigate': 'Navigér',
   'common.open': 'Åbn',
   'common.select': 'Vælg',
+  'common.back': 'Tilbage',
 
   // Settings rows
   'settings.upBody': 'Stigende krop',
@@ -587,6 +588,12 @@ export const DA_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'Vend skala',
   'chartMenu.panePercent': 'Procentskala',
   'chartMenu.exportData': 'Eksportér data (CSV)',
+  'chartMenu.paste': 'Indsæt',
+  'chartMenu.removeIndicators': 'Fjern indikatorer',
+  'chartMenu.resetPriceScale': 'Nulstil kursskala',
+  'chartMenu.labels': 'Etiketter',
+  'chartMenu.lines': 'Linjer',
+  'chartMenu.lastPriceLine': 'Linje for seneste kurs',
   'compare.percent': 'Procentvis ændring, på denne skala',
   'compare.ownScale': 'Kurs, på egen skala',
   'compare.ownPane': 'Kurs, i egen rude',

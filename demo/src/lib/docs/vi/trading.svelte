@@ -146,10 +146,23 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <p>
   ChartWidget dựng các menu của nó trên những sự kiện này. Bấm chuột phải vào vùng biểu đồ để
   đặt cảnh báo, mua và bán tại mức giá đó (lệnh giới hạn khi mức giá nằm ở phía lệnh phải chờ
-  so với giá thị trường, lệnh dừng khi nằm ở phía còn lại), mở phiếu đặt lệnh, vẽ đường ngang,
-  đặt lại khung nhìn và thao tác với hình vẽ; vào trục giá để chuyển chế độ thang; vào trục thời
-  gian để đặt lại khung nhìn và đi tới một ngày. Thêm mục của riêng bạn bằng
-  <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>Tham chiếu API</a>).
+  so với giá thị trường, lệnh dừng khi nằm ở phía còn lại), mở phiếu đặt lệnh và vẽ đường ngang;
+  tiếp theo là đặt lại khung nhìn, dán các hình vẽ đã sao chép, ẩn hoặc xoá hình vẽ, xoá chỉ báo
+  (phần so sánh với mã khác vẫn được giữ), xuất dữ liệu và mở bảng cài đặt.
+</p>
+<p>
+  Bấm chuột phải vào trục giá để đặt lại thang, bật tự co giãn thang, dùng thang đảo ngược hay
+  thang bên trái, chọn một trong bốn chế độ (thường, logarit, phần trăm, quy về 100), chỉnh nhãn
+  trên trục và các đường chạy ngang biểu đồ trong hai menu con, đặt cảnh báo tại mức giá đó, và
+  mở bảng cài đặt ở tab Thang đo. Trục thời gian có mục đặt lại, đi tới ngày và múi giờ.
+</p>
+<p>
+  Khi phím tắt của widget đang bật, mục tương ứng hiện phím đó: <kbd>Alt</kbd> + <kbd>R</kbd>
+  đặt lại khung nhìn, <kbd>Alt</kbd> + <kbd>I</kbd> đảo ngược thang, <kbd>Alt</kbd> +
+  <kbd>G</kbd> đi tới ngày. Menu con mở khi bấm vào, khi nhấn <kbd>Enter</kbd> hoặc
+  <kbd>→</kbd>, hay khi con trỏ dừng trên nó; <kbd>←</kbd> hoặc <kbd>Escape</kbd> để quay lại.
+  Trên điện thoại, nơi menu mở từ dưới lên, dòng đầu tiên của menu con đưa bạn quay lại. Thêm
+  mục của riêng bạn bằng <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>Tham chiếu API</a>).
 </p>
 
 <h2>Phiếu đặt lệnh và bảng tài khoản (ChartWidget)</h2>

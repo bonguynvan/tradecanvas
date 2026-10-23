@@ -220,6 +220,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'common.navigate': 'Navigeeri',
   'common.open': 'Ava',
   'common.select': 'Vali',
+  'common.back': 'Tagasi',
 
   // Settings rows
   'settings.upBody': 'Tõusva küünla keha',
@@ -587,6 +588,12 @@ export const ET_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'Pööra skaala ümber',
   'chartMenu.panePercent': 'Protsendiskaala',
   'chartMenu.exportData': 'Ekspordi andmed (CSV)',
+  'chartMenu.paste': 'Kleebi',
+  'chartMenu.removeIndicators': 'Eemalda indikaatorid',
+  'chartMenu.resetPriceScale': 'Lähtesta hinnaskaala',
+  'chartMenu.labels': 'Sildid',
+  'chartMenu.lines': 'Jooned',
+  'chartMenu.lastPriceLine': 'Viimase hinna joon',
   'compare.percent': 'Muutus protsentides, sellel skaalal',
   'compare.ownScale': 'Hind, oma skaalal',
   'compare.ownPane': 'Hind, eraldi paanis',

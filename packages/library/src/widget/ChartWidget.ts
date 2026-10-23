@@ -11,7 +11,7 @@ import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { WidgetToolbar } from './WidgetToolbar.js';
 import { setHostButtonActive, setHostButtonText } from './hostButtons.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
-import { WidgetSettings } from './WidgetSettings.js';
+import { WidgetSettings, type SettingsTab } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
@@ -38,7 +38,7 @@ import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateSto
 import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
-import { chartMenuEntries, priceEntries, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
+import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import type { OrderTicketRules } from './orderTicket.js';
@@ -644,10 +644,7 @@ export class ChartWidget {
       zoomIn: () => this.chart.zoomIn(),
       zoomOut: () => this.chart.zoomOut(),
       scroll: (direction) => this.chart.scrollBars(direction * Math.max(1, Math.round(this.visibleBarCount / 10))),
-      reset: () => {
-        this.chart.fitContent();
-        this.changeSettings({ autoScale: true });
-      },
+      reset: () => this.resetView(),
       plotRect: () => this.chart.getPlotRect(),
     }, this.t);
 
@@ -977,7 +974,7 @@ export class ChartWidget {
 
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
-    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'));
+    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
     // Indicators that read another symbol (a compare on its own scale, a spread) ask for its bars.
     this.chart.on('symbolSeriesRequest', (e) => void this.loadSymbolSeries(e.payload.symbol));
     // Prices from the pointer go on the market's grid (its smallest step).
@@ -1251,7 +1248,7 @@ export class ChartWidget {
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
         this.intervalInput.open(e.key);
-      } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG')) {
+      } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG' || e.code === 'KeyR')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || !mine) return;
         if (e.code === 'KeyI') {
@@ -1260,6 +1257,11 @@ export class ChartWidget {
           e.preventDefault();
           this.changeSettings({ invertScale: !this.settingsState.invertScale });
           this.settings?.refresh(this.settingsState);
+        } else if (e.code === 'KeyR') {
+          // Alt+R → the whole series in view, the price scale fitted to it.
+          if (!keyOn('hotkeys.resetView')) return;
+          e.preventDefault();
+          this.resetView();
         } else if (this.goToDate && keyOn('hotkeys.goToDate') && this.featureState.goToDate) {
           // Alt+G → go to date.
           e.preventDefault();
@@ -2014,6 +2016,8 @@ export class ChartWidget {
   private chartMenuContext(price: number | undefined): ChartMenuContext {
     const drawings = this.chart.getDrawings();
     const data = this.chart.getData();
+    const s = this.settingsState;
+    const features = this.chart.getFeatures();
     return {
       price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
@@ -2024,12 +2028,36 @@ export class ChartWidget {
       canDraw: true,
       hasDrawings: drawings.length > 0,
       drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
+      canPaste: this.chart.canPasteDrawings(),
+      hasIndicators: features.indicators !== false && this.removableIndicators().length > 0,
       canGoToDate: this.goToDate !== null,
       canExport: this.canExport,
       autoScale: this.chart.isAutoScale(),
-      scaleMode: this.settingsState.scaleMode,
+      scaleMode: s.scaleMode,
+      canLog: features.logScale !== false,
       inverted: this.chart.isInvertScale(),
+      leftScale: s.leftPriceScale,
+      labels: { values: s.indicatorValueLabels, ...(features.barCountdown !== false ? { countdown: s.barCountdown } : {}) },
+      lines: { highLow: s.highLowLines, lastPrice: this.chart.getStyleValue('lastPrice.visible') !== false },
+      timezone: { current: s.timezone, options: this.timezoneChoices() },
+      keys: Object.fromEntries(CHART_MENU_KEYS
+        .filter((k) => this.featureState.hotkeys && this.featureState[k.feature])
+        .map((k) => [k.action, k.keys])),
     };
+  }
+
+  /** The indicators "Remove indicators" takes away: a comparison with another symbol stays, as it has a dialog of its own. */
+  private removableIndicators(): string[] {
+    return this.chart.getActiveIndicators().filter((ind) => !SYMBOL_INDICATOR_IDS.has(ind.id)).map((ind) => ind.instanceId);
+  }
+
+  /** The time zones on offer, the symbol's exchange among them when the adapter can name it. */
+  private timezoneChoices(): { value: string; label: string }[] {
+    const exchange = this.adapter?.resolveSymbol
+      ? { label: this.t('settings.timezone.exchange'), zone: this.chart.getSymbolInfo()?.timezone ?? null }
+      : undefined;
+    return timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), exchange)
+      .map(({ value, label }) => ({ value, label }));
   }
 
   /**
@@ -2049,7 +2077,9 @@ export class ChartWidget {
     const chartRect = this.chartContainer.getBoundingClientRect();
     const rootRect = this.root.getBoundingClientRect();
     this.chartMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
-      if (!pickHostItem(action, extra)) this.runChartMenuAction(action as ChartMenuAction, context.price);
+      if (pickHostItem(action, extra)) return;
+      if (action.startsWith(TIMEZONE_ENTRY)) this.changeSettings({ timezone: action.slice(TIMEZONE_ENTRY.length) });
+      else this.runChartMenuAction(action as ChartMenuAction, context);
     });
   }
 
@@ -2322,8 +2352,15 @@ export class ChartWidget {
     }
   }
 
-  private runChartMenuAction(action: ChartMenuAction, price: number | undefined): void {
+  private runChartMenuAction(action: ChartMenuAction, context: import('./types.js').ChartMenuItemsContext): void {
+    const { price } = context;
     const at = price ?? NaN;
+    const s = this.settingsState;
+    const mode = scaleModeOf(action);
+    if (mode) {
+      this.changeSettings({ scaleMode: mode });
+      return;
+    }
     switch (action) {
       case 'alert':
         this.chart.addAlert(at, 'crossing');
@@ -2358,8 +2395,16 @@ export class ChartWidget {
         break;
       }
       case 'resetView':
-        this.chart.fitContent();
+        this.resetView();
+        break;
+      case 'resetPriceScale':
         this.changeSettings({ autoScale: true });
+        break;
+      case 'paste':
+        this.chart.pasteDrawings();
+        break;
+      case 'removeIndicators':
+        this.chart.removeIndicators(this.removableIndicators());
         break;
       case 'hideDrawings':
         this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
@@ -2372,19 +2417,29 @@ export class ChartWidget {
         this.chart.removeDrawings(this.chart.getDrawings().map((d) => d.id));
         break;
       case 'settings':
-        this.openSettings();
+        // From the price axis, its tab.
+        this.openSettings(context.area === 'priceAxis' ? 'scales' : undefined);
         break;
       case 'autoScale':
         this.changeSettings({ autoScale: !this.chart.isAutoScale() });
         break;
-      case 'logScale':
-        this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' });
-        break;
-      case 'percentScale':
-        this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' });
-        break;
       case 'invertScale':
         this.changeSettings({ invertScale: !this.chart.isInvertScale() });
+        break;
+      case 'leftScale':
+        this.changeSettings({ leftPriceScale: !s.leftPriceScale });
+        break;
+      case 'indicatorValueLabels':
+        this.changeSettings({ indicatorValueLabels: !s.indicatorValueLabels });
+        break;
+      case 'barCountdown':
+        this.changeSettings({ barCountdown: !s.barCountdown });
+        break;
+      case 'highLowLines':
+        this.changeSettings({ highLowLines: !s.highLowLines });
+        break;
+      case 'lastPriceLine':
+        this.changeStyle({ 'lastPrice.visible': this.chart.getStyleValue('lastPrice.visible') === false });
         break;
       case 'goToDate':
         this.toggleGoToDate();
@@ -3294,7 +3349,7 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  private openSettings(): void {
+  private openSettings(tab?: SettingsTab): void {
     if (!this.featureState.settings || this.settings?.isOpen()) return;
     // The chart's own settings of its type (a layout may have brought them), and its scale as a drag left it.
     this.settingsState = {
@@ -3303,7 +3358,14 @@ export class ChartWidget {
       autoScale: this.chart.isAutoScale?.() ?? this.settingsState.autoScale,
     };
     this.settingsEdit = { settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set() };
-    this.settings?.open(this.settingsState, this.state.chartType);
+    this.settings?.open(this.settingsState, this.state.chartType, tab);
+  }
+
+  /** The whole series in view, the price scale fitted to it (the menus' Reset, Alt+R). */
+  private resetView(): void {
+    this.chart.fitContent();
+    this.changeSettings({ autoScale: true });
+    this.settings?.refresh(this.settingsState);
   }
 
   /** The settings closed: OK keeps what they changed as one undo step, Cancel puts it back as it was on opening. */
