@@ -138,8 +138,9 @@ export interface ChartWidgetOptions {
   layouts?: boolean | WidgetLayoutsOptions;
 
   /**
-   * Indicator templates: the indicators menu saves the chart's indicators
-   * (inputs, style, levels, panes) under a name and applies them in one go.
+   * Indicator templates: the Templates tab of the Indicators dialog saves the
+   * chart's indicators (inputs, style, levels, panes) under a name and applies
+   * them in one go.
    * Kept in this browser's `localStorage`. Default `true`.
    */
   indicatorTemplates?: boolean;
@@ -455,8 +456,6 @@ export interface ToolbarConfig {
   /** The ones shown as buttons. Defaults to all of `timeframes`. */
   timeframeFavorites?: TimeFrame[];
   chartTypes: { label: string; value: ChartType }[];
-  indicators: IndicatorDef[];
-  popularIndicatorIds: string[];
 }
 
 export interface ToolbarCallbacks {
@@ -471,7 +470,8 @@ export interface ToolbarCallbacks {
   /** Remove a custom interval from the menu. */
   onRemoveTimeframe?: (tf: TimeFrame) => void;
   onChartType: (type: ChartType) => void;
-  onAddIndicator: (id: string) => void;
+  /** The Indicators button was pressed: open the indicators dialog. */
+  onIndicators: () => void;
   onScreenshot: () => void;
   onSettings: () => void;
   onToggleTheme: () => void;
@@ -481,10 +481,6 @@ export interface ToolbarCallbacks {
   onToggleAccount?: () => void;
   /** The layouts button was pressed: open its menu under it. */
   onLayouts?: (anchor: HTMLElement) => void;
-  /** Indicator templates in the indicators menu: apply, save the chart's, delete. */
-  onApplyIndicatorTemplate?: (name: string) => void;
-  onSaveIndicatorTemplate?: () => void;
-  onDeleteIndicatorTemplate?: (name: string) => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
   /** A new order from the order ticket: in the Trade menu. */
@@ -576,12 +572,6 @@ export interface ChartSettingsState {
   extendedHours: boolean;
   /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
   chartTypeOptions: ChartTypeOptions;
-}
-
-export interface IndicatorDef {
-  id: string;
-  name: string;
-  type: 'overlay' | 'panel';
 }
 
 export interface DrawingToolGroupDef {

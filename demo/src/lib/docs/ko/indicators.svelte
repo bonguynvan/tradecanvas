@@ -61,6 +61,41 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   패널 안의 선, 레벨, 축, 십자선은 하나의 눈금을 공유합니다.
 </p>
 
+<h2>일부 시간 단위에서만</h2>
+<p>
+  지표를 일부 시간 단위에서만 보이게 할 수 있습니다. 200일 이동평균은 일봉 이상에서만, 빠른 오실레이터는
+  분봉에서만 보이게 하는 식입니다. 시간 단위의 종류(틱, 초, 분, 시간, 일, 주, 월)마다 그대로 켜 두거나, 끄거나,
+  범위를 지정할 수 있으며, 지정하지 않은 종류에서는 모든 시간 단위에 표시됩니다. 차트는 연결된 스트림의
+  시간 단위에 규칙을 대조하며, 시간 단위가 바뀔 때마다 다시 판단합니다. <code>setData</code>로 넣은 바는
+  <code>chart.setDataTimeframe('1h')</code>로 시간 단위를 알려 줍니다(ChartWidget은 자동으로 합니다). 둘 다 없으면 지표를 표시합니다.
+  규칙은 레이아웃과 함께 저장되고, 다른 편집처럼 실행 취소할 수 있습니다.
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // 다시 모든 시간 단위에 표시`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code>는 지표마다 <code>visible</code>(켜짐)인지, <code>shown</code>(이 시간 단위에서
+  그려짐)인지 알려 줍니다. ChartWidget에서는 그려지지 않는 동안 그 지표의 범례 행이 회색으로 바뀝니다.
+</p>
+
+<h2>ChartWidget에서</h2>
+<p>
+  도구 모음의 <strong>지표</strong>를 누르면 대화상자가 열립니다. 이름이나 약칭을 입력해 모든 지표를 검색하거나
+  (<kbd>Enter</kbd>는 가장 잘 맞는 지표를 추가합니다), 옆에 늘어선 그룹을 고르세요. <strong>즐겨찾기</strong>,
+  <strong>템플릿</strong>, <strong>전체</strong>, 그리고 종류별 그룹(이동평균, 추세, 오실레이터, 변동성, 거래량,
+  밴드 및 채널, 가격 및 패턴)이 있습니다. 행을 누르면 그 지표가 추가되고, 대화상자는 다음 지표를 위해 열려 있습니다.
+  숫자는 그 지표가 차트에 몇 개 있는지 보여 주고, 옆의 별을 누르면 즐겨찾기에 들어갑니다. 휴대폰에서는 그룹이
+  목록 위에 칩 한 줄로 나옵니다.
+</p>
+<p>
+  지표 설정(범례 행의 이름이나 톱니바퀴로 엽니다)에는 탭이 세 개 있습니다. <strong>입력값</strong>,
+  <strong>스타일</strong>(선마다 한 행으로 표시 여부, 색상, 선 종류, 그리고 선 두께, 오버레이의 가격 눈금, 레벨),
+  <strong>표시</strong>(지표가 보이는 시간 단위)입니다. 편집은 바로 반영됩니다. <strong>취소</strong>나
+  <kbd>Esc</kbd>는 모두 되돌리고, <strong>확인</strong>은 그대로 유지합니다. <strong>기본값</strong>으로 설정을
+  재설정하거나 기본값으로 저장할 수 있습니다. 저장하면 이 브라우저에서 같은 종류의 새 지표가 이 입력값과
+  모양으로 시작합니다.
+</p>
+
 <h2>가격 패널 위 ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>이름</th><th>기본 파라미터</th><th>선</th></tr></thead>
@@ -132,6 +167,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>IndicatorBase</code>를 상속하고 그릴 대상(<code>plots</code>), 패널 눈금,
   레벨, 입력값을 선언하세요. 렌더링 코드를 직접 작성하지 않아도 차트가 지표를 그리고,
   패널 눈금을 맞추고, 값을 태그로 표시하며, 위젯의 범례와 설정에 나열합니다.
+  <code>category</code>(<code>'oscillators'</code>, <code>'volume'</code>…)를 지정하면 지표 대화상자의 그 그룹에
+  들어가고, 지정하지 않으면 기타에 들어갑니다.
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>를 참고하세요.
 </p>
 
@@ -174,7 +211,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   지표 전체를 한꺼번에 꺼냈다가 다시 넣을 수 있으며, ChartWidget의 지표 템플릿이 바로 이 방식입니다.
-  지표 메뉴의 <strong>지표를 템플릿으로 저장…</strong>은 지표(입력값, 스타일, 레벨, 패널)를 이름을 붙여
+  지표 대화상자의 템플릿 탭에 있는 <strong>지표를 템플릿으로 저장…</strong>은 지표(입력값, 스타일, 레벨, 패널)를 이름을 붙여
   저장하고, 템플릿을 고르면 차트의 지표가 그것으로 바뀝니다. 이 교체는 실행 취소 한 단계입니다.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

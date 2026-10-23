@@ -113,6 +113,10 @@ chart.updateIndicator(ema, { source: 'hlc3' });      // compute from another pri
 chart.setIndicatorLevels(rsi, [20, 50, 80]);         // RSI's reference lines (null = defaults)
 chart.updateIndicatorStyle(rsi, { colors: ['#f2a93b'], lineWidths: [2] });
 chart.setIndicatorVisible(ema, false);
+// Only on some intervals: off on minute charts, 1h to 4h. Read against the
+// connected stream's interval; for bars from setData, tell the chart theirs.
+chart.setIndicatorIntervals(ema, { minutes: false, hours: [1, 4] }); // null = all
+chart.setDataTimeframe('1h');
 
 // An indicator on another indicator's line: an SMA of RSI is drawn in RSI's pane.
 const smoothed = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') });
@@ -129,6 +133,8 @@ chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
   `features.indicatorValueLabels: true` (off by default).
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
+  A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
+  group of ChartWidget's Indicators dialog.
 
 ## Drawings, alerts and orders
 

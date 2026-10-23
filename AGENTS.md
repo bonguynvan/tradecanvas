@@ -93,8 +93,10 @@ These fail CI, often far from the line that caused them.
 
 ## Widget UI
 
-- Styles live in `src/widget/WidgetStyles.css` and `WidgetControls.css`
-  (fields, lists, calendar, scrollbars), injected by `WidgetStyles.ts`.
+- Styles live in `src/widget/WidgetStyles.css`, `WidgetControls.css`
+  (fields, lists, calendar, scrollbars) and `WidgetIndicatorDialogs.css`
+  (the indicators dialog and the indicator settings), injected by
+  `WidgetStyles.ts`.
 - Colours, radii and spacing are `--tcw-*` tokens, set for the dark default
   and `[data-tcw-theme='light']`; the Studio, Terminal and Capsule looks are
   presets in `src/widget/widgetUI.ts`. Use a token, not a literal colour.

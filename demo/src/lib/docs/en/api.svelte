@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Remove and tear down.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colours, line widths, opacity, and each plot's dash and visibility (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>The style indicators of a kind start with from now on.</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>The intervals it shows on (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: all of them. Saved with the layout.</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>The interval of bars set with <code>setData</code>: the legend names it, and indicators kept to some intervals follow it.</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>A pane's own look, saved with its indicator.</td></tr>
   </tbody>
 </table>
@@ -427,7 +429,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>Toolbar</td><td>
       The symbol and its info; the intervals (the pinned ones as buttons, and a menu of them all by unit, minutes to
-      months, a star on each to pin it); the chart type as its icon; Indicators, and Compare when there is a data adapter; undo and redo. On the
+      months, a star on each to pin it); the chart type as its icon; Indicators (a dialog: see <a href={href('/docs/indicators')}>Indicators</a>), and Compare when there is a data adapter; undo and redo. On the
       right: layouts, bar replay, alerts, the object tree, a Trade menu (a new order, long and short brackets, the
       depth ladder and the account panel), then screenshot, settings, the theme and fullscreen. What doesn't fit
       folds under “more”.

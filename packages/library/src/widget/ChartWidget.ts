@@ -5,7 +5,7 @@ import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch } from './types.js';
-import { CHART_TYPES, INDICATORS, POPULAR_INDICATORS, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
+import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { WidgetToolbar } from './WidgetToolbar.js';
@@ -28,7 +28,9 @@ import { indicatorChipLabel } from '../indicatorLabel.js';
 import { readChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
-import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
+import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
+import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
+import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
@@ -63,7 +65,7 @@ import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.j
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
-import { RANGE_PRESETS, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -203,6 +205,7 @@ export class ChartWidget {
   private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettings: WidgetIndicatorSettings | null = null;
+  private indicatorPicker: WidgetIndicatorPicker | null = null;
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
@@ -237,6 +240,10 @@ export class ChartWidget {
   /** The bar the on-chart indicator values are read at; null = the latest. */
   private legendHoverIndex: number | null = null;
   private favoritesStore = new DrawingFavoritesStore();
+  /** The indicators starred in the indicators dialog. */
+  private indicatorFavorites = new DrawingFavoritesStore('tcw:indicator-favorites');
+  /** What "Save as default" kept for each kind of indicator. */
+  private indicatorDefaults = new IndicatorDefaultsStore();
   /** Timeframes pinned to the toolbar (same store shape as drawing favourites). */
   private timeframeFavorites = new DrawingFavoritesStore('tcw:tf-favorites');
   /** Intervals the user typed in the timeframe menu. */
@@ -482,8 +489,6 @@ export class ChartWidget {
         chartTypes: options.chartTypes
           ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
           : CHART_TYPES,
-        indicators: INDICATORS,
-        popularIndicatorIds: POPULAR_INDICATORS,
       },
       {
         onSymbolClick: () => this.handleSymbolClick(),
@@ -493,7 +498,7 @@ export class ChartWidget {
         onAddTimeframe: (text) => this.handleAddTimeframe(text),
         onRemoveTimeframe: (tf) => this.handleRemoveTimeframe(tf),
         onChartType: (type) => this.handleChartType(type),
-        onAddIndicator: (id) => this.handleAddIndicator(id),
+        onIndicators: () => this.toggleIndicatorPicker(),
         onScreenshot: () => this.chart.screenshot(),
         onSettings: () => this.openSettings(),
         onToggleTheme: () => this.handleToggleTheme(),
@@ -502,12 +507,6 @@ export class ChartWidget {
         onToggleObjects: () => this.toggleObjects(),
         onToggleAccount: options.trading !== false ? () => this.toggleAccountPanel() : undefined,
         onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
-        onApplyIndicatorTemplate: (name: string) => this.applyIndicatorTemplate(name),
-        onSaveIndicatorTemplate: () => this.promptSaveIndicatorTemplate(),
-        onDeleteIndicatorTemplate: (name: string) => {
-          this.templates.remove(name);
-          this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name), true);
-        },
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
         onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
@@ -618,6 +617,8 @@ export class ChartWidget {
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
     this.applyLegendFont();
+    // New indicators of a kind look as its saved default has them.
+    for (const [id, saved] of this.indicatorDefaults.all()) this.chart.setIndicatorDefaults(id, saved.style);
 
     // Navigation over the chart; a scroll step is a tenth of the bars on screen.
     this.chart.on('visibleRangeChange', (e) => {
@@ -801,6 +802,7 @@ export class ChartWidget {
       paneExpand: this.t('pane.expand'),
       paneMaximize: this.t('pane.maximize'),
       paneRestore: this.t('pane.restore'),
+      offInterval: this.t('indicatorSettings.offInterval'),
     });
     this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
     this.chart.on('crosshairMove', (e) => {
@@ -813,7 +815,7 @@ export class ChartWidget {
       this.legendHoverIndex = null;
       this.scheduleLegend();
     });
-    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange'] as const) {
+    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange'] as const) {
       this.chart.on(event, () => this.scheduleLegend());
     }
 
@@ -982,7 +984,6 @@ export class ChartWidget {
       hint: this.t('interval.hint'),
       invalid: this.t('interval.invalid'),
     }, (tf) => this.selectTypedTimeframe(tf));
-    this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
 
     // Named layouts: save, open, rename, delete, auto-save.
     if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
@@ -1096,6 +1097,21 @@ export class ChartWidget {
       this.alertNotifier?.notify(text);
     });
 
+    // The indicators dialog, from the toolbar's Indicators button.
+    this.indicatorPicker = new WidgetIndicatorPicker(this.overlayHost, {
+      onAdd: (id) => this.handleAddIndicator(id),
+      onFavorite: (id, on) => (on ? this.indicatorFavorites.add(id) : this.indicatorFavorites.remove(id)),
+      templates: {
+        onApply: (name) => this.applyIndicatorTemplate(name),
+        onDelete: (name) => {
+          this.templates.remove(name);
+          this.indicatorPicker?.setTemplates(this.templateNames());
+        },
+        onSave: () => this.promptSaveIndicatorTemplate(),
+      },
+      onClose: () => this.toolbar?.setIndicatorsOpen(false),
+    }, this.t);
+
     // 8a-ter. Object tree (indicators + drawings manager)
     this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
       onApply: (instanceId, params) => {
@@ -1105,7 +1121,10 @@ export class ChartWidget {
       onStyle: (instanceId, style) => this.chart.updateIndicatorStyle(instanceId, style),
       onLevels: (instanceId, levels) => this.chart.setIndicatorLevels(instanceId, levels),
       onScale: (instanceId, scale) => this.chart.setIndicatorScale(instanceId, scale),
-      onClose: () => {},
+      onIntervals: (instanceId, intervals) => this.chart.setIndicatorIntervals(instanceId, intervals),
+      onSaveDefault: (indicatorId, saved) => this.saveIndicatorDefault(indicatorId, saved),
+      // Its changes are one undo step, none after a Cancel.
+      onClose: () => this.chart.endIndicatorEdit(),
     }, this.t);
     this.objectTree = new WidgetObjectTree(this.root, {
       onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
@@ -1241,6 +1260,9 @@ export class ChartWidget {
     if (options.adapter) {
       this.adapter = options.adapter;
       this.connectStream();
+    } else {
+      // No stream to say the interval: the legend and the indicators kept to some take it from here.
+      this.chart.setDataTimeframe(this.state.timeframe);
     }
 
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
@@ -1567,6 +1589,7 @@ export class ChartWidget {
       await this.connectStream();
       return;
     }
+    this.chart.setDataTimeframe(tf);
     if (this.options.resampleTimeframes === false) return;
     // Static data: aggregate the base series locally. Lazily adopt whatever is
     // currently on the chart as the base if the host fed it via getChart().
@@ -1658,6 +1681,7 @@ export class ChartWidget {
     this.alertsPanel?.destroy();
     this.objectTree?.destroy();
     this.indicatorSettings?.destroy();
+    this.indicatorPicker?.destroy();
     this.drawingStyle?.destroy();
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
@@ -2059,6 +2083,7 @@ export class ChartWidget {
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
+      ['toolbar.indicators', () => this.indicatorPicker?.close()],
       ['drawingSettings', () => this.drawingSettings?.close(false)],
       ['sidebar', () => this.drawingStyle?.close()],
       ['commandPalette', () => this.commandPalette?.close()],
@@ -2564,7 +2589,7 @@ export class ChartWidget {
           this.say(this.t('templates.saveFailed'), 'error');
           throw err;
         }
-        this.toolbar?.setIndicatorTemplates(this.templates.list().map((t) => t.name));
+        this.indicatorPicker?.setTemplates(this.templateNames());
         this.say(fill(this.t('templates.saved'), { name }));
       },
     });
@@ -2816,8 +2841,11 @@ export class ChartWidget {
     if (!ind) return;
     const style = this.chart.getIndicatorStyle(instanceId);
     const pane = ind.descriptor.placement === 'panel' || !!ind.pane;
+    const ownLevels = (this.chart.getIndicatorSetup() ?? []).find((s) => s.instanceId === instanceId)?.levels !== undefined;
+    this.chart.beginIndicatorEdit(instanceId);
     this.indicatorSettings.open({
       instanceId,
+      indicatorId: ind.id,
       name: ind.descriptor.name,
       defaults: ind.descriptor.defaultConfig,
       params: ind.params,
@@ -2826,9 +2854,12 @@ export class ChartWidget {
       plots: ind.descriptor.plots,
       colors: style?.colors,
       lineWidth: style?.lineWidths[0],
+      plotStyles: style?.plots,
+      intervals: this.chart.getIndicatorIntervals(instanceId) ?? null,
       // Levels belong to pane indicators.
       levels: pane ? this.chart.getIndicatorLevels(instanceId) : undefined,
       defaultLevels: ind.descriptor.levels,
+      ownLevels,
       scale: pane ? undefined : this.chart.getIndicatorScale(instanceId),
     });
   }
@@ -3064,8 +3095,20 @@ export class ChartWidget {
    * Add another instance — picking EMA twice gives two EMAs (e.g. 20 and 50
    * once their settings are changed). Remove one from its chip.
    */
-  private handleAddIndicator(indId: string): void {
-    this.chart.addIndicator(indId); // the chip strip follows the indicatorAdd event
+  /** Add one as its saved default has it (the chip strip follows the indicatorAdd event); false when the chart won't. */
+  private handleAddIndicator(indId: string): boolean {
+    return this.chart.addIndicator(indId, this.indicatorDefaults.get(indId)?.params ?? {}) !== null;
+  }
+
+  /** "Save as default": new indicators of the kind start like this one, here and next time. */
+  private saveIndicatorDefault(indicatorId: string, saved: IndicatorDefault): void {
+    if (!this.indicatorDefaults.save(indicatorId, saved)) {
+      this.say(this.t('indicatorSettings.defaultSaveFailed'), 'error');
+      return;
+    }
+    this.chart.setIndicatorDefaults(indicatorId, saved.style);
+    const name = this.chart.getAvailableIndicators()?.find((d) => d.id === indicatorId)?.shortName ?? indicatorId.toUpperCase();
+    this.say(fill(this.t('indicatorSettings.defaultSaved'), { name }));
   }
 
   private handleRemoveIndicator(instanceId: string): void {
@@ -3084,7 +3127,7 @@ export class ChartWidget {
   private buildCommandItems(): CommandItem[] {
     const items: CommandItem[] = [];
 
-    for (const ind of INDICATORS) {
+    for (const ind of this.indicatorPickerItems()) {
       items.push({
         id: ind.id,
         label: ind.name,
@@ -3419,6 +3462,50 @@ export class ChartWidget {
     }
     this.state = { ...this.state, activeIndicators: next };
     this.updateUI();
+    this.indicatorPicker?.setCounts(this.indicatorCounts());
+  }
+
+  /** Open the indicators dialog, or close it when it is open. */
+  private toggleIndicatorPicker(): void {
+    if (this.indicatorPicker?.isOpen()) {
+      this.indicatorPicker.close();
+      return;
+    }
+    if (!this.indicatorPicker || !this.featureState['toolbar.indicators']) return;
+    this.indicatorPicker.open({
+      items: this.indicatorPickerItems(),
+      favorites: this.indicatorFavorites.list(),
+      templates: this.featureState.indicatorTemplates ? this.templateNames() : null,
+      counts: this.indicatorCounts(),
+    });
+    this.toolbar?.setIndicatorsOpen(true);
+  }
+
+  /**
+   * Every indicator the chart can add, your own included, as the dialog lists
+   * them; not Compare's, which need the other symbol it asks for.
+   */
+  private indicatorPickerItems(): IndicatorPickerItem[] {
+    return (this.chart.getAvailableIndicators() ?? [])
+      .filter((d) => !SYMBOL_INDICATOR_IDS.has(d.id) && this.chart.isIndicatorAllowed(d.id) !== false)
+      .map((d) => ({
+      id: d.id,
+      name: d.name,
+      shortName: d.shortName ?? d.id.toUpperCase(),
+      placement: d.placement === 'panel' ? 'panel' : 'overlay',
+      category: indicatorCategory(d),
+    }));
+  }
+
+  /** How many of each indicator are on the chart. */
+  private indicatorCounts(): Map<string, number> {
+    const counts = new Map<string, number>();
+    for (const { id } of this.state.activeIndicators.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
+    return counts;
+  }
+
+  private templateNames(): string[] {
+    return this.templates.list().map((t) => t.name);
   }
 
   // --- Replay ---
@@ -3906,11 +3993,14 @@ export class ChartWidget {
       const pane = panes.get(ind.instanceId) ?? null;
       const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
       const style = this.chart.getIndicatorStyle(ind.instanceId);
-      const values = legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
+      // Not drawn on this interval: no values to read off it.
+      const offInterval = ind.visible && ind.shown === false;
+      const values = offInterval ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
       return {
         instanceId: ind.instanceId,
         label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName),
         visible: ind.visible,
+        offInterval,
         values: values.map((v) => ({
           text: pane ? formatIndicatorValue(v.value, locale) : this.chart.formatPrice(v.value),
           color: v.color,

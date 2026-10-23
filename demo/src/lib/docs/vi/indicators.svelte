@@ -61,6 +61,46 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   Các đường, mức, trục và con trỏ chữ thập trong cùng một bảng dùng chung một thang.
 </p>
 
+<h2>Chỉ trên một số khung thời gian</h2>
+<p>
+  Có thể giới hạn một chỉ báo trong một số khung thời gian: đường trung bình 200 ngày trên biểu đồ
+  ngày trở lên, một bộ dao động nhanh chỉ trên các biểu đồ phút. Mỗi loại khung (tick, giây, phút,
+  giờ, ngày, tuần, tháng) có thể để bật, tắt đi, hoặc chỉ bật trong một khoảng, từ bao nhiêu đến bao
+  nhiêu đơn vị; loại nào không nêu thì chỉ báo hiện trên mọi khung của loại đó. Biểu đồ đối chiếu các
+  quy tắc với khung thời gian của luồng dữ liệu mà nó đang kết nối, mỗi khi khung thời gian đổi; với nến nạp bằng
+  <code>setData</code>, <code>chart.setDataTimeframe('1h')</code> cho biết khung thời gian của chúng (ChartWidget tự
+  làm việc này); khi không có cả hai, chỉ báo vẫn hiện. Các quy tắc được lưu cùng bố cục và hoàn tác được như mọi
+  chỉnh sửa khác.
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code> cho biết từng chỉ báo có <code>visible</code> (đang bật) và có
+  <code>shown</code> (được vẽ trên khung thời gian này) hay không. Trong ChartWidget, dòng chú thích
+  của chỉ báo chuyển sang màu xám khi nó không được vẽ.
+</p>
+
+<h2>Trong ChartWidget</h2>
+<p>
+  Nút <strong>Chỉ báo</strong> trên thanh công cụ mở một hộp thoại. Gõ để tìm mọi chỉ báo theo tên
+  hoặc tên viết tắt (<kbd>Enter</kbd> thêm chỉ báo khớp nhất); hoặc chọn một nhóm ở cột bên cạnh:
+  <strong>Yêu thích</strong>, <strong>Mẫu</strong>, <strong>Tất cả</strong>, rồi đến từng loại
+  (đường trung bình động, xu hướng, dao động, biến động, khối lượng, dải và kênh, giá và mô hình).
+  Bấm một dòng để thêm chỉ báo của dòng đó, và hộp thoại vẫn mở để thêm chỉ báo tiếp theo; một con số
+  cho biết biểu đồ đang có bao nhiêu chỉ báo loại đó, và ngôi sao bên cạnh giữ nó trong mục yêu thích.
+  Trên điện thoại, các nhóm là một hàng chip phía trên danh sách.
+</p>
+<p>
+  Phần cài đặt của một chỉ báo (bấm tên trên dòng chú thích của nó, hoặc nút bánh răng) có ba tab:
+  <strong>Thông số</strong>; <strong>Kiểu</strong>, mỗi đường một dòng (hiện hay ẩn, màu, kiểu nét),
+  độ dày nét, thang giá của một chỉ báo phủ lên biểu đồ và các mức; và <strong>Hiển thị</strong>, các
+  khung thời gian mà chỉ báo hiện trên đó. Mọi chỉnh sửa hiện ra ngay. <strong>Huỷ</strong> hoặc
+  <kbd>Esc</kbd> trả mọi thứ về như cũ, <strong>OK</strong> giữ lại. <strong>Mặc định</strong> đặt lại
+  chỉ báo, hoặc lưu nó làm mặc định: từ đó các chỉ báo mới cùng loại sẽ bắt đầu với các thông số và
+  giao diện này, trên trình duyệt này.
+</p>
+
 <h2>Trên bảng giá chính ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Tên</th><th>Tham số mặc định</th><th>Đường</th></tr></thead>
@@ -131,7 +171,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 <p>
   Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của bảng,
   các mức và thông số; biểu đồ sẽ tự vẽ nó, co giãn bảng của nó, gắn nhãn giá trị và liệt kê nó trong
-  chú thích và phần cài đặt của widget mà bạn không phải viết dòng code vẽ nào. Xem
+  chú thích và phần cài đặt của widget mà bạn không phải viết dòng code vẽ nào. Thuộc tính
+  <code>category</code> của nó (<code>'oscillators'</code>, <code>'volume'</code>…) xếp nó vào nhóm đó
+  trong hộp thoại Chỉ báo; nếu không có, nó nằm trong nhóm Khác. Xem
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">hướng dẫn mẫu cho chỉ báo tuỳ chỉnh</a>.
 </p>
 
@@ -175,7 +217,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   Có thể lấy ra và đặt lại toàn bộ chỉ báo cùng một lúc, và đó chính là việc mẫu chỉ báo của
-  ChartWidget làm: <strong>Lưu indicator thành mẫu…</strong> trong menu Chỉ báo lưu chúng (thông số,
+  ChartWidget làm: <strong>Lưu các chỉ báo thành mẫu…</strong> ở tab Mẫu của hộp thoại Chỉ báo lưu chúng (thông số,
   kiểu, mức, bảng) dưới một cái tên, còn chọn một mẫu sẽ đặt chúng vào thay cho các chỉ báo hiện có
   của biểu đồ, trong một bước hoàn tác.
 </p>

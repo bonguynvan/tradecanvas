@@ -481,7 +481,8 @@ export class RenderEngine {
       const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
       const steps: DrawStep[] = [];
       for (const id of ids) {
-        const levels = indicatorEngine.isVisible(id) ? indicatorEngine.getLevels(id) : [];
+        // Not drawn (switched off, or not on this interval): its levels go with it.
+        const levels = indicatorEngine.isShown(id) ? indicatorEngine.getLevels(id) : [];
         if (levels.length > 0) steps.push((c) => this.renderLevels(c, levels, viewport, theme));
       }
       for (const id of ids) steps.push((c) => indicatorEngine.renderPanel(c, id, viewport));
@@ -757,7 +758,7 @@ export class RenderEngine {
       }
 
       // The values at the cursor go in the header, unless the host shows them itself.
-      if (!indicatorEngine || ctx.paneTitles === false) continue;
+      if (!indicatorEngine || ctx.paneTitles === false || !indicatorEngine.isShown(panel.instanceId)) continue;
       const snappedIdx = Math.max(0, Math.min((data?.length ?? 1) - 1, Math.round(xToBarIndex(cursorPos.x, pv))));
       const output = indicatorEngine.getOutput(panel.instanceId);
       const val = output?.series && snappedIdx < output.series.length ? output.series[snappedIdx] : null;

@@ -192,3 +192,84 @@ describe('indicator review fixes', () => {
     expect(range().max).toBeGreaterThan(before.max);
   });
 });
+
+describe('indicators shown on some intervals only', () => {
+  const adapter = {
+    name: 'fake',
+    connect: () => {},
+    disconnect: () => {},
+    getConnectionState: () => 'connected' as const,
+    fetchHistory: async () => bars(300),
+    on: () => {},
+    off: () => {},
+    dispose: () => {},
+  };
+
+  it('follow the stream’s interval, and come back on one they allow', async () => {
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 300 });
+    const sma = chart.addIndicator('sma')!;
+    chart.setIndicatorIntervals(sma, { hours: [4, 24] });
+    expect(chart.getActiveIndicators()[0]).toMatchObject({ visible: true, shown: false });
+    await chart.switchStream('AAA', '4h');
+    expect(chart.getActiveIndicators()[0].shown).toBe(true);
+    expect(chart.getIndicatorIntervals(sma)).toEqual({ hours: [4, 24] });
+  });
+
+  it('follow the interval given with the data when there is no stream', () => {
+    const sma = chart.addIndicator('sma')!;
+    chart.setIndicatorIntervals(sma, { hours: false });
+    expect(chart.getActiveIndicators()[0].shown).toBe(true); // no interval known yet
+    const changes: string[] = [];
+    chart.on('timeframeChange', (e) => changes.push((e.payload as { timeframe: string }).timeframe));
+    chart.setDataTimeframe('1h');
+    expect(chart.getActiveIndicators()[0].shown).toBe(false);
+    chart.setDataTimeframe('1d');
+    expect(chart.getActiveIndicators()[0].shown).toBe(true);
+    expect(changes).toEqual(['1h', '1d']);
+  });
+
+  it('keep their intervals in a saved layout, and are one undo step', () => {
+    const sma = chart.addIndicator('sma')!;
+    const changes: string[] = [];
+    chart.on('indicatorChange', (e) => changes.push((e.payload as { change: string }).change));
+    chart.setIndicatorIntervals(sma, { minutes: false });
+    expect(changes).toEqual(['intervals']);
+    chart.loadState(chart.saveState()!);
+    const restored = chart.getActiveIndicators()[0].instanceId;
+    expect(chart.getIndicatorIntervals(restored)).toEqual({ minutes: false });
+    chart.setIndicatorIntervals(restored, null);
+    expect(chart.getIndicatorIntervals(restored)).toBeNull();
+    chart.undo();
+    expect(chart.getIndicatorIntervals(chart.getActiveIndicators()[0].instanceId)).toEqual({ minutes: false });
+  });
+});
+
+describe('an indicator edit (its settings dialog open)', () => {
+  const period = (id: string) => chart.getActiveIndicators().find((i) => i.instanceId === id)?.params.period;
+
+  it('is one undo step, however many changes it made', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.beginIndicatorEdit(rsi);
+    chart.updateIndicator(rsi, { period: 21 });
+    chart.setIndicatorLevels(rsi, [20, 80]);
+    chart.setIndicatorIntervals(rsi, { minutes: false });
+    chart.endIndicatorEdit();
+    chart.undo();
+    const back = chart.getActiveIndicators()[0].instanceId;
+    expect(period(back)).toBe(14);
+    expect(chart.getIndicatorLevels(back)).toEqual([30, 70]);
+    expect(chart.getIndicatorIntervals(back)).toBeNull();
+    chart.undo();
+    expect(chart.getActiveIndicators()).toHaveLength(0);
+  });
+
+  it('leaves no step when it ends where it began, as a cancel does', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.beginIndicatorEdit(rsi);
+    chart.updateIndicator(rsi, { period: 21 });
+    chart.updateIndicator(rsi, { period: 14 });
+    chart.endIndicatorEdit();
+    chart.undo();
+    expect(chart.getActiveIndicators()).toHaveLength(0);
+  });
+});

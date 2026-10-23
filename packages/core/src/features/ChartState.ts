@@ -1,7 +1,8 @@
-import type { ChartStyleOverrides, ChartType, ChartTypeOptions, DrawingState, IndicatorStyleConfig, PaneStyle, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
+import type { ChartStyleOverrides, ChartType, ChartTypeOptions, DrawingState, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, TradingOrder, TradingPosition, Theme } from '@tradecanvas/commons';
 import { readChartStyleOverrides, readChartTypeOptions, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
+import { cleanIntervals } from '../indicators/intervals.js';
 
 /**
  * Serializable chart state for save/load functionality.
@@ -61,6 +62,8 @@ export interface SnapshotIndicator {
   pane?: string;
   /** `'left'`: an overlay on the left price scale. */
   scale?: 'left';
+  /** The intervals it shows on; absent = all of them. */
+  intervals?: IndicatorIntervals;
   /** Its pane's own background and separator. */
   paneStyle?: PaneStyle;
   /** For an indicator with a pane of its own: the pane's height, place among the panes, fold and maximise. */
@@ -248,6 +251,7 @@ export function validateSnapshot(raw: unknown): ChartSnapshot {
         : undefined,
       pane: typeof ind.pane === 'string' ? ind.pane : undefined,
       scale: ind.scale === 'left' ? 'left' : undefined,
+      intervals: cleanIntervals(ind.intervals) ?? undefined,
       paneStyle: readPaneStyle(ind.paneStyle) ?? undefined,
       paneSize: typeof ind.paneSize === 'number' && Number.isFinite(ind.paneSize) && ind.paneSize > 0 ? Math.min(ind.paneSize, MAX_PANE_SIZE) : undefined,
       paneOrder: typeof ind.paneOrder === 'number' && Number.isInteger(ind.paneOrder) && ind.paneOrder >= 0 ? ind.paneOrder : undefined,

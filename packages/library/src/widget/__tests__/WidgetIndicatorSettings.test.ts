@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { IndicatorDescriptor } from '@tradecanvas/commons';
+import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
 import { WidgetIndicatorSettings, type IndicatorSettingsTarget } from '../WidgetIndicatorSettings.js';
 import { lineSourcesFor } from '../ChartWidget.js';
@@ -14,27 +15,43 @@ let dialog: WidgetIndicatorSettings;
 const onApply = vi.fn();
 const onStyle = vi.fn();
 const onLevels = vi.fn();
+const onIntervals = vi.fn();
+const onSaveDefault = vi.fn();
+const onClose = vi.fn();
 
 const macdTarget = (): IndicatorSettingsTarget => {
   const d = descriptor('macd');
   return {
-    instanceId: 'm1', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
+    instanceId: 'm1', indicatorId: 'macd', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
     inputs: d.inputs, plots: d.plots, colors: ['#4c8dff', '#ff9f43', '#2ecc71', '#e74c3c'], lineWidth: 1.5,
     levels: [0], defaultLevels: [],
     lineSources: [{ value: 'ind:r1:value', label: 'RSI 14: RSI' }],
   };
 };
+const rsiTarget = (): IndicatorSettingsTarget => {
+  const d = descriptor('rsi');
+  return {
+    instanceId: 'r1', indicatorId: 'rsi', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
+    inputs: d.inputs, plots: d.plots, colors: ['#7e57c2'], lineWidth: 1.5, levels: [30, 70], defaultLevels: [30, 70],
+  };
+};
 const tabs = () => [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
 const tab = (name: string) => tabs().find((b) => b.dataset.tab === name)!.click();
 const labels = () => [...host.querySelectorAll('.tcw-modal-body .tcw-settings-label')].map((l) => l.textContent);
+const footer = (name: string) => host.querySelector<HTMLButtonElement>(`.tcw-modal-footer [data-act="${name}"]`)!;
+const change = (el: HTMLInputElement | HTMLSelectElement, value: string) => {
+  el.value = value;
+  el.dispatchEvent(new Event(el instanceof HTMLInputElement && el.type === 'color' ? 'input' : 'change'));
+};
+const menuItem = (text: string) =>
+  [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((b) => b.textContent?.includes(text))!;
 
 beforeEach(() => {
   host = document.createElement('div');
+  host.className = 'tcw-root';
   document.body.appendChild(host);
-  onApply.mockReset();
-  onStyle.mockReset();
-  onLevels.mockReset();
-  dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onClose: () => {} });
+  for (const fn of [onApply, onStyle, onLevels, onIntervals, onSaveDefault, onClose]) fn.mockReset();
+  dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onIntervals, onSaveDefault, onClose });
 });
 
 afterEach(() => {
@@ -43,9 +60,9 @@ afterEach(() => {
 });
 
 describe('WidgetIndicatorSettings', () => {
-  it('shows inputs, style and levels tabs', () => {
+  it('has the inputs, the style and the intervals it shows on', () => {
     dialog.open(macdTarget());
-    expect(tabs().map((b) => b.textContent)).toEqual(['Inputs', 'Style', 'Levels']);
+    expect(tabs().map((b) => b.textContent)).toEqual(['Inputs', 'Style', 'Visibility']);
     expect(tabs()[0].getAttribute('aria-selected')).toBe('true');
     expect(labels()).toEqual(['Fast', 'Slow', 'Signal', 'Source']);
   });
@@ -55,75 +72,202 @@ describe('WidgetIndicatorSettings', () => {
     const select = host.querySelector<HTMLSelectElement>('select')!;
     expect([...select.querySelectorAll('optgroup')].map((g) => g.label)).toEqual(['Price', 'Indicators']);
     expect([...select.options].map((o) => o.value)).toContain('hlc3');
-    select.value = 'ind:r1:value';
-    select.dispatchEvent(new Event('change'));
+    change(select, 'ind:r1:value');
     expect(onApply).toHaveBeenLastCalledWith('m1', { source: 'ind:r1:value' });
   });
 
   it('keeps a number within its declared bounds', () => {
     const d = descriptor('rsi');
-    dialog.open({ instanceId: 'r1', name: d.name, defaults: { period: 14 }, params: { period: 14 }, inputs: { period: { min: 2, max: 50 } } });
+    dialog.open({ instanceId: 'r1', indicatorId: 'rsi', name: d.name, defaults: { period: 14 }, params: { period: 14 }, inputs: { period: { min: 2, max: 50 } } });
     const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
-    input.value = '500';
-    input.dispatchEvent(new Event('change'));
+    change(input, '500');
     expect(onApply).toHaveBeenLastCalledWith('r1', { period: 50 });
-    expect(host.querySelector<HTMLElement>('.tcw-modal-tabs')!.hidden).toBe(true); // nothing but inputs: no tab bar
-  });
-
-  it('edits a colour per line, up and down for two-tone ones, and the line width', () => {
-    dialog.open(macdTarget());
-    tab('style');
-    expect(labels()).toEqual(['MACD', 'Signal', 'Histogram up', 'Histogram down', 'Line width']);
-    const colors = host.querySelectorAll<HTMLInputElement>('input[type="color"]');
-    colors[3].value = '#aa0000';
-    colors[3].dispatchEvent(new Event('input'));
-    expect(onStyle).toHaveBeenLastCalledWith('m1', { colors: ['#4c8dff', '#ff9f43', '#2ecc71', '#aa0000'] });
-    const width = host.querySelector<HTMLSelectElement>('select')!;
-    width.value = '3';
-    width.dispatchEvent(new Event('change'));
-    expect(onStyle).toHaveBeenLastCalledWith('m1', { lineWidths: [3] });
-  });
-
-  it('edits, adds, removes and resets levels', () => {
-    const d = descriptor('rsi');
-    dialog.open({ instanceId: 'r1', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, levels: [30, 70], defaultLevels: [30, 70] });
-    tab('levels');
-    const inputs = () => [...host.querySelectorAll<HTMLInputElement>('.tcw-indi-level input')];
-    inputs()[1].value = '80';
-    inputs()[1].dispatchEvent(new Event('change'));
-    expect(onLevels).toHaveBeenLastCalledWith('r1', [30, 80]);
-    host.querySelector<HTMLButtonElement>('.tcw-indi-add')!.click();
-    expect(onLevels).toHaveBeenLastCalledWith('r1', [30, 80, 90]);
-    host.querySelector<HTMLButtonElement>('.tcw-indi-remove')!.click();
-    expect(onLevels).toHaveBeenLastCalledWith('r1', [80, 90]);
-    host.querySelector<HTMLButtonElement>('.tcw-modal-footer .tcw-reset-link')!.click();
-    expect(onLevels).toHaveBeenLastCalledWith('r1', null);
-    expect(inputs().map((i) => i.value)).toEqual(['30', '70']);
   });
 });
 
-describe('WidgetIndicatorSettings scale', () => {
-  it('moves an overlay to the left price scale from the Style tab', () => {
+describe('WidgetIndicatorSettings style', () => {
+  it('has a row per line: shown or not, its colours (up and down for two-tone ones), its dash', () => {
+    dialog.open(macdTarget());
+    tab('style');
+    expect(labels()).toEqual(['MACD', 'Signal', 'Histogram', 'Line width', 'Level 1']);
+    const histogram = host.querySelector<HTMLElement>('[data-plot="histogram"]')!;
+    expect(histogram.querySelectorAll('input[type="color"]')).toHaveLength(2);
+    expect(histogram.querySelector('select')).toBeNull(); // bars have no dash
+    change(histogram.querySelectorAll<HTMLInputElement>('input[type="color"]')[1], '#aa0000');
+    expect(onStyle).toHaveBeenLastCalledWith('m1', { colors: ['#4c8dff', '#ff9f43', '#2ecc71', '#aa0000'] });
+    const shown = histogram.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    shown.checked = false;
+    shown.dispatchEvent(new Event('change'));
+    expect(onStyle).toHaveBeenLastCalledWith('m1', { plots: { histogram: { visible: false } } });
+    change(host.querySelector<HTMLSelectElement>('[data-plot="signal"] select')!, 'dashed');
+    expect(onStyle).toHaveBeenLastCalledWith('m1', { plots: { signal: { lineStyle: 'dashed' } } });
+  });
+
+  it('sets the line width', () => {
+    dialog.open(macdTarget());
+    tab('style');
+    change(host.querySelector<HTMLSelectElement>('[data-role="line-width"]')!, '3');
+    expect(onStyle).toHaveBeenLastCalledWith('m1', { lineWidths: [3] });
+  });
+
+  it('edits, adds and removes the levels under the lines', () => {
+    dialog.open(rsiTarget());
+    tab('style');
+    expect(host.querySelector('.tcw-settings-section-title')?.textContent).toBe('Levels');
+    const inputs = () => [...host.querySelectorAll<HTMLInputElement>('.tcw-indi-level input')];
+    change(inputs()[1], '80');
+    expect(onLevels).toHaveBeenLastCalledWith('r1', [30, 80]);
+    host.querySelector<HTMLButtonElement>('.tcw-indi-add')!.click();
+    expect(onLevels).toHaveBeenLastCalledWith('r1', [30, 80, 90]);
+    expect(document.activeElement).toBe(inputs()[2]);
+    host.querySelector<HTMLButtonElement>('.tcw-indi-remove')!.click();
+    expect(onLevels).toHaveBeenLastCalledWith('r1', [80, 90]);
+    expect(document.activeElement).toBe(host.querySelector('.tcw-indi-remove'));
+  });
+
+  it('moves an overlay to the left price scale, and offers no scale to a pane indicator', () => {
     const onScale = vi.fn();
     dialog.destroy();
-    dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onScale, onClose: () => {} });
+    dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onScale, onClose });
     const d = descriptor('ema');
     dialog.open({
-      instanceId: 'e1', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
+      instanceId: 'e1', indicatorId: 'ema', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
       inputs: d.inputs, plots: d.plots, colors: ['#4c8dff'], lineWidth: 1.5, scale: 'right',
     });
     tab('style');
     expect(labels()).toContain('Price scale');
-    const select = [...host.querySelectorAll<HTMLSelectElement>('select')].find((s) => s.querySelector('option[value="left"]'))!;
-    select.value = 'left';
-    select.dispatchEvent(new Event('change'));
+    change(host.querySelector<HTMLSelectElement>('[data-role="scale"]')!, 'left');
     expect(onScale).toHaveBeenCalledWith('e1', 'left');
-  });
-
-  it('offers no scale for a pane indicator', () => {
     dialog.open(macdTarget());
     tab('style');
     expect(labels()).not.toContain('Price scale');
+  });
+});
+
+describe('WidgetIndicatorSettings visibility', () => {
+  const unit = (name: string) => host.querySelector<HTMLElement>(`[data-unit="${name}"]`)!;
+  const box = (name: string) => unit(name).querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+  const range = (name: string) => [...unit(name).querySelectorAll<HTMLInputElement>('input[type="number"]')];
+  const tick = (name: string, on: boolean) => {
+    box(name).checked = on;
+    box(name).dispatchEvent(new Event('change'));
+  };
+
+  it('ticks every interval it shows on, with the range of each', () => {
+    dialog.open({ ...macdTarget(), intervals: { minutes: false, hours: [1, 4] } });
+    tab('visibility');
+    expect([...host.querySelectorAll<HTMLElement>('[data-unit]')].map((u) => u.dataset.unit))
+      .toEqual(['ticks', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months']);
+    expect(box('minutes').checked).toBe(false);
+    expect(range('minutes').every((i) => i.disabled)).toBe(true);
+    expect(range('hours').map((i) => i.value)).toEqual(['1', '4']);
+    expect(range('days').map((i) => i.value)).toEqual(['1', '366']);
+    expect(range('ticks')).toHaveLength(0);
+  });
+
+  it('keeps it off a unit, to a range, and on all of them again', () => {
+    dialog.open(macdTarget());
+    tab('visibility');
+    tick('seconds', false);
+    expect(onIntervals).toHaveBeenLastCalledWith('m1', { seconds: false });
+    change(range('days')[1], '7');
+    expect(onIntervals).toHaveBeenLastCalledWith('m1', { seconds: false, days: [1, 7] });
+    tick('seconds', true);
+    change(range('days')[1], '366');
+    expect(onIntervals).toHaveBeenLastCalledWith('m1', null);
+  });
+});
+
+describe('WidgetIndicatorSettings Cancel, Ok and the defaults', () => {
+  it('undoes every change on Cancel, and closes', () => {
+    dialog.open({ ...macdTarget(), intervals: { weeks: false } });
+    change(host.querySelector<HTMLInputElement>('input[type="number"]')!, '8');
+    tab('style');
+    change(host.querySelectorAll<HTMLInputElement>('input[type="color"]')[0], '#000000');
+    change(host.querySelector<HTMLSelectElement>('[data-role="line-width"]')!, '3');
+    tab('visibility');
+    host.querySelector<HTMLInputElement>('[data-unit="days"] input[type="checkbox"]')!.click();
+    for (const fn of [onApply, onStyle, onIntervals]) fn.mockClear();
+    footer('cancel').click();
+    expect(onApply).toHaveBeenCalledWith('m1', { fast: 12, slow: 26, signal: 9, source: 'close' });
+    expect(onStyle).toHaveBeenCalledWith('m1', { colors: ['#4c8dff', '#ff9f43', '#2ecc71', '#e74c3c'], lineWidths: [1.5] });
+    expect(onIntervals).toHaveBeenCalledWith('m1', { weeks: false });
+    expect(dialog.isOpen()).toBe(false);
+  });
+
+  it('undoes nothing that was not changed', () => {
+    dialog.open(macdTarget());
+    footer('cancel').click();
+    expect(onApply).not.toHaveBeenCalled();
+    expect(onStyle).not.toHaveBeenCalled();
+    expect(onLevels).not.toHaveBeenCalled();
+    expect(onIntervals).not.toHaveBeenCalled();
+  });
+
+  it('keeps the changes on Ok, a value still being typed included', () => {
+    dialog.open(macdTarget());
+    const fast = host.querySelector<HTMLInputElement>('input[type="number"]')!;
+    fast.focus();
+    fast.value = '8';
+    footer('ok').click();
+    expect(onApply).toHaveBeenLastCalledWith('m1', { fast: 8 });
+    expect(dialog.isOpen()).toBe(false);
+    expect(onApply).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets the inputs, lines, levels and intervals from the Defaults menu', () => {
+    dialog.open({ ...rsiTarget(), params: { period: 21, source: 'close' }, levels: [20, 80], intervals: { days: false } });
+    footer('defaults').click();
+    menuItem('Reset settings').click();
+    expect(onApply).toHaveBeenLastCalledWith('r1', { period: 14, source: 'close' });
+    expect(onLevels).toHaveBeenLastCalledWith('r1', null);
+    expect(onIntervals).toHaveBeenLastCalledWith('r1', null);
+    expect(host.querySelector<HTMLInputElement>('input[type="number"]')!.value).toBe('14');
+  });
+
+  it('saves what was chosen as the default for new ones of its kind', () => {
+    dialog.open({ ...rsiTarget(), params: { period: 21, source: 'close' }, plotStyles: { value: { lineStyle: 'dotted' } } });
+    footer('defaults').click();
+    menuItem('Save as default').click();
+    // The source and the width are the indicator's own: nothing to keep of them.
+    expect(onSaveDefault).toHaveBeenCalledWith('rsi', {
+      params: { period: 21 },
+      style: { colors: ['#7e57c2'], plots: { value: { lineStyle: 'dotted' } } },
+    });
+  });
+
+  it('leaves out the colours the chart gave, and a line of another indicator', () => {
+    const palette = [...TC_SERIES_COLORS.slice(2), ...TC_SERIES_COLORS.slice(0, 2)];
+    dialog.open({ ...rsiTarget(), params: { period: 14, source: 'ind:e1:value' }, colors: palette, lineWidth: 2 });
+    footer('defaults').click();
+    menuItem('Save as default').click();
+    const saved = onSaveDefault.mock.calls[0][1];
+    expect(saved.params).toEqual({});
+    expect(saved.style.lineWidths).toEqual([2]);
+  });
+
+  it('puts the levels back on the indicator’s own defaults when it had no levels of its own', () => {
+    dialog.open(rsiTarget());
+    tab('style');
+    change(host.querySelector<HTMLInputElement>('.tcw-indi-level input')!, '25');
+    footer('cancel').click();
+    expect(onLevels).toHaveBeenLastCalledWith('r1', null);
+    dialog.open({ ...rsiTarget(), ownLevels: true });
+    tab('style');
+    change(host.querySelector<HTMLInputElement>('.tcw-indi-level input')!, '25');
+    footer('cancel').click();
+    expect(onLevels).toHaveBeenLastCalledWith('r1', [30, 70]);
+  });
+
+  it('ignores a level still being typed when Escape cancels', () => {
+    dialog.open(rsiTarget());
+    tab('style');
+    const level = host.querySelector<HTMLInputElement>('.tcw-indi-level input')!;
+    level.focus();
+    level.value = '55';
+    level.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    level.dispatchEvent(new Event('change')); // its blur, on the way out
+    expect(onLevels).not.toHaveBeenCalled();
   });
 });
 
@@ -152,34 +296,18 @@ describe('WidgetIndicatorSettings keyboard and screen readers', () => {
     expect(tabs()[0]).toBe(first); // marked in place, not rebuilt
   });
 
-  it('applies a value still being typed when Escape closes it', () => {
+  it('cancels on Escape, a value still being typed included, and gives focus back', () => {
+    const opener = document.createElement('button');
+    host.appendChild(opener);
+    opener.focus();
     dialog.open(macdTarget());
     const fast = host.querySelector<HTMLInputElement>('.tcw-modal-body input')!;
     fast.focus();
     fast.value = '8';
     key(fast, 'Escape');
-    expect(onApply).toHaveBeenLastCalledWith('m1', { fast: 8 });
-  });
-
-  it('closes on Escape and gives focus back', () => {
-    const opener = document.createElement('button');
-    host.appendChild(opener);
-    opener.focus();
-    dialog.open(macdTarget());
-    key(document.activeElement!, 'Escape');
-    expect(host.querySelector<HTMLElement>('.tcw-modal-backdrop')!.hidden).toBe(true);
+    expect(onApply).not.toHaveBeenCalled();
+    expect(dialog.isOpen()).toBe(false);
     expect(document.activeElement).toBe(opener);
-  });
-
-  it('keeps focus nearby when levels are added and removed', () => {
-    dialog.open(macdTarget());
-    tab('levels');
-    host.querySelector<HTMLButtonElement>('.tcw-indi-add')!.click();
-    const inputs = host.querySelectorAll<HTMLInputElement>('.tcw-indi-level input');
-    expect(document.activeElement).toBe(inputs[inputs.length - 1]);
-    expect(host.querySelector(`label[for="${inputs[0].id}"]`)!.textContent).toBe('Level 1');
-    host.querySelector<HTMLButtonElement>('.tcw-indi-remove')!.click();
-    expect(document.activeElement).toBe(host.querySelector('.tcw-indi-remove'));
   });
 });
 

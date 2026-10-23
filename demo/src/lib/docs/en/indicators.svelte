@@ -61,6 +61,44 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   A pane's lines, levels, axis and crosshair share one scale.
 </p>
 
+<h2>On some intervals only</h2>
+<p>
+  An indicator can be kept to some intervals: a 200-day average on the daily chart and
+  up, a fast oscillator on the minute charts only. Each kind of interval (ticks, seconds,
+  minutes, hours, days, weeks, months) is left on, switched off, or given a range of
+  counts; a kind left out shows it on all. The chart reads the rules against the interval
+  of the stream it is connected to, as the interval changes; for bars given with <code>setData</code>,
+  <code>chart.setDataTimeframe('1h')</code> tells it theirs (ChartWidget does this itself); with neither
+  it shows the indicator. The rules are saved with the layout and undone like any other edit.
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code> says of each whether it is <code>visible</code> (switched on) and
+  <code>shown</code> (drawn on this interval). In ChartWidget, its legend row greys out while it isn't.
+</p>
+
+<h2>In ChartWidget</h2>
+<p>
+  The toolbar's <strong>Indicators</strong> opens a dialog. Type to search every indicator by its
+  name or short name (<kbd>Enter</kbd> adds the best match); or pick a group down the side:
+  <strong>Favourites</strong>, <strong>Templates</strong>, <strong>All</strong>, then each kind
+  (moving averages, trend, oscillators, volatility, volume, bands and channels, price and
+  patterns). A row adds its indicator and the dialog stays open for the next; a count shows how
+  many are on the chart, and the star beside it keeps it in the favourites. On a phone the groups
+  are a row of chips over the list.
+</p>
+<p>
+  An indicator's settings (its legend row's name, or its gear) have three tabs:
+  <strong>Inputs</strong>; <strong>Style</strong>, a row per line (shown or not, its colours, its
+  dash), the line width, an overlay's price scale and the levels; and <strong>Visibility</strong>,
+  the intervals it shows on. Every edit shows at once. <strong>Cancel</strong> or <kbd>Esc</kbd>
+  puts it all back, <strong>OK</strong> keeps it. <strong>Defaults</strong> resets it, or saves it as
+  the default: new indicators of its kind then start with these inputs and this look, in this
+  browser.
+</p>
+
 <h2>On the price pane ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Name</th><th>Default params</th><th>Lines</th></tr></thead>
@@ -131,7 +169,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 <p>
   Extend <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,
   levels and inputs; the chart draws it, scales its pane, tags its values and lists it in the
-  widget's legend and settings without rendering code of yours. See the
+  widget's legend and settings without rendering code of yours. Its <code>category</code>
+  (<code>'oscillators'</code>, <code>'volume'</code>…) puts it in that group of the Indicators dialog;
+  without one it is under Other. See the
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
 </p>
 
@@ -176,8 +216,8 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   The indicators can be taken and put back as a whole, which is what ChartWidget's
-  indicator templates do: <strong>Save indicators as template…</strong> in the indicators
-  menu keeps them (inputs, style, levels, panes) under a name, and picking a template
+  indicator templates do: <strong>Save indicators as template…</strong> on the Templates tab
+  of the Indicators dialog keeps them (inputs, style, levels, panes) under a name, and picking a template
   puts them in place of the chart's, as one undo step.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

@@ -4,6 +4,20 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### The Indicators dialog and the indicator settings
+
+The toolbar's Indicators opens a dialog in place of the dropdown, and an indicator's settings are rewritten, in the Print look.
+
+- **The Indicators dialog** searches every indicator by its name or short name as you type (Enter adds the best match), or lists a group picked down the side: **Favourites**, **Templates**, **All**, then each kind (moving averages, trend, oscillators, volatility, volume, bands and channels, price and patterns). A row adds its indicator and the dialog stays open for the next, with a count of how many are on the chart; the star beside it keeps it in the favourites (in this browser). The templates moved here from the old menu. On a phone the groups are a row of chips. The old menu's "Popular" list is gone.
+- **Indicator categories** (`@tradecanvas/core`): `indicatorCategory(descriptor)` and `INDICATOR_CATEGORIES`; the 134 built-ins each have one, and a custom indicator can declare its own `category` (`IndicatorCategory` in `@tradecanvas/commons`).
+- **An indicator's settings** have three tabs. **Inputs** as before. **Style**: a row per line, ticked where it is drawn, with its colours (up and down for two-tone ones) and its dash; the line width; an overlay's price scale; and the levels, which had a tab of their own. **Visibility**: the intervals it shows on.
+- **Cancel, OK and Defaults.** Every edit still shows at once; **Cancel** (or Esc, the close button, a click outside) puts back everything changed since the dialog opened, and **OK** keeps it. The whole edit is one undo step, and a Cancel leaves none (`chart.beginIndicatorEdit(id)` and `endIndicatorEdit()` do this for your own dialogs). **Defaults** resets the inputs, the lines, the levels and the intervals, or saves the default for new indicators of the kind, in this browser: the inputs changed from the indicator's own (not a line of another indicator) and what was picked of the look; colours the chart gave stay its to give, so a second one still gets a colour of its own.
+- **On some intervals only.** `chart.setIndicatorIntervals(id, { minutes: false, hours: [1, 4] })` keeps an indicator to some intervals of the connected stream (`null`: all); `getIndicatorIntervals` reads them back. For bars given with `setData`, `chart.setDataTimeframe('1h')` gives the chart their interval (the legend's title line names it too); ChartWidget does this itself. A range up to its unit's top (59 minutes, 24 hours…) runs on past it, so `minutes: [5, 59]` shows on 90m too. They are saved with the layout and undone like other edits, and `indicatorChange` reports them as `'intervals'`. `getActiveIndicators()` now says whether each is `shown`; the widget's legend greys out a row while its indicator isn't drawn on the interval.
+- **Fixed:** on a phone, a dialog's tabs cut off the text of the tab picked; they are taller now instead of padded.
+- **Fixed:** Tab left a dialog from a control Tab skips over (a row's star); it wraps to the dialog's first control now.
+- `chart.isIndicatorAllowed(id)` says whether `addIndicator(id)` may add one (`features.indicators`, `features.indicatorIds`); the Indicators dialog lists only those, and the command palette now lists the chart's indicators, your own included.
+- Compare's own indicators (`compareSymbol`, `spread`, the correlations), which need a second symbol, stay out of the Indicators dialog; `SYMBOL_INDICATOR_IDS` (`@tradecanvas/core`) names them.
+
 ### The widget's bars, rearranged
 
 The toolbar, the drawing tools, the status bar and the toolbar over a selected drawing are laid out as a trader expects to find them, in the Print look.

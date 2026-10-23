@@ -2623,9 +2623,10 @@
     padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
-  /* Larger tap targets inside sheets */
+  /* Larger tap targets inside sheets: taller, not more padding, so a tab's text stays inside its chip. */
   .tcw-modal-tab {
-    padding: 14px 16px;
+    min-height: 40px;
+    padding-inline: 16px;
   }
   .tcw-cmd-item {
     padding: 12px 14px;

@@ -5288,7 +5288,7 @@
       {
         "name": "indicatorTemplates",
         "type": "boolean",
-        "doc": "Indicator templates: the indicators menu saves the chart's indicators (inputs, style, levels, panes) under a name and applies them in one go. Kept in this browser's `localStorage`. Default `true`.",
+        "doc": "Indicator templates: the Templates tab of the Indicators dialog saves the chart's indicators (inputs, style, levels, panes) under a name and applies them in one go. Kept in this browser's `localStorage`. Default `true`.",
         "kind": "boolean"
       },
       {

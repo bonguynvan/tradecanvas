@@ -271,6 +271,20 @@ describe('ChartStateManager.deserialize validation', () => {
     expect(restored.indicators[1].style).toBeUndefined();
   });
 
+  it('keeps the intervals an indicator shows on, checked', () => {
+    const restored = ChartStateManager.deserialize(JSON.stringify({
+      version: 2,
+      indicators: [
+        { id: 'ema', instanceId: 'e1', params: {}, intervals: { minutes: false, hours: [4, 1], years: false } },
+        { id: 'sma', instanceId: 's1', params: {}, intervals: { hours: [1, 24] } },
+        { id: 'rsi', instanceId: 'r1', params: {}, intervals: 'daily' },
+      ],
+    }));
+    expect(restored.indicators[0].intervals).toEqual({ minutes: false, hours: [1, 4] });
+    expect(restored.indicators[1].intervals).toBeUndefined();
+    expect(restored.indicators[2].intervals).toBeUndefined();
+  });
+
   it('drops indicators missing id, instanceId, or params', () => {
     const tampered = JSON.stringify({
       version: 1,

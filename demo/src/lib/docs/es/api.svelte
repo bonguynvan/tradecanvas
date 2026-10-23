@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Lo quita y libera sus recursos.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Las temporalidades en las que se muestra (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: todas. Se guarda con el diseño.</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>La temporalidad de las barras dadas con <code>setData</code>: la línea de título de la leyenda la nombra, y los indicadores limitados a algunas temporalidades la siguen.</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>El aspecto propio de un panel, guardado con su indicador.</td></tr>
   </tbody>
 </table>
@@ -436,7 +438,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>Barra de herramientas</td><td>
       El símbolo y su información; las temporalidades (las fijadas como botones, y un menú con todas por unidad, de minutos
-      a meses, con una estrella en cada una para fijarla); el tipo de gráfico como su icono; Indicadores, y Comparar cuando hay un adaptador de datos;
+      a meses, con una estrella en cada una para fijarla); el tipo de gráfico como su icono; Indicadores (un diálogo: ver <a href={href('/docs/indicators')}>Indicadores</a>), y Comparar cuando hay un adaptador de datos;
       deshacer y rehacer. A la derecha: diseños, repetición de barras, alertas, el árbol de objetos, un menú Operar (una
       orden nueva, órdenes bracket largas y cortas, la escalera de profundidad y el panel de cuenta), y luego captura de
       pantalla, configuración, el tema y pantalla completa. Lo que no cabe se pliega bajo “Más”.

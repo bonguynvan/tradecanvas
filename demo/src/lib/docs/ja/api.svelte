@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>色、線の太さ、不透明度、そしてプロットごとの線種と表示（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>これから追加する同じ種類のインジケーターの初期スタイル。</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>表示する時間足（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）。<code>null</code> ですべての時間足。レイアウトとともに保存。</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td><code>setData</code> で渡したバーの時間足。凡例のタイトル行に表示され、一部の時間足だけに表示するインジケーターはこれに従います。</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>ペイン独自の見た目。インジケーターとともに保存。</td></tr>
   </tbody>
 </table>
@@ -412,7 +414,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>ツールバー</td><td>
       シンボルとその情報。時間足（固定したものはボタンとして並び、すべての時間足を単位ごとに分から月まで並べたメニューもあって、
-      各項目の星で固定できます）。アイコンで示すチャートタイプ。インジケーター、データアダプターがあれば比較。元に戻すとやり直し。右側には、レイアウト、
+      各項目の星で固定できます）。アイコンで示すチャートタイプ。インジケーター（ダイアログ。<a href={href('/docs/indicators')}>インジケーター</a>を参照）、データアダプターがあれば比較。元に戻すとやり直し。右側には、レイアウト、
       バーリプレイ、アラート、オブジェクトツリー、取引メニュー（新規注文、ロングとショートのブラケット注文、板情報、口座パネル）、
       続いてスクリーンショット、設定、テーマ、全画面があります。収まらないものは「その他」の中にまとめられます。
     </td></tr>

@@ -61,6 +61,41 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   オンにします（既定ではオフ）。ペインのライン、レベル、軸、クロスヘアは 1 つのスケールを共有します。
 </p>
 
+<h2>一部の時間足だけに表示</h2>
+<p>
+  インジケーターを一部の時間足だけに表示できます。たとえば 200 日移動平均は日足以上だけ、速いオシレーターは分足だけ、
+  といった使い方です。時間足の種類（ティック、秒、分、時間、日、週、月）ごとに、そのまま表示する、オフにする、
+  値の範囲を指定する、のいずれかにでき、指定しなかった種類ではすべての時間足に表示されます。チャートは、
+  接続しているストリームの時間足にルールを照らし合わせ、時間足が変わるたびに判定し直します。<code>setData</code> で渡したバーには
+  <code>chart.setDataTimeframe('1h')</code> で時間足を伝えます（ChartWidget は自動で行います）。どちらもなければインジケーターを表示します。ルールはレイアウトとともに保存され、ほかの編集と同じように元に戻せます。
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // ふたたびすべての時間足に表示`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code> は、それぞれが <code>visible</code>（オン）かどうかと、
+  <code>shown</code>（この時間足で描画されている）かどうかを返します。ChartWidget では、描画されていない間は
+  凡例の行がグレー表示になります。
+</p>
+
+<h2>ChartWidget では</h2>
+<p>
+  ツールバーの <strong>インジケーター</strong> でダイアログが開きます。入力すると、名前または略称ですべてのインジケーターを
+  検索できます（<kbd>Enter</kbd> で最も一致するものを追加）。脇のグループ一覧から選ぶこともできます：
+  <strong>お気に入り</strong>、<strong>テンプレート</strong>、<strong>すべて</strong>、続いて種類ごとのグループ
+  （移動平均、トレンド、オシレーター、ボラティリティ、出来高、バンドとチャネル、価格とパターン）です。
+  行を選ぶとそのインジケーターが追加され、ダイアログは次の追加のために開いたままです。数字はチャート上にいくつあるかを示し、
+  横の星でお気に入りに入れられます。スマートフォンでは、グループはリストの上に一列に並ぶチップになります。
+</p>
+<p>
+  インジケーターの設定（凡例の行の名前か歯車から開きます）には 3 つのタブがあります：<strong>パラメーター</strong>、
+  <strong>スタイル</strong>（ラインごとの行で表示の有無、色、線種を設定し、ほかに線の太さ、オーバーレイの価格スケール、レベル）、
+  <strong>表示</strong>（表示する時間足）です。編集はすぐに反映されます。<strong>キャンセル</strong>または
+  <kbd>Esc</kbd> ですべて元に戻り、<strong>OK</strong> で確定します。<strong>初期設定</strong> では設定をリセットするか、
+  初期設定として保存できます。保存すると、このブラウザーでは同じ種類の新しいインジケーターが
+  このパラメーターと見た目で始まります。
+</p>
+
 <h2>価格ペインに表示 ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>名前</th><th>既定のパラメーター</th><th>ライン</th></tr></thead>
@@ -131,7 +166,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 <p>
   <code>IndicatorBase</code> を継承し、描画する内容（<code>plots</code>）、ペインのスケール、レベル、
   入力を宣言します。描画のコードを書かなくても、チャートが描画し、ペインのスケールを調整し、値をタグ表示し、
-  ウィジェットの凡例と設定に表示します。詳しくは
+  ウィジェットの凡例と設定に表示します。<code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）を
+  指定するとインジケーターダイアログのそのグループに入り、指定しなければ「その他」に入ります。詳しくは
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>を参照してください。
 </p>
 
@@ -174,7 +210,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   インジケーターは丸ごと取り出して戻すことができ、ChartWidget のインジケーターテンプレートはこの仕組みを使っています。
-  インジケーターメニューの <strong>インジケーターをテンプレートとして保存…</strong> で、それら（入力、スタイル、レベル、ペイン）を
+  インジケーターダイアログの「テンプレート」タブにある <strong>インジケーターをテンプレートとして保存…</strong> で、それら（入力、スタイル、レベル、ペイン）を
   名前を付けて保存し、テンプレートを選ぶとチャートのインジケーターがそれに置き換わります。これは 1 回の元に戻す操作にまとまります。
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

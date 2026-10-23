@@ -222,9 +222,16 @@ describe('ChartWidget keys for tools and intervals', () => {
 describe('ChartWidget indicator templates', () => {
   beforeEach(() => localStorage.clear());
 
+  /** The indicators dialog, on its Templates tab. */
+  const openTemplates = () => {
+    if (!document.querySelector('.tcw-ip')) host.querySelector<HTMLButtonElement>('[data-role="indicators"]')!.click();
+    document.querySelector<HTMLButtonElement>('.tcw-ip-tab[data-view="templates"]')!.click();
+  };
+
   it('saves the chart’s indicators under a name and applies them', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     FakeChart.last.indicatorsShown = [{ id: 'rsi', instanceId: 'tc_rsi_1', params: {}, visible: true, descriptor: { defaultConfig: {} } }];
+    openTemplates();
     document.querySelector<HTMLButtonElement>('[data-tpl-save]')!.click();
     // The open prompt (the layouts have one of their own).
     const prompt = [...host.querySelectorAll<HTMLFormElement>('.tcw-name-prompt')].find((f) => !f.closest('.tcw-modal-backdrop')!.hasAttribute('hidden'))!;
@@ -233,6 +240,7 @@ describe('ChartWidget indicator templates', () => {
     input.dispatchEvent(new Event('input'));
     prompt.dispatchEvent(new Event('submit', { cancelable: true }));
     return Promise.resolve().then(() => {
+      openTemplates();
       const apply = document.querySelector<HTMLButtonElement>('[data-tpl-apply="Momentum"]')!;
       expect(apply).not.toBeNull();
       apply.click();
@@ -242,6 +250,7 @@ describe('ChartWidget indicator templates', () => {
 
   it('says there is nothing to save without indicators', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    openTemplates();
     document.querySelector<HTMLButtonElement>('[data-tpl-save]')!.click();
     const open = [...host.querySelectorAll('.tcw-name-prompt')].filter((f) => !f.closest('.tcw-modal-backdrop')!.hasAttribute('hidden'));
     expect(open).toEqual([]);

@@ -11,6 +11,9 @@ interface SpreadParams extends SymbolParams {
   ratio: boolean;
 }
 
+/** The indicators that read another symbol's bars: Compare adds them, with the symbol. */
+export const SYMBOL_INDICATOR_IDS: ReadonlySet<string> = new Set(['compareSymbol', 'spread', 'correlation', 'correlationlog']);
+
 const symbolOf = (config: IndicatorConfig): string =>
   typeof config.params.symbol === 'string' ? config.params.symbol.trim() : '';
 

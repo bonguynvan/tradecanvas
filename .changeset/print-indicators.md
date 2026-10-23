@@ -1,0 +1,6 @@
+---
+'@tradecanvas/chart': minor
+'@tradecanvas/core': minor
+---
+
+The Indicators dialog and the indicator settings, rewritten. The toolbar's Indicators opens a dialog: a search across every indicator, and groups down the side (Favourites, Templates, All, then moving averages, trend, oscillators, volatility, volume, bands and channels, price and patterns). A row adds its indicator and the dialog stays open; a star keeps it in the favourites. An indicator's settings have Inputs, Style (each line shown or not, its colours and dash, the line width, the scale and the levels) and Visibility (the intervals it shows on); Cancel puts every change back, OK keeps it, and Defaults resets it or saves it as the default for new ones of its kind. New in the chart: `setIndicatorIntervals` and `getIndicatorIntervals` keep an indicator to some intervals, saved with the layout, read against the stream's interval or the one `setDataTimeframe` gives; `getActiveIndicators()` says whether each is `shown`; `beginIndicatorEdit` and `endIndicatorEdit` make a dialog's edits one undo step; `isIndicatorAllowed`. New in core: `indicatorCategory` and `INDICATOR_CATEGORIES`, an optional `category` on an indicator's descriptor, and `SYMBOL_INDICATOR_IDS`. Fixed: Tab no longer leaves a dialog from a row's star, and a dialog's tabs keep their text on a phone.

@@ -6,6 +6,8 @@ export interface IndicatorLegendRow {
   /** "EMA 50", "MACD 12 26 9". */
   label: string;
   visible: boolean;
+  /** On, but not drawn on the chart's interval (its settings keep it to others). */
+  offInterval?: boolean;
   /** The values at the bar in view; `color` null = the neutral text colour. */
   values: readonly { text: string; color: string | null }[];
   /**
@@ -56,6 +58,8 @@ export interface IndicatorLegendLabels {
   paneExpand?: string;
   paneMaximize?: string;
   paneRestore?: string;
+  /** A row's note while its indicator isn't drawn on this interval. */
+  offInterval?: string;
 }
 
 interface PaneEls {
@@ -269,13 +273,15 @@ export class WidgetIndicatorLegend {
   }
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
-    const state = `${row.label}|${row.visible}`;
+    const state = `${row.label}|${row.visible}|${!!row.offInterval}`;
     if (state !== els.state) {
       els.state = state;
       els.visible = row.visible;
       els.name.textContent = row.label;
       els.name.title = this.labels.settings;
-      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible);
+      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || !!row.offInterval);
+      if (row.offInterval && this.labels.offInterval) els.el.title = this.labels.offInterval;
+      else els.el.removeAttribute('title');
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
       setLabel(els.settings, this.labels.settings, row.label);

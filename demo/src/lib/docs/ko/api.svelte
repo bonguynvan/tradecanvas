@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>지표를 제거하고 정리합니다.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>색, 선 두께, 불투명도, 그리고 플롯별 선 종류와 표시(<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>앞으로 추가할 같은 종류 지표의 시작 스타일.</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>지표가 표시되는 시간 단위(<code>{`{ minutes: false, hours: [1, 4] }`}</code>). <code>null</code>이면 전체. 레이아웃과 함께 저장.</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td><code>setData</code>로 넣은 바의 시간 단위. 범례 제목 줄에 표시되고, 일부 시간 단위에서만 표시하는 지표가 이를 따릅니다.</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>패널 자체의 모양, 지표와 함께 저장.</td></tr>
   </tbody>
 </table>
@@ -417,7 +419,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>도구 모음</td><td>
       종목과 종목 정보, 시간 단위(고정한 것은 버튼으로 나오고, 모든 시간 단위를 분부터 월까지 단위별로 모은 메뉴도 있어 항목마다
-      있는 별로 고정합니다), 아이콘으로 표시되는 차트 유형, 지표와 (데이터 어댑터가 있을 때) 비교, 실행 취소와 다시 실행. 오른쪽에는 레이아웃, 바 리플레이,
+      있는 별로 고정합니다), 아이콘으로 표시되는 차트 유형, 지표(대화상자: <a href={href('/docs/indicators')}>지표</a> 참고)와 (데이터 어댑터가 있을 때) 비교, 실행 취소와 다시 실행. 오른쪽에는 레이아웃, 바 리플레이,
       알림, 개체 트리, 거래 메뉴(새 주문, 롱·숏 브래킷 주문, 호가창, 계좌 패널), 이어서 스크린샷, 설정, 테마, 전체 화면이
       있습니다. 자리가 모자라면 나머지는 “더보기” 안으로 접힙니다.
     </td></tr>

@@ -61,6 +61,38 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   同一窗格中的线、水平线、坐标轴和十字光标共用一套坐标。
 </p>
 
+<h2>只在部分周期显示</h2>
+<p>
+  指标可以只在部分周期上显示：例如 200 日均线只在日线及更高周期上显示，快速震荡指标只在分钟图上显示。
+  每一类周期（tick、秒、分钟、小时、日、周、月）可以保持开启、关闭，或限定一个数值范围；
+  未列出的类别在其所有周期上都显示。图表会随周期变化，用所连接数据流的周期来套用这些规则；
+  对于用 <code>setData</code> 设置的K线，
+  <code>chart.setDataTimeframe('1h')</code> 告诉图表它们的周期（ChartWidget 会自动完成）；两者都没有时则显示该指标。这些规则随布局一起保存，也和其他编辑一样可以撤销。
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // 恢复为全部周期`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code> 会说明每个指标是否 <code>visible</code>（已开启）以及是否
+  <code>shown</code>（在当前周期上绘制）。在 ChartWidget 中，指标未绘制时，它的图例行会变灰。
+</p>
+
+<h2>在 ChartWidget 中</h2>
+<p>
+  工具栏上的 <strong>指标</strong> 会打开一个对话框。输入文字即可按名称或简称搜索所有指标
+  （<kbd>Enter</kbd> 添加最匹配的一项）；也可以在侧边选择分组：<strong>收藏</strong>、
+  <strong>模板</strong>、<strong>全部</strong>，然后是各个类别（移动平均线、趋势、震荡指标、波动率、
+  成交量、轨道与通道、价格与形态）。点击一行即添加该指标，对话框保持打开，便于继续添加；
+  计数显示图表上已有几个该指标，旁边的星标可将它加入收藏。在手机上，分组显示为列表上方的一排标签。
+</p>
+<p>
+  指标的设置（点击其图例行上的名称或齿轮图标打开）有三个标签页：<strong>参数</strong>；
+  <strong>样式</strong>，每条线一行（是否显示、颜色、线型），以及线宽、叠加指标的价格坐标和水平线；
+  以及 <strong>可见性</strong>，即它在哪些周期上显示。每次编辑都会立即生效。<strong>取消</strong>或
+  <kbd>Esc</kbd> 会全部恢复原样，<strong>确定</strong>则保留修改。<strong>默认</strong>可重置设置，
+  或将其保存为默认：之后在此浏览器中，新添加的同类指标都会以这些参数和外观开始。
+</p>
+
 <h2>主图指标（{overlays.length}）</h2>
 <table>
   <thead><tr><th>id</th><th>名称</th><th>默认参数</th><th>线</th></tr></thead>
@@ -130,7 +162,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 <p>
   继承 <code>IndicatorBase</code>，声明它要绘制的内容（<code>plots</code>）、窗格坐标、
   水平线和参数；图表会负责绘制、缩放窗格、标注数值，并把它列入组件的图例和设置中，
-  你无需编写任何渲染代码。参见
+  你无需编写任何渲染代码。它的 <code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）
+  会把它放进“指标”对话框中的对应分组；未设置时归入“其他”。参见
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>。
 </p>
 
@@ -172,7 +205,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   所有指标可以作为一个整体取出再放回，ChartWidget 的指标模板正是这样做的：
-  “指标”菜单中的 <strong>将指标保存为模板…</strong> 会把它们（参数、样式、水平线、窗格）
+  “指标”对话框“模板”标签页上的 <strong>将指标保存为模板…</strong> 会把它们（参数、样式、水平线、窗格）
   以一个名称保存下来；选择模板后，它们会替换图表当前的指标，这也只算一次撤销步骤。
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

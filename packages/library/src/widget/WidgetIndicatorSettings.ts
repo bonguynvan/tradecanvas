@@ -1,13 +1,19 @@
-import type { IndicatorInputSpec, IndicatorPlot } from '@tradecanvas/commons';
+import type { IndicatorInputSpec, IndicatorIntervals, IndicatorPlot, IndicatorPlotStyle, IndicatorStyleConfig } from '@tradecanvas/commons';
+import { PRICE_SOURCES, parseIndicatorSource } from '@tradecanvas/commons';
+import { isSeriesPalette } from '@tradecanvas/core';
 import { FOCUSABLE, keepTabInside } from './focusTrap.js';
-import { PRICE_SOURCES } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_MESSAGES, type Translator } from './i18n.js';
+import { WidgetContextMenu } from './WidgetContextMenu.js';
+import { colorInput, numberInput, settingsRow, toggleSwitch } from './settingsControls.js';
+import { renderStyleTab, renderVisibilityTab } from './indicatorSettingsTabs.js';
 
 export type IndicatorParamValue = number | string | boolean;
 
 export interface IndicatorSettingsTarget {
   instanceId: string;
+  /** The kind of indicator (`'rsi'`): what "Save as default" is for. */
+  indicatorId: string;
   name: string;
   /** Default config — defines the editable keys and their types. */
   defaults: Record<string, unknown>;
@@ -17,35 +23,66 @@ export interface IndicatorSettingsTarget {
   inputs?: Readonly<Record<string, IndicatorInputSpec>>;
   /** Other indicators' lines a source can be: value `ind:<instanceId>:<key>`. */
   lineSources?: readonly { value: string; label: string }[];
-  /** What it draws; with `colors`, the Style tab. */
+  /** What it draws; with `colors`, the lines of the Style tab. */
   plots?: readonly IndicatorPlot[];
   colors?: readonly string[];
   lineWidth?: number;
-  /** Its levels and its indicator's defaults; with them, the Levels tab. */
+  /** Each line's own dash and visibility, by its key. */
+  plotStyles?: Readonly<Record<string, IndicatorPlotStyle>>;
+  /** Its levels and its indicator's defaults; with them, the levels under the lines. */
   levels?: readonly number[];
   defaultLevels?: readonly number[];
+  /** Whether `levels` are the instance's own; not: its indicator's defaults, which Cancel leaves it on. */
+  ownLevels?: boolean;
   /** The price scale an overlay is on; set only for price-pane overlays. */
   scale?: 'right' | 'left';
+  /** The intervals it shows on; unset or null: all of them. */
+  intervals?: IndicatorIntervals | null;
+}
+
+/** What "Save as default" keeps: new indicators of the kind start with it. */
+export interface IndicatorDefault {
+  params: Record<string, IndicatorParamValue>;
+  style: IndicatorStyleConfig;
 }
 
 export interface IndicatorSettingsCallbacks {
   onApply: (instanceId: string, params: Record<string, IndicatorParamValue>) => void;
-  onStyle?: (instanceId: string, style: { colors?: string[]; lineWidths?: number[] }) => void;
+  onStyle?: (instanceId: string, style: IndicatorStyleConfig) => void;
   /** `null` restores the indicator's default levels. */
   onLevels?: (instanceId: string, levels: number[] | null) => void;
   /** Move an overlay to the left price scale or back to the price scale. */
   onScale?: (instanceId: string, scale: 'right' | 'left') => void;
+  /** The intervals it shows on (`null`: all); with it, the Visibility tab. */
+  onIntervals?: (instanceId: string, intervals: IndicatorIntervals | null) => void;
+  /** "Save as default" in the Defaults menu. */
+  onSaveDefault?: (indicatorId: string, saved: IndicatorDefault) => void;
   onClose: () => void;
 }
 
-type Tab = 'inputs' | 'style' | 'levels';
+type Tab = 'inputs' | 'style' | 'visibility';
+
+/** What the dialog changes besides the inputs: as it was on opening, and as it is. */
+interface Look {
+  colors: string[];
+  lineWidth: number;
+  plots: Record<string, IndicatorPlotStyle>;
+  levels: number[];
+  scale?: 'right' | 'left';
+  intervals: IndicatorIntervals | null;
+}
 
 /** Ids for the dialog's labelling (several widgets may share a page). */
 let nextDialogId = 1;
 
-
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-const LINE_WIDTHS = [1, 1.5, 2, 3, 4];
+const DEFAULT_LINE_WIDTH = 1.5;
+/** A line as it is with no style of its own. */
+const PLAIN_PLOT: IndicatorPlotStyle = { visible: true, lineStyle: 'solid' };
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+/** A copy of plain values (numbers, strings, flags, lists of them). */
+const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 function titleCase(key: string): string {
   // camelCase / snake_case → "Title Case"
@@ -55,10 +92,17 @@ function titleCase(key: string): string {
     .replace(/^./, (c) => c.toUpperCase());
 }
 
+/** Each line put back as `to` has it; one `to` has no style for goes back to plain. */
+function plotsBack(from: Record<string, IndicatorPlotStyle>, to: Record<string, IndicatorPlotStyle>): Record<string, IndicatorPlotStyle> {
+  return Object.fromEntries([...new Set([...Object.keys(from), ...Object.keys(to)])].map((key) => [key, { ...PLAIN_PLOT, ...to[key] }]));
+}
+
 /**
- * Per-indicator settings: its inputs (a stepper, toggle, colour, choice or
- * source for each parameter), its style (a colour per line, the line width)
- * and its levels. Every edit applies at once.
+ * Per-indicator settings: its inputs; its style (each line shown or not, its
+ * colours and dash, the line width, the scale, the levels); and the
+ * intervals it shows on. Every edit shows at once; Cancel (or Escape) puts
+ * it all back as it was, Ok keeps it. The Defaults menu resets it, or keeps
+ * it for the next ones of its kind.
  */
 export class WidgetIndicatorSettings {
   private backdrop: HTMLDivElement;
@@ -66,12 +110,13 @@ export class WidgetIndicatorSettings {
   private bodyEl: HTMLDivElement;
   private titleEl: HTMLHeadingElement;
   private tabsEl: HTMLDivElement;
-  private resetBtn: HTMLButtonElement;
+  private defaultsBtn: HTMLButtonElement;
+  private menu: WidgetContextMenu | null = null;
   private callbacks: IndicatorSettingsCallbacks;
   private target: IndicatorSettingsTarget | null = null;
   private draft: Record<string, IndicatorParamValue> = {};
-  private colors: string[] = [];
-  private levels: number[] = [];
+  private initial: { params: Record<string, IndicatorParamValue>; look: Look } | null = null;
+  private look: Look = { colors: [], lineWidth: DEFAULT_LINE_WIDTH, plots: {}, levels: [], intervals: null };
   private tab: Tab = 'inputs';
   private tabButtons: HTMLButtonElement[] = [];
   private returnFocus: HTMLElement | null = null;
@@ -86,11 +131,11 @@ export class WidgetIndicatorSettings {
     this.backdrop.className = 'tcw-modal-backdrop';
     this.backdrop.hidden = true;
     this.backdrop.addEventListener('click', (e) => {
-      if (e.target === this.backdrop) this.close();
+      if (e.target === this.backdrop) this.finish(false);
     });
 
     this.modal = document.createElement('div');
-    this.modal.className = 'tcw-modal tcw-modal-narrow';
+    this.modal.className = 'tcw-modal tcw-modal-narrow tcw-indi';
     this.modal.setAttribute('role', 'dialog');
     this.modal.setAttribute('aria-modal', 'true');
     this.modal.setAttribute('aria-labelledby', `tcw-indi-title-${this.uid}`);
@@ -102,13 +147,12 @@ export class WidgetIndicatorSettings {
     header.className = 'tcw-modal-header';
     this.titleEl = document.createElement('h3');
     this.titleEl.id = `tcw-indi-title-${this.uid}`;
-    this.titleEl.textContent = 'Indicator';
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-modal-close';
     closeBtn.setAttribute('aria-label', this.t('indicatorSettings.close'));
     closeBtn.innerHTML = createIcon('x', 16);
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener('click', () => this.finish(false));
     header.append(this.titleEl, closeBtn);
 
     this.tabsEl = document.createElement('div');
@@ -121,32 +165,45 @@ export class WidgetIndicatorSettings {
     this.bodyEl.id = `tcw-indi-panel-${this.uid}`;
     this.bodyEl.setAttribute('role', 'tabpanel');
 
-    const footer = document.createElement('div');
-    footer.className = 'tcw-modal-footer';
-    this.resetBtn = document.createElement('button');
-    this.resetBtn.type = 'button';
-    this.resetBtn.className = 'tcw-reset-link';
-    this.resetBtn.textContent = this.t('settings.resetToDefaults');
-    this.resetBtn.addEventListener('click', () => this.resetTab());
-    const doneBtn = document.createElement('button');
-    doneBtn.type = 'button';
-    doneBtn.className = 'tcw-done-btn';
-    doneBtn.textContent = this.t('settings.done');
-    doneBtn.addEventListener('click', () => this.close());
-    footer.append(this.resetBtn, doneBtn);
-
-    this.modal.append(header, this.tabsEl, this.bodyEl, footer);
+    this.defaultsBtn = this.footerButton('defaults', 'tcw-indi-defaults', () => this.openDefaults());
+    this.modal.append(header, this.tabsEl, this.bodyEl, this.buildFooter());
     this.backdrop.appendChild(this.modal);
     host.appendChild(this.backdrop);
   }
 
+  /** The Defaults menu on the left; Cancel and OK on the right. */
+  private buildFooter(): HTMLDivElement {
+    this.defaultsBtn.setAttribute('aria-haspopup', 'menu');
+    this.defaultsBtn.setAttribute('aria-expanded', 'false');
+    this.defaultsBtn.innerHTML = `<span></span>${createIcon('chevronDown', 12)}`;
+    this.defaultsBtn.querySelector('span')!.textContent = this.t('indicatorSettings.defaults');
+    const end = document.createElement('div');
+    end.className = 'tcw-indi-footer-end';
+    end.append(
+      this.footerButton('cancel', 'tcw-indi-cancel', () => this.finish(false), this.t('common.cancel')),
+      this.footerButton('ok', 'tcw-done-btn', () => this.finish(true), this.t('drawingSettings.ok')),
+    );
+    const footer = document.createElement('div');
+    footer.className = 'tcw-modal-footer';
+    footer.append(this.defaultsBtn, end);
+    return footer;
+  }
+
   open(target: IndicatorSettingsTarget): void {
+    if (this.target) this.finish(true);
     if (this.backdrop.hidden) this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.target = target;
     this.titleEl.textContent = this.t('indicatorSettings.title').replace('{name}', target.name);
     this.draft = {};
-    this.colors = [...(target.colors ?? [])];
-    this.levels = [...(target.levels ?? [])];
+    this.look = {
+      colors: [...(target.colors ?? [])],
+      lineWidth: target.lineWidth ?? DEFAULT_LINE_WIDTH,
+      plots: Object.fromEntries(Object.entries(target.plotStyles ?? {}).map(([key, plot]) => [key, { ...plot }])),
+      levels: [...(target.levels ?? [])],
+      scale: target.scale,
+      intervals: target.intervals ?? null,
+    };
+    this.initial = { params: this.currentParams(), look: copy(this.look) };
     this.tab = 'inputs';
     this.renderTabs();
     this.renderBody();
@@ -156,18 +213,9 @@ export class WidgetIndicatorSettings {
     (this.bodyEl.querySelector<HTMLElement>(FOCUSABLE) ?? firstTab ?? this.modal).focus();
   }
 
+  /** Close, keeping what was changed (as Ok does). */
   close(): void {
-    // A value typed but not yet committed (Escape pressed in the field) still applies.
-    const active = document.activeElement;
-    if ((active instanceof HTMLInputElement || active instanceof HTMLSelectElement) && this.modal.contains(active)) {
-      active.dispatchEvent(new Event('change'));
-    }
-    this.backdrop.hidden = true;
-    this.target = null;
-    this.callbacks.onClose();
-    // Back to where the dialog was opened from (a legend row, the object tree).
-    if (this.returnFocus?.isConnected) this.returnFocus.focus();
-    this.returnFocus = null;
+    this.finish(true);
   }
 
   isOpen(): boolean {
@@ -175,16 +223,67 @@ export class WidgetIndicatorSettings {
   }
 
   destroy(): void {
+    this.menu?.destroy();
     this.backdrop.remove();
   }
+
+  /** Close with Ok (`keep`: a value still being typed applies) or Cancel (everything goes back). */
+  private finish(keep: boolean): void {
+    if (!this.target) return;
+    if (keep) {
+      const active = document.activeElement;
+      if ((active instanceof HTMLInputElement || active instanceof HTMLSelectElement) && this.modal.contains(active)) {
+        active.dispatchEvent(new Event('change'));
+      }
+    } else {
+      this.revert();
+    }
+    // No target: a field's change on its way out (its blur) no longer applies.
+    this.target = null;
+    this.menu?.close();
+    this.backdrop.hidden = true;
+    this.callbacks.onClose();
+    // Back to where the dialog was opened from (a legend row, the object tree).
+    if (this.returnFocus?.isConnected) this.returnFocus.focus();
+    this.returnFocus = null;
+  }
+
+  /** Everything as it was on opening: only what changed is sent back. */
+  private revert(): void {
+    const target = this.target;
+    const initial = this.initial;
+    if (!target || !initial) return;
+    const id = target.instanceId;
+    if (!same(this.currentParams(), initial.params)) this.callbacks.onApply(id, { ...initial.params });
+    const was = initial.look;
+    const style: IndicatorStyleConfig = {};
+    if (!same(this.look.colors, was.colors)) style.colors = [...was.colors];
+    if (this.look.lineWidth !== was.lineWidth) style.lineWidths = [was.lineWidth];
+    if (!same(this.look.plots, was.plots)) style.plots = plotsBack(this.look.plots, was.plots);
+    if (Object.keys(style).length > 0) this.callbacks.onStyle?.(id, style);
+    if (!same(this.look.levels, was.levels)) this.callbacks.onLevels?.(id, target.ownLevels ? [...was.levels] : null);
+    if (this.look.scale !== was.scale && was.scale) this.callbacks.onScale?.(id, was.scale);
+    if (!same(this.look.intervals, was.intervals)) this.callbacks.onIntervals?.(id, was.intervals);
+  }
+
+  private currentParams(): Record<string, IndicatorParamValue> {
+    const target = this.target;
+    if (!target) return {};
+    return { ...target.defaults, ...target.params, ...this.draft } as Record<string, IndicatorParamValue>;
+  }
+
+  // --- Tabs ---
 
   private tabs(): Tab[] {
     const target = this.target;
     if (!target) return [];
-    const out: Tab[] = ['inputs'];
-    if (target.plots?.length && target.colors && this.callbacks.onStyle) out.push('style');
-    if (target.levels && this.callbacks.onLevels) out.push('levels');
-    return out;
+    const lines = !!(target.plots?.length && target.colors && this.callbacks.onStyle);
+    const levels = !!(target.levels && this.callbacks.onLevels);
+    return [
+      'inputs',
+      ...(lines || levels ? ['style' as const] : []),
+      ...(this.callbacks.onIntervals ? ['visibility' as const] : []),
+    ];
   }
 
   /** The tab buttons for this indicator; built on open, then only marked (focus stays put). */
@@ -238,12 +337,12 @@ export class WidgetIndicatorSettings {
     this.selectTab(tabs[next], true);
   }
 
-  /** Escape closes; Tab stays inside the dialog. */
+  /** Escape cancels; Tab stays inside the dialog. */
   private onKeyDown(e: KeyboardEvent): void {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      this.close();
+      this.finish(false);
       return;
     }
     keepTabInside(e, this.modal);
@@ -251,14 +350,11 @@ export class WidgetIndicatorSettings {
 
   private renderBody(): void {
     this.bodyEl.replaceChildren();
-    if (!this.target) return;
-    const section = document.createElement('div');
-    section.className = 'tcw-settings-section';
-    if (this.tab === 'style') this.renderStyle(section);
-    else if (this.tab === 'levels') this.renderLevels(section);
-    else this.renderInputs(section);
-    this.resetBtn.hidden = this.tab === 'style';
-    this.bodyEl.appendChild(section);
+    const target = this.target;
+    if (!target) return;
+    if (this.tab === 'style') this.renderStyle(target);
+    else if (this.tab === 'visibility') renderVisibilityTab(this.bodyEl, this.look.intervals, (next) => this.setIntervals(next), this.t);
+    else this.renderInputs();
   }
 
   // --- Inputs ---
@@ -276,13 +372,13 @@ export class WidgetIndicatorSettings {
     this.callbacks.onApply(this.target.instanceId, { ...this.draft });
   }
 
-  private renderInputs(section: HTMLElement): void {
+  private renderInputs(): void {
+    const section = document.createElement('div');
+    section.className = 'tcw-settings-section';
     const keys = Object.keys(this.target!.defaults);
-    if (keys.length === 0) {
-      section.appendChild(this.note(this.t('indicatorSettings.noInputs')));
-      return;
-    }
+    if (keys.length === 0) section.appendChild(this.note(this.t('indicatorSettings.noInputs')));
     for (const key of keys) section.appendChild(this.fieldRow(key));
+    this.bodyEl.appendChild(section);
   }
 
   private fieldRow(key: string): HTMLLabelElement {
@@ -292,11 +388,14 @@ export class WidgetIndicatorSettings {
     let control: HTMLElement;
     if (spec?.source) control = this.sourceControl(key, String(value ?? 'close'));
     else if (spec?.options) control = this.choiceControl(key, spec.options, value);
-    else if (defType === 'boolean') control = this.toggleControl(key, Boolean(value));
-    else if (defType === 'number') control = this.numberControl(key, Number(value), spec);
-    else if (typeof value === 'string' && HEX_RE.test(value)) control = this.colorInput(value, (v) => this.setValue(key, v));
+    else if (defType === 'boolean') control = toggleSwitch(Boolean(value), (v) => this.setValue(key, v));
+    else if (defType === 'number') {
+      const n = Number(value);
+      // Integer-looking defaults step by 1; fractional defaults step by 0.1.
+      control = numberInput(n, { min: spec?.min, max: spec?.max, step: spec?.step ?? (Number.isInteger(n) ? 1 : 0.1) }, (v) => this.setValue(key, v));
+    } else if (typeof value === 'string' && HEX_RE.test(value)) control = colorInput(value, (v) => this.setValue(key, v));
     else control = this.textControl(key, String(value ?? ''));
-    return this.row(spec?.label ?? titleCase(key), control);
+    return settingsRow(spec?.label ?? titleCase(key), control);
   }
 
   private sourceControl(key: string, value: string): HTMLSelectElement {
@@ -331,41 +430,6 @@ export class WidgetIndicatorSettings {
     return select;
   }
 
-  private toggleControl(key: string, value: boolean): HTMLButtonElement {
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = `tcw-toggle${value ? ' tcw-on' : ''}`;
-    toggle.setAttribute('role', 'switch');
-    toggle.setAttribute('aria-checked', String(value));
-    toggle.addEventListener('click', () => {
-      const next = !toggle.classList.contains('tcw-on');
-      toggle.classList.toggle('tcw-on', next);
-      toggle.setAttribute('aria-checked', String(next));
-      this.setValue(key, next);
-    });
-    return toggle;
-  }
-
-  private numberControl(key: string, value: number, spec?: IndicatorInputSpec): HTMLInputElement {
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'tcw-indi-input';
-    input.value = String(value);
-    // Integer-looking defaults step by 1; fractional defaults step by 0.1.
-    input.step = String(spec?.step ?? (Number.isInteger(value) ? 1 : 0.1));
-    if (spec?.min !== undefined) input.min = String(spec.min);
-    if (spec?.max !== undefined) input.max = String(spec.max);
-    input.addEventListener('change', () => {
-      let n = Number(input.value);
-      if (!Number.isFinite(n)) return;
-      if (spec?.min !== undefined) n = Math.max(spec.min, n);
-      if (spec?.max !== undefined) n = Math.min(spec.max, n);
-      input.value = String(n);
-      this.setValue(key, n);
-    });
-    return input;
-  }
-
   private textControl(key: string, value: string): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'text';
@@ -375,145 +439,129 @@ export class WidgetIndicatorSettings {
     return input;
   }
 
-  // --- Style ---
+  // --- Style and visibility ---
 
-  /** One row per colour the indicator uses: the lines drawn in it, and "up" / "down" for two-tone ones. */
-  private renderStyle(section: HTMLElement): void {
-    const target = this.target!;
-    const names = new Map<number, string[]>();
-    const add = (index: number, name: string) => {
-      const list = names.get(index) ?? [];
-      if (!list.includes(name)) list.push(name);
-      names.set(index, list);
-    };
-    for (const plot of target.plots ?? []) {
-      const twoTone = plot.tone !== undefined && plot.downColor !== undefined;
-      add(plot.color, twoTone ? `${plot.title} ${this.t('indicatorSettings.up')}` : plot.title);
-      if (twoTone) add(plot.downColor!, `${plot.title} ${this.t('indicatorSettings.down')}`);
-    }
-    for (const [index, labels] of [...names].sort((a, b) => a[0] - b[0])) {
-      const color = this.colors[index] ?? this.colors[0] ?? '#4c8dff';
-      section.appendChild(this.row(labels.join(' · '), this.colorInput(color, (v) => {
-        const next = [...this.colors];
-        while (next.length <= index) next.push(next[0] ?? v);
-        next[index] = v;
-        this.colors = next;
-        this.callbacks.onStyle?.(target.instanceId, { colors: [...next] });
-      })));
-    }
-    const width = document.createElement('select');
-    width.className = 'tcw-indi-input tcw-indi-select';
-    for (const w of LINE_WIDTHS) width.appendChild(this.option(String(w), `${w} px`));
-    width.value = String(target.lineWidth ?? 1.5);
-    width.addEventListener('change', () => this.callbacks.onStyle?.(target.instanceId, { lineWidths: [Number(width.value)] }));
-    section.appendChild(this.row(this.t('indicatorSettings.lineWidth'), width));
-
-    if (target.scale && this.callbacks.onScale) {
-      const scale = document.createElement('select');
-      scale.className = 'tcw-indi-input tcw-indi-select';
-      scale.appendChild(this.option('right', this.t('indicatorSettings.scale.right')));
-      scale.appendChild(this.option('left', this.t('indicatorSettings.scale.left')));
-      scale.value = target.scale;
-      scale.addEventListener('change', () => {
-        const next = scale.value === 'left' ? 'left' : 'right';
-        this.target = { ...target, scale: next };
-        this.callbacks.onScale?.(target.instanceId, next);
-      });
-      section.appendChild(this.row(this.t('indicatorSettings.scale'), scale));
-    }
+  private renderStyle(target: IndicatorSettingsTarget): void {
+    const id = target.instanceId;
+    // Once closed, nothing: a field's change on its way out (its blur after a Cancel) no longer applies.
+    const open = () => this.target === target;
+    const onStyle = (style: IndicatorStyleConfig) => open() && this.callbacks.onStyle?.(id, style);
+    const onLevels = (levels: number[]) => open() && this.callbacks.onLevels?.(id, levels);
+    const onScale = (scale: 'right' | 'left') => open() && this.callbacks.onScale?.(id, scale);
+    renderStyleTab(this.bodyEl, {
+      plots: target.colors && this.callbacks.onStyle ? target.plots ?? [] : [],
+      colors: this.look.colors,
+      plotStyles: this.look.plots,
+      lineWidth: this.look.lineWidth,
+      scale: target.scale && this.callbacks.onScale ? this.look.scale : undefined,
+      levels: target.levels && this.callbacks.onLevels ? this.look.levels : undefined,
+    }, {
+      color: (index, value) => {
+        if (!open()) return;
+        const next = [...this.look.colors];
+        while (next.length <= index) next.push(next[0] ?? value);
+        next[index] = value;
+        this.look.colors = next;
+        onStyle({ colors: [...next] });
+      },
+      plot: (key, patch) => {
+        if (!open()) return;
+        this.look.plots = { ...this.look.plots, [key]: { ...this.look.plots[key], ...patch } };
+        onStyle({ plots: { [key]: patch } });
+      },
+      lineWidth: (width) => {
+        if (!open()) return;
+        this.look.lineWidth = width;
+        onStyle({ lineWidths: [width] });
+      },
+      scale: (scale) => {
+        if (!open()) return;
+        this.look.scale = scale;
+        onScale(scale);
+      },
+      levels: (levels) => {
+        if (!open()) return;
+        this.look.levels = levels;
+        onLevels([...levels]);
+      },
+    }, this.t, this.uid);
   }
 
-  // --- Levels ---
-
-  private renderLevels(section: HTMLElement): void {
-    if (this.levels.length === 0) section.appendChild(this.note(this.t('indicatorSettings.noLevels')));
-    this.levels.forEach((level, i) => {
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.className = 'tcw-indi-input';
-      input.id = `tcw-indi-level-${this.uid}-${i}`;
-      input.value = String(level);
-      input.step = 'any';
-      input.addEventListener('change', () => {
-        const n = Number(input.value);
-        if (!Number.isFinite(n) || input.value.trim() === '') return;
-        this.levels = this.levels.map((v, j) => (j === i ? n : v));
-        this.applyLevels();
-      });
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'tcw-indi-remove';
-      remove.innerHTML = createIcon('x', 12);
-      const label = this.t('indicatorSettings.removeLevel');
-      remove.title = label;
-      remove.setAttribute('aria-label', `${label} ${i + 1}`);
-      remove.addEventListener('click', () => {
-        this.levels = this.levels.filter((_, j) => j !== i);
-        this.applyLevels();
-        this.renderBody();
-        // Keep the keyboard nearby: the next level's remove, else Add.
-        (this.bodyEl.querySelectorAll<HTMLElement>('.tcw-indi-remove')[i]
-          ?? this.bodyEl.querySelector<HTMLElement>('.tcw-indi-add'))?.focus();
-      });
-      const controls = document.createElement('span');
-      controls.className = 'tcw-indi-level';
-      controls.append(input, remove);
-      const row = document.createElement('div');
-      row.className = 'tcw-settings-row';
-      const text = document.createElement('label');
-      text.className = 'tcw-settings-label';
-      text.htmlFor = input.id;
-      text.textContent = `${this.t('indicatorSettings.level')} ${i + 1}`;
-      row.append(text, controls);
-      section.appendChild(row);
-    });
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'tcw-reset-link tcw-indi-add';
-    addBtn.textContent = `+ ${this.t('indicatorSettings.addLevel')}`;
-    addBtn.addEventListener('click', () => {
-      const last = this.levels[this.levels.length - 1];
-      this.levels = [...this.levels, last === undefined ? 0 : last + 10];
-      this.applyLevels();
-      this.renderBody();
-      const inputs = this.bodyEl.querySelectorAll<HTMLInputElement>('.tcw-indi-level input');
-      inputs[inputs.length - 1]?.focus();
-    });
-    section.appendChild(addBtn);
+  private setIntervals(intervals: IndicatorIntervals | null): void {
+    if (!this.target) return;
+    this.look.intervals = intervals;
+    this.callbacks.onIntervals?.(this.target.instanceId, intervals);
   }
 
-  private applyLevels(): void {
-    if (this.target) this.callbacks.onLevels?.(this.target.instanceId, [...this.levels]);
+  // --- Defaults ---
+
+  private openDefaults(): void {
+    if (this.menu?.isOpen()) {
+      this.menu.close();
+      return;
+    }
+    this.menu ??= new WidgetContextMenu(this.modal, this.t('indicatorSettings.defaults'));
+    const at = this.defaultsBtn.getBoundingClientRect();
+    const box = this.modal.getBoundingClientRect();
+    const entries = [
+      { id: 'reset', label: this.t('indicatorSettings.resetSettings'), icon: 'reset' },
+      ...(this.callbacks.onSaveDefault ? [{ id: 'save', label: this.t('indicatorSettings.saveAsDefault'), icon: 'save' }] : []),
+    ];
+    // From the button's top: in the footer there is no room below, so it opens above the button.
+    this.menu.open(entries, at.left - box.left, at.top - box.top, (pick) => {
+      if (pick === 'reset') this.resetAll();
+      else this.saveDefault();
+    }, this.defaultsBtn);
   }
 
-  // --- Reset ---
-
-  private resetTab(): void {
+  /** The inputs, the lines' own styles, the levels and the intervals back to the indicator's own. */
+  private resetAll(): void {
     const target = this.target;
     if (!target) return;
-    if (this.tab === 'levels') {
-      this.levels = [...(target.defaultLevels ?? [])];
-      this.callbacks.onLevels?.(target.instanceId, null);
-    } else {
-      const reset: Record<string, IndicatorParamValue> = {};
-      for (const [key, def] of Object.entries(target.defaults)) reset[key] = def as IndicatorParamValue;
-      this.draft = reset;
-      this.callbacks.onApply(target.instanceId, { ...reset });
+    const id = target.instanceId;
+    const params = { ...target.defaults } as Record<string, IndicatorParamValue>;
+    this.draft = { ...params };
+    this.callbacks.onApply(id, { ...params });
+    if (Object.keys(this.look.plots).length > 0) {
+      this.callbacks.onStyle?.(id, { plots: plotsBack(this.look.plots, {}) });
+      this.look.plots = {};
     }
+    if (target.levels && this.callbacks.onLevels) {
+      this.callbacks.onLevels(id, null);
+      this.look.levels = [...(target.defaultLevels ?? [])];
+    }
+    if (this.look.intervals) this.setIntervals(null);
     this.renderBody();
+  }
+
+  /**
+   * Keep what was chosen for the next ones of the kind: the inputs that differ
+   * from the indicator's own (not a line of another indicator, which the next
+   * one won't have), and of the look only what someone picked. Colours the
+   * chart gave stay its to give, so a second one still gets a colour of its own.
+   */
+  private saveDefault(): void {
+    const target = this.target;
+    if (!target) return;
+    const params = Object.fromEntries(Object.entries(this.currentParams()).filter(([key, value]) =>
+      !same(value, target.defaults[key]) && !(typeof value === 'string' && parseIndicatorSource(value)))) as Record<string, IndicatorParamValue>;
+    const style: IndicatorStyleConfig = {};
+    if (!isSeriesPalette(this.look.colors)) style.colors = [...this.look.colors];
+    if (this.look.lineWidth !== DEFAULT_LINE_WIDTH) style.lineWidths = [this.look.lineWidth];
+    if (Object.keys(this.look.plots).length > 0) style.plots = copy(this.look.plots);
+    this.callbacks.onSaveDefault?.(target.indicatorId, { params, style });
   }
 
   // --- Pieces ---
 
-  /** A labelled control: clicking the label reaches the control. */
-  private row(label: string, control: HTMLElement): HTMLLabelElement {
-    const row = document.createElement('label');
-    row.className = 'tcw-settings-row';
-    const text = document.createElement('span');
-    text.className = 'tcw-settings-label';
-    text.textContent = label;
-    row.append(text, control);
-    return row;
+  private footerButton(act: string, className: string, onClick: () => void, text?: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.dataset.act = act;
+    if (text) btn.textContent = text;
+    btn.addEventListener('click', onClick);
+    return btn;
   }
 
   private note(text: string): HTMLDivElement {
@@ -529,23 +577,4 @@ export class WidgetIndicatorSettings {
     opt.textContent = label;
     return opt;
   }
-
-  private colorInput(value: string, onInput: (v: string) => void): HTMLInputElement {
-    const input = document.createElement('input');
-    input.type = 'color';
-    input.className = 'tcw-indi-color';
-    input.value = toHex(value);
-    input.addEventListener('input', () => onInput(input.value));
-    return input;
-  }
-}
-
-/** A colour as `#rrggbb` (what a colour input takes); black if unreadable. */
-function toHex(color: string): string {
-  const c = color.trim();
-  if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase();
-  if (/^#[0-9a-f]{3}$/i.test(c)) return `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`.toLowerCase();
-  const m = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(c);
-  if (!m) return '#000000';
-  return `#${[m[1], m[2], m[3]].map((v) => Math.min(255, Number(v)).toString(16).padStart(2, '0')).join('')}`;
 }

@@ -1,5 +1,6 @@
 import widgetCss from './WidgetStyles.css?raw';
 import controlsCss from './WidgetControls.css?raw';
+import indicatorDialogsCss from './WidgetIndicatorDialogs.css?raw';
 import { widgetFeatureCss } from './widgetFeatures.js';
 
 let refCount = 0;
@@ -23,6 +24,7 @@ export function injectWidgetStyles(): void {
   // The parts of switches turned off hide with these (see widgetFeatures).
   style.textContent = `${widgetCss}
 ${controlsCss}
+${indicatorDialogsCss}
 ${widgetFeatureCss()}`;
   document.head.insertBefore(style, document.head.firstChild);
 }
