@@ -85,7 +85,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
     "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
   }
 }`}</code></pre>
-<p>在 Windows 上（不经过 WSL），npx 需要通过 <code>cmd</code> 启动：<code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>，或在设置中写 <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>。</p>
+<p>在 Windows 上（不经过 WSL），npx 需要通过 <code>cmd</code> 启动：<code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>，或在设置中写 <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>。 在 Git Bash 中（Claude Code 在 Windows 上用它运行 <code>!</code> 命令）要写成 <code>//c</code>：Git Bash 会把 <code>/c</code> 改写成路径。</p>
 <p>两者都不用时，<a href="https://tradecanvas.dev/llms.txt">llms.txt</a> 和 <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> 把文档集中在一个文件里提供给 AI 助手。</p>
 
 <h2>下一步</h2>

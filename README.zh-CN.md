@@ -116,7 +116,7 @@ MCP 服务器 `@tradecanvas/mcp` 在库自身的目录中查找指标、画线�
 claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
-在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
+在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. 在 Git Bash 中（Claude Code 在 Windows 上用它运行 `!` 命令）要写成 `//c`：Git Bash 会把 `/c` 改写成路径。
 
 ## 更多
 

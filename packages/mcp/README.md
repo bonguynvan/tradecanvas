@@ -12,6 +12,8 @@ On Windows outside WSL, npx starts through `cmd`:
 claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp
 ```
 
+In Git Bash, which runs the `!` commands of Claude Code on Windows, write `cmd //c npx -y @tradecanvas/mcp`: Git Bash turns `/c` into a path.
+
 Cursor, Claude Desktop and most other clients take the same command in their MCP settings (on Windows, `"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]`):
 
 ```json

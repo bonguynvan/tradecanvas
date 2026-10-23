@@ -86,7 +86,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
     "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
   }
 }`}</code></pre>
-<p>WSL を使わない Windows では、npx を <code>cmd</code> 経由で起動します: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>。設定では <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code> と書きます。</p>
+<p>WSL を使わない Windows では、npx を <code>cmd</code> 経由で起動します: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>。設定では <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code> と書きます。 Git Bash（Windows で Claude Code の <code>!</code> コマンドを実行するシェル）では <code>//c</code> と書きます。<code>/c</code> がパスに書き換えられるためです。</p>
 <p>どちらも使わない場合は、<a href="https://tradecanvas.dev/llms.txt">llms.txt</a> と <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> がドキュメントを 1 ファイルでアシスタントに渡します。</p>
 
 <h2>次のステップ</h2>

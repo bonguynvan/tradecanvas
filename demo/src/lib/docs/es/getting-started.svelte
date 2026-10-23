@@ -90,7 +90,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
     "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
   }
 }`}</code></pre>
-<p>En Windows fuera de WSL, npx se inicia a través de <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, o en la configuración <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>.</p>
+<p>En Windows fuera de WSL, npx se inicia a través de <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, o en la configuración <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>. En Git Bash, que ejecuta los comandos <code>!</code> de Claude Code en Windows, escribe <code>//c</code>: Git Bash convierte <code>/c</code> en una ruta.</p>
 <p>Sin ninguno de los dos, <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> y <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> dan a un asistente la documentación en un solo archivo.</p>
 
 <h2>Siguientes pasos</h2>
