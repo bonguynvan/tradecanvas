@@ -1,17 +1,20 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
-import { resolveVolumeColors } from '@tradecanvas/commons';
+import { PHI, resolveVolumeColors } from '@tradecanvas/commons';
 import { forEachPixelColumn, isDense } from './denseBars.js';
 import { barColumns, inDevicePixels } from './pixelGrid.js';
+
+/** The volume band's share of the plot's height: φ^-4.5, about 11.5%, a half step of φ like the widget's sizes. */
+export const VOLUME_HEIGHT_RATIO = PHI ** -4.5;
 
 /**
  * Volume histogram along the bottom of the main chart: the theme's volume
  * colours by bar direction (`resolveVolumeColors`), on whole device pixels and lined up with the
- * candle bodies above. It keeps to the bottom 15% by default, so the bars stay
- * a backdrop and the candles above stay clear of them.
+ * candle bodies above. It keeps to its band at the bottom, which the chart's
+ * scale leaves free of candles, so the bars stay a backdrop.
  */
 export class VolumeRenderer {
   private visible = true;
-  private heightRatio = 0.15;
+  private heightRatio = VOLUME_HEIGHT_RATIO;
 
   setVisible(v: boolean): void { this.visible = v; }
   isVisible(): boolean { return this.visible; }

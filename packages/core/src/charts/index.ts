@@ -14,7 +14,7 @@ export { HLCAreaRenderer } from './HLCAreaRenderer.js';
 export { StepLineRenderer } from './StepLineRenderer.js';
 export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';
 export { HiLoRenderer } from './HiLoRenderer.js';
-export { VolumeRenderer } from './VolumeRenderer.js';
+export { VolumeRenderer, VOLUME_HEIGHT_RATIO } from './VolumeRenderer.js';
 export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';
 export { MarketProfileRenderer } from './MarketProfileRenderer.js';
 export type { MarketProfileStats } from './MarketProfileRenderer.js';
