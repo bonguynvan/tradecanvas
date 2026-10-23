@@ -48,8 +48,8 @@ export class OrderRenderer {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Order type and quantity (left side); the axis tag carries the price.
-      const label = order.label ?? `${order.type.toUpperCase()} ${order.quantity}`;
+      // The order's kind and quantity (left side); the axis tag carries the price.
+      const label = `${order.label ?? order.type.toUpperCase()} ${order.quantity}`;
       ctx.font = `bold 10px ${theme.font.family}`;
       const labelWidth = ctx.measureText(label).width + 8;
       ctx.fillStyle = color;

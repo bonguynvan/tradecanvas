@@ -35,6 +35,13 @@ describe('the trading tags', () => {
     expect(texts.some((t) => t.includes(' x '))).toBe(false);
   });
 
+  it('keep the quantity beside an order’s kind label (a paper broker’s STOP)', () => {
+    const { ctx, texts } = recordingCtx();
+    const order = { id: 'o2', side: 'sell' as const, type: 'stop' as const, label: 'STOP' as const, price: 71_900, quantity: 2 };
+    new OrderRenderer().render(ctx, [order], near72k, DARK_THEME, {}, null);
+    expect(texts).toContain('STOP 2');
+  });
+
   it('write a position’s entry on the axis as the axis does', () => {
     const { ctx, texts } = recordingCtx();
     new PositionRenderer().renderAxisBadges(ctx, [{ id: 'p', side: 'buy', entryPrice: 71_558.11, quantity: 1 }], near72k, DARK_THEME, {});
