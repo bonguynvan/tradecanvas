@@ -72,7 +72,20 @@ export interface IndicatorDescriptor {
   levels?: readonly number[];
   /** How its parameters are edited, by parameter name. */
   inputs?: Readonly<Record<string, IndicatorInputSpec>>;
+  /** The group it is listed under in the widget's indicator picker; unset: "other" (built-ins have theirs). */
+  category?: IndicatorCategory;
 }
+
+/** The groups of the widget's indicator picker. */
+export type IndicatorCategory =
+  | 'movingAverages'
+  | 'trend'
+  | 'oscillators'
+  | 'volatility'
+  | 'volume'
+  | 'bands'
+  | 'patterns'
+  | 'other';
 
 export interface IndicatorConfig {
   id: string;
