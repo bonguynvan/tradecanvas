@@ -52,10 +52,27 @@ describe('WidgetChartNav', () => {
     expect(el().classList.contains('tcw-nav-shown')).toBe(false);
   });
 
-  it('stays shown while a button has focus, wherever the pointer is', () => {
+  it('stays shown while a button has the keyboard’s focus, wherever the pointer is', () => {
     button('zoomIn').focus();
     host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
     expect(el().classList.contains('tcw-nav-shown')).toBe(true);
+  });
+
+  it('goes once the pointer leaves the strip after a click, though the button keeps focus', () => {
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 290));
+    button('zoomIn').dispatchEvent(pointer('pointerdown'));
+    button('zoomIn').focus();
+    button('zoomIn').click();
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+  });
+
+  it('keeps a held scroll going while the pointer drifts out of the strip', () => {
+    press(button('scrollLeft'));
+    host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
+    vi.advanceTimersByTime(300 + 80 * 3);
+    expect((actions.scroll as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(2);
+    release(button('scrollLeft'));
   });
 
   it('stays hidden for a touch', () => {

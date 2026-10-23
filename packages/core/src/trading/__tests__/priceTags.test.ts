@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME, priceTagText, type ViewportState } from '@tradecanvas/commons';
+import { DARK_THEME, DEFAULT_TRADING_CONFIG, priceTagText, type ViewportState } from '@tradecanvas/commons';
 import { OrderRenderer } from '../OrderRenderer.js';
 import { PositionRenderer } from '../PositionRenderer.js';
 import { buildPositionLabelContext, formatPositionLabel } from '../positionFormat.js';
@@ -46,6 +46,15 @@ describe('the trading tags', () => {
     const { ctx, texts } = recordingCtx();
     new PositionRenderer().renderAxisBadges(ctx, [{ id: 'p', side: 'buy', entryPrice: 71_558.11, quantity: 1 }], near72k, DARK_THEME, {});
     expect(texts).toEqual(['71,558.11']);
+  });
+
+  it('follow the axis’s decimals when no market or symbol sets them (a sub-cent coin)', () => {
+    const tiny: ViewportState = { ...unitViewport, priceRange: { min: 0.0000041, max: 0.0000046 } };
+    const { ctx, texts } = recordingCtx();
+    const renderer = new OrderRenderer();
+    const order = { id: 'o3', side: 'buy' as const, type: 'limit' as const, price: 0.0000043491, quantity: 1 };
+    renderer.renderAxisBadges(ctx, [order], tiny, DARK_THEME, { ...DEFAULT_TRADING_CONFIG }, null);
+    expect(texts).toContain('0.00000435');
   });
 
   it('group the P&L in the number locale', () => {

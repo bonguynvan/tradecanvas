@@ -227,7 +227,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新价线和标签；未设置时颜色跟随主序列。</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新价线和标签；未设置时颜色跟随主序列。当前 K 线的剩余时间（<code>features.barCountdown</code>）挂在标签下方。</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>成交量柱。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日、周、月分隔线。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>最高价与最低价线、水印。</td></tr>
@@ -289,7 +289,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">OHLCV 图例</h2>
 <p>
-  图表顶部的图例显示指针下的 K 线（否则为最后一根）：开、高、低、收、涨跌和成交量。每个数值在数字变化时保持位置，实时跳动时不会抖动。可以整个关闭，也可以只保留需要的行。在组件中它使用外观的字体，与其下方列出的指标行同样大小；<code>setUI</code> 会在你自己的 <code>setLegend</code> 之后再次设置它。
+  图表顶部的图例以一行标题开头：品种、周期和交易所，同一行接着是指针下的 K 线（否则为最后一根）：开、高、低、收和涨跌。成交量单独占一行。绘图区太窄、放不下标题行时（例如在手机上），它会换行。图表从数据流得到品种和周期，从品种详情得到交易所；<code>setSymbolName('Bitcoin')</code> 可自行命名，直到品种改变为止，<code>showSymbol: false</code> 则不显示标题。每个数值在数字变化时保持位置，实时跳动时不会抖动。可以整个关闭，也可以只保留需要的行。在组件中它使用外观的数字字体，与其下方列出的指标行同样大小；<code>setUI</code> 会在你自己的 <code>setLegend</code> 之后再次设置它。
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -302,6 +302,13 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">价格坐标与成交量带</h2>
+<p>
+  成交量柱保持在绘图区底部的一条带内，高度为绘图区的 φ^-4.5（约 11.5%）；自动适配的价格坐标让 K 线留在这条带上方，
+  间隔 φ^-7（3%）。最高价上方留出 φ^-5（9%）。视图中没有成交量时（已关闭，或 K 线不带成交量），K 线会收回这条带。
+  价格坐标也会适配视图中的叠加指标和对比线。
+</p>
 
 <h2>成交量颜色</h2>
 <p>

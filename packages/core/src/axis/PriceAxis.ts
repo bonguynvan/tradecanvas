@@ -23,6 +23,9 @@ function onPriceGrid(step: number, precision: number | null, tick: number | null
   return step;
 }
 
+/** Float noise in a tick's price, relative to it (a sum of steps is off by about 1e-16). */
+const TICK_NOISE = 1e-9;
+
 /**
  * The fewest decimals, up to `max`, that write every one of `prices` exactly:
  * ticks on a 500 step read 73,500 rather than 73,500.00, and one column of
@@ -31,7 +34,7 @@ function onPriceGrid(step: number, precision: number | null, tick: number | null
 function tickDecimals(prices: readonly number[], max: number): number {
   for (let d = 0; d < max; d++) {
     const scale = 10 ** d;
-    if (prices.every((p) => Math.abs(p * scale - Math.round(p * scale)) <= 1e-6 * Math.max(1, Math.abs(p * scale)))) return d;
+    if (prices.every((p) => Math.abs(p * scale - Math.round(p * scale)) <= TICK_NOISE * Math.max(1, Math.abs(p * scale)))) return d;
   }
   return max;
 }

@@ -131,6 +131,14 @@ describe('PriceAxis — the symbol’s precision and price step', () => {
     expect(axis.labelText(84_000, { ...viewport, priceRange: { min: 83_000, max: 85_000 } })).toBe('84,000.00');
   });
 
+  it('keeps the decimals a fine step needs on a large price', () => {
+    const axis = new PriceAxis();
+    axis.setPricePrecision(2);
+    const texts = labelsOn(axis, { min: 100_000, max: 100_000.16 });
+    expect(texts.length).toBeGreaterThan(2);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
   it('writes each label once when the range is finer than the decimals', () => {
     const axis = new PriceAxis();
     axis.setPricePrecision(0);

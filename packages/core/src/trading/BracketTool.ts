@@ -135,7 +135,7 @@ export class BracketTool {
     return handle === 'entry' ? d.entry : handle === 'sl' ? d.stopLoss : d.takeProfit;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision = 2): void {
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision?: number): void {
     const d = this.draft;
     if (!d) return;
     const { chartRect } = viewport;

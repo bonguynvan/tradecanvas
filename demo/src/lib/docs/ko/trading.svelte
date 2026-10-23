@@ -50,7 +50,10 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>가격선을 드래그해 주문을 수정하고, <code>chart.on('orderModify', ...)</code>로 변경을 구독합니다.</p>
+<p>
+  선의 라벨에는 주문 종류와 수량(<code>LIMIT 0.25</code>)이 표시되고, 가격 축의 태그에는 축과 같은 방식으로 쓴 가격이 표시됩니다.
+  가격선을 드래그해 주문을 수정하고, <code>chart.on('orderModify', ...)</code>로 변경을 구독합니다.
+</p>
 
 <h2>실시간 실행 (어댑터 연결)</h2>
 <p>

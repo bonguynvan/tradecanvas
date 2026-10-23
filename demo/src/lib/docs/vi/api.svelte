@@ -126,8 +126,10 @@ chart.getScaleMode()`}</code></pre>
   giá trái phiếu và hợp đồng tương lai của chúng (<code>101'16</code> là 101 và 16/32). Định dạng
   này áp dụng cho mọi chỗ in giá theo thang giá: trục, con trỏ chữ thập, nhãn giá cuối, chú thích,
   tooltip, lệnh, cảnh báo và nhãn hình vẽ; trục đặt vạch đúng vào các phân số chẵn và
-  <code>roundPrice</code> làm tròn theo chúng. Các bảng chỉ báo giữ cách hiển thị số riêng. Thời
-  gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
+  <code>roundPrice</code> làm tròn theo chúng. Các bảng chỉ báo giữ cách hiển thị số riêng. Khi bạn
+  không đặt định dạng riêng, giá được nhóm chữ số theo cách viết số của ngôn ngữ đã chọn (<code>numberLocale</code>); nhãn vạch chia trên trục chỉ hiện số chữ số
+  thập phân mà bước của nó cần (73,500), còn giá cuối, con trỏ chữ thập và các nhãn cạnh trục hiện đủ mọi chữ số thập
+  phân. Thời gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
@@ -604,7 +606,8 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <h3>Điều hướng, hoàn tác và hướng chữ</h3>
 <p>
   Các nút trên biểu đồ — thu nhỏ và phóng to, cuộn về trước và về sau (giữ nút thì cuộn tiếp), đặt lại —
-  hiện ra khi chuột nằm trên biểu đồ (<code>navigation: false</code> để bỏ chúng). Thay đổi cài đặt và đổi loại
+  hiện ra khi chuột ở gần mép dưới vùng vẽ, tránh che dữ liệu, hoặc khi một nút đang có focus
+  (<code>navigation: false</code> để bỏ chúng). Thay đổi cài đặt và đổi loại
   biểu đồ được hoàn tác bằng Ctrl/Cmd+Z, cùng với hình vẽ và chỉ báo. Với tiếng Ả Rập, tiếng Do Thái, tiếng Ba Tư
   hoặc tiếng Urdu, widget đảo chiều (<code>dir: 'auto'</code>; hoặc <code>'rtl'</code> / <code>'ltr'</code>);
   biểu đồ vẫn giữ thời gian chạy từ trái sang phải.

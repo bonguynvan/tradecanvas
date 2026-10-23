@@ -265,8 +265,7 @@ export class ChartWidget {
   /** The latest quote of each symbol. */
   private quotes = new Map<string, Quote>();
   private symbolInfoPanel: WidgetSymbolInfo | null = null;
-  /** Bumped by each news request: a late answer for an earlier symbol is dropped. */
-  /** Headlines per symbol, kept a few minutes. */
+  /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
   private marketTimer: ReturnType<typeof setInterval> | null = null;
   private onPageShown: (() => void) | null = null;

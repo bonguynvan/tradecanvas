@@ -50,7 +50,10 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   quantity: 0.25,
 })`}</code></pre>
 
-<p>拖动价格线即可修改订单；通过 <code>chart.on('orderModify', ...)</code> 订阅修改事件。</p>
+<p>
+  线上的标签写明订单类型和数量（<code>LIMIT 0.25</code>）；它在价格轴上的标签显示价格，写法与坐标轴一致。拖动价格线即可修改订单；通过
+  <code>chart.on('orderModify', ...)</code> 订阅修改事件。
+</p>
 
 <h2>实盘执行（连接适配器）</h2>
 <p>

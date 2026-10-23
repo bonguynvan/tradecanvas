@@ -31,9 +31,15 @@ export class WidgetChartNav {
   private el: HTMLDivElement;
   private holdTimer: ReturnType<typeof setTimeout> | null = null;
   private repeatTimer: ReturnType<typeof setInterval> | null = null;
+  /** A pointer is pressing on the bar: the focus that follows is the pointer's, not the keyboard's. */
+  private pressed = false;
+  /** A button has the keyboard's focus: the bar stays up wherever the pointer is. */
+  private keyboardFocus = false;
   private readonly onMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') return;
-    if (!this.nearBottom(e) && !this.el.contains(document.activeElement)) {
+    // A held scroll button keeps going wherever the pointer drifts.
+    if (this.holdTimer || this.repeatTimer) return;
+    if (!this.nearBottom(e) && !this.keyboardFocus) {
       this.el.classList.remove('tcw-nav-shown');
       this.stopHold();
       return;
@@ -102,13 +108,21 @@ export class WidgetChartNav {
       this.el.addEventListener(type, (e) => e.stopPropagation());
     }
 
-    // Shown with the keyboard too, while a button has focus.
+    // Shown with the keyboard too, while a button has focus. A click focuses a
+    // button as well; that focus doesn't keep the bar over the chart.
+    this.el.addEventListener('pointerdown', () => { this.pressed = true; }, { capture: true });
+    // Focus comes with the press: by the release it has, or the press was on no button.
+    this.el.addEventListener('pointerup', () => { this.pressed = false; }, { capture: true });
     this.el.addEventListener('focusin', () => {
+      this.keyboardFocus = !this.pressed;
+      this.pressed = false;
       this.place();
       this.el.classList.add('tcw-nav-shown');
     });
     this.el.addEventListener('focusout', (e) => {
-      if (!this.el.contains(e.relatedTarget as Node | null)) this.el.classList.remove('tcw-nav-shown');
+      if (this.el.contains(e.relatedTarget as Node | null)) return;
+      this.keyboardFocus = false;
+      this.el.classList.remove('tcw-nav-shown');
     });
 
     host.appendChild(this.el);

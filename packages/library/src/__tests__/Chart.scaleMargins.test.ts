@@ -32,6 +32,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** The room above the highest visible high, as a share of the plot's height (from the plot's top). */
+function roomAbove(data: OHLCBar[]): number {
+  const state = (chart as unknown as Probe).viewport.getState();
+  const { y, height } = state.chartRect;
+  const high = Math.max(...data.slice(state.visibleRange.from, state.visibleRange.to + 1).map((b) => b.high));
+  return (priceToY(high, state) - y) / height;
+}
+
 /** The room below the lowest visible low, as a share of the plot's height. */
 function roomBelow(data: OHLCBar[]): number {
   const state = (chart as unknown as Probe).viewport.getState();
@@ -45,6 +53,26 @@ describe('the price scale and the volume band', () => {
     const data = swinging(120, 50);
     chart.setData(data);
     expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5 + PHI ** -7, 6);
+  });
+
+  it('gives the band back to a chart started with volume off', () => {
+    chart.destroy();
+    chart = new Chart(host, { chartType: 'candlestick', features: { volume: false } });
+    const data = swinging(120, 50);
+    chart.setData(data);
+    expect(roomBelow(data)).toBeCloseTo(PHI ** -5, 6);
+  });
+
+  it('keeps the band at the bottom of the screen on an upside-down scale', () => {
+    const data = swinging(120, 50);
+    chart.setData(data);
+    chart.setInvertScale(true);
+    // Upside down, the highest high is nearest the bottom edge: the band is under it.
+    const state = (chart as unknown as Probe).viewport.getState();
+    const { y, height } = state.chartRect;
+    const high = Math.max(...data.slice(state.visibleRange.from, state.visibleRange.to + 1).map((b) => b.high));
+    expect((y + height - priceToY(high, state)) / height).toBeCloseTo(PHI ** -4.5 + PHI ** -7, 6);
+    expect(roomAbove(data)).toBeGreaterThan(0);
   });
 
   it('gives the band back when there is no volume to show', () => {

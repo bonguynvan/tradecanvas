@@ -56,8 +56,8 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  각 선의 최신 값은 선과 같은 색으로 축에 태그로 표시됩니다. 태그는
-  <code>features.indicatorValueLabels: false</code> 또는 <code>setIndicatorValueLabelsVisible(false)</code>로 끌 수 있습니다.
+  각 선의 최신 값은 범례에 표시됩니다. 선과 같은 색으로 축에도 태그를 달려면
+  <code>features.indicatorValueLabels: true</code> 또는 <code>setIndicatorValueLabelsVisible(true)</code>로 켭니다(기본값은 꺼짐).
   패널 안의 선, 레벨, 축, 십자선은 하나의 눈금을 공유합니다.
 </p>
 

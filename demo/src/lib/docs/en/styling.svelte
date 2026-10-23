@@ -234,7 +234,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</c
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>The price and time pills on the axes, and on the panes' scales.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Each axis's line and labels (the panes' scales take the price axis's).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>The legend's values, and its labels (O, H, L, Vol).</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>The last-price line and tag; their colours follow the series' unless set.</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>The last-price line and tag; their colours follow the series' unless set. The time left in the bar (<code>features.barCountdown</code>) hangs under the tag.</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>The volume bars.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>The day, week and month breaks.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>The high and low lines, the watermark.</td></tr>
@@ -303,7 +303,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">The OHLCV legend</h2>
 <p>
-  The legend at the top of the chart shows the bar under the pointer (the last bar otherwise): open, high, low, close, the change and the volume. Each value keeps its place while its digits change, so it doesn't jitter on live ticks. It can be turned off, or trimmed to the rows you want. In the widget it takes the look's font, at the size of the indicator rows listed under it; <code>setUI</code> sets that again, after a <code>setLegend</code> of your own.
+  The legend at the top of the chart opens with a title line: the symbol, the interval and the exchange, then the bar under the pointer (the last bar otherwise) on the same line, open, high, low, close and the change. The volume follows on a line of its own. Where the plot is too narrow for the title line, as on a phone, it wraps. The chart names the symbol and interval from its stream and the exchange from the symbol's details; <code>setSymbolName('Bitcoin')</code> names it yourself until the symbol changes, and <code>showSymbol: false</code> leaves the title out. Each value keeps its place while its digits change, so it doesn't jitter on live ticks. It can be turned off, or trimmed to the rows you want. In the widget it takes the look's figures face, at the size of the indicator rows listed under it; <code>setUI</code> sets that again, after a <code>setLegend</code> of your own.
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -316,6 +316,14 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">The price scale and the volume band</h2>
+<p>
+  The volume bars keep to a band along the bottom of the plot, φ^-4.5 (about 11.5%) of its height, and the
+  fitted price scale keeps the candles above it, with a gap of φ^-7 (3%). Above the highest high it leaves φ^-5
+  (9%). With no volume on view (turned off, or bars that carry none) the candles take the band back. The scale
+  also fits the overlay indicators and compare lines on view.
+</p>
 
 <h2>Volume colours</h2>
 <p>

@@ -233,7 +233,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Pill giá và thời gian trên các trục, và trên thang của pane.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Đường và nhãn của từng trục (thang của pane lấy theo trục giá).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Giá trị trong legend, và nhãn của nó (O, H, L, Vol).</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>Đường và nhãn giá cuối; màu theo chuỗi chính nếu không đặt.</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>Đường và nhãn giá cuối; màu theo chuỗi chính nếu không đặt. Thời gian còn lại của nến (<code>features.barCountdown</code>) treo ngay dưới nhãn.</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>Cột volume.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>Đường ngắt ngày, tuần và tháng.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>Đường cao nhất và thấp nhất, watermark.</td></tr>
@@ -301,7 +301,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">Chú giải OHLCV</h2>
 <p>
-  Chú giải ở đầu biểu đồ hiện nến dưới con trỏ (không thì nến cuối): mở, cao, thấp, đóng, thay đổi và volume. Mỗi giá trị giữ nguyên chỗ khi chữ số thay đổi nên không bị giật khi giá chạy. Có thể tắt hẳn, hoặc chỉ giữ các dòng bạn cần. Trong widget nó dùng font của giao diện, cùng cỡ với các dòng chỉ báo bên dưới; <code>setUI</code> đặt lại điều đó, sau một <code>setLegend</code> của bạn.
+  Chú giải ở đầu biểu đồ mở đầu bằng một dòng tiêu đề: mã, khung thời gian và sàn, rồi trên cùng dòng đó là nến dưới con trỏ (không thì nến cuối): mở, cao, thấp, đóng và thay đổi. Volume nằm trên một dòng riêng. Khi vùng vẽ quá hẹp cho dòng tiêu đề, như trên điện thoại, dòng này xuống hàng. Biểu đồ lấy tên mã và khung thời gian từ luồng dữ liệu, tên sàn từ thông tin của mã; <code>setSymbolName('Bitcoin')</code> để bạn tự đặt tên cho đến khi đổi mã, còn <code>showSymbol: false</code> bỏ dòng tiêu đề. Mỗi giá trị giữ nguyên chỗ khi chữ số thay đổi nên không bị giật khi giá chạy. Có thể tắt hẳn, hoặc chỉ giữ các dòng bạn cần. Trong widget nó dùng font chữ số của giao diện, cùng cỡ với các dòng chỉ báo bên dưới; <code>setUI</code> đặt lại điều đó, sau một <code>setLegend</code> của bạn.
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -314,6 +314,14 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">Thang giá và dải volume</h2>
+<p>
+  Các thanh volume nằm trong một dải dọc theo đáy vùng vẽ, cao φ^-4.5 (khoảng 11.5%) chiều cao vùng vẽ, và thang
+  giá khi tự khớp giữ các nến ở phía trên dải đó, cách một khoảng φ^-7 (3%). Phía trên đỉnh cao nhất nó chừa φ^-5
+  (9%). Khi không có volume trên màn hình (đã tắt, hoặc các nến không mang volume) thì nến lấy lại dải đó. Thang giá
+  cũng khớp theo các chỉ báo phủ và các đường so sánh đang hiển thị.
+</p>
 
 <h2>Màu volume</h2>
 <p>

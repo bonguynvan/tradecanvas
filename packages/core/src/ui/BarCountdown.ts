@@ -26,7 +26,7 @@ export class BarCountdown {
     return this.remaining(data) > 0;
   }
 
-  render(ctx: CanvasRenderingContext2D, _viewport: ViewportState, theme: Theme, data: DataSeries, tag: LastPriceTag | null): void {
+  render(ctx: CanvasRenderingContext2D, _viewport: ViewportState, theme: Theme, data: DataSeries, tag: LastPriceTag | null = null): void {
     const remainingMs = this.remaining(data);
     if (tag === null || remainingMs <= 0) return;
 

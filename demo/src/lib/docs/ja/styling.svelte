@@ -232,7 +232,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新価格の線とタグ。未設定なら色はメイン系列に従う。</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新価格の線とタグ。未設定なら色はメイン系列に従う。バーの残り時間（<code>features.barCountdown</code>）はタグの下に付く。</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>出来高のバー。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日・週・月の区切り線。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>高値・安値の線、ウォーターマーク。</td></tr>
@@ -299,7 +299,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">OHLCV 凡例</h2>
 <p>
-  チャート上部の凡例はポインタ下のバー（なければ最後のバー）を表示します：始値、高値、安値、終値、変化と出来高。各値は桁が変わっても位置を保つので、リアルタイムの更新でちらつきません。まるごと消すことも、必要な行だけにすることもできます。ウィジェットではルックのフォントを、その下に並ぶインジケーター行と同じサイズで使います。<code>setUI</code> は自前の <code>setLegend</code> の後でもそれを設定し直します。
+  チャート上部の凡例はタイトル行から始まります：シンボル、時間足、取引所に続けて、同じ行にポインタ下のバー（なければ最後のバー）の始値、高値、安値、終値、変化を表示します。出来高は別の行に表示されます。スマートフォンのように描画領域がタイトル行には狭すぎるときは折り返します。シンボルと時間足はストリームから、取引所はシンボルの詳細情報から取ります。<code>setSymbolName('Bitcoin')</code> でシンボルが変わるまで自分で名前を付けられ、<code>showSymbol: false</code> でタイトルを省けます。各値は桁が変わっても位置を保つので、リアルタイムの更新でちらつきません。まるごと消すことも、必要な行だけにすることもできます。ウィジェットではルックの数字用書体を、その下に並ぶインジケーター行と同じサイズで使います。<code>setUI</code> は自前の <code>setLegend</code> の後でもそれを設定し直します。
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -312,6 +312,14 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">価格スケールと出来高の帯</h2>
+<p>
+  出来高のバーは描画領域の下端に沿った帯に収まり、その高さは描画領域の φ^-4.5（約 11.5%）です。自動で合わせた価格スケールは
+  ローソク足をこの帯の上に、φ^-7（3%）の間隔を空けて置きます。最高値の上には φ^-5（9%）を空けます。表示中に出来高がないとき
+  （オフにした場合や、出来高を持たないバーの場合）は、ローソク足がこの帯まで使います。スケールは表示中のオーバーレイ
+  インジケーターと比較ラインにも合わせます。
+</p>
 
 <h2>出来高の色</h2>
 <p>

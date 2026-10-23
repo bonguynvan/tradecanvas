@@ -56,8 +56,8 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  Giá trị mới nhất của mỗi đường được gắn nhãn trên trục bằng màu của đường đó; tắt các nhãn này bằng
-  <code>features.indicatorValueLabels: false</code> hoặc <code>setIndicatorValueLabelsVisible(false)</code>.
+  Chú giải hiện giá trị mới nhất của mỗi đường. Để gắn thêm nhãn giá trị đó trên trục, bằng màu của đường, hãy bật
+  <code>features.indicatorValueLabels: true</code> hoặc <code>setIndicatorValueLabelsVisible(true)</code> (mặc định tắt).
   Các đường, mức, trục và con trỏ chữ thập trong cùng một bảng dùng chung một thang.
 </p>
 

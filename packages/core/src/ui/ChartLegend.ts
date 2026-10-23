@@ -46,6 +46,7 @@ export class ChartLegend {
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
+    this.drawnHeight = null;
   }
 
   /**
@@ -62,10 +63,12 @@ export class ChartLegend {
 
   setSymbol(symbol: string): void {
     this.symbol = symbol;
+    this.drawnHeight = null;
   }
 
   setTimeframe(tf: string): void {
     this.timeframe = tf;
+    this.drawnHeight = null;
   }
 
   setChartType(_type: string): void {
@@ -84,11 +87,13 @@ export class ChartLegend {
 
   setStatusText(text: string | null): void {
     this.statusText = text;
+    this.drawnHeight = null;
   }
 
   /** The exchange the symbol trades on, named in the title line. */
   setExchange(exchange: string): void {
     this.exchange = exchange;
+    this.drawnHeight = null;
   }
 
   /** Symbol · interval · exchange, as far as they are known ('' with none or `showSymbol` off). */
@@ -175,7 +180,7 @@ export class ChartLegend {
     if (this.drawnHeight !== null) return this.drawnHeight;
     const fs = this.config.fontSize;
     let h = LEGEND_TOP;
-    if (this.config.showOHLC || this.title()) h += fs + LINE_GAP;
+    if (this.config.showOHLC || this.title() || this.statusText) h += fs + LINE_GAP;
     if (this.config.showVolume) h += fs + 2;
     return h;
   }

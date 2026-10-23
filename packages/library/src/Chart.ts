@@ -150,8 +150,6 @@ function assertTimezone(tz: TimeZoneSetting): void {
   if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
 }
 
-/** Decimals of order and alert prices when neither the market nor the symbol sets them. */
-const DEFAULT_ORDER_PRECISION = 2;
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
 /** Between the lowest candle and the volume bars: φ⁻⁷ (3%) of the plot's height. */
@@ -4933,7 +4931,8 @@ export class Chart {
     this.marketPricePrecision = precision;
     this.priceAxis.setPricePrecision(precision);
     this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
-    this.alertManager.setPricePrecision(precision ?? DEFAULT_ORDER_PRECISION);
+    this.alertManager.setPricePrecision(precision);
+    this.tradeZoneManager.setPricePrecision(precision);
     this.streamManager?.priceLine.setPricePrecision(precision);
     this.currentPriceLine.setPricePrecision(precision);
     this.crosshairHandler.setPricePrecision(precision);
@@ -5201,11 +5200,12 @@ export class Chart {
       joinRanges(computePriceRange(displayData, from, to, 0), this.indicatorEngine.getOverlayPriceRange(from, to)),
       this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
     )!;
-    const volume = this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
-    this.viewport.setScaleMargins({
-      top: PRICE_SCALE_MARGIN,
-      bottom: volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN,
-    });
+    const volume = this.features.volume && this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
+    const band = volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN;
+    // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
+    this.viewport.setScaleMargins(this.viewport.isInvertScale()
+      ? { top: band, bottom: PRICE_SCALE_MARGIN }
+      : { top: PRICE_SCALE_MARGIN, bottom: band });
     this.viewport.fitToPrices(range.min, range.max);
   }
 

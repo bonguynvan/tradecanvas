@@ -119,7 +119,7 @@ export class OrderDraftTool {
     viewport: ViewportState,
     theme: Theme,
     marketPrice: number | null,
-    pricePrecision = 2,
+    pricePrecision?: number,
   ): void {
     const d = this.draft;
     if (!d) return;

@@ -73,6 +73,21 @@ describe('the legend’s title line', () => {
     expect(narrow).toBeGreaterThan(wide);
   });
 
+  it('forgets the height it drew when what it shows changes', () => {
+    const { legend } = legendWith(260);
+    const wrapped = legend.getHeight();
+    legend.setConfig({ showOHLC: false });
+    expect(legend.getHeight()).toBeLessThan(wrapped);
+  });
+
+  it('counts a status line before its first draw', () => {
+    const legend = new ChartLegend();
+    legend.setConfig({ showOHLC: false, showVolume: false });
+    expect(legend.getHeight()).toBeLessThan(12);
+    legend.setStatusText('LIVE');
+    expect(legend.getHeight()).toBeGreaterThan(12);
+  });
+
   it('leaves no blank line when it has no title', () => {
     const legend = new ChartLegend();
     const { ctx, texts } = recorder();

@@ -397,12 +397,12 @@ export class TradingManager {
 
     // Bracket placement preview (frontmost)
     if (this.bracket.isActive()) {
-      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision ?? 2);
+      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision);
     }
 
     // Single-order draft preview
     if (this.orderDraft.isActive()) {
-      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision ?? 2);
+      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision);
     }
   }
 

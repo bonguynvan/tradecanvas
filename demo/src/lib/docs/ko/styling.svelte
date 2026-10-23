@@ -231,7 +231,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
-    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름.</td></tr>
+    <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름. 봉의 남은 시간(<code>features.barCountdown</code>)은 태그 아래에 붙음.</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>거래량 막대.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>일·주·월 구분선.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>고가·저가 선, 워터마크.</td></tr>
@@ -298,7 +298,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">OHLCV 범례</h2>
 <p>
-  차트 위쪽의 범례는 포인터 아래의 봉(없으면 마지막 봉)을 보여 줍니다: 시가, 고가, 저가, 종가, 변동과 거래량. 각 값은 자릿수가 바뀌어도 자리를 지키므로 실시간 틱에 흔들리지 않습니다. 아예 끄거나 원하는 줄만 남길 수 있습니다. 위젯에서는 룩의 글꼴을 그 아래 지표 줄과 같은 크기로 씁니다. <code>setUI</code>는 직접 호출한 <code>setLegend</code> 뒤에도 이를 다시 설정합니다.
+  차트 위쪽의 범례는 제목 줄로 시작합니다: 종목, 시간 단위, 거래소에 이어 같은 줄에 포인터 아래의 봉(없으면 마지막 봉)의 시가, 고가, 저가, 종가, 변동이 나옵니다. 거래량은 따로 한 줄에 표시됩니다. 휴대폰처럼 플롯 영역이 제목 줄을 담기에 좁으면 줄이 바뀝니다. 차트는 종목과 시간 단위를 스트림에서, 거래소를 종목 상세 정보에서 가져옵니다. <code>setSymbolName('Bitcoin')</code>은 종목이 바뀔 때까지 이름을 직접 정하고, <code>showSymbol: false</code>는 제목을 뺍니다. 각 값은 자릿수가 바뀌어도 자리를 지키므로 실시간 틱에 흔들리지 않습니다. 아예 끄거나 원하는 줄만 남길 수 있습니다. 위젯에서는 룩의 숫자용 글꼴을 그 아래 지표 줄과 같은 크기로 씁니다. <code>setUI</code>는 직접 호출한 <code>setLegend</code> 뒤에도 이를 다시 설정합니다.
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time
@@ -311,6 +311,13 @@ chart.setLegend({
 
 // The widget: start with it off (the user can still turn it on in Settings)
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+
+<h2 id="volume">가격 눈금과 거래량 띠</h2>
+<p>
+  거래량 막대는 플롯 영역 아래쪽을 따라 놓인 띠 안에 머물며, 그 높이는 플롯 영역의 φ^-4.5(약 11.5%)입니다. 자동으로 맞춘
+  가격 눈금은 캔들을 이 띠 위에 φ^-7(3%) 간격을 두고 놓습니다. 최고가 위로는 φ^-5(9%)를 남깁니다. 화면에 거래량이 없으면
+  (꺼 두었거나 거래량이 없는 봉이면) 캔들이 이 띠까지 차지합니다. 눈금은 화면에 보이는 오버레이 지표와 비교선에도 맞춥니다.
+</p>
 
 <h2>거래량 색</h2>
 <p>

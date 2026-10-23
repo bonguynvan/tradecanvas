@@ -127,7 +127,9 @@ chart.getScaleMode()`}</code></pre>
   everything that prints a price on the price scale: axis, crosshair, last-price tag,
   legend, tooltips, orders, alerts and drawing labels; the axis puts its ticks on whole
   fractions and <code>roundPrice</code> rounds to them. Indicator panes keep their own
-  numbers. Times can read your way too; the formatter is told what a label is.
+  numbers. Without a format of your own, prices are grouped in the number locale; the
+  axis's tick labels show only the decimals their step needs (73,500), while the last
+  price, the crosshair and the tags beside the axis show every decimal. Times can read your way too; the formatter is told what a label is.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
@@ -602,7 +604,8 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <h3>Navigation, undo and direction</h3>
 <p>
   Buttons over the chart — zoom out and in, scroll earlier and later (held, they keep going), reset —
-  show while the mouse is on it (<code>navigation: false</code> leaves them out). Settings changes and
+  show while the mouse is near the plot's bottom edge, out of the way of the data, or while one has focus
+  (<code>navigation: false</code> leaves them out). Settings changes and
   chart type changes are undone with Ctrl/Cmd+Z, with drawings and indicators. In Arabic, Hebrew,
   Persian or Urdu the widget mirrors (<code>dir: 'auto'</code>; or <code>'rtl'</code> / <code>'ltr'</code>);
   the chart keeps time running left to right.

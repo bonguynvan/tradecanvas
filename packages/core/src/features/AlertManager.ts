@@ -134,7 +134,8 @@ export class AlertManager extends Emitter<AlertEvents> {
   private drawingSides = new Map<string, number[]>();
   private drawingLevels: ((drawingId: string) => number[] | null) | null = null;
   private requestRender: (() => void) | null = null;
-  private pricePrecision = 2;
+  /** Decimals of the alert's price; null follows the axis. */
+  private pricePrecision: number | null = null;
   /** The forming bar's time, for moves over bars and bar closes. */
   private barTime: number | null = null;
   private expiryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -151,7 +152,7 @@ export class AlertManager extends Emitter<AlertEvents> {
     this.requestRender = cb;
   }
 
-  setPricePrecision(precision: number): void {
+  setPricePrecision(precision: number | null): void {
     this.pricePrecision = precision;
   }
 
@@ -594,7 +595,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'right';
-      const label = `${priceTagText(alert.price, viewport, this.pricePrecision)}${alert.message ? ` - ${alert.message}` : ''}`;
+      const label = `${priceTagText(alert.price, viewport, this.pricePrecision ?? undefined)}${alert.message ? ` - ${alert.message}` : ''}`;
       const right = chartRect.x + chartRect.width - 4;
       ctx.fillText(label, right, y - 2);
       const iconX = right - ctx.measureText(label).width - LABEL_ICON_GAP - LABEL_ICON_SIZE;
