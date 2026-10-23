@@ -30,6 +30,7 @@ import { orderTarget, redoAction, undoAction } from './drawingHistory.js';
 import { drawingShortcut } from './drawingShortcuts.js';
 import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
 import { snapToBar, type MagnetMode } from './magnetSnap.js';
+import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
 import { DrawingDrag } from './DrawingDrag.js';
 
@@ -94,6 +95,8 @@ export class DrawingManager {
   private edits = new Map<string, DrawingState>();
   /** Undo actions gathered by `batchUndo`, pushed as one step when it ends. */
   private batch: UndoableAction[] | null = null;
+  /** The chart's interval (`'5m'`): drawings kept to some intervals show on theirs. Null: not known, all show. */
+  private timeframe: string | null = null;
 
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
@@ -254,10 +257,14 @@ export class DrawingManager {
     this.state = 'selected';
   }
 
-  /** The other drawings of `drawing`'s group (selected along with it). */
+  /**
+   * The other drawings of `drawing`'s group (selected along with it); not
+   * one hidden or kept off this interval, which would be moved or deleted unseen.
+   */
   private groupMates(drawing: DrawingState): string[] {
     const group = drawing.group?.id;
-    return group ? this.drawings.filter((d) => d.group?.id === group && d.id !== drawing.id).map((d) => d.id) : [];
+    if (!group) return [];
+    return this.drawings.filter((d) => d.group?.id === group && d.id !== drawing.id && this.shown(d)).map((d) => d.id);
   }
 
   /**
@@ -268,7 +275,7 @@ export class DrawingManager {
   select(id: string): boolean {
     if (this.state === 'creating') return false;
     const drawing = this.drawings.find((d) => d.id === id);
-    if (!drawing || !drawing.visible) return false;
+    if (!drawing || !this.shown(drawing)) return false;
     if (!this.selection.has(id)) this.selection.only(id, this.groupMates(drawing));
     this.state = 'selected';
     this.requestRender?.();
@@ -299,7 +306,7 @@ export class DrawingManager {
     const top = Math.min(rect.y0, rect.y1);
     const bottom = Math.max(rect.y0, rect.y1);
     for (const d of this.drawings) {
-      if (!d.visible) continue;
+      if (!this.shown(d)) continue;
       const inside = d.anchors.some((a) => {
         const x = timeToX(a.time, viewport);
         const y = priceToY(a.price, viewport);
@@ -316,7 +323,7 @@ export class DrawingManager {
     if (this.state === 'creating') return false;
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!d.visible) continue;
+      if (!this.shown(d)) continue;
       const plugin = this.registry.get(d.type);
       if (!plugin?.hitTest(pos, d, viewport, 8)) continue;
       // Out of the selection, another selected drawing becomes the primary.
@@ -370,6 +377,27 @@ export class DrawingManager {
 
   showAllDrawings(): void {
     this.setFlags(this.drawings, { visible: true });
+  }
+
+  /**
+   * The chart's interval (`'5m'`, `'1h'`; null when not known): drawings kept
+   * to some intervals show on theirs only, and a selected one it hides is let go.
+   */
+  setTimeframe(timeframe: string | null): void {
+    if (timeframe === this.timeframe) return;
+    this.timeframe = timeframe;
+    this.deselect(this.drawings.filter((d) => !this.shown(d)).map((d) => d.id));
+    this.requestRender?.();
+  }
+
+  /** Whether a drawing is on the chart: not hidden, and kept to no intervals or to the chart's. */
+  isShown(id: string): boolean {
+    const drawing = this.drawings.find((d) => d.id === id);
+    return drawing !== undefined && this.shown(drawing);
+  }
+
+  private shown(drawing: DrawingState): boolean {
+    return drawing.visible && shownOnInterval(drawing.intervals, this.timeframe);
   }
 
   /** Show or hide a drawing (one undo step). Returns the new value, or null if not found. */
@@ -465,13 +493,16 @@ export class DrawingManager {
           anchors: source.anchors.map((a) => ({ ...a, time: a.time + shift })),
           style: { ...source.style },
           options: source.options ? cloneOptions(source.options) : undefined,
+          intervals: source.intervals,
           meta: source.meta ? structuredClone(source.meta) : undefined,
         }));
       }
     });
     if (ids.length === 0) return ids;
     this.selection.clear();
-    for (const id of ids) this.addToSelection(id);
+    this.state = 'idle';
+    // One kept off this interval is pasted, but not selected unseen.
+    for (const id of ids) if (this.isShown(id)) this.addToSelection(id);
     this.requestRender?.();
     return ids;
   }
@@ -685,13 +716,21 @@ export class DrawingManager {
   setDrawings(states: DrawingState[]): void {
     reserveIds(states);
     this.drawings = this.upgradeLegacyAnchors(states).map((d) => {
-      if (!d.options) return d;
+      if (!d.options && d.intervals === undefined) return d;
       const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
-      return { ...d, options: Object.keys(options).length > 0 ? options : undefined };
+      return {
+        ...d,
+        options: Object.keys(options).length > 0 ? options : undefined,
+        intervals: cleanIntervals(d.intervals) ?? undefined,
+      };
     });
-    // What was selected or being edited may be gone.
-    const ids = new Set(this.drawings.map((d) => d.id));
-    this.deselect(this.getSelectedDrawingIds().filter((id) => !ids.has(id)));
+    // What was selected or being edited may be gone, or no longer shown.
+    const byId = new Map(this.drawings.map((d) => [d.id, d]));
+    this.deselect(this.getSelectedDrawingIds().filter((id) => {
+      const drawing = byId.get(id);
+      return !drawing || !this.shown(drawing);
+    }));
+    const ids = new Set(byId.keys());
     for (const id of [...this.edits.keys()]) if (!ids.has(id)) this.edits.delete(id);
     this.requestRender?.();
   }
@@ -856,10 +895,11 @@ export class DrawingManager {
   }
 
   /**
-   * Change a drawing's anchors, style or options (one undo step, or part of
-   * the edit begun with `beginEdit`). Anchors must be as many as it has, with
-   * finite times and prices; options are checked against the tool. Explicit
-   * edits apply to locked drawings too: the lock only stops the pointer.
+   * Change a drawing's anchors, style, options or intervals (one undo step,
+   * or part of the edit begun with `beginEdit`). Anchors must be as many as
+   * it has, with finite times and prices; options are checked against the
+   * tool, intervals cleaned (null: every interval). Explicit edits apply to
+   * locked drawings too: the lock only stops the pointer.
    */
   updateDrawing(id: string, patch: DrawingPatch): boolean {
     const drawing = this.drawings.find((d) => d.id === id);
@@ -875,6 +915,11 @@ export class DrawingManager {
     if (patch.options) {
       const options = { ...drawing.options, ...sanitizeDrawingOptions(this.optionDefs(drawing.type), patch.options) };
       drawing.options = Object.keys(options).length > 0 ? options : undefined;
+    }
+    if (patch.intervals !== undefined) {
+      drawing.intervals = cleanIntervals(patch.intervals) ?? undefined;
+      // An edit (a settings dialog) may yet be cancelled: it lets go on keeping.
+      if (!this.edits.has(id) && !this.shown(drawing)) this.deselect([id]);
     }
     if (before) this.record({ type: 'drawingModify', before, after: cloneDrawing(drawing) });
     this.eventCallback?.('drawingUpdate', { id });
@@ -907,6 +952,7 @@ export class DrawingManager {
     } else if (JSON.stringify(before) !== JSON.stringify(this.drawings[index])) {
       this.record({ type: 'drawingModify', before, after: cloneDrawing(this.drawings[index]) });
     }
+    if (!this.shown(this.drawings[index])) this.deselect([id]);
     this.eventCallback?.('drawingUpdate', { id });
   }
 
@@ -932,6 +978,7 @@ export class DrawingManager {
       visible: state.visible ?? true,
       locked: state.locked ?? false,
       options: this.initialOptions(state.type, state.options),
+      intervals: cleanIntervals(state.intervals) ?? undefined,
       meta: state.meta,
     };
     this.drawings = [...this.drawings, drawing];
@@ -1048,7 +1095,7 @@ export class DrawingManager {
     ctx.clip();
 
     for (const drawing of this.drawings) {
-      if (!drawing.visible) continue;
+      if (!this.shown(drawing)) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
       const isSelected = this.selection.has(drawing.id);
@@ -1149,7 +1196,7 @@ export class DrawingManager {
   private erasableAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!d.visible || d.locked) continue;
+      if (!this.shown(d) || d.locked) continue;
       if (this.registry.get(d.type)?.hitTest(pos, d, viewport, tolerance)) return d.id;
     }
     return null;
@@ -1197,7 +1244,7 @@ export class DrawingManager {
   drawingAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!d.visible) continue;
+      if (!this.shown(d)) continue;
       if (this.registry.get(d.type)?.hitTest(pos, d, viewport, tolerance)) return d.id;
     }
     return null;
@@ -1209,12 +1256,12 @@ export class DrawingManager {
     const tolerance = MOUSE_REACH.line;
     if (this.selection.primary) {
       const selected = this.drawings.find((d) => d.id === this.selection.primary);
-      const plugin = selected && selected.visible && !selected.locked ? this.registry.get(selected.type) : undefined;
+      const plugin = selected && this.shown(selected) && !selected.locked ? this.registry.get(selected.type) : undefined;
       if (selected && plugin && plugin.hitTestAnchor(pos, selected, viewport, tolerance) >= 0) return 'move';
     }
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!d.visible || d.locked) continue;
+      if (!this.shown(d) || d.locked) continue;
       const plugin = this.registry.get(d.type);
       if (plugin?.hitTest(pos, d, viewport, tolerance)) return 'pointer';
     }
@@ -1227,7 +1274,7 @@ export class DrawingManager {
     // If already selected, check for anchor drag
     if (this.selection.primary) {
       const drawing = this.drawings.find((d) => d.id === this.selection.primary);
-      if (drawing && drawing.visible && !drawing.locked) {
+      if (drawing && this.shown(drawing) && !drawing.locked) {
         const plugin = this.registry.get(drawing.type);
         if (plugin) {
           const anchorIdx = plugin.hitTestAnchor(pos, drawing, viewport, reach.handle);
@@ -1247,7 +1294,7 @@ export class DrawingManager {
     // Try to select a drawing
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const drawing = this.drawings[i];
-      if (!drawing.visible) continue;
+      if (!this.shown(drawing)) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
       if (plugin.hitTest(pos, drawing, viewport, tolerance)) {

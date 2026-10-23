@@ -3539,31 +3539,38 @@
 }
 
 /* --- Drawing settings dialog --- */
-.tcw-drawing-settings .tcw-modal-footer { gap: 12px; }
-.tcw-drawing-settings-tools {
-  display: flex;
-  gap: 14px;
-  margin-inline-end: auto;
-}
 .tcw-drawing-text {
   min-height: 56px;
   resize: vertical;
   font-family: inherit;
 }
-.tcw-levels-editor { display: grid; gap: 6px; margin-bottom: 10px; }
+/* The text a drawing writes takes the dialog's width, under its name. */
+.tcw-text-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--tcw-space-3);
+}
+.tcw-text-row .tcw-drawing-text { box-sizing: border-box; width: 100%; }
+.tcw-levels-editor { display: grid; gap: var(--tcw-space-3); }
+/* Two columns of levels on a desktop, as a Fibonacci tool has a dozen. */
 .tcw-levels-grid {
   display: grid;
-  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tcw-space-3) var(--tcw-space-6);
   max-height: 260px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding-inline-end: var(--tcw-space-1);
+}
+@media (max-width: 640px) {
+  .tcw-levels-grid { grid-template-columns: minmax(0, 1fr); }
 }
 .tcw-level-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 32px 24px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--tcw-space-3);
 }
+.tcw-level-row .tcw-indi-input { box-sizing: border-box; width: 100%; min-width: 0; }
 .tcw-level-row input[type='checkbox'] { accent-color: var(--tcw-accent); }
 .tcw-level-remove {
   display: inline-flex;
@@ -3580,8 +3587,6 @@
 .tcw-level-remove:hover { color: var(--tcw-text); background: var(--tcw-bg-elevated); }
 .tcw-level-remove:focus-visible { outline: 2px solid var(--tcw-accent); outline-offset: 1px; }
 .tcw-level-add { justify-self: start; }
-.tcw-drawing-templates { display: grid; gap: 2px; margin-bottom: 8px; }
-.tcw-drawing-alert { display: inline-flex; align-items: center; gap: 6px; }
 
 /* --- Context menu (right-click on a drawing) --- */
 .tcw-context-menu {

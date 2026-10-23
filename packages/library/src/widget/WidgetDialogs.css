@@ -352,11 +352,12 @@
   }
 }
 
-/* === The indicator settings === */
+/* === The indicator settings, and a drawing's === */
 
 /* One half step of phi under the indicators dialog: 610 / sqrt(phi) = 480. */
 @media (min-width: 641px) {
-  .tcw-modal.tcw-modal-narrow.tcw-indi {
+  .tcw-modal.tcw-modal-narrow.tcw-indi,
+  .tcw-modal.tcw-modal-narrow.tcw-drawing-settings {
     width: 480px;
     max-width: 92vw;
   }
@@ -410,7 +411,8 @@
 
 /* Defaults on the left; Cancel and Ok on the right, one height for all three. */
 .tcw-indi .tcw-modal-footer,
-.tcw-set .tcw-modal-footer {
+.tcw-set .tcw-modal-footer,
+.tcw-drawing-settings .tcw-modal-footer {
   gap: var(--tcw-space-4);
 }
 
@@ -421,7 +423,8 @@
 }
 
 .tcw-indi .tcw-modal-footer button,
-.tcw-set .tcw-modal-footer button {
+.tcw-set .tcw-modal-footer button,
+.tcw-drawing-settings .tcw-modal-footer button {
   height: var(--tcw-menu-item-h);
   padding-block: 0;
 }
@@ -457,9 +460,73 @@
 .tcw-footer-menu:focus-visible,
 .tcw-footer-cancel:focus-visible,
 .tcw-indi .tcw-done-btn:focus-visible,
-.tcw-set .tcw-done-btn:focus-visible {
+.tcw-set .tcw-done-btn:focus-visible,
+.tcw-drawing-settings .tcw-done-btn:focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
+}
+
+/* A drawing's switches: the box, then its name, a list without rules between. */
+.tcw-check-row {
+  justify-content: flex-start;
+  gap: var(--tcw-space-4);
+  padding-block: var(--tcw-space-3);
+  cursor: pointer;
+}
+
+.tcw-settings-row + .tcw-check-row,
+.tcw-check-row + .tcw-settings-row {
+  border-top: 0;
+}
+
+/* A point: its name, then its price, date and time in columns; on a phone the price over the date and time. */
+.tcw-draw-point {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: var(--tcw-space-4);
+}
+
+.tcw-draw-point > .tcw-settings-label {
+  white-space: nowrap;
+}
+
+.tcw-draw-point .tcw-indi-plot-controls {
+  display: contents;
+}
+
+.tcw-draw-point input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.tcw-draw-point input[type='number'] {
+  text-align: end;
+}
+
+@media (max-width: 640px) {
+  .tcw-draw-point {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tcw-draw-point > .tcw-settings-label {
+    grid-row: span 2;
+  }
+
+  .tcw-draw-point input[type='number'] {
+    grid-column: span 2;
+  }
+}
+
+.tcw-drawing-settings .tcw-indi-plot-controls input[type='number']:not(.tcw-draw-point *) {
+  width: 68px;
+  text-align: end;
+}
+
+/* The unit after a number (the fill's opacity in %). */
+.tcw-unit {
+  margin-inline-start: calc(-1 * var(--tcw-space-2));
+  color: var(--tcw-text-muted);
 }
 
 /* === The chart settings === */

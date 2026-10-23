@@ -133,6 +133,7 @@ function validateDrawing(raw: unknown): DrawingState | null {
     locked: typeof raw.locked === 'boolean' ? raw.locked : false,
     // Checked against the tool when the drawings are set on a chart.
     options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
+    intervals: cleanIntervals(raw.intervals) ?? undefined,
     group: validateGroup(raw.group),
     meta: isObject(raw.meta) ? raw.meta : undefined,
   };

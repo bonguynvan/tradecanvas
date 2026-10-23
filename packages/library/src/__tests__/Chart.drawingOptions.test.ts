@@ -143,3 +143,21 @@ describe('Chart drawing order and groups', () => {
   });
 });
 
+describe('Chart drawings kept to some intervals', () => {
+  it('follow the chart’s interval, and keep their rules in a saved layout', () => {
+    const id = chart.addDrawing({ type: 'trendLine', anchors: [{ time: T0 + 50 * HOUR, price: 101 }, { time: T0 + 90 * HOUR, price: 99 }], intervals: { hours: false } })!;
+    expect(chart.isDrawingShown(id)).toBe(true); // no interval known yet
+    chart.setDataTimeframe('1h');
+    expect(chart.isDrawingShown(id)).toBe(false);
+    expect(chart.getDrawingRect(id)).toBeNull();
+    chart.setDataTimeframe('1d');
+    expect(chart.isDrawingShown(id)).toBe(true);
+
+    chart.loadState(chart.saveState()!);
+    const [restored] = chart.getDrawings();
+    expect(restored.intervals).toEqual({ hours: false });
+    expect(chart.updateDrawing(restored.id, { intervals: null })).toBe(true);
+    chart.setDataTimeframe('1h');
+    expect(chart.isDrawingShown(restored.id)).toBe(true);
+  });
+});

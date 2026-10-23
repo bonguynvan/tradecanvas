@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { fillArrowHead } from './lineDecor.js';
 
 export class ArrowTool extends DrawingBase {
   descriptor = { type: 'arrow' as const, name: 'Arrow', requiredAnchors: 2 };
@@ -14,18 +15,7 @@ export class ArrowTool extends DrawingBase {
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
-
-    // Arrowhead
-    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-    const headLen = 12;
-    ctx.beginPath();
-    ctx.moveTo(p2.x, p2.y);
-    ctx.lineTo(p2.x - headLen * Math.cos(angle - Math.PI / 6), p2.y - headLen * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(p2.x - headLen * Math.cos(angle + Math.PI / 6), p2.y - headLen * Math.sin(angle + Math.PI / 6));
-    ctx.closePath();
-    ctx.fillStyle = state.style.color;
-    ctx.fill();
-
+    fillArrowHead(ctx, p1, p2, state.style.color);
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

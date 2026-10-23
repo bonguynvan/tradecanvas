@@ -2265,6 +2265,8 @@ export class Chart {
     options?: DrawingOptions;
     visible?: boolean;
     locked?: boolean;
+    /** The intervals it shows on (`{ minutes: false }`: not on minute charts); unset: all. */
+    intervals?: IndicatorIntervals;
     meta?: Record<string, unknown>;
   }): string | null {
     if (!this.features.drawings) return null;
@@ -2317,14 +2319,23 @@ export class Chart {
   }
 
   /**
-   * Change a drawing's anchors (as many as it has), style or options, as one
-   * undo step — or as part of the edit begun with `beginDrawingEdit`.
-   * Applies to locked drawings too. False for an unknown drawing or wrong anchors.
+   * Change a drawing's anchors (as many as it has), style, options or the
+   * intervals it shows on (`intervals: null`: all of them), as one undo step
+   * — or as part of the edit begun with `beginDrawingEdit`. Applies to locked
+   * drawings too. False for an unknown drawing or wrong anchors.
    */
   updateDrawing(id: string, patch: DrawingPatch): boolean {
     const changed = this.drawingManager.updateDrawing(id, patch);
     if (changed) this.markStateChanged();
     return changed;
+  }
+
+  /**
+   * Whether a drawing is on the chart: not hidden, and kept to no intervals
+   * or to the chart's (see `DrawingState.intervals`). False for an unknown one.
+   */
+  isDrawingShown(id: string): boolean {
+    return this.drawingManager.isShown(id);
   }
 
   /** Start an edit (a settings dialog): the `updateDrawing` calls until `endDrawingEdit` are one undo step. */
@@ -3073,6 +3084,7 @@ export class Chart {
     const previous = this.announcedTimeframe;
     this.chartLegend.setTimeframe(timeframe ?? '');
     if (this.indicatorEngine.setTimeframe(timeframe)) this.updateViewportAndRender();
+    this.drawingManager.setTimeframe(timeframe);
     if (timeframe === previous) return;
     this.announcedTimeframe = timeframe;
     if (timeframe) this.eventBus.emit('timeframeChange', { timeframe, previous });
@@ -4533,12 +4545,12 @@ export class Chart {
    * The box a drawing covers on screen, in CSS pixels relative to the chart
    * container, cut to the plot: where a host puts a toolbar or a note over
    * it. Lines that run across the whole plot (horizontal, vertical, cross)
-   * span it on that side. Null for an unknown or hidden drawing, or one
-   * that is all off screen.
+   * span it on that side. Null for an unknown or hidden drawing (or one kept
+   * off this interval), or one that is all off screen.
    */
   getDrawingRect(id: string): { x: number; y: number; width: number; height: number } | null {
     const drawing = this.drawingManager.getDrawings().find((d) => d.id === id);
-    if (!drawing || !drawing.visible || drawing.anchors.length === 0) return null;
+    if (!drawing || !this.drawingManager.isShown(id) || drawing.anchors.length === 0) return null;
     const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
     const plot = vs.chartRect;
     let left = Infinity;

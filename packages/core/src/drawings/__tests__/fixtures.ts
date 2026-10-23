@@ -39,6 +39,7 @@ export function drawing(
     visible: overrides.visible ?? true,
     locked: overrides.locked ?? false,
     options: overrides.options,
+    intervals: overrides.intervals,
     meta: overrides.meta,
   };
 }
