@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Customization — TradeCanvas docs</title>
-  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 123 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
+  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 122 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
 </svelte:head>
 
 <h1>Customization</h1>

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>カスタマイズ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 123 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
+  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 122 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
 </svelte:head>
 
 <h1>カスタマイズ</h1>
@@ -140,6 +140,11 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   <code>widget.toast()</code> による通知も表示されます。
   <code>selectionToolbar</code> をオフにすると選択した描画の上のツールバーが隠れます。右クリックメニューは残ります。
   <code>statusBar.rangeTimeframe</code> をオフにすると、レンジバーの期間がバーに収まらなくても時間足を保ちます。オンでは週足や月足に切り替え、また戻します。
+  取引ツールはツールバーの一つの取引メニューにまとまっています。<code>toolbar.bracketOrders</code>、<code>toolbar.depthLadder</code>、
+  <code>toolbar.accountPanel</code> とそれぞれの機能はメニューから自分の項目を取り除き、<code>toolbar.trade</code> は
+  メニューそのものを取り除きます。項目が一つも残らないときもメニューは消えます。元に戻すとやり直しは描画サイドバーから
+  ツールバーに移りました。<code>sidebar.undo</code> と <code>sidebar.redo</code> で引き続きオフにできます。
+  <code>statusBar.symbol</code> には切り替えるものがもうありません。凡例のタイトル行がシンボルを示します。
 </p>
 
 <p id="toast-icons">

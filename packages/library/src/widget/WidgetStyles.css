@@ -1659,7 +1659,7 @@
   white-space: nowrap;
 }
 
-/* Narrow screens: the range bar gets the room; the scale switches and the clock's zone stay. */
+/* Narrow screens: the range presets close up. */
 @media (max-width: 640px) {
   .tcw-range-btn {
     padding: 4px 5px;
@@ -4571,11 +4571,17 @@
   opacity: 0;
   transition: opacity var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
 }
-/* Shown on the row in hand; always for a pinned tool, filled in ink blue. */
+/* Shown on the row in hand; always for a pinned tool, filled in ink blue; always on a touch screen. */
 .tcw-flyout-row:hover .tcw-flyout-pin,
 .tcw-flyout-row:focus-within .tcw-flyout-pin,
-.tcw-flyout-pin[aria-pressed='true'] {
+.tcw-flyout-pin[aria-pressed='true'],
+.tcw-root[data-tcw-narrow] .tcw-flyout-pin {
   opacity: 1;
+}
+@media (hover: none) {
+  .tcw-flyout-pin {
+    opacity: 1;
+  }
 }
 .tcw-flyout-pin:hover {
   color: var(--tcw-text);
@@ -4629,10 +4635,18 @@
 }
 
 /* A narrow widget keeps the range presets and the clock: the scale switches (also in the
-   settings and the scale's menu) and the connection's word give them the room; its dot stays. */
-.tcw-root[data-tcw-narrow] .tcw-status-scale,
-.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot) {
+   settings and the scale's menu) give them the room, and the connection's word is left to
+   screen readers beside its dot. */
+.tcw-root[data-tcw-narrow] .tcw-status-scale {
   display: none;
+}
+.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* The selection toolbar's grip: dots to take it by. */

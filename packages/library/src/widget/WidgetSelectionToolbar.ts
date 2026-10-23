@@ -72,16 +72,18 @@ export class WidgetSelectionToolbar {
   private openPop: Pop | null = null;
   /** Where the user dragged the toolbar (root px): it stays there, for every drawing, until the grip is double-clicked. */
   private pinned: { left: number; top: number } | null = null;
-  private drag: { x: number; y: number; left: number; top: number } | null = null;
+  private drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
   private readonly onDragMove = (e: PointerEvent) => {
-    if (!this.drag || !this.target) return;
+    if (!this.drag || !this.target || e.pointerId !== this.drag.id) return;
     this.pinned = { left: this.drag.left + e.clientX - this.drag.x, top: this.drag.top + e.clientY - this.drag.y };
     this.place(this.target);
   };
-  private readonly onDragEnd = () => {
+  private readonly onDragEnd = (e?: PointerEvent) => {
+    if (e && this.drag && e.pointerId !== this.drag.id) return;
     this.drag = null;
     document.removeEventListener('pointermove', this.onDragMove);
     document.removeEventListener('pointerup', this.onDragEnd);
+    document.removeEventListener('pointercancel', this.onDragEnd);
   };
   private readonly onDocDown = (e: PointerEvent) => {
     if (this.openPop && !this.el.contains(e.target as Node) && !this.pop.contains(e.target as Node)) this.closePop();
@@ -112,9 +114,13 @@ export class WidgetSelectionToolbar {
     this.el.addEventListener('pointerdown', (e) => {
       if (!(e.target as Element).closest('.tcw-sel-grip')) return;
       e.preventDefault();
-      this.drag = { x: e.clientX, y: e.clientY, left: parseFloat(this.el.style.left) || 0, top: parseFloat(this.el.style.top) || 0 };
+      // A choice left open would stay behind as the toolbar moves.
+      this.closePop();
+      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: parseFloat(this.el.style.left) || 0, top: parseFloat(this.el.style.top) || 0 };
       document.addEventListener('pointermove', this.onDragMove);
       document.addEventListener('pointerup', this.onDragEnd);
+      // A touch the system takes back ends the drag too.
+      document.addEventListener('pointercancel', this.onDragEnd);
     });
     this.el.addEventListener('dblclick', (e) => {
       if (!(e.target as Element).closest('.tcw-sel-grip') || !this.target) return;

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Personalización — Documentación de TradeCanvas</title>
-  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 123 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
+  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 122 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
 </svelte:head>
 
 <h1>Personalización</h1>
@@ -141,6 +141,11 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   <code>widget.toast()</code> también se muestran.
   <code>selectionToolbar</code> apagado oculta la barra sobre un dibujo seleccionado; el menú del botón derecho sigue.
   <code>statusBar.rangeTimeframe</code> apagado mantiene la temporalidad cuando un rango de la barra de rangos es más largo de lo que caben sus barras; encendido, cambia a semanal o mensual y vuelve.
+  Las herramientas de trading son un solo menú Operar en la barra de herramientas: <code>toolbar.bracketOrders</code>,
+  <code>toolbar.depthLadder</code>, <code>toolbar.accountPanel</code> y sus capacidades quitan sus entradas de él, y
+  <code>toolbar.trade</code> quita el menú, que también se va cuando no le queda nada. Deshacer y rehacer pasaron de la
+  barra de dibujo a la barra de herramientas; <code>sidebar.undo</code> y <code>sidebar.redo</code> siguen apagándolos.
+  <code>statusBar.symbol</code> ya no tiene nada que cambiar: la línea de título de la leyenda nombra el símbolo.
 </p>
 
 <p id="toast-icons">

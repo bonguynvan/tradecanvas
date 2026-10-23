@@ -93,7 +93,8 @@ describe('ChartWidget feature switches', () => {
       'toolbar.symbol', 'toolbar.symbolInfo', 'symbolInfo', 'toolbar.timeframes', 'toolbar.timeframeMenu',
       'toolbar.chartType', 'toolbar.indicators', 'toolbar.layouts', 'layouts', 'toolbar.replay', 'replay',
       // The trading tools are one menu: its button, and each entry under its own switches.
-      'toolbar.trade', 'toolbar.compare', 'compare', 'toolbar.undo', 'toolbar.redo',
+      // (Compare shows with a data adapter: ChartWidget.chrome.test.)
+      'toolbar.trade', 'toolbar.undo', 'toolbar.redo',
       'toolbar.objectTree', 'objectTree', 'toolbar.alerts', 'alerts', 'toolbar.screenshot',
       'screenshot', 'toolbar.settings', 'settings', 'toolbar.themeToggle', 'themeToggle',
       'sidebar.cursor', 'sidebar.favorites', 'sidebar.lines', 'sidebar.fibonacci', 'sidebar.patterns',

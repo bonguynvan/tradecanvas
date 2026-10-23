@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>定制 — TradeCanvas 文档</title>
-  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 123 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
+  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 122 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
 </svelte:head>
 
 <h1>定制</h1>
@@ -136,6 +136,10 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   <code>toasts</code> 关闭组件自身的提示（错误提示仍会显示），你通过 <code>widget.toast()</code> 发出的提示也照常显示。
   关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。
   关闭 <code>statusBar.rangeTimeframe</code> 时，区间栏上的区间长于 K 线能放下的范围也保持周期；开启时切换为周线或月线并在之后切回。
+  交易工具合并为工具栏上的一个交易菜单：<code>toolbar.bracketOrders</code>、<code>toolbar.depthLadder</code>、
+  <code>toolbar.accountPanel</code> 及对应的整项功能会把各自的菜单项从中去掉，<code>toolbar.trade</code>
+  去掉整个菜单；菜单里一项都不剩时它也会消失。撤销和重做从绘图侧栏移到了工具栏；<code>sidebar.undo</code> 和
+  <code>sidebar.redo</code> 仍可把它们关掉。<code>statusBar.symbol</code> 已没有可开关的内容：图例的标题行会显示品种。
 </p>
 
 <p id="toast-icons">

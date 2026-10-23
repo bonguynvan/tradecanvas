@@ -26,11 +26,14 @@ export interface StatusBarClock {
   onPick: (value: string) => void;
 }
 
-/** The price scale's switches: percent, log, auto. */
+/** The price scale's switches: percent, log (when the chart offers it), auto. */
 export interface StatusBarScale {
-  labels: { percent: string; log: string; auto: string };
+  /** Their names (the group's, and each switch's). */
+  labels: { group?: string; percent: string; log: string; auto: string };
+  /** What the log and auto switches show ('log', 'auto'); the percent sign shows itself. */
+  texts?: { log: string; auto: string };
   onPercent: () => void;
-  onLog: () => void;
+  onLog?: () => void;
   onAuto: () => void;
 }
 
@@ -49,7 +52,9 @@ export class WidgetStatusBar {
   private readonly hostRight: HTMLDivElement;
   private clockBtn: HTMLButtonElement | null = null;
   private clockMenu: WidgetContextMenu | null = null;
-  private scaleBtns: Record<'percent' | 'log' | 'auto', HTMLButtonElement> | null = null;
+  private scaleBtns: Partial<Record<'percent' | 'log' | 'auto', HTMLButtonElement>> | null = null;
+  /** The scale as last shown: nothing to rewrite when it is the same. */
+  private scaleShown = '';
 
   constructor(
     private readonly host: HTMLElement,
@@ -115,10 +120,12 @@ export class WidgetStatusBar {
 
   /** The price scale's switches as the chart is now: its mode, and whether it fits itself. */
   setScale(state: { mode: PriceScaleMode; auto: boolean }): void {
-    if (!this.scaleBtns) return;
-    this.scaleBtns.percent.setAttribute('aria-pressed', String(state.mode === 'percentage'));
-    this.scaleBtns.log.setAttribute('aria-pressed', String(state.mode === 'logarithmic'));
-    this.scaleBtns.auto.setAttribute('aria-pressed', String(state.auto));
+    const key = `${state.mode}|${state.auto}`;
+    if (!this.scaleBtns || key === this.scaleShown) return;
+    this.scaleShown = key;
+    this.scaleBtns.percent?.setAttribute('aria-pressed', String(state.mode === 'percentage'));
+    this.scaleBtns.log?.setAttribute('aria-pressed', String(state.mode === 'logarithmic'));
+    this.scaleBtns.auto?.setAttribute('aria-pressed', String(state.auto));
   }
 
   /** The market's status (open or closed); hidden for a market around the clock. */
@@ -196,6 +203,7 @@ export class WidgetStatusBar {
     const group = document.createElement('div');
     group.className = 'tcw-status-scale';
     group.setAttribute('role', 'group');
+    if (scale.labels.group) group.setAttribute('aria-label', scale.labels.group);
     markPart(group, 'statusBar.scale');
     const make = (name: 'percent' | 'log' | 'auto', text: string, onClick: () => void): HTMLButtonElement => {
       const btn = document.createElement('button');
@@ -212,8 +220,8 @@ export class WidgetStatusBar {
     };
     this.scaleBtns = {
       percent: make('percent', '%', scale.onPercent),
-      log: make('log', 'log', scale.onLog),
-      auto: make('auto', 'auto', scale.onAuto),
+      ...(scale.onLog ? { log: make('log', scale.texts?.log ?? 'log', scale.onLog) } : {}),
+      auto: make('auto', scale.texts?.auto ?? 'auto', scale.onAuto),
     };
     return group;
   }

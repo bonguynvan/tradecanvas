@@ -334,16 +334,12 @@ export class WidgetDrawingSidebar {
 
   /** Whether every drawing is locked and every one hidden: the buttons say so, and undo it next. */
   setDrawingsState(state: { locked: boolean; hidden: boolean }): void {
+    if (state.locked === this.drawings.locked && state.hidden === this.drawings.hidden) return;
     this.drawings = { ...state };
-    if (this.lockAllBtn) {
-      this.lockAllBtn.setAttribute('aria-pressed', String(state.locked));
-      this.lockAllBtn.classList.toggle('tcw-active', state.locked);
-      this.lockAllBtn.title = this.t(state.locked ? 'drawing.unlockAll' : 'drawing.lockAll');
-    }
-    if (this.hideAllBtn) {
-      this.hideAllBtn.setAttribute('aria-pressed', String(state.hidden));
-      this.hideAllBtn.classList.toggle('tcw-active', state.hidden);
-      this.hideAllBtn.title = this.t(state.hidden ? 'drawing.showAll' : 'drawing.hideAll');
+    // One name each, pressed while on: pressed again, it undoes it.
+    for (const [btn, on] of [[this.lockAllBtn, state.locked], [this.hideAllBtn, state.hidden]] as const) {
+      btn?.setAttribute('aria-pressed', String(on));
+      btn?.classList.toggle('tcw-active', on);
     }
   }
 
@@ -351,6 +347,12 @@ export class WidgetDrawingSidebar {
   setFavorites(favorites: string[]): void {
     this.favorites = [...favorites];
     this.renderFavorites();
+    // A tool menu open now shows the stars as they are.
+    for (const row of this.flyoutEl?.querySelectorAll<HTMLElement>('.tcw-flyout-row') ?? []) {
+      const pinned = this.favorites.includes(row.dataset.toolValue ?? '');
+      row.classList.toggle('tcw-flyout-faved', pinned);
+      row.querySelector('[data-pin]')?.setAttribute('aria-pressed', String(pinned));
+    }
   }
 
   private renderFavorites(): void {
@@ -397,7 +399,7 @@ export class WidgetDrawingSidebar {
     header.textContent = group.label;
     flyout.appendChild(header);
 
-    const pinLabel = this.t('toolbar.timeframes.pin');
+    const pinLabel = this.t('drawing.pinFavorite');
     for (const tool of group.tools) {
       // A row: the tool (its icon, name and shortcut), and a star beside it to pin it.
       const row = document.createElement('div');
@@ -418,8 +420,9 @@ export class WidgetDrawingSidebar {
         const key = document.createElement('kbd');
         key.className = 'tcw-flyout-key';
         key.textContent = shortcut;
+        // Gone with the keys it names.
+        markPart(key, 'hotkeys', 'hotkeys.tools');
         item.appendChild(key);
-        item.setAttribute('aria-keyshortcuts', shortcut);
       }
       item.dataset.toolValue = tool.value;
       item.addEventListener('click', () => {

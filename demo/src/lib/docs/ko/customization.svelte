@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>커스터마이징 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 123개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
+  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 122개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
 </svelte:head>
 
 <h1>커스터마이징</h1>
@@ -140,6 +140,11 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   <code>widget.toast()</code>로 띄운 알림은 그대로 보입니다.
   <code>selectionToolbar</code>를 끄면 선택한 그림 위의 도구 모음이 숨겨집니다. 오른쪽 클릭 메뉴는 그대로입니다.
   <code>statusBar.rangeTimeframe</code>를 끄면 기간 막대의 기간이 봉에 비해 길어도 시간 단위를 유지하고, 켜면 주봉이나 월봉으로 바꿨다가 되돌립니다.
+  거래 도구는 툴바의 거래 메뉴 하나에 모여 있습니다: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
+  <code>toolbar.accountPanel</code>과 각각의 기능은 메뉴에서 자기 항목을 빼고, <code>toolbar.trade</code>는 메뉴를
+  통째로 뺍니다. 남은 항목이 없을 때도 메뉴는 사라집니다. 실행 취소와 다시 실행은 그리기 사이드바에서 툴바로
+  옮겨졌고, <code>sidebar.undo</code>와 <code>sidebar.redo</code>로 여전히 끌 수 있습니다. <code>statusBar.symbol</code>은
+  이제 켜고 끌 것이 없습니다. 범례의 제목 줄이 종목을 보여 줍니다.
 </p>
 
 <p id="toast-icons">

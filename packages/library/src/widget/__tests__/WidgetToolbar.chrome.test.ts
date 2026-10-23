@@ -101,6 +101,19 @@ describe('the chart controls', () => {
   });
 });
 
+describe('the “more” menu', () => {
+  it('leaves out what can’t be done now: undo and redo with nothing to undo', () => {
+    make();
+    root.setAttribute('data-tcw-narrow', '');
+    root.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!.click();
+    expect(menuItems().map((b) => b.textContent?.trim())).not.toContain('Undo');
+    root.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!.click(); // closes it
+    toolbar.setHistory(true, false);
+    root.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!.click();
+    expect(menuItems().map((b) => b.textContent?.trim())).toContain('Undo');
+  });
+});
+
 describe('the Trade menu', () => {
   it('gathers the trading tools in one menu', () => {
     make();

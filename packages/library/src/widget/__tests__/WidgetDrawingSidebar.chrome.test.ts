@@ -51,6 +51,20 @@ describe('a drawing tool menu', () => {
     expect(calls).toEqual(['pin trendLine']);
   });
 
+  it('shows the star’s new state at once, the menu still open', () => {
+    openLines();
+    sidebar.setFavorites(['ray', 'trendLine']);
+    expect(row('trendLine').querySelector('[data-pin]')!.getAttribute('aria-pressed')).toBe('true');
+    expect(row('trendLine').classList.contains('tcw-flyout-faved')).toBe(true);
+    sidebar.setFavorites([]);
+    expect(row('ray').querySelector('[data-pin]')!.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('names the star for what it does: pinning to the drawing tools’ favourites', () => {
+    openLines();
+    expect(row('trendLine').querySelector('[data-pin]')!.getAttribute('title')).toBe('Pin to favourites');
+  });
+
   it('no longer needs its right-click hint', () => {
     openLines();
     expect(host.querySelector('.tcw-flyout-hint')).toBeNull();
@@ -66,7 +80,8 @@ describe('the drawing tools’ own switches', () => {
     expect(calls).toEqual(['lock true', 'hide true']);
     sidebar.setDrawingsState({ locked: true, hidden: false });
     expect(btn('lockAll').getAttribute('aria-pressed')).toBe('true');
-    expect(btn('lockAll').title).toBe('Unlock all drawings');
+    // One name, pressed while on.
+    expect(btn('lockAll').title).toBe('Lock all drawings');
     btn('lockAll').click();
     expect(calls.at(-1)).toBe('lock false');
   });

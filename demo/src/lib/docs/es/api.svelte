@@ -430,6 +430,34 @@ const widget = new ChartWidget(host, {
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
 
+<h3 id="bars">Las barras</h3>
+<table>
+  <thead><tr><th>Barra</th><th>Qué lleva</th></tr></thead>
+  <tbody>
+    <tr><td>Barra de herramientas</td><td>
+      El símbolo y su información; las temporalidades (las fijadas como botones, y un menú con todas por unidad, de minutos
+      a meses, con una estrella en cada una para fijarla); el tipo de gráfico como su icono; Indicadores, y Comparar cuando hay un adaptador de datos;
+      deshacer y rehacer. A la derecha: diseños, repetición de barras, alertas, el árbol de objetos, un menú Operar (una
+      orden nueva, órdenes bracket largas y cortas, la escalera de profundidad y el panel de cuenta), y luego captura de
+      pantalla, configuración, el tema y pantalla completa. Lo que no cabe se pliega bajo “Más”.
+    </td></tr>
+    <tr><td>Herramientas de dibujo</td><td>
+      El menú de cada grupo indica los atajos de sus herramientas (Alt+T una línea de tendencia) y tiene una estrella en
+      cada fila para fijar la herramienta arriba. Abajo: el estilo de dibujo, el imán, la goma, el zoom de área, mantener
+      el modo de dibujo, bloquear todo, ocultar todo y borrar todo.
+    </td></tr>
+    <tr><td>Barra de estado</td><td>
+      Los rangos predefinidos e ir a fecha; el estado del mercado, la conexión, un reloj en la zona horaria de la vista
+      (abre las zonas para elegir) y los interruptores <code>%</code> · <code>log</code> · <code>auto</code> de la escala
+      de precio.
+    </td></tr>
+    <tr><td>Sobre un dibujo seleccionado</td><td>
+      Su color, grosor y estilo de línea, ajustes, una alerta, bloqueo, más y borrar. Arrastra la barra por su asa y se
+      queda ahí para el siguiente dibujo; con doble clic en el asa vuelve sobre el dibujo.
+    </td></tr>
+  </tbody>
+</table>
+
 <h3>Atajos de teclado del widget</h3>
 <table>
   <thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
@@ -759,7 +787,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Interruptores de funciones</h3>
-<p>123 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
+<p>122 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // un botón, una sección de dibujo, todos los atajos
 
 widget.setFeatures({ sidebar: false, statusBar: false })

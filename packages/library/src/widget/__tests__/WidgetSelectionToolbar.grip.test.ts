@@ -31,8 +31,11 @@ afterEach(() => {
 
 const el = () => host.querySelector<HTMLElement>('.tcw-sel-toolbar')!;
 const grip = () => host.querySelector<HTMLElement>('.tcw-sel-grip')!;
-const pointer = (target: EventTarget, type: string, x: number, y: number) =>
-  target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, button: 0 }));
+const pointer = (target: EventTarget, type: string, x: number, y: number, pointerId = 1) => {
+  const e = new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, button: 0 });
+  Object.defineProperty(e, 'pointerId', { value: pointerId });
+  return target.dispatchEvent(e);
+};
 const at = () => ({ left: parseFloat(el().style.left), top: parseFloat(el().style.top) });
 
 describe('the toolbar over a selected drawing', () => {
@@ -55,6 +58,17 @@ describe('the toolbar over a selected drawing', () => {
     expect(at()).toEqual(dropped);
     grip().dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(at()).not.toEqual(dropped);
+  });
+
+  it('ends a drag the system cancels, and follows only the pointer that took the grip', () => {
+    bar.show(target(400, 300));
+    const before = at();
+    pointer(grip(), 'pointerdown', 10, 10, 7);
+    pointer(document, 'pointermove', 30, 10, 8);
+    expect(at()).toEqual(before);
+    pointer(document, 'pointercancel', 30, 10, 7);
+    pointer(document, 'pointermove', 90, 10, 7);
+    expect(at()).toEqual(before);
   });
 
   it('keeps the grip out of the buttons the keys move through', () => {

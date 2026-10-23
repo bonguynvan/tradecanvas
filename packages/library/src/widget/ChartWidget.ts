@@ -511,7 +511,7 @@ export class ChartWidget {
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
         onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
-        onCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
+        onCompare: options.adapter && features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onUndo: () => this.chart.undo(),
         onRedo: () => this.chart.redo(),
         onToggleFullscreen: typeof document !== 'undefined' && document.fullscreenEnabled
@@ -701,14 +701,22 @@ export class ChartWidget {
         onPick: (value) => this.changeSettings({ timezone: value }),
       },
       scale: {
-        labels: { percent: this.t('settings.scale.percentage'), log: this.t('settings.scale.logarithmic'), auto: this.t('settings.autoScale') },
-        onPercent: () => this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' }),
-        onLog: () => this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' }),
+        labels: {
+          group: this.t('settings.priceScale'),
+          percent: this.t('settings.scale.percentage'),
+          log: this.t('settings.scale.logarithmic'),
+          auto: this.t('settings.autoScale'),
+        },
+        texts: { log: this.t('statusBar.log'), auto: this.t('statusBar.auto') },
+        onPercent: () => this.toggleScaleMode('percentage'),
+        onLog: features.logScale !== false ? () => this.toggleScaleMode('logarithmic') : undefined,
         onAuto: () => this.changeSettings({ autoScale: !this.chart.isAutoScale() }),
       },
     });
     // The clock each second, while the page is in view.
-    this.clockTimer = setInterval(() => { if (!pageHidden()) this.statusBar?.tick(); }, CLOCK_TICK_MS);
+    this.clockTimer = setInterval(() => {
+      if (!pageHidden() && this.featureState.statusBar && this.featureState['statusBar.clock']) this.statusBar?.tick();
+    }, CLOCK_TICK_MS);
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
     this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
     this.refreshScaleSwitches();
@@ -2404,7 +2412,7 @@ export class ChartWidget {
 
   /** Whether every drawing is locked, and every one hidden: the sidebar's lock all and hide all say so. */
   private refreshDrawingsState(): void {
-    const drawings = this.chart.getDrawings();
+    const drawings = this.chart.getDrawings() ?? [];
     const all = drawings.length > 0;
     this.sidebar?.setDrawingsState({
       locked: all && drawings.every((d) => d.locked),
@@ -2412,9 +2420,14 @@ export class ChartWidget {
     });
   }
 
-  /** The status bar's scale switches as the chart is now. */
+  /** The status bar's scale switches as the chart is now (a shared link or your code may have set it). */
   private refreshScaleSwitches(): void {
-    this.statusBar?.setScale({ mode: this.settingsState.scaleMode, auto: this.chart.isAutoScale() });
+    this.statusBar?.setScale({ mode: this.chart.getScaleMode(), auto: this.chart.isAutoScale() });
+  }
+
+  /** `mode` on, or back to a regular scale when it is on already, through the settings. */
+  private toggleScaleMode(mode: 'percentage' | 'logarithmic'): void {
+    this.changeSettings({ scaleMode: this.chart.getScaleMode() === mode ? 'regular' : mode });
   }
 
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
@@ -2821,6 +2834,7 @@ export class ChartWidget {
   }
 
   private refreshObjects(): void {
+    this.refreshDrawingsState();
     if (!this.objectTree) return;
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
@@ -3983,6 +3997,7 @@ export class ChartWidget {
   }
 
   private updateUI(): void {
+    this.refreshDrawingsState();
     this.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);

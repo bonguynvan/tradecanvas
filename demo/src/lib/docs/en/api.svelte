@@ -427,7 +427,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>Toolbar</td><td>
       The symbol and its info; the intervals (the pinned ones as buttons, and a menu of them all by unit, minutes to
-      months, a star on each to pin it); the chart type as its icon; Indicators and Compare; undo and redo. On the
+      months, a star on each to pin it); the chart type as its icon; Indicators, and Compare when there is a data adapter; undo and redo. On the
       right: layouts, bar replay, alerts, the object tree, a Trade menu (a new order, long and short brackets, the
       depth ladder and the account panel), then screenshot, settings, the theme and fullscreen. What doesn't fit
       folds under “more”.
@@ -764,7 +764,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>123 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>122 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })
