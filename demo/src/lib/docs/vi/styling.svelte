@@ -258,11 +258,13 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
 <p>
   Override có hai lớp. Của bạn (<code>layer: 'host'</code>, mặc định) giữ qua mọi lần đổi theme và không bao giờ được
   lưu. Của người dùng (<code>layer: 'user'</code>) thắng của bạn, được giữ theo theme mà họ đặt — màu chọn trên theme tối
-  quay lại cùng theme tối — và được lưu bằng <code>saveState()</code>. Phần Settings của widget ghi vào lớp người dùng,
-  và nút Reset đưa về màu của theme, theme nào cũng vậy.
-  Tab Giao diện chỉnh mọi phần của chart theo các khoá này, kể cả màu của loại chart đang xem; tab Giao dịch chỉnh
-  màu lệnh, vị thế, điểm tín hiệu và vùng lệnh. Màu để phần đó tự quyết hiện là Tự động, và nút Tự động đưa màu về
-  như vậy.
+  quay lại cùng theme tối — và được lưu bằng <code>saveState()</code>. Phần Settings của widget ghi vào lớp người dùng.
+  Các tab dọc bên trái chỉnh mọi phần của chart theo các khoá này: <strong>Mã</strong> (loại chart đang xem, giá cuối,
+  khối lượng), <strong>Dòng trạng thái</strong>, <strong>Thang đo</strong>, <strong>Giao diện</strong> (nền, lưới,
+  con trỏ chữ thập, ngắt phiên), <strong>Lớp</strong> và <strong>Giao dịch</strong> (lệnh, vị thế, điểm tín hiệu,
+  vùng lệnh). Mọi thay đổi hiện ngay; <strong>Huỷ</strong> trả tất cả về như cũ, <strong>OK</strong> giữ lại thành một
+  bước hoàn tác. Menu <strong>Mẫu</strong> lưu giao diện dưới một cái tên, áp dụng hoặc xoá mẫu đã lưu, và khôi phục
+  màu của theme, theme nào cũng vậy. Màu để phần đó tự quyết hiện là Tự động, và nút Tự động đưa màu về như vậy.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // của người dùng, cho theme hiện tại

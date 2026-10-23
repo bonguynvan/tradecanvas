@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### The chart settings, rewritten
+
+The widget's settings dialog is laid out as the indicators dialog is, in the Print look: 776 by 610, half a step of φ wider than the indicators dialog, its tabs 233 wide down the side.
+
+- **Tabs down the side**, each with its icon: **Symbol** (the chart type's own settings and colours, the main series, extended hours, the last price, the volume, the high and low), **Status line** (the legend and its colours), **Scales** (the scale mode, auto, invert, the left scale, value labels, the countdown, the time zone, the number format, the axes' colours), **Appearance** (background, panes, grid, crosshair, session breaks, handles), **Layers** (volume and market profiles, the depth heatmap, swings, session shading, prior levels) and **Trading** (orders, positions, signal markers, trade zones).
+- **Cancel and OK.** Every change still shows at once. **Cancel**, Esc, the close button or a click outside put them all back; **OK** keeps them as one undo step, where each change was a step before. Only what the session changed goes back: a scale dragged by hand meanwhile stays.
+- **The Template menu** saves the chart's look under a name (its switches and the colours that are set; not the time zone, the number format or auto-scale), applies or deletes a saved one, and resets to the defaults. Templates are kept in this browser.
+- A context menu's entries can now be removable: a remove button on the row, and the Delete key. A context menu taller than the room scrolls.
+- **Fixed:** a drag that began in a dialog and ended outside it (a slider, a text selection) closed the indicator settings, which now cancels; it doesn't any more. A toast raised over an open dialog shows above it.
+
 Collected on `main` for the next release. Not on npm yet.
 
 ### The Indicators dialog and the indicator settings

@@ -262,10 +262,13 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</c
   Overrides come in two layers. Yours (<code>layer: 'host'</code>, the default) stay through theme switches and are
   never saved. The user's (<code>layer: 'user'</code>) win over yours, are kept with the theme they were made on —
   colours picked on the dark theme come back with the dark theme — and are saved with <code>saveState()</code>. The
-  widget's Settings write the user's layer, and its Reset goes back to the theme's colours, whichever theme it is.
-  Its Style tab sets every part of the chart's look by these keys, the colours of the chart type on view included,
-  and its Trading tab the colours of orders, positions, signal markers and trade zones. A colour left to the part
-  itself shows as Auto, and Auto takes one back there.
+  widget's Settings write the user's layer. Their tabs down the side set every part of the chart's look by these
+  keys: <strong>Symbol</strong> (the chart type on view, the last price, the volume), <strong>Status line</strong>,
+  <strong>Scales</strong>, <strong>Appearance</strong> (background, grid, crosshair, session breaks),
+  <strong>Layers</strong> and <strong>Trading</strong> (orders, positions, signal markers, trade zones). Every change
+  shows at once; <strong>Cancel</strong> puts them all back and <strong>OK</strong> keeps them as one undo step. The
+  <strong>Template</strong> menu saves the look under a name, applies or deletes a saved one, and resets to the
+  theme's colours, whichever theme it is. A colour left to the part itself shows as Auto, and Auto takes one back there.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // the user's, for the current theme

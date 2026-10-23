@@ -232,8 +232,9 @@ is drawn reads back from `getStyleValue(key)`. Orders, positions, signal markers
 drawing handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`,
 `drawings.handleColor`). Each indicator plot's dash and visibility:
 `updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`. The widget's Settings
-edit these keys on the user's layer: the Style tab the chart's parts and the colours of the chart
-type on view, the Trading tab the orders', markers' and zones' colours (Auto until one is picked).
+edit these keys on the user's layer: the Symbol tab the colours of the chart type on view, the
+Appearance and Scales tabs the chart's parts, the Trading tab the orders', markers' and zones'
+colours (Auto until one is picked); Cancel puts a session back, OK keeps it as one undo step.
 
 The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
 `widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability

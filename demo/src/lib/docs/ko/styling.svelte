@@ -256,10 +256,13 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
 <p>
   오버라이드는 두 레이어로 나뉩니다. 앱의 것(<code>layer: 'host'</code>, 기본값)은 테마를 바꿔도 남고 저장되지 않습니다.
   사용자의 것(<code>layer: 'user'</code>)은 앱의 것보다 우선하며, 정한 테마별로 유지되고 — 다크 테마에서 고른 색은
-  다크 테마로 돌아오면 다시 나타납니다 — <code>saveState()</code> 로 저장됩니다. 위젯의 설정은 사용자 레이어에 쓰고,
-  재설정은 어떤 테마든 그 테마의 색으로 돌아갑니다.
-  스타일 탭은 이 키들로 차트의 모든 부분을 설정하며, 지금 보는 차트 유형의 색도 포함합니다. 거래 탭은 주문, 포지션,
-  시그널 표시, 거래 영역의 색을 설정합니다. 부품 자체에 맡긴 색은 자동으로 표시되고, 자동 버튼으로 되돌릴 수 있습니다.
+  다크 테마로 돌아오면 다시 나타납니다 — <code>saveState()</code> 로 저장됩니다. 위젯의 설정은 사용자 레이어에 씁니다.
+  왼쪽에 세로로 놓인 탭이 이 키들로 차트의 모든 부분을 설정합니다: <strong>종목</strong>(지금 보는 차트 유형, 최종가,
+  거래량), <strong>상태 표시줄</strong>, <strong>눈금</strong>, <strong>모양</strong>(배경, 격자, 십자선, 세션 구분),
+  <strong>레이어</strong>, <strong>거래</strong>(주문, 포지션, 시그널 표시, 거래 영역). 바꾼 내용은 바로 보이고,
+  <strong>취소</strong>는 모두 되돌리며 <strong>확인</strong>은 한 번의 실행 취소 단위로 남깁니다. <strong>템플릿</strong>
+  메뉴는 모양을 이름으로 저장하고, 저장한 것을 적용하거나 지우며, 어떤 테마든 그 테마의 색으로 되돌립니다. 부품 자체에
+  맡긴 색은 자동으로 표시되고, 자동 버튼으로 되돌릴 수 있습니다.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // 현재 테마에서 사용자의 것
