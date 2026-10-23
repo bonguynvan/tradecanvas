@@ -103,7 +103,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 元に戻す操作は 1 回分
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // 選択中の描画（Ctrl+C）
+chart.pasteDrawings()                // Ctrl+V。このチャートにも、ページ上の別のチャートにも
+chart.canPasteDrawings()             // 貼り付けられるものがあるかどうか`}</code></pre>
 <p>グループ内の描画を 1 つクリックすると、グループ全体が選択されます。</p>
 
 <h2>消しゴム、ズーム、マグネット</h2>

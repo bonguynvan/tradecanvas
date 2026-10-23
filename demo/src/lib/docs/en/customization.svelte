@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Customization — TradeCanvas docs</title>
-  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 122 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
+  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 125 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
 </svelte:head>
 
 <h1>Customization</h1>
@@ -122,14 +122,14 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
       <code>menu.chart.horizontalLine</code> <code>menu.chart.resetView</code> <code>menu.chart.drawings</code>
       <code>menu.chart.exportData</code> <code>menu.chart.settings</code> <code>menu.chart.scale</code>
-      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code>
+      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code> <code>menu.chart.indicators</code> <code>menu.chart.timezone</code>
       <code>menu.drawing</code> <code>menu.drawing.settings</code> <code>menu.drawing.alert</code>
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
     <tr><td>Keys</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
-      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code>
+      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>

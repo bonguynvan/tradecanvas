@@ -66,6 +66,7 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>オーバーレイ型またはパネル型のインジケーターを追加し、インスタンス id を返します。</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>表示中のインジケーターを変更します。</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>複数をまとめて削除します（元に戻すは 1 回）。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>色、線の太さ、不透明度、そしてプロットごとの線種と表示（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>これから追加する同じ種類のインジケーターの初期スタイル。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>表示する時間足（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）。<code>null</code> ですべての時間足。レイアウトとともに保存。</td></tr>
@@ -101,7 +102,7 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
-chart.fitContent()         // zoom out to all data
+chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
@@ -442,6 +443,9 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>レイアウトを保存（初回は名前を尋ねます）</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>時間足（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）を入力して Enter で切り替え（<code>intervalTyping: false</code> で無効）</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>トレンドライン、水平線、水平半直線、垂直線、十字線、フィボナッチ・リトレースメント</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>表示をリセット：すべてのバーを表示し、価格スケールをそれに合わせます</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>価格スケールを反転</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>日付へ移動</td></tr>
     <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧を表示</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
@@ -736,7 +740,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>機能スイッチ</h3>
-<p>122 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
+<p>125 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // ボタン一つ、描画ツールのグループ一つ、すべてのキー操作
 
 widget.setFeatures({ sidebar: false, statusBar: false })

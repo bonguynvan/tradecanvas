@@ -66,6 +66,7 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>오버레이 또는 패널 지표를 추가합니다. 인스턴스 id를 반환합니다.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>실행 중인 지표를 변경합니다.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>지표를 제거하고 정리합니다.</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>여러 지표를 한 번의 실행 취소 단계로 제거합니다.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>색, 선 두께, 불투명도, 그리고 플롯별 선 종류와 표시(<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>앞으로 추가할 같은 종류 지표의 시작 스타일.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>지표가 표시되는 시간 단위(<code>{`{ minutes: false, hours: [1, 4] }`}</code>). <code>null</code>이면 전체. 레이아웃과 함께 저장.</td></tr>
@@ -101,7 +102,7 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
-chart.fitContent()         // zoom out to all data
+chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
@@ -447,6 +448,9 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>레이아웃 저장(처음에는 이름을 묻습니다)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>시간 단위(<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>)를 입력하고 Enter로 적용(<code>intervalTyping: false</code>로 끌 수 있음)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>추세선, 수평선, 수평 반직선, 수직선, 십자선, 피보나치 되돌림</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>보기 재설정: 모든 봉을 화면에 담고 가격 눈금을 그에 맞춤</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>가격 눈금 반전</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>날짜로 이동</td></tr>
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록 표시</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
@@ -747,7 +751,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>기능 스위치</h3>
-<p>스위치 122개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
+<p>스위치 125개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
 
 widget.setFeatures({ sidebar: false, statusBar: false })

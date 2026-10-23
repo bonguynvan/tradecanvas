@@ -66,6 +66,7 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Adds an overlay or panel indicator. Returns instance id.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Mutate a live indicator.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Remove and tear down.</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>Remove several, as one undo step.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colours, line widths, opacity, and each plot's dash and visibility (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>The style indicators of a kind start with from now on.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>The intervals it shows on (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: all of them. Saved with the layout.</td></tr>
@@ -101,7 +102,7 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
-chart.fitContent()         // zoom out to all data
+chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
@@ -460,6 +461,9 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Save the layout (asks for a name the first time)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Type an interval (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) and press Enter (<code>intervalTyping: false</code> turns it off)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Trend line, horizontal line, horizontal ray, vertical line, cross line, Fibonacci retracement</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Reset the view: every bar in sight, the price scale fitted to them</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Invert the price scale</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Go to a date</td></tr>
     <tr><td><kbd>?</kbd></td><td>Show the keyboard shortcuts sheet</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
@@ -766,7 +770,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>122 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>125 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })

@@ -146,10 +146,24 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <p>
   ChartWidget builds its menus on these. Right-click the plot for an alert, a buy and a
   sell at that price (a limit on the side of the market where it would wait, a stop on
-  the other), an order ticket, a horizontal line, reset view and the drawings; the price
-  axis for its scale switches; the time axis for reset view and go to date. Add your
-  own entries with <code>chartMenuItems</code> (see the
-  <a href={href('/docs/api')}>API reference</a>).
+  the other), an order ticket and a horizontal line; then reset view, paste the drawings
+  you copied, hide or remove the drawings, remove the indicators (a comparison with
+  another symbol stays), export the data, and the settings.
+</p>
+<p>
+  Right-click the price axis for its reset, auto scale, the inverted and the left-hand
+  scale, one of its four modes (regular, logarithmic, percentage, indexed to 100), the
+  labels on it and the lines across the chart in two submenus, an alert at the price, and
+  the settings open on their Scales tab. The time axis has its reset, go to date and the
+  time zone.
+</p>
+<p>
+  An entry shows the widget's shortcut for it while that key is on: <kbd>Alt</kbd> +
+  <kbd>R</kbd> reset view, <kbd>Alt</kbd> + <kbd>I</kbd> invert the scale, <kbd>Alt</kbd> +
+  <kbd>G</kbd> go to date. A submenu opens on a click, <kbd>Enter</kbd>, <kbd>→</kbd> or a
+  pointer resting on it, and <kbd>←</kbd> or <kbd>Escape</kbd> goes back; on a phone, where
+  menus open from the bottom, its first row leads back. Add your own entries with
+  <code>chartMenuItems</code> (see the <a href={href('/docs/api')}>API reference</a>).
 </p>
 
 <h2>Order ticket and account panel (ChartWidget)</h2>

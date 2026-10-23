@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>커스터마이징 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 122개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
+  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 125개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
 </svelte:head>
 
 <h1>커스터마이징</h1>
@@ -122,14 +122,14 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
       <code>menu.chart.horizontalLine</code> <code>menu.chart.resetView</code> <code>menu.chart.drawings</code>
       <code>menu.chart.exportData</code> <code>menu.chart.settings</code> <code>menu.chart.scale</code>
-      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code>
+      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code> <code>menu.chart.indicators</code> <code>menu.chart.timezone</code>
       <code>menu.drawing</code> <code>menu.drawing.settings</code> <code>menu.drawing.alert</code>
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
     <tr><td>단축키</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
-      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code>
+      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>

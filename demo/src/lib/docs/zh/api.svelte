@@ -66,6 +66,7 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>添加叠加指标或副图指标。返回实例 id。</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>修改一个运行中的指标。</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>删除并销毁。</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>删除多个指标，作为一步撤销。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>从现在起同类指标的初始样式。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>它显示在哪些周期上（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）；<code>null</code> 表示全部周期。随布局一起保存。</td></tr>
@@ -100,7 +101,7 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
-chart.fitContent()         // zoom out to all data
+chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
@@ -432,6 +433,9 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>保存布局（首次保存时会询问名称）</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>输入周期（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）后按 Enter（设置 <code>intervalTyping: false</code> 可关闭）</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>趋势线、水平线、水平射线、垂直线、十字线、斐波那契回撤</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>重置视图：显示全部K线，价格坐标随之适配</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>反转价格坐标</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>跳转到日期</td></tr>
     <tr><td><kbd>?</kbd></td><td>显示快捷键列表</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
@@ -716,7 +720,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>功能开关</h3>
-<p>122 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<p>125 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
 
 widget.setFeatures({ sidebar: false, statusBar: false })

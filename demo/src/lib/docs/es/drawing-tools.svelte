@@ -109,7 +109,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // un solo paso de deshacer
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // los seleccionados (Ctrl+C)
+chart.pasteDrawings()                // Ctrl+V, aquí o en otro gráfico de la página
+chart.canPasteDrawings()             // si hay algo que pegar`}</code></pre>
 <p>Al hacer clic en un dibujo de un grupo se selecciona todo el grupo.</p>
 
 <h2>Borrador, zoom e imán</h2>

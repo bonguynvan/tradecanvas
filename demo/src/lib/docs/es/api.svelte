@@ -66,6 +66,7 @@
     <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Añade un indicador superpuesto o en panel. Devuelve el id de la instancia.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Modifica un indicador activo.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Lo quita y libera sus recursos.</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>Quita varios, en un solo paso de deshacer.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Las temporalidades en las que se muestra (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: todas. Se guarda con el diseño.</td></tr>
@@ -102,7 +103,7 @@ chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
-chart.fitContent()         // zoom out to all data
+chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
@@ -469,6 +470,9 @@ widget.destroy()`}</code></pre>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Guarda el diseño (pide un nombre la primera vez)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Escribe una temporalidad (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) y pulsa Enter (<code>intervalTyping: false</code> lo desactiva)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Línea de tendencia, línea horizontal, rayo horizontal, línea vertical, línea en cruz, retroceso de Fibonacci</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Restablece la vista: todas las barras a la vista, con la escala de precio ajustada a ellas</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Invierte la escala de precio</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Va a una fecha</td></tr>
     <tr><td><kbd>?</kbd></td><td>Muestra la hoja de atajos de teclado</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
@@ -789,7 +793,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Interruptores de funciones</h3>
-<p>122 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
+<p>125 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // un botón, una sección de dibujo, todos los atajos
 
 widget.setFeatures({ sidebar: false, statusBar: false })

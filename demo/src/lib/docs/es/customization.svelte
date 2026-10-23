@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Personalización — Documentación de TradeCanvas</title>
-  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 122 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
+  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 125 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
 </svelte:head>
 
 <h1>Personalización</h1>
@@ -122,14 +122,14 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
       <code>menu.chart.horizontalLine</code> <code>menu.chart.resetView</code> <code>menu.chart.drawings</code>
       <code>menu.chart.exportData</code> <code>menu.chart.settings</code> <code>menu.chart.scale</code>
-      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code>
+      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code> <code>menu.chart.indicators</code> <code>menu.chart.timezone</code>
       <code>menu.drawing</code> <code>menu.drawing.settings</code> <code>menu.drawing.alert</code>
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
     <tr><td>Atajos</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
-      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code>
+      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>

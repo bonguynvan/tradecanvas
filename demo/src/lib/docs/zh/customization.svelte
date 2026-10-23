@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>定制 — TradeCanvas 文档</title>
-  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 122 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
+  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 125 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
 </svelte:head>
 
 <h1>定制</h1>
@@ -119,14 +119,14 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
       <code>menu.chart.horizontalLine</code> <code>menu.chart.resetView</code> <code>menu.chart.drawings</code>
       <code>menu.chart.exportData</code> <code>menu.chart.settings</code> <code>menu.chart.scale</code>
-      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code>
+      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code> <code>menu.chart.indicators</code> <code>menu.chart.timezone</code>
       <code>menu.drawing</code> <code>menu.drawing.settings</code> <code>menu.drawing.alert</code>
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
     <tr><td>快捷键</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
-      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code>
+      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>

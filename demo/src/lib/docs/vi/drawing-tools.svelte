@@ -106,7 +106,11 @@ chart.ungroupDrawings(group)
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // một bước hoàn tác
 chart.setDrawingsVisible(ids, false)
-chart.setDrawingsLocked(ids, true)`}</code></pre>
+chart.setDrawingsLocked(ids, true)
+
+chart.copyDrawings()                 // những hình đang chọn (Ctrl+C)
+chart.pasteDrawings()                // Ctrl+V, tại đây hoặc trên biểu đồ khác trong trang
+chart.canPasteDrawings()             // có gì để dán hay không`}</code></pre>
 <p>Bấm vào một hình vẽ trong nhóm sẽ chọn cả nhóm.</p>
 
 <h2>Tẩy, phóng to và nam châm</h2>

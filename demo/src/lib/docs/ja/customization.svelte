@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>カスタマイズ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 122 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
+  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 125 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
 </svelte:head>
 
 <h1>カスタマイズ</h1>
@@ -122,14 +122,14 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
       <code>menu.chart</code> <code>menu.chart.alert</code> <code>menu.chart.order</code> <code>menu.chart.orderTicket</code>
       <code>menu.chart.horizontalLine</code> <code>menu.chart.resetView</code> <code>menu.chart.drawings</code>
       <code>menu.chart.exportData</code> <code>menu.chart.settings</code> <code>menu.chart.scale</code>
-      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code>
+      <code>menu.chart.goToDate</code> <code>menu.chart.paneScale</code> <code>menu.priceAxisAdd</code> <code>menu.chart.indicators</code> <code>menu.chart.timezone</code>
       <code>menu.drawing</code> <code>menu.drawing.settings</code> <code>menu.drawing.alert</code>
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
     <tr><td>キー操作</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
-      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code>
+      <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>
