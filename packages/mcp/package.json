@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/mcp",
-  "version": "1.35.0",
+  "version": "1.36.0",
   "type": "module",
   "description": "An MCP server for TradeCanvas: coding agents look up its indicators, drawing tools, options, feature switches and style keys, and check an options object before they use it.",
   "license": "MIT",
