@@ -19,7 +19,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |
 | `demo` | The Feature Lab you run locally, and the source of the docs in six languages, which [tradecanvas.dev](https://tradecanvas.dev/) publishes. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
-| `scripts` | Docs generated from the code, and their checks; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev. |
+| `scripts` | Docs generated from the code, and their checks; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`. |
 
 ## Commands
 

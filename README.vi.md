@@ -29,30 +29,54 @@
 **Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 134 chỉ báo, 69 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
-  <a href="https://tradecanvas.dev/vi/"><img src=".github/assets/hero.png" alt="ChartWidget với giá BTCUSDT trực tiếp từ Binance: EMA 21 và 55, RSI, một đường xu hướng, một vị thế mua và watchlist có giá trực tiếp" width="100%"></a>
+  <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên thị trường trực tiếp: EMA 21 và 55, RSI, crosshair và một đường xu hướng vẽ bằng chuột" width="100%"></a>
 </p>
 
 ## Điểm nổi bật
 
-- **18 loại biểu đồ**, từ nến và Heikin-Ashi tới Renko, Kagi, point & figure và Equivolume, cùng sáu biểu đồ tài chính (sparkline, độ sâu, equity, heatmap, waterfall, gauge).
-- **134 chỉ báo và 69 công cụ vẽ**: chỉ báo chồng chỉ báo, cảnh báo theo đường xu hướng, template, nhóm, hoàn tác và làm lại.
-- **Giao dịch ngay trên biểu đồ**: vị thế có lãi/lỗ trực tiếp, kéo để sửa lệnh, cắt lỗ và chốt lời, phiếu đặt lệnh, bảng tài khoản, sàn giấy có sẵn hoặc adapter khớp lệnh của riêng bạn.
-- **Dữ liệu trực tiếp**: có sẵn Binance, Bybit, Coinbase và Kraken, nguồn khác chỉ cần khoảng hai mươi dòng; tải lịch sử cũ khi kéo về trái, khung thời gian bất kỳ, biểu đồ tick.
-- **Canvas 2D hoặc WebGL**: một triệu nến kéo ở 60 khung hình/giây, sắc nét ở mọi tỉ lệ màn hình.
-- **Không gian làm việc đầy đủ**: lưới nhiều biểu đồ, layout có tên, replay kèm giao dịch giấy, và bộ backtest trong `@tradecanvas/analytics`.
-- **Tuỳ biến theo ý bạn**: 101 khoá style, 112 công tắc tính năng, ba kiểu giao diện, và plugin cho chỉ báo, công cụ vẽ, loại biểu đồ và overlay.
-- **Cho mọi người**: widget bằng 30 ngôn ngữ, có cả viết phải sang trái, hỗ trợ trình đọc màn hình và bàn phím.
-- **Trên điện thoại và trong ứng dụng**: ngón tay làm được mọi việc của chuột, kể cả hình vẽ, lệnh và cảnh báo; widget tự bố trí cho điện thoại; biểu đồ tiết kiệm pin, và chạy trong WebView, React Native, Capacitor hay Tauri.
+- **18 loại biểu đồ, 134 chỉ báo, 69 công cụ vẽ**, chỉ báo trên chỉ báo, cảnh báo trên đường vẽ, hoàn tác và làm lại.
+- **Giao dịch trên biểu đồ**: vị thế với lãi lỗ trực tiếp, lệnh và điểm dừng kéo được, broker giấy hoặc broker của bạn.
+- **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
+- **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây.
+- **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, tua lại nến, backtest.
+- **Tùy biến theo ý bạn**: theme, ba phong cách, 112 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
-## Cài đặt
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/trading.webp" alt="Kéo take-profit và stop-loss của một vị thế mua; lãi lỗ cập nhật theo giá">
+      <br><b>Lệnh kéo được</b>: điểm dừng, mục tiêu và lệnh giới hạn di chuyển theo chuột.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/replay.webp" alt="Tua lại nến phát lại thị trường với Bollinger Bands">
+      <br><b>Tua lại nến</b>: phát lại thị trường, rồi giao dịch giấy trên đó.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/grid.webp" alt="Bốn biểu đồ trong lưới hai nhân hai với khung thời gian khác nhau, crosshair chạy theo trên cả bốn">
+      <br><b>Lưới</b>: tới sáu biểu đồ, liên kết theo mã, khung thời gian, crosshair hoặc thời gian.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các phong cách Terminal, Capsule và Studio, tối và sáng">
+      <br><b>Phong cách của bạn</b>: Studio, Terminal, Capsule, sáng hoặc tối, hoặc token của riêng bạn.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src=".github/assets/clips/phone.webp" alt="Widget trên điện thoại: ngón tay kéo biểu đồ và vẽ một đường xu hướng" width="46%">
+    </td>
+    <td width="50%" valign="top">
+      <br><b>Trên điện thoại</b>: ngón tay kéo, phóng to, vẽ và kéo lệnh, widget tự sắp xếp cho màn hình nhỏ. Nó cũng chạy trong WebView, React Native, Capacitor hoặc Tauri.
+    </td>
+  </tr>
+</table>
+
+## Bắt đầu nhanh
 
 ```bash
 npm install @tradecanvas/chart
 ```
-
-## Bắt đầu nhanh
-
-`ChartWidget` là cả giao diện giao dịch chỉ trong một lệnh gọi: thanh công cụ, thanh công cụ vẽ, cài đặt, thanh trạng thái.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -67,111 +91,13 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Muốn tự làm giao diện, dùng `Chart` headless và API của nó:
-
-```typescript
-import { Chart } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
-chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
-chart.addIndicator('ema', { period: 50 })
-chart.addIndicator('rsi')
-```
-
-Nguồn dữ liệu của bạn nối vào qua `WebSocketAdapter` hoặc `PollingAdapter`; xem [Dữ liệu trực tiếp](https://tradecanvas.dev/vi/docs/realtime/).
-
-## Framework
-
-```bash
-npm install @tradecanvas/react    # hoặc @tradecanvas/vue, @tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-Ba component dùng chung một bộ prop và trao cho bạn `Chart` bên dưới. Xem [Framework](https://tradecanvas.dev/vi/docs/frameworks/).
-
-## Một vòng xem thử
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="Công cụ vẽ: Fibonacci thoái lui kèm ghi chú, đường xu hướng, sóng đẩy Elliott và một vị thế mua"></a>
-      <br><b>69 công cụ vẽ</b><br>
-      Fibonacci, Gann, pitchfork, sóng Elliott, mô hình harmonic, ghi chú, và vị thế mua/bán tự tính khối lượng.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="Giao dịch trên biểu đồ: vị thế mua có cắt lỗ và chốt lời, lệnh buy stop và sell limit, và bảng tài khoản"></a>
-      <br><b>Giao dịch trên biểu đồ</b><br>
-      Vị thế có lãi/lỗ trực tiếp, kéo lệnh tới giá mới, phiếu đặt lệnh và bảng tài khoản.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="Không gian 2×2 gồm biểu đồ BTC, ETH, SOL và BNB với các khung thời gian khác nhau"></a>
-      <br><b>Nhiều biểu đồ cùng lúc</b><br>
-      Tối đa sáu biểu đồ cạnh nhau, liên kết theo mã, khung thời gian, crosshair, thời gian hay hình vẽ.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="Một biểu đồ ở ba kiểu giao diện: studio, terminal và capsule trên theme sáng"></a>
-      <br><b>Giao diện của riêng bạn</b><br>
-      Ba kiểu có sẵn hoặc tự chỉnh góc bo, mật độ, font và nhãn giá, trên cả theme sáng lẫn tối.
-    </td>
-  </tr>
-</table>
+`Chart` không giao diện nhận dữ liệu nến của bạn (`chart.setData(bars)`) và để giao diện cho bạn tự làm. Với React, Vue và Svelte, `@tradecanvas/react`, `/vue` và `/svelte` bọc nó trong một component có cùng props.
 
 ## Tài liệu
 
-| Chủ đề | |
-|---|---|
-| [Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) | Cài đặt, widget, biểu đồ headless |
-| [Loại biểu đồ](https://tradecanvas.dev/vi/docs/chart-types/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) | Biểu đồ vẽ được gì, và cài đặt của từng thứ |
-| [Dữ liệu trực tiếp](https://tradecanvas.dev/vi/docs/realtime/) | Nguồn có sẵn, adapter của bạn, lịch sử, biểu đồ tick |
-| [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) | Lệnh, vị thế, adapter khớp lệnh, replay |
-| [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Tuỳ biến](https://tradecanvas.dev/vi/docs/customization/) | Theme, khoá style, kiểu giao diện, công tắc tính năng, thành phần của riêng bạn |
-| [Plugin](https://tradecanvas.dev/vi/docs/plugins/) | Chỉ báo, công cụ vẽ, loại biểu đồ và overlay của riêng bạn |
-| [Phân tích](https://tradecanvas.dev/vi/docs/analytics/) · [Biểu đồ tài chính](https://tradecanvas.dev/vi/docs/finance/) | Backtest và chỉ số rủi ro; biểu đồ độ sâu, equity và các loại khác |
-| [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; cảm ứng và cuộn trang |
-| [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/) · [Tham chiếu API](https://tradecanvas.dev/vi/docs/api/) | Số đo và toàn bộ API |
+[Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)
 
-Tài liệu còn có bằng English, 简体中文, 日本語, 한국어 và Español.
-
-## Hiệu năng
-
-Đo trên Chrome với GPU tích hợp (Intel UHD); [audit hệ thống](https://tradecanvas.dev/vi/audit/) có bảng đầy đủ.
-
-| | |
-|---|---|
-| 1.000.000 nến + 4 chỉ báo, thu nhỏ hết cỡ, WebGL | 16,7 ms mỗi khung hình (60 fps) |
-| Một tick trực tiếp trên 100.000 nến với bốn chỉ báo | ~0,001 ms |
-| `Chart` / `ChartWidget`, đã minify và gzip | 176 KB / 315 KB |
-
-## Các gói
-
-| Gói | |
-|---|---|
-| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | Biểu đồ và `ChartWidget` (`/widget`) |
-| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | Component cho framework |
-| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | Backtest và chỉ số rủi ro |
-| `@tradecanvas/core` · `@tradecanvas/commons` | Bộ máy và kiểu dữ liệu chung, tự cài cùng biểu đồ |
-
-## Bản xem trước
-
-Mọi pull request và mọi commit trên `main` đều được đăng lên [pkg.pr.new](https://pkg.pr.new), nên có thể thử một bản sửa hay tính năng trước khi phát hành. Cài bản xem trước theo số pull request hoặc commit:
-
-```bash
-npm install https://pkg.pr.new/@tradecanvas/chart@123      # pull request #123
-npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # một commit trên main
-```
-
-Mỗi pull request có một bình luận ghi sẵn lệnh cài cho từng gói.
-
-## Trình duyệt hỗ trợ
-
-Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
+Tài liệu có bằng English, Tiếng Việt, 简体中文, 日本語, 한국어 và Español. Số đo, giới hạn và cách kiểm thử nằm ở [audit hệ thống](https://tradecanvas.dev/vi/audit/).
 
 ## Công cụ lập trình AI
 
@@ -184,22 +110,14 @@ Agent skill trong [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) dạy codi
 
 Agent khác (Cursor, Codex, Copilot…): `npx skills add bonguynvan/tradecanvas`. Không dùng skill thì [`llms.txt`](https://tradecanvas.dev/llms.txt) và [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) gom tài liệu vào một file cho trợ lý AI. Sửa chính TradeCanvas bằng agent? Quy tắc của repo nằm trong [AGENTS.md](AGENTS.md).
 
-## Dự án liên quan
+## Thêm
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)**: bảng dữ liệu Svelte 5 nhỏ và nhanh cho giao diện fintech, nửa còn lại của một bàn giao dịch. [Demo trực tiếp](https://bonguynvan.github.io/bo-grid/)
-
-## Cho doanh nghiệp
-
-Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradecanvas.dev.
-
-## Đóng góp
-
-Câu hỏi, ý tưởng và sản phẩm bạn làm bằng TradeCanvas xin gửi vào [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); lỗi gửi vào issues, và pull request luôn được hoan nghênh. [CONTRIBUTING.md](./CONTRIBUTING.md) hướng dẫn cài đặt (`pnpm install && pnpm build && pnpm test`) và những gì một pull request cần có. Phát hiện lỗi bảo mật? Hãy làm theo [SECURITY.md](./SECURITY.md) thay vì mở issue.
-
-## Tài trợ
-
-TradeCanvas miễn phí, giấy phép MIT, được xây dựng và duy trì công khai. Nếu thư viện giúp ích cho sản phẩm của bạn, bạn có thể ủng hộ việc phát triển qua [GitHub Sponsors](https://github.com/sponsors/bonguynvan).
-
-## Giấy phép
+- **Các gói**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (biểu đồ và widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), và [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) cho backtest.
+- **Bản xem trước**: mỗi pull request và mỗi commit trên `main` có trên [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), cài được trước khi phát hành.
+- **Trình duyệt**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
+- **Cho doanh nghiệp**: không có logo phải hiển thị, không cần xin phép; trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì một buổi thẩm định IT hỏi. business@tradecanvas.dev
+- **Dự án liên quan**: [bo-grid](https://github.com/bonguynvan/bo-grid), một data grid Svelte nhanh cho nửa bảng của một bàn giao dịch.
+- **Đóng góp**: câu hỏi ở [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), lỗi ở mục issues, và [CONTRIBUTING.md](./CONTRIBUTING.md) cho pull request. Lỗi bảo mật: [SECURITY.md](./SECURITY.md).
+- **Tài trợ**: TradeCanvas miễn phí và phát triển công khai; [GitHub Sponsors](https://github.com/sponsors/bonguynvan) giúp nó tiếp tục.
 
 [MIT](./LICENSE)

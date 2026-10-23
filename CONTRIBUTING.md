@@ -36,7 +36,7 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
 | `packages/react`, `vue`, `svelte` | Framework wrappers. |
 | `demo` | The Feature Lab you run locally, and the source of the docs in six languages, which [tradecanvas.dev](https://tradecanvas.dev/) publishes. |
 | `skills/tradecanvas` | The agent skill; its examples are type-checked in CI. |
-| `scripts` | Generated docs (`pnpm docs:gen`) and their checks; the pages that send the old GitHub Pages addresses on to tradecanvas.dev. |
+| `scripts` | Generated docs (`pnpm docs:gen`) and their checks; the pages that send the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs`, which records the README clips from `scripts/clips`. |
 
 ## Making a change
 

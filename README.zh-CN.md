@@ -29,30 +29,54 @@
 **一套完整的 Web 交易图表。** 从K线到砖形图（Renko），134 个指标、69 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
-  <a href="https://tradecanvas.dev/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
+  <a href="https://tradecanvas.dev/zh/chart/"><img src=".github/assets/clips/hero.webp" alt="实时行情上的 ChartWidget：EMA 21 和 55、RSI、十字光标，以及用鼠标画出的趋势线" width="100%"></a>
 </p>
 
 ## 亮点
 
-- **18 种图表类型**，从蜡烛图和平均K线（Heikin-Ashi）到 Renko、Kagi、Point & Figure 和等量图（Equivolume），另有六种金融图表（迷你走势图、深度图、权益曲线、热力图、瀑布图、仪表盘）。
-- **134 个指标和 69 种画线工具**：指标可叠加在指标上，趋势线可设警报，支持模板、分组、撤销与重做。
-- **在图表上交易**：实时盈亏的持仓，可拖动的订单和止损/止盈，下单面板、账户面板，以及模拟交易经纪商或你自己的执行适配器。
-- **实时数据**：内置 Binance、Bybit、Coinbase 和 Kraken，其他数据源约二十行代码即可接入；回看时自动加载更早的历史，支持任意周期和 Tick 图。
-- **Canvas 2D 或 WebGL**：一百万根K线以 60 fps 平移，在任何屏幕缩放比例下都清晰锐利。
-- **完整的工作区**：多图表网格、命名布局、可模拟交易的K线回放，以及 `@tradecanvas/analytics` 中的回测器。
-- **按你的需要定制**：101 个样式键、112 个功能开关、三种外观，以及用于指标、画线工具、图表类型和叠加层的插件。
-- **人人可用**：组件支持 30 种语言（包括从右到左的语言），并支持屏幕阅读器和键盘操作。
-- **手机与应用中**：手指能做鼠标能做的一切，包括绘图、订单和提醒；组件按手机自动布局；图表顾及电量，可在 WebView、React Native、Capacitor 或 Tauri 中运行。
+- **18 种图表、134 个指标、69 种画线工具**，指标叠加指标、画线预警、撤销与重做。
+- **在图表上交易**：实时盈亏的持仓、可拖动的委托和止损止盈，模拟经纪商或你自己的接口。
+- **实时数据**：内置 Binance、Bybit、Coinbase 和 Kraken，自己的数据源约二十行即可接入。
+- **快**：WebGL 下百万根 K 线 60 fps 平移；一次实时 tick 约一微秒。
+- **工作区**：多图网格、布局、K 线回放、回测。
+- **随你定制**：主题、三种外观、112 个开关、插件；30 种语言；手机与应用。
 
-## 安装
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/trading.webp" alt="拖动多头持仓的止盈和止损，盈亏随价格更新">
+      <br><b>可拖动的委托</b>：止损、目标价和限价单跟随鼠标移动。
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/replay.webp" alt="回放带布林带的行情">
+      <br><b>K 线回放</b>：回放行情，再在上面模拟交易。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/grid.webp" alt="二乘二网格中四个不同周期的图表，十字光标在所有图表上同步">
+      <br><b>网格</b>：最多六个图表，按品种、周期、十字光标或时间联动。
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/looks.webp" alt="同一图表在 Terminal、Capsule 和 Studio 外观之间切换，深色与浅色">
+      <br><b>你的外观</b>：Studio、Terminal、Capsule，浅色或深色，或你自己的 token。
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src=".github/assets/clips/phone.webp" alt="手机上的组件：手指平移图表并画出一条趋势线" width="46%">
+    </td>
+    <td width="50%" valign="top">
+      <br><b>手机上</b>：手指可以平移、缩放、画线和拖动委托，组件会为小屏幕重新排布。也能在 WebView、React Native、Capacitor 或 Tauri 中运行。
+    </td>
+  </tr>
+</table>
+
+## 快速开始
 
 ```bash
 npm install @tradecanvas/chart
 ```
-
-## 快速开始
-
-`ChartWidget` 一次调用即可得到完整的交易界面：工具栏、画线侧边栏、设置和状态栏。
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -67,111 +91,13 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-想自己掌控界面，就使用无界面的 `Chart` 及其 API：
-
-```typescript
-import { Chart } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
-chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
-chart.addIndicator('ema', { period: 50 })
-chart.addIndicator('rsi')
-```
-
-你自己的数据源可通过 `WebSocketAdapter` 或 `PollingAdapter` 接入，参见[实时数据](https://tradecanvas.dev/zh/docs/realtime/)。
-
-## 框架
-
-```bash
-npm install @tradecanvas/react    # 或 @tradecanvas/vue、@tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-三个组件共享相同的 props，并把底层的 `Chart` 交给你。参见[框架](https://tradecanvas.dev/zh/docs/frameworks/)。
-
-## 功能一览
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="画线工具：带注释的斐波那契回撤、一条趋势线、艾略特推动浪和一个多头仓位"></a>
-      <br><b>69 种画线工具</b><br>
-      斐波那契、江恩、音叉、艾略特波浪、谐波形态、注释，以及能自动计算仓位大小的多空仓位工具。
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="图上交易：带止损和止盈的多头仓位、一张买入止损单和一张卖出限价单，以及账户面板"></a>
-      <br><b>在图表上交易</b><br>
-      实时盈亏的持仓、可拖动改价的订单、下单面板和账户面板。
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="2×2 工作区：多种周期的 BTC、ETH、SOL 和 BNB 图表"></a>
-      <br><b>多图表工作区</b><br>
-      最多六个图表并排显示，可按代码、周期、十字光标、时间或画线联动。
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="同一图表的三种外观：studio、terminal，以及浅色主题下的 capsule"></a>
-      <br><b>自定义外观</b><br>
-      三种预设，或自定义圆角、密度、字体和价格标签，深色和浅色主题皆可。
-    </td>
-  </tr>
-</table>
+无界面的 `Chart` 接收你自己的 K 线（`chart.setData(bars)`），界面由你决定。React、Vue 和 Svelte 用户可使用 `@tradecanvas/react`、`/vue` 和 `/svelte`，它们以相同的 props 封装成组件。
 
 ## 文档
 
-| 主题 | |
-|---|---|
-| [入门](https://tradecanvas.dev/zh/docs/getting-started/) | 安装、组件、无界面图表 |
-| [图表类型](https://tradecanvas.dev/zh/docs/chart-types/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) | 图表能绘制什么，以及各自的设置 |
-| [实时数据](https://tradecanvas.dev/zh/docs/realtime/) | 内置数据源、自定义适配器、历史数据、Tick 图 |
-| [交易](https://tradecanvas.dev/zh/docs/trading/) | 订单、持仓、执行适配器、回放 |
-| [样式](https://tradecanvas.dev/zh/docs/styling/) · [自定义](https://tradecanvas.dev/zh/docs/customization/) | 主题、样式键、外观、功能开关、自定义部件 |
-| [插件](https://tradecanvas.dev/zh/docs/plugins/) | 自定义指标、画线工具、图表类型和叠加层 |
-| [分析](https://tradecanvas.dev/zh/docs/analytics/) · [金融图表](https://tradecanvas.dev/zh/docs/finance/) | 回测与风险指标；深度图、权益曲线等图表 |
-| [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri；触摸与页面滚动 |
-| [性能](https://tradecanvas.dev/zh/docs/performance/) · [API 参考](https://tradecanvas.dev/zh/docs/api/) | 性能测量与完整 API |
+[快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
 
-文档也提供 English、Tiếng Việt、日本語、한국어 和 Español 版本。
-
-## 性能
-
-在使用集成显卡（Intel UHD）的 Chrome 中测得；完整表格见[系统审计](https://tradecanvas.dev/zh/audit/)。
-
-| | |
-|---|---|
-| 1,000,000 根K线 + 4 个指标，缩小视图，WebGL | 每帧 16.7 ms（60 fps） |
-| 100,000 根K线、四个指标时的一次实时 tick | ~0.001 ms |
-| `Chart` / `ChartWidget`，压缩并 gzip 后 | 176 KB / 315 KB |
-
-## 包
-
-| 包 | |
-|---|---|
-| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | 图表和 `ChartWidget`（`/widget`） |
-| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | 框架组件 |
-| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | 回测器与风险指标 |
-| `@tradecanvas/core` · `@tradecanvas/commons` | 引擎与共享类型，随图表一起安装 |
-
-## 预览构建
-
-每个 pull request 和 `main` 上的每次提交都会发布到 [pkg.pr.new](https://pkg.pr.new)，因此修复或新功能在正式发布前就能试用。按 pull request 编号或提交安装预览版：
-
-```bash
-npm install https://pkg.pr.new/@tradecanvas/chart@123      # pull request #123
-npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # main 上的一次提交
-```
-
-每个 pull request 都会收到一条评论，列出每个包的确切安装命令。
-
-## 浏览器支持
-
-Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
+文档提供 English、Tiếng Việt、简体中文、日本語、한국어 和 Español 版本。测量数据、限制和测试方式见[系统审计](https://tradecanvas.dev/zh/audit/)。
 
 ## AI 编程工具
 
@@ -184,22 +110,14 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 其他 agent（Cursor、Codex、Copilot 等）：`npx skills add bonguynvan/tradecanvas`。不用技能时，[`llms.txt`](https://tradecanvas.dev/llms.txt) 和 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) 把文档集中在一个文件里提供给 AI 助手。想用 agent 修改 TradeCanvas 本身？仓库的规则见 [AGENTS.md](AGENTS.md)。
 
-## 相关项目
+## 更多
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)**：面向金融科技界面的小巧、快速的 Svelte 5 数据表格，是交易台中的表格部分。[在线演示](https://bonguynvan.github.io/bo-grid/)
-
-## 企业使用
-
-要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://tradecanvas.dev/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradecanvas.dev。
-
-## 参与贡献
-
-问题、想法以及你用 TradeCanvas 做的作品，请发到 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)；bug 请提 issue，也欢迎 pull request。[CONTRIBUTING.md](./CONTRIBUTING.md) 介绍了环境搭建（`pnpm install && pnpm build && pnpm test`）以及 pull request 的要求。发现安全问题？请按照 [SECURITY.md](./SECURITY.md) 报告，不要公开提 issue。
-
-## 赞助
-
-TradeCanvas 免费、采用 MIT 许可，公开开发和维护。如果它对你的产品有帮助，可以通过 [GitHub Sponsors](https://github.com/sponsors/bonguynvan) 支持它的开发。
-
-## 许可证
+- **包**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（图表与组件）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)，以及用于回测的 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)。
+- **预览构建**：每个 pull request 和 `main` 上的每个提交都发布在 [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas)，发布前即可安装。
+- **浏览器**：Chrome 80+、Edge 80+、Firefox 80+、Safari 14+。
+- **企业使用**：无需展示标志，无需申请；[企业使用](https://tradecanvas.dev/zh/business/)页面回答 IT 评审会问的问题。business@tradecanvas.dev
+- **相关项目**：[bo-grid](https://github.com/bonguynvan/bo-grid)，一个快速的 Svelte 数据表格，交易台的表格部分。
+- **参与贡献**：提问请到 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)，问题请提 issue，pull request 见 [CONTRIBUTING.md](./CONTRIBUTING.md)。安全问题：[SECURITY.md](./SECURITY.md)。
+- **赞助**：TradeCanvas 免费且公开开发；[GitHub Sponsors](https://github.com/sponsors/bonguynvan) 让它持续下去。
 
 [MIT](./LICENSE)

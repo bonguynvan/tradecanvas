@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TradeCanvas clip stage</title>
+<script type="importmap">
+{
+  "imports": {
+    "@tradecanvas/commons": "/packages/commons/dist/index.js",
+    "@tradecanvas/core": "/packages/core/dist/index.js",
+    "@tradecanvas/chart": "/packages/library/dist/index.js",
+    "@tradecanvas/chart/widget": "/packages/library/dist/widget/index.js"
+  }
+}
+</script>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0e14; overflow: hidden; }
+  #host { position: absolute; inset: 0; }
+  /* Recorded video has no system cursor: this one follows the real mouse events. */
+  #cursor {
+    position: fixed; left: 0; top: 0; z-index: 99999; pointer-events: none;
+    width: 22px; height: 22px; margin: -3px 0 0 -3px;
+    transition: transform 0.12s ease-out;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  }
+  #cursor.down { transform: scale(0.82); }
+  #cursor.hidden { display: none; }
+  /* On the phone a fingertip stands in for the cursor while a touch lasts. */
+  #finger {
+    position: fixed; left: 0; top: 0; z-index: 99999; pointer-events: none;
+    width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28); border: 2px solid rgba(255, 255, 255, 0.75);
+  }
+  #finger.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="host"></div>
+<svg id="cursor" class="hidden" viewBox="0 0 22 22" aria-hidden="true">
+  <path d="M3 2.5 L3 18 L7.2 14.2 L10.2 20.5 L13 19.2 L10.1 13 L15.8 13 Z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>
+</svg>
+<div id="finger" class="hidden"></div>
+<script type="module" src="./stage.js"></script>
+</body>
+</html>

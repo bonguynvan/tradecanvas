@@ -29,30 +29,54 @@
 **Un gráfico de trading completo para la web.** De velas japonesas a Renko, 134 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
 
 <p align="center">
-  <a href="https://tradecanvas.dev/es/"><img src=".github/assets/hero.png" alt="ChartWidget con BTCUSDT en vivo desde Binance: EMA 21 y 55, RSI, una línea de tendencia, una posición larga y una lista de seguimiento con cotizaciones en vivo" width="100%"></a>
+  <a href="https://tradecanvas.dev/es/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget sobre un mercado en vivo: EMA 21 y 55, RSI, la cruz y una línea de tendencia dibujada con el ratón" width="100%"></a>
 </p>
 
 ## Lo más destacado
 
-- **18 tipos de gráfico**, de velas y Heikin-Ashi a Renko, Kagi, punto y figura y Equivolumen, más seis gráficos financieros (sparkline, profundidad, curva de capital, mapa de calor, cascada, indicador de aguja).
-- **134 indicadores y 69 herramientas de dibujo**: indicadores sobre indicadores, alertas en líneas de tendencia, plantillas, grupos, deshacer y rehacer.
-- **Trading sobre el gráfico**: posiciones con P&L en vivo, órdenes y stop-loss/take-profit que arrastras, un ticket de orden, un panel de cuenta, y un bróker de simulación o tu propio adaptador de ejecución.
-- **Datos en vivo**: Binance, Bybit, Coinbase y Kraken integrados, cualquier otra fuente en unas veinte líneas; historial anterior al desplazarte hacia atrás, cualquier intervalo, gráficos de ticks.
-- **Canvas 2D o WebGL**: un millón de barras desplazadas a 60 fps, nítidas en cualquier escala de pantalla.
-- **Un espacio de trabajo completo**: cuadrículas de varios gráficos, diseños con nombre, repetición de barras con trading simulado y un backtester en `@tradecanvas/analytics`.
-- **A tu medida**: 101 claves de estilo, 112 interruptores de funciones, tres estilos y plugins para indicadores, herramientas de dibujo, tipos de gráfico y capas.
-- **Para todos**: el widget en 30 idiomas, incluidos los de derecha a izquierda, con soporte para lectores de pantalla y teclado.
-- **En móviles y apps**: un dedo hace lo que hace un ratón, dibujos, órdenes y alertas incluidos; el widget se organiza para un móvil; el gráfico cuida la batería y funciona en un WebView, React Native, Capacitor o Tauri.
+- **18 tipos de gráfico, 134 indicadores, 69 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
+- **Trading en el gráfico**: posiciones con P&L en vivo, órdenes y stops que arrastras, un bróker simulado o el tuyo.
+- **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
+- **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos.
+- **Un espacio de trabajo**: cuadrículas de gráficos, diseños, repetición de barras, backtesting.
+- **A tu medida**: temas, tres aspectos, 112 interruptores, plugins; 30 idiomas; móviles y apps.
 
-## Instalación
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/trading.webp" alt="Arrastrando el take-profit y el stop-loss de una posición larga; su P&amp;L cambia con el precio">
+      <br><b>Órdenes que arrastras</b>: stops, objetivos y límites se mueven con el ratón.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/replay.webp" alt="La repetición de barras reproduce un mercado con Bandas de Bollinger">
+      <br><b>Repetición de barras</b>: reproduce un mercado y opera sobre él en simulado.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/grid.webp" alt="Cuatro gráficos en una cuadrícula de dos por dos con intervalos distintos; la cruz los sigue a todos">
+      <br><b>Cuadrículas</b>: hasta seis gráficos, enlazados por símbolo, intervalo, cruz o tiempo.
+    </td>
+    <td width="50%" valign="top">
+      <img src=".github/assets/clips/looks.webp" alt="Un gráfico que cambia entre los aspectos Terminal, Capsule y Studio, oscuro y claro">
+      <br><b>Tu aspecto</b>: Studio, Terminal, Capsule, claro u oscuro, o tus propios tokens.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src=".github/assets/clips/phone.webp" alt="El widget en un móvil: un dedo desplaza el gráfico y dibuja una línea de tendencia" width="46%">
+    </td>
+    <td width="50%" valign="top">
+      <br><b>En el móvil</b>: un dedo desplaza, hace zoom, dibuja y arrastra órdenes, y el widget se reorganiza para una pantalla pequeña. También funciona en un WebView, React Native, Capacitor o Tauri.
+    </td>
+  </tr>
+</table>
+
+## Inicio rápido
 
 ```bash
 npm install @tradecanvas/chart
 ```
-
-## Inicio rápido
-
-`ChartWidget` es toda la interfaz de trading en una sola llamada: barra de herramientas, barra lateral de dibujo, configuración y barra de estado.
 
 ```typescript
 import { ChartWidget } from '@tradecanvas/chart/widget'
@@ -67,111 +91,13 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-Para controlar tú la interfaz, usa el `Chart` headless y su API:
-
-```typescript
-import { Chart } from '@tradecanvas/chart'
-
-const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' })
-chart.setData(bars) // [{ time, open, high, low, close, volume }, …]
-chart.addIndicator('ema', { period: 50 })
-chart.addIndicator('rsi')
-```
-
-Tu propia fuente se conecta con `WebSocketAdapter` o `PollingAdapter`; consulta [Tiempo real](https://tradecanvas.dev/es/docs/realtime/).
-
-## Frameworks
-
-```bash
-npm install @tradecanvas/react    # o @tradecanvas/vue, @tradecanvas/svelte
-```
-
-```tsx
-import { TradeCanvas } from '@tradecanvas/react'
-
-<TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
-```
-
-Los tres componentes comparten las mismas props y te dan el `Chart` subyacente. Consulta [Frameworks](https://tradecanvas.dev/es/docs/frameworks/).
-
-## Un vistazo
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/drawings.png"><img src=".github/assets/drawings.png" alt="Herramientas de dibujo: un retroceso de Fibonacci con una nota, una línea de tendencia, una onda de impulso de Elliott y una posición larga"></a>
-      <br><b>69 herramientas de dibujo</b><br>
-      Fibonacci, Gann, horquillas, ondas de Elliott, patrones armónicos, notas y una posición larga/corta que calcula el tamaño de la operación.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/trading.png"><img src=".github/assets/trading.png" alt="Trading sobre el gráfico: una posición larga con stop-loss y take-profit, un buy stop y un sell limit, y el panel de cuenta"></a>
-      <br><b>Trading sobre el gráfico</b><br>
-      Posiciones con P&amp;L en vivo, órdenes que arrastras a otro precio, un ticket de orden y un panel de cuenta.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href=".github/assets/grid.png"><img src=".github/assets/grid.png" alt="Un espacio de trabajo de dos por dos con gráficos de BTC, ETH, SOL y BNB en varias temporalidades"></a>
-      <br><b>Espacio de trabajo multigráfico</b><br>
-      Hasta seis gráficos lado a lado, enlazados por símbolo, temporalidad, cruz, tiempo o dibujos.
-    </td>
-    <td width="50%" valign="top">
-      <a href=".github/assets/looks.png"><img src=".github/assets/looks.png" alt="Un gráfico con tres estilos: studio, terminal y capsule en el tema claro"></a>
-      <br><b>Tu propio estilo</b><br>
-      Tres preajustes o tus propias esquinas, densidad, fuentes y etiquetas de precio, en temas claro y oscuro.
-    </td>
-  </tr>
-</table>
+El `Chart` sin interfaz recibe tus propias barras (`chart.setData(bars)`) y te deja la interfaz a ti. Para React, Vue y Svelte, `@tradecanvas/react`, `/vue` y `/svelte` lo envuelven en un componente con las mismas props.
 
 ## Documentación
 
-| Tema | |
-|---|---|
-| [Primeros pasos](https://tradecanvas.dev/es/docs/getting-started/) | Instalación, el widget, el gráfico headless |
-| [Tipos de gráfico](https://tradecanvas.dev/es/docs/chart-types/) · [Indicadores](https://tradecanvas.dev/es/docs/indicators/) · [Herramientas de dibujo](https://tradecanvas.dev/es/docs/drawing-tools/) | Lo que dibuja el gráfico y los ajustes de cada cosa |
-| [Tiempo real](https://tradecanvas.dev/es/docs/realtime/) | Fuentes integradas, tu propio adaptador, historial, gráficos de ticks |
-| [Trading](https://tradecanvas.dev/es/docs/trading/) | Órdenes, posiciones, adaptadores de ejecución, repetición |
-| [Estilos](https://tradecanvas.dev/es/docs/styling/) · [Personalización](https://tradecanvas.dev/es/docs/customization/) | Temas, claves de estilo, estilos visuales, interruptores de funciones, tus propias piezas |
-| [Plugins](https://tradecanvas.dev/es/docs/plugins/) | Tus propios indicadores, herramientas de dibujo, tipos de gráfico y capas |
-| [Analítica](https://tradecanvas.dev/es/docs/analytics/) · [Gráficos financieros](https://tradecanvas.dev/es/docs/finance/) | Backtesting y métricas de riesgo; profundidad, curva de capital y otros gráficos |
-| [Móviles y apps](https://tradecanvas.dev/es/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; táctil y desplazamiento de página |
-| [Rendimiento](https://tradecanvas.dev/es/docs/performance/) · [Referencia de la API](https://tradecanvas.dev/es/docs/api/) | Mediciones y la API completa |
+[Primeros pasos](https://tradecanvas.dev/es/docs/getting-started/) · [API](https://tradecanvas.dev/es/docs/api/) · [Indicadores](https://tradecanvas.dev/es/docs/indicators/) · [Herramientas de dibujo](https://tradecanvas.dev/es/docs/drawing-tools/) · [Tiempo real](https://tradecanvas.dev/es/docs/realtime/) · [Trading](https://tradecanvas.dev/es/docs/trading/) · [Estilos](https://tradecanvas.dev/es/docs/styling/) · [Frameworks](https://tradecanvas.dev/es/docs/frameworks/) · [Plugins](https://tradecanvas.dev/es/docs/plugins/) · [Móviles y apps](https://tradecanvas.dev/es/docs/embed/#mobile-app) · [Rendimiento](https://tradecanvas.dev/es/docs/performance/)
 
-La documentación también está en English, Tiếng Việt, 简体中文, 日本語 y 한국어.
-
-## Rendimiento
-
-Medido en Chrome con gráficos integrados (Intel UHD); la [auditoría del sistema](https://tradecanvas.dev/es/audit/) tiene la tabla completa.
-
-| | |
-|---|---|
-| 1.000.000 de barras + 4 indicadores, con zoom alejado, WebGL | 16,7 ms por fotograma (60 fps) |
-| Un tick en vivo sobre 100.000 barras con cuatro indicadores | ~0,001 ms |
-| `Chart` / `ChartWidget`, minificados y con gzip | 176 KB / 315 KB |
-
-## Paquetes
-
-| Paquete | |
-|---|---|
-| [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) | El gráfico y `ChartWidget` (`/widget`) |
-| [`@tradecanvas/react`](https://www.npmjs.com/package/@tradecanvas/react) · [`/vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`/svelte`](https://www.npmjs.com/package/@tradecanvas/svelte) | Componentes para frameworks |
-| [`@tradecanvas/analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) | Backtester y métricas de riesgo |
-| `@tradecanvas/core` · `@tradecanvas/commons` | El motor y los tipos compartidos, instalados con el gráfico |
-
-## Versiones preliminares
-
-Cada pull request y cada commit en `main` se publica en [pkg.pr.new](https://pkg.pr.new), así que puedes probar una corrección o una función antes de que salga. Instala una versión preliminar por número de pull request o por commit:
-
-```bash
-npm install https://pkg.pr.new/@tradecanvas/chart@123      # pull request #123
-npm install https://pkg.pr.new/@tradecanvas/chart@a1b2c3d  # un commit en main
-```
-
-Cada pull request recibe un comentario con los comandos exactos para cada paquete.
-
-## Compatibilidad con navegadores
-
-Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
+La documentación está en English, Tiếng Việt, 简体中文, 日本語, 한국어 y Español. Las mediciones, los límites y cómo se prueba están en la [auditoría del sistema](https://tradecanvas.dev/es/audit/).
 
 ## Herramientas de programación con IA
 
@@ -184,22 +110,14 @@ La skill para agentes de [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) ens
 
 Otros agentes (Cursor, Codex, Copilot y más): `npx skills add bonguynvan/tradecanvas`. Sin skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) y [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) dan a un asistente la documentación en un solo archivo. ¿Vas a cambiar TradeCanvas con un agente? Las reglas del repositorio están en [AGENTS.md](AGENTS.md).
 
-## Proyectos relacionados
+## Más
 
-- **[bo-grid](https://github.com/bonguynvan/bo-grid)**: una tabla de datos Svelte 5 pequeña y rápida para interfaces fintech, la mitad de tablas de un puesto de trading. [Demo en vivo](https://bonguynvan.github.io/bo-grid/)
-
-## Para empresas
-
-¿Vas a poner TradeCanvas delante de tus clientes? No hay logotipo que mostrar ni nada que solicitar. La página [Para empresas](https://tradecanvas.dev/es/business/) responde con fuentes a lo que suele preguntar una revisión de TI y presenta el programa de primeros socios. Escríbenos a business@tradecanvas.dev.
-
-## Contribuir
-
-Las preguntas, las ideas y lo que construyas con TradeCanvas van a [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); los errores, a los issues, y los pull requests son bienvenidos. [CONTRIBUTING.md](./CONTRIBUTING.md) explica la configuración (`pnpm install && pnpm build && pnpm test`) y lo que necesita un pull request. ¿Encontraste un problema de seguridad? Sigue [SECURITY.md](./SECURITY.md) en lugar de abrir un issue.
-
-## Patrocinio
-
-TradeCanvas es gratuito, con licencia MIT, y se desarrolla y mantiene en abierto. Si te ayuda en tu producto, puedes apoyar su desarrollo en [GitHub Sponsors](https://github.com/sponsors/bonguynvan).
-
-## Licencia
+- **Paquetes**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (el gráfico y el widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), y [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) para backtests.
+- **Versiones preliminares**: cada pull request y cada commit en `main` está en [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), instalable antes de publicarse.
+- **Navegadores**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
+- **Para empresas**: ningún logo que mostrar, nada que solicitar; la página [Para empresas](https://tradecanvas.dev/es/business/) responde lo que pregunta una revisión de TI. business@tradecanvas.dev
+- **Proyectos relacionados**: [bo-grid](https://github.com/bonguynvan/bo-grid), una cuadrícula de datos rápida en Svelte para la mitad tabular de una mesa de trading.
+- **Contribuir**: preguntas en [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), errores en los issues, y [CONTRIBUTING.md](./CONTRIBUTING.md) para pull requests. Problemas de seguridad: [SECURITY.md](./SECURITY.md).
+- **Patrocinio**: TradeCanvas es gratuito y se desarrolla en abierto; [GitHub Sponsors](https://github.com/sponsors/bonguynvan) lo mantiene en marcha.
 
 [MIT](./LICENSE)
