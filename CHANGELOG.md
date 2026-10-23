@@ -14,6 +14,10 @@ The widget's settings dialog is laid out as the indicators dialog is, in the Pri
 
 Collected on `main` for the next release. Not on npm yet.
 
+## 1.35.0 (2026-10-23)
+
+React, Vue and Svelte components: 1.3.17. 1.33.0 and 1.34.0 were not published on their own: their changes, "A new default look" and "A calmer chart" below, came out in 1.35.0.
+
 ### The Indicators dialog and the indicator settings
 
 The toolbar's Indicators opens a dialog in place of the dropdown, and an indicator's settings are rewritten, in the Print look.
