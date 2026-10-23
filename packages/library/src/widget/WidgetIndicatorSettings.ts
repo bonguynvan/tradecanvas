@@ -130,8 +130,14 @@ export class WidgetIndicatorSettings {
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'tcw-modal-backdrop';
     this.backdrop.hidden = true;
+    // A press that starts in the dialog (a slider dragged, text selected) and ends on the backdrop doesn't cancel it.
+    let pressedBackdrop = false;
+    this.backdrop.addEventListener('pointerdown', (e) => {
+      pressedBackdrop = e.target === this.backdrop;
+    });
     this.backdrop.addEventListener('click', (e) => {
-      if (e.target === this.backdrop) this.finish(false);
+      if (e.target === this.backdrop && pressedBackdrop) this.finish(false);
+      pressedBackdrop = false;
     });
 
     this.modal = document.createElement('div');
@@ -165,7 +171,7 @@ export class WidgetIndicatorSettings {
     this.bodyEl.id = `tcw-indi-panel-${this.uid}`;
     this.bodyEl.setAttribute('role', 'tabpanel');
 
-    this.defaultsBtn = this.footerButton('defaults', 'tcw-indi-defaults', () => this.openDefaults());
+    this.defaultsBtn = this.footerButton('defaults', 'tcw-footer-menu', () => this.openDefaults());
     this.modal.append(header, this.tabsEl, this.bodyEl, this.buildFooter());
     this.backdrop.appendChild(this.modal);
     host.appendChild(this.backdrop);
@@ -178,9 +184,9 @@ export class WidgetIndicatorSettings {
     this.defaultsBtn.innerHTML = `<span></span>${createIcon('chevronDown', 12)}`;
     this.defaultsBtn.querySelector('span')!.textContent = this.t('indicatorSettings.defaults');
     const end = document.createElement('div');
-    end.className = 'tcw-indi-footer-end';
+    end.className = 'tcw-footer-end';
     end.append(
-      this.footerButton('cancel', 'tcw-indi-cancel', () => this.finish(false), this.t('common.cancel')),
+      this.footerButton('cancel', 'tcw-footer-cancel', () => this.finish(false), this.t('common.cancel')),
       this.footerButton('ok', 'tcw-done-btn', () => this.finish(true), this.t('drawingSettings.ok')),
     );
     const footer = document.createElement('div');

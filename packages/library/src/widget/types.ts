@@ -528,7 +528,18 @@ export interface SettingsCallbacks {
   styleValue: (key: import('@tradecanvas/commons').ChartStyleKey) => string | number | boolean | null;
   onStyleChange: (patch: SettingsStylePatch) => void;
   onReset: () => void;
+  /** OK: keep what was changed. */
   onClose: () => void;
+  /** Cancel (Escape, the close button, a click outside): put back what was changed since the settings opened. */
+  onCancel?: () => void;
+  /** The chart templates of the Template menu; without them it only resets. */
+  templates?: {
+    list: () => readonly string[];
+    apply: (name: string) => void;
+    remove: (name: string) => void;
+    /** Save the chart's look as a template, asking for its name. */
+    save: () => void;
+  };
 }
 
 /** The settings that aren't the look: the look (colours, lines, dashes) is the chart's style keys, on the user's layer. */

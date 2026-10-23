@@ -112,6 +112,8 @@ export class WidgetNamePrompt {
     this.input.value = request.value ?? '';
     this.input.placeholder = request.placeholder ?? this.t('layouts.namePlaceholder');
     this.check();
+    // Over whatever opened it (a dialog mounted after it): last in its host.
+    this.backdrop.parentElement?.appendChild(this.backdrop);
     this.backdrop.hidden = false;
     this.input.focus();
     this.input.select();

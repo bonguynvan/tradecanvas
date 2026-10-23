@@ -183,11 +183,17 @@ export const HE_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'הגדרות גרף',
-  'settings.tab.style': 'סגנון',
-  'settings.tab.display': 'תצוגה',
-  'settings.tab.scale': 'סקאלה',
+  'settings.tab.symbol': 'סימול',
+  'settings.tab.statusLine': 'שורת מצב',
+  'settings.tab.scales': 'סקאלות',
+  'settings.tab.appearance': 'מראה',
+  'settings.tab.layers': 'שכבות',
+  'settings.template': 'תבנית',
+  'settings.section.axes': 'צירים',
+  'settings.saveTemplate': 'שמירה כתבנית…',
+  'settings.saveTemplateTitle': 'שמירת תבנית גרף',
+  'settings.templatePlaceholder': 'הגרף שלי',
   'settings.resetToDefaults': 'איפוס לברירות המחדל',
-  'settings.done': 'סיום',
   'settings.section.candleColors': 'צבעי נרות',
   'settings.section.background': 'רקע',
 

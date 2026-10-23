@@ -1,32 +1,59 @@
 import { CHART_STYLE_KEYS, type ChartType, type ChartTypeOptions, type LineStyle } from '@tradecanvas/commons';
 import type { ChartSettingsState, SettingsCallbacks, SettingsStylePatch } from './types.js';
 import { CHART_TYPES } from './widgetConfig.js';
-import { STYLE_SECTIONS, TRADING_SECTIONS, seriesRows, type LookRow, type LookSection } from './widgetSettingsLook.js';
-import { toHex } from './settingsControls.js';
-import { chartTypeLabel } from './widgetLocales.js';
-import { createIcon } from './icons.js';
+import {
+  APPEARANCE_SECTIONS, HIGH_LOW_SECTION, LAST_PRICE_SECTION, SCALE_ROWS, STATUS_LINE_ROWS, TRADING_SECTIONS, VOLUME_SECTION,
+  seriesRows, type LookRow, type LookSection,
+} from './widgetSettingsLook.js';
+import { chartTypeLabel, numberLocaleOptions } from './widgetLocales.js';
+import { createChartTypeIcon, createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
-import { numberLocaleOptions } from './widgetLocales.js';
-import type { Translator } from './i18n.js';
+import { keepTabInside } from './focusTrap.js';
+import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
+import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow } from './settingsRows.js';
+import { fill, type MessageKey, type Translator } from './i18n.js';
 
-type Tab = 'style' | 'display' | 'scale' | 'trading';
-const TABS: Tab[] = ['style', 'display', 'scale', 'trading'];
+type Tab = 'symbol' | 'statusLine' | 'scales' | 'appearance' | 'layers' | 'trading';
+
+/** The tabs down the side, in the order a trader looks: the symbol first, the trading colours last. */
+const TABS: readonly { id: Tab; icon: string }[] = [
+  { id: 'symbol', icon: 'chartType:candlestick' },
+  { id: 'statusLine', icon: 'type' },
+  { id: 'scales', icon: 'ruler' },
+  { id: 'appearance', icon: 'palette' },
+  { id: 'layers', icon: 'layers' },
+  { id: 'trading', icon: 'trendingUp' },
+];
 /** The widths a line takes in the settings, in pixels. */
 const LINE_WIDTHS = [1, 2, 3, 4];
+/** A template's entry in the Template menu, by its name. */
+const TEMPLATE_ID = 't:';
 
+let nextSettingsId = 1;
+
+/**
+ * The chart's settings: tabs down the side (Symbol, Status line, Scales,
+ * Appearance, Layers, Trading), each change shown at once. Cancel (Escape,
+ * the close button, a click outside) puts it all back, OK keeps it; the
+ * Template menu applies, saves and deletes templates, and resets.
+ */
 export class WidgetSettings {
   private callbacks: SettingsCallbacks;
   private t: Translator;
   private backdrop: HTMLDivElement | null = null;
   private modal: HTMLDivElement | null = null;
-  private currentTab: Tab = 'style';
-  private currentSettings: ChartSettingsState | null = null;
   private bodyEl: HTMLDivElement | null = null;
   private tabButtons: HTMLButtonElement[] = [];
-  /** The chart's type, whose settings the Style tab offers. */
+  private templateBtn: HTMLButtonElement | null = null;
+  private menu: WidgetContextMenu | null = null;
+  private currentTab: Tab = 'symbol';
+  private currentSettings: ChartSettingsState | null = null;
+  /** The chart's type, whose settings the Symbol tab offers. */
   private chartType: ChartType | null = null;
   /** The look's rows on view, each showing the chart's value again (a change to one moves others: a wick with its body). */
   private lookRows: { el: HTMLElement; sync: () => void }[] = [];
+  private returnFocus: HTMLElement | null = null;
+  private readonly uid = nextSettingsId++;
 
   /**
    * `barCountdown` / `logScale` false leave out the controls for features the
@@ -51,17 +78,20 @@ export class WidgetSettings {
   }
 
   open(currentSettings: ChartSettingsState, chartType: ChartType | null = null): void {
+    if (this.modal) this.remove();
+    this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.currentSettings = { ...currentSettings };
     this.chartType = chartType;
-    this.currentTab = 'style';
+    this.currentTab = 'symbol';
     this.buildModal();
+    this.tabButtons[0]?.focus();
   }
 
   isOpen(): boolean {
     return this.modal !== null;
   }
 
-  /** The settings as they are now (after an undo), on the tab that's open; `chartType` when it changed. */
+  /** The settings as they are now (after an undo, a template), on the tab that's open; `chartType` when it changed. */
   refresh(settings: ChartSettingsState, chartType?: ChartType | null): void {
     if (!this.modal) return;
     this.currentSettings = { ...settings };
@@ -69,124 +99,218 @@ export class WidgetSettings {
     this.renderTabContent();
   }
 
+  /** Close, keeping what was changed (as OK does). */
   close(): void {
+    this.finish(true);
+  }
+
+  destroy(): void {
+    this.remove();
+  }
+
+  /** OK (`keep`) or Cancel, then closed, focus back where the dialog was opened from. */
+  private finish(keep: boolean): void {
+    if (!this.modal) return;
+    if (keep) this.callbacks.onClose();
+    else this.callbacks.onCancel?.();
+    this.remove();
+    if (this.returnFocus?.isConnected) this.returnFocus.focus();
+    this.returnFocus = null;
+  }
+
+  private remove(): void {
+    this.menu?.destroy();
+    this.menu = null;
     this.backdrop?.remove();
-    this.modal?.remove();
-    this.backdrop = null;
-    this.modal = null;
-    this.bodyEl = null;
+    this.backdrop = this.modal = this.bodyEl = this.templateBtn = null;
     this.tabButtons = [];
   }
 
   private buildModal(): void {
-    // Backdrop
-    this.backdrop = document.createElement('div');
-    this.backdrop.className = 'tcw-modal-backdrop';
-    this.backdrop.addEventListener('click', () => {
-      this.callbacks.onClose();
-      this.close();
+    const backdrop = document.createElement('div');
+    backdrop.className = 'tcw-modal-backdrop';
+    // A press that starts in the dialog (a slider dragged, text selected) and ends on the backdrop doesn't cancel it.
+    let pressedBackdrop = false;
+    backdrop.addEventListener('pointerdown', (e) => {
+      pressedBackdrop = e.target === backdrop;
     });
-    this.host().appendChild(this.backdrop);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop && pressedBackdrop) this.finish(false);
+      pressedBackdrop = false;
+    });
+    const modal = document.createElement('div');
+    modal.className = 'tcw-modal tcw-set';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', `tcw-set-title-${this.uid}`);
+    modal.tabIndex = -1;
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.finish(false);
+        return;
+      }
+      keepTabInside(e, modal);
+    });
+    this.backdrop = backdrop;
+    this.modal = modal;
+    modal.append(this.buildHeader(), this.buildBody(), this.buildFooter());
+    backdrop.appendChild(modal);
+    this.host().appendChild(backdrop);
+    this.markTabs();
+    this.renderTabContent();
+  }
 
-    // Modal
-    this.modal = document.createElement('div');
-    this.modal.className = 'tcw-modal';
-
-    // Header
+  private buildHeader(): HTMLDivElement {
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
-    const h3 = document.createElement('h3');
-    h3.textContent = this.t('settings.title');
-    header.appendChild(h3);
+    const title = document.createElement('h3');
+    title.id = `tcw-set-title-${this.uid}`;
+    title.textContent = this.t('settings.title');
     const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
     closeBtn.className = 'tcw-modal-close';
+    closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 16);
-    closeBtn.addEventListener('click', () => {
-      this.callbacks.onClose();
-      this.close();
-    });
-    header.appendChild(closeBtn);
-    this.modal.appendChild(header);
+    closeBtn.addEventListener('click', () => this.finish(false));
+    header.append(title, closeBtn);
+    return header;
+  }
 
-    // Tabs
-    const tabsEl = document.createElement('div');
-    tabsEl.className = 'tcw-modal-tabs';
-    tabsEl.setAttribute('role', 'tablist');
-    this.tabButtons = [];
-    for (const tab of TABS) {
+  /** The tabs down the side, and the open one's settings beside them. */
+  private buildBody(): HTMLDivElement {
+    const body = document.createElement('div');
+    body.className = 'tcw-set-body';
+    const nav = document.createElement('div');
+    nav.className = 'tcw-set-nav';
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-orientation', 'vertical');
+    nav.setAttribute('aria-label', this.t('settings.title'));
+    nav.addEventListener('keydown', (e) => this.onTabKey(e));
+    this.tabButtons = TABS.map(({ id, icon }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'tcw-modal-tab';
+      btn.className = 'tcw-set-tab';
+      btn.id = `tcw-set-tab-${this.uid}-${id}`;
+      btn.dataset.tab = id;
       btn.setAttribute('role', 'tab');
-      btn.textContent = this.t(`settings.tab.${tab}` as Parameters<Translator>[0]);
-      btn.dataset.tab = tab;
-      btn.setAttribute('aria-selected', String(tab === this.currentTab));
-      if (tab === this.currentTab) btn.classList.add('tcw-active');
-      btn.addEventListener('click', () => {
-        this.currentTab = tab;
-        this.tabButtons.forEach((b) => {
-          b.classList.toggle('tcw-active', b.dataset.tab === tab);
-          b.setAttribute('aria-selected', String(b.dataset.tab === tab));
-        });
-        this.renderTabContent();
-      });
-      tabsEl.appendChild(btn);
-      this.tabButtons.push(btn);
-    }
-    this.modal.appendChild(tabsEl);
+      btn.setAttribute('aria-controls', `tcw-set-panel-${this.uid}`);
+      const svg = icon.startsWith('chartType:') ? createChartTypeIcon(icon.slice('chartType:'.length) as ChartType, 16) : createIcon(icon, 16);
+      btn.innerHTML = `${svg}<span></span>`;
+      btn.querySelector('span')!.textContent = this.t(`settings.tab.${id}` as MessageKey);
+      btn.addEventListener('click', () => this.selectTab(id));
+      return btn;
+    });
+    nav.append(...this.tabButtons);
+    const panel = document.createElement('div');
+    panel.className = 'tcw-modal-body tcw-set-panel';
+    panel.id = `tcw-set-panel-${this.uid}`;
+    panel.setAttribute('role', 'tabpanel');
+    this.bodyEl = panel;
+    body.append(nav, panel);
+    return body;
+  }
 
-    // Body
-    this.bodyEl = document.createElement('div');
-    this.bodyEl.className = 'tcw-modal-body';
-    this.modal.appendChild(this.bodyEl);
-    this.renderTabContent();
-
-    // Footer
+  /** Template on the left; Cancel and OK on the right. */
+  private buildFooter(): HTMLDivElement {
     const footer = document.createElement('div');
     footer.className = 'tcw-modal-footer';
-    const resetBtn = document.createElement('button');
-    resetBtn.className = 'tcw-reset-link';
-    resetBtn.textContent = this.t('settings.resetToDefaults');
-    resetBtn.addEventListener('click', () => this.callbacks.onReset());
-    footer.appendChild(resetBtn);
-    const doneBtn = document.createElement('button');
-    doneBtn.className = 'tcw-done-btn';
-    doneBtn.textContent = this.t('settings.done');
-    doneBtn.addEventListener('click', () => {
-      this.callbacks.onClose();
-      this.close();
-    });
-    footer.appendChild(doneBtn);
-    this.modal.appendChild(footer);
+    const template = this.footerButton('template', 'tcw-footer-menu', () => this.openTemplates());
+    template.setAttribute('aria-haspopup', 'menu');
+    template.setAttribute('aria-expanded', 'false');
+    template.innerHTML = `<span></span>${createIcon('chevronDown', 12)}`;
+    template.querySelector('span')!.textContent = this.t('settings.template');
+    this.templateBtn = template;
+    const end = document.createElement('div');
+    end.className = 'tcw-footer-end';
+    end.append(
+      this.footerButton('cancel', 'tcw-footer-cancel', () => this.finish(false), this.t('common.cancel')),
+      this.footerButton('ok', 'tcw-done-btn', () => this.finish(true), this.t('drawingSettings.ok')),
+    );
+    footer.append(template, end);
+    return footer;
+  }
 
-    this.host().appendChild(this.modal);
+  private footerButton(act: string, className: string, onClick: () => void, text?: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.dataset.act = act;
+    if (text) btn.textContent = text;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
 
-    // Escape key
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        document.removeEventListener('keydown', onKeyDown);
-        this.callbacks.onClose();
-        this.close();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
+  private markTabs(): void {
+    for (const btn of this.tabButtons) {
+      const on = btn.dataset.tab === this.currentTab;
+      btn.classList.toggle('tcw-active', on);
+      btn.setAttribute('aria-selected', String(on));
+      btn.tabIndex = on ? 0 : -1;
+      if (on) this.bodyEl?.setAttribute('aria-labelledby', btn.id);
+    }
+  }
+
+  private selectTab(tab: Tab, focus = false): void {
+    this.currentTab = tab;
+    this.markTabs();
+    this.renderTabContent();
+    if (focus) this.tabButtons.find((b) => b.dataset.tab === tab)?.focus();
+  }
+
+  /** Through the tabs (Home, End), picking as they go: up and down, or along the row of chips on a phone. */
+  private onTabKey(e: KeyboardEvent): void {
+    const at = TABS.findIndex((tab) => tab.id === this.currentTab);
+    const next = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? (at + 1) % TABS.length
+      : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? (at - 1 + TABS.length) % TABS.length
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? TABS.length - 1
+      : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    this.selectTab(TABS[next].id, true);
+  }
+
+  /** The Template menu: the saved templates (each removable), Save as template, Reset to defaults. */
+  private openTemplates(): void {
+    const btn = this.templateBtn;
+    if (!this.modal || !btn) return;
+    if (this.menu?.isOpen()) {
+      this.menu.close();
+      return;
+    }
+    const templates = this.callbacks.templates;
+    const saved: ContextMenuEntry[] = (templates?.list() ?? []).map((name) => ({
+      id: `${TEMPLATE_ID}${name}`, label: name, icon: 'layers', remove: fill(this.t('templates.delete'), { name }),
+    }));
+    const entries: ContextMenuEntry[] = [
+      ...saved,
+      ...(saved.length > 0 ? ['separator' as const] : []),
+      ...(templates ? [{ id: 'save', label: this.t('settings.saveTemplate'), icon: 'save' }] : []),
+      { id: 'reset', label: this.t('settings.resetToDefaults'), icon: 'reset' },
+    ];
+    this.menu ??= new WidgetContextMenu(this.modal, this.t('settings.template'));
+    const at = btn.getBoundingClientRect();
+    const box = this.modal.getBoundingClientRect();
+    // From the button's top: in the footer there is no room below, so it opens above the button.
+    this.menu.open(entries, at.left - box.left, at.top - box.top, (id) => {
+      if (id === 'reset') this.callbacks.onReset();
+      else if (id === 'save') templates?.save();
+      else if (id.startsWith(TEMPLATE_ID)) templates?.apply(id.slice(TEMPLATE_ID.length));
+    }, btn, (id) => templates?.remove(id.slice(TEMPLATE_ID.length)));
   }
 
   private renderTabContent(): void {
     if (!this.bodyEl || !this.currentSettings) return;
-    this.bodyEl.innerHTML = '';
+    this.bodyEl.replaceChildren();
     this.lookRows = [];
-
     switch (this.currentTab) {
-      case 'style':
-        this.renderStyleTab();
-        break;
-      case 'display':
-        this.renderDisplayTab();
-        break;
-      case 'scale':
-        this.renderScaleTab();
-        break;
+      case 'symbol': this.renderSymbolTab(this.currentSettings); break;
+      case 'statusLine': this.renderStatusLineTab(this.currentSettings); break;
+      case 'scales': this.renderScalesTab(this.currentSettings); break;
+      case 'appearance': this.renderAppearanceTab(this.currentSettings); break;
+      case 'layers': this.renderLayersTab(this.currentSettings); break;
       case 'trading':
         for (const section of TRADING_SECTIONS) {
           if (!section.trading || this.available.trading !== false) this.renderLookSection(section);
@@ -195,17 +319,107 @@ export class WidgetSettings {
     }
   }
 
-  private renderStyleTab(): void {
-    if (!this.bodyEl || !this.currentSettings) return;
+  /** The chart type's own settings and colours, the main series, the last price, the volume, the high and low. */
+  private renderSymbolTab(s: ChartSettingsState): void {
     this.renderChartTypeSection();
-    for (const section of STYLE_SECTIONS) this.renderLookSection(section);
+    this.addSection(undefined, [
+      toggleRow(this.t('settings.mainSeries'), s.mainSeriesVisible, (v) => this.patch({ mainSeriesVisible: v })),
+      toggleRow(this.t('settings.extendedHours'), s.extendedHours, (v) => this.patch({ extendedHours: v })),
+    ]);
+    // A section's own switch says "Show": its title names what it shows.
+    const show = this.t('common.show');
+    this.renderLookSection(LAST_PRICE_SECTION);
+    this.renderLookSection(VOLUME_SECTION, [toggleRow(show, s.volumeVisible, (v) => this.patch({ volumeVisible: v }))]);
+    this.renderLookSection(HIGH_LOW_SECTION, [toggleRow(show, s.highLowLines, (v) => this.patch({ highLowLines: v }))]);
   }
 
-  private renderLookSection(section: LookSection): void {
-    if (!this.bodyEl) return;
-    const el = this.section(this.t(section.title));
-    for (const row of section.rows) el.appendChild(this.lookRow(row));
-    this.bodyEl.appendChild(el);
+  /** The legend over the chart: shown or not, its colours. */
+  private renderStatusLineTab(s: ChartSettingsState): void {
+    this.addSection(undefined, [
+      toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v })),
+      ...STATUS_LINE_ROWS.map((row) => this.lookRow(row)),
+    ]);
+  }
+
+  /** The price scale's mode and behaviour, its labels, the time zone, how numbers are written, the axes' colours. */
+  private renderScalesTab(s: ChartSettingsState): void {
+    const scales = [
+      { value: 'regular', label: this.t('settings.scale.regular') },
+      { value: 'logarithmic', label: this.t('settings.scale.logarithmic') },
+      { value: 'percentage', label: this.t('settings.scale.percentage') },
+      { value: 'indexedTo100', label: this.t('settings.scale.indexedTo100') },
+    ].filter((o) => o.value !== 'logarithmic' || this.available.logScale !== false);
+    const zones = timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local'),
+      this.available.exchangeZone ? { label: this.t('settings.timezone.exchange'), zone: this.available.exchangeZone() } : undefined);
+    this.addSection(undefined, [
+      selectRow(this.t('settings.priceScale'), s.scaleMode, scales, (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })),
+      toggleRow(this.t('settings.autoScale'), s.autoScale, (v) => this.patch({ autoScale: v })),
+      toggleRow(this.t('settings.invertScale'), s.invertScale, (v) => this.patch({ invertScale: v })),
+      toggleRow(this.t('settings.leftScale'), s.leftPriceScale, (v) => this.patch({ leftPriceScale: v })),
+      toggleRow(this.t('settings.indicatorValues'), s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })),
+      ...(this.available.barCountdown !== false
+        ? [toggleRow(this.t('settings.barCountdown'), s.barCountdown, (v) => this.patch({ barCountdown: v }))]
+        : []),
+      selectRow(this.t('settings.timezone'), s.timezone, zones, (v) => this.patch({ timezone: v })),
+      selectRow(this.t('settings.numberLocale'), s.numberLocale, numberLocaleOptions(s.numberLocale), (v) => this.patch({ numberLocale: v })),
+    ]);
+    this.addSection(this.t('settings.section.axes'), SCALE_ROWS.map((row) => this.lookRow(row)));
+  }
+
+  /** The background, the grid, the crosshair, the session breaks, the drawings' handles. */
+  private renderAppearanceTab(s: ChartSettingsState): void {
+    const [background, grid, crosshair, ...rest] = APPEARANCE_SECTIONS;
+    this.renderLookSection(background);
+    this.renderLookSection(grid, [toggleRow(this.t('common.show'), s.gridVisible, (v) => this.patch({ gridVisible: v }))]);
+    this.renderLookSection(crosshair, [selectRow(this.t('settings.crosshairMode'), s.crosshairMode, [
+      { label: this.t('settings.crosshair.magnet'), value: 'magnet' },
+      { label: this.t('settings.crosshair.normal'), value: 'normal' },
+      { label: this.t('settings.crosshair.hidden'), value: 'hidden' },
+    ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] }))]);
+    for (const section of rest) this.renderLookSection(section);
+  }
+
+  /** What the chart can draw over the bars: the profiles, the depth, the swings, the sessions, the prior levels. */
+  private renderLayersTab(s: ChartSettingsState): void {
+    const percent = (v: number) => `${Math.round(v * 100)}%`;
+    const t = (key: MessageKey) => this.t(key);
+    this.addSection(undefined, [toggleRow(t('settings.volumeProfile'), s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v }))]);
+    this.addSection(undefined, [
+      toggleRow(t('settings.marketProfile'), s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })),
+      toggleRow(t('settings.marketProfileSplit'), s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })),
+      toggleRow(t('settings.marketProfileLetters'), s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })),
+      rangeRow(t('settings.marketProfileBuckets'), s.marketProfileBuckets, { min: 8, max: 200, step: 1 }, (v) => this.patch({ marketProfileBuckets: v })),
+      rangeRow(t('settings.marketProfileOpacity'), s.marketProfileOpacity, { min: 0.05, max: 1, step: 0.05 }, (v) => this.patch({ marketProfileOpacity: v }), percent),
+    ]);
+    this.addSection(undefined, [
+      toggleRow(t('settings.depthHeatmap'), s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })),
+      rangeRow(t('settings.depthHeatmapOpacity'), s.depthHeatmapOpacity, { min: 0.1, max: 1, step: 0.05 }, (v) => this.patch({ depthHeatmapOpacity: v }), percent),
+    ]);
+    this.addSection(undefined, [
+      toggleRow(t('settings.swingMarkers'), s.pivotMarkersVisible, (v) => this.patch({ pivotMarkersVisible: v })),
+      rangeRow(t('settings.swingStrength'), s.pivotStrength, { min: 2, max: 20, step: 1 }, (v) => this.patch({ pivotStrength: v })),
+      toggleRow(t('settings.swingStructure'), s.pivotStructureLabels, (v) => this.patch({ pivotStructureLabels: v })),
+    ]);
+    this.addSection(undefined, [
+      toggleRow(t('settings.sessionShading'), s.sessionShadingVisible, (v) => this.patch({ sessionShadingVisible: v })),
+      toggleRow(t('settings.periodLevels'), s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })),
+      selectRow(t('settings.periodLevelsBasis'), s.periodLevelsPeriod, [
+        { value: 'day', label: t('settings.priorDay') },
+        { value: 'week', label: t('settings.priorWeek') },
+      ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })),
+    ]);
+  }
+
+  private addSection(title: string | undefined, rows: readonly HTMLElement[]): HTMLDivElement {
+    const section = settingsSection(title);
+    section.append(...rows);
+    this.bodyEl?.appendChild(section);
+    return section;
+  }
+
+  /** A section of the look, after `lead` (the switch it goes with, say). */
+  private renderLookSection(section: LookSection, lead: readonly HTMLElement[] = []): void {
+    this.addSection(this.t(section.title), [...lead, ...section.rows.map((row) => this.lookRow(row))]);
   }
 
   /** A row of the look: a colour, a switch, a dash or a width, as its key takes it, on the user's layer. */
@@ -226,7 +440,7 @@ export class WidgetSettings {
     let sync: () => void;
     switch (CHART_STYLE_KEYS[row.keys[0]]) {
       case 'boolean': {
-        el = this.toggleRow(label, read() === true, set);
+        el = toggleRow(label, read() === true, set);
         const toggle = el.querySelector('button')!;
         sync = () => {
           const on = read() === true;
@@ -236,23 +450,23 @@ export class WidgetSettings {
         break;
       }
       case 'lineStyle':
-        el = this.selectRow(label, shared(), [...auto, ...this.lineStyles()], (v) => set(v === '' ? null : asLineStyle(v)));
+        el = selectRow(label, shared(), [...auto, ...this.lineStyles()], (v) => set(v === '' ? null : asLineStyle(v)));
         sync = () => { el.querySelector('select')!.value = shared(); };
         break;
       case 'width': {
         const value = read();
         const widths = typeof value === 'number' && !LINE_WIDTHS.includes(value) ? [...LINE_WIDTHS, value].sort((a, b) => a - b) : LINE_WIDTHS;
-        el = this.selectRow(label, shared(), [...auto, ...widths.map((w) => ({ value: String(w), label: `${w}px` }))],
+        el = selectRow(label, shared(), [...auto, ...widths.map((w) => ({ value: String(w), label: `${w}px` }))],
           (v) => set(v === '' ? null : Number(v)));
         sync = () => { el.querySelector('select')!.value = shared(); };
         break;
       }
       default: {
         const value = read();
-        const colour = this.colorRow(label, typeof value === 'string' ? value : null, set, {
+        const colour = colorRow(label, typeof value === 'string' ? value : null, set, {
           read: () => { const v = read(); return typeof v === 'string' ? v : null; },
           start: row.auto ? () => (row.auto?.from ? this.callbacks.styleValue(row.auto.from) : row.auto?.hint) ?? null : undefined,
-        });
+        }, this.t);
         el = colour.row;
         sync = colour.sync;
       }
@@ -269,118 +483,46 @@ export class WidgetSettings {
     ];
   }
 
-  private renderDisplayTab(): void {
-    if (!this.bodyEl || !this.currentSettings) return;
-    const s = this.currentSettings;
-
-    const section = this.section();
-    section.appendChild(this.toggleRow(this.t('settings.mainSeries'), s.mainSeriesVisible, (v) => this.patch({ mainSeriesVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.highLowLines'), s.highLowLines, (v) => this.patch({ highLowLines: v })));
-    section.appendChild(this.toggleRow(this.t('settings.extendedHours'), s.extendedHours, (v) => this.patch({ extendedHours: v })));
-    section.appendChild(this.toggleRow(this.t('settings.gridLines'), s.gridVisible, (v) => this.patch({ gridVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.volume'), s.volumeVisible, (v) => this.patch({ volumeVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.volumeProfile'), s.volumeProfileVisible, (v) => this.patch({ volumeProfileVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.marketProfile'), s.marketProfileVisible, (v) => this.patch({ marketProfileVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.marketProfileSplit'), s.marketProfileSplit, (v) => this.patch({ marketProfileSplit: v })));
-    section.appendChild(this.toggleRow(this.t('settings.marketProfileLetters'), s.marketProfileLetters, (v) => this.patch({ marketProfileLetters: v })));
-    section.appendChild(this.rangeRow(this.t('settings.marketProfileBuckets'), s.marketProfileBuckets, 8, 200, 1, (v) => this.patch({ marketProfileBuckets: v })));
-    section.appendChild(this.rangeRow(this.t('settings.marketProfileOpacity'), s.marketProfileOpacity, 0.05, 1, 0.05, (v) => this.patch({ marketProfileOpacity: v }), (v) => `${Math.round(v * 100)}%`));
-    section.appendChild(this.toggleRow(this.t('settings.depthHeatmap'), s.depthHeatmapVisible, (v) => this.patch({ depthHeatmapVisible: v })));
-    section.appendChild(this.rangeRow(this.t('settings.depthHeatmapOpacity'), s.depthHeatmapOpacity, 0.1, 1, 0.05, (v) => this.patch({ depthHeatmapOpacity: v }), (v) => `${Math.round(v * 100)}%`));
-    section.appendChild(this.toggleRow(this.t('settings.swingMarkers'), s.pivotMarkersVisible, (v) => this.patch({ pivotMarkersVisible: v })));
-    section.appendChild(this.rangeRow(this.t('settings.swingStrength'), s.pivotStrength, 2, 20, 1, (v) => this.patch({ pivotStrength: v })));
-    section.appendChild(this.toggleRow(this.t('settings.swingStructure'), s.pivotStructureLabels, (v) => this.patch({ pivotStructureLabels: v })));
-    section.appendChild(this.toggleRow(this.t('settings.sessionShading'), s.sessionShadingVisible, (v) => this.patch({ sessionShadingVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.periodLevels'), s.periodLevelsVisible, (v) => this.patch({ periodLevelsVisible: v })));
-    section.appendChild(this.selectRow(this.t('settings.periodLevelsBasis'), s.periodLevelsPeriod, [
-      { value: 'day', label: this.t('settings.priorDay') },
-      { value: 'week', label: this.t('settings.priorWeek') },
-    ], (v) => this.patch({ periodLevelsPeriod: v as ChartSettingsState['periodLevelsPeriod'] })));
-    section.appendChild(this.toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v })));
-    section.appendChild(this.toggleRow(this.t('settings.indicatorValues'), s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })));
-    if (this.available.barCountdown !== false) {
-      section.appendChild(this.toggleRow(this.t('settings.barCountdown'), s.barCountdown, (v) => this.patch({ barCountdown: v })));
-    }
-
-    // Crosshair mode
-    section.appendChild(this.selectRow(this.t('settings.crosshairMode'), s.crosshairMode, [
-      { label: this.t('settings.crosshair.magnet'), value: 'magnet' },
-      { label: this.t('settings.crosshair.normal'), value: 'normal' },
-      { label: this.t('settings.crosshair.hidden'), value: 'hidden' },
-    ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] })));
-
-    section.appendChild(this.selectRow(this.t('settings.timezone'), s.timezone,
-      timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local'),
-        this.available.exchangeZone
-          ? { label: this.t('settings.timezone.exchange'), zone: this.available.exchangeZone() }
-          : undefined),
-      (v) => this.patch({ timezone: v })));
-    section.appendChild(this.selectRow(this.t('settings.numberLocale'), s.numberLocale,
-      numberLocaleOptions(s.numberLocale),
-      (v) => this.patch({ numberLocale: v })));
-
-    this.bodyEl.appendChild(section);
-  }
-
-  private renderScaleTab(): void {
-    if (!this.bodyEl || !this.currentSettings) return;
-    const s = this.currentSettings;
-
-    const section = this.section();
-    section.appendChild(this.toggleRow(this.t('settings.autoScale'), s.autoScale, (v) => this.patch({ autoScale: v })));
-    section.appendChild(this.toggleRow(this.t('settings.invertScale'), s.invertScale, (v) => this.patch({ invertScale: v })));
-    section.appendChild(this.toggleRow(this.t('settings.leftScale'), s.leftPriceScale, (v) => this.patch({ leftPriceScale: v })));
-    const scales = [
-      { value: 'regular', label: this.t('settings.scale.regular') },
-      { value: 'logarithmic', label: this.t('settings.scale.logarithmic') },
-      { value: 'percentage', label: this.t('settings.scale.percentage') },
-      { value: 'indexedTo100', label: this.t('settings.scale.indexedTo100') },
-    ].filter((o) => o.value !== 'logarithmic' || this.available.logScale !== false);
-    section.appendChild(this.selectRow(this.t('settings.priceScale'), s.scaleMode, scales,
-      (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })));
-    this.bodyEl.appendChild(section);
-  }
-
   /** The chart's type: its settings (Renko's box, Kagi's reversal…) and its colours and widths. */
   private renderChartTypeSection(): void {
     if (!this.bodyEl || !this.currentSettings || !this.chartType) return;
     const type = this.chartType;
     const all = this.currentSettings.chartTypeOptions ?? {};
     const def = CHART_TYPES.find((c) => c.value === type);
-    const section = this.section(def ? chartTypeLabel(def, this.t) : type);
+    const section = settingsSection(def ? chartTypeLabel(def, this.t) : type);
+    const own = () => this.currentSettings?.chartTypeOptions ?? {};
     /** Change one type's settings: the rest of its own stay. */
     const set = <K extends keyof ChartTypeOptions>(key: K, value: NonNullable<ChartTypeOptions[K]>) =>
-      this.patch({ chartTypeOptions: { ...(this.currentSettings?.chartTypeOptions ?? {}), [key]: value } });
+      this.patch({ chartTypeOptions: { ...own(), [key]: value } });
+    const number = (label: MessageKey, value: number | null, step: string, max: number, onChange: (v: number | null) => void) =>
+      section.appendChild(numberRow(this.t(label), value, { step, max }, onChange, this.t));
     switch (type) {
       case 'renko': {
         const o = all.renko ?? {};
-        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof o.boxSize === 'number' ? o.boxSize : null, 'any', Infinity,
-          (v) => set('renko', { ...(this.currentSettings?.chartTypeOptions?.renko ?? {}), boxSize: v ?? 'atr' })));
-        section.appendChild(this.numberRow(this.t('settings.atrPeriod'), o.atrPeriod ?? null, '1', 500,
-          (v) => set('renko', withValue(this.currentSettings?.chartTypeOptions?.renko, 'atrPeriod', v))));
+        number('settings.boxSize', typeof o.boxSize === 'number' ? o.boxSize : null, 'any', Infinity,
+          (v) => set('renko', { ...(own().renko ?? {}), boxSize: v ?? 'atr' }));
+        number('settings.atrPeriod', o.atrPeriod ?? null, '1', 500, (v) => set('renko', withValue(own().renko, 'atrPeriod', v)));
         break;
       }
       case 'lineBreak':
-        section.appendChild(this.numberRow(this.t('settings.lineBreakLines'), all.lineBreak?.lines ?? null, '1', 10,
-          (v) => set('lineBreak', withValue(this.currentSettings?.chartTypeOptions?.lineBreak, 'lines', v))));
+        number('settings.lineBreakLines', all.lineBreak?.lines ?? null, '1', 10, (v) => set('lineBreak', withValue(own().lineBreak, 'lines', v)));
         break;
       case 'kagi':
-        section.appendChild(this.numberRow(this.t('settings.reversal'), all.kagi?.reversal ?? null, 'any', Infinity,
-          (v) => set('kagi', withValue(this.currentSettings?.chartTypeOptions?.kagi, 'reversal', v))));
-        section.appendChild(this.selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
+        number('settings.reversal', all.kagi?.reversal ?? null, 'any', Infinity, (v) => set('kagi', withValue(own().kagi, 'reversal', v)));
+        section.appendChild(selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
           { value: 'percent', label: this.t('settings.reversalType.percent') },
           { value: 'price', label: this.t('settings.reversalType.price') },
-        ], (v) => set('kagi', { ...(this.currentSettings?.chartTypeOptions?.kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
+        ], (v) => set('kagi', { ...(own().kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
         break;
       case 'pointAndFigure':
-        section.appendChild(this.numberRow(this.t('settings.boxSize'), typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any', Infinity,
-          (v) => set('pointAndFigure', { ...(this.currentSettings?.chartTypeOptions?.pointAndFigure ?? {}), boxSize: v ?? 'auto' })));
-        section.appendChild(this.numberRow(this.t('settings.reversalBoxes'), all.pointAndFigure?.reversal ?? null, '1', 10,
-          (v) => set('pointAndFigure', withValue(this.currentSettings?.chartTypeOptions?.pointAndFigure, 'reversal', v))));
+        number('settings.boxSize', typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any', Infinity,
+          (v) => set('pointAndFigure', { ...(own().pointAndFigure ?? {}), boxSize: v ?? 'auto' }));
+        number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, '1', 10,
+          (v) => set('pointAndFigure', withValue(own().pointAndFigure, 'reversal', v)));
         break;
       case 'rangeBars':
-        section.appendChild(this.numberRow(this.t('settings.barRange'), typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any', Infinity,
-          (v) => set('rangeBars', { range: v ?? 'auto' })));
+        number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any', Infinity,
+          (v) => set('rangeBars', { range: v ?? 'auto' }));
         break;
       default:
         break;
@@ -389,229 +531,9 @@ export class WidgetSettings {
     this.bodyEl.appendChild(section);
   }
 
-  /** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0 are taken. */
-  private numberRow(label: string, value: number | null, step: string, max: number, onChange: (v: number | null) => void): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'tcw-settings-row';
-    const lbl = document.createElement('label');
-    lbl.className = 'tcw-settings-label';
-    lbl.textContent = label;
-    row.appendChild(lbl);
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'tcw-settings-number';
-    input.min = '0';
-    input.step = step;
-    if (Number.isFinite(max)) input.max = String(max);
-    input.placeholder = this.t('settings.auto');
-    input.value = value === null ? '' : String(value);
-    input.setAttribute('aria-label', label);
-    input.addEventListener('change', () => {
-      if (input.value.trim() === '') {
-        input.removeAttribute('aria-invalid');
-        onChange(null);
-        return;
-      }
-      const v = Number(input.value);
-      const ok = Number.isFinite(v) && v > 0 && v <= max && (step !== '1' || Number.isInteger(v));
-      input.toggleAttribute('aria-invalid', !ok);
-      if (ok) onChange(v);
-    });
-    row.appendChild(input);
-    return row;
-  }
-
   private patch(partial: Partial<ChartSettingsState>): void {
-    if (this.currentSettings) {
-      Object.assign(this.currentSettings, partial);
-    }
+    if (this.currentSettings) Object.assign(this.currentSettings, partial);
     this.callbacks.onChange(partial);
-  }
-
-  private section(title?: string): HTMLDivElement {
-    const div = document.createElement('div');
-    div.className = 'tcw-settings-section';
-    if (title) {
-      const t = document.createElement('div');
-      t.className = 'tcw-settings-section-title';
-      t.textContent = title;
-      div.appendChild(t);
-      // Rows named alike ("Colour", "Style") under several titles: the title tells them apart.
-      div.setAttribute('role', 'group');
-      div.setAttribute('aria-label', title);
-    }
-    return div;
-  }
-
-  /**
-   * A colour of the look, shown again from `look.read()`. With `look.start`,
-   * null is the part's own colour: shown as Auto, the picker starting from
-   * `start()`, and once set a button takes it back.
-   */
-  private colorRow(
-    label: string,
-    value: string | null,
-    onChange: (v: string | null) => void,
-    look: { read: () => string | null; start?: () => string | number | boolean | null },
-  ): { row: HTMLDivElement; sync: () => void } {
-    const row = document.createElement('div');
-    row.className = 'tcw-settings-row';
-
-    const lbl = document.createElement('span');
-    lbl.className = 'tcw-settings-label';
-    lbl.textContent = label;
-    row.appendChild(lbl);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'tcw-color-picker-wrap';
-
-    const input = document.createElement('input');
-    input.type = 'color';
-    input.setAttribute('aria-label', label);
-
-    // What the swatch can't say (Auto, a colour with transparency) is read with it.
-    const hex = document.createElement('span');
-    hex.className = 'tcw-color-hex';
-    hex.id = `tcw-color-${++colorRowCount}`;
-    input.setAttribute('aria-describedby', hex.id);
-
-    let back: HTMLButtonElement | null = null;
-    const show = (v: string | null) => {
-      input.value = toHex(v ?? look.start?.());
-      hex.textContent = v ?? this.t('settings.auto');
-      row.classList.toggle('tcw-color-auto', v === null);
-      if (v !== null && look.start && !back) {
-        back = document.createElement('button');
-        back.type = 'button';
-        back.className = 'tcw-color-auto-btn';
-        back.textContent = this.t('settings.auto');
-        back.setAttribute('aria-label', `${label}: ${this.t('settings.auto')}`);
-        back.addEventListener('click', () => {
-          onChange(null);
-          // Focus stays in the row as the button goes; the chart may still draw a colour the host set.
-          input.focus();
-          show(look.read());
-        });
-        wrap.appendChild(back);
-      } else if (v === null && back) {
-        back.remove();
-        back = null;
-      }
-    };
-
-    input.addEventListener('input', () => {
-      onChange(input.value);
-      show(input.value);
-    });
-
-    wrap.appendChild(input);
-    wrap.appendChild(hex);
-    row.appendChild(wrap);
-    show(value);
-    return { row, sync: () => show(look.read()) };
-  }
-
-  private toggleRow(label: string, value: boolean, onChange: (v: boolean) => void): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'tcw-settings-row';
-
-    const lbl = document.createElement('span');
-    lbl.className = 'tcw-settings-label';
-    lbl.textContent = label;
-    row.appendChild(lbl);
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = `tcw-toggle${value ? ' tcw-on' : ''}`;
-    toggle.setAttribute('role', 'switch');
-    toggle.setAttribute('aria-checked', String(value));
-    toggle.setAttribute('aria-label', label);
-    toggle.addEventListener('click', () => {
-      const newVal = !toggle.classList.contains('tcw-on');
-      toggle.classList.toggle('tcw-on', newVal);
-      toggle.setAttribute('aria-checked', String(newVal));
-      onChange(newVal);
-    });
-    row.appendChild(toggle);
-    return row;
-  }
-
-  private selectRow(
-    label: string,
-    value: string,
-    options: { label: string; value: string }[],
-    onChange: (v: string) => void,
-  ): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'tcw-settings-row';
-
-    const lbl = document.createElement('span');
-    lbl.className = 'tcw-settings-label';
-    lbl.textContent = label;
-    row.appendChild(lbl);
-
-    const select = document.createElement('select');
-    select.className = 'tcw-settings-select';
-    select.setAttribute('aria-label', label);
-    for (const opt of options) {
-      const o = document.createElement('option');
-      o.value = opt.value;
-      o.textContent = opt.label;
-      if (opt.value === value) o.selected = true;
-      select.appendChild(o);
-    }
-    // A value none of the options has (two keys that differ): nothing chosen, so any pick is a change.
-    if (!options.some((opt) => opt.value === value)) select.selectedIndex = -1;
-    select.addEventListener('change', () => onChange(select.value));
-    row.appendChild(select);
-    return row;
-  }
-
-  private rangeRow(
-    label: string,
-    value: number,
-    min: number,
-    max: number,
-    step: number,
-    onChange: (v: number) => void,
-    format: (v: number) => string = (v) => String(v),
-  ): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'tcw-settings-row';
-
-    const lbl = document.createElement('span');
-    lbl.className = 'tcw-settings-label';
-    lbl.textContent = label;
-    row.appendChild(lbl);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'tcw-settings-range';
-
-    const input = document.createElement('input');
-    input.type = 'range';
-    input.min = String(min);
-    input.max = String(max);
-    input.step = String(step);
-    input.value = String(value);
-
-    const out = document.createElement('span');
-    out.className = 'tcw-settings-range-val';
-    out.textContent = format(value);
-
-    input.addEventListener('input', () => {
-      const v = Number(input.value);
-      out.textContent = format(v);
-      onChange(v);
-    });
-
-    wrap.appendChild(input);
-    wrap.appendChild(out);
-    row.appendChild(wrap);
-    return row;
-  }
-
-  destroy(): void {
-    this.close();
   }
 }
 
@@ -622,9 +544,6 @@ function withValue<T extends object, K extends string>(settings: T | undefined, 
   else next[key] = value;
   return next as T;
 }
-
-/** Ids for the colour rows' descriptions. */
-let colorRowCount = 0;
 
 function asLineStyle(v: string): LineStyle {
   return v === 'dashed' || v === 'dotted' ? v : 'solid';

@@ -63,26 +63,80 @@ afterEach(() => {
 
 const calls = (name: string) => FakeChart.last.calls.filter(([n]) => n === name).map(([, v]) => v);
 const openSettings = () => (widget as unknown as { openSettings(): void }).openSettings();
+const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
+const footer = (act: string) => document.querySelector<HTMLButtonElement>(`.tcw-set .tcw-modal-footer [data-act="${act}"]`)!;
+const menuItem = (text: string) => [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((b) => b.textContent === text)!;
+/** The grid as the widget's own setting: back on, the way a shortcut or the host would. */
+const toggleGrid = (on: boolean) => (widget as unknown as { applySettings(p: object): void }).applySettings({ gridVisible: on });
+/** The grid's own switch, "Show" in the Grid lines section. */
+const gridToggle = () => document.querySelector<HTMLButtonElement>('.tcw-settings-section[aria-label="Grid lines"] button[aria-label="Show"]')!;
 const toggleFor = (label: string) => [...document.querySelectorAll<HTMLElement>('.tcw-settings-row')]
   .find((r) => r.querySelector('.tcw-settings-label')?.textContent === label)!
   .querySelector<HTMLButtonElement>('.tcw-toggle')!;
 
 describe('ChartWidget settings undo', () => {
-  it('records a change made in the settings, and undoes and redoes it', () => {
+  it('records what the settings changed as one step on OK, and undoes and redoes it', () => {
     openSettings();
-    document.querySelector<HTMLButtonElement>('.tcw-modal-tab[data-tab="display"]')!.click();
-    toggleFor('Grid lines').click();
-    expect(calls('setGridVisible')).toEqual([false]);
-    expect(FakeChart.last.steps).toHaveLength(1);
-    expect(FakeChart.last.steps[0].subject).toBe('settings:gridVisible');
-
-    FakeChart.last.steps[0].undo();
-    expect(calls('setGridVisible')).toEqual([false, true]);
-    // The open settings show the setting as it is again.
-    expect(toggleFor('Grid lines').classList.contains('tcw-on')).toBe(true);
-    FakeChart.last.steps[0].redo();
+    tab('appearance');
+    gridToggle().click();
+    gridToggle().click();
+    gridToggle().click();
     expect(calls('setGridVisible')).toEqual([false, true, false]);
+    expect(FakeChart.last.steps).toHaveLength(0); // still open: nothing recorded yet
+    footer('ok').click();
+    expect(FakeChart.last.steps).toHaveLength(1);
+    FakeChart.last.steps[0].undo();
+    expect(calls('setGridVisible').at(-1)).toBe(true);
+    FakeChart.last.steps[0].redo();
+    expect(calls('setGridVisible').at(-1)).toBe(false);
     expect(FakeChart.last.steps).toHaveLength(1); // undo and redo record nothing
+  });
+
+  it('puts back on Cancel only what the settings changed, and records nothing', () => {
+    openSettings();
+    tab('appearance');
+    gridToggle().click();
+    const before = FakeChart.last.calls.length;
+    footer('cancel').click();
+    expect(FakeChart.last.calls.slice(before)).toEqual([['setGridVisible', true]]);
+    expect(FakeChart.last.steps).toHaveLength(0);
+  });
+
+  it('leaves the chart as it is on a Cancel that changed nothing (a scale dragged by hand stays)', () => {
+    openSettings();
+    const before = FakeChart.last.calls.length;
+    footer('cancel').click();
+    expect(FakeChart.last.calls.slice(before)).toEqual([]);
+    expect(FakeChart.last.steps).toHaveLength(0);
+  });
+
+  it('keeps one session when asked to open while open', () => {
+    openSettings();
+    tab('appearance');
+    gridToggle().click();
+    openSettings();
+    footer('cancel').click();
+    expect(calls('setGridVisible').at(-1)).toBe(true);
+  });
+
+  it('saves the look as a template, and applies it, from the Template menu', async () => {
+    openSettings();
+    tab('appearance');
+    gridToggle().click();
+    footer('template').click();
+    menuItem('Save as template…').click();
+    const prompt = [...document.querySelectorAll<HTMLFormElement>('.tcw-name-prompt')].find((f) => !f.closest('.tcw-modal-backdrop')!.hasAttribute('hidden'))!;
+    const input = prompt.querySelector('input')!;
+    input.value = 'No grid';
+    input.dispatchEvent(new Event('input'));
+    prompt.dispatchEvent(new Event('submit', { cancelable: true }));
+    await Promise.resolve();
+    footer('ok').click();
+    toggleGrid(true);
+    openSettings();
+    footer('template').click();
+    menuItem('No grid').click();
+    expect(calls('setGridVisible').at(-1)).toBe(false);
   });
 
   it('records a shortcut’s change, and a reset as one step', () => {

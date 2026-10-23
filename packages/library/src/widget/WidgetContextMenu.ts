@@ -130,7 +130,6 @@ export class WidgetContextMenu {
     if (!entry.remove) return item;
     // The keyboard removes it with Delete; the button is for a pointer.
     item.setAttribute('aria-keyshortcuts', 'Delete');
-    item.title = entry.remove;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'tcw-context-remove';

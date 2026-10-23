@@ -26,7 +26,14 @@ describe('chart templates', () => {
     expect(kept).not.toHaveProperty('timezone');
     expect(kept).not.toHaveProperty('numberLocale');
     expect(kept).not.toHaveProperty('chartTypeOptions');
+    expect(kept).not.toHaveProperty('autoScale'); // a drag on the axis turns it off: not a look
     expect(kept.gridVisible).toBe(true);
+  });
+
+  it('keep only the colours and lines that are set', () => {
+    const store = new ChartTemplateStore('k', memory());
+    store.save('A', DEFAULT_SETTINGS, { 'background.color': null, 'grid.horizontal.color': '#111111' });
+    expect(store.get('A')?.style).toEqual({ 'grid.horizontal.color': '#111111' });
   });
 
   it('read back only what they could have saved', () => {
