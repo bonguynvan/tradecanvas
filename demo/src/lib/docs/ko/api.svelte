@@ -657,8 +657,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   함께 그 아래에 나열됩니다. 기본적으로 활성화되어 있으며
   <code>objectTree: false</code>로 끌 수 있습니다. 그림 관련 컨트롤은 다음 API에 대응합니다.
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // 숨겨지지 않았고, 이 시간 단위에서 표시됨
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // 함께 숨기고, 잠그고, 선택됨
@@ -668,9 +669,10 @@ chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
 <h3>그림 설정과 메뉴</h3>
 <p>
-  그림을 더블 클릭하거나 개체 트리의 톱니바퀴 버튼을 누르면 그 그림의 설정이 열립니다.
-  스타일, 도구 고유의 설정(피보나치 레벨, 연장, 라벨 등), 차트 시간대 기준의 각 점을
-  다룰 수 있습니다. 그림을 오른쪽 클릭하면 메뉴가 열리며, 설정, 선에 거는 알림, 순서,
+  그림을 더블 클릭하거나 개체 트리의 톱니바퀴 버튼을 누르면 그 그림의 설정이 탭으로 나뉘어 열립니다.
+  탭은 스타일(선, 선 끝, 채우기, 그리고 피보나치 레벨, 연장, 라벨 같은 도구 고유의 설정), 글을 쓰는 도구의
+  텍스트, 좌표(차트 시간대 기준의 각 점), 표시(그림이 보이는 시간 단위)이고, 아래쪽에 템플릿 메뉴, 취소,
+  확인이 있습니다. 그림을 오른쪽 클릭하면 메뉴가 열리며, 설정, 선에 거는 알림, 순서,
   그룹, 잠금, 숨기기, 복제, 삭제를 고를 수 있습니다. 사이드바에는 지우개, 확대 도구,
   그리고 꺼짐·약함·강함으로 바꾸는 자석도 있습니다. 바탕이 되는 API는
   <a href={href('/docs/drawing-tools')}>그리기 도구</a>를 참고하세요.

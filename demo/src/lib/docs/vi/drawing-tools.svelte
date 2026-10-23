@@ -62,6 +62,45 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>Cài đặt lấy từ bố cục đã lưu hoặc từ hình vẽ được dán vào sẽ được kiểm tra theo công cụ; giá trị mà công cụ không nhận sẽ bị bỏ.</p>
 
+<h3 id="settings-dialog">Hộp thoại cài đặt</h3>
+<p>
+  Trong widget, bấm đúp vào một hình vẽ (hoặc chọn Cài đặt trên thanh công cụ của nó, trong menu của nó hay trong cây
+  đối tượng) sẽ mở cài đặt của nó theo từng tab. <strong>Kiểu</strong>: đường (màu, độ dày, kiểu nét) trên một hàng,
+  hai đầu đường, màu nền, rồi các công tắc và lựa chọn của công cụ, và các mức của nó. <strong>Chữ</strong>, với các
+  công cụ có chữ: nội dung chữ và cỡ chữ. <strong>Toạ độ</strong>: giá, ngày và giờ của từng điểm, theo múi giờ của
+  biểu đồ. <strong>Hiển thị</strong>: các khung thời gian mà hình vẽ hiện trên đó. Mọi thay đổi hiện ra ngay;
+  <strong>OK</strong> giữ chúng lại thành một bước hoàn tác, <strong>Huỷ</strong> (hoặc Escape) trả hình vẽ về như cũ.
+  Menu <strong>Mẫu</strong> áp dụng hoặc xoá một mẫu đã lưu, lưu giao diện của hình vẽ thành một mẫu, lưu các cài đặt
+  làm mặc định của công cụ, và đặt lại chúng.
+</p>
+
+<h3 id="drawing-intervals">Chỉ hiện trên một số khung thời gian</h3>
+<p>
+  Có thể giới hạn một hình vẽ trong một số khung thời gian, theo cùng các quy tắc như với chỉ báo: tắt cả một loại khung
+  (<code>minutes: false</code>), hoặc chỉ bật trong một khoảng của loại đó (<code>hours: [1, 4]</code>). Trên các khung
+  khác, hình vẽ không được vẽ, không bấm trúng được và không được chọn. Các quy tắc được lưu cùng bố cục.
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // không hiện trên biểu đồ phút
+chart.isDrawingShown(id)                                    // false trên biểu đồ 5m
+chart.updateDrawing(id, { intervals: null })                // lại hiện trên mọi khung
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>Với Chart dùng trực tiếp, không có luồng dữ liệu, hãy cho biết khung thời gian của nến bằng <code>chart.setDataTimeframe('5m')</code>.</p>
+
+<h3 id="line-stats">Hai đầu, điểm giữa và thống kê của một đường</h3>
+<p>
+  Đường xu hướng, tia và đường kéo dài có thể hiện điểm giữa, và thống kê giữa hai điểm của chúng: mức thay đổi giá và
+  phần trăm của nó, số nến và khoảng thời gian giữa hai điểm, góc. Thống kê hiện khi đường đang được chọn, hoặc hiện
+  luôn, cạnh đầu phải, điểm giữa hoặc đầu trái của đường. Hai đầu của đường xu hướng có thể là mũi tên. Tất cả đều tắt
+  cho đến khi được bật.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // đường xu hướng: leftEnd, rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">Thanh công cụ trên hình được chọn</h2>
 <p>
   Trong widget, bấm vào một hình vẽ là một thanh công cụ nhỏ hiện ngay trên nó: màu, độ dày và kiểu nét, rồi đến cài đặt, cảnh báo trên đường của nó, khoá, menu đầy đủ của hình (giống chuột phải) và xoá. Khi chọn nhiều hình, thanh nằm trên tất cả và thay đổi áp cho từng hình. Nó đi theo hình khi hình được kéo, khi cuộn hay zoom, tạm ẩn khi đang bật công cụ vẽ, cục tẩy hoặc zoom vùng, và là một điểm dừng Tab, di chuyển bằng phím mũi tên.

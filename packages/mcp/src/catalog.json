@@ -3614,6 +3614,51 @@
           "kind": "boolean",
           "label": "Extend right",
           "default": false
+        },
+        "leftEnd": {
+          "kind": "choice",
+          "label": "Left end",
+          "default": "normal"
+        },
+        "rightEnd": {
+          "kind": "choice",
+          "label": "Right end",
+          "default": "normal"
+        },
+        "showMiddlePoint": {
+          "kind": "boolean",
+          "label": "Show middle point",
+          "default": false
+        },
+        "showPriceRange": {
+          "kind": "boolean",
+          "label": "Show price range",
+          "default": false
+        },
+        "showBarsRange": {
+          "kind": "boolean",
+          "label": "Show bars range",
+          "default": false
+        },
+        "showDateRange": {
+          "kind": "boolean",
+          "label": "Show date and time range",
+          "default": false
+        },
+        "showAngle": {
+          "kind": "boolean",
+          "label": "Show angle",
+          "default": false
+        },
+        "alwaysShowStats": {
+          "kind": "boolean",
+          "label": "Always show stats",
+          "default": false
+        },
+        "statsPosition": {
+          "kind": "choice",
+          "label": "Stats position",
+          "default": "right"
         }
       }
     },
@@ -3635,12 +3680,86 @@
     {
       "type": "ray",
       "name": "Ray",
-      "anchors": 2
+      "anchors": 2,
+      "options": {
+        "showMiddlePoint": {
+          "kind": "boolean",
+          "label": "Show middle point",
+          "default": false
+        },
+        "showPriceRange": {
+          "kind": "boolean",
+          "label": "Show price range",
+          "default": false
+        },
+        "showBarsRange": {
+          "kind": "boolean",
+          "label": "Show bars range",
+          "default": false
+        },
+        "showDateRange": {
+          "kind": "boolean",
+          "label": "Show date and time range",
+          "default": false
+        },
+        "showAngle": {
+          "kind": "boolean",
+          "label": "Show angle",
+          "default": false
+        },
+        "alwaysShowStats": {
+          "kind": "boolean",
+          "label": "Always show stats",
+          "default": false
+        },
+        "statsPosition": {
+          "kind": "choice",
+          "label": "Stats position",
+          "default": "right"
+        }
+      }
     },
     {
       "type": "extendedLine",
       "name": "Extended Line",
-      "anchors": 2
+      "anchors": 2,
+      "options": {
+        "showMiddlePoint": {
+          "kind": "boolean",
+          "label": "Show middle point",
+          "default": false
+        },
+        "showPriceRange": {
+          "kind": "boolean",
+          "label": "Show price range",
+          "default": false
+        },
+        "showBarsRange": {
+          "kind": "boolean",
+          "label": "Show bars range",
+          "default": false
+        },
+        "showDateRange": {
+          "kind": "boolean",
+          "label": "Show date and time range",
+          "default": false
+        },
+        "showAngle": {
+          "kind": "boolean",
+          "label": "Show angle",
+          "default": false
+        },
+        "alwaysShowStats": {
+          "kind": "boolean",
+          "label": "Always show stats",
+          "default": false
+        },
+        "statsPosition": {
+          "kind": "choice",
+          "label": "Stats position",
+          "default": "right"
+        }
+      }
     },
     {
       "type": "parallelChannel",

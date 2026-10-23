@@ -692,8 +692,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   por defecto; desactívalo con <code>objectTree: false</code>.
   Los controles de dibujo corresponden a:
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // no está oculto y se muestra en esta temporalidad
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // se ocultan, bloquean y seleccionan juntos
@@ -704,9 +705,12 @@ chart.removeIndicator(instanceId)`}</code></pre>
 <h3>Configuración y menú del dibujo</h3>
 <p>
   Haz doble clic en un dibujo, o usa su engranaje en el árbol de objetos, para
-  abrir su configuración: el estilo, la configuración propia de la herramienta
-  (niveles de Fibonacci, extensiones, etiquetas…) y sus puntos en la zona horaria
-  del gráfico. Haz clic derecho en un dibujo para ver su menú: configuración, una
+  abrir su configuración en pestañas: Estilo (la línea, sus extremos, el relleno y
+  la configuración propia de la herramienta, como los niveles de Fibonacci, las
+  extensiones y las etiquetas), Texto para las herramientas que escriben,
+  Coordenadas (sus puntos en la zona horaria del gráfico) y Visibilidad (las
+  temporalidades en las que se muestra), con un menú Plantilla, Cancelar y Aceptar
+  al pie. Haz clic derecho en un dibujo para ver su menú: configuración, una
   alerta en su línea, orden, agrupar, bloquear, ocultar, duplicar y eliminar. La
   barra lateral también tiene un borrador, una herramienta de zoom y un imán que
   puede estar desactivado, débil o fuerte. Consulta

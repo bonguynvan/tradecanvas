@@ -675,8 +675,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   their drawings under them. Enabled by default — disable with
   <code>objectTree: false</code>. The drawing controls map to:
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // not hidden, and on this interval
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // hidden, locked and selected together
@@ -687,8 +688,11 @@ chart.removeIndicator(instanceId)`}</code></pre>
 <h3>Drawing settings and menu</h3>
 <p>
   Double-click a drawing, or use its gear in the object tree, to open its
-  settings: style, the tool's own settings (Fibonacci levels, extensions,
-  labels…) and its points in the chart's time zone. Right-click a drawing for
+  settings in tabs: Style (the line, its ends, the fill, the tool's own
+  settings such as Fibonacci levels, extensions and labels), Text for the tools
+  that write, Coordinates (its points in the chart's time zone) and Visibility
+  (the intervals it shows on), with a Template menu, Cancel and OK at the foot.
+  Right-click a drawing for
   its menu: settings, an alert on its line, order, group, lock, hide,
   duplicate and delete. The sidebar also has an eraser, a zoom tool and a
   magnet that goes off, weak and strong. See

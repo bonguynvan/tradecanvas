@@ -63,6 +63,46 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>La configuración de un diseño guardado o de un dibujo pegado se comprueba contra la herramienta; los valores que esta no admite se descartan.</p>
 
+<h3 id="settings-dialog">El diálogo de configuración</h3>
+<p>
+  En el widget, un doble clic en un dibujo (o Configuración en su barra, en su menú o en el árbol de objetos) abre su
+  configuración en pestañas. <strong>Estilo</strong>: la línea (color, grosor, trazo) en una fila, sus extremos, el
+  relleno y luego los interruptores y las opciones de la herramienta, y sus niveles. <strong>Texto</strong>, para las
+  herramientas que escriben: el texto y su tamaño. <strong>Coordenadas</strong>: el precio, la fecha y la hora de cada
+  punto, en la zona horaria del gráfico. <strong>Visibilidad</strong>: las temporalidades en las que se muestra. Cada
+  cambio se ve al momento; <strong>Aceptar</strong> los conserva como un solo paso de deshacer, <strong>Cancelar</strong>
+  (o Escape) deja el dibujo como estaba. El menú <strong>Plantilla</strong> aplica o elimina una plantilla guardada,
+  guarda el aspecto del dibujo como plantilla, guarda las opciones como predeterminadas de la herramienta y las
+  restablece.
+</p>
+
+<h3 id="drawing-intervals">Visible solo en algunas temporalidades</h3>
+<p>
+  Un dibujo puede limitarse a algunas temporalidades, con las mismas reglas que un indicador: un tipo desactivado
+  (<code>minutes: false</code>) o un rango de él (<code>hours: [1, 4]</code>). En las demás temporalidades no se
+  dibuja, no responde a los clics y no se selecciona. Las reglas se guardan con el diseño.
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // no en los gráficos de minutos
+chart.isDrawingShown(id)                                    // false en un gráfico de 5m
+chart.updateDrawing(id, { intervals: null })                // todas las temporalidades otra vez
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>Con un Chart directo y sin flujo de datos, indica la temporalidad de tus barras con <code>chart.setDataTimeframe('5m')</code>.</p>
+
+<h3 id="line-stats">Extremos, punto medio y estadísticas de una línea</h3>
+<p>
+  Las líneas de tendencia, los rayos y las líneas extendidas pueden mostrar su punto medio y estadísticas entre sus
+  dos puntos: la variación del precio y su porcentaje, las barras y el tiempo entre ellos, el ángulo. Las estadísticas
+  se muestran mientras la línea está seleccionada, o siempre, junto a su extremo derecho, su punto medio o su extremo
+  izquierdo. Los extremos de una línea de tendencia pueden ser flechas. Todo ello está desactivado hasta que se pide.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // líneas de tendencia: leftEnd, rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">La barra sobre la selección</h2>
 <p>
   En el widget, al hacer clic en un dibujo aparece una pequeña barra justo encima: color, grosor y estilo de línea, y luego ajustes, una alerta en su línea, bloqueo, el menú completo del dibujo (el mismo que con el botón derecho) y borrar. Con varios dibujos seleccionados se sitúa sobre todos y sus cambios van a cada uno. Sigue al dibujo cuando se mueve, se desplaza o se hace zoom, se aparta mientras hay una herramienta de dibujo, la goma o el zoom de área activos, y es una sola parada de tabulación que las flechas recorren.

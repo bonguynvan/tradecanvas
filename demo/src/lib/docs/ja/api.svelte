@@ -649,8 +649,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   既定で有効で、<code>objectTree: false</code> で無効にできます。
   描画の操作は次のメソッドに対応します：
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // 非表示ではなく、この時間足で表示される
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // まとめて非表示・ロック・選択される
@@ -660,9 +661,10 @@ chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
 <h3>描画の設定とメニュー</h3>
 <p>
-  描画をダブルクリックするか、オブジェクトツリーの歯車ボタンを使うと、その描画の設定が開きます。
-  扱えるのはスタイル、ツール独自の設定（フィボナッチのレベル、延長、ラベルなど）、
-  そしてチャートのタイムゾーンで表した各点です。描画を右クリックするとメニューが開き、
+  描画をダブルクリックするか、オブジェクトツリーの歯車ボタンを使うと、その描画の設定がタブに分かれて開きます。
+  タブは、スタイル（ライン、線端、塗りつぶし、そしてフィボナッチのレベル、延長、ラベルなどのツール独自の設定）、
+  文字を書くツールのテキスト、座標（チャートのタイムゾーンで表した各点）、表示（描画を表示する時間足）で、
+  下部にはテンプレートメニュー、キャンセル、OK があります。描画を右クリックするとメニューが開き、
   設定、ラインへのアラート、順序、グループ化、ロック、非表示、複製、削除を選べます。
   サイドバーには消しゴム、ズームツール、そしてオフ・弱・強を切り替えられるマグネットもあります。
   土台となる API は

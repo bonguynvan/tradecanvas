@@ -633,8 +633,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   分组则连同其中的画线一起列出。
   默认启用——设置 <code>objectTree: false</code> 可关闭。画线控制对应以下调用：
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // 未隐藏，且在当前周期上显示
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // 一起隐藏、锁定和选中
@@ -644,8 +645,10 @@ chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
 <h3>画线设置与菜单</h3>
 <p>
-  双击一条画线，或在对象树中点击它的齿轮按钮，即可打开它的设置：样式、工具自身的设置
-  （斐波那契级别、延伸、标签……）以及按图表时区显示的各个点。右键点击画线可打开它的菜单：
+  双击一条画线，或在对象树中点击它的齿轮按钮，即可打开它的设置，分为几个标签页：样式（线条、线端、填充，
+  以及工具自身的设置，如斐波那契级别、延伸和标签）、用于可写文字的工具的文本、坐标（按图表时区显示的各个点）
+  和可见性（它在哪些周期上显示），底部有模板菜单、取消和确定。
+  右键点击画线可打开它的菜单：
   设置、基于其线条的提醒、顺序、分组、锁定、隐藏、创建副本和删除。侧边栏里还有橡皮擦、
   缩放工具，以及可关闭、弱、强三档的磁吸。底层 API 参见
   <a href={href('/docs/drawing-tools')}>画线工具</a>。
