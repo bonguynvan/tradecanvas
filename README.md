@@ -59,7 +59,7 @@
     </td>
     <td width="50%" valign="top">
       <img src=".github/assets/clips/looks.webp" alt="One chart switching between the Terminal, Capsule and Studio looks, dark and light">
-      <br><b>Your look</b>: Studio, Terminal, Capsule, light or dark, or your own tokens.
+      <br><b>Your look</b>: Print (paper and ink, kept to the golden ratio), Studio, Terminal, Capsule, light or dark, or your own tokens.
     </td>
   </tr>
   <tr>

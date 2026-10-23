@@ -44,7 +44,7 @@ import type {
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, padPriceRange, volumeColor, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, padPriceRange, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -4897,7 +4897,7 @@ export class Chart {
   setMarket(config: MarketConfig): void {
     this.marketConfig = config;
 
-    // Apply market color scheme to theme
+    // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {
       const base = this.themeManager.getBaseTheme();
       const marketTheme: Theme = {
@@ -4906,8 +4906,6 @@ export class Chart {
         candleDown: config.colorScheme.down,
         candleUpWick: config.colorScheme.up,
         candleDownWick: config.colorScheme.down,
-        volumeUp: volumeColor(config.colorScheme.up),
-        volumeDown: volumeColor(config.colorScheme.down),
       };
       this.themeManager.setTheme(marketTheme);
     }

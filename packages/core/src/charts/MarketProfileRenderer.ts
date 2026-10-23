@@ -235,7 +235,7 @@ export class MarketProfileRenderer {
   ): void {
     const digits = pricePrecision(poc);
     const rows: [string, string, string][] = [
-      ['POC', poc.toFixed(digits), theme.crosshair],
+      ['POC', poc.toFixed(digits), theme.text],
       ['VAH', vah.toFixed(digits), theme.candleUp],
       ['VAL', val.toFixed(digits), theme.candleUp],
     ];

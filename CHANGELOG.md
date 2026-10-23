@@ -4,6 +4,24 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### A new default look: Print, kept to the golden ratio
+
+The chart and the widget start in a new look, Print: paper and ink, a quiet ground with colour only where it means something, and proportions taken from the golden ratio.
+
+- **The chart's themes.** Dark is warm ink on an off-black (`#131416`), light is ink on an off-white paper (`#fbfaf6`); neither is pure black or white, so text doesn't glare. Candles are a deeper green and red, and the line and area charts are drawn in ink.
+- **Volume in one neutral ink**, lighter under falling bars, since the candles above already show the direction. It stays neutral when you, the widget's settings or a market's colours change the candles: `setMarket({ colorScheme })` and `createVNTheme` now recolour only the candles. `resolveVolumeColors` follows the candles only for a preset that colours its volume (Terminal). `volumeColor(candle)` still gives candle-coloured bars.
+- **Figures in a monospaced face** (Cascadia Mono, SF Mono, Menlo or Consolas, nothing to load): the axes, the price legend, the tags and the indicator rows line up in columns, and drawing labels take it too. The chart's type is 11, 13 and 15 px.
+- **The crosshair is an opaque grey**, 3:1 on the ground, so the bar tint and the Market Profile's POC line drawn in it keep their strength; the POC figure is in the text colour. Axis pills and the finance charts' tooltips sit a step off the ground (`axisLabelBackground`).
+- **Solid hairlines**: the crosshair and the last-price line are solid by default (they were dashed); `crosshair.*.style` and `lastPrice.style` still take `dashed`.
+- **The widget's `print` preset**, now the default (`ui: 'studio'` brings back the earlier look): hairlines, 3 px controls, 5 px menus, 8 px dialogs, capital labels, rules between the toolbar's groups, flat bars, a chosen button in solid ink and a chosen tool in ink blue. The accent is ink blue in both themes; fields are white boxes on the paper.
+- **The golden ratio.** Print's sizes climb in half steps of φ from the icon (16, 20, 26, 33, 42 px). Spacing and corners are Fibonacci numbers (`--tcw-space-1` to `--tcw-space-7`: 2 to 34 px), and a menu's rows have the menu's corner less its padding (`--tcw-menu-pad`, `--tcw-menu-item-radius`), so the curves run parallel. Type climbs a third of φ at a time, so a dialog's title is φ times its text (10, 11, 13, 15, 18, 21 px; never under 10). `PHI`, `FIBONACCI` and `phiStep` come from `@tradecanvas/commons`.
+- **Type sizes in every look follow that scale**: `--tcw-font-size-sm` and `-xs` are a third and two thirds of φ under the body (11 and 10 px at 13), where they were 1 and 2 px under; `--tcw-font-size-xl` and `--tcw-font-size-display` are new. Menus, buttons and tabs are set at the body size, tooltips at the small one.
+- `density: 'compact'` and `'spacious'` move Print's sizes half a step of φ down and up; Studio, Terminal and Capsule keep their earlier compact and spacious sizes.
+- **The base parts change in every look**: flat toolbar and drawing tools (no gradient or shadow), menus with 3 px of padding and rows whose corners nest inside the menu's, Fibonacci spacing in menus, dialogs and tooltips, and menus, buttons and tabs at the body size. Pass `ui: 'studio'` for the earlier look's corners, sizes and type.
+- The price legend and the indicator rows take the look's figures face, at one size.
+- A dialog's backdrop is blurred only in a look that blurs (`ui.blur`).
+- `TC_PALETTE` `up`, `blue`, `ochre` and `violet` are a little deeper, to keep 3:1 on the paper.
+
 ## 1.32.0 (2026-10-23)
 
 ### An MCP server for coding agents

@@ -1,42 +1,46 @@
 import type { Theme } from '../types/theme.js';
 import { withAlpha } from '../utils/color.js';
 
-/** The chart's own type: the system UI face, so text matches the page around it. */
-export const DEFAULT_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+/**
+ * The chart's own type: a monospaced face, so the figures on the axes, in the
+ * legend and on the tags line up in columns, as in a printed price table.
+ */
+export const DEFAULT_FONT_FAMILY = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
 
+/** Three sizes a third of φ apart (11, 13, 15), as the widget's type scale climbs. */
 const DEFAULT_FONT = {
   family: DEFAULT_FONT_FAMILY,
-  sizeSmall: 10,
-  sizeMedium: 12,
-  sizeLarge: 14,
+  sizeSmall: 11,
+  sizeMedium: 13,
+  sizeLarge: 15,
 };
 
 /**
  * TradeCanvas palette. Themes pick their own candle colours for their
  * background; everything drawn on top of either theme (indicators, orders,
  * signals, drawings) uses the theme-neutral values below, which keep at
- * least 3:1 contrast on both the dark ink and a white background. `amber` is
- * the brand accent for dark surfaces (2:1 on white); light surfaces use
- * `LIGHT_THEME.lineColor` / `ochre` instead.
+ * least 3:1 contrast on both the dark ink and the light paper. `amber` is
+ * the brand accent for dark surfaces (2:1 on paper); light surfaces use
+ * `ochre` instead.
  */
 export const TC_PALETTE = {
-  /** Brand amber — the default series line and the accent. */
+  /** Brand amber, for marks on dark surfaces. */
   amber: '#f2a93b',
   /** Rising / bullish, legible on dark and light. */
-  up: '#1fa874',
+  up: '#1c9e6d',
   /** Falling / bearish, legible on dark and light. */
   down: '#e8505b',
   /** Amber deep enough for white backgrounds; auto-coloured series use it. */
-  ochre: '#c98316',
+  ochre: '#c07c12',
   /** Secondary series, signal lines. */
-  blue: '#4c8dff',
-  violet: '#a57cff',
+  blue: '#4688fa',
+  violet: '#9c73f8',
   cyan: '#1398a8',
   rose: '#e25592',
   /** Zero lines, neutral guides. */
   neutral: '#7d8696',
   /** Ink ground of the dark theme. */
-  ink: '#0c1016',
+  ink: '#131416',
 } as const;
 
 /**
@@ -50,8 +54,28 @@ export function volumeColor(candleColor: string): string {
   return withAlpha(candleColor, VOLUME_ALPHA);
 }
 
-const DARK_UP = '#2eb88a';
-const DARK_DOWN = '#e85a67';
+/**
+ * The built-in themes are paper and ink: an off-white and an off-black, never
+ * pure, so text doesn't glare; grey for everything that is normal; colour
+ * only where it means something (up, down, your orders). Volume is the ink at
+ * low strength, lighter under falling bars: the candles above already say
+ * which way the price went.
+ */
+const PAPER = '#fbfaf6';
+const PAPER_INK = '#1b1d21';
+const NIGHT = '#131416';
+const NIGHT_INK = '#e6e3dc';
+const LIGHT_UP = '#1f7a5c';
+const LIGHT_DOWN = '#b8423f';
+const DARK_UP = '#4fae8a';
+const DARK_DOWN = '#e2706b';
+/**
+ * The crosshair is the ink faded into the ground, mixed rather than
+ * translucent: bar tints and guides drawn in it at their own opacity keep
+ * their strength. 3:1 on the ground, quiet beside the data.
+ */
+const NIGHT_CROSSHAIR = '#6a6966';
+const PAPER_CROSSHAIR = '#8d8a84';
 
 /** Order in which overlay indicators are coloured when no colour is given. */
 export const TC_SERIES_COLORS: readonly string[] = [
@@ -64,45 +88,45 @@ export const TC_SERIES_COLORS: readonly string[] = [
 
 export const DARK_THEME: Theme = {
   name: 'dark',
-  background: TC_PALETTE.ink,
-  text: '#d9dde4',
-  textSecondary: '#7d8696',
-  grid: '#161b23',
-  crosshair: '#8a93a3',
+  background: NIGHT,
+  text: NIGHT_INK,
+  textSecondary: '#8d8b86',
+  grid: '#1d1e21',
+  crosshair: NIGHT_CROSSHAIR,
   candleUp: DARK_UP,
   candleDown: DARK_DOWN,
   candleUpWick: DARK_UP,
   candleDownWick: DARK_DOWN,
-  lineColor: TC_PALETTE.amber,
-  areaTopColor: 'rgba(242, 169, 59, 0.32)',
-  areaBottomColor: 'rgba(242, 169, 59, 0.0)',
-  volumeUp: volumeColor(DARK_UP),
-  volumeDown: volumeColor(DARK_DOWN),
-  axisLine: '#1f2630',
-  axisLabel: '#9aa3b2',
-  axisLabelBackground: '#1f2630',
+  lineColor: NIGHT_INK,
+  areaTopColor: withAlpha(NIGHT_INK, 0.14),
+  areaBottomColor: withAlpha(NIGHT_INK, 0),
+  volumeUp: withAlpha(NIGHT_INK, 0.14),
+  volumeDown: withAlpha(NIGHT_INK, 0.08),
+  axisLine: '#2a2b2f',
+  axisLabel: '#a9a6a0',
+  axisLabelBackground: '#232427',
   font: DEFAULT_FONT,
 };
 
 export const LIGHT_THEME: Theme = {
   name: 'light',
-  background: '#ffffff',
-  text: '#0f131a',
-  textSecondary: '#6b7380',
-  grid: '#eef0f3',
-  crosshair: '#8a93a3',
-  candleUp: '#16a36a',
-  candleDown: '#d9414f',
-  candleUpWick: '#16a36a',
-  candleDownWick: '#d9414f',
-  lineColor: '#c77a0a',
-  areaTopColor: 'rgba(199, 122, 10, 0.24)',
-  areaBottomColor: 'rgba(199, 122, 10, 0.0)',
-  volumeUp: volumeColor('#16a36a'),
-  volumeDown: volumeColor('#d9414f'),
-  axisLine: '#dde1e7',
-  axisLabel: '#5b6472',
-  axisLabelBackground: '#eef0f3',
+  background: PAPER,
+  text: PAPER_INK,
+  textSecondary: '#6b6f76',
+  grid: '#ece8df',
+  crosshair: PAPER_CROSSHAIR,
+  candleUp: LIGHT_UP,
+  candleDown: LIGHT_DOWN,
+  candleUpWick: LIGHT_UP,
+  candleDownWick: LIGHT_DOWN,
+  lineColor: PAPER_INK,
+  areaTopColor: withAlpha(PAPER_INK, 0.12),
+  areaBottomColor: withAlpha(PAPER_INK, 0),
+  volumeUp: withAlpha(PAPER_INK, 0.13),
+  volumeDown: withAlpha(PAPER_INK, 0.08),
+  axisLine: '#cfcac0',
+  axisLabel: '#4a4e57',
+  axisLabelBackground: '#eeebe3',
   font: DEFAULT_FONT,
 };
 
@@ -120,8 +144,8 @@ export const DARK_TERMINAL: Theme = {
   lineColor: '#3D8BFD',
   areaTopColor: 'rgba(61, 139, 253, 0.3)',
   areaBottomColor: 'rgba(61, 139, 253, 0.0)',
-  volumeUp: 'rgba(0, 255, 135, 0.2)',
-  volumeDown: 'rgba(255, 59, 77, 0.2)',
+  volumeUp: volumeColor('#00FF87'),
+  volumeDown: volumeColor('#FF3B4D'),
   axisLine: '#1A1A1A',
   axisLabel: '#8A8A8A',
   axisLabelBackground: '#1A1A1A',
@@ -133,14 +157,14 @@ export const DARK_TERMINAL: Theme = {
   },
 };
 
-/** The built-in themes' volume colours, to tell a preset's from a theme's own. */
-const PRESET_VOLUME = new Set([DARK_THEME.volumeUp, DARK_THEME.volumeDown, LIGHT_THEME.volumeUp, LIGHT_THEME.volumeDown, DARK_TERMINAL.volumeUp, DARK_TERMINAL.volumeDown]);
+/** The volume colours of the presets that draw volume in their candles' colours. */
+const PRESET_VOLUME = new Set([DARK_TERMINAL.volumeUp, DARK_TERMINAL.volumeDown]);
 
 /**
  * The volume bars' colours for `theme`: its own `volumeUp` / `volumeDown`,
- * except that a theme spread from a preset with new candle colours (and the
- * preset's volume left in place) gets volume in its candles' colours, as the
- * bars have always followed the candles.
+ * except that a theme spread from a candle-coloured preset with new candle
+ * colours (and the preset's volume left in place) gets volume in its new
+ * candles' colours. Neutral volume stays neutral whatever the candles.
  */
 export function resolveVolumeColors(theme: Pick<Theme, 'candleUp' | 'candleDown' | 'volumeUp' | 'volumeDown'>): { up: string; down: string } {
   const pick = (volume: string, candle: string): string => {

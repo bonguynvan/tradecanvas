@@ -57,9 +57,9 @@ export class CurrentPriceLine {
     const color = isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b');
     const isFlashing = Date.now() < this.flashUntil;
 
-    // Dashed price line (unless its style says otherwise)
+    // A solid hairline (unless its style says otherwise)
     const width = look?.width ?? 1;
-    ctx.setLineDash(lineDash(look?.style ?? 'dashed', [4, 3], width));
+    ctx.setLineDash(lineDash(look?.style ?? 'solid', [4, 3], width));
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
     ctx.globalAlpha = isFlashing ? 1 : 0.7;

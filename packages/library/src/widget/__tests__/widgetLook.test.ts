@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { FIBONACCI } from '@tradecanvas/commons';
 import { resolveWidgetUI, widgetUIVariables } from '../widgetUI.js';
 
 // A Windows checkout may turn the file's line endings into CRLF.
@@ -30,9 +31,9 @@ function ruleBody(selector: string): string {
 describe('the stylesheet’s look', () => {
   const root = declared('.tcw-root {');
 
-  it('defaults to Studio: every token the `ui` option sets, at Studio’s value', () => {
-    const studio = widgetUIVariables(resolveWidgetUI('studio'));
-    for (const [name, value] of Object.entries(studio)) {
+  it('defaults to Print: every token the `ui` option sets, at Print’s value', () => {
+    const print = widgetUIVariables(resolveWidgetUI('print'));
+    for (const [name, value] of Object.entries(print)) {
       expect(root[name], name).toBeDefined();
       expect(resolved(root, root[name]), name).toBe(resolved(root, value));
     }
@@ -115,6 +116,22 @@ describe('the stylesheet’s look', () => {
   it('writes directions logically, so a right-to-left widget mirrors', () => {
     const physical = [...css.matchAll(/(?<![\w-])(?:text-align:\s*(?:left|right)|border-(?:left|right)(?:-color)?:|margin-(?:left|right):\s*auto)/g)].map((m) => m[0]);
     expect(physical).toEqual([]);
+  });
+
+  it('spaces by Fibonacci numbers', () => {
+    const space = Object.entries(root).filter(([name]) => name.startsWith('--tcw-space-'));
+    expect(space.length).toBeGreaterThan(5);
+    for (const [name, value] of space) expect((FIBONACCI as readonly number[]).includes(parseFloat(value)), name).toBe(true);
+  });
+
+  it('nests a menu’s corners: its rows’ corner is its own less its padding', () => {
+    expect(css).toContain('--tcw-menu-item-radius: max(0px, calc(var(--tcw-menu-radius) - var(--tcw-menu-pad)))');
+    for (const menu of ['.tcw-dropdown', '.tcw-flyout', '.tcw-context-menu']) {
+      expect(ruleBody(menu), menu).toContain('padding: var(--tcw-menu-pad)');
+    }
+    for (const row of ['.tcw-dropdown-item', '.tcw-flyout-item', '.tcw-context-item']) {
+      expect(ruleBody(row), row).toContain('border-radius: var(--tcw-menu-item-radius)');
+    }
   });
 
   it('shows a chosen button by the look’s tokens', () => {

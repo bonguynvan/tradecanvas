@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME, LIGHT_THEME, TC_PALETTE, TC_SERIES_COLORS } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, TC_PALETTE, TC_SERIES_COLORS, resolveVolumeColors } from '@tradecanvas/commons';
 
 /** WCAG relative luminance of a #rrggbb colour. */
 function luminance(hex: string): number {
@@ -43,6 +43,40 @@ describe('TradeCanvas palette', () => {
       expect(contrast(theme.text, theme.background), `${theme.name} text`).toBeGreaterThanOrEqual(7);
       expect(contrast(theme.textSecondary, theme.background), `${theme.name} secondary`).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it('draws on paper and ink, never pure white or black', () => {
+    for (const theme of [DARK_THEME, LIGHT_THEME]) {
+      expect(['#000000', '#ffffff'], theme.name).not.toContain(theme.background.toLowerCase());
+    }
+  });
+
+  it('draws the crosshair in an opaque grey at 3:1, so the tints and guides drawn in it keep their strength', () => {
+    for (const theme of [DARK_THEME, LIGHT_THEME]) {
+      expect(theme.crosshair, theme.name).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(contrast(theme.crosshair, theme.background), `${theme.name} crosshair`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('sets tooltips and axis pills a step off the ground, so they keep an edge', () => {
+    for (const theme of [DARK_THEME, LIGHT_THEME]) {
+      expect(theme.axisLabelBackground.toLowerCase(), theme.name).not.toBe(theme.background.toLowerCase());
+    }
+  });
+
+  it('draws volume in one neutral ink, lighter under falling bars, whatever the candles', () => {
+    const rgba = (c: string) => c.match(/^rgba\((\d+), ?(\d+), ?(\d+), ?([\d.]+)\)$/)!.slice(1).map(Number);
+    for (const theme of [DARK_THEME, LIGHT_THEME]) {
+      const [up, down] = [rgba(theme.volumeUp), rgba(theme.volumeDown)];
+      expect(down.slice(0, 3), theme.name).toEqual(up.slice(0, 3));
+      expect(down[3], theme.name).toBeLessThan(up[3]);
+      const recoloured = { ...theme, candleUp: '#26a69a', candleDown: '#ef5350' };
+      expect(resolveVolumeColors(recoloured), theme.name).toEqual({ up: theme.volumeUp, down: theme.volumeDown });
+    }
+  });
+
+  it('sets its figures in a monospaced face, so columns of prices line up', () => {
+    for (const theme of [DARK_THEME, LIGHT_THEME]) expect(theme.font.family, theme.name).toMatch(/monospace$/);
   });
 
   it('uses distinct colours for auto-coloured indicators', () => {

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>样式 — TradeCanvas 文档</title>
-  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。三套预设——Studio、Terminal、Capsule——以及在其基础上定制的你自己的主题。" />
+  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。四套遵循黄金比例的预设——Print、Studio、Terminal、Capsule——以及在其基础上定制的你自己的主题。" />
 </svelte:head>
 
 <h1>组件样式</h1>
@@ -20,7 +20,11 @@
 <table>
   <thead><tr><th>预设</th><th>外观</th></tr></thead>
   <tbody>
-    <tr><td><code>studio</code>（默认）</td><td>
+    <tr><td><code>print</code>（默认）</td><td>
+      纸与墨。近白或近黑的底色，常规内容一律用灰色，只在有含义的地方用颜色；细线、3 px 控件、5 px 菜单和 8 px 对话框；
+      标签大写；所有数字使用等宽字体，让价格按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
+    </td></tr>
+    <tr><td><code>studio</code></td><td>
       控件圆角 7 px，菜单 11 px，对话框 16 px。分组之间用间距而非分隔线隔开，菜单浮在柔和的阴影之上，
       周期按钮位于分段式轨道中，选中的按钮以浅色调填充。
     </td></tr>
@@ -46,9 +50,34 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>黄金比例</h2>
+<p>
+  Print 的比例遵循黄金比例 φ ≈ 1.618，因此相邻的尺寸在各处都保持同样的关系：
+</p>
+<table>
+  <thead><tr><th>对象</th><th>规则</th><th>取值（px）</th></tr></thead>
+  <tbody>
+    <tr><td>尺寸</td><td>从图标起按 φ 的半步递增：图标、它的小按钮、它的按钮、菜单行、工具栏。</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>间距</td><td>斐波那契数，每个数是前两个数之和，因此相邻两个数之比接近 φ。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>圆角</td><td>
+      同样是斐波那契数。内层圆角等于外层圆角减去两者之间的内边距，这样两条曲线彼此平行：菜单的 5 就是其中各行的 2
+      加上 3 的内边距。
+    </td><td>1 · 2 · 3 · 5 · 8</td></tr>
+    <tr><td>字号</td><td>
+      按 φ 的立方根逐级递增，因此每升三级，字号就大 φ 倍：对话框的标题是其正文的 φ 倍。最小不低于 10 px，再小的话，
+      带两个附加符号的字母（如越南语的 ế、ộ）就难以辨认了。
+    </td><td>10 · 11 · 13 · 15 · 18 · 21</td></tr>
+  </tbody>
+</table>
+<p>
+  各级字号跟随你设置的正文字号（<code>font.size</code>），<code>density</code> 会把各尺寸下调或上调半步。
+  <code>PHI</code>、<code>FIBONACCI</code> 和 <code>phiStep(base, steps, perPhi)</code> 由
+  <code>@tradecanvas/commons</code> 提供，可用来打造你自己的外观。
+</p>
+
 <h2>自定义外观</h2>
 <p>
-  自定义主题从一套预设开始（未指定时为 Studio），只修改其中写明的部分。在圆角刻度上设置的值会作用于所有跟随该刻度的部件，
+  自定义主题从一套预设开始（未指定时为 Print），只修改其中写明的部分。在圆角刻度上设置的值会作用于所有跟随该刻度的部件，
   除非你单独设置了该部件自己的圆角。
 </p>
 <pre><code>{`widget.setUI({
@@ -85,10 +114,11 @@ grid.getUI()`}</code></pre>
     </td></tr>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 高度、<code>control</code> 与 <code>controlSmall</code> 高度、<code>icon</code>、
-      <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。
+      <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。<code>compact</code> 和
+      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步。
     </td></tr>
     <tr><td><code>font</code></td><td>
-      字体族（CSS 字体列表）、正文 <code>size</code>（11–20 px；较小的字号随之变化）、字重，以及小标签（如分区标题）的大小写和字间距（em）。
+      字体族（CSS 字体列表）、正文 <code>size</code>（11–20 px；其他字号随之变化，彼此相隔 φ 的三分之一步）、字重，以及小标签（如分区标题）的大小写和字间距（em）。
     </td></tr>
     <tr><td><code>borders</code></td><td>边框宽度，以及工具栏的分组之间、画线工具之间是否用分隔线隔开。</td></tr>
     <tr><td><code>shadows</code></td><td>菜单、对话框和提示框的 CSS 阴影。</td></tr>
@@ -103,14 +133,16 @@ grid.getUI()`}</code></pre>
 
 <h2>字体</h2>
 <p>
-  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Studio 指定 Manrope，其次是 Inter；
+  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Print 指定每个系统都有的字体（Segoe UI、
+  San Francisco、Roboto），数字则用 Cascadia Mono、SF Mono、Menlo 或 Consolas，因此无需加载任何字体。
+  Studio 指定 Manrope，其次是 Inter；
   Terminal 指定 IBM Plex Sans Condensed 和 IBM Plex Mono；Capsule 指定 Sora。请自行加载需要的字体：
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
 <h2>CSS 变量</h2>
 <p>
-  这些 token 是组件根元素（以及其对话框）上的 CSS 变量。不设置 <code>ui</code> 选项时，它们沿用样式表中的值（即 Studio 的值），
+  这些 token 是组件根元素（以及其对话框）上的 CSS 变量。不设置 <code>ui</code> 选项时，它们沿用样式表中的值（即 Print 的值），
   因此你自己的 CSS 可以设置它们：组件会把自己的样式表放在页面最前面，所以你写在 <code>.tcw-root</code> 上的规则会生效。
   设置 <code>ui</code> 后，组件会把它们直接写到元素上，并以这些值为准。
 </p>
@@ -126,10 +158,11 @@ grid.getUI()`}</code></pre>
     <tr><td><code>--tcw-radius-xs</code>、<code>-sm</code>、<code>--tcw-radius</code>、<code>-lg</code>、<code>-xl</code></td><td><code>radius</code></td></tr>
     <tr><td><code>--tcw-control-radius</code>、<code>--tcw-input-radius</code>、<code>--tcw-menu-radius</code>、<code>--tcw-dialog-radius</code>、<code>--tcw-panel-radius</code>、<code>--tcw-tooltip-radius</code>、<code>--tcw-tag-radius</code>、<code>--tcw-toast-radius</code>、<code>--tcw-toolbar-radius</code>、<code>--tcw-sidebar-radius</code></td><td><code>components</code></td></tr>
     <tr><td><code>--tcw-toolbar-h</code>、<code>--tcw-control-h</code>、<code>--tcw-control-h-sm</code>、<code>--tcw-icon</code>、<code>--tcw-sidebar-w</code>、<code>--tcw-menu-item-h</code></td><td><code>sizes</code></td></tr>
-    <tr><td><code>--tcw-font</code>、<code>--tcw-font-mono</code>、<code>--tcw-font-size</code>（以及 <code>-sm</code>、<code>-xs</code>、<code>-lg</code>）、<code>--tcw-weight</code>、<code>--tcw-weight-strong</code>、<code>--tcw-label-case</code>、<code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
+    <tr><td><code>--tcw-font</code>、<code>--tcw-font-mono</code>、<code>--tcw-font-size</code>（以及 <code>-xs</code>、<code>-sm</code>、<code>-lg</code>、<code>-xl</code>、<code>-display</code>）、<code>--tcw-weight</code>、<code>--tcw-weight-strong</code>、<code>--tcw-label-case</code>、<code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
     <tr><td><code>--tcw-border-w</code>、<code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>、<code>--tcw-dialog-shadow</code>、<code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>样式表：斐波那契间距，2 到 34 px</td></tr>
   </tbody>
 </table>
 <p>
@@ -190,7 +223,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>图表背景（面板没有自己的背景时也用它）。</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>指标面板：背景、顶部的分隔条、名称。</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>，每个方向分别设置。</td></tr>
-    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为虚线）。</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为细实线）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
@@ -272,7 +305,7 @@ new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code
 
 <h2>成交量颜色</h2>
 <p>
-  成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code> （或 <code>volume.*</code> 键）。<code>volumeColor(candleColor)</code> 返回带成交量透明度的K线颜色，这样在你自己的主题里，成交量柱依然只是K线背后的衬底。在 widget 的设置里修改K线颜色时，它会自动这样处理；基于预设、只改了 <code>candleUp</code> / <code>candleDown</code> 的主题，成交量也会跟随这些颜色。
+  成交量柱使用主题的 <code>volumeUp</code> 和 <code>volumeDown</code> （或 <code>volume.*</code> 键）。内置主题用同一种中性的墨色绘制它们，下跌的柱子颜色更浅：上方的K线已经显示了价格的涨跌方向，所以成交量柱只作衬底。你或 widget 的设置修改K线颜色时，它们仍保持中性。想让成交量柱使用K线的颜色，<code>volumeColor(candleColor)</code> 会返回带成交量透明度的K线颜色：
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

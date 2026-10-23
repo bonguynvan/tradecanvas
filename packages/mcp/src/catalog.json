@@ -5001,6 +5001,7 @@
     "series.hlcArea.bottomColor": "color"
   },
   "looks": [
+    "print",
     "studio",
     "terminal",
     "capsule"
@@ -5175,7 +5176,7 @@
       {
         "name": "ui",
         "type": "WidgetUIPreset | WidgetUITheme",
-        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'studio'`, the default; `'terminal'`; `'capsule'`) or your theme over one. Colours stay with `theme`."
+        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'print'`, the default; `'studio'`; `'terminal'`; `'capsule'`) or your theme over one. Colours stay with `theme`."
       },
       {
         "name": "locale",

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Giao diện — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Giao diện của widget dưới dạng token: góc bo, kích thước, kiểu chữ, đường viền, bóng đổ và các thanh. Ba preset — Studio, Terminal, Capsule — cùng giao diện riêng của bạn dựng trên chúng." />
+  <meta name="description" content="Giao diện của widget dưới dạng token: góc bo, kích thước, kiểu chữ, đường viền, bóng đổ và các thanh. Bốn preset — Print, Studio, Terminal, Capsule — giữ theo tỉ lệ vàng, cùng giao diện riêng của bạn dựng trên chúng." />
 </svelte:head>
 
 <h1>Tuỳ biến giao diện widget</h1>
@@ -21,7 +21,12 @@
 <table>
   <thead><tr><th>Preset</th><th>Giao diện</th></tr></thead>
   <tbody>
-    <tr><td><code>studio</code> (mặc định)</td><td>
+    <tr><td><code>print</code> (mặc định)</td><td>
+      Giấy và mực. Nền trắng ngà hoặc đen than, màu xám cho mọi thứ bình thường và chỉ dùng màu ở chỗ nó mang ý
+      nghĩa; đường kẻ mảnh, nút 3 px, menu 5 px và hộp thoại 8 px; nhãn chữ in hoa; mọi con số dùng font đơn cách để
+      giá thẳng hàng theo cột. Nút đang chọn tô đặc màu mực, công cụ đang chọn màu xanh mực.
+    </td></tr>
+    <tr><td><code>studio</code></td><td>
       Nút bo góc 7 px, menu 11 px và hộp thoại 16 px. Các nhóm cách nhau bằng khoảng trống thay vì đường kẻ, menu
       nổi trên bóng đổ mềm, các nút khung thời gian nằm trong một rãnh phân đoạn, và nút đang chọn được tô màu nhạt.
     </td></tr>
@@ -48,9 +53,35 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>Tỉ lệ vàng</h2>
+<p>
+  Print giữ các tỉ lệ của mình theo tỉ lệ vàng, φ ≈ 1.618, nên những kích thước đứng cạnh nhau liên hệ với nhau
+  theo cùng một cách ở mọi nơi:
+</p>
+<table>
+  <thead><tr><th>Phần</th><th>Quy tắc</th><th>Giá trị (px)</th></tr></thead>
+  <tbody>
+    <tr><td>Kích thước</td><td>Các nửa bậc φ tính từ biểu tượng: một biểu tượng, nút nhỏ của nó, nút của nó, một dòng menu, thanh công cụ.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>Khoảng cách</td><td>Các số Fibonacci, mỗi số là tổng của hai số trước, nên hai số kề nhau cách nhau gần φ lần.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>Góc bo</td><td>
+      Cũng là các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
+      chạy song song: góc 5 của menu là góc 2 của các dòng cộng 3 phần đệm.
+    </td><td>1 · 2 · 3 · 5 · 8</td></tr>
+    <tr><td>Cỡ chữ</td><td>
+      Các bậc căn bậc ba của φ, nên cứ ba bậc thì cỡ chữ lớn hơn φ lần: tiêu đề hộp thoại lớn gấp φ lần chữ trong nó.
+      Không bao giờ dưới 10 px, vì nhỏ hơn thế thì các chữ có hai dấu (như ế, ộ) không còn đọc được.
+    </td><td>10 · 11 · 13 · 15 · 18 · 21</td></tr>
+  </tbody>
+</table>
+<p>
+  Các bậc cỡ chữ đi theo cỡ chữ thân bạn đặt (<code>font.size</code>), và <code>density</code> dời các kích thước
+  xuống hoặc lên nửa bậc. <code>PHI</code>, <code>FIBONACCI</code> và <code>phiStep(base, steps, perPhi)</code> có
+  trong <code>@tradecanvas/commons</code> để bạn dựng giao diện của riêng mình.
+</p>
+
 <h2>Giao diện của riêng bạn</h2>
 <p>
-  Một giao diện tự định nghĩa bắt đầu từ một preset (Studio nếu bạn không chỉ định) và chỉ đổi những gì nó nêu ra.
+  Một giao diện tự định nghĩa bắt đầu từ một preset (Print nếu bạn không chỉ định) và chỉ đổi những gì nó nêu ra.
   Góc bo đặt trên thang sẽ áp dụng cho mọi thành phần đi theo thang đó, trừ khi bạn đặt riêng cho thành phần ấy.
 </p>
 <pre><code>{`widget.setUI({
@@ -87,10 +118,11 @@ grid.getUI()`}</code></pre>
     </td></tr>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Chiều cao <code>toolbar</code>, chiều cao <code>control</code> và <code>controlSmall</code>, <code>icon</code>,
-      độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, tính bằng px.
+      độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, tính bằng px. <code>compact</code> và
+      <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ.
     </td></tr>
     <tr><td><code>font</code></td><td>
-      Họ font (danh sách CSS), <code>size</code> của chữ thân (11–20 px; các cỡ nhỏ đi theo nó), độ đậm, cùng kiểu chữ hoa/thường
+      Họ font (danh sách CSS), <code>size</code> của chữ thân (11–20 px; các cỡ khác đi theo nó, cách nhau một phần ba bậc φ), độ đậm, cùng kiểu chữ hoa/thường
       và khoảng cách chữ (em) của các nhãn nhỏ như tiêu đề mục.
     </td></tr>
     <tr><td><code>borders</code></td><td>Độ dày đường viền, và có kẻ đường phân cách giữa các nhóm trên thanh công cụ và giữa các công cụ vẽ hay không.</td></tr>
@@ -106,16 +138,17 @@ grid.getUI()`}</code></pre>
 
 <h2>Font chữ</h2>
 <p>
-  Widget không tải font nào: nó chỉ gọi tên, và trình duyệt lần lượt thử từng font trong danh sách. Studio dùng
-  Manrope, rồi đến Inter; Terminal dùng IBM Plex Sans Condensed và IBM Plex Mono; Capsule dùng Sora. Hãy tự tải
-  những font bạn muốn:
+  Widget không tải font nào: nó chỉ gọi tên, và trình duyệt lần lượt thử từng font trong danh sách. Print dùng các
+  font mà hệ điều hành nào cũng có (Segoe UI, San Francisco, Roboto) và, cho các con số, Cascadia Mono, SF Mono,
+  Menlo hoặc Consolas, nên không cần tải gì. Studio dùng Manrope, rồi đến Inter; Terminal dùng IBM Plex Sans
+  Condensed và IBM Plex Mono; Capsule dùng Sora. Hãy tự tải những font bạn muốn:
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
 <h2>Biến CSS</h2>
 <p>
   Các token là biến CSS trên phần tử gốc của widget (và trên các hộp thoại của nó). Khi không có tuỳ chọn
-  <code>ui</code>, chúng vẫn thuộc về stylesheet — tức là của Studio — nên CSS của bạn có thể đặt chúng: widget đặt
+  <code>ui</code>, chúng vẫn thuộc về stylesheet — tức là của Print — nên CSS của bạn có thể đặt chúng: widget đặt
   stylesheet của nó lên đầu trang, nên một quy tắc của bạn trên <code>.tcw-root</code> sẽ được ưu tiên. Khi có
   <code>ui</code>, widget ghi chúng thẳng lên phần tử, và chúng sẽ được ưu tiên.
 </p>
@@ -131,10 +164,11 @@ grid.getUI()`}</code></pre>
     <tr><td><code>--tcw-radius-xs</code>, <code>-sm</code>, <code>--tcw-radius</code>, <code>-lg</code>, <code>-xl</code></td><td><code>radius</code></td></tr>
     <tr><td><code>--tcw-control-radius</code>, <code>--tcw-input-radius</code>, <code>--tcw-menu-radius</code>, <code>--tcw-dialog-radius</code>, <code>--tcw-panel-radius</code>, <code>--tcw-tooltip-radius</code>, <code>--tcw-tag-radius</code>, <code>--tcw-toast-radius</code>, <code>--tcw-toolbar-radius</code>, <code>--tcw-sidebar-radius</code></td><td><code>components</code></td></tr>
     <tr><td><code>--tcw-toolbar-h</code>, <code>--tcw-control-h</code>, <code>--tcw-control-h-sm</code>, <code>--tcw-icon</code>, <code>--tcw-sidebar-w</code>, <code>--tcw-menu-item-h</code></td><td><code>sizes</code></td></tr>
-    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code> (và <code>-sm</code>, <code>-xs</code>, <code>-lg</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
+    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code> (và <code>-xs</code>, <code>-sm</code>, <code>-lg</code>, <code>-xl</code>, <code>-display</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>Stylesheet: khoảng cách Fibonacci, từ 2 đến 34 px</td></tr>
   </tbody>
 </table>
 <p>
@@ -195,7 +229,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>Nền biểu đồ (và nền các pane, trừ khi pane có nền riêng).</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>Pane chỉ báo: nền, thanh ở đỉnh pane, tên pane.</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code> (<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — riêng từng chiều.</td></tr>
-    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Bốn thuộc tính đó cho các đường crosshair (mặc định là nét đứt).</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Bốn thuộc tính đó cho các đường crosshair (mặc định là nét liền mảnh).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Pill giá và thời gian trên các trục, và trên thang của pane.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Đường và nhãn của từng trục (thang của pane lấy theo trục giá).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Giá trị trong legend, và nhãn của nó (O, H, L, Vol).</td></tr>
@@ -283,7 +317,7 @@ new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code
 
 <h2>Màu volume</h2>
 <p>
-  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> (hoặc các khoá <code>volume.*</code>) của theme. <code>volumeColor(candleColor)</code> trả về màu nến với độ trong suốt của volume, nên trong theme của riêng bạn các thanh vẫn chỉ là nền phía sau nến. Widget tự làm việc này khi phần cài đặt đổi màu nến, và một theme dựa trên preset chỉ đổi <code>candleUp</code> / <code>candleDown</code> cũng có volume theo màu đó.
+  Thanh volume lấy màu <code>volumeUp</code> và <code>volumeDown</code> (hoặc các khoá <code>volume.*</code>) của theme. Các theme có sẵn vẽ chúng bằng một màu mực trung tính, nhạt hơn ở các thanh giảm: nến phía trên đã cho thấy giá đi hướng nào, nên các thanh chỉ là nền phía sau. Chúng vẫn giữ màu trung tính khi bạn hoặc phần cài đặt của widget đổi màu nến. Muốn thanh theo màu nến, <code>volumeColor(candleColor)</code> trả về một màu nến với độ trong suốt của volume:
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

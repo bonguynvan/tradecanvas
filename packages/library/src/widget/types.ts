@@ -41,7 +41,7 @@ export interface ChartWidgetOptions {
   theme?: ThemeName | Theme;
   /**
    * The widget's look: its corners, sizes, type, lines, shadows and bars.
-   * A preset (`'studio'`, the default; `'terminal'`; `'capsule'`) or your
+   * A preset (`'print'`, the default; `'studio'`; `'terminal'`; `'capsule'`) or your
    * theme over one. Colours stay with `theme`.
    */
   ui?: import('./widgetUI.js').WidgetUIPreset | import('./widgetUI.js').WidgetUITheme;

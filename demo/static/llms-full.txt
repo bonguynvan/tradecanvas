@@ -9,7 +9,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 - [Getting started](https://tradecanvas.dev/docs/getting-started): install, the widget, the headless chart
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
-- [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables
+- [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal and Capsule presets, your own theme, CSS variables
 - [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 114 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
 - [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
 - [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
@@ -814,7 +814,8 @@ new ChartWidget(document.getElementById('chart')!, {
 import { ChartWidget, WIDGET_UI_PRESETS } from '@tradecanvas/chart/widget';
 import { BinanceAdapter } from '@tradecanvas/chart';
 
-// 'studio' (the default), 'terminal' (dense, square) or 'capsule' (pills, floating bars)
+// 'print' (the default: paper and ink, kept to the golden ratio), 'studio' (rounded),
+// 'terminal' (dense, square) or 'capsule' (pills, floating bars)
 const widget = new ChartWidget(document.getElementById('chart')!, {
   adapter: new BinanceAdapter(),
   symbol: 'BTCUSDT',
@@ -834,8 +835,12 @@ widget.setUI({
 console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.control);
 ```
 
-The look changes shapes and sizes only; colours stay with `theme`. The
-widget loads no fonts, so load the families a look names. Without `ui` the
+The look changes shapes and sizes only; colours stay with `theme`. Print
+keeps to the golden ratio: sizes in half steps of φ (16, 20, 26, 33, 42),
+Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);
+`PHI`, `FIBONACCI` and `phiStep` from `@tradecanvas/commons` do the same for
+yours. The widget loads no fonts, so load the families a look names (Print
+names system faces only). Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
 
@@ -1206,7 +1211,7 @@ packages/library/README.md
     </td>
     <td width="50%" valign="top">
       <img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/clips/looks.webp" alt="One chart switching between the Terminal, Capsule and Studio looks, dark and light">
-      <br><b>Your look</b>: Studio, Terminal, Capsule, light or dark, or your own tokens.
+      <br><b>Your look</b>: Print (paper and ink, kept to the golden ratio), Studio, Terminal, Capsule, light or dark, or your own tokens.
     </td>
   </tr>
   <tr>

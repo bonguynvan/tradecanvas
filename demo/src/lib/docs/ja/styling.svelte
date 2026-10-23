@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>スタイル設定 — TradeCanvas ドキュメント</title>
-  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。3 つのプリセット（Studio、Terminal、Capsule）と、その上に重ねる独自のテーマ。" />
+  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。黄金比に沿った 4 つのプリセット（Print、Studio、Terminal、Capsule）と、その上に重ねる独自のテーマ。" />
 </svelte:head>
 
 <h1>ウィジェットのスタイル設定</h1>
@@ -21,7 +21,12 @@
 <table>
   <thead><tr><th>プリセット</th><th>外観</th></tr></thead>
   <tbody>
-    <tr><td><code>studio</code>（既定）</td><td>
+    <tr><td><code>print</code>（既定）</td><td>
+      紙とインク。白に近い地か黒に近い地に、ふつうのものはすべてグレー、色は意味のある所だけ。細い線、3 px のコントロール、
+      5 px のメニュー、8 px のダイアログ、大文字のラベル。数字はすべて等幅の書体で、価格が列にそろいます。選択中のボタンは
+      インクの塗りつぶし、選択中のツールはインクブルーです。
+    </td></tr>
+    <tr><td><code>studio</code></td><td>
       コントロールは 7 px、メニューは 11 px、ダイアログは 16 px の角丸。グループは区切り線ではなく余白で分け、メニューは
       柔らかい影の上に浮かび、時間足のボタンはセグメント型のトラックに収まり、選択中のボタンは淡い色で塗られます。
     </td></tr>
@@ -48,9 +53,34 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>黄金比</h2>
+<p>
+  Print は比率を黄金比 φ ≈ 1.618 にそろえているので、隣り合うサイズはどこでも同じ関係になります。
+</p>
+<table>
+  <thead><tr><th>対象</th><th>規則</th><th>値（px）</th></tr></thead>
+  <tbody>
+    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー。</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>余白</td><td>フィボナッチ数。どれも前の 2 つの和なので、隣どうしはほぼ φ 倍の関係になります。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>角</td><td>
+      これもフィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
+      その行の 2 と 3 の余白を足したものです。
+    </td><td>1 · 2 · 3 · 5 · 8</td></tr>
+    <tr><td>文字</td><td>
+      φ の立方根ずつの段なので、3 段ごとに φ 倍になります。ダイアログの見出しは本文の φ 倍です。10 px を下回ることは
+      ありません。それより小さいと、記号が 2 つ付く文字（ベトナム語の ế、ộ）が読めなくなるためです。
+    </td><td>10 · 11 · 13 · 15 · 18 · 21</td></tr>
+  </tbody>
+</table>
+<p>
+  文字の段は設定した本文のサイズ（<code>font.size</code>）に連動し、<code>density</code> はサイズを半段下げるか上げます。
+  独自の外観には、<code>@tradecanvas/commons</code> の <code>PHI</code>、<code>FIBONACCI</code>、
+  <code>phiStep(base, steps, perPhi)</code> を使えます。
+</p>
+
 <h2>独自の外観</h2>
 <p>
-  テーマはプリセット（指定しなければ Studio）から始まり、指定した項目だけを変更します。スケールで設定した角の丸みは、
+  テーマはプリセット（指定しなければ Print）から始まり、指定した項目だけを変更します。スケールで設定した角の丸みは、
   そのスケールに従うすべてのパーツに反映されます。パーツ個別の値を設定した場合は、そちらが使われます。
 </p>
 <pre><code>{`widget.setUI({
@@ -87,10 +117,11 @@ grid.getUI()`}</code></pre>
     </td></tr>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> の高さ、<code>control</code> と <code>controlSmall</code> の高さ、<code>icon</code>、
-      <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。
+      <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
+      Print のサイズを φ の半段だけ下げたものと上げたものです。
     </td></tr>
     <tr><td><code>font</code></td><td>
-      フォントファミリー（CSS のリスト）、本文の <code>size</code>（11–20 px。小さいサイズはこれに連動）、ウェイト、そしてセクション
+      フォントファミリー（CSS のリスト）、本文の <code>size</code>（11–20 px。ほかのサイズは φ の 3 分の 1 段ずつ離れてこれに連動）、ウェイト、そしてセクション
       見出しなど小さなラベルの大文字・小文字と字間（em）。
     </td></tr>
     <tr><td><code>borders</code></td><td>枠線の太さと、ツールバーのグループ間や描画ツールの間に区切り線を入れるかどうか。</td></tr>
@@ -107,15 +138,16 @@ grid.getUI()`}</code></pre>
 <h2>フォント</h2>
 <p>
   ウィジェットはフォントを読み込みません。名前を指定するだけで、ブラウザーがリストの順にフォールバックします。
-  Studio は Manrope、次に Inter、Terminal は IBM Plex Sans Condensed と IBM Plex Mono、Capsule は Sora を指定しています。
-  使いたいフォントは自分で読み込んでください。
+  Print はどのシステムにもある書体（Segoe UI、San Francisco、Roboto）と、数字には Cascadia Mono、SF Mono、Menlo、
+  Consolas を指定しているので、何も読み込む必要がありません。Studio は Manrope、次に Inter、Terminal は
+  IBM Plex Sans Condensed と IBM Plex Mono、Capsule は Sora を指定しています。使いたいフォントは自分で読み込んでください。
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
 <h2>CSS 変数</h2>
 <p>
   トークンは、ウィジェットのルート要素（とそのダイアログ）に設定された CSS 変数です。<code>ui</code> オプションがなければ
-  値はスタイルシートのもの（つまり Studio の値）のままなので、独自の CSS で設定できます。ウィジェットは自身の
+  値はスタイルシートのもの（つまり Print の値）のままなので、独自の CSS で設定できます。ウィジェットは自身の
   スタイルシートをページの先頭に置くため、<code>.tcw-root</code> に書いたあなたのルールが優先されます。<code>ui</code>
   を指定すると、ウィジェットが要素に直接値を書き込み、そちらが優先されます。
 </p>
@@ -131,10 +163,11 @@ grid.getUI()`}</code></pre>
     <tr><td><code>--tcw-radius-xs</code>、<code>-sm</code>、<code>--tcw-radius</code>、<code>-lg</code>、<code>-xl</code></td><td><code>radius</code></td></tr>
     <tr><td><code>--tcw-control-radius</code>、<code>--tcw-input-radius</code>、<code>--tcw-menu-radius</code>、<code>--tcw-dialog-radius</code>、<code>--tcw-panel-radius</code>、<code>--tcw-tooltip-radius</code>、<code>--tcw-tag-radius</code>、<code>--tcw-toast-radius</code>、<code>--tcw-toolbar-radius</code>、<code>--tcw-sidebar-radius</code></td><td><code>components</code></td></tr>
     <tr><td><code>--tcw-toolbar-h</code>、<code>--tcw-control-h</code>、<code>--tcw-control-h-sm</code>、<code>--tcw-icon</code>、<code>--tcw-sidebar-w</code>、<code>--tcw-menu-item-h</code></td><td><code>sizes</code></td></tr>
-    <tr><td><code>--tcw-font</code>、<code>--tcw-font-mono</code>、<code>--tcw-font-size</code>（と <code>-sm</code>、<code>-xs</code>、<code>-lg</code>）、<code>--tcw-weight</code>、<code>--tcw-weight-strong</code>、<code>--tcw-label-case</code>、<code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
+    <tr><td><code>--tcw-font</code>、<code>--tcw-font-mono</code>、<code>--tcw-font-size</code>（と <code>-xs</code>、<code>-sm</code>、<code>-lg</code>、<code>-xl</code>、<code>-display</code>）、<code>--tcw-weight</code>、<code>--tcw-weight-strong</code>、<code>--tcw-label-case</code>、<code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
     <tr><td><code>--tcw-border-w</code>、<code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>、<code>--tcw-dialog-shadow</code>、<code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>スタイルシート：フィボナッチの余白、2 から 34 px</td></tr>
   </tbody>
 </table>
 <p>
@@ -195,7 +228,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>チャートの背景（ペインに独自の背景がなければペインも）。</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>インジケーターのペイン：背景、上端のバー、名前。</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>。方向ごとに別々。</td></tr>
-    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は破線）。</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は細い実線）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
@@ -282,7 +315,7 @@ new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code
 
 <h2>出来高の色</h2>
 <p>
-  出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> （または <code>volume.*</code> キー） を使います。<code>volumeColor(candleColor)</code> はローソク足の色を出来高用の透明度にした色を返すので、独自のテーマでもバーはローソク足の背景にとどまります。widget の設定でローソク足の色を変えたときは、widget が自動でこれを行います。プリセットを元に <code>candleUp</code> / <code>candleDown</code> だけを変えたテーマでも、出来高はその色になります。
+  出来高バーはテーマの <code>volumeUp</code> と <code>volumeDown</code> （または <code>volume.*</code> キー） を使います。組み込みのテーマは中立なインクの 1 色で描き、下落のバーはそれより淡くなります。上のローソク足がすでに値動きの向きを示しているので、バーは背景にとどまります。あなたや widget の設定がローソク足の色を変えても、出来高は中立な色のままです。ローソク足の色のバーにしたいときは、<code>volumeColor(candleColor)</code> がローソク足の色を出来高用の透明度にした色を返します。
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 
