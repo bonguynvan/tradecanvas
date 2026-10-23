@@ -57,6 +57,9 @@ class FakeChart {
   getIndicatorPanes(): unknown[] { return []; }
   getLegendBottom(): number { return 0; }
   isTimeAligned(): boolean { return true; }
+  dataTimeframes: (string | null)[] = [];
+  isTimeframeAllowed(): boolean { return true; }
+  setDataTimeframe(tf: string | null): void { this.dataTimeframes.push(tf); }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -126,5 +129,14 @@ describe('the toolbar’s Compare', () => {
   it('shows only with a data adapter to ask for the other symbol', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     expect(role('compare')).toBeNull();
+  });
+});
+
+describe('the interval of static data', () => {
+  it('goes to the chart, which has no stream to say it', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', timeframe: '1h', watchlist: false });
+    expect(FakeChart.last.dataTimeframes).toEqual(['1h']);
+    await widget.setTimeframe('1d');
+    expect(FakeChart.last.dataTimeframes).toEqual(['1h', '1d']);
   });
 });

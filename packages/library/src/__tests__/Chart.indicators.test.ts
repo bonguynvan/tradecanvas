@@ -215,6 +215,19 @@ describe('indicators shown on some intervals only', () => {
     expect(chart.getIndicatorIntervals(sma)).toEqual({ hours: [4, 24] });
   });
 
+  it('follow the interval given with the data when there is no stream', () => {
+    const sma = chart.addIndicator('sma')!;
+    chart.setIndicatorIntervals(sma, { hours: false });
+    expect(chart.getActiveIndicators()[0].shown).toBe(true); // no interval known yet
+    const changes: string[] = [];
+    chart.on('timeframeChange', (e) => changes.push((e.payload as { timeframe: string }).timeframe));
+    chart.setDataTimeframe('1h');
+    expect(chart.getActiveIndicators()[0].shown).toBe(false);
+    chart.setDataTimeframe('1d');
+    expect(chart.getActiveIndicators()[0].shown).toBe(true);
+    expect(changes).toEqual(['1h', '1d']);
+  });
+
   it('keep their intervals in a saved layout, and are one undo step', () => {
     const sma = chart.addIndicator('sma')!;
     const changes: string[] = [];
@@ -228,5 +241,35 @@ describe('indicators shown on some intervals only', () => {
     expect(chart.getIndicatorIntervals(restored)).toBeNull();
     chart.undo();
     expect(chart.getIndicatorIntervals(chart.getActiveIndicators()[0].instanceId)).toEqual({ minutes: false });
+  });
+});
+
+describe('an indicator edit (its settings dialog open)', () => {
+  const period = (id: string) => chart.getActiveIndicators().find((i) => i.instanceId === id)?.params.period;
+
+  it('is one undo step, however many changes it made', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.beginIndicatorEdit(rsi);
+    chart.updateIndicator(rsi, { period: 21 });
+    chart.setIndicatorLevels(rsi, [20, 80]);
+    chart.setIndicatorIntervals(rsi, { minutes: false });
+    chart.endIndicatorEdit();
+    chart.undo();
+    const back = chart.getActiveIndicators()[0].instanceId;
+    expect(period(back)).toBe(14);
+    expect(chart.getIndicatorLevels(back)).toEqual([30, 70]);
+    expect(chart.getIndicatorIntervals(back)).toBeNull();
+    chart.undo();
+    expect(chart.getActiveIndicators()).toHaveLength(0);
+  });
+
+  it('leaves no step when it ends where it began, as a cancel does', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    chart.beginIndicatorEdit(rsi);
+    chart.updateIndicator(rsi, { period: 21 });
+    chart.updateIndicator(rsi, { period: 14 });
+    chart.endIndicatorEdit();
+    chart.undo();
+    expect(chart.getActiveIndicators()).toHaveLength(0);
   });
 });

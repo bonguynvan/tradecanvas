@@ -107,6 +107,12 @@
   font-weight: var(--tcw-weight-strong);
 }
 
+.tcw-ip-nav--searching .tcw-ip-tab.tcw-active {
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font-weight: var(--tcw-weight);
+}
+
 .tcw-ip-list {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -292,13 +298,11 @@
   white-space: nowrap;
 }
 
-/* A phone: the dialog takes the screen bar a margin, and the groups become a row of chips. */
+/* A phone: the dialog is the widget's sheet, as tall as a sheet goes, and the groups a row of chips. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ip {
-    width: calc(100vw - 2 * var(--tcw-space-4));
-    max-width: none;
-    height: calc(100vh - 2 * var(--tcw-space-6));
-    height: calc(100dvh - 2 * var(--tcw-space-6));
+    height: 92vh;
+    height: 92dvh;
   }
 
   .tcw-ip-search {
@@ -334,4 +338,111 @@
   .tcw-ip-list {
     padding-inline: var(--tcw-space-3);
   }
+}
+
+/* === The indicator settings === */
+
+/* One half step of phi under the indicators dialog: 610 / sqrt(phi) = 480. */
+@media (min-width: 641px) {
+  .tcw-modal.tcw-modal-narrow.tcw-indi {
+    width: 480px;
+    max-width: 92vw;
+  }
+}
+
+/* A line, or a kind of interval: ticked where it shows, its name, then what sets it. */
+.tcw-indi-plot-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-4);
+  min-width: 0;
+  cursor: pointer;
+}
+
+.tcw-indi-plot-name .tcw-settings-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Unticked, its name steps back. */
+.tcw-indi-plot-name:has(input:not(:checked)) .tcw-settings-label {
+  color: var(--tcw-text-muted);
+}
+
+.tcw-indi-plot-controls,
+.tcw-indi-range {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  flex: none;
+}
+
+.tcw-indi-plot-controls .tcw-indi-select {
+  width: 104px;
+}
+
+.tcw-indi-range {
+  color: var(--tcw-text-muted);
+}
+
+.tcw-indi-range .tcw-indi-input {
+  width: 68px;
+  text-align: end;
+}
+
+.tcw-indi-range .tcw-indi-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Defaults on the left; Cancel and Ok on the right, one height for all three. */
+.tcw-indi .tcw-modal-footer {
+  gap: var(--tcw-space-4);
+}
+
+.tcw-indi-footer-end {
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-4);
+}
+
+.tcw-indi .tcw-modal-footer button {
+  height: var(--tcw-menu-item-h);
+  padding-block: 0;
+}
+
+.tcw-indi-defaults,
+.tcw-indi-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  padding-inline: var(--tcw-space-5);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
+  font-size: var(--tcw-font-size);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-indi-cancel {
+  border-color: var(--tcw-border-strong);
+  color: var(--tcw-text);
+}
+
+.tcw-indi-defaults:hover,
+.tcw-indi-defaults[aria-expanded='true'],
+.tcw-indi-cancel:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-indi-defaults:focus-visible,
+.tcw-indi-cancel:focus-visible,
+.tcw-indi .tcw-done-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
 }

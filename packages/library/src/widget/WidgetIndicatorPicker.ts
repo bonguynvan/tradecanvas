@@ -16,7 +16,8 @@ export interface IndicatorPickerItem {
 }
 
 export interface IndicatorPickerCallbacks {
-  onAdd: (id: string) => void;
+  /** Add one; false when it wasn't added (nothing is announced then). */
+  onAdd: (id: string) => boolean | void;
   onFavorite: (id: string, on: boolean) => void;
   /** The indicator templates; without them there is no Templates tab. */
   templates?: {
@@ -154,6 +155,19 @@ export class WidgetIndicatorPicker {
     modal.tabIndex = -1;
     modal.addEventListener('keydown', (e) => this.onKeyDown(e, modal));
 
+    const live = document.createElement('div');
+    live.className = 'tcw-visually-hidden';
+    live.setAttribute('aria-live', 'polite');
+    modal.append(this.buildHeader(), this.buildSearch(), this.buildBody(), live);
+    backdrop.appendChild(modal);
+    this.layer().appendChild(backdrop);
+    this.backdrop = backdrop;
+    this.liveEl = live;
+    this.renderNav();
+    this.renderList();
+  }
+
+  private buildHeader(): HTMLDivElement {
     const header = document.createElement('div');
     header.className = 'tcw-modal-header';
     const title = document.createElement('h3');
@@ -166,11 +180,15 @@ export class WidgetIndicatorPicker {
     closeBtn.innerHTML = createIcon('x', 16);
     closeBtn.addEventListener('click', () => this.close());
     header.append(title, closeBtn);
+    return header;
+  }
 
-    const searchRow = document.createElement('label');
-    searchRow.className = 'tcw-ip-search';
+  private buildSearch(): HTMLLabelElement {
+    const row = document.createElement('label');
+    row.className = 'tcw-ip-search';
     const search = document.createElement('input');
     search.type = 'search';
+    search.id = `tcw-ip-search-${this.uid}`;
     search.placeholder = this.t('indicatorPicker.search');
     search.setAttribute('aria-label', this.t('indicatorPicker.search'));
     search.autocomplete = 'off';
@@ -180,9 +198,14 @@ export class WidgetIndicatorPicker {
       this.renderList();
     });
     search.addEventListener('keydown', (e) => this.onSearchKey(e));
-    searchRow.innerHTML = createIcon('search', 16);
-    searchRow.appendChild(search);
+    row.innerHTML = createIcon('search', 16);
+    row.appendChild(search);
+    this.searchEl = search;
+    return row;
+  }
 
+  /** The groups down the side, and the list beside them. */
+  private buildBody(): HTMLDivElement {
     const body = document.createElement('div');
     body.className = 'tcw-ip-body';
     const nav = document.createElement('div');
@@ -198,21 +221,9 @@ export class WidgetIndicatorPicker {
     list.addEventListener('keydown', (e) => this.onListKey(e));
     list.addEventListener('focusin', (e) => this.rove(e.target));
     body.append(nav, list);
-
-    const live = document.createElement('div');
-    live.className = 'tcw-visually-hidden';
-    live.setAttribute('aria-live', 'polite');
-
-    modal.append(header, searchRow, body, live);
-    backdrop.appendChild(modal);
-    this.layer().appendChild(backdrop);
-    this.backdrop = backdrop;
-    this.listEl = list;
     this.navEl = nav;
-    this.searchEl = search;
-    this.liveEl = live;
-    this.renderNav();
-    this.renderList();
+    this.listEl = list;
+    return body;
   }
 
   private renderNav(): void {
@@ -222,6 +233,7 @@ export class WidgetIndicatorPicker {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'tcw-ip-tab';
+      tab.id = `tcw-ip-tab-${this.uid}-${view}`;
       tab.dataset.view = view;
       tab.setAttribute('role', 'tab');
       tab.setAttribute('aria-controls', `tcw-ip-list-${this.uid}`);
@@ -242,6 +254,13 @@ export class WidgetIndicatorPicker {
       tab.classList.toggle('tcw-active', on);
       tab.tabIndex = on ? 0 : -1;
     });
+    this.labelList();
+  }
+
+  /** The list is named by its tab, or by the search while it shows the matches. */
+  private labelList(): void {
+    const searching = this.query.trim() !== '';
+    this.listEl?.setAttribute('aria-labelledby', searching ? `tcw-ip-search-${this.uid}` : `tcw-ip-tab-${this.uid}-${this.view}`);
   }
 
   private select(view: View, focusTab = false): void {
@@ -257,6 +276,9 @@ export class WidgetIndicatorPicker {
     if (!list) return;
     list.replaceChildren();
     const items = this.content.items;
+    // While searching, the results come from every group: the one picked steps back.
+    this.navEl?.classList.toggle('tcw-ip-nav--searching', this.query.trim() !== '');
+    this.labelList();
     if (this.query.trim()) {
       const hits = searchIndicators(items, this.query);
       if (hits.length === 0) list.appendChild(this.note(fill(this.t('indicatorPicker.noMatch'), { query: this.query.trim() })));
@@ -316,6 +338,7 @@ export class WidgetIndicatorPicker {
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'tcw-ip-add tcw-ip-save';
+    save.tabIndex = -1;
     save.dataset.tplSave = '';
     save.innerHTML = `${createIcon('save', 14)}<span class="tcw-ip-name"></span>`;
     save.querySelector('span')!.textContent = this.t('templates.save');
@@ -356,8 +379,10 @@ export class WidgetIndicatorPicker {
   }
 
   private add(item: IndicatorPickerItem): void {
-    this.callbacks.onAdd(item.id);
-    if (this.liveEl) this.liveEl.textContent = fill(this.t('indicatorPicker.added'), { name: item.name });
+    if (this.callbacks.onAdd(item.id) === false || !this.liveEl) return;
+    const text = fill(this.t('indicatorPicker.added'), { name: item.name });
+    // The same words again (a second RSI) are only read out when they change: a space tells them apart.
+    this.liveEl.textContent = this.liveEl.textContent === text ? `${text}\u00a0` : text;
   }
 
   private toggleFavorite(id: string, star: HTMLButtonElement): void {

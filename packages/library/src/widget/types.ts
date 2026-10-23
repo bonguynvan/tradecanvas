@@ -138,8 +138,9 @@ export interface ChartWidgetOptions {
   layouts?: boolean | WidgetLayoutsOptions;
 
   /**
-   * Indicator templates: the indicators menu saves the chart's indicators
-   * (inputs, style, levels, panes) under a name and applies them in one go.
+   * Indicator templates: the Templates tab of the Indicators dialog saves the
+   * chart's indicators (inputs, style, levels, panes) under a name and applies
+   * them in one go.
    * Kept in this browser's `localStorage`. Default `true`.
    */
   indicatorTemplates?: boolean;
@@ -571,12 +572,6 @@ export interface ChartSettingsState {
   extendedHours: boolean;
   /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
   chartTypeOptions: ChartTypeOptions;
-}
-
-export interface IndicatorDef {
-  id: string;
-  name: string;
-  type: 'overlay' | 'panel';
 }
 
 export interface DrawingToolGroupDef {

@@ -56,6 +56,9 @@ describe('an indicator shown on some intervals only', () => {
     engine.setIntervals(id, { days: false, hours: [9, 1] });
     expect(engine.getIntervals(id)).toEqual({ days: false, hours: [1, 9] });
     expect(engine.getActiveIndicators()[0]).toMatchObject({ visible: true, shown: false, intervals: { days: false } });
+    // Copies: changing what was read changes nothing.
+    (engine.getIntervals(id) as Record<string, unknown>).days = [1, 2];
+    expect(engine.getIntervals(id)).toEqual({ days: false, hours: [1, 9] });
     engine.setIntervals(id, null);
     expect(engine.getIntervals(id)).toBeNull();
     expect(engine.getActiveIndicators()[0].shown).toBe(true);

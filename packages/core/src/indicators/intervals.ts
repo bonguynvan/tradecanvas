@@ -25,7 +25,11 @@ function intervalOf(timeframe: string): { unit: IntervalUnit; count: number } | 
   return parsed ? { unit: UNIT_OF[parsed.unit], count: parsed.count } : null;
 }
 
-/** Whether an indicator with these rules shows on `timeframe`. One the rules can't read (or none yet) shows it. */
+/**
+ * Whether an indicator with these rules shows on `timeframe`. One the rules
+ * can't read (or none yet) shows it. A range up to its unit's limit runs on
+ * past it: `minutes: [5, 59]` shows on 90m too.
+ */
 export function shownOnInterval(intervals: IndicatorIntervals | undefined, timeframe: string | null | undefined): boolean {
   if (!intervals || !timeframe) return true;
   const interval = intervalOf(timeframe);
@@ -33,7 +37,7 @@ export function shownOnInterval(intervals: IndicatorIntervals | undefined, timef
   const rule = intervals[interval.unit];
   if (rule === undefined) return true;
   if (rule === false) return false;
-  return interval.count >= rule[0] && interval.count <= rule[1];
+  return interval.count >= rule[0] && (interval.count <= rule[1] || rule[1] >= INTERVAL_LIMITS[interval.unit]);
 }
 
 /**

@@ -117,6 +117,7 @@ function fakeIndicators(overlays: ((c: CanvasRenderingContext2D) => void)[], pan
     getLatestValues: () => [],
     getPanelIndicators: () => Object.keys(panes).map((instanceId) => ({ instanceId, descriptor: { name: instanceId.toUpperCase() } })),
     isVisible: () => true,
+    isShown: () => true,
     getLevels: () => [30, 70],
     getOutput: () => null,
     renderPanel: (c: CanvasRenderingContext2D, id: string) => panes[id]?.(c),
@@ -342,6 +343,17 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     runFrame();
     expect(calls.filter(([, c]) => c === sceneCtx()).map(([name]) => name)).toEqual(['series', 'compare', 'ema', 'bands']);
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ recorded: null }));
+  });
+
+  it('draws no levels in the pane of an indicator not shown on this interval', () => {
+    const { ctx } = makeContext();
+    const getLevels = vi.fn(() => [30, 70]);
+    ctx.indicatorEngine = { ...fakeIndicators([], { rsi: () => {} }), isShown: () => false, getLevels } as unknown as RenderContext['indicatorEngine'];
+    ctx.panels = [{ instanceId: 'rsi', rect: { x: 0, y: 200, width: 300, height: 100 }, viewport: ctx.viewport }];
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(getLevels).not.toHaveBeenCalled();
   });
 
   it('records a pane: its background, levels and indicator; the header stays on the scene', () => {

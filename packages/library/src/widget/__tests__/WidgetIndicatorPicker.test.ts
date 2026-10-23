@@ -59,6 +59,7 @@ describe('the indicators dialog', () => {
     expect(dialog()?.getAttribute('aria-modal')).toBe('true');
     expect(document.activeElement).toBe(search());
     expect(tab('all').getAttribute('aria-selected')).toBe('true');
+    expect(layer.querySelector('.tcw-ip-list')!.getAttribute('aria-labelledby')).toBe(tab('all').id);
     expect([...layer.querySelectorAll('.tcw-ip-heading')].map((h) => h.textContent))
       .toEqual(['Moving averages', 'Oscillators', 'Volatility']);
     expect(listed()).toEqual(['ema', 'sma', 'crsi', 'rsi', 'atr']);
@@ -87,10 +88,13 @@ describe('the indicators dialog', () => {
     tab('volatility').click();
     type('rsi');
     expect(listed()).toEqual(['rsi', 'crsi']);
+    // The groups step back: the results come from all of them.
+    expect(layer.querySelector('.tcw-ip-nav')!.classList.contains('tcw-ip-nav--searching')).toBe(true);
     type('zzz');
     expect(layer.querySelector('.tcw-ip-empty')?.textContent).toContain('zzz');
     type('');
     expect(listed()).toEqual(['atr']);
+    expect(layer.querySelector('.tcw-ip-nav')!.classList.contains('tcw-ip-nav--searching')).toBe(false);
   });
 
   it('adds an indicator and stays open, counting what is on the chart', () => {

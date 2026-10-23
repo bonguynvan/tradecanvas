@@ -16,6 +16,7 @@ import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 import { cleanIntervals, shownOnInterval } from './intervals.js';
+import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -392,7 +393,7 @@ export class IndicatorEngine {
       // A pane has its own value scale: the left price scale is only for overlays.
       delete instance.config.scale;
     }
-    if (isPalette(instance.style.colors)) {
+    if (isSeriesPalette(instance.style.colors)) {
       const placement = instance.plugin.descriptor.placement;
       const pane = instance.config.pane ?? null;
       if (this.colorsInPane(placement, pane, instanceId).has(instance.style.colors[0])) {
@@ -559,7 +560,8 @@ export class IndicatorEngine {
 
   /** The intervals the instance shows on; null when all of them (or not found). */
   getIntervals(instanceId: string): IndicatorIntervals | null {
-    return this.instances.get(instanceId)?.config.intervals ?? null;
+    const intervals = this.instances.get(instanceId)?.config.intervals;
+    return intervals ? copyIntervals(intervals) : null;
   }
 
   /** Mark the instance on or off the chart's interval; true when that changed. */
@@ -637,7 +639,7 @@ export class IndicatorEngine {
         descriptor: instance.plugin.descriptor,
         visible: instance.config.visible ?? true,
         shown: isShown(instance),
-        ...(instance.config.intervals ? { intervals: instance.config.intervals } : {}),
+        ...(instance.config.intervals ? { intervals: copyIntervals(instance.config.intervals) } : {}),
         ...(instance.config.pane ? { pane: instance.config.pane } : {}),
       });
     }
@@ -765,11 +767,6 @@ function shownKeys(instance: IndicatorInstance): readonly string[] | null {
   return keys && plots ? keys.filter((key) => plots[key]?.visible !== false) : keys;
 }
 
-/** A copy of plot styles, each its own object. */
-function copyPlots(plots: Record<string, IndicatorPlotStyle>): Record<string, IndicatorPlotStyle> {
-  return Object.fromEntries(Object.entries(plots).map(([key, plot]) => [key, { ...plot }]));
-}
-
 function latestValues(instance: IndicatorInstance): { value: number; color: string }[] {
   const series = instance.output?.series;
   const plots = instance.plugin.descriptor.plots;
@@ -783,17 +780,4 @@ function latestValues(instance: IndicatorInstance): { value: number; color: stri
     if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
   }
   return out;
-}
-
-/** The series palette rotated to start at `shift`. */
-function paletteFrom(shift: number): string[] {
-  return [...TC_SERIES_COLORS.slice(shift), ...TC_SERIES_COLORS.slice(0, shift)];
-}
-
-/** Whether `colors` is still a rotation of the palette (not chosen by someone). */
-function isPalette(colors: readonly string[]): boolean {
-  const n = TC_SERIES_COLORS.length;
-  if (colors.length !== n) return false;
-  const shift = TC_SERIES_COLORS.indexOf(colors[0]);
-  return shift >= 0 && colors.every((c, i) => c === TC_SERIES_COLORS[(shift + i) % n]);
 }

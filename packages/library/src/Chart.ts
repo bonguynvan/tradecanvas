@@ -45,7 +45,7 @@ import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale
 import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -218,6 +218,8 @@ export class Chart {
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
   /** Above 0 while indicators change as a whole (a layout, an undo): no undo steps are recorded. */
   private indicatorHistoryDepth = 0;
+  /** An edit of one indicator under way (`beginIndicatorEdit`): the indicators as it began. */
+  private indicatorEdit: { subject: string; before: SnapshotIndicator[] } | null = null;
   /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
   private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
   /** The zoom-area tool is waiting for its box. */
@@ -1539,8 +1541,7 @@ export class Chart {
     position: PanelPosition,
     options: { pane?: string; scale?: OverlayScale; instanceId?: string },
   ): string | null {
-    if (!this.features.indicators) return null;
-    if (this.features.indicatorIds.length > 0 && !this.features.indicatorIds.includes(id)) return null;
+    if (!this.isIndicatorAllowed(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
     const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), {
@@ -1572,7 +1573,7 @@ export class Chart {
     const data = this.dataManager.getData();
     let changed = false;
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
-      if (!SYMBOL_INDICATORS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
+      if (!SYMBOL_INDICATOR_IDS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
       this.indicatorEngine.updateIndicator(ind.instanceId, {}, data);
       changed = true;
     }
@@ -1597,7 +1598,7 @@ export class Chart {
     const out = new Set<string>();
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       const symbol = ind.params.symbol;
-      if (SYMBOL_INDICATORS.has(ind.id) && typeof symbol === 'string' && symbol.trim()) out.add(symbol.trim());
+      if (SYMBOL_INDICATOR_IDS.has(ind.id) && typeof symbol === 'string' && symbol.trim()) out.add(symbol.trim());
     }
     return [...out];
   }
@@ -1610,7 +1611,7 @@ export class Chart {
   private requestMissingSymbols(instanceId: string): void {
     this.forgetUnreadSymbols();
     const config = this.indicatorEngine.getIndicatorConfig(instanceId);
-    const symbol = config && SYMBOL_INDICATORS.has(config.id) && typeof config.params.symbol === 'string' ? config.params.symbol.trim() : '';
+    const symbol = config && SYMBOL_INDICATOR_IDS.has(config.id) && typeof config.params.symbol === 'string' ? config.params.symbol.trim() : '';
     if (!symbol || this.symbolSeries.has(symbol) || this.requestedSymbols.has(symbol)) return;
     this.requestedSymbols.add(symbol);
     this.eventBus.emit('symbolSeriesRequest', { symbol });
@@ -2646,7 +2647,8 @@ export class Chart {
    * The intervals an indicator shows on (null: all of them): `{ minutes:
    * false }` hides it on every minute chart, `{ hours: [1, 4] }` shows it on
    * 1h to 4h only. The chart reads them against the interval of the stream
-   * it is connected to; with no stream it shows the indicator.
+   * it is connected to, or the one `setDataTimeframe` gave; with neither it
+   * shows the indicator.
    */
   setIndicatorIntervals(instanceId: string, intervals: IndicatorIntervals | null): void {
     this.recordIndicators(instanceId, () => this.setIndicatorIntervalsNow(instanceId, intervals));
@@ -3029,24 +3031,39 @@ export class Chart {
   /** The stream's symbol and timeframe, told when they change. */
   private setStreamTarget(symbol: string, timeframe: TimeFrame): void {
     const previousSymbol = this.announcedSymbol;
-    const previousTimeframe = this.announcedTimeframe;
     this.currentSymbol = symbol;
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
     this.applyTimeSpacing();
     // The legend's title line names them (a name set with setSymbolName stands until the symbol changes).
     if (symbol !== previousSymbol) this.chartLegend.setSymbol(symbol);
-    this.chartLegend.setTimeframe(timeframe);
-    // Indicators kept to some intervals come and go with it.
-    if (this.indicatorEngine.setTimeframe(timeframe)) this.updateViewportAndRender();
     if (symbol !== previousSymbol) {
       this.announcedSymbol = symbol;
       this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
     }
-    if (timeframe !== previousTimeframe) {
-      this.announcedTimeframe = timeframe;
-      this.eventBus.emit('timeframeChange', { timeframe, previous: previousTimeframe });
-    }
+    this.useTimeframe(timeframe);
+  }
+
+  /**
+   * The interval of the bars given with `setData`, where no stream says it:
+   * the legend's title line names it, `timeframeChange` reports it, and
+   * indicators kept to some intervals follow it. Null: not known (they all
+   * show). A connected stream's own interval stands.
+   */
+  setDataTimeframe(timeframe: TimeFrame | null): void {
+    if (this.streamManager) return;
+    this.useTimeframe(timeframe);
+    this.engine.requestRender(LayerType.Hover);
+  }
+
+  /** The chart's interval: the legend names it, the indicators kept to some come and go with it. */
+  private useTimeframe(timeframe: TimeFrame | null): void {
+    const previous = this.announcedTimeframe;
+    this.chartLegend.setTimeframe(timeframe ?? '');
+    if (this.indicatorEngine.setTimeframe(timeframe)) this.updateViewportAndRender();
+    if (timeframe === previous) return;
+    this.announcedTimeframe = timeframe;
+    if (timeframe) this.eventBus.emit('timeframeChange', { timeframe, previous });
   }
 
   /**
@@ -3065,6 +3082,12 @@ export class Chart {
     this.barCountdown.setTimeframeMs(timeframeToMs(timeframe));
     if (adapter) this.resolveStreamSymbol(adapter, symbol);
     await this.streamManager.switchTo(symbol, timeframe);
+  }
+
+  /** Whether `addIndicator(id)` may add one: indicators on, and `id` listed when `features.indicatorIds` lists any. */
+  isIndicatorAllowed(id: string): boolean {
+    const allowed = this.features.indicatorIds;
+    return this.features.indicators && (allowed.length === 0 || allowed.includes(id));
   }
 
   /** False when `features.timeframes` is set and does not list `timeframe`. */
@@ -4707,7 +4730,7 @@ export class Chart {
           levels: config?.levels?.slice(),
           pane: ind.pane,
           scale: config?.scale,
-          ...(config?.intervals ? { intervals: config.intervals } : {}),
+          ...(config?.intervals ? { intervals: this.indicatorEngine.getIntervals(ind.instanceId) ?? undefined } : {}),
           ...(panel && this.paneStyles.has(ind.instanceId) ? { paneStyle: { ...this.paneStyles.get(ind.instanceId) } } : {}),
           ...(panel
             ? {
@@ -4774,6 +4797,29 @@ export class Chart {
   }
 
   /** Run `change` without recording undo steps for the indicators it changes. */
+  /**
+   * Start an edit of one indicator, as its settings dialog does: its changes
+   * until `endIndicatorEdit` are one undo step, and none when they end where
+   * they began (a cancel that put everything back).
+   */
+  beginIndicatorEdit(instanceId: string): void {
+    this.endIndicatorEdit();
+    if (!this.features.drawingUndoRedo) return;
+    this.indicatorEdit = { subject: instanceId, before: this.getIndicatorSetup() };
+    this.indicatorHistoryDepth++;
+  }
+
+  /** End the edit `beginIndicatorEdit` started, as one undo step when anything changed. */
+  endIndicatorEdit(): void {
+    const edit = this.indicatorEdit;
+    if (!edit) return;
+    this.indicatorEdit = null;
+    this.indicatorHistoryDepth--;
+    const after = this.getIndicatorSetup();
+    if (JSON.stringify(after) === JSON.stringify(edit.before)) return;
+    this.undoRedoManager.push({ type: 'indicators', before: null, after: null, indicators: { before: edit.before, after, subject: edit.subject, at: performance.now() } });
+  }
+
   private withoutIndicatorHistory<T>(change: () => T): T {
     this.indicatorHistoryDepth++;
     try {
@@ -5601,9 +5647,6 @@ function readShapes(shapes: ShapeConfig): ShapeConfig {
   const r = shapes.tagRadius;
   return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
-
-/** The indicators that read another symbol's bars (`params.symbol`). */
-const SYMBOL_INDICATORS: ReadonlySet<string> = new Set(['compareSymbol', 'spread', 'correlation', 'correlationlog']);
 
 /** Whether any bar from `from` to `to` traded. */
 function hasVolume(data: DataSeries, from: number, to: number): boolean {

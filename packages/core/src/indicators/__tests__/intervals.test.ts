@@ -24,6 +24,12 @@ describe('the intervals an indicator shows on', () => {
     expect(shownOnInterval({ days: [1, 1], weeks: false }, '1w')).toBe(false);
   });
 
+  it('read a range up to a unit’s limit as that and longer, for intervals typed past it', () => {
+    expect(shownOnInterval({ minutes: [5, INTERVAL_LIMITS.minutes] }, '90m')).toBe(true);
+    expect(shownOnInterval({ minutes: [5, INTERVAL_LIMITS.minutes] }, '3m')).toBe(false);
+    expect(shownOnInterval({ minutes: [5, 30] }, '90m')).toBe(false);
+  });
+
   it('keep only rules that say something: ranges in order and in bounds, full ranges dropped', () => {
     expect(cleanIntervals({ hours: [4, 2] })).toEqual({ hours: [2, 4] });
     expect(cleanIntervals({ minutes: [0, 500] })).toBeNull();

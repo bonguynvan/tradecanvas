@@ -41,11 +41,15 @@ const OUTPUT: Record<string, (i: number) => Record<string, number>> = {
  */
 class FakeChart {
   static last: FakeChart;
-  indicators: { instanceId: string; id: string; params: Record<string, unknown>; visible: boolean }[] = [];
+  indicators: { instanceId: string; id: string; params: Record<string, unknown>; visible: boolean; shown?: boolean }[] = [];
+  styleDefaults = new Map<string, unknown>();
   bump = 0;
   timeAligned = true;
   // The account panel reads these on its frame.
-  getAvailableIndicators(): IndicatorDescriptor[] { return [...DESCRIPTORS.values()]; }
+  // The chart also has Compare's own indicators, which need a second symbol.
+  getAvailableIndicators(): IndicatorDescriptor[] {
+    return [...DESCRIPTORS.values(), { id: 'compareSymbol', name: 'Compare Symbol', placement: 'overlay', defaultConfig: { symbol: '' } }];
+  }
   getOrders(): unknown[] { return []; }
   getPositions(): unknown[] { return []; }
   getFills(): unknown[] { return []; }
@@ -109,8 +113,10 @@ class FakeChart {
   }
 
   getActiveIndicators() {
-    return this.indicators.map((i) => ({ ...i, descriptor: { ...DESCRIPTORS.get(i.id)!, defaultConfig: DEFAULTS[i.id] ?? {} } }));
+    return this.indicators.map((i) => ({ ...i, shown: i.shown ?? i.visible, descriptor: { ...DESCRIPTORS.get(i.id)!, defaultConfig: DEFAULTS[i.id] ?? {} } }));
   }
+
+  setIndicatorDefaults(id: string, style: unknown): void { this.styleDefaults.set(id, style); }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -338,5 +344,52 @@ describe('indicatorChipLabel', () => {
     expect(indicatorChipLabel('compareSymbol', { symbol: 'ETHUSDT' }, { symbol: '' }, 'Compare')).toBe('Compare ETHUSDT');
     expect(indicatorChipLabel('spread', { symbol: 'ETHUSDT', mode: 'ratio' }, { symbol: '', mode: 'spread' }, 'Spread')).toBe('Ratio ETHUSDT');
     expect(indicatorChipLabel('spread', { symbol: 'ETHUSDT', mode: 'spread' }, { symbol: '', mode: 'spread' }, 'Spread')).toBe('Spread ETHUSDT');
+  });
+});
+
+describe('ChartWidget’s indicators dialog', () => {
+  it('lists what can be added on its own, not Compare’s indicators', () => {
+    host.querySelector<HTMLButtonElement>('[data-role="indicators"]')!.click();
+    const ids = [...document.querySelectorAll<HTMLButtonElement>('.tcw-ip-add')].map((b) => b.dataset.ind);
+    expect(ids).toContain('rsi');
+    expect(ids).not.toContain('compareSymbol');
+    expect(document.querySelector('.tcw-ip-tab[data-view="other"]')).toBeNull();
+  });
+});
+
+describe('ChartWidget indicator defaults and intervals', () => {
+  const menuItem = (text: string) =>
+    [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((b) => b.textContent?.includes(text))!;
+
+  it('starts the next one of a kind as saved with “Save as default”, here and on the next visit', async () => {
+    localStorage.removeItem('tcw:indicator-defaults');
+    pick('rsi');
+    await frame();
+    act(rows()[0], 'settings');
+    const period = document.querySelector<HTMLInputElement>('.tcw-indi input[type="number"]')!;
+    period.value = '21';
+    period.dispatchEvent(new Event('change'));
+    document.querySelector<HTMLButtonElement>('.tcw-indi [data-act="defaults"]')!.click();
+    menuItem('Save as default').click();
+    document.querySelector<HTMLButtonElement>('.tcw-indi [data-act="ok"]')!.click();
+    expect(FakeChart.last.styleDefaults.get('rsi')).toEqual({ colors: PALETTE });
+    pick('rsi');
+    expect(FakeChart.last.indicators.at(-1)!.params.period).toBe(21);
+
+    widget.destroy();
+    widget = new ChartWidget(host, { adapter, symbol: 'AAA', timeframe: '5m', watchlist: false });
+    expect(FakeChart.last.styleDefaults.get('rsi')).toEqual({ colors: PALETTE });
+    localStorage.removeItem('tcw:indicator-defaults');
+  });
+
+  it('greys an indicator not shown on this interval, and says why', async () => {
+    pick('ema');
+    await frame();
+    FakeChart.last.indicators[0].shown = false;
+    FakeChart.last.emit('indicatorChange', { instanceId: FakeChart.last.indicators[0].instanceId, change: 'intervals' });
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    expect(rows()[0].title).toBe('Not shown on this interval');
+    expect(values(rows()[0])).toHaveLength(0);
   });
 });
