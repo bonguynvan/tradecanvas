@@ -116,7 +116,7 @@ MCP server `@tradecanvas/mcp` tra chỉ báo, công cụ vẽ, tùy chọn, côn
 claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
-Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
+Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Trong Git Bash, nơi Claude Code chạy các lệnh `!` trên Windows, hãy viết `//c`: Git Bash đổi `/c` thành một đường dẫn.
 
 ## Thêm
 

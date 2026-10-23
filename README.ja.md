@@ -116,7 +116,7 @@ MCP サーバー `@tradecanvas/mcp` は、インジケーター、描画ツー�
 claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
-WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
+WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash（Windows で Claude Code の `!` コマンドを実行するシェル）では `//c` と書きます。`/c` がパスに書き換えられるためです。
 
 ## その他
 

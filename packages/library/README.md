@@ -116,7 +116,7 @@ The MCP server `@tradecanvas/mcp` looks up indicators, drawing tools, options, f
 claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
-On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
+On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. In Git Bash, which runs the `!` commands of Claude Code on Windows, write `//c`: Git Bash turns `/c` into a path.
 
 ## More
 

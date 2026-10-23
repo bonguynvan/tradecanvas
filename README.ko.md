@@ -116,7 +116,7 @@ MCP 서버 `@tradecanvas/mcp`는 지표, 드로잉 도구, 옵션, 기능 스위
 claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
-WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
+WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash(Windows에서 Claude Code의 `!` 명령을 실행하는 셸)에서는 `//c`로 씁니다. Git Bash가 `/c`를 경로로 바꾸기 때문입니다.
 
 ## 더 보기
 
