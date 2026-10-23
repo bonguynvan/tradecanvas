@@ -35,6 +35,16 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('market colours', () => {
+  it('recolour the candles and leave the theme’s volume as it is', () => {
+    const before = chart.getTheme();
+    chart.setMarket({ type: 'stock', colorScheme: { up: '#22C55E', down: '#EF4444' } } as Parameters<Chart['setMarket']>[0]);
+    const theme = chart.getTheme();
+    expect([theme.candleUp, theme.candleDown]).toEqual(['#22C55E', '#EF4444']);
+    expect([theme.volumeUp, theme.volumeDown]).toEqual([before.volumeUp, before.volumeDown]);
+  });
+});
+
 type Internals = {
   sessionShading: { getConfig(): Record<string, unknown> };
   tradingManager: { config: { pricePrecision?: number } };

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { ChartOptions, DrawingState } from '@tradecanvas/commons';
-import { resolveWidgetUI } from '../widgetUI.js';
+import { resolveWidgetUI, typeSize } from '../widgetUI.js';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -92,17 +92,17 @@ const button = (name: string) => bar()!.querySelector<HTMLButtonElement>(`[data-
 const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
 
 describe('ChartWidget OHLCV legend font', () => {
-  it('draws the legend in the look’s font, at the size of the indicator rows', () => {
+  it('draws the legend in the look’s figures face, at the size of the indicator rows', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
-    const studio = resolveWidgetUI('studio').font;
-    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: studio.family, fontSize: studio.size - 2 });
+    const print = resolveWidgetUI('print').font;
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: print.mono, fontSize: typeSize(print.size, -1) });
   });
 
   it('follows the look when it changes', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     widget.setUI('terminal');
     const terminal = resolveWidgetUI('terminal').font;
-    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: terminal.family, fontSize: terminal.size - 2 });
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: terminal.mono, fontSize: typeSize(terminal.size, -1) });
   });
 });
 

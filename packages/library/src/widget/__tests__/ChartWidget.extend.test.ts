@@ -397,13 +397,13 @@ describe('ChartWidget symbol fetches out of order', () => {
 });
 
 describe('ChartWidget look', () => {
-  it('starts in the Studio look, takes a preset or a theme, and gives the chart its tag shape', () => {
+  it('starts in the Print look, takes a preset or a theme, and gives the chart its tag shape', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
-    expect(root.dataset.tcwUi).toBe('studio');
-    // Without `ui` the tokens stay the stylesheet's (Studio's), yours to override in CSS.
+    expect(root.dataset.tcwUi).toBe('print');
+    // Without `ui` the tokens stay the stylesheet's (Print's), yours to override in CSS.
     expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('');
-    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 4 });
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 2 });
 
     widget.setUI({ preset: 'capsule', radius: { lg: 14 } });
     expect(root.dataset.tcwToolbar).toBe('floating');

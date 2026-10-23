@@ -9,35 +9,36 @@
 .tcw-root {
   color-scheme: dark;
 
-  --tcw-field-bg: rgba(255, 255, 255, 0.035);
-  --tcw-field-bg-hover: rgba(255, 255, 255, 0.055);
-  --tcw-field-bg-focus: rgba(255, 255, 255, 0.025);
-  --tcw-field-line: rgba(255, 255, 255, 0.07);
-  --tcw-field-line-hover: rgba(255, 255, 255, 0.15);
+  --tcw-field-bg: rgba(230, 227, 220, 0.04);
+  --tcw-field-bg-hover: rgba(230, 227, 220, 0.06);
+  --tcw-field-bg-focus: rgba(230, 227, 220, 0.03);
+  --tcw-field-line: rgba(230, 227, 220, 0.12);
+  --tcw-field-line-hover: rgba(230, 227, 220, 0.22);
   --tcw-field-line-focus: var(--tcw-accent-line);
   --tcw-field-placeholder: var(--tcw-text-muted);
-  --tcw-check-line: rgba(255, 255, 255, 0.28);
-  --tcw-scroll-thumb: rgba(255, 255, 255, 0.12);
-  --tcw-scroll-thumb-hover: rgba(255, 255, 255, 0.24);
+  --tcw-check-line: rgba(230, 227, 220, 0.3);
+  --tcw-scroll-thumb: rgba(230, 227, 220, 0.14);
+  --tcw-scroll-thumb-hover: rgba(230, 227, 220, 0.26);
   /* Glyphs drawn in a field's background (a background image takes no currentColor). */
-  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%238b94a3' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%238b94a3' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
-  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%231a1204' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%238c8a85' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%238c8a85' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23131416' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .tcw-root[data-tcw-theme='light'] {
   color-scheme: light;
 
-  --tcw-field-bg: #f3f4f6;
-  --tcw-field-bg-hover: #eef0f3;
+  /* Fields are white boxes on the paper, ruled in ink, as on a printed form. */
+  --tcw-field-bg: #ffffff;
+  --tcw-field-bg-hover: #ffffff;
   --tcw-field-bg-focus: #ffffff;
-  --tcw-field-line: rgba(12, 16, 22, 0.06);
-  --tcw-field-line-hover: rgba(12, 16, 22, 0.16);
-  --tcw-check-line: rgba(12, 16, 22, 0.3);
-  --tcw-scroll-thumb: rgba(12, 16, 22, 0.14);
-  --tcw-scroll-thumb-hover: rgba(12, 16, 22, 0.28);
-  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%23626a77' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23626a77' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-field-line: rgba(27, 29, 33, 0.16);
+  --tcw-field-line-hover: rgba(27, 29, 33, 0.3);
+  --tcw-check-line: rgba(27, 29, 33, 0.34);
+  --tcw-scroll-thumb: rgba(27, 29, 33, 0.16);
+  --tcw-scroll-thumb-hover: rgba(27, 29, 33, 0.3);
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%236c7077' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%236c7077' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
   --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
@@ -195,7 +196,7 @@
   height: 16px;
   margin: 0;
   border: 1.5px solid var(--tcw-check-line);
-  border-radius: 4px;
+  border-radius: var(--tcw-radius-sm);
   background: transparent center / 14px 14px no-repeat;
   cursor: pointer;
   vertical-align: middle;
@@ -276,13 +277,13 @@
 
 .tcw-select-menu {
   z-index: 120;
-  padding: 4px;
+  padding: var(--tcw-menu-pad);
   max-width: min(360px, calc(100vw - 16px));
-  font-size: var(--tcw-font-size-sm);
+  font-size: var(--tcw-font-size);
 }
 
 .tcw-select-group {
-  padding: 8px 10px 4px;
+  padding: var(--tcw-space-4) var(--tcw-space-4) var(--tcw-space-2);
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-text-muted);
@@ -293,11 +294,11 @@
 .tcw-select-option {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--tcw-space-3);
   min-height: var(--tcw-menu-item-h);
   padding-block: 0;
-  padding-inline: 6px 12px;
-  border-radius: var(--tcw-radius-sm);
+  padding-inline: var(--tcw-space-3) var(--tcw-space-5);
+  border-radius: var(--tcw-menu-item-radius);
   color: var(--tcw-text-dim);
   cursor: pointer;
   user-select: none;

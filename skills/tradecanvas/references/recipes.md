@@ -517,7 +517,8 @@ new ChartWidget(document.getElementById('chart')!, {
 import { ChartWidget, WIDGET_UI_PRESETS } from '@tradecanvas/chart/widget';
 import { BinanceAdapter } from '@tradecanvas/chart';
 
-// 'studio' (the default), 'terminal' (dense, square) or 'capsule' (pills, floating bars)
+// 'print' (the default: paper and ink, kept to the golden ratio), 'studio' (rounded),
+// 'terminal' (dense, square) or 'capsule' (pills, floating bars)
 const widget = new ChartWidget(document.getElementById('chart')!, {
   adapter: new BinanceAdapter(),
   symbol: 'BTCUSDT',
@@ -537,8 +538,12 @@ widget.setUI({
 console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.control);
 ```
 
-The look changes shapes and sizes only; colours stay with `theme`. The
-widget loads no fonts, so load the families a look names. Without `ui` the
+The look changes shapes and sizes only; colours stay with `theme`. Print
+keeps to the golden ratio: sizes in half steps of φ (16, 20, 26, 33, 42),
+Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);
+`PHI`, `FIBONACCI` and `phiStep` from `@tradecanvas/commons` do the same for
+yours. The widget loads no fonts, so load the families a look names (Print
+names system faces only). Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
 

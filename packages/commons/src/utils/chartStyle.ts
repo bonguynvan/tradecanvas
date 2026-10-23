@@ -161,9 +161,10 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       horizontal: lineLook(o, 'grid.horizontal', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
       vertical: lineLook(o, 'grid.vertical', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
     },
+    // Hairlines, solid: a dash pattern is noise the eye has to read past.
     crosshair: {
-      horizontal: lineLook(o, 'crosshair.horizontal', { visible: true, color: plain.crosshair, style: 'dashed', width: 1 }),
-      vertical: lineLook(o, 'crosshair.vertical', { visible: true, color: plain.crosshair, style: 'dashed', width: 1 }),
+      horizontal: lineLook(o, 'crosshair.horizontal', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
+      vertical: lineLook(o, 'crosshair.vertical', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
       labelBackground: str('crosshair.labelBackground', plain.text),
       labelText: str('crosshair.labelTextColor', background),
     },
@@ -177,7 +178,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       visible: (o('lastPrice.visible') as boolean | undefined) ?? true,
       up: str('lastPrice.upColor', series.up),
       down: str('lastPrice.downColor', series.down),
-      style: (o('lastPrice.style') as LineStyle | undefined) ?? 'dashed',
+      style: (o('lastPrice.style') as LineStyle | undefined) ?? 'solid',
       width: (o('lastPrice.width') as number | undefined) ?? 1,
     },
     sessionBreaks: {

@@ -30,9 +30,9 @@
     const trading = params.get('trading') === 'true';
     const watchlist = params.get('watchlist') === 'true';
     const locale = params.get('locale') ?? undefined;
-    // `?ui=terminal` / `capsule`: the widget in that look (Studio without it).
+    // `?ui=studio` / `terminal` / `capsule`: the widget in that look (Print without it).
     const uiParam = params.get('ui');
-    const ui = uiParam === 'terminal' || uiParam === 'capsule' || uiParam === 'studio' ? uiParam : undefined;
+    const ui = uiParam === 'terminal' || uiParam === 'capsule' || uiParam === 'studio' || uiParam === 'print' ? uiParam : undefined;
     const numberLocale = params.get('numberLocale') ?? undefined;
     // `?latency=1500` delays every history request — shows the loading veil
     // a slow network gets on symbol/timeframe switches.

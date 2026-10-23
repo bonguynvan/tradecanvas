@@ -17,7 +17,6 @@ import {
   vn30fLastTradingDay,
   vn30fContracts,
   DARK_THEME,
-  volumeColor,
   type MarketConfig,
 } from '@tradecanvas/commons';
 
@@ -155,7 +154,8 @@ describe('Vietnamese colours', () => {
     const theme = createVNTheme(DARK_THEME);
     expect(theme.candleUp).toBe(VN_COLORS.up);
     expect(theme.candleDown).toBe(VN_COLORS.down);
-    expect(theme.volumeUp).toBe(volumeColor(VN_COLORS.up));
-    expect(theme.volumeDown).toBe(volumeColor(VN_COLORS.down));
+    // Volume keeps the theme's own: the candles carry the colours.
+    expect(theme.volumeUp).toBe(DARK_THEME.volumeUp);
+    expect(theme.volumeDown).toBe(DARK_THEME.volumeDown);
   });
 });

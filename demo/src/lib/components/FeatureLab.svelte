@@ -27,11 +27,12 @@
   let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
   /** The look for scenes with a look picker. */
   const LOOKS: readonly { id: WidgetUIPreset; name: string }[] = [
+    { id: 'print', name: 'Print' },
     { id: 'studio', name: 'Studio' },
     { id: 'terminal', name: 'Terminal' },
     { id: 'capsule', name: 'Capsule' },
   ];
-  let look = $state<WidgetUIPreset>('studio');
+  let look = $state<WidgetUIPreset>('print');
   /** The renderer for scenes with a renderer picker. */
   const RENDERERS: readonly { id: 'canvas' | 'webgl'; name: string }[] = [
     { id: 'canvas', name: 'Canvas 2D' },

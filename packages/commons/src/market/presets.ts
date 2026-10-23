@@ -1,6 +1,5 @@
 import type { MarketConfig, MarketColorScheme, PriceStepBand, TradingSession, VN30FContract } from './types.js';
 import type { Theme } from '../types/theme.js';
-import { volumeColor } from '../constants/themes.js';
 import { stepDecimals } from '../utils/symbols.js';
 import { isValidTimeZone, zoneOffsetMinutes } from '../utils/timezone.js';
 
@@ -143,7 +142,11 @@ export const MARKET_NYSE: MarketConfig = {
   ],
 };
 
-// Build a theme variant for VN stock market
+/**
+ * A theme variant for the Vietnamese stock market: its candle colours. Volume
+ * keeps the theme's own (neutral in the built-in themes; a candle-coloured
+ * preset's follows the new candles).
+ */
 export function createVNTheme(base: Theme): Theme {
   return {
     ...base,
@@ -151,8 +154,6 @@ export function createVNTheme(base: Theme): Theme {
     candleDown: VN_COLORS.down,
     candleUpWick: VN_COLORS.up,
     candleDownWick: VN_COLORS.down,
-    volumeUp: volumeColor(VN_COLORS.up),
-    volumeDown: volumeColor(VN_COLORS.down),
   };
 }
 

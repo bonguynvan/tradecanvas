@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME, LIGHT_THEME, withAlpha, volumeColor, resolveVolumeColors } from '@tradecanvas/commons';
+import { DARK_THEME, DARK_TERMINAL, withAlpha, volumeColor, resolveVolumeColors } from '@tradecanvas/commons';
 
 describe('withAlpha', () => {
   it('reads the usual colour forms', () => {
@@ -23,14 +23,19 @@ describe('resolveVolumeColors', () => {
     expect(resolveVolumeColors(theme)).toEqual({ up: 'rgba(1, 2, 3, 0.4)', down: 'rgba(4, 5, 6, 0.4)' });
   });
 
-  it('follows the candles when a theme changes them but keeps a preset’s volume', () => {
-    const theme = { ...DARK_THEME, candleUp: '#26a69a', candleDown: '#ef5350' };
+  it('follows the candles when a theme changes them but keeps a candle-coloured preset’s volume', () => {
+    const theme = { ...DARK_TERMINAL, candleUp: '#26a69a', candleDown: '#ef5350' };
     expect(resolveVolumeColors(theme)).toEqual({ up: volumeColor('#26a69a'), down: volumeColor('#ef5350') });
-    expect(resolveVolumeColors(LIGHT_THEME)).toEqual({ up: LIGHT_THEME.volumeUp, down: LIGHT_THEME.volumeDown });
+    expect(resolveVolumeColors(DARK_TERMINAL)).toEqual({ up: DARK_TERMINAL.volumeUp, down: DARK_TERMINAL.volumeDown });
+  });
+
+  it('keeps neutral volume neutral when the candles change', () => {
+    const theme = { ...DARK_THEME, candleUp: '#26a69a', candleDown: '#ef5350' };
+    expect(resolveVolumeColors(theme)).toEqual({ up: DARK_THEME.volumeUp, down: DARK_THEME.volumeDown });
   });
 
   it('keeps the preset volume when the candle colour cannot take an alpha', () => {
-    const theme = { ...DARK_THEME, candleUp: 'teal' };
-    expect(resolveVolumeColors(theme).up).toBe(DARK_THEME.volumeUp);
+    const theme = { ...DARK_TERMINAL, candleUp: 'teal' };
+    expect(resolveVolumeColors(theme).up).toBe(DARK_TERMINAL.volumeUp);
   });
 });

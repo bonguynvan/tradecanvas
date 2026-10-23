@@ -84,7 +84,7 @@ function llmsTxt() {
     `- [Getting started](${SITE}/docs/getting-started): install, the widget, the headless chart`,
     `- [API reference](${SITE}/docs/api): Chart and ChartWidget methods, options and events`,
     `- [Indicators](${SITE}/docs/indicators): every built-in indicator with its id, inputs and lines`,
-    `- [Styling](${SITE}/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables`,
+    `- [Styling](${SITE}/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal and Capsule presets, your own theme, CSS variables`,
     `- [Customization](${SITE}/docs/customization): every way to customise: themes, looks, style overrides, the widget's ${mcpCatalog.widgetFeatures.length} feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS`,
     `- [Chart types](${SITE}/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more`,
     `- [Drawing tools](${SITE}/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text`,

@@ -24,7 +24,7 @@ import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { readChartTypeOptions } from '@tradecanvas/commons';
-import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
+import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings } from './WidgetIndicatorSettings.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
@@ -465,7 +465,7 @@ export class ChartWidget {
       if (!narrow) this.sidebar?.closeOverlay();
     });
     // The look: tokens and layout switches on the root and the modal portal
-    // alike. Without `ui` the tokens stay the stylesheet's (Studio's), so a
+    // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
     // host's CSS can still set them.
     this.ui = resolveWidgetUI(options.ui);
     const variables = options.ui !== undefined;
@@ -1615,8 +1615,9 @@ export class ChartWidget {
   }
 
   /**
-   * Change the widget's look: a preset (`'studio'`, `'terminal'`,
-   * `'capsule'`) or your theme over one. Colours stay with `setTheme`.
+   * Change the widget's look: a preset (`'print'`, `'studio'`,
+   * `'terminal'`, `'capsule'`) or your theme over one. Colours stay with
+   * `setTheme`.
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
@@ -1632,11 +1633,12 @@ export class ChartWidget {
   }
 
   /**
-   * The OHLCV legend on the chart takes the look's font, at the size of the
-   * indicator rows the widget lists under it, so the two read as one block.
+   * The OHLCV legend on the chart takes the look's figures font, at the size
+   * of the indicator rows the widget lists under it, so the two read as one
+   * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.family, fontSize: this.ui.font.size - 2 });
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(this.ui.font.size, -1) });
   }
 
   /** The chart's own tags and pills take the look's corners. */

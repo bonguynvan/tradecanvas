@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>스타일링 — TradeCanvas 문서</title>
-  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 세 가지 프리셋(Studio, Terminal, Capsule)과 그 위에 얹는 나만의 테마." />
+  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 황금비를 따르는 네 가지 프리셋(Print, Studio, Terminal, Capsule)과 그 위에 얹는 나만의 테마." />
 </svelte:head>
 
 <h1>위젯 스타일링</h1>
@@ -21,7 +21,12 @@
 <table>
   <thead><tr><th>프리셋</th><th>외관</th></tr></thead>
   <tbody>
-    <tr><td><code>studio</code> (기본값)</td><td>
+    <tr><td><code>print</code> (기본값)</td><td>
+      종이와 잉크. 흰색에 가까운 바탕이나 검정에 가까운 바탕에, 평범한 것은 모두 회색이고 색은 뜻이 있는 곳에만 씁니다.
+      가는 선, 3 px 컨트롤, 5 px 메뉴, 8 px 대화 상자, 대문자 라벨. 모든 숫자는 고정폭 글꼴이라 가격이 열에 맞춰
+      정렬됩니다. 선택된 버튼은 잉크색으로 꽉 채워지고, 선택된 도구는 잉크 파랑입니다.
+    </td></tr>
+    <tr><td><code>studio</code></td><td>
       컨트롤은 7 px, 메뉴는 11 px, 대화 상자는 16 px로 모서리가 둥급니다. 그룹은 구분선 대신 여백으로 나뉘고, 메뉴는
       부드러운 그림자 위에 떠 있으며, 시간 단위 버튼은 세그먼트 트랙 안에 놓이고, 선택된 버튼은 옅은 색으로 채워집니다.
     </td></tr>
@@ -48,9 +53,34 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>황금비</h2>
+<p>
+  Print는 비율을 황금비 φ ≈ 1.618에 맞추므로, 나란히 놓이는 크기들은 어디서나 같은 관계를 이룹니다.
+</p>
+<table>
+  <thead><tr><th>대상</th><th>규칙</th><th>값(px)</th></tr></thead>
+  <tbody>
+    <tr><td>크기</td><td>아이콘에서 시작해 φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 메뉴 행, 바.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>간격</td><td>피보나치 수. 각 수가 앞의 두 수의 합이라, 이웃한 두 수는 거의 φ배 차이가 납니다.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>모서리</td><td>
+      역시 피보나치 수. 안쪽 모서리는 바깥 모서리에서 그 사이의 여백을 뺀 값이라 곡선이 나란히 이어집니다. 메뉴의 5는
+      그 행의 2에 여백 3을 더한 값입니다.
+    </td><td>1 · 2 · 3 · 5 · 8</td></tr>
+    <tr><td>글자</td><td>
+      φ의 세제곱근 단계라, 세 단계마다 φ배 커집니다. 대화 상자의 제목은 본문의 φ배입니다. 10 px 밑으로는 내려가지
+      않습니다. 그보다 작으면 부호가 두 개 붙는 글자(베트남어의 ế, ộ)를 읽기 어렵기 때문입니다.
+    </td><td>10 · 11 · 13 · 15 · 18 · 21</td></tr>
+  </tbody>
+</table>
+<p>
+  글자 단계는 설정한 본문 크기(<code>font.size</code>)를 따르고, <code>density</code>는 크기를 반 단계 내리거나
+  올립니다. 나만의 외관을 만들 때는 <code>@tradecanvas/commons</code>의 <code>PHI</code>, <code>FIBONACCI</code>,
+  <code>phiStep(base, steps, perPhi)</code>를 쓸 수 있습니다.
+</p>
+
 <h2>나만의 외관</h2>
 <p>
-  테마는 프리셋(지정하지 않으면 Studio)에서 출발해 명시한 항목만 바꿉니다. 스케일에 설정한 모서리는 그 스케일을 따르는
+  테마는 프리셋(지정하지 않으면 Print)에서 출발해 명시한 항목만 바꿉니다. 스케일에 설정한 모서리는 그 스케일을 따르는
   모든 부품에 적용되며, 부품별로 따로 설정한 값이 있으면 그 값이 쓰입니다.
 </p>
 <pre><code>{`widget.setUI({
@@ -87,10 +117,11 @@ grid.getUI()`}</code></pre>
     </td></tr>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 높이, <code>control</code>과 <code>controlSmall</code> 높이, <code>icon</code>,
-      <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px.
+      <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px. <code>compact</code>와 <code>spacious</code>는
+      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다.
     </td></tr>
     <tr><td><code>font</code></td><td>
-      글꼴 패밀리(CSS 목록), 본문 <code>size</code>(11–20 px; 작은 크기는 이를 따름), 굵기, 그리고 섹션 제목 같은 작은 라벨의
+      글꼴 패밀리(CSS 목록), 본문 <code>size</code>(11–20 px; 다른 크기는 φ의 3분의 1 단계 간격으로 이를 따름), 굵기, 그리고 섹션 제목 같은 작은 라벨의
       대소문자와 자간(em).
     </td></tr>
     <tr><td><code>borders</code></td><td>테두리 두께, 그리고 도구 모음의 그룹 사이와 그리기 도구 사이에 구분선을 넣을지 여부.</td></tr>
@@ -106,15 +137,16 @@ grid.getUI()`}</code></pre>
 
 <h2>글꼴</h2>
 <p>
-  위젯은 글꼴을 불러오지 않습니다. 이름만 지정하고, 브라우저가 목록 순서대로 대체 글꼴을 찾습니다. Studio는 Manrope
-  다음 Inter, Terminal은 IBM Plex Sans Condensed와 IBM Plex Mono, Capsule은 Sora를 지정합니다. 원하는 글꼴은 직접
-  불러오세요.
+  위젯은 글꼴을 불러오지 않습니다. 이름만 지정하고, 브라우저가 목록 순서대로 대체 글꼴을 찾습니다. Print는 어느
+  시스템에나 있는 글꼴(Segoe UI, San Francisco, Roboto)과, 숫자에는 Cascadia Mono, SF Mono, Menlo 또는 Consolas를
+  지정하므로 따로 불러올 것이 없습니다. Studio는 Manrope 다음 Inter, Terminal은 IBM Plex Sans Condensed와
+  IBM Plex Mono, Capsule은 Sora를 지정합니다. 원하는 글꼴은 직접 불러오세요.
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
 <h2>CSS 변수</h2>
 <p>
-  토큰은 위젯 루트(와 그 대화 상자)에 있는 CSS 변수입니다. <code>ui</code> 옵션이 없으면 스타일시트의 값, 즉 Studio의
+  토큰은 위젯 루트(와 그 대화 상자)에 있는 CSS 변수입니다. <code>ui</code> 옵션이 없으면 스타일시트의 값, 즉 Print의
   값이 그대로 남으므로 직접 작성한 CSS로 설정할 수 있습니다. 위젯은 자신의 스타일시트를 페이지 맨 앞에 두므로,
   <code>.tcw-root</code>에 작성한 규칙이 우선합니다. <code>ui</code>를 주면 위젯이 요소에 직접 값을 쓰고, 그 값이 우선합니다.
 </p>
@@ -130,10 +162,11 @@ grid.getUI()`}</code></pre>
     <tr><td><code>--tcw-radius-xs</code>, <code>-sm</code>, <code>--tcw-radius</code>, <code>-lg</code>, <code>-xl</code></td><td><code>radius</code></td></tr>
     <tr><td><code>--tcw-control-radius</code>, <code>--tcw-input-radius</code>, <code>--tcw-menu-radius</code>, <code>--tcw-dialog-radius</code>, <code>--tcw-panel-radius</code>, <code>--tcw-tooltip-radius</code>, <code>--tcw-tag-radius</code>, <code>--tcw-toast-radius</code>, <code>--tcw-toolbar-radius</code>, <code>--tcw-sidebar-radius</code></td><td><code>components</code></td></tr>
     <tr><td><code>--tcw-toolbar-h</code>, <code>--tcw-control-h</code>, <code>--tcw-control-h-sm</code>, <code>--tcw-icon</code>, <code>--tcw-sidebar-w</code>, <code>--tcw-menu-item-h</code></td><td><code>sizes</code></td></tr>
-    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code>(및 <code>-sm</code>, <code>-xs</code>, <code>-lg</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
+    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code>(및 <code>-xs</code>, <code>-sm</code>, <code>-lg</code>, <code>-xl</code>, <code>-display</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>스타일시트: 피보나치 간격, 2에서 34 px까지</td></tr>
   </tbody>
 </table>
 <p>
@@ -194,7 +227,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>차트 배경(패널에 자체 배경이 없으면 패널도).</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>지표 패널: 배경, 위쪽 막대, 이름.</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code>(<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — 방향별로 따로.</td></tr>
-    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 점선).</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 가는 실선).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
@@ -281,7 +314,7 @@ new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code
 
 <h2>거래량 색</h2>
 <p>
-  거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code> (또는 <code>volume.*</code> 키)을 씁니다. <code>volumeColor(candleColor)</code>는 캔들 색을 거래량의 투명도로 돌려주므로, 직접 만든 테마에서도 막대가 캔들 뒤의 배경으로 남습니다. widget의 설정에서 캔들 색을 바꾸면 widget이 알아서 이렇게 하고, 프리셋을 바탕으로 <code>candleUp</code> / <code>candleDown</code>만 바꾼 테마도 거래량이 그 색을 따릅니다.
+  거래량 막대는 테마의 <code>volumeUp</code>과 <code>volumeDown</code> (또는 <code>volume.*</code> 키)을 씁니다. 내장 테마는 중립적인 잉크 한 가지 색으로 그리고, 하락 막대는 더 옅게 그립니다. 위의 캔들이 이미 가격이 어느 쪽으로 움직였는지 보여 주므로 막대는 배경으로 남습니다. 직접 바꾸든 widget의 설정에서 바꾸든, 캔들 색이 바뀌어도 막대는 중립적인 색 그대로입니다. 캔들 색의 막대를 원하면 <code>volumeColor(candleColor)</code>가 캔들 색을 거래량의 투명도로 돌려줍니다:
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

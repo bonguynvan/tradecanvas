@@ -19,13 +19,13 @@ describe('resolveChartTheme', () => {
     const s = t.style!;
     expect(s.grid.horizontal).toEqual({ visible: true, color: DARK_THEME.grid, style: 'solid', width: 1 });
     expect(s.grid.vertical).toEqual({ visible: true, color: DARK_THEME.grid, style: 'solid', width: 1 });
-    expect(s.crosshair.horizontal).toEqual({ visible: true, color: DARK_THEME.crosshair, style: 'dashed', width: 1 });
+    expect(s.crosshair.horizontal).toEqual({ visible: true, color: DARK_THEME.crosshair, style: 'solid', width: 1 });
     expect(s.crosshair.labelBackground).toBe(DARK_THEME.text);
     expect(s.crosshair.labelText).toBe(DARK_THEME.background);
     expect(s.panes).toEqual({ background: DARK_THEME.background, separator: DARK_THEME.axisLine, title: DARK_THEME.textSecondary });
     expect(s.axis).toEqual({ price: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel }, time: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel } });
     expect(s.legend).toEqual({ text: DARK_THEME.text, label: DARK_THEME.textSecondary });
-    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dashed', width: 1 });
+    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'solid', width: 1 });
     expect(s.watermark.color).toBeNull();
     expect(s.sessionBreaks).toEqual({ color: null, style: null, width: null });
     expect(s.highLow.color).toBeNull();

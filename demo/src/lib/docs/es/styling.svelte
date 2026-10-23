@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Estilos — Documentación de TradeCanvas</title>
-  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Tres preajustes (Studio, Terminal, Capsule) y tu propio tema sobre ellos." />
+  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Cuatro preajustes (Print, Studio, Terminal, Capsule) ceñidos a la proporción áurea, y tu propio tema sobre ellos." />
 </svelte:head>
 
 <h1>Estilos del widget</h1>
@@ -22,7 +22,13 @@
 <table>
   <thead><tr><th>Preajuste</th><th>Aspecto</th></tr></thead>
   <tbody>
-    <tr><td><code>studio</code> (predeterminado)</td><td>
+    <tr><td><code>print</code> (predeterminado)</td><td>
+      Papel y tinta. Un fondo casi blanco o casi negro, gris para todo lo normal y color solo donde significa algo;
+      líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; etiquetas en mayúsculas; todas las cifras en una
+      fuente monoespaciada para que los precios se alineen en columnas. Un botón elegido es de tinta sólida; una
+      herramienta elegida, azul tinta.
+    </td></tr>
+    <tr><td><code>studio</code></td><td>
       Controles redondeados de 7 px, menús de 11 px y diálogos de 16 px. Los grupos se separan con espacio en lugar de
       líneas, los menús flotan sobre sombras suaves, los botones de temporalidad van en un carril segmentado y un botón
       elegido lleva un relleno tintado.
@@ -50,9 +56,35 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>La proporción áurea</h2>
+<p>
+  Print ajusta sus proporciones a la proporción áurea, φ ≈ 1.618, de modo que los tamaños que van juntos se relacionan
+  igual en todas partes:
+</p>
+<table>
+  <thead><tr><th>Qué</th><th>Regla</th><th>Valores (px)</th></tr></thead>
+  <tbody>
+    <tr><td>Tamaños</td><td>Medios pasos de φ desde el icono: un icono, su botón pequeño, su botón, una fila de menú, la barra.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>Espaciado</td><td>Números de Fibonacci, cada uno la suma de los dos anteriores, así que dos vecinos guardan una razón cercana a φ.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>Esquinas</td><td>
+      También números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las
+      curvas van paralelas: el 5 de un menú es el 2 de sus filas más sus 3 de relleno.
+    </td><td>1 · 2 · 3 · 5 · 8</td></tr>
+    <tr><td>Texto</td><td>
+      Pasos de la raíz cúbica de φ, así que cada tercer tamaño es φ veces mayor: el título de un diálogo es φ veces su
+      texto. Nunca baja de 10 px, donde las letras con dos marcas (en vietnamita, ế, ộ) dejan de leerse.
+    </td><td>10 · 11 · 13 · 15 · 18 · 21</td></tr>
+  </tbody>
+</table>
+<p>
+  Los pasos del texto siguen el tamaño base que fijes (<code>font.size</code>), y <code>density</code> mueve los
+  tamaños medio paso hacia abajo o hacia arriba. <code>PHI</code>, <code>FIBONACCI</code> y
+  <code>phiStep(base, steps, perPhi)</code> vienen de <code>@tradecanvas/commons</code> para un aspecto propio.
+</p>
+
 <h2>Tu propio aspecto</h2>
 <p>
-  Un tema parte de un preajuste (Studio si no indicas ninguno) y cambia solo lo que nombra. Las esquinas fijadas en la
+  Un tema parte de un preajuste (Print si no indicas ninguno) y cambia solo lo que nombra. Las esquinas fijadas en la
   escala llegan a todas las piezas que la siguen, salvo que fijes las de esa pieza en concreto.
 </p>
 <pre><code>{`widget.setUI({
@@ -90,10 +122,11 @@ grid.getUI()`}</code></pre>
     </td></tr>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Alto de <code>toolbar</code>, alto de <code>control</code> y <code>controlSmall</code>, <code>icon</code>,
-      ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px.
+      ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px. <code>compact</code> y
+      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba.
     </td></tr>
     <tr><td><code>font</code></td><td>
-      Familias (listas CSS), <code>size</code> del texto base (11–20 px; los tamaños pequeños lo siguen), pesos, y las mayúsculas y
+      Familias (listas CSS), <code>size</code> del texto base (11–20 px; los demás tamaños lo siguen, separados un tercio de paso de φ), pesos, y las mayúsculas y
       el espaciado entre letras (em) de las etiquetas pequeñas, como los títulos de sección.
     </td></tr>
     <tr><td><code>borders</code></td><td>Grosor del borde, y si unas líneas separan los grupos de la barra de herramientas y las herramientas de dibujo.</td></tr>
@@ -109,15 +142,17 @@ grid.getUI()`}</code></pre>
 
 <h2>Fuentes</h2>
 <p>
-  El widget no carga ninguna fuente: las nombra, y el navegador recorre cada lista hasta dar con una disponible. Studio
-  nombra Manrope y después Inter; Terminal, IBM Plex Sans Condensed e IBM Plex Mono; Capsule, Sora. Carga las que quieras:
+  El widget no carga ninguna fuente: las nombra, y el navegador recorre cada lista hasta dar con una disponible. Print
+  nombra las fuentes que trae cualquier sistema (Segoe UI, San Francisco, Roboto) y, para las cifras, Cascadia Mono,
+  SF Mono, Menlo o Consolas, así que no necesita cargar nada. Studio nombra Manrope y después Inter; Terminal,
+  IBM Plex Sans Condensed e IBM Plex Mono; Capsule, Sora. Carga las que quieras:
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
 <h2>Variables CSS</h2>
 <p>
   Los tokens son variables CSS en la raíz del widget (y en sus diálogos). Sin la opción <code>ui</code> siguen siendo las
-  de la hoja de estilos (las de Studio), así que tu propio CSS puede fijarlas: el widget coloca su hoja de estilos
+  de la hoja de estilos (las de Print), así que tu propio CSS puede fijarlas: el widget coloca su hoja de estilos
   al principio de la página, de modo que una regla tuya sobre <code>.tcw-root</code> prevalece. Con <code>ui</code>,
   el widget las escribe en el elemento y son ellas las que prevalecen.
 </p>
@@ -133,10 +168,11 @@ grid.getUI()`}</code></pre>
     <tr><td><code>--tcw-radius-xs</code>, <code>-sm</code>, <code>--tcw-radius</code>, <code>-lg</code>, <code>-xl</code></td><td><code>radius</code></td></tr>
     <tr><td><code>--tcw-control-radius</code>, <code>--tcw-input-radius</code>, <code>--tcw-menu-radius</code>, <code>--tcw-dialog-radius</code>, <code>--tcw-panel-radius</code>, <code>--tcw-tooltip-radius</code>, <code>--tcw-tag-radius</code>, <code>--tcw-toast-radius</code>, <code>--tcw-toolbar-radius</code>, <code>--tcw-sidebar-radius</code></td><td><code>components</code></td></tr>
     <tr><td><code>--tcw-toolbar-h</code>, <code>--tcw-control-h</code>, <code>--tcw-control-h-sm</code>, <code>--tcw-icon</code>, <code>--tcw-sidebar-w</code>, <code>--tcw-menu-item-h</code></td><td><code>sizes</code></td></tr>
-    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code> (y <code>-sm</code>, <code>-xs</code>, <code>-lg</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
+    <tr><td><code>--tcw-font</code>, <code>--tcw-font-mono</code>, <code>--tcw-font-size</code> (y <code>-xs</code>, <code>-sm</code>, <code>-lg</code>, <code>-xl</code>, <code>-display</code>), <code>--tcw-weight</code>, <code>--tcw-weight-strong</code>, <code>--tcw-label-case</code>, <code>--tcw-label-tracking</code></td><td><code>font</code></td></tr>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>La hoja de estilos: espaciado Fibonacci, de 2 a 34 px</td></tr>
   </tbody>
 </table>
 <p>
@@ -198,7 +234,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>El fondo del gráfico (y el de los paneles, salvo que tengan el suyo).</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>Paneles de indicadores: fondo, la barra de arriba, su nombre.</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code> (<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code>, cada dirección aparte.</td></tr>
-    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Las mismas cuatro para las líneas del crosshair (discontinuas por defecto).</td></tr>
+    <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Las mismas cuatro para las líneas del crosshair (líneas finas continuas por defecto).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Las etiquetas de precio y hora en los ejes, y en las escalas de los paneles.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>La línea y las etiquetas de cada eje (las escalas de los paneles siguen al eje de precios).</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Los valores de la leyenda, y sus etiquetas (O, H, L, Vol).</td></tr>
@@ -286,7 +322,7 @@ new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code
 
 <h2>Colores del volumen</h2>
 <p>
-  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> (o las claves <code>volume.*</code>) del tema. <code>volumeColor(candleColor)</code> devuelve el color de la vela con la opacidad del volumen, así en un tema propio las barras siguen siendo un fondo bajo las velas. El widget lo hace solo cuando sus ajustes cambian los colores de las velas, y un tema basado en un preajuste que solo cambia <code>candleUp</code> / <code>candleDown</code> también tiene el volumen en esos colores.
+  Las barras de volumen toman <code>volumeUp</code> y <code>volumeDown</code> (o las claves <code>volume.*</code>) del tema. Los temas incluidos las dibujan en una sola tinta neutra, más clara en las barras bajistas: las velas de encima ya muestran hacia dónde fue el precio, así que las barras siguen siendo un fondo. Siguen neutras cuando cambian los colores de las velas, sea desde tu código o desde los ajustes del widget. Para barras en los colores de las velas, <code>volumeColor(candleColor)</code> devuelve un color de vela con la opacidad del volumen:
 </p>
 <pre><code>{`import { DARK_THEME, volumeColor } from '@tradecanvas/chart'
 

@@ -464,7 +464,7 @@ new ChartWidget(host, {
   },
   {
     id: 'looks',
-    code: `new ChartWidget(host, { ui: 'terminal' })   // 'studio' (default) · 'terminal' · 'capsule'
+    code: `new ChartWidget(host, { ui: 'terminal' })   // 'print' (default) · 'studio' · 'terminal' · 'capsule'
 
 widget.setUI({
   preset: 'studio',

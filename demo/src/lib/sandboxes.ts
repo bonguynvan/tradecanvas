@@ -141,7 +141,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   timeframe: '5m',
   adapter: new BinanceAdapter(),
   theme: 'dark',
-  ui: 'studio', // the look: 'studio' · 'terminal' · 'capsule', or a theme of yours
+  ui: 'print', // the look: 'print' · 'studio' · 'terminal' · 'capsule', or a theme of yours
   locale: 'en', // 'vi', 'ja', 'ar' (right to left)… with messages from '@tradecanvas/chart/widget/locales'
   watchlist: {
     lists: [

@@ -3,8 +3,21 @@
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme.
  */
+import { phiStep } from '@tradecanvas/commons';
 
-export type WidgetUIPreset = 'studio' | 'terminal' | 'capsule';
+export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule';
+
+const DEFAULT_PRESET: WidgetUIPreset = 'print';
+
+/** Type climbs by the cube root of φ: every third size is φ larger (11, 13, 15, 18, 21). */
+const TYPE_STEPS_PER_PHI = 3;
+/** Below this, letters with two marks stacked (Vietnamese ế, ộ) stop reading. */
+const MIN_TYPE_SIZE = 10;
+
+/** The type size `steps` from `body` on the look's scale, never below 10px. */
+export function typeSize(body: number, steps: number): number {
+  return Math.max(MIN_TYPE_SIZE, phiStep(body, steps, TYPE_STEPS_PER_PHI));
+}
 
 /** Corners, in px (999 makes a pill). */
 export interface WidgetUIRadius {
@@ -91,7 +104,7 @@ export interface ResolvedWidgetUI {
   tagRadius: number;
 }
 
-/** Your look: a preset to start from (Studio by default) and what to change. */
+/** Your look: a preset to start from (Print by default) and what to change. */
 export interface WidgetUITheme {
   preset?: WidgetUIPreset;
   radius?: Partial<WidgetUIRadius>;
@@ -112,10 +125,49 @@ export interface WidgetUITheme {
 
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace";
+/** The faces every system has: the chart's figures and the widget's labels without a font to load. */
+const PRINT_SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+const PRINT_MONO = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
 
-type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset'> & { components: Partial<WidgetUIComponentRadius> };
+type Density = 'compact' | 'spacious';
+type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset'> & {
+  components: Partial<WidgetUIComponentRadius>;
+  /** Its sizes when compact or spacious; the shared table when it has none. */
+  density?: Record<Density, WidgetUISizes>;
+};
 
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
+  /*
+   * Print, the default: paper and ink, hairlines, figures that line up. It
+   * keeps to the golden ratio. Sizes climb in half steps of φ from the icon
+   * (16, 20, 26, 33, 42), corners are Fibonacci numbers, and a nested corner
+   * is the one around it less the padding between (a menu's 5 = its rows'
+   * 2 + its 3 of padding).
+   */
+  print: {
+    radius: { xs: 1, sm: 2, md: 3, lg: 5, xl: 8 },
+    components: { tag: 2, toolbar: 0, sidebar: 0 },
+    sizes: { toolbar: 42, control: 26, controlSmall: 20, icon: 16, sidebar: 42, menuItem: 33 },
+    // A half step of φ down or up; compact keeps its icons and small buttons whole.
+    density: {
+      compact: { toolbar: 33, control: 20, controlSmall: 20, icon: 16, sidebar: 33, menuItem: 26 },
+      spacious: { toolbar: 53, control: 33, controlSmall: 26, icon: 20, sidebar: 53, menuItem: 42 },
+    },
+    font: { family: PRINT_SANS, mono: PRINT_MONO, size: 13, weight: 400, strongWeight: 600, labelCase: 'uppercase', labelTracking: 0.06 },
+    borders: { width: 1, separators: true },
+    // A hairline round each surface, and a soft shadow to lift it off the chart.
+    shadows: {
+      menu: '0 0 0 1px var(--tcw-border), var(--tcw-shadow-md)',
+      dialog: '0 0 0 1px var(--tcw-border), var(--tcw-shadow-lg)',
+      tooltip: 'var(--tcw-shadow-sm)',
+    },
+    blur: 0,
+    active: 'solid',
+    toolbar: 'docked',
+    sidebar: 'docked',
+    intervals: 'plain',
+    tagRadius: 2,
+  },
   studio: {
     radius: { xs: 3, sm: 5, md: 7, lg: 11, xl: 16 },
     components: { toolbar: 0, sidebar: 0 },
@@ -173,7 +225,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   },
 };
 
-const DENSITY: Record<'compact' | 'spacious', WidgetUISizes> = {
+/** Compact and spacious sizes for the looks without their own. */
+const DENSITY: Record<Density, WidgetUISizes> = {
   compact: { toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 40, menuItem: 26 },
   spacious: { toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 54, menuItem: 34 },
 };
@@ -201,7 +254,7 @@ export const WIDGET_UI_PRESETS: Readonly<Record<WidgetUIPreset, Readonly<Resolve
 );
 
 function resolvePreset(name: WidgetUIPreset): ResolvedWidgetUI {
-  const base = PRESETS[name];
+  const { density: _density, ...base } = PRESETS[name];
   return {
     ...base,
     preset: name,
@@ -219,7 +272,7 @@ function deepFreeze<T extends object>(value: T): T {
   return Object.freeze(value);
 }
 
-const isPreset = (v: unknown): v is WidgetUIPreset => v === 'studio' || v === 'terminal' || v === 'capsule';
+const isPreset = (v: unknown): v is WidgetUIPreset => typeof v === 'string' && Object.prototype.hasOwnProperty.call(PRESETS, v);
 const px = (v: unknown, lo: number, hi: number): v is number => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
 /**
  * CSS text that stays a value: no way out of the declaration, no URLs, and
@@ -255,15 +308,15 @@ function pick<T extends object>(base: T, over: Partial<Record<keyof T, unknown>>
 
 /**
  * Every token of a look: a preset by name, or your theme over its preset
- * (Studio when none). What isn't a usable value is left at the preset's.
+ * (Print when none). What isn't a usable value is left at the preset's.
  */
 export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): ResolvedWidgetUI {
   const t: WidgetUITheme = typeof theme === 'string' ? { preset: theme } : theme ?? {};
-  const name: WidgetUIPreset = isPreset(t.preset) ? t.preset : 'studio';
+  const name: WidgetUIPreset = isPreset(t.preset) ? t.preset : DEFAULT_PRESET;
   const base = PRESETS[name];
 
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
-  const density = t.density === 'compact' || t.density === 'spacious' ? DENSITY[t.density] : base.sizes;
+  const density = t.density === 'compact' || t.density === 'spacious' ? (base.density ?? DENSITY)[t.density] : base.sizes;
   const sizes = pick(density, t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
   const font = pick(base.font, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
@@ -323,9 +376,11 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-font': f.family,
     '--tcw-font-mono': f.mono,
     '--tcw-font-size': p(f.size),
-    '--tcw-font-size-sm': p(f.size - 1),
-    '--tcw-font-size-xs': p(f.size - 2),
-    '--tcw-font-size-lg': p(f.size + 2),
+    '--tcw-font-size-sm': p(typeSize(f.size, -1)),
+    '--tcw-font-size-xs': p(typeSize(f.size, -2)),
+    '--tcw-font-size-lg': p(typeSize(f.size, 1)),
+    '--tcw-font-size-xl': p(typeSize(f.size, 2)),
+    '--tcw-font-size-display': p(typeSize(f.size, 3)),
     '--tcw-weight': String(f.weight),
     '--tcw-weight-strong': String(f.strongWeight),
     '--tcw-label-case': f.labelCase,
@@ -345,7 +400,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
  * Put the look on an element of the widget (its root, its modal portal):
  * its tokens inline and its layout switches as data attributes. With
  * `variables: false` only the switches; the tokens are left to the
- * stylesheet (whose defaults are Studio's), and any set inline before are
+ * stylesheet (whose defaults are Print's), and any set inline before are
  * cleared.
  */
 export function applyWidgetUI(el: HTMLElement, ui: ResolvedWidgetUI, options: { variables?: boolean } = {}): void {
