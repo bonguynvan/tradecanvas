@@ -77,8 +77,8 @@ describe('WidgetToolbar — narrow', () => {
     expect(root.querySelector('.tcw-tf-current')?.textContent).toBe('1D');
   });
 
-  it('keeps the chart type and indicators labels apart from their icons (a narrow toolbar shows the icons)', () => {
-    expect(root.querySelector('[data-role="charttype"] .tcw-trigger-label')?.textContent).toBe('Candlestick');
+  it('keeps the indicators label apart from its icon (a narrow toolbar shows the icon), and names the chart type in its tooltip', () => {
+    expect(root.querySelector<HTMLElement>('[data-role="charttype"]')?.title).toBe('Candlestick');
     expect(root.querySelector('[data-role="indicators"] .tcw-trigger-label')?.textContent).toBe('Indicators');
   });
 });

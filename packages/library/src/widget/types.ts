@@ -487,6 +487,13 @@ export interface ToolbarCallbacks {
   onDeleteIndicatorTemplate?: (name: string) => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
+  /** A new order from the order ticket: in the Trade menu. */
+  onOrderTicket?: () => void;
+  /** Compare another symbol: the Compare button, beside Indicators. */
+  onCompare?: () => void;
+  /** Undo and redo on the toolbar: shown when both are given. */
+  onUndo?: () => void;
+  onRedo?: () => void;
   /** Shown only when given (and the browser allows fullscreen). */
   onToggleFullscreen?: () => void;
 }
@@ -505,8 +512,6 @@ export interface SidebarCallbacks {
   onToggleEraser?: () => void;
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
-  onUndo: () => void;
-  onRedo: () => void;
   onClearDrawings: () => void;
   onToggleStyle?: () => void;
   onToggleStayInDrawing?: () => void;

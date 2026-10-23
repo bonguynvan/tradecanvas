@@ -515,6 +515,10 @@ export class ChartWidget {
         },
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
+        onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
+        onCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
+        onUndo: () => this.chart.undo(),
+        onRedo: () => this.chart.redo(),
         onToggleFullscreen: typeof document !== 'undefined' && document.fullscreenEnabled
           ? () => this.toggleFullscreen()
           : undefined,
@@ -538,8 +542,6 @@ export class ChartWidget {
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
-        onUndo: () => this.chart.undo(),
-        onRedo: () => this.chart.redo(),
         onClearDrawings: () => {
           this.chart.clearDrawings();
           this.state = { ...this.state, activeTool: null };
@@ -886,6 +888,11 @@ export class ChartWidget {
         this.updateSelectionToolbar();
       },
     }, this.t);
+    // Undo and redo on the toolbar, each off while there is nothing for it.
+    this.chart.on('historyChange', (e) => {
+      const { canUndo, canRedo } = e.payload as { canUndo: boolean; canRedo: boolean };
+      this.toolbar?.setHistory(canUndo, canRedo);
+    });
     // Selecting, or picking a tool, the eraser or the zoom area: at once.
     for (const event of ['drawingSelect', 'drawingToolChange', 'toolModeChange'] as const) {
       this.chart.on(event, () => this.updateSelectionToolbar());
@@ -992,6 +999,7 @@ export class ChartWidget {
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },
           formatPrice: (p) => this.formatAlertPrice(p),
+          onToggle: (open) => this.toolbar?.setActive('ladder', open),
         }, undefined, this.t);
       }
       // Esc-cancel originates in the chart; reflect it in the bar.

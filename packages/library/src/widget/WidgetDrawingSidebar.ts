@@ -302,24 +302,7 @@ export class WidgetDrawingSidebar {
     this.hostEl.className = 'tcw-sidebar-host';
     el.appendChild(this.hostEl);
 
-    // History, then the one that clears everything, each apart.
-    this.appendDivider();
-    const undoBtn = document.createElement('button');
-    undoBtn.className = 'tcw-sidebar-btn';
-    undoBtn.title = this.t('drawing.undo');
-    undoBtn.innerHTML = createIcon('undo', 14);
-    undoBtn.addEventListener('click', callbacks.onUndo);
-    markPart(undoBtn, 'sidebar.undo');
-    el.appendChild(undoBtn);
-
-    const redoBtn = document.createElement('button');
-    redoBtn.className = 'tcw-sidebar-btn';
-    redoBtn.title = this.t('drawing.redo');
-    redoBtn.innerHTML = createIcon('redo', 14);
-    redoBtn.addEventListener('click', callbacks.onRedo);
-    markPart(redoBtn, 'sidebar.redo');
-    el.appendChild(redoBtn);
-
+    // The one that clears everything, apart. (Undo and redo are on the toolbar.)
     this.appendDivider();
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';

@@ -6,9 +6,24 @@ import { WidgetDropdown } from './WidgetDropdown.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { fill, type Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
-import { markPart, partAttr, tidyDividers } from './widgetFeatures.js';
+import { markPart, partAttr, tidyDividers, type WidgetFeature } from './widgetFeatures.js';
+import { timeframeSections } from './widgetTimeframes.js';
 
 let toolbarCount = 0;
+
+/** The heading of each unit's section in the interval menu. */
+const UNIT_HEADINGS = {
+  T: 'toolbar.timeframes.ticks',
+  s: 'toolbar.timeframes.seconds',
+  m: 'toolbar.timeframes.minutes',
+  h: 'toolbar.timeframes.hours',
+  d: 'toolbar.timeframes.days',
+  w: 'toolbar.timeframes.weeks',
+  M: 'toolbar.timeframes.months',
+} as const;
+
+/** What the Trade menu offers: each with the switches that take it away. */
+type TradeItem = { id: 'ticket' | 'long' | 'short' | 'ladder' | 'account'; label: string; parts: WidgetFeature[]; run: () => void };
 
 /** A host button's name: its label, with the text it shows when that says more ("News: 3"). */
 export function setHostButtonName(btn: HTMLButtonElement, label: string): void {
@@ -43,6 +58,12 @@ export class WidgetToolbar {
   private resizeObserver: ResizeObserver | null = null;
   private moreBtn: HTMLButtonElement | null = null;
   private fitFrame = 0;
+  private undoBtn: HTMLButtonElement | null = null;
+  private redoBtn: HTMLButtonElement | null = null;
+  private tradeBtn: HTMLButtonElement | null = null;
+  private tradeMenu: WidgetContextMenu | null = null;
+  /** The trading panels open now (the depth ladder, the account): ticked in the Trade menu. */
+  private tradeOpen = new Set<string>();
 
   /**
    * `layer`: where the toolbar's menus open, over the page (the widget's
@@ -200,8 +221,34 @@ export class WidgetToolbar {
     this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px', layer: this.layer });
     this.buildIndicatorMenu();
 
+    if (callbacks.onCompare) {
+      const compareBtn = document.createElement('button');
+      compareBtn.type = 'button';
+      compareBtn.className = 'tcw-dropdown-trigger';
+      compareBtn.dataset.role = 'compare';
+      markPart(compareBtn, 'compare', 'toolbar.compare');
+      const label = this.t('objects.compare');
+      compareBtn.setAttribute('aria-label', label);
+      compareBtn.innerHTML = `${createIcon('plus', 14)} <span class="tcw-trigger-label">${esc(label)}</span>`;
+      compareBtn.addEventListener('click', callbacks.onCompare);
+      el.appendChild(compareBtn);
+    }
+
     this.hostLeft = this.hostGroup();
     el.appendChild(this.hostLeft);
+
+    // History: what the chart can undo and redo (drawings, indicators, settings).
+    if (callbacks.onUndo && callbacks.onRedo) {
+      el.appendChild(this.sep());
+      this.undoBtn = this.iconBtn('undo', this.t('drawing.undo'), callbacks.onUndo);
+      this.undoBtn.dataset.role = 'undo';
+      markPart(this.undoBtn, 'toolbar.undo', 'sidebar.undo');
+      this.redoBtn = this.iconBtn('redo', this.t('drawing.redo'), callbacks.onRedo);
+      this.redoBtn.dataset.role = 'redo';
+      markPart(this.redoBtn, 'toolbar.redo', 'sidebar.redo');
+      el.append(this.undoBtn, this.redoBtn);
+      this.setHistory(false, false);
+    }
 
     // Spacer
     el.appendChild(this.spacer());
@@ -223,41 +270,13 @@ export class WidgetToolbar {
 
     this.hostRight = this.hostGroup();
     el.appendChild(this.hostRight);
+    el.appendChild(this.sep());
 
     if (callbacks.onToggleReplay) {
       const replayBtn = this.iconBtn('play', this.t('toolbar.replay'), callbacks.onToggleReplay);
       replayBtn.dataset.role = 'replay';
       markPart(replayBtn, 'replay', 'toolbar.replay');
       el.appendChild(replayBtn);
-    }
-
-    if (callbacks.onBracket) {
-      const onBracket = callbacks.onBracket;
-      const longBtn = this.iconBtn('trendingUp', this.t('toolbar.longBracket'), () => onBracket('buy'));
-      longBtn.dataset.role = 'long';
-      longBtn.classList.add('tcw-btn-long');
-      markPart(longBtn, 'bracketOrders', 'toolbar.bracketOrders');
-      el.appendChild(longBtn);
-      const shortBtn = this.iconBtn('trendingDown', this.t('toolbar.shortBracket'), () => onBracket('sell'));
-      shortBtn.dataset.role = 'short';
-      shortBtn.classList.add('tcw-btn-short');
-      markPart(shortBtn, 'bracketOrders', 'toolbar.bracketOrders');
-      el.appendChild(shortBtn);
-    }
-
-    if (callbacks.onToggleLadder) {
-      const ladderBtn = this.iconBtn('ladder', this.t('toolbar.depthLadder'), callbacks.onToggleLadder);
-      ladderBtn.dataset.role = 'ladder';
-      markPart(ladderBtn, 'depthLadder', 'toolbar.depthLadder');
-      el.appendChild(ladderBtn);
-    }
-
-    if (callbacks.onToggleAccount) {
-      const accountBtn = this.iconBtn('receipt', this.t('toolbar.account'), callbacks.onToggleAccount);
-      accountBtn.dataset.role = 'account';
-      accountBtn.setAttribute('aria-pressed', 'false');
-      markPart(accountBtn, 'accountPanel', 'toolbar.accountPanel');
-      el.appendChild(accountBtn);
     }
 
     if (callbacks.onToggleObjects) {
@@ -273,6 +292,24 @@ export class WidgetToolbar {
       markPart(alertsBtn, 'alerts', 'toolbar.alerts');
       el.appendChild(alertsBtn);
     }
+
+    // The trading tools in one menu: a new order, brackets, the ladder and the account.
+    if (this.tradeItems().length > 0) {
+      const tradeBtn = document.createElement('button');
+      tradeBtn.type = 'button';
+      tradeBtn.className = 'tcw-dropdown-trigger tcw-toolbar-overflow';
+      tradeBtn.dataset.role = 'trade';
+      tradeBtn.dataset.icon = 'trendingUp';
+      tradeBtn.title = this.t('toolbar.trade');
+      tradeBtn.setAttribute('aria-haspopup', 'menu');
+      tradeBtn.setAttribute('aria-expanded', 'false');
+      markPart(tradeBtn, 'toolbar.trade');
+      tradeBtn.innerHTML = `${createIcon('trendingUp', 14)} <span class="tcw-trigger-label">${esc(this.t('toolbar.trade'))}</span> ${createIcon('chevronDown', 12)}`;
+      tradeBtn.addEventListener('click', () => this.toggleTrade(this.anchorOf(tradeBtn)));
+      el.appendChild(tradeBtn);
+      this.tradeBtn = tradeBtn;
+    }
+    el.appendChild(this.sep());
 
     const screenshotBtn = this.iconBtn('camera', this.t('toolbar.screenshot'), callbacks.onScreenshot);
     markPart(screenshotBtn, 'screenshot', 'toolbar.screenshot');
@@ -387,12 +424,65 @@ export class WidgetToolbar {
 
   /** No separator left at an edge or next to another once buttons are switched off. */
   tidy(): void {
+    if (this.tradeBtn) this.tradeBtn.hidden = this.tradeItems().every((item) => this.isOff(item.parts));
     tidyDividers(this.el, 'tcw-toolbar-sep', 'tcw-toolbar-spacer');
     this.scheduleFit();
   }
 
+  /** What undo and redo can do now: each button is off while there is nothing for it. */
+  setHistory(canUndo: boolean, canRedo: boolean): void {
+    if (this.undoBtn) this.undoBtn.disabled = !canUndo;
+    if (this.redoBtn) this.redoBtn.disabled = !canRedo;
+  }
+
+  /** Whether any of `parts` is switched off on this toolbar's widget. */
+  private isOff(parts: readonly WidgetFeature[]): boolean {
+    const root = this.el.closest<HTMLElement>('.tcw-root') ?? this.host;
+    const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
+    return parts.some((name) => off.has(name));
+  }
+
+  private tradeItems(): TradeItem[] {
+    const { callbacks } = this;
+    const items: TradeItem[] = [];
+    if (callbacks.onOrderTicket) items.push({ id: 'ticket', label: this.t('chartMenu.orderTicket'), parts: ['orderTicket'], run: callbacks.onOrderTicket });
+    const onBracket = callbacks.onBracket;
+    if (onBracket) {
+      items.push({ id: 'long', label: this.t('toolbar.longBracket'), parts: ['bracketOrders', 'toolbar.bracketOrders'], run: () => onBracket('buy') });
+      items.push({ id: 'short', label: this.t('toolbar.shortBracket'), parts: ['bracketOrders', 'toolbar.bracketOrders'], run: () => onBracket('sell') });
+    }
+    if (callbacks.onToggleLadder) items.push({ id: 'ladder', label: this.t('toolbar.depthLadder'), parts: ['depthLadder', 'toolbar.depthLadder'], run: callbacks.onToggleLadder });
+    if (callbacks.onToggleAccount) items.push({ id: 'account', label: this.t('toolbar.account'), parts: ['accountPanel', 'toolbar.accountPanel'], run: callbacks.onToggleAccount });
+    return items;
+  }
+
+  /** The Trade menu under `anchor`: the tools not switched off, the open panels ticked. */
+  private toggleTrade(anchor: HTMLElement): void {
+    if (this.tradeMenu?.isOpen()) {
+      this.tradeMenu.close();
+      return;
+    }
+    const items = this.tradeItems().filter((item) => !this.isOff(item.parts));
+    if (items.length === 0) return;
+    const icons: Record<TradeItem['id'], string> = { ticket: 'receipt', long: 'trendingUp', short: 'trendingDown', ladder: 'ladder', account: 'layers' };
+    const entries: ContextMenuEntry[] = items.map((item) => (item.id === 'ladder' || item.id === 'account'
+      ? { id: item.id, label: item.label, checked: this.tradeOpen.has(item.id) }
+      : { id: item.id, label: item.label, icon: icons[item.id] }));
+    const root = this.el.closest<HTMLElement>('.tcw-root') ?? this.host;
+    this.tradeMenu ??= new WidgetContextMenu(root, this.t('toolbar.trade'));
+    const at = anchor.getBoundingClientRect();
+    const box = root.getBoundingClientRect();
+    this.tradeMenu.open(entries, at.left - box.left, at.bottom - box.top + 2, (id) => {
+      items.find((item) => item.id === id)?.run();
+    }, anchor);
+  }
+
   /** Show a panel button (by its role: 'account', 'objects'…) as on or off. */
   setActive(role: string, on: boolean): void {
+    if (role === 'ladder' || role === 'account') {
+      if (on) this.tradeOpen.add(role);
+      else this.tradeOpen.delete(role);
+    }
     const btn = this.el.querySelector<HTMLButtonElement>(`[data-role="${role}"]`);
     if (!btn) return;
     btn.classList.toggle('tcw-active', on);
@@ -468,18 +558,24 @@ export class WidgetToolbar {
     if (!this.tfDropdown) return;
     const pin = esc(this.t('toolbar.timeframes.pin'));
     const remove = esc(this.t('toolbar.timeframes.remove'));
-    let html = `<div class="tcw-dropdown-label">${esc(this.t('toolbar.timeframes'))}</div>`;
-    for (const tf of this.config.timeframes) {
-      const pinned = this.tfFavorites.includes(tf.value);
-      const [value, label] = [esc(tf.value), esc(tf.label)];
-      html += `<div class="tcw-tf-row">`
-        + `<button class="tcw-dropdown-item" data-tf-pick="${value}">${label}</button>`
-        + (tf.custom && this.callbacks.onRemoveTimeframe
-          ? `<button class="tcw-tf-remove" data-tf-remove="${value}" title="${remove}" aria-label="${remove}: ${label}">${createIcon('x', 12)}</button>`
-          : '')
-        + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${value}" aria-pressed="${pinned}"`
-        + ` title="${pin}" aria-label="${pin}: ${label}">${createIcon('star', 12)}</button>`
-        + `</div>`;
+    // A section for each unit, ticks to months, under its heading.
+    let html = '';
+    for (const { unit, timeframes } of timeframeSections(this.config.timeframes)) {
+      html += `<div class="tcw-tf-section" data-tf-section="${unit}" role="group" aria-label="${esc(this.t(UNIT_HEADINGS[unit]))}">`
+        + `<div class="tcw-dropdown-label">${esc(this.t(UNIT_HEADINGS[unit]))}</div>`;
+      for (const tf of timeframes) {
+        const pinned = this.tfFavorites.includes(tf.value);
+        const [value, label] = [esc(tf.value), esc(tf.label)];
+        html += `<div class="tcw-tf-row">`
+          + `<button class="tcw-dropdown-item" data-tf-pick="${value}">${label}</button>`
+          + (tf.custom && this.callbacks.onRemoveTimeframe
+            ? `<button class="tcw-tf-remove" data-tf-remove="${value}" title="${remove}" aria-label="${remove}: ${label}">${createIcon('x', 12)}</button>`
+            : '')
+          + `<button class="tcw-tf-star${pinned ? ' tcw-active' : ''}" data-tf-star="${value}" aria-pressed="${pinned}"`
+          + ` title="${pin}" aria-label="${pin}: ${label}">${createIcon('star', 12)}</button>`
+          + `</div>`;
+      }
+      html += '</div>';
     }
     if (this.callbacks.onAddTimeframe) {
       const custom = esc(this.t('toolbar.timeframes.custom'));
@@ -646,7 +742,9 @@ export class WidgetToolbar {
     if (ctTrigger) {
       const ct = this.config.chartTypes.find(ct => ct.value === state.chartType);
       const label = ct ? this.chartTypeLabel(ct) : state.chartType;
-      ctTrigger.innerHTML = `${createChartTypeIcon(state.chartType, 14)} <span class="tcw-trigger-label">${esc(label)}</span> ${createIcon('chevronDown', 12)}`;
+      // The icon alone: it says which type at a glance, its name in the tooltip.
+      ctTrigger.innerHTML = createChartTypeIcon(state.chartType, 16);
+      ctTrigger.title = label;
       ctTrigger.setAttribute('aria-label', label);
     }
 
@@ -702,6 +800,7 @@ export class WidgetToolbar {
     this.indicatorDropdown?.destroy();
     this.tfDropdown?.destroy();
     this.moreMenu?.destroy();
+    this.tradeMenu?.destroy();
     this.el.remove();
   }
 }

@@ -9,6 +9,8 @@ export interface DepthLadderCallbacks {
   /** Buy at `price` (clicked an ask cell) or sell at `price` (clicked a bid cell). */
   onTrade: (side: 'buy' | 'sell', price: number) => void;
   formatPrice: (price: number) => string;
+  /** The ladder opened or closed (its own × included). */
+  onToggle?: (open: boolean) => void;
 }
 
 /**
@@ -71,11 +73,13 @@ export class WidgetDepthLadder {
   openPanel(): void {
     this.open = true;
     this.el.hidden = false;
+    this.callbacks.onToggle?.(true);
   }
 
   close(): void {
     this.open = false;
     this.el.hidden = true;
+    this.callbacks.onToggle?.(false);
   }
 
   setData(depth: DepthData | null): void {

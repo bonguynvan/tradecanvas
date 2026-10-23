@@ -21,7 +21,7 @@ export const WIDGET_FEATURES = [
   'toolbar.symbol', 'toolbar.symbolInfo', 'toolbar.timeframes', 'toolbar.timeframeMenu', 'toolbar.chartType',
   'toolbar.indicators', 'toolbar.layouts', 'toolbar.replay', 'toolbar.bracketOrders', 'toolbar.depthLadder',
   'toolbar.accountPanel', 'toolbar.objectTree', 'toolbar.alerts', 'toolbar.screenshot', 'toolbar.settings',
-  'toolbar.themeToggle', 'toolbar.fullscreen',
+  'toolbar.themeToggle', 'toolbar.fullscreen', 'toolbar.compare', 'toolbar.undo', 'toolbar.redo', 'toolbar.trade',
   // The drawing sidebar: its tools by section, then its buttons.
   'sidebar.cursor', 'sidebar.favorites', 'sidebar.lines', 'sidebar.fibonacci', 'sidebar.patterns',
   'sidebar.forecasting', 'sidebar.annotation', 'sidebar.style', 'sidebar.magnet', 'sidebar.eraser',
