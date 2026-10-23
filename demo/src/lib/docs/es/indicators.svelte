@@ -63,6 +63,49 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
   eje y la cruz de un panel comparten una misma escala.
 </p>
 
+<h2>Solo en algunas temporalidades</h2>
+<p>
+  Un indicador puede limitarse a algunas temporalidades: una media de 200 días en el gráfico
+  diario y superiores, un oscilador rápido solo en los gráficos de minutos. Cada tipo de
+  temporalidad (ticks, segundos, minutos, horas, días, semanas, meses) se deja activado, se
+  desactiva o se limita a un rango de valores; un tipo que no se indica lo muestra en todas. El
+  gráfico aplica las reglas a la temporalidad del flujo al que está conectado, a medida que esta
+  cambia; para las barras dadas con <code>setData</code>,
+  <code>chart.setDataTimeframe('1h')</code> le indica su temporalidad (ChartWidget lo hace por sí mismo); sin
+  ninguno de los dos, muestra el indicador. Las reglas se guardan con el diseño y se deshacen como
+  cualquier otro cambio.
+</p>
+<pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
+chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
+chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
+<p>
+  <code>getActiveIndicators()</code> indica de cada uno si está <code>visible</code> (activado) y si
+  está <code>shown</code> (dibujado en esta temporalidad). En ChartWidget, su fila de la leyenda se
+  vuelve gris mientras no lo está.
+</p>
+
+<h2>En ChartWidget</h2>
+<p>
+  <strong>Indicadores</strong>, en la barra de herramientas, abre un diálogo. Escribe para buscar
+  cualquier indicador por su nombre o su nombre corto (<kbd>Enter</kbd> añade la mejor
+  coincidencia), o elige un grupo en el lateral: <strong>Favoritos</strong>,
+  <strong>Plantillas</strong>, <strong>Todos</strong> y luego cada tipo (medias móviles,
+  tendencia, osciladores, volatilidad, volumen, bandas y canales, precio y patrones). Una fila
+  añade su indicador y el diálogo sigue abierto para el siguiente; un contador muestra cuántos hay
+  en el gráfico, y la estrella de al lado lo guarda en favoritos. En un móvil, los grupos son una
+  fila de chips sobre la lista.
+</p>
+<p>
+  La configuración de un indicador (el nombre en su fila de la leyenda, o su engranaje) tiene tres
+  pestañas: <strong>Parámetros</strong>; <strong>Estilo</strong>, una fila por línea (visible o no,
+  sus colores, su trazo), el grosor de línea, la escala de precio de un indicador superpuesto y los
+  niveles; y <strong>Visibilidad</strong>, las temporalidades en las que se muestra. Cada cambio se
+  ve al momento. <strong>Cancelar</strong> o <kbd>Esc</kbd> lo deja todo como estaba,
+  <strong>Aceptar</strong> lo conserva. <strong>Predeterminados</strong> lo restablece, o lo guarda
+  como predeterminado: los nuevos indicadores de su tipo empiezan entonces con estos parámetros y
+  este aspecto, en este navegador.
+</p>
+
 <h2>En el panel de precio ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Nombre</th><th>Parámetros predeterminados</th><th>Líneas</th></tr></thead>
@@ -137,7 +180,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   la escala de su panel, sus niveles y sus parámetros; el gráfico lo dibuja,
   escala su panel, etiqueta sus valores y lo muestra en la leyenda y la
   configuración del widget sin que tengas que escribir código de renderizado.
-  Consulta la
+  Su <code>category</code> (<code>'oscillators'</code>, <code>'volume'</code>…) lo coloca en ese
+  grupo del diálogo Indicadores; sin ella, aparece en Otros. Consulta la
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">receta de indicador personalizado</a>.
 </p>
 
@@ -186,7 +230,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 <p>
   Los indicadores se pueden tomar y volver a poner en bloque, que es lo que hacen las
   plantillas de indicadores de ChartWidget: <strong>Guardar indicadores como plantilla…</strong>
-  en el menú Indicadores los guarda (parámetros, estilo, niveles, paneles) con un nombre, y
+  en la pestaña Plantillas del diálogo Indicadores los guarda (parámetros, estilo, niveles, paneles) con un nombre, y
   elegir una plantilla los pone en lugar de los del gráfico, como un solo paso de deshacer.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

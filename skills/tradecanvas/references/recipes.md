@@ -362,6 +362,7 @@ class RangePosition extends IndicatorBase {
     name: 'Range Position',
     shortName: 'RP',
     placement: 'panel',
+    category: 'oscillators', // its group in ChartWidget's Indicators dialog
     defaultConfig: { period: 20 },
     inputs: { period: { min: 2, max: 500 } },
     plots: [{ key: 'value', title: 'RP', color: 0 }],

@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày, độ mờ, và kiểu nét, ẩn/hiện của từng đường (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style mà các chỉ báo cùng loại bắt đầu với, từ nay.</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Các khung thời gian mà chỉ báo hiện trên đó (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: mọi khung. Lưu cùng bố cục.</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>Khung thời gian của nến nạp bằng <code>setData</code>: dòng tiêu đề chú thích ghi nó, và các chỉ báo chỉ hiện trên một số khung đi theo nó.</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>Giao diện riêng của một pane, lưu cùng chỉ báo của nó.</td></tr>
   </tbody>
 </table>
@@ -428,7 +430,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>Thanh công cụ</td><td>
       Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiện thành nút, cùng một menu có đủ mọi khung
-      theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo
+      theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo (một hộp thoại: xem <a href={href('/docs/indicators')}>Chỉ báo</a>)
       và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, phát lại nến, cảnh báo, cây đối tượng, một menu Giao dịch
       (lệnh mới, bracket Long và Short, sổ lệnh và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
       hình. Phần nào không vừa thì gập vào “Thêm”.

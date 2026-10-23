@@ -68,6 +68,8 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>删除并销毁。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>从现在起同类指标的初始样式。</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>它显示在哪些周期上（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）；<code>null</code> 表示全部周期。随布局一起保存。</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>用 <code>setData</code> 设置的K线的周期：图例标题行显示它，只在部分周期显示的指标随之变化。</td></tr>
     <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>面板自己的外观，随其指标一起保存。</td></tr>
   </tbody>
 </table>
@@ -403,7 +405,7 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>工具栏</td><td>
       品种及其信息；周期（固定的周期显示为按钮，另有一个按单位列出全部周期的菜单，从分钟到月，每项带一个星标，点它即可固定）；
-      以图标显示的图表类型；指标，以及配置了数据适配器时的对比；撤销和重做。右侧依次是：布局、K线回放、提醒、对象树、一个交易菜单（新建委托、做多和做空括号单、
+      以图标显示的图表类型；指标（一个对话框，见<a href={href('/docs/indicators')}>指标</a>），以及配置了数据适配器时的对比；撤销和重做。右侧依次是：布局、K线回放、提醒、对象树、一个交易菜单（新建委托、做多和做空括号单、
       盘口深度和账户面板），然后是截图、设置、主题和全屏。放不下的部分收进“更多”。
     </td></tr>
     <tr><td>画线工具</td><td>
