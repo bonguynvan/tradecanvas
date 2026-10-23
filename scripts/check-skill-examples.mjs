@@ -1,9 +1,10 @@
 // Type-checks every ```ts block of the agent skill against the built packages,
-// so its examples call the real API. Blocks fenced as ```tsx (framework
-// components) are left out. Run after `pnpm build`.
+// so its examples call the real API, and the code the MCP server gives for each
+// indicator. Blocks fenced as ```tsx (framework components) are left out. Run
+// after `pnpm build`.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,10 +26,15 @@ for (const file of sources) {
   });
 }
 
+// The code the MCP server hands out for every indicator (get_indicator's `usage`) is checked the same way.
+const mcp = await import(pathToFileURL(join(ROOT, 'packages/mcp/dist/index.js')).href);
+const usages = mcp.CATALOG.indicators.map((i) => `{\n${mcp.runTool('get_indicator', { id: i.id }).data.usage}\n}`);
+writeFileSync(join(OUT, 'mcp-usage.ts'), `import type { Chart } from '@tradecanvas/chart';\ndeclare const chart: Chart;\n${usages.join('\n')}\nexport {};\n`);
+
 const tsc = join(ROOT, 'node_modules/typescript/bin/tsc');
 try {
   execFileSync(process.execPath, [tsc, '-p', join(ROOT, 'scripts/skill-examples.tsconfig.json')], { stdio: 'inherit' });
-  console.log(`skill examples type-check (${count} blocks)`);
+  console.log(`skill examples type-check (${count} blocks), and the MCP server's code for ${usages.length} indicators`);
 } catch {
   console.error(`skill examples do not type-check (blocks are in ${OUT})`);
   process.exit(1);

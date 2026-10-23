@@ -379,7 +379,7 @@ const pt: SiteMessages = {
     },
     parts: {
       title: 'Seu widget, suas peças',
-      stat: '112 chaves',
+      stat: '114 chaves',
       blurb:
         'Cada parte do widget tem uma chave, ligada até você desligar e alterável em execução: uma capacidade inteira (alertas, configurações, atalhos) ou um único lugar (um botão da barra, uma entrada de menu, uma seção de ferramentas de desenho). Seus próprios botões, menus e itens de status ficam nas barras do widget. Aqui o replay, duas seções de desenho e o download dos dados estão desligados, e a barra traz um menu de chaves.',
       tryThis: [
@@ -764,7 +764,7 @@ const pt: SiteMessages = {
         { name: 'Três aparências para o widget', detail: 'Studio, Terminal, Capsule; ui e setUI; variáveis CSS --tcw-*' },
         { name: 'A aparência do gráfico por chave', detail: 'applyOverrides sobre 101 chaves tipadas, numa camada da aplicação e numa do usuário' },
         { name: 'Configurações que alcançam cada chave', detail: 'Uma aba de estilo para o tipo de gráfico em exibição, uma aba de trading' },
-        { name: '112 chaves de recursos', detail: 'features, setFeatures, isFeatureOn; alteráveis em execução' },
+        { name: '114 chaves de recursos', detail: 'features, setFeatures, isFeatureOn; alteráveis em execução' },
         { name: 'Suas próprias peças no widget', detail: 'Botões e menus suspensos na barra de ferramentas, botões na barra lateral, itens de status, slots, itens de menu' },
         { name: 'Seus próprios atalhos', detail: 'addHotkey de acordo com o layout do teclado' },
       ],

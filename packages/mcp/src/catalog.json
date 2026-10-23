@@ -1,0 +1,6281 @@
+{
+  "indicators": [
+    {
+      "id": "sma",
+      "name": "Simple Moving Average",
+      "shortName": "SMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "SMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "ema",
+      "name": "Exponential Moving Average",
+      "shortName": "EMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "EMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "bb",
+      "name": "Bollinger Bands",
+      "shortName": "BB",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "stdDev": 2,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "middle",
+          "title": "Basis",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "vwap",
+      "name": "Volume Weighted Average Price",
+      "shortName": "VWAP",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "VWAP",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "ichimoku",
+      "name": "Ichimoku Cloud",
+      "shortName": "Ichimoku",
+      "placement": "overlay",
+      "params": {
+        "tenkan": 9,
+        "kijun": 26,
+        "senkou": 52,
+        "displacement": 26
+      },
+      "plots": [
+        {
+          "key": "tenkan",
+          "title": "Conversion",
+          "kind": "line"
+        },
+        {
+          "key": "kijun",
+          "title": "Base",
+          "kind": "line"
+        },
+        {
+          "key": "senkouA",
+          "title": "Lead A",
+          "kind": "line"
+        },
+        {
+          "key": "senkouB",
+          "title": "Lead B",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "psar",
+      "name": "Parabolic SAR",
+      "shortName": "SAR",
+      "placement": "overlay",
+      "params": {
+        "step": 0.02,
+        "max": 0.2
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "SAR",
+          "kind": "dots"
+        }
+      ]
+    },
+    {
+      "id": "supertrend",
+      "name": "Supertrend",
+      "shortName": "Supertrend",
+      "placement": "overlay",
+      "params": {
+        "period": 10,
+        "multiplier": 3
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Supertrend",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "keltner",
+      "name": "Keltner Channel",
+      "shortName": "KC",
+      "placement": "overlay",
+      "params": {
+        "emaPeriod": 20,
+        "atrPeriod": 10,
+        "multiplier": 1.5
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "middle",
+          "title": "Basis",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "donchian",
+      "name": "Donchian Channel",
+      "shortName": "DC",
+      "placement": "overlay",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "middle",
+          "title": "Basis",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "pivots",
+      "name": "Pivot Points",
+      "shortName": "Pivots",
+      "placement": "overlay",
+      "params": {
+        "lookback": 24,
+        "type": "traditional"
+      },
+      "inputs": {
+        "lookback": {
+          "min": 1
+        },
+        "type": {
+          "options": [
+            "traditional",
+            "fibonacci",
+            "woodie",
+            "classic",
+            "camarilla",
+            "dm"
+          ]
+        }
+      },
+      "plots": [
+        {
+          "key": "r3",
+          "title": "R3",
+          "kind": "line"
+        },
+        {
+          "key": "r2",
+          "title": "R2",
+          "kind": "line"
+        },
+        {
+          "key": "r1",
+          "title": "R1",
+          "kind": "line"
+        },
+        {
+          "key": "pp",
+          "title": "P",
+          "kind": "line"
+        },
+        {
+          "key": "s1",
+          "title": "S1",
+          "kind": "line"
+        },
+        {
+          "key": "s2",
+          "title": "S2",
+          "kind": "line"
+        },
+        {
+          "key": "s3",
+          "title": "S3",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "avwap",
+      "name": "Anchored VWAP",
+      "shortName": "AVWAP",
+      "placement": "overlay",
+      "params": {
+        "anchorTime": 0
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "AVWAP",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "zigzag",
+      "name": "ZigZag",
+      "shortName": "ZigZag",
+      "placement": "overlay",
+      "params": {
+        "deviation": 5
+      },
+      "plots": [
+        {
+          "key": "pivot",
+          "title": "Pivot",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "lrc",
+      "name": "Linear Regression Channel",
+      "shortName": "LRC",
+      "placement": "overlay",
+      "params": {
+        "period": 100,
+        "stdDev": 2,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "middle",
+          "title": "Basis",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "hma",
+      "name": "Hull Moving Average",
+      "shortName": "HMA",
+      "placement": "overlay",
+      "params": {
+        "period": 21,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "HMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "mtfma",
+      "name": "MTF Moving Average",
+      "shortName": "MTF MA",
+      "placement": "overlay",
+      "params": {
+        "period": 50,
+        "timeframe": "1d",
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "MA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "svwap",
+      "name": "Session VWAP",
+      "shortName": "SVWAP",
+      "placement": "overlay",
+      "params": {
+        "bands": 1
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "VWAP",
+          "kind": "line"
+        },
+        {
+          "key": "u1",
+          "title": "+1σ",
+          "kind": "line"
+        },
+        {
+          "key": "l1",
+          "title": "−1σ",
+          "kind": "line"
+        },
+        {
+          "key": "u2",
+          "title": "+2σ",
+          "kind": "line"
+        },
+        {
+          "key": "l2",
+          "title": "−2σ",
+          "kind": "line"
+        },
+        {
+          "key": "u3",
+          "title": "+3σ",
+          "kind": "line"
+        },
+        {
+          "key": "l3",
+          "title": "−3σ",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "chandelier",
+      "name": "Chandelier Exit",
+      "shortName": "CE",
+      "placement": "overlay",
+      "params": {
+        "period": 22,
+        "multiplier": 3
+      },
+      "plots": [
+        {
+          "key": "long",
+          "title": "Long",
+          "kind": "line"
+        },
+        {
+          "key": "short",
+          "title": "Short",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "alligator",
+      "name": "Alligator",
+      "shortName": "Alligator",
+      "placement": "overlay",
+      "params": {
+        "jaw": 13,
+        "teeth": 8,
+        "lips": 5,
+        "jawShift": 8,
+        "teethShift": 5,
+        "lipsShift": 3
+      },
+      "plots": [
+        {
+          "key": "jaw",
+          "title": "Jaw",
+          "kind": "line"
+        },
+        {
+          "key": "teeth",
+          "title": "Teeth",
+          "kind": "line"
+        },
+        {
+          "key": "lips",
+          "title": "Lips",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "vwma",
+      "name": "Volume Weighted Moving Average",
+      "shortName": "VWMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "VWMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "wma",
+      "name": "Weighted Moving Average",
+      "shortName": "WMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "WMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "envelope",
+      "name": "Moving Average Envelope",
+      "shortName": "Env",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "percent": 2.5,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "basis",
+          "title": "Basis",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "tema",
+      "name": "Triple EMA",
+      "shortName": "TEMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "TEMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "rsi",
+      "name": "Relative Strength Index",
+      "shortName": "RSI",
+      "placement": "panel",
+      "params": {
+        "period": 14,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RSI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        30,
+        70
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "macd",
+      "name": "MACD",
+      "shortName": "MACD",
+      "placement": "panel",
+      "params": {
+        "fast": 12,
+        "slow": 26,
+        "signal": 9,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "histogram",
+          "title": "Histogram",
+          "kind": "histogram"
+        },
+        {
+          "key": "macd",
+          "title": "MACD",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "stochastic",
+      "name": "Stochastic Oscillator",
+      "shortName": "Stoch",
+      "placement": "panel",
+      "params": {
+        "kPeriod": 14,
+        "dPeriod": 3,
+        "smooth": 3
+      },
+      "plots": [
+        {
+          "key": "k",
+          "title": "%K",
+          "kind": "line"
+        },
+        {
+          "key": "d",
+          "title": "%D",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        20,
+        80
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "atr",
+      "name": "Average True Range",
+      "shortName": "ATR",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "ATR",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "adx",
+      "name": "Average Directional Index",
+      "shortName": "ADX",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "adx",
+          "title": "ADX",
+          "kind": "line"
+        },
+        {
+          "key": "plusDI",
+          "title": "+DI",
+          "kind": "line"
+        },
+        {
+          "key": "minusDI",
+          "title": "−DI",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "obv",
+      "name": "On Balance Volume",
+      "shortName": "OBV",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "OBV",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "williamsR",
+      "name": "Williams %R",
+      "shortName": "%R",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "%R",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -80,
+        -20
+      ],
+      "scale": {
+        "min": -100,
+        "max": 0
+      }
+    },
+    {
+      "id": "cci",
+      "name": "Commodity Channel Index",
+      "shortName": "CCI",
+      "placement": "panel",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CCI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -100,
+        0,
+        100
+      ]
+    },
+    {
+      "id": "mfi",
+      "name": "Money Flow Index",
+      "shortName": "MFI",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "MFI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        20,
+        80
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "aroon",
+      "name": "Aroon",
+      "shortName": "Aroon",
+      "placement": "panel",
+      "params": {
+        "period": 25
+      },
+      "plots": [
+        {
+          "key": "up",
+          "title": "Up",
+          "kind": "line"
+        },
+        {
+          "key": "down",
+          "title": "Down",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "roc",
+      "name": "Rate of Change",
+      "shortName": "ROC",
+      "placement": "panel",
+      "params": {
+        "period": 12,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "ROC",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "tsi",
+      "name": "True Strength Index",
+      "shortName": "TSI",
+      "placement": "panel",
+      "params": {
+        "longPeriod": 25,
+        "shortPeriod": 13,
+        "signalPeriod": 7,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "tsi",
+          "title": "TSI",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "cmf",
+      "name": "Chaikin Money Flow",
+      "shortName": "CMF",
+      "placement": "panel",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CMF",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "stddev",
+      "name": "Standard Deviation",
+      "shortName": "StdDev",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "StdDev",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "volumeProfile",
+      "name": "Volume Profile",
+      "shortName": "VP",
+      "placement": "overlay",
+      "params": {
+        "rows": 24
+      },
+      "plots": []
+    },
+    {
+      "id": "ad",
+      "name": "Accumulation/Distribution",
+      "shortName": "A/D",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "A/D",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "vroc",
+      "name": "Volume Rate of Change",
+      "shortName": "VROC",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "VROC",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "ao",
+      "name": "Awesome Oscillator",
+      "shortName": "AO",
+      "placement": "panel",
+      "params": {
+        "fast": 5,
+        "slow": 34
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "AO",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "chaikinOsc",
+      "name": "Chaikin Oscillator",
+      "shortName": "Chaikin Osc",
+      "placement": "panel",
+      "params": {
+        "fast": 3,
+        "slow": 10
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Chaikin",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "voldelta",
+      "name": "Volume Delta",
+      "shortName": "Vol Δ",
+      "placement": "panel",
+      "params": {
+        "mode": 0
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Delta",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "vortex",
+      "name": "Vortex Indicator",
+      "shortName": "VI",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "viPlus",
+          "title": "VI+",
+          "kind": "line"
+        },
+        {
+          "key": "viMinus",
+          "title": "VI−",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        1
+      ]
+    },
+    {
+      "id": "chop",
+      "name": "Choppiness Index",
+      "shortName": "CHOP",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CHOP",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        38.2,
+        61.8
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "uo",
+      "name": "Ultimate Oscillator",
+      "shortName": "UO",
+      "placement": "panel",
+      "params": {
+        "fast": 7,
+        "mid": 14,
+        "slow": 28
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "UO",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        30,
+        70
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "fi",
+      "name": "Force Index",
+      "shortName": "EFI",
+      "placement": "panel",
+      "params": {
+        "period": 13
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "EFI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "crsi",
+      "name": "Connors RSI",
+      "shortName": "CRSI",
+      "placement": "panel",
+      "params": {
+        "rsiPeriod": 3,
+        "streakPeriod": 2,
+        "rankPeriod": 100,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CRSI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        10,
+        90
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "coppock",
+      "name": "Coppock Curve",
+      "shortName": "Coppock",
+      "placement": "panel",
+      "params": {
+        "longRoc": 14,
+        "shortRoc": 11,
+        "wma": 10,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Coppock",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "kst",
+      "name": "Know Sure Thing",
+      "shortName": "KST",
+      "placement": "panel",
+      "params": {
+        "roc1": 10,
+        "roc2": 15,
+        "roc3": 20,
+        "roc4": 30,
+        "sma1": 10,
+        "sma2": 10,
+        "sma3": 10,
+        "sma4": 15,
+        "signal": 9,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "KST",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "elderray",
+      "name": "Elder Ray",
+      "shortName": "Elder Ray",
+      "placement": "panel",
+      "params": {
+        "period": 13
+      },
+      "plots": [
+        {
+          "key": "bull",
+          "title": "Bull",
+          "kind": "histogram"
+        },
+        {
+          "key": "bear",
+          "title": "Bear",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "stc",
+      "name": "Schaff Trend Cycle",
+      "shortName": "STC",
+      "placement": "panel",
+      "params": {
+        "fast": 23,
+        "slow": 50,
+        "cycle": 10,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "STC",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        25,
+        75
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "kvo",
+      "name": "Klinger Oscillator",
+      "shortName": "KVO",
+      "placement": "panel",
+      "params": {
+        "fast": 34,
+        "slow": 55,
+        "signal": 13
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "KVO",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "fisher",
+      "name": "Fisher Transform",
+      "shortName": "Fisher",
+      "placement": "panel",
+      "params": {
+        "period": 9
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Fisher",
+          "kind": "line"
+        },
+        {
+          "key": "trigger",
+          "title": "Trigger",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "dpo",
+      "name": "Detrended Price Oscillator",
+      "shortName": "DPO",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "DPO",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "bop",
+      "name": "Balance of Power",
+      "shortName": "BOP",
+      "placement": "panel",
+      "params": {
+        "smooth": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "BOP",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ],
+      "scale": {
+        "min": -1,
+        "max": 1
+      }
+    },
+    {
+      "id": "massindex",
+      "name": "Mass Index",
+      "shortName": "Mass",
+      "placement": "panel",
+      "params": {
+        "ema": 9,
+        "sum": 25
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Mass",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        26.5,
+        27
+      ]
+    },
+    {
+      "id": "cmo",
+      "name": "Chande Momentum",
+      "shortName": "CMO",
+      "placement": "panel",
+      "params": {
+        "period": 9,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CMO",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -50,
+        0,
+        50
+      ],
+      "scale": {
+        "min": -100,
+        "max": 100
+      }
+    },
+    {
+      "id": "trix",
+      "name": "TRIX",
+      "shortName": "TRIX",
+      "placement": "panel",
+      "params": {
+        "period": 15,
+        "signal": 9,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "TRIX",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "emv",
+      "name": "Ease of Movement",
+      "shortName": "EOM",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "EOM",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "pvt",
+      "name": "Price Volume Trend",
+      "shortName": "PVT",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "PVT",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "wad",
+      "name": "Williams A/D",
+      "shortName": "WAD",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "WAD",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "chaikinvol",
+      "name": "Chaikin Volatility",
+      "shortName": "CV",
+      "placement": "panel",
+      "params": {
+        "ema": 10,
+        "roc": 10
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "CV",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "rvi",
+      "name": "Relative Vigor Index",
+      "shortName": "RVGI",
+      "placement": "panel",
+      "params": {
+        "period": 10
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RVGI",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "stochrsi",
+      "name": "Stochastic RSI",
+      "shortName": "Stoch RSI",
+      "placement": "panel",
+      "params": {
+        "rsiPeriod": 14,
+        "stochPeriod": 14,
+        "k": 3,
+        "d": 3,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "k",
+          "title": "%K",
+          "kind": "line"
+        },
+        {
+          "key": "d",
+          "title": "%D",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        20,
+        80
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "ppo",
+      "name": "Percentage Price Oscillator",
+      "shortName": "PPO",
+      "placement": "panel",
+      "params": {
+        "fast": 12,
+        "slow": 26,
+        "signal": 9,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "hist",
+          "title": "Histogram",
+          "kind": "histogram"
+        },
+        {
+          "key": "value",
+          "title": "PPO",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "ac",
+      "name": "Accelerator Oscillator",
+      "shortName": "AC",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "AC",
+          "kind": "histogram"
+        }
+      ]
+    },
+    {
+      "id": "rmi",
+      "name": "Relative Momentum Index",
+      "shortName": "RMI",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "momentum": 5,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RMI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        30,
+        70
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "disparity",
+      "name": "Disparity Index",
+      "shortName": "DI",
+      "placement": "panel",
+      "params": {
+        "period": 14,
+        "source": "close"
+      },
+      "inputs": {
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "DI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "qstick",
+      "name": "Qstick",
+      "shortName": "Qstick",
+      "placement": "panel",
+      "params": {
+        "period": 8
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Qstick",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "pgo",
+      "name": "Pretty Good Oscillator",
+      "shortName": "PGO",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "PGO",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -3,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "dema",
+      "name": "Double Exponential Moving Average",
+      "shortName": "DEMA",
+      "placement": "overlay",
+      "params": {
+        "period": 20,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "DEMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "smma",
+      "name": "Smoothed Moving Average",
+      "shortName": "SMMA",
+      "placement": "overlay",
+      "params": {
+        "period": 14,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "SMMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "alma",
+      "name": "Arnaud Legoux Moving Average",
+      "shortName": "ALMA",
+      "placement": "overlay",
+      "params": {
+        "period": 9,
+        "offset": 0.85,
+        "sigma": 6,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1,
+          "max": 5000
+        },
+        "offset": {
+          "min": 0,
+          "max": 1,
+          "step": 0.05
+        },
+        "sigma": {
+          "min": 0.5,
+          "step": 0.5
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "ALMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "kama",
+      "name": "Kaufman Adaptive Moving Average",
+      "shortName": "KAMA",
+      "placement": "overlay",
+      "params": {
+        "period": 10,
+        "fast": 2,
+        "slow": 30,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "fast": {
+          "min": 1
+        },
+        "slow": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "KAMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "lsma",
+      "name": "Least Squares Moving Average",
+      "shortName": "LSMA",
+      "placement": "overlay",
+      "params": {
+        "period": 25,
+        "offset": 0,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 2,
+          "max": 5000
+        },
+        "offset": {
+          "step": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "LSMA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "mcginley",
+      "name": "McGinley Dynamic",
+      "shortName": "McGinley",
+      "placement": "overlay",
+      "params": {
+        "period": 14,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "McGinley",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "macross",
+      "name": "MA Cross",
+      "shortName": "MA Cross",
+      "placement": "overlay",
+      "params": {
+        "fast": 9,
+        "slow": 21,
+        "type": "sma",
+        "source": "close"
+      },
+      "inputs": {
+        "fast": {
+          "min": 1
+        },
+        "slow": {
+          "min": 1
+        },
+        "type": {
+          "options": [
+            "sma",
+            "ema",
+            "sma-ema"
+          ]
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "fast",
+          "title": "Fast",
+          "kind": "line"
+        },
+        {
+          "key": "slow",
+          "title": "Slow",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "fractals",
+      "name": "Williams Fractals",
+      "shortName": "Fractals",
+      "placement": "overlay",
+      "params": {
+        "period": 2
+      },
+      "inputs": {
+        "period": {
+          "min": 1,
+          "max": 10
+        }
+      },
+      "plots": [
+        {
+          "key": "up",
+          "title": "Up",
+          "kind": "dots"
+        },
+        {
+          "key": "down",
+          "title": "Down",
+          "kind": "dots"
+        }
+      ]
+    },
+    {
+      "id": "cks",
+      "name": "Chande Kroll Stop",
+      "shortName": "CKS",
+      "placement": "overlay",
+      "params": {
+        "p": 10,
+        "x": 1,
+        "q": 9
+      },
+      "inputs": {
+        "p": {
+          "label": "ATR length",
+          "min": 1
+        },
+        "x": {
+          "label": "ATR multiplier",
+          "min": 0,
+          "step": 0.1
+        },
+        "q": {
+          "label": "Stop length",
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "long",
+          "title": "Stop Long",
+          "kind": "line"
+        },
+        {
+          "key": "short",
+          "title": "Stop Short",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "bbpb",
+      "name": "Bollinger Bands %B",
+      "shortName": "%B",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "stdDev": 2,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        },
+        "stdDev": {
+          "min": 0.1,
+          "step": 0.1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "%B",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0,
+        0.5,
+        1
+      ]
+    },
+    {
+      "id": "bbw",
+      "name": "Bollinger BandWidth",
+      "shortName": "BBW",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "stdDev": 2,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        },
+        "stdDev": {
+          "min": 0.1,
+          "step": 0.1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "BBW",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "mom",
+      "name": "Momentum",
+      "shortName": "MOM",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "MOM",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "hv",
+      "name": "Historical Volatility",
+      "shortName": "HV",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "annual": 365,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        },
+        "annual": {
+          "label": "Bars per year",
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "HV",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "vo",
+      "name": "Volume Oscillator",
+      "shortName": "Vol Osc",
+      "placement": "panel",
+      "params": {
+        "short": 5,
+        "long": 10
+      },
+      "inputs": {
+        "short": {
+          "min": 1
+        },
+        "long": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Vol Osc",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "ulcer",
+      "name": "Ulcer Index",
+      "shortName": "Ulcer",
+      "placement": "panel",
+      "params": {
+        "period": 14,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Ulcer",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "smi",
+      "name": "Stochastic Momentum Index",
+      "shortName": "SMI",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "smooth": 3,
+        "signal": 3
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "smooth": {
+          "min": 1
+        },
+        "signal": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "smi",
+          "title": "SMI",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        40,
+        -40
+      ]
+    },
+    {
+      "id": "rvix",
+      "name": "Relative Volatility Index",
+      "shortName": "RVI (vol)",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "smooth": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        },
+        "smooth": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RVI",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        80,
+        50,
+        20
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "trendstrength",
+      "name": "Trend Strength Index",
+      "shortName": "TSI (trend)",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Trend",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ],
+      "scale": {
+        "min": -1,
+        "max": 1
+      }
+    },
+    {
+      "id": "lrslope",
+      "name": "Linear Regression Slope",
+      "shortName": "LR Slope",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 2
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Slope",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "stderror",
+      "name": "Standard Error",
+      "shortName": "StdErr",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 3
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "StdErr",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "adr",
+      "name": "Average Day Range",
+      "shortName": "ADR",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "ADR",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "netvolume",
+      "name": "Net Volume",
+      "shortName": "Net Vol",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Net",
+          "kind": "histogram"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "seb",
+      "name": "Standard Error Bands",
+      "shortName": "SEB",
+      "placement": "overlay",
+      "params": {
+        "period": 21,
+        "mult": 2,
+        "smooth": 3
+      },
+      "inputs": {
+        "period": {
+          "min": 3
+        },
+        "mult": {
+          "min": 0,
+          "step": 0.1
+        },
+        "smooth": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "middle",
+          "title": "Middle",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "gmma",
+      "name": "Guppy Multiple Moving Average",
+      "shortName": "GMMA",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "s3",
+          "title": "EMA 3",
+          "kind": "line"
+        },
+        {
+          "key": "s5",
+          "title": "EMA 5",
+          "kind": "line"
+        },
+        {
+          "key": "s8",
+          "title": "EMA 8",
+          "kind": "line"
+        },
+        {
+          "key": "s10",
+          "title": "EMA 10",
+          "kind": "line"
+        },
+        {
+          "key": "s12",
+          "title": "EMA 12",
+          "kind": "line"
+        },
+        {
+          "key": "s15",
+          "title": "EMA 15",
+          "kind": "line"
+        },
+        {
+          "key": "l30",
+          "title": "EMA 30",
+          "kind": "line"
+        },
+        {
+          "key": "l35",
+          "title": "EMA 35",
+          "kind": "line"
+        },
+        {
+          "key": "l40",
+          "title": "EMA 40",
+          "kind": "line"
+        },
+        {
+          "key": "l45",
+          "title": "EMA 45",
+          "kind": "line"
+        },
+        {
+          "key": "l50",
+          "title": "EMA 50",
+          "kind": "line"
+        },
+        {
+          "key": "l60",
+          "title": "EMA 60",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "maribbon",
+      "name": "Moving Average Ribbon",
+      "shortName": "MA Ribbon",
+      "placement": "overlay",
+      "params": {
+        "ma1": 20,
+        "ma2": 50,
+        "ma3": 100,
+        "ma4": 200,
+        "exponential": 0
+      },
+      "inputs": {
+        "ma1": {
+          "min": 1
+        },
+        "ma2": {
+          "min": 1
+        },
+        "ma3": {
+          "min": 1
+        },
+        "ma4": {
+          "min": 1
+        },
+        "exponential": {
+          "min": 0,
+          "max": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "ma1",
+          "title": "MA 1",
+          "kind": "line"
+        },
+        {
+          "key": "ma2",
+          "title": "MA 2",
+          "kind": "line"
+        },
+        {
+          "key": "ma3",
+          "title": "MA 3",
+          "kind": "line"
+        },
+        {
+          "key": "ma4",
+          "title": "MA 4",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "avgprice",
+      "name": "Average Price",
+      "shortName": "OHLC4",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Average",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "medprice",
+      "name": "Median Price",
+      "shortName": "HL2",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Median",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "typprice",
+      "name": "Typical Price",
+      "shortName": "HLC3",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Typical",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "machannel",
+      "name": "Moving Average Channel",
+      "shortName": "MA Channel",
+      "placement": "overlay",
+      "params": {
+        "upperLength": 20,
+        "lowerLength": 20,
+        "upperOffset": 0,
+        "lowerOffset": 0
+      },
+      "inputs": {
+        "upperLength": {
+          "min": 1
+        },
+        "lowerLength": {
+          "min": 1
+        },
+        "upperOffset": {
+          "min": -500,
+          "max": 500
+        },
+        "lowerOffset": {
+          "min": -500,
+          "max": 500
+        }
+      },
+      "plots": [
+        {
+          "key": "upper",
+          "title": "Upper",
+          "kind": "line"
+        },
+        {
+          "key": "lower",
+          "title": "Lower",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "hamming",
+      "name": "Moving Average Hamming",
+      "shortName": "HMA (Hamming)",
+      "placement": "overlay",
+      "params": {
+        "period": 10,
+        "source": "close"
+      },
+      "inputs": {
+        "period": {
+          "min": 2,
+          "max": 500
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "MA",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "madouble",
+      "name": "Moving Average Double",
+      "shortName": "MA x2",
+      "placement": "overlay",
+      "params": {
+        "first": 20,
+        "second": 50,
+        "type": "sma",
+        "source": "close"
+      },
+      "inputs": {
+        "first": {
+          "min": 1
+        },
+        "second": {
+          "min": 1
+        },
+        "type": {
+          "options": [
+            "sma",
+            "ema",
+            "wma"
+          ]
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "ma1",
+          "title": "MA 1",
+          "kind": "line"
+        },
+        {
+          "key": "ma2",
+          "title": "MA 2",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "matriple",
+      "name": "Moving Average Triple",
+      "shortName": "MA x3",
+      "placement": "overlay",
+      "params": {
+        "first": 10,
+        "second": 20,
+        "third": 50,
+        "type": "sma",
+        "source": "close"
+      },
+      "inputs": {
+        "first": {
+          "min": 1
+        },
+        "second": {
+          "min": 1
+        },
+        "third": {
+          "min": 1
+        },
+        "type": {
+          "options": [
+            "sma",
+            "ema",
+            "wma"
+          ]
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "ma1",
+          "title": "MA 1",
+          "kind": "line"
+        },
+        {
+          "key": "ma2",
+          "title": "MA 2",
+          "kind": "line"
+        },
+        {
+          "key": "ma3",
+          "title": "MA 3",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "volindex",
+      "name": "Volatility Index",
+      "shortName": "VI",
+      "placement": "overlay",
+      "params": {
+        "period": 7,
+        "mult": 3
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "mult": {
+          "label": "ATR multiple",
+          "min": 0.1,
+          "step": 0.1
+        }
+      },
+      "plots": [
+        {
+          "key": "sar",
+          "title": "Stop",
+          "kind": "dots"
+        }
+      ]
+    },
+    {
+      "id": "asi",
+      "name": "Accumulative Swing Index",
+      "shortName": "ASI",
+      "placement": "panel",
+      "params": {
+        "limit": 10
+      },
+      "inputs": {
+        "limit": {
+          "label": "Limit move",
+          "min": 0.0001,
+          "step": 0.1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "ASI",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "advdecline",
+      "name": "Advance/Decline",
+      "shortName": "A/D Ratio",
+      "placement": "panel",
+      "params": {
+        "length": 10
+      },
+      "inputs": {
+        "length": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Ratio",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "majority",
+      "name": "Majority Rule",
+      "shortName": "Majority",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Majority",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        50
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "chopzone",
+      "name": "Chop Zone",
+      "shortName": "Chop Zone",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "angle",
+          "title": "Angle",
+          "kind": "histogram"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "smiergodic",
+      "name": "SMI Ergodic",
+      "shortName": "SMIIO",
+      "placement": "panel",
+      "params": {
+        "short": 5,
+        "long": 20,
+        "signal": 5,
+        "source": "close"
+      },
+      "inputs": {
+        "short": {
+          "min": 1
+        },
+        "long": {
+          "min": 1
+        },
+        "signal": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "oscillator",
+          "title": "Oscillator",
+          "kind": "histogram"
+        },
+        {
+          "key": "indicator",
+          "title": "Indicator",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "po",
+      "name": "Price Oscillator",
+      "shortName": "PO",
+      "placement": "panel",
+      "params": {
+        "short": 10,
+        "long": 21,
+        "source": "close"
+      },
+      "inputs": {
+        "short": {
+          "min": 1
+        },
+        "long": {
+          "min": 1
+        },
+        "source": {
+          "source": true
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "PO",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "volohlc",
+      "name": "Volatility O-H-L-C",
+      "shortName": "Vol OHLC",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "annual": 365
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "annual": {
+          "label": "Bars per year",
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Volatility",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "volzt",
+      "name": "Volatility Zero Trend Close-to-Close",
+      "shortName": "Vol ZT",
+      "placement": "panel",
+      "params": {
+        "period": 10,
+        "annual": 365
+      },
+      "inputs": {
+        "period": {
+          "min": 1
+        },
+        "annual": {
+          "label": "Bars per year",
+          "min": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Volatility",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0
+      }
+    },
+    {
+      "id": "psy",
+      "name": "Psychological Line",
+      "shortName": "PSY",
+      "placement": "panel",
+      "params": {
+        "period": 10
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "PSY",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        25,
+        75
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "newpsy",
+      "name": "New Psychological Line",
+      "shortName": "New PSY",
+      "placement": "panel",
+      "params": {
+        "period": 10
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "New PSY",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -50,
+        0,
+        50
+      ],
+      "scale": {
+        "min": -100,
+        "max": 100
+      }
+    },
+    {
+      "id": "vr",
+      "name": "Volume Ratio",
+      "shortName": "VR",
+      "placement": "panel",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "VR",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        70,
+        150,
+        450
+      ]
+    },
+    {
+      "id": "abratio",
+      "name": "AB Ratio",
+      "shortName": "AB Ratio",
+      "placement": "panel",
+      "params": {
+        "period": 26
+      },
+      "plots": [
+        {
+          "key": "a",
+          "title": "A",
+          "kind": "line"
+        },
+        {
+          "key": "b",
+          "title": "B",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        100
+      ]
+    },
+    {
+      "id": "sonar",
+      "name": "Sonar",
+      "shortName": "Sonar",
+      "placement": "panel",
+      "params": {
+        "period": 20,
+        "lookback": 9,
+        "signal": 9
+      },
+      "plots": [
+        {
+          "key": "sonar",
+          "title": "Sonar",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "sigma",
+      "name": "Sigma",
+      "shortName": "Sigma",
+      "placement": "panel",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Sigma",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        -2,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "vhf",
+      "name": "Vertical Horizontal Filter",
+      "shortName": "VHF",
+      "placement": "panel",
+      "params": {
+        "period": 28
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "VHF",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "rsquared",
+      "name": "R-Squared",
+      "shortName": "R²",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "R²",
+          "kind": "line"
+        }
+      ],
+      "scale": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "id": "rwi",
+      "name": "Random Walk Index",
+      "shortName": "RWI",
+      "placement": "panel",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "high",
+          "title": "RWI High",
+          "kind": "line"
+        },
+        {
+          "key": "low",
+          "title": "RWI Low",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        1
+      ]
+    },
+    {
+      "id": "nvi",
+      "name": "Negative Volume Index",
+      "shortName": "NVI",
+      "placement": "panel",
+      "params": {
+        "signal": 255
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "NVI",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "pvi",
+      "name": "Positive Volume Index",
+      "shortName": "PVI",
+      "placement": "panel",
+      "params": {
+        "signal": 255
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "PVI",
+          "kind": "line"
+        },
+        {
+          "key": "signal",
+          "title": "Signal",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "tr",
+      "name": "True Range",
+      "shortName": "TR",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "TR",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "iii",
+      "name": "Intraday Intensity",
+      "shortName": "III",
+      "placement": "panel",
+      "params": {
+        "period": 21
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "III %",
+          "kind": "histogram"
+        }
+      ],
+      "levels": [
+        0
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "volpct",
+      "name": "Volume vs Average",
+      "shortName": "Vol %",
+      "placement": "panel",
+      "params": {
+        "period": 20
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Vol %",
+          "kind": "histogram"
+        }
+      ],
+      "levels": [
+        0
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "volchange",
+      "name": "Volume Change",
+      "shortName": "Vol Δ",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Volume",
+          "kind": "histogram"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "tradevalue",
+      "name": "Trade Value",
+      "shortName": "Value",
+      "placement": "panel",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Value",
+          "kind": "histogram"
+        }
+      ],
+      "scale": {
+        "zero": true
+      }
+    },
+    {
+      "id": "binarywave",
+      "name": "Binary Wave",
+      "shortName": "Binary Wave",
+      "placement": "panel",
+      "params": {
+        "ma": 20,
+        "fast": 12,
+        "slow": 26,
+        "signal": 9,
+        "roc": 12,
+        "stoch": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "Wave",
+          "kind": "step"
+        }
+      ],
+      "levels": [
+        0
+      ],
+      "scale": {
+        "min": -4,
+        "max": 4
+      }
+    },
+    {
+      "id": "sroc",
+      "name": "Smoothed Rate of Change",
+      "shortName": "S-ROC",
+      "placement": "panel",
+      "params": {
+        "ema": 13,
+        "roc": 21
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "S-ROC",
+          "kind": "line"
+        }
+      ],
+      "levels": [
+        0
+      ]
+    },
+    {
+      "id": "tsf",
+      "name": "Time Series Forecast",
+      "shortName": "TSF",
+      "placement": "overlay",
+      "params": {
+        "period": 14
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "TSF",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "wclose",
+      "name": "Weighted Close",
+      "shortName": "HLCC4",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "value",
+          "title": "Weighted",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "demark",
+      "name": "DeMark Projected Range",
+      "shortName": "DeMark",
+      "placement": "overlay",
+      "params": {},
+      "plots": [
+        {
+          "key": "high",
+          "title": "Projected high",
+          "kind": "step"
+        },
+        {
+          "key": "low",
+          "title": "Projected low",
+          "kind": "step"
+        }
+      ]
+    },
+    {
+      "id": "rainbow",
+      "name": "Moving Average Rainbow",
+      "shortName": "Rainbow",
+      "placement": "overlay",
+      "params": {
+        "first": 10,
+        "step": 10,
+        "count": 10,
+        "exponential": 0
+      },
+      "inputs": {
+        "first": {
+          "min": 1
+        },
+        "step": {
+          "min": 1
+        },
+        "count": {
+          "min": 1,
+          "max": 20
+        },
+        "exponential": {
+          "min": 0,
+          "max": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "ma1",
+          "title": "MA 1",
+          "kind": "line"
+        },
+        {
+          "key": "ma2",
+          "title": "MA 2",
+          "kind": "line"
+        },
+        {
+          "key": "ma3",
+          "title": "MA 3",
+          "kind": "line"
+        },
+        {
+          "key": "ma4",
+          "title": "MA 4",
+          "kind": "line"
+        },
+        {
+          "key": "ma5",
+          "title": "MA 5",
+          "kind": "line"
+        },
+        {
+          "key": "ma6",
+          "title": "MA 6",
+          "kind": "line"
+        },
+        {
+          "key": "ma7",
+          "title": "MA 7",
+          "kind": "line"
+        },
+        {
+          "key": "ma8",
+          "title": "MA 8",
+          "kind": "line"
+        },
+        {
+          "key": "ma9",
+          "title": "MA 9",
+          "kind": "line"
+        },
+        {
+          "key": "ma10",
+          "title": "MA 10",
+          "kind": "line"
+        },
+        {
+          "key": "ma11",
+          "title": "MA 11",
+          "kind": "line"
+        },
+        {
+          "key": "ma12",
+          "title": "MA 12",
+          "kind": "line"
+        },
+        {
+          "key": "ma13",
+          "title": "MA 13",
+          "kind": "line"
+        },
+        {
+          "key": "ma14",
+          "title": "MA 14",
+          "kind": "line"
+        },
+        {
+          "key": "ma15",
+          "title": "MA 15",
+          "kind": "line"
+        },
+        {
+          "key": "ma16",
+          "title": "MA 16",
+          "kind": "line"
+        },
+        {
+          "key": "ma17",
+          "title": "MA 17",
+          "kind": "line"
+        },
+        {
+          "key": "ma18",
+          "title": "MA 18",
+          "kind": "line"
+        },
+        {
+          "key": "ma19",
+          "title": "MA 19",
+          "kind": "line"
+        },
+        {
+          "key": "ma20",
+          "title": "MA 20",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "candlepatterns",
+      "name": "Candlestick Patterns",
+      "shortName": "Patterns",
+      "placement": "overlay",
+      "params": {
+        "trendPeriod": 10,
+        "reversal": 1,
+        "continuation": 1,
+        "indecision": 0
+      },
+      "inputs": {
+        "trendPeriod": {
+          "min": 2
+        },
+        "reversal": {
+          "min": 0,
+          "max": 1
+        },
+        "continuation": {
+          "min": 0,
+          "max": 1
+        },
+        "indecision": {
+          "min": 0,
+          "max": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "bull",
+          "title": "Bullish",
+          "kind": "dots"
+        },
+        {
+          "key": "bear",
+          "title": "Bearish",
+          "kind": "dots"
+        },
+        {
+          "key": "neutral",
+          "title": "Indecision",
+          "kind": "dots"
+        }
+      ]
+    }
+  ],
+  "drawingTools": [
+    {
+      "type": "trendLine",
+      "name": "Trend Line",
+      "anchors": 2,
+      "options": {
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": false
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "horizontalLine",
+      "name": "Horizontal Line",
+      "anchors": 1
+    },
+    {
+      "type": "horizontalRay",
+      "name": "Horizontal Ray",
+      "anchors": 1
+    },
+    {
+      "type": "verticalLine",
+      "name": "Vertical Line",
+      "anchors": 1
+    },
+    {
+      "type": "ray",
+      "name": "Ray",
+      "anchors": 2
+    },
+    {
+      "type": "extendedLine",
+      "name": "Extended Line",
+      "anchors": 2
+    },
+    {
+      "type": "parallelChannel",
+      "name": "Parallel Channel",
+      "anchors": 3,
+      "options": {
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": false
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": false
+        },
+        "middleLine": {
+          "kind": "boolean",
+          "label": "Middle line",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "regressionChannel",
+      "name": "Regression Channel",
+      "anchors": 2
+    },
+    {
+      "type": "fibRetracement",
+      "name": "Fibonacci Retracement",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 0.236,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 1.272,
+              "visible": false,
+              "color": "#a57cff"
+            },
+            {
+              "value": 1.414,
+              "visible": false,
+              "color": "#e25592"
+            },
+            {
+              "value": 1.618,
+              "visible": false,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 2.618,
+              "visible": false,
+              "color": "#e8505b"
+            },
+            {
+              "value": 3.618,
+              "visible": false,
+              "color": "#a57cff"
+            },
+            {
+              "value": 4.236,
+              "visible": false,
+              "color": "#e25592"
+            }
+          ]
+        },
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": true
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": true
+        },
+        "reverse": {
+          "kind": "boolean",
+          "label": "Reverse",
+          "default": false
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        },
+        "showPrices": {
+          "kind": "boolean",
+          "label": "Show prices",
+          "default": true
+        },
+        "labelPosition": {
+          "kind": "choice",
+          "label": "Labels",
+          "default": "left"
+        },
+        "background": {
+          "kind": "boolean",
+          "label": "Background",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "fibExtension",
+      "name": "Fibonacci Extension",
+      "anchors": 3,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 0.382,
+              "visible": false,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": false,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": false,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 1.272,
+              "visible": false,
+              "color": "#a57cff"
+            },
+            {
+              "value": 1.414,
+              "visible": false,
+              "color": "#e25592"
+            },
+            {
+              "value": 1.618,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 2,
+              "visible": true,
+              "color": "#a57cff"
+            },
+            {
+              "value": 2.618,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 3.618,
+              "visible": true,
+              "color": "#a57cff"
+            },
+            {
+              "value": 4.236,
+              "visible": true,
+              "color": "#e25592"
+            }
+          ]
+        },
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": true
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": true
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        },
+        "showPrices": {
+          "kind": "boolean",
+          "label": "Show prices",
+          "default": true
+        },
+        "labelPosition": {
+          "kind": "choice",
+          "label": "Labels",
+          "default": "left"
+        },
+        "background": {
+          "kind": "boolean",
+          "label": "Background",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "rectangle",
+      "name": "Rectangle",
+      "anchors": 2
+    },
+    {
+      "type": "ellipse",
+      "name": "Ellipse",
+      "anchors": 2
+    },
+    {
+      "type": "triangle",
+      "name": "Triangle",
+      "anchors": 3
+    },
+    {
+      "type": "pitchfork",
+      "name": "Andrews' Pitchfork",
+      "anchors": 3
+    },
+    {
+      "type": "elliottWave",
+      "name": "Elliott Wave",
+      "anchors": 8,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "priceRange",
+      "name": "Price Range",
+      "anchors": 2
+    },
+    {
+      "type": "dateRange",
+      "name": "Date Range",
+      "anchors": 2
+    },
+    {
+      "type": "measure",
+      "name": "Measure",
+      "anchors": 2
+    },
+    {
+      "type": "text",
+      "name": "Text",
+      "anchors": 1
+    },
+    {
+      "type": "arrow",
+      "name": "Arrow",
+      "anchors": 2
+    },
+    {
+      "type": "gannFan",
+      "name": "Gann Fan",
+      "anchors": 2
+    },
+    {
+      "type": "gannBox",
+      "name": "Gann Box",
+      "anchors": 2
+    },
+    {
+      "type": "anchoredVWAP",
+      "name": "Anchored VWAP",
+      "anchors": 1
+    },
+    {
+      "type": "volumeProfileRange",
+      "name": "Volume Profile (Range)",
+      "anchors": 2
+    },
+    {
+      "type": "fibTimeZones",
+      "name": "Fibonacci Time Zones",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0,
+              "visible": false
+            },
+            {
+              "value": 1,
+              "visible": true
+            },
+            {
+              "value": 2,
+              "visible": true
+            },
+            {
+              "value": 3,
+              "visible": true
+            },
+            {
+              "value": 5,
+              "visible": true
+            },
+            {
+              "value": 8,
+              "visible": true
+            },
+            {
+              "value": 13,
+              "visible": true
+            },
+            {
+              "value": 21,
+              "visible": true
+            },
+            {
+              "value": 34,
+              "visible": true
+            },
+            {
+              "value": 55,
+              "visible": true
+            },
+            {
+              "value": 89,
+              "visible": false
+            },
+            {
+              "value": 144,
+              "visible": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "riskReward",
+      "name": "Long/Short Position",
+      "anchors": 2,
+      "options": {
+        "rewardRatio": {
+          "kind": "number",
+          "label": "Reward:risk",
+          "default": 2
+        },
+        "accountSize": {
+          "kind": "number",
+          "label": "Account size",
+          "default": 1000
+        },
+        "riskMode": {
+          "kind": "choice",
+          "label": "Risk as",
+          "default": "percent"
+        },
+        "risk": {
+          "kind": "number",
+          "label": "Risk",
+          "default": 1
+        },
+        "qtyDecimals": {
+          "kind": "number",
+          "label": "Quantity decimals",
+          "default": 2
+        },
+        "showLabels": {
+          "kind": "boolean",
+          "label": "Show labels",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "crossLine",
+      "name": "Cross Line",
+      "anchors": 1
+    },
+    {
+      "type": "trendAngle",
+      "name": "Trend Angle",
+      "anchors": 2
+    },
+    {
+      "type": "infoLine",
+      "name": "Info Line",
+      "anchors": 2
+    },
+    {
+      "type": "fibChannel",
+      "name": "Fibonacci Channel",
+      "anchors": 3,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 0.236,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 1.618,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 2.618,
+              "visible": false,
+              "color": "#e8505b"
+            },
+            {
+              "value": 3.618,
+              "visible": false,
+              "color": "#a57cff"
+            },
+            {
+              "value": 4.236,
+              "visible": false,
+              "color": "#e25592"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "fibSpeedResistanceFan",
+      "name": "Fib Speed Resistance Fan",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0.236,
+              "visible": false,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.25,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.75,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": false,
+              "color": "#4c8dff"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "schiffPitchfork",
+      "name": "Schiff Pitchfork",
+      "anchors": 3
+    },
+    {
+      "type": "modifiedSchiffPitchfork",
+      "name": "Modified Schiff Pitchfork",
+      "anchors": 3
+    },
+    {
+      "type": "xabcdPattern",
+      "name": "XABCD Pattern",
+      "anchors": 5
+    },
+    {
+      "type": "abcdPattern",
+      "name": "ABCD Pattern",
+      "anchors": 4
+    },
+    {
+      "type": "headAndShoulders",
+      "name": "Head and Shoulders",
+      "anchors": 7
+    },
+    {
+      "type": "circle",
+      "name": "Circle",
+      "anchors": 2
+    },
+    {
+      "type": "dateAndPriceRange",
+      "name": "Date and Price Range",
+      "anchors": 2
+    },
+    {
+      "type": "cyclicLines",
+      "name": "Cyclic Lines",
+      "anchors": 2
+    },
+    {
+      "type": "priceLabel",
+      "name": "Price Label",
+      "anchors": 1
+    },
+    {
+      "type": "note",
+      "name": "Note",
+      "anchors": 1,
+      "options": {
+        "showText": {
+          "kind": "boolean",
+          "label": "Show text",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "callout",
+      "name": "Callout",
+      "anchors": 2
+    },
+    {
+      "type": "flag",
+      "name": "Flag Mark",
+      "anchors": 1
+    },
+    {
+      "type": "arrowMark",
+      "name": "Arrow Mark",
+      "anchors": 1,
+      "options": {
+        "direction": {
+          "kind": "choice",
+          "label": "Direction",
+          "default": "up"
+        },
+        "size": {
+          "kind": "number",
+          "label": "Size",
+          "default": 22
+        }
+      }
+    },
+    {
+      "type": "icon",
+      "name": "Icon",
+      "anchors": 1,
+      "options": {
+        "glyph": {
+          "kind": "choice",
+          "label": "Icon",
+          "default": "star"
+        },
+        "size": {
+          "kind": "number",
+          "label": "Size",
+          "default": 22
+        }
+      }
+    },
+    {
+      "type": "brush",
+      "name": "Brush",
+      "anchors": 2,
+      "creation": "freehand"
+    },
+    {
+      "type": "highlighter",
+      "name": "Highlighter",
+      "anchors": 2,
+      "creation": "freehand"
+    },
+    {
+      "type": "path",
+      "name": "Path",
+      "anchors": 2,
+      "creation": "path",
+      "options": {
+        "arrowEnd": {
+          "kind": "boolean",
+          "label": "Arrow at the end",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "polyline",
+      "name": "Polyline",
+      "anchors": 3,
+      "creation": "path"
+    },
+    {
+      "type": "curve",
+      "name": "Curve",
+      "anchors": 3
+    },
+    {
+      "type": "arc",
+      "name": "Arc",
+      "anchors": 3
+    },
+    {
+      "type": "fibCircles",
+      "name": "Fib Circles",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0.236,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 1.618,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 2.618,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 3.618,
+              "visible": false,
+              "color": "#a57cff"
+            },
+            {
+              "value": 4.236,
+              "visible": false,
+              "color": "#e25592"
+            }
+          ]
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "fibSpiral",
+      "name": "Fib Spiral",
+      "anchors": 2,
+      "options": {
+        "clockwise": {
+          "kind": "boolean",
+          "label": "Clockwise",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "fibArcs",
+      "name": "Fib Speed Resistance Arcs",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0.236,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            }
+          ]
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        },
+        "fullCircles": {
+          "kind": "boolean",
+          "label": "Full circles",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "fibWedge",
+      "name": "Fib Wedge",
+      "anchors": 3,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0.236,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.786,
+              "visible": true,
+              "color": "#4c8dff"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            }
+          ]
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "pitchfan",
+      "name": "Pitchfan",
+      "anchors": 3,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0,
+              "visible": true,
+              "color": "#7d8696"
+            },
+            {
+              "value": 0.25,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.75,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 1,
+              "visible": true,
+              "color": "#7d8696"
+            }
+          ]
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "gannSquare",
+      "name": "Gann Square",
+      "anchors": 2,
+      "options": {
+        "levels": {
+          "kind": "levels",
+          "label": "Levels",
+          "default": [
+            {
+              "value": 0.25,
+              "visible": true,
+              "color": "#e8505b"
+            },
+            {
+              "value": 0.382,
+              "visible": true,
+              "color": "#c98316"
+            },
+            {
+              "value": 0.5,
+              "visible": true,
+              "color": "#1fa874"
+            },
+            {
+              "value": 0.618,
+              "visible": true,
+              "color": "#1398a8"
+            },
+            {
+              "value": 0.75,
+              "visible": true,
+              "color": "#1398a8"
+            }
+          ]
+        },
+        "showLevels": {
+          "kind": "boolean",
+          "label": "Show levels",
+          "default": true
+        },
+        "arcs": {
+          "kind": "boolean",
+          "label": "Arcs",
+          "default": true
+        }
+      }
+    },
+    {
+      "type": "elliottImpulse",
+      "name": "Elliott Impulse Wave",
+      "anchors": 6,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "elliottCorrection",
+      "name": "Elliott Correction Wave",
+      "anchors": 4,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "elliottTriangle",
+      "name": "Elliott Triangle Wave",
+      "anchors": 6,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "elliottDoubleCombo",
+      "name": "Elliott Double Combo Wave",
+      "anchors": 4,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "elliottTripleCombo",
+      "name": "Elliott Triple Combo Wave",
+      "anchors": 6,
+      "options": {
+        "degree": {
+          "kind": "choice",
+          "label": "Degree",
+          "default": "minor"
+        }
+      }
+    },
+    {
+      "type": "threeDrives",
+      "name": "Three Drives Pattern",
+      "anchors": 6
+    },
+    {
+      "type": "cypherPattern",
+      "name": "Cypher Pattern",
+      "anchors": 5
+    },
+    {
+      "type": "timeCycles",
+      "name": "Time Cycles",
+      "anchors": 2
+    },
+    {
+      "type": "sineLine",
+      "name": "Sine Line",
+      "anchors": 2
+    },
+    {
+      "type": "forecast",
+      "name": "Forecast",
+      "anchors": 2
+    },
+    {
+      "type": "projection",
+      "name": "Projection",
+      "anchors": 3
+    },
+    {
+      "type": "barsPattern",
+      "name": "Bars Pattern",
+      "anchors": 3,
+      "options": {
+        "mode": {
+          "kind": "choice",
+          "label": "Show as",
+          "default": "bars"
+        },
+        "mirrored": {
+          "kind": "boolean",
+          "label": "Mirrored",
+          "default": false
+        },
+        "flipped": {
+          "kind": "boolean",
+          "label": "Flipped",
+          "default": false
+        }
+      }
+    }
+  ],
+  "chartTypes": [
+    "candlestick",
+    "hollowCandle",
+    "heikinAshi",
+    "bar",
+    "volumeCandles",
+    "equivolume",
+    "line",
+    "area",
+    "baseline",
+    "hlcArea",
+    "stepLine",
+    "lineWithMarkers",
+    "hiLo",
+    "renko",
+    "lineBreak",
+    "kagi",
+    "pointAndFigure",
+    "rangeBars"
+  ],
+  "timeframes": [
+    "1s",
+    "5s",
+    "15s",
+    "30s",
+    "1m",
+    "3m",
+    "5m",
+    "15m",
+    "30m",
+    "45m",
+    "1h",
+    "2h",
+    "3h",
+    "4h",
+    "6h",
+    "8h",
+    "12h",
+    "1d",
+    "2d",
+    "3d",
+    "1w",
+    "2w",
+    "1M",
+    "3M",
+    "6M",
+    "12M"
+  ],
+  "widgetFeatures": [
+    "toolbar",
+    "sidebar",
+    "statusBar",
+    "alerts",
+    "objectTree",
+    "symbolInfo",
+    "symbolSearch",
+    "settings",
+    "indicatorSettings",
+    "drawingSettings",
+    "dataWindow",
+    "commandPalette",
+    "hotkeySheet",
+    "goToDate",
+    "replay",
+    "screenshot",
+    "copyImage",
+    "shareView",
+    "autoFib",
+    "themeToggle",
+    "fullscreen",
+    "accountPanel",
+    "orderTicket",
+    "bracketOrders",
+    "depthLadder",
+    "layouts",
+    "indicatorTemplates",
+    "compare",
+    "indicatorLegend",
+    "navigation",
+    "customTimeframes",
+    "intervalTyping",
+    "dragDropImport",
+    "hotkeys",
+    "toasts",
+    "toolbar.symbol",
+    "toolbar.symbolInfo",
+    "toolbar.timeframes",
+    "toolbar.timeframeMenu",
+    "toolbar.chartType",
+    "toolbar.indicators",
+    "toolbar.layouts",
+    "toolbar.replay",
+    "toolbar.bracketOrders",
+    "toolbar.depthLadder",
+    "toolbar.accountPanel",
+    "toolbar.objectTree",
+    "toolbar.alerts",
+    "toolbar.screenshot",
+    "toolbar.settings",
+    "toolbar.themeToggle",
+    "toolbar.fullscreen",
+    "sidebar.cursor",
+    "sidebar.favorites",
+    "sidebar.lines",
+    "sidebar.fibonacci",
+    "sidebar.patterns",
+    "sidebar.forecasting",
+    "sidebar.annotation",
+    "sidebar.style",
+    "sidebar.magnet",
+    "sidebar.eraser",
+    "sidebar.zoomArea",
+    "sidebar.stayInDrawing",
+    "sidebar.undo",
+    "sidebar.redo",
+    "sidebar.clear",
+    "statusBar.range",
+    "statusBar.goToDate",
+    "statusBar.market",
+    "statusBar.connection",
+    "statusBar.symbol",
+    "statusBar.rangeTimeframe",
+    "indicatorLegend.values",
+    "indicatorLegend.visibility",
+    "indicatorLegend.settings",
+    "indicatorLegend.remove",
+    "indicatorLegend.more",
+    "pane.move",
+    "pane.collapse",
+    "pane.maximize",
+    "navigation.zoom",
+    "navigation.scroll",
+    "navigation.reset",
+    "menu.chart",
+    "menu.chart.alert",
+    "menu.chart.order",
+    "menu.chart.orderTicket",
+    "menu.chart.horizontalLine",
+    "menu.chart.resetView",
+    "menu.chart.drawings",
+    "menu.chart.exportData",
+    "menu.chart.settings",
+    "menu.chart.scale",
+    "menu.chart.goToDate",
+    "menu.chart.paneScale",
+    "menu.priceAxisAdd",
+    "menu.drawing",
+    "menu.drawing.settings",
+    "menu.drawing.alert",
+    "menu.drawing.order",
+    "menu.drawing.group",
+    "menu.drawing.lock",
+    "menu.drawing.hide",
+    "menu.drawing.duplicate",
+    "menu.drawing.delete",
+    "selectionToolbar",
+    "hotkeys.commandPalette",
+    "hotkeys.symbolSearch",
+    "hotkeys.save",
+    "hotkeys.tools",
+    "hotkeys.invertScale",
+    "hotkeys.goToDate",
+    "hotkeys.help"
+  ],
+  "styleKeys": {
+    "background.color": "color",
+    "panes.background": "color",
+    "panes.separatorColor": "color",
+    "panes.titleColor": "color",
+    "grid.horizontal.visible": "boolean",
+    "grid.horizontal.color": "color",
+    "grid.horizontal.style": "lineStyle",
+    "grid.horizontal.width": "width",
+    "grid.vertical.visible": "boolean",
+    "grid.vertical.color": "color",
+    "grid.vertical.style": "lineStyle",
+    "grid.vertical.width": "width",
+    "crosshair.horizontal.visible": "boolean",
+    "crosshair.horizontal.color": "color",
+    "crosshair.horizontal.style": "lineStyle",
+    "crosshair.horizontal.width": "width",
+    "crosshair.vertical.visible": "boolean",
+    "crosshair.vertical.color": "color",
+    "crosshair.vertical.style": "lineStyle",
+    "crosshair.vertical.width": "width",
+    "crosshair.labelBackground": "color",
+    "crosshair.labelTextColor": "color",
+    "axis.price.lineColor": "color",
+    "axis.price.textColor": "color",
+    "axis.time.lineColor": "color",
+    "axis.time.textColor": "color",
+    "legend.textColor": "color",
+    "legend.labelColor": "color",
+    "watermark.color": "color",
+    "lastPrice.visible": "boolean",
+    "lastPrice.upColor": "color",
+    "lastPrice.downColor": "color",
+    "lastPrice.style": "lineStyle",
+    "lastPrice.width": "width",
+    "volume.upColor": "color",
+    "volume.downColor": "color",
+    "sessionBreaks.color": "color",
+    "sessionBreaks.style": "lineStyle",
+    "sessionBreaks.width": "width",
+    "highLow.color": "color",
+    "trading.buyColor": "color",
+    "trading.sellColor": "color",
+    "trading.profitColor": "color",
+    "trading.lossColor": "color",
+    "trading.entryColor": "color",
+    "markers.longColor": "color",
+    "markers.shortColor": "color",
+    "markers.neutralColor": "color",
+    "tradeZones.profitColor": "color",
+    "tradeZones.lossColor": "color",
+    "tradeZones.activeColor": "color",
+    "drawings.handleColor": "color",
+    "series.candlestick.upColor": "color",
+    "series.candlestick.downColor": "color",
+    "series.candlestick.wickUpColor": "color",
+    "series.candlestick.wickDownColor": "color",
+    "series.heikinAshi.upColor": "color",
+    "series.heikinAshi.downColor": "color",
+    "series.heikinAshi.wickUpColor": "color",
+    "series.heikinAshi.wickDownColor": "color",
+    "series.hollowCandle.upColor": "color",
+    "series.hollowCandle.downColor": "color",
+    "series.volumeCandles.upColor": "color",
+    "series.volumeCandles.downColor": "color",
+    "series.volumeCandles.wickUpColor": "color",
+    "series.volumeCandles.wickDownColor": "color",
+    "series.equivolume.upColor": "color",
+    "series.equivolume.downColor": "color",
+    "series.equivolume.wickUpColor": "color",
+    "series.equivolume.wickDownColor": "color",
+    "series.bar.upColor": "color",
+    "series.bar.downColor": "color",
+    "series.hiLo.upColor": "color",
+    "series.hiLo.downColor": "color",
+    "series.renko.upColor": "color",
+    "series.renko.downColor": "color",
+    "series.lineBreak.upColor": "color",
+    "series.lineBreak.downColor": "color",
+    "series.rangeBars.upColor": "color",
+    "series.rangeBars.downColor": "color",
+    "series.kagi.upColor": "color",
+    "series.kagi.downColor": "color",
+    "series.pointAndFigure.upColor": "color",
+    "series.pointAndFigure.downColor": "color",
+    "series.baseline.upColor": "color",
+    "series.baseline.downColor": "color",
+    "series.baseline.lineWidth": "width",
+    "series.line.color": "color",
+    "series.line.lineWidth": "width",
+    "series.stepLine.color": "color",
+    "series.stepLine.lineWidth": "width",
+    "series.lineWithMarkers.color": "color",
+    "series.lineWithMarkers.lineWidth": "width",
+    "series.area.lineColor": "color",
+    "series.area.lineWidth": "width",
+    "series.area.topColor": "color",
+    "series.area.bottomColor": "color",
+    "series.hlcArea.lineColor": "color",
+    "series.hlcArea.lineWidth": "width",
+    "series.hlcArea.topColor": "color",
+    "series.hlcArea.bottomColor": "color"
+  },
+  "looks": [
+    "studio",
+    "terminal",
+    "capsule"
+  ],
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "builtIn": true
+    },
+    {
+      "code": "vi",
+      "name": "Tiếng Việt",
+      "builtIn": true
+    },
+    {
+      "code": "zh",
+      "name": "简体中文",
+      "builtIn": false
+    },
+    {
+      "code": "zh-Hant",
+      "name": "繁體中文",
+      "builtIn": false
+    },
+    {
+      "code": "ja",
+      "name": "日本語",
+      "builtIn": false
+    },
+    {
+      "code": "ko",
+      "name": "한국어",
+      "builtIn": false
+    },
+    {
+      "code": "es",
+      "name": "Español",
+      "builtIn": false
+    },
+    {
+      "code": "pt",
+      "name": "Português",
+      "builtIn": false
+    },
+    {
+      "code": "fr",
+      "name": "Français",
+      "builtIn": false
+    },
+    {
+      "code": "de",
+      "name": "Deutsch",
+      "builtIn": false
+    },
+    {
+      "code": "ru",
+      "name": "Русский",
+      "builtIn": false
+    },
+    {
+      "code": "tr",
+      "name": "Türkçe",
+      "builtIn": false
+    },
+    {
+      "code": "id",
+      "name": "Bahasa Indonesia",
+      "builtIn": false
+    },
+    {
+      "code": "th",
+      "name": "ไทย",
+      "builtIn": false
+    },
+    {
+      "code": "it",
+      "name": "Italiano",
+      "builtIn": false
+    },
+    {
+      "code": "nl",
+      "name": "Nederlands",
+      "builtIn": false
+    },
+    {
+      "code": "pl",
+      "name": "Polski",
+      "builtIn": false
+    },
+    {
+      "code": "cs",
+      "name": "Čeština",
+      "builtIn": false
+    },
+    {
+      "code": "sk",
+      "name": "Slovenčina",
+      "builtIn": false
+    },
+    {
+      "code": "hu",
+      "name": "Magyar",
+      "builtIn": false
+    },
+    {
+      "code": "ro",
+      "name": "Română",
+      "builtIn": false
+    },
+    {
+      "code": "el",
+      "name": "Ελληνικά",
+      "builtIn": false
+    },
+    {
+      "code": "sv",
+      "name": "Svenska",
+      "builtIn": false
+    },
+    {
+      "code": "da",
+      "name": "Dansk",
+      "builtIn": false
+    },
+    {
+      "code": "nb",
+      "name": "Norsk bokmål",
+      "builtIn": false
+    },
+    {
+      "code": "et",
+      "name": "Eesti",
+      "builtIn": false
+    },
+    {
+      "code": "ms",
+      "name": "Bahasa Melayu",
+      "builtIn": false
+    },
+    {
+      "code": "ar",
+      "name": "العربية",
+      "builtIn": false
+    },
+    {
+      "code": "he",
+      "name": "עברית",
+      "builtIn": false
+    },
+    {
+      "code": "fa",
+      "name": "فارسی",
+      "builtIn": false
+    }
+  ],
+  "options": {
+    "ChartWidget": [
+      {
+        "name": "symbol",
+        "type": "string",
+        "kind": "string"
+      },
+      {
+        "name": "timeframe",
+        "type": "TimeFrame"
+      },
+      {
+        "name": "theme",
+        "type": "ThemeName | Theme"
+      },
+      {
+        "name": "ui",
+        "type": "WidgetUIPreset | WidgetUITheme",
+        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'studio'`, the default; `'terminal'`; `'capsule'`) or your theme over one. Colours stay with `theme`."
+      },
+      {
+        "name": "locale",
+        "type": "string",
+        "doc": "UI chrome language (toolbar, watchlist, indicator picker, status bar, settings panel, hotkey sheet). A built-in table ('en', the default, or 'vi'), layered under `messages` for host overrides/additions. Does not translate the data-driven indicator/drawing-tool names from `widgetConfig.ts` — see README \"Widget i18n\".",
+        "kind": "string"
+      },
+      {
+        "name": "messages",
+        "type": "Partial<Record<MessageKey, string>>",
+        "doc": "Override or add individual UI strings, on top of `locale`'s built-in table."
+      },
+      {
+        "name": "features",
+        "type": "WidgetFeatures",
+        "doc": "The widget's switches, by name (`WIDGET_FEATURES`): every one is on unless set `false` here. A name without a dot turns a whole capability off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name, one place (`toolbar.screenshot`, `menu.chart.order`, `sidebar.magnet`). Change them while running with `setFeatures`."
+      },
+      {
+        "name": "toolbar",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "drawingTools",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "settings",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "trading",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "statusBar",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "rangeBar",
+        "type": "boolean",
+        "doc": "Range presets (1D, 5D, 1M … All) and \"go to date\" (also Alt+G) on the status bar. Default `true`; needs the status bar.",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicatorLegend",
+        "type": "boolean",
+        "doc": "The indicators on the chart, under the OHLCV legend and at the top of their panes, with show / settings / remove. Default `true`; `false` leaves only the toolbar's indicator count.",
+        "kind": "boolean"
+      },
+      {
+        "name": "replayRevealMarks",
+        "type": "boolean",
+        "doc": "In a replay, show the signal markers and trade zones only as it reaches them (a trade open until its exit). Default `true`; `false` shows them all through the replay.",
+        "kind": "boolean"
+      },
+      {
+        "name": "fullscreen",
+        "type": "boolean",
+        "doc": "Fullscreen button in the toolbar, where the browser allows it. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "alerts",
+        "type": "boolean",
+        "doc": "Price-alerts UI — a bell button in the toolbar that opens a floating panel to add / list / delete price alerts, plus a toast when one triggers. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "alertNotifications",
+        "type": "AlertNotifyOptions",
+        "doc": "Sound and/or desktop notification when a price alert triggers. Both off by default. `sound: true` plays a built-in beep; pass a URL for a custom one. `desktop: true` uses the Notification API (asks permission on first use)."
+      },
+      {
+        "name": "objectTree",
+        "type": "boolean",
+        "doc": "Object-tree panel — a layers button in the toolbar that opens a manager listing active indicators and drawings, with per-item show/hide, lock, and delete. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "depthLadder",
+        "type": "boolean",
+        "doc": "Depth-of-market ladder — a ladder button in the toolbar that opens a click-to-trade order-book panel. Off by default (needs trading + an order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.",
+        "kind": "boolean"
+      },
+      {
+        "name": "accountPanel",
+        "type": "boolean",
+        "doc": "The account panel at the bottom: open positions with their profit and loss, working orders and the fills so far, with close, reverse and cancel, and an order ticket. A toolbar button opens it. Default `true` when trading is on.",
+        "kind": "boolean"
+      },
+      {
+        "name": "layouts",
+        "type": "boolean | WidgetLayoutsOptions",
+        "doc": "Named layouts: a toolbar button to save the chart (symbol, interval, scale, chart type, indicators, drawings, alerts) under a name, open, rename and delete layouts, and auto-save the one open; Ctrl/Cmd+S saves. Kept in this browser's `localStorage` unless `storage` says otherwise. Default `true`."
+      },
+      {
+        "name": "indicatorTemplates",
+        "type": "boolean",
+        "doc": "Indicator templates: the indicators menu saves the chart's indicators (inputs, style, levels, panes) under a name and applies them in one go. Kept in this browser's `localStorage`. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "intervalTyping",
+        "type": "boolean",
+        "doc": "Type a number on the chart (after using it) to change the interval: `5`, `15m`, `1h`, `1D`, then Enter. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "chartMenuItems",
+        "type": "(context: ChartMenuItemsContext) => readonly WidgetMenuItem[]",
+        "doc": "Your own entries at the end of the chart's right-click menus (and of the \"+\" by the price axis), after the widget's. Called each time a menu opens.",
+        "kind": "function"
+      },
+      {
+        "name": "drawingMenuItems",
+        "type": "(context: DrawingMenuItemsContext) => readonly WidgetMenuItem[]",
+        "doc": "Your own entries at the end of a drawing's right-click menu. Called each time it opens.",
+        "kind": "function"
+      },
+      {
+        "name": "indicatorMenuItems",
+        "type": "(context: IndicatorMenuItemsContext) => readonly WidgetMenuItem[]",
+        "doc": "Your own entries at the end of an indicator's \"more\" menu (on its row on the chart).",
+        "kind": "function"
+      },
+      {
+        "name": "symbols",
+        "type": "string[]"
+      },
+      {
+        "name": "timeframes",
+        "type": "TimeFrame[]"
+      },
+      {
+        "name": "customTimeframes",
+        "type": "boolean",
+        "doc": "Let users type their own intervals (7m, 90m, 2h…) in the timeframe menu. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "chartTypes",
+        "type": "ChartType[]",
+        "items": [
+          "candlestick",
+          "line",
+          "area",
+          "bar",
+          "heikinAshi",
+          "hollowCandle",
+          "baseline",
+          "renko",
+          "lineBreak",
+          "kagi",
+          "pointAndFigure",
+          "rangeBars",
+          "volumeCandles",
+          "hlcArea",
+          "stepLine",
+          "lineWithMarkers",
+          "equivolume",
+          "hiLo"
+        ]
+      },
+      {
+        "name": "adapter",
+        "type": "DataAdapter"
+      },
+      {
+        "name": "searchSymbols",
+        "type": "(query: string, signal: AbortSignal) => Promise<SymbolInfo[]>",
+        "doc": "Search symbols as the user types in the symbol search (names, exchanges). Defaults to the adapter's `searchSymbols`; without either, the search filters `symbols`.",
+        "kind": "function"
+      },
+      {
+        "name": "historyLimit",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "historyPageSize",
+        "type": "number",
+        "doc": "Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500.",
+        "kind": "number"
+      },
+      {
+        "name": "chartOptions",
+        "type": "Partial<ChartOptions>"
+      },
+      {
+        "name": "watchlist",
+        "type": "boolean | WatchlistOptions",
+        "doc": "A watchlist sidebar on the right: lists of symbols with last price, % change and a mini sparkline; lists can be added, renamed, deleted and reordered. `true` starts with one list of `symbols`. Default `false`."
+      },
+      {
+        "name": "symbolInfo",
+        "type": "boolean",
+        "doc": "The symbol info panel (names, price and move, market status, the day's numbers, hours, news) and its toolbar button. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "navigation",
+        "type": "boolean",
+        "doc": "Buttons over the chart, shown while the pointer is on it: zoom out and in, scroll earlier and later, reset the view. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "dir",
+        "type": "'ltr' | 'rtl' | 'auto'",
+        "doc": "Writing direction of the widget's chrome: `'rtl'` mirrors the toolbar, drawing tools, menus and dialogs (the chart keeps time running left to right). Default `'auto'`: right to left for Arabic, Hebrew, Persian, Urdu.",
+        "values": [
+          "ltr",
+          "rtl",
+          "auto"
+        ]
+      },
+      {
+        "name": "news",
+        "type": "(symbol: string, limit: number) => Promise<NewsItem[]>",
+        "doc": "Headlines for the symbol info panel, newest first; default the adapter's `fetchNews` when it has one. Links that aren't web pages are dropped.",
+        "kind": "function"
+      },
+      {
+        "name": "dragDropImport",
+        "type": "boolean",
+        "doc": "Drag-and-drop CSV / JSON file import onto the chart. Default `true`. Set to `false` to disable (e.g. if the chart sits inside a larger surface that already handles drops).",
+        "kind": "boolean"
+      },
+      {
+        "name": "resampleTimeframes",
+        "type": "boolean",
+        "doc": "Client-side timeframe resampling. When enabled (default `true`) and no live adapter is attached, switching to a coarser timeframe aggregates the loaded base series instead of refetching — one dataset drives every resolution. Disable to keep the timeframe buttons purely as a `onTimeframeChange` signal for the host app to refetch.",
+        "kind": "boolean"
+      },
+      {
+        "name": "weekStartsOn",
+        "type": "0 | 1",
+        "doc": "Anchor day for weekly resample buckets. `0` = Sunday, `1` = Monday (default).",
+        "values": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": "shareUrl",
+        "type": "boolean",
+        "doc": "Deep-linking. When `true`, the widget restores a `#tcw=<encoded>` view from the URL hash on load, and the \"Share View\" command writes one back. Use `exportState()` / `importState()` for manual control.",
+        "kind": "boolean"
+      },
+      {
+        "name": "drawingFavorites",
+        "type": "DrawingToolType[]",
+        "doc": "Drawing tools to pre-pin to the favorites strip at the top of the drawing sidebar on first run. Users pin/unpin any tool by right-clicking it; the set persists to localStorage. The strip is always available (hidden while empty) — this option only seeds the initial pins.",
+        "items": [
+          "trendLine",
+          "horizontalLine",
+          "horizontalRay",
+          "verticalLine",
+          "ray",
+          "extendedLine",
+          "crossLine",
+          "trendAngle",
+          "infoLine",
+          "parallelChannel",
+          "regressionChannel",
+          "fibRetracement",
+          "fibExtension",
+          "fibTimeZones",
+          "fibChannel",
+          "fibSpeedResistanceFan",
+          "rectangle",
+          "ellipse",
+          "triangle",
+          "circle",
+          "pitchfork",
+          "schiffPitchfork",
+          "modifiedSchiffPitchfork",
+          "elliottWave",
+          "xabcdPattern",
+          "abcdPattern",
+          "headAndShoulders",
+          "priceRange",
+          "dateRange",
+          "dateAndPriceRange",
+          "measure",
+          "text",
+          "arrow",
+          "priceLabel",
+          "gannFan",
+          "gannBox",
+          "cyclicLines",
+          "anchoredVWAP",
+          "volumeProfileRange",
+          "riskReward",
+          "note",
+          "callout",
+          "flag",
+          "arrowMark",
+          "icon",
+          "brush",
+          "highlighter",
+          "path",
+          "polyline",
+          "curve",
+          "arc",
+          "fibCircles",
+          "fibSpiral",
+          "fibArcs",
+          "fibWedge",
+          "pitchfan",
+          "gannSquare",
+          "elliottImpulse",
+          "elliottCorrection",
+          "elliottTriangle",
+          "elliottDoubleCombo",
+          "elliottTripleCombo",
+          "threeDrives",
+          "cypherPattern",
+          "timeCycles",
+          "sineLine",
+          "forecast",
+          "projection",
+          "barsPattern"
+        ]
+      },
+      {
+        "name": "persistLayouts",
+        "type": "boolean | { keyPrefix?: string; debounceMs?: number; }"
+      },
+      {
+        "name": "onSymbolChange",
+        "type": "(symbol: string) => void",
+        "kind": "function"
+      },
+      {
+        "name": "onTimeframeChange",
+        "type": "(tf: TimeFrame) => void",
+        "kind": "function"
+      },
+      {
+        "name": "onReady",
+        "type": "(chart: Chart) => void",
+        "kind": "function"
+      }
+    ],
+    "Chart": [
+      {
+        "name": "width",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "height",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "chartType",
+        "type": "ChartType",
+        "doc": "Default `'candlestick'`.",
+        "values": [
+          "candlestick",
+          "line",
+          "area",
+          "bar",
+          "heikinAshi",
+          "hollowCandle",
+          "baseline",
+          "renko",
+          "lineBreak",
+          "kagi",
+          "pointAndFigure",
+          "rangeBars",
+          "volumeCandles",
+          "hlcArea",
+          "stepLine",
+          "lineWithMarkers",
+          "equivolume",
+          "hiLo"
+        ]
+      },
+      {
+        "name": "theme",
+        "type": "ThemeName | Theme"
+      },
+      {
+        "name": "autoScale",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "rightMargin",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "minBarSpacing",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "maxBarSpacing",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "grid",
+        "type": "GridOptions",
+        "doc": "The grid's lines: shorthand for the `grid.*` overrides."
+      },
+      {
+        "name": "crosshair",
+        "type": "CrosshairOptions",
+        "doc": "The crosshair's mode, and its lines: shorthand for the `crosshair.*` overrides."
+      },
+      {
+        "name": "overrides",
+        "type": "ChartStyleOverridesPatch",
+        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`."
+      },
+      {
+        "name": "priceAxis",
+        "type": "PriceAxisOptions"
+      },
+      {
+        "name": "timeAxis",
+        "type": "TimeAxisOptions"
+      },
+      {
+        "name": "watermark",
+        "type": "WatermarkConfig"
+      },
+      {
+        "name": "logScale",
+        "type": "boolean",
+        "doc": "Start with logarithmic price scale",
+        "kind": "boolean"
+      },
+      {
+        "name": "sessionBreaks",
+        "type": "SessionBreakOptions",
+        "doc": "Session break line configuration"
+      },
+      {
+        "name": "features",
+        "type": "FeaturesConfig",
+        "doc": "Feature toggles — control what users can access"
+      },
+      {
+        "name": "numberLocale",
+        "type": "string",
+        "doc": "BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'.",
+        "kind": "string"
+      },
+      {
+        "name": "freePan",
+        "type": "boolean",
+        "doc": "Free panning (default `true`): drag past the newest bar into empty future space, or past the oldest bar, until `panLimits.minVisibleBars` bars remain. `false` restores the pre-1.3 clamp (newest bar stops at its resting position).",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeZone",
+        "type": "string | number | null",
+        "doc": "Timezone for the time axis, crosshair, tooltip, day breaks and range presets: an IANA zone (`'America/New_York'`, daylight saving included), a fixed offset in minutes east of UTC, or null (default) for the browser's."
+      },
+      {
+        "name": "leftPriceScale",
+        "type": "boolean",
+        "doc": "Show a price scale on the left too. It carries the overlays put on it (`addIndicator(…, { scale: 'left' })`), else it mirrors the price scale. It shows by itself once an overlay is on it.",
+        "kind": "boolean"
+      },
+      {
+        "name": "panLimits",
+        "type": "{ minVisibleBars?: number; }",
+        "doc": "Bounds for free panning."
+      },
+      {
+        "name": "maxPixelRatio",
+        "type": "number",
+        "doc": "The highest device pixel ratio the chart draws at. Default 2: a 3x phone screen is drawn at 2x, 56% fewer pixels and less than half the canvas memory for lines barely softer. `Infinity` draws at the screen's own.",
+        "kind": "number"
+      },
+      {
+        "name": "pauseWhenHidden",
+        "type": "boolean",
+        "doc": "Stop drawing while no one can see the chart: scrolled off screen, or the page hidden (another tab, the app in the background). Data, indicators and alerts keep up; the frame missed is drawn on return. Default true. `suspend()` / `resume()` pause it from the host (a WebView's app paused).",
+        "kind": "boolean"
+      },
+      {
+        "name": "pageScroll",
+        "type": "boolean",
+        "doc": "For a chart on a page that scrolls (an article, a phone screen): a one-finger vertical swipe and the plain mouse wheel scroll the page; a sideways swipe pans the chart, and two fingers or Ctrl + wheel (a trackpad pinch) zoom it. Presses on drawings, lines and axes stay the chart's. Default false: the chart takes every gesture over it.",
+        "kind": "boolean"
+      },
+      {
+        "name": "minBarUnit",
+        "type": "number",
+        "doc": "How narrow a bar slot may get to fit a long series on screen (zooming out, `fitContent`, the 'All' range), px. Default 0.25: four bars a pixel, so 26 years of daily bars don't all fit on a laptop screen. Down to 0.02 (50 bars a pixel); below a pixel bars are drawn a pixel column at a time.",
+        "kind": "number"
+      },
+      {
+        "name": "priceFormat",
+        "type": "PriceFormatter | PriceFraction",
+        "doc": "How prices read on the price scale and everything that prints one (axis, crosshair, last-price tag, legend, tooltip, orders, alerts, drawings): a function of yours, or fractions of a point (a bond in 32nds: `101'16`). Indicator panes keep their own numbers. Default: decimals."
+      },
+      {
+        "name": "timeFormatter",
+        "type": "TimeFormatter",
+        "doc": "How times read on the time axis, the crosshair and the tooltip. Default: the chart's own.",
+        "kind": "function"
+      },
+      {
+        "name": "chartTypeOptions",
+        "type": "ChartTypeOptions",
+        "doc": "Settings of Renko, Line Break, Kagi, Point & Figure and range bars."
+      },
+      {
+        "name": "highLowLines",
+        "type": "boolean",
+        "doc": "Mark the highest high and lowest low on screen with a line and a price tag.",
+        "kind": "boolean"
+      },
+      {
+        "name": "shapes",
+        "type": "ShapeConfig",
+        "doc": "The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills."
+      },
+      {
+        "name": "a11y",
+        "type": "false | { labels?: Partial<ChartA11yLabels>; }",
+        "doc": "The chart for screen readers: a summary, what is on screen after the keys move it, comma and period to read the bars. On by default; labels in your language here; `false` leaves it out."
+      },
+      {
+        "name": "renderer",
+        "type": "'canvas' | 'webgl' | 'auto'",
+        "doc": "What draws the plot and panes: `'canvas'` (Canvas 2D, the default), `'webgl'` (WebGL 2 on the GPU, Canvas 2D where it can't be had) or `'auto'` (WebGL 2 where the GPU is a real one).",
+        "values": [
+          "canvas",
+          "webgl",
+          "auto"
+        ]
+      },
+      {
+        "name": "extendedHours",
+        "type": "boolean",
+        "doc": "Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`): pre- and post-market. Default true; bars a day or longer are never left out.",
+        "kind": "boolean"
+      },
+      {
+        "name": "plugins",
+        "type": "ChartPlugin[]",
+        "doc": "Plugins to install with the chart: indicators, drawing tools, chart types and overlays of your own."
+      }
+    ],
+    "ChartWidgetGrid": [
+      {
+        "name": "layout",
+        "type": "GridLayout",
+        "doc": "How the charts are arranged. Default `'1x2'` (two side by side).",
+        "values": [
+          "1x1",
+          "1x2",
+          "2x1",
+          "2x2",
+          "1x3",
+          "3x1",
+          "2x3",
+          "3x2"
+        ]
+      },
+      {
+        "name": "layoutChoices",
+        "type": "readonly GridLayout[]",
+        "doc": "The arrangements the bar offers. Default all of them.",
+        "items": [
+          "1x1",
+          "1x2",
+          "2x1",
+          "2x2",
+          "1x3",
+          "3x1",
+          "2x3",
+          "3x2"
+        ]
+      },
+      {
+        "name": "widget",
+        "type": "ChartWidgetOptions",
+        "doc": "Options for every chart. Leave `adapter` out of these when there is more than one chart: an adapter keeps one stream, so each chart needs its own (see `adapter`)."
+      },
+      {
+        "name": "adapter",
+        "type": "(index: number) => DataAdapter",
+        "doc": "Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart.",
+        "kind": "function"
+      },
+      {
+        "name": "cells",
+        "type": "readonly ChartWidgetOptions[]",
+        "doc": "Each chart's own options, by position (its symbol and interval, say), over `widget`."
+      },
+      {
+        "name": "sync",
+        "type": "Partial<WidgetGridSync>",
+        "doc": "What the charts follow from each other; see {@link DEFAULT_GRID_SYNC}."
+      },
+      {
+        "name": "layouts",
+        "type": "boolean | WidgetLayoutsOptions",
+        "doc": "Named layouts of the whole grid (arrangement, sync and every chart). Default `true`."
+      },
+      {
+        "name": "bar",
+        "type": "boolean",
+        "doc": "The bar above the charts: arrangement, sync, layouts. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "onActiveChange",
+        "type": "(index: number, widget: ChartWidget) => void",
+        "doc": "The chart in use changed (pressed, or the grid shrank).",
+        "kind": "function"
+      },
+      {
+        "name": "onChartAdd",
+        "type": "(widget: ChartWidget, index: number) => void",
+        "doc": "A chart was made: at the start, and when the grid grows. Feed it data, add indicators…",
+        "kind": "function"
+      }
+    ]
+  },
+  "nested": {
+    "ChartWidget.chartOptions": [
+      {
+        "name": "width",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "height",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "chartType",
+        "type": "ChartType",
+        "doc": "Default `'candlestick'`.",
+        "values": [
+          "candlestick",
+          "line",
+          "area",
+          "bar",
+          "heikinAshi",
+          "hollowCandle",
+          "baseline",
+          "renko",
+          "lineBreak",
+          "kagi",
+          "pointAndFigure",
+          "rangeBars",
+          "volumeCandles",
+          "hlcArea",
+          "stepLine",
+          "lineWithMarkers",
+          "equivolume",
+          "hiLo"
+        ]
+      },
+      {
+        "name": "theme",
+        "type": "ThemeName | Theme"
+      },
+      {
+        "name": "autoScale",
+        "type": "boolean",
+        "kind": "boolean"
+      },
+      {
+        "name": "rightMargin",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "minBarSpacing",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "maxBarSpacing",
+        "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "grid",
+        "type": "GridOptions",
+        "doc": "The grid's lines: shorthand for the `grid.*` overrides."
+      },
+      {
+        "name": "crosshair",
+        "type": "CrosshairOptions",
+        "doc": "The crosshair's mode, and its lines: shorthand for the `crosshair.*` overrides."
+      },
+      {
+        "name": "overrides",
+        "type": "ChartStyleOverridesPatch",
+        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`."
+      },
+      {
+        "name": "priceAxis",
+        "type": "PriceAxisOptions"
+      },
+      {
+        "name": "timeAxis",
+        "type": "TimeAxisOptions"
+      },
+      {
+        "name": "watermark",
+        "type": "WatermarkConfig"
+      },
+      {
+        "name": "logScale",
+        "type": "boolean",
+        "doc": "Start with logarithmic price scale",
+        "kind": "boolean"
+      },
+      {
+        "name": "sessionBreaks",
+        "type": "SessionBreakOptions",
+        "doc": "Session break line configuration"
+      },
+      {
+        "name": "features",
+        "type": "FeaturesConfig",
+        "doc": "Feature toggles — control what users can access"
+      },
+      {
+        "name": "numberLocale",
+        "type": "string",
+        "doc": "BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'.",
+        "kind": "string"
+      },
+      {
+        "name": "freePan",
+        "type": "boolean",
+        "doc": "Free panning (default `true`): drag past the newest bar into empty future space, or past the oldest bar, until `panLimits.minVisibleBars` bars remain. `false` restores the pre-1.3 clamp (newest bar stops at its resting position).",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeZone",
+        "type": "string | number | null",
+        "doc": "Timezone for the time axis, crosshair, tooltip, day breaks and range presets: an IANA zone (`'America/New_York'`, daylight saving included), a fixed offset in minutes east of UTC, or null (default) for the browser's."
+      },
+      {
+        "name": "leftPriceScale",
+        "type": "boolean",
+        "doc": "Show a price scale on the left too. It carries the overlays put on it (`addIndicator(…, { scale: 'left' })`), else it mirrors the price scale. It shows by itself once an overlay is on it.",
+        "kind": "boolean"
+      },
+      {
+        "name": "panLimits",
+        "type": "{ minVisibleBars?: number; }",
+        "doc": "Bounds for free panning."
+      },
+      {
+        "name": "maxPixelRatio",
+        "type": "number",
+        "doc": "The highest device pixel ratio the chart draws at. Default 2: a 3x phone screen is drawn at 2x, 56% fewer pixels and less than half the canvas memory for lines barely softer. `Infinity` draws at the screen's own.",
+        "kind": "number"
+      },
+      {
+        "name": "pauseWhenHidden",
+        "type": "boolean",
+        "doc": "Stop drawing while no one can see the chart: scrolled off screen, or the page hidden (another tab, the app in the background). Data, indicators and alerts keep up; the frame missed is drawn on return. Default true. `suspend()` / `resume()` pause it from the host (a WebView's app paused).",
+        "kind": "boolean"
+      },
+      {
+        "name": "pageScroll",
+        "type": "boolean",
+        "doc": "For a chart on a page that scrolls (an article, a phone screen): a one-finger vertical swipe and the plain mouse wheel scroll the page; a sideways swipe pans the chart, and two fingers or Ctrl + wheel (a trackpad pinch) zoom it. Presses on drawings, lines and axes stay the chart's. Default false: the chart takes every gesture over it.",
+        "kind": "boolean"
+      },
+      {
+        "name": "minBarUnit",
+        "type": "number",
+        "doc": "How narrow a bar slot may get to fit a long series on screen (zooming out, `fitContent`, the 'All' range), px. Default 0.25: four bars a pixel, so 26 years of daily bars don't all fit on a laptop screen. Down to 0.02 (50 bars a pixel); below a pixel bars are drawn a pixel column at a time.",
+        "kind": "number"
+      },
+      {
+        "name": "priceFormat",
+        "type": "PriceFormatter | PriceFraction",
+        "doc": "How prices read on the price scale and everything that prints one (axis, crosshair, last-price tag, legend, tooltip, orders, alerts, drawings): a function of yours, or fractions of a point (a bond in 32nds: `101'16`). Indicator panes keep their own numbers. Default: decimals."
+      },
+      {
+        "name": "timeFormatter",
+        "type": "TimeFormatter",
+        "doc": "How times read on the time axis, the crosshair and the tooltip. Default: the chart's own.",
+        "kind": "function"
+      },
+      {
+        "name": "chartTypeOptions",
+        "type": "ChartTypeOptions",
+        "doc": "Settings of Renko, Line Break, Kagi, Point & Figure and range bars."
+      },
+      {
+        "name": "highLowLines",
+        "type": "boolean",
+        "doc": "Mark the highest high and lowest low on screen with a line and a price tag.",
+        "kind": "boolean"
+      },
+      {
+        "name": "shapes",
+        "type": "ShapeConfig",
+        "doc": "The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills."
+      },
+      {
+        "name": "a11y",
+        "type": "false | { labels?: Partial<ChartA11yLabels>; }",
+        "doc": "The chart for screen readers: a summary, what is on screen after the keys move it, comma and period to read the bars. On by default; labels in your language here; `false` leaves it out."
+      },
+      {
+        "name": "renderer",
+        "type": "'canvas' | 'webgl' | 'auto'",
+        "doc": "What draws the plot and panes: `'canvas'` (Canvas 2D, the default), `'webgl'` (WebGL 2 on the GPU, Canvas 2D where it can't be had) or `'auto'` (WebGL 2 where the GPU is a real one).",
+        "values": [
+          "canvas",
+          "webgl",
+          "auto"
+        ]
+      },
+      {
+        "name": "extendedHours",
+        "type": "boolean",
+        "doc": "Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`): pre- and post-market. Default true; bars a day or longer are never left out.",
+        "kind": "boolean"
+      }
+    ],
+    "Chart.features": [
+      {
+        "name": "drawings",
+        "type": "boolean",
+        "doc": "Enable drawing tools entirely. When false, no drawing tool can be activated.",
+        "kind": "boolean"
+      },
+      {
+        "name": "drawingTools",
+        "type": "DrawingToolType[]",
+        "doc": "Whitelist of allowed drawing tool types. When set, only these tools are available.",
+        "items": [
+          "trendLine",
+          "horizontalLine",
+          "horizontalRay",
+          "verticalLine",
+          "ray",
+          "extendedLine",
+          "crossLine",
+          "trendAngle",
+          "infoLine",
+          "parallelChannel",
+          "regressionChannel",
+          "fibRetracement",
+          "fibExtension",
+          "fibTimeZones",
+          "fibChannel",
+          "fibSpeedResistanceFan",
+          "rectangle",
+          "ellipse",
+          "triangle",
+          "circle",
+          "pitchfork",
+          "schiffPitchfork",
+          "modifiedSchiffPitchfork",
+          "elliottWave",
+          "xabcdPattern",
+          "abcdPattern",
+          "headAndShoulders",
+          "priceRange",
+          "dateRange",
+          "dateAndPriceRange",
+          "measure",
+          "text",
+          "arrow",
+          "priceLabel",
+          "gannFan",
+          "gannBox",
+          "cyclicLines",
+          "anchoredVWAP",
+          "volumeProfileRange",
+          "riskReward",
+          "note",
+          "callout",
+          "flag",
+          "arrowMark",
+          "icon",
+          "brush",
+          "highlighter",
+          "path",
+          "polyline",
+          "curve",
+          "arc",
+          "fibCircles",
+          "fibSpiral",
+          "fibArcs",
+          "fibWedge",
+          "pitchfan",
+          "gannSquare",
+          "elliottImpulse",
+          "elliottCorrection",
+          "elliottTriangle",
+          "elliottDoubleCombo",
+          "elliottTripleCombo",
+          "threeDrives",
+          "cypherPattern",
+          "timeCycles",
+          "sineLine",
+          "forecast",
+          "projection",
+          "barsPattern"
+        ]
+      },
+      {
+        "name": "drawingMagnet",
+        "type": "boolean",
+        "doc": "Allow magnet/snap for drawing anchors. When false, `setDrawingMagnet(true)` is ignored.",
+        "kind": "boolean"
+      },
+      {
+        "name": "drawingUndoRedo",
+        "type": "boolean",
+        "doc": "Enable undo/redo for drawings (Ctrl+Z / Ctrl+Y)",
+        "kind": "boolean"
+      },
+      {
+        "name": "trading",
+        "type": "boolean",
+        "doc": "Enable trading features (orders, positions, context menu)",
+        "kind": "boolean"
+      },
+      {
+        "name": "tradingContextMenu",
+        "type": "boolean",
+        "doc": "Right-click menu for placing orders. Default `false` — opt in explicitly.",
+        "kind": "boolean"
+      },
+      {
+        "name": "priceAxisAddButton",
+        "type": "boolean",
+        "doc": "A \"+\" by the price axis, level with the crosshair; a click on it emits `priceAxisAdd` with the price. Default `false` (ChartWidget turns it on).",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicators",
+        "type": "boolean",
+        "doc": "Enable indicator overlays and panels",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicatorIds",
+        "type": "string[]",
+        "doc": "Whitelist of allowed indicator IDs. When set, only these are available."
+      },
+      {
+        "name": "panning",
+        "type": "boolean",
+        "doc": "Enable mouse/touch pan",
+        "kind": "boolean"
+      },
+      {
+        "name": "zooming",
+        "type": "boolean",
+        "doc": "Enable mouse wheel / pinch zoom",
+        "kind": "boolean"
+      },
+      {
+        "name": "crosshair",
+        "type": "boolean",
+        "doc": "Enable crosshair",
+        "kind": "boolean"
+      },
+      {
+        "name": "crosshairTooltip",
+        "type": "boolean",
+        "doc": "Show the floating OHLCV tooltip that follows the cursor on hover. Pro trading charts usually rely on the top-left legend (`legend`) instead of a cursor-following popup — set this to `false` to match that and keep only the legend updating on hover.",
+        "kind": "boolean"
+      },
+      {
+        "name": "keyboard",
+        "type": "boolean",
+        "doc": "Enable keyboard shortcuts (arrows, +/-, Home/End, Space)",
+        "kind": "boolean"
+      },
+      {
+        "name": "priceAxis",
+        "type": "boolean",
+        "doc": "Show price axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeAxis",
+        "type": "boolean",
+        "doc": "Show time axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "grid",
+        "type": "boolean",
+        "doc": "Show grid lines",
+        "kind": "boolean"
+      },
+      {
+        "name": "legend",
+        "type": "boolean",
+        "doc": "Show OHLCV legend overlay",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicatorValueLabels",
+        "type": "boolean",
+        "doc": "Tag each indicator line's latest value on its value axis. Default true.",
+        "kind": "boolean"
+      },
+      {
+        "name": "volume",
+        "type": "boolean",
+        "doc": "Show volume bars below candles",
+        "kind": "boolean"
+      },
+      {
+        "name": "watermark",
+        "type": "boolean",
+        "doc": "Show watermark text",
+        "kind": "boolean"
+      },
+      {
+        "name": "saveLoad",
+        "type": "boolean",
+        "doc": "Enable chart state save/load",
+        "kind": "boolean"
+      },
+      {
+        "name": "screenshot",
+        "type": "boolean",
+        "doc": "Enable screenshot capture",
+        "kind": "boolean"
+      },
+      {
+        "name": "alerts",
+        "type": "boolean",
+        "doc": "Enable price alerts",
+        "kind": "boolean"
+      },
+      {
+        "name": "replay",
+        "type": "boolean",
+        "doc": "Enable bar replay",
+        "kind": "boolean"
+      },
+      {
+        "name": "sessionBreaks",
+        "type": "boolean",
+        "doc": "Show session break lines (day separators)",
+        "kind": "boolean"
+      },
+      {
+        "name": "barCountdown",
+        "type": "boolean",
+        "doc": "Show bar countdown timer (time until current candle closes). When false it stays hidden.",
+        "kind": "boolean"
+      },
+      {
+        "name": "compareSymbols",
+        "type": "boolean",
+        "doc": "Enable compare/overlay symbols. When false, `addCompareSymbol` does nothing.",
+        "kind": "boolean"
+      },
+      {
+        "name": "dataExport",
+        "type": "boolean",
+        "doc": "Enable data export (CSV/JSON). When false, `exportVisibleData` / `exportAllData` do nothing.",
+        "kind": "boolean"
+      },
+      {
+        "name": "logScale",
+        "type": "boolean",
+        "doc": "Allow the logarithmic price scale. When false, switching to it is ignored.",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeframes",
+        "type": "TimeFrame[]",
+        "doc": "Whitelist of timeframes. When set, `setTimeframe` ignores any other, and ChartWidget offers only these."
+      },
+      {
+        "name": "defaultTimeframeFavorites",
+        "type": "TimeFrame[]",
+        "doc": "ChartWidget: timeframes on the quick-access bar until the user changes them."
+      }
+    ]
+  }
+}

@@ -2,10 +2,20 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@tradecanvas/commons", "@tradecanvas/core", "@tradecanvas/chart", "@tradecanvas/analytics"]],
+  "fixed": [
+    [
+      "@tradecanvas/commons",
+      "@tradecanvas/core",
+      "@tradecanvas/chart",
+      "@tradecanvas/analytics",
+      "@tradecanvas/mcp"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@tradecanvas/demo"]
+  "ignore": [
+    "@tradecanvas/demo"
+  ]
 }

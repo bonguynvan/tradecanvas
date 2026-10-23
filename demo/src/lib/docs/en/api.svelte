@@ -733,7 +733,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>112 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>114 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })

@@ -380,7 +380,7 @@ const zh: SiteMessages = {
     },
     parts: {
       title: '你的组件，部件由你定',
-      stat: '112 个开关',
+      stat: '114 个开关',
       blurb:
         '组件的每个部分都有开关，默认开启，运行时可随时切换：可以是整项功能（警报、设置、快捷键），也可以是一个位置（工具栏上的某个按钮、某个菜单项、某组绘图工具）。你自己的按钮、菜单和状态项就放在组件的各个栏里。这里关闭了回放、两组绘图工具和数据下载，工具栏上多了一个开关菜单。',
       tryThis: [
@@ -765,7 +765,7 @@ const zh: SiteMessages = {
         { name: '组件的三种外观', detail: 'Studio、Terminal、Capsule；ui 与 setUI；--tcw-* CSS 变量' },
         { name: '按键定制图表外观', detail: 'applyOverrides 覆盖 101 个带类型的键，分为宿主层和用户层' },
         { name: '覆盖每个键的设置', detail: '当前图表类型的样式选项卡，以及交易选项卡' },
-        { name: '112 个功能开关', detail: 'features、setFeatures、isFeatureOn；运行时可更改' },
+        { name: '114 个功能开关', detail: 'features、setFeatures、isFeatureOn；运行时可更改' },
         { name: '在组件中加入你自己的部件', detail: '工具栏按钮和下拉菜单、侧边栏按钮、状态栏项、插槽、菜单项' },
         { name: '自定义快捷键', detail: 'addHotkey，按键盘布局识别' },
       ],

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>커스터마이징 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 112개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
+  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 114개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
 </svelte:head>
 
 <h1>커스터마이징</h1>

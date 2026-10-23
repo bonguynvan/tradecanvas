@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Personalización — Documentación de TradeCanvas</title>
-  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 112 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
+  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 114 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
 </svelte:head>
 
 <h1>Personalización</h1>

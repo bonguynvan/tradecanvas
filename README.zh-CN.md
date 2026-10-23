@@ -39,7 +39,7 @@
 - **实时数据**：内置 Binance、Bybit、Coinbase 和 Kraken，自己的数据源约二十行即可接入。
 - **快**：WebGL 下百万根 K 线 60 fps 平移；一次实时 tick 约一微秒。
 - **工作区**：多图网格、布局、K 线回放、回测。
-- **随你定制**：主题、三种外观、112 个开关、插件；30 种语言；手机与应用。
+- **随你定制**：主题、三种外观、114 个开关、插件；30 种语言；手机与应用。
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ new ChartWidget(document.getElementById('chart')!, {
 ```
 
 其他 agent（Cursor、Codex、Copilot 等）：`npx skills add bonguynvan/tradecanvas`。不用技能时，[`llms.txt`](https://tradecanvas.dev/llms.txt) 和 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) 把文档集中在一个文件里提供给 AI 助手。想用 agent 修改 TradeCanvas 本身？仓库的规则见 [AGENTS.md](AGENTS.md)。
+
+MCP 服务器 `@tradecanvas/mcp` 在库自身的目录中查找指标、画线工具、选项、功能开关和样式 key，并在使用前检查选项对象 ([其他客户端的设置](https://tradecanvas.dev/zh/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## 更多
 

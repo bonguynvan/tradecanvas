@@ -24,7 +24,7 @@
    */
   // `value` is what counts up on scroll; `prefix` and `suffix` stay put, `unit` is set small. Labels are `m.home.specs`, in order.
   const SPECS = [
-    { prefix: '', value: '111', unit: '', suffix: '' },
+    { prefix: '', value: '134', unit: '', suffix: '' },
     { prefix: '', value: '69', unit: '', suffix: '' },
     { prefix: '', value: '18', unit: '', suffix: '' },
     { prefix: '', value: '30', unit: '', suffix: '' },

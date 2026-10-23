@@ -74,6 +74,21 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
   <a href={href('/docs/frameworks')}>フレームワーク</a>のセクションで紹介しています。
 </p>
 
+<h2 id="ai">コーディングエージェントと使う</h2>
+<p>コーディングエージェントは TradeCanvas を推測せずに学べます。<strong>エージェントスキル</strong>は型チェック済みのサンプルで API を教えます。Claude Code では 2 つのコマンドでインストールできます:</p>
+<pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas`}</code></pre>
+<p><strong>MCP サーバー</strong> <code>@tradecanvas/mcp</code> はライブラリ自身のカタログから答えます: インジケーターの id、パラメーター、各ラインのキー。描画ツールとそれぞれに必要な点の数。<code>ChartWidget</code>、<code>Chart</code>、<code>ChartWidgetGrid</code> のオプション。機能スイッチとスタイルキー。<code>validate_options</code> ツールは使う前にオプションのオブジェクトを確かめ、本来書くつもりだったオプションを示します。Claude Code では:</p>
+<pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
+<p>Cursor、Claude Desktop など多くのクライアントは、MCP の設定に同じコマンドを書きます:</p>
+<pre><code>{`{
+  "mcpServers": {
+    "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
+  }
+}`}</code></pre>
+<p>WSL を使わない Windows では、npx を <code>cmd</code> 経由で起動します: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>。設定では <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code> と書きます。</p>
+<p>どちらも使わない場合は、<a href="https://tradecanvas.dev/llms.txt">llms.txt</a> と <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> がドキュメントを 1 ファイルでアシスタントに渡します。</p>
+
 <h2>次のステップ</h2>
 <ul>
   <li><a href={href('/docs/api')}>API リファレンス</a> — <code>Chart</code> と <code>ChartWidget</code> の全 API</li>

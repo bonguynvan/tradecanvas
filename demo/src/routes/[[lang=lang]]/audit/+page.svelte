@@ -8,7 +8,7 @@
   const m = $derived(i18n.m.audit);
 
   /** The values beside `m.audit.numbers`, in its order. */
-  const NUMBERS = ['18', '111', '69', '30', '101', '112', '0', '3,000+'];
+  const NUMBERS = ['18', '134', '69', '30', '101', '114', '0', '3,000+'];
 
   /**
    * Frame times beside `m.audit.perf`, from the Performance docs: pixel ratio,

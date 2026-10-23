@@ -379,7 +379,7 @@ const fr: SiteMessages = {
     },
     parts: {
       title: 'Votre widget, vos pièces',
-      stat: '112 interrupteurs',
+      stat: '114 interrupteurs',
       blurb:
         'Chaque partie du widget a son interrupteur, allumé jusqu’à ce que vous l’éteigniez et modifiable en marche : une capacité entière (alertes, réglages, raccourcis) ou un seul endroit (un bouton de la barre, une entrée de menu, une section d’outils de dessin). Vos propres boutons, menus et éléments d’état prennent place dans les barres du widget. Ici le replay, deux sections de dessin et le téléchargement des données sont éteints, et la barre porte un menu d’interrupteurs.',
       tryThis: [
@@ -764,7 +764,7 @@ const fr: SiteMessages = {
         { name: 'Trois apparences pour le widget', detail: 'Studio, Terminal, Capsule ; ui et setUI ; variables CSS --tcw-*' },
         { name: 'L’apparence du graphique, clé par clé', detail: 'applyOverrides sur 101 clés typées, sur une couche hôte et une couche utilisateur' },
         { name: 'Des paramètres qui atteignent chaque clé', detail: 'Un onglet de style pour le type de graphique affiché, un onglet trading' },
-        { name: '112 interrupteurs de fonctionnalités', detail: 'features, setFeatures, isFeatureOn ; modifiables en marche' },
+        { name: '114 interrupteurs de fonctionnalités', detail: 'features, setFeatures, isFeatureOn ; modifiables en marche' },
         { name: 'Vos propres pièces dans le widget', detail: 'Boutons et menus déroulants de la barre d’outils, boutons de la barre latérale, éléments d’état, emplacements, entrées de menu' },
         { name: 'Vos propres raccourcis', detail: 'addHotkey selon la disposition du clavier' },
       ],

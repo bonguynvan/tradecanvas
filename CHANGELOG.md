@@ -4,6 +4,15 @@
 
 Collected on `main` for the next release. Not on npm yet.
 
+### An MCP server for coding agents
+
+- **`@tradecanvas/mcp`**, a new package: an MCP server that a coding agent (Claude Code, Cursor, Claude Desktop and others) starts with `npx -y @tradecanvas/mcp`, so it looks TradeCanvas names up instead of guessing them. Seven read-only tools answer from a catalog generated from the library's own code: the indicators with their params and line keys, the drawing tools with the points each takes, the options of `ChartWidget`, `Chart` and `ChartWidgetGrid`, the feature switches and the style keys.
+- **`validate_options`** checks an options object before it is used: unknown names with the one likely meant (and where an option of another entry point goes), values outside the allowed ones, numbers given as strings, intervals, feature switches, style overrides and languages, nested options included. Intervals and style overrides are read by the library's own readers.
+- The Getting started docs have a section on working with a coding agent: the skill, the MCP server and the llms files.
+- The docs counted 112 feature switches; the widget has 114.
+
+## 1.31.0 (2026-10-23)
+
 ### Form controls, one quiet look
 
 The widget's fields, lists and pickers were the browser's own: heavy boxes, a thick ring on focus, a plain grey list under every select and the system calendar under every date. They now share one look, drawn from tokens.

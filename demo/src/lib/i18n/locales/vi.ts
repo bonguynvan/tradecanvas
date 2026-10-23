@@ -379,7 +379,7 @@ const vi: SiteMessages = {
     },
     parts: {
       title: 'Widget của bạn, phần nào tùy bạn',
-      stat: '112 công tắc',
+      stat: '114 công tắc',
       blurb:
         'Mỗi phần của widget có một công tắc, bật sẵn cho tới khi bạn tắt và đổi được khi đang chạy: cả một tính năng (cảnh báo, cài đặt, phím tắt) hoặc một chỗ (một nút trên toolbar, một mục menu, một nhóm công cụ vẽ). Nút, menu và mục trạng thái của riêng bạn nằm ngay trong các thanh của widget. Ở đây replay, hai nhóm công cụ vẽ và nút tải dữ liệu đã tắt, còn toolbar có thêm một menu công tắc.',
       tryThis: [
@@ -764,7 +764,7 @@ const vi: SiteMessages = {
         { name: 'Ba kiểu giao diện cho widget', detail: 'Studio, Terminal, Capsule; ui và setUI; biến CSS --tcw-*' },
         { name: 'Giao diện biểu đồ theo khoá', detail: 'applyOverrides trên 101 khoá có kiểu, ở lớp ứng dụng và lớp người dùng' },
         { name: 'Settings chỉnh được mọi khoá', detail: 'Tab style theo loại biểu đồ đang xem, tab giao dịch' },
-        { name: '112 công tắc tính năng', detail: 'features, setFeatures, isFeatureOn; đổi được khi đang chạy' },
+        { name: '114 công tắc tính năng', detail: 'features, setFeatures, isFeatureOn; đổi được khi đang chạy' },
         { name: 'Thành phần của riêng bạn trong widget', detail: 'Nút và dropdown trên toolbar, nút sidebar, mục thanh trạng thái, slot, mục menu' },
         { name: 'Phím tắt của riêng bạn', detail: 'addHotkey theo bố cục bàn phím' },
       ],

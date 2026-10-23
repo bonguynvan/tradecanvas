@@ -379,7 +379,7 @@ const ko: SiteMessages = {
     },
     parts: {
       title: '위젯의 부품은 당신이 정합니다',
-      stat: '스위치 112개',
+      stat: '스위치 114개',
       blurb:
         '위젯의 모든 부분에 스위치가 있어 끄기 전까지는 켜져 있고 실행 중에도 바꿀 수 있습니다. 기능 전체(알림, 설정, 단축키)일 수도, 한 자리(툴바 버튼 하나, 메뉴 항목 하나, 그리기 도구 묶음 하나)일 수도 있습니다. 직접 만든 버튼, 메뉴, 상태 항목은 위젯의 바 안에 들어갑니다. 여기서는 리플레이, 그리기 도구 두 묶음, 데이터 다운로드를 끄고 툴바에 스위치 메뉴를 더했습니다.',
       tryThis: [
@@ -764,7 +764,7 @@ const ko: SiteMessages = {
         { name: '위젯의 세 가지 외관', detail: 'Studio, Terminal, Capsule. ui와 setUI. --tcw-* CSS 변수' },
         { name: '키 단위로 정하는 차트의 모양', detail: '타입이 지정된 101개 키에 applyOverrides, 호스트 계층과 사용자 계층' },
         { name: '모든 키에 닿는 설정', detail: '보고 있는 차트 유형의 스타일 탭과 트레이딩 탭' },
-        { name: '기능 스위치 112개', detail: 'features, setFeatures, isFeatureOn. 실행 중에도 변경' },
+        { name: '기능 스위치 114개', detail: 'features, setFeatures, isFeatureOn. 실행 중에도 변경' },
         { name: '위젯에 넣는 나만의 요소', detail: '도구 모음 버튼과 드롭다운, 사이드바 버튼, 상태 항목, 슬롯, 메뉴 항목' },
         { name: '나만의 단축키', detail: '키보드 배열에 맞춘 addHotkey' },
       ],

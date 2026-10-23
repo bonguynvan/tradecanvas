@@ -379,7 +379,7 @@ const id: SiteMessages = {
     },
     parts: {
       title: 'Widget Anda, bagian pilihan Anda',
-      stat: '112 sakelar',
+      stat: '114 sakelar',
       blurb:
         'Setiap bagian widget punya sakelar, menyala sampai Anda mematikannya dan bisa diubah saat berjalan: satu kemampuan utuh (peringatan, pengaturan, pintasan) atau satu tempat (tombol toolbar, entri menu, kelompok alat gambar). Tombol, menu, dan item status milik Anda sendiri duduk di bilah-bilah widget. Di sini replay, dua kelompok alat gambar, dan unduhan data dimatikan, dan toolbar membawa menu sakelar.',
       tryThis: [
@@ -764,7 +764,7 @@ const id: SiteMessages = {
         { name: 'Tiga tampilan widget', detail: 'Studio, Terminal, Capsule; ui dan setUI; variabel CSS --tcw-*' },
         { name: 'Tampilan grafik per kunci', detail: 'applyOverrides atas 101 kunci bertipe, pada lapisan host dan lapisan pengguna' },
         { name: 'Pengaturan yang menjangkau setiap kunci', detail: 'Tab gaya untuk jenis grafik yang sedang tampil, tab trading' },
-        { name: '112 sakelar fitur', detail: 'features, setFeatures, isFeatureOn; dapat diubah saat berjalan' },
+        { name: '114 sakelar fitur', detail: 'features, setFeatures, isFeatureOn; dapat diubah saat berjalan' },
         { name: 'Komponen Anda sendiri di widget', detail: 'Tombol dan dropdown bilah alat, tombol panel samping, item status, slot, item menu' },
         { name: 'Pintasan Anda sendiri', detail: 'addHotkey sesuai tata letak keyboard' },
       ],

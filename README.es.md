@@ -39,7 +39,7 @@
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos.
 - **Un espacio de trabajo**: cuadrículas de gráficos, diseños, repetición de barras, backtesting.
-- **A tu medida**: temas, tres aspectos, 112 interruptores, plugins; 30 idiomas; móviles y apps.
+- **A tu medida**: temas, tres aspectos, 114 interruptores, plugins; 30 idiomas; móviles y apps.
 
 <table>
   <tr>
@@ -109,6 +109,14 @@ La skill para agentes de [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) ens
 ```
 
 Otros agentes (Cursor, Codex, Copilot y más): `npx skills add bonguynvan/tradecanvas`. Sin skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) y [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) dan a un asistente la documentación en un solo archivo. ¿Vas a cambiar TradeCanvas con un agente? Las reglas del repositorio están en [AGENTS.md](AGENTS.md).
+
+El servidor MCP `@tradecanvas/mcp` busca indicadores, herramientas de dibujo, opciones, interruptores y claves de estilo en el propio catálogo de la biblioteca, y revisa un objeto de opciones antes de usarlo ([configuración en otros clientes](https://tradecanvas.dev/es/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## Más
 

@@ -10,7 +10,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables
-- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 112 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
+- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 114 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
 - [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
 - [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
 - [Realtime and replay](https://tradecanvas.dev/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
@@ -79,6 +79,11 @@ also works on a widget.
    everything.
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
+8. **Look names up when the TradeCanvas MCP server is connected** (tools named
+   `get_indicator`, `validate_options`…, from `@tradecanvas/mcp`): an
+   indicator's params and line keys with `get_indicator`, drawing types with
+   `list_drawing_tools`, and an options object through `validate_options`
+   before it goes to `new ChartWidget` or `new Chart`.
 
 ## Quick start: the widget with live data
 
@@ -1181,7 +1186,7 @@ packages/library/README.md
 - **Live data** from Binance, Bybit, Coinbase and Kraken, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond.
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
-- **Yours to shape**: themes, three looks, 112 switches, plugins; 30 languages; phones and apps.
+- **Yours to shape**: themes, three looks, 114 switches, plugins; 30 languages; phones and apps.
 
 <table>
   <tr>
@@ -1251,6 +1256,14 @@ The agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecan
 ```
 
 Other agents (Cursor, Codex, Copilot and more): `npx skills add bonguynvan/tradecanvas`. Without a skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) and [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) give an assistant the docs in one file. Changing TradeCanvas itself with an agent? [AGENTS.md](https://github.com/bonguynvan/tradecanvas/blob/main/AGENTS.md) holds the repo's rules.
+
+The MCP server `@tradecanvas/mcp` looks up indicators, drawing tools, options, feature switches and style keys in the library's own catalog, and checks an options object before it is used ([set it up in other clients](https://tradecanvas.dev/docs/getting-started/#ai)):
+
+```bash
+claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
+```
+
+On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`.
 
 ## More
 

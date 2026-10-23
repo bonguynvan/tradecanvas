@@ -379,7 +379,7 @@ const ja: SiteMessages = {
     },
     parts: {
       title: 'ウィジェットの部品はあなた次第',
-      stat: 'スイッチ 112 個',
+      stat: 'スイッチ 114 個',
       blurb:
         'ウィジェットのあらゆる部分にスイッチがあり、オフにするまではオン、動作中でも切り替えられます。機能まるごと（アラート、設定、キー操作）も、一か所（ツールバーのボタン、メニューの項目、描画ツールのグループ）も。自分のボタン、メニュー、ステータス項目はウィジェットの各バーに収まります。ここではリプレイ、描画ツール 2 グループ、データのダウンロードをオフにし、ツールバーにスイッチのメニューを加えています。',
       tryThis: [
@@ -764,7 +764,7 @@ const ja: SiteMessages = {
         { name: 'ウィジェットの 3 つの外観', detail: 'Studio、Terminal、Capsule。ui と setUI。--tcw-* CSS 変数' },
         { name: 'キー単位でのチャートの見た目', detail: '型付きの 101 キーに applyOverrides。ホスト層とユーザー層の 2 層' },
         { name: 'すべてのキーに届く設定', detail: '表示中のチャートタイプのスタイルタブと、トレードタブ' },
-        { name: '112 個の機能スイッチ', detail: 'features、setFeatures、isFeatureOn。実行中に変更可能' },
+        { name: '114 個の機能スイッチ', detail: 'features、setFeatures、isFeatureOn。実行中に変更可能' },
         { name: 'ウィジェットに独自のパーツ', detail: 'ツールバーのボタンとドロップダウン、サイドバーのボタン、ステータス項目、スロット、メニュー項目' },
         { name: '独自のショートカット', detail: 'キーボード配列に合わせた addHotkey' },
       ],

@@ -4,12 +4,14 @@
 //   skills/tradecanvas/references/indicators.md   the agent skill's indicator reference
 //   demo/static/llms.txt, demo/static/llms-full.txt
 //   packages/library/README.md                    the npm page: the root README, links made absolute
+//   packages/mcp/src/catalog.json                 what the MCP server answers from (scripts/mcp-catalog.mjs)
 //
 //   node scripts/gen-ai-docs.mjs           write them (after `pnpm build`)
 //   node scripts/gen-ai-docs.mjs --check   fail if any is out of date
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildMcpCatalog } from './mcp-catalog.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = 'https://tradecanvas.dev';
@@ -83,7 +85,7 @@ function llmsTxt() {
     `- [API reference](${SITE}/docs/api): Chart and ChartWidget methods, options and events`,
     `- [Indicators](${SITE}/docs/indicators): every built-in indicator with its id, inputs and lines`,
     `- [Styling](${SITE}/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables`,
-    `- [Customization](${SITE}/docs/customization): every way to customise: themes, looks, style overrides, the widget's 112 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS`,
+    `- [Customization](${SITE}/docs/customization): every way to customise: themes, looks, style overrides, the widget's ${mcpCatalog.widgetFeatures.length} feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS`,
     `- [Chart types](${SITE}/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more`,
     `- [Drawing tools](${SITE}/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text`,
     `- [Realtime and replay](${SITE}/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay`,
@@ -149,6 +151,7 @@ function llmsFullTxt(indicatorsMd, readmeMd) {
   ].join('') + '\n';
 }
 
+const mcpCatalog = await buildMcpCatalog(ROOT, catalog);
 const indicatorsMd = indicatorsMarkdown();
 const readmeMd = npmReadme();
 const outputs = [
@@ -157,6 +160,7 @@ const outputs = [
   ['demo/static/llms.txt', llmsTxt()],
   ['demo/static/llms-full.txt', llmsFullTxt(indicatorsMd, readmeMd)],
   ['packages/library/README.md', readmeMd],
+  ['packages/mcp/src/catalog.json', JSON.stringify(mcpCatalog, null, 2) + '\n'],
 ];
 
 let stale = 0;

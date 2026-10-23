@@ -78,6 +78,21 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
   <a href={href('/docs/frameworks')}>frameworks</a>.
 </p>
 
+<h2 id="ai">Con un agente de programación</h2>
+<p>Los agentes de programación pueden aprender TradeCanvas en lugar de adivinarlo. La <strong>skill para agentes</strong> enseña la API con ejemplos cuyos tipos se comprueban; en Claude Code se instala con dos comandos:</p>
+<pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas`}</code></pre>
+<p>El <strong>servidor MCP</strong>, <code>@tradecanvas/mcp</code>, responde con el propio catálogo de la biblioteca: los ids de los indicadores, sus parámetros y las claves de sus líneas; las herramientas de dibujo y los puntos que pide cada una; las opciones de <code>ChartWidget</code>, <code>Chart</code> y <code>ChartWidgetGrid</code>; los interruptores de funciones y las claves de estilo. Su herramienta <code>validate_options</code> revisa un objeto de opciones antes de usarlo y nombra la opción que se quería escribir. En Claude Code:</p>
+<pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
+<p>Cursor, Claude Desktop y la mayoría de los demás clientes aceptan el mismo comando en su configuración MCP:</p>
+<pre><code>{`{
+  "mcpServers": {
+    "tradecanvas": { "command": "npx", "args": ["-y", "@tradecanvas/mcp"] }
+  }
+}`}</code></pre>
+<p>En Windows fuera de WSL, npx se inicia a través de <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, o en la configuración <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>.</p>
+<p>Sin ninguno de los dos, <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> y <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> dan a un asistente la documentación en un solo archivo.</p>
+
 <h2>Siguientes pasos</h2>
 <ul>
   <li><a href={href('/docs/api')}>Referencia de la API</a> — superficie completa de <code>Chart</code> y <code>ChartWidget</code></li>
