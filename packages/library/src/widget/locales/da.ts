@@ -5,7 +5,6 @@ export const DA_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Indikatorer',
   'toolbar.more': 'Mere',
-  'toolbar.indicators.popular': 'Populære',
   'toolbar.indicators.all': 'Alle',
   'indicatorType.overlay': 'på grafen',
   'indicatorType.panel': 'egen rude',

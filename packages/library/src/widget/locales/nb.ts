@@ -5,7 +5,6 @@ export const NB_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Indikatorer',
   'toolbar.more': 'Mer',
-  'toolbar.indicators.popular': 'Populære',
   'toolbar.indicators.all': 'Alle',
   'indicatorType.overlay': 'på grafen',
   'indicatorType.panel': 'egen rute',

@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toolbar.indicators': '指標',
   'toolbar.more': '更多',
-  'toolbar.indicators.popular': '常用',
   'toolbar.indicators.all': '全部',
   'indicatorType.overlay': '疊加',
   'indicatorType.panel': '副圖',

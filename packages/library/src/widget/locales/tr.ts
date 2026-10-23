@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const TR_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Göstergeler',
   'toolbar.more': 'Daha fazla',
-  'toolbar.indicators.popular': 'Popüler',
   'toolbar.indicators.all': 'Tümü',
   'indicatorType.overlay': 'grafik üstü',
   'indicatorType.panel': 'ayrı panel',

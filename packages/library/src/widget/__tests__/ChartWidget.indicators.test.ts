@@ -45,6 +45,7 @@ class FakeChart {
   bump = 0;
   timeAligned = true;
   // The account panel reads these on its frame.
+  getAvailableIndicators(): IndicatorDescriptor[] { return [...DESCRIPTORS.values()]; }
   getOrders(): unknown[] { return []; }
   getPositions(): unknown[] { return []; }
   getFills(): unknown[] { return []; }
@@ -126,8 +127,11 @@ const rows = () => [...host.querySelectorAll<HTMLElement>('.tcw-ind-legend-row')
 const names = () => rows().map((r) => r.querySelector('.tcw-ind-legend-name')!.textContent);
 const values = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('.tcw-ind-legend-values > span')];
 const act = (row: HTMLElement, a: string) => row.querySelector<HTMLButtonElement>(`[data-act="${a}"]`)!.click();
-const pick = (id: string): void =>
-  (document.querySelector(`.tcw-dropdown-item[data-ind="${id}"]`) as HTMLButtonElement).click();
+/** Add an indicator from the indicators dialog, opening it first. */
+const pick = (id: string): void => {
+  if (!document.querySelector('.tcw-ip')) host.querySelector<HTMLButtonElement>('[data-role="indicators"]')!.click();
+  document.querySelector<HTMLButtonElement>(`.tcw-ip-add[data-ind="${id}"]`)!.click();
+};
 
 beforeEach(() => {
   host = document.createElement('div');

@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const VI_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Chỉ báo',
   'toolbar.more': 'Thêm',
-  'toolbar.indicators.popular': 'Phổ biến',
   'toolbar.indicators.all': 'Tất cả',
   'indicatorType.overlay': 'phủ lên',
   'indicatorType.panel': 'bảng riêng',

@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const SK_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikátory',
   'toolbar.more': 'Ďalšie',
-  'toolbar.indicators.popular': 'Populárne',
   'toolbar.indicators.all': 'Všetky',
   'indicatorType.overlay': 'v grafe',
   'indicatorType.panel': 'samostatný panel',

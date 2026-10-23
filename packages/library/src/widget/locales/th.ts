@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const TH_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'อินดิเคเตอร์',
   'toolbar.more': 'เพิ่มเติม',
-  'toolbar.indicators.popular': 'ยอดนิยม',
   'toolbar.indicators.all': 'ทั้งหมด',
   'indicatorType.overlay': 'ซ้อนบนกราฟ',
   'indicatorType.panel': 'แผงแยก',

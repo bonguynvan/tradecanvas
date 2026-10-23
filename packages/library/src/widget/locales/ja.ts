@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const JA_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'インジケーター',
   'toolbar.more': 'その他',
-  'toolbar.indicators.popular': '人気',
   'toolbar.indicators.all': 'すべて',
   'indicatorType.overlay': 'オーバーレイ',
   'indicatorType.panel': 'サブチャート',

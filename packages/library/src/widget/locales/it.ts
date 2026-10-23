@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const IT_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indicatori',
   'toolbar.more': 'Altro',
-  'toolbar.indicators.popular': 'Popolari',
   'toolbar.indicators.all': 'Tutti',
   'indicatorType.overlay': 'sovrapposto',
   'indicatorType.panel': 'pannello',

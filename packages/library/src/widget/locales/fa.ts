@@ -5,7 +5,6 @@ export const FA_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'اندیکاتورها',
   'toolbar.more': 'بیشتر',
-  'toolbar.indicators.popular': 'محبوب',
   'toolbar.indicators.all': 'همه',
   'indicatorType.overlay': 'روی نمودار',
   'indicatorType.panel': 'پنل',

@@ -5,7 +5,6 @@ export const MS_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Penunjuk',
   'toolbar.more': 'Lagi',
-  'toolbar.indicators.popular': 'Popular',
   'toolbar.indicators.all': 'Semua',
   'indicatorType.overlay': 'tindanan',
   'indicatorType.panel': 'panel',

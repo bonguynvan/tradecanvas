@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const RO_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indicatori',
   'toolbar.more': 'Mai mult',
-  'toolbar.indicators.popular': 'Populari',
   'toolbar.indicators.all': 'Toți',
   'indicatorType.overlay': 'suprapus',
   'indicatorType.panel': 'panou',

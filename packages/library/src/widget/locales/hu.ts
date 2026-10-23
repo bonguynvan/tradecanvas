@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const HU_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikátorok',
   'toolbar.more': 'Továbbiak',
-  'toolbar.indicators.popular': 'Népszerű',
   'toolbar.indicators.all': 'Összes',
   'indicatorType.overlay': 'árgrafikonon',
   'indicatorType.panel': 'külön panelen',

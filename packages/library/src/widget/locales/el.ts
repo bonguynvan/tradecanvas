@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const EL_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Δείκτες',
   'toolbar.more': 'Περισσότερα',
-  'toolbar.indicators.popular': 'Δημοφιλείς',
   'toolbar.indicators.all': 'Όλοι',
   'indicatorType.overlay': 'επικάλυψη',
   'indicatorType.panel': 'πάνελ',

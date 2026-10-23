@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const KO_MESSAGES: WidgetMessages = {
   'toolbar.indicators': '지표',
   'toolbar.more': '더보기',
-  'toolbar.indicators.popular': '인기',
   'toolbar.indicators.all': '전체',
   'indicatorType.overlay': '오버레이',
   'indicatorType.panel': '보조 차트',

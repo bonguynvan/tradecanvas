@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const ID_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikator',
   'toolbar.more': 'Lainnya',
-  'toolbar.indicators.popular': 'Populer',
   'toolbar.indicators.all': 'Semua',
   'indicatorType.overlay': 'tumpang',
   'indicatorType.panel': 'panel',

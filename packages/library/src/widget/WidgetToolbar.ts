@@ -4,7 +4,7 @@ import { createChartTypeIcon, createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetDropdown } from './WidgetDropdown.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { fill, type Translator } from './i18n.js';
+import type { Translator } from './i18n.js';
 import { chartTypeLabel } from './widgetLocales.js';
 import { markPart, partAttr, tidyDividers } from './widgetFeatures.js';
 import { timeframeSections } from './widgetTimeframes.js';
@@ -36,7 +36,6 @@ export class WidgetToolbar {
   private t: Translator;
   private el: HTMLDivElement;
   private chartTypeDropdown: WidgetDropdown | null = null;
-  private indicatorDropdown: WidgetDropdown | null = null;
   private tfGroup: HTMLDivElement | null = null;
   private tfDropdown: WidgetDropdown | null = null;
   private tfFavorites: TimeFrame[] = [];
@@ -44,8 +43,6 @@ export class WidgetToolbar {
   private readonly uid = (toolbarCount++).toString(36);
   private tfRendered = '';
   private themeBtn: HTMLButtonElement | null = null;
-  /** Indicator templates' names, listed atop the indicators menu. */
-  private indicatorTemplates: string[] = [];
   private fullscreenBtn: HTMLButtonElement | null = null;
   /** Where hosts' own buttons go: after the chart controls, and before the panel buttons. */
   private hostLeft: HTMLDivElement | null = null;
@@ -201,20 +198,16 @@ export class WidgetToolbar {
 
     el.appendChild(this.sep());
 
-    // Indicators dropdown
-    const indWrap = document.createElement('div');
-    indWrap.style.position = 'relative';
-    indWrap.style.display = 'inline-flex';
-    markPart(indWrap, 'toolbar.indicators');
-
+    // Indicators: the dialog that lists them all.
     const indTrigger = document.createElement('button');
+    indTrigger.type = 'button';
     indTrigger.className = 'tcw-dropdown-trigger';
     indTrigger.dataset.role = 'indicators';
-    indWrap.appendChild(indTrigger);
-    el.appendChild(indWrap);
-
-    this.indicatorDropdown = new WidgetDropdown(indWrap, { width: '280px', layer: this.layer });
-    this.buildIndicatorMenu();
+    indTrigger.setAttribute('aria-haspopup', 'dialog');
+    indTrigger.setAttribute('aria-expanded', 'false');
+    markPart(indTrigger, 'toolbar.indicators');
+    indTrigger.addEventListener('click', () => callbacks.onIndicators());
+    el.appendChild(indTrigger);
 
     if (callbacks.onCompare) {
       const compareBtn = document.createElement('button');
@@ -602,75 +595,9 @@ export class WidgetToolbar {
     });
   }
 
-  /**
-   * The indicator templates to list (names), after one is saved or deleted.
-   * `keepFocus`: focus was in the menu (a delete), so it goes to "Save…".
-   */
-  setIndicatorTemplates(names: readonly string[], keepFocus = false): void {
-    this.indicatorTemplates = [...names];
-    this.buildIndicatorMenu();
-    if (keepFocus) (this.indicatorDropdown?.['panel'] as HTMLDivElement | undefined)?.querySelector<HTMLButtonElement>('[data-tpl-save]')?.focus();
-  }
-
-  /** Templates atop the indicators menu: apply one, delete one, save the chart's. */
-  private templatesMenuHtml(): string {
-    if (!this.callbacks.onSaveIndicatorTemplate) return '';
-    const remove = this.t('templates.delete');
-    let html = `<div ${partAttr('indicatorTemplates')}><div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.templates'))}</div>`;
-    for (const name of this.indicatorTemplates) {
-      const n = esc(name);
-      html += `<div class="tcw-tf-row">`
-        + `<button class="tcw-dropdown-item" data-tpl-apply="${n}">${createIcon('layers', 14)}<span>${n}</span></button>`
-        + `<button class="tcw-tf-remove" data-tpl-delete="${n}" title="${esc(fill(remove, { name }))}" aria-label="${esc(fill(remove, { name }))}">${createIcon('x', 12)}</button>`
-        + `</div>`;
-    }
-    html += `<button class="tcw-dropdown-item" data-tpl-save>${createIcon('save', 14)}<span>${esc(this.t('templates.save'))}</span></button>`;
-    return `${html}<div class="tcw-dropdown-divider"></div></div>`;
-  }
-
-  private buildIndicatorMenu(): void {
-    if (!this.indicatorDropdown) return;
-    const { indicators, popularIndicatorIds } = this.config;
-
-    const popular = indicators.filter(d => popularIndicatorIds.includes(d.id));
-    const other = indicators.filter(d => !popularIndicatorIds.includes(d.id));
-
-    const typeLabel = (type: string) => this.t(`indicatorType.${type}` as Parameters<Translator>[0]);
-
-    const row = (ind: (typeof indicators)[number]) =>
-      `<button class="tcw-dropdown-item" data-ind="${esc(ind.id)}"><span>${esc(ind.name)}</span><span class="tcw-tag">${esc(typeLabel(ind.type))}</span></button>`;
-    let html = this.templatesMenuHtml();
-    html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.popular'))}</div>`;
-    for (const ind of popular) html += row(ind);
-    html += '<div class="tcw-dropdown-divider"></div>';
-    html += `<div class="tcw-dropdown-label">${esc(this.t('toolbar.indicators.all'))}</div>`;
-    for (const ind of other) html += row(ind);
-
-    this.indicatorDropdown.setContent(html);
-
-    const panel = this.indicatorDropdown['panel'] as HTMLDivElement;
-    panel.querySelectorAll('.tcw-dropdown-item[data-ind]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const id = (e.currentTarget as HTMLElement).dataset.ind!;
-        this.callbacks.onAddIndicator(id);
-      });
-    });
-    panel.querySelectorAll<HTMLButtonElement>('[data-tpl-apply]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.indicatorDropdown?.close();
-        this.callbacks.onApplyIndicatorTemplate?.(btn.dataset.tplApply!);
-      });
-    });
-    panel.querySelectorAll<HTMLButtonElement>('[data-tpl-delete]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // deleting keeps the menu open
-        this.callbacks.onDeleteIndicatorTemplate?.(btn.dataset.tplDelete!);
-      });
-    });
-    panel.querySelector<HTMLButtonElement>('[data-tpl-save]')?.addEventListener('click', () => {
-      this.indicatorDropdown?.close();
-      this.callbacks.onSaveIndicatorTemplate?.();
-    });
+  /** Whether the indicators dialog is open, on its button. */
+  setIndicatorsOpen(open: boolean): void {
+    this.el.querySelector('[data-role="indicators"]')?.setAttribute('aria-expanded', String(open));
   }
 
   update(state: WidgetState): void {
@@ -741,7 +668,6 @@ export class WidgetToolbar {
     this.resizeObserver?.disconnect();
     if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.chartTypeDropdown?.destroy();
-    this.indicatorDropdown?.destroy();
     this.tfDropdown?.destroy();
     this.moreMenu?.destroy();
     this.trade?.destroy();

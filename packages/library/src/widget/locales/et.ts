@@ -5,7 +5,6 @@ export const ET_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'Indikaatorid',
   'toolbar.more': 'Veel',
-  'toolbar.indicators.popular': 'Populaarsed',
   'toolbar.indicators.all': 'Kõik',
   'indicatorType.overlay': 'graafikul',
   'indicatorType.panel': 'eraldi paan',

@@ -313,11 +313,6 @@ export const INDICATORS: IndicatorDef[] = [
   { id: 'candlepatterns', name: 'Candlestick Patterns', type: 'overlay' },
 ];
 
-export const POPULAR_INDICATORS = [
-  'sma', 'ema', 'bb', 'rsi', 'macd', 'stochastic',
-  'vwap', 'atr', 'obv', 'ichimoku',
-];
-
 export const DEFAULT_SYMBOLS = [
   'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT',
 ];

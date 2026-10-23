@@ -105,7 +105,7 @@ describe('ChartWidget feature switches', () => {
       'statusBar.range', 'statusBar.goToDate', 'goToDate', 'statusBar.market', 'statusBar.connection',
       'statusBar.clock', 'statusBar.scale',
       'navigation', 'navigation.zoom', 'navigation.scroll', 'navigation.reset', 'indicatorLegend', 'customTimeframes',
-      'indicatorTemplates',
+      // (indicatorTemplates marks a tab of the indicators dialog: WidgetIndicatorPicker.test.)
     ];
     for (const name of expected) expect(parts, name).toContain(name);
     for (const name of parts) expect(WIDGET_FEATURES, name).toContain(name);

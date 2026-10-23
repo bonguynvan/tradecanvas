@@ -5,7 +5,6 @@ export const HE_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'אינדיקטורים',
   'toolbar.more': 'עוד',
-  'toolbar.indicators.popular': 'פופולריים',
   'toolbar.indicators.all': 'הכול',
   'indicatorType.overlay': 'על הגרף',
   'indicatorType.panel': 'חלונית',

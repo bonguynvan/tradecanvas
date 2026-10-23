@@ -4,7 +4,6 @@ import type { WidgetMessages } from './en.js';
 export const SV_MESSAGES: WidgetMessages = {
   'toolbar.indicators': 'Indikatorer',
   'toolbar.more': 'Mer',
-  'toolbar.indicators.popular': 'Populära',
   'toolbar.indicators.all': 'Alla',
   'indicatorType.overlay': 'i grafen',
   'indicatorType.panel': 'egen panel',

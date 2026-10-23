@@ -5,7 +5,6 @@ export const AR_MESSAGES: WidgetMessages = {
   // Toolbar
   'toolbar.indicators': 'المؤشرات',
   'toolbar.more': 'المزيد',
-  'toolbar.indicators.popular': 'الشائعة',
   'toolbar.indicators.all': 'الكل',
   'indicatorType.overlay': 'متراكب',
   'indicatorType.panel': 'لوحة',
