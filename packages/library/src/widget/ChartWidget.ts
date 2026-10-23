@@ -1,6 +1,6 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, tickBarCount } from '@tradecanvas/commons';
-import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
+import { barTimeUnit, marketStatus, offsetAt, readQuote, tickBarCount, tzLabel } from '@tradecanvas/commons';
+import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -153,6 +153,8 @@ const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
 
 /** `keyCode` of a key press that goes to an IME composing text. */
 const IME_KEY_CODE = 229;
+/** How often the status bar's clock moves on. */
+const CLOCK_TICK_MS = 1000;
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -268,6 +270,7 @@ export class ChartWidget {
   /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
   private marketTimer: ReturnType<typeof setInterval> | null = null;
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
   private onPageShown: (() => void) | null = null;
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
@@ -678,7 +681,31 @@ export class ChartWidget {
       goToLabel: this.t('range.goTo'),
       onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
+    }, {
+      clock: {
+        label: this.t('settings.timezone'),
+        now: () => this.clockNow(),
+        options: () => ({
+          current: this.settingsState.timezone,
+          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'),
+            this.adapter?.resolveSymbol
+              ? { label: this.t('settings.timezone.exchange'), zone: this.chart.getSymbolInfo()?.timezone ?? null }
+              : undefined),
+        }),
+        onPick: (value) => this.changeSettings({ timezone: value }),
+      },
+      scale: {
+        labels: { percent: this.t('settings.scale.percentage'), log: this.t('settings.scale.logarithmic'), auto: this.t('settings.autoScale') },
+        onPercent: () => this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'percentage' ? 'regular' : 'percentage' }),
+        onLog: () => this.changeSettings({ scaleMode: this.settingsState.scaleMode === 'logarithmic' ? 'regular' : 'logarithmic' }),
+        onAuto: () => this.changeSettings({ autoScale: !this.chart.isAutoScale() }),
+      },
     });
+    // The clock each second, while the page is in view.
+    this.clockTimer = setInterval(() => { if (!pageHidden()) this.statusBar?.tick(); }, CLOCK_TICK_MS);
+    // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
+    this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
+    this.refreshScaleSwitches();
     this.goToDate = new WidgetGoToDate(this.root, {
       title: this.t('range.goTo'),
       date: this.t('range.date'),
@@ -1636,6 +1663,7 @@ export class ChartWidget {
     this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
+    if (this.clockTimer) clearInterval(this.clockTimer);
     if (this.onPageShown) document.removeEventListener('visibilitychange', this.onPageShown);
     this.onPageShown = null;
     this.chartNav?.destroy();
@@ -2353,6 +2381,20 @@ export class ChartWidget {
     const stop = kind.endsWith('Stop');
     this.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
     this.say(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
+  }
+
+  /** The time now in the display zone ("14:05:09") and the zone's offset ("UTC+7"), for the status bar's clock. */
+  private clockNow(): { time: string; zone: string } {
+    const now = Date.now();
+    const tz = this.displayTimezone();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const { time } = utcToWallTime(now, tz);
+    return { time: `${time}:${pad(new Date(now).getUTCSeconds())}`, zone: tzLabel(offsetAt(tz, now)) };
+  }
+
+  /** The status bar's scale switches as the chart is now. */
+  private refreshScaleSwitches(): void {
+    this.statusBar?.setScale({ mode: this.settingsState.scaleMode, auto: this.chart.isAutoScale() });
   }
 
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
@@ -3631,6 +3673,9 @@ export class ChartWidget {
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
     if (patch.leftPriceScale !== undefined) this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
+    if (patch.scaleMode !== undefined || patch.autoScale !== undefined) queueMicrotask(() => this.refreshScaleSwitches());
+    // Another zone: the clock says so at once.
+    if (patch.timezone !== undefined) queueMicrotask(() => this.statusBar?.tick());
     if (patch.scaleMode !== undefined) {
       this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.

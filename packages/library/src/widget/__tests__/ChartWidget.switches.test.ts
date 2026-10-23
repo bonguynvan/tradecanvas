@@ -99,7 +99,9 @@ describe('ChartWidget feature switches', () => {
       'sidebar.cursor', 'sidebar.favorites', 'sidebar.lines', 'sidebar.fibonacci', 'sidebar.patterns',
       'sidebar.forecasting', 'sidebar.annotation', 'sidebar.style', 'sidebar.magnet', 'sidebar.eraser',
       'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
-      'statusBar.range', 'statusBar.goToDate', 'goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
+      // The legend names the symbol now: statusBar.symbol stays a name, with nothing left to switch.
+      'statusBar.range', 'statusBar.goToDate', 'goToDate', 'statusBar.market', 'statusBar.connection',
+      'statusBar.clock', 'statusBar.scale',
       'navigation', 'navigation.zoom', 'navigation.scroll', 'navigation.reset', 'indicatorLegend', 'customTimeframes',
       'indicatorTemplates',
     ];

@@ -28,6 +28,7 @@ export const WIDGET_FEATURES = [
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
+  'statusBar.clock', 'statusBar.scale',
   // A long range on the range bar switches to weeks or months, a short one back.
   'statusBar.rangeTimeframe',
   // On the chart: the indicators' rows, the panes' buttons, the navigation.
