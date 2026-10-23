@@ -37,6 +37,7 @@ export class TimeAxis {
   private timeFormatter: TimeFormatter | null = null;
   private timesPastData = true;
   private locale = 'en-US';
+  private columns: { left: number; right: number }[] = [];
   private readonly marker = new TimeMarker();
 
   /** The locale month names are written in. */
@@ -96,6 +97,11 @@ export class TimeAxis {
     return mark.weight === MARK_WEIGHT.within ? `${clock}:${_pad2(new Date(mark.time).getUTCSeconds())}` : clock;
   }
 
+  /** The spans (px) of the labels written on the last draw: the crosshair's time pill clears those it covers. */
+  labelColumns(): readonly { left: number; right: number }[] {
+    return this.columns;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
     const { chartRect } = viewport;
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
@@ -147,6 +153,7 @@ export class TimeAxis {
       placed.push({ left: x - half, right: x + half });
       ctx.fillText(label, x, axisY + 7);
     }
+    this.columns = placed;
 
     // ─── Timezone indicator (bottom-right) ───
     ctx.font = tzFont;

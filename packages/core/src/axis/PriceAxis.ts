@@ -113,6 +113,8 @@ export class PriceAxis {
   private reservedPrice: (() => number | null) | null = null;
   private precision: number | null = null;
   private tick: number | null = null;
+  /** Where the right-hand scale wrote its labels on the last draw. */
+  private rows: number[] = [];
 
   /** Decimals the labels show (the market's or the symbol's), or null to fit them to the range. */
   setPricePrecision(precision: number | null): void {
@@ -221,6 +223,11 @@ export class PriceAxis {
     this.locale = locale;
   }
 
+  /** The heights (px) of the labels the scale wrote last: the crosshair's pill clears those it covers. */
+  labelRows(): readonly number[] {
+    return this.rows;
+  }
+
   /**
    * Draw the scale beside the plot: on the right (the price scale), or on the
    * left — labels right-aligned against the plot, no last-price tag to avoid.
@@ -291,5 +298,6 @@ export class PriceAxis {
     for (const { y, text } of labels) {
       ctx.fillText(text, axisX + 8 * tick, y);
     }
+    if (!left) this.rows = labels.map((l) => l.y);
   }
 }
