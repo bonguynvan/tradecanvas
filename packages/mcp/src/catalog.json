@@ -6198,7 +6198,7 @@
       {
         "name": "indicatorValueLabels",
         "type": "boolean",
-        "doc": "Tag each indicator line's latest value on its value axis. Default true.",
+        "doc": "Tag each indicator line's latest value on its value axis. Default false: the legend shows the values.",
         "kind": "boolean"
       },
       {

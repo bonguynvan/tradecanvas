@@ -161,8 +161,8 @@ chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
 ```
 
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
-- Each line's latest value is tagged on its axis; turn that off with
-  `features.indicatorValueLabels: false`.
+- The legend shows each line's latest value; tag it on the axis too with
+  `features.indicatorValueLabels: true` (off by default).
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
 
