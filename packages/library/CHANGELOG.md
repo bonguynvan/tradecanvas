@@ -1,5 +1,18 @@
 # @tradecanvas/chart
 
+## 1.35.0
+
+### Minor Changes
+
+- 1a49be6: The widget's bars, rearranged. The interval menu lists each unit under its heading; the chart type shows as its icon; Compare sits beside Indicators when the widget has a data adapter; undo and redo move to the toolbar, and show where the drawing tools are off too (`toolbar.undo` and `toolbar.redo` take them away); the brackets, order ticket, depth ladder and account panel are one Trade menu. The drawing tools' menus name each tool's shortcut and have a star to pin it, and lock all and hide all join clear all. The status bar has a clock in the display time zone that opens the zones, and %, log and auto switches for the price scale; it no longer repeats the symbol. The toolbar over a selected drawing has a grip to drag it out of the way. New switches: `toolbar.compare`, `toolbar.undo`, `toolbar.redo`, `toolbar.trade`, `sidebar.lockAll`, `sidebar.hideAll`, `statusBar.clock`, `statusBar.scale`.
+- 30ad5b8: The Indicators dialog and the indicator settings, rewritten. The toolbar's Indicators opens a dialog: a search across every indicator, and groups down the side (Favourites, Templates, All, then moving averages, trend, oscillators, volatility, volume, bands and channels, price and patterns). A row adds its indicator and the dialog stays open; a star keeps it in the favourites. An indicator's settings have Inputs, Style (each line shown or not, its colours and dash, the line width, the scale and the levels) and Visibility (the intervals it shows on); Cancel puts every change back, OK keeps it, and Defaults resets it or saves it as the default for new ones of its kind. New in the chart: `setIndicatorIntervals` and `getIndicatorIntervals` keep an indicator to some intervals, saved with the layout, read against the stream's interval or the one `setDataTimeframe` gives; `getActiveIndicators()` says whether each is `shown`; `beginIndicatorEdit` and `endIndicatorEdit` make a dialog's edits one undo step; `isIndicatorAllowed`. New in core: `indicatorCategory` and `INDICATOR_CATEGORIES`, an optional `category` on an indicator's descriptor, and `SYMBOL_INDICATOR_IDS`. Fixed: Tab no longer leaves a dialog from a row's star, and a dialog's tabs keep their text on a phone.
+
+### Patch Changes
+
+- Updated dependencies [30ad5b8]
+  - @tradecanvas/core@1.35.0
+  - @tradecanvas/commons@1.35.0
+
 ## 1.34.0
 
 ### Minor Changes
