@@ -3618,6 +3618,25 @@
 .tcw-context-item:focus-visible { box-shadow: inset 0 0 0 1px var(--tcw-accent); }
 .tcw-context-danger, .tcw-context-danger svg { color: var(--tcw-red); }
 .tcw-context-sep { height: 1px; margin: var(--tcw-space-2) var(--tcw-space-4); background: var(--tcw-divider); }
+.tcw-context-label { flex: 1; min-width: 0; }
+/* A shortcut, and the mark of a submenu, at the row's end. */
+.tcw-context-key {
+  flex: none;
+  margin-inline-start: var(--tcw-space-5);
+  font: inherit;
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--tcw-text-muted);
+}
+.tcw-context-item svg.tcw-context-more { width: 12px; height: 12px; }
+/* Right to left, a submenu opens to the left: its marks point there. */
+[dir='rtl'] .tcw-context-more, [dir='rtl'] .tcw-context-back > svg { transform: scaleX(-1); }
+/* No keyboard under a finger: the keys stay named to a screen reader only. */
+@media (hover: none) { .tcw-context-key { display: none; } }
+.tcw-context-item[aria-expanded='true'] { background: var(--tcw-hover-bg); }
+/* The choice made among radios: a dot where a switch has its tick. */
+.tcw-context-dot { display: grid; place-items: center; }
+.tcw-context-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--tcw-text); }
 /* An entry that can be removed: its x on the row in hand, always on a touch screen. */
 .tcw-context-row { display: flex; align-items: center; border-radius: var(--tcw-menu-item-radius); }
 .tcw-context-row .tcw-context-item { flex: 1; min-width: 0; }

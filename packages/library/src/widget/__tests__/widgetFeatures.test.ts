@@ -102,6 +102,21 @@ describe('filterMenuEntries', () => {
     expect(kept).toEqual([{ id: 'settings', label: 'Settings' }]);
   });
 
+  it('filters a submenu too, and leaves out one with nothing left in it', () => {
+    const menu: ContextMenuEntry[] = [
+      { id: 'labels', label: 'Labels', submenu: [{ id: 'barCountdown', label: 'Countdown' }] },
+      { id: 'timezone', label: 'Time zone', submenu: [{ id: 'tz:UTC', label: 'UTC' }] },
+      { id: 'lines', label: 'Lines', submenu: [{ id: 'highLowLines', label: 'High and low' }, { id: 'paste', label: 'Paste' }] },
+    ];
+    const state = { ...resolveWidgetFeatures({}), 'menu.chart.timezone': false, 'menu.chart.drawings': false };
+    expect(filterMenuEntries(menu, CHART_MENU_FEATURES, state)).toEqual([
+      menu[0],
+      { id: 'lines', label: 'Lines', submenu: [{ id: 'highLowLines', label: 'High and low' }] },
+    ]);
+    const scaleOff = { ...resolveWidgetFeatures({}), 'menu.chart.scale': false };
+    expect(filterMenuEntries(menu, CHART_MENU_FEATURES, scaleOff)).toEqual([menu[1]]);
+  });
+
   it('keeps one separator between groups that are left', () => {
     const state = { ...resolveWidgetFeatures({}), 'menu.chart.resetView': false };
     const kept = filterMenuEntries(entries, CHART_MENU_FEATURES, state);

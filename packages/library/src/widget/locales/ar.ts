@@ -220,6 +220,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'common.navigate': 'تنقّل',
   'common.open': 'فتح',
   'common.select': 'اختيار',
+  'common.back': 'رجوع',
 
   // Settings rows
   'settings.upBody': 'جسم الشمعة الصاعدة',
@@ -587,6 +588,12 @@ export const AR_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'عكس المقياس',
   'chartMenu.panePercent': 'مقياس النسبة المئوية',
   'chartMenu.exportData': 'تصدير البيانات (CSV)',
+  'chartMenu.paste': 'لصق',
+  'chartMenu.removeIndicators': 'إزالة المؤشرات',
+  'chartMenu.resetPriceScale': 'إعادة ضبط مقياس السعر',
+  'chartMenu.labels': 'التسميات',
+  'chartMenu.lines': 'الخطوط',
+  'chartMenu.lastPriceLine': 'خط آخر سعر',
   'compare.percent': 'نسبة التغيّر، على هذا المقياس',
   'compare.ownScale': 'السعر، على مقياسه الخاص',
   'compare.ownPane': 'السعر، في لوحة مستقلة',

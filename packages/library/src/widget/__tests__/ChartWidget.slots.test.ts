@@ -281,6 +281,14 @@ describe('ChartWidget shortcuts of the host', () => {
     expect(labels).not.toContain('Fib Retracement');
   });
 
+  it.each([true, false])('lists Alt+R, the view’s reset, while its switch is on (%s)', (on) => {
+    make({ features: { 'hotkeys.resetView': on } });
+    press();
+    key({ key: '?' });
+    const labels = [...document.querySelectorAll('.tcw-hotkey-sheet .tcw-hotkey-label')].map((l) => l.textContent);
+    expect(labels.includes('Reset chart view')).toBe(on);
+  });
+
   it('lists the drawing tools’ keys while they are on', () => {
     make();
     press();

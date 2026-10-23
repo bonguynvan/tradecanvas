@@ -221,6 +221,7 @@ export const EN_MESSAGES = {
   'common.navigate': 'Navigate',
   'common.open': 'Open',
   'common.select': 'Select',
+  'common.back': 'Back',
 
   // Settings rows
   'settings.upBody': 'Up body',
@@ -588,6 +589,12 @@ export const EN_MESSAGES = {
   'chartMenu.paneInvert': 'Invert scale',
   'chartMenu.panePercent': 'Percent scale',
   'chartMenu.exportData': 'Export data (CSV)',
+  'chartMenu.paste': 'Paste',
+  'chartMenu.removeIndicators': 'Remove indicators',
+  'chartMenu.resetPriceScale': 'Reset price scale',
+  'chartMenu.labels': 'Labels',
+  'chartMenu.lines': 'Lines',
+  'chartMenu.lastPriceLine': 'Last price line',
   'compare.percent': 'Percent change, on this scale',
   'compare.ownScale': 'Price, on its own scale',
   'compare.ownPane': 'Price, in a pane of its own',

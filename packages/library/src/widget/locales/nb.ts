@@ -220,6 +220,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'common.navigate': 'Naviger',
   'common.open': 'Åpne',
   'common.select': 'Velg',
+  'common.back': 'Tilbake',
 
   // Settings rows
   'settings.upBody': 'Stigende kropp',
@@ -587,6 +588,12 @@ export const NB_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'Snu skalaen',
   'chartMenu.panePercent': 'Prosentskala',
   'chartMenu.exportData': 'Eksporter data (CSV)',
+  'chartMenu.paste': 'Lim inn',
+  'chartMenu.removeIndicators': 'Fjern indikatorer',
+  'chartMenu.resetPriceScale': 'Tilbakestill kursskalaen',
+  'chartMenu.labels': 'Etiketter',
+  'chartMenu.lines': 'Linjer',
+  'chartMenu.lastPriceLine': 'Linje for siste kurs',
   'compare.percent': 'Prosentvis endring, på denne skalaen',
   'compare.ownScale': 'Kurs, på egen skala',
   'compare.ownPane': 'Kurs, i egen rute',

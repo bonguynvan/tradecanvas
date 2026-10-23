@@ -23,6 +23,7 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   addAlert(price: number): void { this.alerts.push(price); }
+  getFeatures(): Record<string, boolean> { return {}; }
   tools: (string | null)[] = [];
   setDrawingTool(tool: string | null): void { this.tools.push(tool); }
   setups: unknown[][] = [];

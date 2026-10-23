@@ -40,13 +40,14 @@ export const WIDGET_FEATURES = [
   'menu.chart', 'menu.chart.alert', 'menu.chart.order', 'menu.chart.orderTicket', 'menu.chart.horizontalLine',
   'menu.chart.resetView', 'menu.chart.drawings', 'menu.chart.exportData', 'menu.chart.settings',
   'menu.chart.scale', 'menu.chart.goToDate', 'menu.chart.paneScale', 'menu.priceAxisAdd',
+  'menu.chart.indicators', 'menu.chart.timezone',
   'menu.drawing', 'menu.drawing.settings', 'menu.drawing.alert', 'menu.drawing.order', 'menu.drawing.group',
   'menu.drawing.lock', 'menu.drawing.hide', 'menu.drawing.duplicate', 'menu.drawing.delete',
   // The toolbar that appears over a selected drawing.
   'selectionToolbar',
   // Keys.
   'hotkeys.commandPalette', 'hotkeys.symbolSearch', 'hotkeys.save', 'hotkeys.tools', 'hotkeys.invertScale',
-  'hotkeys.goToDate', 'hotkeys.help',
+  'hotkeys.goToDate', 'hotkeys.help', 'hotkeys.resetView',
 ] as const;
 
 export type WidgetFeature = (typeof WIDGET_FEATURES)[number];
@@ -89,16 +90,29 @@ export const CHART_MENU_FEATURES: Readonly<Record<ChartMenuAction, readonly Widg
   orderTicket: ['orderTicket', 'menu.chart.orderTicket'],
   horizontalLine: ['menu.chart.horizontalLine'],
   resetView: ['menu.chart.resetView'],
+  paste: ['menu.chart.drawings'],
   hideDrawings: ['menu.chart.drawings'],
   showDrawings: ['menu.chart.drawings'],
   removeDrawings: ['menu.chart.drawings'],
+  removeIndicators: ['menu.chart.indicators'],
   settings: ['settings', 'menu.chart.settings'],
   exportData: ['menu.chart.exportData'],
+  resetPriceScale: ['menu.chart.scale'],
   autoScale: ['menu.chart.scale'],
+  invertScale: ['menu.chart.scale'],
+  leftScale: ['menu.chart.scale'],
+  regularScale: ['menu.chart.scale'],
   logScale: ['menu.chart.scale'],
   percentScale: ['menu.chart.scale'],
-  invertScale: ['menu.chart.scale'],
+  indexedScale: ['menu.chart.scale'],
+  labels: ['menu.chart.scale'],
+  indicatorValueLabels: ['menu.chart.scale'],
+  barCountdown: ['menu.chart.scale'],
+  lines: ['menu.chart.scale'],
+  highLowLines: ['menu.chart.scale'],
+  lastPriceLine: ['menu.chart.scale'],
   goToDate: ['goToDate', 'menu.chart.goToDate'],
+  timezone: ['menu.chart.timezone'],
   paneLog: ['menu.chart.paneScale'],
   paneInvert: ['menu.chart.paneScale'],
   panePercent: ['menu.chart.paneScale'],
@@ -239,18 +253,22 @@ export function tidyDividers(container: HTMLElement, dividerClass: string, bound
 }
 
 /**
- * A menu's entries with those whose switches are off left out, and no
- * separator at either end or next to another.
+ * A menu's entries with those whose switches are off left out, in its
+ * submenus too (a submenu with nothing left goes), and no separator at
+ * either end or next to another.
  */
 export function filterMenuEntries<Id extends string>(
   entries: readonly ContextMenuEntry[],
   featuresOf: Readonly<Record<Id, readonly WidgetFeature[]>>,
   state: WidgetFeatureState,
 ): ContextMenuEntry[] {
-  const kept = entries.filter((entry) => {
-    if (entry === 'separator') return true;
+  const kept = entries.flatMap((entry): ContextMenuEntry[] => {
+    if (entry === 'separator') return [entry];
     const names = (featuresOf as Readonly<Record<string, readonly WidgetFeature[]>>)[entry.id] ?? [];
-    return names.every((name) => state[name]);
+    if (!names.every((name) => state[name])) return [];
+    if (!entry.submenu) return [entry];
+    const submenu = filterMenuEntries(entry.submenu, featuresOf, state);
+    return submenu.length > 0 ? [{ ...entry, submenu }] : [];
   });
   return kept.filter((entry, i) => {
     if (entry !== 'separator') return true;

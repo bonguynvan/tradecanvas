@@ -37,7 +37,7 @@ class FakeChart {
   canAddDrawingAlert(): boolean { return true; }
   roundPrice(p: number): number { return Math.round(p); }
   getData(): { close: number; time: number }[] { return [{ close: 100, time: 0 }]; }
-  getActiveIndicators(): unknown[] { return []; }
+  getActiveIndicators(): unknown[] { return this.indicators; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   getLegendBottom(): number { return 40; }
@@ -52,6 +52,22 @@ class FakeChart {
   getPaneScale() { return { log: false, invert: false, percent: false }; }
   getAlerts(): unknown[] { return []; }
   formatPrice(v: number): string { return v.toFixed(2); }
+  // What the chart menus' entries do.
+  copied = false;
+  pasted = 0;
+  canPasteDrawings(): boolean { return this.copied; }
+  pasteDrawings(): string[] { this.pasted++; return []; }
+  indicators: { id: string; instanceId: string }[] = [];
+  removed: string[][] = [];
+  removeIndicators(ids: string[]): void { this.removed.push(ids); }
+  calls: [string, unknown][] = [];
+  fitContent(): void { this.calls.push(['fitContent', null]); }
+  setScaleMode(mode: string): void { this.calls.push(['setScaleMode', mode]); }
+  setLeftPriceScaleVisible(on: boolean): void { this.calls.push(['setLeftPriceScaleVisible', on]); }
+  setBarCountdownVisible(on: boolean): void { this.calls.push(['setBarCountdownVisible', on]); }
+  setTimezone(zone: unknown): void { this.calls.push(['setTimezone', zone]); }
+  applyOverrides(patch: unknown): void { this.calls.push(['applyOverrides', patch]); }
+  getStyleValue(key: string): unknown { return key === 'lastPrice.visible' ? true : null; }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -80,7 +96,9 @@ const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
 };
 const root = () => host.querySelector<HTMLElement>('.tcw-root')!;
 const off = () => (root().dataset.tcwOff ?? '').split(' ').filter(Boolean);
-const menuLabels = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')].map((b) => b.textContent);
+const menuItems = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')];
+const menuLabels = () => menuItems().map((b) => b.querySelector('.tcw-context-label')?.textContent);
+const menuItem = (label: string) => menuItems().find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!;
 const press = () => root().dispatchEvent(new Event('pointerdown'));
 const key = (init: KeyboardEventInit) => document.dispatchEvent(new KeyboardEvent('keydown', { cancelable: true, ...init }));
 
@@ -184,6 +202,91 @@ describe('ChartWidget menus by switch', () => {
     expect(FakeChart.last.features.priceAxisAddButton).toBe(false);
     widget.setFeatures({ 'menu.priceAxisAdd': true });
     expect(FakeChart.last.features.priceAxisAddButton).toBe(true);
+  });
+});
+
+describe('ChartWidget chart menus', () => {
+  const plot = () => FakeChart.last.emit('chartContextMenu', { area: 'plot', x: 10, y: 10, price: 95 });
+  const calls = (name: string) => FakeChart.last.calls.filter(([n]) => n === name).map(([, v]) => v);
+
+  it('pastes copied drawings from the plot’s menu, offered only when some are copied', () => {
+    make();
+    plot();
+    expect(menuLabels()).not.toContain('Paste');
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    FakeChart.last.copied = true;
+    plot();
+    menuItem('Paste').click();
+    expect(FakeChart.last.pasted).toBe(1);
+  });
+
+  it('removes the indicators, and leaves a comparison with another symbol', () => {
+    make();
+    FakeChart.last.indicators = [{ id: 'compareSymbol', instanceId: 'c1' }];
+    plot();
+    expect(menuLabels()).not.toContain('Remove indicators');
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    FakeChart.last.indicators = [{ id: 'rsi', instanceId: 'r1' }, { id: 'compareSymbol', instanceId: 'c1' }, { id: 'sma', instanceId: 's1' }];
+    plot();
+    menuItem('Remove indicators').click();
+    expect(FakeChart.last.removed).toEqual([['r1', 's1']]);
+  });
+
+  it('offers no removal of indicators where the chart takes none', () => {
+    make({ chartOptions: { features: { indicators: false } } });
+    FakeChart.last.indicators = [{ id: 'rsi', instanceId: 'r1' }];
+    plot();
+    expect(menuLabels()).not.toContain('Remove indicators');
+  });
+
+  it('sets the scale’s mode, side and labels from the price axis’s menu', () => {
+    make();
+    const axis = () => FakeChart.last.emit('chartContextMenu', { area: 'priceAxis', x: 10, y: 10, price: 95 });
+    axis();
+    expect(menuItem('Regular').getAttribute('aria-checked')).toBe('true');
+    menuItem('Indexed to 100').click();
+    expect(calls('setScaleMode')).toEqual(['indexedTo100']);
+    axis();
+    menuItem('Left price scale').click();
+    expect(calls('setLeftPriceScaleVisible')).toEqual([true]);
+    axis();
+    menuItem('Labels').click();
+    menuItem('Bar countdown').click();
+    expect(calls('setBarCountdownVisible')).toEqual([false]);
+    axis();
+    menuItem('Lines').click();
+    menuItem('Last price line').click();
+    expect(calls('applyOverrides')).toEqual([{ 'lastPrice.visible': false }]);
+  });
+
+  it('opens the settings on the Scales tab from the price axis', () => {
+    make();
+    FakeChart.last.emit('chartContextMenu', { area: 'priceAxis', x: 10, y: 10, price: 95 });
+    menuItem('Settings…').click();
+    expect(document.querySelector('[role="tab"][data-tab="scales"]')?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('sets the time zone from the time axis’s menu', () => {
+    make();
+    FakeChart.last.emit('chartContextMenu', { area: 'timeAxis', x: 10, y: 10 });
+    menuItem('Timezone').click();
+    menuItem('UTC').click();
+    expect(calls('setTimezone')).toEqual(['UTC']);
+  });
+
+  it('resets the view with Alt+R, and writes the key in the menu while it is on', () => {
+    make();
+    press();
+    key({ code: 'KeyR', key: 'r', altKey: true });
+    expect(calls('fitContent')).toHaveLength(1);
+    plot();
+    expect(menuItem('Reset chart view').getAttribute('aria-keyshortcuts')).toBe('Alt+R');
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    widget.setFeatures({ 'hotkeys.resetView': false });
+    key({ code: 'KeyR', key: 'r', altKey: true });
+    expect(calls('fitContent')).toHaveLength(1);
+    plot();
+    expect(menuItem('Reset chart view').hasAttribute('aria-keyshortcuts')).toBe(false);
   });
 });
 

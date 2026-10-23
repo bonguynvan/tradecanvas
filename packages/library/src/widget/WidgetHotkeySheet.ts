@@ -58,6 +58,7 @@ const GROUPS: HotkeyGroup[] = [
       { keys: [mod, 'P'], label: 'hotkeys.symbolSearch', feature: 'hotkeys.symbolSearch' },
       { keys: ['Alt', 'G'], label: 'hotkeys.goToDate', feature: 'hotkeys.goToDate' },
       { keys: ['Alt', 'I'], label: 'hotkeys.invertScale', feature: 'hotkeys.invertScale' },
+      { keys: ['Alt', 'R'], label: 'chartMenu.resetView', feature: 'hotkeys.resetView' },
       { keys: [mod, 'S'], label: 'hotkeys.saveLayout', feature: 'hotkeys.save' },
       { keys: ['0–9'], label: 'hotkeys.typeInterval', feature: 'intervalTyping' },
       { keys: ['?'], label: 'hotkeys.showSheet', feature: 'hotkeys.help' },

@@ -312,6 +312,14 @@ describe('the settings’ tabs', () => {
     expect(labels()).toEqual(expect.arrayContaining(['Volume profile', 'Market profile (TPO)', 'Session shading']));
   });
 
+  it('open on the tab asked for (the scales, from the price axis’s menu)', () => {
+    settings!.open(DEFAULT_SETTINGS, null, 'scales');
+    const scales = document.querySelector<HTMLElement>('[role="tab"][data-tab="scales"]')!;
+    expect(scales.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(scales);
+    expect(labels()).toContain('Price scale');
+  });
+
   it('move with the arrow keys, up and down', () => {
     settings!.open(DEFAULT_SETTINGS);
     const tabs = () => [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];

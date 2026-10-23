@@ -220,6 +220,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'common.navigate': 'ניווט',
   'common.open': 'פתיחה',
   'common.select': 'בחירה',
+  'common.back': 'חזרה',
 
   // Settings rows
   'settings.upBody': 'גוף עולה',
@@ -587,6 +588,12 @@ export const HE_MESSAGES: WidgetMessages = {
   'chartMenu.paneInvert': 'היפוך סקאלה',
   'chartMenu.panePercent': 'סקאלת אחוזים',
   'chartMenu.exportData': 'ייצוא נתונים (CSV)',
+  'chartMenu.paste': 'הדבקה',
+  'chartMenu.removeIndicators': 'הסרת אינדיקטורים',
+  'chartMenu.resetPriceScale': 'איפוס סקאלת המחיר',
+  'chartMenu.labels': 'תוויות',
+  'chartMenu.lines': 'קווים',
+  'chartMenu.lastPriceLine': 'קו המחיר האחרון',
   'compare.percent': 'שינוי באחוזים, על הסקאלה הזו',
   'compare.ownScale': 'מחיר, על סקאלה נפרדת',
   'compare.ownPane': 'מחיר, בחלונית נפרדת',

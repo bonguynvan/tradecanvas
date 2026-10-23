@@ -13,7 +13,8 @@ import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js
 import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow } from './settingsRows.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
 
-type Tab = 'symbol' | 'statusLine' | 'scales' | 'appearance' | 'layers' | 'trading';
+export type SettingsTab = 'symbol' | 'statusLine' | 'scales' | 'appearance' | 'layers' | 'trading';
+type Tab = SettingsTab;
 
 /** The tabs down the side, in the order a trader looks: the symbol first, the trading colours last. */
 const TABS: readonly { id: Tab; icon: string }[] = [
@@ -77,14 +78,15 @@ export class WidgetSettings {
     this.t = t;
   }
 
-  open(currentSettings: ChartSettingsState, chartType: ChartType | null = null): void {
+  /** Open on `tab` (the Symbol tab unless asked: the price axis's menu asks for Scales). */
+  open(currentSettings: ChartSettingsState, chartType: ChartType | null = null, tab: SettingsTab = 'symbol'): void {
     if (this.modal) this.remove();
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.currentSettings = { ...currentSettings };
     this.chartType = chartType;
-    this.currentTab = 'symbol';
+    this.currentTab = tab;
     this.buildModal();
-    this.tabButtons[0]?.focus();
+    this.tabButtons.find((b) => b.dataset.tab === tab)?.focus();
   }
 
   isOpen(): boolean {
