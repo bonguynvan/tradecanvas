@@ -120,7 +120,7 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 ## 更多
 
-- **包**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（图表与组件）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)，以及用于回测的 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)。
+- **包**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（图表与组件）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)，用于回测的 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)，以及供编程 agent 使用的 [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp)。
 - **预览构建**：每个 pull request 和 `main` 上的每个提交都发布在 [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas)，发布前即可安装。
 - **浏览器**：Chrome 80+、Edge 80+、Firefox 80+、Safari 14+。
 - **企业使用**：无需展示标志，无需申请；[企业使用](https://tradecanvas.dev/zh/business/)页面回答 IT 评审会问的问题。business@tradecanvas.dev

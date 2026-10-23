@@ -120,7 +120,7 @@ En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanv
 
 ## Más
 
-- **Paquetes**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (el gráfico y el widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), y [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) para backtests.
+- **Paquetes**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (el gráfico y el widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), y [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) para backtests, y [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) para agentes de programación.
 - **Versiones preliminares**: cada pull request y cada commit en `main` está en [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), instalable antes de publicarse.
 - **Navegadores**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
 - **Para empresas**: ningún logo que mostrar, nada que solicitar; la página [Para empresas](https://tradecanvas.dev/es/business/) responde lo que pregunta una revisión de TI. business@tradecanvas.dev
