@@ -78,6 +78,31 @@ describe('WidgetContextMenu', () => {
   });
 });
 
+describe('WidgetContextMenu entries that can be removed', () => {
+  it('removes one by its button or the Delete key, and stays open on the next', () => {
+    const remove = vi.fn();
+    const pick = vi.fn();
+    menu.open([
+      { id: 'swing', label: 'Swing', remove: 'Delete Swing' },
+      { id: 'scalp', label: 'Scalp', remove: 'Delete Scalp' },
+      'separator',
+      { id: 'save', label: 'Save…' },
+    ], 0, 0, pick, undefined, remove);
+    host.querySelector<HTMLButtonElement>('.tcw-context-remove')!.click();
+    expect(remove).toHaveBeenCalledWith('swing');
+    expect(pick).not.toHaveBeenCalled();
+    expect(items().map((b) => b.textContent)).toEqual(['Scalp', 'Save…']);
+    expect(menu.isOpen()).toBe(true);
+    expect(document.activeElement).toBe(items()[0]);
+    expect(items()[0].getAttribute('aria-keyshortcuts')).toBe('Delete');
+    key('Delete');
+    expect(remove).toHaveBeenLastCalledWith('scalp');
+    expect(items().map((b) => b.textContent)).toEqual(['Save…']);
+    key('Delete');
+    expect(remove).toHaveBeenCalledTimes(2);
+  });
+});
+
 const one = (over: Partial<DrawingMenuTarget['selected'][number]> = {}): DrawingMenuTarget['selected'][number] =>
   ({ id: 'a', locked: false, groupId: null, ...over });
 const ids = (target: DrawingMenuTarget) =>

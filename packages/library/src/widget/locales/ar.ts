@@ -183,11 +183,17 @@ export const AR_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'إعدادات الرسم البياني',
-  'settings.tab.style': 'النمط',
-  'settings.tab.display': 'العرض',
-  'settings.tab.scale': 'المقياس',
+  'settings.tab.symbol': 'الرمز',
+  'settings.tab.statusLine': 'سطر الحالة',
+  'settings.tab.scales': 'المقاييس',
+  'settings.tab.appearance': 'المظهر',
+  'settings.tab.layers': 'الطبقات',
+  'settings.template': 'القالب',
+  'settings.section.axes': 'المحاور',
+  'settings.saveTemplate': 'حفظ كقالب…',
+  'settings.saveTemplateTitle': 'حفظ قالب الرسم البياني',
+  'settings.templatePlaceholder': 'الرسم البياني الخاص بي',
   'settings.resetToDefaults': 'استعادة الإعدادات الافتراضية',
-  'settings.done': 'تم',
   'settings.section.candleColors': 'ألوان الشموع',
   'settings.section.background': 'الخلفية',
 

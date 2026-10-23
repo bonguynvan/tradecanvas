@@ -183,11 +183,17 @@ export const FA_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'تنظیمات نمودار',
-  'settings.tab.style': 'سبک',
-  'settings.tab.display': 'نمایش',
-  'settings.tab.scale': 'مقیاس',
+  'settings.tab.symbol': 'نماد',
+  'settings.tab.statusLine': 'خط وضعیت',
+  'settings.tab.scales': 'مقیاس‌ها',
+  'settings.tab.appearance': 'ظاهر',
+  'settings.tab.layers': 'لایه‌ها',
+  'settings.template': 'قالب',
+  'settings.section.axes': 'محورها',
+  'settings.saveTemplate': 'ذخیره به‌عنوان قالب…',
+  'settings.saveTemplateTitle': 'ذخیره قالب نمودار',
+  'settings.templatePlaceholder': 'نمودار من',
   'settings.resetToDefaults': 'بازگشت به پیش‌فرض‌ها',
-  'settings.done': 'تأیید',
   'settings.section.candleColors': 'رنگ کندل‌ها',
   'settings.section.background': 'پس‌زمینه',
 

@@ -183,11 +183,17 @@ export const MS_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'Tetapan carta',
-  'settings.tab.style': 'Gaya',
-  'settings.tab.display': 'Paparan',
-  'settings.tab.scale': 'Skala',
+  'settings.tab.symbol': 'Simbol',
+  'settings.tab.statusLine': 'Baris status',
+  'settings.tab.scales': 'Skala',
+  'settings.tab.appearance': 'Penampilan',
+  'settings.tab.layers': 'Lapisan',
+  'settings.template': 'Templat',
+  'settings.section.axes': 'Paksi',
+  'settings.saveTemplate': 'Simpan sebagai templat…',
+  'settings.saveTemplateTitle': 'Simpan templat carta',
+  'settings.templatePlaceholder': 'Carta saya',
   'settings.resetToDefaults': 'Tetapkan semula kepada lalai',
-  'settings.done': 'Selesai',
   'settings.section.candleColors': 'Warna candle',
   'settings.section.background': 'Latar belakang',
 

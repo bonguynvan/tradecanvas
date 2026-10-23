@@ -264,10 +264,14 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   Los overrides van en dos capas. Los tuyos (<code>layer: 'host'</code>, por defecto) se mantienen al cambiar de tema y
   nunca se guardan. Los del usuario (<code>layer: 'user'</code>) ganan a los tuyos, se guardan con el tema en que se
   hicieron —los colores elegidos en el tema oscuro vuelven con el tema oscuro— y se guardan con <code>saveState()</code>. Los
-  Ajustes del widget escriben en la capa del usuario, y su Restablecer vuelve a los colores del tema, sea cual sea.
-  Su pestaña Estilo ajusta cada parte del gráfico con estas claves, incluidos los colores del tipo de gráfico a la
-  vista, y su pestaña Trading los colores de órdenes, posiciones, marcas de señal y zonas de operación. Un color que
-  se deja a la propia parte aparece como Auto, y Auto lo devuelve allí.
+  Ajustes del widget escriben en la capa del usuario. Sus pestañas, a un lado, ajustan cada parte del gráfico con estas
+  claves: <strong>Símbolo</strong> (el tipo de gráfico a la vista, el último precio, el volumen), <strong>Línea de
+  estado</strong>, <strong>Escalas</strong>, <strong>Apariencia</strong> (fondo, cuadrícula, cruz, cortes de sesión),
+  <strong>Capas</strong> y <strong>Trading</strong> (órdenes, posiciones, marcas de señal, zonas de operación). Cada
+  cambio se ve al momento; <strong>Cancelar</strong> los deshace todos y <strong>Aceptar</strong> los guarda como un solo
+  paso de deshacer. El menú <strong>Plantilla</strong> guarda el aspecto con un nombre, aplica o borra uno guardado y
+  vuelve a los colores del tema, sea cual sea. Un color que se deja a la propia parte aparece como Auto, y Auto lo
+  devuelve allí.
 </p>
 <pre><code>{`chart.applyOverrides({ 'background.color': '#0b0b0f' }, { layer: 'user' })
 chart.getOverrides({ layer: 'user' })                 // los del usuario, para el tema actual

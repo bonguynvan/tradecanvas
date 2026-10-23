@@ -10,6 +10,8 @@ import { EN_TRANSLATOR } from '../i18n.js';
 import type { ChartSettingsState } from '../types.js';
 
 let changes: Partial<ChartSettingsState>[];
+let calls: string[];
+let templates: string[];
 let styleChanges: Record<string, unknown>[];
 /** The chart's look as it draws it: what a key reads back (null: not set, the part's own). */
 let look: Record<string, unknown>;
@@ -19,8 +21,18 @@ function make(available: ConstructorParameters<typeof WidgetSettings>[2] = {}): 
   settings?.destroy();
   settings = new WidgetSettings({
     onChange: (p) => changes.push(p),
-    onReset: () => {},
-    onClose: () => {},
+    onReset: () => calls.push('reset'),
+    onClose: () => calls.push('ok'),
+    onCancel: () => calls.push('cancel'),
+    templates: {
+      list: () => templates,
+      apply: (name) => calls.push(`apply ${name}`),
+      remove: (name) => {
+        calls.push(`remove ${name}`);
+        templates = templates.filter((t) => t !== name);
+      },
+      save: () => calls.push('save'),
+    },
     styleValue: (key) => (key in look ? look[key] : null) as string | number | boolean | null,
     onStyleChange: (patch) => {
       styleChanges.push(patch);
@@ -32,6 +44,8 @@ function make(available: ConstructorParameters<typeof WidgetSettings>[2] = {}): 
 
 beforeEach(() => {
   changes = [];
+  calls = [];
+  templates = ['Night', 'Paper'];
   styleChanges = [];
   look = {
     'series.candlestick.upColor': '#1fa874',
@@ -55,7 +69,7 @@ const type = (input: HTMLInputElement, value: string) => {
   input.value = value;
   input.dispatchEvent(new Event('change'));
 };
-const tab = (name: string) => document.querySelector<HTMLButtonElement>(`.tcw-modal-tab[data-tab="${name}"]`)!.click();
+const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
 
 describe('settings of the chart’s type', () => {
   it('offers Renko’s box and ATR length, Auto when empty', () => {
@@ -140,12 +154,13 @@ describe('the look by key', () => {
 
   it('sets one row’s keys together, each of its kind', () => {
     settings!.open(DEFAULT_SETTINGS, 'candlestick');
+    expect(section('Volume')).not.toBeNull();
+    tab('appearance');
     const grid = section('Grid lines')!;
     choose(grid.querySelector<HTMLSelectElement>('select[aria-label="Line width"]')!, '2');
     expect(styleChanges.at(-1)).toEqual({ 'grid.horizontal.width': 2, 'grid.vertical.width': 2 });
     grid.querySelector<HTMLButtonElement>('button[aria-label="Horizontal"]')!.click();
     expect(styleChanges.at(-1)).toEqual({ 'grid.horizontal.visible': false });
-    expect(section('Volume')).not.toBeNull();
     expect(section('Crosshair')!.querySelector('input[aria-label="Label background"]')).not.toBeNull();
   });
 
@@ -179,6 +194,7 @@ describe('the look by key', () => {
 
   it('gives a dash left to the part an Auto choice', () => {
     settings!.open(DEFAULT_SETTINGS);
+    tab('appearance');
     const breaks = section('Session breaks')!.querySelector<HTMLSelectElement>('select[aria-label="Line style"]')!;
     expect(breaks.value).toBe('');
     choose(breaks, 'dotted');
@@ -225,6 +241,7 @@ describe('the look by key', () => {
     look['grid.horizontal.style'] = 'dotted';
     look['grid.vertical.style'] = 'solid';
     settings!.open(DEFAULT_SETTINGS);
+    tab('appearance');
     const select = section('Grid lines')!.querySelector<HTMLSelectElement>('select[aria-label="Line style"]')!;
     expect(select.value).toBe('');
     choose(select, 'dotted');
@@ -238,12 +255,13 @@ describe('the look by key', () => {
     expect(section('Kagi')).not.toBeNull();
   });
 
-  it('marks the tabs as tabs, the open one selected', () => {
+  it('marks the tabs as tabs down the side, the open one selected', () => {
     settings!.open(DEFAULT_SETTINGS);
     tab('trading');
-    const tabs = [...document.querySelectorAll('.tcw-modal-tab')];
-    expect(tabs.map((t) => t.getAttribute('role'))).toEqual(['tab', 'tab', 'tab', 'tab']);
-    expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false', 'true']);
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    expect(document.querySelector('[role="tablist"]')!.getAttribute('aria-orientation')).toBe('vertical');
+    expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false', 'false', 'false', 'true']);
+    expect(document.querySelector('[role="tabpanel"]')!.getAttribute('aria-labelledby')).toBe(tabs[5].id);
   });
 
   it('shows what the chart draws again after an undo', () => {
@@ -254,16 +272,113 @@ describe('the look by key', () => {
   });
 });
 
-describe('the display tab', () => {
+describe('the symbol tab', () => {
   it('hides the main series and marks the high and low', () => {
     settings!.open(DEFAULT_SETTINGS);
-    tab('display');
     const rows = [...document.querySelectorAll('.tcw-settings-row')];
     const toggle = (label: string) => rows.find((r) => r.textContent === label)!.querySelector('button')!;
     toggle('Main series').click();
-    toggle('High and low lines').click();
+    // A section's own switch is "Show": its title names what it shows.
+    section('High and low lines')!.querySelector<HTMLButtonElement>('button[aria-label="Show"]')!.click();
     toggle('Extended hours').click();
     expect(changes).toEqual([{ mainSeriesVisible: false }, { highLowLines: true }, { extendedHours: false }]);
+  });
+});
+
+describe('the settings’ tabs', () => {
+  const labels = () => [...document.querySelectorAll('.tcw-modal-body .tcw-settings-label')].map((l) => l.textContent);
+
+  it('are the ones a trader looks for, each with its icon, the symbol first', () => {
+    settings!.open(DEFAULT_SETTINGS, 'candlestick');
+    const tabs = [...document.querySelectorAll<HTMLElement>('[role="tab"]')];
+    expect(tabs.map((t) => t.dataset.tab)).toEqual(['symbol', 'statusLine', 'scales', 'appearance', 'layers', 'trading']);
+    expect(tabs.map((t) => t.textContent)).toEqual(['Symbol', 'Status line', 'Scales', 'Appearance', 'Layers', 'Trading']);
+    expect(tabs.every((t) => t.querySelector('svg'))).toBe(true);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('keep each setting where it is looked for', () => {
+    settings!.open(DEFAULT_SETTINGS, 'candlestick');
+    expect(labels()).toEqual(expect.arrayContaining(['Main series', 'Extended hours']));
+    expect(section('High and low lines')).not.toBeNull();
+    tab('statusLine');
+    expect(labels()).toEqual(expect.arrayContaining(['OHLC legend', 'Legend text']));
+    tab('scales');
+    expect(labels()).toEqual(expect.arrayContaining(['Price scale', 'Auto scale', 'Timezone', 'Number format', 'Text', 'Lines']));
+    expect(section('Axes')).not.toBeNull();
+    tab('appearance');
+    expect(labels()).toEqual(expect.arrayContaining(['Background', 'Crosshair']));
+    tab('layers');
+    expect(labels()).toEqual(expect.arrayContaining(['Volume profile', 'Market profile (TPO)', 'Session shading']));
+  });
+
+  it('move with the arrow keys, up and down', () => {
+    settings!.open(DEFAULT_SETTINGS);
+    const tabs = () => [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    tabs()[0].focus();
+    tabs()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(tabs()[1].getAttribute('aria-selected')).toBe('true');
+    tabs()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    expect(document.activeElement).toBe(tabs()[5]);
+  });
+});
+
+describe('the settings’ Cancel, OK and Template', () => {
+  const footer = (act: string) => document.querySelector<HTMLButtonElement>(`.tcw-modal-footer [data-act="${act}"]`)!;
+  const menuItems = () => [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+
+  it('is a dialog named by its title, which gives focus back', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    settings!.open(DEFAULT_SETTINGS);
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(document.getElementById(dialog.getAttribute('aria-labelledby')!)!.textContent).toBe('Chart Settings');
+    footer('ok').click();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('cancels on Cancel, Escape, the close button or a click outside; keeps on OK', () => {
+    settings!.open(DEFAULT_SETTINGS);
+    footer('cancel').click();
+    settings!.open(DEFAULT_SETTINGS);
+    document.querySelector('[role="dialog"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    settings!.open(DEFAULT_SETTINGS);
+    document.querySelector<HTMLButtonElement>('.tcw-modal-close')!.click();
+    settings!.open(DEFAULT_SETTINGS);
+    const backdrop = document.querySelector<HTMLElement>('.tcw-modal-backdrop')!;
+    backdrop.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    backdrop.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    settings!.open(DEFAULT_SETTINGS);
+    footer('ok').click();
+    expect(calls).toEqual(['cancel', 'cancel', 'cancel', 'cancel', 'ok']);
+    expect(settings!.isOpen()).toBe(false);
+  });
+
+  it('stays open when a drag that began inside ends on the backdrop', () => {
+    settings!.open(DEFAULT_SETTINGS);
+    document.querySelector('.tcw-set')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    document.querySelector<HTMLElement>('.tcw-modal-backdrop')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(settings!.isOpen()).toBe(true);
+    expect(calls).toEqual([]);
+  });
+
+  it('applies, deletes and saves templates, and resets, from the Template menu', () => {
+    settings!.open(DEFAULT_SETTINGS);
+    footer('template').click();
+    expect(menuItems().map((b) => b.textContent)).toEqual(['Night', 'Paper', 'Save as template…', 'Reset to defaults']);
+    document.querySelector<HTMLButtonElement>('.tcw-context-remove')!.click();
+    expect(calls).toEqual(['remove Night']);
+    menuItems()[0].click();
+    expect(calls).toEqual(['remove Night', 'apply Paper']);
+    expect(settings!.isOpen()).toBe(true);
+    footer('template').click();
+    menuItems().find((b) => b.textContent === 'Save as template…')!.click();
+    footer('template').click();
+    menuItems().find((b) => b.textContent === 'Reset to defaults')!.click();
+    expect(calls).toEqual(['remove Night', 'apply Paper', 'save', 'reset']);
   });
 });
 

@@ -183,11 +183,17 @@ export const NB_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'Grafinnstillinger',
-  'settings.tab.style': 'Stil',
-  'settings.tab.display': 'Visning',
-  'settings.tab.scale': 'Skala',
+  'settings.tab.symbol': 'Symbol',
+  'settings.tab.statusLine': 'Statuslinje',
+  'settings.tab.scales': 'Skalaer',
+  'settings.tab.appearance': 'Utseende',
+  'settings.tab.layers': 'Lag',
+  'settings.template': 'Mal',
+  'settings.section.axes': 'Akser',
+  'settings.saveTemplate': 'Lagre som mal…',
+  'settings.saveTemplateTitle': 'Lagre grafmal',
+  'settings.templatePlaceholder': 'Min graf',
   'settings.resetToDefaults': 'Tilbakestill til standard',
-  'settings.done': 'Ferdig',
   'settings.section.candleColors': 'Lysenes farger',
   'settings.section.background': 'Bakgrunn',
 

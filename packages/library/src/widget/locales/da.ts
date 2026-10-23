@@ -183,11 +183,17 @@ export const DA_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'Grafindstillinger',
-  'settings.tab.style': 'Stil',
-  'settings.tab.display': 'Visning',
-  'settings.tab.scale': 'Skala',
+  'settings.tab.symbol': 'Symbol',
+  'settings.tab.statusLine': 'Statuslinje',
+  'settings.tab.scales': 'Skalaer',
+  'settings.tab.appearance': 'Udseende',
+  'settings.tab.layers': 'Lag',
+  'settings.template': 'Skabelon',
+  'settings.section.axes': 'Akser',
+  'settings.saveTemplate': 'Gem som skabelon…',
+  'settings.saveTemplateTitle': 'Gem grafskabelon',
+  'settings.templatePlaceholder': 'Min graf',
   'settings.resetToDefaults': 'Nulstil til standard',
-  'settings.done': 'Færdig',
   'settings.section.candleColors': 'Lysenes farver',
   'settings.section.background': 'Baggrund',
 

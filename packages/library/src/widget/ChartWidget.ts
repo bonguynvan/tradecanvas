@@ -31,6 +31,7 @@ import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
+import { ChartTemplateStore } from './chartTemplates.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
@@ -224,6 +225,20 @@ export class ChartWidget {
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
+  /** The chart templates of the settings' Template menu, and the prompt that names a new one. */
+  private chartTemplates = new ChartTemplateStore();
+  private chartTemplatePrompt: WidgetNamePrompt | null = null;
+  /**
+   * The settings open now: as they were on opening, and the keys changed since
+   * (a change, a reset, a template). Cancel puts those back, OK records them
+   * as one step; the rest (an axis dragged meanwhile) is left as it is.
+   */
+  private settingsEdit: {
+    settings: ChartSettingsState;
+    style: { theme: string; overrides: SettingsStylePatch };
+    keys: Set<keyof ChartSettingsState>;
+    styleKeys: Set<ChartStyleKey>;
+  } | null = null;
   private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
@@ -733,7 +748,14 @@ export class ChartWidget {
     this.settings = new WidgetSettings({
       onChange: (patch) => this.changeSettings(patch),
       onReset: () => this.resetSettings(),
-      onClose: () => {},
+      onClose: () => this.endSettingsEdit(true),
+      onCancel: () => this.endSettingsEdit(false),
+      templates: {
+        list: () => this.chartTemplates.list().map((t) => t.name),
+        apply: (name) => this.applyChartTemplate(name),
+        remove: (name) => this.chartTemplates.remove(name),
+        save: () => this.promptSaveChartTemplate(),
+      },
       styleValue: (key) => this.chart.getStyleValue?.(key) ?? null,
       onStyleChange: (patch) => this.changeStyle(patch),
     }, this.t, {
@@ -1237,6 +1259,7 @@ export class ChartWidget {
           if (!keyOn('hotkeys.invertScale')) return;
           e.preventDefault();
           this.changeSettings({ invertScale: !this.settingsState.invertScale });
+          this.settings?.refresh(this.settingsState);
         } else if (this.goToDate && keyOn('hotkeys.goToDate') && this.featureState.goToDate) {
           // Alt+G → go to date.
           e.preventDefault();
@@ -1692,6 +1715,7 @@ export class ChartWidget {
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
+    this.chartTemplatePrompt?.destroy();
     this.intervalInput?.destroy();
     this.markerTip?.remove();
     this.layoutSession?.destroy();
@@ -2145,6 +2169,8 @@ export class ChartWidget {
    * with them to the new theme: colours stay with the theme they were picked on.
    */
   private keepingLook(change: () => void): void {
+    // The open settings keep what they changed: its colours belong to the theme that is going.
+    if (this.settingsEdit) this.settings?.close();
     const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
     const kept = Object.fromEntries(LOOK_KEYS.filter((key) => user[key] !== undefined).map((key) => [key, user[key]]));
     change();
@@ -3086,7 +3112,7 @@ export class ChartWidget {
   private applyChartType(type: ChartType): void {
     this.state = { ...this.state, chartType: type };
     this.chart.setChartType(type);
-    // Settings open: their Style tab shows the type's own colours.
+    // Settings open: their Symbol tab shows the type's own colours.
     this.settings?.refresh(this.settingsState, type);
     this.updateUI();
   }
@@ -3269,10 +3295,73 @@ export class ChartWidget {
   }
 
   private openSettings(): void {
-    if (!this.featureState.settings) return;
-    // The chart's own settings of its type (a layout may have brought them).
-    this.settingsState = { ...this.settingsState, chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {} };
+    if (!this.featureState.settings || this.settings?.isOpen()) return;
+    // The chart's own settings of its type (a layout may have brought them), and its scale as a drag left it.
+    this.settingsState = {
+      ...this.settingsState,
+      chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {},
+      autoScale: this.chart.isAutoScale?.() ?? this.settingsState.autoScale,
+    };
+    this.settingsEdit = { settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set() };
     this.settings?.open(this.settingsState, this.state.chartType);
+  }
+
+  /** The settings closed: OK keeps what they changed as one undo step, Cancel puts it back as it was on opening. */
+  private endSettingsEdit(keep: boolean): void {
+    const edit = this.settingsEdit;
+    this.settingsEdit = null;
+    if (!edit) return;
+    const keys = [...edit.keys];
+    const pick = (from: ChartSettingsState): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, from[k]]));
+    const styleKeys = [...edit.styleKeys];
+    const before = pick(edit.settings);
+    const beforeStyle = styleKeys.length > 0
+      ? { theme: edit.style.theme, overrides: Object.fromEntries(styleKeys.map((k) => [k, edit.style.overrides[k] ?? null])) as SettingsStylePatch }
+      : null;
+    if (!keep) {
+      this.restoreSettings(before, beforeStyle);
+      return;
+    }
+    const after = pick(this.settingsState);
+    const afterStyle = styleKeys.length > 0 ? this.settingsStyle(styleKeys) : null;
+    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
+    this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
+  }
+
+  /** In the open settings, the keys a change touched: what Cancel and the undo step go by. */
+  private touchSettings(keys: Iterable<keyof ChartSettingsState>, styleKeys: Iterable<ChartStyleKey> = []): void {
+    if (!this.settingsEdit) return;
+    for (const key of keys) this.settingsEdit.keys.add(key);
+    for (const key of styleKeys) this.settingsEdit.styleKeys.add(key);
+  }
+
+  /** A chart template in place of the chart's look: its switches, and its colours over the theme's. */
+  private applyChartTemplate(name: string): void {
+    const template = this.chartTemplates.get(name);
+    if (!template) return;
+    this.touchSettings(Object.keys(template.settings) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
+    this.applySettings(template.settings);
+    this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
+    this.chart.applyOverrides(template.style, { layer: 'user' });
+    this.settings?.refresh(this.settingsState);
+    this.say(fill(this.t('templates.applied'), { name }));
+  }
+
+  /** Save the chart's look as a template, asking for its name over the open settings. */
+  private promptSaveChartTemplate(): void {
+    this.chartTemplatePrompt ??= new WidgetNamePrompt(this.overlayHost(), this.t);
+    this.chartTemplatePrompt.open({
+      title: this.t('settings.saveTemplateTitle'),
+      submitLabel: this.t('common.save'),
+      placeholder: this.t('settings.templatePlaceholder'),
+      onSubmit: (name) => {
+        if (!this.chartTemplates.save(name, this.settingsState, this.settingsStyle().overrides)) {
+          this.say(this.t('templates.saveFailed'), 'error');
+          throw new Error('The template could not be saved');
+        }
+        this.say(fill(this.t('templates.saved'), { name }));
+      },
+    });
   }
 
   // --- Toast ---
@@ -3296,7 +3385,11 @@ export class ChartWidget {
       el.appendChild(mark);
     }
     el.appendChild(document.createTextNode(message));
-    this.root.appendChild(el);
+    // Over an open dialog (a template saved from the settings), not dimmed behind its backdrop.
+    const dialogOpen = (host: HTMLElement) => host.querySelector('.tcw-modal-backdrop:not([hidden])') !== null;
+    const host = dialogOpen(this.portal) ? this.portal : this.root;
+    el.classList.toggle('tcw-toast-over', host === this.portal || dialogOpen(this.root));
+    host.appendChild(el);
     // Trigger CSS transition on next frame
     requestAnimationFrame(() => el.classList.add('tcw-toast-in'));
     setTimeout(() => {
@@ -3362,6 +3455,7 @@ export class ChartWidget {
     this.applySettings({ scaleMode: content.scaleMode, invertScale: content.invertScale });
     this.syncIndicatorsFromChart();
     this.updateUI();
+    this.settings?.refresh(this.settingsState, this.state.chartType);
   }
 
   /** `captureLayout()` as JSON. */
@@ -3826,12 +3920,14 @@ export class ChartWidget {
     const before = { ...this.settingsState };
     const beforeStyle = this.settingsStyle();
     const defaults = { ...this.settingsDefaults };
+    this.touchSettings(Object.keys(defaults) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
     this.applySettings(defaults);
     this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
     const after = { ...this.settingsState };
     const afterStyle = this.settingsStyle();
     this.settings?.refresh(this.settingsState);
-    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
+    // In the open settings, OK records it with the rest.
+    if (this.settingsEdit || JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
     this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
   }
 
@@ -3844,10 +3940,11 @@ export class ChartWidget {
   private changeStyle(patch: SettingsStylePatch): void {
     // Only the keys it touched: an undo leaves the rest (the host's own user overrides) as they are.
     const keys = Object.keys(patch) as ChartStyleKey[];
+    this.touchSettings([], keys);
     const before = this.settingsStyle(keys);
     this.chart.applyOverrides(patch, { layer: 'user' });
     const after = this.settingsStyle(keys);
-    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    if (this.settingsEdit || JSON.stringify(before) === JSON.stringify(after)) return;
     this.chart.recordUndo({
       subject: `style:${Object.keys(patch).sort().join(',')}`,
       undo: () => this.restoreSettings({}, before),
@@ -3867,10 +3964,11 @@ export class ChartWidget {
       for (const k of ['scaleMode', 'logScale'] as const) if (!keys.includes(k)) keys.push(k);
     }
     const pick = (): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, this.settingsState[k]]));
+    this.touchSettings(keys);
     const before = pick();
     this.applySettings(patch);
     const after = pick();
-    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    if (this.settingsEdit || JSON.stringify(before) === JSON.stringify(after)) return;
     this.chart.recordUndo({
       subject: `settings:${Object.keys(patch).sort().join(',')}`,
       undo: () => this.restoreSettings(before),

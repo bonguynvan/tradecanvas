@@ -1,8 +1,12 @@
 import { createIcon } from './icons.js';
 
 export type ContextMenuEntry =
-  /** `checked` makes it a switch (ticked when on). */
-  | { id: string; label: string; icon?: string; danger?: boolean; checked?: boolean }
+  /**
+   * `checked` makes it a switch (ticked when on). `remove` (its action's
+   * name, "Delete template Swing") gives it a remove button and the Delete
+   * key; the menu's `onRemove` hears it.
+   */
+  | { id: string; label: string; icon?: string; danger?: boolean; checked?: boolean; remove?: string }
   | 'separator';
 
 /** Room kept between the menu and the edge it would touch. */
@@ -22,6 +26,7 @@ function place(at: number, size: number, end: number): number {
 export class WidgetContextMenu {
   private el: HTMLDivElement;
   private onPick: ((id: string) => void) | null = null;
+  private onRemove: ((id: string) => void) | null = null;
   private returnFocus: HTMLElement | null = null;
   /** The button that opened it: pressing it again is its click's to handle (a toggle). */
   private anchor: HTMLElement | null = null;
@@ -48,9 +53,17 @@ export class WidgetContextMenu {
    * of the point when there is no room below or to the right, and stays
    * inside both the host and the window.
    */
-  open(entries: readonly ContextMenuEntry[], x: number, y: number, onPick: (id: string) => void, anchor?: HTMLElement): void {
+  open(
+    entries: readonly ContextMenuEntry[],
+    x: number,
+    y: number,
+    onPick: (id: string) => void,
+    anchor?: HTMLElement,
+    onRemove?: (id: string) => void,
+  ): void {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.onPick = onPick;
+    this.onRemove = onRemove ?? null;
     this.anchor = anchor ?? null;
     this.anchor?.setAttribute('aria-expanded', 'true');
     this.el.replaceChildren(...entries.map((entry) => this.entry(entry)));
@@ -73,6 +86,7 @@ export class WidgetContextMenu {
     if (this.el.hidden) return;
     this.el.hidden = true;
     this.onPick = null;
+    this.onRemove = null;
     this.anchor?.setAttribute('aria-expanded', 'false');
     this.anchor = null;
     document.removeEventListener('pointerdown', this.onDocPointer, true);
@@ -113,7 +127,42 @@ export class WidgetContextMenu {
     text.textContent = entry.label;
     item.appendChild(text);
     item.addEventListener('click', () => this.pick(entry.id));
-    return item;
+    if (!entry.remove) return item;
+    // The keyboard removes it with Delete; the button is for a pointer.
+    item.setAttribute('aria-keyshortcuts', 'Delete');
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'tcw-context-remove';
+    remove.tabIndex = -1;
+    remove.setAttribute('aria-hidden', 'true');
+    remove.title = entry.remove;
+    remove.innerHTML = createIcon('x', 12);
+    remove.addEventListener('click', () => this.remove(item));
+    const row = document.createElement('div');
+    row.className = 'tcw-context-row';
+    row.setAttribute('role', 'none');
+    row.append(item, remove);
+    return row;
+  }
+
+  /** Take an entry out (its `onRemove` told), the keyboard on the one after it; the menu closes when none is left. */
+  private remove(item: HTMLButtonElement): void {
+    const id = item.dataset.id;
+    if (!id || !item.hasAttribute('aria-keyshortcuts')) return;
+    const items = this.items();
+    const at = items.indexOf(item);
+    this.onRemove?.(id);
+    item.closest('.tcw-context-row')?.remove();
+    // A separator left first, last or next to another goes too.
+    const seps = [...this.el.children].filter((el, i, all) => el.classList.contains('tcw-context-sep')
+      && (i === 0 || i === all.length - 1 || all[i - 1].classList.contains('tcw-context-sep')));
+    for (const sep of seps) sep.remove();
+    const left = this.items();
+    if (left.length === 0) {
+      this.close();
+      return;
+    }
+    left[Math.min(at, left.length - 1)].focus({ preventScroll: true });
   }
 
   private pick(id: string): void {
@@ -134,7 +183,11 @@ export class WidgetContextMenu {
     else if (e.key === 'ArrowUp') next = (at - 1 + items.length) % items.length;
     else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = items.length - 1;
-    else if (e.key === 'Escape' || e.key === 'Tab') {
+    else if (e.key === 'Delete' && at >= 0) {
+      e.preventDefault();
+      this.remove(items[at]);
+      return;
+    } else if (e.key === 'Escape' || e.key === 'Tab') {
       e.preventDefault();
       e.stopPropagation();
       this.close();

@@ -2246,6 +2246,12 @@
 }
 .tcw-toast-error .tcw-toast-icon { color: var(--tcw-red); }
 
+/* Over an open dialog: above its backdrop, at the window's foot. */
+.tcw-toast.tcw-toast-over {
+  position: fixed;
+  z-index: 120;
+}
+
 .tcw-toast {
   position: absolute;
   bottom: 60px;
@@ -3582,6 +3588,9 @@
   position: absolute;
   z-index: 70;
   min-width: 200px;
+  /* Taller than the room (many templates, say), it scrolls. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--tcw-menu-pad);
   background: var(--tcw-bg-elevated);
   border: var(--tcw-border-w) solid var(--tcw-border);
@@ -3609,6 +3618,29 @@
 .tcw-context-item:focus-visible { box-shadow: inset 0 0 0 1px var(--tcw-accent); }
 .tcw-context-danger, .tcw-context-danger svg { color: var(--tcw-red); }
 .tcw-context-sep { height: 1px; margin: var(--tcw-space-2) var(--tcw-space-4); background: var(--tcw-divider); }
+/* An entry that can be removed: its x on the row in hand, always on a touch screen. */
+.tcw-context-row { display: flex; align-items: center; border-radius: var(--tcw-menu-item-radius); }
+.tcw-context-row .tcw-context-item { flex: 1; min-width: 0; }
+.tcw-context-row:hover { background: var(--tcw-hover-bg); }
+.tcw-context-row:hover .tcw-context-item { background: transparent; }
+.tcw-context-remove {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  margin-inline-end: var(--tcw-space-1);
+  border: 0;
+  border-radius: var(--tcw-menu-item-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-context-row:hover .tcw-context-remove, .tcw-context-row:focus-within .tcw-context-remove { opacity: 1; }
+.tcw-context-remove:hover { color: var(--tcw-red); background: var(--tcw-hover-bg); }
+@media (hover: none) { .tcw-context-remove { opacity: 1; } }
 /* --- Toolbar over a selected drawing --- */
 .tcw-sel-toolbar {
   position: absolute;

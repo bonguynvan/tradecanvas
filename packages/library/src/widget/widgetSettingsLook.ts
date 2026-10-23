@@ -35,17 +35,49 @@ const hint = (colour: string | undefined) => ({ hint: colour });
 /** The theme's quieter text, which the watermark and the high and low lines take. */
 const QUIET_TEXT = { from: 'panes.titleColor' } as const;
 
-/** The Style tab's sections after the chart type's own. */
-export const STYLE_SECTIONS: readonly LookSection[] = [
+/** The Symbol tab's sections after the chart type's own: the last price, the volume, the high and low. */
+export const LAST_PRICE_SECTION: LookSection = {
+  title: 'settings.section.lastPrice',
+  rows: [
+    row('settings.priceLine', 'lastPrice.visible'),
+    row('settings.up', 'lastPrice.upColor'),
+    row('settings.down', 'lastPrice.downColor'),
+    row('drawingSettings.lineStyle', 'lastPrice.style'),
+    row('drawingSettings.lineWidth', 'lastPrice.width'),
+  ],
+};
+export const VOLUME_SECTION: LookSection = {
+  title: 'settings.volume',
+  rows: [row('settings.up', 'volume.upColor'), row('settings.down', 'volume.downColor')],
+};
+export const HIGH_LOW_SECTION: LookSection = {
+  title: 'settings.highLowLines',
+  rows: [autoRow('drawingSettings.color', 'highLow.color', QUIET_TEXT)],
+};
+
+export const SYMBOL_SECTIONS: readonly LookSection[] = [LAST_PRICE_SECTION, VOLUME_SECTION, HIGH_LOW_SECTION];
+
+/** The Status line tab's colours: the legend's text and the panes' titles. */
+export const STATUS_LINE_ROWS: readonly LookRow[] = [
+  row('settings.legendText', 'legend.textColor'),
+  row('settings.legendLabels', 'legend.labelColor'),
+  row('settings.paneTitles', 'panes.titleColor'),
+];
+
+/** The Scales tab's colours: the axes' text and lines. */
+export const SCALE_ROWS: readonly LookRow[] = [
+  row('drawingSettings.text', 'axis.price.textColor', 'axis.time.textColor'),
+  row('settings.scaleLines', 'axis.price.lineColor', 'axis.time.lineColor'),
+];
+
+/** The Appearance tab: the background, the grid, the crosshair, the session breaks, the drawings' handles. */
+export const APPEARANCE_SECTIONS: readonly LookSection[] = [
   {
     title: 'settings.section.background',
     rows: [
       row('settings.background', 'background.color'),
       row('settings.paneBackground', 'panes.background'),
       row('settings.paneSeparator', 'panes.separatorColor'),
-      row('settings.paneTitles', 'panes.titleColor'),
-      row('settings.legendText', 'legend.textColor'),
-      row('settings.legendLabels', 'legend.labelColor'),
       autoRow('settings.watermark', 'watermark.color', QUIET_TEXT),
     ],
   },
@@ -72,37 +104,12 @@ export const STYLE_SECTIONS: readonly LookSection[] = [
     ],
   },
   {
-    title: 'settings.tab.scale',
-    rows: [
-      row('drawingSettings.text', 'axis.price.textColor', 'axis.time.textColor'),
-      row('settings.scaleLines', 'axis.price.lineColor', 'axis.time.lineColor'),
-    ],
-  },
-  {
-    title: 'settings.section.lastPrice',
-    rows: [
-      row('settings.priceLine', 'lastPrice.visible'),
-      row('settings.up', 'lastPrice.upColor'),
-      row('settings.down', 'lastPrice.downColor'),
-      row('drawingSettings.lineStyle', 'lastPrice.style'),
-      row('drawingSettings.lineWidth', 'lastPrice.width'),
-    ],
-  },
-  {
-    title: 'settings.volume',
-    rows: [row('settings.up', 'volume.upColor'), row('settings.down', 'volume.downColor')],
-  },
-  {
     title: 'settings.sessionBreaks',
     rows: [
       autoRow('drawingSettings.color', 'sessionBreaks.color', { from: 'axis.price.lineColor' }),
       autoRow('drawingSettings.lineStyle', 'sessionBreaks.style'),
       autoRow('drawingSettings.lineWidth', 'sessionBreaks.width'),
     ],
-  },
-  {
-    title: 'settings.highLowLines',
-    rows: [autoRow('drawingSettings.color', 'highLow.color', QUIET_TEXT)],
   },
   {
     title: 'objects.drawings',
@@ -180,6 +187,7 @@ export function seriesRows(type: ChartType): LookRow[] {
 export const SETTINGS_LOOK_KEYS: readonly ChartStyleKey[] = [
   ...new Set<ChartStyleKey>([
     ...(Object.keys(CHART_STYLE_KEYS) as ChartStyleKey[]).filter((key) => key.startsWith('series.')),
-    ...[...STYLE_SECTIONS, ...TRADING_SECTIONS].flatMap((section) => section.rows.flatMap((r) => r.keys)),
+    ...[...SYMBOL_SECTIONS, ...APPEARANCE_SECTIONS, ...TRADING_SECTIONS].flatMap((section) => section.rows.flatMap((r) => r.keys)),
+    ...[...STATUS_LINE_ROWS, ...SCALE_ROWS].flatMap((r) => r.keys),
   ]),
 ];

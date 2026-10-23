@@ -183,11 +183,17 @@ export const ET_MESSAGES: WidgetMessages = {
 
   // Settings panel
   'settings.title': 'Graafiku seaded',
-  'settings.tab.style': 'Stiil',
-  'settings.tab.display': 'Kuva',
-  'settings.tab.scale': 'Skaala',
+  'settings.tab.symbol': 'Sümbol',
+  'settings.tab.statusLine': 'Olekurida',
+  'settings.tab.scales': 'Skaalad',
+  'settings.tab.appearance': 'Välimus',
+  'settings.tab.layers': 'Kihid',
+  'settings.template': 'Mall',
+  'settings.section.axes': 'Teljed',
+  'settings.saveTemplate': 'Salvesta mallina…',
+  'settings.saveTemplateTitle': 'Salvesta graafikumall',
+  'settings.templatePlaceholder': 'Minu graafik',
   'settings.resetToDefaults': 'Taasta vaikeseaded',
-  'settings.done': 'Valmis',
   'settings.section.candleColors': 'Küünalde värvid',
   'settings.section.background': 'Taust',
 
