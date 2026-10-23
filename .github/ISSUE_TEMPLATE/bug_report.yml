@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for the report. The smaller the setup that shows the bug, the faster it gets fixed.
-        A fork of a [StackBlitz sandbox](https://bonguynvan.github.io/tradecanvas/examples/) is the easiest way to share one.
+        A fork of a [StackBlitz sandbox](https://tradecanvas.dev/examples/) is the easiest way to share one.
   - type: textarea
     id: what
     attributes:

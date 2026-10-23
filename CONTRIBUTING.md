@@ -5,9 +5,10 @@ Thanks for helping. Bug reports, ideas, docs fixes and pull requests are all wel
 ## Before you start
 
 - **Questions and ideas**: ask in [Discussions](https://github.com/bonguynvan/tradecanvas/discussions); a question there helps the next person who searches for it.
-- **Bugs**: open an [issue](https://github.com/bonguynvan/tradecanvas/issues/new/choose) with the smallest setup that shows it: the options you passed, the data (a few bars is often enough), what you expected and what happened. A fork of one of the [StackBlitz sandboxes](https://bonguynvan.github.io/tradecanvas/examples/) is the quickest way to share one.
+- **Bugs**: open an [issue](https://github.com/bonguynvan/tradecanvas/issues/new/choose) with the smallest setup that shows it: the options you passed, the data (a few bars is often enough), what you expected and what happened. A fork of one of the [StackBlitz sandboxes](https://tradecanvas.dev/examples/) is the quickest way to share one.
 - **Features**: open an issue first for anything larger than a small fix, so we can agree on the API before you build it.
 - **Security issues**: don't open an issue; see [SECURITY.md](./SECURITY.md).
+- **With a coding agent**: [AGENTS.md](./AGENTS.md) holds this page's rules and the ones only a failing check would tell you, for the agent to read first. Claude Code, Cursor, Codex and Copilot pick it up by themselves.
 
 ## Setup
 
@@ -19,7 +20,7 @@ cd tradecanvas
 pnpm install
 pnpm build        # every package; the demo and the wrappers read the built output
 pnpm test         # unit tests of every package
-pnpm --filter @tradecanvas/demo dev   # the site with the Feature Lab, on localhost
+pnpm --filter @tradecanvas/demo dev   # the Feature Lab and the docs, on localhost
 ```
 
 While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, `commons`) rebuilds it on save; reload the demo to see the change.
@@ -33,9 +34,9 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
 | `packages/library` | `@tradecanvas/chart`: the `Chart` class, and `ChartWidget` with its UI under `src/widget`. |
 | `packages/analytics` | Backtester, strategies and risk metrics. |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. |
-| `demo` | The SvelteKit site: Feature Lab, docs in six languages, examples. |
+| `demo` | The Feature Lab you run locally, and the source of the docs in six languages, which [tradecanvas.dev](https://tradecanvas.dev/) publishes. |
 | `skills/tradecanvas` | The agent skill; its examples are type-checked in CI. |
-| `scripts` | Generated docs (`pnpm docs:gen`) and their checks. |
+| `scripts` | Generated docs (`pnpm docs:gen`) and their checks; the pages that send the old GitHub Pages addresses on to tradecanvas.dev. |
 
 ## Making a change
 

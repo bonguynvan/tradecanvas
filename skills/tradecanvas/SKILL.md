@@ -248,4 +248,4 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 
 - [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
 - [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, multi-chart layouts.
-- Docs site: https://bonguynvan.github.io/tradecanvas/ · API: https://bonguynvan.github.io/tradecanvas/docs/api
+- Docs site: https://tradecanvas.dev/ · API: https://tradecanvas.dev/docs/api

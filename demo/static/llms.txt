@@ -6,18 +6,18 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 
 ## Docs
 
-- [Getting started](https://bonguynvan.github.io/tradecanvas/docs/getting-started): install, the widget, the headless chart
-- [API reference](https://bonguynvan.github.io/tradecanvas/docs/api): Chart and ChartWidget methods, options and events
-- [Indicators](https://bonguynvan.github.io/tradecanvas/docs/indicators): every built-in indicator with its id, inputs and lines
-- [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables
-- [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization): every way to customise: themes, looks, style overrides, the widget's 112 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
-- [Chart types](https://bonguynvan.github.io/tradecanvas/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
-- [Drawing tools](https://bonguynvan.github.io/tradecanvas/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
-- [Realtime and replay](https://bonguynvan.github.io/tradecanvas/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
-- [Trading](https://bonguynvan.github.io/tradecanvas/docs/trading): orders, positions, brackets and execution adapters on the chart
-- [Frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks): React, Vue and Svelte components
-- [Plugins](https://bonguynvan.github.io/tradecanvas/docs/plugins): custom indicators, drawings and chart types
-- [Analytics](https://bonguynvan.github.io/tradecanvas/docs/analytics): strategy backtester and risk metrics
+- [Getting started](https://tradecanvas.dev/docs/getting-started): install, the widget, the headless chart
+- [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
+- [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
+- [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Studio, Terminal and Capsule presets, your own theme, CSS variables
+- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 112 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
+- [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
+- [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
+- [Realtime and replay](https://tradecanvas.dev/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
+- [Trading](https://tradecanvas.dev/docs/trading): orders, positions, brackets and execution adapters on the chart
+- [Frameworks](https://tradecanvas.dev/docs/frameworks): React, Vue and Svelte components
+- [Plugins](https://tradecanvas.dev/docs/plugins): custom indicators, drawings and chart types
+- [Analytics](https://tradecanvas.dev/docs/analytics): strategy backtester and risk metrics
 
 ## Agent skill
 
@@ -27,5 +27,5 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 
 ## Optional
 
-- [Everything in one file](https://bonguynvan.github.io/tradecanvas/llms-full.txt): the library README, the skill and its references
+- [Everything in one file](https://tradecanvas.dev/llms-full.txt): the library README, the skill and its references
 - [Source](https://github.com/bonguynvan/tradecanvas)

@@ -4,10 +4,10 @@ contact_links:
     url: https://github.com/bonguynvan/tradecanvas/discussions
     about: Ask how to do something, suggest an idea, or show what you built. Bugs stay here, in issues.
   - name: Docs
-    url: https://bonguynvan.github.io/tradecanvas/docs/getting-started/
+    url: https://tradecanvas.dev/docs/getting-started/
     about: Guides and the full API, in six languages.
   - name: Live demo and Feature Lab
-    url: https://bonguynvan.github.io/tradecanvas/
+    url: https://tradecanvas.dev/
     about: Try a feature on a live chart before you report it.
   - name: Security issue
     url: https://github.com/bonguynvan/tradecanvas/security/advisories/new

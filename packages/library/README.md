@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/banner.png" alt="TradeCanvas, the chart engine for trading apps" width="100%"></a>
+  <a href="https://tradecanvas.dev/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/banner.png" alt="TradeCanvas, the chart engine for trading apps" width="100%"></a>
 </p>
 
 <p align="center">
@@ -15,11 +15,10 @@
 </p>
 
 <p align="center">
-  <b><a href="https://bonguynvan.github.io/tradecanvas/">Live demo</a></b> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/docs/getting-started/">Docs</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/examples/">Examples</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/playground/">Playground</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/audit/">System audit</a> ·
+  <b><a href="https://tradecanvas.dev/chart/">Live demo</a></b> ·
+  <a href="https://tradecanvas.dev/docs/getting-started/">Docs</a> ·
+  <a href="https://tradecanvas.dev/examples/">Examples</a> ·
+  <a href="https://tradecanvas.dev/audit/">System audit</a> ·
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/CHANGELOG.md">Changelog</a>
 </p>
 
@@ -30,7 +29,7 @@
 **A complete trading chart for the web.** Candlesticks to Renko, 134 indicators, 69 drawing tools, live exchange feeds and orders on the chart, drawn with Canvas 2D or WebGL and free of third-party dependencies. Drop in the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
+  <a href="https://tradecanvas.dev/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/hero.png" alt="ChartWidget with live BTCUSDT from Binance: EMA 21 and 55, RSI, a trend line, a long position and a watchlist with live quotes" width="100%"></a>
 </p>
 
 ## Highlights
@@ -79,7 +78,7 @@ chart.addIndicator('ema', { period: 50 })
 chart.addIndicator('rsi')
 ```
 
-Your own feed plugs in through `WebSocketAdapter` or `PollingAdapter`; see [Realtime](https://bonguynvan.github.io/tradecanvas/docs/realtime/).
+Your own feed plugs in through `WebSocketAdapter` or `PollingAdapter`; see [Realtime](https://tradecanvas.dev/docs/realtime/).
 
 ## Frameworks
 
@@ -93,7 +92,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
 
-The three components share the same props and hand you the underlying `Chart`. See [Frameworks](https://bonguynvan.github.io/tradecanvas/docs/frameworks/).
+The three components share the same props and hand you the underlying `Chart`. See [Frameworks](https://tradecanvas.dev/docs/frameworks/).
 
 ## A look around
 
@@ -128,21 +127,21 @@ The three components share the same props and hand you the underlying `Chart`. S
 
 | Topic | |
 |---|---|
-| [Getting started](https://bonguynvan.github.io/tradecanvas/docs/getting-started/) | Install, the widget, the headless chart |
-| [Chart types](https://bonguynvan.github.io/tradecanvas/docs/chart-types/) · [Indicators](https://bonguynvan.github.io/tradecanvas/docs/indicators/) · [Drawing tools](https://bonguynvan.github.io/tradecanvas/docs/drawing-tools/) | What the chart draws, and the settings of each |
-| [Realtime](https://bonguynvan.github.io/tradecanvas/docs/realtime/) | Built-in feeds, your own adapter, history, tick charts |
-| [Trading](https://bonguynvan.github.io/tradecanvas/docs/trading/) | Orders, positions, execution adapters, replay |
-| [Styling](https://bonguynvan.github.io/tradecanvas/docs/styling/) · [Customization](https://bonguynvan.github.io/tradecanvas/docs/customization/) | Themes, style keys, looks, feature switches, your own parts |
-| [Plugins](https://bonguynvan.github.io/tradecanvas/docs/plugins/) | Your own indicators, drawing tools, chart types and overlays |
-| [Analytics](https://bonguynvan.github.io/tradecanvas/docs/analytics/) · [Finance charts](https://bonguynvan.github.io/tradecanvas/docs/finance/) | Backtesting and risk metrics; depth, equity and other charts |
-| [Phones and apps](https://bonguynvan.github.io/tradecanvas/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; touch and page scrolling |
-| [Performance](https://bonguynvan.github.io/tradecanvas/docs/performance/) · [API reference](https://bonguynvan.github.io/tradecanvas/docs/api/) | Measurements and the full API |
+| [Getting started](https://tradecanvas.dev/docs/getting-started/) | Install, the widget, the headless chart |
+| [Chart types](https://tradecanvas.dev/docs/chart-types/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) | What the chart draws, and the settings of each |
+| [Realtime](https://tradecanvas.dev/docs/realtime/) | Built-in feeds, your own adapter, history, tick charts |
+| [Trading](https://tradecanvas.dev/docs/trading/) | Orders, positions, execution adapters, replay |
+| [Styling](https://tradecanvas.dev/docs/styling/) · [Customization](https://tradecanvas.dev/docs/customization/) | Themes, style keys, looks, feature switches, your own parts |
+| [Plugins](https://tradecanvas.dev/docs/plugins/) | Your own indicators, drawing tools, chart types and overlays |
+| [Analytics](https://tradecanvas.dev/docs/analytics/) · [Finance charts](https://tradecanvas.dev/docs/finance/) | Backtesting and risk metrics; depth, equity and other charts |
+| [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; touch and page scrolling |
+| [Performance](https://tradecanvas.dev/docs/performance/) · [API reference](https://tradecanvas.dev/docs/api/) | Measurements and the full API |
 
 The docs are also in Tiếng Việt, 简体中文, 日本語, 한국어 and Español.
 
 ## Performance
 
-Measured in Chrome on integrated graphics (Intel UHD); the [system audit](https://bonguynvan.github.io/tradecanvas/audit/) has the full table.
+Measured in Chrome on integrated graphics (Intel UHD); the [system audit](https://tradecanvas.dev/audit/) has the full table.
 
 | | |
 |---|---|
@@ -176,7 +175,14 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## AI coding tools
 
-[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) and [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) give assistants the docs in one file, and the agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md) teaches coding agents the API with examples that CI type-checks.
+The agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md) teaches coding agents the API, with examples that CI type-checks. In Claude Code:
+
+```text
+/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas
+```
+
+Other agents (Cursor, Codex, Copilot and more): `npx skills add bonguynvan/tradecanvas`. Without a skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) and [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) give an assistant the docs in one file. Changing TradeCanvas itself with an agent? [AGENTS.md](https://github.com/bonguynvan/tradecanvas/blob/main/AGENTS.md) holds the repo's rules.
 
 ## Related projects
 
@@ -184,7 +190,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## For businesses
 
-Putting TradeCanvas in front of your customers? There is no logo to show and nothing to apply for. The [For businesses](https://bonguynvan.github.io/tradecanvas/business/) page answers what an IT review asks, with sources, and describes the first-partner programme. Write to business@tradecanvas.dev.
+Putting TradeCanvas in front of your customers? There is no logo to show and nothing to apply for. The [For businesses](https://tradecanvas.dev/business/) page answers what an IT review asks, with sources, and describes the first-partner programme. Write to business@tradecanvas.dev.
 
 ## Contributing
 
