@@ -21,6 +21,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
+import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
@@ -140,15 +141,6 @@ const MAX_REPLAY_STEPS = 5000;
 const inOverlay = (): boolean => {
   const active = document.activeElement;
   return active instanceof Element && active.closest('[role="dialog"], [aria-modal="true"], [role="menu"]') !== null;
-};
-/** Alt + a letter picks a drawing tool (by key position, so it works on any layout). */
-const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
-  KeyT: 'trendLine',
-  KeyH: 'horizontalLine',
-  KeyJ: 'horizontalRay',
-  KeyV: 'verticalLine',
-  KeyC: 'crossLine',
-  KeyF: 'fibRetracement',
 };
 
 /** `keyCode` of a key press that goes to an IME composing text. */
@@ -537,7 +529,11 @@ export class ChartWidget {
     if (options.drawingFavorites) this.favoritesStore.seedDefaults(options.drawingFavorites);
     this.sidebar = new WidgetDrawingSidebar(
       body,
-      { drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t), favorites: this.favoritesStore.list() as DrawingToolType[] },
+      {
+        drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t),
+        favorites: this.favoritesStore.list() as DrawingToolType[],
+        shortcuts: toolShortcuts(),
+      },
       {
         onDrawingTool: (tool) => this.handleDrawingTool(tool),
         onCancelDrawing: () => this.handleCancelDrawing(),
@@ -552,6 +548,16 @@ export class ChartWidget {
         },
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
+        onLockAll: (locked) => {
+          this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
+          this.refreshDrawingsState();
+          this.refreshObjects();
+        },
+        onHideAll: (hidden) => {
+          this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), !hidden);
+          this.refreshDrawingsState();
+          this.refreshObjects();
+        },
       },
     this.t,
     );
@@ -915,6 +921,10 @@ export class ChartWidget {
         this.updateSelectionToolbar();
       },
     }, this.t);
+    // Lock all and hide all show whether every drawing is.
+    for (const event of ['drawingCreate', 'drawingUpdate', 'drawingRemove'] as const) {
+      this.chart.on(event, () => this.refreshDrawingsState());
+    }
     // Undo and redo on the toolbar, each off while there is nothing for it.
     this.chart.on('historyChange', (e) => {
       const { canUndo, canRedo } = e.payload as { canUndo: boolean; canRedo: boolean };
@@ -2390,6 +2400,16 @@ export class ChartWidget {
     const pad = (n: number) => String(n).padStart(2, '0');
     const { time } = utcToWallTime(now, tz);
     return { time: `${time}:${pad(new Date(now).getUTCSeconds())}`, zone: tzLabel(offsetAt(tz, now)) };
+  }
+
+  /** Whether every drawing is locked, and every one hidden: the sidebar's lock all and hide all say so. */
+  private refreshDrawingsState(): void {
+    const drawings = this.chart.getDrawings();
+    const all = drawings.length > 0;
+    this.sidebar?.setDrawingsState({
+      locked: all && drawings.every((d) => d.locked),
+      hidden: all && drawings.every((d) => !d.visible),
+    });
   }
 
   /** The status bar's scale switches as the chart is now. */

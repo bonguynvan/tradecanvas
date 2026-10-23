@@ -26,6 +26,7 @@ export const WIDGET_FEATURES = [
   'sidebar.cursor', 'sidebar.favorites', 'sidebar.lines', 'sidebar.fibonacci', 'sidebar.patterns',
   'sidebar.forecasting', 'sidebar.annotation', 'sidebar.style', 'sidebar.magnet', 'sidebar.eraser',
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
+  'sidebar.lockAll', 'sidebar.hideAll',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
   'statusBar.clock', 'statusBar.scale',

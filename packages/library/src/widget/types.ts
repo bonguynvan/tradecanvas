@@ -502,6 +502,8 @@ export interface SidebarConfig {
   drawingToolGroups: DrawingToolGroupDef[];
   /** Initially pinned tools shown in the favorites strip. */
   favorites?: DrawingToolType[];
+  /** Each tool's shortcut, written in its menu row ("Alt+T"). */
+  shortcuts?: Partial<Record<DrawingToolType, string>>;
 }
 
 export interface SidebarCallbacks {
@@ -513,6 +515,10 @@ export interface SidebarCallbacks {
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
   onClearDrawings: () => void;
+  /** Lock (true) or unlock every drawing: the button shows when given. */
+  onLockAll?: (locked: boolean) => void;
+  /** Hide (true) or show every drawing: the button shows when given. */
+  onHideAll?: (hidden: boolean) => void;
   onToggleStyle?: () => void;
   onToggleStayInDrawing?: () => void;
 }
