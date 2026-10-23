@@ -3014,6 +3014,9 @@ export class Chart {
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
     this.applyTimeSpacing();
+    // The legend's title line names them (a name set with setSymbolName stands until the symbol changes).
+    if (symbol !== previousSymbol) this.chartLegend.setSymbol(symbol);
+    this.chartLegend.setTimeframe(timeframe);
     if (symbol !== previousSymbol) {
       this.announcedSymbol = symbol;
       this.eventBus.emit('symbolChange', { symbol, previous: previousSymbol });
@@ -3782,6 +3785,8 @@ export class Chart {
    */
   setSymbolInfo(info: SymbolInfo | null): void {
     this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
+    this.engine.requestRender(LayerType.Hover);
     this.priceAxis.setPriceTick(this.symbolInfo?.minTick ?? null);
     if (this.marketConfig?.pricePrecision === undefined) {
       this.applyPricePrecision(this.symbolInfo?.pricePrecision ?? null);
