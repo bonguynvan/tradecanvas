@@ -1,5 +1,11 @@
 # @tradecanvas/vue
 
+## 1.3.14
+
+### Patch Changes
+
+- @tradecanvas/chart@1.32.0
+
 ## 1.3.13
 
 ### Patch Changes

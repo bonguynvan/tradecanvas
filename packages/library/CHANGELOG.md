@@ -1,5 +1,12 @@
 # @tradecanvas/chart
 
+## 1.32.0
+
+### Patch Changes
+
+- @tradecanvas/commons@1.32.0
+- @tradecanvas/core@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes
