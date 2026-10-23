@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/"><img src=".github/assets/banner.png" alt="TradeCanvas, bộ máy biểu đồ cho ứng dụng giao dịch" width="100%"></a>
+  <a href="https://tradecanvas.dev/vi/"><img src=".github/assets/banner.png" alt="TradeCanvas, bộ máy biểu đồ cho ứng dụng giao dịch" width="100%"></a>
 </p>
 
 <p align="center">
@@ -15,11 +15,10 @@
 </p>
 
 <p align="center">
-  <b><a href="https://bonguynvan.github.io/tradecanvas/vi/">Demo trực tiếp</a></b> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/docs/getting-started/">Tài liệu</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/examples/">Ví dụ</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/playground/">Playground</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/audit/">Audit hệ thống</a> ·
+  <b><a href="https://tradecanvas.dev/vi/chart/">Demo trực tiếp</a></b> ·
+  <a href="https://tradecanvas.dev/vi/docs/getting-started/">Tài liệu</a> ·
+  <a href="https://tradecanvas.dev/vi/examples/">Ví dụ</a> ·
+  <a href="https://tradecanvas.dev/vi/audit/">Audit hệ thống</a> ·
   <a href="./CHANGELOG.md">Nhật ký thay đổi</a>
 </p>
 
@@ -30,7 +29,7 @@
 **Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 134 chỉ báo, 69 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/vi/"><img src=".github/assets/hero.png" alt="ChartWidget với giá BTCUSDT trực tiếp từ Binance: EMA 21 và 55, RSI, một đường xu hướng, một vị thế mua và watchlist có giá trực tiếp" width="100%"></a>
+  <a href="https://tradecanvas.dev/vi/"><img src=".github/assets/hero.png" alt="ChartWidget với giá BTCUSDT trực tiếp từ Binance: EMA 21 và 55, RSI, một đường xu hướng, một vị thế mua và watchlist có giá trực tiếp" width="100%"></a>
 </p>
 
 ## Điểm nổi bật
@@ -79,7 +78,7 @@ chart.addIndicator('ema', { period: 50 })
 chart.addIndicator('rsi')
 ```
 
-Nguồn dữ liệu của bạn nối vào qua `WebSocketAdapter` hoặc `PollingAdapter`; xem [Dữ liệu trực tiếp](https://bonguynvan.github.io/tradecanvas/vi/docs/realtime/).
+Nguồn dữ liệu của bạn nối vào qua `WebSocketAdapter` hoặc `PollingAdapter`; xem [Dữ liệu trực tiếp](https://tradecanvas.dev/vi/docs/realtime/).
 
 ## Framework
 
@@ -93,7 +92,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
 
-Ba component dùng chung một bộ prop và trao cho bạn `Chart` bên dưới. Xem [Framework](https://bonguynvan.github.io/tradecanvas/vi/docs/frameworks/).
+Ba component dùng chung một bộ prop và trao cho bạn `Chart` bên dưới. Xem [Framework](https://tradecanvas.dev/vi/docs/frameworks/).
 
 ## Một vòng xem thử
 
@@ -128,21 +127,21 @@ Ba component dùng chung một bộ prop và trao cho bạn `Chart` bên dưới
 
 | Chủ đề | |
 |---|---|
-| [Bắt đầu](https://bonguynvan.github.io/tradecanvas/vi/docs/getting-started/) | Cài đặt, widget, biểu đồ headless |
-| [Loại biểu đồ](https://bonguynvan.github.io/tradecanvas/vi/docs/chart-types/) · [Chỉ báo](https://bonguynvan.github.io/tradecanvas/vi/docs/indicators/) · [Công cụ vẽ](https://bonguynvan.github.io/tradecanvas/vi/docs/drawing-tools/) | Biểu đồ vẽ được gì, và cài đặt của từng thứ |
-| [Dữ liệu trực tiếp](https://bonguynvan.github.io/tradecanvas/vi/docs/realtime/) | Nguồn có sẵn, adapter của bạn, lịch sử, biểu đồ tick |
-| [Giao dịch](https://bonguynvan.github.io/tradecanvas/vi/docs/trading/) | Lệnh, vị thế, adapter khớp lệnh, replay |
-| [Giao diện](https://bonguynvan.github.io/tradecanvas/vi/docs/styling/) · [Tuỳ biến](https://bonguynvan.github.io/tradecanvas/vi/docs/customization/) | Theme, khoá style, kiểu giao diện, công tắc tính năng, thành phần của riêng bạn |
-| [Plugin](https://bonguynvan.github.io/tradecanvas/vi/docs/plugins/) | Chỉ báo, công cụ vẽ, loại biểu đồ và overlay của riêng bạn |
-| [Phân tích](https://bonguynvan.github.io/tradecanvas/vi/docs/analytics/) · [Biểu đồ tài chính](https://bonguynvan.github.io/tradecanvas/vi/docs/finance/) | Backtest và chỉ số rủi ro; biểu đồ độ sâu, equity và các loại khác |
-| [Điện thoại và ứng dụng](https://bonguynvan.github.io/tradecanvas/vi/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; cảm ứng và cuộn trang |
-| [Hiệu năng](https://bonguynvan.github.io/tradecanvas/vi/docs/performance/) · [Tham chiếu API](https://bonguynvan.github.io/tradecanvas/vi/docs/api/) | Số đo và toàn bộ API |
+| [Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) | Cài đặt, widget, biểu đồ headless |
+| [Loại biểu đồ](https://tradecanvas.dev/vi/docs/chart-types/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) | Biểu đồ vẽ được gì, và cài đặt của từng thứ |
+| [Dữ liệu trực tiếp](https://tradecanvas.dev/vi/docs/realtime/) | Nguồn có sẵn, adapter của bạn, lịch sử, biểu đồ tick |
+| [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) | Lệnh, vị thế, adapter khớp lệnh, replay |
+| [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Tuỳ biến](https://tradecanvas.dev/vi/docs/customization/) | Theme, khoá style, kiểu giao diện, công tắc tính năng, thành phần của riêng bạn |
+| [Plugin](https://tradecanvas.dev/vi/docs/plugins/) | Chỉ báo, công cụ vẽ, loại biểu đồ và overlay của riêng bạn |
+| [Phân tích](https://tradecanvas.dev/vi/docs/analytics/) · [Biểu đồ tài chính](https://tradecanvas.dev/vi/docs/finance/) | Backtest và chỉ số rủi ro; biểu đồ độ sâu, equity và các loại khác |
+| [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; cảm ứng và cuộn trang |
+| [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/) · [Tham chiếu API](https://tradecanvas.dev/vi/docs/api/) | Số đo và toàn bộ API |
 
 Tài liệu còn có bằng English, 简体中文, 日本語, 한국어 và Español.
 
 ## Hiệu năng
 
-Đo trên Chrome với GPU tích hợp (Intel UHD); [audit hệ thống](https://bonguynvan.github.io/tradecanvas/vi/audit/) có bảng đầy đủ.
+Đo trên Chrome với GPU tích hợp (Intel UHD); [audit hệ thống](https://tradecanvas.dev/vi/audit/) có bảng đầy đủ.
 
 | | |
 |---|---|
@@ -176,7 +175,14 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## Công cụ lập trình AI
 
-[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) và [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) gom tài liệu vào một file cho trợ lý AI, và agent skill trong [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) dạy coding agent dùng API qua các ví dụ được CI kiểm kiểu.
+Agent skill trong [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) dạy coding agent dùng API, với các ví dụ được CI kiểm kiểu. Trong Claude Code:
+
+```text
+/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas
+```
+
+Agent khác (Cursor, Codex, Copilot…): `npx skills add bonguynvan/tradecanvas`. Không dùng skill thì [`llms.txt`](https://tradecanvas.dev/llms.txt) và [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) gom tài liệu vào một file cho trợ lý AI. Sửa chính TradeCanvas bằng agent? Quy tắc của repo nằm trong [AGENTS.md](AGENTS.md).
 
 ## Dự án liên quan
 
@@ -184,7 +190,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## Cho doanh nghiệp
 
-Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://bonguynvan.github.io/tradecanvas/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradecanvas.dev.
+Đưa TradeCanvas đến khách hàng của bạn? Không có logo phải hiển thị, không có gì phải xin phép. Trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì bộ phận IT hay hỏi, kèm nguồn kiểm chứng, và giới thiệu chương trình đối tác đầu tiên. Liên hệ business@tradecanvas.dev.
 
 ## Đóng góp
 

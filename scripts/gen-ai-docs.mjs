@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SITE = 'https://bonguynvan.github.io/tradecanvas';
+const SITE = 'https://tradecanvas.dev';
 const REPO = 'https://github.com/bonguynvan/tradecanvas';
 const check = process.argv.includes('--check');
 

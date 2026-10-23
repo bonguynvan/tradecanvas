@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/banner.png" alt="TradeCanvas：トレーディングアプリのためのチャートエンジン" width="100%"></a>
+  <a href="https://tradecanvas.dev/ja/"><img src=".github/assets/banner.png" alt="TradeCanvas：トレーディングアプリのためのチャートエンジン" width="100%"></a>
 </p>
 
 <p align="center">
@@ -15,11 +15,10 @@
 </p>
 
 <p align="center">
-  <b><a href="https://bonguynvan.github.io/tradecanvas/ja/">ライブデモ</a></b> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/docs/getting-started/">ドキュメント</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/examples/">サンプル</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/playground/">Playground</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/audit/">システム監査</a> ·
+  <b><a href="https://tradecanvas.dev/ja/chart/">ライブデモ</a></b> ·
+  <a href="https://tradecanvas.dev/ja/docs/getting-started/">ドキュメント</a> ·
+  <a href="https://tradecanvas.dev/ja/examples/">サンプル</a> ·
+  <a href="https://tradecanvas.dev/ja/audit/">システム監査</a> ·
   <a href="./CHANGELOG.md">変更履歴</a>
 </p>
 
@@ -30,7 +29,7 @@
 **Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、134 種類のインジケーター、69 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>
+  <a href="https://tradecanvas.dev/ja/"><img src=".github/assets/hero.png" alt="Binance のライブ BTCUSDT を表示する ChartWidget：EMA 21 と 55、RSI、トレンドライン、ロングポジション、ライブのクオート付きのウォッチリスト" width="100%"></a>
 </p>
 
 ## 特長
@@ -79,7 +78,7 @@ chart.addIndicator('ema', { period: 50 })
 chart.addIndicator('rsi')
 ```
 
-独自のフィードは `WebSocketAdapter` または `PollingAdapter` で接続できます。[リアルタイム](https://bonguynvan.github.io/tradecanvas/ja/docs/realtime/)を参照してください。
+独自のフィードは `WebSocketAdapter` または `PollingAdapter` で接続できます。[リアルタイム](https://tradecanvas.dev/ja/docs/realtime/)を参照してください。
 
 ## フレームワーク
 
@@ -93,7 +92,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
 
-3 つのコンポーネントは同じ props を持ち、内部の `Chart` を渡します。[フレームワーク](https://bonguynvan.github.io/tradecanvas/ja/docs/frameworks/)を参照してください。
+3 つのコンポーネントは同じ props を持ち、内部の `Chart` を渡します。[フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/)を参照してください。
 
 ## 機能ツアー
 
@@ -128,21 +127,21 @@ import { TradeCanvas } from '@tradecanvas/react'
 
 | トピック | |
 |---|---|
-| [はじめに](https://bonguynvan.github.io/tradecanvas/ja/docs/getting-started/) | インストール、ウィジェット、ヘッドレスチャート |
-| [チャートタイプ](https://bonguynvan.github.io/tradecanvas/ja/docs/chart-types/) · [インジケーター](https://bonguynvan.github.io/tradecanvas/ja/docs/indicators/) · [描画ツール](https://bonguynvan.github.io/tradecanvas/ja/docs/drawing-tools/) | チャートが描けるものと、それぞれの設定 |
-| [リアルタイム](https://bonguynvan.github.io/tradecanvas/ja/docs/realtime/) | 内蔵フィード、独自のアダプター、履歴、ティックチャート |
-| [トレーディング](https://bonguynvan.github.io/tradecanvas/ja/docs/trading/) | 注文、ポジション、執行アダプター、リプレイ |
-| [スタイル](https://bonguynvan.github.io/tradecanvas/ja/docs/styling/) · [カスタマイズ](https://bonguynvan.github.io/tradecanvas/ja/docs/customization/) | テーマ、スタイルキー、見た目、機能スイッチ、独自の部品 |
-| [プラグイン](https://bonguynvan.github.io/tradecanvas/ja/docs/plugins/) | 独自のインジケーター、描画ツール、チャートタイプ、オーバーレイ |
-| [アナリティクス](https://bonguynvan.github.io/tradecanvas/ja/docs/analytics/) · [金融チャート](https://bonguynvan.github.io/tradecanvas/ja/docs/finance/) | バックテストとリスク指標、板の深さ・資産曲線などのチャート |
-| [スマートフォンとアプリ](https://bonguynvan.github.io/tradecanvas/ja/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri。タッチとページのスクロール |
-| [パフォーマンス](https://bonguynvan.github.io/tradecanvas/ja/docs/performance/) · [API リファレンス](https://bonguynvan.github.io/tradecanvas/ja/docs/api/) | 計測結果と API の全体 |
+| [はじめに](https://tradecanvas.dev/ja/docs/getting-started/) | インストール、ウィジェット、ヘッドレスチャート |
+| [チャートタイプ](https://tradecanvas.dev/ja/docs/chart-types/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) | チャートが描けるものと、それぞれの設定 |
+| [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) | 内蔵フィード、独自のアダプター、履歴、ティックチャート |
+| [トレーディング](https://tradecanvas.dev/ja/docs/trading/) | 注文、ポジション、執行アダプター、リプレイ |
+| [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [カスタマイズ](https://tradecanvas.dev/ja/docs/customization/) | テーマ、スタイルキー、見た目、機能スイッチ、独自の部品 |
+| [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) | 独自のインジケーター、描画ツール、チャートタイプ、オーバーレイ |
+| [アナリティクス](https://tradecanvas.dev/ja/docs/analytics/) · [金融チャート](https://tradecanvas.dev/ja/docs/finance/) | バックテストとリスク指標、板の深さ・資産曲線などのチャート |
+| [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri。タッチとページのスクロール |
+| [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/) · [API リファレンス](https://tradecanvas.dev/ja/docs/api/) | 計測結果と API の全体 |
 
 ドキュメントは English、Tiếng Việt、简体中文、한국어、Español でも読めます。
 
 ## パフォーマンス
 
-内蔵グラフィックス（Intel UHD）の Chrome で計測しました。全体の表は[システム監査](https://bonguynvan.github.io/tradecanvas/ja/audit/)にあります。
+内蔵グラフィックス（Intel UHD）の Chrome で計測しました。全体の表は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
 
 | | |
 |---|---|
@@ -176,7 +175,14 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## AI コーディングツール
 
-[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) と [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) はアシスタントにドキュメントを 1 ファイルで渡し、[`skills/tradecanvas`](skills/tradecanvas/SKILL.md) のエージェントスキルは、CI が型チェックするサンプルでコーディングエージェントに API を教えます。
+[`skills/tradecanvas`](skills/tradecanvas/SKILL.md) のエージェントスキルは、CI が型チェックするサンプルでコーディングエージェントに API を教えます。Claude Code では:
+
+```text
+/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas
+```
+
+ほかのエージェント（Cursor、Codex、Copilot など）: `npx skills add bonguynvan/tradecanvas`。スキルを使わない場合は、[`llms.txt`](https://tradecanvas.dev/llms.txt) と [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) がドキュメントを 1 ファイルでアシスタントに渡します。エージェントで TradeCanvas 自体を変更するなら、リポジトリのルールは [AGENTS.md](AGENTS.md) にあります。
 
 ## 関連プロジェクト
 
@@ -184,7 +190,7 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## 法人の方へ
 
-TradeCanvas をお客様向けの製品に組み込みますか？表示が必要なロゴも、申請手続きもありません。[法人向けページ](https://bonguynvan.github.io/tradecanvas/ja/business/)では、IT 審査でよく聞かれる項目に出典つきで答え、最初のパートナー向けプログラムを紹介しています。お問い合わせは business@tradecanvas.dev まで。
+TradeCanvas をお客様向けの製品に組み込みますか？表示が必要なロゴも、申請手続きもありません。[法人向けページ](https://tradecanvas.dev/ja/business/)では、IT 審査でよく聞かれる項目に出典つきで答え、最初のパートナー向けプログラムを紹介しています。お問い合わせは business@tradecanvas.dev まで。
 
 ## コントリビュート
 

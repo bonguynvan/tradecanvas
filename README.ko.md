@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/"><img src=".github/assets/banner.png" alt="TradeCanvas, 트레이딩 앱을 위한 차트 엔진" width="100%"></a>
+  <a href="https://tradecanvas.dev/ko/"><img src=".github/assets/banner.png" alt="TradeCanvas, 트레이딩 앱을 위한 차트 엔진" width="100%"></a>
 </p>
 
 <p align="center">
@@ -15,11 +15,10 @@
 </p>
 
 <p align="center">
-  <b><a href="https://bonguynvan.github.io/tradecanvas/ko/">라이브 데모</a></b> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/docs/getting-started/">문서</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/examples/">예제</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/playground/">Playground</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/audit/">시스템 점검</a> ·
+  <b><a href="https://tradecanvas.dev/ko/chart/">라이브 데모</a></b> ·
+  <a href="https://tradecanvas.dev/ko/docs/getting-started/">문서</a> ·
+  <a href="https://tradecanvas.dev/ko/examples/">예제</a> ·
+  <a href="https://tradecanvas.dev/ko/audit/">시스템 점검</a> ·
   <a href="./CHANGELOG.md">변경 기록</a>
 </p>
 
@@ -30,7 +29,7 @@
 **웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 134개 지표, 69개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>
+  <a href="https://tradecanvas.dev/ko/"><img src=".github/assets/hero.png" alt="Binance의 실시간 BTCUSDT를 보여 주는 ChartWidget: EMA 21과 55, RSI, 추세선, 롱 포지션, 실시간 시세가 있는 관심 종목" width="100%"></a>
 </p>
 
 ## 주요 특징
@@ -79,7 +78,7 @@ chart.addIndicator('ema', { period: 50 })
 chart.addIndicator('rsi')
 ```
 
-직접 가진 피드는 `WebSocketAdapter` 또는 `PollingAdapter`로 연결합니다. [실시간](https://bonguynvan.github.io/tradecanvas/ko/docs/realtime/)을 참고하세요.
+직접 가진 피드는 `WebSocketAdapter` 또는 `PollingAdapter`로 연결합니다. [실시간](https://tradecanvas.dev/ko/docs/realtime/)을 참고하세요.
 
 ## 프레임워크
 
@@ -93,7 +92,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
 
-세 컴포넌트는 같은 props를 공유하며 내부 `Chart`를 넘겨줍니다. [프레임워크](https://bonguynvan.github.io/tradecanvas/ko/docs/frameworks/)를 참고하세요.
+세 컴포넌트는 같은 props를 공유하며 내부 `Chart`를 넘겨줍니다. [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/)를 참고하세요.
 
 ## 둘러보기
 
@@ -128,21 +127,21 @@ import { TradeCanvas } from '@tradecanvas/react'
 
 | 주제 | |
 |---|---|
-| [시작하기](https://bonguynvan.github.io/tradecanvas/ko/docs/getting-started/) | 설치, 위젯, 헤드리스 차트 |
-| [차트 유형](https://bonguynvan.github.io/tradecanvas/ko/docs/chart-types/) · [지표](https://bonguynvan.github.io/tradecanvas/ko/docs/indicators/) · [그리기 도구](https://bonguynvan.github.io/tradecanvas/ko/docs/drawing-tools/) | 차트가 그리는 것과 각각의 설정 |
-| [실시간](https://bonguynvan.github.io/tradecanvas/ko/docs/realtime/) | 내장 피드, 직접 만든 어댑터, 과거 데이터, 틱 차트 |
-| [트레이딩](https://bonguynvan.github.io/tradecanvas/ko/docs/trading/) | 주문, 포지션, 실행 어댑터, 리플레이 |
-| [스타일](https://bonguynvan.github.io/tradecanvas/ko/docs/styling/) · [사용자 정의](https://bonguynvan.github.io/tradecanvas/ko/docs/customization/) | 테마, 스타일 키, 외관, 기능 스위치, 직접 만든 부품 |
-| [플러그인](https://bonguynvan.github.io/tradecanvas/ko/docs/plugins/) | 직접 만든 지표, 그리기 도구, 차트 유형, 오버레이 |
-| [분석](https://bonguynvan.github.io/tradecanvas/ko/docs/analytics/) · [금융 차트](https://bonguynvan.github.io/tradecanvas/ko/docs/finance/) | 백테스트와 리스크 지표, 호가 깊이·자산 곡선 등의 차트 |
-| [휴대폰과 앱](https://bonguynvan.github.io/tradecanvas/ko/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; 터치와 페이지 스크롤 |
-| [성능](https://bonguynvan.github.io/tradecanvas/ko/docs/performance/) · [API 레퍼런스](https://bonguynvan.github.io/tradecanvas/ko/docs/api/) | 측정 결과와 전체 API |
+| [시작하기](https://tradecanvas.dev/ko/docs/getting-started/) | 설치, 위젯, 헤드리스 차트 |
+| [차트 유형](https://tradecanvas.dev/ko/docs/chart-types/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [그리기 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) | 차트가 그리는 것과 각각의 설정 |
+| [실시간](https://tradecanvas.dev/ko/docs/realtime/) | 내장 피드, 직접 만든 어댑터, 과거 데이터, 틱 차트 |
+| [트레이딩](https://tradecanvas.dev/ko/docs/trading/) | 주문, 포지션, 실행 어댑터, 리플레이 |
+| [스타일](https://tradecanvas.dev/ko/docs/styling/) · [사용자 정의](https://tradecanvas.dev/ko/docs/customization/) | 테마, 스타일 키, 외관, 기능 스위치, 직접 만든 부품 |
+| [플러그인](https://tradecanvas.dev/ko/docs/plugins/) | 직접 만든 지표, 그리기 도구, 차트 유형, 오버레이 |
+| [분석](https://tradecanvas.dev/ko/docs/analytics/) · [금융 차트](https://tradecanvas.dev/ko/docs/finance/) | 백테스트와 리스크 지표, 호가 깊이·자산 곡선 등의 차트 |
+| [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) | WebView, React Native, Capacitor, Tauri; 터치와 페이지 스크롤 |
+| [성능](https://tradecanvas.dev/ko/docs/performance/) · [API 레퍼런스](https://tradecanvas.dev/ko/docs/api/) | 측정 결과와 전체 API |
 
 문서는 English, Tiếng Việt, 简体中文, 日本語, Español으로도 제공됩니다.
 
 ## 성능
 
-내장 그래픽(Intel UHD)의 Chrome에서 측정했습니다. 전체 표는 [시스템 점검](https://bonguynvan.github.io/tradecanvas/ko/audit/)에 있습니다.
+내장 그래픽(Intel UHD)의 Chrome에서 측정했습니다. 전체 표는 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
 
 | | |
 |---|---|
@@ -176,7 +175,14 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## AI 코딩 도구
 
-[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt)와 [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt)는 어시스턴트에게 문서를 한 파일로 제공하고, [`skills/tradecanvas`](skills/tradecanvas/SKILL.md)의 에이전트 스킬은 CI가 타입 검사하는 예제로 코딩 에이전트에게 API를 알려 줍니다.
+[`skills/tradecanvas`](skills/tradecanvas/SKILL.md)의 에이전트 스킬은 CI가 타입 검사하는 예제로 코딩 에이전트에게 API를 알려 줍니다. Claude Code에서는:
+
+```text
+/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas
+```
+
+다른 에이전트(Cursor, Codex, Copilot 등): `npx skills add bonguynvan/tradecanvas`. 스킬 없이 쓸 때는 [`llms.txt`](https://tradecanvas.dev/llms.txt)와 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt)가 문서를 한 파일로 어시스턴트에게 제공합니다. 에이전트로 TradeCanvas 자체를 고친다면 저장소 규칙은 [AGENTS.md](AGENTS.md)에 있습니다.
 
 ## 관련 프로젝트
 
@@ -184,7 +190,7 @@ Chrome 80+, Firefox 80+, Safari 14+, Edge 80+.
 
 ## 기업 고객
 
-TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://bonguynvan.github.io/tradecanvas/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradecanvas.dev.
+TradeCanvas를 고객용 제품에 넣으시나요? 표시해야 할 로고도, 신청 절차도 없습니다. [기업 페이지](https://tradecanvas.dev/ko/business/)에서 IT 검토에서 자주 묻는 항목에 출처와 함께 답하고, 첫 파트너 프로그램을 소개합니다. 문의: business@tradecanvas.dev.
 
 ## 기여하기
 

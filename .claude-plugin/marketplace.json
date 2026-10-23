@@ -1,0 +1,17 @@
+{
+  "name": "tradecanvas",
+  "owner": { "name": "Nguyen Bo", "url": "https://github.com/bonguynvan" },
+  "description": "The TradeCanvas skill for coding agents: trading and financial charts with @tradecanvas/chart.",
+  "plugins": [
+    {
+      "name": "tradecanvas",
+      "source": "./skills",
+      "description": "Teaches the TradeCanvas API: the widget and the headless chart, 134 indicators, drawings, live feeds, orders and positions, alerts, replay, React, Vue and Svelte.",
+      "homepage": "https://tradecanvas.dev/",
+      "repository": "https://github.com/bonguynvan/tradecanvas",
+      "license": "MIT",
+      "keywords": ["charts", "trading", "candlestick", "finance", "typescript"],
+      "skills": ["./tradecanvas"]
+    }
+  ]
+}

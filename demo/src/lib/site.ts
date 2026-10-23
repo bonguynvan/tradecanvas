@@ -6,7 +6,7 @@ import chartPkg from '../../../packages/library/package.json';
 export const VERSION: string = chartPkg.version;
 
 /** The published site, for absolute links (hreflang, sitemap). */
-export const SITE_URL = 'https://bonguynvan.github.io/tradecanvas';
+export const SITE_URL = 'https://tradecanvas.dev';
 
 export const LINKS = {
   github: 'https://github.com/bonguynvan/tradecanvas',

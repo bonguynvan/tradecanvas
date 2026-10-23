@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bonguynvan.github.io/tradecanvas/sitemap.xml
+Sitemap: https://tradecanvas.dev/sitemap-index.xml

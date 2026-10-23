@@ -2,7 +2,7 @@
 
 Canvas rendering engine, indicators, drawing tools, trading overlays, and real-time streaming for the [@tradecanvas/chart](https://www.npmjs.com/package/@tradecanvas/chart) library.
 
-**[Live Demo](https://bonguynvan.github.io/tradecanvas/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://bonguynvan.github.io/tradecanvas/docs/getting-started/)**
+**[Live Demo](https://tradecanvas.dev/)** | **[GitHub](https://github.com/bonguynvan/tradecanvas)** | **[Documentation](https://tradecanvas.dev/docs/getting-started/)**
 
 ## Install
 
@@ -36,7 +36,7 @@ Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAnd
 
 ### Indicators (134 built-in)
 
-Moving averages, bands and channels, trend and stops, VWAPs and profiles on the price pane; oscillators, volume and volatility indicators in panes of their own. Every id with its inputs, lines and levels is in the [indicator catalog](https://bonguynvan.github.io/tradecanvas/docs/indicators). Four more read a second symbol's bars (`compareSymbol`, `spread`, `correlation`, `correlationlog`); `@tradecanvas/chart`'s `Chart` registers them with its symbol store.
+Moving averages, bands and channels, trend and stops, VWAPs and profiles on the price pane; oscillators, volume and volatility indicators in panes of their own. Every id with its inputs, lines and levels is in the [indicator catalog](https://tradecanvas.dev/docs/indicators). Four more read a second symbol's bars (`compareSymbol`, `spread`, `correlation`, `correlationlog`); `@tradecanvas/chart`'s `Chart` registers them with its symbol store.
 
 Indicator parameters are read through `getNumberParam` / `getIntParam` helpers, so invalid values (NaN, Infinity, missing keys, non-numeric strings) safely fall back to defaults instead of producing NaN-laced calculations.
 

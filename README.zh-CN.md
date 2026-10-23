@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/banner.png" alt="TradeCanvas，为交易应用打造的图表引擎" width="100%"></a>
+  <a href="https://tradecanvas.dev/zh/"><img src=".github/assets/banner.png" alt="TradeCanvas，为交易应用打造的图表引擎" width="100%"></a>
 </p>
 
 <p align="center">
@@ -15,11 +15,10 @@
 </p>
 
 <p align="center">
-  <b><a href="https://bonguynvan.github.io/tradecanvas/zh/">在线演示</a></b> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/docs/getting-started/">文档</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/examples/">示例</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/playground/">Playground</a> ·
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/audit/">系统审计</a> ·
+  <b><a href="https://tradecanvas.dev/zh/chart/">在线演示</a></b> ·
+  <a href="https://tradecanvas.dev/zh/docs/getting-started/">文档</a> ·
+  <a href="https://tradecanvas.dev/zh/examples/">示例</a> ·
+  <a href="https://tradecanvas.dev/zh/audit/">系统审计</a> ·
   <a href="./CHANGELOG.md">更新日志</a>
 </p>
 
@@ -30,7 +29,7 @@
 **一套完整的 Web 交易图表。** 从K线到砖形图（Renko），134 个指标、69 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
-  <a href="https://bonguynvan.github.io/tradecanvas/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
+  <a href="https://tradecanvas.dev/zh/"><img src=".github/assets/hero.png" alt="ChartWidget 显示来自 Binance 的 BTCUSDT 实时行情：EMA 21 和 55、RSI、一条趋势线、一个多头仓位，以及带实时报价的自选列表" width="100%"></a>
 </p>
 
 ## 亮点
@@ -79,7 +78,7 @@ chart.addIndicator('ema', { period: 50 })
 chart.addIndicator('rsi')
 ```
 
-你自己的数据源可通过 `WebSocketAdapter` 或 `PollingAdapter` 接入，参见[实时数据](https://bonguynvan.github.io/tradecanvas/zh/docs/realtime/)。
+你自己的数据源可通过 `WebSocketAdapter` 或 `PollingAdapter` 接入，参见[实时数据](https://tradecanvas.dev/zh/docs/realtime/)。
 
 ## 框架
 
@@ -93,7 +92,7 @@ import { TradeCanvas } from '@tradecanvas/react'
 <TradeCanvas symbol="BTCUSDT" timeframe="5m" indicators={['rsi', { id: 'ema', params: { period: 50 } }]} />
 ```
 
-三个组件共享相同的 props，并把底层的 `Chart` 交给你。参见[框架](https://bonguynvan.github.io/tradecanvas/zh/docs/frameworks/)。
+三个组件共享相同的 props，并把底层的 `Chart` 交给你。参见[框架](https://tradecanvas.dev/zh/docs/frameworks/)。
 
 ## 功能一览
 
@@ -128,21 +127,21 @@ import { TradeCanvas } from '@tradecanvas/react'
 
 | 主题 | |
 |---|---|
-| [入门](https://bonguynvan.github.io/tradecanvas/zh/docs/getting-started/) | 安装、组件、无界面图表 |
-| [图表类型](https://bonguynvan.github.io/tradecanvas/zh/docs/chart-types/) · [指标](https://bonguynvan.github.io/tradecanvas/zh/docs/indicators/) · [画线工具](https://bonguynvan.github.io/tradecanvas/zh/docs/drawing-tools/) | 图表能绘制什么，以及各自的设置 |
-| [实时数据](https://bonguynvan.github.io/tradecanvas/zh/docs/realtime/) | 内置数据源、自定义适配器、历史数据、Tick 图 |
-| [交易](https://bonguynvan.github.io/tradecanvas/zh/docs/trading/) | 订单、持仓、执行适配器、回放 |
-| [样式](https://bonguynvan.github.io/tradecanvas/zh/docs/styling/) · [自定义](https://bonguynvan.github.io/tradecanvas/zh/docs/customization/) | 主题、样式键、外观、功能开关、自定义部件 |
-| [插件](https://bonguynvan.github.io/tradecanvas/zh/docs/plugins/) | 自定义指标、画线工具、图表类型和叠加层 |
-| [分析](https://bonguynvan.github.io/tradecanvas/zh/docs/analytics/) · [金融图表](https://bonguynvan.github.io/tradecanvas/zh/docs/finance/) | 回测与风险指标；深度图、权益曲线等图表 |
-| [手机与应用](https://bonguynvan.github.io/tradecanvas/zh/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri；触摸与页面滚动 |
-| [性能](https://bonguynvan.github.io/tradecanvas/zh/docs/performance/) · [API 参考](https://bonguynvan.github.io/tradecanvas/zh/docs/api/) | 性能测量与完整 API |
+| [入门](https://tradecanvas.dev/zh/docs/getting-started/) | 安装、组件、无界面图表 |
+| [图表类型](https://tradecanvas.dev/zh/docs/chart-types/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) | 图表能绘制什么，以及各自的设置 |
+| [实时数据](https://tradecanvas.dev/zh/docs/realtime/) | 内置数据源、自定义适配器、历史数据、Tick 图 |
+| [交易](https://tradecanvas.dev/zh/docs/trading/) | 订单、持仓、执行适配器、回放 |
+| [样式](https://tradecanvas.dev/zh/docs/styling/) · [自定义](https://tradecanvas.dev/zh/docs/customization/) | 主题、样式键、外观、功能开关、自定义部件 |
+| [插件](https://tradecanvas.dev/zh/docs/plugins/) | 自定义指标、画线工具、图表类型和叠加层 |
+| [分析](https://tradecanvas.dev/zh/docs/analytics/) · [金融图表](https://tradecanvas.dev/zh/docs/finance/) | 回测与风险指标；深度图、权益曲线等图表 |
+| [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) | WebView、React Native、Capacitor、Tauri；触摸与页面滚动 |
+| [性能](https://tradecanvas.dev/zh/docs/performance/) · [API 参考](https://tradecanvas.dev/zh/docs/api/) | 性能测量与完整 API |
 
 文档也提供 English、Tiếng Việt、日本語、한국어 和 Español 版本。
 
 ## 性能
 
-在使用集成显卡（Intel UHD）的 Chrome 中测得；完整表格见[系统审计](https://bonguynvan.github.io/tradecanvas/zh/audit/)。
+在使用集成显卡（Intel UHD）的 Chrome 中测得；完整表格见[系统审计](https://tradecanvas.dev/zh/audit/)。
 
 | | |
 |---|---|
@@ -176,7 +175,14 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## AI 编程工具
 
-[`llms.txt`](https://bonguynvan.github.io/tradecanvas/llms.txt) 和 [`llms-full.txt`](https://bonguynvan.github.io/tradecanvas/llms-full.txt) 把文档集中在一个文件里提供给 AI 助手；[`skills/tradecanvas`](skills/tradecanvas/SKILL.md) 中的 agent 技能则通过经 CI 类型检查的示例，教编程 agent 使用 API。
+[`skills/tradecanvas`](skills/tradecanvas/SKILL.md) 中的 agent 技能通过经 CI 类型检查的示例，教编程 agent 使用 API。在 Claude Code 中：
+
+```text
+/plugin marketplace add bonguynvan/tradecanvas
+/plugin install tradecanvas@tradecanvas
+```
+
+其他 agent（Cursor、Codex、Copilot 等）：`npx skills add bonguynvan/tradecanvas`。不用技能时，[`llms.txt`](https://tradecanvas.dev/llms.txt) 和 [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) 把文档集中在一个文件里提供给 AI 助手。想用 agent 修改 TradeCanvas 本身？仓库的规则见 [AGENTS.md](AGENTS.md)。
 
 ## 相关项目
 
@@ -184,7 +190,7 @@ Chrome 80+、Firefox 80+、Safari 14+、Edge 80+。
 
 ## 企业使用
 
-要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://bonguynvan.github.io/tradecanvas/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradecanvas.dev。
+要把 TradeCanvas 交到您的客户手中？无需显示任何标志，也无需提交申请。[企业页面](https://tradecanvas.dev/zh/business/)逐条回答 IT 审查常问的问题并附上出处，还介绍了首批合作伙伴计划。联系方式：business@tradecanvas.dev。
 
 ## 参与贡献
 

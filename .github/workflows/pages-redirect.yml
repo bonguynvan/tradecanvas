@@ -1,13 +1,16 @@
-name: Deploy Demo
+# The demo site moved from GitHub Pages to tradecanvas.dev. Pages now serves
+# a page per old address that sends readers on (scripts/redirects.mjs), and
+# the llms files where agents already fetch them.
+name: Pages redirect
 on:
   push:
     branches: [main]
     paths:
-      - 'demo/**'
-      - 'packages/**'
-      - 'CHANGELOG.md'
-      - 'README.md'
-      - '.github/workflows/deploy-demo.yml'
+      - 'scripts/redirects.mjs'
+      - 'demo/static/llms*.txt'
+      - 'demo/src/lib/docs/en/**'
+      - 'demo/src/lib/i18n/languages.ts'
+      - '.github/workflows/pages-redirect.yml'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -28,23 +31,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
-
-      - name: Build packages + demo
-        run: pnpm -r --filter @tradecanvas/commons --filter @tradecanvas/core --filter @tradecanvas/analytics --filter @tradecanvas/chart --filter @tradecanvas/demo build
+      - run: node --test scripts/redirects.test.mjs
+      - run: node scripts/redirects.mjs _site
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: demo/build
+          path: _site
 
       - id: deployment
         uses: actions/deploy-pages@v4
