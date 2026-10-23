@@ -1,6 +1,6 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, tickBarCount } from '@tradecanvas/commons';
-import { settingToTimezone, timezoneToSetting } from './widgetTimezones.js';
+import { barTimeUnit, marketStatus, offsetAt, readQuote, tickBarCount, tzLabel } from '@tradecanvas/commons';
+import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
@@ -21,6 +21,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
+import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
@@ -141,18 +142,11 @@ const inOverlay = (): boolean => {
   const active = document.activeElement;
   return active instanceof Element && active.closest('[role="dialog"], [aria-modal="true"], [role="menu"]') !== null;
 };
-/** Alt + a letter picks a drawing tool (by key position, so it works on any layout). */
-const TOOL_HOTKEYS: Readonly<Record<string, DrawingToolType>> = {
-  KeyT: 'trendLine',
-  KeyH: 'horizontalLine',
-  KeyJ: 'horizontalRay',
-  KeyV: 'verticalLine',
-  KeyC: 'crossLine',
-  KeyF: 'fibRetracement',
-};
 
 /** `keyCode` of a key press that goes to an IME composing text. */
 const IME_KEY_CODE = 229;
+/** How often the status bar's clock moves on. */
+const CLOCK_TICK_MS = 1000;
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -268,6 +262,7 @@ export class ChartWidget {
   /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
   private marketTimer: ReturnType<typeof setInterval> | null = null;
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
   private onPageShown: (() => void) | null = null;
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
@@ -515,6 +510,10 @@ export class ChartWidget {
         },
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
+        onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
+        onCompare: options.adapter && features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
+        onUndo: () => this.chart.undo(),
+        onRedo: () => this.chart.redo(),
         onToggleFullscreen: typeof document !== 'undefined' && document.fullscreenEnabled
           ? () => this.toggleFullscreen()
           : undefined,
@@ -530,7 +529,11 @@ export class ChartWidget {
     if (options.drawingFavorites) this.favoritesStore.seedDefaults(options.drawingFavorites);
     this.sidebar = new WidgetDrawingSidebar(
       body,
-      { drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t), favorites: this.favoritesStore.list() as DrawingToolType[] },
+      {
+        drawingToolGroups: localizeToolGroups(DRAWING_TOOL_GROUPS, this.t),
+        favorites: this.favoritesStore.list() as DrawingToolType[],
+        shortcuts: toolShortcuts(),
+      },
       {
         onDrawingTool: (tool) => this.handleDrawingTool(tool),
         onCancelDrawing: () => this.handleCancelDrawing(),
@@ -538,8 +541,6 @@ export class ChartWidget {
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
-        onUndo: () => this.chart.undo(),
-        onRedo: () => this.chart.redo(),
         onClearDrawings: () => {
           this.chart.clearDrawings();
           this.state = { ...this.state, activeTool: null };
@@ -547,6 +548,16 @@ export class ChartWidget {
         },
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
+        onLockAll: (locked) => {
+          this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
+          this.refreshDrawingsState();
+          this.refreshObjects();
+        },
+        onHideAll: (hidden) => {
+          this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), !hidden);
+          this.refreshDrawingsState();
+          this.refreshObjects();
+        },
       },
     this.t,
     );
@@ -676,7 +687,39 @@ export class ChartWidget {
       goToLabel: this.t('range.goTo'),
       onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
+    }, {
+      clock: {
+        label: this.t('settings.timezone'),
+        now: () => this.clockNow(),
+        options: () => ({
+          current: this.settingsState.timezone,
+          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'),
+            this.adapter?.resolveSymbol
+              ? { label: this.t('settings.timezone.exchange'), zone: this.chart.getSymbolInfo()?.timezone ?? null }
+              : undefined),
+        }),
+        onPick: (value) => this.changeSettings({ timezone: value }),
+      },
+      scale: {
+        labels: {
+          group: this.t('settings.priceScale'),
+          percent: this.t('settings.scale.percentage'),
+          log: this.t('settings.scale.logarithmic'),
+          auto: this.t('settings.autoScale'),
+        },
+        texts: { log: this.t('statusBar.log'), auto: this.t('statusBar.auto') },
+        onPercent: () => this.toggleScaleMode('percentage'),
+        onLog: features.logScale !== false ? () => this.toggleScaleMode('logarithmic') : undefined,
+        onAuto: () => this.changeSettings({ autoScale: !this.chart.isAutoScale() }),
+      },
     });
+    // The clock each second, while the page is in view.
+    this.clockTimer = setInterval(() => {
+      if (!pageHidden() && this.featureState.statusBar && this.featureState['statusBar.clock']) this.statusBar?.tick();
+    }, CLOCK_TICK_MS);
+    // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
+    this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
+    this.refreshScaleSwitches();
     this.goToDate = new WidgetGoToDate(this.root, {
       title: this.t('range.goTo'),
       date: this.t('range.date'),
@@ -886,6 +929,15 @@ export class ChartWidget {
         this.updateSelectionToolbar();
       },
     }, this.t);
+    // Lock all and hide all show whether every drawing is.
+    for (const event of ['drawingCreate', 'drawingUpdate', 'drawingRemove'] as const) {
+      this.chart.on(event, () => this.refreshDrawingsState());
+    }
+    // Undo and redo on the toolbar, each off while there is nothing for it.
+    this.chart.on('historyChange', (e) => {
+      const { canUndo, canRedo } = e.payload as { canUndo: boolean; canRedo: boolean };
+      this.toolbar?.setHistory(canUndo, canRedo);
+    });
     // Selecting, or picking a tool, the eraser or the zoom area: at once.
     for (const event of ['drawingSelect', 'drawingToolChange', 'toolModeChange'] as const) {
       this.chart.on(event, () => this.updateSelectionToolbar());
@@ -992,6 +1044,7 @@ export class ChartWidget {
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },
           formatPrice: (p) => this.formatAlertPrice(p),
+          onToggle: (open) => this.toolbar?.setActive('ladder', open),
         }, undefined, this.t);
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
@@ -1628,6 +1681,7 @@ export class ChartWidget {
     this.dataWindow?.destroy();
     if (this.watchlistInterval) clearInterval(this.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
+    if (this.clockTimer) clearInterval(this.clockTimer);
     if (this.onPageShown) document.removeEventListener('visibilitychange', this.onPageShown);
     this.onPageShown = null;
     this.chartNav?.destroy();
@@ -2347,6 +2401,35 @@ export class ChartWidget {
     this.say(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
   }
 
+  /** The time now in the display zone ("14:05:09") and the zone's offset ("UTC+7"), for the status bar's clock. */
+  private clockNow(): { time: string; zone: string } {
+    const now = Date.now();
+    const tz = this.displayTimezone();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const { time } = utcToWallTime(now, tz);
+    return { time: `${time}:${pad(new Date(now).getUTCSeconds())}`, zone: tzLabel(offsetAt(tz, now)) };
+  }
+
+  /** Whether every drawing is locked, and every one hidden: the sidebar's lock all and hide all say so. */
+  private refreshDrawingsState(): void {
+    const drawings = this.chart.getDrawings() ?? [];
+    const all = drawings.length > 0;
+    this.sidebar?.setDrawingsState({
+      locked: all && drawings.every((d) => d.locked),
+      hidden: all && drawings.every((d) => !d.visible),
+    });
+  }
+
+  /** The status bar's scale switches as the chart is now (a shared link or your code may have set it). */
+  private refreshScaleSwitches(): void {
+    this.statusBar?.setScale({ mode: this.chart.getScaleMode(), auto: this.chart.isAutoScale() });
+  }
+
+  /** `mode` on, or back to a regular scale when it is on already, through the settings. */
+  private toggleScaleMode(mode: 'percentage' | 'logarithmic'): void {
+    this.changeSettings({ scaleMode: this.chart.getScaleMode() === mode ? 'regular' : mode });
+  }
+
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
   private displayTimezone(): TimeZoneSetting {
     const tz = settingToTimezone(this.settingsState.timezone);
@@ -2751,6 +2834,7 @@ export class ChartWidget {
   }
 
   private refreshObjects(): void {
+    this.refreshDrawingsState();
     if (!this.objectTree) return;
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
@@ -3623,6 +3707,9 @@ export class ChartWidget {
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
     if (patch.leftPriceScale !== undefined) this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
+    if (patch.scaleMode !== undefined || patch.autoScale !== undefined) queueMicrotask(() => this.refreshScaleSwitches());
+    // Another zone: the clock says so at once.
+    if (patch.timezone !== undefined) queueMicrotask(() => this.statusBar?.tick());
     if (patch.scaleMode !== undefined) {
       this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
@@ -3910,6 +3997,7 @@ export class ChartWidget {
   }
 
   private updateUI(): void {
+    this.refreshDrawingsState();
     this.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);

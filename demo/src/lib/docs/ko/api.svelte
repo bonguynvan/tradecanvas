@@ -411,6 +411,31 @@ const widget = new ChartWidget(host, {
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
 
+<h3 id="bars">각 바</h3>
+<table>
+  <thead><tr><th>바</th><th>들어 있는 것</th></tr></thead>
+  <tbody>
+    <tr><td>도구 모음</td><td>
+      종목과 종목 정보, 시간 단위(고정한 것은 버튼으로 나오고, 모든 시간 단위를 분부터 월까지 단위별로 모은 메뉴도 있어 항목마다
+      있는 별로 고정합니다), 아이콘으로 표시되는 차트 유형, 지표와 (데이터 어댑터가 있을 때) 비교, 실행 취소와 다시 실행. 오른쪽에는 레이아웃, 바 리플레이,
+      알림, 개체 트리, 거래 메뉴(새 주문, 롱·숏 브래킷 주문, 호가창, 계좌 패널), 이어서 스크린샷, 설정, 테마, 전체 화면이
+      있습니다. 자리가 모자라면 나머지는 “더보기” 안으로 접힙니다.
+    </td></tr>
+    <tr><td>그리기 도구</td><td>
+      각 그룹의 메뉴에는 도구의 단축키(Alt+T는 추세선)가 적혀 있고, 행마다 별이 있어 그 도구를 맨 위에 고정할 수 있습니다.
+      맨 아래에는 그리기 스타일, 자석, 지우개, 영역 확대, 그리기 모드 유지, 모두 잠금, 모두 숨기기, 모두 지우기가 있습니다.
+    </td></tr>
+    <tr><td>상태 바</td><td>
+      기간 프리셋과 날짜로 이동, 시장 상태, 연결, 표시 시간대의 시계(누르면 고를 수 있는 시간대 목록이 열립니다), 가격 눈금의
+      <code>%</code> · <code>log</code> · <code>auto</code> 전환.
+    </td></tr>
+    <tr><td>선택한 그림 위</td><td>
+      색, 선 두께와 선 모양, 설정, 알림, 잠금, 더보기, 삭제. 도구 모음을 손잡이로 끌어 옮기면 다음 그림에서도 그 자리에
+      머물고, 손잡이를 더블 클릭하면 그림 위로 돌아갑니다.
+    </td></tr>
+  </tbody>
+</table>
+
 <h3>위젯 키보드 단축키</h3>
 <table>
   <thead><tr><th>단축키</th><th>동작</th></tr></thead>
@@ -720,7 +745,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>기능 스위치</h3>
-<p>스위치 114개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
+<p>스위치 122개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
 
 widget.setFeatures({ sidebar: false, statusBar: false })

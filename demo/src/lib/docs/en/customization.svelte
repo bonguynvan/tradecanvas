@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Customization — TradeCanvas docs</title>
-  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 114 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
+  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 122 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
 </svelte:head>
 
 <h1>Customization</h1>
@@ -98,17 +98,20 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>toolbar.layouts</code> <code>toolbar.replay</code> <code>toolbar.bracketOrders</code>
       <code>toolbar.depthLadder</code> <code>toolbar.accountPanel</code> <code>toolbar.objectTree</code>
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
-      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code>
+      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
+      <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
     <tr><td>Drawing sidebar</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
-      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code>
+      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code> <code>sidebar.lockAll</code>
+      <code>sidebar.hideAll</code>
     </td></tr>
     <tr><td>Status bar</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
       <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
+      <code>statusBar.clock</code> <code>statusBar.scale</code>
     </td></tr>
     <tr><td>On the chart</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -137,6 +140,11 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
   <code>selectionToolbar</code> off hides the toolbar over a selected drawing; the right-click menu stays.
   <code>statusBar.rangeTimeframe</code> off keeps the timeframe when a range on the range bar is longer than its bars fit; on, it switches to weeks or months and back.
+  The trading tools are one Trade menu on the toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
+  <code>toolbar.accountPanel</code> and their capabilities take their entries out of it, and <code>toolbar.trade</code>
+  takes the menu, which also goes when nothing is left in it. Undo and redo moved from the drawing tools to the
+  toolbar; <code>sidebar.undo</code> and <code>sidebar.redo</code> still switch them off. <code>statusBar.symbol</code>
+  has nothing left to switch: the legend's title line names the symbol.
 </p>
 
 <p id="toast-icons">

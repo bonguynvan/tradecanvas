@@ -70,6 +70,21 @@ export class WidgetSelectionToolbar {
   private built = '';
   private size: { w: number; h: number } | null = null;
   private openPop: Pop | null = null;
+  /** Where the user dragged the toolbar (root px): it stays there, for every drawing, until the grip is double-clicked. */
+  private pinned: { left: number; top: number } | null = null;
+  private drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
+  private readonly onDragMove = (e: PointerEvent) => {
+    if (!this.drag || !this.target || e.pointerId !== this.drag.id) return;
+    this.pinned = { left: this.drag.left + e.clientX - this.drag.x, top: this.drag.top + e.clientY - this.drag.y };
+    this.place(this.target);
+  };
+  private readonly onDragEnd = (e?: PointerEvent) => {
+    if (e && this.drag && e.pointerId !== this.drag.id) return;
+    this.drag = null;
+    document.removeEventListener('pointermove', this.onDragMove);
+    document.removeEventListener('pointerup', this.onDragEnd);
+    document.removeEventListener('pointercancel', this.onDragEnd);
+  };
   private readonly onDocDown = (e: PointerEvent) => {
     if (this.openPop && !this.el.contains(e.target as Node) && !this.pop.contains(e.target as Node)) this.closePop();
   };
@@ -95,6 +110,23 @@ export class WidgetSelectionToolbar {
     this.pop.addEventListener('keydown', (e) => this.onPopKey(e));
     // Clicks on the toolbar must not reach the chart under it (and deselect).
     for (const el of [this.el, this.pop]) el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    // The grip drags the toolbar out of the way; a double-click sends it back over the drawing.
+    this.el.addEventListener('pointerdown', (e) => {
+      if (!(e.target as Element).closest('.tcw-sel-grip')) return;
+      e.preventDefault();
+      // A choice left open would stay behind as the toolbar moves.
+      this.closePop();
+      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: parseFloat(this.el.style.left) || 0, top: parseFloat(this.el.style.top) || 0 };
+      document.addEventListener('pointermove', this.onDragMove);
+      document.addEventListener('pointerup', this.onDragEnd);
+      // A touch the system takes back ends the drag too.
+      document.addEventListener('pointercancel', this.onDragEnd);
+    });
+    this.el.addEventListener('dblclick', (e) => {
+      if (!(e.target as Element).closest('.tcw-sel-grip') || !this.target) return;
+      this.pinned = null;
+      this.place(this.target);
+    });
     document.addEventListener('pointerdown', this.onDocDown, true);
   }
 
@@ -125,6 +157,7 @@ export class WidgetSelectionToolbar {
   }
 
   destroy(): void {
+    this.onDragEnd();
     document.removeEventListener('pointerdown', this.onDocDown, true);
     this.el.remove();
     this.pop.remove();
@@ -142,6 +175,7 @@ export class WidgetSelectionToolbar {
     const pop = (action: Pop, label: string, inner: string) =>
       btn(action, label, inner, ' tcw-sel-has-pop').replace('<button ', '<button aria-haspopup="dialog" aria-expanded="false" ');
     this.el.innerHTML = [
+      '<span class="tcw-sel-grip" aria-hidden="true"></span>',
       pop('color', t('drawingSettings.color'), `<span class="tcw-sel-color" style="background:${escapeHtml(color)}"></span>`),
       pop('width', t('drawingSettings.lineWidth'), `<span class="tcw-sel-width" style="--w:${width}px"></span><span class="tcw-sel-num">${width}px</span>`),
       pop('lineStyle', t('drawingSettings.lineStyle'), lineGlyph(lineStyle)),
@@ -170,10 +204,17 @@ export class WidgetSelectionToolbar {
     if (focus) button?.focus();
   }
 
-  /** Over the selection, centred on it; under it when there is no room above. */
+  /** Over the selection, centred on it; under it when there is no room above; where the user dropped it, once dragged. */
   private place(target: SelectionToolbarTarget): void {
     const { rect, bounds } = target;
-    const { w, h } = this.size!;
+    const { w, h } = this.size ?? { w: 0, h: 0 };
+    if (this.pinned) {
+      const left = Math.max(bounds.x + EDGE, Math.min(this.pinned.left, bounds.x + bounds.width - w - EDGE));
+      const top = Math.max(bounds.y + EDGE, Math.min(this.pinned.top, bounds.y + bounds.height - h - EDGE));
+      this.el.style.left = `${Math.round(left)}px`;
+      this.el.style.top = `${Math.round(top)}px`;
+      return;
+    }
     let left = rect.x + rect.width / 2 - w / 2;
     left = Math.max(bounds.x + EDGE, Math.min(left, bounds.x + bounds.width - w - EDGE));
     let top = rect.y - h - GAP;

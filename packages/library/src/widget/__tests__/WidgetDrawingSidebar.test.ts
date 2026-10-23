@@ -22,8 +22,6 @@ beforeEach(() => {
   sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
     onDrawingTool: (tool) => { picked.push(tool); },
     onCancelDrawing: () => {},
-    onUndo: () => {},
-    onRedo: () => {},
     onClearDrawings: () => {},
   });
   sidebar.update({ activeTool: null, magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
@@ -142,15 +140,16 @@ describe('drawing tool icons', () => {
   });
 });
 
-describe('tool menu hint', () => {
-  it('says once how to pin, instead of a tooltip on every row', () => {
+describe('pinning from a tool menu', () => {
+  it('has a star on each row to pin with, and no tooltip on the rows themselves', () => {
     sidebar.destroy();
     sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
-      onDrawingTool: () => {}, onCancelDrawing: () => {}, onUndo: () => {}, onRedo: () => {}, onClearDrawings: () => {},
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClearDrawings: () => {},
       onToggleFavorite: () => {},
     });
     enter(wraps()[0]);
-    expect(host.querySelector('.tcw-flyout-hint')?.textContent).toMatch(/pin/i);
+    const rows = host.querySelectorAll('.tcw-flyout-row');
+    expect(host.querySelectorAll('.tcw-flyout-row [data-pin]').length).toBe(rows.length);
     expect(host.querySelector('.tcw-flyout-item[title]')).toBeNull();
   });
 });
@@ -172,7 +171,7 @@ describe('sections', () => {
   it('draws no section dividers for groups without sections', () => {
     sidebar.destroy();
     sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS.map(({ section: _, ...g }) => g) }, {
-      onDrawingTool: () => {}, onCancelDrawing: () => {}, onUndo: () => {}, onRedo: () => {}, onClearDrawings: () => {},
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClearDrawings: () => {},
     });
     const kids = [...host.querySelector('.tcw-sidebar')!.children];
     const firstGroup = kids.findIndex((el) => el.classList.contains('tcw-tool-group-wrap'));

@@ -100,6 +100,21 @@ export function withExtraTimeframes(list: TimeFrame[], extra: TimeFrame[], white
 /** A range should give each bar at least this many pixels, to read as a candle. */
 export const RANGE_MIN_BAR_PX = 2;
 
+/** A timeframe's unit: ticks, seconds, minutes, hours, days, weeks, months. */
+export type TimeframeUnit = 'T' | 's' | 'm' | 'h' | 'd' | 'w' | 'M';
+const UNIT_ORDER: readonly TimeframeUnit[] = ['T', 's', 'm', 'h', 'd', 'w', 'M'];
+
+/** `timeframes` in a section for each unit, ticks to months, each in its given order; empty units left out. */
+export function timeframeSections<T extends { value: TimeFrame }>(timeframes: readonly T[]): { unit: TimeframeUnit; timeframes: T[] }[] {
+  const unitOf = (tf: TimeFrame): TimeframeUnit => {
+    const unit = tf.slice(-1) as TimeframeUnit;
+    return UNIT_ORDER.includes(unit) ? unit : 'm';
+  };
+  return UNIT_ORDER
+    .map((unit) => ({ unit, timeframes: timeframes.filter((tf) => unitOf(tf.value) === unit) }))
+    .filter((section) => section.timeframes.length > 0);
+}
+
 const DAY_MS = 86_400_000;
 /** Weekdays in a week: a guess at a daily series' share of the calendar from intraday bars. */
 const TRADING_DAY_SHARE = 5 / 7;

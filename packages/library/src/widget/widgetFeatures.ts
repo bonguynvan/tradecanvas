@@ -21,13 +21,15 @@ export const WIDGET_FEATURES = [
   'toolbar.symbol', 'toolbar.symbolInfo', 'toolbar.timeframes', 'toolbar.timeframeMenu', 'toolbar.chartType',
   'toolbar.indicators', 'toolbar.layouts', 'toolbar.replay', 'toolbar.bracketOrders', 'toolbar.depthLadder',
   'toolbar.accountPanel', 'toolbar.objectTree', 'toolbar.alerts', 'toolbar.screenshot', 'toolbar.settings',
-  'toolbar.themeToggle', 'toolbar.fullscreen',
+  'toolbar.themeToggle', 'toolbar.fullscreen', 'toolbar.compare', 'toolbar.undo', 'toolbar.redo', 'toolbar.trade',
   // The drawing sidebar: its tools by section, then its buttons.
   'sidebar.cursor', 'sidebar.favorites', 'sidebar.lines', 'sidebar.fibonacci', 'sidebar.patterns',
   'sidebar.forecasting', 'sidebar.annotation', 'sidebar.style', 'sidebar.magnet', 'sidebar.eraser',
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
+  'sidebar.lockAll', 'sidebar.hideAll',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
+  'statusBar.clock', 'statusBar.scale',
   // A long range on the range bar switches to weeks or months, a short one back.
   'statusBar.rangeTimeframe',
   // On the chart: the indicators' rows, the panes' buttons, the navigation.

@@ -41,6 +41,10 @@ export class WidgetDrawingSidebar {
   private eraserBtn: HTMLButtonElement | null = null;
   private zoomBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
+  private lockAllBtn: HTMLButtonElement | null = null;
+  private hideAllBtn: HTMLButtonElement | null = null;
+  /** Every drawing locked, every drawing hidden: what those buttons undo next. */
+  private drawings = { locked: false, hidden: false };
   private flyoutEl: HTMLDivElement | null = null;
   private flyoutIdx = -1;
   private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -302,25 +306,23 @@ export class WidgetDrawingSidebar {
     this.hostEl.className = 'tcw-sidebar-host';
     el.appendChild(this.hostEl);
 
-    // History, then the one that clears everything, each apart.
+    // Every drawing at once: lock, hide, then the one that removes them, apart.
+    // (Undo and redo are on the toolbar.)
     this.appendDivider();
-    const undoBtn = document.createElement('button');
-    undoBtn.className = 'tcw-sidebar-btn';
-    undoBtn.title = this.t('drawing.undo');
-    undoBtn.innerHTML = createIcon('undo', 14);
-    undoBtn.addEventListener('click', callbacks.onUndo);
-    markPart(undoBtn, 'sidebar.undo');
-    el.appendChild(undoBtn);
-
-    const redoBtn = document.createElement('button');
-    redoBtn.className = 'tcw-sidebar-btn';
-    redoBtn.title = this.t('drawing.redo');
-    redoBtn.innerHTML = createIcon('redo', 14);
-    redoBtn.addEventListener('click', callbacks.onRedo);
-    markPart(redoBtn, 'sidebar.redo');
-    el.appendChild(redoBtn);
-
-    this.appendDivider();
+    if (callbacks.onLockAll) {
+      const onLockAll = callbacks.onLockAll;
+      this.lockAllBtn = this.toggleButton('lock', this.t('drawing.lockAll'), () => onLockAll(!this.drawings.locked));
+      this.lockAllBtn.dataset.role = 'lockAll';
+      markPart(this.lockAllBtn, 'sidebar.lockAll');
+      el.appendChild(this.lockAllBtn);
+    }
+    if (callbacks.onHideAll) {
+      const onHideAll = callbacks.onHideAll;
+      this.hideAllBtn = this.toggleButton('eyeOff', this.t('drawing.hideAll'), () => onHideAll(!this.drawings.hidden));
+      this.hideAllBtn.dataset.role = 'hideAll';
+      markPart(this.hideAllBtn, 'sidebar.hideAll');
+      el.appendChild(this.hideAllBtn);
+    }
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
     clearBtn.title = this.t('drawing.clearAll');
@@ -330,10 +332,27 @@ export class WidgetDrawingSidebar {
     el.appendChild(clearBtn);
   }
 
+  /** Whether every drawing is locked and every one hidden: the buttons say so, and undo it next. */
+  setDrawingsState(state: { locked: boolean; hidden: boolean }): void {
+    if (state.locked === this.drawings.locked && state.hidden === this.drawings.hidden) return;
+    this.drawings = { ...state };
+    // One name each, pressed while on: pressed again, it undoes it.
+    for (const [btn, on] of [[this.lockAllBtn, state.locked], [this.hideAllBtn, state.hidden]] as const) {
+      btn?.setAttribute('aria-pressed', String(on));
+      btn?.classList.toggle('tcw-active', on);
+    }
+  }
+
   /** Update the pinned-tools strip. */
   setFavorites(favorites: string[]): void {
     this.favorites = [...favorites];
     this.renderFavorites();
+    // A tool menu open now shows the stars as they are.
+    for (const row of this.flyoutEl?.querySelectorAll<HTMLElement>('.tcw-flyout-row') ?? []) {
+      const pinned = this.favorites.includes(row.dataset.toolValue ?? '');
+      row.classList.toggle('tcw-flyout-faved', pinned);
+      row.querySelector('[data-pin]')?.setAttribute('aria-pressed', String(pinned));
+    }
   }
 
   private renderFavorites(): void {
@@ -380,41 +399,61 @@ export class WidgetDrawingSidebar {
     header.textContent = group.label;
     flyout.appendChild(header);
 
+    const pinLabel = this.t('drawing.pinFavorite');
     for (const tool of group.tools) {
+      // A row: the tool (its icon, name and shortcut), and a star beside it to pin it.
+      const row = document.createElement('div');
+      row.className = 'tcw-flyout-row';
+      row.setAttribute('role', 'none');
+      row.dataset.toolValue = tool.value;
       const item = document.createElement('button');
       item.className = 'tcw-flyout-item';
       item.setAttribute('role', 'menuitem');
       item.tabIndex = -1;
       item.innerHTML = createToolIcon(tool.value, TOOL_ICON_PX);
       const name = document.createElement('span');
+      name.className = 'tcw-flyout-name';
       name.textContent = tool.label;
       item.appendChild(name);
+      const shortcut = this.config.shortcuts?.[tool.value];
+      if (shortcut) {
+        const key = document.createElement('kbd');
+        key.className = 'tcw-flyout-key';
+        key.textContent = shortcut;
+        // Gone with the keys it names.
+        markPart(key, 'hotkeys', 'hotkeys.tools');
+        item.appendChild(key);
+      }
       item.dataset.toolValue = tool.value;
       item.addEventListener('click', () => {
         this.hideFlyout();
         this.pick(tool.value);
       });
+      row.appendChild(item);
       if (this.callbacks.onToggleFavorite) {
-        if (this.favorites.includes(tool.value)) {
-          item.classList.add('tcw-flyout-faved');
-          const star = document.createElement('span');
-          star.className = 'tcw-flyout-star';
-          star.innerHTML = createIcon('star', 12);
-          item.appendChild(star);
-        }
+        const pinned = this.favorites.includes(tool.value);
+        row.classList.toggle('tcw-flyout-faved', pinned);
+        const star = document.createElement('button');
+        star.type = 'button';
+        star.className = 'tcw-flyout-pin';
+        star.dataset.pin = tool.value;
+        star.tabIndex = -1;
+        star.title = pinLabel;
+        star.setAttribute('aria-label', `${pinLabel}: ${tool.label}`);
+        star.setAttribute('aria-pressed', String(pinned));
+        star.innerHTML = createIcon('star', 12);
+        star.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.callbacks.onToggleFavorite?.(tool.value);
+        });
+        row.appendChild(star);
+        // From the keyboard, the menu key (or Shift+F10) on a tool pins it too.
         item.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           this.callbacks.onToggleFavorite?.(tool.value);
         });
       }
-      flyout.appendChild(item);
-    }
-    if (this.callbacks.onToggleFavorite) {
-      // Said once for the menu rather than as a tooltip on every row.
-      const hint = document.createElement('div');
-      hint.className = 'tcw-flyout-hint';
-      hint.textContent = this.t('drawing.pinHint');
-      flyout.appendChild(hint);
+      flyout.appendChild(row);
     }
 
     // The menu sits beside the sidebar, not in it, so the sidebar can scroll

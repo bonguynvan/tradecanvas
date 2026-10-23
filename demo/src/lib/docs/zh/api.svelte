@@ -397,6 +397,30 @@ const widget = new ChartWidget(host, {
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
 
+<h3 id="bars">各个栏</h3>
+<table>
+  <thead><tr><th>栏</th><th>包含的内容</th></tr></thead>
+  <tbody>
+    <tr><td>工具栏</td><td>
+      品种及其信息；周期（固定的周期显示为按钮，另有一个按单位列出全部周期的菜单，从分钟到月，每项带一个星标，点它即可固定）；
+      以图标显示的图表类型；指标，以及配置了数据适配器时的对比；撤销和重做。右侧依次是：布局、K线回放、提醒、对象树、一个交易菜单（新建委托、做多和做空括号单、
+      盘口深度和账户面板），然后是截图、设置、主题和全屏。放不下的部分收进“更多”。
+    </td></tr>
+    <tr><td>画线工具</td><td>
+      每个分组的菜单都标出其中工具的快捷键（Alt+T 为趋势线），每一行都有一个星标，可把该工具固定到顶部。底部依次是：
+      画线样式、磁吸、橡皮擦、区域缩放、保持画线模式、全部锁定、全部隐藏和全部清除。
+    </td></tr>
+    <tr><td>状态栏</td><td>
+      区间预设和跳转到日期；市场状态、连接状态、一个按显示时区走的时钟（点击它会打开可选的时区列表），以及价格轴的
+      <code>%</code> · <code>log</code> · <code>auto</code> 切换按钮。
+    </td></tr>
+    <tr><td>选中画线上方</td><td>
+      颜色、线宽和线型、设置、提醒、锁定、更多和删除。按住工具栏的拖动柄把它拖开，它就留在那里，下一个画线也是如此；
+      双击拖动柄可让它回到画线上方。
+    </td></tr>
+  </tbody>
+</table>
+
 <h3>组件快捷键</h3>
 <table>
   <thead><tr><th>快捷键</th><th>操作</th></tr></thead>
@@ -690,7 +714,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>功能开关</h3>
-<p>114 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<p>122 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
 
 widget.setFeatures({ sidebar: false, statusBar: false })

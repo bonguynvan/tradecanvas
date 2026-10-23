@@ -487,6 +487,13 @@ export interface ToolbarCallbacks {
   onDeleteIndicatorTemplate?: (name: string) => void;
   onBracket?: (side: 'buy' | 'sell') => void;
   onToggleLadder?: () => void;
+  /** A new order from the order ticket: in the Trade menu. */
+  onOrderTicket?: () => void;
+  /** Compare another symbol: the Compare button, beside Indicators. */
+  onCompare?: () => void;
+  /** Undo and redo on the toolbar: shown when both are given. */
+  onUndo?: () => void;
+  onRedo?: () => void;
   /** Shown only when given (and the browser allows fullscreen). */
   onToggleFullscreen?: () => void;
 }
@@ -495,6 +502,8 @@ export interface SidebarConfig {
   drawingToolGroups: DrawingToolGroupDef[];
   /** Initially pinned tools shown in the favorites strip. */
   favorites?: DrawingToolType[];
+  /** Each tool's shortcut, written in its menu row ("Alt+T"). */
+  shortcuts?: Partial<Record<DrawingToolType, string>>;
 }
 
 export interface SidebarCallbacks {
@@ -505,9 +514,11 @@ export interface SidebarCallbacks {
   onToggleEraser?: () => void;
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
-  onUndo: () => void;
-  onRedo: () => void;
   onClearDrawings: () => void;
+  /** Lock (true) or unlock every drawing: the button shows when given. */
+  onLockAll?: (locked: boolean) => void;
+  /** Hide (true) or show every drawing: the button shows when given. */
+  onHideAll?: (hidden: boolean) => void;
   onToggleStyle?: () => void;
   onToggleStayInDrawing?: () => void;
 }

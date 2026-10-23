@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Tùy biến — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 114 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
+  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 122 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
 </svelte:head>
 
 <h1>Tùy biến</h1>
@@ -98,17 +98,20 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
       <code>toolbar.layouts</code> <code>toolbar.replay</code> <code>toolbar.bracketOrders</code>
       <code>toolbar.depthLadder</code> <code>toolbar.accountPanel</code> <code>toolbar.objectTree</code>
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
-      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code>
+      <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
+      <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
     <tr><td>Thanh công cụ vẽ</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
-      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code>
+      <code>sidebar.undo</code> <code>sidebar.redo</code> <code>sidebar.clear</code> <code>sidebar.lockAll</code>
+      <code>sidebar.hideAll</code>
     </td></tr>
     <tr><td>Thanh trạng thái</td><td>
       <code>statusBar.range</code> <code>statusBar.goToDate</code> <code>statusBar.market</code>
       <code>statusBar.connection</code> <code>statusBar.symbol</code> <code>statusBar.rangeTimeframe</code>
+      <code>statusBar.clock</code> <code>statusBar.scale</code>
     </td></tr>
     <tr><td>Trên biểu đồ</td><td>
       <code>indicatorLegend.values</code> <code>indicatorLegend.visibility</code> <code>indicatorLegend.settings</code>
@@ -137,6 +140,11 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   widget (thông báo lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
   Tắt <code>selectionToolbar</code> sẽ ẩn thanh công cụ trên hình được chọn; menu chuột phải vẫn còn.
   Tắt <code>statusBar.rangeTimeframe</code> sẽ giữ nguyên khung thời gian khi một khoảng trên thanh khoảng thời gian dài hơn số nến vừa màn hình; bật thì chuyển sang tuần hoặc tháng rồi quay về.
+  Các công cụ giao dịch gộp vào một menu Giao dịch trên thanh công cụ: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
+  <code>toolbar.accountPanel</code> và các tính năng tương ứng bỏ mục của chúng khỏi menu, còn <code>toolbar.trade</code>
+  bỏ cả menu; menu cũng tự mất khi không còn mục nào. Hoàn tác và làm lại đã chuyển từ thanh công cụ vẽ lên thanh
+  công cụ; <code>sidebar.undo</code> và <code>sidebar.redo</code> vẫn tắt được chúng. <code>statusBar.symbol</code>
+  không còn gì để bật tắt: dòng tiêu đề của chú giải đã ghi tên mã.
 </p>
 
 <p id="toast-icons">

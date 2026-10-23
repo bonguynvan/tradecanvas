@@ -422,6 +422,34 @@ const widget = new ChartWidget(host, {
 widget.chart.setData(...)
 widget.destroy()`}</code></pre>
 
+<h3 id="bars">Các thanh</h3>
+<table>
+  <thead><tr><th>Thanh</th><th>Có gì trên đó</th></tr></thead>
+  <tbody>
+    <tr><td>Thanh công cụ</td><td>
+      Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiện thành nút, cùng một menu có đủ mọi khung
+      theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo
+      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, phát lại nến, cảnh báo, cây đối tượng, một menu Giao dịch
+      (lệnh mới, bracket Long và Short, sổ lệnh và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
+      hình. Phần nào không vừa thì gập vào “Thêm”.
+    </td></tr>
+    <tr><td>Công cụ vẽ</td><td>
+      Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là đường xu hướng) và có một ngôi sao trên mỗi
+      dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá tất cả,
+      ẩn tất cả và xoá tất cả.
+    </td></tr>
+    <tr><td>Thanh trạng thái</td><td>
+      Các khoảng thời gian dựng sẵn và đi tới ngày; trạng thái thị trường, kết nối, một đồng hồ theo múi giờ hiển thị
+      (bấm vào thì mở danh sách múi giờ để chọn) và các công tắc <code>%</code> · <code>log</code> · <code>auto</code>
+      của thang giá.
+    </td></tr>
+    <tr><td>Trên hình vẽ đang chọn</td><td>
+      Màu, độ dày và kiểu nét, cài đặt, cảnh báo, khoá, menu thêm và xoá. Kéo thanh này bằng tay nắm của nó thì nó ở
+      yên chỗ đó cho hình vẽ tiếp theo; bấm đúp vào tay nắm để đưa nó về lại trên hình vẽ.
+    </td></tr>
+  </tbody>
+</table>
+
 <h3>Phím tắt của widget</h3>
 <table>
   <thead><tr><th>Phím tắt</th><th>Thao tác</th></tr></thead>
@@ -739,7 +767,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Công tắc tính năng</h3>
-<p>114 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
+<p>122 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // một nút, một nhóm công cụ vẽ, mọi phím tắt
 
 widget.setFeatures({ sidebar: false, statusBar: false })
