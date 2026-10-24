@@ -1,5 +1,7 @@
 # @tradecanvas/commons
 
+## 1.41.0
+
 ## 1.40.0
 
 ### Minor Changes
