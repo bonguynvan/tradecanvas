@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Customization — TradeCanvas docs</title>
-  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 125 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
+  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 126 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
 </svelte:head>
 
 <h1>Customization</h1>
@@ -89,7 +89,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
       <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
-      <code>customTimeframes</code> <code>intervalTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
+      <code>customTimeframes</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code>
     </td></tr>
     <tr><td>Toolbar</td><td>

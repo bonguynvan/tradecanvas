@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Tùy biến — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 125 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
+  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 126 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
 </svelte:head>
 
 <h1>Tùy biến</h1>
@@ -89,7 +89,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
       <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
-      <code>customTimeframes</code> <code>intervalTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
+      <code>customTimeframes</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code>
     </td></tr>
     <tr><td>Toolbar</td><td>

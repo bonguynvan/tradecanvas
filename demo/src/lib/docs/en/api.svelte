@@ -106,7 +106,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>Long ranges.</strong> A bar slot is never narrower than 0.25 px, so a range longer than that allows (26 years of days on a laptop) shows its newest part. In the widget a long range on the range bar switches to the timeframe whose bars fit, at 2 px a bar or more: 5Y of days goes to weeks, All to months; a short range goes back to the timeframe you picked, never finer. It switches only to timeframes your feed serves (or the bars here resample to). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> keeps the timeframe. On a bare <code>Chart</code>, <code>minBarUnit</code> (an option, or <code>setMinBarUnit</code>) lets slots go down to 0.02 px, drawn a pixel column at a time.
 </p>
@@ -194,7 +196,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday,
   exchange's current rules before you rely on it.
 </p>
 
-<h3>Comparing symbols</h3>
+<h3 id="comparing-symbols">Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or
   its price on a scale of its own, in a pane of its own, or the spread or ratio of the
@@ -214,8 +216,10 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  In ChartWidget, the object tree's compare button asks for a symbol, then how:
-  percent change, own scale, own pane, spread, ratio, or the correlation of prices or of returns.
+  In ChartWidget, Compare on the toolbar (and the + in the object tree) opens the compare dialog: search for a
+  symbol, pick how under <strong>Add as</strong> (percent change, own scale, own pane, spread, ratio, or the
+  correlation of prices or of returns) and add as many as you like. What is compared already is listed first,
+  each with its way and a button to take it off. The dialog opens next time on the way used last.
 </p>
 
 <h3>Exporting data</h3>
@@ -452,12 +456,34 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">Symbol search, Compare and Go to</h3>
+<p>
+  <strong>Symbol search</strong> opens from the symbol on the toolbar, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
+  or a letter typed on the chart, which it starts with. It lists your <code>symbols</code> until something is
+  typed, then asks your feed's search (<code>searchSymbols</code>, or the adapter's) once typing pauses: the
+  symbol, its name, its kind and its exchange in columns, the chart's own marked. Results of more than one kind
+  (stocks and crypto, say) can be narrowed to one. The names a search told of stay for the list it opens with.
+  <code>{`features: { symbolTyping: false }`}</code> leaves letters typed on the chart alone.
+</p>
+<p>
+  <strong>Compare</strong> is the same dialog with <strong>Add as</strong> under the search and what is compared
+  listed first (see <a href="#comparing-symbols">Comparing symbols</a>).
+</p>
+<p>
+  <strong>Go to</strong> (the calendar on the status bar, <kbd>Alt</kbd>+<kbd>G</kbd>, or the chart's menu) has two
+  tabs. <strong>Date</strong> centres the bar of a day and a time; <strong>Custom range</strong> shows the bars
+  between two of them edge to edge, starting from those on screen. The month under the fields fills the date
+  field in hand, and after a range's start it moves on to its end. On daily bars and longer there is no time to
+  give, and days after today can't be picked. Dates and times read in the display time zone.
+</p>
+
 <h3>Widget keyboard shortcuts</h3>
 <table>
   <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette (indicators, chart types, drawings…)</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search — fuzzy picker over the configured symbol list</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search: your symbols, or your feed's search as you type</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Search for a symbol, starting with the letter typed (<code>{`features: { symbolTyping: false }`}</code> turns it off)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Save the layout (asks for a name the first time)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Type an interval (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) and press Enter (<code>intervalTyping: false</code> turns it off)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Trend line, horizontal line, horizontal ray, vertical line, cross line, Fibonacci retracement</td></tr>
@@ -706,11 +732,11 @@ chart.removeIndicator(instanceId)`}</code></pre>
   re-add to change a period or colour.
 </p>
 <p>
-  The object tree's <strong>Compare</strong> section overlays other symbols as
-  normalized lines. With a live adapter, the + button opens the symbol picker,
-  fetches that symbol's history via <code>adapter.fetchHistory</code>, and adds
-  it in percent mode (so mixed-price symbols share one axis). Comparisons
-  refetch automatically on timeframe change. Programmatic equivalents:
+  The object tree's <strong>Compare</strong> section lists the symbols overlaid as
+  normalized lines. With a live adapter, its + button opens the compare dialog;
+  a symbol added in percent has its history fetched via <code>adapter.fetchHistory</code>
+  (so mixed-price symbols share one axis). Comparisons refetch automatically on
+  timeframe change. Programmatic equivalents:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
 
@@ -774,7 +800,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>125 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>126 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })

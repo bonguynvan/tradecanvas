@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>커스터마이징 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 125개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
+  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 126개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
 </svelte:head>
 
 <h1>커스터마이징</h1>
@@ -89,7 +89,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
       <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
-      <code>customTimeframes</code> <code>intervalTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
+      <code>customTimeframes</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code>
     </td></tr>
     <tr><td>툴바</td><td>

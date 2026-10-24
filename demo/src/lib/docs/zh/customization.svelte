@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>定制 — TradeCanvas 文档</title>
-  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 125 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
+  <meta name="description" content="把 TradeCanvas 变成你自己的所有方式：颜色、组件外观、按键名设置图表外观、组件各部分的 126 个开关、你自己的按钮、菜单和状态项、文字、插件以及无界面的 Chart。" />
 </svelte:head>
 
 <h1>定制</h1>
@@ -86,7 +86,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
       <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
-      <code>customTimeframes</code> <code>intervalTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
+      <code>customTimeframes</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code>
     </td></tr>
     <tr><td>工具栏</td><td>

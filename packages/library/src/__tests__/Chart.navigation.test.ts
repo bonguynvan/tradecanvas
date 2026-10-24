@@ -41,6 +41,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('Chart.getVisibleTimeRange', () => {
+  it('gives the times of the first and last bars on screen', () => {
+    expect(chart.getVisibleTimeRange()).toBeNull();
+    chart.setData(hourly(2000));
+    chart.setVisibleRange(T0 + 100 * HOUR, T0 + 300 * HOUR);
+    const range = chart.getVisibleTimeRange()!;
+    expect(Math.abs(range.from - (T0 + 100 * HOUR))).toBeLessThanOrEqual(HOUR);
+    expect(Math.abs(range.to - (T0 + 300 * HOUR))).toBeLessThanOrEqual(HOUR);
+  });
+});
+
 describe('Chart.goToTime', () => {
   it('centres the bar that contains the time, keeping the zoom', () => {
     chart.setData(hourly(2000));

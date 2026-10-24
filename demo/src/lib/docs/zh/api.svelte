@@ -105,7 +105,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>长区间。</strong>每根 K 线的位置不窄于 0.25 px，因此超过这一限度的区间（笔记本上 26 年的日线）只显示最新的部分。在组件中，区间栏上的长区间会切换到 K 线能够放下的周期，每根至少 2 px：5Y 日线切换为周线，All 切换为月线；短区间则回到你选择的周期，绝不更细。它只会切换到你的数据源提供的周期（或现有 K 线能聚合到的周期）。<code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> 保持周期不变。直接使用 <code>Chart</code> 时，<code>minBarUnit</code>（选项，或 <code>setMinBarUnit</code>）允许最窄 0.02 px，按像素列绘制。
 </p>
@@ -186,7 +188,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四�
   在依赖某个预设之前，请先对照你所在交易所的现行规则进行核实。
 </p>
 
-<h3>品种对比</h3>
+<h3 id="comparing-symbols">品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，
   或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>spread</code>），
@@ -204,7 +206,9 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  在 ChartWidget 中，对象树的对比按钮会先询问品种，再询问对比方式：涨跌幅、独立坐标、独立副图、价差、比值，或按价格或收益率计算的相关性。
+  在 ChartWidget 中，工具栏上的对比（以及对象树中的 +）会打开对比对话框：搜索品种，在<strong>添加方式</strong>下选择对比方式
+  （涨跌幅、独立坐标、独立副图、价差、比值，或按价格或收益率计算的相关性），想添加多少个都可以。已在对比的品种列在最前面，
+  每个都标出其对比方式，并带一个移除按钮。下次打开时，对话框默认使用上次用过的方式。
 </p>
 
 <h3>导出数据</h3>
@@ -424,12 +428,31 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">搜索代码、对比和跳转到</h3>
+<p>
+  <strong>搜索代码</strong>可以从工具栏上的品种或 <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd> 打开，
+  也可以直接在图表上输入一个字母打开，并以该字母开始搜索。还没有输入时，它列出你的 <code>symbols</code>；
+  输入后，每当停顿下来，它就调用数据源的搜索（<code>searchSymbols</code>，或适配器的搜索）：品种、名称、类别和交易所分列显示，
+  图表当前的品种会被标出。结果包含多种类别（比如股票和加密货币）时，可以只看其中一种。搜索得知的名称会保留下来，
+  用在打开时显示的列表里。<code>{`features: { symbolTyping: false }`}</code> 让在图表上输入的字母不再打开搜索。
+</p>
+<p>
+  <strong>对比</strong>是同一个对话框，只是在搜索框下方多了<strong>添加方式</strong>，并把已在对比的品种列在最前面
+  （见<a href="#comparing-symbols">品种对比</a>）。
+</p>
+<p>
+  <strong>跳转到</strong>（状态栏上的日历、<kbd>Alt</kbd>+<kbd>G</kbd> 或图表菜单）有两个标签页。<strong>日期</strong>把某一天某一时刻的K线移到中间；
+  <strong>自定义范围</strong>把两个这样的时刻之间的K线铺满整个宽度，初始值为屏幕上当前显示的K线。输入框下方的月历会填入正在编辑的日期框，
+  选好范围的起点后会转到终点。日线及更长周期无需填写时间，今天之后的日期不能选。日期和时间按显示时区解读。
+</p>
+
 <h3>组件快捷键</h3>
 <table>
   <thead><tr><th>快捷键</th><th>操作</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板（指标、图表类型、画线……）</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索——在已配置的品种列表中模糊查找</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索：你的品种列表，输入时则调用数据源的搜索</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>搜索品种，从输入的字母开始（设置 <code>{`features: { symbolTyping: false }`}</code> 可关闭）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>保存布局（首次保存时会询问名称）</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>输入周期（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）后按 Enter（设置 <code>intervalTyping: false</code> 可关闭）</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>趋势线、水平线、水平射线、垂直线、十字线、斐波那契回撤</td></tr>
@@ -660,9 +683,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
   修改周期或颜色时无需先删除再重新添加。
 </p>
 <p>
-  对象树中的<strong>对比</strong>区域可以把其他品种叠加为归一化的折线。
-  连接实时适配器时，点击 + 按钮会打开品种选择器，通过 <code>adapter.fetchHistory</code>
-  获取该品种的历史数据，并以百分比模式添加（这样价格量级不同的品种可以共用一个坐标轴）。
+  对象树中的<strong>对比</strong>区域列出叠加为归一化折线的品种。
+  连接实时适配器时，点击其中的 + 按钮会打开对比对话框；以百分比方式添加的品种会通过 <code>adapter.fetchHistory</code>
+  获取历史数据（这样价格量级不同的品种可以共用一个坐标轴）。
   切换周期时，对比数据会自动重新获取。对应的代码调用：
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
@@ -723,7 +746,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>功能开关</h3>
-<p>125 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<p>126 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
 
 widget.setFeatures({ sidebar: false, statusBar: false })

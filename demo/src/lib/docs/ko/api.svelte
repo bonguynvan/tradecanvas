@@ -106,7 +106,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>긴 기간.</strong> 봉 하나의 자리는 0.25 px보다 좁아지지 않으므로, 그보다 긴 기간(노트북에서 26년치 일봉)은 가장 최근 부분만 보입니다. 위젯에서는 기간 막대의 긴 기간이 봉당 2 px 이상으로 들어가는 시간 단위로 바뀝니다: 5Y 일봉은 주봉으로, All은 월봉으로. 짧은 기간은 고른 시간 단위로 돌아오며, 그보다 촘촘해지지 않습니다. 데이터 피드가 제공하는(또는 가진 봉을 모아 만들 수 있는) 시간 단위로만 바뀝니다. <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code>는 시간 단위를 유지합니다. <code>Chart</code>를 직접 쓸 때는 <code>minBarUnit</code>(옵션, 또는 <code>setMinBarUnit</code>)으로 0.02 px까지 좁힐 수 있고, 픽셀 열 단위로 그립니다.
 </p>
@@ -189,7 +191,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, �
   거래소 규칙은 때때로 바뀌므로, 프리셋을 사용하기 전에 해당 거래소의 현행 규칙과 대조해 보세요.
 </p>
 
-<h3>종목 비교</h3>
+<h3 id="comparing-symbols">종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나
   별도 패널에 표시하거나, 차트 종가와의 스프레드 또는 비율을 표시할 수 있습니다. 뒤의 방식들은
@@ -208,8 +210,10 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  ChartWidget에서는 개체 트리의 비교 버튼이 종목을 먼저 묻고, 이어서 표시 방식(변동률, 별도 눈금,
-  별도 보조 차트, 스프레드, 비율, 가격 또는 수익률 상관관계)을 묻습니다.
+  ChartWidget에서는 도구 모음의 비교(그리고 개체 트리의 +)가 비교 대화상자를 엽니다. 종목을 검색하고
+  <strong>추가 방식</strong>에서 표시 방식(변동률, 별도 눈금, 별도 보조 차트, 스프레드, 비율, 가격 또는 수익률 상관관계)을
+  고른 뒤 원하는 만큼 추가할 수 있습니다. 이미 비교 중인 종목은 맨 앞에 나열되며, 각각 표시 방식과 제거 버튼이
+  붙습니다. 다음에 열 때는 마지막으로 쓴 방식이 선택되어 있습니다.
 </p>
 
 <h3>데이터 내보내기</h3>
@@ -439,12 +443,34 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">종목 검색, 비교, 이동</h3>
+<p>
+  <strong>종목 검색</strong>은 도구 모음의 종목, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
+  또는 차트 위에서 입력한 글자로 열리며, 그 글자로 검색을 시작합니다. 아무것도 입력하기 전에는 <code>symbols</code> 목록을
+  보여 주고, 입력하면 입력이 멈출 때마다 피드의 검색(<code>searchSymbols</code> 또는 어댑터의 검색)에 묻습니다. 종목, 이름,
+  종류, 거래소가 열로 나뉘어 표시되고, 차트의 종목에는 표시가 붙습니다. 결과에 여러 종류(예: 주식과 암호화폐)가 섞여 있으면
+  하나로 좁힐 수 있습니다. 검색으로 알게 된 이름은 처음 열 때 보이는 목록에도 남습니다.
+  <code>{`features: { symbolTyping: false }`}</code>로 하면 차트 위에서 글자를 입력해도 열리지 않습니다.
+</p>
+<p>
+  <strong>비교</strong>는 같은 대화상자로, 검색창 아래에 <strong>추가 방식</strong>이 있고 비교 중인 종목이 맨 앞에
+  나열됩니다(<a href="#comparing-symbols">종목 비교</a> 참고).
+</p>
+<p>
+  <strong>이동</strong>(상태 바의 달력, <kbd>Alt</kbd>+<kbd>G</kbd>, 또는 차트 메뉴)에는 탭이 두 개 있습니다.
+  <strong>날짜</strong>는 지정한 날짜와 시각의 봉을 가운데로 가져오고, <strong>사용자 지정 범위</strong>는 두 시점 사이의 봉을
+  화면 끝에서 끝까지 채워 보여 주며, 처음 값은 지금 화면에 보이는 범위입니다. 입력란 아래의 월 달력은 입력 중인 날짜 칸을
+  채우고, 범위의 시작을 고르면 끝으로 넘어갑니다. 일봉 이상에서는 시각을 입력하지 않으며, 오늘 이후의 날짜는 고를 수
+  없습니다. 날짜와 시각은 표시 시간대 기준으로 읽습니다.
+</p>
+
 <h3>위젯 키보드 단축키</h3>
 <table>
   <thead><tr><th>단축키</th><th>동작</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>명령 팔레트(지표, 차트 유형, 그리기 도구…)</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>종목 검색 — 설정된 종목 목록에서 퍼지 검색</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>종목 검색: 설정된 종목 목록, 또는 입력하는 대로 피드의 검색</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>입력한 글자로 시작하는 종목 검색(<code>{`features: { symbolTyping: false }`}</code>로 끌 수 있음)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>레이아웃 저장(처음에는 이름을 묻습니다)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>시간 단위(<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>)를 입력하고 Enter로 적용(<code>intervalTyping: false</code>로 끌 수 있음)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>추세선, 수평선, 수평 반직선, 수직선, 십자선, 피보나치 되돌림</td></tr>
@@ -685,10 +711,10 @@ chart.removeIndicator(instanceId)`}</code></pre>
   지표를 지웠다가 다시 추가할 필요가 없습니다.
 </p>
 <p>
-  개체 트리의 <strong>비교</strong> 섹션은 다른 종목을 정규화된 선으로
-  겹쳐 표시합니다. 실시간 어댑터가 있으면 + 버튼이 종목 선택기를 열고,
-  <code>adapter.fetchHistory</code>로 해당 종목의 과거 데이터를 가져와
-  퍼센트 모드로 추가합니다(가격대가 다른 종목도 하나의 축을 공유하도록). 비교 종목은
+  개체 트리의 <strong>비교</strong> 섹션에는 정규화된 선으로 겹쳐 표시한 종목이
+  나열됩니다. 실시간 어댑터가 있으면 이 섹션의 + 버튼이 비교 대화상자를 엽니다.
+  퍼센트로 추가한 종목은 <code>adapter.fetchHistory</code>로 과거 데이터를
+  가져옵니다(가격대가 다른 종목도 하나의 축을 공유하도록). 비교 종목은
   시간 단위가 바뀌면 자동으로 다시 가져옵니다. 코드로는 다음과 같습니다.
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
@@ -753,7 +779,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>기능 스위치</h3>
-<p>스위치 125개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
+<p>스위치 126개가 있고, 끄기 전까지 모두 켜져 있습니다. 점이 없는 이름은 기능 전체로 나타나는 모든 곳에서 꺼지고, 점이 있는 이름은 한 자리입니다. 위젯이 실행 중일 때도 바꿀 수 있습니다. 전체 목록과 그에 해당하는 예전 옵션은 <a href={href('/docs/customization')}>커스터마이징</a>에 있습니다.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 버튼 하나, 그리기 도구 묶음 하나, 모든 단축키
 
 widget.setFeatures({ sidebar: false, statusBar: false })

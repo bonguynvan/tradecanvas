@@ -106,7 +106,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>長い期間。</strong>バーの幅は 0.25 px より狭くならないため、それを超える期間（ノート PC での 26 年分の日足）は最新の部分だけが表示されます。ウィジェットでは、レンジバーの長い期間はバーが 1 本 2 px 以上で収まる時間足に切り替わります：5Y の日足は週足に、All は月足に。短い期間では選んだ時間足に戻り、それより細かくはなりません。切り替わるのはデータフィードが提供する（または手元のバーから集計できる）時間足だけです。<code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> で時間足を保ちます。<code>Chart</code> を直接使う場合は <code>minBarUnit</code>（オプション、または <code>setMinBarUnit</code>）で 0.02 px まで狭められ、ピクセル列ごとに描画されます。
 </p>
@@ -188,7 +190,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。�
   取引所のルールは随時変わるため、プリセットに頼る前に、その取引所の現行ルールと照らし合わせてください。
 </p>
 
-<h3>シンボルの比較</h3>
+<h3 id="comparing-symbols">シンボルの比較</h3>
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
   スケールや専用のペインに表示したり、チャートの終値とのスプレッドや比率を表示したりできます。後者は
@@ -207,8 +209,10 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  ChartWidget では、オブジェクトツリーの比較ボタンでまずシンボルを、次に表示方法（変化率、専用スケール、
-  専用サブチャート、スプレッド、比率、価格またはリターンの相関）を選びます。
+  ChartWidget では、ツールバーの比較（とオブジェクトツリーの +）で比較ダイアログが開きます。シンボルを検索し、
+  <strong>追加方法</strong>で表示方法（変化率、専用スケール、専用サブチャート、スプレッド、比率、価格またはリターンの相関）を
+  選んで、いくつでも追加できます。比較中のシンボルは先頭に並び、それぞれに表示方法と、外すためのボタンが付きます。
+  次に開いたときは、前回使った表示方法が選ばれています。
 </p>
 
 <h3>データのエクスポート</h3>
@@ -434,12 +438,33 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">シンボル検索、比較、移動</h3>
+<p>
+  <strong>シンボル検索</strong>は、ツールバーのシンボル、<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>、
+  またはチャート上での文字の入力で開き、入力した文字から検索が始まります。何も入力していないうちは <code>symbols</code> の一覧を表示し、
+  入力すると、入力が止まるたびにフィードの検索（<code>searchSymbols</code>、またはアダプターの検索）に問い合わせます。シンボル、
+  名称、種類、取引所が列に並び、チャートのシンボルには印が付きます。結果に複数の種類（たとえば株式と暗号資産）があれば、
+  1 つに絞り込めます。検索で分かった名称は、開いたときの一覧にも残ります。
+  <code>{`features: { symbolTyping: false }`}</code> にすると、チャート上で文字を入力しても開かなくなります。
+</p>
+<p>
+  <strong>比較</strong>は同じダイアログで、検索欄の下に<strong>追加方法</strong>があり、比較中のシンボルが先頭に並びます
+  （<a href="#comparing-symbols">シンボルの比較</a>を参照）。
+</p>
+<p>
+  <strong>移動</strong>（ステータスバーのカレンダー、<kbd>Alt</kbd>+<kbd>G</kbd>、またはチャートのメニュー）には 2 つのタブがあります。
+  <strong>日付</strong>は指定した日時のバーを中央に表示し、<strong>期間を指定</strong>は 2 つの日時のあいだのバーを端から端まで表示します。
+  初期値は画面に表示中の範囲です。入力欄の下の月カレンダーは編集中の日付欄に入り、期間の開始を選ぶと終了に移ります。
+  日足以上では時刻の入力はなく、今日より後の日は選べません。日付と時刻は表示タイムゾーンで解釈されます。
+</p>
+
 <h3>ウィジェットのキーボードショートカット</h3>
 <table>
   <thead><tr><th>ショートカット</th><th>操作</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット（インジケーター、チャートタイプ、描画など）</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索 — 設定したシンボル一覧からのあいまい検索</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索：設定したシンボル、または入力に応じたフィードの検索</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>入力した文字からシンボルを検索（<code>{`features: { symbolTyping: false }`}</code> で無効）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>レイアウトを保存（初回は名前を尋ねます）</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>時間足（<code>5</code>、<code>15m</code>、<code>1h</code>、<code>1D</code>）を入力して Enter で切り替え（<code>intervalTyping: false</code> で無効）</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>トレンドライン、水平線、水平半直線、垂直線、十字線、フィボナッチ・リトレースメント</td></tr>
@@ -677,9 +702,9 @@ chart.removeIndicator(instanceId)`}</code></pre>
   即座に適用します。期間や色を変えるために、削除して追加し直す必要はありません。
 </p>
 <p>
-  オブジェクトツリーの<strong>比較</strong>セクションでは、他のシンボルを正規化したラインとして
-  重ねて表示します。ライブアダプターがある場合、+ ボタンでシンボルの選択画面が開き、
-  <code>adapter.fetchHistory</code> でそのシンボルの履歴を取得して、パーセントモードで追加します
+  オブジェクトツリーの<strong>比較</strong>セクションには、正規化したラインとして重ねて表示している
+  シンボルが並びます。ライブアダプターがある場合、その + ボタンで比較ダイアログが開きます。
+  パーセントで追加したシンボルは <code>adapter.fetchHistory</code> で履歴を取得します
   （価格帯の異なるシンボルでも 1 本の軸を共有できます）。比較は時間足を変えると自動で再取得されます。
   プログラムでは次のようにします：
 </p>
@@ -742,7 +767,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>機能スイッチ</h3>
-<p>125 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
+<p>126 個のスイッチがあり、オフにするまではすべてオンです。ドットのない名前は機能まるごとで、現れるすべての場所でオフになり、ドットのある名前は一か所です。ウィジェットの動作中に切り替えられます。全一覧と対応する従来のオプションは<a href={href('/docs/customization')}>カスタマイズ</a>にあります。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // ボタン一つ、描画ツールのグループ一つ、すべてのキー操作
 
 widget.setFeatures({ sidebar: false, statusBar: false })

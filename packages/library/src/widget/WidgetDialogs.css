@@ -9,7 +9,8 @@
   max-height: none;
 }
 
-.tcw-ip-search {
+.tcw-ip-search,
+.tcw-ss-search {
   display: flex;
   align-items: center;
   gap: var(--tcw-space-3);
@@ -24,16 +25,19 @@
   transition: border-color var(--tcw-dur-fast) var(--tcw-ease), box-shadow var(--tcw-dur-fast) var(--tcw-ease);
 }
 
-.tcw-ip-search:focus-within {
+.tcw-ip-search:focus-within,
+.tcw-ss-search:focus-within {
   border-color: var(--tcw-accent);
   box-shadow: var(--tcw-ring);
 }
 
-.tcw-ip-search svg {
+.tcw-ip-search svg,
+.tcw-ss-search svg {
   flex: none;
 }
 
-.tcw-ip-search input {
+.tcw-ip-search input,
+.tcw-ss-search input {
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -45,7 +49,8 @@
   font-size: var(--tcw-font-size);
 }
 
-.tcw-ip-search input::placeholder {
+.tcw-ip-search input::placeholder,
+.tcw-ss-search input::placeholder {
   color: var(--tcw-text-muted);
 }
 
@@ -308,11 +313,13 @@
 /* A phone: the dialog is the widget's sheet, as tall as a sheet goes, and the groups a row of chips. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ip {
-    height: 92vh;
-    height: 92dvh;
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
   }
 
-  .tcw-ip-search {
+  .tcw-ip-search,
+  .tcw-ss-search {
     margin-inline: var(--tcw-space-4);
   }
 
@@ -557,12 +564,421 @@
   .tcw-modal.tcw-set {
     width: 100vw;
     max-width: 100vw;
-    height: 92vh;
-    height: 92dvh;
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
   }
 
   .tcw-set-body {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+/* === The symbol search, and the same dialog comparing === */
+
+/* As wide and as still as the indicators dialog: 610, a fixed height while a search shortens the list. */
+.tcw-modal.tcw-ss {
+  width: 610px;
+  height: min(610px, 86vh);
+  height: min(610px, 86dvh);
+  max-height: none;
+}
+
+/* Comparing: how the next symbol goes on the chart, under the search. */
+.tcw-ss-way {
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-4);
+  flex: none;
+  margin: 0 var(--tcw-space-6) var(--tcw-space-4);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+}
+
+.tcw-ss-way > span {
+  flex: none;
+}
+
+.tcw-root .tcw-ss-way-select {
+  flex: 1;
+  min-width: 0;
+  height: var(--tcw-control-h);
+  padding-block: 0;
+}
+
+/* The kinds the results come in: All, stock, crypto… */
+.tcw-ss-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  gap: var(--tcw-space-3);
+  margin: 0 var(--tcw-space-6) var(--tcw-space-4);
+}
+
+.tcw-ss-type {
+  height: var(--tcw-control-h);
+  padding: 0 var(--tcw-space-5);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-ss-type:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-ss-type[aria-pressed='true'] {
+  border-color: var(--tcw-accent);
+  background: var(--tcw-accent-soft);
+  color: var(--tcw-accent);
+}
+
+.tcw-ss-type:focus-visible,
+.tcw-ss-remove:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* The symbol takes 144 (89 x phi), the name the rest; kind and exchange at the end. The heads line up
+   with the rows: the inset of what scrolls and the row's own. */
+.tcw-ss-columns,
+.tcw-ss-row {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--tcw-space-5);
+}
+
+.tcw-ss-columns {
+  flex: none;
+  padding: var(--tcw-space-3) calc(var(--tcw-space-4) * 2);
+  border-top: 1px solid var(--tcw-divider);
+  border-bottom: 1px solid var(--tcw-divider);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+/* What scrolls: what is compared, the symbols, a note when there are none. */
+.tcw-ss-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
+}
+
+.tcw-ss-row {
+  min-height: var(--tcw-menu-item-h);
+  padding: 0 var(--tcw-space-4);
+  border-radius: var(--tcw-menu-item-radius);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-ss-row.tcw-selected {
+  background: var(--tcw-hover-bg);
+}
+
+/* The figures of a ticker, in the mono face, left to right in any widget, at the start of its column;
+   the chart's own in ink. */
+.tcw-ss-symbol {
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text);
+  font-family: var(--tcw-font-mono);
+  font-weight: var(--tcw-weight-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-ss-row.tcw-current .tcw-ss-symbol {
+  color: var(--tcw-accent);
+}
+
+.tcw-ss-symbol mark {
+  background: transparent;
+  color: var(--tcw-accent);
+}
+
+.tcw-ss-desc-cell {
+  min-width: 0;
+}
+
+/* As wide as its words, at the start of the column, whichever way they run. */
+.tcw-ss-desc {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-ss-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--tcw-space-4);
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.tcw-ss-kind {
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+}
+
+.tcw-ss-exchange {
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+/* The chart's symbol, or one on it already: a check after the exchange. */
+.tcw-ss-row:has(.tcw-ss-check) {
+  grid-template-columns: 144px minmax(0, 1fr) auto auto;
+}
+
+.tcw-ss-check {
+  display: inline-grid;
+  place-items: center;
+  color: var(--tcw-accent);
+}
+
+.tcw-ss-heading[hidden] {
+  display: none;
+}
+
+/* "On the chart" and "Symbols", above their rows while they scroll. */
+.tcw-ss-heading {
+  position: sticky;
+  top: calc(var(--tcw-space-3) * -1);
+  z-index: 1;
+  padding: var(--tcw-space-5) var(--tcw-space-4) var(--tcw-space-2);
+  background: var(--tcw-bg-elevated);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+.tcw-ss-added-row {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--tcw-space-5);
+  min-height: var(--tcw-menu-item-h);
+  padding: 0 var(--tcw-space-4);
+  border-radius: var(--tcw-menu-item-radius);
+}
+
+.tcw-ss-added-row:hover {
+  background: var(--tcw-hover-bg);
+}
+
+/* How it is compared, after the line's colour where it has one of its own. */
+.tcw-ss-way-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-4);
+  min-width: 0;
+}
+
+.tcw-ss-swatch {
+  flex: none;
+  width: var(--tcw-space-4);
+  height: var(--tcw-space-4);
+  border-radius: var(--tcw-radius-sm);
+}
+
+.tcw-ss-way-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-ss-remove {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tcw-control-h);
+  height: var(--tcw-control-h);
+  border: none;
+  border-radius: var(--tcw-menu-item-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+
+.tcw-ss-remove:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-red);
+}
+
+.tcw-ss-empty {
+  max-width: 44ch;
+  padding: var(--tcw-space-6) var(--tcw-space-4);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* The way the dialog opens too: a letter typed on the chart. */
+.tcw-ss-foot {
+  flex: none;
+  padding: var(--tcw-space-5) var(--tcw-space-6);
+  border-top: 1px solid var(--tcw-divider);
+  border-radius: 0 0 var(--tcw-dialog-radius) var(--tcw-dialog-radius);
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  text-align: center;
+}
+
+/* === Go to === */
+
+/* 377: the step of phi under the search dialogs. */
+@media (min-width: 641px) {
+  .tcw-modal.tcw-goto {
+    width: 377px;
+  }
+}
+
+.tcw-goto-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tcw-goto-fields {
+  display: grid;
+  gap: var(--tcw-space-5);
+  padding: var(--tcw-space-6) var(--tcw-space-6) var(--tcw-space-4);
+}
+
+/* The date takes the room; the time 144 beside it; a range's end named above its two. */
+.tcw-goto-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 144px;
+  gap: var(--tcw-space-3) var(--tcw-space-4);
+  align-items: center;
+}
+
+.tcw-goto-label {
+  grid-column: 1 / -1;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+.tcw-root .tcw-goto-input {
+  width: 100%;
+  min-width: 0;
+  height: var(--tcw-control-h);
+  box-sizing: border-box;
+  padding: 0 var(--tcw-space-4);
+  font-size: var(--tcw-font-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* No time on daily bars: the date across the row. */
+.tcw-goto-input[type='date']:last-child {
+  grid-column: 1 / -1;
+}
+
+/* The month under the fields, part of the dialog: no card of its own. */
+.tcw-calendar.tcw-goto-calendar {
+  position: static;
+  width: auto;
+  padding: var(--tcw-space-4) var(--tcw-space-6) var(--tcw-space-5);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: none;
+}
+
+.tcw-goto-calendar .tcw-calendar-day {
+  height: 34px;
+}
+
+.tcw-goto .tcw-modal-footer {
+  justify-content: flex-end;
+  gap: var(--tcw-space-4);
+}
+
+.tcw-goto .tcw-modal-footer button {
+  height: var(--tcw-menu-item-h);
+  padding-block: 0;
+}
+
+.tcw-goto .tcw-done-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* A phone: both are the widget's sheet; the search as tall as a sheet goes, its symbols 89 wide. */
+@media (max-width: 640px) {
+  .tcw-modal.tcw-ss {
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+  }
+
+  .tcw-ss-way,
+  .tcw-ss-kinds {
+    margin-inline: var(--tcw-space-4);
+  }
+
+  .tcw-ss-columns,
+  .tcw-ss-row,
+  .tcw-ss-added-row {
+    grid-template-columns: 89px minmax(0, 1fr) auto;
+  }
+
+  .tcw-ss-row:has(.tcw-ss-check) {
+    grid-template-columns: 89px minmax(0, 1fr) auto auto;
+  }
+
+  .tcw-ss-kind {
+    display: none;
+  }
+
+  .tcw-ss-row,
+  .tcw-ss-added-row {
+    min-height: 44px;
+  }
+}
+
+/* Without a keyboard there are no letters to type on the chart. */
+@media (hover: none) and (pointer: coarse) {
+  .tcw-ss-foot {
+    display: none;
   }
 }

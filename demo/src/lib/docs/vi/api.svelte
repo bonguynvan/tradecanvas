@@ -106,7 +106,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>Khoảng dài.</strong> Mỗi nến không hẹp hơn 0,25 px, nên một khoảng dài hơn mức đó (26 năm nến ngày trên laptop) chỉ hiện phần mới nhất. Trong widget, một khoảng dài trên thanh khoảng thời gian sẽ chuyển sang khung có số nến vừa màn hình, từ 2 px mỗi nến: 5Y nến ngày sang nến tuần, All sang nến tháng; khoảng ngắn thì trở về khung bạn đã chọn, không bao giờ mịn hơn. Nó chỉ chuyển sang khung mà nguồn dữ liệu của bạn có (hoặc nến hiện có gộp lên được). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> giữ nguyên khung. Với <code>Chart</code> dùng trực tiếp, <code>minBarUnit</code> (tuỳ chọn, hoặc <code>setMinBarUnit</code>) cho nến hẹp đến 0,02 px, vẽ theo từng cột pixel.
 </p>
@@ -195,7 +197,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
   trước khi dựa vào nó.
 </p>
 
-<h3>So sánh các mã</h3>
+<h3 id="comparing-symbols">So sánh các mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
   nó trên thang riêng, trong bảng riêng, hoặc chênh lệch hay tỷ lệ giữa giá đóng cửa của biểu đồ
@@ -215,8 +217,10 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  Trong ChartWidget, nút so sánh trong cây đối tượng hỏi mã, rồi hỏi cách so sánh: thay đổi
-  phần trăm, thang riêng, pane riêng, chênh lệch, tỷ lệ, hoặc tương quan theo giá hay theo lợi suất.
+  Trong ChartWidget, nút So sánh trên thanh công cụ (và nút + trong cây đối tượng) mở hộp thoại so sánh: tìm một
+  mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch,
+  tỷ lệ, hoặc tương quan theo giá hay theo lợi suất) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê
+  trước, mỗi mã kèm cách so sánh của nó và một nút để gỡ ra. Lần mở sau, hộp thoại chọn sẵn cách đã dùng lần trước.
 </p>
 
 <h3>Xuất dữ liệu</h3>
@@ -453,12 +457,35 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">Tìm mã, So sánh và Đi tới</h3>
+<p>
+  <strong>Tìm mã</strong> mở từ mã trên thanh công cụ, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
+  hoặc khi gõ một chữ cái trên biểu đồ, và bắt đầu tìm bằng chữ cái đó. Khi chưa gõ gì, hộp thoại liệt kê các mã
+  trong <code>symbols</code> của bạn; khi đã gõ, mỗi lần bạn ngừng gõ nó hỏi chức năng tìm kiếm của nguồn dữ liệu
+  (<code>searchSymbols</code>, hoặc của adapter): mã, tên, loại và sàn của mã xếp thành cột, mã của biểu đồ được
+  đánh dấu. Khi kết quả có nhiều loại (chẳng hạn cổ phiếu và tiền mã hoá), có thể lọc chỉ còn một loại. Tên mà một
+  lần tìm đã cho biết được giữ lại cho danh sách hiện ra lúc mở.
+  <code>{`features: { symbolTyping: false }`}</code> để các chữ cái gõ trên biểu đồ không mở hộp thoại này.
+</p>
+<p>
+  <strong>So sánh</strong> là chính hộp thoại đó, có thêm <strong>Thêm theo kiểu</strong> dưới ô tìm kiếm và các mã
+  đang so sánh được liệt kê trước (xem <a href="#comparing-symbols">So sánh các mã</a>).
+</p>
+<p>
+  <strong>Đi tới</strong> (biểu tượng lịch trên thanh trạng thái, <kbd>Alt</kbd>+<kbd>G</kbd>, hoặc menu của biểu đồ)
+  có hai tab. <strong>Ngày</strong> đưa nến của một ngày và giờ vào giữa; <strong>Khoảng tự chọn</strong> hiện các
+  nến giữa hai mốc như vậy, vừa khít từ mép này sang mép kia, ban đầu là khoảng đang hiện trên màn hình. Lịch tháng
+  dưới các ô nhập điền vào ô ngày đang nhập, và sau khi chọn đầu khoảng thì chuyển sang cuối khoảng. Với nến ngày
+  trở lên thì không cần nhập giờ, và không chọn được các ngày sau hôm nay. Ngày và giờ được hiểu theo múi giờ hiển thị.
+</p>
+
 <h3>Phím tắt của widget</h3>
 <table>
   <thead><tr><th>Phím tắt</th><th>Thao tác</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh (chỉ báo, loại biểu đồ, công cụ vẽ…)</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã — tìm gần đúng trong danh sách mã đã cấu hình</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã: các mã của bạn, hoặc tìm qua nguồn dữ liệu khi bạn gõ</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Tìm một mã, bắt đầu bằng chữ cái vừa gõ (<code>{`features: { symbolTyping: false }`}</code> để tắt)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Gõ một khung thời gian (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) rồi nhấn Enter (<code>intervalTyping: false</code> để tắt)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Đường xu hướng, đường ngang, tia ngang, đường dọc, đường chữ thập, Fibonacci thoái lui</td></tr>
@@ -708,10 +735,10 @@ chart.removeIndicator(instanceId)`}</code></pre>
   thêm lại để đổi chu kỳ hay màu.
 </p>
 <p>
-  Phần <strong>So sánh</strong> trong cây đối tượng vẽ chồng các mã khác thành
-  các đường đã chuẩn hoá. Khi có adapter dữ liệu trực tiếp, nút + mở bộ chọn mã,
-  tải lịch sử của mã đó qua <code>adapter.fetchHistory</code> và thêm
-  vào ở chế độ phần trăm (để các mã có mức giá khác nhau dùng chung một trục). Các mã so sánh
+  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê các mã đang vẽ chồng thành
+  các đường đã chuẩn hoá. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở hộp thoại so sánh;
+  mã được thêm ở chế độ phần trăm được tải lịch sử qua <code>adapter.fetchHistory</code>
+  (để các mã có mức giá khác nhau dùng chung một trục). Các mã so sánh
   tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
@@ -777,7 +804,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Công tắc tính năng</h3>
-<p>125 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
+<p>126 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // một nút, một nhóm công cụ vẽ, mọi phím tắt
 
 widget.setFeatures({ sidebar: false, statusBar: false })

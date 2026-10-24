@@ -341,6 +341,16 @@ describe('calendar', () => {
     expect(calendar()).toBeNull();
     expect(document.activeElement).toBe(input);
   });
+
+  it('leaves a field whose calendar is shown beside it alone', () => {
+    const input = dateInput('2026-03-18');
+    input.dataset.tcwCalendar = 'inline';
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    input.dispatchEvent(click);
+    press(input, 'ArrowDown', { altKey: true });
+    expect(calendar()).toBeNull();
+    expect(click.defaultPrevented).toBe(false);
+  });
 });
 
 describe('monthGrid / weekStart', () => {

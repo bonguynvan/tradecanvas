@@ -47,6 +47,10 @@ class FakeChart {
   getData(): { time: number }[] { return this.data; }
   setVisibleRangePreset(preset: string): void { this.presets.push(preset); }
   goToTime(time: number): number { this.goTos.push(time); return 0; }
+  ranges: [number, number][] = [];
+  visibleTimes: { from: number; to: number } | null = null;
+  getVisibleTimeRange(): { from: number; to: number } | null { return this.visibleTimes; }
+  setVisibleRange(from: number, to: number): void { this.ranges.push([from, to]); }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
@@ -216,12 +220,12 @@ describe('ChartWidget symbol search through the adapter', () => {
         adapter: { name: 'fake', searchSymbols } as unknown as DataAdapter, symbol: 'AAA', watchlist: false,
       });
       host.querySelector<HTMLButtonElement>('[data-role="symbol"]')!.click();
-      const input = document.querySelector<HTMLInputElement>('.tcw-cmd-input')!;
+      const input = document.querySelector<HTMLInputElement>('.tcw-ss-input')!;
       input.value = 'btc';
       input.dispatchEvent(new Event('input'));
       await vi.advanceTimersByTimeAsync(200);
       expect(searchSymbols).toHaveBeenCalledWith('btc', expect.objectContaining({ limit: 50 }));
-      expect(document.querySelector('.tcw-cmd-item')?.textContent).toContain('BTC / USDT');
+      expect(document.querySelector('.tcw-ss-row')?.textContent).toContain('BTC / USDT');
     } finally {
       vi.useRealTimers();
     }
@@ -263,17 +267,55 @@ describe('ChartWidget range bar', () => {
     expect(FakeChart.last.display).toEqual(['legend:false', 'countdown:false', 'values:false']);
   });
 
-  it('goes to the date typed in the popover, read in the display timezone', () => {
+  const field = (name: string) => document.querySelector<HTMLInputElement>(`.tcw-goto [data-field="${name}"]`);
+  const goForm = () => document.querySelector<HTMLFormElement>('form.tcw-goto-form')!;
+
+  it('goes to the date typed in the dialog, read in the display timezone', () => {
     make();
     FakeChart.last.data = [{ time: T_FIRST }, { time: T_LAST }];
     (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' }); // UTC, via the settings panel's handler
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
-    const [date, time] = [...host.querySelectorAll<HTMLInputElement>('.tcw-goto-input')];
-    expect([date.value, time.value]).toEqual(['2026-03-01', '12:00']); // starts at the last bar
-    date.value = '2026-02-10';
-    time.value = '08:30';
-    host.querySelector<HTMLFormElement>('form.tcw-goto')!.requestSubmit();
+    expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']); // starts at the last bar
+    field('date')!.value = '2026-02-10';
+    field('time')!.value = '08:30';
+    goForm().requestSubmit();
     expect(FakeChart.last.goTos).toEqual([Date.UTC(2026, 1, 10, 8, 30)]);
+  });
+
+  it('shows a custom range edge to edge, from the bars on screen to start with', () => {
+    make({ timeframe: '1h' });
+    const fake = FakeChart.last;
+    fake.data = [T_FIRST, Date.UTC(2026, 1, 1), Date.UTC(2026, 1, 20), T_LAST].map((time) => ({ time }));
+    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
+    // The bars on screen, as the chart draws them (a Renko chart's bricks, say).
+    fake.visibleTimes = { from: Date.UTC(2026, 1, 1), to: Date.UTC(2026, 1, 20) };
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    document.querySelector<HTMLButtonElement>('.tcw-goto [data-tab="range"]')!.click();
+    expect([field('fromDate')!.value, field('fromTime')!.value, field('toDate')!.value]).toEqual(['2026-02-01', '00:00', '2026-02-20']);
+    field('fromDate')!.value = '2026-01-05';
+    field('toTime')!.value = '06:00';
+    goForm().requestSubmit();
+    expect(fake.ranges).toEqual([[Date.UTC(2026, 0, 5), Date.UTC(2026, 1, 20, 6)]]);
+  });
+
+  it('goes to a date on bars timed in seconds', () => {
+    make();
+    FakeChart.last.data = [{ time: T_FIRST / 1000 }, { time: T_LAST / 1000 }];
+    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']);
+    field('date')!.value = '2026-02-10';
+    field('time')!.value = '08:30';
+    goForm().requestSubmit();
+    expect(FakeChart.last.goTos).toEqual([Date.UTC(2026, 1, 10, 8, 30) / 1000]);
+  });
+
+  it('asks for no time on a daily chart', () => {
+    make({ timeframe: '1d' });
+    FakeChart.last.data = [{ time: T_LAST }];
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    expect(field('date')).not.toBeNull();
+    expect(field('time')).toBeNull();
   });
 
   it('starts from the host’s time zone and left scale, and Reset keeps them', () => {
@@ -293,15 +335,14 @@ describe('ChartWidget range bar', () => {
     make({ chartOptions: { timeZone: 0 } });
     FakeChart.last.data = [{ time: T_LAST }];
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
-    const [date, time] = [...host.querySelectorAll<HTMLInputElement>('.tcw-goto-input')];
-    expect([date.value, time.value]).toEqual(['2026-03-01', '12:00']);
+    expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']);
   });
 
   it('opens with Alt+G', () => {
     make();
     FakeChart.last.data = [{ time: T_LAST }];
     document.dispatchEvent(new KeyboardEvent('keydown', { key: '©', code: 'KeyG', altKey: true }));
-    expect(host.querySelector('.tcw-goto')).not.toBeNull();
+    expect(document.querySelector('.tcw-goto')).not.toBeNull();
   });
 
   it('can be left out', () => {
@@ -420,14 +461,16 @@ describe('ChartWidget overlays and shortcuts', () => {
     }
   });
 
-  it('closes the go-to popover from the button that opened it', () => {
+  it('closes the go-to dialog on Escape, focus back on the button that opened it', () => {
     make();
     FakeChart.last.data = [{ time: Date.UTC(2026, 0, 1) }];
     const btn = host.querySelector<HTMLButtonElement>('[data-role="goto"]')!;
+    btn.focus();
     btn.click();
-    expect(host.querySelector('.tcw-goto')).not.toBeNull();
-    btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    btn.click();
-    expect(host.querySelector('.tcw-goto')).toBeNull();
+    const date = document.querySelector<HTMLInputElement>('.tcw-goto [data-field="date"]')!;
+    expect(document.activeElement).toBe(date);
+    date.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(document.querySelector('.tcw-goto')).toBeNull();
+    expect(document.activeElement).toBe(btn);
   });
 });

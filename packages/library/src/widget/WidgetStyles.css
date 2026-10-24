@@ -682,25 +682,6 @@
   position: relative;
 }
 
-/* === Symbol search results: name and exchange === */
-
-.tcw-cmd-item-desc {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--tcw-text-muted);
-  font-size: var(--tcw-font-size-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tcw-cmd-item-meta {
-  flex-shrink: 0;
-  color: var(--tcw-text-dim);
-  font-size: var(--tcw-font-size-xs);
-  letter-spacing: 0.02em;
-}
-
 /* === History pill (older bars loading at the left edge) === */
 
 .tcw-history-pill {
@@ -1384,7 +1365,6 @@
   margin-bottom: calc(var(--tcw-tab-line) / -2);
   transition: color var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
   font-family: inherit;
-  text-transform: capitalize;
   letter-spacing: -0.005em;
 }
 
@@ -1718,76 +1698,6 @@
 
 .tcw-range-goto svg {
   display: block;
-}
-
-/* Go-to-date popover, anchored above the range bar */
-.tcw-goto {
-  position: absolute;
-  left: 10px;
-  bottom: 40px;
-  z-index: 40;
-  display: grid;
-  gap: 10px;
-  width: 232px;
-  padding: 14px;
-  background: var(--tcw-bg-elevated);
-  border: 1px solid var(--tcw-border);
-  border-radius: var(--tcw-menu-radius);
-  box-shadow: var(--tcw-menu-shadow);
-  color: var(--tcw-text);
-  font-size: var(--tcw-font-size-sm);
-}
-
-.tcw-goto-title {
-  font-weight: var(--tcw-weight-strong);
-  font-size: var(--tcw-font-size);
-}
-
-.tcw-goto-field {
-  display: grid;
-  gap: 4px;
-  color: var(--tcw-text-muted);
-  font-size: var(--tcw-font-size-xs);
-}
-
-.tcw-goto-input {
-  height: 30px;
-  padding: 0 8px;
-  font: inherit;
-  font-size: var(--tcw-font-size-sm);
-  color: var(--tcw-text);
-  background: var(--tcw-bg);
-  border: 1px solid var(--tcw-border);
-  border-radius: var(--tcw-input-radius);
-  color-scheme: dark;
-}
-
-.tcw-root[data-tcw-theme='light'] .tcw-goto-input {
-  color-scheme: light;
-}
-
-.tcw-goto-input:focus {
-  outline: none;
-  border-color: var(--tcw-accent);
-  box-shadow: 0 0 0 2px var(--tcw-accent-soft);
-}
-
-.tcw-goto-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.tcw-goto-submit {
-  background: var(--tcw-accent);
-  color: var(--tcw-accent-ink);
-  font-weight: var(--tcw-weight-strong);
-}
-
-.tcw-goto-submit:hover {
-  background: var(--tcw-accent);
-  color: var(--tcw-accent-ink);
-  filter: brightness(1.08);
 }
 
 .tcw-status-indicator {
@@ -2590,8 +2500,9 @@
     box-sizing: border-box;
     width: 100vw;
     max-width: 100vw;
-    max-height: 92vh;
-    max-height: 92dvh;
+    /* Less the on-screen keyboard: a sheet's top never goes above the screen. */
+    max-height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    max-height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
     border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
     border-bottom: none;
     /* Grab handle */
