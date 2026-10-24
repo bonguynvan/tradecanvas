@@ -177,7 +177,7 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 
 <h2>Phiếu đặt lệnh và bảng tài khoản (ChartWidget)</h2>
 <p>
-  Nút biên lai của widget mở bảng tài khoản bên dưới biểu đồ: các vị thế đang mở
+  Mục <strong>Tài khoản</strong> trong menu <strong>Giao dịch</strong> của thanh công cụ mở bảng tài khoản bên dưới biểu đồ: các vị thế đang mở
   kèm lãi/lỗ, các lệnh đang chờ, và các lần khớp từ trước đến giờ kèm lãi/lỗ (P&amp;L)
   đã chốt. Mỗi dòng có thể đóng, đảo chiều hoặc huỷ. <strong>Lệnh mới</strong> mở
   phiếu đặt lệnh: mua hoặc bán, lệnh thị trường, giới hạn hoặc dừng, khối lượng, giá, mức
@@ -187,6 +187,13 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   Khi đã đặt thị trường (<code>chart.setMarket</code>), phiếu còn giữ các mức giá theo bước giá
   của thị trường và giá đặt lệnh trong khoảng giá trần, giá sàn của ngày, bắt đầu với một lô, và trên một
   lô thì chỉ nhận lô chẵn (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
+</p>
+<p>
+  Phiếu ghi mã cạnh tiêu đề. Loại lệnh và hiệu lực là các lựa chọn trên một hàng (phím mũi tên chuyển
+  giữa chúng); nút − và + đổi khối lượng theo lô và giá theo bước giá của thị trường, còn giá lấy từ biểu đồ được làm
+  tròn theo bước đó. Dừng lỗ hay chốt lời khi bật sẽ ghi cách điểm vào bao nhiêu phần trăm và lãi hay lỗ bao nhiêu;
+  bên dưới, một tờ biên lai tóm tắt lệnh: giá trị, rủi ro, lợi nhuận và lời trên lỗ. Đổi giữa mua và bán vẫn giữ lệnh
+  chờ ở chỗ đã đặt (mua dừng trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

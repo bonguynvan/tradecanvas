@@ -1,5 +1,5 @@
 import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, tickBarCount, tzLabel } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
@@ -141,6 +141,9 @@ const PANEL_FEATURES = {
   dataWindow: 'dataWindow',
   symbolInfo: 'symbolInfo',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
+
+/** Money is written to the price step's decimals, but to no more than these. */
+const MONEY_DECIMALS = 2;
 
 /** The toolbar's button for a panel, where it has one. */
 const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo' };
@@ -1083,6 +1086,8 @@ export class ChartWidget {
           }));
         },
         formatPrice: (p) => this.formatAlertPrice(p),
+        formatAmount: (v) => this.formatMoney(v),
+        formatNumber: (v, d) => this.formatNumber(v, d),
       }, this.t);
       this.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.chart.closePositionIntent(id),
@@ -2600,7 +2605,15 @@ export class ChartWidget {
   private openOrderTicket(price?: number): void {
     if (!this.featureState.orderTicket) return;
     const data = this.chart.getData();
-    this.orderTicket?.open({ price, lastPrice: data.length > 0 ? data[data.length - 1].close : null, rules: this.orderRules() });
+    this.orderTicket?.open({
+      price,
+      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      rules: this.orderRules(),
+      symbol: this.state.symbol,
+      // − and + move a price by the market's step; a click on the chart lands between steps.
+      step: (p) => this.chart.getPriceStep(p),
+      round: (p) => this.chart.roundPrice(p),
+    });
   }
 
   /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
@@ -2612,6 +2625,7 @@ export class ChartWidget {
       roundPrice: stepped ? (p) => this.chart.roundPrice(p) : undefined,
       limits: this.chart.getPriceLimits(),
       lot: market.volumeUnit,
+      multiplier: market.contractMultiplier,
     };
   }
 
@@ -3432,6 +3446,21 @@ export class ChartWidget {
     const key = channel.slice(sep + 1);
     const v = this.chart.getIndicatorOutput(instanceId)?.series?.[data.length - 1]?.[key];
     return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  }
+
+  /**
+   * Money in the quote's units (a stop's risk, an order's value), in the
+   * number locale: to the decimals of the price step, two at most (a forex
+   * pip's five would be noise on money).
+   */
+  private formatMoney(value: number): string {
+    return this.formatNumber(value, Math.min(stepDecimals(this.chart.getPriceStep()), MONEY_DECIMALS));
+  }
+
+  /** A plain figure to `decimals`, in the number locale. */
+  private formatNumber(value: number, decimals: number): string {
+    const locale = this.settingsState.numberLocale || undefined;
+    return value.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
   private formatAlertPrice(price: number): string {

@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### The order ticket
+
+The order ticket and the Trade menu in the Print look, the second part of the trading round.
+
+- **The ticket** is a dialog 480 wide that names the symbol beside its title. Buy and Sell are two large buttons, the chosen one filled with its colour. The type (market, limit, stop) and the time in force are choices in a row, moved through with the arrow keys, not selects.
+- **− and +** beside the quantity and the prices (and the arrow keys in them) move them on a grid: a price by the market's step (the chart's `getPriceStep`; going down from a band's edge, by the band below), a quantity by a lot, or else by its own last digit (0.5 by 0.1). A value between steps lands on the next one; − stops at one step. A price from the chart starts rounded to that step and is written to its decimals: a click on the chart filled the price with a raw float (`75997.2844890925`). What is typed stays as typed, and is what Place sends.
+- A **stop-loss or take-profit**, switched on, starts 1% or 2% from the entry as it is then, rounded as the chart rounds, and says under its name how far it is in percent and what it would make or lose for the quantity.
+- **A receipt** under them sums the order up: its value, its risk, its reward and reward to risk, in the chart's mono type, money to the decimals of the price step (two at most) in the number locale, a futures contract's points times its multiplier (`contractMultiplier`). A stop or a target on the wrong side of the entry sums to nothing.
+- Switching between buy and sell keeps a waiting order where it was put: a buy stop over the market becomes a sell limit (it showed an error). Place takes the side's colour; a market order's price row shows the market's price now. On a phone the ticket is a sheet above the keyboard.
+- **The Trade menu** sets the panels (depth ladder, account) apart from the orders and brackets with a rule.
+- On a phone the layouts dialog takes the sheet's whole width (it kept 480 px between 481 and 640 px).
+- Six new strings in all 30 languages (the receipt's four, the −/+ buttons' names); `ticket.riskReward` is gone.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.42.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.24.
+
 ### Orders and positions on the chart
 
 The trading lines in the Print look, the first part of the trading round.
@@ -23,8 +42,6 @@ The trading lines in the Print look, the first part of the trading round.
 
 - **The watchlist opens when asked**: ChartWidget no longer opens it by itself on a widget 987 px wide or more. Every panel starts shut, on the rail; `widget.openPanel('watchlist')` opens one from code.
 - **`MockAdapter`** ends its history on the timeframe's grid, so its ticks build the newest bar from the start: for up to a bar's length they were dropped, the price line moving while the bars stood still (and a host reading `getData()` saw a stale close). The forming bar keeps its open and grows its range.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.41.0 (2026-10-24)
 

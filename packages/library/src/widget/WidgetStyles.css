@@ -1608,6 +1608,8 @@
   background: var(--tcw-accent-hover);
 }
 
+.tcw-done-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .tcw-done-btn:active {
   transform: translateY(0.5px);
 }
@@ -3584,40 +3586,6 @@
 @media (max-width: 640px) {
   .tcw-account { height: 45vh; height: 45dvh; }
 }
-
-/* --- Order ticket --- */
-.tcw-ticket-side {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.tcw-ticket-side-btn {
-  padding: 8px;
-  border: 1px solid var(--tcw-border);
-  border-radius: var(--tcw-control-radius);
-  background: transparent;
-  color: var(--tcw-text-muted);
-  font: inherit;
-  font-weight: var(--tcw-weight-strong);
-  cursor: pointer;
-}
-.tcw-ticket-buy[aria-pressed="true"] { background: var(--tcw-green-soft); border-color: var(--tcw-green); color: var(--tcw-green); }
-.tcw-ticket-sell[aria-pressed="true"] { background: var(--tcw-red-soft); border-color: var(--tcw-red); color: var(--tcw-red); }
-.tcw-ticket-side-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
-.tcw-ticket-optional { display: flex; align-items: center; gap: 8px; }
-.tcw-ticket-optional > span { flex: 1; }
-.tcw-ticket-optional .tcw-indi-input { width: 110px; }
-.tcw-ticket-problems {
-  min-height: 18px;
-  padding: 0 22px 8px;
-  font-size: var(--tcw-font-size-sm);
-  color: var(--tcw-text-dim);
-}
-.tcw-ticket-problems p { margin: 2px 0; }
-.tcw-ticket-problems.tcw-ticket-bad { color: var(--tcw-red); }
-.tcw-done-btn.tcw-ticket-sell { background: var(--tcw-red); color: #fff; }
-.tcw-done-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* --- Named layouts --- */
 .tcw-layouts-btn { max-width: 190px; }
