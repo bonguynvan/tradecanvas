@@ -29,8 +29,6 @@ export interface DockOptions {
   saveWidth?: (width: number) => void;
   /** After a page opened, or the dock shut (null). */
   onChange?: (page: string | null) => void;
-  /** A press on a rail button (a choice of the user's), before it opens or shuts its page. */
-  onPick?: (page: string) => void;
   /** Whether the rail shows now (not on a phone, not switched off). */
   railShown?: () => boolean;
   /** Where the keyboard goes when the dock shuts and the page's rail button is out of sight. */
@@ -139,7 +137,6 @@ export class WidgetDock {
     button.innerHTML = createIcon(page.icon, 18);
     if (page.parts?.length) markPart(button, ...page.parts);
     button.addEventListener('click', () => {
-      this.options.onPick?.(page.id);
       this.toggle(page.id);
     });
     button.addEventListener('focus', () => this.rove(button));

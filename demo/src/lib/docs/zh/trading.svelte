@@ -31,27 +31,36 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>持仓</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  每条线在右端、靠近价格轴处有一个标签。开仓价的标签显示数量、方向和浮动盈亏，随后是 <strong>⇅</strong> 和
+  <strong>×</strong>；止损和止盈的标签显示价格到达那里时持仓的盈亏。每个价格也都标在价格轴上。会互相遮挡的标签并排显示，
+  轴上的价格标签也会自动错开。拖动止损或止盈的线或其标签即可修改。
+</p>
 
 <h2>订单</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  线上的标签写明订单类型和数量（<code>LIMIT 0.25</code>）；它在价格轴上的标签显示价格，写法与坐标轴一致。拖动价格线即可修改订单；通过
+  订单的标签显示数量和类型（<code>0.25</code>、<code>Sell limit</code>），随后是用于撤单的 <strong>×</strong>；
+  它在价格轴上的标签显示价格，写法与坐标轴一致。带止损和止盈开仓的订单会用点线显示它们，并标出到达时的盈亏。拖动线或其标签即可修改订单；通过
   <code>chart.on('orderModify', ...)</code> 订阅修改事件。
 </p>
 
@@ -92,7 +101,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   能一步完成反手的适配器可实现 <code>reversePosition</code>；
   若未实现，图表会先平仓，再按相反方向发送一笔市价单。
@@ -276,12 +285,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>持仓标签占位符</h2>
 <p>
-  自定义每个持仓在图表上的标签。<code>positionLabel</code> 接受一个
+  按你的方式书写持仓标签：<code>positionLabel</code> 取代数量之后的方向和盈亏。它接受一个
   模板字符串，或一个返回字符串的函数。
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -292,11 +300,14 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>盈亏渐变色阶</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  标签上的浮动盈亏和到当前价格的色带，取 <code>pnl</code> 不超过持仓盈亏（以金额计）的最高色阶的颜色。
+</p>

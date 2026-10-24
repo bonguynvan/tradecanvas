@@ -466,8 +466,8 @@ widget.destroy()`}</code></pre>
 <p>
   Các bảng của widget nằm cạnh biểu đồ, mỗi lúc một bảng, và mở từ dải nút ở mép ngoài (bên trái khi widget đảo
   chiều từ phải sang trái). Bấm một nút trên dải thì bảng của nó mở ra, hoặc đóng lại nếu đó là bảng đang mở; nút
-  đóng trên mỗi bảng cũng đóng bảng đó. Khi widget rộng từ 987 px trở lên, danh mục theo dõi tự mở, cho tới khi bạn tự
-  mở hay đóng một bảng. Kéo mép bảng, hoặc dùng các phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu
+  đóng trên mỗi bảng cũng đóng bảng đó. Không bảng nào tự mở: biểu đồ giữ toàn bộ chỗ cho tới khi có bảng được gọi
+  (<code>widget.openPanel('watchlist')</code> mở một bảng từ code của bạn). Kéo mép bảng, hoặc dùng các phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu
   296), được giữ lại trên trình duyệt này; bảng không bao giờ chiếm quá 38,2% hàng, phần còn lại dành cho biểu đồ.
 </p>
 <p>

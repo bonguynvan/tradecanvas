@@ -18,7 +18,7 @@ export class TradingRenderer {
   }
 
   /** Where the axis badges sit, for the scale and other tags to keep clear of. */
-  axisTagYs(viewport: ViewportState): number[] {
-    return this.manager.axisTagYs(viewport);
+  axisTagYs(viewport: ViewportState, theme?: Theme): number[] {
+    return this.manager.axisTagYs(viewport, theme);
   }
 }

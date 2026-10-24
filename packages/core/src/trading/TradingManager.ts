@@ -9,7 +9,7 @@ import type {
   Point,
   FillEvent,
 } from '@tradecanvas/commons';
-import { DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
+import { DARK_THEME, DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
 import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { OrderRenderer } from './OrderRenderer.js';
@@ -21,6 +21,8 @@ import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
 import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
+import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox } from './tradingTags.js';
+import { clampToPlot } from './plot.js';
 
 /** Most fills kept for their marks; the oldest go first. */
 const MAX_FILLS = 1000;
@@ -43,6 +45,10 @@ export class TradingManager {
   private orderDraft = new OrderDraftTool();
   /** The buttons on the lines as last drawn, for clicks and the cursor. */
   private buttons: LineButton[] = [];
+  /** The tags that take their line when pressed, as last drawn. */
+  private tagBoxes: TagBox[] = [];
+  /** A press on a tag drags its line: how far the line sits from the pointer. */
+  private grabOffset = 0;
   private fills: FillEvent[] = [];
   private realisedPnl = 0;
 
@@ -228,6 +234,7 @@ export class TradingManager {
   /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
   isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
     if (!this.config.enabled) return false;
+    if (tagAt(this.tagBoxes, pos.x, pos.y) && !buttonAt(this.buttons, pos)) return true;
     const near = (price: number | undefined) => {
       if (price === undefined) return false;
       const y = priceToY(price, viewport);
@@ -250,6 +257,14 @@ export class TradingManager {
    */
   onPointerDown(pos: Point, viewport: ViewportState, reach?: Pick<PointerReach, 'handle' | 'order' | 'button'>): boolean {
     if (!this.config.enabled) return false;
+    // A button on a tag acts; anywhere else on a tag takes its own line, whatever line is nearer.
+    const button = buttonAt(this.buttons, pos, reach?.button);
+    const tag = button ? null : tagAt(this.tagBoxes, pos.x, pos.y);
+    if (tag && this.grabTag(tag, pos)) {
+      this.requestRender?.();
+      return true;
+    }
+    this.grabOffset = 0;
     // Bracket handles take priority over order/position drags while placing.
     if (this.bracket.isActive() && this.bracket.beginDrag(pos, viewport, reach?.handle)) {
       this.requestRender?.();
@@ -260,7 +275,6 @@ export class TradingManager {
       return true;
     }
     // A button on a line before the line itself (an SL line is draggable too).
-    const button = buttonAt(this.buttons, pos, reach?.button);
     if (button) {
       this.armed = button.action;
       return true;
@@ -268,8 +282,30 @@ export class TradingManager {
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, reach?.order ?? 8);
   }
 
-  onPointerMove(pos: Point, viewport: ViewportState): boolean {
+  /** Start dragging the line `tag` is on, the line keeping its distance from the pointer at `pos`. */
+  private grabTag(tag: TagBox, pos: Point): boolean {
+    this.grabOffset = tag.lineY - pos.y;
+    const grab = tag.grab;
+    switch (grab.kind) {
+      case 'bracket':
+        return this.bracket.beginDragOn(grab.handle);
+      case 'draft':
+        return this.orderDraft.beginDragOn();
+      case 'order': {
+        const order = this.orders.find((o) => o.id === grab.orderId);
+        return order !== undefined && this.dragHandler.beginOrder(order, tag.lineY);
+      }
+      case 'stop': {
+        const position = this.positions.find((p) => p.id === grab.positionId);
+        return position !== undefined && this.dragHandler.beginStop(position, grab.which, tag.lineY);
+      }
+    }
+  }
+
+  onPointerMove(pointer: Point, viewport: ViewportState): boolean {
     if (this.armed) return true;
+    // Dragged by its tag, the line keeps its distance from the pointer, and stays on the plot.
+    const pos = this.grabOffset === 0 ? pointer : { x: pointer.x, y: clampToPlot(pointer.y + this.grabOffset, viewport) };
     if (this.bracket.isDragging()) {
       const consumed = this.bracket.drag(pos, viewport);
       if (consumed) this.requestRender?.();
@@ -288,6 +324,7 @@ export class TradingManager {
 
   /** End a press; `pos` is where it ended (none when the pointer left: a pressed button does nothing). */
   onPointerUp(pos?: Point): boolean {
+    this.grabOffset = 0;
     if (this.armed) {
       const action = this.armed;
       this.armed = null;
@@ -331,6 +368,7 @@ export class TradingManager {
    * button does nothing, and nothing is reported. True when there was one.
    */
   cancelPointer(): boolean {
+    this.grabOffset = 0;
     let had = false;
     if (this.armed) {
       this.armed = null;
@@ -360,6 +398,7 @@ export class TradingManager {
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     this.buttons = [];
+    this.tagBoxes = [];
     if (!this.config.enabled) return;
     // Lines priced off the plot would otherwise paint over the time axis and
     // the panes below; restored even if a host callback (a label) throws.
@@ -385,25 +424,21 @@ export class TradingManager {
 
     if (config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, config);
 
-    // Positions (middle)
-    if (this.positions.length > 0) {
-      this.positionRenderer.render(ctx, this.positions, this.currentPrice, viewport, theme, config, this.buttons);
-    }
-
-    // Orders (front)
-    if (this.orders.length > 0) {
-      this.orderRenderer.render(ctx, this.orders, viewport, theme, config, this.dragHandler.getDragState(), this.buttons);
-    }
-
-    // Bracket placement preview (frontmost)
-    if (this.bracket.isActive()) {
-      this.bracket.render(ctx, viewport, theme, this.config.pricePrecision);
-    }
-
-    // Single-order draft preview
-    if (this.orderDraft.isActive()) {
-      this.orderDraft.render(ctx, viewport, theme, this.currentPrice, this.config.pricePrecision);
-    }
+    // Every line first, then every tag over them, laid out together so none
+    // covers another. The tags laid out first keep the axis end: what is
+    // being placed, then positions, then orders.
+    const drag = this.dragHandler.getDragState();
+    this.positionRenderer.renderLines(ctx, this.positions, this.currentPrice, viewport, config, drag);
+    this.orderRenderer.renderLines(ctx, this.orders, viewport, config, drag);
+    this.bracket.renderLines(ctx, viewport, theme);
+    this.orderDraft.renderLines(ctx, viewport, theme);
+    const tags = [
+      ...this.bracket.tags(viewport, theme),
+      ...this.orderDraft.tags(viewport, theme, this.currentPrice),
+      ...this.positionRenderer.tags(this.positions, this.currentPrice, viewport, config, drag),
+      ...this.orderRenderer.tags(this.orders, viewport, config, drag),
+    ];
+    drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes);
   }
 
   /**
@@ -412,26 +447,29 @@ export class TradingManager {
    */
   renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (!this.config.enabled) return;
-    const config = tradingConfigFor(this.config, theme);
-    if (this.positions.length > 0) {
-      this.positionRenderer.renderAxisBadges(ctx, this.positions, viewport, theme, config);
-    }
-    if (this.orders.length > 0) {
-      this.orderRenderer.renderAxisBadges(ctx, this.orders, viewport, theme, config, this.dragHandler.getDragState());
+    for (const badge of spreadAxisBadges(this.axisBadges(viewport, theme), viewport)) {
+      drawAxisBadge(ctx, badge.at, badge.text, badge.color, viewport, theme);
     }
   }
 
-  /** Where the axis badges sit (entries and orders on the plot), for the scale to keep clear of. */
-  axisTagYs(viewport: ViewportState): number[] {
+  /** Every price the lines put on the axis, where their lines are. */
+  private axisBadges(viewport: ViewportState, theme: Theme): AxisBadge[] {
+    const config = tradingConfigFor(this.config, theme);
+    return [
+      ...this.positionRenderer.axisBadges(this.positions, viewport, config, this.dragHandler.getDragState()),
+      ...this.orderRenderer.axisBadges(this.orders, viewport, config, this.dragHandler.getDragState()),
+      ...this.bracket.axisBadges(viewport, theme, this.config.pricePrecision),
+      ...this.orderDraft.axisBadges(viewport, theme, this.config.pricePrecision),
+    ];
+  }
+
+  /**
+   * Where the axis badges sit (top to bottom), for the scale to keep clear
+   * of. The theme colours them; where they sit is the same in any.
+   */
+  axisTagYs(viewport: ViewportState, theme: Theme = DARK_THEME): number[] {
     if (!this.config.enabled) return [];
-    const drag = this.dragHandler.getDragState();
-    const ys = this.positions.map((p) => priceToY(p.entryPrice, viewport));
-    for (const o of this.orders) {
-      const price = drag?.orderId === o.id && drag.sourceType === 'order' ? drag.currentPrice : o.price;
-      ys.push(priceToY(price, viewport));
-    }
-    const { chartRect } = viewport;
-    return ys.filter((y) => y >= chartRect.y && y <= chartRect.y + chartRect.height);
+    return spreadAxisBadges(this.axisBadges(viewport, theme), viewport).map((b) => b.at);
   }
 
   destroy(): void {

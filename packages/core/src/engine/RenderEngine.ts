@@ -4,7 +4,7 @@ import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleM
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
 import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
-import { renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
+import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
@@ -562,7 +562,7 @@ export class RenderEngine {
       if (onPlot && ctx.barCountdown?.isShown(data)) tags.push({ y: y + 10 + COUNTDOWN_HEIGHT / 2, half: COUNTDOWN_HEIGHT / 2 });
     }
     for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
-    for (const y of ctx.tradingRenderer?.axisTagYs(viewport) ?? []) tags.push({ y, half: 9 });
+    for (const y of ctx.tradingRenderer?.axisTagYs(viewport, ctx.theme) ?? []) tags.push({ y, half: AXIS_LABEL_HEIGHT / 2 });
     return tags.filter((t) => t.y >= chartRect.y && t.y <= chartRect.y + chartRect.height);
   }
 

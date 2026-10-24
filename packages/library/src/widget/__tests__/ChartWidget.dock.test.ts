@@ -122,13 +122,15 @@ const visible = (el: Element | null) => !!el && getComputedStyle(el).display !==
 const toolbarButton = (part: string) => host.querySelector<HTMLButtonElement>(`.tcw-toolbar [data-tcw-part~="${part}"]`)!;
 
 describe('ChartWidget dock', () => {
-  it('docks the panels by the chart, a rail button for each, the watchlist open to start with', () => {
+  it('docks the panels by the chart, a rail button for each, all shut until one is opened', () => {
     make({ watchlist: true });
     const body = host.querySelector('.tcw-body')!;
     const order = [...body.children].map((el) => el.className.split(' ')[0]);
     expect(order.indexOf('tcw-chart-container')).toBeLessThan(order.indexOf('tcw-dock'));
     expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo']);
-    expect(visible(panel())).toBe(true);
+    expect(panel().hidden).toBe(true);
+    expect(railButton('watchlist').getAttribute('aria-pressed')).toBe('false');
+    widget.openPanel('watchlist');
     expect(visible(inPanel('.tcw-watchlist'))).toBe(true);
     expect(railButton('watchlist').getAttribute('aria-pressed')).toBe('true');
   });
@@ -143,25 +145,21 @@ describe('ChartWidget dock', () => {
     expect(visible(inPanel('.tcw-alerts-panel'))).toBe(true);
   });
 
-  it('opens the watchlist to start with only where the chart keeps its room: 987 px or more', () => {
-    width = 900;
+  it('opens no panel by itself, however wide: the host opens the one it wants', () => {
+    width = 1920;
     make({ watchlist: true });
-    expect(panel().hidden).toBe(true);
-    resize(1200);
-    expect(widget.getOpenPanel()).toBe('watchlist');
+    expect(widget.getOpenPanel()).toBeNull();
+    resize(2560);
+    expect(widget.getOpenPanel()).toBeNull();
   });
 
-  it('shuts any panel on going narrow, even one picked, and brings the watchlist back only if none was', () => {
+  it('shuts any panel on going narrow, and opens none on going wide again', () => {
     make({ watchlist: true });
+    widget.openPanel('watchlist');
     resize(390);
     expect(panel().hidden).toBe(true);
     resize(1366);
-    expect(widget.getOpenPanel()).toBe('watchlist');
-    railButton('alerts').click();
-    resize(390);
-    expect(panel().hidden).toBe(true);
-    resize(1366);
-    expect(panel().hidden).toBe(true);
+    expect(widget.getOpenPanel()).toBeNull();
   });
 
   it('on a phone, gives the keyboard to "more" when a panel opened from it shuts', () => {

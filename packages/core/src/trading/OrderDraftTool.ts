@@ -8,7 +8,9 @@ import type {
 } from '@tradecanvas/commons';
 import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { fillTag } from '../ui/shapes.js';
+import { inPlot, levelLine } from './plot.js';
+import { orderKindText } from './OrderRenderer.js';
+import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
 
 export interface OrderDraft {
   side: OrderSide;
@@ -32,6 +34,8 @@ export function inferOrderType(
 }
 
 const HANDLE_TOLERANCE = 6;
+/** The draft's line: dashed, as an order's. */
+const DRAFT_DASH = [6, 3];
 
 /**
  * In-progress single-order placement: one draggable price line whose order type
@@ -91,7 +95,12 @@ export class OrderDraftTool {
   }
 
   beginDrag(pos: Point, viewport: ViewportState, tolerance?: number): boolean {
-    if (!this.hitTest(pos, viewport, tolerance)) return false;
+    return this.hitTest(pos, viewport, tolerance) && this.beginDragOn();
+  }
+
+  /** Drag the line, pressed by its tag. */
+  beginDragOn(): boolean {
+    if (!this.draft) return false;
     this.dragging = true;
     this.dragStart = this.draft;
     return true;
@@ -114,76 +123,59 @@ export class OrderDraftTool {
     this.dragStart = null;
   }
 
+  /** The line and its tag (`pricePrecision` is for the axis badge, drawn apart). */
   render(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
     theme: Theme,
     marketPrice: number | null,
-    pricePrecision?: number,
+    _pricePrecision?: number,
   ): void {
+    this.renderLines(ctx, viewport, theme);
+    drawTags(ctx, this.tags(viewport, theme, marketPrice), viewport, theme, []);
+  }
+
+  /** The draft's line, dashed as an order's. */
+  renderLines(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const d = this.draft;
     if (!d) return;
-    const { chartRect } = viewport;
-    const x0 = chartRect.x;
-    const x1 = chartRect.x + chartRect.width;
-    const y = priceToY(d.price, viewport);
-    const type = inferOrderType(d.side, d.price, marketPrice);
-    // As the order will draw: the style keys' colours, else the candles'.
-    const color = d.side === 'buy' ? theme.style?.trading.buy ?? theme.candleUp : theme.style?.trading.sell ?? theme.candleDown;
-
     ctx.save();
-    drawHLine(ctx, x0, x1, y, color, [6, 3]);
-    const sideLabel = d.side === 'buy' ? 'BUY' : 'SELL';
-    priceTag(
-      ctx,
-      x0 + 6,
-      y,
-      `${sideLabel} ${type.toUpperCase()} ${priceTagText(d.price, viewport, pricePrecision)}`,
-      color,
-      theme,
-    );
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(x1 - 6, y, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+    levelLine(ctx, viewport, priceToY(d.price, viewport), draftColor(d.side, theme), DRAFT_DASH);
     ctx.restore();
+  }
+
+  /** Its tag, a handle for the line: the quantity, then the order it will be ("Buy limit"). */
+  tags(viewport: ViewportState, theme: Theme, marketPrice: number | null): TradingTag[] {
+    const d = this.draft;
+    if (!d) return [];
+    const y = priceToY(d.price, viewport);
+    if (!inPlot(y, viewport)) return [];
+    const type = inferOrderType(d.side, d.price, marketPrice);
+    return [{
+      y,
+      color: draftColor(d.side, theme),
+      grab: { kind: 'draft' },
+      cells: [{ kind: 'stamp', text: String(d.quantity) }, { kind: 'text', text: orderKindText({ side: d.side, type }) }],
+    }];
+  }
+
+  /** Its price on the price axis. */
+  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision?: number): void {
+    for (const badge of this.axisBadges(viewport, theme, pricePrecision)) {
+      drawAxisBadge(ctx, badge.y, badge.text, badge.color, viewport, theme);
+    }
+  }
+
+  /** The price it puts on the axis (on the plot). */
+  axisBadges(viewport: ViewportState, theme: Theme, pricePrecision?: number): AxisBadge[] {
+    const d = this.draft;
+    if (!d) return [];
+    const y = priceToY(d.price, viewport);
+    return inPlot(y, viewport) ? [{ y, text: priceTagText(d.price, viewport, pricePrecision), color: draftColor(d.side, theme) }] : [];
   }
 }
 
-function drawHLine(
-  ctx: CanvasRenderingContext2D,
-  x0: number,
-  x1: number,
-  y: number,
-  color: string,
-  dash: number[],
-): void {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
-  ctx.setLineDash(dash);
-  ctx.beginPath();
-  ctx.moveTo(x0, Math.round(y) + 0.5);
-  ctx.lineTo(x1, Math.round(y) + 0.5);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function priceTag(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  text: string,
-  color: string,
-  theme: Theme,
-): void {
-  ctx.font = '600 10px system-ui, sans-serif';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  const w = ctx.measureText(text).width;
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = theme.background;
-  fillTag(ctx, x - 3, y - 8, w + 6, 16, theme);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y + 0.5);
+/** As the order will draw: the style keys' colours, else the candles'. */
+function draftColor(side: OrderSide, theme: Theme): string {
+  return side === 'buy' ? theme.style?.trading.buy ?? theme.candleUp : theme.style?.trading.sell ?? theme.candleDown;
 }

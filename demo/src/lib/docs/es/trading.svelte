@@ -32,29 +32,40 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>Posiciones</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  Cada línea lleva una etiqueta en su extremo derecho, junto al eje de precio. La de la entrada da la
+  cantidad, el lado y la ganancia o pérdida abierta, y luego <strong>⇅</strong> y <strong>×</strong>; las del stop y
+  el objetivo dicen cuánto ganaría o perdería la posición allí. Cada precio figura también en el eje. Las etiquetas
+  que se taparían se ponen una al lado de otra, y las del eje se separan. Arrastra un stop o un objetivo por su línea
+  o por su etiqueta.
+</p>
 
 <h2>Órdenes</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  La etiqueta de la línea indica el tipo y la cantidad de la orden (<code>LIMIT 0.25</code>); su etiqueta en el eje de precio
-  lleva el precio, escrito como lo escribe el eje. Arrastra la línea de precio para modificarla; suscríbete con
-  <code>chart.on('orderModify', ...)</code>.
+  La etiqueta de la orden da su cantidad y su tipo (<code>0.25</code>, <code>Sell limit</code>), y luego
+  <strong>×</strong> para cancelarla; su etiqueta en el eje de precio lleva el precio, escrito como lo escribe el eje.
+  Una orden que abre con stop y objetivo los muestra como líneas punteadas, con lo que darían. Arrastra la línea, o su
+  etiqueta, para modificarla; suscríbete con <code>chart.on('orderModify', ...)</code>.
 </p>
 
 <h2>Ejecución en vivo (conecta un adaptador)</h2>
@@ -99,7 +110,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   Un adaptador que pueda invertir en un solo paso implementa
   <code>reversePosition</code>; si no lo hace, el gráfico cierra la posición y envía
@@ -308,12 +319,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>Tokens de la etiqueta de posición</h2>
 <p>
-  Personaliza la etiqueta de cada posición en el gráfico. <code>positionLabel</code>
-  acepta una cadena de plantilla o una función que devuelva una cadena.
+  Escribe la etiqueta de una posición a tu manera: <code>positionLabel</code> ocupa el lugar del lado y la
+  ganancia tras su cantidad. Acepta una cadena de plantilla o una función que devuelva una cadena.
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -324,11 +334,15 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>Puntos del degradado de P&amp;L</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  La ganancia abierta de la etiqueta y la banda hasta el precio toman el color del punto más alto cuyo
+  <code>pnl</code> no supera la ganancia o pérdida de la posición, en dinero.
+</p>

@@ -1,7 +1,8 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { fillTag } from '../ui/shapes.js';
+import { inPlot, levelLine } from './plot.js';
+import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
 
 export type BracketHandle = 'entry' | 'sl' | 'tp';
 
@@ -47,6 +48,10 @@ export function bracketRiskReward(draft: BracketDraft): number {
 }
 
 const HANDLE_TOLERANCE = 6;
+/** How strongly the reward and risk zones tint the plot. */
+const ZONE_ALPHA = 0.12;
+/** The entry's line: dashed, as a price not yet traded. */
+const ENTRY_DASH = [6, 3];
 
 /**
  * In-progress bracket-order placement: an entry line plus draggable stop-loss
@@ -101,7 +106,12 @@ export class BracketTool {
 
   beginDrag(pos: Point, viewport: ViewportState, tolerance?: number): boolean {
     const handle = this.hitTest(pos, viewport, tolerance);
-    if (!handle) return false;
+    return handle !== null && this.beginDragOn(handle);
+  }
+
+  /** Drag `handle`, pressed by its tag: by which it is, whatever line is nearer. */
+  beginDragOn(handle: BracketHandle): boolean {
+    if (!this.draft) return false;
     this.dragging = handle;
     this.dragStart = this.draft;
     return true;
@@ -135,52 +145,89 @@ export class BracketTool {
     return handle === 'entry' ? d.entry : handle === 'sl' ? d.stopLoss : d.takeProfit;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision?: number): void {
+  /** The zones, the lines and their tags (`pricePrecision` is for the axis badges, drawn apart). */
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, _pricePrecision?: number): void {
+    this.renderLines(ctx, viewport, theme);
+    drawTags(ctx, this.tags(viewport, theme), viewport, theme, []);
+  }
+
+  /** The reward zone (entry to target) and the risk zone (entry to stop), and the three lines. */
+  renderLines(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     const d = this.draft;
     if (!d) return;
     const { chartRect } = viewport;
-    const x0 = chartRect.x;
-    const x1 = chartRect.x + chartRect.width;
     const yEntry = priceToY(d.entry, viewport);
     const ySl = priceToY(d.stopLoss, viewport);
     const yTp = priceToY(d.takeProfit, viewport);
-
-    // As the positions will draw: the style keys' colours, else the candles'.
-    const profit = theme.style?.trading.profit ?? theme.candleUp;
-    const loss = theme.style?.trading.loss ?? theme.candleDown;
-
+    const { profit, loss } = bracketColors(theme);
     ctx.save();
-
-    // Reward zone (entry → TP) and risk zone (entry → SL), translucent.
-    ctx.globalAlpha = 0.12;
+    ctx.globalAlpha = ZONE_ALPHA;
     ctx.fillStyle = profit;
-    ctx.fillRect(x0, Math.min(yEntry, yTp), chartRect.width, Math.abs(yTp - yEntry));
+    ctx.fillRect(chartRect.x, Math.min(yEntry, yTp), chartRect.width, Math.abs(yTp - yEntry));
     ctx.fillStyle = loss;
-    ctx.fillRect(x0, Math.min(yEntry, ySl), chartRect.width, Math.abs(ySl - yEntry));
+    ctx.fillRect(chartRect.x, Math.min(yEntry, ySl), chartRect.width, Math.abs(ySl - yEntry));
     ctx.globalAlpha = 1;
-
-    drawLine(ctx, x0, x1, yEntry, theme.text, [6, 3]);
-    drawLine(ctx, x0, x1, yTp, profit, []);
-    drawLine(ctx, x0, x1, ySl, loss, []);
-
-    const rr = bracketRiskReward(d);
-    const sideLabel = d.side === 'buy' ? 'LONG' : 'SHORT';
-    const fmt = (p: number) => priceTagText(p, viewport, pricePrecision);
-    label(ctx, x0 + 6, yEntry, `${sideLabel} entry ${fmt(d.entry)}`, theme.text, theme);
-    label(ctx, x0 + 6, yTp, `TP ${fmt(d.takeProfit)}  ·  ${rr.toFixed(2)}R`, profit, theme);
-    label(ctx, x0 + 6, ySl, `SL ${fmt(d.stopLoss)}`, loss, theme);
-
-    // Drag handles (small knobs at the right edge).
-    for (const [price, color] of [[d.entry, theme.text], [d.takeProfit, profit], [d.stopLoss, loss]] as const) {
-      const y = priceToY(price, viewport);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x1 - 6, y, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
+    levelLine(ctx, viewport, yEntry, theme.text, ENTRY_DASH);
+    levelLine(ctx, viewport, yTp, profit, []);
+    levelLine(ctx, viewport, ySl, loss, []);
     ctx.restore();
   }
+
+  /**
+   * The tags, each a handle for its line: the side and the reward to risk
+   * on the entry, how far away in percent on the target and the stop.
+   */
+  tags(viewport: ViewportState, theme: Theme): TradingTag[] {
+    const d = this.draft;
+    if (!d) return [];
+    const { profit, loss } = bracketColors(theme);
+    const direction = d.side === 'buy' ? 1 : -1;
+    const percent = (price: number) => {
+      const pct = d.entry === 0 ? 0 : ((price - d.entry) / d.entry) * 100 * direction;
+      return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+    };
+    const tags: TradingTag[] = [
+      { y: priceToY(d.entry, viewport), color: theme.text, grab: { kind: 'bracket', handle: 'entry' }, cells: [
+        { kind: 'stamp', text: d.side === 'buy' ? 'Long' : 'Short' },
+        { kind: 'text', text: `${bracketRiskReward(d).toFixed(2)}R` },
+      ] },
+      { y: priceToY(d.takeProfit, viewport), color: profit, grab: { kind: 'bracket', handle: 'tp' }, cells: [
+        { kind: 'stamp', text: 'TP' },
+        { kind: 'text', text: percent(d.takeProfit), color: profit },
+      ] },
+      { y: priceToY(d.stopLoss, viewport), color: loss, grab: { kind: 'bracket', handle: 'sl' }, cells: [
+        { kind: 'stamp', text: 'SL' },
+        { kind: 'text', text: percent(d.stopLoss), color: loss },
+      ] },
+    ];
+    // None for a line off the plot: it would show as a sliver at its edge.
+    return tags.filter((tag) => inPlot(tag.y, viewport));
+  }
+
+  /** The entry, the target and the stop on the price axis. */
+  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, pricePrecision?: number): void {
+    for (const badge of this.axisBadges(viewport, theme, pricePrecision)) {
+      drawAxisBadge(ctx, badge.y, badge.text, badge.color, viewport, theme);
+    }
+  }
+
+  /** The prices it puts on the axis (on the plot): the target, the stop, the entry. */
+  axisBadges(viewport: ViewportState, theme: Theme, pricePrecision?: number): AxisBadge[] {
+    const d = this.draft;
+    if (!d) return [];
+    const { profit, loss } = bracketColors(theme);
+    const badges: AxisBadge[] = [];
+    for (const [price, color] of [[d.takeProfit, profit], [d.stopLoss, loss], [d.entry, theme.text]] as const) {
+      const y = priceToY(price, viewport);
+      if (inPlot(y, viewport)) badges.push({ y, text: priceTagText(price, viewport, pricePrecision), color });
+    }
+    return badges;
+  }
+}
+
+/** As the positions will draw: the style keys' colours, else the candles'. */
+function bracketColors(theme: Theme): { profit: string; loss: string } {
+  return { profit: theme.style?.trading.profit ?? theme.candleUp, loss: theme.style?.trading.loss ?? theme.candleDown };
 }
 
 /** Move a handle to `price`, keeping SL/TP on the correct side of entry. */
@@ -202,28 +249,4 @@ function applyHandlePrice(draft: BracketDraft, handle: BracketHandle, price: num
   }
   const tp = isLong ? Math.max(price, draft.entry) : Math.min(price, draft.entry);
   return { ...draft, takeProfit: tp };
-}
-
-function drawLine(ctx: CanvasRenderingContext2D, x0: number, x1: number, y: number, color: string, dash: number[]): void {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
-  ctx.setLineDash(dash);
-  ctx.beginPath();
-  ctx.moveTo(x0, Math.round(y) + 0.5);
-  ctx.lineTo(x1, Math.round(y) + 0.5);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function label(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, color: string, theme: Theme): void {
-  ctx.font = '600 10px system-ui, sans-serif';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  const w = ctx.measureText(text).width;
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = theme.background;
-  fillTag(ctx, x - 3, y - 8, w + 6, 16, theme);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y + 0.5);
 }

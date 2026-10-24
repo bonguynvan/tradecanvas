@@ -79,6 +79,7 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   link: { d: 'M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2' }, // Sync
   arrowUp: { d: 'M12 19V5M6 11L12 5L18 11' }, // Move pane up
   arrowDown: { d: 'M12 5V19M6 13L12 19L18 13' }, // Move pane down
+  arrowUpDown: { d: 'M8.5 19V5M5 8.5L8.5 5L12 8.5M15.5 5V19M12 15.5L15.5 19L19 15.5' }, // Reverse a position
   more: { dots: [[6, 12, 1.6], [12, 12, 1.6], [18, 12, 1.6]] }, // More
   layoutGrid: { d: 'M5 4.5h4.5a.5.5 0 0 1 .5.5v4.5a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5zM14.5 4.5H19a.5.5 0 0 1 .5.5v4.5a.5.5 0 0 1-.5.5h-4.5a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5zM5 14h4.5a.5.5 0 0 1 .5.5V19a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5v-4.5A.5.5 0 0 1 5 14zM14.5 14H19a.5.5 0 0 1 .5.5V19a.5.5 0 0 1-.5.5h-4.5a.5.5 0 0 1-.5-.5v-4.5a.5.5 0 0 1 .5-.5z' }, // Chart layout
 };

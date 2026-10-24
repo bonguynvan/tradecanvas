@@ -48,6 +48,9 @@ export class MockAdapter implements DataAdapter {
   private currentPrice: number;
   /** Open of the oldest bar handed out per symbol, where its next older page ends. */
   private oldestOpen = new Map<string, number>();
+  /** The bar the ticks build on, and its timeframe: the history's newest, then each new one. */
+  private forming: OHLCBar | null = null;
+  private formingTimeframe: TimeFrame | null = null;
 
   constructor(options?: MockAdapterOptions) {
     this.options = {
@@ -147,6 +150,8 @@ export class MockAdapter implements DataAdapter {
       ? this.options.historyGenerator(symbol, timeframe, limit ?? this.options.historySize!)
       : this.generateHistory(timeframe, limit ?? this.options.historySize!);
     if (bars.length > 0) this.oldestOpen.set(symbol, bars[0].open);
+    this.forming = bars.length > 0 ? { ...bars[bars.length - 1] } : null;
+    this.formingTimeframe = timeframe;
     return bars;
   }
 
@@ -196,13 +201,14 @@ export class MockAdapter implements DataAdapter {
 
   private generateHistory(timeframe: TimeFrame, count: number): OHLCBar[] {
     const bars: OHLCBar[] = [];
-    const now = Date.now();
     const intervalMs = timeframeToMs(timeframe);
+    // On the timeframe's grid, as a feed's bars are: the newest is the one now forming.
+    const newest = Math.floor(Date.now() / intervalMs) * intervalMs;
     let price = this.options.basePrice!;
     const vol = this.options.volatility! / 100;
 
     for (let i = count - 1; i >= 0; i--) {
-      const time = now - i * intervalMs;
+      const time = newest - i * intervalMs;
       const change = (Math.random() - 0.48) * price * vol;
       const open = price;
       price += change;
@@ -228,24 +234,35 @@ export class MockAdapter implements DataAdapter {
       this.currentPrice += change;
 
       const now = Date.now();
-      const intervalMs = timeframeToMs(this.config.timeframe);
-      const barTime = Math.floor(now / intervalMs) * intervalMs;
-
-      const bar: OHLCBar = {
-        time: barTime,
-        open: this.currentPrice - change,
-        high: Math.max(this.currentPrice, this.currentPrice - change) + Math.abs(change) * 0.2,
-        low: Math.min(this.currentPrice, this.currentPrice - change) - Math.abs(change) * 0.2,
-        close: this.currentPrice,
-        volume: Math.floor(100 + Math.random() * 5000),
-      };
-
-      // Check if bar closed (crossed timeframe boundary)
-      const closed = false; // In mock, we mostly send forming bars
-
-      this.emitEvent('bar', { bar, closed });
+      const bar = this.tickBar(now, change, Math.floor(100 + Math.random() * 5000));
+      // A forming bar each tick; the next bar's time starts the next one.
+      this.emitEvent('bar', { bar, closed: false });
       this.emitEvent('tick', { time: now, price: this.currentPrice, volume: bar.volume });
     }, interval);
+  }
+
+  /**
+   * The forming bar after a tick moved the price by `change`: the bar of this
+   * moment carried on (its open kept, its range widened, its volume added),
+   * or a new one opening at the last close once its time has come.
+   */
+  private tickBar(now: number, change: number, volume: number): OHLCBar {
+    const timeframe = this.config!.timeframe;
+    const intervalMs = timeframeToMs(timeframe);
+    const time = Math.floor(now / intervalMs) * intervalMs;
+    const price = this.currentPrice;
+    const last = this.formingTimeframe === timeframe ? this.forming : null;
+    const wick = Math.abs(change) * 0.2;
+    let bar: OHLCBar;
+    if (last && last.time === time) {
+      bar = { time, open: last.open, high: Math.max(last.high, price + wick), low: Math.min(last.low, price - wick), close: price, volume: last.volume + volume };
+    } else {
+      const open = last?.close ?? price - change;
+      bar = { time, open, high: Math.max(open, price) + wick, low: Math.min(open, price) - wick, close: price, volume };
+    }
+    this.forming = bar;
+    this.formingTimeframe = timeframe;
+    return { ...bar };
   }
 
   private stopTicking(): void {

@@ -167,6 +167,9 @@ with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDraw
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
 `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+Positions and orders get a tag at the right end of their lines (quantity, side, open profit;
+what a stop or a target would make) with × and ⇅ (`setTradingConfig({ lineButtons })`), and
+their prices on the axis; a press on an order's, a stop's or a target's tag drags its line.
 
 ## Signals, trades and replay
 
