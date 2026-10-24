@@ -464,12 +464,13 @@ widget.destroy()`}</code></pre>
 <p>
   The widget's panels sit beside the chart, one at a time, opened from the rail at the outer edge (on the left in
   a right-to-left widget). A rail button opens its panel, or shuts it when it is the one open; so does each
-  panel's close button. The watchlist is open to start with, when there is one. Drag the panel's edge, or use the
-  arrow keys on it, for a width from 233 to 377 px (296 to start); the width is kept in this browser.
+  panel's close button. On a widget 987 px wide or more the watchlist opens by itself, until a panel is opened or
+  shut by hand. Drag the panel's edge, or use the arrow keys on it, for a width from 233 to 377 px (296 to start),
+  kept in this browser; it never takes more than 38.2% of the row, the chart keeping the rest.
 </p>
 <p>
   On a phone, or in a widget narrower than 641 px, there is no rail: a panel rises from the bottom over the chart,
-  and starts shut. Alerts and the object tree open from the toolbar there, the symbol info from the
+  starts shut and shuts on Escape; a panel open as the widget turns narrow (a tablet turned) shuts. Alerts and the object tree open from the toolbar there, the symbol info from the
   <strong>ⓘ</strong> by the symbol, and any panel from your own code. The charts of a
   <code>ChartWidgetGrid</code> have no rail each, unless its <code>widget.features</code> turn <code>dock</code> on.
 </p>

@@ -79,11 +79,25 @@ let widget: InstanceType<typeof ChartWidget>;
 
 /** jsdom lays nothing out: a laptop's width, unless a test says otherwise. */
 let width = 1366;
+/** jsdom has no ResizeObserver: these stand in, called by `resize`. */
+let observers: (() => void)[] = [];
+class FakeResizeObserver {
+  constructor(private readonly cb: () => void) {}
+  observe(): void { observers.push(this.cb); }
+  unobserve(): void {}
+  disconnect(): void { observers = observers.filter((cb) => cb !== this.cb); }
+}
+const resize = (to: number) => {
+  width = to;
+  for (const cb of [...observers]) cb();
+};
 
 beforeEach(() => {
   localStorage.clear();
   width = 1366;
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => width });
+  observers = [];
+  (globalThis as { ResizeObserver?: unknown }).ResizeObserver = FakeResizeObserver;
   host = document.createElement('div');
   document.body.appendChild(host);
 });
@@ -93,6 +107,7 @@ afterEach(() => {
   host.remove();
   // Back to jsdom's own, on Element.
   delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+  delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
 });
 
 const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
@@ -126,6 +141,44 @@ describe('ChartWidget dock', () => {
     expect(visible(toolbarButton('toolbar.alerts'))).toBe(true);
     toolbarButton('toolbar.alerts').click();
     expect(visible(inPanel('.tcw-alerts-panel'))).toBe(true);
+  });
+
+  it('opens the watchlist to start with only where the chart keeps its room: 987 px or more', () => {
+    width = 900;
+    make({ watchlist: true });
+    expect(panel().hidden).toBe(true);
+    resize(1200);
+    expect(widget.getOpenPanel()).toBe('watchlist');
+  });
+
+  it('shuts any panel on going narrow, even one picked, and brings the watchlist back only if none was', () => {
+    make({ watchlist: true });
+    resize(390);
+    expect(panel().hidden).toBe(true);
+    resize(1366);
+    expect(widget.getOpenPanel()).toBe('watchlist');
+    railButton('alerts').click();
+    resize(390);
+    expect(panel().hidden).toBe(true);
+    resize(1366);
+    expect(panel().hidden).toBe(true);
+  });
+
+  it('on a phone, gives the keyboard to "more" when a panel opened from it shuts', () => {
+    width = 390;
+    make({ watchlist: true });
+    widget.openPanel('alerts');
+    inPanel('input')!.focus();
+    inPanel('.tcw-alerts-close')!.click();
+    expect(document.activeElement).toBe(host.querySelector('.tcw-toolbar-more'));
+  });
+
+  it('keeps a Tab stop on the rail with the watchlist’s button off', () => {
+    make({ watchlist: true, features: { 'dock.watchlist': false } });
+    expect(railButton('watchlist').tabIndex).toBe(-1);
+    expect(railButton('alerts').tabIndex).toBe(0);
+    widget.setFeatures({ 'dock.watchlist': true, 'dock.alerts': false });
+    expect(railButton('watchlist').tabIndex).toBe(0);
   });
 
   it('starts shut without a watchlist', () => {
@@ -172,8 +225,17 @@ describe('ChartWidget dock', () => {
     expect(panel().hidden).toBe(true);
   });
 
-  // (While the rail shows, the toolbar's alerts and objects buttons hide: WidgetPanels.css, seen in a browser;
-  // the widget's stylesheets don't load under jsdom, only the switches' rules do.)
+  it('leaves the toolbar its alerts and objects buttons, and "more" too, only where the rail has none', () => {
+    make();
+    expect(visible(toolbarButton('toolbar.alerts'))).toBe(false);
+    expect(visible(toolbarButton('toolbar.objectTree'))).toBe(false);
+    widget.setFeatures({ 'dock.alerts': false });
+    expect(visible(toolbarButton('toolbar.alerts'))).toBe(true);
+    expect(visible(toolbarButton('toolbar.objectTree'))).toBe(false);
+    resize(390);
+    expect(visible(toolbarButton('toolbar.objectTree'))).toBe(true);
+  });
+
   it('with the rail off, opens the panels from the toolbar into the dock', () => {
     make();
     widget.setFeatures({ dock: false });

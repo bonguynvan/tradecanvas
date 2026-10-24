@@ -144,6 +144,11 @@ export class WidgetWatchlist {
     if (!this.menuEl.hidden) this.renderMenu();
   }
 
+  /** Draw every row again (its sparkline at its size, once the list shows). */
+  redraw(): void {
+    for (const symbol of this.rowMap.keys()) this.renderRow(symbol);
+  }
+
   /** Set the BCP 47 locale used for price/percent formatting. */
   setLocale(locale: string | undefined): void {
     this.locale = locale;

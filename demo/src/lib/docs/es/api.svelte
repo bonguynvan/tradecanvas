@@ -474,13 +474,14 @@ widget.destroy()`}</code></pre>
 <p>
   Los paneles del widget se colocan junto al gráfico, de uno en uno, y se abren desde el riel del borde exterior (a la
   izquierda en un widget de derecha a izquierda). Un botón del riel abre su panel, o lo cierra si es el que está
-  abierto; el botón de cerrar de cada panel también lo cierra. La lista de seguimiento empieza abierta, si la hay.
-  Arrastra el borde del panel, o usa las flechas del teclado sobre él, para darle un ancho de 233 a 377 px (296 al
-  principio); el ancho se guarda en este navegador.
+  abierto; el botón de cerrar de cada panel también lo cierra. En un widget de 987 px de ancho o más, la lista de
+  seguimiento se abre sola, hasta que abras o cierres un panel tú mismo. Arrastra el borde del panel, o usa las flechas
+  del teclado sobre él, para darle un ancho de 233 a 377 px (296 al principio), que se guarda en este navegador; nunca
+  ocupa más del 38,2% de la fila, y el resto queda para el gráfico.
 </p>
 <p>
-  En un móvil, o en un widget de menos de 641 px de ancho, no hay riel: el panel sube desde abajo sobre el gráfico y
-  empieza cerrado. Ahí las alertas y el árbol de objetos se abren desde la barra de herramientas, la información del
+  En un móvil, o en un widget de menos de 641 px de ancho, no hay riel: el panel sube desde abajo sobre el gráfico,
+  empieza cerrado y se cierra con Escape; un panel abierto cuando el widget se estrecha (al girar una tableta) se cierra. Ahí las alertas y el árbol de objetos se abren desde la barra de herramientas, la información del
   símbolo desde la <strong>ⓘ</strong> junto al símbolo, y cualquier panel desde tu propio código. Los gráficos de un
   <code>ChartWidgetGrid</code> no tienen riel cada uno, salvo que su <code>widget.features</code> active <code>dock</code>.
 </p>

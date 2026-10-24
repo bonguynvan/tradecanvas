@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { WidgetDock, DOCK_WIDTH, DOCK_WIDTH_STEP, type DockPage } from '../WidgetDock.js';
 
 let host: HTMLDivElement;
@@ -132,6 +132,67 @@ describe('WidgetDock', () => {
     expect(button('watchlist').tabIndex).toBe(0);
   });
 
+  it('keeps a Tab stop and the arrow keys on the buttons that show', () => {
+    make();
+    dock.addPage(page('watchlist'));
+    dock.addPage(page('alerts'));
+    dock.addPage(page('objects'));
+    button('watchlist').style.display = 'none';
+    dock.syncRail();
+    expect([button('watchlist'), button('alerts'), button('objects')].map((b) => b.tabIndex)).toEqual([-1, 0, -1]);
+    button('alerts').focus();
+    button('alerts').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    button('objects').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(button('alerts'));
+  });
+
+  it('gives the keyboard to its owner’s choice when the page’s button is out of sight', () => {
+    const fallback = document.body.appendChild(document.createElement('button'));
+    let railShown = true;
+    make({ railShown: () => railShown, focusAfterClose: (id) => (id === 'alerts' ? fallback : null) });
+    const alerts = page('alerts');
+    const input = alerts.element.appendChild(document.createElement('input'));
+    dock.addPage(alerts);
+    railShown = false;
+    dock.open('alerts');
+    input.focus();
+    dock.close();
+    expect(document.activeElement).toBe(fallback);
+  });
+
+  it('tells its owner of a press on the rail, not of an open from code', () => {
+    const picked: string[] = [];
+    make({ onPick: (id) => picked.push(id) });
+    dock.addPage(page('alerts'));
+    dock.open('alerts');
+    expect(picked).toEqual([]);
+    button('alerts').click();
+    expect(picked).toEqual(['alerts']);
+  });
+
+  it('leaves the chart 61.8% of the room, whatever width was asked for', () => {
+    let room = 700;
+    make({ room: () => room, savedWidth: () => 377 });
+    expect(width()).toBe(Math.floor(700 * 0.382));
+    expect(handle().getAttribute('aria-valuemax')).toBe(String(Math.floor(700 * 0.382)));
+    room = 1600;
+    dock.fit();
+    expect(width()).toBe(377);
+  });
+
+  it('shuts on Escape while it is a sheet over the chart', () => {
+    make();
+    const alerts = page('alerts');
+    const input = alerts.element.appendChild(document.createElement('input'));
+    dock.addPage(alerts);
+    dock.open('alerts');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(dock.current()).toBe('alerts');
+    host.setAttribute('data-tcw-narrow', '');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(dock.current()).toBeNull();
+  });
+
   it('opens 296 wide, or as wide as kept last within 233 to 377', () => {
     make();
     expect(DOCK_WIDTH).toEqual({ min: 233, default: 296, max: 377 });
@@ -190,15 +251,17 @@ describe('WidgetDock', () => {
     expect(button('alerts').dataset.tcwPart).toBe('dock.alerts alerts');
   });
 
-  it('goes away with the widget', () => {
+  it('goes away with the widget, a drag in hand with it', () => {
     make();
-    const move = vi.fn();
     dock.addPage(page('alerts'));
+    const element = host.querySelector<HTMLElement>('.tcw-dock')!;
     pointer(handle(), 'pointerdown', 500);
     dock.destroy();
-    document.addEventListener('pointermove', move);
     pointer(document, 'pointermove', 400);
+    pointer(document, 'pointerup', 400);
     expect(host.querySelector('.tcw-dock')).toBeNull();
+    expect(element.style.getPropertyValue('--tcw-dock-w')).toBe('296px');
+    expect(saved).toEqual([]);
     dock = new WidgetDock(host, { labels });
   });
 });

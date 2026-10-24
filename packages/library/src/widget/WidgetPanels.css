@@ -62,6 +62,12 @@
   outline: none;
 }
 
+@media (forced-colors: active) {
+  .tcw-dock-resize:is(:hover, :active, :focus-visible)::after {
+    background: Highlight;
+  }
+}
+
 /* The panel: 296 wide to start (377 / sqrt(phi)), from 233 to 377. */
 .tcw-dock-panel {
   position: relative;
@@ -132,7 +138,8 @@
   flex: none;
   min-height: calc(var(--tcw-space-6) + var(--tcw-space-5));
   margin: 0;
-  padding: 0 var(--tcw-space-3) 0 var(--tcw-space-5);
+  padding-block: 0;
+  padding-inline: var(--tcw-space-5) var(--tcw-space-3);
   border-bottom: 1px solid var(--tcw-divider);
   background: var(--tcw-bg-surface);
   color: var(--tcw-text);
@@ -172,9 +179,10 @@
   box-shadow: var(--tcw-ring);
 }
 
-/* What scrolled in a box of its own on a floating panel scrolls with the page here. */
-.tcw-dock-page :is(.tcw-alerts-list, .tcw-datawin-body, .tcw-watchlist-list) {
+/* What scrolled in a box of its own on a floating panel scrolls with the page here (a phone's caps too). */
+.tcw-dock-page :is(.tcw-alerts-list, .tcw-datawin-body, .tcw-watchlist-list, .tcw-tree-list) {
   max-height: none;
+  overflow-y: visible;
 }
 
 .tcw-dock-page .tcw-watchlist-list {
@@ -194,12 +202,6 @@
   padding: var(--tcw-space-5);
 }
 
-/* While the rail shows, the toolbar leaves alerts and objects to it (unless its button for them is off). */
-.tcw-root:not([data-tcw-narrow]):not([data-tcw-off~='dock']):not([data-tcw-off~='dock.alerts']) > .tcw-toolbar [data-tcw-part~='toolbar.alerts'],
-.tcw-root:not([data-tcw-narrow]):not([data-tcw-off~='dock']):not([data-tcw-off~='dock.objectTree']) > .tcw-toolbar [data-tcw-part~='toolbar.objectTree'] {
-  display: none;
-}
-
 /* Narrow (a phone, a narrow column): no rail; the panel rises from the bottom over the chart, 61.8% tall. */
 .tcw-root[data-tcw-narrow] .tcw-dock-rail,
 .tcw-root[data-tcw-narrow] .tcw-dock-resize {
@@ -210,13 +212,15 @@
   position: static;
 }
 
+/* Above the chart's lines and tags, under its toasts; above the on-screen keyboard. */
 .tcw-root[data-tcw-narrow] .tcw-dock-panel {
   position: absolute;
   inset-inline: 0;
-  bottom: 0;
-  z-index: 30;
+  bottom: var(--tcw-keyboard-inset, 0px);
+  z-index: 38;
   width: auto;
   height: 61.8%;
+  max-height: calc(100% - var(--tcw-keyboard-inset, 0px));
   border-inline-start: none;
   border-top: var(--tcw-border-w) solid var(--tcw-border-strong);
   border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;

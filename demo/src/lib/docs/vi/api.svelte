@@ -466,12 +466,13 @@ widget.destroy()`}</code></pre>
 <p>
   Các bảng của widget nằm cạnh biểu đồ, mỗi lúc một bảng, và mở từ dải nút ở mép ngoài (bên trái khi widget đảo
   chiều từ phải sang trái). Bấm một nút trên dải thì bảng của nó mở ra, hoặc đóng lại nếu đó là bảng đang mở; nút
-  đóng trên mỗi bảng cũng đóng bảng đó. Khi có danh mục theo dõi thì lúc đầu nó đang mở. Kéo mép bảng, hoặc dùng các
-  phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu 296); độ rộng được giữ lại trên trình duyệt này.
+  đóng trên mỗi bảng cũng đóng bảng đó. Khi widget rộng từ 987 px trở lên, danh mục theo dõi tự mở, cho tới khi bạn tự
+  mở hay đóng một bảng. Kéo mép bảng, hoặc dùng các phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu
+  296), được giữ lại trên trình duyệt này; bảng không bao giờ chiếm quá 38,2% hàng, phần còn lại dành cho biểu đồ.
 </p>
 <p>
-  Trên điện thoại, hoặc khi widget hẹp hơn 641 px, không có dải nút: bảng trượt từ dưới lên, phủ lên biểu đồ, và
-  lúc đầu đóng. Khi đó cảnh báo và cây đối tượng mở từ thanh công cụ, thông tin mã mở từ nút <strong>ⓘ</strong>
+  Trên điện thoại, hoặc khi widget hẹp hơn 641 px, không có dải nút: bảng trượt từ dưới lên, phủ lên biểu đồ, lúc
+  đầu đóng và đóng khi nhấn Escape; bảng đang mở khi widget hẹp lại (xoay máy tính bảng) sẽ đóng. Khi đó cảnh báo và cây đối tượng mở từ thanh công cụ, thông tin mã mở từ nút <strong>ⓘ</strong>
   cạnh mã, và bảng nào cũng mở được từ code của bạn. Các biểu đồ của một <code>ChartWidgetGrid</code> không có dải
   nút riêng, trừ khi <code>widget.features</code> của nó bật <code>dock</code>.
 </p>
