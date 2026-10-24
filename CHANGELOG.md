@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.44.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.26.
 
 ### The account panel and the depth ladder
 
@@ -17,8 +19,6 @@ The last part of the trading round, in the Print look.
 ### Fixed
 
 - The order ticket and the account panel lost a figure's sign in a locale that writes other digits (Persian, Arabic): a loss read as a gain. A figure goes unsigned only when it reads as zero does, and is coloured by the sign it shows (a loss too small to show is "0.00", not a red one).
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.43.0 (2026-10-24)
 
