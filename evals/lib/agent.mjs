@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { posix, win32 } from 'node:path';
 
 /**
  * The tools an agent has, the same in every arm (the skill arm's Skill tool
@@ -118,10 +118,13 @@ function pushEvent(events, line) {
 
 const slashes = (path) => path.replace(/\\/g, '/').replace(/^([A-Z]):/, (_, d) => `${d.toLowerCase()}:`);
 
+/** Absolute on either system: a run made on Windows has Windows paths, wherever it is read. */
+const isAbsolute = (path) => win32.isAbsolute(path) || posix.isAbsolute(path);
+
 /** Where a file an agent opened comes from: the package's README, docs, types or code, the skill, its own work. */
 export function surfaceOf(file, cwd) {
   const root = `${slashes(cwd).replace(/\/$/, '')}/`;
-  const path = slashes(isAbsolute(file) ? file : join(cwd, file));
+  const path = posix.normalize(isAbsolute(file) ? slashes(file) : `${slashes(cwd)}/${slashes(file)}`);
   if (`${path.replace(/\/$/, '')}/` === root) return 'project';
   if (!path.startsWith(root)) return 'outside';
   const rel = path.slice(root.length);
