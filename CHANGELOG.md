@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.45.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.27.
 
 ### Live prices from your own feed
 
