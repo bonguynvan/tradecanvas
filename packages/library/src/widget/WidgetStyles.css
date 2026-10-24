@@ -2500,8 +2500,9 @@
     box-sizing: border-box;
     width: 100vw;
     max-width: 100vw;
-    max-height: 92vh;
-    max-height: 92dvh;
+    /* Less the on-screen keyboard: a sheet's top never goes above the screen. */
+    max-height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    max-height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
     border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
     border-bottom: none;
     /* Grab handle */

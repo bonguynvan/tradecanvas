@@ -105,7 +105,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>长区间。</strong>每根 K 线的位置不窄于 0.25 px，因此超过这一限度的区间（笔记本上 26 年的日线）只显示最新的部分。在组件中，区间栏上的长区间会切换到 K 线能够放下的周期，每根至少 2 px：5Y 日线切换为周线，All 切换为月线；短区间则回到你选择的周期，绝不更细。它只会切换到你的数据源提供的周期（或现有 K 线能聚合到的周期）。<code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> 保持周期不变。直接使用 <code>Chart</code> 时，<code>minBarUnit</code>（选项，或 <code>setMinBarUnit</code>）允许最窄 0.02 px，按像素列绘制。
 </p>

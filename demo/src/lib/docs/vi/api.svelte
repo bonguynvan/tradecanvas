@@ -106,7 +106,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>Khoảng dài.</strong> Mỗi nến không hẹp hơn 0,25 px, nên một khoảng dài hơn mức đó (26 năm nến ngày trên laptop) chỉ hiện phần mới nhất. Trong widget, một khoảng dài trên thanh khoảng thời gian sẽ chuyển sang khung có số nến vừa màn hình, từ 2 px mỗi nến: 5Y nến ngày sang nến tuần, All sang nến tháng; khoảng ngắn thì trở về khung bạn đã chọn, không bao giờ mịn hơn. Nó chỉ chuyển sang khung mà nguồn dữ liệu của bạn có (hoặc nến hiện có gộp lên được). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> giữ nguyên khung. Với <code>Chart</code> dùng trực tiếp, <code>minBarUnit</code> (tuỳ chọn, hoặc <code>setMinBarUnit</code>) cho nến hẹp đến 0,02 px, vẽ theo từng cột pixel.
 </p>

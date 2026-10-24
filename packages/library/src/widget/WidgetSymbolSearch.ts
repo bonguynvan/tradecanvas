@@ -16,6 +16,9 @@ export type SymbolSearchFn = (query: string, signal: AbortSignal) => Promise<Sym
 /** How long typing must pause before a search function is asked. */
 export const SYMBOL_SEARCH_DEBOUNCE_MS = 150;
 
+/** The key code a browser gives a key an input method takes. */
+const IME_KEY_CODE = 229;
+
 /** What the symbol search opens with. */
 export interface SymbolSearchStart {
   /** Listed until something is typed; filtered as it is when there is no `search`. */
@@ -82,6 +85,10 @@ export class WidgetSymbolSearch {
   private backdrop: HTMLDivElement | null = null;
   private input: HTMLInputElement | null = null;
   private list: HTMLDivElement | null = null;
+  /** What scrolls: what is compared, the list of symbols, a note when there are none. */
+  private results: HTMLDivElement | null = null;
+  /** Says "Searching…", "Search failed", "No symbols match" to a screen reader. */
+  private live: HTMLDivElement | null = null;
   private kindsEl: HTMLDivElement | null = null;
   private mode: Mode | null = null;
   private rows: Row[] = [];
@@ -122,10 +129,11 @@ export class WidgetSymbolSearch {
   /** What is compared now, after an add or a remove. */
   setCompared(entries: readonly CompareEntry[]): void {
     this.compared = entries;
-    if (this.mode?.kind !== 'compare' || !this.list) return;
-    const hadFocus = this.list.contains(document.activeElement);
+    if (this.mode?.kind !== 'compare' || !this.results) return;
+    // A remove button that had the keyboard is gone with its row: the search takes it.
+    const hadFocus = this.results.contains(document.activeElement);
     this.renderList();
-    if (hadFocus && !this.list.contains(document.activeElement)) this.input?.focus();
+    if (hadFocus && !this.results.contains(document.activeElement)) this.input?.focus();
   }
 
   close(): void {
@@ -134,7 +142,7 @@ export class WidgetSymbolSearch {
     this.pickOnResults = false;
     this.searchFn = null;
     this.backdrop.remove();
-    this.backdrop = this.input = this.list = this.kindsEl = null;
+    this.backdrop = this.input = this.list = this.results = this.live = this.kindsEl = null;
     this.mode = null;
     this.callbacks.onClose();
     const back = this.returnFocus;
@@ -144,6 +152,11 @@ export class WidgetSymbolSearch {
 
   isOpen(): boolean {
     return this.backdrop !== null;
+  }
+
+  /** Whether it is open to add a symbol to compare. */
+  isComparing(): boolean {
+    return this.mode?.kind === 'compare';
   }
 
   destroy(): void {
@@ -215,9 +228,14 @@ export class WidgetSymbolSearch {
     list.className = 'tcw-ss-list';
     list.id = `tcw-ss-list-${this.uid}`;
     list.setAttribute('role', 'listbox');
-    list.setAttribute('aria-labelledby', `tcw-ss-title-${this.uid}`);
+    const results = document.createElement('div');
+    results.className = 'tcw-ss-results';
+    results.appendChild(list);
+    const live = document.createElement('div');
+    live.className = 'tcw-ss-live tcw-visually-hidden';
+    live.setAttribute('aria-live', 'polite');
 
-    modal.append(kinds, columns, list);
+    modal.append(kinds, columns, results, live);
     const hint = mode.kind === 'search' ? mode.start.hint : undefined;
     if (hint) {
       const foot = document.createElement('div');
@@ -230,6 +248,8 @@ export class WidgetSymbolSearch {
     this.backdrop = backdrop;
     this.kindsEl = kinds;
     this.list = list;
+    this.results = results;
+    this.live = live;
   }
 
   private buildHeader(mode: Mode): HTMLDivElement {
@@ -260,6 +280,7 @@ export class WidgetSymbolSearch {
     input.setAttribute('role', 'combobox');
     input.setAttribute('aria-expanded', 'true');
     input.setAttribute('aria-controls', `tcw-ss-list-${this.uid}`);
+    input.setAttribute('aria-autocomplete', 'list');
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.addEventListener('input', () => this.filter());
@@ -344,12 +365,13 @@ export class WidgetSymbolSearch {
     this.searchAbort?.abort();
     const controller = new AbortController();
     this.searchAbort = controller;
+    // The rows of the last search stay while this one runs: no flicker as typing goes on.
     this.status = 'searching';
-    this.rows = [];
-    this.afterResults(false);
+    this.renderList();
     try {
-      const results = await search(query, controller.signal);
+      const found = await search(query, controller.signal);
       if (controller.signal.aborted) return;
+      const results = (Array.isArray(found) ? found : []).filter((info) => typeof info?.symbol === 'string' && info.symbol !== '');
       for (const info of results) this.known.set(info.symbol, info);
       this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info }));
       this.status = 'idle';
@@ -417,24 +439,38 @@ export class WidgetSymbolSearch {
     el.replaceChildren(chip(null, this.t('symbolSearch.allKinds')), ...kinds.map((k) => chip(k, k)));
   }
 
+  /**
+   * What is compared (comparing, before anything is typed) as a group under
+   * its heading, then the symbols, a listbox of options only, under theirs;
+   * a note when there are none, told to a screen reader too.
+   */
   private renderList(): void {
     const list = this.list;
-    if (!list) return;
-    list.replaceChildren();
+    const results = this.results;
+    if (!list || !results) return;
     const typed = (this.input?.value ?? '').trim();
     const comparing = this.mode?.kind === 'compare';
+    const before: HTMLElement[] = [];
     if (comparing && !typed && this.compared.length > 0) {
-      list.appendChild(this.heading(this.t('compare.onChart')));
-      list.append(...this.compared.map((entry) => this.addedRow(entry)));
-      if (this.shown.length > 0) list.appendChild(this.heading(this.t('compare.symbols')));
-    }
-    if (this.shown.length === 0) {
-      const note = this.emptyNote(typed, comparing);
-      if (note) list.appendChild(note);
+      const heading = this.heading(this.t('compare.onChart'), 'added');
+      const group = document.createElement('div');
+      group.className = 'tcw-ss-added';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-labelledby', heading.id);
+      group.append(...this.compared.map((entry) => this.addedRow(entry)));
+      const symbols = this.heading(this.t('compare.symbols'), 'symbols');
+      symbols.hidden = this.shown.length === 0;
+      before.push(heading, group, symbols);
+      list.setAttribute('aria-labelledby', symbols.id);
+    } else {
+      list.setAttribute('aria-labelledby', `tcw-ss-title-${this.uid}`);
     }
     const query = typed.toUpperCase();
     const onChart = new Set(this.compared.map((c) => c.symbol));
-    this.shown.forEach((row, i) => list.appendChild(this.row(row, i, query, comparing && onChart.has(row.symbol))));
+    list.replaceChildren(...this.shown.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol))));
+    const note = this.shown.length === 0 ? this.emptyNote(typed, comparing) : null;
+    results.replaceChildren(...before, list, ...(note ? [note] : []));
+    if (this.live) this.live.textContent = note?.textContent ?? '';
     this.markSelection();
   }
 
@@ -448,15 +484,14 @@ export class WidgetSymbolSearch {
     } else text = this.t('symbolSearch.empty');
     const note = document.createElement('div');
     note.className = 'tcw-ss-empty';
-    note.setAttribute('role', 'status');
     note.textContent = text;
     return note;
   }
 
-  private heading(text: string): HTMLDivElement {
+  private heading(text: string, name: string): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'tcw-ss-heading';
-    el.setAttribute('role', 'presentation');
+    el.id = `tcw-ss-${name}-${this.uid}`;
     el.textContent = text;
     return el;
   }
@@ -470,9 +505,12 @@ export class WidgetSymbolSearch {
     const isCurrent = this.mode?.kind === 'search' && row.symbol === this.mode.start.current;
     el.classList.toggle('tcw-current', isCurrent);
     el.classList.toggle('tcw-on-chart', onChart);
+    if (isCurrent) el.setAttribute('aria-current', 'true');
 
     const symbol = document.createElement('span');
     symbol.className = 'tcw-ss-symbol';
+    // A ticker reads left to right in any widget ("^GSPC", "BRK.B").
+    symbol.dir = 'ltr';
     symbol.innerHTML = highlight(row.symbol, query);
     const desc = row.info?.description && row.info.description !== row.symbol ? row.info.description : '';
     const description = document.createElement('span');
@@ -480,6 +518,8 @@ export class WidgetSymbolSearch {
     if (desc) {
       const text = document.createElement('span');
       text.className = 'tcw-ss-desc';
+      // A feed's words read in their own direction ("Apple Inc." in a right-to-left widget).
+      text.dir = 'auto';
       text.textContent = desc;
       description.appendChild(text);
     }
@@ -487,6 +527,7 @@ export class WidgetSymbolSearch {
     meta.className = 'tcw-ss-meta';
     if (row.info?.type) meta.appendChild(this.tag('tcw-ss-kind', row.info.type));
     if (row.info?.exchange) meta.appendChild(this.tag('tcw-ss-exchange', row.info.exchange));
+    for (const tag of meta.children) (tag as HTMLElement).dir = 'auto';
     el.append(symbol, description, meta);
     if (isCurrent || onChart) {
       const check = document.createElement('span');
@@ -494,6 +535,8 @@ export class WidgetSymbolSearch {
       check.innerHTML = createIcon('check', 14);
       el.appendChild(check);
     }
+    // The check says it to the eye; a screen reader hears it.
+    if (onChart) el.appendChild(this.tag('tcw-visually-hidden', this.t('compare.onChart')));
     el.addEventListener('click', () => this.pick(index));
     el.addEventListener('mousemove', () => {
       if (this.selectedIndex === index) return;
@@ -527,7 +570,9 @@ export class WidgetSymbolSearch {
     remove.addEventListener('click', () => {
       if (this.mode?.kind === 'compare') this.mode.start.onRemove(entry.id);
     });
-    el.append(this.tag('tcw-ss-symbol', entry.symbol), way, remove);
+    const symbol = this.tag('tcw-ss-symbol', entry.symbol);
+    symbol.dir = 'ltr';
+    el.append(symbol, way, remove);
     return el;
   }
 
@@ -575,6 +620,8 @@ export class WidgetSymbolSearch {
 
   private onKeyDown(e: KeyboardEvent, modal: HTMLElement): void {
     e.stopPropagation(); // keys here must not drive chart shortcuts
+    // Enter, Escape and the arrows pick and close among an input method's candidates while it composes.
+    if (e.isComposing || e.keyCode === IME_KEY_CODE) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       this.close();
@@ -590,6 +637,8 @@ export class WidgetSymbolSearch {
       this.markSelection();
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      // Comparing, the dialog stays: a held Enter would add the symbol again and again.
+      if (e.repeat && this.mode?.kind === 'compare') return;
       if (this.searchTimer !== null || this.status === 'searching') {
         // The list on screen is for an older query.
         this.pickOnResults = true;
@@ -627,19 +676,31 @@ function scoreMatch(symbol: string, query: string): number {
   return 100 - Math.min(99, gapPenalty);
 }
 
-/** The symbol with the letters the query matched marked. */
+/**
+ * The symbol with the letters the query matched marked: the run of them where
+ * the symbol holds the query whole, else each in order; nothing when the
+ * symbol doesn't hold them all (a feed's match on the name).
+ */
 function highlight(symbol: string, query: string): string {
   if (!query) return escapeHtml(symbol);
   const upper = symbol.toUpperCase();
-  let out = '';
-  let qi = 0;
-  for (let i = 0; i < symbol.length; i++) {
-    if (qi < query.length && upper[i] === query[qi]) {
-      out += `<mark>${escapeHtml(symbol[i])}</mark>`;
-      qi++;
-    } else {
-      out += escapeHtml(symbol[i]);
+  const marked = new Set<number>();
+  const run = upper.indexOf(query);
+  if (run >= 0) {
+    for (let i = run; i < run + query.length; i++) marked.add(i);
+  } else {
+    let qi = 0;
+    for (let i = 0; i < upper.length && qi < query.length; i++) {
+      if (upper[i] === query[qi]) {
+        marked.add(i);
+        qi++;
+      }
     }
+    if (qi < query.length) marked.clear();
+  }
+  let out = '';
+  for (let i = 0; i < symbol.length; i++) {
+    out += marked.has(i) ? `<mark>${escapeHtml(symbol[i])}</mark>` : escapeHtml(symbol[i]);
   }
   return out;
 }

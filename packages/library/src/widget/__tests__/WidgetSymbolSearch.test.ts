@@ -91,6 +91,51 @@ describe('WidgetSymbolSearch as a dialog', () => {
     expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
   });
 
+  it('leaves Enter, Escape and the arrows to an input method while it composes', () => {
+    search.open({ symbols: ['ETHUSDT', 'SOLUSDT'], current: '' });
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true }));
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true, cancelable: true }));
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 229, bubbles: true, cancelable: true } as KeyboardEventInit));
+    expect(picked).toEqual([]);
+    expect(search.isOpen()).toBe(true);
+    expect(rows()[0].getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('gives focus back to what opened it after a pick', () => {
+    search.open({ symbols: ['ETHUSDT'], current: '' });
+    key('Enter');
+    expect(picked).toEqual(['ETHUSDT']);
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('starts afresh when opened again while open', () => {
+    search.open({ symbols: ['ETHUSDT'], current: '' });
+    search.openCompare({ symbols: ['SOLUSDT'], current: '', ways: [{ id: 'percent', label: 'Percent' }], way: 'percent', compared: [], onAdd: () => {}, onRemove: () => {} });
+    expect(host.querySelectorAll('.tcw-ss')).toHaveLength(1);
+    expect(host.querySelector('.tcw-ss h3')?.textContent).toBe('Compare symbol');
+    expect(rowText()).toEqual(['SOLUSDT']);
+  });
+
+  it('marks the chart’s symbol as the current one for a screen reader too', () => {
+    search.open({ symbols: ['ETHUSDT', 'SOLUSDT'], current: 'SOLUSDT' });
+    expect(rows()[1].getAttribute('aria-current')).toBe('true');
+    expect(rows()[0].hasAttribute('aria-current')).toBe(false);
+    expect(input().getAttribute('aria-autocomplete')).toBe('list');
+  });
+
+  it('marks the letters of the symbol that match, the run where there is one, nothing for a match on the name', async () => {
+    search.open({ symbols: ['WETHUSDT', 'AAPL'], current: '' });
+    type('eth');
+    expect([...rows()[0].querySelectorAll('mark')].map((m) => m.textContent).join('')).toBe('ETH');
+    expect(rows()[0].querySelector('.tcw-ss-symbol')?.innerHTML).toContain('W<mark>');
+    search.close();
+    search.open({ symbols: [], current: '', search: async () => [{ symbol: 'AAPL', description: 'Apple Inc.' }] });
+    type('apple');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['AAPL']);
+    expect(rows()[0].querySelectorAll('mark')).toHaveLength(0);
+  });
+
   it('shows a hint at its foot when given one', () => {
     search.open({ symbols: [], current: '', hint: 'Type on the chart to search' });
     expect(host.querySelector('.tcw-ss-foot')?.textContent).toBe('Type on the chart to search');
@@ -120,6 +165,9 @@ describe('WidgetSymbolSearch with a search function', () => {
     expect(fn.mock.calls[0][0]).toBe('btc');
     expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
     expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('BTC / USDT');
+    // The feed's words and the ticker keep their own direction in a right-to-left widget.
+    expect(rows()[0].querySelector<HTMLElement>('.tcw-ss-desc')?.dir).toBe('auto');
+    expect(rows()[0].querySelector<HTMLElement>('.tcw-ss-symbol')?.dir).toBe('ltr');
     expect(rows()[1].querySelector('.tcw-ss-exchange')?.textContent).toBe('Kraken');
     expect(rows()[1].querySelector('.tcw-ss-kind')?.textContent).toBe('crypto');
   });
@@ -132,6 +180,36 @@ describe('WidgetSymbolSearch with a search function', () => {
     search.open({ symbols: ['BTCEUR', 'ETHUSDT'], current: '', search: async () => results });
     expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('BTC / EUR');
     expect(rows()[1].querySelector('.tcw-ss-desc')).toBeNull();
+  });
+
+  it('lets a result that lands after it closed change nothing, though the feed ignored the signal', async () => {
+    let answer!: (r: SymbolInfo[]) => void;
+    search.open({ symbols: [], current: '', search: () => new Promise<SymbolInfo[]>((r) => { answer = r; }) });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    search.close();
+    search.open({ symbols: ['ETHUSDT'], current: '' });
+    answer(results);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(rowText()).toEqual(['ETHUSDT']);
+  });
+
+  it('keeps the rows on screen while the next search runs', async () => {
+    let calls = 0;
+    search.open({ symbols: [], current: '', search: () => (++calls === 1 ? Promise.resolve(results) : new Promise<SymbolInfo[]>(() => {})) });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    type('btce');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
+    expect(empty()).toBeUndefined();
+  });
+
+  it('skips rows of the feed that have no symbol', async () => {
+    search.open({ symbols: [], current: '', search: async () => [{} as SymbolInfo, ...results, { symbol: '' }] });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
   });
 
   it('cancels a query that a newer one replaced', async () => {
@@ -149,15 +227,21 @@ describe('WidgetSymbolSearch with a search function', () => {
     expect(signals[1].aborted).toBe(false);
   });
 
-  it('says it is searching, and says so when the search fails', async () => {
+  it('says it is searching, and says so when the search fails, in a live region outside the list', async () => {
     let fail!: (e: Error) => void;
     search.open({ symbols: [], current: '', search: () => new Promise<SymbolInfo[]>((_r, reject) => { fail = reject; }) });
+    const live = host.querySelector<HTMLElement>('.tcw-ss-live')!;
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    expect(live.closest('[role="listbox"]')).toBeNull();
     type('btc');
     await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
     expect(empty()).toMatch(/Searching/);
+    expect(live.textContent).toMatch(/Searching/);
     fail(new Error('offline'));
     await vi.advanceTimersByTimeAsync(0);
     expect(empty()).toMatch(/failed/i);
+    expect(live.textContent).toMatch(/failed/i);
+    expect(host.querySelector('.tcw-ss-empty')?.closest('[role="listbox"]')).toBeNull();
   });
 
   it('picks a result with Enter, and with a click', async () => {
@@ -268,6 +352,25 @@ describe('WidgetSymbolSearch comparing', () => {
     expect([...way.options].map((o) => o.value)).toEqual(['percent', 'pane', 'ratio']);
     expect(way.value).toBe('percent');
     expect(host.querySelector('.tcw-ss-way')?.textContent).toContain('Add as');
+  });
+
+  it('adds once for a held Enter', () => {
+    compare();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true, cancelable: true }));
+    expect(added).toEqual([['ETHUSDT', 'percent']]);
+  });
+
+  it('keeps what is compared out of the list of symbols, each list under its own heading', () => {
+    compare([{ id: 'a', symbol: 'ETHUSDT', way: 'Ratio' }]);
+    const listbox = host.querySelector('[role="listbox"]')!;
+    expect([...listbox.children].every((el) => el.getAttribute('role') === 'option')).toBe(true);
+    const group = host.querySelector<HTMLElement>('.tcw-ss-added')!;
+    expect(group.getAttribute('role')).toBe('group');
+    expect(document.getElementById(group.getAttribute('aria-labelledby')!)?.textContent).toBe('On the chart');
+    expect(document.getElementById(listbox.getAttribute('aria-labelledby')!)?.textContent).toBe('Symbols');
+    // A symbol on the chart says so in words, not only with its check.
+    expect(rows().find((r) => r.dataset.symbol === 'ETHUSDT')?.textContent).toContain('On the chart');
   });
 
   it('adds a symbol the way chosen and stays open for the next', () => {

@@ -327,6 +327,25 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(document.querySelector('.tcw-ss-foot')?.textContent).toMatch(/Type a letter on the chart/);
   });
 
+  it('leaves letters to the page once it was pressed elsewhere, to Alt Gr and to an input method', () => {
+    make();
+    press();
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    key({ key: 'e' });
+    expect(document.querySelector('.tcw-ss')).toBeNull();
+    press();
+    key({ key: 'e', isComposing: true });
+    key({ key: 'e', modifierAltGraph: true } as KeyboardEventInit);
+    expect(document.querySelector('.tcw-ss')).toBeNull();
+  });
+
+  it('reads the letter by its key on another script’s keyboard', () => {
+    make();
+    press();
+    key({ key: 'ش', code: 'KeyA' });
+    expect(document.querySelector<HTMLInputElement>('.tcw-ss-input')?.value).toBe('a');
+  });
+
   it('stops typing a symbol on the chart', () => {
     make({ features: { symbolTyping: false } });
     press();

@@ -109,6 +109,31 @@ describe('WidgetGoToDate', () => {
     expect(document.activeElement).toBe(opener);
   });
 
+  it('marks a missing date or one after the last day, keeps the keyboard there, and goes nowhere', () => {
+    dialog.open(start);
+    field('date')!.value = '';
+    form().requestSubmit();
+    expect(submitted).toEqual([]);
+    expect(field('date')!.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(field('date'));
+    field('date')!.value = '2026-03-25';
+    field('date')!.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field('date')!.hasAttribute('aria-invalid')).toBe(false);
+    form().requestSubmit();
+    expect(submitted).toEqual([]);
+    expect(field('date')!.getAttribute('aria-invalid')).toBe('true');
+    tab('range').click();
+    field('toDate')!.value = '';
+    form().requestSubmit();
+    expect(submitted).toEqual([]);
+    expect(document.activeElement).toBe(field('toDate'));
+  });
+
+  it('marks today as its owner says it is', () => {
+    dialog.open({ ...start, today: '2026-03-20' });
+    expect(layer.querySelector('.tcw-goto-calendar .tcw-today')?.getAttribute('data-date')).toBe('2026-03-20');
+  });
+
   it('has no time fields on a daily chart', () => {
     dialog.open({ ...start, withTime: false });
     expect(field('time')).toBeNull();

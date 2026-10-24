@@ -107,7 +107,9 @@ chart.fitContent()         // zoom out to all data (Alt+R in the widget, with au
 chart.scrollToEnd()
 chart.setVisibleRangePreset('3M')       // 1D 5D 1M 3M 6M YTD 1Y 5Y All
 chart.setMinBarUnit(0.05)               // narrower bars, so 'All' fits a long series (0.25 by default)
-chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)`}</code></pre>
+chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
+chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
+chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
   <strong>Rangos largos.</strong> El hueco de una barra nunca es más estrecho que 0,25 px, así que un rango más largo (26 años de diario en un portátil) muestra su parte más reciente. En el widget, un rango largo de la barra de rangos cambia a la temporalidad cuyas barras caben, a 2 px o más cada una: 5Y de diario pasa a semanal, All a mensual; un rango corto vuelve a la temporalidad que eligió, nunca más fina. Solo cambia a temporalidades que su fuente sirve (o a las que se agregan las barras que hay). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> mantiene la temporalidad. Con un <code>Chart</code> directo, <code>minBarUnit</code> (opción, o <code>setMinBarUnit</code>) deja bajar hasta 0,02 px, dibujando columna de píxel a columna.
 </p>

@@ -71,6 +71,15 @@ describe('MonthView', () => {
     expect(day('2025-11-02').getAttribute('aria-selected')).toBe('true');
   });
 
+  it('takes today from its owner (the day in the chart’s time zone)', () => {
+    view.show('2026-03-18', { today: '2026-03-20', max: '2026-03-20' });
+    expect(days().filter((d) => d.classList.contains('tcw-today')).map((d) => d.dataset.date)).toEqual(['2026-03-20']);
+    view.element.querySelector<HTMLButtonElement>('.tcw-calendar-today')!.click();
+    expect(picked).toEqual(['2026-03-20']);
+    view.show('', { today: '2026-07-04' });
+    expect(title()).toBe('July 2026');
+  });
+
   it('opens on today when there is no date, and Today picks it', () => {
     vi.useFakeTimers({ now: new Date(2026, 9, 22, 12) });
     try {

@@ -3369,6 +3369,24 @@ export class Chart {
   }
 
   /**
+   * The times of the first and last bars on screen, in the bars' own unit:
+   * of the series drawn (a Renko chart's bricks, not the bars under them).
+   * Null without data.
+   */
+  getVisibleTimeRange(): { from: number; to: number } | null {
+    const data = this.getDisplayData();
+    if (data.length === 0) return null;
+    // The bars whose middles are inside the plot (the viewport's range keeps a bar more each side to draw).
+    const { offset, barWidth, barSpacing, chartRect } = this.viewport.getState();
+    const unit = barWidth + barSpacing;
+    if (unit <= 0) return null;
+    const first = Math.ceil((offset - barWidth / 2) / unit);
+    const last = Math.floor((offset + chartRect.width - barWidth / 2) / unit);
+    const at = (index: number) => data[Math.max(0, Math.min(data.length - 1, index))].time;
+    return { from: at(first), to: at(Math.max(first, last)) };
+  }
+
+  /**
    * Show the bars between two timestamps edge to edge. Times past either end
    * of the data are allowed (they map into the empty future / past).
    */

@@ -68,6 +68,8 @@ export interface GoToStart {
   withTime: boolean;
   /** The last day that can be picked, YYYY-MM-DD. */
   max?: string;
+  /** Today in the time zone the dates are read in; the browser's when left out. */
+  today?: string;
 }
 
 type Tab = 'date' | 'range';
@@ -292,6 +294,7 @@ export class WidgetGoToDate {
     if (this.start?.max) date.max = this.start.max;
     date.addEventListener('focus', () => this.setActive(date));
     date.addEventListener('input', () => {
+      date.removeAttribute('aria-invalid');
       if (this.active === date) this.showMonth();
     });
     row.appendChild(date);
@@ -319,7 +322,7 @@ export class WidgetGoToDate {
 
   private showMonth(): void {
     if (!this.active) return;
-    this.month?.show(this.active.value, { max: this.start?.max });
+    this.month?.show(this.active.value, { max: this.start?.max, today: this.start?.today });
   }
 
   /** A day from the month: into the field in hand; a range's start then moves on to its end. */
@@ -344,9 +347,16 @@ export class WidgetGoToDate {
 
   private submit(): void {
     // The fields as they are now, whether or not they said they changed (autofill).
-    this.fieldsEl?.querySelectorAll<HTMLInputElement>('[data-field]').forEach((input) => {
-      this.values[input.dataset.field as Field] = input.value;
-    });
+    const inputs = [...(this.fieldsEl?.querySelectorAll<HTMLInputElement>('[data-field]') ?? [])];
+    for (const input of inputs) this.values[input.dataset.field as Field] = input.value;
+    // A date not given (or not whole), or after the last day: marked, the keyboard on it, and nowhere to go.
+    const max = this.start?.max;
+    const wrong = inputs.find((input) => input.type === 'date' && (!input.value || (max !== undefined && input.value > max)));
+    if (wrong) {
+      wrong.setAttribute('aria-invalid', 'true');
+      wrong.focus();
+      return;
+    }
     const v = this.values;
     const withTime = this.start?.withTime ?? false;
     const time = (t: string) => (withTime ? t : '');

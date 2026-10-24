@@ -313,8 +313,9 @@
 /* A phone: the dialog is the widget's sheet, as tall as a sheet goes, and the groups a row of chips. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ip {
-    height: 92vh;
-    height: 92dvh;
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
   }
 
   .tcw-ip-search,
@@ -563,8 +564,9 @@
   .tcw-modal.tcw-set {
     width: 100vw;
     max-width: 100vw;
-    height: 92vh;
-    height: 92dvh;
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
   }
 
   .tcw-set-body {
@@ -646,7 +648,7 @@
 }
 
 /* The symbol takes 144 (89 x phi), the name the rest; kind and exchange at the end. The heads line up
-   with the rows: the list's inset and the row's own. */
+   with the rows: the inset of what scrolls and the row's own. */
 .tcw-ss-columns,
 .tcw-ss-row {
   display: grid;
@@ -667,7 +669,8 @@
   letter-spacing: var(--tcw-label-tracking);
 }
 
-.tcw-ss-list {
+/* What scrolls: what is compared, the symbols, a note when there are none. */
+.tcw-ss-results {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -687,8 +690,11 @@
   background: var(--tcw-hover-bg);
 }
 
-/* The figures of a ticker, in the mono face; the chart's own in ink. */
+/* The figures of a ticker, in the mono face, left to right in any widget, at the start of its column;
+   the chart's own in ink. */
 .tcw-ss-symbol {
+  justify-self: start;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   color: var(--tcw-text);
@@ -711,8 +717,11 @@
   min-width: 0;
 }
 
+/* As wide as its words, at the start of the column, whichever way they run. */
 .tcw-ss-desc {
   display: block;
+  width: fit-content;
+  max-width: 100%;
   overflow: hidden;
   color: var(--tcw-text-dim);
   font-size: var(--tcw-font-size-sm);
@@ -750,6 +759,10 @@
   display: inline-grid;
   place-items: center;
   color: var(--tcw-accent);
+}
+
+.tcw-ss-heading[hidden] {
+  display: none;
 }
 
 /* "On the chart" and "Symbols", above their rows while they scroll. */
@@ -933,8 +946,9 @@
 /* A phone: both are the widget's sheet; the search as tall as a sheet goes, its symbols 89 wide. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ss {
-    height: 92vh;
-    height: 92dvh;
+    /* Above the on-screen keyboard: the sheet's top stays on the screen. */
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
   }
 
   .tcw-ss-way,

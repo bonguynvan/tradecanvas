@@ -132,6 +132,21 @@ const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;
 
+/**
+ * The Latin letter a plain key press types, for a symbol search started on
+ * the chart; null for anything else (a modifier held, Alt Gr, an input
+ * method composing). On another script's keyboard the letter of the key's
+ * place: tickers are Latin.
+ */
+function typedLetter(e: KeyboardEvent): string | null {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.keyCode === IME_KEY_CODE) return null;
+  if (e.getModifierState?.('AltGraph')) return null;
+  if (/^[a-z]$/i.test(e.key)) return e.key;
+  const place = /^Key([A-Z])$/.exec(e.code ?? '');
+  // A single character of another script; not a named key such as Enter or F5.
+  return place && [...e.key].length === 1 && !/[\s\d]/.test(e.key) ? place[1].toLowerCase() : null;
+}
+
 /** Gap between the on-chart indicator rows and the plot or pane edge, px. */
 const LEGEND_INSET = 4;
 /** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
@@ -295,8 +310,6 @@ export class ChartWidget {
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
-  /** The bars on screen, by index, as the chart last said. */
-  private visibleBars: { from: number; to: number } | null = null;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
   /** Bars revealed per second. */
   private replaySpeed = DEFAULT_REPLAY_SPEED;
@@ -343,6 +356,8 @@ export class ChartWidget {
   private compares: { id: string; symbol: string; color: string }[] = [];
   /** How the compare dialog adds a symbol: the way picked last. */
   private compareWay: CompareWay = 'percent';
+  /** Symbols whose bars are on the way to be compared in percent. */
+  private readonly comparesLoading = new Set<string>();
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -648,9 +663,7 @@ export class ChartWidget {
     // Navigation over the chart; a scroll step is a tenth of the bars on screen.
     this.chart.on('visibleRangeChange', (e) => {
       const { from, to } = e.payload as { from: number; to: number };
-      if (!Number.isFinite(from) || !Number.isFinite(to)) return;
-      this.visibleBarCount = Math.max(1, to - from);
-      this.visibleBars = { from, to };
+      if (Number.isFinite(from) && Number.isFinite(to)) this.visibleBarCount = Math.max(1, to - from);
     });
     this.chartNav = new WidgetChartNav(this.chartContainer, {
       zoomIn: () => this.chart.zoomIn(),
@@ -1274,14 +1287,14 @@ export class ChartWidget {
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
         this.intervalInput.open(e.key);
-      } else if (/^[a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !e.isComposing) {
-        // A letter typed on the chart starts a symbol search with it (not one an input method is composing).
+      } else if (typedLetter(e) !== null) {
+        // A letter typed on the chart starts a symbol search with it.
         if (e.defaultPrevented || !keyOn('symbolTyping') || !this.featureState.symbolSearch || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
         const active = document.activeElement;
         // Focus in another part of the page: the keys are its.
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
-        this.openSymbolSearch(e.key);
+        this.openSymbolSearch(typedLetter(e)!);
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG' || e.code === 'KeyR')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || !mine) return;
@@ -1313,7 +1326,8 @@ export class ChartWidget {
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
-    this.unregisterKeys = registerKeyRoot(this.root);
+    // A press in the widget's layer (a dialog, a menu) is a press in the widget.
+    this.unregisterKeys = registerKeyRoot(this.root, [this.portal]);
 
     // 9. Connect stream
     if (options.adapter) {
@@ -2201,6 +2215,9 @@ export class ChartWidget {
       ['commandPalette', () => this.commandPalette?.close()],
       ['hotkeySheet', () => this.hotkeySheet?.close()],
       ['symbolSearch', () => this.symbolSearch?.close()],
+      ['compare', () => {
+        if (this.symbolSearch?.isComparing()) this.symbolSearch.close();
+      }],
       ['menu.chart', () => this.chartMenu?.close()],
       ['menu.priceAxisAdd', () => this.chartMenu?.close()],
       ['menu.drawing', () => this.drawingMenu?.close()],
@@ -2611,15 +2628,18 @@ export class ChartWidget {
     if (data.length === 0) return;
     const tz = this.displayTimezone();
     const unit = barTimeUnit(data);
-    const wall = (index: number) => utcToWallTime(data[Math.max(0, Math.min(data.length - 1, Math.round(index)))].time * unit, tz);
-    const last = data.length - 1;
-    const shown = this.visibleBars;
+    const wall = (time: number) => utcToWallTime(time * unit, tz);
+    const last = data[data.length - 1].time;
+    // The bars on screen, as the chart draws them (a Renko chart's bricks).
+    const shown = this.chart.getVisibleTimeRange() ?? { from: data[0].time, to: last };
+    const today = utcToWallTime(Date.now(), tz).date;
     this.goToDate.open({
       date: wall(last),
-      range: { from: wall(shown?.from ?? Math.max(0, last - this.visibleBarCount)), to: wall(shown?.to ?? last) },
+      range: { from: wall(shown.from), to: wall(shown.to) },
       // Daily bars and longer have no time of day.
       withTime: !(timeframeToMs(this.state.timeframe) >= DAY_MS),
-      max: utcToWallTime(Date.now(), tz).date,
+      max: today,
+      today,
     });
   }
 
@@ -3076,7 +3096,7 @@ export class ChartWidget {
 
   /** The compare dialog's list, after something was compared or taken off. */
   private refreshCompareDialog(): void {
-    this.symbolSearch?.setCompared(this.comparedNow());
+    if (this.symbolSearch?.isComparing()) this.symbolSearch.setCompared(this.comparedNow());
   }
 
   /**
@@ -3101,11 +3121,14 @@ export class ChartWidget {
       if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
       return;
     }
-    if (this.compares.some((c) => c.symbol === symbol)) return;
-    const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
+    // On the chart already, or its bars on the way (picked twice in a row).
+    if (this.compares.some((c) => c.symbol === symbol) || this.comparesLoading.has(symbol)) return;
     const id = `cmp_${symbol}`;
+    this.comparesLoading.add(symbol);
     try {
       const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+      if (this.destroyed || this.compares.some((c) => c.symbol === symbol)) return;
+      const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
       // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
       // a shared % axis — the right default for comparison.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
@@ -3116,6 +3139,8 @@ export class ChartWidget {
       this.say(fill(this.t('toast.comparing'), { symbol }));
     } catch (err: unknown) {
       this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
+    } finally {
+      this.comparesLoading.delete(symbol);
     }
   }
 

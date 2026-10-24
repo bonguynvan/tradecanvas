@@ -11,10 +11,12 @@ export interface CalendarDay {
   day: number;
 }
 
-/** The first and last day that can be picked, YYYY-MM-DD; either may be left out. */
+/** The first and last day that can be picked, and today, YYYY-MM-DD; each may be left out. */
 export interface DayLimits {
   min?: string;
   max?: string;
+  /** Today where the dates are read (the chart's time zone); the browser's when left out. */
+  today?: string;
 }
 
 const DAYS_SHOWN = 42;
@@ -82,6 +84,7 @@ export class MonthView {
   private readonly titleEl: HTMLDivElement;
   private chosen = '';
   private limits: DayLimits = {};
+  private today = iso(todayDay());
   /** The month shown and the day the keys are on. */
   private view = { year: 0, month: 0 };
   private focusDay: CalendarDay = todayDay();
@@ -129,7 +132,7 @@ export class MonthView {
     today.type = 'button';
     today.className = 'tcw-calendar-today';
     today.textContent = labels.today;
-    today.addEventListener('click', () => this.pick(iso(todayDay())));
+    today.addEventListener('click', () => this.pick(this.today));
     foot.appendChild(today);
 
     element.append(head, weekdays, grid, foot);
@@ -142,7 +145,8 @@ export class MonthView {
   show(value: string, limits: DayLimits = {}): void {
     this.chosen = value;
     this.limits = limits;
-    const start = this.clamp(parseIso(value) ?? todayDay());
+    this.today = parseIso(limits.today) ? limits.today! : iso(todayDay());
+    const start = this.clamp(parseIso(value) ?? parseIso(this.today)!);
     this.focusDay = start;
     this.view = { year: start.year, month: start.month };
     this.render();
@@ -194,7 +198,7 @@ export class MonthView {
     const locale = this.locale;
     this.titleEl.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })
       .format(new Date(Date.UTC(this.view.year, this.view.month, 1)));
-    const today = iso(todayDay());
+    const today = this.today;
     const focus = iso(this.focusDay);
     const fullDate = new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' });
     this.grid.textContent = '';

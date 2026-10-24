@@ -48,6 +48,8 @@ class FakeChart {
   setVisibleRangePreset(preset: string): void { this.presets.push(preset); }
   goToTime(time: number): number { this.goTos.push(time); return 0; }
   ranges: [number, number][] = [];
+  visibleTimes: { from: number; to: number } | null = null;
+  getVisibleTimeRange(): { from: number; to: number } | null { return this.visibleTimes; }
   setVisibleRange(from: number, to: number): void { this.ranges.push([from, to]); }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
@@ -285,7 +287,8 @@ describe('ChartWidget range bar', () => {
     const fake = FakeChart.last;
     fake.data = [T_FIRST, Date.UTC(2026, 1, 1), Date.UTC(2026, 1, 20), T_LAST].map((time) => ({ time }));
     (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
-    fake.emit('visibleRangeChange', { from: 1, to: 2 });
+    // The bars on screen, as the chart draws them (a Renko chart's bricks, say).
+    fake.visibleTimes = { from: Date.UTC(2026, 1, 1), to: Date.UTC(2026, 1, 20) };
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
     document.querySelector<HTMLButtonElement>('.tcw-goto [data-tab="range"]')!.click();
     expect([field('fromDate')!.value, field('fromTime')!.value, field('toDate')!.value]).toEqual(['2026-02-01', '00:00', '2026-02-20']);
@@ -293,6 +296,18 @@ describe('ChartWidget range bar', () => {
     field('toTime')!.value = '06:00';
     goForm().requestSubmit();
     expect(fake.ranges).toEqual([[Date.UTC(2026, 0, 5), Date.UTC(2026, 1, 20, 6)]]);
+  });
+
+  it('goes to a date on bars timed in seconds', () => {
+    make();
+    FakeChart.last.data = [{ time: T_FIRST / 1000 }, { time: T_LAST / 1000 }];
+    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
+    host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
+    expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']);
+    field('date')!.value = '2026-02-10';
+    field('time')!.value = '08:30';
+    goForm().requestSubmit();
+    expect(FakeChart.last.goTos).toEqual([Date.UTC(2026, 1, 10, 8, 30) / 1000]);
   });
 
   it('asks for no time on a daily chart', () => {

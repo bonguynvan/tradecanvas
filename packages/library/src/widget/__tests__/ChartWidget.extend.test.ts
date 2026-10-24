@@ -406,6 +406,16 @@ describe('ChartWidget comparing with another symbol', () => {
     expect(addedRows()).toEqual([]);
   });
 
+  it('adds a percent comparison once, however quickly it is picked again', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB'], watchlist: false, adapter: adapter as never });
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    const row = document.querySelector<HTMLElement>('.tcw-ss-row[data-symbol="BBB"]')!;
+    row.click();
+    row.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(addedRows()).toEqual([['BBB', 'Percent change, on this scale']]);
+  });
+
   it('fetches the bars a chart’s indicator asks for, and again on a new interval', async () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never, timeframe: '1h' });
     const fake = FakeChart.last;
