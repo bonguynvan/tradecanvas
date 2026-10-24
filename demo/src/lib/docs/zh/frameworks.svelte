@@ -96,7 +96,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>timeframe</code></td><td><code>TimeFrame</code></td><td>数据流的周期。默认 <code>'5m'</code>。</td></tr>
     <tr><td><code>theme</code></td><td><code>'dark' | 'light' | Theme</code></td><td>默认 <code>'dark'</code>。</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartType</code></td><td>默认 <code>'candlestick'</code>。</td></tr>
-    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>你自己的 K 线，原样显示。挂载时就提供则不打开数据流；之后才提供，已打开的数据流保持不变（<code>stream={false}</code> 会关闭它）。在 Vue 和 Svelte 中，向同一数组追加的 K 线或最后一根 K 线的变化会作为实时 tick 传入，视图保持不动；新的数组则是一个新序列。</td></tr>
+    <tr><td><code>data</code></td><td><code>OHLCBar[]</code></td><td>你自己的 K 线，原样显示。挂载时就提供则不打开数据流；之后才提供，已打开的数据流保持不变（<code>stream={'{'}false{'}'}</code> 会关闭它）。在 Vue 和 Svelte 中，向同一数组追加的 K 线或最后一根 K 线的变化会作为实时 tick 传入，视图保持不动；新的数组则是一个新序列。在 React 中，每个新数组都是一个新序列，追加一根 K 线也一样：实时数据请通过 ref 直接更新图表（<code>getChart()?.updateLastBar(bar)</code>、<code>appendBar</code>）。</td></tr>
     <tr><td><code>adapter</code></td><td><code>DataAdapter</code></td><td>数据流的来源；不提供时使用 Binance。</td></tr>
     <tr><td><code>stream</code></td><td><code>boolean</code></td><td><code>false</code>：完全不打开数据流，图表等待 <code>data</code>。默认 <code>true</code>。</td></tr>
     <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>数据流首先加载的 K 线数。默认 500。</td></tr>

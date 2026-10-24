@@ -52,6 +52,10 @@ describe('readShareHash', () => {
     expect(readShareHash('#other=1')).toBeNull();
     expect(readShareHash('')).toBeNull();
   });
+
+  it('is null for a fragment that is not a URI component', () => {
+    expect(readShareHash('#tcw=%E0%A4%A')).toBeNull();
+  });
 });
 
 describe('buildShareUrl', () => {

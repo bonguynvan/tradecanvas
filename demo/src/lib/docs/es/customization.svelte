@@ -52,6 +52,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // un gráfico limpio, en marcha
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // todos los interruptores, encendidos o apagados
 grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</code></pre>
 <p>

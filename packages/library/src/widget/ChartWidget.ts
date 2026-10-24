@@ -1401,14 +1401,26 @@ export class ChartWidget {
     this.refreshMarket();
     this.updateUI();
 
-    // 9. Fire onReady
-    options.onReady?.(this.chart);
+    // 9. Once the constructor has returned (the name the host gives the
+    // widget is set by then: `onReady: () => widget.openPanel('watchlist')`),
+    // onReady, then a view shared in the URL over what it set up. The last
+    // step here: a widget whose making failed calls neither.
+    queueMicrotask(() => {
+      if (this.destroyed) return;
+      try {
+        options.onReady?.(this.chart, this);
+      } finally {
+        // An error in onReady is the host's to see; the shared view still comes.
+        if (!this.destroyed) this.restoreSharedView();
+      }
+    });
+  }
 
-    // Deep-link restore: apply a `#tcw=` view from the URL when enabled.
-    if (options.shareUrl && typeof location !== 'undefined') {
-      const encoded = readShareHash(location.hash);
-      if (encoded) void this.importState(encoded);
-    }
+  /** A view shared in the URL (`#tcw=`), when `shareUrl` is on. */
+  private restoreSharedView(): void {
+    if (!this.options.shareUrl || typeof location === 'undefined') return;
+    const encoded = readShareHash(location.hash);
+    if (encoded) void this.importState(encoded);
   }
 
   // --- Public API ---
@@ -2275,7 +2287,13 @@ export class ChartWidget {
     return { ...this.featureState };
   }
 
-  /** Whether a switch is on. */
+  /**
+   * Whether this one switch is on, as set: not whether what it names shows.
+   * A part shows while every switch it belongs to is on (its capability, its
+   * place, the bar it sits in), so the replay button goes with `replay`,
+   * `toolbar.replay` or `toolbar` off: with `features: { replay: false }`,
+   * `isFeatureOn('toolbar.replay')` is still `true`. Ask for each of them.
+   */
   isFeatureOn(name: WidgetFeature): boolean {
     return this.featureState[name] === true;
   }
@@ -3111,9 +3129,9 @@ export class ChartWidget {
   }
 
   /**
-   * The dock's pages, in the rail's order: the watchlist (open to start
-   * with), alerts, objects, the data window and the symbol info. Each draws
-   * itself as it shows, and says so on the toolbar's button.
+   * The dock's pages, in the rail's order: the watchlist, alerts, objects,
+   * the data window, the symbol info and the depth ladder, all shut to start
+   * with. Each draws itself as it shows, and says so on the toolbar's button.
    */
   private setupDock(): void {
     const dock = this.dock;

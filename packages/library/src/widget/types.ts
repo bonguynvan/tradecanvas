@@ -13,6 +13,7 @@ import type {
   SymbolInfo,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
+import type { ChartWidget } from './ChartWidget.js';
 import type { WatchlistList } from './WatchlistStore.js';
 
 /** The watchlist's lists and where its rows' quotes come from. */
@@ -173,6 +174,14 @@ export interface ChartWidgetOptions {
   chartTypes?: ChartType[];
 
   // Data
+  /**
+   * Your data feed: the widget connects it and loads each symbol and
+   * interval the user picks. Without one nothing connects, Binance or any
+   * other: the widget shows the bars you give `setData`. A symbol picked
+   * comes to `onSymbolChange` for you to give its bars; a coarser interval
+   * is made from the bars you gave (`resampleTimeframes`), a finer one comes
+   * to `onTimeframeChange`.
+   */
   adapter?: DataAdapter;
   /**
    * Search symbols as the user types in the symbol search (names, exchanges).
@@ -188,9 +197,12 @@ export interface ChartWidgetOptions {
   chartOptions?: Partial<ChartOptions>;
 
   /**
-   * A watchlist sidebar on the right: lists of symbols with last price,
-   * % change and a mini sparkline; lists can be added, renamed, deleted and
-   * reordered. `true` starts with one list of `symbols`. Default `false`.
+   * A watchlist, a panel of the dock beside the chart: lists of symbols with
+   * last price, % change and a mini sparkline; lists can be added, renamed,
+   * deleted and reordered. `true` starts with one list of `symbols`.
+   * Default `false`. Like every panel it starts shut, with its button on the
+   * dock's rail: `widget.openPanel('watchlist')` opens it (in `onReady`, for
+   * a widget that starts with it open).
    */
   watchlist?: boolean | WatchlistOptions;
 
@@ -264,7 +276,25 @@ export interface ChartWidgetOptions {
   // Callbacks
   onSymbolChange?: (symbol: string) => void;
   onTimeframeChange?: (tf: TimeFrame) => void;
-  onReady?: (chart: Chart) => void;
+  /**
+   * The widget is built: called once, with its chart and the widget itself,
+   * in a microtask after `new ChartWidget()` returns, so the name you give
+   * the widget is set by then. The statements right after the constructor
+   * run first (a `setData` there comes before it), and a view shared in the
+   * URL (`shareUrl`) is put back after it. Not called for a widget destroyed
+   * before. An error it throws is reported as uncaught, not by the
+   * constructor.
+   *
+   * @example
+   * const widget = new ChartWidget(host, {
+   *   watchlist: true,
+   *   onReady: (chart) => {
+   *     chart.addIndicator('ema', { period: 50 });
+   *     widget.openPanel('watchlist');
+   *   },
+   * });
+   */
+  onReady?: (chart: Chart, widget: ChartWidget) => void;
 }
 
 /** Where a chart menu opened, for `chartMenuItems`. */

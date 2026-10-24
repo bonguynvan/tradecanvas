@@ -29,15 +29,37 @@ export interface TradeCanvasRef {
   screenshotDataURL(): string | null;
 }
 
+/**
+ * The chart is made once, on mount. Later changes to `symbol`, `timeframe`,
+ * `theme`, `chartType`, `indicators`, `data`, `stream`, `features`,
+ * `overrides`, the markers and zones and `onCrosshairMove` go to it
+ * (`setTheme`, `setChartType`, `setData`…). `options` and `autoScale` are
+ * read at mount; `adapter`, `historyLimit` and `watermarkText` when the
+ * stream connects (at mount, or for a new symbol or interval). Unmounting
+ * closes the chart's stream and destroys it.
+ */
 export interface TradeCanvasProps {
+  /** The stream's symbol (`'BTCUSDT'`); a new one reconnects the stream, while there is no `data`. */
   symbol?: string;
+  /** The stream's interval (`'5m'`); a new one reconnects it, while there is no `data`. */
   timeframe?: TimeFrame;
   theme?: 'dark' | 'light' | Theme;
   chartType?: ChartType;
-  /** Indicators by id (`'rsi'`), or with their inputs (`{ id: 'ema', params: { period: 50 } }`). */
+  /**
+   * Indicators by id (`'rsi'`), or with their inputs (`{ id: 'ema', params: { period: 50 } }`).
+   * A new list is matched to what's on the chart: added, removed, and one
+   * whose inputs changed put back with them (its style edits go).
+   */
   indicators?: IndicatorSpec[];
-  /** Static bars: the chart shows these, and opens no stream of its own when it has them at mount. */
+  /**
+   * Static bars: the chart shows these, and opens no stream of its own when
+   * it has them at mount. A new array replaces the series (`setData`): the
+   * view goes back to the newest bar and every indicator is computed again.
+   * For a live feed, update the chart itself from the ref
+   * (`getChart()?.updateLastBar(bar)`, `appendBar`), or give it a stream.
+   */
   data?: OHLCBar[];
+  /** The stream's feed (Binance by default), taken when the stream connects. */
   adapter?: DataAdapter;
   /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
   stream?: boolean;
@@ -59,6 +81,11 @@ export interface TradeCanvasProps {
    * from their props.
    */
   options?: Partial<ChartOptions>;
+  /**
+   * Called with the chart when it is made, on mount: once, or twice in
+   * React's StrictMode in development, which mounts twice (the first chart
+   * is destroyed). The ref's `getChart()` gives it too.
+   */
   onReady?: (chart: Chart) => void;
   onCrosshairMove?: (payload: unknown) => void;
   className?: string;

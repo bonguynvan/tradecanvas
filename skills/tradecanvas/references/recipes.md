@@ -658,7 +658,9 @@ console.log(WIDGET_FEATURES.length, widget.getFeatures().alerts);
 ```
 
 A name without a dot (`alerts`, `settings`, `hotkeys`) turns a capability off
-wherever it shows; a dotted one (`toolbar.alerts`) one place. The older options
+wherever it shows; a dotted one (`toolbar.alerts`) one place. A part shows while
+all of its switches are on, and `isFeatureOn` answers for one switch as set:
+with `alerts: false`, `isFeatureOn('toolbar.alerts')` is still `true`. The older options
 (`toolbar: false`, `drawingTools: false`…) are the same switches. They hide the
 widget's own UI; `chartOptions.features` is what stops drawing, trading or zoom
 on the chart. A `ChartWidgetGrid` takes them for every chart with
@@ -683,7 +685,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 });
 widget.addToWatchlist('BNBUSDT', 'alts');
 widget.openPanel('symbolInfo');        // price, market status, the day, hours, news
-widget.openPanel('watchlist');         // the panels share the dock beside the chart; on a phone it starts shut
+widget.openPanel('watchlist');         // the panels share the dock beside the chart, all shut to start with
 await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's trades
 
 // Your own feed's quotes instead

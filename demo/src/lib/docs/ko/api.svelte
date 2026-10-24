@@ -418,7 +418,7 @@ const widget = new ChartWidget(host, {
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // 위젯의 스위치: 커스터마이징 참고
-  onReady: (chart) => { /* ... */ },
+  onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
 widget.chart.setData(...)
