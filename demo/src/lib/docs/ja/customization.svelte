@@ -103,7 +103,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
     </td></tr>
     <tr><td>ドック</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
     </td></tr>
     <tr><td>描画サイドバー</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

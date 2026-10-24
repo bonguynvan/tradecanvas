@@ -485,7 +485,7 @@ widget.destroy()`}</code></pre>
   símbolo desde la <strong>ⓘ</strong> junto al símbolo, y cualquier panel desde tu propio código. Los gráficos de un
   <code>ChartWidgetGrid</code> no tienen riel cada uno, salvo que su <code>widget.features</code> active <code>dock</code>.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

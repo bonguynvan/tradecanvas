@@ -187,6 +187,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   リワード、リスクリワード比がまとまります。買いと売りを切り替えても待機中の注文は置いた価格のままで
   （市場より上の買い逆指値は売り指値になります）、発注ボタンは売買の色になります。
 </p>
+<p>
+  口座パネルの上部には、どのタブでも含み損益と確定損益が表示されます。数字は等幅書体で右揃え、
+  金額は呼値の桁数と数値ロケールで書かれ、スマートフォンでは各行が項目名付きのカードになります。
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -236,7 +240,14 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   クリックすると OMS 向けの <code>orderPlace</code> の意図が発行されます（チャート自身は取引しません）。
   同じデータは、チャート上の板のオーバーレイにも使われます。
 </p>
+<p>
+  板情報はチャート横の dock のページです（スマートフォンではシート）。取引メニュー、レールのボタン、または
+  <code>widget.openPanel('depthLadder')</code> で開き、<code>dock.depthLadder: false</code> でレールのボタンを外せます。
+  売りは買いの上に並び、その間にスプレッドが入ります。各数量には価格の列から伸びるバーが付き、
+  自分の待機注文がある価格の行にはその数量が表示されます。
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],

@@ -4981,6 +4981,7 @@
     "dock.objectTree",
     "dock.dataWindow",
     "dock.symbolInfo",
+    "dock.depthLadder",
     "statusBar.range",
     "statusBar.goToDate",
     "statusBar.market",
@@ -5400,7 +5401,7 @@
       {
         "name": "depthLadder",
         "type": "boolean",
-        "doc": "Depth-of-market ladder — a ladder button in the toolbar that opens a click-to-trade order-book panel. Off by default (needs trading + an order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.",
+        "doc": "Depth-of-market ladder: a click-to-trade order book, a page of the dock beside the chart (a sheet on a phone). Open it from the Trade menu, its rail button (the `dock.depthLadder` switch) or `widget.openPanel('depthLadder')`. Off by default (needs trading and an order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.",
         "kind": "boolean"
       },
       {

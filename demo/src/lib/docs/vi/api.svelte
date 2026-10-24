@@ -476,7 +476,7 @@ widget.destroy()`}</code></pre>
   cạnh mã, và bảng nào cũng mở được từ code của bạn. Các biểu đồ của một <code>ChartWidgetGrid</code> không có dải
   nút riêng, trừ khi <code>widget.features</code> của nó bật <code>dock</code>.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

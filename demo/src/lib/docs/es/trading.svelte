@@ -210,6 +210,11 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   su beneficio y la relación entre ambos. Cambiar entre compra y venta deja una orden en espera donde se puso (una
   compra stop sobre el mercado pasa a venta límite), y el botón de enviar toma el color del lado.
 </p>
+<p>
+  La cabecera del panel de cuenta muestra en todas las pestañas el P&amp;L abierto y el realizado. Sus cifras van
+  alineadas a la derecha en tipo monoespaciado, el dinero con los decimales del paso de precio y en el formato numérico
+  del idioma; en el móvil cada fila es una tarjeta con sus cifras rotuladas.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -264,7 +269,14 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   <code>orderPlace</code> para tu OMS (el gráfico nunca opera por sí mismo). Los
   mismos datos alimentan también la capa de profundidad sobre el gráfico.
 </p>
+<p>
+  La escalera es una página del panel lateral junto al gráfico (una hoja en el móvil): ábrela desde el menú
+  Operar, su botón en el riel o <code>widget.openPanel('depthLadder')</code>, y quita su botón con
+  <code>dock.depthLadder: false</code>. Las ventas quedan sobre las compras con el diferencial entre ellas, cada tamaño
+  sobre una barra que crece desde el precio; las filas donde esperan tus órdenes llevan su cantidad.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],

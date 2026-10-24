@@ -10,7 +10,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal and Capsule presets, your own theme, CSS variables
-- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 132 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
+- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 133 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
 - [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
 - [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
 - [Realtime and replay](https://tradecanvas.dev/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
@@ -1004,8 +1004,9 @@ console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', session
 
 Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
 `setQuotes`); tick timeframes need a feed with `fetchTrades` and
-`subscribeTrades`. The watchlist, alerts, object tree, data window and symbol
-info are panels of one dock beside the chart, opened from a rail at its edge or
+`subscribeTrades`. The watchlist, alerts, object tree, data window, symbol
+info and (with `depthLadder: true`) the depth ladder are panels of one dock
+beside the chart, all shut to start with, opened from a rail at its edge or
 with `widget.openPanel(...)`; `features: { dock: false }` drops the rail.
 
 ==============================================================================

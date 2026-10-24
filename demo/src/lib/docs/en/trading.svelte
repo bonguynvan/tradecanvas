@@ -197,6 +197,11 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   its reward and the one over the other. Switching between buy and sell keeps a waiting order where it was put (a buy
   stop over the market becomes a sell limit), and Place takes the side's colour.
 </p>
+<p>
+  The account panel's head keeps the open P&amp;L and the P&amp;L realised in sight on every tab. Its figures are
+  set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
+  of named figures.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -248,7 +253,14 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   your OMS (the chart never trades itself). The same data also drives the
   on-chart depth overlay.
 </p>
+<p>
+  The ladder is a page of the dock beside the chart (a sheet on a phone): open it from the Trade menu, its rail
+  button or <code>widget.openPanel('depthLadder')</code>, and take its rail button away with
+  <code>dock.depthLadder: false</code>. Asks sit over bids with the spread between them, each size on a bar grown from
+  the price; the rows where your working orders wait carry their quantity.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],

@@ -458,7 +458,7 @@ widget.destroy()`}</code></pre>
   <strong>ⓘ</strong> から開き、どのパネルも自分のコードから開けます。<code>ChartWidgetGrid</code> のチャートには
   それぞれのレールはありません。ただし、その <code>widget.features</code> で <code>dock</code> をオンにすれば表示されます。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

@@ -445,7 +445,7 @@ widget.destroy()`}</code></pre>
   品种信息从品种旁的 <strong>ⓘ</strong> 打开，任何面板也都可以由你自己的代码打开。<code>ChartWidgetGrid</code> 中的图表各自没有按钮栏，
   除非它的 <code>widget.features</code> 打开了 <code>dock</code>。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

@@ -464,7 +464,7 @@ widget.destroy()`}</code></pre>
   코드에서 열 수 있습니다. <code>ChartWidgetGrid</code>의 차트에는 각자의 레일이 없습니다. 단, 그
   <code>widget.features</code>에서 <code>dock</code>을 켜면 생깁니다.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
