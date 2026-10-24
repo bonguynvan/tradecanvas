@@ -35,6 +35,7 @@ class FakeChart {
   }
   getDrawings(): DrawingState[] { return this.drawings; }
   getSelectedDrawingIds(): string[] { return this.selected; }
+  isDrawingShown(id: string): boolean { return this.drawings.some((d) => d.id === id && d.visible); }
   setDrawingsLocked(ids: string[], locked: boolean): void {
     this.drawings = this.drawings.map((d) => (ids.includes(d.id) ? { ...d, locked } : d));
   }

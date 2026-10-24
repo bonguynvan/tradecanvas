@@ -80,3 +80,13 @@ describe('WidgetObjectTree groups', () => {
     expect(groupRow().querySelector('.tcw-tree-name')!.textContent!.trim()).toBe('Weekly levels');
   });
 });
+
+describe('WidgetObjectTree drawings kept to other intervals', () => {
+  it('steps back a drawing this interval does not show, and says why, its eye still on', () => {
+    tree.setObjects([], [{ id: 'd', label: 'Trend Line', visible: true, offInterval: true, locked: false }]);
+    const [row] = rows();
+    expect(row.classList.contains('tcw-tree-hidden')).toBe(true);
+    expect(row.title).toBe('Not shown on this interval');
+    expect(button(row, 'Hide')).not.toBeNull();
+  });
+});

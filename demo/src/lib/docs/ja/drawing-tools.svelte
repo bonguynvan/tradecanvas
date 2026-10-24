@@ -61,6 +61,44 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>保存したレイアウトや貼り付けた描画の設定はツールに照らして検証され、ツールが受け付けない値は取り除かれます。</p>
 
+<h3 id="settings-dialog">設定ダイアログ</h3>
+<p>
+  ウィジェットで描画をダブルクリックする（またはツールバー、メニュー、オブジェクトツリーの「設定」を選ぶ）と、
+  その描画の設定がタブに分かれて開きます。<strong>スタイル</strong>：ライン（色、太さ、線種）を 1 行にまとめ、
+  続いて線端、塗りつぶし、ツールの切り替えと選択肢、そしてレベル。<strong>テキスト</strong>（文字を書くツールのみ）：
+  テキストとそのサイズ。<strong>座標</strong>：各点の価格、日付、時刻（チャートのタイムゾーンで表示）。
+  <strong>表示</strong>：描画を表示する時間足。変更はすぐに反映され、<strong>OK</strong> で 1 回分の元に戻す操作として確定し、
+  <strong>キャンセル</strong>（または Escape）で描画を元の状態に戻します。<strong>テンプレート</strong>メニューでは、
+  保存したテンプレートの適用と削除、描画の見た目のテンプレートとしての保存、設定のツールの既定値としての保存、
+  そのリセットができます。
+</p>
+
+<h3 id="drawing-intervals">一部の時間足だけに表示</h3>
+<p>
+  描画は、インジケーターと同じルールで一部の時間足だけに表示できます：ある種類をオフにする
+  （<code>minutes: false</code>）か、その範囲を指定します（<code>hours: [1, 4]</code>）。ほかの時間足では描画されず、
+  クリックにも反応せず、選択もされません。ルールはレイアウトとともに保存されます。
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // 分足には表示しない
+chart.isDrawingShown(id)                                    // 5m のチャートでは false
+chart.updateDrawing(id, { intervals: null })                // ふたたびすべての時間足に表示
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>ストリームのない Chart を直接使う場合は、<code>chart.setDataTimeframe('5m')</code> でバーの時間足を伝えます。</p>
+
+<h3 id="line-stats">ラインの端、中点、統計</h3>
+<p>
+  トレンドライン、半直線、延長線は、中点と、2 点間の統計を表示できます：価格の変化とその割合、2 点間のバー数と時間、角度です。
+  統計はラインを選択している間だけ表示するか常に表示し、右端、中点、左端のいずれかのそばに置かれます。
+  トレンドラインの両端は矢印にできます。どれも、指定するまではオフです。
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // トレンドライン：leftEnd、rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">選択した描画の上のツールバー</h2>
 <p>
   ウィジェットで描画をクリックすると、そのすぐ上に小さなツールバーが表示されます：色、線の太さと線種、続いて設定、その線へのアラート、ロック、描画の完全なメニュー（右クリックと同じ）、削除。複数選択時はすべての上に置かれ、変更はそれぞれに適用されます。描画の移動、パン、ズームに追従し、描画ツール・消しゴム・範囲ズームが有効な間は退き、矢印キーで移動できる 1 つのタブストップです。

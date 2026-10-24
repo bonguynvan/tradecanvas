@@ -62,6 +62,45 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>Settings from a saved layout or a pasted drawing are checked against the tool; values it does not take are dropped.</p>
 
+<h3 id="settings-dialog">The settings dialog</h3>
+<p>
+  In the widget, a double-click on a drawing (or Settings on its toolbar, its menu or the object tree) opens its
+  settings in tabs. <strong>Style</strong>: the line (colour, width, dash) in one row, its ends, the fill, then the
+  tool's switches and choices, and its levels. <strong>Text</strong>, for the tools that write: the text and its
+  size. <strong>Coordinates</strong>: each point's price, date and time, in the chart's time zone.
+  <strong>Visibility</strong>: the intervals it shows on. Every change shows at once; <strong>OK</strong> keeps them
+  as one undo step, <strong>Cancel</strong> (or Escape) puts the drawing back. The <strong>Template</strong> menu
+  applies or deletes a saved template, saves the drawing's look as one, keeps the options as the tool's default,
+  and resets them.
+</p>
+
+<h3 id="drawing-intervals">Shown on some intervals</h3>
+<p>
+  A drawing can be kept to some intervals, with the rules an indicator takes: a unit off
+  (<code>minutes: false</code>), or a range of it (<code>hours: [1, 4]</code>). On the other intervals it is not
+  drawn, not hit and not selected. The rules are saved with the layout.
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // not on minute charts
+chart.isDrawingShown(id)                                    // false on a 5m chart
+chart.updateDrawing(id, { intervals: null })                // every interval again
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>On a bare Chart without a stream, give the interval of your bars with <code>chart.setDataTimeframe('5m')</code>.</p>
+
+<h3 id="line-stats">A line's ends, middle and stats</h3>
+<p>
+  Trend lines, rays and extended lines can show their middle point, and stats between their two points: the
+  price's change and its percentage, the bars and the time between them, the angle. The stats show while the line
+  is selected, or all the time, by its right end, its middle or its left end. A trend line's ends can be arrows.
+  All of it is off until asked for.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // trend lines: leftEnd, rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">The toolbar over a selection</h2>
 <p>
   In the widget, clicking a drawing shows a small toolbar right over it: colour, line width and line style, then settings, an alert on its line, lock, the full drawing menu (the same as a right-click) and delete. With several drawings selected it sits over all of them, and its changes go to each. It follows the drawing while it is moved, panned or zoomed, steps aside while a drawing tool, the eraser or the zoom area is on, and is one tab stop that the arrow keys move along.

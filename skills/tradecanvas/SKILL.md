@@ -149,7 +149,8 @@ chart.setDrawingTool('fibRetracement'); // the user clicks the points; null canc
 const line = chart.addDrawing({
   type: 'trendLine',
   anchors: [{ time: t1, price: 61_800 }, { time: t2, price: 63_400 }],
-  options: { extendRight: true },        // each tool's own settings: chart.getDrawingOptionDefs(type)
+  options: { extendRight: true, showPriceRange: true, rightEnd: 'arrow' }, // each tool's own: chart.getDrawingOptionDefs(type)
+  intervals: { minutes: false },         // not drawn on minute charts; unset: every interval
 });
 if (line && chart.canAddDrawingAlert(line)) chart.addDrawingAlert(line, { condition: 'crossingDown' });
 chart.addAlert(65_000, 'crossingUp', 'BTC above 65k');
@@ -161,6 +162,10 @@ chart.on('positionModify', (e) => console.log('stop or target dragged', e.payloa
 and drawings can be grouped (`groupDrawings`), reordered (`moveDrawing`), erased
 (`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then
 `pasteDrawings` there; `canPasteDrawings()` says whether there is something to paste).
+A drawing kept to some intervals (`intervals`, the rules of `IndicatorIntervals`; change them
+with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDrawingShown(id)`.
+Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
+`showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
 `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
 
 ## Signals, trades and replay

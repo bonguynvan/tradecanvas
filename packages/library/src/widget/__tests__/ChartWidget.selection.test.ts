@@ -44,6 +44,7 @@ class FakeChart {
   setLegend(config: Record<string, unknown>): void { this.legend.push(config); }
   getDrawings(): DrawingState[] { return this.drawings; }
   getSelectedDrawingIds(): string[] { return this.selected; }
+  isDrawingShown(id: string): boolean { return this.drawings.some((d) => d.id === id && d.visible); }
   getDrawingRect(id: string): Box | null { return this.rects[id] ?? this.rect; }
   getDrawingTool(): string | null { return this.tool; }
   isEraserMode(): boolean { return false; }
@@ -61,6 +62,8 @@ class FakeChart {
     return gone.size;
   }
   setDrawingsLocked(ids: string[], locked: boolean): void { this.locked.push([[...ids], locked]); }
+  updated: [string, Record<string, unknown>][] = [];
+  updateDrawing(id: string, patch: Record<string, unknown>): boolean { this.updated.push([id, patch]); return true; }
   getData(): unknown[] { return []; }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
@@ -145,6 +148,32 @@ describe('ChartWidget selection toolbar', () => {
     button('delete').click();
     expect(FakeChart.last.removed).toEqual([['d1']]);
     expect(bar()!.hidden).toBe(true);
+  });
+
+  it('opens the settings on the intervals the drawing keeps to, and changes them', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings[0].intervals = { minutes: false };
+    FakeChart.last.select(['d1']);
+    button('settings').click();
+    [...host.querySelectorAll<HTMLButtonElement>('.tcw-drawing-settings [role="tab"]')].find((b) => b.textContent === 'Visibility')!.click();
+    const unit = (name: string) => host.querySelector<HTMLInputElement>(`.tcw-drawing-settings [data-unit="${name}"] input[type=checkbox]`)!;
+    expect(unit('minutes').checked).toBe(false);
+    unit('minutes').click();
+    expect(FakeChart.last.updated).toEqual([['d1', { intervals: null }]]);
+  });
+
+  it('saves a drawing’s look as a template of its tool, under the name asked for', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    button('settings').click();
+    host.querySelector<HTMLButtonElement>('.tcw-drawing-settings [data-act="template"]')!.click();
+    [...host.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((b) => b.textContent === 'Save as template…')!.click();
+    const prompt = host.querySelector<HTMLFormElement>('.tcw-modal-backdrop:not([hidden]) .tcw-name-prompt')!;
+    expect(prompt.querySelector('h3')!.textContent).toBe('Save drawing template');
+    prompt.querySelector('input')!.value = 'Blue line';
+    prompt.dispatchEvent(new Event('submit', { cancelable: true }));
+    const saved = JSON.parse(localStorage.getItem('tcw:draw-templates')!);
+    expect(saved).toEqual([{ name: 'Blue line', style: { color: '#2962ff', lineWidth: 2, lineStyle: 'solid' }, type: 'trendLine', options: {} }]);
   });
 
   it('follows the drawing when it moves or the price scale changes, once a frame', async () => {

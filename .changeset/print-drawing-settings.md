@@ -1,0 +1,7 @@
+---
+'@tradecanvas/chart': minor
+'@tradecanvas/core': minor
+'@tradecanvas/commons': minor
+---
+
+A drawing's settings, rebuilt. The dialog is 480 wide with its tabs along the top: Style (the line in one row, its ends, the fill, the tool's switches as ticked rows, its levels in two columns), Text for the tools that write, Coordinates (a row per point: price, date, time) and Visibility (the intervals it shows on). Template, Cancel and OK sit at its foot: the Template menu applies and deletes the saved templates, saves the drawing's look under a name it asks for, keeps the options as the tool's default and resets them. The Properties tab, the template list under the style and the Add alert link are gone. Drawings can be kept to some intervals: `DrawingState.intervals` (the rules of `IndicatorIntervals`), kept in saved layouts, set with `chart.updateDrawing(id, { intervals })` or `chart.addDrawing({ …, intervals })`; `chart.isDrawingShown(id)` says whether one is on the chart now (`DrawingManager.setTimeframe()` and `isShown()` in core). Trend lines, rays and extended lines take a middle point and stats (price change, bars, time, angle) while selected or always, by the line's right end, middle or left end (`showMiddlePoint`, `showPriceRange`, `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`); a trend line's ends can be arrows (`leftEnd`, `rightEnd`). All off by default.

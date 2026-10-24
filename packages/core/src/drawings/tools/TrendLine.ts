@@ -1,9 +1,15 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
+import { LINE_END_OPTIONS, LINE_STATS_OPTIONS, drawLineEnds, drawLineStats } from './lineDecor.js';
 
 export class TrendLineTool extends DrawingBase {
-  descriptor = { type: 'trendLine' as const, name: 'Trend Line', requiredAnchors: 2, options: extendOptions() };
+  descriptor = {
+    type: 'trendLine' as const,
+    name: 'Trend Line',
+    requiredAnchors: 2,
+    options: { ...extendOptions(), ...LINE_END_OPTIONS, ...LINE_STATS_OPTIONS },
+  };
 
   private segment(state: DrawingState, viewport: ViewportState): [Point, Point] {
     const p1 = this.anchorToPixel(state.anchors[0], viewport);
@@ -20,6 +26,10 @@ export class TrendLineTool extends DrawingBase {
     ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
     this.resetLineStyle(ctx);
+    const option = this.optionsOf(state);
+    drawLineEnds(ctx, [p1, p2], state.style.color, option);
+    const anchors = [this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport)] as const;
+    drawLineStats(ctx, state, viewport, anchors, selected, option);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

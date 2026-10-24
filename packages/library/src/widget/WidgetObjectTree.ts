@@ -12,6 +12,8 @@ export interface ObjectTreeDrawing {
   id: string;
   label: string;
   visible: boolean;
+  /** Shown, but kept to other intervals than the chart's: not drawn now. */
+  offInterval?: boolean;
   locked: boolean;
   /** The group it belongs to; a group's drawings are listed under one row. */
   group?: { id: string; name: string };
@@ -282,7 +284,8 @@ export class WidgetObjectTree {
 
   private drawingRow(d: ObjectTreeDrawing): HTMLDivElement {
     const row = this.row(d.label);
-    if (!d.visible) row.classList.add('tcw-tree-hidden');
+    if (!d.visible || d.offInterval) row.classList.add('tcw-tree-hidden');
+    if (d.offInterval) row.title = this.t('indicatorSettings.offInterval');
 
     const actions = document.createElement('div');
     actions.className = 'tcw-tree-actions';

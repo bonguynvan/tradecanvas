@@ -1,6 +1,7 @@
 /**
- * Form controls shared by the settings dialogs: a labelled row, a switch, a
- * number field, a colour picker and a select. Each calls back on change.
+ * Form controls shared by the settings dialogs: a labelled row, a ticked
+ * row, a switch, a number field, a colour picker and a select. Each calls
+ * back on change.
  */
 
 /** A labelled control: clicking the label reaches the control. */
@@ -11,6 +12,21 @@ export function settingsRow(label: string, control: HTMLElement): HTMLLabelEleme
   text.className = 'tcw-settings-label';
   text.textContent = label;
   row.append(text, control);
+  return row;
+}
+
+/** A box ticked or not, its label after it: the whole row ticks it. */
+export function checkRow(label: string, value: boolean, onChange: (value: boolean) => void): HTMLLabelElement {
+  const row = document.createElement('label');
+  row.className = 'tcw-settings-row tcw-check-row';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.checked = value;
+  box.addEventListener('change', () => onChange(box.checked));
+  const text = document.createElement('span');
+  text.className = 'tcw-settings-label';
+  text.textContent = label;
+  row.append(box, text);
   return row;
 }
 

@@ -1,10 +1,13 @@
-import type { AnchorPoint, DrawingOptions, DrawingState, DrawingStyle } from '@tradecanvas/commons';
+import type { AnchorPoint, DrawingOptions, DrawingState, DrawingStyle, IndicatorIntervals } from '@tradecanvas/commons';
+import { copyIntervals } from '../indicators/palette.js';
 
-/** A change to a drawing: its anchors (as many as it has), style or options. */
+/** A change to a drawing: its anchors (as many as it has), style, options, or the intervals it shows on. */
 export interface DrawingPatch {
   anchors?: AnchorPoint[];
   style?: Partial<DrawingStyle>;
   options?: DrawingOptions;
+  /** Null: every interval. */
+  intervals?: IndicatorIntervals | null;
 }
 
 /** Where `moveDrawing` puts a drawing among the others: drawn on top of all, under all, or one step. */
@@ -32,6 +35,7 @@ export function cloneDrawing(d: DrawingState): DrawingState {
     anchors: d.anchors.map((a) => ({ ...a })),
     style: { ...d.style },
     options: d.options ? cloneOptions(d.options) : undefined,
+    intervals: d.intervals ? copyIntervals(d.intervals) : undefined,
     group: d.group ? { ...d.group } : undefined,
     meta: d.meta ? { ...d.meta } : undefined,
   };

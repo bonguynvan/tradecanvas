@@ -1,5 +1,6 @@
 import type { Point, ViewportState } from './rendering.js';
 import type { OHLCBar } from './ohlc.js';
+import type { IndicatorIntervals } from './indicator.js';
 
 export type DrawingToolType =
   | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
@@ -49,6 +50,11 @@ export interface DrawingState {
   options?: DrawingOptions;
   /** The group it belongs to: drawings selected, hidden and locked together. */
   group?: { id: string; name: string };
+  /**
+   * The intervals it shows on, as an indicator's are (`{ minutes: false }`:
+   * not on minute charts); unset: all of them.
+   */
+  intervals?: IndicatorIntervals;
   meta?: Record<string, unknown>;
 }
 

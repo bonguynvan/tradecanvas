@@ -35,7 +35,7 @@ import { ChartTemplateStore } from './chartTemplates.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
-import { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
+import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
@@ -228,6 +228,8 @@ export class ChartWidget {
   /** The chart templates of the settings' Template menu, and the prompt that names a new one. */
   private chartTemplates = new ChartTemplateStore();
   private chartTemplatePrompt: WidgetNamePrompt | null = null;
+  /** Asks a drawing template's name, over the drawing's settings. */
+  private drawingTemplatePrompt: WidgetNamePrompt | null = null;
   /**
    * The settings open now: as they were on opening, and the keys changed since
    * (a change, a reset, a template). Cancel puts those back, OK records them
@@ -889,13 +891,16 @@ export class ChartWidget {
       },
       roundPrice: (price) => this.chart.roundPrice(price),
       priceStep: () => this.chart.getPriceStep(),
-      onAddAlert: (id) => this.addDrawingAlert(id),
       onSaveDefault: (type, toolOptions) => {
         this.chart.setDrawingToolDefaults(type, toolOptions);
         defaults.set(type, this.chart.getDrawingToolDefaults(type));
         this.say(fill(this.t('drawingSettings.defaultSaved'), { name: this.drawingToolName(type) }));
       },
-      templates,
+      templates: {
+        list: (type) => templates.list(type),
+        save: (look) => this.promptSaveDrawingTemplate(templates, look),
+        remove: (name, type) => templates.remove(name, type),
+      },
     }, this.t);
     this.chart.on('drawingDoubleClick', (e) => this.openDrawingSettings((e.payload as { id: string }).id));
     this.drawingStyle = new WidgetDrawingStyle(
@@ -1200,6 +1205,8 @@ export class ChartWidget {
     this.chart.on('drawingCreate', refresh);
     this.chart.on('drawingRemove', refresh);
     this.chart.on('drawingUpdate', refreshSoon);
+    // Drawings kept to some intervals come and go with it.
+    this.chart.on('timeframeChange', refreshSoon);
     this.chart.on('indicatorAdd', refresh);
     this.chart.on('indicatorRemove', refresh);
     this.chart.on('indicatorChange', refresh);
@@ -1718,6 +1725,7 @@ export class ChartWidget {
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
     this.chartTemplatePrompt?.destroy();
+    this.drawingTemplatePrompt?.destroy();
     this.intervalInput?.destroy();
     this.markerTip?.remove();
     this.layoutSession?.destroy();
@@ -1891,7 +1899,7 @@ export class ChartWidget {
       return;
     }
     const ids = new Set(selected);
-    const drawings = this.chart.getDrawings().filter((d) => ids.has(d.id) && d.visible);
+    const drawings = this.chart.getDrawings().filter((d) => ids.has(d.id) && this.chart.isDrawingShown(d.id));
     const busy = this.chart.getDrawingTool() !== null || this.chart.isEraserMode() || this.chart.isZoomAreaMode();
     if (busy || drawings.length === 0) {
       toolbar.hide();
@@ -1930,7 +1938,21 @@ export class ChartWidget {
       anchors: drawing.anchors.map((a) => ({ ...a })),
       fill: descriptor.fill === true,
       text: descriptor.text === true,
-      alertable: this.chart.canAddDrawingAlert(id),
+      intervals: drawing.intervals ?? null,
+    });
+  }
+
+  /** Save a drawing's look as a template of its tool, asking for its name over the drawing's settings. */
+  private promptSaveDrawingTemplate(templates: DrawingTemplateStore, look: DrawingTemplateLook): void {
+    this.drawingTemplatePrompt ??= new WidgetNamePrompt(this.root, this.t);
+    this.drawingTemplatePrompt.open({
+      title: this.t('drawingSettings.saveTemplateTitle'),
+      submitLabel: this.t('common.save'),
+      placeholder: this.drawingToolName(look.type),
+      onSubmit: (name) => {
+        templates.save(name, look.style, { type: look.type, options: look.options });
+        this.say(fill(this.t('templates.saved'), { name: name.trim() }));
+      },
     });
   }
 
@@ -2957,6 +2979,7 @@ export class ChartWidget {
       id: d.id,
       label: drawingTypeLabel(d.type, this.t),
       visible: d.visible,
+      offInterval: d.visible && !this.chart.isDrawingShown(d.id),
       locked: d.locked,
       group: d.group,
     }));

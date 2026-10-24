@@ -677,8 +677,9 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
   các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
   <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
 </p>
-<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked)
+<pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
+chart.isDrawingShown(id)            // không bị ẩn, và hiện trên khung thời gian này
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
 chart.groupDrawings(ids, 'Weekly levels')  // ẩn, khoá và chọn cùng nhau
@@ -689,8 +690,11 @@ chart.removeIndicator(instanceId)`}</code></pre>
 <h3>Cài đặt hình vẽ và menu</h3>
 <p>
   Bấm đúp vào một hình vẽ, hoặc dùng nút bánh răng của nó trong cây đối tượng, để mở
-  cài đặt: kiểu, các cài đặt riêng của công cụ (mức Fibonacci, phần kéo dài,
-  nhãn…) và các điểm của nó theo múi giờ của biểu đồ. Bấm chuột phải vào một
+  cài đặt theo từng tab: Kiểu (đường, hai đầu đường, màu nền, các cài đặt riêng
+  của công cụ như mức Fibonacci, phần kéo dài và nhãn), Chữ cho các công cụ có
+  chữ, Toạ độ (các điểm của nó theo múi giờ của biểu đồ) và Hiển thị (các khung
+  thời gian mà nó hiện trên đó), cùng menu Mẫu, Huỷ và OK ở cuối hộp thoại.
+  Bấm chuột phải vào một
   hình vẽ để mở menu: cài đặt, cảnh báo trên đường của nó, thứ tự, nhóm, khoá,
   ẩn, nhân bản và xoá. Thanh bên còn có tẩy, công cụ phóng to và nam châm với
   các mức tắt, yếu và mạnh. Xem

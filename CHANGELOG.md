@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### A drawing's settings
+
+A drawing's settings dialog is laid out as the indicator settings are, in the Print look: 480 wide, its tabs along the top, **Template**, **Cancel** and **OK** at the foot.
+
+- **Style** has the line in one row (colour, width, dash), its ends, the fill and its opacity, then the tool's own switches as ticked rows and its choices, and the levels last, in two columns on a desktop. The **Properties** tab is gone: what it held is here.
+- **Text**, for the tools that write: the text, across the dialog, and its size.
+- **Coordinates**: a row per point, its price, date and time; on a phone the price above the date and time.
+- **Visibility**: the intervals the drawing shows on, as an indicator's. A drawing kept to some intervals is not drawn, hit or selected on the others (nor along with its group), and a selected one leaves the selection when the interval changes to one it is not on. It is copied and pasted with its intervals. The object tree steps it back while it is off the chart's interval, and says why.
+- **The Template menu** lists the templates saved for the tool and the plain ones (each with its delete button), saves the drawing's look as a template under a name it asks for, keeps the options as the tool's default, and resets them. The template list and the name field under the style are gone, and so is the dialog's Add alert link (the drawing's toolbar and its right-click menu have it).
+- **Trend lines, rays and extended lines** have a middle point and stats when asked: the price's change and its percentage, the bars and the time between the two points, the angle. They show while the line is selected, or all the time, by its right end, its middle or its left end. A trend line's ends can be arrows.
+- `DrawingState.intervals` (the same rules as `IndicatorIntervals`), kept in saved layouts; `chart.updateDrawing(id, { intervals })` sets them (null: every interval), `chart.addDrawing({ …, intervals })` starts with them, and `chart.isDrawingShown(id)` says whether a drawing is on the chart now. `DrawingManager.setTimeframe()` and `isShown()` in `@tradecanvas/core`.
+- New options on `trendLine`: `leftEnd`, `rightEnd` (`'normal'` or `'arrow'`); on `trendLine`, `ray` and `extendedLine`: `showMiddlePoint`, `showPriceRange`, `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition` (`'left'`, `'center'`, `'right'`). All off by default: lines look as before.
+- The line's colour carries to the levels and the fill that have none of their own as it is picked. Adding or removing a level keeps the keyboard there. In a right-to-left widget the arrow keys move the other way along the tabs of a drawing's and an indicator's settings.
+- Nineteen new strings in all 30 languages; `drawingSettings.tab.options` is gone.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.37.0 (2026-10-23)
+
+React, Vue and Svelte components: 1.3.19.
+
 ### The chart's right-click menus
 
 The menus on the plot, the price axis and the time axis are rebuilt in the Print look, grouped as a trader looks for them, with submenus and the widget's shortcuts.
@@ -14,8 +35,6 @@ The menus on the plot, the price axis and the time axis are rebuilt in the Print
 - New switches: `menu.chart.indicators`, `menu.chart.timezone`, `hotkeys.resetView` (125 in all).
 - `chart.canPasteDrawings()` says whether `pasteDrawings()` would paste; `DrawingManager.canPaste()` in `@tradecanvas/core`.
 - `chart.removeIndicators(ids)` removes several indicators as one undo step.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.36.0 (2026-10-23)
 

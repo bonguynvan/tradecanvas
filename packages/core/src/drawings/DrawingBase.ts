@@ -107,6 +107,11 @@ export abstract class DrawingBase implements DrawingPlugin {
     return (own !== undefined && optionKindMatches(def, own) ? own : def.default) as T;
   }
 
+  /** `option` for one drawing, for helpers that read several of its options. */
+  protected optionsOf(state: DrawingState): <T extends DrawingOptionValue>(key: string) => T {
+    return <T extends DrawingOptionValue>(key: string) => this.option<T>(state, key);
+  }
+
   /** The levels turned on, in order. */
   protected visibleLevels(state: DrawingState, key = 'levels'): DrawingLevel[] {
     return this.option<DrawingLevel[]>(state, key).filter((level) => level.visible && Number.isFinite(level.value));

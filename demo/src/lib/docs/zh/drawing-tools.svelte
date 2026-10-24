@@ -61,6 +61,42 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>来自已保存布局或粘贴画线的设置会按工具进行校验；工具不接受的值会被丢弃。</p>
 
+<h3 id="settings-dialog">设置对话框</h3>
+<p>
+  在组件中双击一条画线（或点击它的工具栏、菜单或对象树中的“设置”），会打开它的设置，分为几个标签页。
+  <strong>样式</strong>：线条（颜色、线宽、线型）在同一行，然后是线端、填充，接着是工具的开关和选项，以及它的级别。
+  <strong>文本</strong>，用于可写文字的工具：文本及其字号。<strong>坐标</strong>：每个点的价格、日期和时间，按图表时区显示。
+  <strong>可见性</strong>：它在哪些周期上显示。每项更改都会立即生效；<strong>确定</strong>将这些更改保留为一次撤销，
+  <strong>取消</strong>（或 Escape）将画线还原。<strong>模板</strong>菜单可以应用或删除已保存的模板、将画线的外观保存为模板、
+  将这些选项保存为该工具的默认值，以及重置它们。
+</p>
+
+<h3 id="drawing-intervals">只在部分周期显示</h3>
+<p>
+  画线可以只在部分周期上显示，规则与指标相同：关闭某一类周期（<code>minutes: false</code>），
+  或限定它的一个范围（<code>hours: [1, 4]</code>）。在其他周期上，画线不会被绘制、无法点中，也不会被选中。
+  这些规则随布局一起保存。
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // 不在分钟图上显示
+chart.isDrawingShown(id)                                    // 在 5m 图上为 false
+chart.updateDrawing(id, { intervals: null })                // 恢复为全部周期
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>直接使用 Chart 且没有数据流时，用 <code>chart.setDataTimeframe('5m')</code> 告诉图表K线的周期。</p>
+
+<h3 id="line-stats">线的端点、中点和统计</h3>
+<p>
+  趋势线、射线和延长线可以显示中点，以及两点之间的统计：价格变化及其百分比、两点之间的K线数和时间、角度。
+  统计在线条被选中时显示，也可以始终显示，位置在右端、中点或左端旁。趋势线的端点可以是箭头。
+  这些默认全部关闭，需要时再开启。
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // 趋势线：leftEnd、rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">选中画线上方的工具栏</h2>
 <p>
   在组件中点击一个画线，其上方会出现一个小工具栏：颜色、线宽和线型，然后是设置、在其线上加提醒、锁定、完整的画线菜单（与右键相同）和删除。选中多个画线时，工具栏位于它们全部之上，修改作用于每一个。画线被移动、平移或缩放时它会跟随；画线工具、橡皮擦或区域缩放开启时它会让开；它是一个 Tab 停靠点，可用方向键在其中移动。

@@ -329,12 +329,14 @@ export class WidgetIndicatorSettings {
     if (focus) this.tabButtons.find((b) => b.dataset.tab === tab)?.focus();
   }
 
-  /** Arrow keys, Home and End move between tabs. */
+  /** Arrow keys (the other way right to left), Home and End move between tabs. */
   private onTabKey(e: KeyboardEvent): void {
     const tabs = this.tabButtons.map((b) => b.dataset.tab as Tab);
     const at = tabs.indexOf(this.tab);
-    const next = e.key === 'ArrowRight' ? (at + 1) % tabs.length
-      : e.key === 'ArrowLeft' ? (at - 1 + tabs.length) % tabs.length
+    const rtl = this.modal.closest('[dir]')?.getAttribute('dir') === 'rtl';
+    const [forward, back] = rtl ? ['ArrowLeft', 'ArrowRight'] : ['ArrowRight', 'ArrowLeft'];
+    const next = e.key === forward ? (at + 1) % tabs.length
+      : e.key === back ? (at - 1 + tabs.length) % tabs.length
       : e.key === 'Home' ? 0
       : e.key === 'End' ? tabs.length - 1
       : -1;

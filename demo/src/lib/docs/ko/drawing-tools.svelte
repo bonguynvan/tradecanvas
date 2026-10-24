@@ -61,6 +61,43 @@ chart.endDrawingEdit(id, { cancel: false })
 chart.setDrawingToolDefaults('fibRetracement', { showPrices: false })`}</code></pre>
 <p>저장된 레이아웃이나 붙여넣은 그림의 설정은 도구에 맞게 검사되며, 도구가 받지 않는 값은 버려집니다.</p>
 
+<h3 id="settings-dialog">설정 대화상자</h3>
+<p>
+  위젯에서 그림을 더블 클릭하면(또는 그 그림의 도구 모음, 메뉴, 개체 트리에서 설정을 누르면) 그림의 설정이
+  탭으로 나뉘어 열립니다. <strong>스타일</strong>: 한 행에 놓인 선(색상, 두께, 선 모양), 선 끝, 채우기, 이어서 도구의
+  스위치와 선택 항목, 그리고 레벨. <strong>텍스트</strong>(글을 쓰는 도구에만 있음): 텍스트와 그 크기.
+  <strong>좌표</strong>: 각 점의 가격, 날짜, 시간(차트 시간대 기준). <strong>표시</strong>: 그림이 보이는 시간 단위.
+  모든 변경은 바로 반영되며, <strong>확인</strong>은 변경을 하나의 실행 취소 단계로 유지하고, <strong>취소</strong>(또는
+  Escape)는 그림을 원래대로 되돌립니다. <strong>템플릿</strong> 메뉴는 저장된 템플릿을 적용하거나 삭제하고, 그림의
+  모양을 템플릿으로 저장하고, 설정을 도구의 기본값으로 저장하고, 그 설정을 재설정합니다.
+</p>
+
+<h3 id="drawing-intervals">일부 시간 단위에서만 표시</h3>
+<p>
+  그림도 지표와 같은 규칙으로 일부 시간 단위에서만 보이게 할 수 있습니다. 한 종류를 끄거나
+  (<code>minutes: false</code>) 그 범위를 지정합니다(<code>hours: [1, 4]</code>). 다른 시간 단위에서는 그려지지 않고,
+  클릭되지 않으며, 선택되지 않습니다. 규칙은 레이아웃과 함께 저장됩니다.
+</p>
+<pre><code>{`chart.updateDrawing(id, { intervals: { minutes: false } })  // 분봉에서는 표시하지 않음
+chart.isDrawingShown(id)                                    // 5m 차트에서는 false
+chart.updateDrawing(id, { intervals: null })                // 다시 모든 시간 단위에 표시
+
+chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], intervals: { days: false, weeks: false } })`}</code></pre>
+<p>스트림 없이 Chart를 직접 쓸 때는 <code>chart.setDataTimeframe('5m')</code>로 봉의 시간 단위를 알려 주세요.</p>
+
+<h3 id="line-stats">선의 끝, 중간점, 통계</h3>
+<p>
+  추세선, 반직선, 연장선은 중간점과, 두 점 사이의 통계를 표시할 수 있습니다. 가격의 변화와 그 퍼센트, 두 점 사이의
+  봉 수와 시간, 각도입니다. 통계는 선이 선택되어 있는 동안 또는 항상 표시되며, 오른쪽 끝, 중간점, 왼쪽 끝 중 한 곳
+  옆에 놓입니다. 추세선의 끝은 화살표로 만들 수 있습니다. 모두 켜기 전까지는 꺼져 있습니다.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, {
+  showPriceRange: true, showBarsRange: true, showDateRange: true, showAngle: true,
+  alwaysShowStats: true, statsPosition: 'right',   // 'left' | 'center' | 'right'
+  showMiddlePoint: true,
+  rightEnd: 'arrow',                                // 추세선: leftEnd, rightEnd
+})`}</code></pre>
+
 <h2 id="selection-toolbar">선택한 그림 위의 도구 모음</h2>
 <p>
   위젯에서 그림을 클릭하면 바로 위에 작은 도구 모음이 나타납니다: 색, 선 두께와 선 모양, 이어서 설정, 그 선에 거는 알림, 잠금, 그림의 전체 메뉴(오른쪽 클릭과 같음), 삭제. 여러 그림을 선택하면 모두의 위에 놓이고 변경은 각각에 적용됩니다. 그림을 옮기거나 이동·확대할 때 따라가고, 그리기 도구·지우개·영역 확대가 켜져 있으면 비켜나며, 화살표 키로 이동하는 하나의 탭 정지점입니다.
