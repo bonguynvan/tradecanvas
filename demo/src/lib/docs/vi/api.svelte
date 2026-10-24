@@ -509,7 +509,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>Phím tắt</th><th>Thao tác</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh (chỉ báo, loại biểu đồ, công cụ vẽ…)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh: các lệnh của widget kèm phím tắt (đi tới, đặt lại khung nhìn, lưu layout, các bảng…), công cụ vẽ, loại biểu đồ, khung thời gian và chỉ báo; lệnh dùng gần đây đứng đầu</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã: các mã của bạn, hoặc tìm qua nguồn dữ liệu khi bạn gõ</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Tìm một mã, bắt đầu bằng chữ cái vừa gõ (<code>{`features: { symbolTyping: false }`}</code> để tắt)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
@@ -518,7 +518,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Đặt lại khung nhìn: hiện mọi nến, thang giá vừa với chúng</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Đảo ngược thang giá</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Đi tới một ngày</td></tr>
-    <tr><td><kbd>?</kbd></td><td>Hiện bảng phím tắt</td></tr>
+    <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo việc phím làm hoặc theo phím</td></tr>
     <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí con trỏ chữ thập hiện tại)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>
     <tr><td>Bấm vào mã trên thanh công cụ</td><td>Mở hộp thoại tìm mã</td></tr>

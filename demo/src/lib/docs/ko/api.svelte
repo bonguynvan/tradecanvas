@@ -495,7 +495,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>단축키</th><th>동작</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>명령 팔레트(지표, 차트 유형, 그리기 도구…)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>명령 팔레트: 위젯 명령과 단축키(이동, 화면 초기화, 레이아웃 저장, 각 패널…), 그리기 도구, 차트 유형, 시간 단위, 지표. 최근 사용한 명령이 맨 위에 옵니다</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>종목 검색: 설정된 종목 목록, 또는 입력하는 대로 피드의 검색</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>입력한 글자로 시작하는 종목 검색(<code>{`features: { symbolTyping: false }`}</code>로 끌 수 있음)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>레이아웃 저장(처음에는 이름을 묻습니다)</td></tr>
@@ -504,7 +504,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>보기 재설정: 모든 봉을 화면에 담고 가격 눈금을 그에 맞춤</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>가격 눈금 반전</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>날짜로 이동</td></tr>
-    <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록 표시</td></tr>
+    <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록. 기능이나 키로 검색할 수 있습니다</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
     <tr><td>도구 모음에서 종목 클릭</td><td>종목 검색 모달을 엽니다</td></tr>

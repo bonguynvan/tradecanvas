@@ -506,7 +506,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette (indicators, chart types, drawings…)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette: the widget's own commands with their keys (go to, reset the view, save the layout, the panels…), the drawing tools, chart types, intervals and indicators; the ones used last come first</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Symbol search: your symbols, or your feed's search as you type</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Search for a symbol, starting with the letter typed (<code>{`features: { symbolTyping: false }`}</code> turns it off)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Save the layout (asks for a name the first time)</td></tr>
@@ -515,7 +515,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Reset the view: every bar in sight, the price scale fitted to them</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Invert the price scale</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Go to a date</td></tr>
-    <tr><td><kbd>?</kbd></td><td>Show the keyboard shortcuts sheet</td></tr>
+    <tr><td><kbd>?</kbd></td><td>The shortcut sheet, searchable by what a key does or by the keys</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
     <tr><td>Click symbol in toolbar</td><td>Opens the symbol search modal</td></tr>

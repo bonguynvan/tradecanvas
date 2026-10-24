@@ -474,7 +474,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>快捷键</th><th>操作</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板（指标、图表类型、画线……）</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>命令面板：组件自身的命令及其快捷键（跳转、重置视图、保存布局、各个面板……）、画线工具、图表类型、周期和指标；最近用过的排在最前</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>代码搜索：你的品种列表，输入时则调用数据源的搜索</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>搜索品种，从输入的字母开始（设置 <code>{`features: { symbolTyping: false }`}</code> 可关闭）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>保存布局（首次保存时会询问名称）</td></tr>
@@ -483,7 +483,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>重置视图：显示全部K线，价格坐标随之适配</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>反转价格坐标</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>跳转到日期</td></tr>
-    <tr><td><kbd>?</kbd></td><td>显示快捷键列表</td></tr>
+    <tr><td><kbd>?</kbd></td><td>快捷键列表，可按功能或按键搜索</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
     <tr><td>点击工具栏中的品种</td><td>打开代码搜索弹窗</td></tr>

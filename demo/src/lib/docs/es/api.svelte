@@ -518,7 +518,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Paleta de comandos (indicadores, tipos de gráfico, dibujos…)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Paleta de comandos: los comandos del widget con sus atajos (ir a, restablecer la vista, guardar la disposición, los paneles…), las herramientas de dibujo, los tipos de gráfico, las temporalidades y los indicadores; los usados hace poco, primero</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Búsqueda de símbolos: tus símbolos, o la búsqueda de tu feed mientras escribes</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Busca un símbolo, empezando por la letra escrita (<code>{`features: { symbolTyping: false }`}</code> lo desactiva)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Guarda el diseño (pide un nombre la primera vez)</td></tr>
@@ -527,7 +527,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Restablece la vista: todas las barras a la vista, con la escala de precio ajustada a ellas</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Invierte la escala de precio</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Va a una fecha</td></tr>
-    <tr><td><kbd>?</kbd></td><td>Muestra la hoja de atajos de teclado</td></tr>
+    <tr><td><kbd>?</kbd></td><td>La hoja de atajos, que se busca por lo que hace una tecla o por la tecla</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
     <tr><td>Clic en el símbolo de la barra de herramientas</td><td>Abre el cuadro de búsqueda de símbolos</td></tr>
