@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="live-price">
+  <code>appendBar</code>、<code>appendBars</code> 或 <code>updateLastBar</code> 送来的K线，以及一笔 tick，就是实时价格：价格线、警报和订单的盈亏都跟随它，就像跟随已连接的数据流和 <code>setCurrentPrice</code> 一样。新K线会发出 <code>dataUpdate</code>；正在形成的K线上的 tick 不会。
+</p>
+
 <p id="bar-times">
   K 线时间为纪元毫秒或秒，整个序列使用同一单位。图表从最新一根 K 线读取一次单位：<code>barTimeUnit(data)</code> 返回 1（毫秒，1e11 及以上）或 1000（秒）。因此毫秒序列中 2001 年以前的日期也保持正确，即使这些值小于 1e12。请让一个序列只用一种单位；图表返回的时间（事件、<code>getData()</code>）使用该单位。
 </p>
@@ -40,6 +44,7 @@
   <thead><tr><th>方法</th><th>用途</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>18 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
+    <tr><td><code>getChartType()</code></td><td>图表当前绘制的类型（默认 <code>'candlestick'</code>）。</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>在内置主题之间切换，或设置自己的主题。<code>getTheme()</code> 按设置时的样子返回。</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>按键设置图表任意部分的样式（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）；<code>null</code> 移除一个键。见<a href={href('/docs/styling#overrides')}>样式</a>。</td></tr>
     <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>一次替换整个层；移除指定的键（或全部）。</td></tr>
@@ -167,6 +172,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 或用 scaleMarketPrices(MARKET_HOSE, 1000) 处理 25350 这样的价格
+chart.setTimezone('exchange')                // 时间轴使用市场的时区：Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 参考价：前一交易日的收盘价
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35，最小变动 50 越南盾
@@ -348,7 +354,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)
+chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }；其他情况 kind 为 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

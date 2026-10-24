@@ -156,8 +156,9 @@ rather than skip ahead. The bars before `startTime` come back with
 ## Alerts beyond a price level
 
 A line crossing another line, a fast move, a close past a level, and an end
-date. They check on every price the feed sends, with the lines they watch
-taken at the same moment:
+date. They check on every live price, with the lines they watch taken at
+the same moment: a connected stream's, or your own feed's through
+`updateLastBar`, `appendBar` or `setCurrentPrice`:
 
 ```ts
 import { Chart, BinanceAdapter } from '@tradecanvas/chart';
@@ -238,13 +239,16 @@ chart.setSymbolInfo({ symbol: 'ZN', timezone: 'America/Chicago', sessions: [{ st
 
 HOSE's rules on the chart: steps by price band, the day's ceiling and floor,
 lots of 100 in the order ticket, the price board's colours. Preset prices are
-in thousands of dong; `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong.
+in thousands of dong, as price boards show them (bars in thousands need
+nothing more); `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong. The axis
+keeps its zone until `setTimezone('exchange')`, and numbers their locale.
 
 ```ts
 import { Chart, MARKET_HOSE, MARKET_VN30F, priceStepAt, vn30fContracts } from '@tradecanvas/chart';
 
-const chart = new Chart(document.getElementById('chart')!, { extendedHours: false });
+const chart = new Chart(document.getElementById('chart')!, { extendedHours: false, numberLocale: 'vi-VN' });
 chart.setMarket(MARKET_HOSE);
+chart.setTimezone('exchange');                     // the market's zone: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35);                       // the reference: yesterday's close
 console.log(chart.getPriceLimits());               // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.01

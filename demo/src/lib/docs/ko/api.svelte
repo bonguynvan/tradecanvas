@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="live-price">
+  <code>appendBar</code>, <code>appendBars</code>, <code>updateLastBar</code>로 넣은 봉과 틱은 현재 가격입니다. 가격선, 알림, 주문의 손익은 연결된 스트림이나 <code>setCurrentPrice</code>를 따를 때처럼 이를 따릅니다. 새 봉은 <code>dataUpdate</code>를 보내고, 형성 중인 봉의 틱은 보내지 않습니다.
+</p>
+
 <p id="bar-times">
   봉의 시간은 에포크 밀리초 또는 초이며, 시리즈 전체가 하나의 단위를 씁니다. 차트는 가장 최근 봉에서 단위를 한 번 읽습니다: <code>barTimeUnit(data)</code>는 1(밀리초, 1e11 이상) 또는 1000(초)을 돌려줍니다. 그래서 밀리초 시리즈는 1e12보다 작은 2001년 이전 날짜도 올바르게 유지합니다. 한 시리즈는 한 단위로 유지하세요. 차트가 돌려주는 시간(이벤트, <code>getData()</code>)도 그 단위입니다.
 </p>
@@ -40,6 +44,7 @@
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>18가지 유형 중 하나 — <a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
+    <tr><td><code>getChartType()</code></td><td>현재 그리고 있는 차트 유형(기본값 <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>내장 테마 사이에서 전환하거나 자신의 테마를 설정합니다. <code>getTheme()</code> 은 설정한 그대로 돌려줍니다.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>차트의 어떤 부분이든 키로 스타일 지정(<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…). <code>null</code> 은 키를 뺍니다. <a href={href('/docs/styling#overrides')}>스타일</a> 참고.</td></tr>
     <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>레이어 전체를 한 번에. 키(또는 전부)를 뺌.</td></tr>
@@ -170,6 +175,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 25350 같은 가격이면 scaleMarketPrices(MARKET_HOSE, 1000)
+chart.setTimezone('exchange')                // 시간 축을 시장의 시간대로: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 기준가: 전일 종가
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, 50동 단위
@@ -360,7 +366,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)
+chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', length }, 그 밖에는 kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

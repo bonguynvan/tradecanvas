@@ -42,7 +42,7 @@ import type {
   ExecutionConfig,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { ChartTypeOptions, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import type { ChartTypeOptions, DataUpdatePayload, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
@@ -122,7 +122,7 @@ import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPa
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
-import { DataManager } from './DataManager.js';
+import { DataManager, isValidBar } from './DataManager.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { startOverrides } from './style/styleOptions.js';
@@ -140,7 +140,7 @@ declare const __TC_VERSION__: string;
 /** The scale of an indicator pane with nothing to fit yet. */
 const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
-/** `setTimezone(EXCHANGE_TIMEZONE)` shows the time zone of the symbol's exchange. */
+/** `setTimezone(EXCHANGE_TIMEZONE)` shows the zone of the symbol's exchange, else of its market (`getExchangeTimezone`). */
 export const EXCHANGE_TIMEZONE = 'exchange';
 /** Throws a RangeError for a time zone the browser doesn't know or an offset that isn't a number. */
 function assertTimezone(tz: TimeZoneSetting): void {
@@ -226,10 +226,9 @@ export class Chart {
   private zoomAreaMode = false;
   /** The "+" by the price axis. */
   private priceAxisAddButton = new PriceAxisAddButton();
-  /** Display timezone, minutes east of UTC; null = the browser's. */
-  /** The time zone shown: the setting, with 'exchange' resolved to the symbol's zone. */
+  /** The time zone shown: the setting, with 'exchange' resolved (`getExchangeTimezone`, else UTC). */
   private displayTz: TimeZoneSetting = null;
-  /** What `setTimezone` was given; 'exchange' follows the symbol. */
+  /** What `setTimezone` was given; 'exchange' follows the symbol, else its market. */
   private timezoneSetting: TimeZoneSetting = null;
   /** What the feed (or host) said about the symbol on the chart. */
   private symbolInfo: SymbolInfo | null = null;
@@ -739,7 +738,7 @@ export class Chart {
     this.alertManager.on('triggered', (alert) => {
       this.eventBus.emit('alertTriggered', alertPayload(alert));
       // Back-compat: legacy listeners keyed off dataUpdate.
-      this.eventBus.emit('dataUpdate', { alert: 'triggered', alertId: alert.id, price: alert.price, message: alert.message });
+      this.eventBus.emit('dataUpdate', { kind: 'alert', alert: 'triggered', alertId: alert.id, price: alert.price, message: alert.message } satisfies DataUpdatePayload);
     });
     this.alertManager.on('added', (alert) => {
       this.eventBus.emit('alertAdd', alertPayload(alert));
@@ -968,7 +967,7 @@ export class Chart {
       }
       if (this.features.trading && this.tradingManager.isBracketActive()) {
         this.tradingManager.cancelBracket();
-        this.eventBus.emit('dataUpdate', { bracket: 'cancelled' });
+        this.eventBus.emit('dataUpdate', { kind: 'bracket', bracket: 'cancelled' } satisfies DataUpdatePayload);
         return;
       }
       if (this.pinnedTooltip.isPinned()) {
@@ -1083,14 +1082,19 @@ export class Chart {
     this.options.autoScale = this.defaultAutoScale;
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
-    if (!restoring) this.alertManager.clearLastValues();
-    this.recalcIndicators(this.dataManager.getData());
-    // Auto-set current price line from last bar's close
-    if (data.length > 0) {
-      this.currentPriceLine.setPrice(data[data.length - 1].close);
+    // The bars kept: a bar the chart can't take is left out.
+    const kept = this.dataManager.getData();
+    const lastKept = kept[kept.length - 1];
+    if (!restoring) {
+      this.alertManager.clearLastValues();
+      // The first live price after the bars crosses a level from their last close.
+      if (lastKept) this.alertManager.seedLastValue('price', lastKept.close);
     }
+    this.recalcIndicators(kept);
+    // Auto-set current price line from last bar's close
+    if (lastKept) this.currentPriceLine.setPrice(lastKept.close);
     this.updateViewportAndRender(true);
-    this.eventBus.emit('dataUpdate', { length: data.length });
+    this.emitBars(kept.length);
   }
 
   /**
@@ -1163,7 +1167,7 @@ export class Chart {
     this.recalcIndicators(merged);
     if (merged.length > 0) this.currentPriceLine.setPrice(merged[merged.length - 1].close);
     this.updateViewportAndRender(follow);
-    this.eventBus.emit('dataUpdate', { length: merged.length });
+    this.emitBars(merged.length);
   }
 
   /**
@@ -1235,15 +1239,30 @@ export class Chart {
     this.checkHistory();
   }
 
+  /**
+   * A new bar after the last, from your own feed. Its close is the live
+   * price: the price line, the orders' P&L and the alerts follow it, as
+   * they do `setCurrentPrice` and a connected stream. Sends `dataUpdate`
+   * (`{ kind: 'bars', length }`), before the alerts it sets off. A bar the
+   * chart can't take (a price that isn't a number, below zero, a high under
+   * its low) is left out, price and all.
+   */
   appendBar(bar: OHLCBar): void {
+    if (!isValidBar(bar)) return;
     if (this.replaySession) {
       this.replaySession.live.appendBar(bar);
+      this.takeLivePrice(bar.close);
       return;
     }
-    if (!this.takeBar(bar, 'append')) return;
+    if (!this.takeBar(bar, 'append')) {
+      this.takeLivePrice(bar.close);
+      this.scheduleRender();
+      return;
+    }
     // Follow the live edge only if the view is already there — browsing
     // history shouldn't be yanked back to the end on every new bar.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
+    const before = this.dataManager.getLength();
     this.dataManager.appendBar(bar);
     const data = this.dataManager.getData();
     this.crosshairHandler.setData(data);
@@ -1251,40 +1270,61 @@ export class Chart {
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
     this.recalcIndicatorsFrom(data, data.length - 2);
+    this.currentPriceLine.setPrice(bar.close);
     this.updateViewportAndRender(follow);
+    if (data.length !== before) this.emitBars(data.length);
+    // Last: an alert's listener sees the chart with its new bar.
+    this.followLivePrice(bar.close);
   }
 
   /**
-   * Append multiple bars at once (e.g., catch-up after reconnect).
-   * More efficient than calling appendBar() in a loop — recalculates
-   * indicators only once at the end.
+   * Several new bars at once (a catch-up after a reconnect), the indicators
+   * computed once. The last bar's close is the live price, as with
+   * `appendBar`; one `dataUpdate` for them all.
    */
   appendBars(bars: OHLCBar[]): void {
+    bars = bars.filter(isValidBar);
     if (bars.length === 0) return;
+    const price = bars[bars.length - 1].close;
     if (this.replaySession) {
       for (const bar of bars) this.replaySession.live.appendBar(bar);
+      this.takeLivePrice(price);
       return;
     }
-    bars = bars.filter((bar) => this.takeBar(bar, 'append'));
-    if (bars.length === 0) return;
-    const follow = this.viewport.isAtEnd();
-    const firstChanged = this.dataManager.getLength() - 1;
-    for (const bar of bars) {
-      this.dataManager.appendBar(bar);
+    const shown = bars.filter((bar) => this.takeBar(bar, 'append'));
+    if (shown.length === 0) {
+      this.takeLivePrice(price);
+      this.scheduleRender();
+      return;
     }
+    const follow = this.viewport.isAtEnd();
+    const before = this.dataManager.getLength();
+    for (const bar of shown) this.dataManager.appendBar(bar);
     this.displayDataCache = null;
-    this.recalcIndicatorsFrom(this.dataManager.getData(), firstChanged);
-    this.crosshairHandler.setData(this.dataManager.getData());
+    const data = this.dataManager.getData();
+    this.recalcIndicatorsFrom(data, before - 1);
+    this.crosshairHandler.setData(data);
+    this.currentPriceLine.setPrice(price);
     this.updateViewportAndRender(follow);
+    if (data.length !== before) this.emitBars(data.length);
+    this.followLivePrice(price);
   }
 
+  /**
+   * The forming bar again, with its latest values (same `time` as the last
+   * bar). Its close is the live price: the price line, the orders' P&L and
+   * the alerts follow it. A tick sends no `dataUpdate`; `indicatorUpdate`
+   * says the indicators moved. A bar the chart can't take is left out.
+   */
   updateLastBar(bar: OHLCBar): void {
+    if (!isValidBar(bar)) return;
     if (this.replaySession) {
       this.replaySession.live.updateLastBar(bar);
+      this.takeLivePrice(bar.close);
       return;
     }
     if (!this.takeBar(bar, 'update')) {
-      this.currentPriceLine.setPrice(bar.close);
+      this.takeLivePrice(bar.close);
       this.scheduleRender();
       return;
     }
@@ -1302,20 +1342,24 @@ export class Chart {
     // + overlay indicators freeze until bar close. Only the last bar changed.
     const data = this.dataManager.getData();
     this.recalcIndicatorsFrom(data, data.length - 1);
+    // After the indicators: an alert on a line compares with its value at this bar.
+    this.followLivePrice(bar.close);
     this.scheduleRender();
   }
 
-  /** Merge a price tick into the current last bar (convenience for live feeds) */
+  /** A trade's price into the forming bar (its high, low, close and volume): the live price, as with `updateLastBar`. */
   updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+    if (!Number.isFinite(tick.price) || tick.price < 0) return;
+    if (tick.volume !== undefined && !(Number.isFinite(tick.volume) && tick.volume >= 0)) return;
     if (this.replaySession) {
       this.replaySession.live.updateLastBarFromTick(tick);
-      if (Number.isFinite(tick.price)) this.replaySession.price = { price: tick.price };
+      this.takeLivePrice(tick.price);
       return;
     }
-    // A tick outside regular hours, while they are hidden, moves only the price line.
+    // A tick outside regular hours, while they are hidden, moves the price line and what follows the price, not a bar.
     const keep = this.fullSeries ? this.sessionKeep(this.fullSeries) : null;
     if (keep && !keep(tick.time)) {
-      this.currentPriceLine.setPrice(tick.price);
+      this.takeLivePrice(tick.price);
       this.scheduleRender();
       return;
     }
@@ -1332,10 +1376,16 @@ export class Chart {
     }
     const data = this.dataManager.getData();
     this.recalcIndicatorsFrom(data, data.length - 1);
+    this.followLivePrice(tick.price);
     this.scheduleRender();
   }
 
   // --- Chart type ---
+
+  /** The type the chart is drawn as: what `setChartType`, the `chartType` option or a loaded layout set; `'candlestick'` by default. */
+  getChartType(): ChartType | (string & {}) {
+    return this.options.chartType ?? 'candlestick';
+  }
 
   setChartType(type: ChartType | (string & {})): void {
     const previous = this.options.chartType ?? 'candlestick';
@@ -1458,7 +1508,7 @@ export class Chart {
     this.sessionBreaks.invalidateCache();
     this.recalcIndicators(data);
     this.updateViewportAndRender(true);
-    this.eventBus.emit('dataUpdate', { length: data.length });
+    this.emitBars(data.length);
   }
 
   /** The price lines for this frame: during a replay without the live bid and ask. */
@@ -2869,6 +2919,21 @@ export class Chart {
     return this.replaySession !== null && this.executionAdapter?.setMarkPrice !== undefined;
   }
 
+  /**
+   * A price from the host's own feed: what follows the live price, and the
+   * price line (during a replay, kept for when it ends).
+   */
+  private takeLivePrice(price: number): void {
+    this.followLivePrice(price);
+    if (this.replaySession) this.replaySession.price = { price };
+    else this.currentPriceLine.setPrice(price);
+  }
+
+  /** `dataUpdate` for the bars: the series is `length` bars now. */
+  private emitBars(length: number): void {
+    this.eventBus.emit('dataUpdate', { kind: 'bars', length } satisfies DataUpdatePayload);
+  }
+
   /** The orders and the alerts follow a live price (a paper account in a replay follows the replay). */
   private followLivePrice(price: number): void {
     if (!this.replayTrades()) this.tradingManager.setCurrentPrice(price);
@@ -2961,28 +3026,36 @@ export class Chart {
     // Each bar lands by its time: the last bar again (its latest values, a
     // close included), a new one after it, or none when it is older.
     this.streamManager.on('barClose', (bar) => {
+      if (!isValidBar(bar)) return;
+      // Its final close is a live price the stream's priceChange doesn't send.
       if (this.replaySession) {
         this.replaySession.live.appendBar(bar);
+        this.followLivePrice(bar.close);
         return;
       }
       const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
       if (how === 'stale' || !this.takeBar(bar, how)) return;
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
+      const before = this.dataManager.getLength();
       if (!this.placeStreamBar(bar)) return;
       const data = this.dataManager.getData();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
       this.recalcIndicatorsFrom(data, data.length - 2);
       this.updateViewportAndRender(follow);
+      if (data.length !== before) this.emitBars(data.length);
+      this.followLivePrice(bar.close);
     });
 
     this.streamManager.on('barUpdate', (bar) => {
+      if (!isValidBar(bar)) return;
       if (this.replaySession) {
         this.replaySession.live.updateLastBar(bar);
         return;
       }
       this.currentPriceLine.setPrice(bar.close);
       const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
+      const before = this.dataManager.getLength();
       if (how === 'stale' || !this.takeBar(bar, how) || !this.placeStreamBar(bar)) {
         this.scheduleRender();
         return;
@@ -2994,6 +3067,8 @@ export class Chart {
       const data = this.dataManager.getData();
       this.indicatorEngine.deferRecalculateFrom(data, data.length - 1);
       this.announceIndicatorUpdate(data.length - 1);
+      // A new bar comes forming first (most feeds): the series grew. The price follows from priceChange.
+      if (data.length !== before) this.emitBars(data.length);
       this.scheduleRender();
     });
 
@@ -3005,6 +3080,7 @@ export class Chart {
     });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
+      if (!Number.isFinite(price) || price < 0) return;
       // Orders and alerts keep tracking the live market during a replay; the
       // price line shows the replayed close instead.
       this.followLivePrice(price);
@@ -3017,11 +3093,11 @@ export class Chart {
     });
 
     this.streamManager.on('connectionChange', (info) => {
-      this.eventBus.emit('dataUpdate', { connection: info });
+      this.eventBus.emit('dataUpdate', { kind: 'connection', connection: info } satisfies DataUpdatePayload);
     });
 
     this.streamManager.on('error', (err) => {
-      this.eventBus.emit('dataUpdate', { error: err.message });
+      this.eventBus.emit('dataUpdate', { kind: 'error', error: err.message } satisfies DataUpdatePayload);
     });
 
     // The feed learned more about the symbol (after it was asked, or later): this chart's, it applies.
@@ -3829,8 +3905,10 @@ export class Chart {
   /**
    * The timezone for the time axis, crosshair, tooltip, day breaks and range
    * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
-   * fixed offset in minutes east of UTC (`-300`, `330`), or null for the
-   * browser's. Throws a RangeError for a zone the browser doesn't know.
+   * fixed offset in minutes east of UTC (`-300`, `330`), `'exchange'` for the
+   * symbol's zone (`setSymbolInfo`), else its market's (`setMarket`), else
+   * UTC, or null for the browser's. Throws a RangeError for a zone the
+   * browser doesn't know. The `timeZone` option sets it at the start.
    */
   setTimezone(tz: TimeZoneSetting): void {
     assertTimezone(tz);
@@ -3843,16 +3921,22 @@ export class Chart {
     return this.timezoneSetting;
   }
 
-  /** The zone the chart shows: `'exchange'` resolved to the symbol's zone (UTC when unknown). */
+  /** The zone the chart shows: `'exchange'` resolved to the symbol's zone, else its market's (UTC when neither names one). */
   getEffectiveTimezone(): TimeZoneSetting {
     return this.displayTz;
   }
 
+  /**
+   * The zone `'exchange'` stands for: the symbol's (`setSymbolInfo`, or the
+   * stream's adapter), else its market's (`setMarket`); null when neither
+   * names one the browser knows, and `'exchange'` then shows UTC.
+   */
+  getExchangeTimezone(): string | null {
+    return [this.symbolInfo?.timezone, this.marketConfig?.timeZone].find((zone) => zone && isValidTimeZone(zone)) ?? null;
+  }
+
   private applyTimezone(): void {
-    const exchange = this.symbolInfo?.timezone;
-    const tz = this.timezoneSetting === EXCHANGE_TIMEZONE
-      ? (exchange && isValidTimeZone(exchange) ? exchange : 'UTC')
-      : this.timezoneSetting;
+    const tz = this.timezoneSetting === EXCHANGE_TIMEZONE ? (this.getExchangeTimezone() ?? 'UTC') : this.timezoneSetting;
     this.displayTz = tz;
     this.timeAxis.setTimezoneOffset(tz);
     this.crosshairHandler.setTimezoneOffset(tz);
@@ -5018,8 +5102,25 @@ export class Chart {
 
   // --- Market ---
 
+  /**
+   * The rules of the market the symbol trades on (`MARKET_HOSE`,
+   * `MARKET_NYSE`… or your own): its price steps for `roundPrice` and the
+   * order ticket, its decimals on every price, its colours on the candles,
+   * its daily limits once `setPriceLimits` gives the reference.
+   *
+   * The axis keeps its zone: `setTimezone('exchange')` shows the market's
+   * (the symbol's own, when `setSymbolInfo` gave one). Numbers keep the
+   * chart's locale (`numberLocale`).
+   *
+   * @example
+   * chart.setMarket(MARKET_HOSE);
+   * chart.setTimezone('exchange');     // Asia/Ho_Chi_Minh
+   * chart.setPriceLimits(25.35);       // yesterday's close: ceiling 27.1, floor 23.6
+   */
   setMarket(config: MarketConfig): void {
     this.marketConfig = config;
+    // `'exchange'` shows the market's zone when the symbol names none.
+    if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
 
     // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {

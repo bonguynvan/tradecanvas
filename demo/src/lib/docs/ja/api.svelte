@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="live-price">
+  <code>appendBar</code>・<code>appendBars</code>・<code>updateLastBar</code> で渡したバーとティックは現在価格です。価格ライン、アラート、注文の損益は、接続中のストリームや <code>setCurrentPrice</code> と同じようにこれに従います。新しいバーは <code>dataUpdate</code> を送り、形成中のバーへのティックは送りません。
+</p>
+
 <p id="bar-times">
   バーの時刻はエポックのミリ秒または秒で、系列全体で 1 つの単位です。チャートは最新のバーから一度だけ単位を読み取ります：<code>barTimeUnit(data)</code> は 1（ミリ秒、1e11 以上）か 1000（秒）を返します。そのためミリ秒の系列では、1e12 未満となる 2001 年以前の日付も正しく保たれます。1 つの系列は 1 つの単位にしてください。チャートが返す時刻（イベント、<code>getData()</code>）もその単位です。
 </p>
@@ -40,6 +44,7 @@
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>18 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
+    <tr><td><code>getChartType()</code></td><td>現在描画しているチャートタイプ（既定は <code>'candlestick'</code>）。</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>組み込みテーマを切り替えるか、独自のテーマを設定します。<code>getTheme()</code> は設定したとおりに返します。</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>チャートの任意の部分をキーでスタイル設定（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）。<code>null</code> でキーを外します。<a href={href('/docs/styling#overrides')}>スタイル</a>を参照。</td></tr>
     <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>レイヤーをまるごと置き換え。キー（またはすべて）を外す。</td></tr>
@@ -169,6 +174,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 25350 のような価格には scaleMarketPrices(MARKET_HOSE, 1000)
+chart.setTimezone('exchange')                // 時間軸を市場のタイムゾーンに：Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 基準価格：前日の終値
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35（50 ドン刻み）
@@ -355,7 +361,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)
+chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', length }、ほかに kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

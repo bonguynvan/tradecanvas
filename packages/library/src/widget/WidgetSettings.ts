@@ -66,8 +66,8 @@ export class WidgetSettings {
     private readonly available: {
       barCountdown?: boolean;
       logScale?: boolean;
-      /** Offer the exchange's time zone; returns it (null while unknown). */
-      exchangeZone?: () => string | null;
+      /** The exchange's time zone to offer (null while unknown), or undefined when there is none to offer. */
+      exchangeZone?: () => string | null | undefined;
       /** false: the chart doesn't trade, so the orders' colours aren't offered. */
       trading?: boolean;
     } = {},
@@ -351,8 +351,9 @@ export class WidgetSettings {
       { value: 'percentage', label: this.t('settings.scale.percentage') },
       { value: 'indexedTo100', label: this.t('settings.scale.indexedTo100') },
     ].filter((o) => o.value !== 'logarithmic' || this.available.logScale !== false);
+    const exchangeZone = this.available.exchangeZone?.();
     const zones = timezoneOptions(s.timezone, Date.now(), this.t('settings.timezone.local'),
-      this.available.exchangeZone ? { label: this.t('settings.timezone.exchange'), zone: this.available.exchangeZone() } : undefined);
+      exchangeZone !== undefined ? { label: this.t('settings.timezone.exchange'), zone: exchangeZone } : undefined);
     this.addSection(undefined, [
       selectRow(this.t('settings.priceScale'), s.scaleMode, scales, (v) => this.patch({ scaleMode: v as ChartSettingsState['scaleMode'] })),
       toggleRow(this.t('settings.autoScale'), s.autoScale, (v) => this.patch({ autoScale: v })),
