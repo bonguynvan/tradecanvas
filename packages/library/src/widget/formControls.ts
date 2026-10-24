@@ -1,5 +1,6 @@
 import { SelectMenu } from './selectMenu.js';
-import { CalendarPopup, type CalendarLabels } from './calendarPopup.js';
+import { CalendarPopup } from './calendarPopup.js';
+import type { CalendarLabels } from './monthView.js';
 
 export interface FormControlOptions {
   /** Where the lists and calendars open, over the page (the widget's overlay layer). */
@@ -32,8 +33,10 @@ function ownSelect(target: EventTarget | null): HTMLSelectElement | null {
   return select;
 }
 
+/** A date field to open the calendar for: enabled, and not one whose month is shown beside it already. */
 function dateField(target: EventTarget | null): HTMLInputElement | null {
   if (!(target instanceof HTMLInputElement) || target.type !== 'date') return null;
+  if (target.dataset.tcwCalendar === 'inline') return null;
   return target.matches(':disabled') || target.readOnly ? null : target;
 }
 

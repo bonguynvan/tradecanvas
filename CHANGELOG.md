@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Symbol search, Compare and Go to
+
+The three dialogs that find a place on the chart are rebuilt in the Print look, as the indicators dialog is.
+
+- **Symbol search** is a dialog with a title, the search, and the results in columns: the symbol, its name, then its kind and exchange; the chart's own symbol is marked. It lists your `symbols` until something is typed, then asks the feed's search once typing pauses, as before. Results of more than one kind (stocks and crypto, say) can be narrowed to one with the chips over the list. The names a search told of are kept for the list the dialog opens with next time. The keys stay in the search field: up and down move through the list, Enter picks.
+- **A letter typed on the chart** opens the symbol search with that letter in it, as a digit opens the interval field. The dialog says so at its foot (not on a touch screen). `features: { symbolTyping: false }` leaves letters alone; a shortcut of yours on a plain letter (`addHotkey`) still comes first, and a key an input method is composing is left to it.
+- **Compare** opens the same dialog, titled Compare symbol, with **Add as** under the search: percent change on this scale, the price on its own scale or in a pane of its own, the spread, the ratio, or the correlation of prices or of returns. A pick adds the symbol that way and the dialog stays open for the next. What is compared already (overlays and the indicators that read another symbol) is listed first, each with its colour, its way and a button to take it off. The dialog opens next time on the way used last. The menu of ways that followed a pick is gone.
+- **Go to** is a dialog in the middle of the widget, no longer a popover over the status bar. **Date** centres the bar of a day and a time; **Custom range** shows the bars between two of them edge to edge (`chart.setVisibleRange`), starting from those on screen. The month under the fields fills the date field in hand; after a range's start it moves on to its end. Daily bars and longer have no time to give, and days after today can't be picked.
+- The month in a date field's calendar and the one in Go to are one piece, `MonthView`; a date field marked `data-tcw-calendar="inline"` keeps the widget's calendar popup shut.
+- A dialog's tabs keep the case their words have (“Custom range”, not “Custom Range”).
+- Twenty-one new strings in all 30 languages; the hotkey sheet lists A–Z.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.38.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.20.
+
 ### A drawing's settings
 
 A drawing's settings dialog is laid out as the indicator settings are, in the Print look: 480 wide, its tabs along the top, **Template**, **Cancel** and **OK** at the foot.
@@ -16,8 +34,6 @@ A drawing's settings dialog is laid out as the indicator settings are, in the Pr
 - New options on `trendLine`: `leftEnd`, `rightEnd` (`'normal'` or `'arrow'`); on `trendLine`, `ray` and `extendedLine`: `showMiddlePoint`, `showPriceRange`, `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition` (`'left'`, `'center'`, `'right'`). All off by default: lines look as before.
 - The line's colour carries to the levels and the fill that have none of their own as it is picked. Adding or removing a level keeps the keyboard there. In a right-to-left widget the arrow keys move the other way along the tabs of a drawing's and an indicator's settings.
 - Nineteen new strings in all 30 languages; `drawingSettings.tab.options` is gone.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.37.0 (2026-10-23)
 

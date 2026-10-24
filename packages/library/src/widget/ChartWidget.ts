@@ -62,7 +62,8 @@ import {
   timeframeLabel,
   withExtraTimeframes,
 } from './widgetTimeframes.js';
-import { WidgetGoToDate, utcToWallTime, wallTimeToUtc } from './WidgetGoToDate.js';
+import { WidgetGoToDate, utcToWallTime, wallTimeToUtc, type GoToTarget } from './WidgetGoToDate.js';
+import { comparedEntries, compareWayOptions, isCompareWay, type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
@@ -127,6 +128,9 @@ function afterPaint(): Promise<void> {
 
 /** Distinct line colors for comparison overlays, cycled by add order. */
 const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
+
+/** A day: bars this long or longer have no time of day to go to. */
+const DAY_MS = 86_400_000;
 
 /** Gap between the on-chart indicator rows and the plot or pane edge, px. */
 const LEGEND_INSET = 4;
@@ -291,6 +295,8 @@ export class ChartWidget {
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
+  /** The bars on screen, by index, as the chart last said. */
+  private visibleBars: { from: number; to: number } | null = null;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
   /** Bars revealed per second. */
   private replaySpeed = DEFAULT_REPLAY_SPEED;
@@ -335,6 +341,8 @@ export class ChartWidget {
   /** Ranges apply one at a time, each reading the bars the last one brought. */
   private rangeQueue: Promise<void> = Promise.resolve();
   private compares: { id: string; symbol: string; color: string }[] = [];
+  /** How the compare dialog adds a symbol: the way picked last. */
+  private compareWay: CompareWay = 'percent';
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -640,7 +648,9 @@ export class ChartWidget {
     // Navigation over the chart; a scroll step is a tenth of the bars on screen.
     this.chart.on('visibleRangeChange', (e) => {
       const { from, to } = e.payload as { from: number; to: number };
-      if (Number.isFinite(from) && Number.isFinite(to)) this.visibleBarCount = Math.max(1, to - from);
+      if (!Number.isFinite(from) || !Number.isFinite(to)) return;
+      this.visibleBarCount = Math.max(1, to - from);
+      this.visibleBars = { from, to };
     });
     this.chartNav = new WidgetChartNav(this.chartContainer, {
       zoomIn: () => this.chart.zoomIn(),
@@ -735,13 +745,18 @@ export class ChartWidget {
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
     this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
     this.refreshScaleSwitches();
-    this.goToDate = new WidgetGoToDate(this.root, {
-      title: this.t('range.goTo'),
+    this.goToDate = new WidgetGoToDate(this.overlayHost, () => ({
+      title: this.t('goTo.title'),
       date: this.t('range.date'),
+      range: this.t('goTo.range'),
+      from: this.t('goTo.from'),
+      to: this.t('goTo.to'),
       time: this.t('range.time'),
       submit: this.t('range.goToSubmit'),
       cancel: this.t('range.cancel'),
-    }, ({ date, time }) => this.goToWallTime(date, time));
+      close: this.t('common.close'),
+      calendar: { prevMonth: this.t('calendar.prevMonth'), nextMonth: this.t('calendar.nextMonth'), today: this.t('calendar.today') },
+    }), () => this.intlLocale(), (target) => this.goTo(target));
 
     // 7. Create settings (lazy, not appended until opened)
     this.settings = new WidgetSettings({
@@ -1210,6 +1225,10 @@ export class ChartWidget {
     this.chart.on('indicatorAdd', refresh);
     this.chart.on('indicatorRemove', refresh);
     this.chart.on('indicatorChange', refresh);
+    // Compared symbols that are indicators come and go in the compare dialog's list.
+    for (const event of ['indicatorAdd', 'indicatorRemove', 'indicatorChange'] as const) {
+      this.chart.on(event, () => this.refreshCompareDialog());
+    }
 
     // 8b. Command palette
     this.commandPalette = new WidgetCommandPalette({
@@ -1236,7 +1255,7 @@ export class ChartWidget {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         if (!mine || !keyOn('hotkeys.symbolSearch') || !this.featureState.symbolSearch) return;
         e.preventDefault();
-        this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+        this.openSymbolSearch();
       } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
         // Ctrl/Cmd+S → save the layout (rather than the page), once this widget was used.
         if (!this.layoutSession || !keyOn('hotkeys.save') || !this.featureState.layouts || isTyping() || !isKeyTarget(this.root, true)) return;
@@ -1255,6 +1274,14 @@ export class ChartWidget {
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
         this.intervalInput.open(e.key);
+      } else if (/^[a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !e.isComposing) {
+        // A letter typed on the chart starts a symbol search with it (not one an input method is composing).
+        if (e.defaultPrevented || !keyOn('symbolTyping') || !this.featureState.symbolSearch || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
+        const active = document.activeElement;
+        // Focus in another part of the page: the keys are its.
+        if (active && active !== document.body && !this.root.contains(active)) return;
+        e.preventDefault();
+        this.openSymbolSearch(e.key);
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyI' || e.code === 'KeyG' || e.code === 'KeyR')) {
         // By key position: on macOS Alt+G types "©".
         if (isTyping() || !mine) return;
@@ -1459,7 +1486,7 @@ export class ChartWidget {
     const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
     this.watchlist = new WidgetWatchlist(body, {
       onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.symbolSearch?.open(this.symbols, this.state.symbol, (sym) => store.add(sym), this.symbolSearchFn()),
+      onAdd: () => this.symbolSearch?.open({ symbols: this.symbols, current: this.state.symbol, onPick: (sym) => store.add(sym), search: this.symbolSearchFn() }),
       onRemove: (sym) => store.removeSymbol(sym),
       onMove: (sym, index) => store.move(sym, index),
       onPickList: (id) => store.setActive(id),
@@ -1763,10 +1790,19 @@ export class ChartWidget {
 
   private handleSymbolClick(): void {
     if (!this.featureState.symbolSearch) return;
-    // Opens the fuzzy search modal. The cycle-through behaviour the toolbar
-    // used to do is gone — a real search scales past 3-4 symbols and matches
-    // what users expect from professional trading terminals.
-    this.symbolSearch?.open(this.symbols, this.state.symbol, undefined, this.symbolSearchFn());
+    this.openSymbolSearch();
+  }
+
+  /** The symbol search, started from `query` (a letter typed on the chart). */
+  private openSymbolSearch(query?: string): void {
+    this.symbolSearch?.open({
+      symbols: this.symbols,
+      current: this.state.symbol,
+      search: this.symbolSearchFn(),
+      query,
+      // Said where it can be done: letters typed on the chart open it.
+      hint: this.sheetKeyOn('symbolTyping') ? this.t('symbolSearch.typeHint') : undefined,
+    });
   }
 
   /** The host's symbol search, else the adapter's; none filters `symbols`. */
@@ -2240,6 +2276,7 @@ export class ChartWidget {
       case 'hotkeys.save': return f.layouts && this.layoutSession !== null;
       case 'hotkeys.help': return f.hotkeySheet;
       case 'intervalTyping': return this.intervalInput !== null;
+      case 'symbolTyping': return f.symbolSearch;
       default: return true;
     }
   }
@@ -2572,19 +2609,38 @@ export class ChartWidget {
     }
     const data = this.chart.getData();
     if (data.length === 0) return;
-    this.goToDate.open(
-      utcToWallTime(data[data.length - 1].time * barTimeUnit(data), this.displayTimezone()),
-      this.root.querySelector('[data-role="goto"]'),
-    );
+    const tz = this.displayTimezone();
+    const unit = barTimeUnit(data);
+    const wall = (index: number) => utcToWallTime(data[Math.max(0, Math.min(data.length - 1, Math.round(index)))].time * unit, tz);
+    const last = data.length - 1;
+    const shown = this.visibleBars;
+    this.goToDate.open({
+      date: wall(last),
+      range: { from: wall(shown?.from ?? Math.max(0, last - this.visibleBarCount)), to: wall(shown?.to ?? last) },
+      // Daily bars and longer have no time of day.
+      withTime: !(timeframeToMs(this.state.timeframe) >= DAY_MS),
+      max: utcToWallTime(Date.now(), tz).date,
+    });
   }
 
-  private goToWallTime(date: string, time: string): void {
-    const ms = wallTimeToUtc(date, time, this.displayTimezone());
+  /** A moment to centre, or a span to show edge to edge, from the Go to dialog. */
+  private goTo(target: GoToTarget): void {
     const data = this.chart.getData();
-    if (ms === null || data.length === 0) return;
-    const ts = ms / barTimeUnit(data); // the bars' own unit
-    this.chart.goToTime(ts);
-    if (ts < data[0].time) this.say(this.t('range.beforeData'));
+    const tz = this.displayTimezone();
+    if (data.length === 0) return;
+    const unit = barTimeUnit(data); // the bars' own unit
+    if (target.kind === 'date') {
+      const ms = wallTimeToUtc(target.date, target.time, tz);
+      if (ms === null) return;
+      this.chart.goToTime(ms / unit);
+      if (ms / unit < data[0].time) this.say(this.t('range.beforeData'));
+      return;
+    }
+    const from = wallTimeToUtc(target.from.date, target.from.time, tz);
+    const to = wallTimeToUtc(target.to.date, target.to.time, tz);
+    if (from === null || to === null) return;
+    this.chart.setVisibleRange(from / unit, to / unit);
+    if (Math.min(from, to) / unit < data[0].time) this.say(this.t('range.beforeData'));
   }
 
   /** Pinned timeframes that are still on offer, shortest first. */
@@ -2993,27 +3049,34 @@ export class ChartWidget {
       this.say(this.t('toast.compareNeedsAdapter'), 'error');
       return;
     }
-    const taken = new Set([this.state.symbol, ...this.compares.map((c) => c.symbol)]);
-    const options = this.symbols.filter((s) => !taken.has(s));
-    this.symbolSearch?.open(options.length ? options : this.symbols, this.state.symbol, (symbol) => {
-      this.pickCompareWay(symbol);
-    }, this.symbolSearchFn());
+    this.symbolSearch?.openCompare({
+      symbols: this.symbols,
+      current: this.state.symbol,
+      search: this.symbolSearchFn(),
+      ways: compareWayOptions(this.t),
+      way: this.compareWay,
+      compared: this.comparedNow(),
+      onAdd: (symbol, way) => {
+        if (!isCompareWay(way)) return;
+        this.compareWay = way;
+        void this.addCompareSymbol(symbol, way);
+      },
+      onRemove: (id) => {
+        if (this.compares.some((c) => c.id === id)) this.handleRemoveCompare(id);
+        else this.chart.removeIndicator(id);
+      },
+    });
   }
 
-  /** How to compare with `symbol`: a menu by the chart's top left. */
-  private pickCompareWay(symbol: string): void {
-    const main = this.state.symbol;
-    const entries = [
-      { id: 'percent', label: this.t('compare.percent') },
-      { id: 'scale', label: this.t('compare.ownScale') },
-      { id: 'pane', label: this.t('compare.ownPane') },
-      { id: 'spread', label: fill(this.t('compare.spread'), { main, other: symbol }) },
-      { id: 'ratio', label: fill(this.t('compare.ratio'), { main, other: symbol }) },
-      { id: 'correlation', label: fill(this.t('compare.correlation'), { main, other: symbol }) },
-      { id: 'correlationLog', label: fill(this.t('compare.correlationLog'), { main, other: symbol }) },
-    ];
-    const rect = this.chart.getPlotRect();
-    this.chartMenu?.open(entries, rect.x + 24, rect.y + 24, (way) => void this.addCompareSymbol(symbol, way as CompareWay));
+  /** What is compared with the chart's symbol now, as the compare dialog lists it. */
+  private comparedNow(): ReturnType<typeof comparedEntries> {
+    const ownPanes = new Set(this.chart.getIndicatorPanes().flatMap((p) => p.instanceIds));
+    return comparedEntries(this.compares, this.chart.getActiveIndicators(), ownPanes, this.t);
+  }
+
+  /** The compare dialog's list, after something was compared or taken off. */
+  private refreshCompareDialog(): void {
+    this.symbolSearch?.setCompared(this.comparedNow());
   }
 
   /**
@@ -3049,6 +3112,7 @@ export class ChartWidget {
       this.chart.addCompareSymbol(id, symbol, bars, color);
       this.compares = [...this.compares, { id, symbol, color }];
       this.refreshObjects();
+      this.refreshCompareDialog();
       this.say(fill(this.t('toast.comparing'), { symbol }));
     } catch (err: unknown) {
       this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
@@ -3059,6 +3123,7 @@ export class ChartWidget {
     this.chart.removeCompareSymbol(id);
     this.compares = this.compares.filter((c) => c.id !== id);
     this.refreshObjects();
+    this.refreshCompareDialog();
   }
 
   /**
@@ -4315,8 +4380,7 @@ export { indicatorChipLabel };
 
 type ActiveIndicator = ReturnType<Chart['getActiveIndicators']>[number];
 
-/** How `addCompareSymbol` compares: percent change on the price scale, its own scale or pane, spread, ratio. */
-export type CompareWay = 'percent' | 'scale' | 'pane' | 'spread' | 'ratio' | 'correlation' | 'correlationLog';
+export type { CompareWay };
 
 /**
  * The lines `instanceId` can be computed from: every drawn line of the other

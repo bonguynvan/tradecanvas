@@ -114,7 +114,7 @@ describe('ChartWidget watchlists', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB'], watchlist: true });
     widget.removeFromWatchlist('BBB');
     host.querySelector<HTMLButtonElement>('.tcw-watchlist-add')!.click();
-    const option = [...document.querySelectorAll<HTMLElement>('.tcw-cmd-item')].find((el) => el.textContent?.includes('BBB'));
+    const option = [...document.querySelectorAll<HTMLElement>('.tcw-ss-row')].find((el) => el.textContent?.includes('BBB'));
     expect(option).toBeTruthy();
     option!.click();
     expect(rows()).toEqual(['AAA', 'BBB']);

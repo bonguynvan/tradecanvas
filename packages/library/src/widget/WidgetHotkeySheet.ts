@@ -61,6 +61,7 @@ const GROUPS: HotkeyGroup[] = [
       { keys: ['Alt', 'R'], label: 'chartMenu.resetView', feature: 'hotkeys.resetView' },
       { keys: [mod, 'S'], label: 'hotkeys.saveLayout', feature: 'hotkeys.save' },
       { keys: ['0–9'], label: 'hotkeys.typeInterval', feature: 'intervalTyping' },
+      { keys: ['A–Z'], label: 'hotkeys.typeSymbol', feature: 'symbolTyping' },
       { keys: ['?'], label: 'hotkeys.showSheet', feature: 'hotkeys.help' },
     ],
   },

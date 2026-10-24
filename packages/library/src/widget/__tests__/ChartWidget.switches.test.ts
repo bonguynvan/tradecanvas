@@ -313,6 +313,29 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(host.querySelector<HTMLElement>('.tcw-interval-input')!.hidden).toBe(true);
   });
 
+  it('opens the symbol search on a letter typed on the chart, the letter in it', () => {
+    make();
+    key({ key: 'e' });
+    expect(document.querySelector('.tcw-ss')).toBeNull(); // the chart not used yet
+    press();
+    key({ key: 'e', ctrlKey: true });
+    key({ key: 'e', altKey: true });
+    expect(document.querySelector('.tcw-ss')).toBeNull();
+    key({ key: 'e' });
+    expect(document.querySelector<HTMLInputElement>('.tcw-ss-input')?.value).toBe('e');
+    // The dialog says so at its foot.
+    expect(document.querySelector('.tcw-ss-foot')?.textContent).toMatch(/Type a letter on the chart/);
+  });
+
+  it('stops typing a symbol on the chart', () => {
+    make({ features: { symbolTyping: false } });
+    press();
+    key({ key: 'e' });
+    expect(document.querySelector('.tcw-ss')).toBeNull();
+    key({ key: 'p', ctrlKey: true });
+    expect(document.querySelector('.tcw-ss-foot')).toBeNull();
+  });
+
   it('gives the panes their titles back without the indicators’ rows', () => {
     make();
     expect(FakeChart.last.paneTitles.at(-1)).toBe(false);

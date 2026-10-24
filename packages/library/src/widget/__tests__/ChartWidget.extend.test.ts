@@ -37,6 +37,8 @@ class FakeChart {
     this.added.push([id, params, position, options]);
     return `tc_${id}_${this.added.length}`;
   }
+  removedIndicators: string[] = [];
+  removeIndicator(id: string): void { this.removedIndicators.push(id); }
   moved: [string, string][] = [];
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
   series = new Map<string, unknown>();
@@ -353,6 +355,55 @@ describe('ChartWidget comparing with another symbol', () => {
       ['correlationlog', { symbol: 'BBB' }, undefined, undefined],
     ]);
     expect(fake.moved).toEqual([['tc_compareSymbol_2', 'new']]);
+  });
+
+  const dialogRows = () => [...document.querySelectorAll<HTMLElement>('.tcw-ss-row')].map((r) => r.dataset.symbol);
+  const addedRows = () => [...document.querySelectorAll<HTMLElement>('.tcw-ss-added-row')]
+    .map((r) => [r.querySelector('.tcw-ss-symbol')?.textContent, r.querySelector('.tcw-ss-way-label')?.textContent]);
+  const pickWay = (value: string) => {
+    const way = document.querySelector<HTMLSelectElement>('.tcw-ss-way select')!;
+    way.value = value;
+    way.dispatchEvent(new Event('change'));
+  };
+
+  it('opens the compare dialog from the toolbar: the other symbols, and the ways to add one', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB', 'CCC'], watchlist: false, adapter: adapter as never });
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    expect(document.querySelector('.tcw-ss h3')?.textContent).toBe('Compare symbol');
+    expect(dialogRows()).toEqual(['BBB', 'CCC']);
+    const way = document.querySelector<HTMLSelectElement>('.tcw-ss-way select')!;
+    expect([...way.options].map((o) => o.value)).toEqual(['percent', 'scale', 'pane', 'spread', 'ratio', 'correlation', 'correlationLog']);
+    expect(document.querySelector('.tcw-ss-empty')?.textContent).toBeUndefined();
+  });
+
+  it('adds the way chosen, lists it with a way to remove it, and opens next time on that way', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB', 'CCC'], watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    pickWay('ratio');
+    document.querySelector<HTMLElement>('.tcw-ss-row[data-symbol="CCC"]')!.click();
+    expect(fake.added).toEqual([['spread', { symbol: 'CCC', mode: 'ratio' }, undefined, undefined]]);
+    expect(document.querySelector('.tcw-ss')).not.toBeNull(); // open for the next
+    fake.indicatorsShown = [{ instanceId: 'tc_spread_1', id: 'spread', params: { symbol: 'CCC', mode: 'ratio' }, descriptor: { name: 'Spread / Ratio' }, visible: true }];
+    fake.emit('indicatorAdd', {});
+    expect(addedRows()).toEqual([['CCC', 'Ratio']]);
+    document.querySelector<HTMLButtonElement>('.tcw-ss-remove')!.click();
+    expect(fake.removedIndicators).toEqual(['tc_spread_1']);
+    document.querySelector<HTMLButtonElement>('.tcw-ss .tcw-modal-close')!.click();
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    expect(document.querySelector<HTMLSelectElement>('.tcw-ss-way select')!.value).toBe('ratio');
+  });
+
+  it('adds a percent comparison through the adapter and lists it in its colour', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB'], watchlist: false, adapter: adapter as never });
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    document.querySelector<HTMLElement>('.tcw-ss-row[data-symbol="BBB"]')!.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(addedRows()).toEqual([['BBB', 'Percent change, on this scale']]);
+    expect(document.querySelector<HTMLElement>('.tcw-ss-added-row .tcw-ss-swatch')!.style.background).not.toBe('');
+    expect(document.querySelector('.tcw-ss-row[data-symbol="BBB"]')?.classList.contains('tcw-on-chart')).toBe(true);
+    document.querySelector<HTMLButtonElement>('.tcw-ss-remove')!.click();
+    expect(addedRows()).toEqual([]);
   });
 
   it('fetches the bars a chart’s indicator asks for, and again on a new interval', async () => {
