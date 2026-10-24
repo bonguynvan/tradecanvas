@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Personalización — Documentación de TradeCanvas</title>
-  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 126 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
+  <meta name="description" content="Todas las formas de hacer TradeCanvas tuyo: colores, el aspecto del widget, el aspecto del gráfico por clave, 132 interruptores para las partes del widget, botones, menús y elementos de estado propios, textos, plugins y el gráfico sin interfaz." />
 </svelte:head>
 
 <h1>Personalización</h1>
@@ -81,7 +81,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
 <table>
   <thead><tr><th>Grupo</th><th>Interruptores</th></tr></thead>
   <tbody>
-    <tr><td>Barras</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code></td></tr>
+    <tr><td>Barras</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code> <code>dock</code></td></tr>
     <tr><td>Capacidades</td><td>
       <code>alerts</code> <code>objectTree</code> <code>symbolInfo</code> <code>symbolSearch</code> <code>settings</code>
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
@@ -100,6 +100,10 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
       <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
       <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
+    </td></tr>
+    <tr><td>Dock</td><td>
+      <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
+      <code>dock.symbolInfo</code>
     </td></tr>
     <tr><td>Barra de dibujo</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

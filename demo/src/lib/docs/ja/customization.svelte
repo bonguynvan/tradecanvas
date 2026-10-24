@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>カスタマイズ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 126 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
+  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 132 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
 </svelte:head>
 
 <h1>カスタマイズ</h1>
@@ -81,7 +81,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
 <table>
   <thead><tr><th>グループ</th><th>スイッチ</th></tr></thead>
   <tbody>
-    <tr><td>バー</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code></td></tr>
+    <tr><td>バー</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code> <code>dock</code></td></tr>
     <tr><td>機能</td><td>
       <code>alerts</code> <code>objectTree</code> <code>symbolInfo</code> <code>symbolSearch</code> <code>settings</code>
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
@@ -100,6 +100,10 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
       <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
       <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
+    </td></tr>
+    <tr><td>ドック</td><td>
+      <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
+      <code>dock.symbolInfo</code>
     </td></tr>
     <tr><td>描画サイドバー</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

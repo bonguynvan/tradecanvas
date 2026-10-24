@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Customization — TradeCanvas docs</title>
-  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 126 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
+  <meta name="description" content="Every way to make TradeCanvas your own: colours, the widget's look, the chart's look by key, 132 switches for the widget's parts, your own buttons, menus and status items, words, plugins and the headless chart." />
 </svelte:head>
 
 <h1>Customization</h1>
@@ -81,7 +81,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
 <table>
   <thead><tr><th>Group</th><th>Switches</th></tr></thead>
   <tbody>
-    <tr><td>Bars</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code></td></tr>
+    <tr><td>Bars</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code> <code>dock</code></td></tr>
     <tr><td>Capabilities</td><td>
       <code>alerts</code> <code>objectTree</code> <code>symbolInfo</code> <code>symbolSearch</code> <code>settings</code>
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
@@ -100,6 +100,10 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
       <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
       <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
+    </td></tr>
+    <tr><td>Dock</td><td>
+      <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
+      <code>dock.symbolInfo</code>
     </td></tr>
     <tr><td>Drawing sidebar</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

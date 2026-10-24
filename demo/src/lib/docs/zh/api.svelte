@@ -410,8 +410,9 @@ widget.destroy()`}</code></pre>
   <tbody>
     <tr><td>工具栏</td><td>
       品种及其信息；周期（固定的周期显示为按钮，另有一个按单位列出全部周期的菜单，从分钟到月，每项带一个星标，点它即可固定）；
-      以图标显示的图表类型；指标（一个对话框，见<a href={href('/docs/indicators')}>指标</a>），以及配置了数据适配器时的对比；撤销和重做。右侧依次是：布局、K线回放、提醒、对象树、一个交易菜单（新建委托、做多和做空括号单、
-      盘口深度和账户面板），然后是截图、设置、主题和全屏。放不下的部分收进“更多”。
+      以图标显示的图表类型；指标（一个对话框，见<a href={href('/docs/indicators')}>指标</a>），以及配置了数据适配器时的对比；撤销和重做。右侧依次是：布局、K线回放、一个交易菜单（新建委托、做多和做空括号单、
+      盘口深度和账户面板），然后是截图、设置、主题和全屏；没有按钮栏时（在手机上，或设置
+      <code>{`features: { dock: false }`}</code> 时）还有提醒和对象树。放不下的部分收进“更多”。
     </td></tr>
     <tr><td>画线工具</td><td>
       每个分组的菜单都标出其中工具的快捷键（Alt+T 为趋势线），每一行都有一个星标，可把该工具固定到顶部。底部依次是：
@@ -425,8 +426,29 @@ widget.destroy()`}</code></pre>
       颜色、线宽和线型、设置、提醒、锁定、更多和删除。按住工具栏的拖动柄把它拖开，它就留在那里，下一个画线也是如此；
       双击拖动柄可让它回到画线上方。
     </td></tr>
+    <tr><td>停靠区</td><td>
+      外侧边缘的一条按钮栏，每个面板一个按钮：自选列表、提醒、对象树、数据窗口和品种信息。见<a href="#dock">停靠区</a>。
+    </td></tr>
   </tbody>
 </table>
+
+<h3 id="dock">停靠区</h3>
+<p>
+  组件的面板位于图表旁边，一次显示一个，从外侧边缘的按钮栏打开（组件左右镜像时位于左侧）。按下按钮栏上的按钮会打开对应的面板，
+  如果它正是打开着的那个，则将其关闭；每个面板的关闭按钮也能关闭它。有自选列表时，一开始打开的就是它。拖动面板的边缘，
+  或在边缘上按方向键，可把宽度设为 233 到 377 px（初始为 296）；宽度保存在当前浏览器中。
+</p>
+<p>
+  在手机上，或组件宽度小于 641 px 时，没有按钮栏：面板从底部升起，覆盖在图表上，并且一开始是关闭的。此时提醒和对象树从工具栏打开，
+  品种信息从品种旁的 <strong>ⓘ</strong> 打开，任何面板也都可以由你自己的代码打开。<code>ChartWidgetGrid</code> 中的图表各自没有按钮栏，
+  除非它的 <code>widget.features</code> 打开了 <code>dock</code>。
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+widget.getOpenPanel()           // the panel open, or null
+widget.closePanel()
+
+new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
+new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>
 
 <h3 id="search-dialogs">搜索代码、对比和跳转到</h3>
 <p>
@@ -583,7 +605,7 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
 
 <h3>自选列表</h3>
 <p>
-  右侧面板中有多个品种列表，每一行显示最新价、涨跌幅 % 和走势图。列表可在面板菜单中切换、新建、重命名和删除；
+  停靠区中的一个面板，含多个品种列表，每一行显示最新价、涨跌幅 % 和走势图。列表可在面板菜单中切换、新建、重命名和删除；
   品种可从代码搜索（+）添加，可移除，也可通过拖动或 Alt+↑/↓ 重新排序。各行的报价来自适配器的
   <code>subscribeQuotes</code>、你自己的报价源，或你推送的数据。
 </p>
@@ -611,7 +633,7 @@ widget.getQuote('AAPL')`}</code></pre>
 
 <h3>品种信息</h3>
 <p>
-  从工具栏的 ⓘ 按钮（或命令面板）打开的面板：品种的名称、最新价和涨跌、市场状态及距下次开盘或收盘的倒计时、
+  停靠区中的一个面板，可从品种旁的 ⓘ、按钮栏或命令面板打开：品种的名称、最新价和涨跌、市场状态及距下次开盘或收盘的倒计时、
   当日开盘价、波动区间、成交量、昨收、买价和卖价、最小变动价位、货币、时区和交易时段，以及新闻。市场休市时，状态栏会显示出来。
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -651,7 +673,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>对象树</h3>
 <p>
-  工具栏中的图层按钮会打开对象树面板，列出所有已添加的指标和画线。
+  按钮栏上的图层按钮（没有按钮栏时是工具栏上的）会在停靠区中打开对象树，列出所有已添加的指标和画线。
   指标可以删除；每条画线都可以单独显示 / 隐藏、锁定 / 解锁、设置和删除，
   分组则连同其中的画线一起列出。
   默认启用——设置 <code>objectTree: false</code> 可关闭。画线控制对应以下调用：
@@ -746,7 +768,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>功能开关</h3>
-<p>126 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
+<p>132 个开关，全部默认开启，直到被关闭：不带点的名称是一整项功能，在它出现的每个地方关闭；带点的名称是一个位置。开关可在组件运行时切换。完整列表及对应的旧选项见<a href={href('/docs/customization')}>定制</a>。</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // 一个按钮、一组绘图工具、所有快捷键
 
 widget.setFeatures({ sidebar: false, statusBar: false })

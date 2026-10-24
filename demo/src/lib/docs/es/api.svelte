@@ -444,9 +444,10 @@ widget.destroy()`}</code></pre>
     <tr><td>Barra de herramientas</td><td>
       El símbolo y su información; las temporalidades (las fijadas como botones, y un menú con todas por unidad, de minutos
       a meses, con una estrella en cada una para fijarla); el tipo de gráfico como su icono; Indicadores (un diálogo: ver <a href={href('/docs/indicators')}>Indicadores</a>), y Comparar cuando hay un adaptador de datos;
-      deshacer y rehacer. A la derecha: diseños, repetición de barras, alertas, el árbol de objetos, un menú Operar (una
-      orden nueva, órdenes bracket largas y cortas, la escalera de profundidad y el panel de cuenta), y luego captura de
-      pantalla, configuración, el tema y pantalla completa. Lo que no cabe se pliega bajo “Más”.
+      deshacer y rehacer. A la derecha: diseños, repetición de barras, un menú Operar (una orden nueva, órdenes bracket
+      largas y cortas, la escalera de profundidad y el panel de cuenta), y luego captura de pantalla, configuración, el
+      tema y pantalla completa; también las alertas y el árbol de objetos donde no hay riel (en un móvil, o con
+      <code>{`features: { dock: false }`}</code>). Lo que no cabe se pliega bajo “Más”.
     </td></tr>
     <tr><td>Herramientas de dibujo</td><td>
       El menú de cada grupo indica los atajos de sus herramientas (Alt+T una línea de tendencia) y tiene una estrella en
@@ -462,8 +463,33 @@ widget.destroy()`}</code></pre>
       Su color, grosor y estilo de línea, ajustes, una alerta, bloqueo, más y borrar. Arrastra la barra por su asa y se
       queda ahí para el siguiente dibujo; con doble clic en el asa vuelve sobre el dibujo.
     </td></tr>
+    <tr><td>Dock</td><td>
+      Un riel en el borde exterior con un botón para cada panel: la lista de seguimiento, las alertas, el árbol de
+      objetos, la ventana de datos y la información del símbolo. Ver <a href="#dock">El dock</a>.
+    </td></tr>
   </tbody>
 </table>
+
+<h3 id="dock">El dock</h3>
+<p>
+  Los paneles del widget se colocan junto al gráfico, de uno en uno, y se abren desde el riel del borde exterior (a la
+  izquierda en un widget de derecha a izquierda). Un botón del riel abre su panel, o lo cierra si es el que está
+  abierto; el botón de cerrar de cada panel también lo cierra. La lista de seguimiento empieza abierta, si la hay.
+  Arrastra el borde del panel, o usa las flechas del teclado sobre él, para darle un ancho de 233 a 377 px (296 al
+  principio); el ancho se guarda en este navegador.
+</p>
+<p>
+  En un móvil, o en un widget de menos de 641 px de ancho, no hay riel: el panel sube desde abajo sobre el gráfico y
+  empieza cerrado. Ahí las alertas y el árbol de objetos se abren desde la barra de herramientas, la información del
+  símbolo desde la <strong>ⓘ</strong> junto al símbolo, y cualquier panel desde tu propio código. Los gráficos de un
+  <code>ChartWidgetGrid</code> no tienen riel cada uno, salvo que su <code>widget.features</code> active <code>dock</code>.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+widget.getOpenPanel()           // the panel open, or null
+widget.closePanel()
+
+new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
+new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>
 
 <h3 id="search-dialogs">Buscar símbolo, Comparar e Ir a</h3>
 <p>
@@ -637,7 +663,7 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
 
 <h3>Listas de seguimiento</h3>
 <p>
-  Un panel a la derecha con listas de símbolos; cada fila lleva el último precio, el % de cambio y un minigráfico. Las
+  Un panel del dock con listas de símbolos; cada fila lleva el último precio, el % de cambio y un minigráfico. Las
   listas se cambian, crean, renombran y borran desde su menú; los símbolos se añaden desde la búsqueda de símbolos
   (+), se quitan y se reordenan arrastrando o con Alt+↑/↓. Las filas toman las cotizaciones del
   <code>subscribeQuotes</code> del adaptador, de una fuente de cotizaciones tuya o de lo que tú envíes.
@@ -666,7 +692,7 @@ widget.getQuote('AAPL')`}</code></pre>
 
 <h3>Información del símbolo</h3>
 <p>
-  Un panel que se abre con el botón ⓘ de la barra de herramientas (o desde la paleta de comandos): los nombres del
+  Un panel del dock que se abre con la ⓘ junto al símbolo, desde el riel o desde la paleta de comandos: los nombres del
   símbolo, el último precio y su variación, el estado del mercado con la cuenta atrás hasta la próxima apertura o cierre,
   la apertura del día, el rango, el volumen, el cierre anterior, compra y venta, el tamaño del tick, la moneda, la zona y
   el horario de negociación, y noticias. La barra de estado indica cuándo el mercado está cerrado.
@@ -712,8 +738,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>Árbol de objetos</h3>
 <p>
-  El botón de capas de la barra de herramientas abre un panel con el árbol de
-  objetos, que lista todos los indicadores y dibujos activos. Los indicadores se
+  El botón de capas del riel (el de la barra de herramientas, donde no hay riel) abre en el dock el
+  árbol de objetos, que lista todos los indicadores y dibujos activos. Los indicadores se
   pueden quitar; cada dibujo se puede mostrar / ocultar, bloquear / desbloquear,
   configurar y eliminar, y los grupos aparecen con sus dibujos debajo. Activado
   por defecto; desactívalo con <code>objectTree: false</code>.
@@ -824,7 +850,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Interruptores de funciones</h3>
-<p>126 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
+<p>132 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // un botón, una sección de dibujo, todos los atajos
 
 widget.setFeatures({ sidebar: false, statusBar: false })
