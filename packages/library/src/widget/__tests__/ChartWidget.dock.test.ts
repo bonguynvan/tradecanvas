@@ -135,6 +135,18 @@ describe('ChartWidget dock', () => {
     expect(railButton('watchlist').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('holds the depth ladder as a page of its own when the widget has one, its rail button under a switch', () => {
+    make({ watchlist: true, depthLadder: true });
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'depthLadder']);
+    expect(widget.openPanel('depthLadder')).toBe(true);
+    expect(visible(inPanel('.tcw-ladder'))).toBe(true);
+    widget.closePanel();
+    widget.setFeatures({ 'dock.depthLadder': false });
+    expect(railButton('depthLadder').hidden || getComputedStyle(railButton('depthLadder')).display === 'none').toBe(true);
+    widget.setFeatures({ depthLadder: false });
+    expect(widget.openPanel('depthLadder')).toBe(false);
+  });
+
   it('starts shut on a phone, the rail’s place taken by the toolbar’s buttons', () => {
     width = 390;
     make({ watchlist: true });
@@ -169,6 +181,14 @@ describe('ChartWidget dock', () => {
     inPanel('input')!.focus();
     inPanel('.tcw-alerts-close')!.click();
     expect(document.activeElement).toBe(host.querySelector('.tcw-toolbar-more'));
+  });
+
+  it('gives the keyboard to the Trade menu when the ladder shuts without its rail button', () => {
+    make({ depthLadder: true, features: { 'dock.depthLadder': false } });
+    widget.openPanel('depthLadder');
+    inPanel('.tcw-ladder-close')!.focus();
+    inPanel('.tcw-ladder-close')!.click();
+    expect(document.activeElement).toBe(host.querySelector('.tcw-toolbar [data-role="trade"]'));
   });
 
   it('keeps a Tab stop on the rail with the watchlist’s button off', () => {

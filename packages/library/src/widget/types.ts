@@ -114,8 +114,10 @@ export interface ChartWidgetOptions {
   objectTree?: boolean;
 
   /**
-   * Depth-of-market ladder — a ladder button in the toolbar that opens a
-   * click-to-trade order-book panel. Off by default (needs trading + an
+   * Depth-of-market ladder: a click-to-trade order book, a page of the dock
+   * beside the chart (a sheet on a phone). Open it from the Trade menu, its
+   * rail button (the `dock.depthLadder` switch) or
+   * `widget.openPanel('depthLadder')`. Off by default (needs trading and an
    * order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.
    */
   depthLadder?: boolean;
@@ -596,4 +598,4 @@ export interface DrawingToolGroupDef {
 }
 
 /** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
-export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo';
+export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder';

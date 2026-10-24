@@ -2581,111 +2581,6 @@
   .tcw-datawin { top: auto; bottom: 0; left: 0; right: 0; width: 100vw; border-radius: var(--tcw-radius-xl) var(--tcw-radius-xl) 0 0; }
 }
 
-/* === Depth-of-market ladder === */
-
-.tcw-ladder {
-  position: absolute;
-  top: var(--tcw-panel-top);
-  inset-inline-end: 12px;
-  z-index: 41;
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  background: var(--tcw-bg-elevated);
-  border: 1px solid var(--tcw-border-strong);
-  border-radius: var(--tcw-panel-radius);
-  box-shadow: var(--tcw-menu-shadow);
-  overflow: hidden;
-  animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
-}
-.tcw-ladder-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  font-size: var(--tcw-font-size);
-  font-weight: var(--tcw-weight-strong);
-  color: var(--tcw-text);
-  border-bottom: 1px solid var(--tcw-border);
-}
-.tcw-ladder-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--tcw-control-h-sm);
-  height: var(--tcw-control-h-sm);
-  border: none;
-  background: transparent;
-  color: var(--tcw-text-muted);
-  border-radius: var(--tcw-control-radius);
-  cursor: pointer;
-}
-.tcw-ladder-close:hover { background: var(--tcw-bg-surface); color: var(--tcw-text); }
-.tcw-ladder-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  padding: 4px 0;
-  font-size: var(--tcw-font-size-xs);
-  font-weight: calc(var(--tcw-weight-strong) + 100);
-  text-transform: var(--tcw-label-case);
-  letter-spacing: var(--tcw-label-tracking);
-  color: var(--tcw-text-muted);
-  border-bottom: 1px solid var(--tcw-border);
-}
-.tcw-ladder-cols span { text-align: center; }
-.tcw-ladder-body { max-height: 360px; overflow-y: auto; }
-.tcw-ladder-empty { padding: 18px; text-align: center; font-size: var(--tcw-font-size-sm); color: var(--tcw-text-muted); }
-
-.tcw-ladder-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  height: 22px;
-  font-variant-numeric: tabular-nums;
-}
-.tcw-ladder-cell {
-  position: relative;
-  display: flex;
-  align-items: center;
-  border: none;
-  background: transparent;
-  font-size: var(--tcw-font-size-xs);
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-}
-.tcw-ladder-cell:disabled { cursor: default; }
-/* Depth bar grows from the centre column outward. */
-.tcw-ladder-cell::before {
-  content: '';
-  position: absolute;
-  top: 1px; bottom: 1px;
-  width: var(--w, 0%);
-}
-.tcw-ladder-bid { justify-content: flex-end; padding-right: 8px; color: var(--tcw-green); }
-.tcw-ladder-bid::before { right: 0; background: var(--tcw-green-soft); }
-.tcw-ladder-bid span, .tcw-ladder-bid { position: relative; }
-.tcw-ladder-ask { justify-content: flex-start; padding-left: 8px; color: var(--tcw-red); }
-.tcw-ladder-ask::before { left: 0; background: var(--tcw-red-soft); }
-.tcw-ladder-cell:not(:disabled):hover::before { opacity: 0.7; filter: brightness(1.4); }
-.tcw-ladder-cell > * { position: relative; }
-.tcw-ladder-price {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--tcw-font-size-xs);
-  font-weight: var(--tcw-weight-strong);
-  color: var(--tcw-text-dim);
-  border-inline-start: 1px solid var(--tcw-border);
-  border-inline-end: 1px solid var(--tcw-border);
-}
-.tcw-ladder-price.tcw-ask { color: var(--tcw-red); }
-.tcw-ladder-price.tcw-bid { color: var(--tcw-green); }
-
-@media (max-width: 640px) {
-  .tcw-ladder { top: auto; bottom: 0; left: 0; right: 0; width: 100vw; border-radius: var(--tcw-radius-xl) var(--tcw-radius-xl) 0 0; }
-  .tcw-ladder-body { max-height: 45vh; max-height: 45dvh; padding-bottom: max(0px, env(safe-area-inset-bottom)); }
-}
-
 /* === Bracket order placement === */
 
 .tcw-btn-long:hover { color: var(--tcw-green) !important; }
@@ -3491,35 +3386,41 @@
   .tcw-sel-swatch { transition: none; }
 }
 
-/* --- Account panel (positions, orders, history) --- */
+/* --- The account: a panel under the chart; its head the tabs, the totals, a new order and its close. --- */
 .tcw-account-dock {
   flex: none;
 }
 .tcw-account {
   display: flex;
   flex-direction: column;
-  height: 220px;
-  border-top: 1px solid var(--tcw-border);
+  /* 233, on the widget's φ ladder. */
+  height: 233px;
+  border-top: var(--tcw-border-w) solid var(--tcw-border);
   background: var(--tcw-bg-surface);
 }
 .tcw-account-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
+  gap: var(--tcw-space-4);
+  min-height: calc(var(--tcw-space-6) + var(--tcw-space-5));
+  padding-inline: var(--tcw-space-4) var(--tcw-space-3);
   border-bottom: 1px solid var(--tcw-divider);
 }
 .tcw-account-tabs {
   display: flex;
-  gap: 2px;
-  flex: 1;
+  gap: var(--tcw-space-1);
   min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 .tcw-account-tab {
-  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  height: var(--tcw-tab-h);
+  padding: var(--tcw-tab-pad);
   border: 0;
-  border-radius: var(--tcw-control-radius);
+  border-radius: var(--tcw-tab-radius);
   background: transparent;
   color: var(--tcw-text-muted);
   font: inherit;
@@ -3527,64 +3428,171 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.tcw-account-tab:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
-.tcw-account-tab[aria-selected="true"] { color: var(--tcw-text); background: var(--tcw-active-bg); }
-.tcw-account-tab:focus-visible, .tcw-account-new:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--tcw-accent); }
+.tcw-account-tab:hover { color: var(--tcw-text); background: var(--tcw-tab-hover); }
+.tcw-account-tab[aria-selected='true'] {
+  color: var(--tcw-tab-on-fg);
+  background: var(--tcw-tab-on-bg);
+  font-weight: var(--tcw-weight-strong);
+  box-shadow: inset 0 calc(-1 * var(--tcw-tab-line)) 0 var(--tcw-accent);
+}
+/* A tab's count: a figure in a soft pill. */
+.tcw-account-count {
+  min-width: 1.6em;
+  padding-inline: var(--tcw-space-2);
+  border-radius: 999px;
+  background: var(--tcw-hover-bg);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+/* The open and realised P&L, on every tab, in the mono figures. Short of room, they keep their start: the open P&L's words stay whole. */
+.tcw-account-totals {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  justify-content: safe flex-end;
+  gap: var(--tcw-space-5);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-dim);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .tcw-account-new {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--tcw-accent-line);
+  gap: var(--tcw-space-3);
+  height: var(--tcw-control-h);
+  padding-inline: var(--tcw-space-4);
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
   border-radius: var(--tcw-control-radius);
-  background: var(--tcw-accent-soft);
-  color: var(--tcw-accent);
+  background: transparent;
+  color: var(--tcw-text);
   font: inherit;
   font-size: var(--tcw-font-size-sm);
   cursor: pointer;
 }
-.tcw-account-new:hover { background: var(--tcw-accent-glow); }
+.tcw-account-new:hover { background: var(--tcw-hover-bg); }
+.tcw-account-tab:focus-visible,
+.tcw-account-new:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
 .tcw-account-body {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
 }
+/* The rows: headings in the label case, figures set right in the mono type. */
 .tcw-account-table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--tcw-font-size-sm);
-  font-variant-numeric: tabular-nums;
 }
 .tcw-account-table th {
   position: sticky;
   top: 0;
-  padding: 6px 10px;
+  z-index: 1;
+  height: var(--tcw-control-h);
+  padding-inline: var(--tcw-space-4);
+  border-bottom: 1px solid var(--tcw-divider);
   background: var(--tcw-bg-surface);
   color: var(--tcw-text-muted);
-  font-weight: var(--tcw-weight);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
   text-align: start;
-  border-bottom: 1px solid var(--tcw-divider);
-}
-.tcw-account-table td {
-  padding: 5px 10px;
-  color: var(--tcw-text);
-  border-bottom: 1px solid var(--tcw-divider);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
   white-space: nowrap;
 }
-.tcw-account-table tr:hover td { background: var(--tcw-hover-bg); }
+.tcw-account-table td {
+  height: calc(var(--tcw-control-h) + var(--tcw-space-2));
+  padding-inline: var(--tcw-space-4);
+  border-bottom: 1px solid var(--tcw-divider);
+  color: var(--tcw-text);
+  white-space: nowrap;
+}
+.tcw-account-table :is(th, td).tcw-num {
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.tcw-account-table tbody tr:hover td { background: var(--tcw-hover-bg); }
 .tcw-account-side { font-weight: var(--tcw-weight-strong); }
 .tcw-account-buy, .tcw-account-up { color: var(--tcw-green); }
 .tcw-account-sell, .tcw-account-down { color: var(--tcw-red); }
-.tcw-account-actions { display: flex; gap: 2px; }
-.tcw-account-empty, .tcw-account-summary {
+.tcw-account-actions { display: flex; justify-content: flex-end; gap: var(--tcw-space-1); }
+.tcw-account-empty {
   margin: 0;
-  padding: 14px 12px;
+  padding: var(--tcw-space-6);
   color: var(--tcw-text-muted);
   font-size: var(--tcw-font-size-sm);
+  text-align: center;
 }
-.tcw-account-summary { padding: 8px 12px; color: var(--tcw-text-dim); }
-@media (max-width: 640px) {
-  .tcw-account { height: 45vh; height: 45dvh; }
+
+/*
+ * A narrow widget (a phone, a narrow column): the totals go under the tabs,
+ * and each row is a card of named figures. The headings stay for a screen
+ * reader, unseen: the cells name themselves on screen. The panel is a step
+ * of phi taller (377) for two cards and more, at most 45% of a phone's screen.
+ */
+.tcw-root[data-tcw-narrow] .tcw-account {
+  height: 377px;
+  max-height: 45vh;
+  max-height: 45dvh;
+}
+.tcw-root[data-tcw-narrow] .tcw-account-head { flex-wrap: wrap; padding-block: var(--tcw-space-2); }
+/* The tabs give way (they scroll): New order and the close keep the first line. */
+.tcw-root[data-tcw-narrow] .tcw-account-tabs { flex: 1 1 0; }
+.tcw-root[data-tcw-narrow] .tcw-account-totals { order: 3; flex-basis: 100%; justify-content: flex-start; padding-inline: var(--tcw-space-3); }
+.tcw-root[data-tcw-narrow] .tcw-account-table thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.tcw-root[data-tcw-narrow] .tcw-account-table,
+.tcw-root[data-tcw-narrow] .tcw-account-table tbody { display: block; }
+.tcw-root[data-tcw-narrow] .tcw-account-table tbody tr {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tcw-space-2) var(--tcw-space-5);
+  padding: var(--tcw-space-4);
+  border-bottom: 1px solid var(--tcw-divider);
+}
+.tcw-root[data-tcw-narrow] .tcw-account-table td {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tcw-space-3);
+  height: auto;
+  padding: 0;
+  border: 0;
+}
+.tcw-root[data-tcw-narrow] .tcw-account-table td::before {
+  content: attr(data-label);
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font);
+  font-size: var(--tcw-font-size-xs);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+.tcw-root[data-tcw-narrow] .tcw-account-table td:first-child,
+.tcw-root[data-tcw-narrow] .tcw-account-table td[data-label=''] { grid-column: 1 / -1; }
+.tcw-root[data-tcw-narrow] .tcw-account-table td[data-label='']::before { content: none; }
+.tcw-root[data-tcw-narrow] .tcw-account-table td[data-label=''] .tcw-account-actions { width: 100%; }
+.tcw-root[data-tcw-narrow] .tcw-account-table .tcw-tree-btn { width: 34px; height: 34px; }
+
+@media (forced-colors: active) {
+  .tcw-account-tab[aria-selected='true'] { outline: 2px solid Highlight; }
+  .tcw-account-tab:focus-visible,
+  .tcw-account-new:focus-visible { outline: 2px solid Highlight; }
 }
 
 /* --- Named layouts --- */

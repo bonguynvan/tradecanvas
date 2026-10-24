@@ -99,7 +99,8 @@ describe('the stylesheet’s look', () => {
   });
 
   it('places its panels below the toolbar and beside the drawing tools, as the look sizes them', () => {
-    for (const panel of ['.tcw-alerts-panel', '.tcw-datawin', '.tcw-ladder', '.tcw-tree-panel']) {
+    // The floating panels (the depth ladder is a page of the dock: it has no place of its own).
+    for (const panel of ['.tcw-alerts-panel', '.tcw-datawin', '.tcw-tree-panel']) {
       expect(ruleBody(panel), panel).toContain('top: var(--tcw-panel-top)');
     }
     expect(ruleBody('.tcw-style-panel')).toContain('inset-inline-start: var(--tcw-panel-left)');

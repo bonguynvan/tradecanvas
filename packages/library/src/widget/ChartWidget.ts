@@ -140,13 +140,14 @@ const PANEL_FEATURES = {
   objectTree: 'objectTree',
   dataWindow: 'dataWindow',
   symbolInfo: 'symbolInfo',
+  depthLadder: 'depthLadder',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
 
 /** Money is written to the price step's decimals, but to no more than these. */
 const MONEY_DECIMALS = 2;
 
 /** The toolbar's button for a panel, where it has one. */
-const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo' };
+const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
 
 /**
  * The Latin letter a plain key press types, for a symbol search started on
@@ -571,7 +572,7 @@ export class ChartWidget {
         onToggleAccount: options.trading !== false ? () => this.toggleAccountPanel() : undefined,
         onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
-        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.depthLadder?.toggle() : undefined,
+        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.toggleLadder() : undefined,
         onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
         onCompare: options.adapter && features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
         onUndo: () => this.chart.undo(),
@@ -1099,6 +1100,8 @@ export class ChartWidget {
           const { date, time } = utcToWallTime(ms, this.displayTimezone());
           return `${date} ${time}`;
         },
+        formatAmount: (v) => this.formatMoney(v),
+        formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
           this.toolbar?.setActive('account', open);
           this.refreshAccount();
@@ -1133,8 +1136,13 @@ export class ChartWidget {
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },
           formatPrice: (p) => this.formatAlertPrice(p),
+          priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.toolbar?.setActive('ladder', open),
+          onClose: () => this.closePanelByHand('depthLadder'),
         }, undefined, this.t);
+        // Your working orders, marked on the rows where they wait.
+        const ladder = this.depthLadder;
+        this.chart.on('ordersChange', () => ladder.setOrders(this.chart.getOrders()));
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
@@ -1467,14 +1475,20 @@ export class ChartWidget {
 
   /**
    * Open a panel of the dock beside the chart (in a sheet on a phone), in
-   * place of the one open. False when the widget hasn't it: no watchlist, or
-   * its switch off.
+   * place of the one open. False when the widget hasn't it: no watchlist, no
+   * depth ladder (the `depthLadder` option), or its switch off.
    */
   openPanel(panel: WidgetPanel): boolean {
-    const there = panel === 'watchlist' ? this.watchlist !== null : this.featureState[PANEL_FEATURES[panel]];
-    if (!there || !this.dock) return false;
+    if (!this.hasPanel(panel) || !this.dock) return false;
     this.dock.open(panel);
     return this.dock.current() === panel;
+  }
+
+  /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
+  private hasPanel(panel: WidgetPanel): boolean {
+    if (panel === 'watchlist') return this.watchlist !== null;
+    if (panel === 'depthLadder' && this.depthLadder === null) return false;
+    return this.featureState[PANEL_FEATURES[panel]];
   }
 
   /** Shut the dock. */
@@ -2272,7 +2286,7 @@ export class ChartWidget {
       ['dataWindow', () => this.dock?.closePage('dataWindow')],
       ['accountPanel', () => this.toggleAccountPanel(false)],
       ['orderTicket', () => this.orderTicket?.close()],
-      ['depthLadder', () => this.depthLadder?.close()],
+      ['depthLadder', () => this.dock?.closePage('depthLadder')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
@@ -2964,6 +2978,12 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /** The depth ladder, a page of the dock: open or shut it (the Trade menu's entry). */
+  private toggleLadder(): void {
+    if (!this.depthLadder || !this.featureState.depthLadder) return;
+    this.dock?.toggle('depthLadder');
+  }
+
   private toggleAlerts(): void {
     if (!this.alertsPanel || !this.featureState.alerts) return;
     this.dock?.toggle('alerts');
@@ -3147,6 +3167,14 @@ export class ChartWidget {
         id: 'symbolInfo', label: this.t('symbolInfo.title'), icon: 'info', element: info.element, parts: ['dock.symbolInfo', 'symbolInfo'],
         onShow: () => info.open(),
         onHide: () => info.close(),
+      });
+    }
+    const ladder = this.depthLadder;
+    if (ladder) {
+      dock.addPage({
+        id: 'depthLadder', label: this.t('ladder.title'), icon: 'ladder', element: ladder.element, parts: ['dock.depthLadder', 'depthLadder'],
+        onShow: () => ladder.openPanel(),
+        onHide: () => ladder.close(),
       });
     }
     this.syncRail();
