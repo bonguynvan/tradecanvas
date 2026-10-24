@@ -106,9 +106,14 @@ export class WidgetTradeMenu {
     }
     const items = this.items.filter((item) => !this.isOff(item.parts));
     if (items.length === 0) return;
-    const entries: ContextMenuEntry[] = items.map((item) => (PANELS.includes(item.id)
-      ? { id: item.id, label: item.label, checked: this.open.has(item.id) }
-      : { id: item.id, label: item.label, icon: ACTION_ICONS[item.id] }));
+    const actions = items.filter((item) => !PANELS.includes(item.id));
+    const panels = items.filter((item) => PANELS.includes(item.id));
+    // The orders, then a rule, then the panels (ticked while open).
+    const entries: ContextMenuEntry[] = [
+      ...actions.map((item) => ({ id: item.id, label: item.label, icon: ACTION_ICONS[item.id] })),
+      ...(actions.length > 0 && panels.length > 0 ? ['separator' as const] : []),
+      ...panels.map((item) => ({ id: item.id, label: item.label, checked: this.open.has(item.id) })),
+    ];
     const root = this.root();
     this.menu ??= new WidgetContextMenu(root, this.t('toolbar.trade'));
     const at = anchor.getBoundingClientRect();

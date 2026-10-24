@@ -124,6 +124,19 @@ describe('the Trade menu', () => {
     expect(calls).toEqual(['bracket buy']);
   });
 
+  it('sets the panels apart from the orders with a rule, only when there are both', () => {
+    make();
+    role('trade')!.click();
+    const menu = document.querySelector('.tcw-context-menu:not([hidden])')!;
+    const kinds = [...menu.children].map((el) => (el.getAttribute('role') === 'separator' ? '|' : el.textContent?.trim()));
+    expect(kinds).toEqual(['New order…', 'Long bracket', 'Short bracket', '|', 'Depth ladder', 'Account: positions, orders, history']);
+    document.body.click();
+    root.dataset.tcwOff = 'depthLadder accountPanel';
+    toolbar.tidy();
+    role('trade')!.click();
+    expect(document.querySelectorAll('.tcw-context-menu:not([hidden]) [role=separator]')).toHaveLength(0);
+  });
+
   it('ticks the panels that are open', () => {
     make();
     toolbar.setActive('ladder', true);
