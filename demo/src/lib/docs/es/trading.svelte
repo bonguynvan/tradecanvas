@@ -188,7 +188,7 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 
 <h2>Ticket de orden y panel de cuenta (ChartWidget)</h2>
 <p>
-  El botón de recibo del widget abre un panel de cuenta bajo el gráfico: las
+  <strong>Cuenta</strong>, en el menú <strong>Operar</strong> de la barra, abre un panel de cuenta bajo el gráfico: las
   posiciones abiertas con su ganancia o pérdida, las órdenes pendientes y las
   ejecuciones hasta el momento con el P&amp;L realizado. Cada fila permite cerrar,
   invertir o cancelar. <strong>Nueva orden</strong> abre un ticket de orden: compra o
@@ -201,6 +201,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   fluctuación mínima del mercado y el precio de la orden dentro del techo y el suelo del día, empieza en un lote y, por
   encima de uno, acepta solo lotes completos (las acciones sueltas van en una orden de lote
   incompleto aparte).
+</p>
+<p>
+  El ticket muestra el símbolo junto al título. El tipo y la vigencia son opciones en una fila (las flechas
+  pasan de una a otra); − y + mueven la cantidad de lote en lote y el precio según la fluctuación mínima del mercado, y
+  un precio tomado del gráfico empieza redondeado a ella. Un stop-loss o un take-profit activado dice a qué distancia
+  está de la entrada en porcentaje y cuánto ganaría o perdería; debajo, un recibo resume la orden: su valor, su riesgo,
+  su beneficio y la relación entre ambos. Cambiar entre compra y venta deja una orden en espera donde se puso (una
+  compra stop sobre el mercado pasa a venta límite), y el botón de enviar toma el color del lado.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

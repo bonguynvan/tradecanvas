@@ -1179,11 +1179,13 @@
 
 /* === Layouts === */
 
-/* 480, as the settings of an indicator: a list of names and when they were saved. */
+/* 480, as the settings of an indicator: a list of names and when they were saved. On a phone, the sheet's width. */
 .tcw-modal.tcw-layouts-dialog {
-  width: 480px;
   max-height: min(610px, 86vh);
   max-height: min(610px, 86dvh);
+}
+@media (min-width: 641px) {
+  .tcw-modal.tcw-layouts-dialog { width: 480px; }
 }
 
 .tcw-layouts-body {
@@ -1294,7 +1296,7 @@
   border: none;
   border-radius: var(--tcw-control-radius);
   background: var(--tcw-red);
-  /* White on the red in every theme, as the order ticket's sell button. */
+  /* White on the red in every theme. */
   color: #fff;
   font: inherit;
   font-size: var(--tcw-font-size-sm);
@@ -1343,4 +1345,166 @@
   .tcw-cp-row {
     min-height: 44px;
   }
+}
+
+/* === The order ticket === */
+
+/* 480, as a drawing's settings: the side, the order, its stop and target, then the receipt. On a phone, the sheet's width. */
+.tcw-modal.tcw-order-ticket {
+  max-height: min(610px, 92vh);
+  max-height: min(610px, 92dvh);
+}
+@media (min-width: 641px) {
+  .tcw-modal.tcw-order-ticket { width: 480px; }
+}
+.tcw-order-ticket[data-side='buy'] { --tcw-side: var(--tcw-green); }
+.tcw-order-ticket[data-side='sell'] { --tcw-side: var(--tcw-red); }
+
+.tcw-ticket-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--tcw-space-4);
+  min-width: 0;
+}
+.tcw-ticket-symbol {
+  overflow: hidden;
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tcw-ticket-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Buy and Sell: the chosen one filled with its colour, the ground's own colour on it. */
+.tcw-ticket-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--tcw-space-3);
+  margin-bottom: var(--tcw-space-4);
+}
+.tcw-ticket-side-btn {
+  height: 34px;
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-ticket-side-btn:hover { color: var(--tcw-text); }
+.tcw-ticket-buy[aria-pressed='true'] { border-color: var(--tcw-green); background: var(--tcw-green); color: var(--tcw-bg); }
+.tcw-ticket-sell[aria-pressed='true'] { border-color: var(--tcw-red); background: var(--tcw-red); color: var(--tcw-bg); }
+.tcw-ticket-side-btn:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+
+/* A row's control goes under its name when they don't fit side by side (a long choice at 320 px). */
+.tcw-ticket-row {
+  flex-wrap: wrap;
+  gap: var(--tcw-space-3) var(--tcw-space-5);
+}
+.tcw-ticket-market {
+  color: var(--tcw-text-dim);
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A stop or a target: its switch, its name with how far it is under it, then its price. */
+.tcw-ticket-optional {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--tcw-space-4);
+}
+.tcw-ticket-optional-name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcw-space-1);
+  min-width: 0;
+}
+.tcw-ticket-away {
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  /* Left to right inside, but at the name's start in either direction (the column's, not its own). */
+  align-self: flex-start;
+}
+
+/* The receipt: under a torn-paper rule, each sum a label and a figure in the mono type. */
+.tcw-ticket-summary:not(:empty) {
+  display: grid;
+  gap: var(--tcw-space-2);
+  margin: 0 var(--tcw-space-6) var(--tcw-space-4);
+  padding-top: var(--tcw-space-4);
+  border-top: var(--tcw-border-w) dashed var(--tcw-border-strong);
+}
+.tcw-ticket-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tcw-space-5);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+}
+.tcw-ticket-figure {
+  color: var(--tcw-text);
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.tcw-ticket-figure.tcw-ticket-up { color: var(--tcw-green); }
+.tcw-ticket-figure.tcw-ticket-down { color: var(--tcw-red); }
+
+.tcw-ticket-problems {
+  padding: 0 var(--tcw-space-6) var(--tcw-space-4);
+  color: var(--tcw-red);
+  font-size: var(--tcw-font-size-sm);
+}
+.tcw-ticket-problems p { margin: var(--tcw-space-1) 0; }
+
+/* Cancel and Place alone, at the end, as tall as each other. */
+.tcw-order-ticket .tcw-modal-footer { justify-content: flex-end; }
+.tcw-order-ticket .tcw-modal-footer button { height: var(--tcw-menu-item-h); padding-block: 0; }
+.tcw-ticket-place {
+  height: var(--tcw-menu-item-h);
+  padding-inline: var(--tcw-space-6);
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: var(--tcw-side, var(--tcw-accent));
+  color: var(--tcw-bg);
+  font: inherit;
+  font-size: var(--tcw-font-size);
+  font-weight: var(--tcw-weight-strong);
+  cursor: pointer;
+}
+.tcw-ticket-place:hover:not(:disabled) { background: color-mix(in srgb, var(--tcw-side, var(--tcw-accent)) 86%, var(--tcw-text)); }
+.tcw-ticket-place:disabled { opacity: 0.45; cursor: not-allowed; }
+.tcw-ticket-place:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+
+/* A phone: the ticket is a sheet above the keyboard, its controls a finger's size. */
+@media (max-width: 640px) {
+  .tcw-modal.tcw-order-ticket {
+    max-height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    max-height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+  }
+  .tcw-stepper .tcw-indi-input { width: 96px; }
+  .tcw-stepper-btn, .tcw-segment { min-width: 34px; }
+  .tcw-segment { height: 34px; }
+  .tcw-stepper { height: 38px; }
+}
+
+/* Forced colours drop the box-shadow rings: an outline marks focus and the chosen side. */
+@media (forced-colors: active) {
+  .tcw-ticket-side-btn[aria-pressed='true'] { outline: 2px solid Highlight; }
+  .tcw-ticket-place { border: 1px solid ButtonText; }
+  .tcw-ticket-side-btn:focus-visible,
+  .tcw-ticket-place:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
 }

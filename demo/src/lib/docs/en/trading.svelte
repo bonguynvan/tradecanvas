@@ -178,7 +178,7 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 
 <h2>Order ticket and account panel (ChartWidget)</h2>
 <p>
-  The widget's receipt button opens an account panel under the chart: open positions
+  <strong>Account</strong> in the toolbar's <strong>Trade</strong> menu opens an account panel under the chart: open positions
   with their profit and loss, working orders, and the fills so far with the P&amp;L
   realised. Each row closes, reverses or cancels. <strong>New order</strong> opens an
   order ticket: buy or sell, market, limit or stop, quantity, price, an optional
@@ -188,6 +188,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   market set (<code>chart.setMarket</code>), it also keeps its prices on the market's step and
   the order's price inside the day's ceiling and floor, starts at one lot, and takes whole lots above one
   (fewer shares are an odd-lot order of their own).
+</p>
+<p>
+  The ticket names the symbol beside its title. The type and the time in force are choices in a row
+  (the arrow keys move between them); − and + move the quantity by a lot and a price by the market's step, and a
+  price from the chart starts rounded to that step. A stop-loss or a take-profit, switched on, says how far it is from
+  the entry in percent and what it would make or lose; under them a receipt sums the order up: its value, its risk,
+  its reward and the one over the other. Switching between buy and sell keeps a waiting order where it was put (a buy
+  stop over the market becomes a sell limit), and Place takes the side's colour.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

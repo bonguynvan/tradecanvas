@@ -38,6 +38,8 @@ export interface OrderTicketRules {
   limits?: { ceiling: number; floor: number } | null;
   /** Shares in a lot. Fewer is an odd lot, an order of its own; more must be whole lots. */
   lot?: number;
+  /** Money per point of a futures contract (VN30F: 100,000 dong): what the sums are in. */
+  multiplier?: number;
 }
 
 /** Prices that differ by less than this are the same price (float dust). */
@@ -113,4 +115,45 @@ export function orderTicketRiskReward(draft: OrderTicketDraft, lastPrice: number
   if (entry === null || draft.stopLoss === null || draft.takeProfit === null) return null;
   const risk = Math.abs(entry - draft.stopLoss);
   return risk > 0 ? Math.abs(draft.takeProfit - entry) / risk : null;
+}
+
+/**
+ * How far a stop-loss or take-profit at `price` is from the entry: in percent,
+ * and what it would make for the quantity (times a contract's multiplier).
+ */
+export function orderTicketDistance(
+  draft: OrderTicketDraft,
+  lastPrice: number | null,
+  price: number,
+  multiplier = 1,
+): { pct: number; amount: number } | null {
+  const entry = entryOf(draft, lastPrice);
+  if (entry === null || !(entry > 0) || !Number.isFinite(price) || !(draft.quantity > 0)) return null;
+  const direction = draft.side === 'buy' ? 1 : -1;
+  return { pct: ((price - entry) / entry) * 100 * direction, amount: (price - entry) * draft.quantity * direction * multiplier };
+}
+
+/** What the ticket sums up: the order's value, what its stop-loss risks and its take-profit makes, and reward over risk. */
+export interface OrderTicketSummary {
+  value: number | null;
+  risk: number | null;
+  reward: number | null;
+  ratio: number | null;
+}
+
+/**
+ * The receipt's sums, in money (a contract's points times its multiplier).
+ * A stop or a target on the wrong side of the entry sums to nothing: its
+ * "risk" would read as a gain, and reward over risk would mean nothing.
+ */
+export function orderTicketSummary(draft: OrderTicketDraft, lastPrice: number | null, rules: OrderTicketRules = {}): OrderTicketSummary {
+  const multiplier = rules.multiplier !== undefined && rules.multiplier > 0 ? rules.multiplier : 1;
+  const entry = entryOf(draft, lastPrice);
+  const value = entry !== null && entry > 0 && draft.quantity > 0 ? entry * draft.quantity * multiplier : null;
+  const problems = orderTicketProblems(draft, lastPrice);
+  const at = (price: number | null, wrong: OrderTicketProblem) =>
+    price === null || problems.includes(wrong) ? null : orderTicketDistance(draft, lastPrice, price, multiplier)?.amount ?? null;
+  const risk = at(draft.stopLoss, 'stopLossSide');
+  const reward = at(draft.takeProfit, 'takeProfitSide');
+  return { value, risk, reward, ratio: risk !== null && reward !== null ? orderTicketRiskReward(draft, lastPrice) : null };
 }

@@ -536,3 +536,26 @@ describe('ChartWidget bracket bar', () => {
     expect(host.querySelector<HTMLElement>('.tcw-bracket-bar')!.dir).toBe('rtl');
   });
 });
+
+describe('ChartWidget order ticket', () => {
+  it('names the symbol, and starts at a price the chart rounds, stepped as the chart steps', () => {
+    make({ trading: true, symbol: 'AAA' });
+    const chart = FakeChart.last as unknown as { getPriceStep: (p: number) => number };
+    chart.getPriceStep = () => 0.5;
+    (widget as unknown as { openOrderTicket(price?: number): void }).openOrderTicket(95.123456);
+    expect(host.querySelector('.tcw-ticket-symbol')?.textContent).toBe('AAA');
+    const price = host.querySelector<HTMLInputElement>('input[data-ticket-field="price"]')!;
+    expect(price.value).toBe('95.0'); // the fake chart rounds to whole prices, its step is 0.5
+    host.querySelector<HTMLButtonElement>('[data-ticket-field="price-up"]')!.click();
+    expect(price.value).toBe('95.5');
+  });
+
+  it('writes money to the decimals of the chart’s price step', () => {
+    make({ trading: true, symbol: 'AAA' });
+    (FakeChart.last as unknown as { getPriceStep: (p: number) => number }).getPriceStep = () => 0.5;
+    (widget as unknown as { openOrderTicket(price?: number): void }).openOrderTicket();
+    host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-optional .tcw-toggle')[0].click();
+    // A buy at the fake chart's 100 with its stop 1% under: one unit risks 1, written as the step's one decimal.
+    expect(host.querySelector('.tcw-ticket-away')!.textContent).toBe('-1.00% · -1.0');
+  });
+});

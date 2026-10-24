@@ -573,3 +573,89 @@
   outline: none;
   box-shadow: 0 0 0 3px var(--tcw-accent-soft);
 }
+
+/* One choice of a few in a row (a radio group): the chosen one as the look shows a chosen button. */
+.tcw-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 2px;
+  padding: 2px;
+  border-radius: calc(var(--tcw-control-radius) + 2px);
+  background: var(--tcw-hover-bg);
+}
+.tcw-segment {
+  height: calc(var(--tcw-control-h) - 4px);
+  padding-inline: var(--tcw-space-4);
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-segment:hover { color: var(--tcw-text); }
+.tcw-segment[aria-checked='true'] {
+  background: var(--tcw-on-bg);
+  color: var(--tcw-on-fg);
+  font-weight: var(--tcw-weight-strong);
+  box-shadow: var(--tcw-on-ring);
+}
+.tcw-segment:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* A number between a − and a +: one field, the figure right-aligned in the chart's mono type. */
+.tcw-stepper {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--tcw-control-h);
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-control-radius);
+  background: var(--tcw-bg);
+  overflow: hidden;
+}
+.tcw-stepper:focus-within { box-shadow: var(--tcw-ring); }
+.tcw-stepper .tcw-indi-input {
+  width: 110px;
+  height: auto;
+  padding-inline: var(--tcw-space-3);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.tcw-stepper .tcw-indi-input::-webkit-inner-spin-button,
+.tcw-stepper .tcw-indi-input::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
+.tcw-stepper .tcw-indi-input:focus { outline: none; box-shadow: none; }
+.tcw-stepper-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tcw-control-h);
+  border: none;
+  background: transparent;
+  color: var(--tcw-text-dim);
+  cursor: pointer;
+}
+.tcw-stepper-btn:hover { background: var(--tcw-hover-bg); color: var(--tcw-text); }
+.tcw-stepper-btn:focus-visible { outline: none; background: var(--tcw-hover-bg); color: var(--tcw-text); }
+
+/* Forced colours drop the box-shadow rings: an outline marks focus and the chosen choice. */
+@media (forced-colors: active) {
+  .tcw-segment[aria-checked='true'] { outline: 2px solid Highlight; }
+  .tcw-segment:focus-visible,
+  .tcw-stepper-btn:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+  .tcw-stepper:focus-within { outline: 2px solid Highlight; }
+}
