@@ -464,8 +464,8 @@ widget.destroy()`}</code></pre>
 <p>
   The widget's panels sit beside the chart, one at a time, opened from the rail at the outer edge (on the left in
   a right-to-left widget). A rail button opens its panel, or shuts it when it is the one open; so does each
-  panel's close button. On a widget 987 px wide or more the watchlist opens by itself, until a panel is opened or
-  shut by hand. Drag the panel's edge, or use the arrow keys on it, for a width from 233 to 377 px (296 to start),
+  panel's close button. No panel opens by itself: the chart has the room until one is asked for
+  (<code>widget.openPanel('watchlist')</code> opens one from your code). Drag the panel's edge, or use the arrow keys on it, for a width from 233 to 377 px (296 to start),
   kept in this browser; it never takes more than 38.2% of the row, the chart keeping the rest.
 </p>
 <p>

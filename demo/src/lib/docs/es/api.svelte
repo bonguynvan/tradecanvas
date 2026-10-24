@@ -474,8 +474,8 @@ widget.destroy()`}</code></pre>
 <p>
   Los paneles del widget se colocan junto al gráfico, de uno en uno, y se abren desde el riel del borde exterior (a la
   izquierda en un widget de derecha a izquierda). Un botón del riel abre su panel, o lo cierra si es el que está
-  abierto; el botón de cerrar de cada panel también lo cierra. En un widget de 987 px de ancho o más, la lista de
-  seguimiento se abre sola, hasta que abras o cierres un panel tú mismo. Arrastra el borde del panel, o usa las flechas
+  abierto; el botón de cerrar de cada panel también lo cierra. Ningún panel se abre solo: el gráfico tiene el espacio hasta que se pide uno
+  (<code>widget.openPanel('watchlist')</code> lo abre desde tu código). Arrastra el borde del panel, o usa las flechas
   del teclado sobre él, para darle un ancho de 233 a 377 px (296 al principio), que se guarda en este navegador; nunca
   ocupa más del 38,2% de la fila, y el resto queda para el gráfico.
 </p>

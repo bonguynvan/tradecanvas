@@ -160,16 +160,6 @@ describe('WidgetDock', () => {
     expect(document.activeElement).toBe(fallback);
   });
 
-  it('tells its owner of a press on the rail, not of an open from code', () => {
-    const picked: string[] = [];
-    make({ onPick: (id) => picked.push(id) });
-    dock.addPage(page('alerts'));
-    dock.open('alerts');
-    expect(picked).toEqual([]);
-    button('alerts').click();
-    expect(picked).toEqual(['alerts']);
-  });
-
   it('leaves the chart 61.8% of the room, whatever width was asked for', () => {
     let room = 700;
     make({ room: () => room, savedWidth: () => 377 });

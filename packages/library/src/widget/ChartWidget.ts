@@ -142,9 +142,6 @@ const PANEL_FEATURES = {
   symbolInfo: 'symbolInfo',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
 
-/** As wide as the chart's row must be for the watchlist to open by itself: 610 for the chart, 377 for the panel. */
-const DOCK_AUTO_OPEN_PX = 987;
-
 /** The toolbar's button for a panel, where it has one. */
 const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo' };
 
@@ -237,8 +234,6 @@ export class ChartWidget {
   private symbolSearch: WidgetSymbolSearch | null = null;
   /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
   private dock: WidgetDock | null = null;
-  /** A panel was opened or shut by hand: the watchlist no longer opens by itself. */
-  private dockChosen = false;
   /** Whether the widget was narrow when the dock last looked (null: not yet). */
   private dockNarrow: boolean | null = null;
   /** Follows the widget's width for the dock. */
@@ -644,7 +639,6 @@ export class ChartWidget {
       labels: { rail: this.t('dock.rail'), resize: this.t('dock.resize') },
       savedWidth: () => readDockWidth(),
       saveWidth: (width) => writeDockWidth(width),
-      onPick: () => { this.dockChosen = true; },
       railShown: () => this.railShown(),
       focusAfterClose: (page) => this.panelFocusTarget(page as WidgetPanel),
       room: () => body.clientWidth,
@@ -1474,14 +1468,12 @@ export class ChartWidget {
   openPanel(panel: WidgetPanel): boolean {
     const there = panel === 'watchlist' ? this.watchlist !== null : this.featureState[PANEL_FEATURES[panel]];
     if (!there || !this.dock) return false;
-    this.dockChosen = true;
     this.dock.open(panel);
     return this.dock.current() === panel;
   }
 
   /** Shut the dock. */
   closePanel(): void {
-    this.dockChosen = true;
     this.dock?.close();
   }
 
@@ -1497,7 +1489,6 @@ export class ChartWidget {
     const opening = open ?? !panel.isOpen();
     // Switched off, it only closes.
     if (opening && !this.featureState.symbolInfo) return;
-    this.dockChosen = true;
     if (opening) this.dock?.open('symbolInfo');
     else this.dock?.closePage('symbolInfo');
   }
@@ -2961,7 +2952,6 @@ export class ChartWidget {
 
   private toggleAlerts(): void {
     if (!this.alertsPanel || !this.featureState.alerts) return;
-    this.dockChosen = true;
     this.dock?.toggle('alerts');
   }
 
@@ -3075,13 +3065,11 @@ export class ChartWidget {
 
   private toggleDataWindow(): void {
     if (!this.dataWindow || !this.featureState.dataWindow) return;
-    this.dockChosen = true;
     this.dock?.toggle('dataWindow');
   }
 
   private toggleObjects(): void {
     if (!this.objectTree || !this.featureState.objectTree) return;
-    this.dockChosen = true;
     this.dock?.toggle('objectTree');
   }
 
@@ -3157,9 +3145,8 @@ export class ChartWidget {
 
   /**
    * The dock and the widget's width. Going narrow (a phone, a rotated
-   * tablet) shuts any panel: it would be a sheet over the chart. On a widget
-   * of 987 px or more the watchlist opens by itself, until a panel is opened
-   * or shut by hand.
+   * tablet) shuts any panel: it would be a sheet over the chart. No panel
+   * opens by itself: the chart has the room until one is asked for.
    */
   private fitDockToWidth(): void {
     const dock = this.dock;
@@ -3168,11 +3155,7 @@ export class ChartWidget {
     const narrow = width < NARROW_WIDGET_PX;
     const was = this.dockNarrow;
     this.dockNarrow = narrow;
-    if (narrow) {
-      if (was !== true) dock.close();
-      return;
-    }
-    if (!this.dockChosen && this.watchlist && width >= DOCK_AUTO_OPEN_PX && dock.current() === null) dock.open('watchlist');
+    if (narrow && was !== true) dock.close();
   }
 
   /** Whether the rail shows now: on, and the widget not narrow. */
@@ -3204,7 +3187,6 @@ export class ChartWidget {
 
   /** A panel shut by its own close button: by hand. */
   private closePanelByHand(page: WidgetPanel): void {
-    this.dockChosen = true;
     this.dock?.closePage(page);
   }
 
