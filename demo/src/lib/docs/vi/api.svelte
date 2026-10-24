@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="live-price">
+  Nến từ <code>appendBar</code>, <code>appendBars</code> hay <code>updateLastBar</code>, và một tick, là giá hiện tại: đường giá, cảnh báo và lãi/lỗ của lệnh đi theo nó, như đi theo một luồng dữ liệu đã kết nối và <code>setCurrentPrice</code>. Nến mới gửi <code>dataUpdate</code>; tick trên nến đang hình thành thì không.
+</p>
+
 <p id="bar-times">
   Thời gian của nến là epoch mili-giây hoặc giây, một đơn vị cho cả chuỗi. Biểu đồ đọc đơn vị một lần, từ nến mới nhất: <code>barTimeUnit(data)</code> trả về 1 (mili-giây, từ 1e11 trở lên) hoặc 1000 (giây). Vì vậy một chuỗi mili-giây giữ đúng ngày cả trước năm 2001, dù các giá trị đó nhỏ hơn 1e12. Hãy giữ một chuỗi ở một đơn vị; thời gian biểu đồ trả lại (sự kiện, <code>getData()</code>) dùng đơn vị đó.
 </p>
@@ -40,6 +44,7 @@
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>Một trong 18 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
+    <tr><td><code>getChartType()</code></td><td>Loại biểu đồ đang vẽ (mặc định <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Chuyển giữa các giao diện có sẵn, hoặc đặt theme của bạn. <code>getTheme()</code> trả lại đúng như đã đặt.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style bất kỳ phần nào của biểu đồ theo khoá (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một khoá. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
     <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Cả một lớp một lúc; bỏ các khoá (hoặc tất cả).</td></tr>
@@ -175,6 +180,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // hoặc scaleMarketPrices(MARKET_HOSE, 1000) cho giá 25350
+chart.setTimezone('exchange')                // trục thời gian theo múi giờ của sàn: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // giá tham chiếu: giá đóng cửa hôm trước
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, bước 50 đồng
@@ -369,7 +375,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

@@ -59,6 +59,15 @@ const HOSE_STEPS: readonly PriceStepBand[] = [
 
 // Market presets. Vietnamese prices are in thousands of dong (25.35 is 25,350
 // dong), as price boards show them; scaleMarketPrices(preset, 1000) for dong.
+
+/**
+ * HOSE shares (Ho Chi Minh City), in thousands of dong: steps of 0.01 below
+ * 10, 0.05 from 10, 0.1 from 50; 2 decimals; lots of 100; limits of ±7%
+ * from the reference; zone Asia/Ho_Chi_Minh; the price board's colours
+ * (`VN_COLORS`); the ATO, two continuous sessions and ATC (`HOSE_SESSIONS`).
+ * With `chart.setMarket`: `setPriceLimits(reference)` for the day's ceiling
+ * and floor, `setTimezone('exchange')` for the axis in Vietnam's time.
+ */
 export const MARKET_HOSE: MarketConfig = {
   type: 'stock',
   exchange: 'HOSE',
@@ -79,6 +88,7 @@ export const MARKET_HOSE_ETF: MarketConfig = {
   priceSteps: undefined,
 };
 
+/** HNX shares (Hanoi), in thousands of dong: 0.1 a step, limits of ±10%, zone Asia/Ho_Chi_Minh, lots of 100, `HNX_SESSIONS`. */
 export const MARKET_HNX: MarketConfig = {
   type: 'stock',
   exchange: 'HNX',
@@ -92,6 +102,7 @@ export const MARKET_HNX: MarketConfig = {
   colorScheme: VN_COLORS,
 };
 
+/** UPCoM shares, in thousands of dong: 0.1 a step, limits of ±15%, zone Asia/Ho_Chi_Minh, lots of 100, `UPCOM_SESSIONS`. */
 export const MARKET_UPCOM: MarketConfig = {
   type: 'stock',
   exchange: 'UPCOM',
@@ -105,7 +116,7 @@ export const MARKET_UPCOM: MarketConfig = {
   colorScheme: VN_COLORS,
 };
 
-/** VN30 index futures on HNX: index points, 0.1 a step, 100,000 dong a point. */
+/** VN30 index futures on HNX: index points, 0.1 a step, 100,000 dong a point, limits of ±7%, zone Asia/Ho_Chi_Minh, `VN30F_SESSIONS`. */
 export const MARKET_VN30F: MarketConfig = {
   type: 'futures',
   exchange: 'HNX',
@@ -120,6 +131,7 @@ export const MARKET_VN30F: MarketConfig = {
   colorScheme: VN_COLORS,
 };
 
+/** Crypto: 2 decimals, no limits, no zone or sessions (it trades around the clock). */
 export const MARKET_CRYPTO: MarketConfig = {
   type: 'crypto',
   currency: 'USDT',
@@ -127,6 +139,7 @@ export const MARKET_CRYPTO: MarketConfig = {
   priceLimits: { enabled: false },
 };
 
+/** NYSE shares, in dollars: 0.01 a step, no limits, zone America/New_York, pre-market, regular and after-hours sessions. */
 export const MARKET_NYSE: MarketConfig = {
   type: 'stock',
   exchange: 'NYSE',

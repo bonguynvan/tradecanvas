@@ -10,9 +10,8 @@ export function mount(host: HTMLElement, bars: OHLCBar[], above: number, below: 
   function onPrice(price: number): void {
     const data = chart.getData();
     const last = data[data.length - 1];
+    // The forming bar's close is the live price: the alerts follow it.
     chart.updateLastBar({ ...last, close: price, high: Math.max(last.high, price), low: Math.min(last.low, price) });
-    // Alerts follow the live price, which updateLastBar doesn't pass on (evals/FINDINGS.md).
-    chart.setCurrentPrice(price);
   }
 
   return { chart, onPrice };

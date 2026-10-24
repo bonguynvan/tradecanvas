@@ -520,6 +520,15 @@ export class AlertManager extends Emitter<AlertEvents> {
   }
 
   /**
+   * Take `value` as `channel`'s latest without checking an alert: where a new
+   * series starts (its last close), so the first live value after it can
+   * cross a level.
+   */
+  seedLastValue(channel: string, value: number): void {
+    if (Number.isFinite(value)) this.lastValues.set(channel, value);
+  }
+
+  /**
    * Forget per-channel previous values. Call on a data context change (symbol /
    * timeframe switch) so the first value of the new context seeds cleanly
    * instead of crossing against a stale previous value.

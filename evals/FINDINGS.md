@@ -2,22 +2,30 @@
 
 What writing and running the evals turned up about the library, for the
 fixes that follow. Each says where it showed and what an agent (or a person)
-runs into.
+runs into, and, once fixed, what changed (the eval tasks then gain a right
+answer that only the fix lets pass).
 
 ## From writing the graders
 
 1. **No `getChartType()`.** `setChartType` has no getter; the chart's type reads
    back only from `saveState()`. An agent checking its work, or a host keeping
    a toolbar in step, has to guess. (Task 01.)
+   *Fixed (Unreleased):* `getChartType()`.
 2. **A live price from `updateLastBar` or `appendBar` fires no alert.** Alerts
    and the orders' current price follow `setCurrentPrice` and a connected
    stream only. The skill teaches `updateLastBar` for live feeds, so alerts
    set on a chart fed by hand never go off, and nothing says why. (Task 07:
    its reference calls `setCurrentPrice` beside `updateLastBar`.)
+   *Fixed (Unreleased):* `updateLastBar`, `updateLastBarFromTick`,
+   `appendBar` and `appendBars` are the live price; task 07's reference
+   feeds the bar alone.
 3. **`dataUpdate` is not what the docs say.** The event table gives its payload
    as "the series"; it carries `{ length }`, `{ alert, … }`, `{ connection }`
    or `{ error }` depending on who sent it, and `updateLastBar` / `appendBar`
    don't send it at all. An agent listening for new bars hears nothing.
+   *Fixed (Unreleased):* each payload has a `kind`, the type says so
+   (`DataUpdatePayload`), and a new bar sends `{ kind: 'bars', length }`, by
+   hand or by the stream.
 4. **Time zone, four spellings.** The option is `timeZone`, the methods
    `setTimezone` / `getTimezone` / `getEffectiveTimezone`, `SymbolInfo` has
    `timezone`, `MarketConfig` has `timeZone`. Writing the reference, the
@@ -26,6 +34,9 @@ runs into.
 5. **A market's zone isn't the chart's.** `MARKET_HOSE` carries
    `timeZone: 'Asia/Ho_Chi_Minh'`, but `setMarket(MARKET_HOSE)` leaves the
    axis in the browser's zone; the zone has to be set again. (Task 10.)
+   *Fixed (Unreleased):* `setTimezone('exchange')` shows the market's zone
+   when the symbol names none, and `setMarket` says so; the axis still keeps
+   a zone chosen otherwise. Task 10 has a right answer that uses it.
 
 ## From the baseline (2026-10-24, Sonnet)
 
@@ -48,9 +59,10 @@ where the agents had to read the compiled code to get on.
    runs without the skill, 12 of 48 with it. Where the runs with the skill
    did it too (both of them, but for task 06):
    - alerts on a price fed by hand: that `updateLastBar` doesn't check them
-     (finding 2; task 07);
+     (finding 2; task 07). *Fixed (Unreleased)*, and the skill says so;
    - a market preset's rules: `MARKET_HOSE`'s steps, limits and zone are
-     only in the JS, its type is `MarketConfig` (task 10);
+     only in the JS, its type is `MarketConfig` (task 10). *Fixed
+     (Unreleased):* each preset's doc says what it holds;
    - saving drawings: when `saveState` and the auto-save write, and under
      which key (task 06);
    - a widget with no feed: whether it connects to an exchange by itself

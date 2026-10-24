@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Live prices from your own feed
+
+What coding agents ran into in the evals, on the chart.
+
+- **A price fed by hand is the live price.** `updateLastBar`, `updateLastBarFromTick`, `appendBar` and `appendBars` move the price line, the alerts and the orders' P&L, as a connected stream and `setCurrentPrice` do. Alerts on a chart fed by your own code never went off, and nothing said why. The same price sent both ways fires an alert once. A bar the chart can't take (a price that isn't a number or is below zero, a high under its low) is left out, price and all: it no longer sets off an alert the chart never shows.
+- **The first live price after the bars counts.** An alert crosses from the series' last close, so a first tick past the level fires it; that tick only set the starting point. A stream's bar close is a live price too, as its forming prices were.
+- **`dataUpdate` says what changed**, by `kind`: `'bars'` (`{ length }`) for `setData`, a reconnect's bars and each new bar, by hand or by the stream (most feeds send a new bar forming first, which sent nothing); `'alert'`, `'bracket'`, `'connection'` and `'error'` for the rest. A tick on the forming bar sends none (`indicatorUpdate` follows those). New bars go out before the alerts they set off. Its payload is typed as it is, `DataUpdatePayload`, exported: it was typed as a series it never carried, so code that read `e.payload.length` checks `e.payload.kind === 'bars'` first.
+- **`getChartType()`** reads the chart type back; it was only in `saveState()`.
+- **`setTimezone('exchange')` shows the market's zone** when the symbol names none: `setMarket(MARKET_HOSE)` then `'exchange'` is Vietnam's time. A market set later moves it too; a zone chosen otherwise stays. `getExchangeTimezone()` says which zone `'exchange'` stands for, and the widget offers it in its zone lists for a market as well as for a feed that names the symbol's.
+- The market presets (`MARKET_HOSE`, `MARKET_HNX`, `MARKET_UPCOM`, `MARKET_VN30F`, `MARKET_CRYPTO`, `MARKET_NYSE`) say what they hold, and `setMarket` what it applies and what it leaves (the axis's zone, the number locale).
+
 ## 1.44.0 (2026-10-24)
 
 React, Vue and Svelte components: 1.3.26.

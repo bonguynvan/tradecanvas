@@ -40,7 +40,9 @@ also works on a widget.
    that instance id, not the indicator id.
 6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
    one. Never `setData` on every tick: it resets the view and recomputes
-   everything.
+   everything. Their close is the live price: the price line, the alerts and
+   the orders' P&L follow it (a feed with only a price, no bars:
+   `setCurrentPrice`).
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
 8. **Look names up when the TradeCanvas MCP server is connected** (tools named
@@ -153,7 +155,8 @@ const line = chart.addDrawing({
   intervals: { minutes: false },         // not drawn on minute charts; unset: every interval
 });
 if (line && chart.canAddDrawingAlert(line)) chart.addDrawingAlert(line, { condition: 'crossingDown' });
-chart.addAlert(65_000, 'crossingUp', 'BTC above 65k');
+chart.addAlert(65_000, 'crossingUp', 'BTC above 65k'); // checked on each live price: a stream's, updateLastBar, appendBar, setCurrentPrice
+chart.on('alertTriggered', (e) => console.log(e.payload.message));
 chart.setPositions([{ id: 'p1', side: 'buy', entryPrice: 62_500, quantity: 0.5, stopLoss: 61_000, takeProfit: 66_000 }]);
 chart.on('positionModify', (e) => console.log('stop or target dragged', e.payload));
 ```
@@ -216,7 +219,8 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
-| `dataUpdate` | the series |
+| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
+| `chartTypeChange` | `{ type, previous }` (`getChartType()` reads it back) |
 | `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
 | `indicatorUpdate` | `{ from }`: values recomputed from that bar on (once per update) |

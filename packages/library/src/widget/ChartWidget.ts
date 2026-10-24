@@ -1,4 +1,4 @@
-import type { ChartType, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
@@ -763,10 +763,7 @@ export class ChartWidget {
         now: () => this.clockNow(),
         options: () => ({
           current: this.settingsState.timezone,
-          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'),
-            this.adapter?.resolveSymbol
-              ? { label: this.t('settings.timezone.exchange'), zone: this.chart.getSymbolInfo()?.timezone ?? null }
-              : undefined),
+          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice()),
         }),
         onPick: (value) => this.changeSettings({ timezone: value }),
       },
@@ -821,7 +818,7 @@ export class ChartWidget {
       barCountdown: features.barCountdown,
       logScale: features.logScale,
       trading: features.trading !== false,
-      exchangeZone: this.adapter?.resolveSymbol ? () => this.chart.getSymbolInfo()?.timezone ?? null : undefined,
+      exchangeZone: () => this.exchangeChoice()?.zone,
     }, this.overlayHost);
 
     // 8a. Symbol search
@@ -1146,8 +1143,7 @@ export class ChartWidget {
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
-        const p = e.payload as { bracket?: string };
-        if (p && p.bracket === 'cancelled') this.bracketBar?.hide();
+        if (e.payload.kind === 'bracket') this.bracketBar?.hide();
       });
     }
 
@@ -2204,12 +2200,20 @@ export class ChartWidget {
     return this.chart.getActiveIndicators().filter((ind) => !SYMBOL_INDICATOR_IDS.has(ind.id)).map((ind) => ind.instanceId);
   }
 
-  /** The time zones on offer, the symbol's exchange among them when the adapter can name it. */
+  /**
+   * The exchange's zone, offered when the chart knows one (the symbol's, or
+   * its market's) or the adapter can name the symbol's; its zone is null
+   * while unknown.
+   */
+  private exchangeChoice(): { label: string; zone: string | null } | undefined {
+    const zone = this.chart.getExchangeTimezone() ?? null;
+    if (zone === null && !this.adapter?.resolveSymbol) return undefined;
+    return { label: this.t('settings.timezone.exchange'), zone };
+  }
+
+  /** The time zones on offer, the exchange's among them when there is one. */
   private timezoneChoices(): { value: string; label: string }[] {
-    const exchange = this.adapter?.resolveSymbol
-      ? { label: this.t('settings.timezone.exchange'), zone: this.chart.getSymbolInfo()?.timezone ?? null }
-      : undefined;
-    return timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), exchange)
+    return timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice())
       .map(({ value, label }) => ({ value, label }));
   }
 
@@ -2935,10 +2939,8 @@ export class ChartWidget {
     this.lastLocalSwitchMs = performance.now() - started;
   }
 
-  private handleDataUpdate(payload: unknown): void {
-    if (!payload || typeof payload !== 'object') return;
-    const p = payload as { length?: number; error?: string; connection?: { state?: string } };
-    if (typeof p.length === 'number') {
+  private handleDataUpdate(p: DataUpdatePayload): void {
+    if (p.kind === 'bars') {
       if (p.length > 0 && this.loading.isActive()) {
         this.loading.end();
         // A retry after a failed load just delivered history.
@@ -2946,7 +2948,7 @@ export class ChartWidget {
       }
       return;
     }
-    if (p.error !== undefined) {
+    if (p.kind === 'error') {
       // Only a failed *load* is reported from the error itself. Errors outside
       // one can be transient (a single failed poll on a healthy connection);
       // the status bar follows the stream's connection state below instead.
@@ -2956,7 +2958,8 @@ export class ChartWidget {
       }
       return;
     }
-    switch (p.connection?.state) {
+    if (p.kind !== 'connection') return;
+    switch (p.connection.state) {
       case 'connected':
         // A retry that brought back an empty history ends a failed load too.
         if (this.loading.hasFailed()) this.loading.end();

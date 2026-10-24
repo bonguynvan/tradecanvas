@@ -1,8 +1,8 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { barTimeUnit, mergeBar, normalizeBarTime } from '@tradecanvas/commons';
 
-/** Validate a single OHLC bar. Returns true if bar is usable. */
-function isValidBar(bar: OHLCBar): boolean {
+/** Whether a bar is one the chart takes: its time and prices numbers, none below zero, its high not under its low, its volume (if any) not below zero. */
+export function isValidBar(bar: OHLCBar): boolean {
   if (!bar || typeof bar.time !== 'number' || !Number.isFinite(bar.time)) return false;
   const { open, high, low, close } = bar;
   // Reject NaN / Infinity

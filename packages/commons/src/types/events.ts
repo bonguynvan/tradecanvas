@@ -1,4 +1,5 @@
-import type { OHLCBar, DataSeries } from './ohlc.js';
+import type { OHLCBar } from './ohlc.js';
+import type { ConnectionInfo } from './realtime.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
@@ -292,6 +293,25 @@ export interface IndicatorSettingsChangePayload {
   change: 'visible' | 'style' | 'levels' | 'params' | 'pane' | 'scale' | 'intervals';
 }
 
+/**
+ * What `dataUpdate` says changed, by `kind`:
+ * - `bars`: the series is `length` bars now: `setData`, a bar appended (by
+ *   hand or by the stream), a reconnect's bars, the hours shown changing.
+ *   A tick on the forming bar sends none (`indicatorUpdate` follows those),
+ *   nor do older bars paged in (`historyLoad`) or a replay's steps
+ *   (`replayStep`).
+ * - `alert`: an alert went off (`alertTriggered` says more).
+ * - `bracket`: the bracket being placed was cancelled with Esc.
+ * - `connection`: the stream's connection changed.
+ * - `error`: the stream failed.
+ */
+export type DataUpdatePayload =
+  | { kind: 'bars'; length: number }
+  | { kind: 'alert'; alert: 'triggered'; alertId: string; price: number; message?: string }
+  | { kind: 'bracket'; bracket: 'cancelled' }
+  | { kind: 'connection'; connection: ConnectionInfo }
+  | { kind: 'error'; error: string };
+
 export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
   /** The pointer left the plot; the crosshair is gone. */
@@ -301,7 +321,7 @@ export interface ChartEventMap {
   visibleRangeChange: VisibleRangeChangePayload;
   priceRangeChange: PriceRangeChangePayload;
   zoomChange: ZoomChangePayload;
-  dataUpdate: DataSeries;
+  dataUpdate: DataUpdatePayload;
   /** Older bars are being paged in, or finished loading. */
   historyLoad: HistoryLoadPayload;
   /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */

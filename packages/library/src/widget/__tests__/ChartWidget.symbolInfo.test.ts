@@ -9,6 +9,7 @@ const NOW = Date.UTC(2026, 9, 5, 21);
 class FakeChart {
   static last: FakeChart;
   static info: SymbolInfo | null = null;
+  static exchangeZone: string | null = null;
   private listeners = new Map<string, ((e: { payload: unknown }) => void)[]>();
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
@@ -23,6 +24,7 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   getSymbolInfo(): SymbolInfo | null { return FakeChart.info; }
+  getExchangeTimezone(): string | null { return FakeChart.exchangeZone; }
   zoomIns = 0;
   zoomIn(): void { this.zoomIns++; }
   scrolled: number[] = [];
@@ -75,6 +77,7 @@ beforeEach(() => {
   vi.setSystemTime(NOW);
   localStorage.clear();
   FakeChart.info = AAPL;
+  FakeChart.exchangeZone = null;
   host = document.createElement('div');
   document.body.appendChild(host);
 });
@@ -156,6 +159,15 @@ describe('ChartWidget symbol info', () => {
     widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'], news: async () => { throw new Error('down'); } });
     widget.toggleSymbolInfo(true);
     await vi.waitFor(() => expect(panel().querySelector('.tcw-syminfo-news')!.textContent).toBe('News could not be loaded.'));
+  });
+
+  it("offers the exchange's zone as the chart resolves it, a market's too, with no adapter", () => {
+    type Choices = { timezoneChoices(): { value: string; label: string }[] };
+    widget = new ChartWidget(host, { symbol: 'VNM', symbols: ['VNM'] });
+    const exchange = () => (widget as unknown as Choices).timezoneChoices().find((c) => c.value === 'exchange');
+    expect(exchange()).toBeUndefined();
+    FakeChart.exchangeZone = 'Asia/Ho_Chi_Minh';
+    expect(exchange()?.label).toBe('Exchange (UTC+7)');
   });
 
   it('puts navigation over the chart, unless asked not to', () => {

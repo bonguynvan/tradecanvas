@@ -38,7 +38,7 @@ class FakeChart {
 
   setData(data: OHLCBar[]): void {
     this.data = data;
-    this.emit('dataUpdate', { length: data.length });
+    this.emit('dataUpdate', { kind: 'bars', length: data.length });
   }
 
   /**
@@ -51,7 +51,7 @@ class FakeChart {
       this.connects.push({
         config,
         resolve: (outcome) => {
-          if (outcome === 'failed') this.emit('dataUpdate', { error: 'Failed to fetch' });
+          if (outcome === 'failed') this.emit('dataUpdate', { kind: 'error', error: 'Failed to fetch' });
           else if (outcome !== 'superseded') this.setData(outcome);
           resolve();
         },
@@ -178,12 +178,12 @@ describe('ChartWidget loading state — live adapter', () => {
     chart.connects[0].resolve(bars(10));
     await vi.advanceTimersByTimeAsync(0);
 
-    chart.emit('dataUpdate', { error: 'poll failed' });
+    chart.emit('dataUpdate', { kind: 'error', error: 'poll failed' });
     expect(status()).toContain('Live');
 
-    chart.emit('dataUpdate', { connection: { state: 'reconnecting' } });
+    chart.emit('dataUpdate', { kind: 'connection', connection: { state: 'reconnecting' } });
     expect(status()).not.toContain('Live');
-    chart.emit('dataUpdate', { connection: { state: 'connected' } });
+    chart.emit('dataUpdate', { kind: 'connection', connection: { state: 'connected' } });
     expect(status()).toContain('Live');
   });
 });

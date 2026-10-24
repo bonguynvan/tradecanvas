@@ -31,6 +31,10 @@
   </tbody>
 </table>
 
+<p id="live-price">
+  Una barra de <code>appendBar</code>, <code>appendBars</code> o <code>updateLastBar</code>, y un tick, son el precio en vivo: la línea de precio, las alertas y el P&amp;L de las órdenes lo siguen, igual que siguen a un stream conectado y a <code>setCurrentPrice</code>. Una barra nueva envía <code>dataUpdate</code>; un tick en la barra en formación, no.
+</p>
+
 <p id="bar-times">
   Los tiempos de las barras son milisegundos o segundos de época, una sola unidad para toda la serie. El gráfico la lee una vez, de la barra más reciente: <code>barTimeUnit(data)</code> da 1 (milisegundos, desde 1e11) o 1000 (segundos). Así una serie en milisegundos conserva también sus fechas anteriores a 2001, aunque queden por debajo de 1e12. Mantenga cada serie en una unidad; los tiempos que el gráfico devuelve (eventos, <code>getData()</code>) están en ella.
 </p>
@@ -40,6 +44,7 @@
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>Uno de los 18 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
+    <tr><td><code>getChartType()</code></td><td>El tipo con que se dibuja el gráfico (<code>'candlestick'</code> por defecto).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Cambia entre los temas integrados, o fija el tuyo. <code>getTheme()</code> lo devuelve tal como se fijó.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Da estilo a cualquier parte del gráfico por clave (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> quita una clave. Ver <a href={href('/docs/styling#overrides')}>Estilos</a>.</td></tr>
     <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Toda una capa de una vez; quita claves (o todas).</td></tr>
@@ -178,6 +183,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // o scaleMarketPrices(MARKET_HOSE, 1000) para 25350
+chart.setTimezone('exchange')                // el eje en la zona del mercado: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // la referencia: el cierre de ayer
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, un paso de 50 dongs
@@ -377,7 +383,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { length } */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } con setData y barras nuevas; o kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
