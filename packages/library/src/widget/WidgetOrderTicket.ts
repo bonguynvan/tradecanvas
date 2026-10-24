@@ -4,6 +4,7 @@ import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { segmentedControl, stepperField, toggleSwitch } from './settingsControls.js';
 import { keepTabInside } from './focusTrap.js';
+import { signed, toneOf } from './signedFigure.js';
 import {
   orderTicketDistance,
   orderTicketIntent,
@@ -441,10 +442,12 @@ export class WidgetOrderTicket {
   /** The receipt: the order's value, then what the stop risks, the target makes, and the one over the other. */
   private renderSummary(draft: OrderTicketDraft): void {
     const sum = orderTicketSummary(draft, this.lastPrice, this.rules);
+    const risk = sum.risk === null ? null : this.amount(sum.risk);
+    const reward = sum.reward === null ? null : this.amount(sum.reward);
     const rows: [string, MessageKey, string | null, 'up' | 'down' | null][] = [
       ['value', 'ticket.value', sum.value === null ? null : this.money(sum.value), null],
-      ['risk', 'ticket.risk', sum.risk === null ? null : this.amount(sum.risk), tone(sum.risk)],
-      ['reward', 'ticket.reward', sum.reward === null ? null : this.amount(sum.reward), tone(sum.reward)],
+      ['risk', 'ticket.risk', risk, risk === null ? null : toneOf(risk)],
+      ['reward', 'ticket.reward', reward, reward === null ? null : toneOf(reward)],
       ['ratio', 'ticket.rewardRisk', sum.ratio === null ? null : this.number(sum.ratio, 2), null],
     ];
     this.summaryEl.replaceChildren(...rows.filter(([, , figure]) => figure !== null).map(([id, key, figure, mood]) => {
@@ -468,12 +471,12 @@ export class WidgetOrderTicket {
 
   /** A figure with its sign: "-1.00", "+2.00", "0.00". */
   private signedNumber(value: number, decimals: number): string {
-    return signed(this.number(Math.abs(value), decimals), value);
+    return signed(this.number(Math.abs(value), decimals), value, this.number(0, decimals));
   }
 
   /** Money made or lost, signed. */
   private amount(value: number): string {
-    return signed(this.money(Math.abs(value)), value);
+    return signed(this.money(Math.abs(value)), value, this.money(0));
   }
 
   private money(value: number): string {
@@ -494,18 +497,6 @@ export class WidgetOrderTicket {
 function field<T extends HTMLElement>(name: string, el: T): T {
   el.dataset.ticketField = name;
   return el;
-}
-
-/** A gain up, a loss down, nothing neither. */
-function tone(value: number | null): 'up' | 'down' | null {
-  return value === null || value === 0 ? null : value > 0 ? 'up' : 'down';
-}
-
-/** `text` with the sign of `value`: a plus for a gain, a minus for a loss, none for what is written as nothing ("0.00"). */
-function signed(text: string, value: number): string {
-  const bare = text.replace(/^[-+−]/, '');
-  if (!/[1-9]/.test(bare)) return bare;
-  return value > 0 ? `+${bare}` : value < 0 ? `-${bare}` : bare;
 }
 
 /** A hundredth of a price, as a round step (1, 0.01, 0.0001…): − and + without a market's step. */
