@@ -77,12 +77,17 @@ export function decodeWidgetState(encoded: string): ShareableWidgetState | null 
 
 const HASH_KEY = 'tcw';
 
-/** Read a `#tcw=<encoded>` fragment from a URL hash, or null. */
+/** Read a `#tcw=<encoded>` fragment from a URL hash, or null (none, or not a URI component: a link cut short or made up). */
 export function readShareHash(hash: string): string | null {
   const clean = hash.startsWith('#') ? hash.slice(1) : hash;
   for (const part of clean.split('&')) {
     const eq = part.indexOf('=');
-    if (eq > 0 && part.slice(0, eq) === HASH_KEY) return decodeURIComponent(part.slice(eq + 1));
+    if (eq <= 0 || part.slice(0, eq) !== HASH_KEY) continue;
+    try {
+      return decodeURIComponent(part.slice(eq + 1));
+    } catch {
+      return null;
+    }
   }
   return null;
 }

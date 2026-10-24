@@ -52,6 +52,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // một biểu đồ gọn, ngay khi đang chạy
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // mọi công tắc, bật hay tắt
 grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidgetGrid`}</code></pre>
 <p>

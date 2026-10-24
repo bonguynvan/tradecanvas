@@ -51,6 +51,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // 运行中得到一个干净的图表
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // 所有开关，开或关
 grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</code></pre>
 <p>

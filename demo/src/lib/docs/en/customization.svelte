@@ -52,6 +52,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // a clean chart, while it runs
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // every switch, on or off
 grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code></pre>
 <p>

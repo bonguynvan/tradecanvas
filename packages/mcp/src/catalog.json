@@ -5485,7 +5485,8 @@
       },
       {
         "name": "adapter",
-        "type": "DataAdapter"
+        "type": "DataAdapter",
+        "doc": "Your data feed: the widget connects it and loads each symbol and interval the user picks. Without one nothing connects, Binance or any other: the widget shows the bars you give `setData`."
       },
       {
         "name": "searchSymbols",
@@ -5511,7 +5512,7 @@
       {
         "name": "watchlist",
         "type": "boolean | WatchlistOptions",
-        "doc": "A watchlist sidebar on the right: lists of symbols with last price, % change and a mini sparkline; lists can be added, renamed, deleted and reordered. `true` starts with one list of `symbols`. Default `false`."
+        "doc": "A watchlist, a panel of the dock beside the chart: lists of symbols with last price, % change and a mini sparkline; lists can be added, renamed, deleted and reordered. `true` starts with one list of `symbols`. Default `false`."
       },
       {
         "name": "symbolInfo",
@@ -5660,7 +5661,8 @@
       },
       {
         "name": "onReady",
-        "type": "(chart: Chart) => void",
+        "type": "(chart: Chart, widget: ChartWidget) => void",
+        "doc": "The widget is built: called once, with its chart and the widget itself, in a microtask after `new ChartWidget()` returns, so the name you give the widget is set by then. The statements right after the constructor run first (a `setData` there comes before it), and a view shared in the URL (`shareUrl`) is put back after it.",
         "kind": "function"
       }
     ],

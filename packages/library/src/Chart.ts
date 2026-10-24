@@ -2663,6 +2663,15 @@ export class Chart {
 
   // --- Auto-save ---
 
+  /**
+   * Save the layout to `localStorage[key]` by itself, as `saveState(key)`
+   * does: `delayMs` (above 0) after the last change to what it holds (a
+   * drawing added, moved or removed, an indicator, an alert, the chart type,
+   * the theme, a style override), the changes of that time at once.
+   * `loadStateFromStorage(key)` brings it back; `disableAutoSave()` stops it,
+   * as `destroy()` does: a change in the last `delayMs` before it is not
+   * saved (`saveState(key)` first, to keep it).
+   */
   setAutoSave(key: string, delayMs = 5000): void {
     this.autoSaveScheduler.enable(key, delayMs);
   }
@@ -4990,6 +4999,13 @@ export class Chart {
     this.markStateChanged();
   }
 
+  /**
+   * The layout as JSON: the drawings, the indicators and their panes, the
+   * alerts, the chart type and its settings, the theme and the style
+   * overrides, the symbol; not the bars. With `key`, also written to
+   * `localStorage[key]`, the key as given (it throws where localStorage does:
+   * blocked, or full). Null with `features.saveLoad` off.
+   */
   saveState(key?: string): string | null {
     if (!this.features.saveLoad) return null;
     const snapshot = this.captureSnapshot();
@@ -4998,6 +5014,12 @@ export class Chart {
     return json;
   }
 
+  /**
+   * A layout `saveState` gave, in place of the chart's own drawings,
+   * indicators, alerts, chart type and style overrides. The bars and the
+   * symbol stay; so does the theme, unless the layout's is `'dark'` or
+   * `'light'`.
+   */
   loadState(json: string): void {
     if (!this.features.saveLoad) return;
     const snapshot = ChartStateManager.deserialize(json);
@@ -5050,6 +5072,7 @@ export class Chart {
     this.markStateChanged();
   }
 
+  /** The layout saved under `localStorage[key]` (`saveState(key)`, `setAutoSave(key)`); false when there is none, and it throws on one that isn't JSON. */
   loadStateFromStorage(key: string): boolean {
     if (!this.features.saveLoad) return false;
     const snapshot = ChartStateManager.loadFromStorage(key);

@@ -437,7 +437,7 @@ const widget = new ChartWidget(host, {
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // los interruptores del widget: ver Personalización
-  onReady: (chart) => { /* ... */ },
+  onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
 widget.chart.setData(...)
