@@ -28,7 +28,7 @@ export const WIDGET_FEATURES = [
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
   'sidebar.lockAll', 'sidebar.hideAll',
   // The dock's rail: a button for each panel.
-  'dock.watchlist', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo',
+  'dock.watchlist', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo', 'dock.depthLadder',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
   'statusBar.clock', 'statusBar.scale',

@@ -184,6 +184,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   下方的小票汇总这笔订单：金额、风险、收益以及收益风险比。在买卖之间切换时，挂单仍留在原来的价位
   （高于市价的买入止损单会变为卖出限价单），下单按钮使用该方向的颜色。
 </p>
+<p>
+  账户面板的顶部在每个标签页都显示浮动盈亏和已实现盈亏。数字以等宽字体右对齐，金额按最小价位的小数位数和数字区域格式书写；
+  在手机上每一行是一张标明各项数字的卡片。
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -232,7 +236,13 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   点击会发出 <code>orderPlace</code> 意图，交给你的 OMS 处理（图表自己从不交易）。
   同一份数据也会驱动图表上的深度叠加层。
 </p>
+<p>
+  盘口深度是图表旁 dock 的一页（手机上为底部面板）：可从交易菜单、它在侧栏上的按钮或
+  <code>widget.openPanel('depthLadder')</code> 打开，用 <code>dock.depthLadder: false</code> 去掉侧栏按钮。卖价在上、
+  买价在下，中间是价差，每个数量都有一条从价格列向外生长的条形；有你挂单的价位会标出挂单数量。
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],

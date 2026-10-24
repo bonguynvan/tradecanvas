@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### The account panel and the depth ladder
+
+The last part of the trading round, in the Print look.
+
+- **The account panel** keeps the open P&L and the P&L realised in its head on every tab (it showed the realised only under the history). Each tab's count is a figure in a soft pill.
+- Its figures (quantities, prices, P&L, stops) are set right in the chart's mono type. Money is written to the price step's decimals in the number locale, with the percent beside it (`+119.36 · +0.08%`), and signed figures read left to right in a right-to-left widget.
+- Its headings are in the label case. In a narrow widget (a phone, a narrow column) each row is a card of named figures (columns were cut off), the headings kept for a screen reader, and the totals go under the tabs. Each tab is named with its count ("Positions (1)"). The realised P&L shows once there are fills or a figure. Reverse uses the `arrowUpDown` icon, as on the chart.
+- **The depth ladder** is a page of the dock beside the chart, not a floating box over it and the watchlist: open it from the Trade menu, its rail button or `widget.openPanel('depthLadder')`. A new switch, `dock.depthLadder`, takes its rail button away.
+- The ladder's rows are 21 tall in the mono figures (26 in a narrow widget, for a finger): asks over bids with the spread between them on a dashed rule, each size on a bar grown from the price, its columns lined up row to row. The rows where your working orders wait carry their quantity, stamped in the side's colour and named by their side (a buy before the price, a sell after it); an order marks a row within half the market's price step of it.
+- Its cells say their size and what a press does to a screen reader ("2, Sell @ 76,336.03"), and sizes are written short (`1.5k`, `0.5`). It draws only while open, keeps its buttons while only the sizes change (a press or the focus is never lost to a feed's update), and brings the spread to the middle of its own page without scrolling the page around the widget.
+- Two new strings in all 30 languages (the open P&L, the spread).
+
+### Fixed
+
+- The order ticket and the account panel lost a figure's sign in a locale that writes other digits (Persian, Arabic): a loss read as a gain. A figure goes unsigned only when it reads as zero does, and is coloured by the sign it shows (a loss too small to show is "0.00", not a red one).
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.43.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.25.
+
 ### The order ticket
 
 The order ticket and the Trade menu in the Print look, the second part of the trading round.
@@ -14,8 +36,6 @@ The order ticket and the Trade menu in the Print look, the second part of the tr
 - **The Trade menu** sets the panels (depth ladder, account) apart from the orders and brackets with a rule.
 - On a phone the layouts dialog takes the sheet's whole width (it kept 480 px between 481 and 640 px).
 - Six new strings in all 30 languages (the receipt's four, the −/+ buttons' names); `ticket.riskReward` is gone.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.42.0 (2026-10-24)
 

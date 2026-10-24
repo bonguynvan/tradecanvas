@@ -43,6 +43,13 @@ describe('buildLadderRows', () => {
     expect(m.rows[0]).toEqual({ price: 100, bidVolume: 2, askVolume: 3 });
   });
 
+  it('gives the spread and the best bid, crossed, locked or one-sided', () => {
+    expect(buildLadderRows({ bids: [{ price: 99, volume: 1 }], asks: [{ price: 101, volume: 1 }] })).toMatchObject({ spread: 2, bestBid: 99 });
+    expect(buildLadderRows({ bids: [{ price: 102, volume: 1 }], asks: [{ price: 101, volume: 1 }] })).toMatchObject({ spread: -1, bestBid: 102 });
+    expect(buildLadderRows({ bids: [{ price: 100, volume: 1 }], asks: [{ price: 100, volume: 1 }] })).toMatchObject({ spread: 0, bestBid: 100 });
+    expect(buildLadderRows({ bids: [], asks: [{ price: 101, volume: 1 }] })).toMatchObject({ spread: null, bestBid: null });
+  });
+
   it('handles an empty side', () => {
     const m = buildLadderRows({ bids: [], asks: [{ price: 10, volume: 1 }] });
     expect(m.mid).toBeNull();

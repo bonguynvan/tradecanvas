@@ -100,7 +100,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
     </td></tr>
     <tr><td>停靠区</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
     </td></tr>
     <tr><td>绘图侧栏</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

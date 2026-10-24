@@ -689,6 +689,7 @@ console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', session
 
 Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
 `setQuotes`); tick timeframes need a feed with `fetchTrades` and
-`subscribeTrades`. The watchlist, alerts, object tree, data window and symbol
-info are panels of one dock beside the chart, opened from a rail at its edge or
+`subscribeTrades`. The watchlist, alerts, object tree, data window, symbol
+info and (with `depthLadder: true`) the depth ladder are panels of one dock
+beside the chart, all shut to start with, opened from a rail at its edge or
 with `widget.openPanel(...)`; `features: { dock: false }` drops the rail.

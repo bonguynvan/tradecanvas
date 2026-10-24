@@ -128,7 +128,7 @@
 }
 
 /* One header for every page: its title, its own buttons, and the close at the end. 34 tall (21 + 13). */
-.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) {
+.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header) {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -155,7 +155,7 @@
   white-space: nowrap;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close) {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close) {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -169,12 +169,12 @@
   cursor: pointer;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close):hover {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close):focus-visible {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
 }
@@ -229,7 +229,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) {
+.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header) {
   background: var(--tcw-bg-elevated);
 }
 
@@ -262,4 +262,141 @@
 
 .tcw-dock-page .tcw-watchlist-add {
   margin-inline-start: auto;
+}
+
+/* === The depth ladder, a page of the dock === */
+
+.tcw-ladder-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Bid, price, ask: under the header, in the label case. The heading and each
+ * row are grids of their own, so their columns are fixed shares: a row's
+ * content (a mark of your orders) never moves its column off the others'.
+ */
+.tcw-ladder-cols,
+.tcw-ladder-row {
+  --tcw-ladder-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
+}
+.tcw-ladder-cols {
+  position: sticky;
+  top: calc(var(--tcw-space-6) + var(--tcw-space-5));
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--tcw-ladder-columns);
+  align-items: center;
+  height: var(--tcw-space-6);
+  padding-inline: var(--tcw-space-3);
+  border-bottom: 1px solid var(--tcw-divider);
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+.tcw-ladder-cols span:first-child { text-align: end; padding-inline-end: var(--tcw-space-4); }
+.tcw-ladder-cols span:nth-child(2) { text-align: center; }
+.tcw-ladder-cols span:last-child { padding-inline-start: var(--tcw-space-4); }
+
+.tcw-ladder-body { flex: 1; padding-inline: var(--tcw-space-3); }
+
+/* A row 21 tall: the bid's size, the price, the ask's size, in the mono figures. */
+.tcw-ladder-row {
+  display: grid;
+  grid-template-columns: var(--tcw-ladder-columns);
+  height: var(--tcw-space-6);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+/* A side's size over a bar grown from the price outward, as long as its share of the largest. */
+.tcw-ladder-cell {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-inline: var(--tcw-space-4);
+  border: none;
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  cursor: pointer;
+}
+.tcw-ladder-cell::before {
+  content: '';
+  position: absolute;
+  inset-block: 2px;
+  z-index: -1;
+  width: var(--w, 0%);
+  border-radius: 1px;
+}
+.tcw-ladder-bid { justify-content: flex-end; }
+.tcw-ladder-bid::before { inset-inline-end: 0; background: var(--tcw-green-soft); }
+.tcw-ladder-ask { justify-content: flex-start; }
+.tcw-ladder-ask::before { inset-inline-start: 0; background: var(--tcw-red-soft); }
+.tcw-ladder-cell:not(:disabled):hover { background: var(--tcw-hover-bg); }
+.tcw-ladder-cell:disabled { cursor: default; }
+.tcw-ladder-cell:focus-visible { outline: none; box-shadow: inset var(--tcw-ring); }
+.tcw-ladder-price {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tcw-space-2);
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: var(--tcw-space-3);
+  border-inline: 1px solid var(--tcw-divider);
+  white-space: nowrap;
+}
+.tcw-ladder-price.tcw-ask { color: var(--tcw-red); }
+.tcw-ladder-price.tcw-bid { color: var(--tcw-green); }
+/* Your orders at a price: their quantity, stamped in the side's colour. */
+.tcw-ladder-own {
+  flex: none;
+  padding-inline: var(--tcw-space-2);
+  border-radius: 2px;
+  color: var(--tcw-bg);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+}
+.tcw-ladder-own[data-side='buy'] { background: var(--tcw-green); }
+.tcw-ladder-own[data-side='sell'] { background: var(--tcw-red); }
+/* The spread, between the asks and the bids, on a torn-paper rule. */
+.tcw-ladder-spread {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--tcw-space-6);
+  border-block: 1px dashed var(--tcw-border-strong);
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+.tcw-ladder-empty {
+  padding: var(--tcw-space-6);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  text-align: center;
+}
+
+/* Narrow (a finger, not a pointer): rows a control tall, 26 not 21. */
+.tcw-root[data-tcw-narrow] .tcw-ladder-row {
+  height: var(--tcw-control-h);
+}
+
+/* Forced colours drop the bars' and the marks' fills: the bars show in the system's highlight, the marks framed. */
+@media (forced-colors: active) {
+  .tcw-ladder-cell::before { forced-color-adjust: none; background: Highlight; opacity: 0.3; }
+  .tcw-ladder-cell:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+  .tcw-ladder-own { border: 1px solid CanvasText; }
 }

@@ -175,6 +175,24 @@ describe('WidgetOrderTicket at the edges', () => {
     expect(input('price').value).toBe('101');
   });
 
+  it('colours a risk by the sign it shows, none on what reads as nothing', () => {
+    ticket.open({ lastPrice: 100 });
+    type('quantity', '1');
+    toggle('stopLoss');
+    type('stopLoss', '99.999');
+    const risk = host.querySelector<HTMLElement>('.tcw-ticket-summary-row[data-row="risk"] .tcw-ticket-figure')!;
+    expect(risk.textContent).toBe('0.00');
+    expect(risk.className).toBe('tcw-ticket-figure');
+  });
+
+  it('keeps a loss’s sign in any digits (Persian figures)', () => {
+    const fa = (v: number, d = 2) => v.toLocaleString('fa-IR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    build({ formatAmount: (v) => fa(v), formatNumber: (v, d) => fa(v, d) });
+    ticket.open({ lastPrice: 100 });
+    toggle('stopLoss');
+    expect(host.querySelector('.tcw-ticket-away')!.textContent).toBe('-۱٫۰۰% · -۱٫۰۰');
+  });
+
   it('writes figures in the host’s number format, and nothing with no sign', () => {
     build({ formatNumber: (v, d) => v.toFixed(d).replace('.', ',') });
     ticket.open({ lastPrice: 100 });

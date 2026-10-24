@@ -103,7 +103,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
     </td></tr>
     <tr><td>Ngăn bên</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
     </td></tr>
     <tr><td>Thanh công cụ vẽ</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

@@ -13,6 +13,10 @@ export interface LadderModel {
   maxVolume: number;
   /** Midpoint between best bid and best ask, or null if a side is empty. */
   mid: number | null;
+  /** Best ask less best bid, or null if a side is empty. */
+  spread: number | null;
+  /** The best bid's price, where the bids start under the spread; null with no bids. */
+  bestBid: number | null;
 }
 
 /**
@@ -44,5 +48,5 @@ export function buildLadderRows(data: DepthData, maxLevels = 12): LadderModel {
   let maxVolume = 0;
   for (const r of rows) maxVolume = Math.max(maxVolume, r.bidVolume, r.askVolume);
 
-  return { rows, maxVolume, mid };
+  return { rows, maxVolume, mid, spread: bestAsk !== null && bestBid !== null ? bestAsk - bestBid : null, bestBid };
 }

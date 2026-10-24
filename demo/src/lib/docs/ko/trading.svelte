@@ -192,6 +192,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   금액, 위험, 보상, 보상 대비 위험이 정리됩니다. 매수와 매도를 바꿔도 대기 주문은 놓은 가격에 그대로 남고
   (시장가보다 위의 매수 스톱은 매도 지정가가 됩니다), 주문 버튼은 매수·매도의 색을 띱니다.
 </p>
+<p>
+  계좌 패널 머리에는 어느 탭에서나 평가 손익과 실현 손익이 표시됩니다. 숫자는 고정폭 글꼴로 오른쪽 정렬되고,
+  금액은 호가 단위의 소수 자리와 숫자 로캘로 표기되며, 휴대폰에서는 각 행이 항목 이름이 붙은 카드가 됩니다.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -243,7 +247,14 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   발생합니다(차트는 직접 거래하지 않습니다). 같은 데이터로 차트 위의
   심도 오버레이도 그립니다.
 </p>
+<p>
+  호가창은 차트 옆 dock의 한 페이지입니다(휴대폰에서는 시트). 거래 메뉴, 레일의 버튼, 또는
+  <code>widget.openPanel('depthLadder')</code>로 열고, <code>dock.depthLadder: false</code>로 레일 버튼을 없앱니다.
+  매도 호가가 매수 호가 위에 있고 그 사이에 스프레드가 표시되며, 각 잔량에는 가격 열에서 뻗어 나가는 막대가
+  붙습니다. 내 대기 주문이 있는 가격 행에는 그 수량이 표시됩니다.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],

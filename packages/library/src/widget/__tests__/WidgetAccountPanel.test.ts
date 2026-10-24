@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WidgetAccountPanel, positionPnl, type AccountPanelCallbacks } from '../WidgetAccountPanel.js';
+import { EN_TRANSLATOR } from '../i18n.js';
 
 let host: HTMLDivElement;
 let panel: WidgetAccountPanel;
@@ -51,9 +52,88 @@ describe('WidgetAccountPanel', () => {
 
   it('counts each tab and lists the positions with their P&L', () => {
     panel.openPanel();
-    expect([...host.querySelectorAll('[role=tab]')].map((b) => b.textContent)).toEqual(['Positions (1)', 'Orders (1)', 'History (2)']);
-    expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 (+3.00%)', '95.00', '—']);
+    const tabs = [...host.querySelectorAll('[role=tab]')].map((b) => [b.querySelector('.tcw-account-tab-label')!.textContent, b.querySelector('.tcw-account-count')!.textContent]);
+    expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2']]);
+    expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 · +3.00%', '95.00', '—']);
     expect(callbacks.onToggle).toHaveBeenCalledWith(true);
+  });
+
+  it('sets its figures as numbers, each cell named for a phone’s card', () => {
+    panel.openPanel();
+    const row = host.querySelector('tbody tr')!;
+    const named = [...row.querySelectorAll('td')].map((td) => [td.dataset.label, td.classList.contains('tcw-num')]);
+    expect(named).toEqual([
+      ['Side', false], ['Qty', true], ['Entry', true], ['Price', true], ['P&L', true], ['SL', true], ['TP', true], ['', false],
+    ]);
+  });
+
+  it('sums the account up in its head, on every tab: the open P&L and what is realised', () => {
+    panel.openPanel();
+    const totals = () => [...host.querySelectorAll('.tcw-account-total')].map((el) => el.textContent);
+    expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
+    tab(/Orders/).click();
+    expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
+    panel.update({ ...snapshotOf(), price: 104 });
+    expect(totals()[0]).toBe('Open P&L: +8.00');
+  });
+
+  it('writes signed figures left to right in any widget, the totals’ too', () => {
+    panel.openPanel();
+    expect(host.querySelector<HTMLElement>('tbody td:nth-child(5) span')!.dir).toBe('ltr');
+    expect([...host.querySelectorAll<HTMLElement>('.tcw-account-total [dir="ltr"]')].map((el) => el.textContent)).toEqual(['+6.00', '+4.00']);
+  });
+
+  it('keeps a loss’s sign in any digits, and none on nothing (Persian figures)', () => {
+    const fa = (v: number, d = 2) => v.toLocaleString('fa-IR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    panel.destroy();
+    panel = new WidgetAccountPanel(host, { ...(callbacks as unknown as AccountPanelCallbacks), formatAmount: (v) => fa(v), formatNumber: (v, d) => fa(v, d) });
+    panel.update({ ...snapshotOf(), price: 97 });
+    panel.openPanel();
+    // Two long from 100 at 97 lose 6: three percent.
+    expect(cells()[0][4]).toBe('-۶٫۰۰ · -۳٫۰۰%');
+    panel.update({ ...snapshotOf(), price: 100 });
+    expect(cells()[0][4]).toBe('۰٫۰۰ · ۰٫۰۰%');
+  });
+
+  it('colours a figure by the sign it shows, none on what reads as nothing', () => {
+    // Two long from 100 at 100.001 make 0.002: "0.00", neither gain nor loss.
+    panel.update({ ...snapshotOf(), price: 100.001 });
+    panel.openPanel();
+    expect(cells()[0][4]).toBe('0.00 · 0.00%');
+    expect(host.querySelector('tbody tr')!.querySelectorAll('td')[4].firstElementChild!.className).toBe('');
+    expect(host.querySelector('.tcw-account-total')!.className).toBe('tcw-account-total');
+  });
+
+  it('shows the realised P&L only once something is realised', () => {
+    panel.update({ positions: [], orders: [], fills: [], price: null, realisedPnl: 0 });
+    expect(host.querySelectorAll('.tcw-account-total')).toHaveLength(0);
+    panel.update({ positions: [], orders: [], fills: [], price: null, realisedPnl: -2 });
+    expect(host.querySelector('.tcw-account-total')!.textContent).toBe('Realised P&L: -2.00');
+  });
+
+  it('puts the figure after words that have no place for it', () => {
+    panel.destroy();
+    const words = (key: string, vars?: Record<string, string | number>) => (key === 'account.openPnl' ? 'Open' : EN_TRANSLATOR(key as never, vars));
+    panel = new WidgetAccountPanel(host, callbacks as unknown as AccountPanelCallbacks, words as never);
+    panel.update(snapshotOf());
+    expect(host.querySelector('.tcw-account-total')!.textContent).toBe('Open +6.00');
+  });
+
+  it('names each tab with its count, and keeps a table’s roles for a phone’s cards', () => {
+    panel.openPanel();
+    expect(tab(/Positions/).getAttribute('aria-label')).toBe('Positions (1)');
+    expect(host.querySelector('table')!.getAttribute('role')).toBe('table');
+    expect(host.querySelector('thead th')!.getAttribute('role')).toBe('columnheader');
+    expect(host.querySelector('tbody tr')!.getAttribute('role')).toBe('row');
+    expect(host.querySelector('tbody td')!.getAttribute('role')).toBe('cell');
+  });
+
+  it('writes money and percents in the host’s formats', () => {
+    panel.destroy();
+    panel = new WidgetAccountPanel(host, { ...(callbacks as unknown as AccountPanelCallbacks), formatAmount: (v) => v.toFixed(1), formatNumber: (v, d) => v.toFixed(d).replace('.', ',') });
+    panel.update(snapshotOf());
+    panel.openPanel();
+    expect(cells()[0][4]).toBe('+6.0 · +3,00%');
   });
 
   it('closes, reverses and cancels from the rows', () => {
@@ -74,7 +154,7 @@ describe('WidgetAccountPanel', () => {
     expect(cells().map((row) => row[4])).toEqual(['Closed', 'Order']);
     // A fill is a buy or a sell (closing a long sells), not a long or a short.
     expect(cells().map((row) => row[1])).toEqual(['Sell', 'Buy']);
-    expect(host.querySelector('.tcw-account-summary')!.textContent).toBe('Realised P&L: +4.00');
+    expect(cells().map((row) => row[5])).toEqual(['+4.00', '—']);
   });
 
   it('moves between tabs with the arrow keys, and opens a new order', () => {
@@ -92,7 +172,7 @@ describe('WidgetAccountPanel', () => {
     panel.update({ ...snapshotOf(), price: 104 });
     expect(host.querySelector('[aria-label^="Close position"]')).toBe(close);
     expect(document.activeElement).toBe(close);
-    expect(cells()[0].slice(3, 5)).toEqual(['104.00', '+8.00 (+4.00%)']);
+    expect(cells()[0].slice(3, 5)).toEqual(['104.00', '+8.00 · +4.00%']);
   });
 
   it('keeps focus on the same button when the rows change', () => {

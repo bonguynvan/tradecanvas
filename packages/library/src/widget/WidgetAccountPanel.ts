@@ -1,7 +1,8 @@
 import type { FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
-import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
+import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
+import { signed, toneOf } from './signedFigure.js';
 
 export interface AccountPanelCallbacks {
   onClosePosition: (id: string) => void;
@@ -10,6 +11,10 @@ export interface AccountPanelCallbacks {
   onNewOrder: () => void;
   formatPrice: (price: number) => string;
   formatTime: (ms: number) => string;
+  /** Money made or lost (a P&L); unset, to two decimals. */
+  formatAmount?: (value: number) => string;
+  /** A plain figure to `decimals` (a percent), in the number locale; unset, with a point. */
+  formatNumber?: (value: number, decimals: number) => string;
   /** Called when the panel opens or closes (the chart above resizes). */
   onToggle?: (open: boolean) => void;
 }
@@ -29,6 +34,18 @@ const TABS: readonly Tab[] = ['positions', 'orders', 'history'];
 const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit'] as const;
 const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
 const TIME_IN_FORCE = ['gtc', 'day'] as const;
+/** What a cell holds where there is nothing (no stop, no price yet). */
+const NONE = '—';
+/** Where the totals' words take their figure. */
+const PNL_SLOT = '{pnl}';
+/** The positions table's column of the latest price, rewritten on a tick. */
+const PRICE_COLUMN = 3;
+
+/** A table's column: its heading, and whether it holds figures (set right, in the mono type). */
+interface Column {
+  key: MessageKey | null;
+  num?: boolean;
+}
 
 /** `value` when it is one of `known`, else `fallback` (a host may send what the panel has no words for). */
 function known<T extends string>(known: readonly T[], value: string | undefined, fallback: T): T {
@@ -57,18 +74,32 @@ export function positionPnl(position: TradingPosition, price: number | null): { 
   return { pnl, pct };
 }
 
-function signed(value: number, decimals = 2): string {
-  return `${value > 0 ? '+' : ''}${value.toFixed(decimals)}`;
+/** A figure that reads left to right in any widget: its sign stays before it. */
+function ltr(text: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.dir = 'ltr';
+  span.textContent = text;
+  return span;
+}
+
+/** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
+function toneClass(figure: string): string {
+  const tone = toneOf(figure);
+  return tone ? `tcw-account-${tone}` : '';
 }
 
 /**
  * The account at the bottom of the widget: open positions with their profit
  * and loss, working orders, and the fills so far, each with its actions
- * (close, reverse, cancel), and a button for a new order.
+ * (close, reverse, cancel), a button for a new order, and the open and
+ * realised P&L in its head on every tab. On a phone each row is a card.
  */
 export class WidgetAccountPanel {
   private el: HTMLElement;
   private tabButtons = new Map<Tab, HTMLButtonElement>();
+  private tabLabels = new Map<Tab, string>();
+  private tabCounts = new Map<Tab, HTMLSpanElement>();
+  private totalsEl: HTMLDivElement;
   private content: HTMLDivElement;
   private tab: Tab = 'positions';
   private snapshot: AccountSnapshot = { positions: [], orders: [], fills: [], price: null };
@@ -93,10 +124,20 @@ export class WidgetAccountPanel {
       btn.className = 'tcw-account-tab';
       btn.setAttribute('role', 'tab');
       btn.id = `tcw-account-tab-${tab}`;
+      const label = document.createElement('span');
+      label.className = 'tcw-account-tab-label';
+      label.textContent = this.t(`account.${tab}` as MessageKey);
+      const count = document.createElement('span');
+      count.className = 'tcw-account-count';
+      btn.append(label, count);
       btn.addEventListener('click', () => this.selectTab(tab));
       this.tabButtons.set(tab, btn);
+      this.tabLabels.set(tab, label.textContent);
+      this.tabCounts.set(tab, count);
       tabs.appendChild(btn);
     }
+    this.totalsEl = document.createElement('div');
+    this.totalsEl.className = 'tcw-account-totals';
     const newOrder = document.createElement('button');
     newOrder.type = 'button';
     newOrder.className = 'tcw-account-new';
@@ -110,7 +151,7 @@ export class WidgetAccountPanel {
     close.setAttribute('aria-label', this.t('account.close'));
     close.innerHTML = createIcon('x', 14);
     close.addEventListener('click', () => this.closePanel());
-    head.append(tabs, newOrder, close);
+    head.append(tabs, this.totalsEl, newOrder, close);
 
     this.content = document.createElement('div');
     this.content.className = 'tcw-account-body';
@@ -144,9 +185,10 @@ export class WidgetAccountPanel {
   }
 
   /**
-   * New positions, orders, fills or price; the tabs' counts follow, the open
-   * tab redraws. A new price alone only rewrites the price and P&L cells, so
-   * a tick never takes a button from under the pointer or the focus.
+   * New positions, orders, fills or price; the tabs' counts and the totals
+   * follow, the open tab redraws. A new price alone only rewrites the price
+   * and P&L cells and the open total, so a tick never takes a button from
+   * under the pointer or the focus.
    */
   update(snapshot: AccountSnapshot): void {
     const before = this.snapshot;
@@ -156,7 +198,10 @@ export class WidgetAccountPanel {
       && sameRows(before.fills, snapshot.fills)
       && before.realisedPnl === snapshot.realisedPnl;
     if (rowsSame) {
-      if (this.open && this.tab === 'positions' && before.price !== snapshot.price) this.patchPrices();
+      if (before.price !== snapshot.price) {
+        this.renderTotals();
+        if (this.open && this.tab === 'positions') this.patchPrices();
+      }
       return;
     }
     this.renderTabs();
@@ -192,11 +237,42 @@ export class WidgetAccountPanel {
     };
     for (const [tab, btn] of this.tabButtons) {
       const selected = tab === this.tab;
-      btn.textContent = `${this.t(`account.${tab}` as MessageKey)} (${counts[tab]})`;
+      this.tabCounts.get(tab)!.textContent = String(counts[tab]);
+      // "Positions (1)": a reader hears the count as part of the name, not run into it.
+      btn.setAttribute('aria-label', `${this.tabLabels.get(tab)} (${counts[tab]})`);
       btn.setAttribute('aria-selected', String(selected));
       btn.tabIndex = selected ? 0 : -1;
       if (selected) this.content.setAttribute('aria-labelledby', btn.id);
     }
+    this.renderTotals();
+  }
+
+  /** The open P&L (with positions and a price) and the realised (once there are fills or a figure), on every tab. */
+  private renderTotals(): void {
+    const { positions, price, fills, realisedPnl } = this.snapshot;
+    const totals: HTMLElement[] = [];
+    const open = positions.reduce<number | null>((sum, p) => {
+      const pnl = positionPnl(p, price);
+      return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
+    }, null);
+    if (open !== null) totals.push(this.total('account.openPnl', open));
+    if (fills.length > 0 || (realisedPnl !== undefined && realisedPnl !== 0)) {
+      totals.push(this.total('account.realised', realisedPnl ?? fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0)));
+    }
+    this.totalsEl.replaceChildren(...totals);
+  }
+
+  /** A total: its words, the figure in them read left to right ("+6.00", never "6.00+"); after them, if they have no place for it. */
+  private total(key: MessageKey, value: number): HTMLElement {
+    const el = document.createElement('span');
+    const amount = this.amount(value);
+    el.className = `tcw-account-total ${toneClass(amount)}`.trim();
+    const words = this.t(key);
+    const at = words.indexOf(PNL_SLOT);
+    const figure = ltr(amount);
+    if (at < 0) el.append(`${words} `, figure);
+    else el.append(words.slice(0, at), figure, words.slice(at + PNL_SLOT.length));
+    return el;
   }
 
   private render(): void {
@@ -214,46 +290,77 @@ export class WidgetAccountPanel {
   private patchPrices(): void {
     const { price } = this.snapshot;
     for (const cells of this.live) {
-      cells.price.textContent = price === null ? '—' : this.callbacks.formatPrice(price);
+      cells.price.textContent = price === null ? NONE : this.callbacks.formatPrice(price);
       this.writePnl(cells.pnl, positionPnl(cells.position, price));
     }
   }
 
-  private writePnl(span: HTMLSpanElement, result: { pnl: number; pct: number } | null): void {
-    span.className = result === null ? '' : result.pnl >= 0 ? 'tcw-account-up' : 'tcw-account-down';
-    span.textContent = result === null ? '—' : `${signed(result.pnl)} (${signed(result.pct)}%)`;
+  private amount(value: number): string {
+    return signed(this.money(Math.abs(value)), value, this.money(0));
   }
 
-  private table(columns: readonly MessageKey[], rows: HTMLTableRowElement[], empty: MessageKey): void {
+  private money(value: number): string {
+    return this.callbacks.formatAmount ? this.callbacks.formatAmount(value) : value.toFixed(2);
+  }
+
+  private percent(value: number): string {
+    const figure = (v: number) => (this.callbacks.formatNumber ? this.callbacks.formatNumber(v, 2) : v.toFixed(2));
+    return `${signed(figure(Math.abs(value)), value, figure(0))}%`;
+  }
+
+  private writePnl(span: HTMLSpanElement, result: { pnl: number; pct: number } | null): void {
+    if (result === null) {
+      span.className = '';
+      span.textContent = NONE;
+      return;
+    }
+    const amount = this.amount(result.pnl);
+    span.className = toneClass(amount);
+    span.textContent = `${amount} · ${this.percent(result.pct)}`;
+  }
+
+  /**
+   * A table of `rows` under `columns`, each cell named by its column (a phone
+   * shows rows as cards); else what is empty. Its roles are set, not left to
+   * the elements: a card's `display` takes a table's away in some browsers.
+   */
+  private table(columns: readonly Column[], rows: readonly (readonly (string | HTMLElement)[])[], empty: MessageKey): HTMLTableElement | null {
     if (rows.length === 0) {
       const p = document.createElement('p');
       p.className = 'tcw-account-empty';
       p.textContent = this.t(empty);
       this.content.replaceChildren(p);
-      return;
+      return null;
     }
+    const labels = columns.map((c) => (c.key ? this.t(c.key) : ''));
     const table = document.createElement('table');
     table.className = 'tcw-account-table';
+    table.setAttribute('role', 'table');
     const head = table.createTHead().insertRow();
-    for (const key of columns) {
+    head.setAttribute('role', 'row');
+    columns.forEach((column, i) => {
       const th = document.createElement('th');
       th.scope = 'col';
-      th.textContent = key ? this.t(key) : '';
+      th.setAttribute('role', 'columnheader');
+      th.textContent = labels[i];
+      if (column.num) th.className = 'tcw-num';
       head.appendChild(th);
+    });
+    const body = table.createTBody();
+    for (const cells of rows) {
+      const tr = body.insertRow();
+      tr.setAttribute('role', 'row');
+      cells.forEach((cell, i) => {
+        const td = tr.insertCell();
+        td.setAttribute('role', 'cell');
+        td.dataset.label = labels[i];
+        if (columns[i].num) td.className = 'tcw-num';
+        if (typeof cell === 'string') td.textContent = cell;
+        else td.appendChild(cell);
+      });
     }
-    table.createTBody().append(...rows);
     this.content.replaceChildren(table);
-  }
-
-  private row(cells: readonly (string | HTMLElement)[], className = ''): HTMLTableRowElement {
-    const tr = document.createElement('tr');
-    if (className) tr.className = className;
-    for (const cell of cells) {
-      const td = tr.insertCell();
-      if (typeof cell === 'string') td.textContent = cell;
-      else td.appendChild(cell);
-    }
-    return tr;
+    return table;
   }
 
   /** Long or Short for a position; Buy or Sell for an order or a fill (closing a long is a sell). */
@@ -286,36 +393,47 @@ export class WidgetAccountPanel {
     return wrap;
   }
 
+  private price(value: number | undefined): string {
+    return value === undefined ? NONE : this.callbacks.formatPrice(value);
+  }
+
   private renderPositions(): void {
     const { formatPrice } = this.callbacks;
     const { price } = this.snapshot;
+    const pnls: HTMLSpanElement[] = [];
     const rows = this.snapshot.positions.map((p) => {
       const open = p.quantity - (p.closedQuantity ?? 0);
-      const pnl = document.createElement('span');
+      const pnl = ltr('');
       this.writePnl(pnl, positionPnl(p, price));
+      pnls.push(pnl);
       // "Close position: Long 2 @ 100.00", so each row's buttons say which.
       const which = `${this.sideText(p.side, 'position')} ${open} @ ${formatPrice(p.entryPrice)}`;
-      const tr = this.row([
+      return [
         this.sideCell(p.side),
         String(open),
         formatPrice(p.entryPrice),
-        price === null ? '—' : formatPrice(price),
+        price === null ? NONE : formatPrice(price),
         pnl,
-        p.stopLoss === undefined ? '—' : formatPrice(p.stopLoss),
-        p.takeProfit === undefined ? '—' : formatPrice(p.takeProfit),
+        this.price(p.stopLoss),
+        this.price(p.takeProfit),
         this.actions(
-          { icon: 'repeat', label: `${this.t('account.reverse')}: ${which}`, key: `reverse:${p.id}`, run: () => this.callbacks.onReversePosition(p.id) },
+          { icon: 'arrowUpDown', label: `${this.t('account.reverse')}: ${which}`, key: `reverse:${p.id}`, run: () => this.callbacks.onReversePosition(p.id) },
           { icon: 'x', label: `${this.t('account.closePosition')}: ${which}`, key: `close:${p.id}`, run: () => this.callbacks.onClosePosition(p.id), danger: true },
         ),
-      ]);
-      this.live.push({ position: p, price: tr.cells[3], pnl });
-      return tr;
+      ];
     });
-    this.table(
-      ['account.side', 'account.quantity', 'account.entry', 'account.price', 'account.pnl', 'account.stopLoss', 'account.takeProfit', 'account.actions'],
+    const table = this.table(
+      [
+        { key: 'account.side' }, { key: 'account.quantity', num: true }, { key: 'account.entry', num: true },
+        { key: 'account.price', num: true }, { key: 'account.pnl', num: true }, { key: 'account.stopLoss', num: true },
+        { key: 'account.takeProfit', num: true }, { key: null },
+      ],
       rows,
       'account.noPositions',
     );
+    if (!table) return;
+    const trs = [...table.tBodies[0].rows];
+    this.snapshot.positions.forEach((position, i) => this.live.push({ position, price: trs[i].cells[PRICE_COLUMN], pnl: pnls[i] }));
   }
 
   private renderOrders(): void {
@@ -323,19 +441,22 @@ export class WidgetAccountPanel {
     const rows = this.snapshot.orders.map((o) => {
       const type = known(ORDER_TYPES, o.type === 'stopLimit' ? 'stop' : o.type, 'limit');
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
-      return this.row([
+      return [
         this.sideCell(o.side, 'trade'),
         this.t(`ticket.type.${type}` as MessageKey),
         String(o.quantity),
         formatPrice(o.price),
-        o.stopLoss === undefined ? '—' : formatPrice(o.stopLoss),
-        o.takeProfit === undefined ? '—' : formatPrice(o.takeProfit),
-        o.timeInForce ? this.t(`ticket.tif.${known(TIME_IN_FORCE, o.timeInForce, 'gtc')}` as MessageKey) : '—',
+        this.price(o.stopLoss),
+        this.price(o.takeProfit),
+        o.timeInForce ? this.t(`ticket.tif.${known(TIME_IN_FORCE, o.timeInForce, 'gtc')}` as MessageKey) : NONE,
         this.actions({ icon: 'x', label: `${this.t('account.cancelOrder')}: ${which}`, key: `cancel:${o.id}`, run: () => this.callbacks.onCancelOrder(o.id), danger: true }),
-      ]);
+      ];
     });
     this.table(
-      ['account.side', 'ticket.type', 'account.quantity', 'account.price', 'account.stopLoss', 'account.takeProfit', 'ticket.timeInForce', 'account.actions'],
+      [
+        { key: 'account.side' }, { key: 'ticket.type' }, { key: 'account.quantity', num: true }, { key: 'account.price', num: true },
+        { key: 'account.stopLoss', num: true }, { key: 'account.takeProfit', num: true }, { key: 'ticket.timeInForce' }, { key: null },
+      ],
       rows,
       'account.noOrders',
     );
@@ -345,29 +466,29 @@ export class WidgetAccountPanel {
     const { formatPrice, formatTime } = this.callbacks;
     // The newest first.
     const rows = [...this.snapshot.fills].reverse().map((f) => {
-      const pnl = document.createElement('span');
+      const pnl = ltr('');
       if (f.pnl !== undefined) {
-        pnl.className = f.pnl >= 0 ? 'tcw-account-up' : 'tcw-account-down';
-        pnl.textContent = signed(f.pnl);
+        pnl.textContent = this.amount(f.pnl);
+        pnl.className = toneClass(pnl.textContent);
       } else {
-        pnl.textContent = '—';
+        pnl.textContent = NONE;
       }
-      return this.row([
+      return [
         formatTime(f.time),
         this.sideCell(f.side, 'trade'),
         String(f.quantity),
         formatPrice(f.price),
         this.t(`account.reason.${known(REASONS, f.reason, 'order')}` as MessageKey),
         pnl,
-      ]);
+      ];
     });
-    this.table(['account.time', 'account.side', 'account.quantity', 'account.price', 'account.reason', 'account.pnl'], rows, 'account.noFills');
-    const total = this.snapshot.realisedPnl ?? this.snapshot.fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0);
-    if (rows.length > 0) {
-      const summary = document.createElement('p');
-      summary.className = 'tcw-account-summary';
-      summary.textContent = fill(this.t('account.realised'), { pnl: signed(total) });
-      this.content.appendChild(summary);
-    }
+    this.table(
+      [
+        { key: 'account.time' }, { key: 'account.side' }, { key: 'account.quantity', num: true },
+        { key: 'account.price', num: true }, { key: 'account.reason' }, { key: 'account.pnl', num: true },
+      ],
+      rows,
+      'account.noFills',
+    );
   }
 }

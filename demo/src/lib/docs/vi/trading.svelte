@@ -195,6 +195,11 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   bên dưới, một tờ biên lai tóm tắt lệnh: giá trị, rủi ro, lợi nhuận và lời trên lỗ. Đổi giữa mua và bán vẫn giữ lệnh
   chờ ở chỗ đã đặt (mua dừng trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
 </p>
+<p>
+  Đầu bảng tài khoản luôn hiện lãi/lỗ đang mở và lãi/lỗ đã chốt ở mọi tab. Các con số được căn phải bằng chữ
+  đơn cách, tiền theo số lẻ của bước giá và định dạng số của ngôn ngữ; trên điện thoại mỗi dòng là một thẻ ghi tên từng
+  con số.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
@@ -246,7 +251,14 @@ chart.cancelBracket()   // same as Esc`}</code></pre>
   OMS của bạn (biểu đồ không bao giờ tự giao dịch). Cùng dữ liệu đó cũng điều khiển
   lớp phủ độ sâu trên biểu đồ.
 </p>
+<p>
+  Sổ lệnh là một trang của dock bên cạnh biểu đồ (trên điện thoại là một tấm trượt): mở từ menu Giao dịch, nút
+  của nó trên dải bên phải hoặc <code>widget.openPanel('depthLadder')</code>, và bỏ nút đó bằng
+  <code>dock.depthLadder: false</code>. Giá bán nằm trên giá mua, chênh lệch ở giữa, mỗi khối lượng có một thanh mọc ra
+  từ cột giá; hàng nào có lệnh đang chờ của bạn thì ghi khối lượng lệnh đó.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
+widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
 
 widget.setDepth({
   bids: [{ price: 64_190, volume: 3.1 }, { price: 64_185, volume: 5.4 }],
