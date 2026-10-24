@@ -1,5 +1,12 @@
 # @tradecanvas/mcp
 
+## 1.42.0
+
+### Patch Changes
+
+- Updated dependencies [b1b49f5]
+  - @tradecanvas/commons@1.42.0
+
 ## 1.41.0
 
 ### Patch Changes
