@@ -123,6 +123,8 @@ describe('ChartWidget feature switches', () => {
       'statusBar.range', 'statusBar.goToDate', 'goToDate', 'statusBar.market', 'statusBar.connection',
       'statusBar.clock', 'statusBar.scale',
       'navigation', 'navigation.zoom', 'navigation.scroll', 'navigation.reset', 'indicatorLegend', 'customTimeframes',
+      // The dock's rail and its buttons.
+      'dock', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo', 'dataWindow',
       // (indicatorTemplates marks a tab of the indicators dialog: WidgetIndicatorPicker.test.)
     ];
     for (const name of expected) expect(parts, name).toContain(name);

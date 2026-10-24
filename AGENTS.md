@@ -94,9 +94,11 @@ These fail CI, often far from the line that caused them.
 ## Widget UI
 
 - Styles live in `src/widget/WidgetStyles.css`, `WidgetControls.css`
-  (fields, lists, calendar, scrollbars) and `WidgetDialogs.css`
-  (the indicators dialog, the indicator settings and the chart settings), injected by
-  `WidgetStyles.ts`.
+  (fields, lists, calendar, scrollbars), `WidgetDialogs.css`
+  (the indicators dialog, the indicator settings and the chart settings) and
+  `WidgetPanels.css` (the dock and its panels), injected by `WidgetStyles.ts`.
+  Under vitest the `.css` files load empty: a test sees only the switches'
+  rules (`widgetFeatureCss`), so check the rest in a browser.
 - Colours, radii and spacing are `--tcw-*` tokens, set for the dark default
   and `[data-tcw-theme='light']`; the Studio, Terminal and Capsule looks are
   presets in `src/widget/widgetUI.ts`. Use a token, not a literal colour.

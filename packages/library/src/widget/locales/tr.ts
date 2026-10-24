@@ -782,6 +782,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Sat @ {price}',
   'ladder.buyAt': 'Al @ {price}',
   'dataWindow.title': 'Veri penceresi',
+  'dock.rail': 'Paneller',
+  'dock.resize': 'Panelin genişliğini değiştir',
   'dataWindow.hover': 'İmleci grafiğin üzerine getirin',
   'dataWindow.open': 'Açılış',
   'dataWindow.high': 'En yüksek',

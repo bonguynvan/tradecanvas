@@ -31,6 +31,8 @@ export type SymbolInfoNews =
 export interface SymbolInfoCallbacks {
   /** After it opens or closes. */
   onToggle?: (open: boolean) => void;
+  /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
+  onClose?: () => void;
 }
 
 /**
@@ -65,7 +67,7 @@ export class WidgetSymbolInfo {
     closeBtn.className = 'tcw-syminfo-close';
     closeBtn.setAttribute('aria-label', t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
     header.append(title, closeBtn);
 
     this.bodyEl = document.createElement('div');
@@ -77,6 +79,11 @@ export class WidgetSymbolInfo {
 
     this.el.append(header, this.bodyEl, this.newsEl);
     host.appendChild(this.el);
+  }
+
+  /** The panel, for the dock to hold. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   isOpen(): boolean {

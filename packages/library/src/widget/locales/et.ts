@@ -798,6 +798,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Müü @ {price}',
   'ladder.buyAt': 'Osta @ {price}',
   'dataWindow.title': 'Andmeaken',
+  'dock.rail': 'Paneelid',
+  'dock.resize': 'Muuda paneeli laiust',
   'dataWindow.hover': 'Liigu hiirega graafiku kohale',
   'dataWindow.open': 'Avamine',
   'dataWindow.high': 'Kõrgeim',

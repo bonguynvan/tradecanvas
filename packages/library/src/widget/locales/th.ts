@@ -782,6 +782,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'ขาย @ {price}',
   'ladder.buyAt': 'ซื้อ @ {price}',
   'dataWindow.title': 'หน้าต่างข้อมูล',
+  'dock.rail': 'แผง',
+  'dock.resize': 'ปรับความกว้างของแผง',
   'dataWindow.hover': 'วางเมาส์บนกราฟ',
   'dataWindow.open': 'ราคาเปิด',
   'dataWindow.high': 'ราคาสูงสุด',

@@ -782,6 +782,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Sälj @ {price}',
   'ladder.buyAt': 'Köp @ {price}',
   'dataWindow.title': 'Datafönster',
+  'dock.rail': 'Paneler',
+  'dock.resize': 'Ändra panelens bredd',
   'dataWindow.hover': 'Håll muspekaren över diagrammet',
   'dataWindow.open': 'Öppning',
   'dataWindow.high': 'Högsta',

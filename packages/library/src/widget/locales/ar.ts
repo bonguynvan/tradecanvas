@@ -798,6 +798,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'بيع @ {price}',
   'ladder.buyAt': 'شراء @ {price}',
   'dataWindow.title': 'نافذة البيانات',
+  'dock.rail': 'اللوحات',
+  'dock.resize': 'تغيير حجم اللوحة',
   'dataWindow.hover': 'مرّر الماوس فوق الرسم البياني',
   'dataWindow.open': 'الافتتاح',
   'dataWindow.high': 'الأعلى',

@@ -1,6 +1,7 @@
 import widgetCss from './WidgetStyles.css?raw';
 import controlsCss from './WidgetControls.css?raw';
 import dialogsCss from './WidgetDialogs.css?raw';
+import panelsCss from './WidgetPanels.css?raw';
 import { widgetFeatureCss } from './widgetFeatures.js';
 
 let refCount = 0;
@@ -25,6 +26,7 @@ export function injectWidgetStyles(): void {
   style.textContent = `${widgetCss}
 ${controlsCss}
 ${dialogsCss}
+${panelsCss}
 ${widgetFeatureCss()}`;
   document.head.insertBefore(style, document.head.firstChild);
 }

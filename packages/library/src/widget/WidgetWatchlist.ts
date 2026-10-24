@@ -31,6 +31,8 @@ export interface WatchlistCallbacks {
   onCreateList?: (name: string) => void;
   onRenameList?: (id: string, name: string) => void;
   onDeleteList?: (id: string) => void;
+  /** A close button in its header, for the dock it sits in. */
+  onClose?: () => void;
 }
 
 export interface WatchlistLabels {
@@ -46,6 +48,8 @@ export interface WatchlistLabels {
   remove: string;
   empty: string;
   listName: string;
+  /** The close button's name. */
+  close?: string;
 }
 
 interface RowRef {
@@ -95,18 +99,26 @@ export class WidgetWatchlist {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'tcw-watchlist-add';
-    addBtn.textContent = '+';
+    addBtn.innerHTML = createIcon('plus', 14);
     addBtn.title = labels.add;
     addBtn.setAttribute('aria-label', labels.add);
     addBtn.hidden = !callbacks.onAdd;
     addBtn.addEventListener('click', () => callbacks.onAdd?.());
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'tcw-watchlist-close';
+    closeBtn.setAttribute('aria-label', labels.close ?? labels.title);
+    closeBtn.innerHTML = createIcon('x', 14);
+    closeBtn.hidden = !callbacks.onClose;
+    closeBtn.addEventListener('click', () => callbacks.onClose?.());
 
     this.menuEl = document.createElement('div');
     this.menuEl.className = 'tcw-dropdown tcw-watchlist-menu';
     this.menuEl.setAttribute('role', 'menu');
     this.menuEl.hidden = true;
 
-    this.headerEl.append(this.nameBtn, addBtn, this.menuEl);
+    this.headerEl.append(this.nameBtn, addBtn, closeBtn, this.menuEl);
     this.el.appendChild(this.headerEl);
 
     this.listEl = document.createElement('div');
@@ -115,6 +127,11 @@ export class WidgetWatchlist {
     this.el.appendChild(this.listEl);
 
     host.appendChild(this.el);
+  }
+
+  /** The panel, for the dock to hold. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   /** The lists, and which one shows. Rows are diffed so prices stay. */

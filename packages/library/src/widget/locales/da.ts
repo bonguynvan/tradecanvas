@@ -798,6 +798,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Sælg @ {price}',
   'ladder.buyAt': 'Køb @ {price}',
   'dataWindow.title': 'Datavindue',
+  'dock.rail': 'Paneler',
+  'dock.resize': 'Skift panelets bredde',
   'dataWindow.hover': 'Hold musen over grafen',
   'dataWindow.open': 'Åbning',
   'dataWindow.high': 'Høj',

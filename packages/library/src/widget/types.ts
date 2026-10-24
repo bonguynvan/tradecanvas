@@ -595,4 +595,5 @@ export interface DrawingToolGroupDef {
   section?: string;
 }
 
-
+/** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
+export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo';

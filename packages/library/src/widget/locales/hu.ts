@@ -782,6 +782,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Eladás @ {price}',
   'ladder.buyAt': 'Vétel @ {price}',
   'dataWindow.title': 'Adatablak',
+  'dock.rail': 'Panelek',
+  'dock.resize': 'A panel szélességének módosítása',
   'dataWindow.hover': 'Vigye az egeret a grafikon fölé',
   'dataWindow.open': 'Nyitó',
   'dataWindow.high': 'Maximum',

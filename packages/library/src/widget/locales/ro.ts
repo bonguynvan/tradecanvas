@@ -782,6 +782,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Vânzare @ {price}',
   'ladder.buyAt': 'Cumpărare @ {price}',
   'dataWindow.title': 'Fereastră de date',
+  'dock.rail': 'Panouri',
+  'dock.resize': 'Redimensionare panou',
   'dataWindow.hover': 'Treceți cursorul peste grafic',
   'dataWindow.open': 'Deschidere',
   'dataWindow.high': 'Maxim',

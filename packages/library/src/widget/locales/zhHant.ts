@@ -782,6 +782,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ladder.sellAt': '賣出 @ {price}',
   'ladder.buyAt': '買進 @ {price}',
   'dataWindow.title': '資料視窗',
+  'dock.rail': '面板',
+  'dock.resize': '調整面板寬度',
   'dataWindow.hover': '將滑鼠移到圖表上',
   'dataWindow.open': '開盤',
   'dataWindow.high': '最高',

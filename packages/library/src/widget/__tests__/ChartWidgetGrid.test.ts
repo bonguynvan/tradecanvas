@@ -123,6 +123,15 @@ describe('ChartWidgetGrid', () => {
     expect(charts()[3].overrides).toEqual([{ 'grid.vertical.visible': false }]);
   });
 
+  it('gives its charts no rail of panels each, unless asked', () => {
+    make();
+    expect(grid.getWidgets().map((w) => w.isFeatureOn('dock'))).toEqual([false, false]);
+    grid.destroy();
+    host.replaceChildren();
+    make({ widget: { watchlist: false, features: { dock: true } } });
+    expect(grid.getWidgets().map((w) => w.isFeatureOn('dock'))).toEqual([true, true]);
+  });
+
   it('switches the widget parts of every chart, and of the charts it adds later', () => {
     make();
     grid.setFeatures({ 'toolbar.screenshot': false, sidebar: false });

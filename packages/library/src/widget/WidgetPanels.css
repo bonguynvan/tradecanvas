@@ -1,0 +1,261 @@
+/* === The dock: the panels by the chart, and their rail === */
+
+/* In the body's row after the chart: the panel of the page open beside the chart, the rail at the outer edge
+   (both mirror in a right-to-left widget). */
+.tcw-dock {
+  position: relative;
+  display: flex;
+  flex: none;
+  min-height: 0;
+}
+
+/* The rail: as wide as the drawing tools on the other side, its buttons as theirs. */
+.tcw-dock-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  width: var(--tcw-sidebar-w);
+  padding: var(--tcw-space-3) 0;
+  border-inline-start: var(--tcw-border-w) solid var(--tcw-border);
+  background: var(--tcw-bg-surface);
+}
+
+.tcw-dock-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--tcw-control-h);
+  height: var(--tcw-control-h);
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-dock-btn svg {
+  width: var(--tcw-icon);
+  height: var(--tcw-icon);
+}
+
+.tcw-dock-btn:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+/* The page open: in ink on its wash, as a tool in use on the other side. */
+.tcw-dock-btn[aria-pressed='true'] {
+  background: var(--tcw-on-icon-bg, var(--tcw-accent-soft));
+  color: var(--tcw-on-icon-fg, var(--tcw-accent));
+}
+
+.tcw-dock-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* The edge in focus shows as its line, in ink: a ring round a strip this thin reads as two lines. */
+.tcw-dock-resize:focus-visible {
+  outline: none;
+}
+
+/* The panel: 296 wide to start (377 / sqrt(phi)), from 233 to 377. */
+.tcw-dock-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--tcw-dock-w, 296px);
+  min-height: 0;
+  border-inline-start: var(--tcw-border-w) solid var(--tcw-border);
+  background: var(--tcw-bg-surface);
+}
+
+/* Its edge by the chart: a strip to drag, a line in ink while in hand. */
+.tcw-dock-resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--tcw-space-3) * -1);
+  z-index: 3;
+  width: calc(var(--tcw-space-3) * 2);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.tcw-dock-resize::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--tcw-space-3) - 1px);
+  width: 2px;
+  background: transparent;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-dock-resize:hover::after,
+.tcw-dock-resize:active::after,
+.tcw-dock-resize:focus-visible::after {
+  background: var(--tcw-accent);
+}
+
+/* A page fills the panel and scrolls under its header; the floating panels it was lose their card. */
+.tcw-dock-panel > .tcw-dock-page {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+/* One header for every page: its title, its own buttons, and the close at the end. 34 tall (21 + 13). */
+.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  flex: none;
+  min-height: calc(var(--tcw-space-6) + var(--tcw-space-5));
+  margin: 0;
+  padding: 0 var(--tcw-space-3) 0 var(--tcw-space-5);
+  border-bottom: 1px solid var(--tcw-divider);
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight-strong);
+}
+
+.tcw-dock-page > :is(.tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close) {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--tcw-control-h);
+  height: var(--tcw-control-h);
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close):hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close):focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* What scrolled in a box of its own on a floating panel scrolls with the page here. */
+.tcw-dock-page :is(.tcw-alerts-list, .tcw-datawin-body, .tcw-watchlist-list) {
+  max-height: none;
+}
+
+.tcw-dock-page .tcw-watchlist-list {
+  flex: 1;
+}
+
+/* The watchlist was a bar of its own: its width and shadow are the panel's now. */
+.tcw-dock-panel > .tcw-watchlist {
+  width: auto;
+  border-inline-start: none;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+/* The symbol info's own padding sits under the header. */
+.tcw-dock-page.tcw-syminfo > .tcw-syminfo-body {
+  padding: var(--tcw-space-5);
+}
+
+/* While the rail shows, the toolbar leaves alerts and objects to it (unless its button for them is off). */
+.tcw-root:not([data-tcw-narrow]):not([data-tcw-off~='dock']):not([data-tcw-off~='dock.alerts']) > .tcw-toolbar [data-tcw-part~='toolbar.alerts'],
+.tcw-root:not([data-tcw-narrow]):not([data-tcw-off~='dock']):not([data-tcw-off~='dock.objectTree']) > .tcw-toolbar [data-tcw-part~='toolbar.objectTree'] {
+  display: none;
+}
+
+/* Narrow (a phone, a narrow column): no rail; the panel rises from the bottom over the chart, 61.8% tall. */
+.tcw-root[data-tcw-narrow] .tcw-dock-rail,
+.tcw-root[data-tcw-narrow] .tcw-dock-resize {
+  display: none;
+}
+
+.tcw-root[data-tcw-narrow] .tcw-dock {
+  position: static;
+}
+
+.tcw-root[data-tcw-narrow] .tcw-dock-panel {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  width: auto;
+  height: 61.8%;
+  border-inline-start: none;
+  border-top: var(--tcw-border-w) solid var(--tcw-border-strong);
+  border-radius: var(--tcw-dialog-radius) var(--tcw-dialog-radius) 0 0;
+  background: var(--tcw-bg-elevated);
+  box-shadow: var(--tcw-dialog-shadow);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) {
+  background: var(--tcw-bg-elevated);
+}
+
+/* The small buttons in a panel's rows: the browser's padding left their icons 8 px wide in a 20 px button. */
+:is(.tcw-tree-btn, .tcw-tree-add, .tcw-alerts-del, .tcw-watchlist-remove) {
+  padding: 0;
+}
+
+:is(.tcw-tree-btn, .tcw-tree-add, .tcw-alerts-del, .tcw-watchlist-remove) svg {
+  flex: none;
+}
+
+/* A page's title as the others': the watchlist's is its list's name, a menu. */
+.tcw-dock-page .tcw-watchlist-name {
+  height: var(--tcw-control-h);
+  padding: 0 var(--tcw-space-3);
+  margin-inline-start: calc(var(--tcw-space-3) * -1);
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: none;
+  letter-spacing: normal;
+  flex: 0 1 auto;
+}
+
+/* Its caret beside the name, the add and close buttons at the end. */
+.tcw-dock-page .tcw-watchlist-name::after {
+  margin-inline-start: var(--tcw-space-3);
+}
+
+.tcw-dock-page .tcw-watchlist-add {
+  margin-inline-start: auto;
+}
