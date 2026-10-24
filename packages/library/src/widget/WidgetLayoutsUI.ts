@@ -2,6 +2,7 @@ import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetLayoutsDialog } from './WidgetLayoutsDialog.js';
 import { fill, type Translator } from './i18n.js';
+import { MOD_KEY } from './WidgetHotkeySheet.js';
 import type { LayoutSession } from '../state/LayoutSession.js';
 import type { SavedLayoutSummary } from '../state/layoutStorage.js';
 
@@ -136,7 +137,7 @@ export class WidgetLayoutsUI {
     if (this.destroyed) return;
     const current = session.current();
     const entries: ContextMenuEntry[] = [
-      { id: 'save', label: t('layouts.save'), icon: 'save' },
+      { id: 'save', label: t('layouts.save'), icon: 'save', shortcut: `${MOD_KEY}+S` },
       { id: 'saveAs', label: t('layouts.saveAs'), icon: 'plus' },
     ];
     if (current) entries.push({ id: 'rename', label: t('layouts.rename'), icon: 'penLine' });

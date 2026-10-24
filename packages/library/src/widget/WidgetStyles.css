@@ -1741,176 +1741,6 @@
   box-shadow: 0 0 0 3px rgba(232, 80, 91, 0.2);
 }
 
-/* === Command Palette === */
-
-.tcw-cmd-palette {
-  position: fixed;
-  z-index: 102;
-  top: 18%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--tcw-bg-elevated);
-  border: var(--tcw-border-w) solid var(--tcw-border);
-  border-radius: var(--tcw-dialog-radius);
-  width: 560px;
-  max-width: 92vw;
-  max-height: 62vh;
-  max-height: 62dvh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--tcw-dialog-shadow);
-  overflow: hidden;
-  backdrop-filter: blur(var(--tcw-blur));
-  -webkit-backdrop-filter: blur(var(--tcw-blur));
-  animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
-}
-
-.tcw-cmd-header {
-  display: flex;
-  align-items: center;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--tcw-divider);
-  gap: 12px;
-}
-
-.tcw-cmd-icon {
-  color: var(--tcw-text-muted);
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-}
-
-.tcw-cmd-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: var(--tcw-font-size-lg);
-  font-family: inherit;
-  color: var(--tcw-text);
-  caret-color: var(--tcw-accent);
-  letter-spacing: -0.005em;
-}
-
-.tcw-cmd-input::placeholder {
-  color: var(--tcw-text-muted);
-}
-
-.tcw-cmd-hint {
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-  font-family: var(--tcw-font-mono);
-  border: 1px solid var(--tcw-border);
-  background: var(--tcw-bg-surface);
-  padding: 3px 7px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  box-shadow: inset 0 -1px 0 var(--tcw-border);
-}
-
-.tcw-cmd-list {
-  overflow-y: auto;
-  flex: 1;
-  padding: 6px;
-  max-height: 380px;
-}
-
-.tcw-cmd-category {
-  text-transform: var(--tcw-label-case);
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-  letter-spacing: var(--tcw-label-tracking);
-  padding: 10px 10px 4px;
-  font-weight: var(--tcw-weight-strong);
-}
-
-.tcw-cmd-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px;
-  font-size: var(--tcw-font-size);
-  color: var(--tcw-text-dim);
-  cursor: pointer;
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  text-align: start;
-  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
-  gap: 10px;
-  border-radius: var(--tcw-radius);
-  letter-spacing: -0.005em;
-}
-
-.tcw-cmd-item:hover,
-.tcw-cmd-item.tcw-selected {
-  background: var(--tcw-hover-bg);
-  color: var(--tcw-text);
-}
-
-.tcw-cmd-item.tcw-selected {
-  box-shadow: inset 2px 0 0 var(--tcw-accent);
-}
-
-.tcw-cmd-item.tcw-active .tcw-cmd-item-label {
-  color: var(--tcw-accent);
-  font-weight: var(--tcw-weight-strong);
-}
-
-.tcw-cmd-item-label {
-  flex: 1;
-}
-
-.tcw-cmd-check {
-  display: inline-flex;
-  color: var(--tcw-accent);
-}
-
-.tcw-cmd-kbd {
-  font-size: var(--tcw-font-size-xs);
-  font-family: var(--tcw-font-mono);
-  color: var(--tcw-text-muted);
-  background: var(--tcw-bg-surface);
-  border: 1px solid var(--tcw-border);
-  padding: 2px 6px;
-  border-radius: var(--tcw-tag-radius);
-  box-shadow: inset 0 -1px 0 var(--tcw-border);
-}
-
-.tcw-cmd-empty {
-  padding: 32px 16px;
-  text-align: center;
-  color: var(--tcw-text-muted);
-  font-size: var(--tcw-font-size);
-}
-
-/* A key and what it does, in a list dialog's footer: keys in the shortcut chips (.tcw-cmd-kbd). */
-.tcw-cmd-help {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-.tcw-cmd-help-text { margin-inline-start: 3px; }
-.tcw-cmd-key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  font-style: normal;
-}
-
-.tcw-cmd-footer {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 10px 18px;
-  border-top: 1px solid var(--tcw-divider);
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-  background: var(--tcw-bg-surface);
-}
-
 /* === Watchlist === */
 
 .tcw-watchlist {
@@ -2374,58 +2204,6 @@
   }
 }
 
-/* === Hotkey sheet === */
-
-.tcw-hotkey-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px 32px;
-}
-
-.tcw-hotkey-section .tcw-settings-section-title {
-  margin-bottom: 8px;
-}
-
-.tcw-hotkey-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--tcw-divider);
-}
-
-.tcw-hotkey-row:last-child {
-  border-bottom: none;
-}
-
-.tcw-hotkey-keys {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.tcw-hotkey-sep {
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-}
-
-.tcw-hotkey-label {
-  font-size: var(--tcw-font-size-sm);
-  color: var(--tcw-text-dim);
-  text-align: end;
-  letter-spacing: -0.005em;
-}
-
-@media (max-width: 640px) {
-  .tcw-hotkey-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-}
-
-
 /* === Responsive === */
 
 @media (max-width: 768px) {
@@ -2453,8 +2231,7 @@
     width: max(40px, var(--tcw-control-h));
     height: max(40px, var(--tcw-control-h));
   }
-  .tcw-modal,
-  .tcw-cmd-palette {
+  .tcw-modal {
     width: 94vw;
     border-radius: var(--tcw-dialog-radius);
   }
@@ -2474,8 +2251,7 @@
  * matches how every modern iOS/Android app handles overflow UI.
  */
 @media (max-width: 640px) {
-  .tcw-modal,
-  .tcw-cmd-palette {
+  .tcw-modal {
     top: auto;
     /* Above the on-screen keyboard (the widget sets it from visualViewport). */
     bottom: var(--tcw-keyboard-inset, 0px);
@@ -2498,8 +2274,7 @@
   }
 
   /* Visual "grab handle" affordance — a short pill at the top of every sheet */
-  .tcw-modal::before,
-  .tcw-cmd-palette::before {
+  .tcw-modal::before {
     content: '';
     display: block;
     width: 36px;
@@ -2517,14 +2292,12 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .tcw-modal,
-  .tcw-cmd-palette {
+  .tcw-modal {
     animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
   }
 
   /* Safe-area-aware footer padding for iPhone notch / home indicator */
-  .tcw-modal-footer,
-  .tcw-cmd-footer {
+  .tcw-modal-footer {
     padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
@@ -2533,18 +2306,9 @@
     min-height: 40px;
     padding-inline: 16px;
   }
-  .tcw-cmd-item {
-    padding: 12px 14px;
-    font-size: var(--tcw-font-size-lg);
-  }
   .tcw-dropdown-item {
     padding: 12px 12px;
     font-size: var(--tcw-font-size-lg);
-  }
-
-  /* Hotkey sheet — single column on phones */
-  .tcw-hotkey-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -3820,73 +3584,6 @@
 }
 .tcw-name-field { display: flex; flex-direction: column; gap: 6px; font-size: var(--tcw-font-size-sm); color: var(--tcw-text-dim); }
 .tcw-name-field .tcw-indi-input { width: 100%; height: 34px; font-size: var(--tcw-font-size); }
-.tcw-layouts-body { display: flex; flex-direction: column; gap: 10px; }
-.tcw-layouts-search { width: 100%; height: 32px; }
-.tcw-layouts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 50vh;
-  max-height: 50dvh;
-  overflow-y: auto;
-}
-.tcw-layouts-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: var(--tcw-radius);
-}
-.tcw-layouts-row:hover { background: var(--tcw-hover-bg); }
-.tcw-layouts-open {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 7px 8px;
-  border: none;
-  background: transparent;
-  color: var(--tcw-text);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  border-radius: var(--tcw-radius);
-}
-.tcw-layouts-open:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
-.tcw-layouts-name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  font-size: var(--tcw-font-size);
-  font-weight: var(--tcw-weight-strong);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tcw-layouts-open[aria-current="true"] .tcw-layouts-name { color: var(--tcw-accent); }
-.tcw-layouts-meta {
-  max-width: 100%;
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tcw-layouts-confirm {
-  padding: 4px 10px;
-  border: none;
-  border-radius: var(--tcw-control-radius);
-  background: var(--tcw-red);
-  color: #fff;
-  font: inherit;
-  font-size: var(--tcw-font-size-sm);
-  font-weight: var(--tcw-weight-strong);
-  cursor: pointer;
-}
-.tcw-layouts-confirm:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-red-soft); }
 
 /* --- Chart grid --- */
 .tcw-grid { background: var(--tcw-bg); }
@@ -4456,9 +4153,7 @@
 }
 
 /* Sheets and lists scroll on their own, without dragging the page behind them. */
-.tcw-modal,
-.tcw-cmd-palette,
-.tcw-cmd-list {
+.tcw-modal {
   overscroll-behavior: contain;
 }
 

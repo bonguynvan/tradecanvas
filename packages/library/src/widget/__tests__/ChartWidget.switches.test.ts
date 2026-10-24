@@ -348,6 +348,33 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(document.querySelector<HTMLInputElement>('.tcw-ss-input')?.value).toBe('a');
   });
 
+  it('offers the panels, the dialogs and the view in the command palette, each with its keys', () => {
+    make();
+    press();
+    key({ key: 'k', ctrlKey: true });
+    const row = (id: string) => document.querySelector<HTMLElement>(`.tcw-cp-row[data-id="${id}"]`);
+    expect(row('goToDate')?.querySelector('kbd')?.textContent).toBe('Alt+G');
+    expect(row('resetView')?.querySelector('kbd')?.textContent).toBe('Alt+R');
+    expect(row('invertScale')?.querySelector('kbd')?.textContent).toBe('Alt+I');
+    expect(row('symbolSearch')?.querySelector('kbd')?.textContent).toMatch(/^(Ctrl|⌘)\+P$/);
+    expect(row('hotkeys')?.querySelector('kbd')?.textContent).toBe('?');
+    expect(row('trendLine')?.querySelector('kbd')?.textContent).toBe('Alt+T');
+    expect(row('objectTree')).not.toBeNull();
+    row('alerts')!.click();
+    expect(widget.getOpenPanel()).toBe('alerts');
+  });
+
+  it('leaves out of the palette the commands switched off', () => {
+    make({ features: { goToDate: false, alerts: false, hotkeySheet: false } });
+    press();
+    key({ key: 'k', ctrlKey: true });
+    const ids = [...document.querySelectorAll<HTMLElement>('.tcw-cp-row')].map((r) => r.dataset.id);
+    expect(ids).not.toContain('goToDate');
+    expect(ids).not.toContain('alerts');
+    expect(ids).not.toContain('hotkeys');
+    expect(ids).toContain('resetView');
+  });
+
   it('stops typing a symbol on the chart', () => {
     make({ features: { symbolTyping: false } });
     press();

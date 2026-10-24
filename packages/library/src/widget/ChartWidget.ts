@@ -15,7 +15,7 @@ import { WidgetSettings, type SettingsTab } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
-import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
+import { MOD_KEY, WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
@@ -1292,7 +1292,10 @@ export class ChartWidget {
       onTimeframe: (tf) => this.handleTimeframe(tf),
       onAction: (id) => this.handleAction(id),
       onClose: () => {},
-    }, this.overlayHost, this.t);
+    }, this.overlayHost, this.t, {
+      list: () => readRecentCommands(),
+      add: (key) => writeRecentCommands([key, ...readRecentCommands().filter((k) => k !== key)]),
+    });
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.featureState.hotkeys && this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
@@ -1359,10 +1362,7 @@ export class ChartWidget {
         // Only fire when the user isn't typing into an input.
         if (isTyping() || !mine || !keyOn('hotkeys.help') || !this.featureState.hotkeySheet) return;
         e.preventDefault();
-        this.hotkeySheet?.open({
-          isOn: (name) => this.sheetKeyOn(name),
-          extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
-        });
+        this.openHotkeySheet();
       }
     };
     document.addEventListener('keydown', this.boundGlobalKeydown);
@@ -3533,12 +3533,14 @@ export class ChartWidget {
       });
     }
 
+    const toolKeys = toolShortcuts();
     for (const group of localizeToolGroups(DRAWING_TOOL_GROUPS, this.t)) {
       for (const tool of group.tools) {
         items.push({
           id: tool.value,
           label: tool.label,
           category: 'drawing',
+          shortcut: toolKeys[tool.value],
           active: this.state.activeTool === tool.value,
         });
       }
@@ -3553,19 +3555,46 @@ export class ChartWidget {
       });
     }
 
+    // The widget's own, with the keys the sheet lists for them.
     items.push(
-      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action', shortcut: '' },
-      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
-      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
-      { id: 'settings', label: this.t('action.settings'), category: 'action' },
-      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
-      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
+      { id: 'symbolSearch', label: this.t('hotkeys.symbolSearch'), category: 'action', shortcut: `${MOD_KEY}+P` },
+      { id: 'compare', label: this.t('compare.title'), category: 'action' },
+      { id: 'goToDate', label: this.t('hotkeys.goToDate'), category: 'action', shortcut: 'Alt+G' },
+      { id: 'resetView', label: this.t('chartMenu.resetView'), category: 'action', shortcut: 'Alt+R' },
+      { id: 'invertScale', label: this.t('hotkeys.invertScale'), category: 'action', shortcut: 'Alt+I' },
+      { id: 'saveLayout', label: this.t('hotkeys.saveLayout'), category: 'action', shortcut: `${MOD_KEY}+S` },
+      { id: 'watchlist', label: this.t('watchlist.title'), category: 'action' },
+      { id: 'alerts', label: this.t('alerts.title'), category: 'action' },
+      { id: 'objectTree', label: this.t('objects.title'), category: 'action' },
       { id: 'dataWindow', label: this.t('action.dataWindow'), category: 'action' },
       { id: 'symbolInfo', label: this.t('action.symbolInfo'), category: 'action' },
+      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action' },
+      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
+      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
+      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
+      { id: 'settings', label: this.t('action.settings'), category: 'action' },
+      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
       { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
+      { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: '?' },
     );
 
-    return items.filter((item) => item.category !== 'action' || this.commandOn(item.id));
+    return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
+  }
+
+  /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
+  private commandThere(id: string): boolean {
+    if (id === 'watchlist') return this.watchlist !== null;
+    if (id === 'compare') return this.adapter !== null;
+    if (id === 'saveLayout') return this.layoutSession !== null;
+    return true;
+  }
+
+  /** The shortcut sheet: the keys switched on, and the host's. */
+  private openHotkeySheet(): void {
+    this.hotkeySheet?.open({
+      isOn: (name) => this.sheetKeyOn(name),
+      extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
+    });
   }
 
   /** Whether a command's switch (when it has one) is on. */
@@ -3577,6 +3606,33 @@ export class ChartWidget {
   private handleAction(id: string): void {
     if (!this.commandOn(id)) return;
     switch (id) {
+      case 'symbolSearch':
+        this.openSymbolSearch();
+        break;
+      case 'compare':
+        void this.handleAddCompare();
+        break;
+      case 'goToDate':
+        this.toggleGoToDate();
+        break;
+      case 'resetView':
+        this.resetView();
+        break;
+      case 'invertScale':
+        this.changeSettings({ invertScale: !this.settingsState.invertScale });
+        this.settings?.refresh(this.settingsState);
+        break;
+      case 'saveLayout':
+        void this.saveLayout();
+        break;
+      case 'watchlist':
+      case 'alerts':
+      case 'objectTree':
+        this.openPanel(id);
+        break;
+      case 'hotkeys':
+        this.openHotkeySheet();
+        break;
       case 'screenshot':
         this.chart.screenshot();
         break;
@@ -4634,6 +4690,25 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
 }
 
 /** The page's localStorage, or null where it can't be used (private mode, SSR). */
+/** Where the command palette's recent commands are kept, in this browser, and how many. */
+const RECENT_COMMANDS_KEY = 'tcw:recentCommands';
+const RECENT_COMMANDS_KEPT = 10;
+
+function readRecentCommands(): string[] {
+  try {
+    const kept: unknown = JSON.parse(browserStorage()?.getItem(RECENT_COMMANDS_KEY) ?? '[]');
+    return Array.isArray(kept) ? kept.filter((k): k is string => typeof k === 'string').slice(0, RECENT_COMMANDS_KEPT) : [];
+  } catch {
+    return []; // unreadable or refused: none
+  }
+}
+
+function writeRecentCommands(keys: readonly string[]): void {
+  try {
+    browserStorage()?.setItem(RECENT_COMMANDS_KEY, JSON.stringify(keys.slice(0, RECENT_COMMANDS_KEPT)));
+  } catch { /* storage full or refused: the palette forgets */ }
+}
+
 /** Where the dock's width is kept, in this browser. */
 const DOCK_WIDTH_KEY = 'tcw:dockWidth';
 
