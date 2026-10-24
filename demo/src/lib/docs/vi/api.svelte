@@ -436,9 +436,10 @@ widget.destroy()`}</code></pre>
     <tr><td>Thanh công cụ</td><td>
       Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiện thành nút, cùng một menu có đủ mọi khung
       theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo (một hộp thoại: xem <a href={href('/docs/indicators')}>Chỉ báo</a>)
-      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, phát lại nến, cảnh báo, cây đối tượng, một menu Giao dịch
+      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, phát lại nến, một menu Giao dịch
       (lệnh mới, bracket Long và Short, sổ lệnh và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
-      hình. Phần nào không vừa thì gập vào “Thêm”.
+      hình; khi không có dải nút (trên điện thoại, hoặc với <code>{`features: { dock: false }`}</code>) thì có thêm
+      cảnh báo và cây đối tượng. Phần nào không vừa thì gập vào “Thêm”.
     </td></tr>
     <tr><td>Công cụ vẽ</td><td>
       Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là đường xu hướng) và có một ngôi sao trên mỗi
@@ -454,8 +455,33 @@ widget.destroy()`}</code></pre>
       Màu, độ dày và kiểu nét, cài đặt, cảnh báo, khoá, menu thêm và xoá. Kéo thanh này bằng tay nắm của nó thì nó ở
       yên chỗ đó cho hình vẽ tiếp theo; bấm đúp vào tay nắm để đưa nó về lại trên hình vẽ.
     </td></tr>
+    <tr><td>Ngăn bên</td><td>
+      Một dải nút ở mép ngoài, mỗi bảng một nút: danh mục theo dõi, cảnh báo, cây đối tượng, cửa sổ dữ liệu và thông
+      tin mã. Xem <a href="#dock">Ngăn bên</a>.
+    </td></tr>
   </tbody>
 </table>
+
+<h3 id="dock">Ngăn bên</h3>
+<p>
+  Các bảng của widget nằm cạnh biểu đồ, mỗi lúc một bảng, và mở từ dải nút ở mép ngoài (bên trái khi widget đảo
+  chiều từ phải sang trái). Bấm một nút trên dải thì bảng của nó mở ra, hoặc đóng lại nếu đó là bảng đang mở; nút
+  đóng trên mỗi bảng cũng đóng bảng đó. Khi widget rộng từ 987 px trở lên, danh mục theo dõi tự mở, cho tới khi bạn tự
+  mở hay đóng một bảng. Kéo mép bảng, hoặc dùng các phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu
+  296), được giữ lại trên trình duyệt này; bảng không bao giờ chiếm quá 38,2% hàng, phần còn lại dành cho biểu đồ.
+</p>
+<p>
+  Trên điện thoại, hoặc khi widget hẹp hơn 641 px, không có dải nút: bảng trượt từ dưới lên, phủ lên biểu đồ, lúc
+  đầu đóng và đóng khi nhấn Escape; bảng đang mở khi widget hẹp lại (xoay máy tính bảng) sẽ đóng. Khi đó cảnh báo và cây đối tượng mở từ thanh công cụ, thông tin mã mở từ nút <strong>ⓘ</strong>
+  cạnh mã, và bảng nào cũng mở được từ code của bạn. Các biểu đồ của một <code>ChartWidgetGrid</code> không có dải
+  nút riêng, trừ khi <code>widget.features</code> của nó bật <code>dock</code>.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+widget.getOpenPanel()           // the panel open, or null
+widget.closePanel()
+
+new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
+new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>
 
 <h3 id="search-dialogs">Tìm mã, So sánh và Đi tới</h3>
 <p>
@@ -624,7 +650,7 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
 
 <h3>Danh mục theo dõi</h3>
 <p>
-  Bảng bên phải gồm các danh sách mã, mỗi dòng có giá cuối, % thay đổi và một sparkline. Chuyển, tạo,
+  Một bảng trong ngăn bên, gồm các danh sách mã, mỗi dòng có giá cuối, % thay đổi và một sparkline. Chuyển, tạo,
   đổi tên và xoá danh sách từ menu của bảng; thêm mã từ ô tìm mã (+), bỏ mã, và sắp xếp lại bằng cách kéo
   hoặc Alt+↑/↓. Các dòng lấy giá từ <code>subscribeQuotes</code> của adapter, từ một nguồn giá của riêng bạn,
   hoặc từ những gì bạn đẩy vào.
@@ -653,7 +679,7 @@ widget.getQuote('AAPL')`}</code></pre>
 
 <h3>Thông tin mã</h3>
 <p>
-  Một bảng mở từ nút ⓘ trên thanh công cụ (hoặc từ bảng lệnh): tên của mã, giá cuối và mức thay đổi, trạng thái
+  Một bảng trong ngăn bên, mở từ nút ⓘ cạnh mã, từ dải nút hoặc từ bảng lệnh: tên của mã, giá cuối và mức thay đổi, trạng thái
   thị trường kèm đếm ngược tới lần mở hoặc đóng cửa kế tiếp, giá mở cửa, biên độ và khối lượng trong ngày, giá đóng cửa
   phiên trước, giá mua và giá bán, bước giá, tiền tệ, múi giờ và giờ giao dịch, cùng tin tức. Thanh trạng thái báo
   khi thị trường đóng cửa.
@@ -698,8 +724,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>Cây đối tượng</h3>
 <p>
-  Nút lớp (layers) trên thanh công cụ mở bảng cây đối tượng liệt kê mọi chỉ báo
-  và hình vẽ đang có. Chỉ báo có thể xoá; mỗi hình vẽ có nút
+  Nút lớp (layers) trên dải nút (trên thanh công cụ, khi không có dải nút) mở cây đối tượng
+  trong ngăn bên, liệt kê mọi chỉ báo và hình vẽ đang có. Chỉ báo có thể xoá; mỗi hình vẽ có nút
   hiện / ẩn, khoá / mở khoá, cài đặt và xoá, còn các nhóm được liệt kê cùng
   các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
   <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
@@ -804,7 +830,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Công tắc tính năng</h3>
-<p>126 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
+<p>132 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // một nút, một nhóm công cụ vẽ, mọi phím tắt
 
 widget.setFeatures({ sidebar: false, statusBar: false })

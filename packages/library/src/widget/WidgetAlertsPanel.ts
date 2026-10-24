@@ -53,6 +53,8 @@ export interface AlertsPanelCallbacks {
   formatTime?: (ms: number) => string;
   /** Now, in ms (an expiry is counted from it). */
   now?: () => number;
+  /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
+  onClose?: () => void;
 }
 
 /**
@@ -154,7 +156,7 @@ export class WidgetAlertsPanel {
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', this.t('alerts.close'));
     closeBtn.innerHTML = createIcon('x', 14);
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
     header.appendChild(title);
     header.appendChild(closeBtn);
     this.el.appendChild(header);
@@ -318,6 +320,11 @@ export class WidgetAlertsPanel {
     // Keep the prior selection if it still exists, else default to price.
     this.sourceSelect.value = this.sources.some((s) => s.channel === current) ? current : 'price';
     this.renderTargets();
+  }
+
+  /** The panel, for the dock to hold. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   isOpen(): boolean {

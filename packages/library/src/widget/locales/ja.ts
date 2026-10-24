@@ -782,6 +782,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'ladder.sellAt': '売り @ {price}',
   'ladder.buyAt': '買い @ {price}',
   'dataWindow.title': 'データウィンドウ',
+  'dock.rail': 'パネル',
+  'dock.resize': 'パネルの幅を変更',
   'dataWindow.hover': 'チャートにカーソルを合わせてください',
   'dataWindow.open': '始値',
   'dataWindow.high': '高値',

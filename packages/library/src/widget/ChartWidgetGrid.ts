@@ -450,6 +450,8 @@ export class ChartWidgetGrid {
       ...(this.uiTheme ? { ui: this.uiTheme } : {}),
       // The grid keeps the layouts, of all its charts at once.
       layouts: false,
+      // A rail of panels on every chart would narrow them all: off unless the grid's widget options turn it on.
+      features: { dock: false, ...shared.features, ...own.features },
       onSymbolChange: (symbol) => {
         own.onSymbolChange?.(symbol);
         shared.onSymbolChange?.(symbol);

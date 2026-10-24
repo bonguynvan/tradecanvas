@@ -435,9 +435,9 @@ widget.destroy()`}</code></pre>
     <tr><td>Toolbar</td><td>
       The symbol and its info; the intervals (the pinned ones as buttons, and a menu of them all by unit, minutes to
       months, a star on each to pin it); the chart type as its icon; Indicators (a dialog: see <a href={href('/docs/indicators')}>Indicators</a>), and Compare when there is a data adapter; undo and redo. On the
-      right: layouts, bar replay, alerts, the object tree, a Trade menu (a new order, long and short brackets, the
-      depth ladder and the account panel), then screenshot, settings, the theme and fullscreen. What doesn't fit
-      folds under “more”.
+      right: layouts, bar replay, a Trade menu (a new order, long and short brackets, the depth ladder and the
+      account panel), then screenshot, settings, the theme and fullscreen; alerts and the object tree too where
+      there is no rail (a phone, or <code>{`features: { dock: false }`}</code>). What doesn't fit folds under “more”.
     </td></tr>
     <tr><td>Drawing tools</td><td>
       Each group's menu names its tools' shortcuts (Alt+T a trend line) and has a star on each row to pin it to the
@@ -453,8 +453,33 @@ widget.destroy()`}</code></pre>
       Its colour, width and line style, settings, an alert, lock, more and delete. Drag it by its grip and it stays
       there for the next drawing; double-click the grip to put it back over the drawing.
     </td></tr>
+    <tr><td>Dock</td><td>
+      A rail at the outer edge with a button for each panel: the watchlist, alerts, the object tree, the data
+      window and the symbol info. See <a href="#dock">The dock</a>.
+    </td></tr>
   </tbody>
 </table>
+
+<h3 id="dock">The dock</h3>
+<p>
+  The widget's panels sit beside the chart, one at a time, opened from the rail at the outer edge (on the left in
+  a right-to-left widget). A rail button opens its panel, or shuts it when it is the one open; so does each
+  panel's close button. On a widget 987 px wide or more the watchlist opens by itself, until a panel is opened or
+  shut by hand. Drag the panel's edge, or use the arrow keys on it, for a width from 233 to 377 px (296 to start),
+  kept in this browser; it never takes more than 38.2% of the row, the chart keeping the rest.
+</p>
+<p>
+  On a phone, or in a widget narrower than 641 px, there is no rail: a panel rises from the bottom over the chart,
+  starts shut and shuts on Escape; a panel open as the widget turns narrow (a tablet turned) shuts. Alerts and the object tree open from the toolbar there, the symbol info from the
+  <strong>ⓘ</strong> by the symbol, and any panel from your own code. The charts of a
+  <code>ChartWidgetGrid</code> have no rail each, unless its <code>widget.features</code> turn <code>dock</code> on.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'; false if not there
+widget.getOpenPanel()           // the panel open, or null
+widget.closePanel()
+
+new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
+new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>
 
 <h3 id="search-dialogs">Symbol search, Compare and Go to</h3>
 <p>
@@ -621,7 +646,7 @@ const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code
 
 <h3>Watchlists</h3>
 <p>
-  A right-side panel of lists of symbols, each row with last price, % change and a sparkline. Lists
+  A panel of the dock: lists of symbols, each row with last price, % change and a sparkline. Lists
   are switched, created, renamed and deleted from its menu; symbols are added from the symbol search
   (+), removed, and reordered by dragging or Alt+↑/↓. Rows take quotes from the adapter's
   <code>subscribeQuotes</code>, a quote source of yours, or what you push.
@@ -650,7 +675,7 @@ widget.getQuote('AAPL')`}</code></pre>
 
 <h3>Symbol info</h3>
 <p>
-  A panel from the toolbar's ⓘ button (or the command palette): the symbol's names, last price and
+  A panel of the dock, from the ⓘ by the symbol, the rail, or the command palette: the symbol's names, last price and
   move, the market's status counting down to the next open or close, the day's open, range, volume,
   prior close, bid and ask, tick size, currency, zone and trading hours, and news. The status bar shows
   when the market is closed.
@@ -695,8 +720,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>Object tree</h3>
 <p>
-  The toolbar layers button opens an object-tree panel listing every active
-  indicator and drawing. Indicators can be removed; drawings get per-item
+  The rail's layers button (the toolbar's, where there is no rail) opens the
+  object tree in the dock, listing every active indicator and drawing. Indicators can be removed; drawings get per-item
   show / hide, lock / unlock, settings and delete, and groups are listed with
   their drawings under them. Enabled by default — disable with
   <code>objectTree: false</code>. The drawing controls map to:
@@ -800,7 +825,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Feature switches</h3>
-<p>126 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
+<p>132 switches, every one on until turned off: a name without a dot is a whole capability, off wherever it shows; a dotted name is one place. They change while the widget runs. All of them, and the older options they stand for, are in <a href={href('/docs/customization')}>Customization</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })

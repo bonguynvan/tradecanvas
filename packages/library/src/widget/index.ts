@@ -29,6 +29,7 @@ export type {
   DrawingMenuItemsContext,
   IndicatorMenuItemsContext,
   WatchlistOptions,
+  WidgetPanel,
 } from './types.js';
 export { WIDGET_FEATURES } from './widgetFeatures.js';
 export type { WidgetFeature, WidgetFeatures } from './widgetFeatures.js';

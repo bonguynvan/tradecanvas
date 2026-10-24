@@ -782,6 +782,8 @@ export const SK_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Predať @ {price}',
   'ladder.buyAt': 'Kúpiť @ {price}',
   'dataWindow.title': 'Okno údajov',
+  'dock.rail': 'Panely',
+  'dock.resize': 'Zmeniť šírku panelu',
   'dataWindow.hover': 'Prejdite kurzorom nad graf',
   'dataWindow.open': 'Otvorenie',
   'dataWindow.high': 'Maximum',

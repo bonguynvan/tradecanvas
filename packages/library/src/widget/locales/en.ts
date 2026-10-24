@@ -799,6 +799,8 @@ export const EN_MESSAGES = {
   'ladder.sellAt': 'Sell @ {price}',
   'ladder.buyAt': 'Buy @ {price}',
   'dataWindow.title': 'Data window',
+  'dock.rail': 'Panels',
+  'dock.resize': 'Resize the panel',
   'dataWindow.hover': 'Hover the chart',
   'dataWindow.open': 'Open',
   'dataWindow.high': 'High',

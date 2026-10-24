@@ -678,7 +678,8 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   },
 });
 widget.addToWatchlist('BNBUSDT', 'alts');
-widget.toggleSymbolInfo(true);         // price, market status, the day, hours, news
+widget.openPanel('symbolInfo');        // price, market status, the day, hours, news
+widget.openPanel('watchlist');         // the panels share the dock beside the chart; on a phone it starts shut
 await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's trades
 
 // Your own feed's quotes instead
@@ -688,4 +689,6 @@ console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', session
 
 Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
 `setQuotes`); tick timeframes need a feed with `fetchTrades` and
-`subscribeTrades`.
+`subscribeTrades`. The watchlist, alerts, object tree, data window and symbol
+info are panels of one dock beside the chart, opened from a rail at its edge or
+with `widget.openPanel(...)`; `features: { dock: false }` drops the rail.

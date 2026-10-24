@@ -16,6 +16,8 @@ export interface DataWindowModel {
 
 export interface DataWindowCallbacks {
   formatPrice: (price: number) => string;
+  /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
+  onClose?: () => void;
 }
 
 /**
@@ -45,7 +47,7 @@ export class WidgetDataWindow {
     closeBtn.className = 'tcw-datawin-close';
     closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
     header.appendChild(title);
     header.appendChild(closeBtn);
     this.el.appendChild(header);
@@ -55,6 +57,11 @@ export class WidgetDataWindow {
     this.el.appendChild(this.bodyEl);
 
     host.appendChild(this.el);
+  }
+
+  /** The panel, for the dock to hold. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   isOpen(): boolean {

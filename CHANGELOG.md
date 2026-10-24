@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### The dock: the panels beside the chart
+
+The watchlist, alerts, the object tree, the data window and the symbol info are panels of one dock beside the chart, in the Print look, no longer cards floating over it (the watchlist no longer a bar of its own).
+
+- **A rail** at the outer edge has a button for each panel: it opens its panel in place of the one open, or shuts it when it is the one open. Each panel's close button shuts it too. The arrow keys, Home and End move along the rail, which always keeps a Tab stop on a button that shows. In a right-to-left widget the dock sits on the left.
+- **The watchlist opens by itself** on a widget 987 px wide or more (610 for the chart, 377 for the panel), until a panel is opened or shut by hand.
+- **The panel** is 296 px wide to start, from 233 to 377: drag its edge, or use the arrow keys, Home and End on it. The width is kept in this browser. It never takes more than 38.2% of its row: the chart keeps the rest.
+- **Every panel has one header**: its title, its own buttons and a close button. The watchlist's title is its list's name and menu; its + is an icon now.
+- **On a phone**, or a widget narrower than 641 px, there is no rail: a panel rises from the bottom over the chart, 61.8% of its height, above the on-screen keyboard and under the toasts; it starts shut and shuts on Escape, and a panel open as the widget turns narrow (a tablet turned) shuts. Alerts and the object tree open from the toolbar there; while the rail shows, the toolbar hides its buttons for them, its "more" menu too. When a panel shuts, the keyboard goes back to its rail button, or to its toolbar button, or to "more".
+- The watchlist's sparklines are drawn again as its panel shows.
+- **The charts of a `ChartWidgetGrid`** have no rail each, unless `widget.features` turns `dock` on.
+- `widget.openPanel(panel)`, `widget.closePanel()` and `widget.getOpenPanel()`, with the type `WidgetPanel` (`'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo'`). `toggleSymbolInfo` opens and shuts it in the dock.
+- New switches: `dock` (the rail) and `dock.watchlist`, `dock.alerts`, `dock.objectTree`, `dock.dataWindow`, `dock.symbolInfo` (its buttons); 132 in all. A panel whose switch goes off shuts.
+- The icon set has `list` and `table`. The small buttons in the object tree's and the alerts' rows show their icons at their size (the browser's padding had squeezed them to 8 px).
+- Two new strings in all 30 languages.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.39.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.21.
+
 ### Symbol search, Compare and Go to
 
 The three dialogs that find a place on the chart are rebuilt in the Print look, as the indicators dialog is.
@@ -16,8 +38,6 @@ The three dialogs that find a place on the chart are rebuilt in the Print look, 
 - The month in a date field's calendar and the one in Go to are one piece, `MonthView`; a date field marked `data-tcw-calendar="inline"` keeps the widget's calendar popup shut.
 - A dialog's tabs keep the case their words have (“Custom range”, not “Custom Range”).
 - Twenty-one new strings in all 30 languages; the hotkey sheet lists A–Z. `compare.spread`, `compare.ratio`, `compare.correlation` and `compare.correlationLog` are gone (the menu that used them is).
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.38.0 (2026-10-24)
 

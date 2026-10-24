@@ -782,6 +782,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Verkopen @ {price}',
   'ladder.buyAt': 'Kopen @ {price}',
   'dataWindow.title': 'Gegevensvenster',
+  'dock.rail': 'Panelen',
+  'dock.resize': 'Breedte van het paneel wijzigen',
   'dataWindow.hover': 'Beweeg over de grafiek',
   'dataWindow.open': 'Open',
   'dataWindow.high': 'Hoog',

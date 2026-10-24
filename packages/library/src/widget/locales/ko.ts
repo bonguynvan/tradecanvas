@@ -782,6 +782,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'ladder.sellAt': '매도 @ {price}',
   'ladder.buyAt': '매수 @ {price}',
   'dataWindow.title': '데이터 창',
+  'dock.rail': '패널',
+  'dock.resize': '패널 너비 조절',
   'dataWindow.hover': '차트 위에 마우스를 올리세요',
   'dataWindow.open': '시가',
   'dataWindow.high': '고가',

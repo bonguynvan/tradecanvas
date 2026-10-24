@@ -4,7 +4,7 @@ import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetT
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch } from './types.js';
+import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch, WidgetPanel } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -53,7 +53,7 @@ import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { createIcon } from './icons.js';
 import { watchKeyboardInset } from './keyboardInset.js';
-import { watchNarrow } from './narrowMode.js';
+import { NARROW_WIDGET_PX, watchNarrow } from './narrowMode.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
@@ -63,6 +63,7 @@ import {
   withExtraTimeframes,
 } from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc, type GoToTarget } from './WidgetGoToDate.js';
+import { WidgetDock } from './WidgetDock.js';
 import { comparedEntries, compareWayOptions, isCompareWay, type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
@@ -131,6 +132,20 @@ const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '
 
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;
+
+/** The switch each of the dock's panels, but the watchlist (an option), goes with. */
+const PANEL_FEATURES = {
+  alerts: 'alerts',
+  objectTree: 'objectTree',
+  dataWindow: 'dataWindow',
+  symbolInfo: 'symbolInfo',
+} as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
+
+/** As wide as the chart's row must be for the watchlist to open by itself: 610 for the chart, 377 for the panel. */
+const DOCK_AUTO_OPEN_PX = 987;
+
+/** The toolbar's button for a panel, where it has one. */
+const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo' };
 
 /**
  * The Latin letter a plain key press types, for a symbol search started on
@@ -219,6 +234,14 @@ export class ChartWidget {
   };
   private commandPalette: WidgetCommandPalette | null = null;
   private symbolSearch: WidgetSymbolSearch | null = null;
+  /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
+  private dock: WidgetDock | null = null;
+  /** A panel was opened or shut by hand: the watchlist no longer opens by itself. */
+  private dockChosen = false;
+  /** Whether the widget was narrow when the dock last looked (null: not yet). */
+  private dockNarrow: boolean | null = null;
+  /** Follows the widget's width for the dock. */
+  private dockObserver: ResizeObserver | null = null;
   private hotkeySheet: WidgetHotkeySheet | null = null;
   private replayBar: WidgetReplayBar | null = null;
   private dragDrop: DragDropImporter | null = null;
@@ -504,6 +527,7 @@ export class ChartWidget {
       // The toolbar's own width may not change as the switch flips: fit it again.
       this.toolbar?.fit();
       if (!narrow) this.sidebar?.closeOverlay();
+      this.syncRail();
     });
     // The look: tokens and layout switches on the root and the modal portal
     // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
@@ -614,8 +638,16 @@ export class ChartWidget {
       failed: this.t('history.failed'),
     });
 
-    // Watchlist sidebar (right side). Appended AFTER the chart container so
-    // it sits to the right of the canvas in the flexbox row.
+    // The dock: after the chart in the row, so its panel sits beside the chart and its rail at the edge.
+    this.dock = new WidgetDock(body, {
+      labels: { rail: this.t('dock.rail'), resize: this.t('dock.resize') },
+      savedWidth: () => readDockWidth(),
+      saveWidth: (width) => writeDockWidth(width),
+      onPick: () => { this.dockChosen = true; },
+      railShown: () => this.railShown(),
+      focusAfterClose: (page) => this.panelFocusTarget(page as WidgetPanel),
+      room: () => body.clientWidth,
+    });
     if (options.watchlist) this.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
 
     this.root.appendChild(body);
@@ -688,6 +720,7 @@ export class ChartWidget {
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
     this.symbolInfoPanel = new WidgetSymbolInfo(this.root, this.t, {
+      onClose: () => this.closePanelByHand('symbolInfo'),
       onToggle: (open) => {
         this.toolbar?.setActive('symbolInfo', open);
         if (open) {
@@ -891,7 +924,10 @@ export class ChartWidget {
     });
 
     // Data Window — precise OHLCV + indicator values at the hovered bar.
-    this.dataWindow = new WidgetDataWindow(this.root, { formatPrice: (p) => this.formatAlertPrice(p) }, this.t);
+    this.dataWindow = new WidgetDataWindow(this.root, {
+      formatPrice: (p) => this.formatAlertPrice(p),
+      onClose: () => this.closePanelByHand('dataWindow'),
+    }, this.t);
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
@@ -1109,6 +1145,7 @@ export class ChartWidget {
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
     this.alertsPanel = new WidgetAlertsPanel(this.root, {
+      onClose: () => this.closePanelByHand('alerts'),
       onAdd: ({ price, condition, message, channel, label, options }) => {
         try {
           this.chart.addAlert(price, condition, message, channel, label, options);
@@ -1179,6 +1216,7 @@ export class ChartWidget {
       onClose: () => this.chart.endIndicatorEdit(),
     }, this.t);
     this.objectTree = new WidgetObjectTree(this.root, {
+      onClose: () => this.closePanelByHand('objectTree'),
       onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
       onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
       onToggleIndicatorVisible: (iid, visible) => {
@@ -1242,6 +1280,9 @@ export class ChartWidget {
     for (const event of ['indicatorAdd', 'indicatorRemove', 'indicatorChange'] as const) {
       this.chart.on(event, () => this.refreshCompareDialog());
     }
+
+    // Every panel made: into the dock, in the rail's order.
+    this.setupDock();
 
     // 8b. Command palette
     this.commandPalette = new WidgetCommandPalette({
@@ -1424,6 +1465,30 @@ export class ChartWidget {
     return quote ? { ...quote } : null;
   }
 
+  /**
+   * Open a panel of the dock beside the chart (in a sheet on a phone), in
+   * place of the one open. False when the widget hasn't it: no watchlist, or
+   * its switch off.
+   */
+  openPanel(panel: WidgetPanel): boolean {
+    const there = panel === 'watchlist' ? this.watchlist !== null : this.featureState[PANEL_FEATURES[panel]];
+    if (!there || !this.dock) return false;
+    this.dockChosen = true;
+    this.dock.open(panel);
+    return this.dock.current() === panel;
+  }
+
+  /** Shut the dock. */
+  closePanel(): void {
+    this.dockChosen = true;
+    this.dock?.close();
+  }
+
+  /** The panel open in the dock, or null. */
+  getOpenPanel(): WidgetPanel | null {
+    return (this.dock?.current() as WidgetPanel | null | undefined) ?? null;
+  }
+
   /** Open or close the symbol info panel (toggle when `open` is left out). */
   toggleSymbolInfo(open?: boolean): void {
     const panel = this.symbolInfoPanel;
@@ -1431,8 +1496,9 @@ export class ChartWidget {
     const opening = open ?? !panel.isOpen();
     // Switched off, it only closes.
     if (opening && !this.featureState.symbolInfo) return;
-    if (opening) panel.open();
-    else panel.close();
+    this.dockChosen = true;
+    if (opening) this.dock?.open('symbolInfo');
+    else this.dock?.closePage('symbolInfo');
   }
 
   /** The market's status in the status bar, and the panel when it's open. */
@@ -1507,7 +1573,9 @@ export class ChartWidget {
       onCreateList: (name) => store.create(name),
       onRenameList: (id, name) => store.rename(id, name),
       onDeleteList: (id) => store.remove(id),
+      onClose: () => this.closePanelByHand('watchlist'),
     }, {
+      close: t('common.close'),
       title: t('watchlist.title'),
       lists: t('watchlist.lists'),
       newList: t('watchlist.newList'),
@@ -1729,6 +1797,7 @@ export class ChartWidget {
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
+    this.dockObserver?.disconnect();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;
@@ -1785,6 +1854,7 @@ export class ChartWidget {
     this.onPageShown = null;
     this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
+    this.dock?.destroy();
     this.stopQuotes?.();
     this.stopQuotes = null;
     this.watchlist?.destroy();
@@ -2199,10 +2269,10 @@ export class ChartWidget {
   private closeSwitchedOff(turnedOff: (name: WidgetFeature) => boolean): void {
     if (turnedOff('replay') && this.replayBar?.isMounted()) this.exitReplay();
     const closers: readonly [WidgetFeature, () => void][] = [
-      ['alerts', () => this.alertsPanel?.close()],
-      ['objectTree', () => this.objectTree?.close()],
-      ['symbolInfo', () => this.symbolInfoPanel?.close()],
-      ['dataWindow', () => this.dataWindow?.close()],
+      ['alerts', () => this.dock?.closePage('alerts')],
+      ['objectTree', () => this.dock?.closePage('objectTree')],
+      ['symbolInfo', () => this.dock?.closePage('symbolInfo')],
+      ['dataWindow', () => this.dock?.closePage('dataWindow')],
       ['accountPanel', () => this.toggleAccountPanel(false)],
       ['orderTicket', () => this.orderTicket?.close()],
       ['depthLadder', () => this.depthLadder?.close()],
@@ -2308,6 +2378,7 @@ export class ChartWidget {
     this.toolbar?.setSymbolSearch(this.featureState.symbolSearch);
     this.toolbar?.tidy();
     this.sidebar?.tidy();
+    this.syncRail();
   }
 
   /**
@@ -2889,8 +2960,8 @@ export class ChartWidget {
 
   private toggleAlerts(): void {
     if (!this.alertsPanel || !this.featureState.alerts) return;
-    this.alertsPanel.toggle();
-    if (this.alertsPanel.isOpen()) this.refreshAlerts();
+    this.dockChosen = true;
+    this.dock?.toggle('alerts');
   }
 
   private handleToggleFavorite(tool: DrawingToolType): void {
@@ -3003,14 +3074,137 @@ export class ChartWidget {
 
   private toggleDataWindow(): void {
     if (!this.dataWindow || !this.featureState.dataWindow) return;
-    this.dataWindow.toggle();
-    if (this.dataWindow.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+    this.dockChosen = true;
+    this.dock?.toggle('dataWindow');
   }
 
   private toggleObjects(): void {
     if (!this.objectTree || !this.featureState.objectTree) return;
-    this.objectTree.toggle();
-    if (this.objectTree.isOpen()) this.refreshObjects();
+    this.dockChosen = true;
+    this.dock?.toggle('objectTree');
+  }
+
+  /**
+   * The dock's pages, in the rail's order: the watchlist (open to start
+   * with), alerts, objects, the data window and the symbol info. Each draws
+   * itself as it shows, and says so on the toolbar's button.
+   */
+  private setupDock(): void {
+    const dock = this.dock;
+    if (!dock) return;
+    if (this.watchlist) {
+      const list = this.watchlist;
+      // Hidden, its sparklines were drawn at no size: drawn again as it shows.
+      dock.addPage({ id: 'watchlist', label: this.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
+    }
+    const alerts = this.alertsPanel;
+    if (alerts) {
+      dock.addPage({
+        id: 'alerts', label: this.t('alerts.title'), icon: 'bell', element: alerts.element, parts: ['dock.alerts', 'alerts'],
+        onShow: () => {
+          alerts.openPanel();
+          this.refreshAlerts();
+          this.toolbar?.setActive('alerts', true);
+        },
+        onHide: () => {
+          alerts.close();
+          this.toolbar?.setActive('alerts', false);
+        },
+      });
+    }
+    const tree = this.objectTree;
+    if (tree) {
+      dock.addPage({
+        id: 'objectTree', label: this.t('objects.title'), icon: 'layers', element: tree.element, parts: ['dock.objectTree', 'objectTree'],
+        onShow: () => {
+          tree.openPanel();
+          this.refreshObjects();
+          this.toolbar?.setActive('objects', true);
+        },
+        onHide: () => {
+          tree.close();
+          this.toolbar?.setActive('objects', false);
+        },
+      });
+    }
+    const data = this.dataWindow;
+    if (data) {
+      dock.addPage({
+        id: 'dataWindow', label: this.t('dataWindow.title'), icon: 'table', element: data.element, parts: ['dock.dataWindow', 'dataWindow'],
+        onShow: () => {
+          data.openPanel();
+          data.render(this.buildDataWindowModel());
+        },
+        onHide: () => data.close(),
+      });
+    }
+    const info = this.symbolInfoPanel;
+    if (info) {
+      dock.addPage({
+        id: 'symbolInfo', label: this.t('symbolInfo.title'), icon: 'info', element: info.element, parts: ['dock.symbolInfo', 'symbolInfo'],
+        onShow: () => info.open(),
+        onHide: () => info.close(),
+      });
+    }
+    this.syncRail();
+    this.fitDockToWidth();
+    if (typeof ResizeObserver !== 'undefined') {
+      this.dockObserver = new ResizeObserver(() => this.fitDockToWidth());
+      this.dockObserver.observe(this.root);
+    }
+  }
+
+  /**
+   * The dock and the widget's width. Going narrow (a phone, a rotated
+   * tablet) shuts any panel: it would be a sheet over the chart. On a widget
+   * of 987 px or more the watchlist opens by itself, until a panel is opened
+   * or shut by hand.
+   */
+  private fitDockToWidth(): void {
+    const dock = this.dock;
+    const width = this.root.clientWidth;
+    if (!dock || width === 0) return;
+    const narrow = width < NARROW_WIDGET_PX;
+    const was = this.dockNarrow;
+    this.dockNarrow = narrow;
+    if (narrow) {
+      if (was !== true) dock.close();
+      return;
+    }
+    if (!this.dockChosen && this.watchlist && width >= DOCK_AUTO_OPEN_PX && dock.current() === null) dock.open('watchlist');
+  }
+
+  /** Whether the rail shows now: on, and the widget not narrow. */
+  private railShown(): boolean {
+    return this.featureState.dock && !this.root.hasAttribute('data-tcw-narrow');
+  }
+
+  /**
+   * The rail's Tab stop on a button that shows, and the toolbar's alerts and
+   * objects buttons hidden while the rail has its own for them (so the
+   * "more" menu leaves them out too).
+   */
+  private syncRail(): void {
+    this.dock?.syncRail();
+    const rail = this.railShown();
+    this.toolbar?.setRailed('alerts', rail && this.featureState['dock.alerts']);
+    this.toolbar?.setRailed('objects', rail && this.featureState['dock.objectTree']);
+    this.toolbar?.fit();
+  }
+
+  /** Where the keyboard goes when a panel shuts and the rail can't take it: its toolbar button, or "more" on a phone. */
+  private panelFocusTarget(page: WidgetPanel): HTMLElement | null {
+    const role = PANEL_TOOLBAR_ROLES[page];
+    const own = role ? this.root.querySelector<HTMLElement>(`.tcw-toolbar [data-role="${role}"]`) : null;
+    const narrow = this.root.hasAttribute('data-tcw-narrow');
+    if (own && !own.hidden && !(narrow && own.classList.contains('tcw-toolbar-overflow'))) return own;
+    return this.root.querySelector<HTMLElement>('.tcw-toolbar-more') ?? this.chartContainer;
+  }
+
+  /** A panel shut by its own close button: by hand. */
+  private closePanelByHand(page: WidgetPanel): void {
+    this.dockChosen = true;
+    this.dock?.closePage(page);
   }
 
   private openIndicatorSettings(instanceId: string): void {
@@ -4440,6 +4634,24 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
 }
 
 /** The page's localStorage, or null where it can't be used (private mode, SSR). */
+/** Where the dock's width is kept, in this browser. */
+const DOCK_WIDTH_KEY = 'tcw:dockWidth';
+
+function readDockWidth(): number | null {
+  try {
+    const kept = Number(browserStorage()?.getItem(DOCK_WIDTH_KEY) ?? NaN);
+    return Number.isFinite(kept) && kept > 0 ? kept : null;
+  } catch {
+    return null; // storage refused: the default width
+  }
+}
+
+function writeDockWidth(width: number): void {
+  try {
+    browserStorage()?.setItem(DOCK_WIDTH_KEY, String(width));
+  } catch { /* storage full or refused: the width lasts this session */ }
+}
+
 function browserStorage(): Storage | null {
   try {
     return typeof localStorage !== 'undefined' ? localStorage : null;

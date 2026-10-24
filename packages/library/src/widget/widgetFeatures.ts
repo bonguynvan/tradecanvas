@@ -10,7 +10,7 @@ import type { DrawingMenuAction } from './drawingMenu.js';
  */
 export const WIDGET_FEATURES = [
   // The bars.
-  'toolbar', 'sidebar', 'statusBar',
+  'toolbar', 'sidebar', 'statusBar', 'dock',
   // Capabilities, wherever they show.
   'alerts', 'objectTree', 'symbolInfo', 'symbolSearch', 'settings', 'indicatorSettings', 'drawingSettings',
   'dataWindow', 'commandPalette', 'hotkeySheet', 'goToDate', 'replay', 'screenshot', 'copyImage', 'shareView',
@@ -27,6 +27,8 @@ export const WIDGET_FEATURES = [
   'sidebar.forecasting', 'sidebar.annotation', 'sidebar.style', 'sidebar.magnet', 'sidebar.eraser',
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
   'sidebar.lockAll', 'sidebar.hideAll',
+  // The dock's rail: a button for each panel.
+  'dock.watchlist', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
   'statusBar.clock', 'statusBar.scale',

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>커스터마이징 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 126개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
+  <meta name="description" content="TradeCanvas를 내 것으로 만드는 모든 방법: 색, 위젯의 모양, 키로 지정하는 차트 모양, 위젯 부품을 켜고 끄는 132개 스위치, 직접 만든 버튼·메뉴·상태 항목, 문구, 플러그인, 헤드리스 차트." />
 </svelte:head>
 
 <h1>커스터마이징</h1>
@@ -81,7 +81,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
 <table>
   <thead><tr><th>묶음</th><th>스위치</th></tr></thead>
   <tbody>
-    <tr><td>바</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code></td></tr>
+    <tr><td>바</td><td><code>toolbar</code> <code>sidebar</code> <code>statusBar</code> <code>dock</code></td></tr>
     <tr><td>기능</td><td>
       <code>alerts</code> <code>objectTree</code> <code>symbolInfo</code> <code>symbolSearch</code> <code>settings</code>
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
@@ -100,6 +100,10 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
       <code>toolbar.alerts</code> <code>toolbar.screenshot</code> <code>toolbar.settings</code>
       <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
       <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
+    </td></tr>
+    <tr><td>도크</td><td>
+      <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
+      <code>dock.symbolInfo</code>
     </td></tr>
     <tr><td>그리기 사이드바</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

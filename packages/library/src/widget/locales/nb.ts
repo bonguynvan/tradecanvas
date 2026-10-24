@@ -798,6 +798,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Selg @ {price}',
   'ladder.buyAt': 'Kjøp @ {price}',
   'dataWindow.title': 'Datavindu',
+  'dock.rail': 'Paneler',
+  'dock.resize': 'Endre panelets bredde',
   'dataWindow.hover': 'Hold musepekeren over grafen',
   'dataWindow.open': 'Åpning',
   'dataWindow.high': 'Høy',

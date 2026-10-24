@@ -782,6 +782,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Bán @ {price}',
   'ladder.buyAt': 'Mua @ {price}',
   'dataWindow.title': 'Cửa sổ dữ liệu',
+  'dock.rail': 'Các bảng',
+  'dock.resize': 'Đổi độ rộng của bảng',
   'dataWindow.hover': 'Rê chuột lên biểu đồ',
   'dataWindow.open': 'Mở cửa',
   'dataWindow.high': 'Cao',

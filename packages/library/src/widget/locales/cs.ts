@@ -782,6 +782,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Prodat @ {price}',
   'ladder.buyAt': 'Koupit @ {price}',
   'dataWindow.title': 'Okno dat',
+  'dock.rail': 'Panely',
+  'dock.resize': 'Změnit šířku panelu',
   'dataWindow.hover': 'Najeďte kurzorem na graf',
   'dataWindow.open': 'Otevření',
   'dataWindow.high': 'Maximum',

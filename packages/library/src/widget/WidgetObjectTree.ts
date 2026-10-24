@@ -26,6 +26,8 @@ export interface ObjectTreeCompare {
 }
 
 export interface ObjectTreeCallbacks {
+  /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
+  onClose?: () => void;
   onRemoveIndicator: (instanceId: string) => void;
   onConfigureIndicator?: (instanceId: string) => void;
   onToggleIndicatorVisible?: (instanceId: string, visible: boolean) => void;
@@ -75,7 +77,7 @@ export class WidgetObjectTree {
     closeBtn.className = 'tcw-tree-close';
     closeBtn.setAttribute('aria-label', this.t('objects.close'));
     closeBtn.innerHTML = createIcon('x', 14);
-    closeBtn.addEventListener('click', () => this.close());
+    closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
     header.appendChild(title);
     header.appendChild(closeBtn);
     this.el.appendChild(header);
@@ -93,6 +95,11 @@ export class WidgetObjectTree {
     }
 
     host.appendChild(this.el);
+  }
+
+  /** The panel, for the dock to hold. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   isOpen(): boolean {

@@ -798,6 +798,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'מכירה @ {price}',
   'ladder.buyAt': 'קנייה @ {price}',
   'dataWindow.title': 'חלון נתונים',
+  'dock.rail': 'חלוניות',
+  'dock.resize': 'שינוי רוחב החלונית',
   'dataWindow.hover': 'יש לרחף מעל הגרף',
   'dataWindow.open': 'פתיחה',
   'dataWindow.high': 'גבוה',

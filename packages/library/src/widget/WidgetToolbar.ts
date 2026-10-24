@@ -426,6 +426,12 @@ export class WidgetToolbar {
     btn.setAttribute('aria-pressed', String(on));
   }
 
+  /** Hide the button of `role` while the dock's rail has its own for it (and leave it out of "more"). */
+  setRailed(role: string, railed: boolean): void {
+    const btn = this.el.querySelector<HTMLButtonElement>(`[data-role="${role}"]`);
+    if (btn) btn.hidden = railed;
+  }
+
   /** The layout open now on its button (`null`: none saved yet), with a dot while it has unsaved changes. */
   setLayout(name: string | null, dirty: boolean): void {
     const btn = this.el.querySelector<HTMLButtonElement>('[data-role="layouts"]');

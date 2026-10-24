@@ -798,6 +798,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'فروش @ {price}',
   'ladder.buyAt': 'خرید @ {price}',
   'dataWindow.title': 'پنجره داده‌ها',
+  'dock.rail': 'پنل‌ها',
+  'dock.resize': 'تغییر پهنای پنل',
   'dataWindow.hover': 'نشانگر ماوس را روی نمودار ببرید',
   'dataWindow.open': 'باز شدن',
   'dataWindow.high': 'بالاترین',

@@ -782,6 +782,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Jual @ {price}',
   'ladder.buyAt': 'Beli @ {price}',
   'dataWindow.title': 'Jendela data',
+  'dock.rail': 'Panel',
+  'dock.resize': 'Ubah lebar panel',
   'dataWindow.hover': 'Arahkan kursor ke grafik',
   'dataWindow.open': 'Pembukaan',
   'dataWindow.high': 'Tertinggi',

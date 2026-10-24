@@ -798,6 +798,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Jual @ {price}',
   'ladder.buyAt': 'Beli @ {price}',
   'dataWindow.title': 'Tetingkap data',
+  'dock.rail': 'Panel',
+  'dock.resize': 'Ubah lebar panel',
   'dataWindow.hover': 'Halakan tetikus ke atas carta',
   'dataWindow.open': 'Buka',
   'dataWindow.high': 'Tinggi',

@@ -782,6 +782,8 @@ export const PT_MESSAGES: WidgetMessages = {
   'ladder.sellAt': 'Vender @ {price}',
   'ladder.buyAt': 'Comprar @ {price}',
   'dataWindow.title': 'Janela de dados',
+  'dock.rail': 'Painéis',
+  'dock.resize': 'Redimensionar o painel',
   'dataWindow.hover': 'Passe o cursor sobre o gráfico',
   'dataWindow.open': 'Abertura',
   'dataWindow.high': 'Máxima',
