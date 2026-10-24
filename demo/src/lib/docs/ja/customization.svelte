@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>カスタマイズ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 125 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
+  <meta name="description" content="TradeCanvas を自分のものにするあらゆる方法：色、ウィジェットの見た目、キーで指定するチャートの見た目、ウィジェットの部品を切り替える 126 個のスイッチ、独自のボタン・メニュー・ステータス項目、文言、プラグイン、ヘッドレスのチャート。" />
 </svelte:head>
 
 <h1>カスタマイズ</h1>
@@ -89,7 +89,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
       <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
-      <code>customTimeframes</code> <code>intervalTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
+      <code>customTimeframes</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code>
     </td></tr>
     <tr><td>ツールバー</td><td>

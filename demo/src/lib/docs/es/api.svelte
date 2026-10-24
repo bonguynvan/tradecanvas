@@ -198,7 +198,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
   las reglas vigentes de tu bolsa antes de confiar en él.
 </p>
 
-<h3>Comparar símbolos</h3>
+<h3 id="comparing-symbols">Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su
   precio en una escala propia, en un panel propio, o el diferencial o el ratio entre el cierre del
@@ -219,8 +219,10 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  En ChartWidget, el botón de comparar del árbol de objetos pide un símbolo y luego cómo mostrarlo:
-  cambio porcentual, escala propia, panel propio, diferencial, ratio, o la correlación de precios o de rendimientos.
+  En ChartWidget, Comparar en la barra de herramientas (y el + del árbol de objetos) abre el diálogo de comparar: busca
+  un símbolo, elige cómo mostrarlo en <strong>Añadir como</strong> (cambio porcentual, escala propia, panel propio,
+  diferencial, ratio, o la correlación de precios o de rendimientos) y añade tantos como quieras. Lo que ya se compara
+  aparece primero, cada uno con su modo y un botón para quitarlo. La próxima vez, el diálogo se abre con el último modo usado.
 </p>
 
 <h3>Exportar datos</h3>
@@ -461,12 +463,35 @@ widget.destroy()`}</code></pre>
   </tbody>
 </table>
 
+<h3 id="search-dialogs">Buscar símbolo, Comparar e Ir a</h3>
+<p>
+  <strong>Buscar símbolo</strong> se abre desde el símbolo de la barra de herramientas, con <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>
+  o al escribir una letra sobre el gráfico, con la que empieza la búsqueda. Lista tus <code>symbols</code> hasta que se
+  escribe algo, y luego consulta la búsqueda de tu feed (<code>searchSymbols</code>, o la del adaptador) cuando dejas de
+  escribir: el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. Los resultados de más de un
+  tipo (acciones y cripto, por ejemplo) se pueden reducir a uno. Los nombres que una búsqueda dio a conocer se quedan para
+  la lista con la que se abre. Con <code>{`features: { symbolTyping: false }`}</code>, las letras escritas sobre el gráfico
+  no abren la búsqueda.
+</p>
+<p>
+  <strong>Comparar</strong> es el mismo diálogo, con <strong>Añadir como</strong> bajo la búsqueda y lo que se compara
+  listado primero (ver <a href="#comparing-symbols">Comparar símbolos</a>).
+</p>
+<p>
+  <strong>Ir a</strong> (el calendario de la barra de estado, <kbd>Alt</kbd>+<kbd>G</kbd> o el menú del gráfico) tiene dos
+  pestañas. <strong>Fecha</strong> centra la barra de un día y una hora; <strong>Rango personalizado</strong> muestra de borde
+  a borde las barras entre dos de ellos, partiendo de las que hay en pantalla. El mes bajo los campos rellena el campo de
+  fecha que se está editando y, tras el inicio de un rango, pasa a su final. En barras diarias y mayores no hay hora que
+  indicar, y no se pueden elegir días posteriores a hoy. Las fechas y horas se leen en la zona horaria de la vista.
+</p>
+
 <h3>Atajos de teclado del widget</h3>
 <table>
   <thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
   <tbody>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Paleta de comandos (indicadores, tipos de gráfico, dibujos…)</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Búsqueda de símbolos: selector difuso sobre la lista de símbolos configurada</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Búsqueda de símbolos: tus símbolos, o la búsqueda de tu feed mientras escribes</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Busca un símbolo, empezando por la letra escrita (<code>{`features: { symbolTyping: false }`}</code> lo desactiva)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Guarda el diseño (pide un nombre la primera vez)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Escribe una temporalidad (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) y pulsa Enter (<code>intervalTyping: false</code> lo desactiva)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Línea de tendencia, línea horizontal, rayo horizontal, línea vertical, línea en cruz, retroceso de Fibonacci</td></tr>
@@ -725,10 +750,10 @@ chart.removeIndicator(instanceId)`}</code></pre>
   cambiar un periodo o un color.
 </p>
 <p>
-  La sección <strong>Comparar</strong> del árbol de objetos superpone otros
-  símbolos como líneas normalizadas. Con un adaptador en vivo, el botón + abre el
-  selector de símbolos, descarga el historial de ese símbolo mediante
-  <code>adapter.fetchHistory</code> y lo añade en modo porcentaje (para que
+  La sección <strong>Comparar</strong> del árbol de objetos lista los símbolos
+  superpuestos como líneas normalizadas. Con un adaptador en vivo, su botón + abre el
+  diálogo de comparar; un símbolo añadido en porcentaje descarga su historial mediante
+  <code>adapter.fetchHistory</code> (para que
   símbolos con precios muy distintos compartan un eje). Las comparaciones se
   vuelven a descargar automáticamente al cambiar de temporalidad. Equivalentes
   por código:
@@ -797,7 +822,7 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Interruptores de funciones</h3>
-<p>125 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
+<p>126 interruptores, todos encendidos hasta que se apagan: un nombre sin punto es una capacidad entera, apagada allí donde aparezca; un nombre con punto es un solo lugar. Cambian mientras el widget funciona. La lista completa y las opciones anteriores a las que equivalen están en <a href={href('/docs/customization')}>Personalización</a>.</p>
 <pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // un botón, una sección de dibujo, todos los atajos
 
 widget.setFeatures({ sidebar: false, statusBar: false })
