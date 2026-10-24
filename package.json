@@ -16,6 +16,7 @@
     "test:scripts": "node --test scripts/redirects.test.mjs scripts/mcp-catalog.test.mjs evals/lib/evals.test.mjs",
     "eval": "node evals/run.mjs",
     "eval:check": "node evals/check.mjs",
+    "eval:regrade": "node evals/regrade.mjs",
     "bench": "pnpm --filter @tradecanvas/core exec vitest bench --run",
     "bench:render": "node scripts/bench-render.mjs",
     "changeset": "changeset",

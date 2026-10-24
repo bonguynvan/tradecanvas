@@ -135,6 +135,25 @@ export function surfaceOf(file, cwd) {
   return 'project';
 }
 
+/** A shell wildcard (`*`, `?`) for one folder's name, as a pattern. */
+function wildcard(glob) {
+  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped.replace(/\*/g, '.*').replace(/\?/g, '.')}$`);
+}
+
+/**
+ * Whether `path` is in the project at `root`. A wildcard may stand for a
+ * folder above it: agents type their project's own path with a `*` for the
+ * run's time. One in the project's own name may as well match another
+ * run's (the other arm of the task), so it doesn't count.
+ */
+function inProject(path, root) {
+  const want = root.split('/');
+  const have = path.replace(/\/$/, '').split('/');
+  if (have.length < want.length) return false;
+  return want.every((name, i) => have[i] === name || (i < want.length - 1 && wildcard(have[i]).test(name)));
+}
+
 /**
  * Absolute paths in a shell command that aren't in the project: a drive
  * (`C:/…`, `/c/…`), the home folder (`~`), or the root. Relative paths stay
@@ -147,7 +166,32 @@ function outsidePaths(command, cwd) {
   const tokens = command.replace(/\\/g, '/').match(/(?:^|[\s"'=(])((?:[A-Za-z]:\/|\/[a-z]\/|~\/?)[^\s"';|&)]*)/g) ?? [];
   return tokens
     .map((t) => slashes(t.replace(/^[\s"'=(]/, '')))
-    .filter((p) => !p.startsWith(root) && !p.startsWith(gitBashRoot));
+    .filter((p) => !inProject(p, root) && !inProject(p, gitBashRoot));
+}
+
+/** A file of the packages' compiled JavaScript (not their types), named in a path, a glob or a command. */
+const COMPILED = /\.(c|m)?js\b/;
+const PACKAGES_DIST = /node_modules[\\/]@tradecanvas|[\\/]dist\b|^dist\b/;
+
+/**
+ * Whether a tool use went for the packages' compiled code by name: a `.js`
+ * file read, searched or listed. That is what an agent turns to when the
+ * docs and the types leave a behaviour out. A search of a whole `dist`
+ * folder, types and code alike, is not counted: it says nothing of which the
+ * agent was after.
+ */
+function looksAtCompiled(use, cwd) {
+  const input = use.input ?? {};
+  if (use.name === 'Read') return Boolean(input.file_path) && surfaceOf(input.file_path, cwd) === 'code' && COMPILED.test(input.file_path);
+  if (use.name === 'Grep') return input.type === 'js' || COMPILED.test(`${input.glob ?? ''} ${input.path ?? ''}`);
+  if (use.name === 'Glob') return COMPILED.test(input.pattern ?? '') && PACKAGES_DIST.test(`${input.path ?? ''} ${input.pattern ?? ''}`);
+  if (use.name === 'Bash') {
+    const command = input.command ?? '';
+    // Code an agent writes through the shell names its own files, not the packages'.
+    if (/<<\s*['"]?\w+/.test(command)) return false;
+    return PACKAGES_DIST.test(command) && COMPILED.test(command);
+  }
+  return false;
 }
 
 /** What a run reached outside its project: reads and searches, and shell commands that name another place. */
@@ -186,12 +230,16 @@ function count(names) {
  * A run in figures, from its stream: turns, tokens, cost, how it ended, and
  * what it looked at (files by source, the skill, the MCP server's tools), how
  * often it type-checked, what it was refused, and what it reached outside
- * its project.
+ * its project. Claude Code itself refuses a path outside the project; a
+ * command it refused reached nothing, and is only counted. A run cut off
+ * before its result lists every one.
  */
 export function summariseRun(events, cwd) {
   const result = events.find((e) => e.type === 'result');
   const init = events.find((e) => e.type === 'system' && e.subtype === 'init');
   const uses = toolUses(events);
+  const refusedIds = new Set((result?.permission_denials ?? []).map((d) => d.tool_use_id));
+  const ran = uses.filter((u) => !refusedIds.has(u.id));
   const reads = uses.filter((u) => u.name === 'Read' && u.input?.file_path).map((u) => surfaceOf(u.input.file_path, cwd));
   return {
     ok: Boolean(result) && !result.is_error && result.subtype === 'success',
@@ -203,11 +251,13 @@ export function summariseRun(events, cwd) {
     tokens: tokensOf(result),
     tools: count(uses.map((u) => u.name)),
     surfaces: count(reads.filter((s) => !['own', 'project', 'outside'].includes(s))),
+    compiled: ran.filter((u) => looksAtCompiled(u, cwd)).length,
     skills: uses.filter((u) => u.name === 'Skill').map((u) => u.input?.skill ?? u.input?.command ?? '?'),
     mcpTools: uses.filter((u) => u.name.startsWith('mcp__')).map((u) => u.name.split('__').slice(2).join('__')),
     typechecks: uses.filter((u) => u.name === 'Bash' && /typecheck|\btsc\b/.test(u.input?.command ?? '')).length,
     denied: (result?.permission_denials ?? []).map((d) => `${d.tool_name}: ${d.tool_input?.command ?? JSON.stringify(d.tool_input ?? {})}`),
-    leaks: leaksOf(uses, cwd),
+    leaks: leaksOf(ran, cwd),
+    leaksRefused: leaksOf(uses.filter((u) => refusedIds.has(u.id)), cwd).length,
     answer: result?.result ?? '',
   };
 }

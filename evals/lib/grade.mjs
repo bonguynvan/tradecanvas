@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REPO } from './workspace.mjs';
@@ -60,6 +60,8 @@ function behaviour(ws, task) {
  * near miss scores more than nothing.
  */
 export function grade(ws, task) {
+  // What an answer graded here before emitted would run in place of one whose type check emits nothing.
+  rmSync(join(ws, '.grade'), { recursive: true, force: true });
   const typecheck = typeCheck(ws, task);
   const run = behaviour(ws, task);
   const passed = run.checks.filter((c) => c.pass).length;

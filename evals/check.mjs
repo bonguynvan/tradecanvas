@@ -37,5 +37,5 @@ for (const task of tasks) {
   }
 }
 rmSync(root, { recursive: true, force: true });
-console.log(`\n${failed ? `${failed} grader problem(s)` : 'every grader passes the right answers and fails the wrong ones'} (${tasks.length} tasks)`);
+console.log(`\n${failed ? `${failed} grader problem(s)` : 'every grader passes the right answers and fails the wrong ones'} (${tasks.length} task${tasks.length === 1 ? '' : 's'})`);
 process.exit(failed ? 1 : 0);

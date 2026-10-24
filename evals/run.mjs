@@ -129,7 +129,7 @@ const header = [
   `# TradeCanvas evals, ${stamp.slice(0, 10)}`,
   '',
   `TradeCanvas ${version}, model \`${opts.model}\`, ${opts.runs} run(s) per task and arm, ${rows.length} runs, $${spent.toFixed(2)} in all.${stopped ? ` Stopped at ${stopped}.` : ''}`,
-  'A cell: runs passed · mean turns · mean cost. Sources: runs that opened the package README, its types, the skill, or called the MCP server.',
+  'A cell: runs passed · mean turns · mean cost. Sources: runs that opened the package README, its types, its compiled code (read or searched), the skill, or called the MCP server.',
   '',
 ];
 writeFileSync(join(out, 'summary.md'), `${header.join('\n')}${summaryTable(rows)}\n`);

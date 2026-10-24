@@ -42,8 +42,9 @@ Each task runs in **arms**:
 Nothing of the person running the evals reaches the agent: no CLAUDE.md, no
 memory, none of their plugins, skills, hooks or MCP servers. TypeScript and
 React come from a copy outside the repo, so nothing in the project points
-at the reference answers; what a run reaches outside its project is listed
-in the summary.
+at the reference answers. Claude Code refuses a path outside the project;
+what a run tried there is counted in the summary, and what got through is
+listed.
 
 ## Running
 
@@ -52,6 +53,7 @@ pnpm build
 pnpm eval:check     # each grader passes the right answers and fails the wrong ones; free, in CI
 pnpm eval:check --pack   # the same in projects installed from the packed packages
 pnpm eval           # the agents: costs money, on your Claude Code login
+pnpm eval:regrade   # a finished run's answers through the graders as they are now; free
 ```
 
 `pnpm eval` takes:
@@ -69,10 +71,18 @@ pnpm eval           # the agents: costs money, on your Claude Code login
 | `--no-preflight` | off | skip checking every grader in installed projects before the first agent |
 
 Results go to `evals/results/<time>/` (not committed): `summary.md` (pass
-rate, turns, cost and tokens by task and arm, and which sources the agents
-opened), `runs.jsonl`, each run's transcript and answer.
+rate, turns, cost and tokens by task and arm, which sources the agents
+opened, what Claude Code refused them), `runs.jsonl`, each run's transcript
+and answer. A grader fixed after a run grades its answers again with
+`pnpm eval:regrade [evals/results/<time>]`, into `regraded.md` beside them:
+with the graders and the packages as this repo has them now (built, and
+linked rather than packed), so a library fixed since grades the old answers
+against the new code.
 
-What the evals turned up so far is in [FINDINGS.md](FINDINGS.md).
+The runs worth keeping are in [baselines](baselines): the first,
+[2026-10-24](baselines/2026-10-24-sonnet.md), is what the fixes are
+measured against. What the evals turned up so far is in
+[FINDINGS.md](FINDINGS.md).
 
 ## A task
 

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,7 @@ import { ALLOWED_TOOLS, agentArgs, isInfra, runAgent, summariseRun, surfaceOf } 
 import { summaryTable } from './report.mjs';
 import { forgetSessions, projectDirName } from './workspace.mjs';
 import { parseOptions } from './options.mjs';
+import { latestRun, regradeRow } from './regrade.mjs';
 
 test('a task file splits into its settings and its prompt', () => {
   const { meta, body } = parseFrontmatter('---\narea: chart\nmax_turns: 25\npackages: [analytics, react]\ntitle: "Live: ticks"\n---\n\nShow the bars.\n');
@@ -91,8 +93,8 @@ test('the summary shows each task by arm, and each arm’s totals', () => {
   assert.match(md, /\| bare \| 50% \| 0\.75 \| 8 \| \$0\.30 \| 2k \|/);
   assert.match(md, /\| skill \| 100% \| 1\.00 \| 4 \| \$0\.10 \| 1k \|/);
   // How many runs opened each source at least once.
-  assert.match(md, /\| bare \| 1\/2 \| 1\/2 \| 0\/2 \| 0\/2 \|/);
-  assert.match(md, /\| skill \| 0\/2 \| 0\/2 \| 2\/2 \| 0\/2 \|/);
+  assert.match(md, /\| bare \| 1\/2 \| 1\/2 \| 0\/2 \| 0\/2 \| 0\/2 \|/);
+  assert.match(md, /\| skill \| 0\/2 \| 0\/2 \| 0\/2 \| 2\/2 \| 0\/2 \|/);
 });
 
 test('each arm has the same tools, the skill arm the Skill tool besides; one shell on every system', () => {
@@ -134,6 +136,25 @@ test('what a run reaches outside its project is reported', () => {
   ]);
 });
 
+test('a command outside the project that Claude Code refused reached nothing: counted, not listed', () => {
+  const stream = [
+    { type: 'assistant', message: { content: [
+      { type: 'tool_use', id: 'a', name: 'Bash', input: { command: 'ls /c/Users' } },
+      { type: 'tool_use', id: 'b', name: 'Bash', input: { command: 'cat ~/notes.md' } },
+    ] } },
+    { type: 'result', subtype: 'success', is_error: false, num_turns: 3, permission_denials: [{ tool_name: 'Bash', tool_use_id: 'a', tool_input: { command: 'ls /c/Users' } }] },
+  ];
+  const run = summariseRun(stream, 'C:/tmp/ws');
+  assert.deepEqual(run.leaks, ['Bash cat ~/notes.md']);
+  assert.equal(run.leaksRefused, 1);
+});
+
+test('the summary counts what Claude Code refused, by arm', () => {
+  const row = (arm, denied, leaksRefused) => ({ task: 't', arm, pass: true, score: 1, turns: 6, costUsd: 0.2, tokens: { total: 1000 }, surfaces: {}, denied, leaksRefused });
+  const md = summaryTable([row('bare', ['Bash: a', 'Bash: b'], 1), row('bare', [], 0), row('skill', ['Bash: c'], 0)]);
+  assert.match(md, /Commands refused by Claude Code, a run: bare 1\.0, skill 1\.0\. 1 of them named a path outside the project\./);
+});
+
 test('a run that never got going is the setup’s failure, not the agent’s', () => {
   assert.equal(isInfra({ ok: false, turns: 0, subtype: 'no result' }, false), true);
   assert.equal(isInfra({ ok: false, turns: 1, subtype: 'error_during_execution' }, false), true);
@@ -156,6 +177,85 @@ test('the setup’s failures stay out of the rates, and are counted', () => {
 test('a run’s leaks show in the summary', () => {
   const rows = [{ task: 't', arm: 'bare', pass: true, score: 1, turns: 6, costUsd: 0.2, tokens: { total: 1000 }, surfaces: {}, leaks: ['Read D:/x'] }];
   assert.match(summaryTable(rows), /Outside the project: t\.bare\.\? Read D:\/x/);
+});
+
+test('a wildcard for a folder above the project still names the project; one for the project’s own name doesn’t', () => {
+  const cwd = 'C:/tmp/evals/2026-10-24/04-rsi.bare.1';
+  const stream = [{ type: 'assistant', message: { content: [
+    { type: 'tool_use', id: 'a', name: 'Bash', input: { command: 'cd C:/tmp/evals/*/04-rsi.bare.1/node_modules && ls' } },
+    { type: 'tool_use', id: 'b', name: 'Bash', input: { command: 'ls /c/tmp/evals/*/04-rsi.bare.1/src' } },
+    // Another run's project (the other arm of the same task) matches this one.
+    { type: 'tool_use', id: 'c', name: 'Bash', input: { command: 'ls C:/tmp/evals/*/04*/src' } },
+  ] } }];
+  assert.deepEqual(summariseRun(stream, cwd).leaks, ['Bash ls C:/tmp/evals/*/04*/src']);
+});
+
+test('a run that read or searched the packages’ compiled code is counted', () => {
+  const cwd = 'C:/tmp/ws';
+  const run = (input, name = 'Bash') => summariseRun([{ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'a', name, input }] } }], cwd).compiled;
+  assert.equal(run({ command: 'cd node_modules/@tradecanvas/chart/dist && grep -o "checkAlerts.{0,80}" index.js' }), 1);
+  assert.equal(run({ command: 'grep -rn "MARKET_HOSE =" node_modules/@tradecanvas/commons/dist --include=*.js' }), 1);
+  assert.equal(run({ pattern: 'followLivePrice', path: 'C:/tmp/ws/node_modules/@tradecanvas/chart/dist', glob: '*.js' }, 'Grep'), 1);
+  assert.equal(run({ pattern: 'MARKET_HOSE =', path: 'node_modules/@tradecanvas/commons/dist/index.js' }, 'Grep'), 1);
+  // A search of a whole folder, types and code alike, says nothing of which the agent was after.
+  assert.equal(run({ pattern: 'followLivePrice', path: 'node_modules/@tradecanvas/chart/dist' }, 'Grep'), 0);
+  assert.equal(run({ file_path: 'C:/tmp/ws/node_modules/@tradecanvas/react/dist/index.js' }, 'Read'), 1);
+  // The types, the project's own files, and code written through the shell are not.
+  assert.equal(run({ file_path: 'C:/tmp/ws/node_modules/@tradecanvas/chart/dist/Chart.d.ts' }, 'Read'), 0);
+  assert.equal(run({ pattern: 'x', path: 'node_modules/@tradecanvas/chart/dist', glob: '*.d.ts' }, 'Grep'), 0);
+  assert.equal(run({ command: 'cat package.json tsconfig.json' }), 0);
+  assert.equal(run({ command: "cat > src/main.ts <<'EOF'\nimport { x } from './util.js';\nEOF" }), 0);
+});
+
+test('the summary counts the runs that went to the compiled code', () => {
+  const rows = [
+    { task: 't', arm: 'bare', pass: true, score: 1, turns: 6, costUsd: 0.2, tokens: { total: 1000 }, surfaces: {}, compiled: 3 },
+    { task: 't', arm: 'bare', pass: true, score: 1, turns: 6, costUsd: 0.2, tokens: { total: 1000 }, surfaces: {}, compiled: 0 },
+  ];
+  assert.match(summaryTable(rows), /\| Arm \| readme \| types \| code \| skill \| mcp \|\n\|---\|---\|---\|---\|---\|---\|\n\| bare \| 0\/2 \| 0\/2 \| 1\/2 \| 0\/2 \| 0\/2 \|/);
+});
+
+const ROW = { task: 't', arm: 'skill', run: 1, pass: false, score: 0.5, costUsd: 1.5, turns: 4, tampered: false, infra: false, leaks: ['old'] };
+const GRADED = { pass: true, score: 1, typecheck: { ok: true, errors: [] }, error: null, checks: [{ name: 'a', pass: true }] };
+const RUN_EVENTS = [
+  { type: 'system', subtype: 'init', cwd: 'C:\\tmp\\evals\\then\\t.skill.1', model: 'm' },
+  { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'a', name: 'Read', input: { file_path: 'C:\\tmp\\evals\\then\\t.skill.1\\node_modules\\@tradecanvas\\chart\\README.md' } }] } },
+  { type: 'result', subtype: 'success', is_error: false, num_turns: 9, total_cost_usd: 0.07, permission_denials: [] },
+];
+
+test('a run graded again: the new grade, its figures read again from where it ran, its cost as charged', () => {
+  const row = regradeRow(ROW, { events: RUN_EVENTS, grade: () => GRADED });
+  assert.equal(row.pass, true);
+  assert.equal(row.score, 1);
+  assert.deepEqual(row.failed, []);
+  assert.equal(row.turns, 9);
+  // The paths in its stream are its project's, wherever the results are now.
+  assert.deepEqual(row.surfaces, { readme: 1 });
+  assert.deepEqual(row.leaks, []);
+  // A run cut off was charged its budget: the charge stands.
+  assert.equal(row.costUsd, 1.5);
+});
+
+test('a run graded again stays failed if it changed its setup; a setup failure and a missing answer keep their grade', () => {
+  assert.deepEqual(regradeRow({ ...ROW, tampered: true }, { events: RUN_EVENTS, grade: () => GRADED }).pass, false);
+  assert.equal(regradeRow({ ...ROW, tampered: true }, { events: RUN_EVENTS, grade: () => GRADED }).score, 0);
+  const infra = { ...ROW, infra: true };
+  assert.equal(regradeRow(infra, { events: RUN_EVENTS, grade: () => GRADED }), infra);
+  const unanswered = regradeRow(ROW, { events: RUN_EVENTS, grade: null });
+  assert.equal(unanswered.pass, false);
+  assert.equal(unanswered.turns, 9);
+});
+
+test('the run to grade again is the latest that finished, not the latest folder', () => {
+  const root = join(tmpdir(), 'tc-evals-latest');
+  rmSync(root, { recursive: true, force: true });
+  for (const [name, done] of [['2026-10-24T10-00-00', true], ['2026-10-24T11-00-00', true], ['2026-10-24T12-00-00', false]]) {
+    mkdirSync(join(root, name), { recursive: true });
+    if (done) writeFileSync(join(root, name, 'runs.jsonl'), '{}\n');
+  }
+  assert.equal(latestRun(root), join(root, '2026-10-24T11-00-00'));
+  assert.throws(() => latestRun(join(root, 'none')), /no finished run/);
+  rmSync(root, { recursive: true, force: true });
 });
 
 test('the options are numbers in range, or the run stops before it starts', () => {

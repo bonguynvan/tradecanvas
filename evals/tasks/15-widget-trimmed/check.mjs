@@ -11,8 +11,10 @@ export const checks = [
     assert.equal(shown.length, 0, 'a sidebar shows');
   }],
   ['no replay or compare button', ({ result }) => {
-    assert.equal(result.isFeatureOn('toolbar.replay'), false, 'replay is on');
-    assert.equal(result.isFeatureOn('toolbar.compare'), false, 'compare is on');
+    // The button's switch or its whole capability: either takes the button away.
+    const off = (capability) => !result.isFeatureOn(capability) || !result.isFeatureOn(`toolbar.${capability}`);
+    assert.ok(off('replay'), 'replay is on');
+    assert.ok(off('compare'), 'compare is on');
   }],
   ['only 1m, 5m, 15m and 1h to pick', ({ host }) => {
     const offered = [...new Set([...host.querySelectorAll('[data-tf]')].map((el) => el.dataset.tf))].sort();

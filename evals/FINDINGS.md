@@ -26,3 +26,39 @@ runs into.
 5. **A market's zone isn't the chart's.** `MARKET_HOSE` carries
    `timeZone: 'Asia/Ho_Chi_Minh'`, but `setMarket(MARKET_HOSE)` leaves the
    axis in the browser's zone; the zone has to be set again. (Task 10.)
+
+## From the baseline (2026-10-24, Sonnet)
+
+[The baseline](baselines/2026-10-24-sonnet.md): 96 runs, two failures, and
+where the agents had to read the compiled code to get on.
+
+6. **`onReady` runs inside the constructor.** The widget calls it before
+   `new ChartWidget(…)` returns, so `const widget = new ChartWidget(host, {
+   onReady: () => widget.openPanel('depthLadder') })` type-checks and throws
+   (`Cannot access 'widget' before initialization`). It has no doc comment
+   saying when it runs or that it gets only the chart. (Task 18, one run.)
+7. **The watchlist starts shut; not every word says so.** No panel of the
+   dock opens by itself, so a watchlist made and never opened is there and
+   unseen. The recipe's prose says the panels are "all shut to start with",
+   but its own code comment says "on a phone it starts shut", as if not
+   elsewhere; the `watchlist` option reads "A watchlist sidebar on the right"
+   and says nothing of opening it; the code's comment on the dock still says
+   the watchlist is "open to start with". (Task 20, one run.)
+8. **What the docs leave out, agents read in the compiled code**: 25 of 48
+   runs without the skill, 12 of 48 with it. Where the runs with the skill
+   did it too (both of them, but for task 06):
+   - alerts on a price fed by hand: that `updateLastBar` doesn't check them
+     (finding 2; task 07);
+   - a market preset's rules: `MARKET_HOSE`'s steps, limits and zone are
+     only in the JS, its type is `MarketConfig` (task 10);
+   - saving drawings: when `saveState` and the auto-save write, and under
+     which key (task 06);
+   - a widget with no feed: whether it connects to an exchange by itself
+     when `adapter` is left out (task 14);
+   - the React component: what a changed prop does (the data, the options)
+     and what unmounting does (task 21).
+9. **`isFeatureOn` reports a switch, not what shows.** With
+   `features: { replay: false }` the replay button is gone, yet
+   `isFeatureOn('toolbar.replay')` is `true`. The task 15 grader read it so
+   and failed three right answers; a host keeping its own menu in step with
+   the widget would be wrong the same way.
