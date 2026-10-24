@@ -139,6 +139,13 @@ export const DRAWING_MENU_FEATURES: Readonly<Record<DrawingMenuAction, readonly 
 
 /** The switch each command of the command palette needs on (by its action id). */
 export const COMMAND_FEATURES: Readonly<Record<string, WidgetFeature>> = {
+  symbolSearch: 'symbolSearch',
+  compare: 'compare',
+  goToDate: 'goToDate',
+  saveLayout: 'layouts',
+  alerts: 'alerts',
+  objectTree: 'objectTree',
+  hotkeys: 'hotkeySheet',
   screenshot: 'screenshot',
   copyImage: 'copyImage',
   toggleTheme: 'themeToggle',

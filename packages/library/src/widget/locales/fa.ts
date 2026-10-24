@@ -205,7 +205,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'میان‌برهای صفحه‌کلید',
   'hotkeys.footer': 'هر زمان ? را بزنید تا این برگه نمایش داده شود',
   'hotkeys.close': 'بستن',
-  'hotkeys.gotIt': 'متوجه شدم',
+  'hotkeys.search': 'جستجوی میان‌برها',
+  'hotkeys.noMatch': 'هیچ میان‌بری مطابقت ندارد',
   'hotkeys.group.searchNavigation': 'جستجو و پیمایش',
   'hotkeys.group.chartManipulation': 'کار با نمودار',
   'hotkeys.group.touch': 'لمسی (موبایل / تبلت)',
@@ -221,9 +222,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'common.hide': 'پنهان کردن',
   'common.lock': 'قفل',
   'common.unlock': 'باز کردن قفل',
-  'common.navigate': 'پیمایش',
   'common.open': 'باز کردن',
-  'common.select': 'انتخاب',
   'common.back': 'بازگشت',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'ابزارهای ترسیم',
   'palette.group.timeframe': 'تایم‌فریم‌ها',
   'palette.group.action': 'عملیات',
+  'palette.group.recent': 'اخیر',
   'action.screenshot': 'اسکرین‌شات',
   'action.copyImage': 'کپی تصویر نمودار',
   'action.toggleTheme': 'تغییر تم',

@@ -205,7 +205,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'Tastaturgenveje',
   'hotkeys.footer': 'Tryk på ? når som helst for at vise denne oversigt',
   'hotkeys.close': 'Luk',
-  'hotkeys.gotIt': 'Forstået',
+  'hotkeys.search': 'Søg i genveje',
+  'hotkeys.noMatch': 'Ingen genveje passer',
   'hotkeys.group.searchNavigation': 'Søgning og navigation',
   'hotkeys.group.chartManipulation': 'Betjening af grafen',
   'hotkeys.group.touch': 'Berøring (mobil / tablet)',
@@ -221,9 +222,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'common.hide': 'Skjul',
   'common.lock': 'Lås',
   'common.unlock': 'Lås op',
-  'common.navigate': 'Navigér',
   'common.open': 'Åbn',
-  'common.select': 'Vælg',
   'common.back': 'Tilbage',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'Tegneværktøjer',
   'palette.group.timeframe': 'Tidsrammer',
   'palette.group.action': 'Handlinger',
+  'palette.group.recent': 'Seneste',
   'action.screenshot': 'Skærmbillede',
   'action.copyImage': 'Kopiér billede af grafen',
   'action.toggleTheme': 'Skift tema',

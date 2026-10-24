@@ -231,6 +231,10 @@ export class WidgetSymbolSearch {
     const results = document.createElement('div');
     results.className = 'tcw-ss-results';
     results.appendChild(list);
+    // A press on a heading or between the rows keeps the keyboard in the search (a remove button takes it).
+    results.addEventListener('mousedown', (e) => {
+      if (!(e.target as Element).closest('button')) e.preventDefault();
+    });
     const live = document.createElement('div');
     live.className = 'tcw-ss-live tcw-visually-hidden';
     live.setAttribute('aria-live', 'polite');

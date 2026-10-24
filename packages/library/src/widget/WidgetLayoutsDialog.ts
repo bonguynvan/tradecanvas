@@ -38,7 +38,7 @@ export class WidgetLayoutsDialog {
     });
 
     const modal = document.createElement('div');
-    modal.className = 'tcw-modal tcw-modal-narrow tcw-layouts-dialog';
+    modal.className = 'tcw-modal tcw-layouts-dialog';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-labelledby', `tcw-layouts-title-${this.uid}`);
@@ -65,21 +65,27 @@ export class WidgetLayoutsDialog {
     closeBtn.addEventListener('click', () => this.close());
     header.append(title, closeBtn);
 
+    // The dialogs' search row: its icon, then the field.
+    const searchRow = document.createElement('label');
+    searchRow.className = 'tcw-ss-search tcw-layouts-search-row';
+    searchRow.innerHTML = createIcon('search', 16);
     this.search = document.createElement('input');
     this.search.type = 'search';
-    this.search.className = 'tcw-indi-input tcw-layouts-search';
+    this.search.className = 'tcw-layouts-search';
     this.search.placeholder = this.t('layouts.search');
     this.search.setAttribute('aria-label', this.t('layouts.search'));
+    this.search.autocomplete = 'off';
     this.search.addEventListener('input', () => this.render());
+    searchRow.appendChild(this.search);
 
     this.listEl = document.createElement('div');
     this.listEl.className = 'tcw-layouts-list';
     this.listEl.setAttribute('role', 'list');
 
     const body = document.createElement('div');
-    body.className = 'tcw-modal-body tcw-layouts-body';
-    body.append(this.search, this.listEl);
-    modal.append(header, body);
+    body.className = 'tcw-layouts-body';
+    body.appendChild(this.listEl);
+    modal.append(header, searchRow, body);
     this.backdrop.appendChild(modal);
     host.appendChild(this.backdrop);
   }
@@ -163,11 +169,16 @@ export class WidgetLayoutsDialog {
       fill(this.t('layouts.updated'), { time: this.callbacks.formatTime(layout.updatedAt) }),
     ].filter(Boolean).join(' — ');
     open.append(name, meta);
+    // The one open now: a check, and its name in ink; said in words to a screen reader.
     if (current) {
-      const badge = document.createElement('span');
-      badge.className = 'tcw-tag';
-      badge.textContent = this.t('layouts.current');
-      name.appendChild(badge);
+      const check = document.createElement('span');
+      check.className = 'tcw-layouts-check';
+      check.innerHTML = createIcon('check', 14);
+      const said = document.createElement('span');
+      said.className = 'tcw-visually-hidden';
+      said.textContent = this.t('layouts.current');
+      open.prepend(check);
+      open.appendChild(said);
     }
     open.addEventListener('click', () => {
       this.callbacks.onOpen(layout.id);

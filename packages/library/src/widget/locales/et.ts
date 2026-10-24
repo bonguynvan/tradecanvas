@@ -205,7 +205,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'Kiirklahvid',
   'hotkeys.footer': 'Selle ülevaate avamiseks vajuta igal ajal ?',
   'hotkeys.close': 'Sulge',
-  'hotkeys.gotIt': 'Selge',
+  'hotkeys.search': 'Otsi otseteid',
+  'hotkeys.noMatch': 'Ükski otsetee ei sobi',
   'hotkeys.group.searchNavigation': 'Otsing ja navigeerimine',
   'hotkeys.group.chartManipulation': 'Graafiku juhtimine',
   'hotkeys.group.touch': 'Puuteekraan (telefon / tahvelarvuti)',
@@ -221,9 +222,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'common.hide': 'Peida',
   'common.lock': 'Lukusta',
   'common.unlock': 'Vabasta',
-  'common.navigate': 'Navigeeri',
   'common.open': 'Ava',
-  'common.select': 'Vali',
   'common.back': 'Tagasi',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'Joonistustööriistad',
   'palette.group.timeframe': 'Intervallid',
   'palette.group.action': 'Toimingud',
+  'palette.group.recent': 'Hiljutised',
   'action.screenshot': 'Kuvatõmmis',
   'action.copyImage': 'Kopeeri graafiku pilt',
   'action.toggleTheme': 'Vaheta teemat',

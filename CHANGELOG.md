@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### The shortcut sheet, the command palette and layouts
+
+The last of the widget's dialogs in the Print look.
+
+- **The shortcut sheet** (`?`) is a dialog 610 wide with a search: find a shortcut by what it does or by its keys ("alt+g"). Each row says what it does, then its keys; a gesture (drag, double-click, pinch) is written as words, not drawn as a key. Groups keep together in two columns (one on a phone). The "Got it" button is gone: its foot says how to open it again. It gives the keyboard back to what opened it, and keeps its keys from the chart.
+- **The command palette** (Ctrl/⌘+K) is a dialog like the symbol search: the widget's own commands first, then the drawing tools, chart types, intervals and indicators, each with its keys at the end of its row (`Alt+T`, `Alt+G`). The commands used last come first until something is typed, kept in this browser. Searching ranks the matches, the group with the best one first. New commands: symbol search, compare, go to, reset the view, invert the price scale, save the layout, the watchlist, alerts and objects panels, and the shortcut sheet; each is left out with its switch (or without a feed, layouts or a watchlist). A row shows only keys that work: none while its key switch is off, none once a shortcut you added with `addHotkey` takes them. Ctrl/⌘+K closes it again, and a search finds keys typed with a space or a plus ("alt g"). The keys stay in its search; an input method's Enter and Escape are its own.
+- **Layouts**: the dialog is 480 wide with the dialogs' search row; the layout open is marked with a check and its name in ink (no "Open" tag), rename and delete show on the row in hand. The menu says Save's keys (Ctrl/⌘+S) while `hotkeys.save` is on.
+- On a phone the palette and the layouts dialog are sheets that stop above the on-screen keyboard. In the palette and the symbol search, a row the arrows reach scrolls in below its group's heading, and "no results" is said to a screen reader.
+- Three new strings in all 30 languages; `hotkeys.gotIt`, `common.navigate` and `common.select` (not used) are gone. The old palette's styles (`.tcw-cmd-*`) are gone.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.40.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.22.
+
 ### The dock: the panels beside the chart
 
 The watchlist, alerts, the object tree, the data window and the symbol info are panels of one dock beside the chart, in the Print look, no longer cards floating over it (the watchlist no longer a bar of its own).
@@ -17,8 +33,6 @@ The watchlist, alerts, the object tree, the data window and the symbol info are 
 - New switches: `dock` (the rail) and `dock.watchlist`, `dock.alerts`, `dock.objectTree`, `dock.dataWindow`, `dock.symbolInfo` (its buttons); 132 in all. A panel whose switch goes off shuts.
 - The icon set has `list` and `table`. The small buttons in the object tree's and the alerts' rows show their icons at their size (the browser's padding had squeezed them to 8 px).
 - Two new strings in all 30 languages.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.39.0 (2026-10-24)
 

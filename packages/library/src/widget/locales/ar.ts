@@ -205,7 +205,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'اختصارات لوحة المفاتيح',
   'hotkeys.footer': 'اضغط ? في أي وقت لعرض هذه القائمة',
   'hotkeys.close': 'إغلاق',
-  'hotkeys.gotIt': 'فهمت',
+  'hotkeys.search': 'ابحث في الاختصارات',
+  'hotkeys.noMatch': 'لا توجد اختصارات مطابقة',
   'hotkeys.group.searchNavigation': 'البحث والتنقل',
   'hotkeys.group.chartManipulation': 'التحكم في الرسم البياني',
   'hotkeys.group.touch': 'اللمس (الهاتف / الجهاز اللوحي)',
@@ -221,9 +222,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'common.hide': 'إخفاء',
   'common.lock': 'قفل',
   'common.unlock': 'إلغاء القفل',
-  'common.navigate': 'تنقّل',
   'common.open': 'فتح',
-  'common.select': 'اختيار',
   'common.back': 'رجوع',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'أدوات الرسم',
   'palette.group.timeframe': 'الأطر الزمنية',
   'palette.group.action': 'الإجراءات',
+  'palette.group.recent': 'الأخيرة',
   'action.screenshot': 'لقطة شاشة',
   'action.copyImage': 'نسخ صورة الرسم البياني',
   'action.toggleTheme': 'تبديل السمة',

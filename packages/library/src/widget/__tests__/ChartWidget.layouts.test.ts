@@ -64,8 +64,9 @@ const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
   return widget;
 };
 const layoutsButton = () => host.querySelector<HTMLButtonElement>('[data-role="layouts"]');
-const menuLabels = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu [role^=menuitem]')].map((b) => b.textContent);
-const pick = (label: string) => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu [role^=menuitem]')].find((b) => b.textContent === label)!.click();
+const menuItems = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu [role^=menuitem]')];
+const menuLabels = () => menuItems().map((b) => b.querySelector('.tcw-context-label')?.textContent);
+const pick = (label: string) => menuItems().find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!.click();
 const prompt = () => host.querySelector<HTMLFormElement>('.tcw-name-prompt')!;
 const typeName = (name: string) => {
   const input = prompt().querySelector('input')!;
@@ -97,6 +98,35 @@ describe('ChartWidget named layouts', () => {
     layoutsButton()!.click();
     await flush();
     expect(menuLabels()).toEqual(['Save layout', 'Save as…', 'Auto-save', 'Open layout…']);
+    // Save says its key, as the shortcut sheet does.
+    expect(menuItems()[0].getAttribute('aria-keyshortcuts')).toMatch(/^(Ctrl|⌘)\+S$/);
+  });
+
+  it('writes no key for Save in the menu while the keys are off', async () => {
+    make({ features: { hotkeys: false } });
+    layoutsButton()!.click();
+    await flush();
+    expect(menuItems()[0].hasAttribute('aria-keyshortcuts')).toBe(false);
+  });
+
+  it('marks the layout open in the dialog with a check, and its name in ink', async () => {
+    make();
+    await widget.getLayoutSession()!.saveAs('Alpha');
+    await storage.save({ id: 'b', name: 'Beta', symbol: 'BBB', timeframe: '1h', updatedAt: 1, content: '{}' });
+    layoutsButton()!.click();
+    await flush();
+    pick('Open layout…');
+    await flush();
+    const rows = [...host.querySelectorAll<HTMLElement>('.tcw-layouts-row')];
+    const alpha = rows.find((r) => r.querySelector('.tcw-layouts-name')?.textContent === 'Alpha')!;
+    const beta = rows.find((r) => r.querySelector('.tcw-layouts-name')?.textContent === 'Beta')!;
+    expect(alpha.querySelector('[aria-current="true"]')).not.toBeNull();
+    expect(alpha.querySelector('.tcw-layouts-check')).not.toBeNull();
+    expect(alpha.querySelector('.tcw-tag')).toBeNull();
+    expect(beta.querySelector('.tcw-layouts-check')).toBeNull();
+    expect(beta.querySelector('.tcw-layouts-meta')!.textContent).toContain('BBB · 1h');
+    // Its search is the dialogs' search row.
+    expect(host.querySelector('.tcw-layouts-dialog .tcw-ss-search input')).not.toBeNull();
   });
 
   it('asks for a name on the first save, then saves the chart under it', async () => {

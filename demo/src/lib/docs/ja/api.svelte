@@ -488,7 +488,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <table>
   <thead><tr><th>ショートカット</th><th>操作</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット（インジケーター、チャートタイプ、描画など）</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>コマンドパレット：ウィジェットのコマンドとそのショートカット（移動、表示のリセット、レイアウトの保存、各パネルなど）、描画ツール、チャートタイプ、時間足、インジケーター。最近使ったものが先頭に並びます</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>シンボル検索：設定したシンボル、または入力に応じたフィードの検索</td></tr>
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>入力した文字からシンボルを検索（<code>{`features: { symbolTyping: false }`}</code> で無効）</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>レイアウトを保存（初回は名前を尋ねます）</td></tr>
@@ -497,7 +497,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>表示をリセット：すべてのバーを表示し、価格スケールをそれに合わせます</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>価格スケールを反転</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>日付へ移動</td></tr>
-    <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧を表示</td></tr>
+    <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧。機能名でもキーでも検索できます</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
     <tr><td>ツールバーのシンボルをクリック</td><td>シンボル検索のモーダルを開きます</td></tr>

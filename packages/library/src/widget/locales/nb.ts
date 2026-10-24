@@ -205,7 +205,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'Hurtigtaster',
   'hotkeys.footer': 'Trykk på ? når som helst for å vise denne oversikten',
   'hotkeys.close': 'Lukk',
-  'hotkeys.gotIt': 'Forstått',
+  'hotkeys.search': 'Søk i snarveier',
+  'hotkeys.noMatch': 'Ingen snarveier passer',
   'hotkeys.group.searchNavigation': 'Søk og navigasjon',
   'hotkeys.group.chartManipulation': 'Betjening av grafen',
   'hotkeys.group.touch': 'Berøring (mobil / nettbrett)',
@@ -221,9 +222,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'common.hide': 'Skjul',
   'common.lock': 'Lås',
   'common.unlock': 'Lås opp',
-  'common.navigate': 'Naviger',
   'common.open': 'Åpne',
-  'common.select': 'Velg',
   'common.back': 'Tilbake',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'Tegneverktøy',
   'palette.group.timeframe': 'Tidsrammer',
   'palette.group.action': 'Handlinger',
+  'palette.group.recent': 'Nylige',
   'action.screenshot': 'Skjermbilde',
   'action.copyImage': 'Kopier bilde av grafen',
   'action.toggleTheme': 'Bytt tema',

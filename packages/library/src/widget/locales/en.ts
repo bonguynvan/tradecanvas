@@ -206,7 +206,8 @@ export const EN_MESSAGES = {
   'hotkeys.title': 'Keyboard shortcuts',
   'hotkeys.footer': 'Press ? anytime to show this sheet',
   'hotkeys.close': 'Close',
-  'hotkeys.gotIt': 'Got it',
+  'hotkeys.search': 'Search shortcuts',
+  'hotkeys.noMatch': 'No shortcuts match',
   'hotkeys.group.searchNavigation': 'Search & navigation',
   'hotkeys.group.chartManipulation': 'Chart manipulation',
   'hotkeys.group.touch': 'Touch (mobile / tablet)',
@@ -222,9 +223,7 @@ export const EN_MESSAGES = {
   'common.hide': 'Hide',
   'common.lock': 'Lock',
   'common.unlock': 'Unlock',
-  'common.navigate': 'Navigate',
   'common.open': 'Open',
-  'common.select': 'Select',
   'common.back': 'Back',
 
   // Settings rows
@@ -781,6 +780,7 @@ export const EN_MESSAGES = {
   'palette.group.drawing': 'Drawing tools',
   'palette.group.timeframe': 'Timeframes',
   'palette.group.action': 'Actions',
+  'palette.group.recent': 'Recent',
   'action.screenshot': 'Screenshot',
   'action.copyImage': 'Copy chart image',
   'action.toggleTheme': 'Toggle theme',

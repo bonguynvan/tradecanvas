@@ -205,7 +205,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'Pintasan papan kekunci',
   'hotkeys.footer': 'Tekan ? pada bila-bila masa untuk menunjukkan helaian ini',
   'hotkeys.close': 'Tutup',
-  'hotkeys.gotIt': 'Faham',
+  'hotkeys.search': 'Cari pintasan',
+  'hotkeys.noMatch': 'Tiada pintasan yang sepadan',
   'hotkeys.group.searchNavigation': 'Carian & navigasi',
   'hotkeys.group.chartManipulation': 'Kawalan carta',
   'hotkeys.group.touch': 'Sentuhan (telefon / tablet)',
@@ -221,9 +222,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'common.hide': 'Sembunyikan',
   'common.lock': 'Kunci',
   'common.unlock': 'Buka kunci',
-  'common.navigate': 'Navigasi',
   'common.open': 'Buka',
-  'common.select': 'Pilih',
   'common.back': 'Kembali',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'Alat lukisan',
   'palette.group.timeframe': 'Jangka masa',
   'palette.group.action': 'Tindakan',
+  'palette.group.recent': 'Terkini',
   'action.screenshot': 'Tangkapan skrin',
   'action.copyImage': 'Salin imej carta',
   'action.toggleTheme': 'Tukar tema',

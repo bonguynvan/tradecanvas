@@ -205,7 +205,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'hotkeys.title': 'קיצורי מקשים',
   'hotkeys.footer': 'אפשר ללחוץ על ? בכל עת כדי להציג את הדף הזה',
   'hotkeys.close': 'סגירה',
-  'hotkeys.gotIt': 'הבנתי',
+  'hotkeys.search': 'חיפוש קיצורים',
+  'hotkeys.noMatch': 'אין קיצורים תואמים',
   'hotkeys.group.searchNavigation': 'חיפוש וניווט',
   'hotkeys.group.chartManipulation': 'שליטה בגרף',
   'hotkeys.group.touch': 'מגע (נייד / טאבלט)',
@@ -221,9 +222,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'common.hide': 'הסתרה',
   'common.lock': 'נעילה',
   'common.unlock': 'ביטול נעילה',
-  'common.navigate': 'ניווט',
   'common.open': 'פתיחה',
-  'common.select': 'בחירה',
   'common.back': 'חזרה',
 
   // Settings rows
@@ -780,6 +779,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'palette.group.drawing': 'כלי ציור',
   'palette.group.timeframe': 'טווחי זמן',
   'palette.group.action': 'פעולות',
+  'palette.group.recent': 'אחרונים',
   'action.screenshot': 'צילום מסך',
   'action.copyImage': 'העתקת תמונת הגרף',
   'action.toggleTheme': 'החלפת ערכת נושא',

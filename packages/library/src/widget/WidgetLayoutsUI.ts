@@ -14,6 +14,8 @@ export interface LayoutsUIHost {
   t: Translator;
   toast: (message: string, kind?: 'info' | 'error') => void;
   formatTime: (ms: number) => string;
+  /** Save's keys, while they work ("Ctrl+S"); none to write none. */
+  saveKeys?: () => string | undefined;
 }
 
 /**
@@ -136,7 +138,7 @@ export class WidgetLayoutsUI {
     if (this.destroyed) return;
     const current = session.current();
     const entries: ContextMenuEntry[] = [
-      { id: 'save', label: t('layouts.save'), icon: 'save' },
+      { id: 'save', label: t('layouts.save'), icon: 'save', shortcut: this.host.saveKeys?.() },
       { id: 'saveAs', label: t('layouts.saveAs'), icon: 'plus' },
     ];
     if (current) entries.push({ id: 'rename', label: t('layouts.rename'), icon: 'penLine' });

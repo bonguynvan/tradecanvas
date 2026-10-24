@@ -675,6 +675,8 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A row the arrows reach scrolls in below its heading, not under it. */
+  scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5 - var(--tcw-space-3));
   padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
 }
 
@@ -980,5 +982,365 @@
 @media (hover: none) and (pointer: coarse) {
   .tcw-ss-foot {
     display: none;
+  }
+}
+
+/* === The shortcut sheet === */
+
+/* As wide and as still as the indicators dialog: 610, a fixed height while a search shortens the list. */
+.tcw-modal.tcw-hotkey-sheet {
+  width: 610px;
+  height: min(610px, 86vh);
+  height: min(610px, 86dvh);
+  max-height: none;
+}
+
+.tcw-hotkey-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--tcw-space-6) var(--tcw-space-5);
+  border-top: 1px solid var(--tcw-divider);
+  columns: 2;
+  column-gap: var(--tcw-space-7);
+}
+
+/* A group keeps together in its column, its name above its rows. */
+.tcw-hotkey-group {
+  break-inside: avoid;
+  padding-top: var(--tcw-space-5);
+}
+
+.tcw-hotkey-heading {
+  padding-bottom: var(--tcw-space-3);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+/* What it does on the left, its keys on the right, the keys in a column of their own. */
+.tcw-hotkey-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tcw-space-4);
+  min-height: calc(var(--tcw-space-6) + var(--tcw-space-3));
+  padding: var(--tcw-space-2) 0;
+}
+
+.tcw-hotkey-label {
+  min-width: 0;
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.4;
+}
+
+.tcw-hotkey-keys {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tcw-space-2);
+  flex: none;
+  max-width: 55%;
+}
+
+/* A key: its name in the mono face on a key's face. */
+.tcw-hotkey-key,
+.tcw-cp-key {
+  display: inline-block;
+  min-width: calc(var(--tcw-space-6) - var(--tcw-space-2));
+  padding: 0 var(--tcw-space-3);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-bottom-width: 2px;
+  border-radius: var(--tcw-tag-radius);
+  background: var(--tcw-bg);
+  color: var(--tcw-text-dim);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+  line-height: 1.6;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* A gesture is not a key: its words, quieter. */
+.tcw-hotkey-gesture {
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  white-space: nowrap;
+}
+
+.tcw-hotkey-sep {
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+}
+
+.tcw-hotkey-empty {
+  padding: var(--tcw-space-6) 0;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+}
+
+/* How to open it again, at its foot. */
+.tcw-hotkey-foot {
+  flex: none;
+  padding: var(--tcw-space-5) var(--tcw-space-6);
+  border-top: 1px solid var(--tcw-divider);
+  border-radius: 0 0 var(--tcw-dialog-radius) var(--tcw-dialog-radius);
+  background: var(--tcw-bg-surface);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+}
+
+/* === The command palette === */
+
+/* 610 wide, a third of the way down: a launcher, not a form; its search is the dialogs' search row. */
+.tcw-modal.tcw-cp {
+  top: 19.1%;
+  transform: translate(-50%, 0);
+  width: 610px;
+  max-height: min(610px, 76.4vh);
+  max-height: min(610px, 76.4dvh);
+  animation: none;
+}
+
+.tcw-cp .tcw-cp-search {
+  margin-top: var(--tcw-space-5);
+}
+
+.tcw-cp-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A row the arrows reach scrolls in below its group's heading, not under it. */
+  scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5);
+  padding: 0 var(--tcw-space-4) var(--tcw-space-4);
+  border-top: 1px solid var(--tcw-divider);
+}
+
+.tcw-cp-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--tcw-space-5) var(--tcw-space-4) var(--tcw-space-2);
+  background: var(--tcw-bg-elevated);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+
+.tcw-cp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-4);
+  min-height: var(--tcw-menu-item-h);
+  padding: 0 var(--tcw-space-4);
+  border-radius: var(--tcw-menu-item-radius);
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size);
+  cursor: pointer;
+}
+
+.tcw-cp-row.tcw-selected {
+  background: var(--tcw-hover-bg);
+}
+
+.tcw-cp-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What is on now: its name in ink, a check at the end. */
+.tcw-cp-row.tcw-on .tcw-cp-label {
+  color: var(--tcw-accent);
+}
+
+.tcw-cp-check {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--tcw-accent);
+}
+
+.tcw-cp-empty {
+  padding: var(--tcw-space-6) var(--tcw-space-4);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+}
+
+/* === Layouts === */
+
+/* 480, as the settings of an indicator: a list of names and when they were saved. */
+.tcw-modal.tcw-layouts-dialog {
+  width: 480px;
+  max-height: min(610px, 86vh);
+  max-height: min(610px, 86dvh);
+}
+
+.tcw-layouts-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
+  border-top: 1px solid var(--tcw-divider);
+}
+
+.tcw-layouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcw-space-1);
+}
+
+.tcw-layouts-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  padding-inline-end: var(--tcw-space-3);
+  border-radius: var(--tcw-menu-item-radius);
+}
+
+.tcw-layouts-row:hover,
+.tcw-layouts-row:focus-within {
+  background: var(--tcw-hover-bg);
+}
+
+/* A column for the check of the one open, so every name starts at the same place. */
+.tcw-layouts-open {
+  display: grid;
+  grid-template-columns: var(--tcw-space-5) minmax(0, 1fr);
+  column-gap: var(--tcw-space-3);
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  padding: var(--tcw-space-3) var(--tcw-space-4);
+  border: none;
+  border-radius: var(--tcw-menu-item-radius);
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.tcw-layouts-open:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+.tcw-layouts-name,
+.tcw-layouts-meta {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-layouts-name {
+  font-size: var(--tcw-font-size);
+  font-weight: var(--tcw-weight-strong);
+}
+
+.tcw-layouts-meta {
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.tcw-layouts-check {
+  display: inline-grid;
+  place-items: center;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  color: var(--tcw-accent);
+}
+
+.tcw-layouts-open[aria-current='true'] .tcw-layouts-name {
+  color: var(--tcw-accent);
+}
+
+/* Rename and delete show on the row in hand; always on a touch screen. */
+.tcw-layouts-row .tcw-account-actions {
+  display: flex;
+  gap: var(--tcw-space-1);
+  opacity: 0;
+  transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-layouts-row:is(:hover, :focus-within) .tcw-account-actions,
+.tcw-layouts-row .tcw-account-actions:has(.tcw-layouts-confirm) {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .tcw-layouts-row .tcw-account-actions {
+    opacity: 1;
+  }
+}
+
+.tcw-layouts-confirm {
+  height: var(--tcw-control-h);
+  padding: 0 var(--tcw-space-4);
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: var(--tcw-red);
+  /* White on the red in every theme, as the order ticket's sell button. */
+  color: #fff;
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight-strong);
+  cursor: pointer;
+}
+
+.tcw-layouts-confirm:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+/* A phone: the sheets as tall as they go, the shortcuts in one column. */
+@media (max-width: 640px) {
+  .tcw-modal.tcw-hotkey-sheet {
+    height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+  }
+
+  .tcw-hotkey-body {
+    columns: 1;
+    padding-inline: var(--tcw-space-4);
+  }
+
+  /* Their own heights outrank the sheet's: give them back its height, less the keyboard, and the palette its slide up. */
+  .tcw-modal.tcw-cp,
+  .tcw-modal.tcw-layouts-dialog {
+    max-height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    max-height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+  }
+
+  .tcw-modal.tcw-cp {
+    top: auto;
+    transform: none;
+    animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
+  }
+
+  .tcw-cp .tcw-cp-search {
+    margin-top: var(--tcw-space-3);
+  }
+
+  :is(.tcw-hotkey-search, .tcw-cp-search, .tcw-layouts-search-row) {
+    margin-inline: var(--tcw-space-4);
+  }
+
+  .tcw-cp-row {
+    min-height: 44px;
   }
 }
