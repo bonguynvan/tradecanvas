@@ -215,9 +215,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'common.hide': 'Ausblenden',
   'common.lock': 'Sperren',
   'common.unlock': 'Entsperren',
-  'common.navigate': 'Navigieren',
   'common.open': 'Öffnen',
-  'common.select': 'Auswählen',
   'common.back': 'Zurück',
 
   'settings.upBody': 'Körper steigend',

@@ -222,9 +222,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'common.hide': 'הסתרה',
   'common.lock': 'נעילה',
   'common.unlock': 'ביטול נעילה',
-  'common.navigate': 'ניווט',
   'common.open': 'פתיחה',
-  'common.select': 'בחירה',
   'common.back': 'חזרה',
 
   // Settings rows

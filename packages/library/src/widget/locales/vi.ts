@@ -215,9 +215,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'common.hide': 'Ẩn',
   'common.lock': 'Khoá',
   'common.unlock': 'Mở khoá',
-  'common.navigate': 'Di chuyển',
   'common.open': 'Mở',
-  'common.select': 'Chọn',
   'common.back': 'Quay lại',
 
   'settings.upBody': 'Thân nến tăng',

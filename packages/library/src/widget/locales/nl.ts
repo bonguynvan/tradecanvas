@@ -215,9 +215,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'common.hide': 'Verbergen',
   'common.lock': 'Vergrendelen',
   'common.unlock': 'Ontgrendelen',
-  'common.navigate': 'Navigeren',
   'common.open': 'Openen',
-  'common.select': 'Selecteren',
   'common.back': 'Terug',
 
   'settings.upBody': 'Lichaam stijgend',

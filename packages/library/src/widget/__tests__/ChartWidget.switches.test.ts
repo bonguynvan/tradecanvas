@@ -364,6 +364,21 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(widget.getOpenPanel()).toBe('alerts');
   });
 
+  it('writes in the palette only the keys that work: none with the keys off, none a host took', () => {
+    make({ features: { 'hotkeys.tools': false } });
+    widget.addHotkey({ keys: 'Alt+G', label: 'Mine', onPress: () => {} });
+    press();
+    key({ key: 'k', ctrlKey: true });
+    const row = (id: string) => document.querySelector<HTMLElement>(`.tcw-cp-row[data-id="${id}"]`);
+    expect(row('trendLine')?.querySelector('kbd')).toBeNull();
+    expect(row('goToDate')?.querySelector('kbd')).toBeNull();
+    expect(row('resetView')?.querySelector('kbd')?.textContent).toBe('Alt+R');
+    key({ key: 'k', ctrlKey: true });
+    widget.setFeatures({ hotkeys: false });
+    (widget as unknown as { toggleCommandPalette(): void }).toggleCommandPalette();
+    expect(document.querySelectorAll('.tcw-cp-row kbd')).toHaveLength(0);
+  });
+
   it('leaves out of the palette the commands switched off', () => {
     make({ features: { goToDate: false, alerts: false, hotkeySheet: false } });
     press();

@@ -223,9 +223,7 @@ export const EN_MESSAGES = {
   'common.hide': 'Hide',
   'common.lock': 'Lock',
   'common.unlock': 'Unlock',
-  'common.navigate': 'Navigate',
   'common.open': 'Open',
-  'common.select': 'Select',
   'common.back': 'Back',
 
   // Settings rows

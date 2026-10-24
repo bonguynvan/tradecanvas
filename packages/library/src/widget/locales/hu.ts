@@ -215,9 +215,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'common.hide': 'Elrejtés',
   'common.lock': 'Zárolás',
   'common.unlock': 'Feloldás',
-  'common.navigate': 'Navigálás',
   'common.open': 'Megnyitás',
-  'common.select': 'Kiválasztás',
   'common.back': 'Vissza',
 
   'settings.upBody': 'Emelkedő test',

@@ -102,6 +102,13 @@ describe('ChartWidget named layouts', () => {
     expect(menuItems()[0].getAttribute('aria-keyshortcuts')).toMatch(/^(Ctrl|⌘)\+S$/);
   });
 
+  it('writes no key for Save in the menu while the keys are off', async () => {
+    make({ features: { hotkeys: false } });
+    layoutsButton()!.click();
+    await flush();
+    expect(menuItems()[0].hasAttribute('aria-keyshortcuts')).toBe(false);
+  });
+
   it('marks the layout open in the dialog with a check, and its name in ink', async () => {
     make();
     await widget.getLayoutSession()!.saveAs('Alpha');

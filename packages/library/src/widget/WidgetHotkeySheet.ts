@@ -2,6 +2,7 @@ import type { MessageKey, Translator } from './i18n.js';
 import type { WidgetFeature } from './widgetFeatures.js';
 import { createIcon } from './icons.js';
 import { keepTabInside } from './focusTrap.js';
+import { MOD_KEY, searchForm } from './platformKeys.js';
 
 /**
  * Keyboard-shortcut reference sheet. Bound to `?` (and `Shift+/`). Surfaces
@@ -11,6 +12,9 @@ import { keepTabInside } from './focusTrap.js';
 export interface HotkeySheetCallbacks {
   onClose: () => void;
 }
+
+/** The key code a browser gives a key an input method takes. */
+const IME_KEY_CODE = 229;
 
 // Group titles translate via this lookup; individual shortcut labels (and
 // the `keys` badges) stay English for now — see README "Widget i18n".
@@ -47,9 +51,7 @@ interface HotkeyGroup {
   entries: HotkeyEntry[];
 }
 
-const isMac =
-  typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
-const mod = isMac ? '⌘' : 'Ctrl';
+const mod = MOD_KEY;
 
 const GROUPS: HotkeyGroup[] = [
   {
@@ -124,9 +126,6 @@ const GROUPS: HotkeyGroup[] = [
   },
 ];
 
-/** The key Ctrl stands for here: ⌘ on a Mac. */
-export const MOD_KEY = mod;
-
 let sheetSeq = 0;
 
 /**
@@ -139,6 +138,8 @@ export class WidgetHotkeySheet {
   private backdrop: HTMLDivElement | null = null;
   private bodyEl: HTMLDivElement | null = null;
   private searchEl: HTMLInputElement | null = null;
+  /** Says "No shortcuts match" to a screen reader. */
+  private liveEl: HTMLDivElement | null = null;
   private groups: { title: string; entries: (HotkeyEntry | HostHotkeyEntry)[] }[] = [];
   private returnFocus: HTMLElement | null = null;
   private readonly uid = ++sheetSeq;
@@ -164,7 +165,7 @@ export class WidgetHotkeySheet {
       }))
       .filter((group) => group.entries.length > 0);
     if (options.extra && options.extra.length > 0) this.groups.push({ title: 'More', entries: [...options.extra] });
-    this.build();
+    this.build(isOn('hotkeys.help'));
     this.render();
     this.searchEl?.focus();
   }
@@ -172,7 +173,7 @@ export class WidgetHotkeySheet {
   close(): void {
     if (!this.backdrop) return;
     this.backdrop.remove();
-    this.backdrop = this.bodyEl = this.searchEl = null;
+    this.backdrop = this.bodyEl = this.searchEl = this.liveEl = null;
     this.callbacks.onClose();
     const back = this.returnFocus;
     this.returnFocus = null;
@@ -187,7 +188,8 @@ export class WidgetHotkeySheet {
     this.close();
   }
 
-  private build(): void {
+  /** The sheet; `withFoot` says how to open it again (while its key is on). */
+  private build(withFoot: boolean): void {
     const backdrop = document.createElement('div');
     backdrop.className = 'tcw-modal-backdrop';
     // A press that starts in the sheet and ends on the backdrop doesn't close it.
@@ -208,7 +210,8 @@ export class WidgetHotkeySheet {
     modal.tabIndex = -1;
     modal.addEventListener('keydown', (e) => {
       e.stopPropagation(); // keys here must not drive chart shortcuts
-      if (e.key === 'Escape' && !e.isComposing) {
+      // An input method's Escape ends what it composes; the sheet stays.
+      if (e.key === 'Escape' && !e.isComposing && e.keyCode !== IME_KEY_CODE) {
         e.preventDefault();
         this.close();
         return;
@@ -244,23 +247,30 @@ export class WidgetHotkeySheet {
     const body = document.createElement('div');
     body.className = 'tcw-hotkey-body';
 
-    const foot = document.createElement('div');
-    foot.className = 'tcw-hotkey-foot';
-    foot.textContent = this.t('hotkeys.footer');
+    const live = document.createElement('div');
+    live.className = 'tcw-hotkey-live tcw-visually-hidden';
+    live.setAttribute('aria-live', 'polite');
 
-    modal.append(header, search, body, foot);
+    modal.append(header, search, body, live);
+    if (withFoot) {
+      const foot = document.createElement('div');
+      foot.className = 'tcw-hotkey-foot';
+      foot.textContent = this.t('hotkeys.footer');
+      modal.appendChild(foot);
+    }
     backdrop.appendChild(modal);
     this.host().appendChild(backdrop);
     this.backdrop = backdrop;
     this.bodyEl = body;
     this.searchEl = input;
+    this.liveEl = live;
   }
 
   /** The groups and their shortcuts that match what is typed. */
   private render(): void {
     const body = this.bodyEl;
     if (!body) return;
-    const query = (this.searchEl?.value ?? '').trim().toLowerCase().replace(/\s+/g, '');
+    const query = searchForm((this.searchEl?.value ?? '').trim());
     const sections: HTMLElement[] = [];
     for (const group of this.groups) {
       const entries = query ? group.entries.filter((e) => this.matches(e, query)) : group.entries;
@@ -274,10 +284,10 @@ export class WidgetHotkeySheet {
       section.append(heading, ...entries.map((entry) => this.row(entry)));
       sections.push(section);
     }
+    if (this.liveEl) this.liveEl.textContent = sections.length === 0 ? this.t('hotkeys.noMatch') : '';
     if (sections.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-hotkey-empty';
-      empty.setAttribute('role', 'status');
       empty.textContent = this.t('hotkeys.noMatch');
       body.replaceChildren(empty);
       return;
@@ -296,8 +306,8 @@ export class WidgetHotkeySheet {
 
   /** What it does, or its keys written as "alt+g", holds the query. */
   private matches(entry: HotkeyEntry | HostHotkeyEntry, query: string): boolean {
-    if (this.label(entry).toLowerCase().replace(/\s+/g, '').includes(query)) return true;
-    return entry.keys.map((k) => this.keyText(k)).join('+').toLowerCase().replace(/\s+/g, '').includes(query);
+    if (searchForm(this.label(entry)).includes(query)) return true;
+    return searchForm(entry.keys.map((k) => this.keyText(k)).join('+')).includes(query);
   }
 
   /** What it does, then its keys: a key as a key, a gesture as words. */

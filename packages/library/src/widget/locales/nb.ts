@@ -222,9 +222,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'common.hide': 'Skjul',
   'common.lock': 'Lås',
   'common.unlock': 'Lås opp',
-  'common.navigate': 'Naviger',
   'common.open': 'Åpne',
-  'common.select': 'Velg',
   'common.back': 'Tilbake',
 
   // Settings rows

@@ -222,9 +222,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'common.hide': 'پنهان کردن',
   'common.lock': 'قفل',
   'common.unlock': 'باز کردن قفل',
-  'common.navigate': 'پیمایش',
   'common.open': 'باز کردن',
-  'common.select': 'انتخاب',
   'common.back': 'بازگشت',
 
   // Settings rows

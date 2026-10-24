@@ -215,9 +215,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'common.hide': 'Nascondi',
   'common.lock': 'Blocca',
   'common.unlock': 'Sblocca',
-  'common.navigate': 'Naviga',
   'common.open': 'Apri',
-  'common.select': 'Seleziona',
   'common.back': 'Indietro',
 
   'settings.upBody': 'Corpo rialzista',

@@ -222,9 +222,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'common.hide': 'Peida',
   'common.lock': 'Lukusta',
   'common.unlock': 'Vabasta',
-  'common.navigate': 'Navigeeri',
   'common.open': 'Ava',
-  'common.select': 'Vali',
   'common.back': 'Tagasi',
 
   // Settings rows

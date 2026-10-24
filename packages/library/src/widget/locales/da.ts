@@ -222,9 +222,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'common.hide': 'Skjul',
   'common.lock': 'Lås',
   'common.unlock': 'Lås op',
-  'common.navigate': 'Navigér',
   'common.open': 'Åbn',
-  'common.select': 'Vælg',
   'common.back': 'Tilbage',
 
   // Settings rows

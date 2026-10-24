@@ -215,9 +215,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'common.hide': 'Skrýt',
   'common.lock': 'Zamknout',
   'common.unlock': 'Odemknout',
-  'common.navigate': 'Navigace',
   'common.open': 'Otevřít',
-  'common.select': 'Vybrat',
   'common.back': 'Zpět',
 
   'settings.upBody': 'Tělo rostoucí svíčky',

@@ -215,9 +215,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'common.hide': '隱藏',
   'common.lock': '鎖定',
   'common.unlock': '解除鎖定',
-  'common.navigate': '選擇',
   'common.open': '開啟',
-  'common.select': '確定',
   'common.back': '返回',
 
   'settings.upBody': '陽線實體',

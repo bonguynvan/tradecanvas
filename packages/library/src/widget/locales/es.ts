@@ -215,9 +215,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'common.hide': 'Ocultar',
   'common.lock': 'Bloquear',
   'common.unlock': 'Desbloquear',
-  'common.navigate': 'Navegar',
   'common.open': 'Abrir',
-  'common.select': 'Seleccionar',
   'common.back': 'Atrás',
 
   'settings.upBody': 'Cuerpo alcista',

@@ -215,9 +215,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'common.hide': 'Скрыть',
   'common.lock': 'Заблокировать',
   'common.unlock': 'Разблокировать',
-  'common.navigate': 'Перемещение',
   'common.open': 'Открыть',
-  'common.select': 'Выбрать',
   'common.back': 'Назад',
 
   'settings.upBody': 'Тело растущей свечи',

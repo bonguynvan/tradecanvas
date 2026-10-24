@@ -215,9 +215,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'common.hide': 'ซ่อน',
   'common.lock': 'ล็อก',
   'common.unlock': 'ปลดล็อก',
-  'common.navigate': 'เลื่อน',
   'common.open': 'เปิด',
-  'common.select': 'เลือก',
   'common.back': 'ย้อนกลับ',
 
   'settings.upBody': 'ตัวแท่งขาขึ้น',

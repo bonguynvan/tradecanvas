@@ -215,9 +215,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'common.hide': '隐藏',
   'common.lock': '锁定',
   'common.unlock': '解锁',
-  'common.navigate': '选择',
   'common.open': '打开',
-  'common.select': '确定',
   'common.back': '返回',
 
   'settings.upBody': '阳线实体',

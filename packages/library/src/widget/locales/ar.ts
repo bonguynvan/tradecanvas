@@ -222,9 +222,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'common.hide': 'إخفاء',
   'common.lock': 'قفل',
   'common.unlock': 'إلغاء القفل',
-  'common.navigate': 'تنقّل',
   'common.open': 'فتح',
-  'common.select': 'اختيار',
   'common.back': 'رجوع',
 
   // Settings rows

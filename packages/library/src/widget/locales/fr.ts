@@ -215,9 +215,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'common.hide': 'Masquer',
   'common.lock': 'Verrouiller',
   'common.unlock': 'Déverrouiller',
-  'common.navigate': 'Naviguer',
   'common.open': 'Ouvrir',
-  'common.select': 'Choisir',
   'common.back': 'Retour',
 
   'settings.upBody': 'Corps haussier',

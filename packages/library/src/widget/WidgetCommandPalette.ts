@@ -2,6 +2,7 @@ import type { ChartType, DrawingToolType, TimeFrame } from '@tradecanvas/commons
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { keepTabInside } from './focusTrap.js';
+import { searchForm } from './platformKeys.js';
 
 export interface CommandItem {
   id: string;
@@ -54,12 +55,12 @@ const keyOf = (item: CommandItem) => `${item.category}:${item.id}`;
  */
 function score(item: CommandItem, query: string): number {
   const label = item.label.toLowerCase();
-  const flat = label.replace(/\s+/g, '');
+  const flat = searchForm(label);
   if (item.id.toLowerCase() === query || flat === query) return 5;
   if (flat.startsWith(query)) return 4;
   if (label.split(/[\s/()-]+/).some((word) => word.startsWith(query))) return 3;
   if (flat.includes(query) || item.id.toLowerCase().includes(query)) return 2;
-  if (item.shortcut && item.shortcut.toLowerCase().replace(/\s+/g, '').includes(query)) return 1;
+  if (item.shortcut && searchForm(item.shortcut).includes(query)) return 1;
   return 0;
 }
 
@@ -82,6 +83,8 @@ export class WidgetCommandPalette {
   private input: HTMLInputElement | null = null;
   private list: HTMLDivElement | null = null;
   private emptyEl: HTMLDivElement | null = null;
+  /** Says "No results" to a screen reader. */
+  private liveEl: HTMLDivElement | null = null;
   private items: CommandItem[] = [];
   /** The rows on show, in order, for the keys. */
   private shown: CommandItem[] = [];
@@ -109,7 +112,7 @@ export class WidgetCommandPalette {
   close(): void {
     if (!this.backdrop) return;
     this.backdrop.remove();
-    this.backdrop = this.input = this.list = this.emptyEl = null;
+    this.backdrop = this.input = this.list = this.emptyEl = this.liveEl = null;
     this.callbacks.onClose();
     const back = this.returnFocus;
     this.returnFocus = null;
@@ -171,21 +174,26 @@ export class WidgetCommandPalette {
     list.setAttribute('aria-label', this.t('hotkeys.commandPalette'));
     const empty = document.createElement('div');
     empty.className = 'tcw-cp-empty';
-    empty.setAttribute('role', 'status');
     results.append(list, empty);
+    // A press on a heading or between the rows keeps the keyboard in the search.
+    results.addEventListener('mousedown', (e) => e.preventDefault());
+    const live = document.createElement('div');
+    live.className = 'tcw-cp-live tcw-visually-hidden';
+    live.setAttribute('aria-live', 'polite');
 
-    modal.append(search, results);
+    modal.append(search, results, live);
     backdrop.appendChild(modal);
     this.host().appendChild(backdrop);
     this.backdrop = backdrop;
     this.input = input;
     this.list = list;
     this.emptyEl = empty;
+    this.liveEl = live;
   }
 
   /** The groups for what is typed: the commands used last first while nothing is, then each kind. */
   private groups(): Group[] {
-    const query = (this.input?.value ?? '').trim().toLowerCase().replace(/\s+/g, '');
+    const query = searchForm((this.input?.value ?? '').trim());
     const groups: Group[] = [];
     if (!query) {
       const byKey = new Map(this.items.map((item) => [keyOf(item), item]));
@@ -228,8 +236,10 @@ export class WidgetCommandPalette {
       el.append(heading, ...group.items.map((item) => this.row(item, index++)));
       return el;
     }));
-    if (this.emptyEl) this.emptyEl.textContent = this.shown.length === 0 ? this.t('palette.empty') : '';
+    const note = this.shown.length === 0 ? this.t('palette.empty') : '';
+    if (this.emptyEl) this.emptyEl.textContent = note;
     this.emptyEl?.toggleAttribute('hidden', this.shown.length > 0);
+    if (this.liveEl) this.liveEl.textContent = note;
     this.markSelection();
   }
 
@@ -247,6 +257,8 @@ export class WidgetCommandPalette {
     if (item.shortcut) {
       const kbd = document.createElement('kbd');
       kbd.className = 'tcw-cp-key';
+      // Keys read left to right in any widget: ⌘+P, never P+⌘.
+      kbd.dir = 'ltr';
       kbd.textContent = item.shortcut;
       row.appendChild(kbd);
     }
@@ -301,7 +313,9 @@ export class WidgetCommandPalette {
     e.stopPropagation(); // keys here must not drive chart shortcuts
     // Enter, Escape and the arrows pick and close among an input method's candidates while it composes.
     if (e.isComposing || e.keyCode === IME_KEY_CODE) return;
-    if (e.key === 'Escape') {
+    // Escape, and the key that opened it, shut it (the browser's own Ctrl+K kept away).
+    const toggle = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+    if (e.key === 'Escape' || toggle) {
       e.preventDefault();
       this.close();
       return;

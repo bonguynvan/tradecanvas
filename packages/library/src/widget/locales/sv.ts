@@ -215,9 +215,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'common.hide': 'Dölj',
   'common.lock': 'Lås',
   'common.unlock': 'Lås upp',
-  'common.navigate': 'Navigera',
   'common.open': 'Öppna',
-  'common.select': 'Välj',
   'common.back': 'Tillbaka',
 
   'settings.upBody': 'Stigande kropp',

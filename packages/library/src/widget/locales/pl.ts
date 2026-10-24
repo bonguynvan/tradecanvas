@@ -215,9 +215,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'common.hide': 'Ukryj',
   'common.lock': 'Zablokuj',
   'common.unlock': 'Odblokuj',
-  'common.navigate': 'Nawigacja',
   'common.open': 'Otwórz',
-  'common.select': 'Wybierz',
   'common.back': 'Wstecz',
 
   'settings.upBody': 'Korpus świecy wzrostowej',

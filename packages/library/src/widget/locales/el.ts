@@ -215,9 +215,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'common.hide': 'Απόκρυψη',
   'common.lock': 'Κλείδωμα',
   'common.unlock': 'Ξεκλείδωμα',
-  'common.navigate': 'Πλοήγηση',
   'common.open': 'Άνοιγμα',
-  'common.select': 'Επιλογή',
   'common.back': 'Πίσω',
 
   'settings.upBody': 'Ανοδικό σώμα',

@@ -215,9 +215,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'common.hide': 'Ocultar',
   'common.lock': 'Bloquear',
   'common.unlock': 'Desbloquear',
-  'common.navigate': 'Navegar',
   'common.open': 'Abrir',
-  'common.select': 'Selecionar',
   'common.back': 'Voltar',
 
   'settings.upBody': 'Corpo de alta',

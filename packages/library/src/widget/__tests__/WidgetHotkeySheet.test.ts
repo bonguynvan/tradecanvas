@@ -95,9 +95,36 @@ describe('WidgetHotkeySheet', () => {
     expect(sheet.isOpen()).toBe(false);
   });
 
-  it('has no "Got it" button: its foot says how to open it', () => {
+  it('has no "Got it" button: its foot says how to open it, while that key is on', () => {
     sheet.open();
     expect(host.querySelector('.tcw-done-btn')).toBeNull();
     expect(host.querySelector('.tcw-hotkey-foot')?.textContent).toBe('Press ? anytime to show this sheet');
+    sheet.close();
+    sheet.open({ isOn: (feature) => feature !== 'hotkeys.help' });
+    expect(host.querySelector('.tcw-hotkey-foot')).toBeNull();
+  });
+
+  it('finds keys typed with a space, and a dash for the range of digits', () => {
+    sheet.open();
+    type('alt g');
+    expect(labels()).toEqual(['Go to date']);
+    type('0-9');
+    expect(labels()).toEqual(['Type a number to change the interval']);
+  });
+
+  it('says when nothing matches in a live region that stays', () => {
+    sheet.open();
+    const live = host.querySelector<HTMLElement>('.tcw-hotkey-live')!;
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    type('zzz');
+    expect(live.textContent).toBe('No shortcuts match');
+    type('');
+    expect(live.textContent).toBe('');
+  });
+
+  it('leaves Escape to an input method while it composes', () => {
+    sheet.open();
+    search().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 229, bubbles: true, cancelable: true } as KeyboardEventInit));
+    expect(sheet.isOpen()).toBe(true);
   });
 });

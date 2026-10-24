@@ -122,6 +122,40 @@ describe('WidgetCommandPalette', () => {
     expect(headings()).toEqual(['Drawing tools']);
   });
 
+  it('shuts on Ctrl or Cmd+K, the key that opened it, and keeps it from the browser', () => {
+    palette.open(items);
+    const press = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
+    input().dispatchEvent(press);
+    expect(palette.isOpen()).toBe(false);
+    expect(press.defaultPrevented).toBe(true);
+  });
+
+  it('finds a command by its keys typed with a space or a plus', () => {
+    palette.open(items);
+    type('alt g');
+    expect(labels()).toEqual(['Go to date']);
+    type('alt+t');
+    expect(labels()).toEqual(['Trend Line']);
+  });
+
+  it('writes its keys left to right in any widget', () => {
+    palette.open(items);
+    expect(rows().find((r) => r.dataset.id === 'trendLine')!.querySelector<HTMLElement>('kbd')!.dir).toBe('ltr');
+  });
+
+  it('says "no results" in a live region that stays, and keeps the keyboard in the search on a press in the list', () => {
+    palette.open(items);
+    const live = host.querySelector<HTMLElement>('.tcw-cp-live')!;
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    type('zzz');
+    expect(live.textContent).toBe('No results found');
+    expect(host.querySelector('.tcw-cp-live')).toBe(live);
+    type('');
+    const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    host.querySelector('.tcw-cp-heading')!.dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(true);
+  });
+
   it('leaves Enter and Escape to an input method while it composes, and keeps its keys from the chart', () => {
     const chartKeys = vi.fn();
     document.addEventListener('keydown', chartKeys);

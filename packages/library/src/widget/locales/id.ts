@@ -215,9 +215,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'common.hide': 'Sembunyikan',
   'common.lock': 'Kunci',
   'common.unlock': 'Buka kunci',
-  'common.navigate': 'Navigasi',
   'common.open': 'Buka',
-  'common.select': 'Pilih',
   'common.back': 'Kembali',
 
   'settings.upBody': 'Badan candle naik',

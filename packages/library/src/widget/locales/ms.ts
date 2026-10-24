@@ -222,9 +222,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'common.hide': 'Sembunyikan',
   'common.lock': 'Kunci',
   'common.unlock': 'Buka kunci',
-  'common.navigate': 'Navigasi',
   'common.open': 'Buka',
-  'common.select': 'Pilih',
   'common.back': 'Kembali',
 
   // Settings rows

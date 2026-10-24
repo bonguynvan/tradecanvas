@@ -15,7 +15,8 @@ import { WidgetSettings, type SettingsTab } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
-import { MOD_KEY, WidgetHotkeySheet } from './WidgetHotkeySheet.js';
+import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
+import { MOD_KEY } from './platformKeys.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
@@ -3540,7 +3541,7 @@ export class ChartWidget {
           id: tool.value,
           label: tool.label,
           category: 'drawing',
-          shortcut: toolKeys[tool.value],
+          shortcut: toolKeys[tool.value] ? this.keysShown('hotkeys.tools', toolKeys[tool.value]!) : undefined,
           active: this.state.activeTool === tool.value,
         });
       }
@@ -3557,12 +3558,12 @@ export class ChartWidget {
 
     // The widget's own, with the keys the sheet lists for them.
     items.push(
-      { id: 'symbolSearch', label: this.t('hotkeys.symbolSearch'), category: 'action', shortcut: `${MOD_KEY}+P` },
+      { id: 'symbolSearch', label: this.t('hotkeys.symbolSearch'), category: 'action', shortcut: this.keysShown('hotkeys.symbolSearch', `${MOD_KEY}+P`) },
       { id: 'compare', label: this.t('compare.title'), category: 'action' },
-      { id: 'goToDate', label: this.t('hotkeys.goToDate'), category: 'action', shortcut: 'Alt+G' },
-      { id: 'resetView', label: this.t('chartMenu.resetView'), category: 'action', shortcut: 'Alt+R' },
-      { id: 'invertScale', label: this.t('hotkeys.invertScale'), category: 'action', shortcut: 'Alt+I' },
-      { id: 'saveLayout', label: this.t('hotkeys.saveLayout'), category: 'action', shortcut: `${MOD_KEY}+S` },
+      { id: 'goToDate', label: this.t('hotkeys.goToDate'), category: 'action', shortcut: this.keysShown('hotkeys.goToDate', 'Alt+G') },
+      { id: 'resetView', label: this.t('chartMenu.resetView'), category: 'action', shortcut: this.keysShown('hotkeys.resetView', 'Alt+R') },
+      { id: 'invertScale', label: this.t('hotkeys.invertScale'), category: 'action', shortcut: this.keysShown('hotkeys.invertScale', 'Alt+I') },
+      { id: 'saveLayout', label: this.t('hotkeys.saveLayout'), category: 'action', shortcut: this.keysShown('hotkeys.save', `${MOD_KEY}+S`) },
       { id: 'watchlist', label: this.t('watchlist.title'), category: 'action' },
       { id: 'alerts', label: this.t('alerts.title'), category: 'action' },
       { id: 'objectTree', label: this.t('objects.title'), category: 'action' },
@@ -3575,7 +3576,7 @@ export class ChartWidget {
       { id: 'settings', label: this.t('action.settings'), category: 'action' },
       { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
       { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
-      { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: '?' },
+      { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: this.keysShown('hotkeys.help', '?') },
     );
 
     return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
@@ -3584,9 +3585,19 @@ export class ChartWidget {
   /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
   private commandThere(id: string): boolean {
     if (id === 'watchlist') return this.watchlist !== null;
-    if (id === 'compare') return this.adapter !== null;
+    if (id === 'compare') return this.adapter !== null && this.options.chartOptions?.features?.compareSymbols !== false;
     if (id === 'saveLayout') return this.layoutSession !== null;
     return true;
+  }
+
+  /**
+   * `keys` as a command's shortcut, where they work: their switch on (and
+   * what they need there), and no shortcut of the host's on them instead.
+   */
+  private keysShown(name: WidgetFeature, keys: string): string | undefined {
+    if (!this.sheetKeyOn(name)) return undefined;
+    const taken = this.hostHotkeys.some((h) => h.parsed.display.join('+').toLowerCase() === keys.toLowerCase());
+    return taken ? undefined : keys;
   }
 
   /** The shortcut sheet: the keys switched on, and the host's. */
@@ -3912,6 +3923,7 @@ export class ChartWidget {
     this.layoutsUI = new WidgetLayoutsUI(session, {
       root: this.root,
       t: this.t,
+      saveKeys: () => this.keysShown('hotkeys.save', `${MOD_KEY}+S`),
       toast: (message, kind) => this.say(message, kind),
       formatTime: (ms) => {
         const { date, time } = utcToWallTime(ms, this.displayTimezone());

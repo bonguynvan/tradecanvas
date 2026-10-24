@@ -215,9 +215,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'common.hide': 'Ascundere',
   'common.lock': 'Blocare',
   'common.unlock': 'Deblocare',
-  'common.navigate': 'Navigare',
   'common.open': 'Deschidere',
-  'common.select': 'Selectare',
   'common.back': 'Înapoi',
 
   'settings.upBody': 'Corp ascendent',

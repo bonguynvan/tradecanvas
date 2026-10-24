@@ -215,9 +215,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'common.hide': 'Skryť',
   'common.lock': 'Zamknúť',
   'common.unlock': 'Odomknúť',
-  'common.navigate': 'Navigácia',
   'common.open': 'Otvoriť',
-  'common.select': 'Vybrať',
   'common.back': 'Späť',
 
   'settings.upBody': 'Telo rastúcej sviečky',

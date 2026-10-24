@@ -675,6 +675,8 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A row the arrows reach scrolls in below its heading, not under it. */
+  scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5 - var(--tcw-space-3));
   padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
 }
 
@@ -1114,6 +1116,8 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A row the arrows reach scrolls in below its group's heading, not under it. */
+  scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5);
   padding: 0 var(--tcw-space-4) var(--tcw-space-4);
   border-top: 1px solid var(--tcw-divider);
 }
@@ -1315,9 +1319,17 @@
     padding-inline: var(--tcw-space-4);
   }
 
+  /* Their own heights outrank the sheet's: give them back its height, less the keyboard, and the palette its slide up. */
+  .tcw-modal.tcw-cp,
+  .tcw-modal.tcw-layouts-dialog {
+    max-height: calc(92vh - var(--tcw-keyboard-inset, 0px));
+    max-height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+  }
+
   .tcw-modal.tcw-cp {
     top: auto;
     transform: none;
+    animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
   }
 
   .tcw-cp .tcw-cp-search {

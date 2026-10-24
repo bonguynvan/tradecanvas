@@ -215,9 +215,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'common.hide': '非表示',
   'common.lock': 'ロック',
   'common.unlock': 'ロック解除',
-  'common.navigate': '移動',
   'common.open': '開く',
-  'common.select': '選択',
   'common.back': '戻る',
 
   'settings.upBody': '陽線の実体',

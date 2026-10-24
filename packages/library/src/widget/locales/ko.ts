@@ -215,9 +215,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'common.hide': '숨기기',
   'common.lock': '잠금',
   'common.unlock': '잠금 해제',
-  'common.navigate': '이동',
   'common.open': '열기',
-  'common.select': '선택',
   'common.back': '뒤로',
 
   'settings.upBody': '양봉 몸통',

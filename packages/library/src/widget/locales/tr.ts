@@ -215,9 +215,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'common.hide': 'Gizle',
   'common.lock': 'Kilitle',
   'common.unlock': 'Kilidi aç',
-  'common.navigate': 'Gezin',
   'common.open': 'Aç',
-  'common.select': 'Seç',
   'common.back': 'Geri',
 
   'settings.upBody': 'Yükselen mum gövdesi',
