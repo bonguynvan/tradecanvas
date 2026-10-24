@@ -31,28 +31,38 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>ポジション</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  各ラインの右端、価格軸の手前にタグが付きます。建値のタグには数量、売買の向き、含み損益、続いて
+  <strong>⇅</strong> と <strong>×</strong>。損切りと利確のタグには、価格がそこに達したときの損益が表示されます。
+  すべての価格は軸にも表示されます。重なりそうなタグは横に並び、軸のタグは互いにずれて表示されます。
+  損切りや利確はラインでもタグでもドラッグできます。
+</p>
 
 <h2>注文</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  ラインのラベルには注文の種類と数量（<code>LIMIT 0.25</code>）が表示され、価格軸のタグには軸と同じ書き方で価格が表示されます。
-  価格ラインをドラッグして変更します。変更は <code>chart.on('orderModify', ...)</code> で購読できます。
+  注文のタグには数量と種類（<code>0.25</code>、<code>Sell limit</code>）、続いて取消用の <strong>×</strong>
+  が表示され、価格軸のタグには軸と同じ書き方で価格が表示されます。損切りと利確付きで建てる注文は、それらを点線で示し、
+  達したときの損益も表示します。ラインかタグをドラッグして変更します。変更は <code>chart.on('orderModify', ...)</code> で購読できます。
 </p>
 
 <h2>ライブ執行（アダプターの接続）</h2>
@@ -92,7 +102,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   1 回の操作でドテンできるアダプターは <code>reversePosition</code> を実装します。
   実装がなければ、チャートはポジションを決済してから、反対方向に成行注文を出します。
@@ -280,12 +290,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>ポジションラベルのトークン</h2>
 <p>
-  チャート上のラベルをポジションごとにカスタマイズできます。<code>positionLabel</code> には
+  ポジションのタグを自由に書けます。<code>positionLabel</code> は数量の後ろの売買の向きと損益に置き換わります。
   テンプレート文字列か、文字列を返す関数を指定します。
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -296,11 +305,14 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>損益グラデーションのカラーストップ</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  タグの含み損益と現在値までの帯は、<code>pnl</code> がポジションの損益（金額）以下である最も高いストップの色になります。
+</p>

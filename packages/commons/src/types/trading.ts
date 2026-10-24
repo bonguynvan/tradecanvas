@@ -79,9 +79,11 @@ export interface TradingConfig {
    */
   pnlThresholds?: PnLThreshold[];
   /**
-   * Position P&L label template. Supports tokens: {side} {qty} {closedQty}
-   * {openQty} {entry} {price} {pnl} {pnlPct} {pnlSign}. Pass a function for
-   * full control. Default: `{side} {qty} | P&L: {pnlSign}{pnl}`.
+   * The words on a position's tag after its open quantity, in place of its
+   * side and its open profit. A template with the tokens {side} {qty}
+   * {closedQty} {openQty} {entry} {price} {pnl} {pnlPct} {pnlSign}, or a
+   * function for full control. Unset: the side ("Long", "Short") and the
+   * profit in the profit or loss colour.
    */
   positionLabel?: string | ((ctx: PositionLabelContext) => string);
   depthOverlay?: {

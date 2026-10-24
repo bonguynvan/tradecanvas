@@ -23,6 +23,8 @@ export class WidgetBracketBar {
 
     this.el = document.createElement('div');
     this.el.className = 'tcw-bracket-bar';
+    // A named group of two buttons: Tab moves between them.
+    this.el.setAttribute('role', 'group');
     this.el.hidden = true;
 
     this.labelEl = document.createElement('span');
@@ -53,8 +55,13 @@ export class WidgetBracketBar {
 
   show(side: 'buy' | 'sell'): void {
     this.visible = true;
-    this.labelEl.textContent = side === 'buy' ? this.t('toolbar.longBracket') : this.t('toolbar.shortBracket');
-    this.labelEl.dataset.side = side;
+    const name = side === 'buy' ? this.t('toolbar.longBracket') : this.t('toolbar.shortBracket');
+    this.labelEl.textContent = name;
+    this.el.setAttribute('aria-label', name);
+    // Its side colours the label and Place.
+    this.el.dataset.side = side;
+    // It sits on the chart, which is always left to right; it reads as the widget does.
+    this.el.dir = this.el.closest<HTMLElement>('.tcw-root')?.dir || 'auto';
     this.el.hidden = false;
   }
 

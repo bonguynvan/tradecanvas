@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Orders and positions on the chart
+
+The trading lines in the Print look, the first part of the trading round.
+
+- **Tags at the right end of each line**, by the price axis: they no longer sit over the legend at the plot's left edge. Each is a small paper tag bordered in its line's colour, its first cell stamped in that colour:
+  - an order: its quantity, its side and kind (`0.25` `Sell limit`), and × to cancel it;
+  - a position: what is still open of it, its side and its open profit or loss, then ⇅ and ×;
+  - a stop or a target: `SL` or `TP` and what the position would make or lose there, and × to remove it.
+- Tags that would cover each other stand side by side, what is being placed nearest the axis, then positions, then orders; one that can't fit has no buttons, as it may lie under another.
+- A press on an order's, a stop's or a target's tag drags that line, whatever line is nearer, and keeps it on the plot. A stop or a target being dragged shows where it is going: its line, what it would make, its price on the axis, a faint line where it was.
+- A press between two buttons in a column (a finger's reach) takes the one it is on, not the neighbour drawn after it.
+- **Prices on the axis** for stops and targets as well as entries and orders; the trading badges move apart when they would overlap (an order beside a stop hid its price), and the scale keeps clear of where they end up.
+- An order to open with a stop and a target (`stopLoss`, `takeProfit`) shows them as dotted lines with what they would make.
+- **Bracket placement** has the same tags: its side and reward to risk on the entry, the distance in percent on the stop and the target, their prices on the axis, and no knobs at the edge. Its bar sits at the foot of the chart (at the top while the replay bar shows), centred: its entrance animation undid its centring, so it started at the middle and ran off a phone's screen. It reads in the widget's direction, and its name gives way before Place does.
+- `positionLabel` fills the position's tag after its quantity. Lines' buttons are icons of the set (new: `arrowUpDown`). A profit that rounds to nothing is "0.00", not "+-0.00".
+- The trading page's examples call the real API (`setPositions`, `setOrders`, `modifyPositionIntent({ positionId })`, `setTradingConfig({ positionLabel, pnlThresholds })` with `pnl` stops), in six languages.
+
+### Also
+
+- **The watchlist opens when asked**: ChartWidget no longer opens it by itself on a widget 987 px wide or more. Every panel starts shut, on the rail; `widget.openPanel('watchlist')` opens one from code.
+- **`MockAdapter`** ends its history on the timeframe's grid, so its ticks build the newest bar from the start: for up to a bar's length they were dropped, the price line moving while the bars stood still (and a host reading `getData()` saw a stale close). The forming bar keeps its open and grows its range.
+
+Collected on `main` for the next release. Not on npm yet.
+
+## 1.41.0 (2026-10-24)
+
+React, Vue and Svelte components: 1.3.23.
+
 ### The shortcut sheet, the command palette and layouts
 
 The last of the widget's dialogs in the Print look.
@@ -11,8 +39,6 @@ The last of the widget's dialogs in the Print look.
 - **Layouts**: the dialog is 480 wide with the dialogs' search row; the layout open is marked with a check and its name in ink (no "Open" tag), rename and delete show on the row in hand. The menu says Save's keys (Ctrl/⌘+S) while `hotkeys.save` is on.
 - On a phone the palette and the layouts dialog are sheets that stop above the on-screen keyboard. In the palette and the symbol search, a row the arrows reach scrolls in below its group's heading, and "no results" is said to a screen reader.
 - Three new strings in all 30 languages; `hotkeys.gotIt`, `common.navigate` and `common.select` (not used) are gone. The old palette's styles (`.tcw-cmd-*`) are gone.
-
-Collected on `main` for the next release. Not on npm yet.
 
 ## 1.40.0 (2026-10-24)
 

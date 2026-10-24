@@ -20,9 +20,10 @@ describe('PositionRenderer', () => {
   it('puts no entry badge on the price axis for an entry out of the plot', () => {
     const { ctx, texts } = recordingCtx();
     const r = new PositionRenderer();
-    r.renderAxisBadges(ctx, [{ ...position, entryPrice: 500 }], unitViewport, theme, {});
+    const bare = { id: 'p1', side: 'buy' as const, entryPrice: 500, quantity: 1 };
+    r.renderAxisBadges(ctx, [bare], unitViewport, theme, {});
     expect(texts).toEqual([]);
-    r.renderAxisBadges(ctx, [position], unitViewport, theme, {});
+    r.renderAxisBadges(ctx, [{ ...bare, entryPrice: 60 }], unitViewport, theme, {});
     expect(texts).toEqual(['60.00']);
   });
 });

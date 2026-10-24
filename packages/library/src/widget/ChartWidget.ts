@@ -1107,7 +1107,7 @@ export class ChartWidget {
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
-      this.bracketBar = new WidgetBracketBar(this.root, {
+      this.bracketBar = new WidgetBracketBar(this.chartContainer, {
         onConfirm: () => this.chart.confirmBracket(),
         onCancel: () => {
           this.chart.cancelBracket();

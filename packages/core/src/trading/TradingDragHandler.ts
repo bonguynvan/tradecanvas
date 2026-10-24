@@ -10,6 +10,9 @@ export interface DragResult {
   previousPrice: number;
 }
 
+/** A position's prices a drag can move. */
+const STOPS = ['stopLoss', 'takeProfit'] as const;
+
 export class TradingDragHandler {
   private dragState: DragState | null = null;
   private startY = 0;
@@ -17,6 +20,7 @@ export class TradingDragHandler {
 
   constructor(private dragThreshold = 3) {}
 
+  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target. */
   onPointerDown(
     pos: Point,
     orders: TradingOrder[],
@@ -24,56 +28,39 @@ export class TradingDragHandler {
     viewport: ViewportState,
     tolerance: number,
   ): boolean {
-    // Check order lines
-    for (const order of orders) {
-      if (order.draggable === false) continue;
-      const y = priceToY(order.price, viewport);
-      if (inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance) {
-        this.dragState = {
-          orderId: order.id,
-          sourceType: 'order',
-          startPrice: order.price,
-          currentPrice: order.price,
-        };
-        this.startY = pos.y;
-        this.dragging = false;
-        return true;
+    const near = (price: number) => {
+      const y = priceToY(price, viewport);
+      return inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance;
+    };
+    const order = orders.find((o) => o.draggable !== false && near(o.price));
+    if (order) return this.beginOrder(order, pos.y);
+    for (const position of positions) {
+      for (const which of STOPS) {
+        const price = position[which];
+        if (price !== undefined && near(price)) return this.beginStop(position, which, pos.y);
       }
     }
-
-    // Check SL/TP lines on positions
-    for (const pos2 of positions) {
-      if (pos2.stopLoss !== undefined) {
-        const slY = priceToY(pos2.stopLoss, viewport);
-        if (inPlot(slY, viewport) && Math.abs(pos.y - slY) <= tolerance) {
-          this.dragState = {
-            orderId: pos2.id,
-            sourceType: 'stopLoss',
-            startPrice: pos2.stopLoss,
-            currentPrice: pos2.stopLoss,
-          };
-          this.startY = pos.y;
-          this.dragging = false;
-          return true;
-        }
-      }
-      if (pos2.takeProfit !== undefined) {
-        const tpY = priceToY(pos2.takeProfit, viewport);
-        if (inPlot(tpY, viewport) && Math.abs(pos.y - tpY) <= tolerance) {
-          this.dragState = {
-            orderId: pos2.id,
-            sourceType: 'takeProfit',
-            startPrice: pos2.takeProfit,
-            currentPrice: pos2.takeProfit,
-          };
-          this.startY = pos.y;
-          this.dragging = false;
-          return true;
-        }
-      }
-    }
-
     return false;
+  }
+
+  /** Drag `order`'s line, pressed at `y`. */
+  beginOrder(order: TradingOrder, y: number): boolean {
+    if (order.draggable === false) return false;
+    return this.start({ orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price }, y);
+  }
+
+  /** Drag `position`'s stop or target, pressed at `y`. */
+  beginStop(position: TradingPosition, which: 'stopLoss' | 'takeProfit', y: number): boolean {
+    const price = position[which];
+    if (price === undefined) return false;
+    return this.start({ orderId: position.id, sourceType: which, startPrice: price, currentPrice: price }, y);
+  }
+
+  private start(state: DragState, y: number): boolean {
+    this.dragState = state;
+    this.startY = y;
+    this.dragging = false;
+    return true;
   }
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {

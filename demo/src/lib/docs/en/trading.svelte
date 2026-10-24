@@ -31,29 +31,39 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>Positions</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  Each line has a tag at its right end, by the price axis. The entry's gives the quantity, the side
+  and the open profit or loss, then <strong>⇅</strong> and <strong>×</strong>; the stop's and the target's say
+  what the position would make or lose there. Every price is on the axis too. Tags that would cover each other
+  stand side by side, and the badges on the axis move apart. Drag a stop or a target by its line or by its tag.
+</p>
 
 <h2>Orders</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  The line's label names the order's kind and quantity (<code>LIMIT 0.25</code>); its tag on the price axis
-  carries the price, written as the axis writes it. Drag the price line to modify; subscribe via
-  <code>chart.on('orderModify', ...)</code>.
+  The order's tag gives its quantity and its kind (<code>0.25</code>, <code>Sell limit</code>), then
+  <strong>×</strong> to cancel it; its tag on the price axis carries the price, written as the axis writes it.
+  An order that opens with a stop and a target shows them as dotted lines, with what they would make. Drag the
+  line, or its tag, to modify; subscribe via <code>chart.on('orderModify', ...)</code>.
 </p>
 
 <h2>Live execution (connect an adapter)</h2>
@@ -95,7 +105,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   An adapter that can reverse in one step implements <code>reversePosition</code>;
   without it the chart closes the position and sends a market order the other way.
@@ -291,12 +301,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>Position label tokens</h2>
 <p>
-  Customize the on-chart label per position. <code>positionLabel</code> accepts a
-  template string or a function returning a string.
+  Write a position's tag your way: <code>positionLabel</code> takes the place of the side and the profit
+  after its quantity. It accepts a template string or a function returning a string.
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -307,11 +316,15 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>P&amp;L gradient stops</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  The open profit on the tag and the band to the price take the colour of the highest stop whose
+  <code>pnl</code> is at or under the position's profit or loss, in money.
+</p>

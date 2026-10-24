@@ -71,6 +71,27 @@ export function formatPositionLabel(
   });
 }
 
+/**
+ * Money made or lost, signed ("+40.00", "-20.00"), grouped in the number
+ * locale. What rounds to nothing has no sign: a short at its entry is "0.00",
+ * not "+-0.00".
+ */
+export function formatAmount(value: number, precision: number, locale?: string): string {
+  const scale = 10 ** precision;
+  const rounded = Math.round(value * scale) / scale || 0;
+  return `${rounded > 0 ? '+' : ''}${groupedNumber(rounded, precision, locale)}`;
+}
+
+/** What a position (or the order that opens it) makes when the price reaches `price`. */
+export function amountAt(
+  side: 'buy' | 'sell',
+  entryPrice: number,
+  quantity: number,
+  price: number,
+): number {
+  return (price - entryPrice) * quantity * (side === 'buy' ? 1 : -1);
+}
+
 export const DEFAULT_POSITION_LABEL =
   '{side} {qty} | P&L: {pnlSign}{pnl}';
 

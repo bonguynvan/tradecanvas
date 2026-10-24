@@ -1,11 +1,10 @@
 import type { TradingOrder, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, priceTagText } from '@tradecanvas/commons';
-import { drawCloseButton, type LineButton } from './lineButtons.js';
-import { fillTag } from '../ui/shapes.js';
-
-/** Side of the × button on an order's label (px). */
-const BUTTON = 16;
+import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
+import type { LineButton } from './lineButtons.js';
+import { inPlot, levelLine } from './plot.js';
+import { amountAt, formatAmount } from './positionFormat.js';
+import { drawAxisBadge, drawTags, type AxisBadge, type TagCell, type TradingTag } from './tradingTags.js';
 
 export interface DragState {
   orderId: string;
@@ -14,7 +13,41 @@ export interface DragState {
   currentPrice: number;
 }
 
+/** A working order's line: long dashes. Its stop's and target's: dots, as prices it only brings. */
+const ORDER_DASH = [6, 4];
+const PLANNED_DASH = [2, 3];
+/** Where a dragged order was: dotted and faint. */
+const GHOST_DASH = [2, 4];
+const GHOST_ALPHA = 0.3;
+
+/** The words for an order's kind ("Buy limit", "Sell stop limit"), or its own label's for a stop or a target. */
+export function orderKindText(order: Pick<TradingOrder, 'side' | 'type' | 'label'>): string {
+  if (order.label === 'SL' || order.label === 'TP') return order.label;
+  const kind = order.label ? order.label.toLowerCase() : order.type === 'stopLimit' ? 'stop limit' : order.type;
+  return `${order.side === 'buy' ? 'Buy' : 'Sell'} ${kind}`;
+}
+
+function colorsOf(config: TradingConfig): { buy: string; sell: string; profit: string; loss: string } {
+  return {
+    buy: config.orderColors?.buy ?? '#1fa874',
+    sell: config.orderColors?.sell ?? '#e8505b',
+    profit: config.positionColors?.profit ?? '#1fa874',
+    loss: config.positionColors?.loss ?? '#e8505b',
+  };
+}
+
+/** Whether `order` is the one being dragged. */
+function isDragged(order: TradingOrder, dragState: DragState | null): boolean {
+  return dragState?.orderId === order.id && dragState.sourceType === 'order';
+}
+
+/** Where an order is drawn: where it is being dragged to, else its price. */
+function priceOf(order: TradingOrder, dragState: DragState | null): number {
+  return isDragged(order, dragState) ? dragState!.currentPrice : order.price;
+}
+
 export class OrderRenderer {
+  /** The lines and their tags, the tags laid out among themselves. */
   render(
     ctx: CanvasRenderingContext2D,
     orders: TradingOrder[],
@@ -24,85 +57,78 @@ export class OrderRenderer {
     dragState: DragState | null,
     buttons: LineButton[] = [],
   ): void {
-    const buyColor = config.orderColors?.buy ?? '#1fa874';
-    const sellColor = config.orderColors?.sell ?? '#e8505b';
-    const { chartRect } = viewport;
-    const cancelButton = config.lineButtons?.cancel !== false;
+    this.renderLines(ctx, orders, viewport, config, dragState);
+    drawTags(ctx, this.tags(orders, viewport, config, dragState), viewport, theme, buttons);
+  }
 
+  /** Each order's line (and, while it is dragged, a ghost where it was), and its stop's and target's. */
+  renderLines(
+    ctx: CanvasRenderingContext2D,
+    orders: TradingOrder[],
+    viewport: ViewportState,
+    config: TradingConfig,
+    dragState: DragState | null,
+  ): void {
+    const colors = colorsOf(config);
     for (const order of orders) {
-      const isDragging = dragState?.orderId === order.id && dragState.sourceType === 'order';
-      const price = isDragging ? dragState!.currentPrice : order.price;
-      const y = priceToY(price, viewport);
-
-      if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
-
-      const color = order.side === 'buy' ? buyColor : sellColor;
-
-      // Dashed order line
-      ctx.setLineDash([6, 4]);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-      ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // The order's kind and quantity (left side); the axis tag carries the price.
-      const label = `${order.label ?? order.type.toUpperCase()} ${order.quantity}`;
-      ctx.font = `bold 10px ${theme.font.family}`;
-      const labelWidth = ctx.measureText(label).width + 8;
-      ctx.fillStyle = color;
-      fillTag(ctx, chartRect.x + 4, y - 8, labelWidth, 16, theme);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'left';
-      ctx.fillText(label, chartRect.x + 8, y);
-
-      // Price + qty badge on axis — rendered separately via renderAxisBadges()
-      // after the price axis so it paints on top of its labels.
-
-      // Side indicator (small triangle)
-      const triX = chartRect.x + 4 + labelWidth + 6;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      if (order.side === 'buy') {
-        ctx.moveTo(triX, y + 4);
-        ctx.lineTo(triX + 5, y - 2);
-        ctx.lineTo(triX + 10, y + 4);
-      } else {
-        ctx.moveTo(triX, y - 4);
-        ctx.lineTo(triX + 5, y + 2);
-        ctx.lineTo(triX + 10, y - 4);
-      }
-      ctx.fill();
-
-      // × cancels the order.
-      if (cancelButton && !isDragging) {
-        const bx = triX + 16;
-        drawCloseButton(ctx, bx, y - BUTTON / 2, BUTTON, color);
-        buttons.push({ x: bx, y: y - BUTTON / 2, size: BUTTON, action: { type: 'cancelOrder', orderId: order.id } });
-      }
-
-      // Ghost line at original price if dragging
-      if (isDragging) {
-        const origY = priceToY(dragState!.startPrice, viewport);
-        ctx.setLineDash([2, 4]);
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath();
-        ctx.moveTo(chartRect.x, Math.round(origY) + 0.5);
-        ctx.lineTo(chartRect.x + chartRect.width, Math.round(origY) + 0.5);
-        ctx.stroke();
+      const y = priceToY(priceOf(order, dragState), viewport);
+      const color = order.side === 'buy' ? colors.buy : colors.sell;
+      if (inPlot(y, viewport)) levelLine(ctx, viewport, y, color, ORDER_DASH);
+      if (isDragged(order, dragState)) {
+        ctx.globalAlpha = GHOST_ALPHA;
+        levelLine(ctx, viewport, priceToY(dragState!.startPrice, viewport), color, GHOST_DASH);
         ctx.globalAlpha = 1;
-        ctx.setLineDash([]);
+      }
+      for (const [price, stopColor] of [[order.stopLoss, colors.loss], [order.takeProfit, colors.profit]] as const) {
+        const stopY = price === undefined ? NaN : priceToY(price, viewport);
+        if (inPlot(stopY, viewport)) levelLine(ctx, viewport, stopY, stopColor, PLANNED_DASH);
       }
     }
   }
 
   /**
-   * Draw order price badges on the price axis. Called after the price axis
-   * so they paint ON TOP of the regular axis tick labels.
+   * Each order's tag: its quantity, its side and kind, and a × that cancels
+   * it; a tag on its stop and its target saying what they would make.
+   */
+  tags(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag[] {
+    const colors = colorsOf(config);
+    const precision = config.pricePrecision ?? 2;
+    const tags: TradingTag[] = [];
+    for (const order of orders) {
+      const price = priceOf(order, dragState);
+      const y = priceToY(price, viewport);
+      if (inPlot(y, viewport)) {
+        const cells: TagCell[] = [
+          { kind: 'stamp', text: String(order.quantity) },
+          { kind: 'text', text: orderKindText(order) },
+        ];
+        if (config.lineButtons?.cancel !== false && !isDragged(order, dragState)) {
+          cells.push({ kind: 'button', icon: UI_ICONS.x, action: { type: 'cancelOrder', orderId: order.id } });
+        }
+        const grab = order.draggable === false ? undefined : { kind: 'order' as const, orderId: order.id };
+        tags.push({ y, color: order.side === 'buy' ? colors.buy : colors.sell, cells, grab });
+      }
+      for (const which of ['stopLoss', 'takeProfit'] as const) {
+        const stop = order[which];
+        const stopY = stop === undefined ? NaN : priceToY(stop, viewport);
+        if (stop === undefined || !inPlot(stopY, viewport)) continue;
+        const amount = amountAt(order.side, price, order.quantity, stop);
+        tags.push({
+          y: stopY,
+          color: which === 'stopLoss' ? colors.loss : colors.profit,
+          cells: [
+            { kind: 'stamp', text: which === 'stopLoss' ? 'SL' : 'TP' },
+            { kind: 'text', text: formatAmount(amount, precision, viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
+          ],
+        });
+      }
+    }
+    return tags;
+  }
+
+  /**
+   * Each order's price on the price axis, written as the axis writes it.
+   * Called after the price axis so they paint over its labels.
    */
   renderAxisBadges(
     ctx: CanvasRenderingContext2D,
@@ -112,28 +138,21 @@ export class OrderRenderer {
     config: TradingConfig,
     dragState: DragState | null,
   ): void {
-    const buyColor = config.orderColors?.buy ?? '#1fa874';
-    const sellColor = config.orderColors?.sell ?? '#e8505b';
-    const { chartRect } = viewport;
-    const axisX = chartRect.x + chartRect.width + 1;
-
-    for (const order of orders) {
-      const isDragging = dragState?.orderId === order.id && dragState.sourceType === 'order';
-      const price = isDragging ? dragState!.currentPrice : order.price;
-      const y = priceToY(price, viewport);
-      if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
-
-      const color = order.side === 'buy' ? buyColor : sellColor;
-      const priceText = priceTagText(price, viewport, config.pricePrecision);
-      ctx.font = `11px ${theme.font.family}`;
-      const badgeWidth = ctx.measureText(priceText).width + 10;
-      ctx.fillStyle = color;
-      fillTag(ctx, axisX, y - 9, Math.min(badgeWidth, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2), 18, theme);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(priceText, axisX + 5, y);
+    for (const badge of this.axisBadges(orders, viewport, config, dragState)) {
+      drawAxisBadge(ctx, badge.y, badge.text, badge.color, viewport, theme);
     }
+  }
+
+  /** The price each order puts on the axis (on the plot): where it is being dragged to, else its own. */
+  axisBadges(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): AxisBadge[] {
+    const colors = colorsOf(config);
+    const badges: AxisBadge[] = [];
+    for (const order of orders) {
+      const price = priceOf(order, dragState);
+      const y = priceToY(price, viewport);
+      if (inPlot(y, viewport)) badges.push({ y, text: priceTagText(price, viewport, config.pricePrecision), color: order.side === 'buy' ? colors.buy : colors.sell });
+    }
+    return badges;
   }
 
   hitTest(

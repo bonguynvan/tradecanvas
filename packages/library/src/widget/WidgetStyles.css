@@ -2689,58 +2689,109 @@
 .tcw-btn-long:hover { color: var(--tcw-green) !important; }
 .tcw-btn-short:hover { color: var(--tcw-red) !important; }
 
+/*
+ * Placing a bracket: a strip at the foot of the chart, over its time axis
+ * (30 px, the chart's TIME_AXIS_HEIGHT), clear of the tags along its top; its
+ * name and Place in the side's colour. Centred by its margins, not a
+ * transform: the entrance animation ends on `transform: none`, which left it
+ * starting at the middle.
+ */
 .tcw-bracket-bar {
   position: absolute;
-  top: calc(var(--tcw-panel-top) + 2px);
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(30px + var(--tcw-space-5));
+  inset-inline: 0;
+  margin-inline: auto;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--tcw-space-4));
   z-index: 45;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 8px 7px 14px;
+  gap: var(--tcw-space-4);
+  padding-block: var(--tcw-space-3);
+  padding-inline: var(--tcw-space-5) var(--tcw-space-3);
   background: var(--tcw-bg-elevated);
-  border: 1px solid var(--tcw-border-strong);
   border-radius: var(--tcw-panel-radius);
   box-shadow: var(--tcw-menu-shadow);
   animation: tcw-alerts-in var(--tcw-dur, 160ms) var(--tcw-ease, ease) both;
 }
+.tcw-bracket-bar[data-side='buy'] { --tcw-side: var(--tcw-green); }
+.tcw-bracket-bar[data-side='sell'] { --tcw-side: var(--tcw-red); }
+/* The name gives way first: in German or Russian it would push Place off a phone. */
 .tcw-bracket-label {
-  font-size: var(--tcw-font-size-sm);
-  font-weight: calc(var(--tcw-weight-strong) + 100);
-}
-.tcw-bracket-label[data-side='buy'] { color: var(--tcw-green); }
-.tcw-bracket-label[data-side='sell'] { color: var(--tcw-red); }
-.tcw-bracket-hint {
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-}
-.tcw-bracket-cancel, .tcw-bracket-confirm {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 30px;
-  padding: 0 12px;
-  font-size: var(--tcw-font-size-sm);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-side, var(--tcw-text));
+  font-size: var(--tcw-font-size);
   font-weight: var(--tcw-weight-strong);
-  border: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* The replay bar has the chart's foot while it shows: the bracket's goes to the top. */
+.tcw-chart-container:has(> .tcw-replay-bar) > .tcw-bracket-bar {
+  top: var(--tcw-space-4);
+  bottom: auto;
+}
+.tcw-bracket-hint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tcw-bracket-cancel,
+.tcw-bracket-confirm {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  height: var(--tcw-control-h);
+  padding-inline: var(--tcw-space-5);
   border-radius: var(--tcw-control-radius);
+  font: inherit;
+  font-size: var(--tcw-font-size);
+  white-space: nowrap;
   cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
 }
 .tcw-bracket-cancel {
-  color: var(--tcw-text-dim);
-  background: var(--tcw-bg-surface);
+  border: var(--tcw-border-w) solid var(--tcw-border-strong);
+  background: transparent;
+  color: var(--tcw-text);
 }
-.tcw-bracket-cancel:hover { color: var(--tcw-text); }
+.tcw-bracket-cancel:hover { background: var(--tcw-hover-bg); }
+/* The ground's own colour reads on the side's: dark on the dark theme's light greens, paper on the light theme's deep ones. */
 .tcw-bracket-confirm {
-  color: var(--tcw-accent-ink);
-  background: var(--tcw-accent);
+  border: none;
+  background: var(--tcw-side, var(--tcw-accent));
+  color: var(--tcw-bg);
+  font-weight: var(--tcw-weight-strong);
 }
-.tcw-bracket-confirm:hover { background: var(--tcw-accent-hover); }
+.tcw-bracket-confirm:hover { background: color-mix(in srgb, var(--tcw-side, var(--tcw-accent)) 86%, var(--tcw-text)); }
+.tcw-bracket-cancel:focus-visible,
+.tcw-bracket-confirm:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
 
 @media (max-width: 640px) {
-  .tcw-bracket-bar { width: calc(100vw - 24px); justify-content: space-between; }
+  .tcw-bracket-bar {
+    inset-inline: var(--tcw-space-4);
+    width: auto;
+    max-width: none;
+  }
   .tcw-bracket-hint { display: none; }
+  .tcw-bracket-label { margin-inline-end: auto; }
+  .tcw-bracket-cancel,
+  .tcw-bracket-confirm { height: 34px; }
+}
+
+@media (forced-colors: active) {
+  .tcw-bracket-bar { border: 1px solid CanvasText; }
+  .tcw-bracket-confirm { border: 1px solid ButtonText; }
+  .tcw-bracket-cancel:focus-visible,
+  .tcw-bracket-confirm:focus-visible { outline: 2px solid Highlight; }
 }
 
 /* === Drawing style + templates popover === */

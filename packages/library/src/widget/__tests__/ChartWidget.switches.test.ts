@@ -522,3 +522,17 @@ describe('ChartWidget switches after review', () => {
     expect(host.querySelector('[data-role="symbol"]')!.hasAttribute('aria-disabled')).toBe(false);
   });
 });
+
+describe('ChartWidget bracket bar', () => {
+  it('sits in the chart, over its foot, clear of the tags along its top', () => {
+    make({ trading: true });
+    expect(host.querySelector('.tcw-chart-container > .tcw-bracket-bar')).not.toBeNull();
+  });
+
+  it('reads right to left in a right-to-left widget, though the chart under it does not', () => {
+    make({ trading: true, dir: 'rtl' });
+    (widget as unknown as { bracketBar: { show(side: 'buy' | 'sell'): void } }).bracketBar.show('buy');
+    expect(host.querySelector<HTMLElement>('.tcw-chart-container')!.dir).toBe('ltr');
+    expect(host.querySelector<HTMLElement>('.tcw-bracket-bar')!.dir).toBe('rtl');
+  });
+});

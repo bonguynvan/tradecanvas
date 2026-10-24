@@ -31,28 +31,39 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>포지션</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  각 선의 오른쪽 끝, 가격 축 옆에 태그가 붙습니다. 진입가 태그에는 수량, 방향, 평가 손익이 표시되고 그다음
+  <strong>⇅</strong>와 <strong>×</strong>가 있습니다. 손절과 익절 태그에는 가격이 그곳에 닿았을 때의 손익이 표시됩니다.
+  모든 가격은 축에도 표시됩니다. 서로 겹칠 태그는 나란히 놓이고, 축의 태그는 서로 비켜 섭니다. 손절이나 익절은 선이나
+  태그를 끌어 옮깁니다.
+</p>
 
 <h2>주문</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  선의 라벨에는 주문 종류와 수량(<code>LIMIT 0.25</code>)이 표시되고, 가격 축의 태그에는 축과 같은 방식으로 쓴 가격이 표시됩니다.
-  가격선을 드래그해 주문을 수정하고, <code>chart.on('orderModify', ...)</code>로 변경을 구독합니다.
+  주문 태그에는 수량과 종류(<code>0.25</code>, <code>Sell limit</code>), 그리고 취소용 <strong>×</strong>가
+  표시되고, 가격 축의 태그에는 축과 같은 방식으로 쓴 가격이 표시됩니다. 손절과 익절을 달고 진입하는 주문은 그것들을
+  점선으로, 닿았을 때의 손익과 함께 보여 줍니다. 선이나 태그를 끌어 주문을 수정하고, <code>chart.on('orderModify', ...)</code>로
+  변경을 구독합니다.
 </p>
 
 <h2>실시간 실행 (어댑터 연결)</h2>
@@ -94,7 +105,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   한 번에 반전할 수 있는 어댑터는 <code>reversePosition</code>을 구현합니다.
   구현하지 않으면 차트가 포지션을 청산한 뒤 반대 방향으로 시장가 주문을 보냅니다.
@@ -286,12 +297,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>포지션 라벨 토큰</h2>
 <p>
-  포지션마다 차트에 표시되는 라벨을 사용자 지정합니다. <code>positionLabel</code>은
+  포지션 태그를 원하는 대로 씁니다. <code>positionLabel</code>은 수량 뒤의 방향과 손익 자리에 들어갑니다.
   템플릿 문자열 또는 문자열을 반환하는 함수를 받습니다.
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -302,11 +312,14 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>손익 그라데이션 기준점</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  태그의 평가 손익과 현재가까지의 띠는, <code>pnl</code>이 포지션 손익(금액) 이하인 가장 높은 기준점의 색을 따릅니다.
+</p>

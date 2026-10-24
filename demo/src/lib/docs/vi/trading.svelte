@@ -31,29 +31,39 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 </p>
 
 <h2>Vị thế</h2>
-<pre><code>{`chart.addPosition({
+<pre><code>{`chart.setPositions([{
   id: 'pos-1',
-  side: 'long',
-  entry: 65_200,
+  side: 'buy',
+  entryPrice: 65_200,
   quantity: 0.5,
   closedQuantity: 0.1,   // partial-close band on the left edge
   stopLoss: 64_800,
   takeProfit: 66_000,
-})`}</code></pre>
+}])`}</code></pre>
+
+<p>
+  Mỗi đường có một nhãn ở đầu bên phải, sát trục giá. Nhãn của giá vào lệnh ghi khối lượng, chiều và
+  lãi/lỗ đang mở, rồi đến <strong>⇅</strong> và <strong>×</strong>; nhãn của dừng lỗ và chốt lời ghi vị thế sẽ lãi
+  hay lỗ bao nhiêu nếu giá chạm tới đó. Mọi mức giá cũng hiện trên trục. Các nhãn có thể che nhau thì đứng cạnh nhau,
+  và nhãn trên trục tự giãn ra. Kéo dừng lỗ hay chốt lời bằng chính đường hoặc nhãn của nó.
+</p>
 
 <h2>Lệnh</h2>
-<pre><code>{`chart.addOrder({
+<pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
   type: 'limit',
   price: 65_500,
   quantity: 0.25,
-})`}</code></pre>
+  stopLoss: 66_000,      // dotted until it fills
+  takeProfit: 64_500,
+}])`}</code></pre>
 
 <p>
-  Nhãn trên đường lệnh ghi loại lệnh và khối lượng (<code>LIMIT 0.25</code>); nhãn của lệnh trên trục giá mang giá, viết
-  theo đúng cách trục viết giá. Kéo đường giá để sửa lệnh; đăng ký nghe thay đổi qua
-  <code>chart.on('orderModify', ...)</code>.
+  Nhãn của lệnh ghi khối lượng và loại lệnh (<code>0.25</code>, <code>Sell limit</code>), rồi đến
+  <strong>×</strong> để huỷ; nhãn trên trục giá mang giá, viết theo đúng cách trục viết giá. Lệnh mở kèm dừng lỗ
+  và chốt lời hiện chúng bằng đường chấm, cùng số lãi/lỗ tại đó. Kéo đường hoặc nhãn để sửa lệnh; đăng ký nghe thay
+  đổi qua <code>chart.on('orderModify', ...)</code>.
 </p>
 
 <h2>Khớp lệnh thật (kết nối một adapter)</h2>
@@ -95,7 +105,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent('pos-1', { stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
 <p>
   Adapter nào đảo chiều được trong một bước thì cài đặt <code>reversePosition</code>;
   nếu không có, biểu đồ sẽ đóng vị thế rồi gửi một lệnh thị trường theo chiều ngược lại.
@@ -290,12 +300,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 
 <h2>Token cho nhãn vị thế</h2>
 <p>
-  Tuỳ chỉnh nhãn trên biểu đồ cho từng vị thế. <code>positionLabel</code> nhận một
-  chuỗi mẫu hoặc một hàm trả về chuỗi.
+  Viết nhãn vị thế theo ý bạn: <code>positionLabel</code> thay cho chiều và lãi/lỗ đứng sau khối lượng.
+  Nó nhận một chuỗi mẫu hoặc một hàm trả về chuỗi.
 </p>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
-  positionLabel: '{side} {qty} @ {entry} · {pnlSign}{pnlPct}%',
+<pre><code>{`chart.setTradingConfig({
+  positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
 })`}</code></pre>
 
 <p>
@@ -306,11 +315,15 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 </p>
 
 <h2>Mốc màu chuyển sắc theo P&amp;L</h2>
-<pre><code>{`new ChartWidget(host, {
-  trading: true,
+<pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
-    { pnlPct: -0.02, color: '#ef4444' },
-    { pnlPct: 0,     color: '#94a3b8' },
-    { pnlPct: 0.02,  color: '#10b981' },
+    { pnl: -Infinity, color: '#ef4444' },
+    { pnl: 0,         color: '#94a3b8' },
+    { pnl: 500,       color: '#10b981' },   // 500 or more in profit
   ],
 })`}</code></pre>
+
+<p>
+  Số lãi/lỗ trên nhãn và dải màu tới giá hiện tại lấy màu của mốc cao nhất có <code>pnl</code> không vượt
+  quá lãi/lỗ của vị thế, tính bằng tiền.
+</p>
