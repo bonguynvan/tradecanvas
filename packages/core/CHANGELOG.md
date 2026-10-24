@@ -1,5 +1,11 @@
 # @tradecanvas/core
 
+## 1.39.0
+
+### Patch Changes
+
+- @tradecanvas/commons@1.39.0
+
 ## 1.38.0
 
 ### Minor Changes
