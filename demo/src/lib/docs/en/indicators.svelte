@@ -127,9 +127,10 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
 </p>
 
 <p>
-  <code>volumeProfile</code> draws one row per price band from the left edge of the plot, as long as the
-  volume traded there. The rows are see-through, so the legend and the candles under them stay readable;
-  give the indicator a lower <code>opacity</code> with <code>updateIndicatorStyle</code> to fade it further.
+  <code>volumeProfile</code> draws one row per price band from the left edge of the plot; each row's length
+  follows the volume traded in that band. The rows are see-through, so the legend over them and the candles
+  under them stay readable; give the indicator a lower <code>opacity</code> with <code>updateIndicatorStyle</code>
+  to fade it further.
 </p>
 
 <h2>In a pane of their own ({panes.length})</h2>

@@ -124,8 +124,8 @@ chart.setIndicatorIntervals(ema, null)  // ふたたびすべての時間足に�
 </p>
 
 <p>
-  <code>volumeProfile</code> は価格帯ごとに 1 行を、描画領域の左端からその価格帯の出来高に応じた長さで描きます。
-  行は半透明なので、下にある凡例やローソク足も読み取れます。<code>updateIndicatorStyle</code> で
+  <code>volumeProfile</code> は価格帯ごとに 1 行を描画領域の左端から描き、各行の長さはその価格帯で取引された出来高に従います。
+  行は半透明なので、上に重なる凡例も下にあるローソク足も読み取れます。<code>updateIndicatorStyle</code> で
   <code>opacity</code> を下げると、さらに薄くできます。
 </p>
 

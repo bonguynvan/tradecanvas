@@ -54,6 +54,25 @@ describe('the Volume Profile indicator', () => {
     for (const fill of fills) expect(fill.alpha).toBeCloseTo(PROFILE_ALPHA * 0.5);
   });
 
+  it('keeps its rows see-through when its opacity was cleared', () => {
+    // updateIndicatorStyle(id, { opacity: undefined }) copies the key over, and a
+    // NaN alpha is ignored by the canvas, which then draws the rows solid.
+    const { fills } = draw({ ...engineStyle, opacity: undefined as unknown as number });
+    expect(fills.length).toBeGreaterThan(0);
+    for (const fill of fills) expect(fill.alpha).toBeCloseTo(PROFILE_ALPHA);
+  });
+
+  it('takes an opacity past 1 as full strength, not as solid rows', () => {
+    const { fills } = draw({ ...engineStyle, opacity: 5 });
+    expect(fills.length).toBeGreaterThan(0);
+    for (const fill of fills) expect(fill.alpha).toBeCloseTo(PROFILE_ALPHA);
+  });
+
+  it('draws its rows invisible, not solid, at a negative opacity', () => {
+    const { fills } = draw({ ...engineStyle, opacity: -1 });
+    for (const fill of fills) expect(fill.alpha).toBe(0);
+  });
+
   it('leaves the context at full strength after it has drawn', () => {
     const { ctx, fills } = draw(engineStyle);
     ctx.fillRect(0, 0, 1, 1);

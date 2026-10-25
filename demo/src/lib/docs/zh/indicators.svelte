@@ -119,8 +119,8 @@ chart.setIndicatorIntervals(ema, null)  // 恢复为全部周期`}</code></pre>
 </p>
 
 <p>
-  <code>volumeProfile</code> 从绘图区左边缘为每个价格区间画一行，长度取决于该区间的成交量。
-  这些行是半透明的，下面的图例和K线仍清晰可读；用 <code>updateIndicatorStyle</code> 设置更低的
+  <code>volumeProfile</code> 从绘图区左边缘为每个价格区间画一行，每行的长度随该区间的成交量而定。
+  这些行是半透明的，叠在其上的图例和位于其下的K线都清晰可读；用 <code>updateIndicatorStyle</code> 设置更低的
   <code>opacity</code> 可让它更淡。
 </p>
 

@@ -129,8 +129,8 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
 </p>
 
 <p>
-  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng từ mép trái vùng vẽ, dài theo khối lượng đã khớp ở vùng đó.
-  Các hàng trong mờ nên chú giải và nến nằm bên dưới vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng
+  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng từ mép trái vùng vẽ; độ dài mỗi hàng theo khối lượng đã khớp trong vùng giá đó.
+  Các hàng trong mờ nên chú giải đè lên trên chúng và nến nằm bên dưới chúng vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng
   <code>updateIndicatorStyle</code> để làm chỉ báo mờ thêm.
 </p>
 

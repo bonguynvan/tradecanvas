@@ -136,9 +136,9 @@ chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
 </p>
 
 <p>
-  <code>volumeProfile</code> dibuja una fila por franja de precio desde el borde izquierdo del gráfico,
-  tan larga como el volumen negociado en ella. Las filas son translúcidas, así que la leyenda y las velas
-  que quedan debajo se siguen leyendo; dale una <code>opacity</code> menor con
+  <code>volumeProfile</code> dibuja una fila por franja de precio desde el borde izquierdo del gráfico;
+  el largo de cada fila sigue el volumen negociado en esa franja. Las filas son translúcidas, así que la
+  leyenda que queda encima y las velas que quedan debajo se siguen leyendo; dale una <code>opacity</code> menor con
   <code>updateIndicatorStyle</code> para atenuarlo más.
 </p>
 

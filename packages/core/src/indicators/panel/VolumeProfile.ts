@@ -4,7 +4,7 @@ import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { priceToYMapper } from '../../viewport/ScaleMapping.js';
-import { PROFILE_ROW_ALPHA } from '../../charts/VolumeProfileRenderer.js';
+import { profileRowAlpha } from '../../style/profileRows.js';
 
 /** The busiest row's width, as a share of the plot's width. */
 const MAX_WIDTH_SHARE = 0.3;
@@ -71,7 +71,7 @@ export class VolumeProfileIndicator extends IndicatorBase {
     // The rows sit at the left of the plot, under the legend and over the
     // candles, so they are see-through for both to read; the colours the
     // chart hands out are opaque. The busiest rows stand out by colour alone.
-    ctx.globalAlpha = PROFILE_ROW_ALPHA * style.opacity;
+    ctx.globalAlpha = profileRowAlpha(style.opacity);
     for (let i = 0; i < rows; i++) {
       const width = (bins[i] / maxVolume) * maxBarWidth;
       if (width <= 0) continue;

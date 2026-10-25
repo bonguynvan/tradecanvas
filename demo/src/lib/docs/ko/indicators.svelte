@@ -124,8 +124,8 @@ chart.setIndicatorIntervals(ema, null)  // 다시 모든 시간 단위에 표시
 </p>
 
 <p>
-  <code>volumeProfile</code>은 가격대마다 한 줄을 플롯 왼쪽 가장자리부터, 그 가격대에서 거래된 거래량만큼의 길이로 그립니다.
-  줄은 반투명하므로 아래에 있는 범례와 캔들도 그대로 읽힙니다. <code>updateIndicatorStyle</code>로
+  <code>volumeProfile</code>은 가격대마다 한 줄을 플롯 왼쪽 가장자리부터 그리며, 각 줄의 길이는 그 가격대에서 거래된 거래량을 따릅니다.
+  줄은 반투명하므로 위에 겹친 범례와 아래에 있는 캔들도 그대로 읽힙니다. <code>updateIndicatorStyle</code>로
   <code>opacity</code>를 낮추면 더 흐리게 할 수 있습니다.
 </p>
 

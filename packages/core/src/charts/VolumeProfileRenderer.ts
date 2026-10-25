@@ -1,12 +1,6 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
-
-/**
- * How strongly a volume profile's rows show. Faint enough that the candles,
- * and the legend drawn over the plot, still read through them; the chart's
- * profile and the Volume Profile indicator share it so the two look alike.
- */
-export const PROFILE_ROW_ALPHA = 0.32;
+import { PROFILE_ROW_ALPHA } from '../style/profileRows.js';
 
 /**
  * Volume Profile — horizontal histogram of traded volume bucketed by price.
