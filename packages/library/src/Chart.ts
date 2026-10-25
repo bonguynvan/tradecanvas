@@ -216,6 +216,7 @@ export class Chart {
   private renderDeferred = false;
   /** Current price-axis width; grows to fit long (e.g. sub-cent) labels. */
   private priceAxisWidth = PRICE_AXIS_WIDTH;
+  /** A canvas out of the page, to measure on when the chart has none of its own (destroyed). */
   private measureCtx: CanvasRenderingContext2D | null | undefined;
   private containerSizeCache: { width: number; height: number } | null = null;
   private containerSizeCacheTime = 0;
@@ -1460,11 +1461,13 @@ export class Chart {
   }
 
   /**
-   * The face and sizes of the chart's own text (the axes, the legend, the
-   * tags), over every theme and on top of the font set before: `{ family:
-   * SANS_FONT_FAMILY }` for proportional figures. Null goes back to each
-   * theme's own. A family that is empty or a size that isn't a number above
-   * zero is left out.
+   * The face and sizes of the chart's own text (the axes, the tags, the
+   * crosshair's pills), over every theme and on top of the font set before:
+   * `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes
+   * the face, unless `setLegend` names one, at its own size (`setLegend`); in a
+   * widget its face and size come from the look (`ui.font`). Null goes back to
+   * each theme's own. A family that is empty or a size that isn't a number
+   * above zero is left out.
    */
   setFont(font: Partial<FontConfig> | null): void {
     if (font === null) {
@@ -5558,16 +5561,30 @@ export class Chart {
     return true;
   }
 
+  /**
+   * The width of a label as the chart draws it. It measures on the chart's own
+   * canvas: in Chromium a canvas's text takes what the page passes down to the
+   * element (the widget's tabular figures, wider in a proportional face),
+   * which a canvas out of the page doesn't get, so the axis would be sized too
+   * narrow for its crosshair pill. The canvas's font is put back after.
+   */
   private measureText(text: string, font: string): number {
+    const ctx = this.engine.layerManager.getLayer(LayerType.Main)?.ctx ?? this.detachedMeasureContext();
+    if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
+    const drawing = ctx.font;
+    ctx.font = font;
+    const width = ctx.measureText(text).width;
+    ctx.font = drawing;
+    return width;
+  }
+
+  private detachedMeasureContext(): CanvasRenderingContext2D | null {
     if (this.measureCtx === undefined) {
       this.measureCtx = typeof document !== 'undefined'
         ? document.createElement('canvas').getContext('2d')
         : null;
     }
-    const ctx = this.measureCtx;
-    if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
-    ctx.font = font;
-    return ctx.measureText(text).width;
+    return this.measureCtx;
   }
 
   /**

@@ -2,7 +2,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { PHI, type OHLCBar } from '@tradecanvas/commons';
 import { Chart, SANS_FONT_FAMILY } from '../index.js';
-import { installChartStubs, sizedHost } from './chartTestEnv.js';
+import { fakeContext, installChartStubs, sizedHost } from './chartTestEnv.js';
 
 type Inside = { viewport: { getState(): { barWidth: number; barSpacing: number } } };
 const slot = (chart: Chart) => {
@@ -98,6 +98,38 @@ describe('Chart: bar layout and figures font', () => {
     chart.setTheme({ ...chart.getTheme(), candleUp: '#0a8f5a' });
     chart.setFont(null);
     expect(chart.getFont().family).toBe(themes);
+  });
+
+  it('measures its figures on its own canvas, the one it draws them on, and leaves that canvas’s font as it was', () => {
+    // A canvas in the page draws its text with what the page passes down to it (in Chromium the
+    // widget's tabular figures, wider in a proportional face); here it measures wider than one out of the page.
+    const measured: boolean[] = [];
+    const contexts = new WeakMap<HTMLCanvasElement, CanvasRenderingContext2D>();
+    installChartStubs();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
+      const canvas = this;
+      let ctx = contexts.get(canvas);
+      if (!ctx) {
+        ctx = fakeContext(canvas);
+        ctx.measureText = ((text: string) => {
+          measured.push(canvas.isConnected);
+          return { width: text.length * (canvas.isConnected ? 9 : 6) };
+        }) as never;
+        contexts.set(canvas, ctx);
+      }
+      return ctx as never;
+    });
+    const host = sizedHost();
+    const chart = new Chart(host, {});
+    charts.push(chart);
+    chart.setData(bars(300));
+    const scene = host.querySelector('canvas')!.getContext('2d')!;
+    scene.font = '7px Drawing';
+    measured.length = 0;
+    chart.setFont({ sizeSmall: 14 });
+    expect(measured.length).toBeGreaterThan(0);
+    expect(measured.every((inPage) => inPage)).toBe(true);
+    expect(scene.font).toBe('7px Drawing');
   });
 
   it('leaves out a font that is no font', () => {

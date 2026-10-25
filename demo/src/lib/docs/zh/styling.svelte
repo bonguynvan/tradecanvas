@@ -65,7 +65,7 @@ chart.setBarLayout('classic')    // a 2 px gap, as before
 chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
 chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 优先于外观的设置。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
+  <code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 中的 <code>family</code> 优先于外观的设置；<code>chartOptions.font</code> 只设字号时，仍使用外观的字体。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
 </p>
 
 <h2>黄金比例</h2>
@@ -181,6 +181,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-menu-shadow</code>、<code>--tcw-dialog-shadow</code>、<code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>样式表：斐波那契间距，2 到 34 px</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>样式表：<code>normal</code>，字体按原样显示。<code>ui</code> 选项从不设置它，所以你写在 <code>.tcw-root</code> 上的规则可以打开你所用字体自己的 OpenType 特性（Inter 的单层 a 和开口数字：<code>'cv11', 'ss01'</code>）。它们作用于组件的文字，但大多数按钮和输入框仍保留浏览器自己的设置，图表的文字则从不使用它们。</td></tr>
   </tbody>
 </table>
 <p>

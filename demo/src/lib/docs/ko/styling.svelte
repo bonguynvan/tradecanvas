@@ -68,7 +68,8 @@ chart.setBarLayout('classic')    // a 2 px gap, as before
 chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
 chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code>와 <code>chartOptions.font</code>가 외관의 설정보다 우선합니다. 화면에 봉이 있을 때
+  <code>chartOptions.barLayout</code>와 <code>chartOptions.font</code>의 <code>family</code>가 외관의 설정보다 우선합니다.
+  <code>chartOptions.font</code>가 크기만 정하면 글꼴은 외관의 것을 씁니다. 화면에 봉이 있을 때
   레이아웃을 바꾸면 확대 수준은 그대로 두고 칸만 다시 나눕니다.
 </p>
 
@@ -186,6 +187,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>스타일시트: 피보나치 간격, 2에서 34 px까지</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>스타일시트: <code>normal</code>, 글꼴의 기본 모양 그대로. <code>ui</code> 옵션은 이 값을 설정하지 않으므로, <code>.tcw-root</code>에 작성한 규칙으로 사용하는 글꼴 자체의 OpenType 기능을 켤 수 있습니다(Inter의 한 층 a와 열린 숫자: <code>'cv11', 'ss01'</code>). 위젯의 글자에 적용되지만, 버튼과 입력란 대부분은 브라우저 자체 설정을 그대로 쓰고, 차트의 글자에는 적용되지 않습니다.</td></tr>
   </tbody>
 </table>
 <p>

@@ -67,7 +67,7 @@
   width: 100%;
   height: 100%;
   font-family: var(--tcw-font);
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-feature-settings: var(--tcw-font-features);
   font-size: var(--tcw-font-size);
   line-height: 1.4;
   color: #e6e3dc;
@@ -178,6 +178,9 @@
 
   /* Type */
   --tcw-font-mono: 'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  /* The faces as drawn: a tag means something else in each face (in IBM Plex, ss01 is a one-storey a).
+   * The `ui` option never sets it, so a rule of yours on .tcw-root turns on your face's own. */
+  --tcw-font-features: normal;
 }
 
 /* Print by day: ink on paper. */
@@ -934,7 +937,6 @@
   font-family: var(--tcw-font-mono);
   font-size: var(--tcw-font-size-sm);
   line-height: 19px;
-  font-feature-settings: 'tnum';
   white-space: nowrap;
   color: var(--tcw-text-dim);
   pointer-events: auto;
@@ -1633,7 +1635,6 @@
   font-size: var(--tcw-font-size-xs);
   color: var(--tcw-text-muted);
   flex-shrink: 0;
-  font-feature-settings: 'tnum';
 }
 
 .tcw-status-right {
@@ -2184,7 +2185,6 @@
   color: var(--tcw-text-muted);
   min-width: 64px;
   text-align: center;
-  font-feature-settings: 'tnum';
 }
 
 .tcw-replay-speed {

@@ -247,8 +247,9 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
-The chart's own text (axes, legend, tags) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
-or `chart.setFont(...)` (`null`: the theme's). Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
+The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
+or `chart.setFont(...)` (`null`: the theme's); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
+and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
 screen) or `'classic'` (the default, a 2 px gap); `chart.setBarLayout`. The widget's
 `ui: { density: 'airy' }` turns on golden bars, sans figures and spacious controls together.
 

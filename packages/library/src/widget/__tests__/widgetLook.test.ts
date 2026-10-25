@@ -91,6 +91,20 @@ describe('the stylesheet’s look', () => {
     expect([...read].filter((name) => !declaredAnywhere.has(name) && !set.has(name))).toEqual([]);
   });
 
+  it('turns on no OpenType features but the ones its token names: none, unless your CSS sets it', () => {
+    const dir = fileURLToPath(new URL('..', import.meta.url));
+    const sheets = readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => readFileSync(`${dir}/${f}`, 'utf8')).join('\n');
+    // A list here would replace the token's on that part, and tags mean something else in each face.
+    const lists = [...sheets.matchAll(/font-feature-settings:\s*([^;]+);/g)].map((m) => m[1].trim());
+    expect(lists).toEqual(['var(--tcw-font-features)']);
+    expect(ruleBody('.tcw-root')).toContain('font-feature-settings: var(--tcw-font-features);');
+    expect(root['--tcw-font-features']).toBe('normal');
+    // Only the stylesheet declares it, so a rule of yours on .tcw-root sets it with the `ui` option or without.
+    for (const preset of ['print', 'studio', 'terminal', 'capsule'] as const) {
+      expect(widgetUIVariables(resolveWidgetUI(preset)), preset).not.toHaveProperty('--tcw-font-features');
+    }
+  });
+
   it('uses every token the look sets', () => {
     const unused = Object.keys(widgetUIVariables(resolveWidgetUI())).filter(
       (name) => !css.includes(`var(${name})`) && !css.includes(`var(${name},`),

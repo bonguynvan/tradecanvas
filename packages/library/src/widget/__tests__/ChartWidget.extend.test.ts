@@ -603,6 +603,16 @@ describe('ChartWidget look', () => {
     expect(FakeChart.last.fonts).toEqual([]);
   });
 
+  it('gives a chart font of yours that sets only sizes the airy look’s face, and keeps the sizes after', () => {
+    const yours = { sizeSmall: 13 };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' }, chartOptions: { font: yours } });
+    // The font as drawn: each setFont goes over the one before, null goes back to the theme's.
+    const drawn = () => FakeChart.last.fonts.reduce<object>((font, next) => (next === null ? {} : { ...font, ...(next as object) }), yours);
+    expect(drawn()).toEqual({ sizeSmall: 13, family: SANS_FONT_FAMILY });
+    widget.setUI('print');
+    expect(drawn()).toEqual({ sizeSmall: 13 });
+  });
+
   it('takes the look from its options', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'terminal' });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;

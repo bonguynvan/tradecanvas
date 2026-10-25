@@ -1782,9 +1782,10 @@ export class ChartWidget {
   /**
    * Change the widget's look: a preset (`'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`) or your theme over one. Colours stay with
-   * `setTheme`. The look sets the chart's bar layout and font too (golden and
+   * `setTheme`. The look sets the chart's bar layout and face too (golden and
    * the look's sans face when airy, classic and the theme's otherwise),
-   * over any set on the chart itself, unless `chartOptions` set them.
+   * over any set on the chart itself, unless `chartOptions` set the bar
+   * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
@@ -1812,13 +1813,21 @@ export class ChartWidget {
   /**
    * The airy look's chart: golden bars, and its figures (axes, tags) in the
    * look's figures face; any other look gives them back. `chartOptions`
-   * that set the bars or the font win.
+   * that set the bars or a face win; sizes alone keep the look's face.
    */
   private applyChartLook(): void {
     const airy = this.ui.density === 'airy';
     const given = this.options.chartOptions;
     if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
-    if (!given?.font) this.chart.setFont(airy ? { family: this.ui.font.mono } : null);
+    if (given?.font?.family) return;
+    // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.
+    if (airy) {
+      this.chart.setFont({ family: this.ui.font.mono });
+      return;
+    }
+    // Back to the theme's face: null drops the look's, and with it your sizes, so they go on again.
+    this.chart.setFont(null);
+    if (given?.font) this.chart.setFont(given.font);
   }
 
   /** The chart's own tags and pills take the look's corners. */
