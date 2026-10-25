@@ -4366,8 +4366,8 @@
 
 /* The toolbar fits itself too (on a tablet, a window half a screen wide):
    the right-hand buttons that don't fit fold under "more" (`--collapsed`
-   shows it), and `--icons` drops the menus' labels and the interval buttons.
-   Narrow folds them all. */
+   shows it), a host's left-hand ones last, and `--icons` drops the menus'
+   labels and the interval buttons. Narrow folds them all. */
 .tcw-toolbar [data-tcw-folded],
 .tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-toolbar-overflow {
   display: none;

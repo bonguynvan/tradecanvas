@@ -1,0 +1,5 @@
+---
+'@tradecanvas/chart': patch
+---
+
+Toolbar buttons and menus you add with `addToolbarButton` or `addToolbarDropdown` and `side: 'left'` now fold under the toolbar's "more" menu like the widget's own, after everything on the right. Before, they never folded: on a phone they pushed "more" off the edge of the screen, and everything under it with it. This changes what a narrow widget (under 641 px) shows: a left button of yours that used to stay on the bar there now goes under "more" with the rest, listed first. A menu of yours picked from "more" opens under "more"; it used to open at the widget's top-left corner. `handle.setText` refits the toolbar, so a count that grows folds buttons instead of pushing "more" out of the widget. In "more", a button of yours is named with its count ("News: 3"). An `onClick` of yours still gets its own button when it is picked from "more"; that button is folded and has no size then, so a popover you place from it lands at the corner: place it from somewhere else.

@@ -348,7 +348,11 @@ export interface ToolbarButtonSpec {
   icon?: string | Element;
   /** Text after the icon. Without an icon or text the label shows. */
   text?: string;
-  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  /**
+   * With the chart controls on the left, or the panel buttons on the right.
+   * Default `'right'`. Either side folds under the toolbar's "more" menu when
+   * it runs out of room (a narrow widget folds them all), the left ones last.
+   */
   side?: 'left' | 'right';
   /** A switch that shows pressed while on (see `setActive`). */
   toggle?: boolean;
@@ -386,7 +390,11 @@ export interface ToolbarDropdownSpec {
   icon?: string | Element;
   /** Text after the icon. */
   text?: string;
-  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  /**
+   * With the chart controls on the left, or the panel buttons on the right.
+   * Default `'right'`. Either side folds under the toolbar's "more" menu when
+   * it runs out of room (a narrow widget folds them all), the left ones last.
+   */
   side?: 'left' | 'right';
   /** The menu's entries, asked for each time it opens. */
   items: () => readonly WidgetMenuItem[];

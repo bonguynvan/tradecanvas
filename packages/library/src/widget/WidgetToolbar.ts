@@ -96,9 +96,10 @@ export class WidgetToolbar {
 
   /**
    * What a menu opened from `btn` hangs from: the button, or "more" while the
-   * button is folded under it.
+   * button is folded under it. A folded button has no box, so a menu placed
+   * from it would open at the widget's corner.
    */
-  private anchorOf(btn: HTMLElement): HTMLElement {
+  menuAnchor(btn: HTMLElement): HTMLElement {
     const folded = btn.hasAttribute('data-tcw-folded') || this.el.closest('[data-tcw-narrow]') !== null;
     return folded && this.moreBtn ? this.moreBtn : btn;
   }
@@ -106,9 +107,10 @@ export class WidgetToolbar {
   /**
    * Fit the toolbar to its width. When everything doesn't fit, the buttons
    * on the right fold under "more" one at a time, from the right, until the
-   * rest does; when even that isn't enough, the menus show their icons only
+   * rest does; a host's buttons on the left come before them all, so they
+   * fold last. When even that isn't enough, the menus show their icons only
    * and the interval buttons give way to the interval menu, and as many
-   * buttons as then fit come back.
+   * buttons as then fit come back, from the left.
    */
   fit(): void {
     const { el } = this;
@@ -252,7 +254,7 @@ export class WidgetToolbar {
       layoutsBtn.dataset.icon = 'save';
       markPart(layoutsBtn, 'layouts', 'toolbar.layouts');
       layoutsBtn.setAttribute('aria-haspopup', 'menu');
-      layoutsBtn.addEventListener('click', () => onLayouts(this.anchorOf(layoutsBtn)));
+      layoutsBtn.addEventListener('click', () => onLayouts(this.menuAnchor(layoutsBtn)));
       el.appendChild(layoutsBtn);
       this.setLayout(null, false);
     }
@@ -283,7 +285,7 @@ export class WidgetToolbar {
     }
 
     // The trading tools in one menu: a new order, brackets, the ladder and the account.
-    this.trade = WidgetTradeMenu.create(callbacks, this.t, () => this.rootEl(), (btn) => this.anchorOf(btn));
+    this.trade = WidgetTradeMenu.create(callbacks, this.t, () => this.rootEl(), (btn) => this.menuAnchor(btn));
     if (this.trade) el.appendChild(this.trade.button);
     el.appendChild(this.sep());
 
@@ -330,7 +332,7 @@ export class WidgetToolbar {
     const root = this.rootEl();
     const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
     const isOff = (el: HTMLElement) => (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name));
-    // Narrow, every button on the right is under "more"; else those folded to fit.
+    // Narrow, every button that can fold is under "more"; else those folded to fit.
     const narrow = this.el.closest('[data-tcw-narrow]') !== null;
     const buttons: HTMLButtonElement[] = [];
     for (const item of this.el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')) {
@@ -341,7 +343,8 @@ export class WidgetToolbar {
     }
     if (buttons.length === 0) return;
     const entries: ContextMenuEntry[] = buttons.map((btn, i) => {
-      const label = btn.title || btn.getAttribute('aria-label') || btn.textContent?.trim() || '';
+      // Its name before its tooltip: a host's button with a count is "News: 3", not "News".
+      const label = btn.getAttribute('aria-label') || btn.title || btn.textContent?.trim() || '';
       // A switch that is on shows its tick; one that is off, its icon.
       return btn.getAttribute('aria-pressed') === 'true'
         ? { id: String(i), label, checked: true }
@@ -357,7 +360,9 @@ export class WidgetToolbar {
   addHostButton(spec: ToolbarButtonSpec): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = spec.text || !spec.icon ? 'tcw-btn tcw-host-btn' : 'tcw-btn-icon tcw-host-btn';
+    // A host's button folds under "more" like the toolbar's own, on either side.
+    // One on the left comes before them all, so it folds last and comes back first.
+    btn.className = `${spec.text || !spec.icon ? 'tcw-btn' : 'tcw-btn-icon'} tcw-host-btn tcw-toolbar-overflow`;
     btn.dataset.hostButton = spec.id;
     if (typeof spec.icon === 'string') btn.dataset.icon = spec.icon;
     btn.title = spec.label;
@@ -373,8 +378,6 @@ export class WidgetToolbar {
     }
     setHostButtonName(btn, spec.label);
     btn.addEventListener('click', () => spec.onClick(btn));
-    // On the right, a host's button folds under "more" like the toolbar's own.
-    if (spec.side !== 'left') btn.classList.add('tcw-toolbar-overflow');
     (spec.side === 'left' ? this.hostLeft : this.hostRight)?.appendChild(btn);
     this.scheduleFit();
     return btn;

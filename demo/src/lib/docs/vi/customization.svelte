@@ -162,6 +162,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Nút, menu và mục của bạn nằm trong các thanh của widget, trông như của widget và theo theme lẫn giao diện của
   nó. Mỗi hàm trả về một handle để đổi hoặc gỡ, và phần đó hiện khi thanh của nó hiện.
+  Khi thanh công cụ hết chỗ, nút và menu của bạn gập vào menu “thêm” cùng với nút của widget, nút bên trái gập sau
+  cùng; hẹp hơn 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “thêm” mở ngay dưới nút đó.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

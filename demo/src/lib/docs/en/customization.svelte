@@ -162,6 +162,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Your buttons, menus and items go into the widget's bars, look like its own and follow its theme and look. Each
   returns a handle to change or remove it, and shows while its bar does.
+  When the toolbar runs out of room your buttons and menus fold under its “more” menu with the widget's own, those
+  on the left last; below 641 px wide they all go there. A menu of yours picked from “more” opens under it.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

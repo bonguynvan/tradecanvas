@@ -87,6 +87,7 @@ class FakeChart {
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
+const { WidgetContextMenu } = await import('../WidgetContextMenu.js');
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -142,6 +143,83 @@ describe('ChartWidget toolbar buttons of the host', () => {
     expect(getComputedStyle(toolbar).display).toBe('none');
     widget.setFeatures({ toolbar: true });
     expect(getComputedStyle(toolbar).display).not.toBe('none');
+  });
+});
+
+describe('ChartWidget toolbar parts of the host with no room', () => {
+  const root = () => host.querySelector<HTMLElement>('.tcw-root')!;
+  const toolbarEl = () => host.querySelector<HTMLElement>('.tcw-toolbar')!;
+  const more = () => host.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!;
+  const pickFromMore = (label: string) => {
+    more().click();
+    menuItems().find((b) => b.textContent?.trim() === label)!.click();
+  };
+  /** Where "more" sits; jsdom puts everything else at 0, 0. */
+  const placeMore = () => {
+    more().getBoundingClientRect = () => ({ left: 500, right: 528, top: 10, bottom: 40, width: 28, height: 30, x: 500, y: 10, toJSON: () => ({}) }) as DOMRect;
+  };
+  const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  /** The fits a new widget asks for, a frame after its first, all done. */
+  const settled = async () => {
+    for (let i = 0; i < 3; i++) await nextFrame();
+  };
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('puts a left button under “more” on a narrow widget, where a pick still calls back', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const clicks: HTMLButtonElement[] = [];
+    const handle = widget.addToolbarButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: (b) => clicks.push(b) })!;
+    root().setAttribute('data-tcw-narrow', '');
+    expect(handle.element.classList.contains('tcw-toolbar-overflow')).toBe(true);
+    pickFromMore('Scanner');
+    expect(clicks).toEqual([handle.element]);
+  });
+
+  it('opens a menu of the host picked from “more” on a narrow widget under “more”, not at the corner', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const open = vi.spyOn(WidgetContextMenu.prototype, 'open');
+    widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'left', items: () => [{ label: 'A', onSelect: () => {} }] });
+    root().setAttribute('data-tcw-narrow', '');
+    placeMore();
+    pickFromMore('Scans');
+    const [, x, y, , anchor] = open.mock.calls.at(-1)!;
+    expect([x, y]).toEqual([500, 42]);
+    expect(anchor).toBe(more());
+  });
+
+  it('opens it under “more” too while its button is folded to fit a wide widget', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const open = vi.spyOn(WidgetContextMenu.prototype, 'open');
+    const handle = widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'right', items: () => [{ label: 'A', onSelect: () => {} }] })!;
+    // All at once: a fit waiting for its frame would unfold it.
+    root().removeAttribute('data-tcw-narrow');
+    toolbarEl().classList.add('tcw-toolbar--collapsed');
+    handle.element.setAttribute('data-tcw-folded', '');
+    placeMore();
+    pickFromMore('Scans');
+    const [, x, y] = open.mock.calls.at(-1)!;
+    expect([x, y]).toEqual([500, 42]);
+  });
+
+  it.each(['button', 'menu'] as const)('refits the toolbar when the text of its %s grows, folding from the right', async (kind) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const handle = kind === 'button'
+      ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} })!
+      : widget.addToolbarDropdown({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', items: () => [] })!;
+    const el = toolbarEl();
+    // 400px for the chart's controls, 40 for each button that can fold still shown, 10 for each letter of the count.
+    const shown = () => [...el.querySelectorAll('.tcw-toolbar-overflow')].filter((b) => !b.hasAttribute('data-tcw-folded')).length;
+    const need = () => 400 + 40 * shown() + 10 * (handle.element.textContent?.length ?? 0);
+    const width = need();
+    Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(el, 'scrollWidth', { configurable: true, get: need });
+    await settled();
+    expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(false);
+    handle.setText('12 unread');
+    await nextFrame();
+    expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(true);
+    expect(handle.element.hasAttribute('data-tcw-folded')).toBe(false); // on the left, it folds last
   });
 });
 

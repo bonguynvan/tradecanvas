@@ -68,6 +68,8 @@ const shownMenu = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-men
 describe('ChartWidget toolbar menus of the host', () => {
   it('adds a button that opens the host’s entries, asked for each time', () => {
     make();
+    // Wide, where the button shows (jsdom lays nothing out, so the widget starts narrow, its button under "more").
+    host.querySelector('.tcw-root')!.removeAttribute('data-tcw-narrow');
     const picked: string[] = [];
     let count = 0;
     const handle = widget.addToolbarDropdown({

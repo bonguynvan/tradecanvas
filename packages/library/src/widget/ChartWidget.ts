@@ -2442,7 +2442,11 @@ export class ChartWidget {
     return {
       element,
       setActive: (on) => setHostButtonActive(element, on, spec.toggle === true),
-      setText: (text) => setHostButtonText(element, spec.label, text),
+      setText: (text) => {
+        setHostButtonText(element, spec.label, text);
+        // A longer count widens the button, not the toolbar its observer watches.
+        toolbar.tidy();
+      },
       remove: () => {
         element.remove();
         toolbar.tidy();
@@ -2472,9 +2476,11 @@ export class ChartWidget {
         }
         const items = spec.items();
         if (items.length === 0) return;
-        const box = button.getBoundingClientRect();
+        // Picked from "more", the button is folded: the menu hangs from "more", as the toolbar's own do.
+        const anchor = toolbar.menuAnchor(button);
+        const box = anchor.getBoundingClientRect();
         const root = this.root.getBoundingClientRect();
-        menu.open(withHostItems([], items), box.left - root.left, box.bottom - root.top + 2, (id) => pickHostItem(id, items), button);
+        menu.open(withHostItems([], items), box.left - root.left, box.bottom - root.top + 2, (id) => pickHostItem(id, items), anchor);
       },
     });
     element.setAttribute('aria-haspopup', 'menu');
@@ -2482,7 +2488,10 @@ export class ChartWidget {
     toolbar.tidy();
     return {
       element,
-      setText: (text) => setHostButtonText(element, spec.label, text),
+      setText: (text) => {
+        setHostButtonText(element, spec.label, text);
+        toolbar.tidy();
+      },
       remove: () => {
         menu.destroy();
         this.hostMenus.delete(menu);

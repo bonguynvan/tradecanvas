@@ -163,6 +163,9 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Tus botones, menús y elementos van en las barras del widget, se ven como los suyos y siguen su tema y su aspecto. Cada
   uno devuelve un manejador para cambiarlo o quitarlo, y se muestra mientras se muestre su barra.
+  Cuando la barra se queda sin espacio, tus botones y menús se pliegan bajo su menú «más» junto con los del widget,
+  los de la izquierda los últimos; por debajo de 641 px de ancho van todos allí. Un menú tuyo elegido desde «más» se
+  abre debajo de él.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

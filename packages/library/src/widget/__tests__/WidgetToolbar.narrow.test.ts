@@ -69,6 +69,37 @@ describe('WidgetToolbar — narrow', () => {
     expect(menuItems().map((b) => b.textContent?.trim())).not.toContain('Price alerts');
   });
 
+  it('folds a host’s buttons under “more” like its own, those on the left listed first', () => {
+    toolbar.addHostButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
+    toolbar.addHostButton({ id: 'dom', label: 'DOM', side: 'right', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    more().click();
+    expect(menuItems().map((b) => b.textContent?.trim()))
+      .toEqual(['Scanner', 'DOM', 'Bar replay', 'Price alerts', 'Screenshot', 'Chart Settings', 'Toggle theme']);
+  });
+
+  it('a pick from “more” clicks a host’s left button, and its switch shows a tick while on', () => {
+    let pressed: HTMLButtonElement | null = null;
+    const btn = toolbar.addHostButton({
+      id: 'flow', label: 'Order flow', icon: 'layers', toggle: true, side: 'left', onClick: (b) => { pressed = b; },
+    });
+    root.setAttribute('data-tcw-narrow', '');
+    const entry = () => menuItems().find((b) => b.textContent?.trim() === 'Order flow');
+    more().click();
+    entry()!.click();
+    expect(pressed).toBe(btn);
+    btn.setAttribute('aria-pressed', 'true'); // what handle.setActive(true) does to a switch
+    more().click();
+    expect(entry()?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('names a host’s button in “more” with its count, as assistive tech hears it', () => {
+    toolbar.addHostButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    more().click();
+    expect(menuItems().map((b) => b.textContent?.trim())).toContain('News: 3');
+  });
+
   it('names the current timeframe on the timeframe menu’s button', () => {
     expect(root.querySelector('.tcw-tf-current')?.textContent).toBe('1h');
     toolbar.update({ ...state, timeframe: '1d' } as WidgetState);
@@ -212,5 +243,28 @@ describe('WidgetToolbar — fitting its width', () => {
     toolbar.fit();
     expect(folded(el)).toEqual([]);
     expect(iconsOnly(el)).toBe(false);
+  });
+
+  it('folds a host’s buttons on the left last of all, and brings them back first', () => {
+    toolbar.addHostButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
+    toolbar.addHostButton({ id: 'dom', label: 'DOM', side: 'right', onClick: () => {} });
+    // Counted whether it can fold or not: a button that never folds still takes its room.
+    const hostShown = (el: HTMLElement) => [...el.querySelectorAll('.tcw-toolbar-overflow, [data-host-button]')]
+      .filter((b) => !b.hasAttribute('data-tcw-folded')).length;
+    const needAll = (el: HTMLElement) => (iconsOnly(el) ? 300 : 500) + 60 * hostShown(el);
+    const el = layout(560, needAll); // room for one button: the host's on the left
+    toolbar.fit();
+    expect(folded(el)).toEqual(['DOM', 'Bar replay', 'Price alerts', 'Screenshot', 'Chart Settings', 'Toggle theme']);
+    layout(500, needAll); // room for none: it goes too, before the labels do
+    toolbar.fit();
+    expect(folded(el)).toContain('Scanner');
+    expect(iconsOnly(el)).toBe(false);
+    more().click();
+    expect(menuItems()[0].textContent?.trim()).toBe('Scanner');
+    layout(400, needAll); // icons only, room for one again
+    toolbar.fit();
+    expect(iconsOnly(el)).toBe(true);
+    expect(folded(el)).not.toContain('Scanner');
+    expect(folded(el)).toContain('DOM');
   });
 });
