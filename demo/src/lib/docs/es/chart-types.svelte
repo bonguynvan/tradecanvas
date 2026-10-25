@@ -73,8 +73,11 @@
   otro paso de precio, todas las barras se vuelven a construir con el nuevo rango. Al subir, una barra
   cierra en su mínimo más el rango; al bajar, en su máximo menos el rango: su cierre es un precio que
   alcanzó, y su mecha muestra hacia dónde fue primero. Un salto de varios rangos, también un hueco entre
-  dos barras, da una barra por cada rango. Un rango, fijado o automático, que daría más de 100,000
-  barras se eleva a 2, 5, 10, 20… veces sí mismo, el primero que da menos.
+  dos barras, da una barra por cada rango; las barras que llenan un hueco quedan en precios que el
+  hueco saltó, a los que nunca se negoció. Un rango, fijado o automático, se eleva a 2, 5, 10, 20…
+  veces sí mismo, el primero que no da más, cuando las barras cerradas darían más de 100,000 range
+  bars, o la barra que todavía se forma más de 100,000 por sí sola; entonces todas las barras se
+  vuelven a construir con el rango elevado.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

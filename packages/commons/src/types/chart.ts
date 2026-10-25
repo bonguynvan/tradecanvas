@@ -27,9 +27,10 @@ export interface ChartTypeOptions {
   /**
    * Each bar's range in price ('auto': the mean true range of the last 100
    * closed bars, rounded to 1, 2 or 5 and to a whole number of the price
-   * step, the largest those bars traded at). One that would make more than
-   * 100,000 bars is raised to 2, 5, 10… times itself. The last bar drawn is
-   * the one still forming.
+   * step, the largest those bars traded at). One with which the closed bars
+   * would make more than 100,000 range bars, or the last bar more than
+   * 100,000 on its own, is raised to 2, 5, 10… times itself, and every bar is
+   * built again on it. The last bar drawn is the one still forming.
    */
   rangeBars?: { range?: number | 'auto' };
 }

@@ -73,8 +73,10 @@
   mọi range bar được dựng lại theo biên độ mới. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
   biên độ; khi đi xuống, ở giá cao nhất trừ biên độ: giá đóng cửa là giá nến đã chạm tới, và râu nến
   cho thấy hướng giá đi trước. Một cú nhảy qua nhiều biên độ, kể cả khoảng trống giữa hai nến, tạo
-  một nến cho mỗi biên độ. Một biên độ, đặt tay hay tự động, mà tạo ra hơn 100,000 nến sẽ được nâng
-  lên 2, 5, 10, 20… lần chính nó, lấy mức đầu tiên cho ít nến hơn số đó.
+  một nến cho mỗi biên độ; các nến lấp khoảng trống nằm ở những mức giá mà khoảng trống đã bỏ qua,
+  chưa từng được giao dịch. Một biên độ, đặt tay hay tự động, sẽ được nâng lên 2, 5, 10, 20… lần chính
+  nó, lấy mức đầu tiên không vượt quá số đó, khi các nến đã đóng tạo ra hơn 100,000 range bar, hoặc
+  riêng nến đang hình thành tạo ra hơn 100,000; khi đó mọi range bar được dựng lại theo biên độ đã nâng.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

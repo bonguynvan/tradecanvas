@@ -165,7 +165,8 @@ const cleanRange = (size: number): number => Number(size.toPrecision(RANGE_DIGIT
  * is rounded to a 1-2-5 number, so it holds still as bars close, then to a
  * whole number of price steps (`step`, one at least), so bars close on prices
  * the market can trade. With 2 bars or fewer, about a hundredth of the last close.
- * `toRangeBars` raises either kind when it would make more than 100,000 bars.
+ * `toRangeBars` raises either kind when the closed bars would make more than
+ * 100,000 range bars, or the last bar that many on its own.
  */
 export function rangeBarsSize(raw: DataSeries, options: ChartTypeOptions = {}, step?: number): number {
   const range = options.rangeBars?.range;

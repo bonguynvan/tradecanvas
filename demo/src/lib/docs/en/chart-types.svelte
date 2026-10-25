@@ -73,9 +73,11 @@
   next 1-2-5 number, or those bars to another price step, every bar is built again on the
   new range. A bar closes at its low plus the range on the way up, or its high minus the
   range on the way down: its close is a price it reached, and its wick shows the way it
-  went first. A jump of several ranges, a gap between bars too, makes a bar for each range.
-  A range, set or automatic, that would make more than 100,000 bars is raised to 2, 5,
-  10, 20… times itself, the first that makes fewer.
+  went first. A jump of several ranges, a gap between bars too, makes a bar for each range;
+  the bars that fill a gap stand at prices the gap skipped, which never traded. A range, set
+  or automatic, is raised to 2, 5, 10, 20… times itself, the first that makes no more, when
+  the closed bars would make more than 100,000 range bars, or the bar still forming more than
+  100,000 on its own; every bar is then built again on the raised range.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

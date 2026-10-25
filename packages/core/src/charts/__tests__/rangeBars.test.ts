@@ -54,6 +54,45 @@ describe('toRangeBars', () => {
     expect(out.map((b) => [b.open, b.close])).toEqual([[100, 102], [102, 104], [104, 106]]);
   });
 
+  it('replays each bar from its open, so the bars filling a gap stand at prices the gap skipped', () => {
+    // The second bar opens 7 above the first close, dips to 103 and ends at 108: the gap makes 102, 104 and 106,
+    // which never traded, before the bar's own way down and up.
+    const data = [bar(100, 100, 100, 100, 0), bar(107, 108, 103, 108, 1)];
+    expect(toRangeBars(data, { rangeSize: 2 }).map((b) => [b.open, b.close])).toEqual([
+      [100, 102], [102, 104], [104, 106], [106, 105], [105, 103], [103, 105], [105, 107],
+    ]);
+  });
+
+  it('counts the bars it makes for the limit, not how far the price travels', () => {
+    // 60,000 bars swinging 1.4 inside a range of 1.5 travel 168,000 but close no bar; a climb of 30 then closes 20.
+    const noise = Array.from({ length: 60_000 }, (_, i) => bar(100, 100.7, 99.3, 100, i));
+    const data = [...noise, bar(100, 130, 100, 130, 60_000), bar(130, 130, 130, 130, 60_001)];
+    const out = toRangeBars(data, { rangeSize: 1.5 });
+    expect(new Set(out.map((b) => Number((b.high - b.low).toFixed(9))))).toEqual(new Set([1.5]));
+    expect(out).toHaveLength(20);
+  });
+
+  it('keeps a range that makes 100,000 bars, and raises it at one more', () => {
+    const jumpTo = (top: number) => toRangeBars([bar(100, 100, 100, 100, 0), bar(100, top, 100, top, 1)], { rangeSize: 1 });
+    expect(jumpTo(100_100)).toHaveLength(100_000);
+    const raised = jumpTo(100_101);
+    expect(raised).toHaveLength(50_000);
+    expect(raised.every((b) => b.high - b.low === 2)).toBe(true);
+  });
+
+  it('raises a range the closed bars alone make too many of, and builds every bar on the raised one', () => {
+    // The second bar climbs 100,001 at a range of 1; the last bar is quiet.
+    const data = [bar(100, 100, 100, 100, 0), bar(100, 100_101, 100, 100_101, 1), bar(100_101, 100_101, 100_101, 100_101, 2)];
+    const out = toRangeBars(data, { rangeSize: 1 });
+    expect(out).toHaveLength(50_000);
+    expect(new Set(out.map((b) => b.high - b.low))).toEqual(new Set([2]));
+  });
+
+  it('skips a price that is no finite number, where an infinite one would close bars without end', () => {
+    const data = [bar(100, 100, 100, 100, 0), bar(100, Infinity, 100, 104, 1), bar(104, 104, NaN, 104, 2)];
+    expect(toRangeBars(data, { rangeSize: 2 }).map((b) => b.close)).toEqual([102, 104]);
+  });
+
   it('ends on a range finer than the digits prices are kept to', () => {
     // At 100,000 prices keep 15 digits, down to 1e-9: the low plus 4e-10 reads as the low, which closes no range.
     const data = [bar(100_000, 100_000, 100_000, 100_000, 0, 1), bar(100_000, 100_000.00001, 100_000, 100_000.00001, 1, 1)];
