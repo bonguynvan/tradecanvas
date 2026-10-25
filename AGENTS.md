@@ -14,7 +14,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 |---|---|
 | `packages/commons` | Shared types, themes, the icon set (`src/icons/iconSet.ts`). No DOM. |
 | `packages/core` | The engine: viewport, renderers (Canvas 2D and WebGL), indicators, drawings, trading, data adapters. |
-| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), and `ChartWidget` with its UI in `src/widget`. |
+| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), its bars in `src/SeriesStore.ts` (every write goes through it), and `ChartWidget` with its UI in `src/widget`. |
 | `packages/analytics` | Backtester, strategies, risk metrics. |
 | `packages/mcp` | `@tradecanvas/mcp`: the MCP server for coding agents. Its catalog is generated from the other packages (`scripts/mcp-catalog.mjs`). |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |

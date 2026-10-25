@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### One way in for the bars
+
+Every way bars reach the chart (`setData`, `appendBar`, `appendBars`, `updateLastBar`, `updateLastBarFromTick`, `prependBars`, a stream, a replay, the extended hours hidden or shown) now goes through one place, the series store. A seeded test runs each of them, mixed, against a chart given the same bars with `setData`, its bars and indicators alike. It found three faults:
+
+- **A trade keeps the forming bar at its own time.** `updateLastBarFromTick` moved the bar's time to the trade's: `getData()` showed the bar off its interval, a stream's next update for that bar was taken as an older bar and left out, and with the extended hours hidden the trade was lost when they were shown again. `mergeBar` keeps the bar's time the same way.
+- **A stream's bars during a replay are placed by their time**, as they are outside one. A new forming bar replaced the last bar, and a bar's close added it a second time, so `replayStop()` brought back a series the feed never sent.
+- **A stream in milliseconds on a series in seconds**, with the extended hours hidden, left its bars in milliseconds among the hidden ones: shown again, the series mixed the two units.
+
+The docs say what agents still read the compiled code for: `getIndicatorOutput` (`series[i]` is the value at bar `i`, keyed by the indicator's lines) and `replayStart` (`startIndex` is the first bar it reveals; one bar every `interval / speed` ms).
+
 ## 1.49.0 (2026-10-25)
 
 React, Vue and Svelte components: 1.3.31.
