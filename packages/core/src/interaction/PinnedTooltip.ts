@@ -4,6 +4,8 @@ import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /** Decimals prices show when neither the chart nor the market sets them. */
 const DEFAULT_DECIMALS = 2;
+/** Decimals the move's percentage shows. */
+const PERCENT_DECIMALS = 2;
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -191,7 +193,9 @@ export class PinnedTooltip {
         const barΔ = hoverIndex - this.pinnedIndex;
         const direction = priceΔ >= 0 ? theme.candleUp : theme.candleDown;
         this.deltaEl.style.color = direction;
-        this.deltaEl.innerHTML = `Δ ${sign}${this.fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${Math.abs(pct).toFixed(2)}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
+        // The percentage in the locale too: a price in it beside a plain 1.23 reads as two systems.
+        const pctText = escapeText(formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale));
+        this.deltaEl.innerHTML = `Δ ${sign}${this.fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${pctText}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
         this.deltaEl.style.display = 'block';
       } else {
         this.deltaEl.style.display = 'none';

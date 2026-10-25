@@ -1,7 +1,11 @@
 import type { DrawingLevel, DrawingState, ViewportState } from '@tradecanvas/commons';
+import { formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../../viewport/ScaleMapping.js';
 import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
 import { crispY } from '../../charts/pixelGrid.js';
+
+/** Decimals a level's percentage shows (61.8%). */
+const LEVEL_PERCENT_DECIMALS = 1;
 
 /** A Fibonacci level at its price. */
 export interface PriceLevel {
@@ -20,14 +24,20 @@ export interface PriceLevelLook {
   background: boolean;
 }
 
+/**
+ * A level's text: its percentage, its price, or both. The percentage is in
+ * `locale`, as the price beside it is, so a German reader sees 61,8% next to
+ * 99.726,1, not a 61.8 that reads as 618.
+ */
 export function levelLabel(
   level: number,
   price: number,
   showLevels: boolean,
   showPrices: boolean,
   format: (price: number) => string = (p) => p.toFixed(2),
+  locale = 'en-US',
 ): string {
-  const pct = `${(level * 100).toFixed(1)}%`;
+  const pct = `${formatPrice(level * 100, LEVEL_PERCENT_DECIMALS, locale)}%`;
   const value = format(price);
   if (showLevels && showPrices) return `${pct} (${value})`;
   return showLevels ? pct : showPrices ? value : '';
@@ -78,7 +88,7 @@ export function renderPriceLevels(
     ctx.moveTo(look.x0, line.y);
     ctx.lineTo(look.x1, line.y);
     ctx.stroke();
-    const text = levelLabel(level.value, price, look.showLevels, look.showPrices, (p) => formatDrawingPrice(p, p, viewport));
+    const text = levelLabel(level.value, price, look.showLevels, look.showPrices, (p) => formatDrawingPrice(p, p, viewport), viewport.numberLocale);
     if (text) {
       ctx.globalAlpha = 1;
       ctx.fillStyle = color;

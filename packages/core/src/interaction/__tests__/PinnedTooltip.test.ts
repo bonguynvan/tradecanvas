@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { PinnedTooltip } from '../PinnedTooltip.js';
+import { unitViewport } from '../../drawings/__tests__/fixtures.js';
 
 describe('PinnedTooltip', () => {
   it('shows the bar time in the chart’s time zone', () => {
@@ -38,5 +39,18 @@ describe('PinnedTooltip', () => {
     tooltip.pin(bar, 0, DARK_THEME);
     expect(host.textContent).toContain('100.018,7');
     expect(host.textContent).toContain('99.990,1');
+  });
+
+  it('writes the move to the bar under the crosshair, its percentage too, in the number locale', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    tooltip.setPricePrecision(1);
+    tooltip.setLocale('de-DE');
+    const pinned = { time: Date.UTC(2026, 2, 4), open: 100_000, high: 100_000, low: 100_000, close: 100_000 };
+    tooltip.pin(pinned, 0, DARK_THEME);
+    const viewport = { ...unitViewport, priceRange: { min: 99_000, max: 102_000 } };
+    tooltip.reposition(viewport, { ...pinned, time: pinned.time + 5, close: 101_250 }, 5, DARK_THEME);
+    expect(host.textContent).toContain('Δ +1.250,0 (+1,25%) · +5 bars');
   });
 });

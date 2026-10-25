@@ -25,6 +25,12 @@ describe('drawing price labels', () => {
     expect(fibTexts(near100k)).toContain('23.6% (99,125.18)');
   });
 
+  it('write a fib level’s percentage in the number locale, as its price', () => {
+    const texts = fibTexts({ ...near100k, pricePrecision: 1, numberLocale: 'de-DE' });
+    expect(texts).toContain('23,6% (99.125,2)');
+    expect(texts).toContain('61,8% (99.726,1)');
+  });
+
   it('write a horizontal line’s price in the number locale', () => {
     const { ctx, texts } = recordingCtx();
     const line = drawing('horizontalLine', [{ time: 0, price: 98_977.3 }]);

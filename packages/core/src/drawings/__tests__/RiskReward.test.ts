@@ -67,6 +67,13 @@ describe('RiskRewardTool', () => {
     expect(out[2]).toBe('Stop 40,00 (−20,00%) · 10.000,00');
   });
 
+  it('writes the R:R in the number locale too', () => {
+    const { ctx, texts: out } = recordingCtx();
+    tool.render(ctx, drawing('riskReward', LONG, { options: { rewardRatio: 1.5 } }), { ...unitViewport, numberLocale: 'de-DE' }, false);
+    expect(out[0]).toBe('Long · Qty 1,00 · R:R 1,5');
+    expect(texts(LONG, { rewardRatio: 1.5 })[0]).toBe('Long · Qty 1.00 · R:R 1.5');
+  });
+
   it('keeps the tags apart when the stop is close to the entry', () => {
     const { ctx, calls } = recordingCtx();
     tool.render(ctx, drawing('riskReward', [LONG[0], { ...LONG[1], price: 49.5 }]), unitViewport, false);

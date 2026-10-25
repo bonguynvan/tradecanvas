@@ -13,6 +13,8 @@ const MAX_RATIO = 100;
 const MAX_MONEY = 1e15;
 /** Decimals the reward and the risk show: money, not prices. */
 const MONEY_DECIMALS = 2;
+/** Most decimals the R:R shows; a whole ratio shows none (R:R 2, R:R 1.5). */
+const RATIO_DECIMALS = 2;
 
 /**
  * "Long/Short Position": drag from the entry to the stop; the target sits the
@@ -101,7 +103,8 @@ export class RiskRewardTool extends DrawingBase {
       const locale = viewport.numberLocale ?? 'en-US';
       const qtyDecimals = this.option<number>(state, 'qtyDecimals');
       const pct = (price: number) => (g.entry !== 0 ? ((price - g.entry) / g.entry) * 100 : 0);
-      const ratio = Number(g.ratio.toFixed(2));
+      // In the locale too, as the quantity and the amounts beside it are.
+      const ratio = g.ratio.toLocaleString(locale, { maximumFractionDigits: RATIO_DECIMALS });
       ctx.font = drawingFont(11);
       const price = (p: number) => priceTagText(p, viewport, decimals);
       const money = (amount: number) => formatPrice(amount, MONEY_DECIMALS, locale);

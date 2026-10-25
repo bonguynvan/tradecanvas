@@ -132,6 +132,26 @@ describe('ChartWidget panels’ prices', () => {
     expect(dataWindowValues()[3]).toBe('100,018.7');
   });
 
+  it('write the data window’s change, its percentage too, in the number locale', () => {
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });
+    widget.openPanel('dataWindow');
+    hoverBar();
+    // The one bar moved 18.7 from its open of 100,000: 0.0187%.
+    const change = [...host.querySelectorAll('.tcw-datawin-value')][4]?.textContent;
+    expect(change).toBe('+18,70 (+0,02%)');
+  });
+
+  it('take a symbol’s decimals of null as none set, as the chart does', () => {
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });
+    // A feed's JSON can carry null for a field it has no value for.
+    FakeChart.last.setSymbolInfo({ symbol: 'AAA', pricePrecision: null as unknown as number });
+    widget.openPanel('alerts');
+    FakeChart.last.emit('alertAdd');
+    expect(alertRow()).toBe('Crossing 100.018,70');
+  });
+
   it('take the chart’s own price format first', () => {
     FakeChart.last.priceFormatter = (p) => `$${Math.round(p)}`;
     widget.openPanel('alerts');

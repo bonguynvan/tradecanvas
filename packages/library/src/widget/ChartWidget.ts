@@ -73,7 +73,7 @@ import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStar
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
-import { WidgetDataWindow, type DataWindowModel } from './WidgetDataWindow.js';
+import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, type DataWindowModel } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -926,6 +926,7 @@ export class ChartWidget {
     // Data Window — precise OHLCV + indicator values at the hovered bar.
     this.dataWindow = new WidgetDataWindow(this.root, {
       formatPrice: (p) => this.formatAlertPrice(p),
+      formatPercent: (pct) => this.formatNumber(pct, DATA_WINDOW_PERCENT_DECIMALS),
       onClose: () => this.closePanelByHand('dataWindow'),
     }, this.t);
     this.chart.on('crosshairMove', (e) => {
@@ -3553,7 +3554,8 @@ export class ChartWidget {
 
   /** Whether the market or the symbol sets the decimals prices show (the market's win, as on the chart). */
   private chartSetsDecimals(): boolean {
-    return this.chart.getMarket?.()?.pricePrecision !== undefined || this.chart.getSymbolInfo?.()?.pricePrecision !== undefined;
+    // `!= null`: a feed's JSON can send null for a field it has none of, and the chart takes that as unset.
+    return this.chart.getMarket?.()?.pricePrecision != null || this.chart.getSymbolInfo?.()?.pricePrecision != null;
   }
 
   /** The user picked a chart type: applied, and undoable. */
