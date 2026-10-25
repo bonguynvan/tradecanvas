@@ -23,23 +23,30 @@ function csvCell(text: string): string {
   return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
-/** The most significant digits a double holds exactly, so trimming to them never drops a real digit. */
+/**
+ * The significant digits kept of a number with a fraction. A double holds 15
+ * exactly, so every digit of a number up to 15 significant digits comes
+ * through and the binary dust past them goes; a 16th digit a feed did send
+ * (12345678.12345678) goes with it.
+ */
 const EXPORT_SIGNIFICANT_DIGITS = 15;
-/** From here on a double has no fraction left to carry dust, and its 16th digit is real. */
+/** From here on a double's fraction is eighths at most, too coarse to carry dust, and its 16th digit is real. */
 const EXACT_ABOVE = 1e15;
 
 /**
  * A number as the export writes it. Volumes summed from trades or smaller
  * bars pick up binary dust (20.17 + 20.2 is 40.370000000000005), so a
- * fraction is cut to 15 significant digits, which keeps every digit a feed
- * sent. Whole numbers and huge values are left alone: they carry no dust,
- * and cutting them would lose the 16th digit. Not a number gives null.
+ * fraction is cut to 15 significant digits, which keeps every digit of a
+ * number up to 15 significant digits. Whole numbers and huge values are left
+ * alone: they carry no dust, and cutting them would lose the 16th digit. Not
+ * a number gives null.
  */
 function exportNumber(v: number | null | undefined): number | null {
   if (v === null || v === undefined || !Number.isFinite(v)) return null;
+  // A negative zero is whole and returns here as it is: String and
+  // JSON.stringify both write it as 0. The rounding below never makes a zero.
   if (Number.isInteger(v) || Math.abs(v) >= EXACT_ABOVE) return v;
-  // `+ 0` makes sure a negative zero never comes out of the rounding.
-  return Number(v.toPrecision(EXPORT_SIGNIFICANT_DIGITS)) + 0;
+  return Number(v.toPrecision(EXPORT_SIGNIFICANT_DIGITS));
 }
 
 const valueText = (v: number | null | undefined): string => {

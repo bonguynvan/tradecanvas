@@ -59,6 +59,13 @@ describe('DataExporter numbers', () => {
     expect(JSON.parse(DataExporter.toJSON([bar({ volume: 1503456789012345 })]))[0].volume).toBe(1503456789012345);
   });
 
+  it('keeps a fraction on a value of 1e15 or more, where the 16th digit is real', () => {
+    // A double this large holds its quarters exactly; cut to 15 digits it would read 1234567890123460.
+    const huge = 1234567890123456.5;
+    expect(row(DataExporter.toCSV([bar({ volume: huge })])).endsWith(',1234567890123456.5')).toBe(true);
+    expect(JSON.parse(DataExporter.toJSON([bar({ volume: huge })]))[0].volume).toBe(huge);
+  });
+
   it('writes prices and indicator values without float dust', () => {
     const csv = DataExporter.toCSV(
       [bar({ open: 0.1 + 0.2, high: (25.35 * 3) / 3, low: 25.3, close: 1.1 * 3, volume: 100 })],
