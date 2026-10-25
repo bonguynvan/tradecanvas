@@ -38,6 +38,14 @@ export interface SymbolInfo {
   sessions?: SymbolSession[];
   /** Currency prices are quoted in. */
   currency?: string;
+  /**
+   * The symbol's logo, a square image the widget's symbol search shows at
+   * the start of its row: an `https:` or `http:` address, a path on your
+   * site, a `blob:` URL, or a `data:image/png|jpeg|gif|webp|avif|svg+xml`
+   * one. It is only ever an image's source, loaded with no referrer; any
+   * other address is ignored, and the row shows the ticker's first letter.
+   */
+  logo?: string;
 }
 
 /** Options for `DataAdapter.searchSymbols`. */

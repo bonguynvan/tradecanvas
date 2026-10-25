@@ -520,6 +520,47 @@ new ChartWidget(document.getElementById('chart')!, {
 });
 ```
 
+## The symbol search with names, kinds, exchanges and logos
+
+Give `symbols` as `SymbolInfo` and the search opens with each symbol's
+name, kind, exchange and logo, with tabs for the kinds and, from two
+exchanges on, a list to keep to one. A plain ticker still works beside them.
+Without a `searchSymbols` (the option, or the adapter's), typing finds them
+by ticker and by name.
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import type { SymbolInfo } from '@tradecanvas/chart';
+
+const markets: SymbolInfo[] = [
+  { symbol: 'VCB', description: 'Vietcombank', type: 'stock', exchange: 'HOSE', logo: '/logos/vcb.svg' },
+  { symbol: 'SHB', description: 'SHB Bank', type: 'stock', exchange: 'HNX' },
+  { symbol: 'VN30F2511', description: 'VN30 futures, Nov 2025', type: 'futures', exchange: 'HNX' },
+];
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbols: [...markets, 'FPT'],   // a ticker alone shows its first letter, no name
+  // A watchlist of its own: without `lists`, setSymbols below would replace it with every symbol given.
+  watchlist: { lists: [{ id: 'main', name: 'Main', symbols: ['VCB', 'FPT'] }] },
+});
+
+// A longer list from your server later: the search opens with it, the watchlist stays.
+const more: SymbolInfo[] = await fetch('/api/markets').then((r) => r.json());
+widget.setSymbols(more);
+```
+
+- A feed's search results (`searchSymbols`) win over these words field by
+  field; the logo you gave stays. The chart's own info for its symbol
+  (`resolveSymbol`, `chart.setSymbolInfo`) names the toolbar's symbol first.
+- `pricePrecision`, `minTick`, `sessions` given here never reach the chart:
+  give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
+- `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
+  `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,
+  with no referrer (allow its host in your CSP's `img-src`). Anything else, or
+  a logo that fails to load, shows the ticker's first letter in its kind's colour.
+- The kind and exchange filters narrow the rows the feed returned (at most
+  50); they do not ask the feed again.
+
 ## The widget in a look of your own
 
 ```ts

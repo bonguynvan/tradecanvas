@@ -517,10 +517,33 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   <strong>Buscar símbolo</strong> se abre desde el símbolo de la barra de herramientas, con <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>
   o al escribir una letra sobre el gráfico, con la que empieza la búsqueda. Lista tus <code>symbols</code> hasta que se
   escribe algo, y luego consulta la búsqueda de tu feed (<code>searchSymbols</code>, o la del adaptador) cuando dejas de
-  escribir: el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. Los resultados de más de un
-  tipo (acciones y cripto, por ejemplo) se pueden reducir a uno. Los nombres que una búsqueda dio a conocer se quedan para
-  la lista con la que se abre. Con <code>{`features: { symbolTyping: false }`}</code>, las letras escritas sobre el gráfico
-  no abren la búsqueda.
+  escribir. Cada fila empieza con una insignia (el logo del símbolo o, si no lo hay, la primera letra de su ticker en el
+  color de su tipo), y siguen el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. Las
+  pestañas reducen la lista a un tipo (acciones, cripto) y no se mueven mientras escribes; cuando las filas vienen de dos
+  bolsas o más, una lista al lado la reduce a una. Ambas filtran las filas que ya hay: la búsqueda de un feed da como
+  mucho 50, así que HNX elegida tras escribir <code>V</code> muestra los de HNX entre esos 50, no todos los símbolos de
+  HNX con una V. Sin búsqueda, al escribir se encuentran tus símbolos por ticker y por nombre, con o sin los diacríticos
+  del vietnamita (<code>ngan hang</code> encuentra «Ngân hàng»). Con <code>{`features: { symbolTyping: false }`}</code>,
+  las letras escritas sobre el gráfico no abren la búsqueda.
+</p>
+<p>
+  Da <code>symbols</code> como <code>SymbolInfo</code> y la lista se abre con nombres, tipos, bolsas y logos; el símbolo
+  de la barra de herramientas y el panel de información del símbolo toman de ahí un nombre y una bolsa cuando el gráfico
+  no los conoce. Los resultados de la búsqueda del feed mandan sobre estos datos y conservan tu logo; lo que el gráfico
+  sabe de su propio símbolo solo rellena los huecos. Los pasos de precio y los horarios que des aquí no se aplican al
+  gráfico: vienen del <code>resolveSymbol</code> del adaptador o de <code>chart.setSymbolInfo</code>.
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // solo el ticker, como antes
+  ],
+})`}</code></pre>
+<p>
+  Un <code>logo</code> es una dirección <code>https:</code> o <code>http:</code>, una ruta de tu sitio, una URL
+  <code>blob:</code> o una imagen escrita en <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF o SVG); cualquier otra cosa
+  se ignora. Solo se carga como imagen y sin referrer, así que la política <code>img-src</code> de tu página debe permitir
+  su servidor; si no carga, se muestra la letra. Las letras toman sus colores de <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (acciones, futuros, índices, cripto, divisas; otro tipo recibe uno según sus palabras), definidos para el tema oscuro y el claro.
 </p>
 <p>
   <strong>Comparar</strong> es el mismo diálogo, con <strong>Añadir como</strong> bajo la búsqueda y lo que se compara
@@ -554,7 +577,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>Clic en reproducir en la barra de herramientas</td><td>Abre el control de repetición de barras (reproducir/avanzar/buscar/velocidad)</td></tr>
   </tbody>
 </table>
-<p>Actualiza el catálogo de búsqueda en tiempo de ejecución con <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
+<p>
+  Cambia los símbolos disponibles en tiempo de ejecución con <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>,
+  tickers o <code>SymbolInfo</code> como en <code>symbols</code>. Una lista de seguimiento hecha a partir de
+  <code>symbols</code> (sin <code>lists</code> y sin guardarse) se sustituye por ellos y pide cotizaciones de cada uno:
+  para una lista larga de tu servidor, dale a la lista de seguimiento sus propias listas.
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: 'Principal', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // los SymbolInfo[] de tu servidor: la búsqueda se abre con ellos, la lista de seguimiento se queda`}</code></pre>
 
 <h3>Ventana de datos</h3>
 <p>

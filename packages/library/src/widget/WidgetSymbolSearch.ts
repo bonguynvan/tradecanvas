@@ -1,9 +1,12 @@
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { escapeHtml } from './escapeHtml.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { keepTabInside } from './focusTrap.js';
 import { markPart } from './widgetFeatures.js';
+import { mergeSymbolInfo, readSymbolCatalog } from './symbolCatalog.js';
+import { createSymbolBadge } from './symbolBadge.js';
+import { highlight, scoreSymbol } from './symbolMatch.js';
+import { SymbolSearchFilters } from './symbolSearchFilters.js';
 
 export interface SymbolSearchCallbacks {
   onPick: (symbol: string) => void;
@@ -19,12 +22,17 @@ export const SYMBOL_SEARCH_DEBOUNCE_MS = 150;
 /** The key code a browser gives a key an input method takes. */
 const IME_KEY_CODE = 229;
 
+/** A symbol on offer: its ticker, or what is known of it (a name, kind, exchange, logo). */
+export type SymbolEntry = string | SymbolInfo;
+
 /** What the symbol search opens with. */
 export interface SymbolSearchStart {
-  /** Listed until something is typed; filtered as it is when there is no `search`. */
-  symbols: readonly string[];
+  /** Listed until something is typed; filtered, by ticker and name, when there is no `search`. */
+  symbols: readonly SymbolEntry[];
   /** The chart's symbol, marked in the list. */
   current: string;
+  /** What the chart knows of `current`: it fills only what the symbols given and the feed leave out. */
+  currentInfo?: SymbolInfo | null;
   /** A feed's search, asked once typing pauses. */
   search?: SymbolSearchFn;
   /** Typed already: the letter that opened it. */
@@ -46,7 +54,7 @@ export interface CompareEntry {
 
 /** What the compare dialog opens with. */
 export interface CompareStart {
-  symbols: readonly string[];
+  symbols: readonly SymbolEntry[];
   current: string;
   search?: SymbolSearchFn;
   /** The ways to add a symbol, and the one chosen to start with. */
@@ -70,12 +78,16 @@ let nextSearchId = 1;
 /**
  * The symbol search, and the same dialog for adding a symbol to compare.
  *
- * - Without a search function it filters the symbols it was given with a
- *   cheap subsequence match, good enough for lists in the low thousands.
+ * - The symbols it is given are listed until something is typed, named
+ *   where they came with a SymbolInfo (or the chart knows its own).
+ * - Without a search function it filters them by ticker and name with a
+ *   cheap match, good enough for lists in the low thousands.
  * - With one (a feed's `searchSymbols`) it asks once typing pauses, cancels a
- *   query a newer one replaced, and lists names, kinds and exchanges; the
- *   names it hears of are kept for the list it opens with next time.
- * - Results of more than one kind (stocks and crypto, say) can be narrowed to one.
+ *   query a newer one replaced, and lists names, kinds and exchanges; what it
+ *   hears is kept for the list it opens with next time. The feed's words win
+ *   over the ones given, which fill what it leaves out (a logo, say).
+ * - The rows can be narrowed to a kind (stocks, crypto) and, when they come
+ *   from two or more, to an exchange.
  * - Comparing, a pick adds the symbol the way chosen above the list and the
  *   dialog stays; what is compared already is listed first, each removable.
  *
@@ -89,12 +101,16 @@ export class WidgetSymbolSearch {
   private results: HTMLDivElement | null = null;
   /** Says "Searching…", "Search failed", "No symbols match" to a screen reader. */
   private live: HTMLDivElement | null = null;
-  private kindsEl: HTMLDivElement | null = null;
+  /** The heads of the columns, at the top of what scrolls. */
+  private columns: HTMLDivElement | null = null;
+  private filters: SymbolSearchFilters | null = null;
   private mode: Mode | null = null;
+  /** The tickers given to it, cleaned. */
+  private given: string[] = [];
   private rows: Row[] = [];
+  /** Whether the rows are the symbols given (filtered or not), not a feed's results. */
+  private rowsGiven = false;
   private shown: Row[] = [];
-  /** The kind of symbol the list keeps to; null for all. */
-  private kind: string | null = null;
   private compared: readonly CompareEntry[] = [];
   private way = '';
   private selectedIndex = 0;
@@ -104,7 +120,7 @@ export class WidgetSymbolSearch {
   private status: 'idle' | 'searching' | 'failed' = 'idle';
   /** Enter came before the results for what was typed: take the top one when they land. */
   private pickOnResults = false;
-  /** Names, kinds and exchanges the search told of, by symbol. */
+  /** Names, kinds, exchanges and logos given or told of, by symbol. */
   private readonly known = new Map<string, SymbolInfo>();
   private returnFocus: HTMLElement | null = null;
   private readonly uid = nextSearchId++;
@@ -142,7 +158,8 @@ export class WidgetSymbolSearch {
     this.pickOnResults = false;
     this.searchFn = null;
     this.backdrop.remove();
-    this.backdrop = this.input = this.list = this.results = this.live = this.kindsEl = null;
+    this.backdrop = this.input = this.list = this.results = this.live = this.columns = null;
+    this.filters = null;
     this.mode = null;
     this.callbacks.onClose();
     const back = this.returnFocus;
@@ -169,7 +186,7 @@ export class WidgetSymbolSearch {
     this.mode = mode;
     this.searchFn = mode.start.search ?? null;
     this.status = 'idle';
-    this.kind = null;
+    this.learnGiven(mode);
     this.build(mode);
     const query = mode.kind === 'search' ? mode.start.query ?? '' : '';
     if (this.input) this.input.value = query;
@@ -180,6 +197,21 @@ export class WidgetSymbolSearch {
       this.listGiven();
     }
     this.input?.focus();
+  }
+
+  /**
+   * The tickers given, and what came with them: the host's words for its
+   * list are the ones it opens with. What the chart knows of its own symbol
+   * only fills gaps, as it may use other words for it (a kind in English
+   * where the list's are translated).
+   */
+  private learnGiven(mode: Mode): void {
+    const catalog = readSymbolCatalog(mode.start.symbols);
+    this.given = catalog.names;
+    for (const [symbol, info] of catalog.info) this.known.set(symbol, mergeSymbolInfo(this.known.get(symbol), info)!);
+    const current = mode.start.current;
+    const own = mode.kind === 'search' ? mode.start.currentInfo : null;
+    if (own && current) this.known.set(current, mergeSymbolInfo({ ...own, symbol: current }, this.known.get(current))!);
   }
 
   // --- Building ---
@@ -209,20 +241,10 @@ export class WidgetSymbolSearch {
     modal.append(this.buildHeader(mode), this.buildSearch());
     if (mode.kind === 'compare') modal.appendChild(this.buildWay(mode.start));
 
-    const kinds = document.createElement('div');
-    kinds.className = 'tcw-ss-kinds';
-    kinds.setAttribute('role', 'group');
-    kinds.setAttribute('aria-label', this.t('symbolSearch.kinds'));
-    kinds.hidden = true;
-
-    const columns = document.createElement('div');
-    columns.className = 'tcw-ss-columns';
-    columns.setAttribute('aria-hidden', 'true');
-    for (const text of [this.t('symbolSearch.symbol'), this.t('symbolSearch.description')]) {
-      const cell = document.createElement('span');
-      cell.textContent = text;
-      columns.appendChild(cell);
-    }
+    const filters = new SymbolSearchFilters(this.t, () => {
+      this.afterResults(false);
+      this.input?.focus();
+    });
 
     const list = document.createElement('div');
     list.className = 'tcw-ss-list';
@@ -230,7 +252,8 @@ export class WidgetSymbolSearch {
     list.setAttribute('role', 'listbox');
     const results = document.createElement('div');
     results.className = 'tcw-ss-results';
-    results.appendChild(list);
+    const columns = this.buildColumns();
+    results.append(columns, list);
     // A press on a heading or between the rows keeps the keyboard in the search (a remove button takes it).
     results.addEventListener('mousedown', (e) => {
       if (!(e.target as Element).closest('button')) e.preventDefault();
@@ -239,7 +262,7 @@ export class WidgetSymbolSearch {
     live.className = 'tcw-ss-live tcw-visually-hidden';
     live.setAttribute('aria-live', 'polite');
 
-    modal.append(kinds, columns, results, live);
+    modal.append(filters.el, results, live);
     const hint = mode.kind === 'search' ? mode.start.hint : undefined;
     if (hint) {
       const foot = document.createElement('div');
@@ -250,10 +273,21 @@ export class WidgetSymbolSearch {
     backdrop.appendChild(modal);
     this.host().appendChild(backdrop);
     this.backdrop = backdrop;
-    this.kindsEl = kinds;
+    this.filters = filters;
+    this.columns = columns;
     this.list = list;
     this.results = results;
     this.live = live;
+  }
+
+  /** The heads of the columns: none over the badges, then symbol, description, type, exchange. */
+  private buildColumns(): HTMLDivElement {
+    const columns = document.createElement('div');
+    columns.className = 'tcw-ss-columns';
+    columns.setAttribute('aria-hidden', 'true');
+    const heads = ['', this.t('symbolSearch.symbol'), this.t('symbolSearch.description'), this.t('symbolSearch.type'), this.t('symbolSearch.exchange')];
+    columns.append(...heads.map((text) => this.tag('tcw-ss-head', text)));
+    return columns;
   }
 
   private buildHeader(mode: Mode): HTMLDivElement {
@@ -317,14 +351,11 @@ export class WidgetSymbolSearch {
 
   // --- Searching ---
 
-  /** The symbols it was given, named where a search told of them. */
+  /** The symbols it was given, named where they came with a name or a search told of one. */
   private listGiven(): void {
-    this.rows = this.given().map((symbol) => ({ symbol, score: 0, info: this.known.get(symbol) }));
+    this.rows = this.given.map((symbol) => ({ symbol, score: 0, info: this.known.get(symbol) }));
+    this.rowsGiven = true;
     this.afterResults(true);
-  }
-
-  private given(): readonly string[] {
-    return this.mode?.start.symbols ?? [];
   }
 
   private filter(): void {
@@ -341,10 +372,14 @@ export class WidgetSymbolSearch {
       return;
     }
     const q = typed.toUpperCase();
-    this.rows = this.given()
-      .map((symbol) => ({ symbol, score: scoreMatch(symbol.toUpperCase(), q), info: this.known.get(symbol) }))
+    this.rows = this.given
+      .map((symbol) => {
+        const info = this.known.get(symbol);
+        return { symbol, score: scoreSymbol(symbol, info?.description, q), info };
+      })
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score);
+    this.rowsGiven = true;
     this.afterResults(false);
   }
 
@@ -376,14 +411,16 @@ export class WidgetSymbolSearch {
       const found = await search(query, controller.signal);
       if (controller.signal.aborted) return;
       const results = (Array.isArray(found) ? found : []).filter((info) => typeof info?.symbol === 'string' && info.symbol !== '');
-      for (const info of results) this.known.set(info.symbol, info);
-      this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info }));
+      // The feed's words win; what it leaves out (a logo given with the symbols, say) stays.
+      for (const info of results) this.known.set(info.symbol, mergeSymbolInfo(this.known.get(info.symbol), info)!);
+      this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info: this.known.get(info.symbol) }));
       this.status = 'idle';
     } catch {
       if (controller.signal.aborted) return;
       this.rows = [];
       this.status = 'failed';
     }
+    this.rowsGiven = false;
     this.afterResults(false);
     if (this.pickOnResults) {
       this.pickOnResults = false;
@@ -398,50 +435,28 @@ export class WidgetSymbolSearch {
     this.searchAbort = null;
   }
 
-  /** New rows: the kinds on offer, the list, the keys on the chart's symbol (`atCurrent`) or the top. */
+  /** New rows: the kinds and exchanges on offer, the list, the keys on the chart's symbol (`atCurrent`) or the top. */
   private afterResults(atCurrent: boolean): void {
-    this.renderKinds();
+    this.filters?.see(this.rows.map((r) => r.info));
     this.shown = this.visibleRows();
     const current = atCurrent ? this.shown.findIndex((r) => r.symbol === this.mode?.start.current) : -1;
     this.selectedIndex = Math.max(0, current);
     this.renderList();
   }
 
-  /** The rows on show: of the kind picked, and comparing, not the chart's own symbol. */
+  /**
+   * The rows on show: of the kind and exchange picked, and comparing, not the
+   * chart's own symbol. A symbol given that says nothing of its kind or
+   * exchange stays: it may be of either.
+   */
   private visibleRows(): Row[] {
     const comparing = this.mode?.kind === 'compare';
     const current = this.mode?.start.current;
-    return this.rows.filter((r) => (!comparing || r.symbol !== current) && (this.kind === null || r.info?.type === this.kind));
+    const filters = this.filters;
+    return this.rows.filter((r) => (!comparing || r.symbol !== current) && (!filters || filters.passes(r.info, this.rowsGiven)));
   }
 
   // --- Drawing ---
-
-  /** Chips for the kinds the results come in, when there are two or more. */
-  private renderKinds(): void {
-    const el = this.kindsEl;
-    if (!el) return;
-    const kinds = [...new Set(this.rows.map((r) => r.info?.type).filter((k): k is string => !!k))];
-    if (this.kind !== null && !kinds.includes(this.kind)) this.kind = null;
-    el.hidden = kinds.length < 2;
-    if (el.hidden) {
-      el.replaceChildren();
-      return;
-    }
-    const chip = (value: string | null, text: string) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'tcw-ss-type';
-      b.textContent = text;
-      b.setAttribute('aria-pressed', String(this.kind === value));
-      b.addEventListener('click', () => {
-        this.kind = value;
-        this.afterResults(false);
-        this.input?.focus();
-      });
-      return b;
-    };
-    el.replaceChildren(chip(null, this.t('symbolSearch.allKinds')), ...kinds.map((k) => chip(k, k)));
-  }
 
   /**
    * What is compared (comparing, before anything is typed) as a group under
@@ -473,7 +488,7 @@ export class WidgetSymbolSearch {
     const onChart = new Set(this.compared.map((c) => c.symbol));
     list.replaceChildren(...this.shown.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol))));
     const note = this.shown.length === 0 ? this.emptyNote(typed, comparing) : null;
-    results.replaceChildren(...before, list, ...(note ? [note] : []));
+    results.replaceChildren(...(this.columns ? [this.columns] : []), ...before, list, ...(note ? [note] : []));
     if (this.live) this.live.textContent = note?.textContent ?? '';
     this.markSelection();
   }
@@ -516,23 +531,11 @@ export class WidgetSymbolSearch {
     // A ticker reads left to right in any widget ("^GSPC", "BRK.B").
     symbol.dir = 'ltr';
     symbol.innerHTML = highlight(row.symbol, query);
-    const desc = row.info?.description && row.info.description !== row.symbol ? row.info.description : '';
-    const description = document.createElement('span');
-    description.className = 'tcw-ss-desc-cell';
-    if (desc) {
-      const text = document.createElement('span');
-      text.className = 'tcw-ss-desc';
-      // A feed's words read in their own direction ("Apple Inc." in a right-to-left widget).
-      text.dir = 'auto';
-      text.textContent = desc;
-      description.appendChild(text);
-    }
-    const meta = document.createElement('span');
-    meta.className = 'tcw-ss-meta';
-    if (row.info?.type) meta.appendChild(this.tag('tcw-ss-kind', row.info.type));
-    if (row.info?.exchange) meta.appendChild(this.tag('tcw-ss-exchange', row.info.exchange));
-    for (const tag of meta.children) (tag as HTMLElement).dir = 'auto';
-    el.append(symbol, description, meta);
+    // Every row has the same cells, empty where nothing was said, so the columns line up.
+    const kind = this.tag('tcw-ss-kind', row.info?.type?.trim() ?? '');
+    const exchange = this.tag('tcw-ss-exchange', row.info?.exchange?.trim() ?? '');
+    kind.dir = exchange.dir = 'auto';
+    el.append(createSymbolBadge(row.symbol, row.info), symbol, this.descriptionCell(row), kind, exchange);
     if (isCurrent || onChart) {
       const check = document.createElement('span');
       check.className = 'tcw-ss-check';
@@ -550,19 +553,32 @@ export class WidgetSymbolSearch {
     return el;
   }
 
-  /** A symbol compared already: its name, its colour and way under Description, and a button to take it off. */
+  private descriptionCell(row: Row): HTMLSpanElement {
+    const cell = document.createElement('span');
+    cell.className = 'tcw-ss-desc-cell';
+    const desc = row.info?.description && row.info.description !== row.symbol ? row.info.description : '';
+    if (desc) {
+      const text = this.tag('tcw-ss-desc', desc);
+      // A feed's words read in their own direction ("Apple Inc." in a right-to-left widget).
+      text.dir = 'auto';
+      cell.appendChild(text);
+    }
+    return cell;
+  }
+
+  /** A symbol compared already: its colour where the badges are, its way across the rest, and a button to take it off. */
   private addedRow(entry: CompareEntry): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'tcw-ss-added-row';
     el.setAttribute('role', 'presentation');
-    const way = document.createElement('span');
-    way.className = 'tcw-ss-way-cell';
     if (entry.color) {
       const swatch = document.createElement('span');
       swatch.className = 'tcw-ss-swatch';
       swatch.style.background = entry.color;
-      way.appendChild(swatch);
+      el.appendChild(swatch);
     }
+    const way = document.createElement('span');
+    way.className = 'tcw-ss-way-cell';
     way.appendChild(this.tag('tcw-ss-way-label', entry.way));
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -652,59 +668,4 @@ export class WidgetSymbolSearch {
       this.pick(this.selectedIndex);
     }
   }
-}
-
-/**
- * Cheap fuzzy score:
- *   exact match              → 1000
- *   starts-with              → 500 + tighter-prefix bonus
- *   subsequence match        → 100 − gap penalty
- *   no match                 → 0
- */
-function scoreMatch(symbol: string, query: string): number {
-  if (symbol === query) return 1000;
-  if (symbol.startsWith(query)) return 500 + (50 - Math.min(50, symbol.length - query.length));
-  if (symbol.includes(query)) return 200 + (50 - Math.min(50, symbol.length - query.length));
-
-  let qi = 0;
-  let lastIdx = -1;
-  let gapPenalty = 0;
-  for (let i = 0; i < symbol.length && qi < query.length; i++) {
-    if (symbol[i] === query[qi]) {
-      if (lastIdx >= 0) gapPenalty += i - lastIdx - 1;
-      lastIdx = i;
-      qi++;
-    }
-  }
-  if (qi < query.length) return 0;
-  return 100 - Math.min(99, gapPenalty);
-}
-
-/**
- * The symbol with the letters the query matched marked: the run of them where
- * the symbol holds the query whole, else each in order; nothing when the
- * symbol doesn't hold them all (a feed's match on the name).
- */
-function highlight(symbol: string, query: string): string {
-  if (!query) return escapeHtml(symbol);
-  const upper = symbol.toUpperCase();
-  const marked = new Set<number>();
-  const run = upper.indexOf(query);
-  if (run >= 0) {
-    for (let i = run; i < run + query.length; i++) marked.add(i);
-  } else {
-    let qi = 0;
-    for (let i = 0; i < upper.length && qi < query.length; i++) {
-      if (upper[i] === query[qi]) {
-        marked.add(i);
-        qi++;
-      }
-    }
-    if (qi < query.length) marked.clear();
-  }
-  let out = '';
-  for (let i = 0; i < symbol.length; i++) {
-    out += marked.has(i) ? `<mark>${escapeHtml(symbol[i])}</mark>` : escapeHtml(symbol[i]);
-  }
-  return out;
 }

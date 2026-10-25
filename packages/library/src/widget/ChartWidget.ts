@@ -22,6 +22,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
+import { chartInfoFor, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
@@ -358,7 +359,14 @@ export class ChartWidget {
   private lastLocalSwitchMs = 0;
   private destroyed = false;
   private options: ChartWidgetOptions;
+  /** The tickers on offer, cleaned: what the toolbar, the watchlist and the saved state work with. */
   private symbols: string[];
+  /**
+   * What came with the symbols given as SymbolInfo, by ticker: names, kinds,
+   * exchanges and logos for the search and the symbol's titles. Never the
+   * chart's: price steps and hours come from the feed or `setSymbolInfo`.
+   */
+  private symbolCatalog: Map<string, SymbolInfo>;
   private settingsState: ChartSettingsState;
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   private settingsDefaults: ChartSettingsState;
@@ -394,7 +402,10 @@ export class ChartWidget {
 
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
-    this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
+    // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.
+    const catalog = readSymbolCatalog(options.symbols ?? DEFAULT_SYMBOLS);
+    this.symbols = catalog.names;
+    this.symbolCatalog = catalog.info;
     // `numberLocale`, `timeZone` and `leftPriceScale` live in two places:
     // the headless Chart gets them via `chartOptions` (spread straight into
     // `new Chart()` below) — but the widget's own chrome (watchlist, alerts,
@@ -710,12 +721,11 @@ export class ChartWidget {
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
     this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
-    this.chart.on('symbolInfoChange', (e) => {
-      const info = (e.payload as { info: SymbolInfo | null }).info;
-      const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
-      this.toolbar?.setSymbolDescription(text || null);
+    this.chart.on('symbolInfoChange', () => {
+      this.refreshSymbolTitle();
       this.refreshMarket();
     });
+    this.refreshSymbolTitle();
 
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
@@ -1427,14 +1437,42 @@ export class ChartWidget {
 
   // --- Public API ---
 
-  /** Replace the searchable symbol catalog. Does not change the active symbol. */
-  setSymbols(symbols: string[]): void {
-    this.symbols = symbols;
+  /**
+   * Replace the symbols on offer, tickers or SymbolInfo as in the `symbols`
+   * option. Does not change the active symbol. A watchlist made from
+   * `symbols` (no `lists`, nothing kept) is replaced by their tickers too.
+   */
+  setSymbols(symbols: readonly (string | SymbolInfo)[]): void {
+    const catalog = readSymbolCatalog(symbols);
+    this.symbols = catalog.names;
+    this.symbolCatalog = catalog.info;
     // A list made from the symbols follows them; lists given or kept stay.
     const store = this.watchlistStore;
     if (store && this.watchlistFromSymbols) {
-      store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols } : l)));
+      store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols: catalog.names } : l)));
     }
+    this.refreshSymbolTitle();
+    this.refreshSymbolInfo();
+  }
+
+  /** The symbols on offer, each with what came with it, for the search and compare dialogs. */
+  private symbolEntries(): (string | SymbolInfo)[] {
+    return this.symbols.map((symbol) => this.symbolCatalog.get(symbol) ?? symbol);
+  }
+
+  /** What the chart knows of its symbol; null while it is still another symbol's. */
+  private chartSymbolInfo(): SymbolInfo | null {
+    return chartInfoFor(this.state.symbol, this.chart.getSymbolInfo());
+  }
+
+  /** The symbol's names: what the chart knows first, what came with `symbols` for the rest. */
+  private displayInfo(): SymbolInfo | null {
+    return mergeSymbolInfo(this.symbolCatalog.get(this.state.symbol), this.chartSymbolInfo()) ?? null;
+  }
+
+  /** The symbol's name and exchange as the tooltip of its button on the toolbar. */
+  private refreshSymbolTitle(): void {
+    this.toolbar?.setSymbolDescription(symbolTitle(this.displayInfo()));
   }
 
   // --- Watchlists ---
@@ -1546,6 +1584,7 @@ export class ChartWidget {
     return buildSymbolInfoView({
       symbol,
       info: this.chart.getSymbolInfo(),
+      names: this.displayInfo(),
       quote: this.quotes.get(symbol),
       bars: this.chart.getData(),
       formatPrice: (p) => this.formatAlertPrice(p),
@@ -1592,7 +1631,10 @@ export class ChartWidget {
     const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
     this.watchlist = new WidgetWatchlist(body, {
       onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.symbolSearch?.open({ symbols: this.symbols, current: this.state.symbol, onPick: (sym) => store.add(sym), search: this.symbolSearchFn() }),
+      onAdd: () => this.symbolSearch?.open({
+        symbols: this.symbolEntries(), current: this.state.symbol, currentInfo: this.chartSymbolInfo(),
+        onPick: (sym) => store.add(sym), search: this.symbolSearchFn(),
+      }),
       onRemove: (sym) => store.removeSymbol(sym),
       onMove: (sym, index) => store.move(sym, index),
       onPickList: (id) => store.setActive(id),
@@ -1678,6 +1720,7 @@ export class ChartWidget {
     this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
+    this.refreshSymbolTitle();
     this.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
@@ -1930,8 +1973,9 @@ export class ChartWidget {
   /** The symbol search, started from `query` (a letter typed on the chart). */
   private openSymbolSearch(query?: string): void {
     this.symbolSearch?.open({
-      symbols: this.symbols,
+      symbols: this.symbolEntries(),
       current: this.state.symbol,
+      currentInfo: this.chartSymbolInfo(),
       search: this.symbolSearchFn(),
       query,
       // Said where it can be done: letters typed on the chart open it.
@@ -3352,7 +3396,7 @@ export class ChartWidget {
       return;
     }
     this.symbolSearch?.openCompare({
-      symbols: this.symbols,
+      symbols: this.symbolEntries(),
       current: this.state.symbol,
       search: this.symbolSearchFn(),
       ways: compareWayOptions(this.t),

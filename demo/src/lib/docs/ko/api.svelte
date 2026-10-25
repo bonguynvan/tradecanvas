@@ -494,10 +494,31 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <strong>종목 검색</strong>은 도구 모음의 종목, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
   또는 차트 위에서 입력한 글자로 열리며, 그 글자로 검색을 시작합니다. 아무것도 입력하기 전에는 <code>symbols</code> 목록을
-  보여 주고, 입력하면 입력이 멈출 때마다 피드의 검색(<code>searchSymbols</code> 또는 어댑터의 검색)에 묻습니다. 종목, 이름,
-  종류, 거래소가 열로 나뉘어 표시되고, 차트의 종목에는 표시가 붙습니다. 결과에 여러 종류(예: 주식과 암호화폐)가 섞여 있으면
-  하나로 좁힐 수 있습니다. 검색으로 알게 된 이름은 처음 열 때 보이는 목록에도 남습니다.
+  보여 주고, 입력하면 입력이 멈출 때마다 피드의 검색(<code>searchSymbols</code> 또는 어댑터의 검색)에 묻습니다. 각 행의 앞에는
+  배지(종목의 로고, 없으면 티커의 첫 글자를 종류의 색으로)가 있고, 이어서 종목, 이름, 종류, 거래소가 열로 나뉘어 표시되며,
+  차트의 종목에는 표시가 붙습니다. 탭으로 한 종류(주식, 암호화폐)만 볼 수 있고, 입력하는 동안에도 탭은 그대로입니다. 행이 두 곳
+  이상의 거래소에서 오면 옆의 목록으로 한 거래소만 볼 수 있습니다. 둘 다 이미 받은 행만 걸러 냅니다. 피드의 검색은 최대 50개를
+  주므로, <code>V</code>를 입력한 뒤 HNX를 고르면 그 50개 중 HNX 종목이 보이며, V가 들어간 모든 HNX 종목이 아닙니다.
+  검색이 없으면 입력한 글자로 티커와 이름 모두에서 찾으며, 베트남어 성조 부호는 있어도 없어도 됩니다
+  (<code>ngan hang</code>으로 “Ngân hàng”을 찾습니다).
   <code>{`features: { symbolTyping: false }`}</code>로 하면 차트 위에서 글자를 입력해도 열리지 않습니다.
+</p>
+<p>
+  <code>symbols</code>를 <code>SymbolInfo</code>로 주면 목록이 이름, 종류, 거래소, 로고와 함께 열립니다. 차트가 모를 때는
+  도구 모음의 종목과 종목 정보 패널도 여기에서 이름과 거래소를 가져옵니다. 피드의 검색 결과가 이 정보보다 우선하지만 로고는
+  남습니다. 차트가 자기 종목에 대해 아는 내용은 빈 곳만 채웁니다. 여기서 준 호가 단위와 거래 시간은 차트에 적용되지 않으며,
+  어댑터의 <code>resolveSymbol</code>이나 <code>chart.setSymbolInfo</code>에서 옵니다.
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // 이전처럼 티커만
+  ],
+})`}</code></pre>
+<p>
+  <code>logo</code>는 <code>https:</code> 또는 <code>http:</code> 주소, 사이트의 경로, <code>blob:</code> URL, 또는
+  <code>data:</code>로 쓴 이미지(PNG, JPEG, GIF, WebP, AVIF, SVG)입니다. 그 밖의 값은 무시합니다. 이미지로만, 리퍼러 없이
+  불러오므로 페이지의 <code>img-src</code> 정책이 그 호스트를 허용해야 합니다. 불러오지 못한 로고 대신 첫 글자가 보입니다. 첫 글자의 색은 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>(주식, 선물, 지수, 암호화폐, 외환. 다른 종류는 이름에 따라 하나가 정해집니다)이며, 어두운 테마와 밝은 테마에 각각 설정되어 있습니다.
 </p>
 <p>
   <strong>비교</strong>는 같은 대화상자로, 검색창 아래에 <strong>추가 방식</strong>이 있고 비교 중인 종목이 맨 앞에
@@ -531,7 +552,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>도구 모음에서 재생 클릭</td><td>바 리플레이 스크러버를 엽니다(재생/한 봉씩 이동/탐색/속도)</td></tr>
   </tbody>
 </table>
-<p>검색 가능한 종목 목록은 런타임에 <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>로 업데이트합니다.</p>
+<p>
+  검색할 수 있는 종목은 런타임에 <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>로 바꿉니다.
+  <code>symbols</code>처럼 티커나 <code>SymbolInfo</code>를 줄 수 있습니다. <code>symbols</code>로 만든 관심 종목 목록(<code>lists</code>가
+  없고 저장하지 않는 것)은 이 종목들로 바뀌고 각 종목의 시세를 요청합니다. 서버에서 받은 긴 목록이라면 관심 종목에 따로
+  목록을 주세요.
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: '기본', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // 서버에서 받은 SymbolInfo[]: 검색이 이것으로 열리고, 관심 종목은 그대로`}</code></pre>
 
 <h3>데이터 창</h3>
 <p>

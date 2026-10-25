@@ -5447,7 +5447,8 @@
       },
       {
         "name": "symbols",
-        "type": "string[]"
+        "type": "readonly (string | SymbolInfo)[]",
+        "doc": "The symbols on offer, as tickers or `SymbolInfo` (a name, `type`, `exchange` and `logo` for the symbol search, the toolbar's symbol and the symbol info panel). The search lists them until something is typed (with no search, it filters them by ticker and name), a watchlist with no `lists` starts with their tickers, and the chart starts on the first."
       },
       {
         "name": "timeframes",

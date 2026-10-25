@@ -13,7 +13,10 @@ type DayBar = { time: number; open: number; high: number; low: number; close: nu
 /** What the symbol info panel is drawn from. */
 export interface SymbolInfoInput {
   symbol: string;
+  /** What the chart knows: the market's hours, price step, currency and zone come from it. */
   info: SymbolInfo | null;
+  /** Where the name, exchange and kind come from, when not `info` (the symbols given fill what the chart leaves out). */
+  names?: SymbolInfo | null;
   /** The live quote, when a source gives one. */
   quote: Quote | undefined;
   /** The chart's bars: the day's numbers come from them when there's no quote. */
@@ -66,10 +69,11 @@ export function buildSymbolInfoView(input: SymbolInfoInput): SymbolInfoView {
   add(t('symbolInfo.hours'), sessionsText(info, textLocale));
 
   const sign = (change ?? 0) >= 0 ? '+' : '-';
+  const named = input.names === undefined ? info : input.names;
   return {
     symbol: input.symbol,
-    description: info?.description,
-    meta: [info?.exchange, info?.type].filter(Boolean).join(' · ') || undefined,
+    description: named?.description,
+    meta: [named?.exchange, named?.type].filter(Boolean).join(' · ') || undefined,
     price: last !== undefined ? fp(last) : undefined,
     change: change !== undefined
       ? { text: `${sign}${fp(Math.abs(change))}${percent !== undefined ? ` (${sign}${Math.abs(percent).toFixed(2)}%)` : ''}`, up: change >= 0 }

@@ -41,6 +41,13 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+<p>
+  <code>searchSymbols</code> と <code>resolveSymbol</code> は <code>SymbolInfo</code> を返します。<code>symbol</code> と、
+  フィードが知っているその他の情報です。読みやすい名称（<code>description</code>）、<code>exchange</code>、フィード自身の
+  言葉での <code>type</code>（<code>'stock'</code>、<code>'futures'</code>、<code>'Cổ phiếu'</code>…）、ウィジェットの
+  シンボル検索に表示される <code>logo</code>、<code>pricePrecision</code>、<code>minTick</code>、<code>currency</code>、
+  <code>timeZone</code>、<code>sessions</code>。
+</p>
 
 <h2 id="symbol-info">データフィードが後から知る銘柄情報</h2>
 <p>

@@ -52,7 +52,25 @@ describe('widget colour tokens', () => {
   ])('%s: muted text stays readable', (_name, t) => {
     expect(contrast(t['--tcw-text-muted'], t['--tcw-bg'])).toBeGreaterThanOrEqual(4.5);
   });
+
+  it.each([
+    ['dark', dark],
+    ['light', light],
+  ])('%s: a kind colour reads on its own tint in the symbol search', (_name, t) => {
+    for (let slot = 1; slot <= 5; slot++) {
+      const name = `--tcw-kind-${slot}`;
+      expect(t[name], name).toMatch(/^#[0-9a-f]{6}$/i);
+      // The badge is the colour at 16% over the dialog's surface, its letter the colour itself.
+      expect(contrast(t[name], mix(t[name], t['--tcw-bg-elevated'], 0.16)), name).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 });
+
+/** `fg` at `alpha` over `bg`, as `color-mix(in srgb, fg alpha, transparent)` is drawn on it. */
+function mix(fg: string, bg: string, alpha: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * alpha + channel(bg, i) * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`;
+}
 
 describe('loading overlay styles', () => {
   const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));

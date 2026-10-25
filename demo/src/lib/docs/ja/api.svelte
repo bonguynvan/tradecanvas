@@ -489,10 +489,32 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <strong>シンボル検索</strong>は、ツールバーのシンボル、<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>、
   またはチャート上での文字の入力で開き、入力した文字から検索が始まります。何も入力していないうちは <code>symbols</code> の一覧を表示し、
-  入力すると、入力が止まるたびにフィードの検索（<code>searchSymbols</code>、またはアダプターの検索）に問い合わせます。シンボル、
-  名称、種類、取引所が列に並び、チャートのシンボルには印が付きます。結果に複数の種類（たとえば株式と暗号資産）があれば、
-  1 つに絞り込めます。検索で分かった名称は、開いたときの一覧にも残ります。
+  入力すると、入力が止まるたびにフィードの検索（<code>searchSymbols</code>、またはアダプターの検索）に問い合わせます。各行の先頭には
+  バッジ（シンボルのロゴ、なければティッカーの頭文字を種類の色で）があり、続いてシンボル、名称、種類、取引所が列に並び、
+  チャートのシンボルには印が付きます。タブで 1 つの種類（株式、暗号資産）に絞り込め、入力中もタブは動きません。行が 2 つ以上の
+  取引所にまたがると、横のリストで 1 つの取引所に絞り込めます。どちらも手元の行を絞り込むだけです。フィードの検索は最大 50 件なので、
+  <code>V</code> と入力して HNX を選ぶと、その 50 件のうちの HNX の銘柄が表示され、V を含むすべての HNX 銘柄ではありません。
+  検索がない場合は、入力した文字でティッカーと名称の両方から探し、ベトナム語の声調記号はあってもなくても構いません
+  （<code>ngan hang</code> で「Ngân hàng」が見つかります）。
   <code>{`features: { symbolTyping: false }`}</code> にすると、チャート上で文字を入力しても開かなくなります。
+</p>
+<p>
+  <code>symbols</code> を <code>SymbolInfo</code> で渡すと、一覧は名称、種類、取引所、ロゴ付きで開きます。チャートが知らない
+  ときは、ツールバーのシンボルとシンボル情報パネルもここから名称と取引所を取ります。フィードの検索結果はこれらより優先されますが、
+  ロゴは残ります。チャートが自分のシンボルについて知っていることは、空いているところを埋めるだけです。ここで渡した値幅や取引時間は
+  チャートには適用されません。それらはアダプターの <code>resolveSymbol</code> か <code>chart.setSymbolInfo</code> から来ます。
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // 従来どおりティッカーだけ
+  ],
+})`}</code></pre>
+<p>
+  <code>logo</code> には <code>https:</code> か <code>http:</code> のアドレス、サイト上のパス、<code>blob:</code> URL、
+  または <code>data:</code> で書いた画像（PNG、JPEG、GIF、WebP、AVIF、SVG）を指定します。それ以外は無視されます。
+  画像としてのみ、リファラーなしで読み込まれるため、ページの <code>img-src</code> ポリシーでそのホストを許可してください。
+  読み込めないロゴの代わりには頭文字が表示されます。頭文字の色は <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（株式、先物、指数、暗号資産、FX。ほかの種類は名前から 1 つが決まります）で、ダークとライトのテーマそれぞれに設定されています。
 </p>
 <p>
   <strong>比較</strong>は同じダイアログで、検索欄の下に<strong>追加方法</strong>があり、比較中のシンボルが先頭に並びます
@@ -525,7 +547,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>ツールバーの再生ボタンをクリック</td><td>バーリプレイのスクラバーを開きます（再生 / ステップ / シーク / 速度）</td></tr>
   </tbody>
 </table>
-<p>検索対象の一覧は、実行時に <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> で更新できます。</p>
+<p>
+  検索対象のシンボルは、実行時に <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> で入れ替えられます。
+  <code>symbols</code> と同じく、ティッカーでも <code>SymbolInfo</code> でも構いません。<code>symbols</code> から作られた
+  ウォッチリスト（<code>lists</code> がなく、保存もしないもの）はこれらに置き換わり、1 つずつ相場を問い合わせます。
+  サーバーからの長い一覧を渡すときは、ウォッチリストに専用のリストを渡してください。
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: 'メイン', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // サーバーからの SymbolInfo[]：検索はこれで開き、ウォッチリストはそのまま`}</code></pre>
 
 <h3>データウィンドウ</h3>
 <p>

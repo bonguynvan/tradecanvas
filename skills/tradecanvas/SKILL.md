@@ -272,7 +272,9 @@ everywhere, dotted = one place; a part shows while all of its switches are on, s
 `isFeatureOn('toolbar.replay')` stays `true` with `replay: false`). They hide the widget's UI only,
 and never add a part: the depth ladder and the watchlist come from their options
 (`depthLadder: true`, `watchlist: true`), and `features: { depthLadder: true }` alone makes no ladder.
-To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The dock's panels
+To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The widget's `symbols` (and
+`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
+opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your

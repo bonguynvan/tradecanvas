@@ -55,9 +55,14 @@ describe('WidgetSymbolSearch as a dialog', () => {
     expect(input().getAttribute('aria-activedescendant')).toBe(rows()[1].id);
   });
 
-  it('heads its columns', () => {
+  it('heads its columns inside what scrolls, out of the list a screen reader hears', () => {
     search.open({ symbols: ['ETHUSDT'], current: '' });
-    expect(host.querySelector('.tcw-ss-columns')?.textContent).toMatch(/Symbol.*Description/);
+    const columns = host.querySelector<HTMLElement>('.tcw-ss-columns')!;
+    expect(columns.textContent).toMatch(/Symbol.*Description.*Type.*Exchange/);
+    expect([...columns.children].map((c) => c.textContent)).toEqual(['', 'Symbol', 'Description', 'Type', 'Exchange']);
+    expect(columns.parentElement?.classList.contains('tcw-ss-results')).toBe(true);
+    expect(columns.closest('[role="listbox"]')).toBeNull();
+    expect(columns.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('closes on Escape and on the backdrop, giving focus back', () => {
@@ -299,11 +304,233 @@ describe('WidgetSymbolSearch kinds of symbol', () => {
     expect(rowText()).toHaveLength(3);
   });
 
-  it('has no kinds to pick from when the results are all of one', async () => {
+  it('keeps the kinds bar for results of one kind', async () => {
     search.open({ symbols: [], current: '', search: async () => results });
     type('btc');
     await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'crypto']);
+  });
+
+  it('has no kinds to pick from when no result carries one', async () => {
+    search.open({ symbols: [], current: '', search: async () => [{ symbol: 'AAA' }, { symbol: 'BBB' }] });
+    type('a');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
     expect(chips()).toHaveLength(0);
+    expect(host.querySelector<HTMLElement>('.tcw-ss-filters')?.hidden).toBe(true);
+  });
+
+  it('keeps a kind picked, and its tab, as typing narrows the results', async () => {
+    const fn = vi.fn(async () => [{ symbol: 'VCB', description: 'Vietcombank', type: 'Stock', exchange: 'HOSE' }]);
+    search.open({
+      symbols: [{ symbol: 'VCB', type: 'Stock' }, { symbol: 'VN30F2511', type: 'Futures' }],
+      current: '', search: fn,
+    });
+    chips().find((c) => c.textContent === 'Futures')!.click();
+    expect(rowText()).toEqual(['VN30F2511']);
+    type('vcb');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'Stock', 'Futures']);
+    expect(chips()[2].getAttribute('aria-pressed')).toBe('true');
+    expect(rows()).toHaveLength(0);
+    expect(empty()).toBe('No symbols match');
+  });
+
+  it('takes kinds that differ only in case as one', async () => {
+    search.open({ symbols: [], current: '', search: async () => [{ symbol: 'AAA', type: 'Stock' }, { symbol: 'AAB', type: 'stock' }, { symbol: 'AAC', type: 'crypto' }] });
+    type('aa');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'Stock', 'crypto']);
+    chips()[1].click();
+    expect(rowText()).toEqual(['AAA', 'AAB']);
+  });
+});
+
+describe('WidgetSymbolSearch exchanges', () => {
+  const vn: SymbolInfo[] = [
+    { symbol: 'VNM', description: 'Vinamilk', exchange: 'HOSE', type: 'stock' },
+    { symbol: 'SHB', description: 'SHB Bank', exchange: 'HNX', type: 'stock' },
+    { symbol: 'ACV', description: 'Airports Corporation', exchange: 'UPCOM', type: 'stock' },
+    { symbol: 'VN30F2511', description: 'VN30 futures', exchange: 'HNX', type: 'futures' },
+  ];
+  const select = () => host.querySelector<HTMLSelectElement>('select.tcw-ss-exchange-filter')!;
+  const pickExchange = (value: string) => {
+    select().value = value;
+    select().dispatchEvent(new Event('change'));
+  };
+
+  it('offers the exchanges the results come from, when two or more, and keeps to the one picked', async () => {
+    search.open({ symbols: [], current: '', search: async () => vn.slice(0, 3) });
+    type('a');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(select().hidden).toBe(false);
+    expect(select().getAttribute('aria-label')).toBe('Exchange');
+    expect([...select().options].map((o) => o.textContent)).toEqual(['All exchanges', 'HOSE', 'HNX', 'UPCOM']);
+    pickExchange('HNX');
+    expect(rowText()).toEqual(['SHB']);
+    expect(document.activeElement).toBe(input());
+    pickExchange('');
+    expect(rowText()).toHaveLength(3);
+  });
+
+  it('has no exchange filter for results from one exchange', async () => {
+    search.open({ symbols: [], current: '', search: async () => [vn[0], { symbol: 'VIC', exchange: 'hose' }] });
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(select().hidden).toBe(true);
+  });
+
+  it('narrows by kind and exchange together', async () => {
+    search.open({ symbols: [], current: '', search: async () => vn });
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    pickExchange('HNX');
+    expect(rowText()).toEqual(['SHB', 'VN30F2511']);
+    chips().find((c) => c.textContent === 'futures')!.click();
+    expect(rowText()).toEqual(['VN30F2511']);
+    // The exchange picked stays picked.
+    expect(select().value).toBe('HNX');
+  });
+
+  it('works on the list before anything is typed', () => {
+    search.open({ symbols: vn, current: '' });
+    expect(select().hidden).toBe(false);
+    pickExchange('HNX');
+    expect(rowText()).toEqual(['SHB', 'VN30F2511']);
+  });
+
+  it('keeps the symbols it was given that say nothing of their kind or exchange, on the list before typing', async () => {
+    const fn = vi.fn(async () => [
+      { symbol: 'VPB', exchange: 'HOSE', type: 'stock' },
+      { symbol: 'VN30F2511', exchange: 'HNX', type: 'futures' },
+    ]);
+    search.open({ symbols: ['MBB', 'SSI', 'VPB', 'VN30F2511'], current: '', search: fn });
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    type('');
+    expect(rowText()).toEqual(['MBB', 'SSI', 'VPB', 'VN30F2511']);
+    chips().find((c) => c.textContent === 'stock')!.click();
+    expect(rowText()).toEqual(['MBB', 'SSI', 'VPB']);
+    pickExchange('HOSE');
+    expect(rowText()).toEqual(['MBB', 'SSI', 'VPB']);
+    // The feed's results keep to what was picked.
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['VPB']);
+  });
+});
+
+describe('WidgetSymbolSearch symbols given with their info', () => {
+  it('lists the names, kinds and exchanges it was given before anything is typed', () => {
+    const fn = vi.fn(async () => results);
+    search.open({ symbols: [{ symbol: 'VNM', description: 'Vinamilk', exchange: 'HOSE', type: 'stock' }, 'FPT'], current: 'VNM', search: fn });
+    expect(rowText()).toEqual(['VNM', 'FPT']);
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vinamilk');
+    expect(rows()[0].querySelector('.tcw-ss-exchange')?.textContent).toBe('HOSE');
+    expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('stock');
+    expect(rows()[1].querySelector('.tcw-ss-desc')).toBeNull();
+    expect(rows()[1].querySelector('.tcw-ss-kind')?.textContent).toBe('');
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'stock']);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('takes the feed’s words over the ones it was given, which fill the rest and keep the logo', async () => {
+    search.open({
+      symbols: [{ symbol: 'VNM', description: 'Vinamilk', type: 'Cổ phiếu', logo: 'https://cdn.x/vnm.png' }],
+      current: '',
+      search: async () => [{ symbol: 'VNM', description: 'VINAMILK JSC', exchange: 'HOSE' }],
+    });
+    type('vn');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    const row = rows()[0];
+    expect(row.querySelector('.tcw-ss-desc')?.textContent).toBe('VINAMILK JSC');
+    expect(row.querySelector('.tcw-ss-exchange')?.textContent).toBe('HOSE');
+    expect(row.querySelector('.tcw-ss-kind')?.textContent).toBe('Cổ phiếu');
+    expect(row.querySelector('img.tcw-ss-badge')?.getAttribute('src')).toBe('https://cdn.x/vnm.png');
+  });
+
+  it('without a search, finds a given symbol by its name too, the tickers first', () => {
+    search.open({
+      symbols: [{ symbol: 'VNM', description: 'Vinamilk' }, { symbol: 'VIC', description: 'Vingroup' }, 'VNMX', { symbol: 'VCB', description: 'Ngân hàng Ngoại thương' }],
+      current: '',
+    });
+    type('milk');
+    expect(rowText()).toEqual(['VNM']);
+    type('vn');
+    expect(rowText()).toEqual(['VNM', 'VNMX']);
+    // Typed without the marks a Vietnamese name is written with.
+    type('ngan hang');
+    expect(rowText()).toEqual(['VCB']);
+  });
+
+  it('names the chart’s symbol from what the chart knows, where nothing else does', () => {
+    search.open({ symbols: ['VCB', 'FPT'], current: 'VCB', currentInfo: { symbol: 'VCB', description: 'Vietcombank', type: 'stock' } });
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vietcombank');
+    expect(rows()[1].querySelector('.tcw-ss-desc')).toBeNull();
+  });
+
+  it('lets what the chart knows only fill gaps in the words it was given', () => {
+    search.open({
+      symbols: [{ symbol: 'VCB', type: 'Cổ phiếu', exchange: 'HOSE' }, { symbol: 'FPT', type: 'Cổ phiếu', exchange: 'HOSE' }],
+      current: 'VCB',
+      currentInfo: { symbol: 'VCB', description: 'VCB (KBS)', type: 'stock', exchange: 'KBS' },
+    });
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'Cổ phiếu']);
+    expect(host.querySelector<HTMLSelectElement>('.tcw-ss-exchange-filter')?.hidden).toBe(true);
+    expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('Cổ phiếu');
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('VCB (KBS)');
+  });
+
+  it('lays every row out in the same cells, empty where nothing was said', () => {
+    search.open({ symbols: [{ symbol: 'VNM', description: 'Vinamilk', exchange: 'HOSE', type: 'stock' }, 'FPT'], current: '' });
+    for (const row of rows()) {
+      expect([...row.children].map((c) => c.className)).toEqual(['tcw-ss-badge', 'tcw-ss-symbol', 'tcw-ss-desc-cell', 'tcw-ss-kind', 'tcw-ss-exchange']);
+      expect(row.querySelector('.tcw-ss-badge')?.getAttribute('aria-hidden')).toBe('true');
+    }
+  });
+
+  it('marks each row with the first letter of its ticker in its kind’s colour', () => {
+    search.open({
+      symbols: [
+        { symbol: 'VN30F2511', type: 'Futures' }, { symbol: '^GSPC', type: 'index' }, { symbol: '600519', type: 'Stock' },
+        { symbol: 'KBS:VCB', type: 'stock' }, 'ETHUSDT',
+      ],
+      current: '',
+    });
+    const badges = rows().map((r) => r.querySelector<HTMLElement>('.tcw-ss-badge')!);
+    expect(badges.map((b) => b.textContent)).toEqual(['V', 'G', '6', 'V', 'E']);
+    expect(badges[2].dataset.kind).toBe(badges[3].dataset.kind);
+    expect(badges[0].dataset.kind).not.toBe(badges[2].dataset.kind);
+    expect(badges[4].dataset.kind).toBe('0');
+  });
+
+  it('shows a logo only as an image, from the addresses it takes', () => {
+    search.open({
+      symbols: [
+        { symbol: 'A', logo: 'https://cdn.x/a.png' }, { symbol: 'B', logo: 'javascript:alert(1)' },
+        { symbol: 'C', logo: '<img src=x onerror=alert(1)>' }, { symbol: 'D' },
+      ],
+      current: '',
+    });
+    const [a, b, c, d] = rows();
+    const img = a.querySelector('img')!;
+    expect(img.getAttribute('src')).toBe('https://cdn.x/a.png');
+    expect(img.getAttribute('alt')).toBe('');
+    expect(img.getAttribute('referrerpolicy')).toBe('no-referrer');
+    expect(b.querySelector('img')).toBeNull();
+    expect(b.querySelector('span.tcw-ss-badge')?.textContent).toBe('B');
+    expect(d.querySelector('img')).toBeNull();
+    expect(c.querySelector('img')?.getAttribute('src') ?? '').not.toContain('<');
+    expect(host.querySelector('[onerror]')).toBeNull();
+    for (const row of rows()) expect(row.querySelectorAll('img').length).toBeLessThanOrEqual(1);
+  });
+
+  it('shows the letter when a logo fails to load', () => {
+    search.open({ symbols: [{ symbol: 'AAPL', type: 'stock', logo: 'https://cdn.x/aapl.png' }], current: '' });
+    rows()[0].querySelector('img')!.dispatchEvent(new Event('error'));
+    const badge = rows()[0].querySelector<HTMLElement>('.tcw-ss-badge')!;
+    expect(badge.tagName).toBe('SPAN');
+    expect(badge.textContent).toBe('A');
+    expect(rows()[0].firstElementChild).toBe(badge);
   });
 });
 
@@ -405,6 +632,18 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(document.activeElement).toBe(input());
     search.setCompared([]);
     expect(host.querySelectorAll('.tcw-ss-added-row')).toHaveLength(0);
+  });
+
+  it('lists the names it was given, and what is compared, in the same columns', () => {
+    search.openCompare({
+      symbols: [{ symbol: 'ETHUSDT', description: 'Ether / Tether', type: 'crypto', exchange: 'Binance' }, 'SOLUSDT'],
+      current: 'BTCUSDT', ways, way: 'percent',
+      compared: [{ id: 'a', symbol: 'XRPUSDT', way: 'Ratio', color: '#ff9800' }], onAdd: () => {}, onRemove: () => {},
+    });
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Ether / Tether');
+    expect(rows()[0].querySelector('.tcw-ss-badge')?.textContent).toBe('E');
+    const added = host.querySelector('.tcw-ss-added-row')!;
+    expect([...added.children].map((c) => c.className)).toEqual(['tcw-ss-swatch', 'tcw-ss-symbol', 'tcw-ss-way-cell', 'tcw-ss-remove']);
   });
 
   it('says there is nothing compared yet when it has no symbols to offer', () => {
