@@ -627,7 +627,6 @@ export class Chart {
     this.barCountdown = new BarCountdown();
     this.barCountdown.setVisible(this.features.barCountdown);
     this.sessionBreaks = new SessionBreaks();
-    this.sessionBreaks.setLocale(this.numberLocale);
     this.sessionShading = new SessionShading();
     this.compareRenderer = new CompareRenderer();
 
@@ -5136,7 +5135,6 @@ export class Chart {
     this.timeAxis.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
-    this.sessionBreaks.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
     // Separators change label widths; the axis may need to refit.
     this.updateViewportAndRender();

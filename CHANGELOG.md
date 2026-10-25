@@ -5,6 +5,7 @@
 ### What a downstream app found
 
 - **`maxDrawdownPct` is the deepest fall from a running peak** (`@tradecanvas/analytics`). It was the percent of the largest fall in money, which on a growing account can be a later, shallower fall: 100, 50, 100, 400, 1000, 800, 1200 gave 20% instead of 50%. It only ever gets larger, and `calmar`, which divides by it, falls with it. `maxDrawdown` is still the largest fall in money, so the two can come from different falls; the `RiskMetrics` fields now say their units (the percentages are fractions). `PerformanceDashboard` shows a `Backtester` result's total return and max drawdown in percent, where they read 100 times too small, and the Max Drawdown card reads as a fall (`-50.00%`), as the Drawdown panel plots it.
+- **Session breaks are lines only** (`@tradecanvas/core`, `@tradecanvas/chart`). Their dates no longer print along the top of the plot, where they repeated the time axis and ran under the legend: zoomed out on intraday bars (the All range on daily bars, then 4h) they made a row of Mondays and months, and at the usual zoom a Monday near the left edge still sat under the OHLC line. The time axis names the days, months and years at every zoom. `SessionBreaks.renderLabels` and `SessionBreaks.setLocale` are deprecated and do nothing; they go in 2.0.
 
 ## 1.50.0 (2026-10-25)
 

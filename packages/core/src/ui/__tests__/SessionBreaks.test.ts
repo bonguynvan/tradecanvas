@@ -52,21 +52,21 @@ function hourlyBarsAcrossMonthBoundary(): DataSeries {
   return bars;
 }
 
-describe('SessionBreaks — month-boundary label', () => {
-  it('labels a month boundary with the full year, not an ambiguous 2-digit one', () => {
+// The time axis names the days, months and years at every zoom, so the breaks
+// are lines only: a date along the top repeated the axis and ran under the legend.
+describe('SessionBreaks — lines only, the dates are on the time axis', () => {
+  it('draws the lines of a month boundary and writes no text', () => {
     const sb = new SessionBreaks();
     sb.setVisible(true);
     const { ctx, fillTextCalls } = mockCtx();
 
-    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
+    sb.render(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
-    // "Oct 26" (2-digit year) reads like a day-of-month and was mistaken for
-    // the wrong date; the fix always renders the 4-digit year.
-    expect(fillTextCalls.some((t) => /^Oct \d{2}$/.test(t))).toBe(false);
-    expect(fillTextCalls.some((t) => t.includes('2026'))).toBe(true);
+    expect(ctx.stroke).toHaveBeenCalled();
+    expect(fillTextCalls).toEqual([]);
   });
 
-  it('formats the label using the configured locale instead of hardcoded English', () => {
+  it('keeps renderLabels, which draws nothing in any locale', () => {
     const sb = new SessionBreaks();
     sb.setVisible(true);
     sb.setLocale('vi-VN');
@@ -74,8 +74,35 @@ describe('SessionBreaks — month-boundary label', () => {
 
     sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
 
-    expect(fillTextCalls.some((t) => t.includes('Oct') || t.includes('Sep'))).toBe(false);
-    expect(fillTextCalls.some((t) => t.includes('thg') || /\d{1,2}\/\d{4}/.test(t))).toBe(true);
+    expect(fillTextCalls).toEqual([]);
+    expect(ctx.save).not.toHaveBeenCalled();
+  });
+
+  it('writes no row of dates over 4h bars zoomed out to the whole series', () => {
+    // A downstream app's case: "All" on daily bars, then 4h, kept the zoom out
+    // and printed every Monday and month along the top of the plot.
+    const end = Date.UTC(2026, 9, 25, 8);
+    const bars: DataSeries = Array.from({ length: 5000 }, (_, i) => ({
+      time: end - (4999 - i) * 4 * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const width = 1270;
+    const vp: ViewportState = {
+      visibleRange: { from: 0, to: bars.length - 1 },
+      priceRange: { min: 0, max: 2 },
+      barWidth: 0.632,
+      barSpacing: 0.632,
+      offset: bars.length * 1.264 - width,
+      chartRect: { x: 0, y: 0, width, height: 700 },
+    };
+    const sb = new SessionBreaks();
+    sb.setVisible(true);
+    sb.setTimezone(0);
+    const { ctx, fillTextCalls } = mockCtx();
+
+    sb.render(ctx, vp, DARK_THEME, bars);
+
+    expect(ctx.moveTo).toHaveBeenCalled();
+    expect(fillTextCalls).toEqual([]);
   });
 });
 
@@ -99,7 +126,7 @@ describe('SessionBreaks in the display timezone', () => {
 });
 
 
-describe('SessionBreaks — lines under the bars, labels over them', () => {
+describe('SessionBreaks — lines under the bars', () => {
   const breaks = () => {
     const sb = new SessionBreaks();
     sb.setVisible(true);
@@ -107,7 +134,7 @@ describe('SessionBreaks — lines under the bars, labels over them', () => {
     return sb;
   };
 
-  it('draws only the lines in renderLines, only the labels in renderLabels, both in render', () => {
+  it('draws the same lines in render as in renderLines, and no text in either', () => {
     const sb = breaks();
     const data = hourlyBarsAcrossMonthBoundary();
     const lines = mockCtx();
@@ -115,15 +142,10 @@ describe('SessionBreaks — lines under the bars, labels over them', () => {
     expect(lines.fillTextCalls).toEqual([]);
     expect(lines.ctx.stroke).toHaveBeenCalled();
 
-    const labels = mockCtx();
-    sb.renderLabels(labels.ctx, viewport(), DARK_THEME, data);
-    expect(labels.fillTextCalls.length).toBeGreaterThan(0);
-    expect(labels.ctx.stroke).not.toHaveBeenCalled();
-
     const both = mockCtx();
     sb.render(both.ctx, viewport(), DARK_THEME, data);
-    expect(both.ctx.stroke).toHaveBeenCalled();
-    expect(both.fillTextCalls).toEqual(labels.fillTextCalls);
+    expect(vi.mocked(both.ctx.moveTo).mock.calls).toEqual(vi.mocked(lines.ctx.moveTo).mock.calls);
+    expect(both.fillTextCalls).toEqual([]);
   });
 
   it('gives a rectangle per line, dashed, heavier for bigger breaks', () => {
@@ -191,13 +213,10 @@ describe('SessionBreaks — zoomed far out', () => {
     return { texts, lines };
   }
 
-  it('keeps its labels apart, the years among them', () => {
-    const { texts } = drawn();
-    expect(texts.map((t) => t.text)).toEqual(expect.arrayContaining(['2024', '2025']));
-    const sorted = [...texts].sort((a, b) => a.x - b.x);
-    for (let i = 1; i < sorted.length; i++) {
-      expect(sorted[i].x, `${sorted[i - 1].text} / ${sorted[i].text}`).toBeGreaterThanOrEqual(sorted[i - 1].x + sorted[i - 1].text.length * 6);
-    }
+  it('draws lines but no dates', () => {
+    const { texts, lines } = drawn();
+    expect(lines.length).toBeGreaterThan(0);
+    expect(texts).toEqual([]);
   });
 
   it('draws no lines closer than a few pixels', () => {

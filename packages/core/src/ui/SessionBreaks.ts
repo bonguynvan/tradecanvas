@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, timeParts, zonedDateFormatter } from '@tradecanvas/commons';
+import { barTimeUnit, timeParts } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 import type { GpuRect } from '../engine/gpu.js';
 
@@ -23,20 +23,17 @@ const DASHES: Record<NonNullable<SessionBreakConfig['lineStyle']>, [number, numb
   dotted: [2, 3],
 };
 
-/** A break on screen: its line's centre and width, its strength, and its label. */
+/** A break on screen: its line's centre and width, and its strength. */
 interface BreakMark {
   px: number;
   width: number;
   alpha: number;
-  label: string | null;
   /** How significant: a year 3, a month 2, a week 1, a day 0. Zoomed out, the lesser give way. */
   rank: number;
 }
 
 /** Break lines at least this far apart (px): zoomed out, the lesser ones are left out. */
 const MIN_LINE_GAP_PX = 6;
-/** Space kept between one break label and the next (px). */
-const LABEL_GAP_PX = 8;
 
 /** The marks, most significant first, each kept unless one already kept is closer than `gap`. */
 function thinByRank(marks: readonly BreakMark[], gap: number): BreakMark[] {
@@ -63,14 +60,14 @@ function thinByRank(marks: readonly BreakMark[], gap: number): BreakMark[] {
 interface SessionBreak {
   idx: number;
   kind: 'day' | 'week' | 'month' | 'year';
-  /** The bar's time, ms. */
-  time: number;
-  year: number;
 }
 
 /**
  * Renders vertical session break lines on the chart.
  * Detects day boundaries from bar timestamps and draws vertical separators.
+ * The lines carry no dates: the time axis names the days, months and years at
+ * every zoom, and dates along the top of the plot repeated it and ran under
+ * the legend.
  */
 export class SessionBreaks {
   private config: SessionBreakConfig = { visible: false };
@@ -81,16 +78,17 @@ export class SessionBreaks {
   // that case rescan every bar on every frame.
   private cacheValid = false;
   private lastDataLength = 0;
-  private locale = 'en-US';
   private tz: TimeZoneSetting = null;
 
   setConfig(config: Partial<SessionBreakConfig>): void {
     Object.assign(this.config, config);
   }
 
-  setLocale(locale: string): void {
-    this.locale = locale;
-  }
+  /**
+   * @deprecated The breaks no longer write dates, so the locale changes nothing;
+   * the time axis formats the dates. Removed in 2.0.
+   */
+  setLocale(_locale: string): void {}
 
   /** Days start at midnight in this timezone (default: the browser's). */
   setTimezone(tz: TimeZoneSetting): void {
@@ -110,7 +108,7 @@ export class SessionBreaks {
   /**
    * Find bar indices where a new trading day begins. Each entry also carries
    * the strength of the break: 'day' < 'week' < 'month' < 'year'. Renderer
-   * uses this to draw progressively heavier separators + labels.
+   * uses this to draw progressively heavier separators.
    */
   private computeBreaksTyped(data: DataSeries): SessionBreak[] {
     if (data.length < 2) return [];
@@ -125,16 +123,15 @@ export class SessionBreaks {
     let prev = timeParts(data[0].time * unit, this.tz);
 
     for (let i = 1; i < data.length; i++) {
-      const time = data[i].time * unit;
-      const d = timeParts(time, this.tz);
+      const d = timeParts(data[i].time * unit, this.tz);
       if (d.year !== prev.year) {
-        out.push({ idx: i, kind: 'year', time, year: d.year });
+        out.push({ idx: i, kind: 'year' });
       } else if (d.month !== prev.month) {
-        out.push({ idx: i, kind: 'month', time, year: d.year });
+        out.push({ idx: i, kind: 'month' });
       } else if (d.day !== prev.day) {
         // Monday (1) is the most common "week start" anchor.
         const isWeekStart = new Date(Date.UTC(d.year, d.month - 1, d.day)).getUTCDay() === 1;
-        out.push({ idx: i, kind: isWeekStart ? 'week' : 'day', time, year: d.year });
+        out.push({ idx: i, kind: isWeekStart ? 'week' : 'day' });
       }
       prev = d;
     }
@@ -146,7 +143,7 @@ export class SessionBreaks {
     return out;
   }
 
-  /** The break lines and their labels. */
+  /** The break lines. */
   render(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
@@ -154,10 +151,9 @@ export class SessionBreaks {
     data: DataSeries,
   ): void {
     this.renderLines(ctx, viewport, theme, data);
-    this.renderLabels(ctx, viewport, theme, data);
   }
 
-  /** The break lines alone: the chart draws them under the bars and the labels over them. */
+  /** The break lines, which the chart draws under the bars. */
   renderLines(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
@@ -184,35 +180,16 @@ export class SessionBreaks {
     ctx.restore();
   }
 
-  /** The labels of week, month and year breaks, drawn over the bars. */
+  /**
+   * @deprecated Draws nothing: the breaks are lines only, and their dates are
+   * on the time axis. Removed in 2.0.
+   */
   renderLabels(
-    ctx: CanvasRenderingContext2D,
-    viewport: ViewportState,
-    theme: Theme,
-    data: DataSeries,
-  ): void {
-    const marks = this.lineMarks(viewport, data, theme).filter((m): m is BreakMark & { label: string } => m.label !== null);
-    if (marks.length === 0) return;
-    const { chartRect } = viewport;
-
-    ctx.save();
-    ctx.font = `600 11px ${theme.font.family}`;
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = theme.textSecondary;
-    // Years first, then months, then weeks, each where the text fits clear of those kept.
-    const kept: { left: number; right: number }[] = [];
-    const order = [...marks].sort((a, b) => b.rank - a.rank || a.px - b.px);
-    for (const m of order) {
-      const left = m.px + 4;
-      const right = left + ctx.measureText(m.label).width;
-      if (kept.some((k) => left < k.right + LABEL_GAP_PX && right + LABEL_GAP_PX > k.left)) continue;
-      kept.push({ left, right });
-      ctx.globalAlpha = Math.min(1, m.alpha + 0.35);
-      ctx.fillText(m.label, left, chartRect.y + 4);
-    }
-    ctx.restore();
-  }
+    _ctx: CanvasRenderingContext2D,
+    _viewport: ViewportState,
+    _theme: Theme,
+    _data: DataSeries,
+  ): void {}
 
   /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */
   lineRects(viewport: ViewportState, theme: Theme, data: DataSeries): GpuRect[] {
@@ -239,7 +216,7 @@ export class SessionBreaks {
     return thinByRank(this.marks(viewport, data, theme), MIN_LINE_GAP_PX);
   }
 
-  /** The breaks on screen, each with its line and label, heavier as the boundary is more significant. */
+  /** The breaks on screen, each with its line, heavier as the boundary is more significant. */
   private marks(viewport: ViewportState, data: DataSeries, theme: Theme): BreakMark[] {
     if (!this.config.visible || data.length < 2) return [];
 
@@ -261,7 +238,6 @@ export class SessionBreaks {
 
       let alpha = 0.25;
       let width = lineWidth;
-      let label: string | null = null;
       let rank = 3;
       if (brk.kind === 'day') {
         alpha = 0.22;
@@ -269,18 +245,15 @@ export class SessionBreaks {
       } else if (brk.kind === 'week') {
         alpha = 0.34;
         rank = 1;
-        label = zonedDateFormatter(this.locale, MONTH_DAY, this.tz)(brk.time);
       } else if (brk.kind === 'month') {
         alpha = 0.5;
         rank = 2;
         width = lineWidth + 0.5;
-        label = zonedDateFormatter(this.locale, MONTH_YEAR, this.tz)(brk.time);
       } else {
         alpha = 0.7;
         width = lineWidth + 1;
-        label = String(brk.year);
       }
-      out.push({ px, width, alpha, label, rank });
+      out.push({ px, width, alpha, rank });
     }
     return out;
   }
@@ -293,16 +266,6 @@ export class SessionBreaks {
     this.cacheValid = false;
   }
 }
-
-// Month-boundary labels use the FULL year ("Oct 2026"), not a 2-digit one
-// ("Oct 26") — a 2-digit year reads identically to a week-boundary's
-// "month day" label (e.g. "Oct 26" could mean October 26th), which misled
-// readers into thinking the chart had jumped to the wrong date. The
-// formatters are cached per locale and zone: these labels re-render on every
-// pan/zoom frame.
-const MONTH_DAY: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' };
-
 
 /**
  * Median time between bars in ms. Used to gate the day-separator render so
