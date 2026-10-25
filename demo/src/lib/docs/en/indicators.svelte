@@ -32,6 +32,12 @@ chart.removeIndicator(rsi)`}</code></pre>
   times, each instance with its own inputs, colours and levels.
 </p>
 
+<p>
+  In TypeScript the built-in ids and their inputs are typed: <code>BuiltInIndicators</code> lists each indicator
+  with its inputs, their defaults, and the keys of its lines, so an editor offers them as you type and a misspelt
+  input fails the type check. An indicator a plugin registers takes any id and inputs.
+</p>
+
 <h2>Sources and indicators on indicators</h2>
 <p>
   Indicators marked <em>source</em> below can run on another price than the close

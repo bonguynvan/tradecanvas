@@ -63,7 +63,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   Los interruptores muestran y ocultan las partes del propio widget. Para impedir algo en el gráfico mismo —dibujar,
   operar, hacer zoom, una temporalidad— usa las features del gráfico (<code>chartOptions.features</code>). Las partes que
   traen datos o almacenamiento siguen siendo opciones: <code>trading</code>, <code>watchlist</code>,
-  <code>depthLadder</code> y <code>layouts</code> deciden si existen, y los interruptores ocultan sus botones.
+  <code>depthLadder</code> y <code>layouts</code> deciden si existen, y los interruptores ocultan sus botones. Encender un interruptor no añade ninguna: <code>features: &#123; depthLadder: true &#125;</code> por sí solo no crea la escalera.
 </p>
 <p>Las opciones de encendido y apagado anteriores son estos mismos interruptores, y siguen como estaban:</p>
 <table>

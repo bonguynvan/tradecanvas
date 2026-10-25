@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### What the types say
+
+What coding agents still read the compiled code for, in the evals after the last fixes.
+
+- **The built-in indicators are in the types.** `BuiltInIndicators` lists the 134 by id: each one's inputs, with their defaults and ranges in their notes, and the keys of the lines it draws (as `getIndicatorOutput` and `indicatorSource` name them). `addIndicator('rsi', { period: 14 })` offers the ids and the inputs as you type, and a misspelt input fails the type check (`{ stddev: 2 }` for the bands' `stdDev`). Any id still takes any inputs, for the indicators a plugin registers (`IndicatorId`, `IndicatorParamsFor<Id>`). The components' `indicators` prop takes the same ids. The file is generated from the registry with the other docs.
+  - For TypeScript code: an object literal with an input the built-in doesn't have no longer compiles (it was ignored), and neither does `true` or `false` for a number. Values are otherwise as loose as they were: text for a number (a form field's value), any text for a kind. A function generic over the id types its inputs `IndicatorParamsFor<Id>`.
+- **Notes the published types dropped are in them.** Fields and union members explained by a comment at the end of their line lost it in the `.d.ts` files. They are doc comments now, and a test keeps new ones so: a replay's `interval` and `speed` (one bar every `interval / speed` ms, 500 and 1 by default), the stream's reconnecting (`StreamConfig.reconnect`, and the `DataAdapterConfig` fields it doesn't pass to an adapter), a market's lot, price step, limits and session times, a Renko brick, what each trading adapter event carries.
+- **Which keys colour the wicks.** `applyOverrides`, the `overrides` option and `CHART_STYLE_KEYS` say that `series.candlestick.upColor` / `downColor` colour the wicks with the bodies, and that `wickUpColor` / `wickDownColor` give the wicks colours of their own. The skill has every key with its kind (`references/style-keys.md`, generated).
+- **A widget switch never adds a part**, and its `features` and `depthLadder` options now say so: the depth ladder and the watchlist come from their options, and `features: { depthLadder: true }` alone makes no ladder. The comment over the on/off options said each one stands for its switch, which read the other way.
+
 ## 1.48.0 (2026-10-25)
 
 React, Vue and Svelte components: 1.3.30.

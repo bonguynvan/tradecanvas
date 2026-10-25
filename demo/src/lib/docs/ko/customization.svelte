@@ -63,7 +63,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   스위치는 위젯 자체의 부품을 보이고 숨깁니다. 차트 자체에서 무언가를 막으려면 — 그리기, 거래, 확대·축소, 특정 시간 단위 —
   차트의 features(<code>chartOptions.features</code>)를 쓰세요. 데이터나 저장소를 함께 가져오는 부품은 옵션으로 남습니다:
   <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code>, <code>layouts</code>가 그 부품의 존재 여부를
-  정하고, 스위치는 그 버튼을 숨깁니다.
+  정하고, 스위치는 그 버튼을 숨깁니다. 스위치를 켜도 이 부품들은 추가되지 않습니다: <code>features: &#123; depthLadder: true &#125;</code>만으로는 호가창이 만들어지지 않습니다.
 </p>
 <p>예전의 켜기/끄기 옵션이 바로 이 스위치이며, 지금처럼 쓸 수 있습니다:</p>
 <table>

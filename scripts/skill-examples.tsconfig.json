@@ -17,5 +17,5 @@
       "@tradecanvas/analytics": ["packages/analytics/dist/index.d.ts"]
     }
   },
-  "include": ["../skills/tradecanvas/.check/*.ts"]
+  "include": ["../skills/tradecanvas/.check/*.ts", "type-tests/*.ts"]
 }

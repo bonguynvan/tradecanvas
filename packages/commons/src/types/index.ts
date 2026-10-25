@@ -1,6 +1,7 @@
 export * from './ohlc.js';
 export * from './chart.js';
 export * from './indicator.js';
+export * from './builtInIndicators.js';
 export * from './rendering.js';
 export * from './events.js';
 export * from './axis.js';

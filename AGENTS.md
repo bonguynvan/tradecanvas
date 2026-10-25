@@ -70,8 +70,10 @@ These fail CI, often far from the line that caused them.
 
 - **Generated files.** `pnpm docs:gen` (after `pnpm build`) writes
   `demo/static/llms.txt`, `llms-full.txt`, `demo/src/lib/generated/indicators.json`,
-  `skills/tradecanvas/references/indicators.md`, `packages/library/README.md`
-  and `packages/mcp/src/catalog.json`. Never edit those by hand: change the
+  `skills/tradecanvas/references/indicators.md`, `skills/tradecanvas/references/style-keys.md`,
+  `packages/commons/src/types/builtInIndicators.ts` (the built-in indicators'
+  ids, inputs and lines as types: build again after it changes),
+  `packages/library/README.md` and `packages/mcp/src/catalog.json`. Never edit those by hand: change the
   source (the indicator registry, the docs, the root `README.md`, the option
   types and their doc comments) and regenerate. A new or renamed option,
   feature switch, style key or drawing tool shows up in the MCP catalog this
@@ -91,7 +93,11 @@ These fail CI, often far from the line that caused them.
   written `{'{'}`. Write `<` as `&lt;`.
 - **Skill examples.** Every `ts` block in `skills/tradecanvas` is compiled
   against the built packages by `scripts/check-skill-examples.mjs`. A renamed
-  option breaks it.
+  option breaks it. So are the files in `scripts/type-tests`, which pin what
+  the published types accept: a `@ts-expect-error` line there must fail.
+- **Field notes are doc comments.** A field's note, or a union member's,
+  goes above it as `/** … */`; a `//` at the end of its line never reaches
+  the published types, and `fieldDocs.test.ts` fails on one.
 
 ## Widget UI
 

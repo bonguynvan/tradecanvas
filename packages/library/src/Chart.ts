@@ -42,7 +42,7 @@ import type {
   ExecutionConfig,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { ChartTypeOptions, DataUpdatePayload, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import type { ChartTypeOptions, DataUpdatePayload, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
@@ -1591,14 +1591,17 @@ export class Chart {
    * `options.pane` draws it in another indicator's pane instead, on that
    * pane's scale; a price-pane indicator computed from a pane indicator's
    * line (`source: 'ind:<instanceId>:<key>'`) goes there by itself.
+   *
+   * A built-in's id and inputs are typed: `BuiltInIndicators` lists every
+   * one with its inputs, their defaults, and the keys of its lines.
    */
-  addIndicator(
-    id: string,
-    params: Record<string, number | string | boolean> = {},
+  addIndicator<Id extends IndicatorId>(
+    id: Id,
+    params?: IndicatorParamsFor<Id>,
     position: PanelPosition = 'bottom',
     options: { pane?: string; scale?: OverlayScale } = {},
   ): string | null {
-    return this.recordIndicators(undefined, () => this.addIndicatorNow(id, params, position, options));
+    return this.recordIndicators(undefined, () => this.addIndicatorNow(id, params ?? {}, position, options));
   }
 
   private addIndicatorNow(
@@ -3686,6 +3689,11 @@ export class Chart {
    * the crosshair, the axes, the panes, the legend, the last price, the
    * volume, the main series as each chart type draws it, and more
    * (`CHART_STYLE_KEYS` lists them). A value sets a key, `null` takes it away.
+   *
+   * Candles: `series.candlestick.upColor` and `downColor` colour the bodies
+   * and the wicks with them; `wickUpColor` and `wickDownColor` give the
+   * wicks colours of their own. The other chart types take their up and
+   * down colours from these when they have none of their own.
    *
    * `layer: 'host'` (default) is your app's: kept through theme changes,
    * never saved. `layer: 'user'` is what the person using the chart chose:

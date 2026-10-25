@@ -1,9 +1,12 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 
 export interface RenkoConfig {
-  brickSize: number;      // Price change per brick
-  useATR?: boolean;       // Auto-calculate brick size from ATR
-  atrPeriod?: number;     // Default: 14
+  /** The price move a brick stands for. */
+  brickSize: number;
+  /** Take the brick size from the ATR instead of `brickSize`. */
+  useATR?: boolean;
+  /** The ATR's period with `useATR`. Default 14. */
+  atrPeriod?: number;
 }
 
 /**

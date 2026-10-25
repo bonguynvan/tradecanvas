@@ -63,7 +63,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   スイッチが表示・非表示にするのはウィジェット自身の部品です。チャートそのものでの操作——描画、取引、ズーム、ある時間足——
   を止めるには、チャートの features（<code>chartOptions.features</code>）を使います。データやストレージを伴う部品は
   オプションのままです：<code>trading</code>、<code>watchlist</code>、<code>depthLadder</code>、<code>layouts</code>
-  がそれ自体の有無を決め、スイッチはそのボタンを隠します。
+  がそれ自体の有無を決め、スイッチはそのボタンを隠します。スイッチをオンにしてもこれらは追加されません：<code>features: &#123; depthLadder: true &#125;</code> だけではラダーは作られません。
 </p>
 <p>従来のオン・オフのオプションはこれらのスイッチそのもので、これまでどおり使えます：</p>
 <table>

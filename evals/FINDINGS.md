@@ -108,6 +108,12 @@ passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
     false` is `features: { toolbar: false }`", so turning the switch on
     reads as turning the option on. It type-checks, and nothing shows.
     (Task 18, Haiku with the skill, one run.)
+    *Fixed (Unreleased), in the docs:* the `features` and `depthLadder`
+    options, the switch list and the skill say a switch never adds a part.
+    Letting the switch make the ladder would give one to every widget whose
+    switches come back from `getFeatures()`, where all are on. Task 18's
+    `wrong-feature-switch.ts` is the failed answer as it was; the checks
+    fail it.
 11. **Field notes the types drop.** 33 fields of the packages' types (not
     counting Binance's own message types) are
     explained by a `//` comment at the end of their line, which the
@@ -116,8 +122,11 @@ passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
     their defaults, `MarketConfig`'s lot, step and limits. On task 13 both
     models searched the compiled replay code for what `interval` and
     `speed` mean: every run without the skill, and one of Haiku's with it.
-    Fix: doc comments (`/** … */`), and a check that fails on a `//` note
-    on a field of an exported type.
+    *Fixed (Unreleased):* they are doc comments, Binance's and the union
+    members' too, and `fieldDocs.test.ts` fails on a `//` note after a
+    field or a member. Writing them showed that the stream passes none of
+    `DataAdapterConfig`'s reconnect fields and reads no
+    `showCurrentPriceLine`; their notes say so.
 12. **No indicator is named in the types.** `addIndicator(id: string,
     params: Record<string, …>)`: the types list no indicator, no input and
     no output line, and the package README gives only their number. Without
@@ -125,9 +134,13 @@ passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
     `'macd'`, `'bb'` and their defaults: tasks 03, 04, 21, 23 and 24, in
     19 of those 20 runs, both models. Haiku with the skill did once (task
     23, the bands' `stdDev`). The skill has the generated list
-    (`references/indicators.md`); the package has nothing like it. Fix: the
-    built-in ids as a type (still taking a custom one) and each one's
-    inputs, generated from the registry as the catalog is.
+    (`references/indicators.md`); the package had nothing like it.
+    *Fixed (Unreleased):* `BuiltInIndicators`, generated from the registry,
+    lists each one's inputs with their defaults and the keys of its lines;
+    `addIndicator` takes an id from it (or any other), and a misspelt input
+    of a built-in fails the type check. The values stay as loose as they
+    were, so code that compiled still does but for unknown inputs.
+    `scripts/type-tests/indicators.ts` pins what the types accept.
 13. **Style keys: where they are, and the wicks'.** The skill names
     `CHART_STYLE_KEYS` and two of its keys. The object is in
     `@tradecanvas/commons`, re-exported by `@tradecanvas/chart`, and the
@@ -135,6 +148,10 @@ passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
     it; neither says which keys colour the wicks
     (`series.candlestick.wickUpColor`, `wickDownColor`). Both Sonnet runs
     with the skill (task 09: 16 turns, 11 in the baseline).
+    *Fixed (Unreleased):* `applyOverrides`, the `overrides` option and
+    `CHART_STYLE_KEYS` say that the body colours colour the wicks too and
+    which keys part them; the skill has every key with its kind
+    (`references/style-keys.md`, generated).
 14. **Smaller gaps, a task each**, where agents read the compiled code:
     - drawing a custom indicator: what `valuesToPoints` and a descriptor's
       `plots` do (05, without the skill, both models);

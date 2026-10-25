@@ -32,6 +32,13 @@ chart.removeIndicator(rsi)`}</code></pre>
   añadir varias veces, cada instancia con sus propios parámetros, colores y niveles.
 </p>
 
+<p>
+  En TypeScript, los ids integrados y sus parámetros tienen tipos: <code>BuiltInIndicators</code> recoge cada indicador
+  con sus parámetros, sus valores por defecto y las claves de sus líneas, así que el editor los sugiere mientras escribes
+  y un parámetro mal escrito no pasa la comprobación de tipos. Un indicador que registra un plugin acepta
+  cualquier id y parámetros.
+</p>
+
 <h2>Fuentes e indicadores sobre indicadores</h2>
 <p>
   Los indicadores marcados con <em>fuente</em> más abajo pueden calcularse sobre

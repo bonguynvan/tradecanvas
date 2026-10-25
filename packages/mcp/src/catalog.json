@@ -5330,7 +5330,7 @@
       {
         "name": "features",
         "type": "WidgetFeatures",
-        "doc": "The widget's switches, by name (`WIDGET_FEATURES`): every one is on unless set `false` here. A name without a dot turns a whole capability off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name, one place (`toolbar.screenshot`, `menu.chart.order`, `sidebar.magnet`). Change them while running with `setFeatures`."
+        "doc": "The widget's switches, by name (`WIDGET_FEATURES`): every one is on unless set `false` here. A switch hides a part and never adds one: the depth ladder and the watchlist come from their options, so `features: { depthLadder: true }` alone makes no ladder."
       },
       {
         "name": "toolbar",
@@ -5401,7 +5401,7 @@
       {
         "name": "depthLadder",
         "type": "boolean",
-        "doc": "Depth-of-market ladder: a click-to-trade order book, a page of the dock beside the chart (a sheet on a phone). Open it from the Trade menu, its rail button (the `dock.depthLadder` switch) or `widget.openPanel('depthLadder')`. Off by default (needs trading and an order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.",
+        "doc": "The depth-of-market ladder, a click-to-trade order book on a page of the dock. Off until this is `true` (with trading on); its switch only hides it, so `features: { depthLadder: true }` makes none. Feed it with `widget.setDepth`, open it with `widget.openPanel('depthLadder')`, the Trade menu or its rail button. Clicks emit `orderPlace` intents.",
         "kind": "boolean"
       },
       {
@@ -5739,7 +5739,7 @@
       {
         "name": "overrides",
         "type": "ChartStyleOverridesPatch",
-        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`."
+        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`, which colours the rising candles' wicks too). `CHART_STYLE_KEYS` lists the keys; see `chart.applyOverrides`."
       },
       {
         "name": "priceAxis",
@@ -6026,7 +6026,7 @@
       {
         "name": "overrides",
         "type": "ChartStyleOverridesPatch",
-        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`."
+        "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`, which colours the rising candles' wicks too). `CHART_STYLE_KEYS` lists the keys; see `chart.applyOverrides`."
       },
       {
         "name": "priceAxis",
