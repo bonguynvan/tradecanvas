@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### The widget, as agents found it
+
+What coding agents ran into in the evals, on the widget.
+
+- **`onReady` runs once the widget is built**, in a microtask after `new ChartWidget()` returns, and gets the widget as well as its chart. `onReady: () => widget.openPanel('watchlist')` threw, the widget's name not yet set, though it type-checked. It no longer runs for a widget destroyed first, nor for one whose making failed.
+  - For code written to the old order: the statements right after the constructor now run before it (a `setData` there comes first, and a variable `onReady` sets is not set yet: use `widget.getChart()`). A view shared in the URL (`shareUrl`) is still put back after it. An error it throws is reported as uncaught, no longer by the constructor.
+- **A shared link cut short** (`#tcw=` that isn't a URI component) is left alone; it made the widget's constructor throw.
+- **The docs say what agents read the compiled code for:**
+  - the `watchlist` option is a panel of the dock, shut to start with like every panel: `widget.openPanel('watchlist')` opens it;
+  - a widget without `adapter` connects nowhere and shows the bars you give `setData` (a coarser interval is made from them, a symbol or a finer interval comes to `onSymbolChange` / `onTimeframeChange`);
+  - `isFeatureOn` answers for one switch as set: with `replay: false` the replay button is gone, and `isFeatureOn('toolbar.replay')` is still `true` (a part shows while its capability, its place and its bar are all on);
+  - `saveState`, `setAutoSave` and `loadStateFromStorage` say what a layout holds (not the bars) and when it is written;
+  - the React component says which props follow their changes and which are read at mount, that a new `data` array is a new series (for a live feed, update the chart through the ref), and that unmounting closes the stream and destroys the chart.
+
+## 1.45.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.27.
+
 ### Live prices from your own feed
 
 What coding agents ran into in the evals, on the chart.

@@ -52,6 +52,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // 動作中にすっきりしたチャートへ
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // すべてのスイッチのオン・オフ
 grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャート`}</code></pre>
 <p>

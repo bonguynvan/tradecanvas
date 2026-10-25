@@ -194,6 +194,9 @@
     });
 
     if (current.data) {
+      // The scene's onReady (its indicators) runs once the widget is built: the bars go in after it, timed with them.
+      await Promise.resolve();
+      if (token !== mountToken) return;
       const bars = current.data(opts.symbol ?? 'DEMO');
       const t0 = performance.now();
       w.setData(bars);

@@ -39,7 +39,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   historyLimit: 500,
   trading: true,
   // Optional features
-  watchlist: true,         // right-side sparkline panel
+  watchlist: true,         // a watchlist in the dock; widget.openPanel('watchlist') opens it
   persistLayouts: true,    // remember per-symbol indicators / drawings
   // dragDropImport defaults to true — drop a CSV / JSON onto the chart
 })`}</code></pre>

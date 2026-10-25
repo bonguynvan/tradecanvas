@@ -52,6 +52,7 @@
 
 widget.setFeatures({ sidebar: false, statusBar: false })   // 실행 중에 깔끔한 차트로
 widget.isFeatureOn('sidebar')        // false
+widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
 widget.getFeatures()                 // 모든 스위치의 켜짐/꺼짐
 grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code></pre>
 <p>

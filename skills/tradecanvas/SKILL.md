@@ -63,12 +63,14 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   theme: 'dark',
   adapter: new BinanceAdapter(),
   locale: 'en', // 'vi' too; 28 more from '@tradecanvas/chart/widget/locales' (`messages`)
+  // Once it is built, in a microtask after `new ChartWidget()` returns: `widget` is set by then.
   onReady: (chart) => {
     chart.addIndicator('ema', { period: 50 });
     chart.addIndicator('rsi', { period: 14 });
   },
 });
 
+// A widget made without `adapter` connects nowhere: give it bars with widget.setData(bars).
 // Later, when the page goes away:
 widget.destroy();
 ```
@@ -253,8 +255,10 @@ colours (Auto until one is picked); Cancel puts a session back, OK keeps it as o
 
 The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
 `widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability
-everywhere, dotted = one place). They hide the widget's UI only; to stop drawing, trading or zoom
-on the chart, use `chartOptions.features`. Your own parts: `addToolbarButton`,
+everywhere, dotted = one place; a part shows while all of its switches are on, so
+`isFeatureOn('toolbar.replay')` stays `true` with `replay: false`). They hide the widget's UI only;
+to stop drawing, trading or zoom on the chart, use `chartOptions.features`. The dock's panels
+(watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your
 own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable through 1.x).
