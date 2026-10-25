@@ -19,6 +19,7 @@
     "eval:regrade": "node evals/regrade.mjs",
     "bench": "pnpm --filter @tradecanvas/core exec vitest bench --run",
     "bench:render": "node scripts/bench-render.mjs",
+    "size": "node scripts/size-report.mjs",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish"

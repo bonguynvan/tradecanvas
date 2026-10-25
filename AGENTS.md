@@ -19,8 +19,10 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `packages/mcp` | `@tradecanvas/mcp`: the MCP server for coding agents. Its catalog is generated from the other packages (`scripts/mcp-catalog.mjs`). |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |
 | `demo` | The Feature Lab you run locally, and the source of the docs in six languages, which [tradecanvas.dev](https://tradecanvas.dev/) publishes. |
+| `benchmarks` | Those two measured on one machine, by date: what a change to the engine is compared with. |
+| `evals` | Coding agents given tasks with and without the skill (`pnpm eval`); the runs to compare with in `evals/baselines`, and what they turned up in `evals/FINDINGS.md`. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
-| `scripts` | Docs generated from the code, and their checks; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page. |
+| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page. |
 
 ## Commands
 
