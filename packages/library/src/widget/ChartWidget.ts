@@ -22,7 +22,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
-import { chartInfoFor, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
+import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
@@ -1468,16 +1468,18 @@ export class ChartWidget {
   }
 
   /**
-   * What the chart knows of its symbol; null while it is still another
-   * symbol's. It is this symbol's when it names it (in any case, or with a
-   * venue before one of the two), or when the chart was told it since the
-   * symbol changed: a feed may spell the symbol its own way ('BTC-USD' for
-   * 'BTCUSD').
+   * What the chart knows of its symbol, to name it; null while it is still
+   * another symbol's. It is this symbol's when it names it (in any case, or
+   * with a venue before one of the two), or when the chart was told it since
+   * the symbol changed: a feed may spell the symbol its own way ('BTC-USD' for
+   * 'BTCUSD'). Its words are cleaned as the symbols given are, so a blank name
+   * or a numeric exchange code neither shows nor erases theirs; the market's
+   * hours, price step and zone are read from the chart's info as it is.
    */
   private chartSymbolInfo(): SymbolInfo | null {
     const info = this.chart.getSymbolInfo();
-    if (info && info !== this.chartInfoAtSwitch) return info;
-    return chartInfoFor(this.state.symbol, info);
+    const own = info && info !== this.chartInfoAtSwitch ? info : chartInfoFor(this.state.symbol, info);
+    return own ? cleanSymbolInfo(own, this.state.symbol) : null;
   }
 
   /** The symbol's names: what the chart knows first, what came with `symbols` for the rest. */

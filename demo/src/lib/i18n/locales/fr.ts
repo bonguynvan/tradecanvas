@@ -329,6 +329,7 @@ const fr: SiteMessages = {
         'Ouvrez un nouvel ordre depuis le panneau du compte : il commence à 100 actions, et un prix au-delà du plafond est refusé',
         'Passez à FPT (pas de 100 dongs) ou au contrat VN30F (dès 8 h 45)',
         'Les lignes violette, cyan et jaune sont le prix plafond, le prix plancher et le prix de référence',
+        'Cliquez sur HPG dans la barre d’outils : la recherche liste chaque symbole avec son nom, son type, sa place de marché et son logo ; gardez seulement les warrants, ou HNX',
       ],
     },
     priceboard: {

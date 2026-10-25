@@ -517,8 +517,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   Give <code>symbols</code> as <code>SymbolInfo</code> and the list opens with names, kinds, exchanges and logos;
   the toolbar's symbol and the symbol info panel take a name and an exchange from them where the chart knows none.
-  A feed's search results win over these words and keep your logo; what the chart knows of its own symbol only
-  fills the gaps. Price steps and hours given here are not applied to the chart: those come from the adapter's
+  A feed's search results win over these words and keep your logo; what the chart knows of its own symbol gives the search only a name or a logo it lacks, as it may name the kind and the exchange in other words than your list (stock for Cổ phiếu, a broker for the exchange). Price steps and hours given here are not applied to the chart: those come from the adapter's
   <code>resolveSymbol</code> or <code>chart.setSymbolInfo</code>.
 </p>
 <pre><code>{`new ChartWidget(el, {
@@ -531,12 +530,12 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   A <code>logo</code> is an <code>https:</code> or <code>http:</code> address, a path on your site, a
   <code>blob:</code> URL or an image written in <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF or SVG); anything
   else is ignored. It is only ever loaded as an image, with no referrer, so your page's <code>img-src</code> policy
-  must allow its host; one that fails to load shows the letter. The letters take their colours from <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (stock, futures, index, crypto and perpetuals, forex; another kind gets one by its words), set for the dark and the light theme.
+  must allow its host; one that fails to load shows the letter. The letters take their colours from <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (stock, futures, index, crypto and perpetuals, forex, in English, Vietnamese, Japanese, Chinese or Korean words; a warrant takes the futures' colour, a fund or an ETF the index's, a bond the forex's; another kind gets one by its words), set for the dark and the light theme.
 </p>
 <p>
   Once a search has told of a symbol, the feed's words name it on the list the search opens with too, not only
   among the results. A name, kind, exchange or logo that isn't text (a JSON feed's <code>null</code>, a numeric
-  exchange code) counts as not given: it neither shows nor erases yours. A venue before a colon
+  exchange code), in a feed's results or in what the chart knows, counts as not given: it neither shows nor erases yours. A venue before a colon
   (<code>BINANCE:BTCUSDT</code>) is dimmed, and is what a narrow column shortens first; on a phone the kind tabs
   scroll in one line and fade at an end with more past it. What the chart knows of its symbol names it on the
   toolbar and in the info panel when it is of the same symbol (in any case, with or without a venue before a colon)

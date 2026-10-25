@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SymbolInfo } from '@tradecanvas/commons';
 import { WidgetSymbolSearch, SYMBOL_SEARCH_DEBOUNCE_MS, type CompareEntry } from '../WidgetSymbolSearch.js';
+import { FOCUSABLE } from '../focusTrap.js';
 
 let host: HTMLDivElement;
 let opener: HTMLButtonElement;
@@ -63,6 +64,49 @@ describe('WidgetSymbolSearch as a dialog', () => {
     expect(columns.parentElement?.classList.contains('tcw-ss-results')).toBe(true);
     expect(columns.closest('[role="listbox"]')).toBeNull();
     expect(columns.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('takes Tab from the search to the kind tabs and the exchange list, and keeps it in the dialog', () => {
+    // jsdom lays nothing out: what isn't hidden gets a box, as it would on screen.
+    const boxes = vi.spyOn(Element.prototype, 'getClientRects').mockImplementation(function (this: Element) {
+      return (this.closest('[hidden]') ? [] : [{}]) as unknown as DOMRectList;
+    });
+    const stops = (root: ParentNode) =>
+      [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+    /** Tab as a browser takes it: the dialog's keys first, then on to the next stop on the page unless they kept it. */
+    const tab = (shiftKey = false) => {
+      const from = document.activeElement as HTMLElement;
+      const e = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      from.dispatchEvent(e);
+      if (e.defaultPrevented) return document.activeElement;
+      const page = stops(document);
+      page[page.indexOf(from) + (shiftKey ? -1 : 1)]?.focus();
+      return document.activeElement;
+    };
+    try {
+      search.open({
+        symbols: [
+          { symbol: 'VNM', type: 'Stock', exchange: 'HOSE' },
+          { symbol: 'VN30F2611', type: 'Futures', exchange: 'HNX' },
+        ],
+        current: '',
+      });
+      const modal = host.querySelector<HTMLElement>('.tcw-modal')!;
+      const select = host.querySelector('select.tcw-ss-exchange-filter');
+      const close = host.querySelector('.tcw-modal-close');
+      expect(document.activeElement).toBe(input());
+      expect([tab(), tab(), tab()]).toEqual(chips());
+      expect(chips().map((c) => c.textContent)).toEqual(['All', 'Stock', 'Futures']);
+      expect(tab()).toBe(select);
+      // Past the last stop it wraps to the first, never out to the page.
+      expect(tab()).toBe(close);
+      expect(tab()).toBe(input());
+      expect(tab(true)).toBe(close);
+      expect(tab(true)).toBe(select);
+      expect(modal.contains(document.activeElement)).toBe(true);
+    } finally {
+      boxes.mockRestore();
+    }
   });
 
   it('closes on Escape and on the backdrop, giving focus back', () => {
@@ -587,6 +631,34 @@ describe('WidgetSymbolSearch symbols given with their info', () => {
     expect(host.querySelector<HTMLSelectElement>('.tcw-ss-exchange-filter')?.hidden).toBe(true);
     expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('Cổ phiếu');
     expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('VCB (KBS)');
+  });
+
+  it('takes only a name and a logo from what the chart knows, so its own words for a kind or an exchange add no tab or option', async () => {
+    const fn = vi.fn(async () => [
+      { symbol: 'VCB', description: 'Vietcombank', type: 'Cổ phiếu', exchange: 'HOSE' },
+      { symbol: 'VND', description: 'VNDirect', type: 'Cổ phiếu', exchange: 'HNX' },
+    ]);
+    search.open({
+      symbols: ['VCB', 'FPT'],
+      current: 'VCB',
+      currentInfo: { symbol: 'VCB', description: 'VCB (KBS)', type: 'stock', exchange: 'KBS', logo: 'https://cdn.x/vcb.png' },
+      search: fn,
+    });
+    const [vcb] = rows();
+    expect(vcb.querySelector('.tcw-ss-desc')?.textContent).toBe('VCB (KBS)');
+    expect(vcb.querySelector('img.tcw-ss-badge')?.getAttribute('src')).toBe('https://cdn.x/vcb.png');
+    expect(vcb.querySelector('.tcw-ss-kind')?.textContent).toBe('');
+    expect(vcb.querySelector('.tcw-ss-exchange')?.textContent).toBe('');
+    expect(host.querySelector<HTMLElement>('.tcw-ss-filters')?.hidden).toBe(true);
+    const exchanges = () => [...host.querySelector<HTMLSelectElement>('.tcw-ss-exchange-filter')!.options].map((o) => o.textContent);
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'Cổ phiếu']);
+    expect(exchanges()).toEqual(['All exchanges', 'HOSE', 'HNX']);
+    type('');
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'Cổ phiếu']);
+    expect(exchanges()).toEqual(['All exchanges', 'HOSE', 'HNX']);
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vietcombank');
   });
 
   it('lays every row out in the same cells, empty where nothing was said', () => {

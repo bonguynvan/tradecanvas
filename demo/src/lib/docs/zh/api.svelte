@@ -486,7 +486,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   把 <code>symbols</code> 写成 <code>SymbolInfo</code>，列表一打开就有名称、类别、交易所和 logo；图表还不知道时，
   工具栏上的品种和品种信息面板也从这里取名称和交易所。数据源的搜索结果优先于这些信息，但保留你的 logo；
-  图表对自身品种的了解只用来补空缺。这里给出的价格步长和交易时间不会用到图表上：它们来自适配器的
+  图表对自身品种的了解只为搜索补上缺少的名称或 logo，因为它对类别和交易所的叫法可能和你的列表不同（用 stock 而不是 Cổ phiếu，用券商名代替交易所）。这里给出的价格步长和交易时间不会用到图表上：它们来自适配器的
   <code>resolveSymbol</code> 或 <code>chart.setSymbolInfo</code>。
 </p>
 <pre><code>{`new ChartWidget(el, {
@@ -498,11 +498,11 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <code>logo</code> 可以是 <code>https:</code> 或 <code>http:</code> 地址、你网站上的路径、<code>blob:</code> URL，
   或写在 <code>data:</code> 里的图片（PNG、JPEG、GIF、WebP、AVIF 或 SVG）；其他一律忽略。它只会作为图片加载，
-  不带 referrer，所以页面的 <code>img-src</code> 策略必须允许它的主机；加载失败时显示首字母。首字母的颜色来自 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（股票、期货、指数、加密货币和永续合约、外汇；其他类别按名称分到一种），深色和浅色主题各有一套。
+  不带 referrer，所以页面的 <code>img-src</code> 策略必须允许它的主机；加载失败时显示首字母。首字母的颜色来自 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（股票、期货、指数、加密货币和永续合约、外汇，用英语、越南语、日语、中文或韩语写都可以；权证用期货的颜色，基金和 ETF 用指数的颜色，债券用外汇的颜色；其他类别按名称分到一种），深色和浅色主题各有一套。
 </p>
 <p>
   一旦搜索告知过某个品种，数据源给的名称不只用在搜索结果里，也用在搜索打开时的列表上。不是文本的名称、类别、交易所或
-  logo（JSON 数据源的 <code>null</code>、数字形式的交易所代码）视为没有给出：既不显示，也不会抹掉你给的信息。冒号前的
+  logo（JSON 数据源的 <code>null</code>、数字形式的交易所代码），无论出现在数据源的结果里还是图表的信息里，都视为没有给出：既不显示，也不会抹掉你给的信息。冒号前的
   交易所名（<code>BINANCE:BTCUSDT</code>）显示得更淡，列变窄时先缩短它；在手机上，类别标签排成一行滚动，后面还有标签的
   那一端会渐隐。图表对自身品种的了解，在属于同一个品种时（不分大小写，冒号前有没有交易所名都可以），或在切换品种之后
   才设置时，会作为工具栏和信息面板上品种的名称，所以数据源自己的写法（<code>BTCUSD</code> 写作 <code>BTC-USD</code>）也算数。

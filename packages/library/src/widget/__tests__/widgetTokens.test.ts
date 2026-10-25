@@ -81,6 +81,32 @@ describe('symbol kind colours', () => {
       }
     }
   });
+
+  it.each([
+    ['dark', dark],
+    ['light', light],
+  ])('%s: a kind is told apart from the accent and the up and down colours', (_name, t) => {
+    // The accent marks the chart's symbol and what matched; green and red say up and down.
+    for (let slot = 1; slot <= 5; slot++) {
+      for (const meaning of ['--tcw-accent', '--tcw-green', '--tcw-red']) {
+        const pair = `--tcw-kind-${slot} / ${meaning}`;
+        expect(distance(t[`--tcw-kind-${slot}`], t[meaning]), pair).toBeGreaterThanOrEqual(APART);
+      }
+    }
+  });
+});
+
+describe('symbol search styles', () => {
+  const dialogs = readFileSync(fileURLToPath(new URL('../WidgetDialogs.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /** The innermost rules, selector and body, of the symbol search and the compare dialog (`.tcw-ss…`). */
+  const rules = [...dialogs.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].includes('.tcw-ss'));
+
+  it('write every colour through a token, the kind tabs’ fade too', () => {
+    expect(rules.length).toBeGreaterThan(0);
+    const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\(|(?<![-\w])(?:black|white)(?![-\w])/i;
+    const offending = rules.filter((m) => literal.test(m[2])).map((m) => m[1].trim());
+    expect(offending).toEqual([]);
+  });
 });
 
 /** How far apart two colours look: the straight distance between them in OKLab. */

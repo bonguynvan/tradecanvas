@@ -521,8 +521,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   Truyền <code>symbols</code> dưới dạng <code>SymbolInfo</code> thì danh sách mở ra đã có tên, loại, sàn và logo;
   mã trên thanh công cụ và bảng thông tin mã lấy tên và sàn từ đó khi biểu đồ chưa biết. Kết quả tìm của nguồn dữ
-  liệu được ưu tiên hơn những thông tin này nhưng vẫn giữ logo của bạn; những gì biểu đồ biết về mã của nó chỉ điền
-  vào chỗ còn thiếu. Bước giá và giờ giao dịch truyền ở đây không áp dụng cho biểu đồ: chúng đến từ
+  liệu được ưu tiên hơn những thông tin này nhưng vẫn giữ logo của bạn; những gì biểu đồ biết về mã của nó chỉ điền tên hoặc logo còn thiếu vào hộp tìm, vì nó có thể gọi loại và sàn bằng từ khác với danh sách của bạn (stock thay cho Cổ phiếu, tên công ty chứng khoán thay cho sàn). Bước giá và giờ giao dịch truyền ở đây không áp dụng cho biểu đồ: chúng đến từ
   <code>resolveSymbol</code> của adapter hoặc <code>chart.setSymbolInfo</code>.
 </p>
 <pre><code>{`new ChartWidget(el, {
@@ -535,12 +534,11 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên trang của bạn, một
   URL <code>blob:</code> hoặc một ảnh viết trong <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); mọi thứ khác
   bị bỏ qua. Nó chỉ được tải như một ảnh, không kèm referrer, nên chính sách <code>img-src</code> của trang phải cho
-  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá và hợp đồng vĩnh cửu, ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
+  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá và hợp đồng vĩnh cửu, ngoại hối, viết bằng tiếng Anh, Việt, Nhật, Trung hay Hàn; chứng quyền lấy màu của phái sinh, chứng chỉ quỹ và ETF lấy màu của chỉ số, trái phiếu lấy màu của ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
 </p>
 <p>
   Khi một lần tìm đã cho biết về một mã, tên của nguồn dữ liệu cũng hiện trên danh sách lúc hộp thoại mở ra, không
-  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng
-  số) được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Tên sàn đứng trước dấu hai chấm
+  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng số), trong kết quả của nguồn dữ liệu hay trong thông tin biểu đồ biết, được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Tên sàn đứng trước dấu hai chấm
   (<code>BINANCE:BTCUSDT</code>) hiện mờ hơn và được rút gọn trước tiên khi cột hẹp; trên điện thoại, các thẻ loại mã cuộn
   trên một dòng và mờ dần ở đầu còn thẻ bị khuất. Thông tin biểu đồ biết về mã của nó đặt tên cho mã trên thanh công
   cụ và trong bảng thông tin khi nó nói về đúng mã đó (không phân biệt chữ hoa chữ thường, có hay không có tên sàn

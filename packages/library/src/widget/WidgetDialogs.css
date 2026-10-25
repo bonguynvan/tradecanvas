@@ -631,17 +631,19 @@
 }
 
 /* Where they scroll in one line, the tabs fade out at an end with more past it, so a tab cut there
-   reads as more to scroll to. A mask: only its alpha counts, not the colour it is written in. */
+   reads as more to scroll to. A mask: only its alpha counts, so what shows is drawn in the text's
+   colour, which is opaque, and what fades goes to transparent. */
 .tcw-ss-kinds[data-more] {
-  --tcw-ss-fade-start: #000;
-  --tcw-ss-fade-end: #000;
-  -webkit-mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
-  mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  --tcw-ss-shown: currentColor;
+  --tcw-ss-fade-start: var(--tcw-ss-shown);
+  --tcw-ss-fade-end: var(--tcw-ss-shown);
+  -webkit-mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
 }
 
 [dir='rtl'] .tcw-ss-kinds[data-more] {
-  -webkit-mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
-  mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  -webkit-mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
 }
 
 .tcw-ss-kinds[data-more~='start'] {

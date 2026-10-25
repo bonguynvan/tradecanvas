@@ -31,8 +31,31 @@ describe('kindSlot', () => {
     expect(new Set(['Cổ phiếu', 'Phái sinh', 'Chỉ số', 'Tiền mã hoá'].map(kindSlot)).size).toBe(4);
   });
 
+  it('gives Vietnamese warrants, funds and bonds the colour of the kind they are like', () => {
+    // A covered warrant is an option on a share; a fund holds a basket, as an index does; a bond is fixed
+    // income, kept with the currencies.
+    for (const warrant of ['Chứng quyền', 'warrant', 'Covered warrant']) expect(kindSlot(warrant), warrant).toBe(kindSlot('futures'));
+    for (const fund of ['Chứng chỉ quỹ', 'ETF', 'fund']) expect(kindSlot(fund), fund).toBe(kindSlot('index'));
+    for (const bond of ['Trái phiếu', 'bond', 'Bonds']) expect(kindSlot(bond), bond).toBe(kindSlot('forex'));
+    // A Vietnamese list's stock still looks apart from all three.
+    expect(new Set(['Cổ phiếu', 'Chứng quyền', 'Chứng chỉ quỹ', 'Trái phiếu'].map(kindSlot)).size).toBe(4);
+  });
+
+  it('knows the usual Japanese, Chinese and Korean words for the five kinds', () => {
+    const words: Record<number, string[]> = {
+      1: ['株式', '株', '股票', '주식'],
+      2: ['先物', '期货', '期貨', '선물'],
+      3: ['指数', '指數', '지수'],
+      4: ['暗号資産', '仮想通貨', '加密货币', '加密貨幣', '数字货币', '암호화폐', '가상자산'],
+      5: ['為替', '外国為替', '外汇', '外匯', '외환'],
+    };
+    for (const [slot, list] of Object.entries(words)) {
+      for (const word of list) expect(kindSlot(word), word).toBe(Number(slot));
+    }
+  });
+
   it('gives any other kind a colour of its own words, the same each time', () => {
-    for (const kind of ['warrant', 'Chứng quyền', '株式', 'ETF']) {
+    for (const kind of ['Aktie', 'Rohstoff', 'CFD', 'Optionsschein']) {
       const slot = kindSlot(kind);
       expect(slot, kind).toBeGreaterThanOrEqual(1);
       expect(slot, kind).toBeLessThanOrEqual(5);

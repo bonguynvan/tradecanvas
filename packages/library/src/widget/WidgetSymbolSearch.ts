@@ -32,7 +32,7 @@ export interface SymbolSearchStart {
   symbols: readonly SymbolEntry[];
   /** The chart's symbol, marked in the list. */
   current: string;
-  /** What the chart knows of `current`: it fills only what the symbols given and the feed leave out. */
+  /** What the chart knows of `current`: its name and logo, where the symbols given and the feed have none. */
   currentInfo?: SymbolInfo | null;
   /** A feed's search, asked once typing pauses. */
   search?: SymbolSearchFn;
@@ -87,9 +87,9 @@ let nextSearchId = 1;
  *   query a newer one replaced, and lists names, kinds and exchanges; what it
  *   hears is kept for the list it opens with next time.
  * - Whose words a row shows is one rule, wherever it is listed: the feed's,
- *   then the ones given for what it left out (a logo, say), then what the
- *   chart knows of its own symbol. Words that aren't text (a JSON feed's
- *   numeric code, a null) say nothing.
+ *   then the ones given for what it left out (a logo, say), then the name
+ *   and logo the chart knows of its own symbol. Words that aren't text (a
+ *   JSON feed's numeric code, a null) say nothing.
  * - The rows can be narrowed to a kind (stocks, crypto) and, when they come
  *   from two or more, to an exchange.
  * - Comparing, a pick adds the symbol the way chosen above the list and the
@@ -208,8 +208,10 @@ export class WidgetSymbolSearch {
 
   /**
    * The tickers given, and what came with them. What the chart knows of its
-   * own symbol only fills gaps, as it may use other words for it (a kind in
-   * English where the list's are translated).
+   * own symbol gives only a name and a logo, where none came with it: its
+   * kind and exchange may be in other words (a kind in English where the
+   * list's are translated, a broker for the exchange), and would add a tab or
+   * an exchange that no row is in once the feed has named the symbol.
    */
   private learnGiven(mode: Mode): void {
     const catalog = readSymbolCatalog(mode.start.symbols);
@@ -218,7 +220,8 @@ export class WidgetSymbolSearch {
     const current = mode.start.current;
     const own = mode.kind === 'search' ? mode.start.currentInfo : null;
     if (own && typeof own === 'object' && current) {
-      this.givenInfo.set(current, mergeSymbolInfo(cleanSymbolInfo(own, current), this.givenInfo.get(current))!);
+      const { description, logo } = cleanSymbolInfo(own, current);
+      this.givenInfo.set(current, mergeSymbolInfo({ symbol: current, description, logo }, this.givenInfo.get(current))!);
     }
   }
 

@@ -134,6 +134,20 @@ describe('ChartWidget symbols given with their info', () => {
     expect(symbolButton().title).toBe('Ether');
   });
 
+  it('keeps the given name and exchange when the chart’s info has a blank name and a number for its exchange', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', symbols: [VNM, 'FPT'], watchlist: false });
+    FakeChart.info = { symbol: 'VNM', description: '', exchange: 7, minTick: 0.1, timeZone: 'UTC' } as unknown as SymbolInfo;
+    FakeChart.last.emit('symbolInfoChange', { info: FakeChart.info });
+    expect(symbolButton().title).toBe('Vinamilk · HOSE');
+    widget.toggleSymbolInfo(true);
+    expect(panel().querySelector('.tcw-syminfo-desc')?.textContent).toBe('Vinamilk');
+    expect(panel().querySelector('.tcw-syminfo-meta')?.textContent).toBe('HOSE · stock');
+    // The price step and the zone still come from the chart's info as it is.
+    const stats = new Map([...panel().querySelectorAll('.tcw-syminfo-stat')].map((row) => [row.querySelector('dt')?.textContent, row.querySelector('dd')?.textContent]));
+    expect(stats.get('Tick size')).toBe('0.1');
+    expect(stats.get('Time zone')).toBe('UTC');
+  });
+
   it('names the symbol in the info panel from the given info, the market’s hours from the chart only', async () => {
     FakeChart.info = { symbol: 'FPT', description: 'FPT Corp', timeZone: 'UTC' };
     widget = new ChartWidget(host, { symbol: 'VNM', symbols: [VNM, 'FPT'], watchlist: false });

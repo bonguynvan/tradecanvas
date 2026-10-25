@@ -554,14 +554,22 @@ widget.setSymbols(more);
   symbol; the logo you gave stays. A `null`, a number or a blank where a word
   goes (a JSON feed's) counts as not given: it neither shows nor erases yours.
 - The chart's own info for its symbol (`resolveSymbol`, `chart.setSymbolInfo`)
-  names the toolbar's symbol first, in whatever spelling the feed answers
-  with, once it is set after the symbol changed.
+  names the toolbar's symbol and the info panel first, in whatever spelling
+  the feed answers with, once it is set after the symbol changed; a blank or a
+  number there doesn't erase your words either. In the search it gives only a
+  name or a logo the list lacks: its kind and exchange (`'stock'` where your
+  list says `'Cổ phiếu'`, a broker) add no tab and no exchange to pick.
 - `pricePrecision`, `minTick`, `sessions` given here never reach the chart:
   give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
 - `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
   `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,
   with no referrer (allow its host in your CSP's `img-src`). Anything else, or
   a logo that fails to load, shows the ticker's first letter in its kind's colour.
+- The colours go by the kind's words: stock, futures, index, crypto
+  (perpetuals too) and forex, in English, Vietnamese, Japanese, Chinese or
+  Korean; a warrant takes the futures' colour, a fund or an ETF the index's, a
+  bond the forex's; another kind gets one by its words. Set
+  `--tcw-kind-1` … `--tcw-kind-5` to recolour them.
 - The kind and exchange filters narrow the rows the feed returned (at most
   50); they do not ask the feed again.
 

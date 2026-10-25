@@ -529,8 +529,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   Da <code>symbols</code> como <code>SymbolInfo</code> y la lista se abre con nombres, tipos, bolsas y logos; el símbolo
   de la barra de herramientas y el panel de información del símbolo toman de ahí un nombre y una bolsa cuando el gráfico
-  no los conoce. Los resultados de la búsqueda del feed mandan sobre estos datos y conservan tu logo; lo que el gráfico
-  sabe de su propio símbolo solo rellena los huecos. Los pasos de precio y los horarios que des aquí no se aplican al
+  no los conoce. Los resultados de la búsqueda del feed mandan sobre estos datos y conservan tu logo; lo que el gráfico sabe de su propio símbolo solo da a la búsqueda un nombre o un logo que le falte, porque puede llamar al tipo y a la bolsa con otras palabras que tu lista (stock por Cổ phiếu, un bróker por la bolsa). Los pasos de precio y los horarios que des aquí no se aplican al
   gráfico: vienen del <code>resolveSymbol</code> del adaptador o de <code>chart.setSymbolInfo</code>.
 </p>
 <pre><code>{`new ChartWidget(el, {
@@ -543,12 +542,12 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   Un <code>logo</code> es una dirección <code>https:</code> o <code>http:</code>, una ruta de tu sitio, una URL
   <code>blob:</code> o una imagen escrita en <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF o SVG); cualquier otra cosa
   se ignora. Solo se carga como imagen y sin referrer, así que la política <code>img-src</code> de tu página debe permitir
-  su servidor; si no carga, se muestra la letra. Las letras toman sus colores de <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (acciones, futuros, índices, cripto y perpetuos, divisas; otro tipo recibe uno según sus palabras), definidos para el tema oscuro y el claro.
+  su servidor; si no carga, se muestra la letra. Las letras toman sus colores de <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (acciones, futuros, índices, cripto y perpetuos, divisas, en inglés, vietnamita, japonés, chino o coreano; un warrant toma el color de los futuros, un fondo o un ETF el de los índices y un bono el de las divisas; otro tipo recibe uno según sus palabras), definidos para el tema oscuro y el claro.
 </p>
 <p>
   Cuando una búsqueda ya ha informado de un símbolo, las palabras del feed lo nombran también en la lista con la que
   se abre la búsqueda, no solo entre los resultados. Un nombre, tipo, bolsa o logo que no sea texto (el
-  <code>null</code> de un feed JSON, un código de bolsa numérico) cuenta como no dado: ni se muestra ni borra los
+  <code>null</code> de un feed JSON, un código de bolsa numérico), en los resultados de un feed o en lo que sabe el gráfico, cuenta como no dado: ni se muestra ni borra los
   tuyos. Un prefijo de mercado antes de los dos puntos (<code>BINANCE:BTCUSDT</code>) se atenúa, y es lo primero que
   acorta una columna estrecha; en un teléfono, las pestañas de tipo se desplazan en una sola línea y se desvanecen en
   el extremo que tiene más detrás. Lo que el gráfico sabe de su símbolo lo nombra en la barra de herramientas y en el
