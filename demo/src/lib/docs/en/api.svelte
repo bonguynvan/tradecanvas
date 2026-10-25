@@ -742,7 +742,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <h3>Object tree</h3>
 <p>
   The rail's layers button (the toolbar's, where there is no rail) opens the
-  object tree in the dock, listing every active indicator and drawing. Indicators can be removed; drawings get per-item
+  object tree in the dock, listing every active indicator, named as its chip names it (EMA 20, Compare ETHUSDT),
+  and every drawing. Indicators can be removed; drawings get per-item
   show / hide, lock / unlock, settings and delete, and groups are listed with
   their drawings under them. Enabled by default — disable with
   <code>objectTree: false</code>. The drawing controls map to:
@@ -778,13 +779,18 @@ chart.removeIndicator(instanceId)`}</code></pre>
   re-add to change a period or colour.
 </p>
 <p>
-  The object tree's <strong>Compare</strong> section lists the symbols overlaid as
-  normalized lines. With a live adapter, its + button opens the compare dialog;
-  a symbol added in percent has its history fetched via <code>adapter.fetchHistory</code>
-  (so mixed-price symbols share one axis). Comparisons refetch automatically on
-  timeframe change. Programmatic equivalents:
+  The object tree's <strong>Compare</strong> section lists every compare, as the compare
+  dialog does: each symbol with its way (percent change, own scale, own pane, spread, ratio
+  or correlation) and a button to take it off. With a live adapter, its + button opens the
+  compare dialog. Whatever the way, the widget fetches the other symbol's bars through
+  <code>adapter.fetchHistory</code> before it adds the compare, and adds nothing when they
+  don't come (the fetch fails, or there are no bars at this interval); a toast says why.
+  A compare a saved state brings back stays on the chart when its bars fail to load, and
+  fills on an interval that has them. Comparisons refetch automatically on timeframe
+  change. Programmatic equivalents:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')

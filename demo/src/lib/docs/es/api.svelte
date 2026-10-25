@@ -761,7 +761,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <h3>Árbol de objetos</h3>
 <p>
   El botón de capas del riel (el de la barra de herramientas, donde no hay riel) abre en el dock el
-  árbol de objetos, que lista todos los indicadores y dibujos activos. Los indicadores se
+  árbol de objetos, que lista todos los indicadores activos, con el nombre de su etiqueta (EMA 20,
+  Compare ETHUSDT), y todos los dibujos. Los indicadores se
   pueden quitar; cada dibujo se puede mostrar / ocultar, bloquear / desbloquear,
   configurar y eliminar, y los grupos aparecen con sus dibujos debajo. Activado
   por defecto; desactívalo con <code>objectTree: false</code>.
@@ -800,15 +801,19 @@ chart.removeIndicator(instanceId)`}</code></pre>
   cambiar un periodo o un color.
 </p>
 <p>
-  La sección <strong>Comparar</strong> del árbol de objetos lista los símbolos
-  superpuestos como líneas normalizadas. Con un adaptador en vivo, su botón + abre el
-  diálogo de comparar; un símbolo añadido en porcentaje descarga su historial mediante
-  <code>adapter.fetchHistory</code> (para que
-  símbolos con precios muy distintos compartan un eje). Las comparaciones se
+  La sección <strong>Comparar</strong> del árbol de objetos lista todas las comparaciones, como
+  el diálogo de comparar: cada símbolo con su modo (cambio porcentual, escala propia, panel
+  propio, diferencial, ratio o correlación) y un botón para quitarlo. Con un adaptador en vivo,
+  su botón + abre el diálogo de comparar. Sea cual sea el modo, el widget descarga las velas del
+  otro símbolo mediante <code>adapter.fetchHistory</code> antes de añadir la comparación, y no
+  añade nada si no llegan (la descarga falla, o no hay velas en esta temporalidad); un aviso dice
+  por qué. Una comparación que trae un estado guardado se queda en el gráfico cuando sus velas no
+  cargan, y se llena en una temporalidad que las tenga. Las comparaciones se
   vuelven a descargar automáticamente al cambiar de temporalidad. Equivalentes
   por código:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')

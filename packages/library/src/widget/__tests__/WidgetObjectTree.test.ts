@@ -90,3 +90,28 @@ describe('WidgetObjectTree drawings kept to other intervals', () => {
     expect(button(row, 'Hide')).not.toBeNull();
   });
 });
+
+describe('WidgetObjectTree compares', () => {
+  const compareRows = () => [...host.querySelectorAll<HTMLElement>('.tcw-tree-section:last-child .tcw-tree-row')];
+
+  it('says how each symbol is compared, with its colour where it has one', () => {
+    tree.setObjects([], [], [
+      { id: 'cmp_BBB', label: 'BBB', color: '#f00', way: 'Percent change, on this scale' },
+      { id: 'c1', label: 'CCC', way: 'Price, on its own scale' },
+    ]);
+    const [percent, scale] = compareRows();
+    expect(percent.querySelector('.tcw-tree-name')!.textContent).toBe('BBB');
+    expect(percent.querySelector('.tcw-tree-way')!.textContent).toBe('Percent change, on this scale');
+    expect(percent.querySelector<HTMLElement>('.tcw-tree-dot')!.style.background).not.toBe('');
+    expect(scale.querySelector('.tcw-tree-way')!.textContent).toBe('Price, on its own scale');
+    // Its dot's room, empty, so the two symbols line up.
+    expect(scale.querySelector<HTMLElement>('.tcw-tree-dot')!.style.background).toBe('');
+    button(scale, 'Remove comparison').click();
+    expect(callbacks.onRemoveCompare).toHaveBeenCalledWith('c1');
+  });
+
+  it('has no dots when no compare has a colour of its own', () => {
+    tree.setObjects([], [], [{ id: 'c1', label: 'CCC', way: 'Price, on its own scale' }]);
+    expect(compareRows()[0].querySelector('.tcw-tree-dot')).toBeNull();
+  });
+});

@@ -41,6 +41,8 @@ class FakeChart {
   removeIndicator(id: string): void { this.removedIndicators.push(id); }
   moved: [string, string][] = [];
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
+  overlays: string[] = [];
+  addCompareSymbol(id: string): void { this.overlays.push(id); }
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
@@ -386,6 +388,7 @@ describe('ChartWidget comparing with another symbol', () => {
     host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
     pickWay('ratio');
     document.querySelector<HTMLElement>('.tcw-ss-row[data-symbol="CCC"]')!.click();
+    await new Promise((r) => setTimeout(r, 0)); // its bars come first
     expect(fake.added).toEqual([['spread', { symbol: 'CCC', mode: 'ratio' }, undefined, undefined]]);
     expect(document.querySelector('.tcw-ss')).not.toBeNull(); // open for the next
     fake.indicatorsShown = [{ instanceId: 'tc_spread_1', id: 'spread', params: { symbol: 'CCC', mode: 'ratio' }, descriptor: { name: 'Spread / Ratio' }, visible: true }];
@@ -427,6 +430,89 @@ describe('ChartWidget comparing with another symbol', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.series.get('BBB')).toBe(bars);
     expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', expect.any(Number));
+  });
+
+  /** An adapter that answers BBB with `answer`, and anything else with the bars. */
+  const adapterFor = (answer: () => Promise<unknown>) => ({
+    ...adapter,
+    fetchHistory: vi.fn((symbol: string) => (symbol === 'BBB' ? answer() : Promise.resolve(bars))),
+  });
+  const toastText = () => host.querySelector('.tcw-toast')?.textContent;
+
+  it('adds no compare on its own scale when the other symbol’s bars fail to load, as the percent way does', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapterFor(async () => { throw new Error('451'); }) as never });
+    const fake = FakeChart.last;
+    for (const way of ['scale', 'pane', 'ratio', 'correlation', 'percent'] as const) await widget.addCompareSymbol('BBB', way);
+    expect(fake.added).toEqual([]);
+    expect(fake.overlays).toEqual([]);
+    expect(toastText()).toBe('BBB: 451');
+  });
+
+  it('adds no compare when the other symbol has no bars at this interval, in any way', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapterFor(async () => []) as never });
+    const fake = FakeChart.last;
+    await widget.addCompareSymbol('BBB', 'scale');
+    await widget.addCompareSymbol('BBB', 'percent');
+    expect(fake.added).toEqual([]);
+    expect(fake.overlays).toEqual([]);
+    expect(toastText()).toBe('BBB: failed to load');
+  });
+
+  it('gives the chart the other symbol’s bars before adding the compare', async () => {
+    const own = adapterFor(async () => bars);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never });
+    const fake = FakeChart.last;
+    const hadBars: boolean[] = [];
+    // As the chart does: an indicator on a symbol it has no bars of asks for them.
+    fake.addIndicator = (id, params) => {
+      const symbol = params.symbol as string;
+      hadBars.push(fake.series.has(symbol));
+      if (!fake.series.has(symbol)) fake.emit('symbolSeriesRequest', { symbol });
+      fake.added.push([id, params]);
+      return `tc_${id}_${fake.added.length}`;
+    };
+    await widget.addCompareSymbol('BBB', 'scale');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(hadBars).toEqual([true]);
+    expect(fake.series.get('BBB')).toBe(bars);
+    expect(own.fetchHistory.mock.calls.filter(([symbol]) => symbol === 'BBB')).toHaveLength(1);
+  });
+
+  it('keeps a compare a saved state brings back without bars, and fills it on an interval that has them', async () => {
+    let refuse = true;
+    const own = adapterFor(async () => {
+      if (refuse) throw new Error('no bars of BBB at 5m');
+      return bars;
+    });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+    const fake = FakeChart.last;
+    fake.required = ['BBB'];
+    fake.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBeNull();
+    expect(fake.removedIndicators).toEqual([]);
+    refuse = false;
+    await widget.setTimeframe('1h');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBe(bars);
+  });
+
+  it('names a compare by its symbol in Objects and lists it under Compare with its way', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    fake.indicatorsShown = [{
+      instanceId: 'c1', id: 'compareSymbol', params: { symbol: 'BBB' }, visible: true,
+      descriptor: { name: 'Compare Symbol', defaultConfig: { symbol: '' }, shortName: 'Compare' },
+    }];
+    widget.openPanel('objectTree');
+    const section = (title: string) => [...host.querySelectorAll<HTMLElement>('.tcw-tree-section')]
+      .find((s) => s.querySelector('.tcw-tree-section-head span')?.textContent === title)!;
+    const names = (title: string) => [...section(title).querySelectorAll('.tcw-tree-row')].map((r) => r.textContent);
+    expect(names('Indicators')).toEqual(['Compare BBB']);
+    expect(names('Compare')).toEqual(['BBBPrice, on its own scale']);
+    expect(section('Compare').textContent).not.toContain('No comparisons');
+    section('Compare').querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
+    expect(fake.removedIndicators).toEqual(['c1']);
   });
 });
 

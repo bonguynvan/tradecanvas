@@ -22,7 +22,10 @@ export interface ObjectTreeDrawing {
 export interface ObjectTreeCompare {
   id: string;
   label: string;
-  color: string;
+  /** The line's colour, for a compare that has one of its own (the percent way). */
+  color?: string;
+  /** How it is compared, in words. */
+  way?: string;
 }
 
 export interface ObjectTreeCallbacks {
@@ -329,12 +332,24 @@ export class WidgetObjectTree {
       this.compareEl.appendChild(this.emptyRow(this.t('objects.noComparisons')));
       return;
     }
+    // The symbols line up: beside a coloured one, a compare without a colour keeps the dot's room, empty.
+    const dots = compares.some((c) => c.color);
     for (const c of compares) {
       const row = this.row(c.label);
-      const dot = document.createElement('span');
-      dot.className = 'tcw-tree-dot';
-      dot.style.background = c.color;
-      row.insertBefore(dot, row.firstChild);
+      row.classList.add('tcw-tree-compare');
+      if (dots) {
+        const dot = document.createElement('span');
+        dot.className = 'tcw-tree-dot';
+        if (c.color) dot.style.background = c.color;
+        row.insertBefore(dot, row.firstChild);
+      }
+      if (c.way) {
+        const way = document.createElement('span');
+        way.className = 'tcw-tree-way';
+        way.textContent = c.way;
+        way.title = c.way;
+        row.appendChild(way);
+      }
       if (this.callbacks.onRemoveCompare) {
         row.appendChild(this.iconButton('trash', this.t('objects.removeComparison'), 'tcw-tree-del', () =>
           this.callbacks.onRemoveCompare?.(c.id),

@@ -747,7 +747,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <h3>Cây đối tượng</h3>
 <p>
   Nút lớp (layers) trên dải nút (trên thanh công cụ, khi không có dải nút) mở cây đối tượng
-  trong ngăn bên, liệt kê mọi chỉ báo và hình vẽ đang có. Chỉ báo có thể xoá; mỗi hình vẽ có nút
+  trong ngăn bên, liệt kê mọi chỉ báo đang có, gọi theo tên trên nhãn của nó (EMA 20, Compare ETHUSDT),
+  và mọi hình vẽ. Chỉ báo có thể xoá; mỗi hình vẽ có nút
   hiện / ẩn, khoá / mở khoá, cài đặt và xoá, còn các nhóm được liệt kê cùng
   các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
   <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
@@ -783,13 +784,17 @@ chart.removeIndicator(instanceId)`}</code></pre>
   thêm lại để đổi chu kỳ hay màu.
 </p>
 <p>
-  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê các mã đang vẽ chồng thành
-  các đường đã chuẩn hoá. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở hộp thoại so sánh;
-  mã được thêm ở chế độ phần trăm được tải lịch sử qua <code>adapter.fetchHistory</code>
-  (để các mã có mức giá khác nhau dùng chung một trục). Các mã so sánh
-  tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
+  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê mọi mã đang so sánh, như hộp thoại
+  so sánh: mỗi mã kèm cách so sánh (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch, tỷ lệ
+  hay tương quan) và một nút để bỏ nó đi. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở
+  hộp thoại so sánh. Dù so sánh theo cách nào, widget cũng tải nến của mã kia qua
+  <code>adapter.fetchHistory</code> trước khi thêm, và không thêm gì nếu nến không về (tải lỗi,
+  hoặc không có nến ở khung thời gian này); một thông báo nói lý do. Một mã so sánh do trạng thái
+  đã lưu mang lại vẫn ở trên biểu đồ khi nến của nó không tải được, và có dữ liệu ở khung thời
+  gian có nến. Các mã so sánh tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')

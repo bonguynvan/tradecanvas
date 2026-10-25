@@ -726,7 +726,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>개체 트리</h3>
 <p>
-  레일의 레이어 버튼(레일이 없으면 도구 모음의 버튼)을 누르면 모든 활성 지표와 그림을 나열하는 개체 트리가
+  레일의 레이어 버튼(레일이 없으면 도구 모음의 버튼)을 누르면 모든 활성 지표(칩과 같은 이름, 예: EMA 20, Compare ETHUSDT)와 그림을 나열하는 개체 트리가
   도크에 열립니다. 지표는 삭제할 수 있고, 그림은 항목마다
   표시 / 숨기기, 잠금 / 잠금 해제, 설정, 삭제를 할 수 있고, 그룹은 소속된 그림과
   함께 그 아래에 나열됩니다. 기본적으로 활성화되어 있으며
@@ -760,13 +760,16 @@ chart.removeIndicator(instanceId)`}</code></pre>
   지표를 지웠다가 다시 추가할 필요가 없습니다.
 </p>
 <p>
-  개체 트리의 <strong>비교</strong> 섹션에는 정규화된 선으로 겹쳐 표시한 종목이
-  나열됩니다. 실시간 어댑터가 있으면 이 섹션의 + 버튼이 비교 대화상자를 엽니다.
-  퍼센트로 추가한 종목은 <code>adapter.fetchHistory</code>로 과거 데이터를
-  가져옵니다(가격대가 다른 종목도 하나의 축을 공유하도록). 비교 종목은
+  개체 트리의 <strong>비교</strong> 섹션에는 비교 대화상자처럼 모든 비교가 나열됩니다. 종목마다
+  비교 방식(변동률, 별도 눈금, 별도 보조 차트, 스프레드, 비율, 상관관계)과 비교를 없애는 버튼이 붙습니다.
+  실시간 어댑터가 있으면 이 섹션의 + 버튼이 비교 대화상자를 엽니다. 어떤 방식이든 위젯은 비교를 추가하기 전에
+  <code>adapter.fetchHistory</code>로 다른 종목의 봉을 가져오고, 봉이 오지 않으면(가져오기 실패, 또는 이 시간 단위에
+  봉이 없음) 아무것도 추가하지 않고 토스트로 이유를 알립니다. 저장된 상태에서 돌아온 비교는 봉을 불러오지 못해도
+  차트에 남아 있다가, 봉이 있는 시간 단위에서 채워집니다. 비교 종목은
   시간 단위가 바뀌면 자동으로 다시 가져옵니다. 코드로는 다음과 같습니다.
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')

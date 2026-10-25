@@ -3049,6 +3049,26 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A compare: its colour and symbol, then how it is compared, taking the room left before its button. */
+.tcw-tree-compare {
+  justify-content: flex-start;
+}
+.tcw-tree-compare .tcw-tree-name {
+  flex: 0 1 auto;
+}
+.tcw-tree-compare .tcw-tree-del {
+  flex: none;
+  margin-inline-start: auto;
+}
+.tcw-tree-way {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tcw-tree-actions {
   display: flex;
   align-items: center;

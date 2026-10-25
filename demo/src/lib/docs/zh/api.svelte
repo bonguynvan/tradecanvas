@@ -696,7 +696,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>对象树</h3>
 <p>
-  按钮栏上的图层按钮（没有按钮栏时是工具栏上的）会在停靠区中打开对象树，列出所有已添加的指标和画线。
+  按钮栏上的图层按钮（没有按钮栏时是工具栏上的）会在停靠区中打开对象树，列出所有已添加的指标（名称与指标标签一致，如 EMA 20、Compare ETHUSDT）和画线。
   指标可以删除；每条画线都可以单独显示 / 隐藏、锁定 / 解锁、设置和删除，
   分组则连同其中的画线一起列出。
   默认启用——设置 <code>objectTree: false</code> 可关闭。画线控制对应以下调用：
@@ -728,12 +728,15 @@ chart.removeIndicator(instanceId)`}</code></pre>
   修改周期或颜色时无需先删除再重新添加。
 </p>
 <p>
-  对象树中的<strong>对比</strong>区域列出叠加为归一化折线的品种。
-  连接实时适配器时，点击其中的 + 按钮会打开对比对话框；以百分比方式添加的品种会通过 <code>adapter.fetchHistory</code>
-  获取历史数据（这样价格量级不同的品种可以共用一个坐标轴）。
+  对象树中的<strong>对比</strong>区域与对比对话框一样列出所有对比：每个品种附带其对比方式
+  （涨跌幅、独立坐标、独立副图、价差、比值或相关性）和一个移除按钮。
+  连接实时适配器时，点击其中的 + 按钮会打开对比对话框。无论哪种方式，组件都会先通过
+  <code>adapter.fetchHistory</code> 获取另一品种的 K 线再添加对比；K 线没有取到（请求失败，或此周期没有 K 线）时不会添加任何内容，并以提示说明原因。
+  由保存的状态恢复的对比在 K 线加载失败时仍保留在图表上，切换到有 K 线的周期后即会显示。
   切换周期时，对比数据会自动重新获取。对应的代码调用：
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')

@@ -1,4 +1,4 @@
-import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
@@ -1264,7 +1264,7 @@ export class ChartWidget {
         this.refreshObjects();
       },
       onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
-      onRemoveCompare: (id) => this.handleRemoveCompare(id),
+      onRemoveCompare: (id) => this.removeCompared(id),
     }, this.t);
     const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
     // A drawing changes many times a second while its settings are edited
@@ -3306,9 +3306,10 @@ export class ChartWidget {
   private refreshObjects(): void {
     this.refreshDrawingsState();
     if (!this.objectTree) return;
+    // Named as the chips and the legend name them: a compare by its symbol, two EMAs by their periods.
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
-      name: i.descriptor.name,
+      name: indicatorChipLabel(i.id, i.params, i.descriptor.defaultConfig, i.descriptor.shortName),
       visible: i.visible,
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
@@ -3319,7 +3320,8 @@ export class ChartWidget {
       locked: d.locked,
       group: d.group,
     }));
-    const compares = this.compares.map((c) => ({ id: c.id, label: c.symbol, color: c.color }));
+    // Every compare, as the compare dialog lists it: the percent lines and the indicators on another symbol.
+    const compares = this.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
     this.objectTree.setObjects(indicators, drawings, compares);
   }
 
@@ -3341,10 +3343,7 @@ export class ChartWidget {
         this.compareWay = way;
         void this.addCompareSymbol(symbol, way);
       },
-      onRemove: (id) => {
-        if (this.compares.some((c) => c.id === id)) this.handleRemoveCompare(id);
-        else this.chart.removeIndicator(id);
-      },
+      onRemove: (id) => this.removeCompared(id),
     });
   }
 
@@ -3373,12 +3372,7 @@ export class ChartWidget {
       return;
     }
     if (way !== 'percent') {
-      const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
-        : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
-          : way === 'correlation' ? this.chart.addIndicator('correlation', { symbol })
-            : way === 'correlationLog' ? this.chart.addIndicator('correlationlog', { symbol })
-              : this.chart.addIndicator('spread', { symbol, mode: way });
-      if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
+      await this.addCompareIndicator(this.adapter, symbol, way);
       return;
     }
     // On the chart already, or its bars on the way (picked twice in a row).
@@ -3388,6 +3382,11 @@ export class ChartWidget {
     try {
       const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
       if (this.destroyed || this.compares.some((c) => c.symbol === symbol)) return;
+      // No bars at this interval: a line with nothing to draw is no comparison.
+      if (bars.length === 0) {
+        this.sayCompareFailed(symbol);
+        return;
+      }
       const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
       // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
       // a shared % axis — the right default for comparison.
@@ -3398,10 +3397,53 @@ export class ChartWidget {
       this.refreshCompareDialog();
       this.say(fill(this.t('toast.comparing'), { symbol }));
     } catch (err: unknown) {
-      this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
+      this.sayCompareFailed(symbol, err);
     } finally {
       this.comparesLoading.delete(symbol);
     }
+  }
+
+  /**
+   * A compare that is an indicator (on its own scale or pane, a spread, a
+   * correlation), its bars first, as the percent way does. A symbol the feed
+   * can't serve at this interval then adds nothing, rather than an empty
+   * line that stays in the chart's saves. The bars go to the chart before
+   * the indicator, so it finds them there and asks for none.
+   */
+  private async addCompareIndicator(adapter: DataAdapter, symbol: string, way: Exclude<CompareWay, 'percent'>): Promise<void> {
+    const timeframe = this.state.timeframe;
+    let bars: OHLCBar[];
+    try {
+      const limit = Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
+      bars = await withResampling(adapter).fetchHistory(symbol, timeframe, limit);
+    } catch (err: unknown) {
+      if (!this.destroyed) this.sayCompareFailed(symbol, err);
+      return;
+    }
+    if (this.destroyed) return;
+    if (bars.length === 0) {
+      this.sayCompareFailed(symbol);
+      return;
+    }
+    // On another interval by now: the indicator asks for that one's bars.
+    if (timeframe === this.state.timeframe) this.chart.setSymbolSeries(symbol, bars);
+    const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
+      : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
+        : way === 'correlation' ? this.chart.addIndicator('correlation', { symbol })
+          : way === 'correlationLog' ? this.chart.addIndicator('correlationlog', { symbol })
+            : this.chart.addIndicator('spread', { symbol, mode: way });
+    if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
+  }
+
+  /** The other symbol's bars didn't come: the adapter's reason, or that they failed. */
+  private sayCompareFailed(symbol: string, err?: unknown): void {
+    this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
+  }
+
+  /** Take a compare off, an overlay or an indicator, as the compare dialog and Objects do. */
+  private removeCompared(id: string): void {
+    if (this.compares.some((c) => c.id === id)) this.handleRemoveCompare(id);
+    else this.chart.removeIndicator(id);
   }
 
   private handleRemoveCompare(id: string): void {
@@ -3434,7 +3476,7 @@ export class ChartWidget {
       if (stale()) return;
       // Keep what the chart had; an indicator on the symbol may ask again.
       this.chart.setSymbolSeries(symbol, this.chart.getSymbolSeries(symbol));
-      this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
+      this.sayCompareFailed(symbol, err);
     }
   }
 

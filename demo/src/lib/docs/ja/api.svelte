@@ -717,7 +717,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>オブジェクトツリー</h3>
 <p>
-  レールのレイヤーボタン（レールがない場合はツールバーのもの）で、有効なインジケーターと描画をすべて一覧する
+  レールのレイヤーボタン（レールがない場合はツールバーのもの）で、有効なインジケーター（チップと同じ名前、例：EMA 20、Compare ETHUSDT）と描画をすべて一覧する
   オブジェクトツリーがドックに開きます。インジケーターは削除でき、描画は項目ごとに表示 / 非表示、ロック / ロック解除、
   設定、削除ができ、グループはその下に所属する描画とともに一覧表示されます。
   既定で有効で、<code>objectTree: false</code> で無効にできます。
@@ -751,13 +751,16 @@ chart.removeIndicator(instanceId)`}</code></pre>
   即座に適用します。期間や色を変えるために、削除して追加し直す必要はありません。
 </p>
 <p>
-  オブジェクトツリーの<strong>比較</strong>セクションには、正規化したラインとして重ねて表示している
-  シンボルが並びます。ライブアダプターがある場合、その + ボタンで比較ダイアログが開きます。
-  パーセントで追加したシンボルは <code>adapter.fetchHistory</code> で履歴を取得します
-  （価格帯の異なるシンボルでも 1 本の軸を共有できます）。比較は時間足を変えると自動で再取得されます。
+  オブジェクトツリーの<strong>比較</strong>セクションには、比較ダイアログと同じくすべての比較が並びます。
+  各シンボルに比較方法（変化率、専用スケール、専用サブチャート、スプレッド、比率、相関）と、外すためのボタンが付きます。
+  ライブアダプターがある場合、その + ボタンで比較ダイアログが開きます。どの方法でも、ウィジェットは比較を追加する前に
+  <code>adapter.fetchHistory</code> で相手シンボルのバーを取得し、バーが届かない場合（取得の失敗、またはこの時間足にバーがない場合）は
+  何も追加せず、理由をトーストで知らせます。保存した状態から戻った比較は、バーの読み込みに失敗してもチャートに残り、
+  バーのある時間足で表示されます。比較は時間足を変えると自動で再取得されます。
   プログラムでは次のようにします：
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
