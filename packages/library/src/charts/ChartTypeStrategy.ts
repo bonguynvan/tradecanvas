@@ -74,9 +74,9 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
 /**
  * Transform raw OHLC bars into the display series for a given chart type,
  * with its settings (`options`; what isn't set is worked out from the data).
- * `step` is the market's price step, when there is one: the automatic range
- * of range bars is a multiple of it. Returns the input unchanged for chart
- * types that render raw OHLC directly.
+ * `step` is the market's price step (`rangeBarsStep`), when there is one:
+ * the automatic range of range bars is a multiple of it. Returns the input
+ * unchanged for chart types that render raw OHLC directly.
  *
  * Centralized so adding a new chart type only requires editing one file.
  */
@@ -165,20 +165,26 @@ const cleanRange = (size: number): number => Number(size.toPrecision(RANGE_DIGIT
  * is rounded to a 1-2-5 number, so it holds still as bars close, then to a
  * whole number of price steps (`step`, one at least), so bars close on prices
  * the market can trade. With 2 bars or fewer, about a hundredth of the last close.
+ * `toRangeBars` raises either kind when it would make more than 100,000 bars.
  */
 export function rangeBarsSize(raw: DataSeries, options: ChartTypeOptions = {}, step?: number): number {
   const range = options.rangeBars?.range;
   if (typeof range === 'number') return range;
-  const trueRange = raw.length >= RANGE_BARS_MIN_BARS ? meanTrueRange(raw, RANGE_BARS_AUTO_BARS) : 0;
+  const trueRange = raw.length >= RANGE_BARS_MIN_BARS ? meanTrueRange(raw) : 0;
   const lastClose = Math.abs(raw[raw.length - 1]?.close ?? 0);
   const size = trueRange > 0 ? trueRange : lastClose * RANGE_BARS_PRICE_SHARE || 1;
   return onSteps(cleanRange(niceNumber(size, true)), step);
 }
 
-/** The mean true range of the last `count` closed bars: the last bar, still forming, is left out. */
-function meanTrueRange(raw: DataSeries, count: number): number {
+/** The closed bars the automatic range is measured on, `from` to before `end`: the last 100, the bar still forming left out. */
+function autoWindow(raw: DataSeries): { from: number; end: number } {
   const end = raw.length - 1;
-  const from = Math.max(0, end - count);
+  return { from: Math.max(0, end - RANGE_BARS_AUTO_BARS), end };
+}
+
+/** The mean true range of the closed bars the automatic range is measured on. */
+function meanTrueRange(raw: DataSeries): number {
+  const { from, end } = autoWindow(raw);
   let sum = 0;
   for (let i = from; i < end; i++) {
     const { high, low } = raw[i];
@@ -186,6 +192,30 @@ function meanTrueRange(raw: DataSeries, count: number): number {
     sum += Math.max(high - low, Math.abs(high - prev), Math.abs(low - prev));
   }
   return end > from ? sum / (end - from) : 0;
+}
+
+/**
+ * The price step automatic range bars go on: the coarsest the market has over
+ * the closed bars the range is measured on (on a market whose step depends on
+ * the price, the step at their highest or their lowest price), so a last price
+ * that crosses a band edge doesn't change the range of the whole history. With
+ * one bar, the step at its close; undefined when the market has no step.
+ */
+export function rangeBarsStep(raw: DataSeries, stepAt: (price: number) => number | undefined): number | undefined {
+  const { from, end } = autoWindow(raw);
+  if (end <= from) return stepAt(raw[raw.length - 1]?.close ?? 0);
+  let high = -Infinity;
+  let low = Infinity;
+  for (let i = from; i < end; i++) {
+    high = Math.max(high, raw[i].high);
+    low = Math.min(low, raw[i].low);
+  }
+  return coarser(stepAt(high), stepAt(low));
+}
+
+function coarser(a: number | undefined, b: number | undefined): number | undefined {
+  if (a === undefined) return b;
+  return b === undefined ? a : Math.max(a, b);
 }
 
 /** `size` as a whole number of price steps, one at least; as it is without a step. */

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { ChartType, OHLCBar } from '@tradecanvas/commons';
+import { MARKET_HOSE, priceStepAt } from '@tradecanvas/commons';
 import {
   CandlestickRenderer,
   LineRenderer,
@@ -15,6 +16,7 @@ import {
   createRendererFor,
   isTransformedChartType,
   rangeBarsSize,
+  rangeBarsStep,
   transformDisplayData,
 } from '../ChartTypeStrategy.js';
 import { secondBars } from '../../__tests__/secondBars.js';
@@ -141,6 +143,33 @@ describe('rangeBarsSize', () => {
   it('takes a hundredth of the last close with too few bars for a true range', () => {
     expect(rangeBarsSize(bars([100_000, 100_500]))).toBe(1_000);
     expect(rangeBarsSize(bars([100_000, 100_500]), {}, 0.5)).toBe(1_000);
+  });
+});
+
+describe('rangeBarsStep', () => {
+  // HOSE steps 0.05 a price from 10 and 0.1 from 50.
+  const hose = (price: number): number | undefined => priceStepAt(price, MARKET_HOSE);
+
+  it('takes the coarsest step the closed bars of the automatic range traded at', () => {
+    // Closed bars on both sides of 50 and a last price below it: the range goes on 0.1, not 0.05.
+    expect(rangeBarsStep(bars([49.8, 49.9, 50.1, 50.2, 49.9, 49.7], 0.05), hose)).toBe(0.1);
+    expect(rangeBarsStep(bars([49.8, 49.9, 49.7], 0.05), hose)).toBe(0.05);
+  });
+
+  it('leaves out the bar still forming, so a tick over a band edge changes nothing', () => {
+    expect(rangeBarsStep(bars([49.6, 49.7, 49.8, 50.4], 0.05), hose)).toBe(0.05);
+  });
+
+  it('looks only at the bars the automatic range is measured on', () => {
+    // A price past 50 more than 100 closed bars back no longer sets the step.
+    const quiet = Array.from({ length: 99 }, () => 49.5);
+    expect(rangeBarsStep(bars([50.5, ...quiet, 49.5, 49.6], 0.05), hose)).toBe(0.05);
+    expect(rangeBarsStep(bars([50.5, ...quiet, 49.6], 0.05), hose)).toBe(0.1);
+  });
+
+  it('takes the step at the last close with one bar, and none without a step', () => {
+    expect(rangeBarsStep(bars([50.2], 0.05), hose)).toBe(0.1);
+    expect(rangeBarsStep(bars([100, 101, 102]), () => undefined)).toBeUndefined();
   });
 });
 

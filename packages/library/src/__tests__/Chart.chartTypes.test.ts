@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
+import { MARKET_HOSE } from '@tradecanvas/commons';
 import { HiLoRenderer, PointAndFigureRenderer } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
@@ -132,6 +133,25 @@ describe('range bars', () => {
     expect(new Set(spans())).toEqual(new Set([10]));
     chart.setSymbolInfo({ symbol: 'BTCUSDT', minTick: 25 });
     expect(new Set(spans())).toEqual(new Set([25]));
+  });
+
+  it('keeps the automatic range when the last price crosses a band edge', () => {
+    // Steps of 0.05 below 50 and 0.1 from it; bars moving 0.05 around 50 have a mean true range of 0.05.
+    chart.setMarket({ type: 'stock', priceStep: 0.01, priceSteps: MARKET_HOSE.priceSteps });
+    const cycle = [50, 50.05, 50, 49.95];
+    const around = Array.from({ length: 120 }, (_, i): OHLCBar => {
+      const open = cycle[(i + 3) % 4];
+      const close = cycle[i % 4];
+      return { time: T0 + i * HOUR, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 1 };
+    });
+    chart.setData(around);
+    chart.setChartType('rangeBars');
+    const spans = () => new Set(probe().getDisplayData().slice(0, -1).map((b) => Number((b.high - b.low).toFixed(9))));
+    const last = around.at(-1)!;
+    for (const close of [50.05, 49.95, 50.05]) {
+      chart.updateLastBar({ ...last, close, high: Math.max(last.open, close), low: Math.min(last.open, close) });
+      expect(spans()).toEqual(new Set([0.1]));
+    }
   });
 });
 

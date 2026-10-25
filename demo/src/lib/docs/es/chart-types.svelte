@@ -65,12 +65,16 @@
 </p>
 <p>
   El rango automático de las Range Bars es el rango verdadero medio de las últimas 100 barras cerradas,
-  redondeado a un 1, 2 o 5 (… 1, 2, 5, 10, 20 …) y a un número entero de pasos de precio del símbolo:
-  barras pequeñas en un gráfico de un segundo, más grandes en uno diario. La barra que todavía se forma
-  queda fuera del cálculo, así que un tick solo mueve la última barra, no el historial. Al subir, una barra
+  redondeado a un 1, 2 o 5 (… 1, 2, 5, 10, 20 …) y a un número entero de pasos de precio del símbolo
+  (en un mercado cuyo paso depende del precio, el mayor paso al que negociaron esas barras): barras
+  pequeñas en un gráfico de un segundo, más grandes en uno diario. La barra que todavía se forma queda
+  fuera del cálculo, así que un tick solo cambia las range bars hechas con esa barra; las anteriores se
+  quedan como están. Cuando una barra cierra y lleva la media al siguiente número 1-2-5, o esas barras a
+  otro paso de precio, todas las barras se vuelven a construir con el nuevo rango. Al subir, una barra
   cierra en su mínimo más el rango; al bajar, en su máximo menos el rango: su cierre es un precio que
   alcanzó, y su mecha muestra hacia dónde fue primero. Un salto de varios rangos, también un hueco entre
-  dos barras, da una barra por cada rango.
+  dos barras, da una barra por cada rango. Un rango, fijado o automático, que daría más de 100,000
+  barras se eleva a 2, 5, 10, 20… veces sí mismo, el primero que da menos.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

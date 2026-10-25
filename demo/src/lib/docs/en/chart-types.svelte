@@ -66,11 +66,16 @@
 <p>
   The automatic range of range bars is the mean true range of the last 100 closed bars,
   rounded to a 1, 2 or 5 (… 1, 2, 5, 10, 20 …) and to a whole number of the symbol's
-  price step: small bars on a one-second chart, larger ones on a daily chart. The bar
-  still forming is left out of it, so a tick moves only the last bar, not the history.
-  A bar closes at its low plus the range on the way up, or its high minus the range on
-  the way down: its close is a price it reached, and its wick shows the way it went first.
-  A jump of several ranges, a gap between bars too, makes a bar for each range.
+  price step (on a market whose step depends on the price, the largest step those bars
+  traded at): small bars on a one-second chart, larger ones on a daily chart. The bar
+  still forming is left out of it, so a tick changes only the range bars built from that
+  bar; the ones before it stay as they are. When a bar closes and moves the mean to the
+  next 1-2-5 number, or those bars to another price step, every bar is built again on the
+  new range. A bar closes at its low plus the range on the way up, or its high minus the
+  range on the way down: its close is a price it reached, and its wick shows the way it
+  went first. A jump of several ranges, a gap between bars too, makes a bar for each range.
+  A range, set or automatic, that would make more than 100,000 bars is raised to 2, 5,
+  10, 20… times itself, the first that makes fewer.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

@@ -54,6 +54,37 @@ describe('toRangeBars', () => {
     expect(out.map((b) => [b.open, b.close])).toEqual([[100, 102], [102, 104], [104, 106]]);
   });
 
+  it('ends on a range finer than the digits prices are kept to', () => {
+    // At 100,000 prices keep 15 digits, down to 1e-9: the low plus 4e-10 reads as the low, which closes no range.
+    const data = [bar(100_000, 100_000, 100_000, 100_000, 0, 1), bar(100_000, 100_000.00001, 100_000, 100_000.00001, 1, 1)];
+    const out = toRangeBars(data, { rangeSize: 4e-10, includeForming: true });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ time: 0, open: 100_000, high: 100_000.00001, low: 100_000, close: 100_000.00001 });
+    expect(out[0].volume).toBeCloseTo(2, 9);
+  });
+
+  it('raises a range too small for the move to a whole multiple of itself, under 100,000 bars', () => {
+    // 2.5 over a move of 1,000,000 would be 400,000 bars: five times it, 12.5, makes 80,000.
+    const data = [bar(100, 100, 100, 100, 0), bar(100, 1_000_100, 100, 1_000_100, 1)];
+    const out = toRangeBars(data, { rangeSize: 2.5 });
+    expect(out).toHaveLength(80_000);
+    expect(out.every((b) => b.high - b.low === 12.5)).toBe(true);
+    expect(out.at(-1)!.close).toBe(1_000_100);
+  });
+
+  it('keeps a raised range when only the last bar moves', () => {
+    // 200 moves of 1,000 would be 200,000 bars of 1, so the range is 2; a tick 2 lower on the last bar leaves it 2.
+    const zigzag = Array.from({ length: 201 }, (_, i) => {
+      const open = i === 0 || i % 2 === 1 ? 100 : 1_100;
+      const close = i % 2 === 1 ? 1_100 : 100;
+      return bar(open, Math.max(open, close), Math.min(open, close), close, i);
+    });
+    const spans = (data: OHLCBar[]) => new Set(toRangeBars(data, { rangeSize: 1 }).map((b) => b.high - b.low));
+    expect(spans(zigzag)).toEqual(new Set([2]));
+    const last = zigzag.at(-1)!;
+    expect(spans([...zigzag.slice(0, -1), { ...last, low: 98, close: 98 }])).toEqual(new Set([2]));
+  });
+
   it('keeps the bar still forming with includeForming: a quiet market is one bar, not none', () => {
     const data = [
       bar(100, 100.5, 99.5, 100.2, 0),

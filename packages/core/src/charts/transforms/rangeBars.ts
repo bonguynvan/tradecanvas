@@ -1,7 +1,13 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { niceNumber } from '@tradecanvas/commons';
 
 export interface RangeBarsConfig {
-  /** Price distance per range bar. Each bar is closed when (high - low) >= rangeSize. */
+  /**
+   * Price distance per range bar. Each bar is closed when (high - low) >= rangeSize.
+   * A range so small that the move before the last bar, or the last bar's
+   * own, would make more than 100,000 bars is raised to 2, 5, 10, 20… times
+   * itself, the first that makes fewer.
+   */
   rangeSize: number;
   /**
    * Add the bar still forming, from the last close to the last price, as the
@@ -15,6 +21,14 @@ export interface RangeBarsConfig {
  * (100.2, not 100.19999999999999), with every digit a feed sends.
  */
 const PRICE_SIGNIFICANT_DIGITS = 15;
+
+/**
+ * Range bars the move before the last bar makes at most, about, and the last
+ * bar's own move as many again. The replay runs again on every tick, so a
+ * range far too small for the move is raised rather than filling memory with
+ * millions of bars.
+ */
+const MAX_RANGE_BARS = 100_000;
 
 /**
  * Rounds a price to 15 significant digits of the series' largest price. One
@@ -38,6 +52,47 @@ function pathOf(bar: OHLCBar): readonly number[] {
 }
 
 /**
+ * Every price the replay goes through, in order, from bar `from` to before
+ * bar `to`: each bar's open, then its path, which carries its volume.
+ */
+function replay(data: DataSeries, visit: (price: number, volume: number) => void, from = 0, to = data.length): void {
+  for (let i = from; i < to; i++) {
+    const bar = data[i];
+    visit(bar.open, 0);
+    const path = pathOf(bar);
+    for (const price of path) visit(price, bar.volume / path.length);
+  }
+}
+
+/**
+ * How far the replay travels from bar `from` to before bar `to`, the gap
+ * before `from` included: each bar it closes takes a range of it.
+ */
+function pathLength(data: DataSeries, from: number, to: number): number {
+  let length = 0;
+  let last = from > 0 ? data[from - 1].close : data[0].open;
+  replay(data, (price) => {
+    length += Math.abs(price - last);
+    last = price;
+  }, from, to);
+  return length;
+}
+
+/**
+ * The range the bars are built on: the one asked for, unless the move would
+ * make more than MAX_RANGE_BARS of it. Then the first of 2, 5, 10, 20… times
+ * it that makes fewer: a whole multiple, so a range on the price step stays on it.
+ * The last bar's move is weighed on its own, so a tick on the bar still forming
+ * doesn't change the range unless that bar alone would make that many.
+ */
+function rangeFor(data: DataSeries, range: number): number {
+  const lastBar = data.length - 1;
+  const least = Math.max(pathLength(data, 0, lastBar), pathLength(data, lastBar, data.length)) / MAX_RANGE_BARS;
+  if (!(range < least) || !Number.isFinite(least)) return range;
+  return Number((range * niceNumber(least / range, false)).toPrecision(PRICE_SIGNIFICANT_DIGITS));
+}
+
+/**
  * Transform OHLC data into fixed-range bars. A bar closes once its high and
  * low are `rangeSize` apart, at the far end plus or minus the range: on the
  * way up at its low + range, on the way down at its high - range, so it
@@ -47,15 +102,20 @@ function pathOf(bar: OHLCBar): readonly number[] {
  * not trade. Like Renko, range bars have no time axis: their times count up
  * by one from the first bar's.
  *
+ * Closes are kept to 15 significant digits of the largest price, so a range
+ * finer than that closes no bar. A range that would make more than 100,000
+ * bars is raised to 2, 5, 10, 20… times itself, the first that makes fewer;
+ * the last bar's move is weighed on its own, so the range holds as it moves.
+ *
  * Approximation: input is OHLC, not tick-level. Each bar is replayed from
  * its open through its extremes in the order its candle implies (up bar:
  * open, low, high, close; down bar: open, high, low, close), its volume
  * shared by the three moves after the open.
  */
 export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeries {
-  const range = config.rangeSize;
-  if (data.length === 0 || !(range > 0)) return [];
+  if (data.length === 0 || !(config.rangeSize > 0)) return [];
 
+  const range = rangeFor(data, config.rangeSize);
   const clean = priceRounder(data, range);
   const out: OHLCBar[] = [];
   let time = data[0].time;
@@ -81,9 +141,10 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
   const visit = (price: number, vol: number) => {
     last = price;
     const first = out.length;
+    // A close the kept digits can't tell from the bar's high (or low) would close bars of nothing without end.
     for (;;) {
-      if (price > high && price >= upClose) close(upClose, true);
-      else if (price < low && price <= downClose) close(downClose, false);
+      if (price > high && price >= upClose && upClose > high) close(upClose, true);
+      else if (price < low && price <= downClose && downClose < low) close(downClose, false);
       else break;
     }
     if (price > high) {
@@ -103,11 +164,7 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
     for (let i = first; i < out.length; i++) out[i].volume += vol / closed;
   };
 
-  for (const bar of data) {
-    visit(bar.open, 0);
-    const path = pathOf(bar);
-    for (const price of path) visit(price, bar.volume / path.length);
-  }
+  replay(data, visit);
 
   if (config.includeForming && (out.length === 0 || high > low)) {
     out.push({ time, open, high, low, close: last, volume });

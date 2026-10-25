@@ -120,7 +120,7 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox, rangeBarsStep } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar } from './SeriesStore.js';
@@ -203,7 +203,7 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
-  /** The price step the cached display series was built on: a new step (the symbol's `minTick` arrives) builds it again. */
+  /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
   private displayDataStep: number | undefined;
   /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
   private indicatorUpdateFrom: number | null = null;
@@ -5353,10 +5353,11 @@ export class Chart {
   }
 
   private getDisplayData(): DataSeries {
-    // The market's own grid, when the chart knows one; not the decimals the axis shows, which follow the view.
-    const step = this.stepAt(this.lastClose());
-    if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
     const raw = this.series.bars();
+    // Range bars go on the market's own grid, not the decimals the axis shows, which follow the view: the
+    // coarsest step of the bars their range is measured on, so a last price over a band edge rebuilds nothing.
+    const step = this.options.chartType === 'rangeBars' ? rangeBarsStep(raw, (price) => this.stepAt(price)) : undefined;
+    if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
     if (raw.length === 0) return raw;
     const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions, step);
     // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).

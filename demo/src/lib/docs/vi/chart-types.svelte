@@ -65,12 +65,16 @@
 </p>
 <p>
   Biên độ tự động của Range Bars là true range trung bình của 100 nến đã đóng gần nhất, làm tròn
-  về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một số nguyên lần bước giá của mã: nến nhỏ trên biểu
-  đồ một giây, lớn hơn trên biểu đồ ngày. Nến đang hình thành không được tính vào, nên một tick chỉ
-  làm thay đổi nến cuối chứ không thay đổi lịch sử. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
+  về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một số nguyên lần bước giá của mã (với thị trường có
+  bước giá thay đổi theo mức giá, đó là bước giá lớn nhất mà các nến này đã giao dịch): nến nhỏ trên
+  biểu đồ một giây, lớn hơn trên biểu đồ ngày. Nến đang hình thành không được tính vào, nên một tick
+  chỉ thay đổi các range bar dựng từ nến đó; các range bar trước nó giữ nguyên. Khi một nến đóng cửa
+  làm giá trị trung bình chuyển sang số 1-2-5 kế tiếp, hoặc đưa các nến này sang một bước giá khác,
+  mọi range bar được dựng lại theo biên độ mới. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
   biên độ; khi đi xuống, ở giá cao nhất trừ biên độ: giá đóng cửa là giá nến đã chạm tới, và râu nến
   cho thấy hướng giá đi trước. Một cú nhảy qua nhiều biên độ, kể cả khoảng trống giữa hai nến, tạo
-  một nến cho mỗi biên độ.
+  một nến cho mỗi biên độ. Một biên độ, đặt tay hay tự động, mà tạo ra hơn 100,000 nến sẽ được nâng
+  lên 2, 5, 10, 20… lần chính nó, lấy mức đầu tiên cho ít nến hơn số đó.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
