@@ -53,9 +53,11 @@ export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x:
   ctx.fillText(text, x, y);
 }
 
-/** A level label's size (px), its inset from where its line starts and its gap above the line. */
+/** A level label's font size (px). */
 const LEVEL_LABEL_SIZE = 11;
+/** How far a level label starts right of where its line starts (px). */
 const LEVEL_LABEL_INSET = 4;
+/** How far a level label's baseline sits above its line (px). */
 const LEVEL_LABEL_GAP = 3;
 
 /**
