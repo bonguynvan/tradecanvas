@@ -156,6 +156,11 @@ export class WidgetContextMenu {
     return !this.el.hidden;
   }
 
+  /** Whether the keyboard is in the menu, or in a submenu of it. */
+  hasFocus(): boolean {
+    return document.activeElement !== null && this.holds(document.activeElement);
+  }
+
   destroy(): void {
     this.close();
     this.child?.destroy();

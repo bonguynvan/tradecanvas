@@ -56,20 +56,31 @@ const foldedPresets = () => [...root.querySelectorAll<HTMLElement>('[data-range]
 const has = (name: string) => statusBar().classList.contains(`tcw-statusbar--${name}`);
 const menuItems = () => [...root.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')];
 
+const box = (left: number, right: number) => ({ left, right, width: right - left, top: 0, bottom: 0, height: 0, x: left, y: 0, toJSON: () => ({}) }) as DOMRect;
+
 /**
  * Lay the bar out `width` px wide, as a browser would: the right group keeps
  * its width, and the range bar gets what is left, never more than its buttons
- * need. Only the range bar's widths are read.
+ * need. With less room than the right group's width even an empty range bar
+ * leaves it too little, and it runs past the bar's end: the right edge, or
+ * the left one right to left.
  */
 function layout(width: number): void {
   const range = rangeBar();
   const content = () => [...range.querySelectorAll<HTMLElement>('button')]
     .filter((b) => !isFolded(b) && !isOff(b))
     .reduce((sum, b) => sum + (!b.classList.contains('tcw-range-more') ? BUTTON_PX : has('folded') ? MORE_PX : 0), 0);
-  const room = () => Math.max(0, width - (has('short-market') ? RIGHT_SHORT_PX : RIGHT_PX));
+  const rightPx = () => (has('short-market') ? RIGHT_SHORT_PX : RIGHT_PX);
+  const room = () => Math.max(0, width - rightPx());
   Object.defineProperty(statusBar(), 'clientWidth', { configurable: true, get: () => width });
   Object.defineProperty(range, 'scrollWidth', { configurable: true, get: content });
   Object.defineProperty(range, 'clientWidth', { configurable: true, get: () => Math.min(content(), room()) });
+  const rtl = statusBar().style.direction === 'rtl';
+  statusBar().getBoundingClientRect = () => box(0, width);
+  q('.tcw-status-right').getBoundingClientRect = () => {
+    const end = rtl ? Math.min(0, width - rightPx()) : Math.max(width, rightPx());
+    return rtl ? box(end, end + rightPx()) : box(end - rightPx(), end);
+  };
 }
 
 function fitAt(width: number): void {
@@ -172,6 +183,52 @@ describe('the status bar, fitting its width', () => {
     expect(has('folded')).toBe(false);
   });
 
+  it('brings back a folded go to date when the presets are switched off after it folded', () => {
+    fitAt(RIGHT_PX + MORE_PX);
+    expect(isFolded(q('[data-role="goto"]'))).toBe(true);
+    root.dataset.tcwOff = 'statusBar.range';
+    fitAt(RIGHT_PX + MORE_PX);
+    expect(root.querySelectorAll('[data-tcw-folded]')).toHaveLength(0);
+    expect(has('folded')).toBe(false);
+  });
+
+  describe('with the presets and go to date switched off (`rangeBar: false`)', () => {
+    beforeEach(() => {
+      root.dataset.tcwOff = 'statusBar.range statusBar.rangeTimeframe goToDate';
+      bar.setMarket('closed', 'Market closed', 'Closed');
+    });
+
+    it('shortens the market word when the right group still has no room', () => {
+      fitAt(RIGHT_PX - 20);
+      expect(has('short-market')).toBe(true);
+      expect(has('folded')).toBe(false);
+    });
+
+    it('keeps the market word whole while the right group has room', () => {
+      fitAt(RIGHT_PX + 10);
+      expect(has('short-market')).toBe(false);
+    });
+
+    it('shortens it right to left too, where the right group runs past the left edge', () => {
+      statusBar().style.direction = 'rtl';
+      fitAt(RIGHT_PX - 20);
+      expect(has('short-market')).toBe(true);
+      fitAt(RIGHT_PX + 10);
+      expect(has('short-market')).toBe(false);
+    });
+  });
+
+  it('shortens the market word with no range bar at all, when the right group has no room', () => {
+    bar.destroy();
+    bar = new WidgetStatusBar(root);
+    bar.setMarket('closed', 'Market closed', 'Closed');
+    Object.defineProperty(statusBar(), 'clientWidth', { configurable: true, get: () => RIGHT_PX - 20 });
+    statusBar().getBoundingClientRect = () => box(0, RIGHT_PX - 20);
+    q('.tcw-status-right').getBoundingClientRect = () => box(0, has('short-market') ? RIGHT_SHORT_PX : RIGHT_PX);
+    bar.fit();
+    expect(has('short-market')).toBe(true);
+  });
+
   it('does nothing while the bar is hidden', () => {
     fitAt(0);
     expect(root.querySelectorAll('[data-tcw-folded]')).toHaveLength(0);
@@ -183,6 +240,67 @@ describe('the status bar, fitting its width', () => {
     Object.defineProperty(q('.tcw-statusbar'), 'clientWidth', { configurable: true, get: () => 100 });
     expect(() => bar.fit()).not.toThrow();
     expect(root.querySelector('[data-role="rangeMore"]')).toBeNull();
+  });
+});
+
+describe('the status bar, refitting under the keyboard and the "more" menu', () => {
+  const more = () => q<HTMLButtonElement>('[data-role="rangeMore"]');
+  const preset = (name: string) => q<HTMLButtonElement>(`[data-range="${name}"]`);
+  const menuOpen = () => root.querySelector('.tcw-context-menu:not([hidden])') !== null;
+
+  it('hands the keyboard to "more" when the preset it is on folds', () => {
+    fitAt(800);
+    preset('All').focus();
+    fitAt(RIGHT_PX + 240);
+    expect(isFolded(preset('All'))).toBe(true);
+    expect(document.activeElement).toBe(more());
+  });
+
+  it('hands it to go to date\'s neighbour, "more", when go to date folds', () => {
+    fitAt(800);
+    q<HTMLButtonElement>('[data-role="goto"]').focus();
+    fitAt(RIGHT_PX + MORE_PX);
+    expect(document.activeElement).toBe(more());
+  });
+
+  it('leaves the keyboard on a preset that still shows', () => {
+    fitAt(800);
+    preset('1D').focus();
+    fitAt(RIGHT_PX + 240);
+    expect(document.activeElement).toBe(preset('1D'));
+  });
+
+  it('hands the keyboard to the last preset when "more" goes', () => {
+    fitAt(RIGHT_PX + 240);
+    more().focus();
+    fitAt(800);
+    expect(has('folded')).toBe(false);
+    expect(document.activeElement).toBe(preset('All'));
+  });
+
+  it('keeps the menu open while what is folded stays the same', () => {
+    fitAt(RIGHT_PX + 240);
+    more().click();
+    fitAt(RIGHT_PX + 240);
+    expect(menuOpen()).toBe(true);
+    expect(root.contains(document.activeElement) && document.activeElement!.closest('.tcw-context-menu')).toBeTruthy();
+  });
+
+  it('closes the menu when what is folded changes, its entries gone stale, the keyboard back on "more"', () => {
+    fitAt(RIGHT_PX + 240);
+    more().click();
+    fitAt(RIGHT_PX + 180);
+    expect(menuOpen()).toBe(false);
+    expect(more().getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(more());
+  });
+
+  it('closes the menu when nothing is folded any more, the keyboard on the last preset', () => {
+    fitAt(RIGHT_PX + 240);
+    more().click();
+    fitAt(800);
+    expect(menuOpen()).toBe(false);
+    expect(document.activeElement).toBe(preset('All'));
   });
 });
 

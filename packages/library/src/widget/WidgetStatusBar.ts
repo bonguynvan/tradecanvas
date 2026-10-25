@@ -80,8 +80,11 @@ export class WidgetStatusBar {
   private scaleShown = '';
   /** The market's status as last shown: the widget asks every 30 seconds. */
   private marketShown = '';
+  /** The market's status, the connection, the clock and the scale: it keeps its width. */
+  private readonly rightEl: HTMLDivElement;
   private rangeEl: HTMLDivElement | null = null;
   private presetBtns: HTMLButtonElement[] = [];
+  private moreBtn: HTMLButtonElement | null = null;
   private goToBtn: HTMLButtonElement | null = null;
   private rangeMenu: WidgetContextMenu | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -102,6 +105,7 @@ export class WidgetStatusBar {
 
     const right = document.createElement('div');
     right.className = 'tcw-status-right';
+    this.rightEl = right;
     this.hostRight = this.hostGroup();
     right.appendChild(this.hostRight);
 
@@ -163,37 +167,105 @@ export class WidgetStatusBar {
    * off). Only when everything has folded and it still doesn't fit does the
    * market's status shorten to its word ("Closed"), and what fits in the
    * room that gives comes back.
+   *
+   * A refit that changes what is folded closes the "more" menu, whose
+   * entries would be stale, and the keyboard stays on the range bar when the
+   * button it was on hides (see `keepFocus`).
    */
   fit(): void {
-    if (!this.rangeEl) return;
+    const folded = this.foldedCount();
+    const focused = this.rangeFocus();
+    this.refit();
+    if (this.foldedCount() !== folded) this.rangeMenu?.close();
+    this.keepFocus(focused);
+  }
+
+  /** The folding and the market's word, as `fit` says; the menu and the keyboard are `fit`'s. */
+  private refit(): void {
     const steps = this.foldSteps();
+    const foldable = this.goToBtn ? [...this.presetBtns, this.goToBtn] : this.presetBtns;
+    // Every button, not just the steps: one folded before its presets were switched off comes back.
     const fold = (count: number) => {
-      steps.forEach((btn, i) => btn.toggleAttribute(FOLDED_ATTR, i < count));
+      const gone = new Set(steps.slice(0, count));
+      for (const btn of foldable) btn.toggleAttribute(FOLDED_ATTR, gone.has(btn));
       this.el.classList.toggle(FOLDED_CLASS, count > 0);
     };
     fold(0);
     this.el.classList.remove(SHORT_MARKET_CLASS);
-    if (this.el.clientWidth === 0 || this.rangeFits()) return;
+    if (this.el.clientWidth === 0 || this.fits()) return;
     let count = 0;
     while (count < steps.length) {
       fold(++count);
-      if (this.rangeFits()) return;
+      if (this.fits()) return;
     }
     if (this.marketEl.hidden || this.isOff(this.marketEl)) return;
     this.el.classList.add(SHORT_MARKET_CLASS);
     // Back in the order they went, while they fit.
     for (; count > 0; count--) {
       fold(count - 1);
-      if (this.rangeFits()) continue;
+      if (this.fits()) continue;
       fold(count);
       return;
     }
+  }
+
+  /** Whether the bar shows all it holds: the range bar all its buttons, and the right group all of itself. */
+  private fits(): boolean {
+    return this.rangeFits() && this.rightFits();
   }
 
   /** Whether the range bar shows all it holds: it clips, so what's past its edge is its overflow. */
   private rangeFits(): boolean {
     const range = this.rangeEl;
     return !range || range.scrollWidth <= range.clientWidth + FIT_SLACK_PX;
+  }
+
+  /**
+   * Whether the right group ends inside the bar's content edge. It keeps its
+   * width, so when the range bar has nothing left to give (its presets and
+   * go to date switched off, as `rangeBar: false` does, or no range bar at
+   * all) and the bar is still too narrow, it runs past the bar's end: the
+   * right edge, the left one right to left.
+   */
+  private rightFits(): boolean {
+    const style = getComputedStyle(this.el);
+    const bar = this.el.getBoundingClientRect();
+    const right = this.rightEl.getBoundingClientRect();
+    const past = style.direction === 'rtl'
+      ? bar.left + (parseFloat(style.paddingLeft) || 0) - right.left
+      : right.right - (bar.right - (parseFloat(style.paddingRight) || 0));
+    return past <= FIT_SLACK_PX;
+  }
+
+  private foldedCount(): number {
+    return this.rangeEl?.querySelectorAll(`[${FOLDED_ATTR}]`).length ?? 0;
+  }
+
+  /** The range bar's button the keyboard is on: "more" while it is in the menu "more" opened. */
+  private rangeFocus(): HTMLElement | null {
+    if (this.rangeMenu?.hasFocus()) return this.moreBtn;
+    const active = document.activeElement;
+    return active instanceof HTMLElement && this.rangeEl?.contains(active) ? active : null;
+  }
+
+  /**
+   * Keep the keyboard on the range bar after a refit, when it was on
+   * `focused`: a preset or go to date that folded hands it to "more", "more"
+   * gone (nothing folded any more) to the last preset, and a menu the refit
+   * closed back to "more". A button that still shows keeps it.
+   */
+  private keepFocus(focused: HTMLElement | null): void {
+    if (!focused || this.rangeMenu?.isOpen()) return;
+    const target = this.shows(focused) ? focused
+      : focused === this.moreBtn ? this.presetBtns.filter((btn) => this.shows(btn)).at(-1)
+        : this.moreBtn;
+    if (target && this.shows(target) && document.activeElement !== target) target.focus({ preventScroll: true });
+  }
+
+  /** Whether a button of the range bar shows: not folded, not switched off, and "more" only while something is folded. */
+  private shows(btn: HTMLElement): boolean {
+    if (btn === this.moreBtn && !this.el.classList.contains(FOLDED_CLASS)) return false;
+    return !btn.hasAttribute(FOLDED_ATTR) && !this.isOff(btn);
   }
 
   /** What folds, in the order it folds: the presets from the longest range, then go to date. */
@@ -415,6 +487,7 @@ export class WidgetStatusBar {
     more.setAttribute('aria-expanded', 'false');
     more.addEventListener('click', () => this.toggleRangeMenu(more, range));
     group.appendChild(more);
+    this.moreBtn = more;
 
     const goTo = this.rangeIconBtn('tcw-range-goto', 'goto', 'calendar', range.goToLabel);
     markPart(goTo, 'goToDate', 'statusBar.goToDate');
