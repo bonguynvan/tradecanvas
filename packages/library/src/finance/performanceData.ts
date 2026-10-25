@@ -7,13 +7,21 @@ export interface EquitySample {
   equity: number;
 }
 
-/** Subset of analytics RiskMetrics needed to render the stats strip. */
+/**
+ * Subset of analytics RiskMetrics needed to render the stats strip. The
+ * percentages are fractions, as @tradecanvas/analytics returns them: a
+ * totalReturnPct of 0.12 shows as +12.00%.
+ */
 export interface RiskMetricsLike {
+  /** Total return as a fraction: 0.12 is +12%. */
   totalReturnPct: number;
+  /** Compound annual growth rate as a fraction. */
   cagr: number;
   sharpe: number;
   sortino: number;
+  /** The deepest fall from a running peak, as a positive fraction: 0.5 is 50%. */
   maxDrawdownPct: number;
+  /** Share of winning trades as a fraction. */
   winRate: number;
   profitFactor: number;
   trades: number;
@@ -85,6 +93,9 @@ export function computeMonthlyReturns(curve: ReadonlyArray<EquitySample>): Heatm
   return cells;
 }
 
+/** Metrics arrive as fractions (0.12); the cards show percent (12.00%). */
+const PERCENT = 100;
+
 function pct(value: number): string {
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(2)}%`;
@@ -96,15 +107,18 @@ function tone(value: number): DashboardStat['tone'] {
   return 'neutral';
 }
 
-/** The headline stats rendered as cards above the charts. */
+/**
+ * The headline stats rendered as cards above the charts. The drawdown is a
+ * fall, so it reads with a minus sign, as the Drawdown panel below plots it.
+ */
 export function selectKeyStats(metrics: RiskMetricsLike): DashboardStat[] {
   return [
-    { label: 'Total Return', value: pct(metrics.totalReturnPct), tone: tone(metrics.totalReturnPct) },
-    { label: 'CAGR', value: pct(metrics.cagr * 100), tone: tone(metrics.cagr) },
+    { label: 'Total Return', value: pct(metrics.totalReturnPct * PERCENT), tone: tone(metrics.totalReturnPct) },
+    { label: 'CAGR', value: pct(metrics.cagr * PERCENT), tone: tone(metrics.cagr) },
     { label: 'Sharpe', value: metrics.sharpe.toFixed(2), tone: tone(metrics.sharpe) },
     { label: 'Sortino', value: metrics.sortino.toFixed(2), tone: tone(metrics.sortino) },
-    { label: 'Max Drawdown', value: pct(metrics.maxDrawdownPct), tone: 'negative' },
-    { label: 'Win Rate', value: `${(metrics.winRate * 100).toFixed(1)}%`, tone: 'neutral' },
+    { label: 'Max Drawdown', value: pct(-metrics.maxDrawdownPct * PERCENT), tone: 'negative' },
+    { label: 'Win Rate', value: `${(metrics.winRate * PERCENT).toFixed(1)}%`, tone: 'neutral' },
     { label: 'Profit Factor', value: Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : '∞', tone: tone(metrics.profitFactor - 1) },
     { label: 'Trades', value: String(metrics.trades), tone: 'neutral' },
   ];

@@ -94,15 +94,23 @@ const m = computeRiskMetrics(initialCash, equityCurve, trades, {
   riskFreeRate: 0.03,
 })
 
-m.totalReturnPct
+m.totalReturnPct   // a fraction: 0.12 is +12%
 m.cagr
 m.sharpe
 m.sortino
-m.calmar
-m.maxDrawdownPct
+m.calmar           // cagr / maxDrawdownPct
+m.maxDrawdown      // the largest fall from a running peak, in money
+m.maxDrawdownPct   // the deepest fall from a running peak, as a fraction (0.5 is 50%)
 m.winRate
 m.profitFactor
 m.expectancy`}</code></pre>
+
+<p>
+  여기의 백분율은 모두 소수입니다. 0.12는 12%입니다. 두 낙폭은 따로 측정하므로, 자산이 불어나는
+  계좌에서는 서로 다른 하락에서 나올 수 있습니다. 자산 곡선 100, 50, 100, 400, 1000, 800, 1200에서
+  가장 깊은 하락은 50%(100에서 50으로, <code>maxDrawdownPct</code>는 0.5)이고, 금액으로 가장 큰
+  하락은 200(1000에서 800으로, <code>maxDrawdown</code>은 200)입니다.
+</p>
 
 <p>
   결과의 <code>equityCurve</code>를
@@ -139,4 +147,4 @@ const mc = runMonteCarlo(10_000, result.trades, {
 mc.equityBands         // per-step P5/P25/P50/P75/P95
 mc.finalEquityPercentiles  // { p5, p25, p50, p75, p95 }
 mc.probabilityProfitable
-mc.worstMaxDrawdownPct`}</code></pre>
+mc.worstMaxDrawdownPct  // in percent (25 is 25%), not a fraction`}</code></pre>

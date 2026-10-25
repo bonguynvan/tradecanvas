@@ -88,16 +88,26 @@ const m = computeRiskMetrics(initialCash, equityCurve, trades, {
   riskFreeRate: 0.03,
 })
 
-m.totalReturnPct
+m.totalReturnPct   // a fraction: 0.12 is +12%
 m.cagr
 m.sharpe
 m.sortino
-m.calmar
-m.maxDrawdownPct
+m.calmar           // cagr / maxDrawdownPct
+m.maxDrawdown      // the largest fall from a running peak, in money
+m.maxDrawdownPct   // the deepest fall from a running peak, as a fraction (0.5 is 50%)
 m.winRate
 m.profitFactor
 m.expectancy
 ```
+
+Every percentage here is a fraction: 0.12 is 12%. The two drawdowns are
+measured separately, so on a growing account they can come from different
+falls. An equity curve of 100, 50, 100, 400, 1000, 800, 1200 has a deepest
+fall of 50% (100 to 50, so `maxDrawdownPct` is 0.5) and a largest fall in money
+of 200 (1000 to 800, so `maxDrawdown` is 200).
+
+`runMonteCarlo` reports its `worstMaxDrawdownPct` in percent instead (25 is
+25%).
 
 ## Strategy library
 

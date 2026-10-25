@@ -138,22 +138,27 @@ function downsideDeviation(values: number[], target: number): number {
   return Math.sqrt(acc / count);
 }
 
+/**
+ * The deepest fall from a running peak, in money and as a fraction of that
+ * peak. They are tracked apart: on a growing account a late fall can cost more
+ * money yet be a smaller share of its higher peak, so the two can come from
+ * different falls.
+ */
 function computeDrawdown(curve: ReadonlyArray<EquityPoint>): {
   maxDrawdown: number;
   maxDrawdownPct: number;
 } {
   let peak = curve[0].equity;
-  let maxDd = 0;
-  let maxDdPct = 0;
+  let maxDrawdown = 0;
+  let maxDrawdownPct = 0;
   for (const point of curve) {
     if (point.equity > peak) peak = point.equity;
-    const dd = peak - point.equity;
-    if (dd > maxDd) {
-      maxDd = dd;
-      maxDdPct = peak > 0 ? dd / peak : 0;
-    }
+    const fall = peak - point.equity;
+    if (fall > maxDrawdown) maxDrawdown = fall;
+    const fallPct = peak > 0 ? fall / peak : 0;
+    if (fallPct > maxDrawdownPct) maxDrawdownPct = fallPct;
   }
-  return { maxDrawdown: maxDd, maxDrawdownPct: maxDdPct };
+  return { maxDrawdown, maxDrawdownPct };
 }
 
 function summarizeTrades(trades: ReadonlyArray<ClosedTrade>): {

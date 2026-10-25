@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### What a downstream app found
+
+- **`maxDrawdownPct` is the deepest fall from a running peak** (`@tradecanvas/analytics`). It was the percent of the largest fall in money, which on a growing account can be a later, shallower fall: 100, 50, 100, 400, 1000, 800, 1200 gave 20% instead of 50%. It only ever gets larger, and `calmar`, which divides by it, falls with it. `maxDrawdown` is still the largest fall in money, so the two can come from different falls; the `RiskMetrics` fields now say their units (the percentages are fractions). `PerformanceDashboard` shows a `Backtester` result's total return and max drawdown in percent, where they read 100 times too small, and the Max Drawdown card reads as a fall (`-50.00%`), as the Drawdown panel plots it.
+
 ## 1.50.0 (2026-10-25)
 
 React, Vue and Svelte components: 1.3.33.

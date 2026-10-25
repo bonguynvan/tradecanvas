@@ -103,14 +103,31 @@ export interface BacktestResult {
   metrics: RiskMetrics;
 }
 
+/**
+ * Summary of a backtest. Every `...Pct` field, `cagr` and `winRate` are
+ * fractions: 0.12 is 12%.
+ */
 export interface RiskMetrics {
+  /** Final equity minus initialCash, in money. */
   totalReturn: number;
+  /** Total return as a fraction of initialCash: 0.12 is +12%. */
   totalReturnPct: number;
+  /** Compound annual growth rate as a fraction, or 0 when the curve spans no time. */
   cagr: number;
   sharpe: number;
   sortino: number;
+  /** `cagr / maxDrawdownPct`, or 0 when there is no drawdown. */
   calmar: number;
+  /**
+   * The largest fall from a running peak of the equity curve, in money. The
+   * peak starts at the curve's first point.
+   */
   maxDrawdown: number;
+  /**
+   * The deepest fall from a running peak, as a fraction of that peak: 0.5 is
+   * 50%. Measured apart from maxDrawdown, so on a growing account the two can
+   * come from different falls.
+   */
   maxDrawdownPct: number;
   winRate: number;
   profitFactor: number;

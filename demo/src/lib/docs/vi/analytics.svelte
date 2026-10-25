@@ -94,15 +94,24 @@ const m = computeRiskMetrics(initialCash, equityCurve, trades, {
   riskFreeRate: 0.03,
 })
 
-m.totalReturnPct
+m.totalReturnPct   // a fraction: 0.12 is +12%
 m.cagr
 m.sharpe
 m.sortino
-m.calmar
-m.maxDrawdownPct
+m.calmar           // cagr / maxDrawdownPct
+m.maxDrawdown      // the largest fall from a running peak, in money
+m.maxDrawdownPct   // the deepest fall from a running peak, as a fraction (0.5 is 50%)
 m.winRate
 m.profitFactor
 m.expectancy`}</code></pre>
+
+<p>
+  Mọi tỉ lệ phần trăm ở đây đều là phân số: 0.12 là 12%. Hai mức drawdown được đo
+  riêng, nên với một tài khoản đang lớn dần chúng có thể đến từ hai lần sụt giảm khác nhau.
+  Đường vốn 100, 50, 100, 400, 1000, 800, 1200 có lần sụt sâu nhất là 50% (từ 100 xuống 50,
+  nên <code>maxDrawdownPct</code> là 0.5) và lần sụt lớn nhất tính bằng tiền là 200 (từ 1000
+  xuống 800, nên <code>maxDrawdown</code> là 200).
+</p>
 
 <p>
   Kết hợp <code>equityCurve</code> trong kết quả với
@@ -139,4 +148,4 @@ const mc = runMonteCarlo(10_000, result.trades, {
 mc.equityBands         // per-step P5/P25/P50/P75/P95
 mc.finalEquityPercentiles  // { p5, p25, p50, p75, p95 }
 mc.probabilityProfitable
-mc.worstMaxDrawdownPct`}</code></pre>
+mc.worstMaxDrawdownPct  // in percent (25 is 25%), not a fraction`}</code></pre>
