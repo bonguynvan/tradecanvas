@@ -84,8 +84,10 @@ The runs worth keeping are in [baselines](baselines): the first,
 measured against; [2026-10-25](baselines/2026-10-25-sonnet.md) is the same
 run after the first nine, and [its Haiku run](baselines/2026-10-25-haiku.md)
 the first with a smaller model (`--model haiku`), which takes more turns
-and reads the compiled code more, so a gap shows sooner. What the
-evals turned up so far is in [FINDINGS.md](FINDINGS.md).
+and reads the compiled code more, so a gap shows sooner;
+[a later one](baselines/2026-10-25-haiku-after-types.md) runs only the
+tasks a fix touched (`--tasks`), to see what it changed. What the evals
+turned up so far is in [FINDINGS.md](FINDINGS.md).
 
 ## A task
 
