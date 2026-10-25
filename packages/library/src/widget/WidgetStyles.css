@@ -109,12 +109,12 @@
   --tcw-green-soft: rgba(79, 174, 138, 0.12);
 
   /* The kinds of symbol in the symbol search (stock, futures, index, crypto, forex): hues as far
-   * from the accent's blue and the up and down green and red as from each other (0.12 in OKLab at
+   * from the accent's blue and the up and down green and red as from each other (0.11 in OKLab at
    * the least, where 0.02 is a step the eye just sees), so a badge is never taken for the chart's
-   * symbol, a match or a move; each readable on a tint of itself. */
+   * symbol, a match or a move; each readable on a tint of itself, on the selected row too. */
   --tcw-kind-1: #4cbedf;
   --tcw-kind-2: #e8a144;
-  --tcw-kind-3: #ca81ff;
+  --tcw-kind-3: #ca8cff;
   --tcw-kind-4: #f387c1;
   --tcw-kind-5: #a5c45d;
 

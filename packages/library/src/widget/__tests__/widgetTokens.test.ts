@@ -5,12 +5,33 @@ import { fileURLToPath } from 'node:url';
 // A Windows checkout may turn the file's line endings into CRLF.
 const css = readFileSync(fileURLToPath(new URL('../WidgetStyles.css', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
 
+/** The declarations of the first block matching `selector`. */
+function block(selector: string): string {
+  const start = css.indexOf(selector);
+  return css.slice(css.indexOf('{', start) + 1, css.indexOf('}', start));
+}
+
 /** `--tcw-*` custom properties declared in the first block matching `selector`. */
 function tokens(selector: string): Record<string, string> {
-  const start = css.indexOf(selector);
-  const block = css.slice(css.indexOf('{', start) + 1, css.indexOf('}', start));
   const out: Record<string, string> = {};
-  for (const m of block.matchAll(/(--tcw-[\w-]+):\s*(#[0-9a-f]{6})\b/gi)) out[m[1]] = m[2];
+  for (const m of block(selector).matchAll(/(--tcw-[\w-]+):\s*(#[0-9a-f]{6})\b/gi)) out[m[1]] = m[2];
+  return out;
+}
+
+/** A tint: a colour and how much of it is laid over what is under it. */
+interface Tint {
+  hex: string;
+  alpha: number;
+}
+
+/** `--tcw-*` custom properties declared as `rgba(…)` in the first block matching `selector`. */
+function tints(selector: string): Record<string, Tint> {
+  const out: Record<string, Tint> = {};
+  const rgba = /(--tcw-[\w-]+):\s*rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\s*\)/gi;
+  for (const m of block(selector).matchAll(rgba)) {
+    const hex = `#${[m[2], m[3], m[4]].map((c) => Number(c).toString(16).padStart(2, '0')).join('')}`;
+    out[m[1]] = { hex, alpha: Number(m[5]) };
+  }
   return out;
 }
 
@@ -26,8 +47,12 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const dark = tokens('.tcw-root {');
-const light = { ...dark, ...tokens(".tcw-root[data-tcw-theme='light'] {") };
+const DARK = '.tcw-root {';
+const LIGHT = ".tcw-root[data-tcw-theme='light'] {";
+const dark = tokens(DARK);
+const light = { ...dark, ...tokens(LIGHT) };
+const darkTints = tints(DARK);
+const lightTints = { ...darkTints, ...tints(LIGHT) };
 
 describe('widget colour tokens', () => {
   it.each([
@@ -61,14 +86,20 @@ describe('widget colour tokens', () => {
   });
 
   it.each([
-    ['dark', dark],
-    ['light', light],
-  ])('%s: a kind colour reads on its own tint in the symbol search', (_name, t) => {
+    ['dark', dark, darkTints],
+    ['light', light, lightTints],
+  ])('%s: a kind colour reads on its own tint in the symbol search, on the selected row too', (_name, t, tint) => {
+    const surface = t['--tcw-bg-elevated'];
+    // The row the arrow keys are on is the hover tint over the dialog's surface.
+    const hover = tint['--tcw-hover-bg'];
+    const selected = mix(hover.hex, surface, hover.alpha);
     for (let slot = 1; slot <= 5; slot++) {
       const name = `--tcw-kind-${slot}`;
       expect(t[name], name).toMatch(/^#[0-9a-f]{6}$/i);
-      // The badge is the colour at 16% over the dialog's surface, its letter the colour itself.
-      expect(contrast(t[name], mix(t[name], t['--tcw-bg-elevated'], 0.16)), name).toBeGreaterThanOrEqual(4.5);
+      // The badge is the colour at 16% over the row, its letter the colour itself.
+      for (const [row, ground] of [['a row', surface], ['the selected row', selected]]) {
+        expect(contrast(t[name], mix(t[name], ground, 0.16)), `${name} on ${row}`).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });
