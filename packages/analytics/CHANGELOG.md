@@ -1,5 +1,11 @@
 # @tradecanvas/analytics
 
+## 1.46.0
+
+### Patch Changes
+
+- @tradecanvas/commons@1.46.0
+
 ## 1.45.0
 
 ### Patch Changes
