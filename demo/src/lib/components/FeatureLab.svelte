@@ -33,6 +33,8 @@
     { id: 'capsule', name: 'Capsule' },
   ];
   let look = $state<WidgetUIPreset>('print');
+  /** The airy density on top of the look: golden bars, sans figures, spacious controls. */
+  let airy = $state(false);
   /** The renderer for scenes with a renderer picker. */
   const RENDERERS: readonly { id: 'canvas' | 'webgl'; name: string }[] = [
     { id: 'canvas', name: 'Canvas 2D' },
@@ -127,6 +129,7 @@
       slowBinance: (ms) => delayed(new lib.BinanceAdapter(), ms),
       language: current.languages ? languages.find((l) => l.code === languageCode) : undefined,
       look: current.looks ? look : undefined,
+      airy: current.looks ? airy : undefined,
     };
     if (current.looks) loadLookFonts();
     const opts = current.options(env);
@@ -260,10 +263,23 @@
   function pickLook(id: WidgetUIPreset) {
     if (id === look) return;
     look = id;
+    applyLook();
+  }
+
+  /**
+   * The airy density on or off. The scene opens again: a chart opens at its
+   * layout's slot, so only a fresh one shows how many more bars fit.
+   */
+  function toggleAiry() {
+    airy = !airy;
+    if (started) showScene(active);
+  }
+
+  function applyLook() {
     if (!widget) return;
     const t0 = performance.now();
-    widget.setUI(id);
-    pushMetric(fill(m.lab.metricLook, { name: id, ms: fmtMs(performance.now() - t0) }));
+    widget.setUI(airy ? { preset: look, density: 'airy' } : look);
+    pushMetric(fill(m.lab.metricLook, { name: airy ? `${look} · airy` : look, ms: fmtMs(performance.now() - t0) }));
   }
 
   function select(index: number) {
@@ -376,6 +392,7 @@
               onclick={() => pickLook(option.id)}
             >{option.name}</button>
           {/each}
+          <button type="button" class="lang" class:active={airy} aria-pressed={airy} onclick={toggleAiry}>Airy</button>
         </div>
       {/if}
       {#if scene.renderers}

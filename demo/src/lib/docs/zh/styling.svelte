@@ -50,6 +50,24 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>疏朗的外观</h2>
+<p>
+  <code>density: 'airy'</code> 让图表打开时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的
+  φ⁻¹（62%），图表打开时每格 φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>）。控件更宽松，坐标轴和图例中的数字使用外观的无衬线字体。
+  这就是 2.0 默认打开的外观。
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 优先于外观的设置。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
+</p>
+
 <h2>黄金比例</h2>
 <p>
   Print 的比例遵循黄金比例 φ ≈ 1.618，因此相邻的尺寸在各处都保持同样的关系：
@@ -84,7 +102,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

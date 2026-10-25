@@ -53,6 +53,25 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>Giao diện thoáng</h2>
+<p>
+  <code>density: 'airy'</code> mở chart với nhiều nến hơn trên màn hình và khoảng trống giữa chúng: thân nến là ô ×
+  φ⁻¹ (62%) ở mọi mức zoom, và chart mở ở φ⁴ ≈ 6,85 px mỗi ô (<code>barLayout: 'golden'</code>). Các nút điều khiển
+  rộng rãi, các con số trên trục và trong legend dùng font sans của giao diện. Đây là giao diện mà 2.0 sẽ mở ra.
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code> và <code>chartOptions.font</code> được ưu tiên hơn của giao diện. Khi đã có nến
+  trên màn hình, đổi layout giữ nguyên mức zoom và chỉ chia lại từng ô.
+</p>
+
 <h2>Tỉ lệ vàng</h2>
 <p>
   Print giữ các tỉ lệ của mình theo tỉ lệ vàng, φ ≈ 1.618, nên những kích thước đứng cạnh nhau liên hệ với nhau
@@ -88,7 +107,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

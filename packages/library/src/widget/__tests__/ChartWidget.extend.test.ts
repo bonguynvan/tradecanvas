@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { ChartOptions } from '@tradecanvas/commons';
+import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -46,6 +46,10 @@ class FakeChart {
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
   shapes: unknown[] = [];
   setShapes(shapes: unknown): void { this.shapes.push(shapes); }
+  barLayouts: unknown[] = [];
+  setBarLayout(layout: unknown): void { this.barLayouts.push(layout); }
+  fonts: unknown[] = [];
+  setFont(font: unknown): void { this.fonts.push(font); }
   chartTypeOptions: unknown = {};
   getChartTypeOptions(): unknown { return this.chartTypeOptions; }
   required: string[] = [];
@@ -503,6 +507,22 @@ describe('ChartWidget look', () => {
     expect(FakeChart.last.shapes).toEqual([]);
     widget.setUI('capsule');
     expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
+  });
+
+  it('gives the chart golden bars and sans figures in the airy look, and takes them back', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' } });
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: SANS_FONT_FAMILY });
+    widget.setUI('print');
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
+    expect(FakeChart.last.fonts.at(-1)).toBeNull();
+  });
+
+  it('leaves the chart the bars and the font its options give, in any look', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' }, chartOptions: { barLayout: 'classic', font: { family: 'Plex Sans' } } });
+    widget.setUI('terminal');
+    expect(FakeChart.last.barLayouts).toEqual([]);
+    expect(FakeChart.last.fonts).toEqual([]);
   });
 
   it('takes the look from its options', () => {

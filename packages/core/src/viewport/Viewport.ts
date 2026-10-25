@@ -1,15 +1,20 @@
-import type { ViewportState, Rect, DataSeries, PriceScaleMode, ScaleMargins } from '@tradecanvas/commons';
+import type { BarLayout, ViewportState, Rect, DataSeries, PriceScaleMode, ScaleMargins } from '@tradecanvas/commons';
 import { PHI, clamp, computePriceRange, fitPriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
 /**
- * Narrowest bar slot (bar + gap) in CSS pixels. Below the usual floor
- * (`minBarWidth` + the 2px gap) the chart only zooms out as far as it takes to
- * fit every loaded bar, and never past this.
+ * Narrowest bar slot (bar + gap) in CSS pixels. Below the usual floor (the
+ * slot whose body is `minBarWidth`) the chart only zooms out as far as it
+ * takes to fit every loaded bar, and never past this.
  */
 export const MIN_BAR_UNIT = 0.25;
 /** The narrowest `setMinBarUnit` allows: 50 bars a pixel. */
 export const MIN_BAR_UNIT_LIMIT = 0.02;
+
+/** A golden bar's body: this share of its slot. */
+const GOLDEN_BODY = 1 / PHI;
+/** Where a golden chart opens: φ⁴ px a slot. */
+const GOLDEN_OPENING_SLOT = PHI ** 4;
 
 /** Room above the highest high and below the lowest low: φ⁻⁵ (9%) of the scale's height. */
 export const PRICE_SCALE_MARGIN = PHI ** -5;
@@ -39,6 +44,7 @@ export class Viewport {
   private freePan = true;
   private minVisibleBars = 3;
   private minBarUnit = MIN_BAR_UNIT;
+  private barLayout: BarLayout = 'classic';
 
   constructor(
     containerWidth: number,
@@ -205,9 +211,40 @@ export class Viewport {
     this.updateVisibleRange();
   }
 
-  /** The usual narrowest slot: `minBarWidth` plus the 2px gap. */
+  /**
+   * How a bar fills its slot (see `BarLayout`). Before any bars the chart
+   * opens at the layout's own slot; over bars on screen the zoom stays and
+   * only its split into body and gap changes.
+   */
+  setBarLayout(layout: BarLayout): void {
+    const next: BarLayout = layout === 'golden' ? 'golden' : 'classic';
+    if (next === this.barLayout) return;
+    // A view at the newest bar stays there, though the other layout's limits
+    // may move the slot (golden zooms further in and out than classic).
+    const atEnd = this.dataLength > 0 && this.isAtEnd();
+    this.barLayout = next;
+    this.applyUnit(this.dataLength === 0 ? this.openingUnit() : this.state.barWidth + this.state.barSpacing);
+    this.clampUnit();
+    if (atEnd) {
+      this.state.offset = this.endOffset();
+      this.invalidate();
+    }
+    this.clampOffset();
+    this.updateVisibleRange();
+  }
+
+  getBarLayout(): BarLayout {
+    return this.barLayout;
+  }
+
+  /** The slot a chart opens at: 10 px classic (8 and a 2 px gap), φ⁴ golden. */
+  private openingUnit(): number {
+    return this.barLayout === 'golden' ? GOLDEN_OPENING_SLOT : DEFAULT_BAR_WIDTH + DEFAULT_BAR_SPACING;
+  }
+
+  /** The usual narrowest slot: where the body is `minBarWidth` (classic: and the 2px gap). */
   private floorUnit(): number {
-    return this.minBarWidth + DEFAULT_BAR_SPACING;
+    return this.barLayout === 'golden' ? this.minBarWidth / GOLDEN_BODY : this.minBarWidth + DEFAULT_BAR_SPACING;
   }
 
   /**
@@ -240,16 +277,20 @@ export class Viewport {
   }
 
   private maxUnit(): number {
-    return this.maxBarWidth + DEFAULT_BAR_SPACING;
+    return this.barLayout === 'golden' ? this.maxBarWidth / GOLDEN_BODY : this.maxBarWidth + DEFAULT_BAR_SPACING;
   }
 
   /**
-   * Split a slot into bar and gap: above the floor the gap stays 2px, below it
-   * both shrink in the floor's proportions, so the bars never turn into gaps.
+   * Split a slot into bar and gap. Golden: the body is φ⁻¹ of it, at every
+   * size. Classic: above the floor the gap stays 2px, below it both shrink
+   * in the floor's proportions, so the bars never turn into gaps.
    */
   private applyUnit(unit: number): void {
     const floor = this.floorUnit();
-    if (unit >= floor) {
+    if (this.barLayout === 'golden') {
+      this.state.barWidth = unit * GOLDEN_BODY;
+      this.state.barSpacing = unit - this.state.barWidth;
+    } else if (unit >= floor) {
       this.state.barWidth = unit - DEFAULT_BAR_SPACING;
       this.state.barSpacing = DEFAULT_BAR_SPACING;
     } else {
@@ -406,10 +447,10 @@ export class Viewport {
 
   zoom(delta: number, centerX: number): void {
     const barUnit = this.state.barWidth + this.state.barSpacing;
-    // Above the floor the bar grows or shrinks and the gap stays, as it always
-    // has; below it the whole slot scales.
+    // Classic: above the floor the bar grows or shrinks and the gap stays, as
+    // it always has; below it, and golden at every size, the whole slot scales.
     const grownBar = this.state.barWidth * (1 + delta);
-    const wanted = barUnit >= this.floorUnit() && grownBar >= this.minBarWidth
+    const wanted = this.barLayout === 'classic' && barUnit >= this.floorUnit() && grownBar >= this.minBarWidth
       ? grownBar + DEFAULT_BAR_SPACING
       : barUnit * (1 + delta);
     const newBarUnit = clamp(wanted, this.minUnit(), this.maxUnit());

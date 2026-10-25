@@ -374,6 +374,7 @@
   padding: 1px var(--tcw-space-3);
   border-radius: var(--tcw-tag-radius);
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* === Dropdown === */
@@ -598,6 +599,7 @@
   color: var(--tcw-text);
   font: inherit;
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: var(--tcw-font-size-sm);
 }
 
@@ -656,6 +658,7 @@
 .tcw-tag {
   font-size: var(--tcw-font-size-xs);
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--tcw-text-muted);
   padding: 2px 6px;
   border-radius: var(--tcw-tag-radius);
@@ -1448,6 +1451,7 @@
 .tcw-color-hex {
   font-size: var(--tcw-font-size-xs);
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--tcw-text-muted);
   min-width: 64px;
   letter-spacing: 0.01em;
@@ -1837,6 +1841,7 @@
 .tcw-watchlist-count {
   color: var(--tcw-text-muted);
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: var(--tcw-font-size-xs);
 }
 .tcw-watchlist-menu .tcw-danger {
@@ -2186,6 +2191,7 @@
   padding: 4px 8px;
   font-size: var(--tcw-font-size-xs);
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
   background: var(--tcw-bg-surface);
   border: 1px solid var(--tcw-border);
   border-radius: var(--tcw-control-radius);
@@ -4287,6 +4293,7 @@
 }
 .tcw-status-clock {
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
 }
 .tcw-status-clock:hover,
 .tcw-status-scale-btn:hover {

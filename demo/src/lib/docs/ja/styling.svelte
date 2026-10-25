@@ -53,6 +53,25 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>ゆとりのある外観</h2>
+<p>
+  <code>density: 'airy'</code> は、画面に多くのバーを並べ、その間に余白を取ってチャートを開きます。どのズームでもローソク足の実体は
+  枠の φ⁻¹（62%）で、チャートは 1 枠 φ⁴ ≈ 6.85 px で開きます（<code>barLayout: 'golden'</code>）。コントロールはゆったりし、
+  軸と凡例の数字は外観のサンセリフ書体になります。2.0 が最初に開く外観です。
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code> と <code>chartOptions.font</code> が外観の設定より優先されます。バーが表示されている間に
+  レイアウトを変えると、ズームはそのままで各枠の分け方だけが変わります。
+</p>
+
 <h2>黄金比</h2>
 <p>
   Print は比率を黄金比 φ ≈ 1.618 にそろえているので、隣り合うサイズはどこでも同じ関係になります。
@@ -87,7 +106,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

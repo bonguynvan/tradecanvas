@@ -42,7 +42,7 @@ import type {
   ExecutionConfig,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { ChartTypeOptions, DataUpdatePayload, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
@@ -515,6 +515,7 @@ export class Chart {
       options.maxBarSpacing ?? 30,
       options.rightMargin ?? 5,
     );
+    if (options.barLayout) this.viewport.setBarLayout(options.barLayout);
     this.viewport.setPanLimits({
       freePan: options.freePan ?? true,
       minVisibleBars: options.panLimits?.minVisibleBars ?? 3,
@@ -660,6 +661,7 @@ export class Chart {
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
     if (options.shapes) this.themeManager.setShape(readShapes(options.shapes));
+    if (options.font) this.themeManager.setFont(readFont(options.font));
     // Their tags in the chart's precision, locale and format.
     this.priceLines.setPriceText((p) => this.formatPrice(p));
     if (options.extendedHours === false) this.extendedHours = false;
@@ -1456,6 +1458,45 @@ export class Chart {
 
   getShapes(): ShapeConfig {
     return { ...this.themeManager.getTheme().shape };
+  }
+
+  /**
+   * The face and sizes of the chart's own text (the axes, the legend, the
+   * tags), over every theme and on top of the font set before: `{ family:
+   * SANS_FONT_FAMILY }` for proportional figures. Null goes back to each
+   * theme's own. A family that is empty or a size that isn't a number above
+   * zero is left out.
+   */
+  setFont(font: Partial<FontConfig> | null): void {
+    if (font === null) {
+      this.themeManager.setFont(null);
+    } else {
+      const read = readFont(font);
+      if (Object.keys(read).length === 0) return;
+      this.themeManager.setFont(read);
+    }
+    // The price axis is as wide as its labels: fitted again for the new face and size.
+    this.updateViewportAndRender();
+  }
+
+  /** The chart's text as drawn: the theme's font with any set by `setFont` over it. */
+  getFont(): FontConfig {
+    return { ...this.themeManager.getTheme().font };
+  }
+
+  /**
+   * How a bar fills its slot: `'golden'` (the body φ⁻¹ of the slot at every
+   * zoom) or `'classic'` (a 2 px gap). Over bars on screen the zoom stays.
+   */
+  setBarLayout(layout: BarLayout): void {
+    // The same layout again runs nothing: no pass, no events (a widget sets it on every look).
+    if ((layout !== 'golden' && layout !== 'classic') || layout === this.viewport.getBarLayout()) return;
+    this.viewport.setBarLayout(layout);
+    this.updateViewportAndRender();
+  }
+
+  getBarLayout(): BarLayout {
+    return this.viewport.getBarLayout();
   }
 
   /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
@@ -5788,6 +5829,22 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.pane ?? null) === (b.pane ?? null)
     && (a.scale ?? null) === (b.scale ?? null)
     && (a.position === undefined) === (b.position === undefined);
+}
+
+/** The longest family list `setFont` takes, characters. */
+const MAX_FONT_FAMILY = 300;
+
+/** A font the chart can draw with: a family that isn't empty, sizes above zero. */
+function readFont(font: Partial<FontConfig>): Partial<FontConfig> {
+  const out: Partial<FontConfig> = {};
+  // A list of faces, nothing a style sheet could read more into (the family also reaches CSS text).
+  const family = font.family;
+  if (typeof family === 'string' && family.trim() !== '' && family.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(family)) out.family = family;
+  for (const key of ['sizeSmall', 'sizeMedium', 'sizeLarge'] as const) {
+    const size = font[key];
+    if (typeof size === 'number' && Number.isFinite(size) && size > 0) out[key] = size;
+  }
+  return out;
 }
 
 /** Shapes the chart can draw: a corner radius from 0 to 999 px. */

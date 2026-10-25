@@ -53,6 +53,25 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>여유로운 외관</h2>
+<p>
+  <code>density: 'airy'</code>는 화면에 더 많은 봉을 띄우고 그 사이에 여백을 두어 차트를 엽니다. 어떤 확대 수준에서도 캔들 몸통은
+  칸의 φ⁻¹(62%)이고, 차트는 칸당 φ⁴ ≈ 6.85 px로 열립니다(<code>barLayout: 'golden'</code>). 컨트롤은 넉넉해지고, 축과 범례의
+  숫자는 외관의 산세리프 글꼴을 씁니다. 2.0이 처음 열 외관입니다.
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code>와 <code>chartOptions.font</code>가 외관의 설정보다 우선합니다. 화면에 봉이 있을 때
+  레이아웃을 바꾸면 확대 수준은 그대로 두고 칸만 다시 나눕니다.
+</p>
+
 <h2>황금비</h2>
 <p>
   Print는 비율을 황금비 φ ≈ 1.618에 맞추므로, 나란히 놓이는 크기들은 어디서나 같은 관계를 이룹니다.
@@ -87,7 +106,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

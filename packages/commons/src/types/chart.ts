@@ -31,6 +31,14 @@ export interface ChartTypeOptions {
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 
 /**
+ * How a bar fills its slot on the time axis. `'golden'`: the body is the
+ * slot × φ⁻¹ (62%) at every zoom, the rest a gap, and the chart opens at
+ * φ⁴ ≈ 6.85 px a slot. `'classic'`: a 2 px gap (narrower only when zoomed
+ * out to fit a long series), and 10 px a slot to open.
+ */
+export type BarLayout = 'golden' | 'classic';
+
+/**
  * Controls which features are available to the end user.
  * Developers can selectively enable/disable tools, UI elements, and interactions.
  * All features default to `true` (enabled) when not specified.
@@ -136,6 +144,12 @@ export interface ChartOptions {
   rightMargin?: number;
   minBarSpacing?: number;
   maxBarSpacing?: number;
+  /**
+   * How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every
+   * zoom (more bars on screen, air between them), or `'classic'` (the
+   * default), a 2 px gap. Change it with `chart.setBarLayout`.
+   */
+  barLayout?: BarLayout;
   /** The grid's lines: shorthand for the `grid.*` overrides. */
   grid?: GridOptions;
   /** The crosshair's mode, and its lines: shorthand for the `crosshair.*` overrides. */
@@ -224,6 +238,12 @@ export interface ChartOptions {
   highLowLines?: boolean;
   /** The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills. */
   shapes?: import('./theme.js').ShapeConfig;
+  /**
+   * The face and sizes of the chart's own text (the axes, the legend, the
+   * tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional
+   * figures. Change it with `chart.setFont`.
+   */
+  font?: Partial<import('./theme.js').FontConfig>;
   /**
    * The chart for screen readers: a summary, what is on screen after the keys
    * move it, comma and period to read the bars. On by default; labels in your

@@ -3,7 +3,7 @@
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme.
  */
-import { phiStep } from '@tradecanvas/commons';
+import { SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
 
 export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule';
 
@@ -81,9 +81,19 @@ export interface WidgetUIShadows {
   tooltip: string;
 }
 
+/**
+ * How roomy the look is: its controls' sizes, and for `'airy'` the chart too.
+ * `'airy'` is spacious controls, the figures (legend, axes) in the look's
+ * sans face and golden bars (the body φ⁻¹ of its slot), the look 2.0 opens
+ * with; `chartOptions.barLayout` and `chartOptions.font` win over it.
+ */
+export type WidgetUIDensity = 'compact' | 'comfortable' | 'spacious' | 'airy';
+
 /** The whole look, every token set. */
 export interface ResolvedWidgetUI {
   preset: WidgetUIPreset;
+  /** Always set by `resolveWidgetUI`; `'comfortable'` when left out. */
+  density?: WidgetUIDensity;
   radius: WidgetUIRadius;
   components: WidgetUIComponentRadius;
   sizes: WidgetUISizes;
@@ -109,8 +119,12 @@ export interface WidgetUITheme {
   preset?: WidgetUIPreset;
   radius?: Partial<WidgetUIRadius>;
   components?: Partial<WidgetUIComponentRadius>;
-  /** Control sizes at once: compact, comfortable (the preset's) or spacious; `sizes` win over it. */
-  density?: 'compact' | 'comfortable' | 'spacious';
+  /**
+   * Control sizes at once: compact, comfortable (the preset's) or spacious;
+   * `sizes` win over it. `'airy'`: spacious, with the chart's figures in the
+   * sans face and golden bars (see `WidgetUIDensity`).
+   */
+  density?: WidgetUIDensity;
   sizes?: Partial<WidgetUISizes>;
   font?: Partial<WidgetUIFont>;
   borders?: Partial<ResolvedWidgetUI['borders']>;
@@ -126,11 +140,11 @@ export interface WidgetUITheme {
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace";
 /** The faces every system has: the chart's figures and the widget's labels without a font to load. */
-const PRINT_SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+const PRINT_SANS = SANS_FONT_FAMILY;
 const PRINT_MONO = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
 
 type Density = 'compact' | 'spacious';
-type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset'> & {
+type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & {
   components: Partial<WidgetUIComponentRadius>;
   /** Its sizes when compact or spacious; the shared table when it has none. */
   density?: Record<Density, WidgetUISizes>;
@@ -258,6 +272,7 @@ function resolvePreset(name: WidgetUIPreset): ResolvedWidgetUI {
   return {
     ...base,
     preset: name,
+    density: 'comfortable',
     radius: { ...base.radius },
     components: componentsFrom(base.radius, base.components),
     sizes: { ...base.sizes },
@@ -316,19 +331,24 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const base = PRESETS[name];
 
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
-  const density = t.density === 'compact' || t.density === 'spacious' ? (base.density ?? DENSITY)[t.density] : base.sizes;
-  const sizes = pick(density, t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
-  const font = pick(base.font, t.font, (key, v) => {
+  const density = oneOf(t.density, ['compact', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
+  const step = density === 'airy' ? 'spacious' : density;
+  const stepSizes = step === 'compact' || step === 'spacious' ? (base.density ?? DENSITY)[step] : base.sizes;
+  const sizes = pick(stepSizes, t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
+  const picked = pick(base.font, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
     if (key === 'size') return px(v, 11, 20);
     if (key === 'weight' || key === 'strongWeight') return px(v, 100, 900);
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);
   });
+  // Airy figures read in the look's own sans face, unless its figures face is set.
+  const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: picked.family } : picked;
   // Corners the theme sets on the scale reach the parts that follow it.
   const components = pick(componentsFrom(radius, base.components), t.components, (_, v) => px(v, 0, 999));
   return {
     preset: name,
+    density,
     radius,
     components,
     sizes,

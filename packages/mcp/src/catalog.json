@@ -5727,6 +5727,15 @@
         "kind": "number"
       },
       {
+        "name": "barLayout",
+        "type": "BarLayout",
+        "doc": "How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'` (the default), a 2 px gap. Change it with `chart.setBarLayout`.",
+        "values": [
+          "golden",
+          "classic"
+        ]
+      },
+      {
         "name": "grid",
         "type": "GridOptions",
         "doc": "The grid's lines: shorthand for the `grid.*` overrides."
@@ -5847,6 +5856,11 @@
         "name": "shapes",
         "type": "ShapeConfig",
         "doc": "The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills."
+      },
+      {
+        "name": "font",
+        "type": "Partial<FontConfig>",
+        "doc": "The face and sizes of the chart's own text (the axes, the legend, the tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. Change it with `chart.setFont`."
       },
       {
         "name": "a11y",
@@ -6014,6 +6028,15 @@
         "kind": "number"
       },
       {
+        "name": "barLayout",
+        "type": "BarLayout",
+        "doc": "How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'` (the default), a 2 px gap. Change it with `chart.setBarLayout`.",
+        "values": [
+          "golden",
+          "classic"
+        ]
+      },
+      {
         "name": "grid",
         "type": "GridOptions",
         "doc": "The grid's lines: shorthand for the `grid.*` overrides."
@@ -6134,6 +6157,11 @@
         "name": "shapes",
         "type": "ShapeConfig",
         "doc": "The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills."
+      },
+      {
+        "name": "font",
+        "type": "Partial<FontConfig>",
+        "doc": "The face and sizes of the chart's own text (the axes, the legend, the tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. Change it with `chart.setFont`."
       },
       {
         "name": "a11y",
