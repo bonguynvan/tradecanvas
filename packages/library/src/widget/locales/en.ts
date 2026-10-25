@@ -59,6 +59,8 @@ export const EN_MESSAGES = {
   'toolbar.trade': 'Trade',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Open',
+  'statusBar.marketClosed': 'Closed',
   'toolbar.fullscreen': 'Fullscreen',
   'legend.show': 'Show',
   'legend.hide': 'Hide',

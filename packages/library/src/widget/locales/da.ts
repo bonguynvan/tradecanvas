@@ -58,6 +58,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Handel',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Åbent',
+  'statusBar.marketClosed': 'Lukket',
   'toolbar.fullscreen': 'Fuld skærm',
   'legend.show': 'Vis',
   'legend.hide': 'Skjul',

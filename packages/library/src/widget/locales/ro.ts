@@ -57,6 +57,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Tranzacționare',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Deschis',
+  'statusBar.marketClosed': 'Închis',
   'toolbar.fullscreen': 'Ecran complet',
   'legend.show': 'Afișare',
   'legend.hide': 'Ascundere',

@@ -1642,29 +1642,32 @@
   align-items: center;
   gap: 14px;
   margin-inline-start: auto;
-  min-width: 0;
+  /* Never narrower than what it holds, so the clock at its end stays whole: the range presets give way instead. */
+  flex: none;
   white-space: nowrap;
 }
 
-/* Narrow screens: the range presets close up. */
-@media (max-width: 640px) {
-  .tcw-range-btn {
-    padding: 4px 5px;
-  }
-}
-
-/* Range presets + go to date, bottom left */
+/* Range presets + go to date, bottom left. The bar takes the room the rest leaves and
+   clips what's past it; WidgetStatusBar.fit folds that under "more". Logical margins,
+   so right to left it keeps its gap before the right group. */
 .tcw-range-bar {
   display: flex;
   align-items: center;
   gap: 1px;
-  margin: -4px 12px -4px -8px;
+  margin-block: -4px;
+  margin-inline: -8px 12px;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
-.tcw-range-bar::-webkit-scrollbar {
+/* A narrow widget (a phone, a narrow column, a grid's cell): the range presets close up. */
+.tcw-root[data-tcw-narrow] .tcw-range-btn[data-range] {
+  padding: 4px 5px;
+}
+
+/* What the bar has folded, and "more" while nothing is. */
+.tcw-statusbar [data-tcw-folded],
+.tcw-statusbar:not(.tcw-statusbar--folded) .tcw-range-more {
   display: none;
 }
 
@@ -1696,14 +1699,19 @@
   outline-offset: -2px;
 }
 
-.tcw-range-goto {
+.tcw-range-goto,
+.tcw-range-more {
   display: inline-grid;
   place-items: center;
-  margin-inline-start: 6px;
   padding: 4px 6px;
 }
 
-.tcw-range-goto svg {
+.tcw-range-goto {
+  margin-inline-start: 6px;
+}
+
+.tcw-range-goto svg,
+.tcw-range-more svg {
   display: block;
 }
 
@@ -3675,7 +3683,10 @@
 /* --- Host sidebar buttons, status bar items, and the layer over the chart --- */
 .tcw-sidebar-host { display: flex; flex-direction: column; align-items: center; }
 .tcw-sidebar-host:empty { display: none; }
-.tcw-status-host { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Your items keep their width (the range presets fold for them), and on the left a gap
+   before the right group, whose auto margin closes up when the bar is full. */
+.tcw-status-host { display: flex; align-items: center; gap: 10px; flex: none; }
+.tcw-statusbar > .tcw-status-host { margin-inline-end: var(--tcw-space-5); }
 .tcw-status-host:empty { display: none; }
 .tcw-status-host-item { white-space: nowrap; }
 .tcw-status-host-btn {
@@ -4325,7 +4336,16 @@
 .tcw-root[data-tcw-narrow] .tcw-status-scale {
   display: none;
 }
-.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot) {
+/* The market's status in a word ("Closed"), when even with everything folded under "more"
+   the bar has no room: the full words are left to screen readers and the tooltip. */
+.tcw-status-market-short {
+  display: none;
+}
+.tcw-statusbar--short-market .tcw-status-market-short {
+  display: inline;
+}
+.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot),
+.tcw-statusbar--short-market .tcw-status-market-text {
   position: absolute;
   width: 1px;
   height: 1px;

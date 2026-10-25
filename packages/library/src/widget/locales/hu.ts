@@ -57,6 +57,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Kereskedés',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Nyitva',
+  'statusBar.marketClosed': 'Zárva',
   'toolbar.fullscreen': 'Teljes képernyő',
   'legend.show': 'Megjelenítés',
   'legend.hide': 'Elrejtés',

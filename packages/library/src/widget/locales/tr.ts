@@ -57,6 +57,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'İşlem',
   'statusBar.log': 'log',
   'statusBar.auto': 'oto',
+  'statusBar.marketOpen': 'Açık',
+  'statusBar.marketClosed': 'Kapalı',
   'toolbar.fullscreen': 'Tam ekran',
   'legend.show': 'Göster',
   'legend.hide': 'Gizle',

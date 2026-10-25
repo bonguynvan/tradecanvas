@@ -57,6 +57,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'toolbar.trade': '取引',
   'statusBar.log': '対数',
   'statusBar.auto': '自動',
+  'statusBar.marketOpen': '取引中',
+  'statusBar.marketClosed': '時間外',
   'toolbar.fullscreen': '全画面',
   'legend.show': '表示',
   'legend.hide': '非表示',

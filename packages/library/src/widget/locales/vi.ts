@@ -57,6 +57,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Giao dịch',
   'statusBar.log': 'log',
   'statusBar.auto': 'tự động',
+  'statusBar.marketOpen': 'Mở cửa',
+  'statusBar.marketClosed': 'Đóng cửa',
   'toolbar.fullscreen': 'Toàn màn hình',
   'legend.show': 'Hiện',
   'legend.hide': 'Ẩn',

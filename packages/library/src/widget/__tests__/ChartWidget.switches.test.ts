@@ -155,6 +155,15 @@ describe('ChartWidget feature switches', () => {
     expect(FakeChart.last.resizes).toBe(2);
   });
 
+  it('fits the status bar again when a switch changes what it shows', async () => {
+    const { WidgetStatusBar } = await import('../WidgetStatusBar.js');
+    make();
+    const fit = vi.spyOn(WidgetStatusBar.prototype, 'fit');
+    widget.setFeatures({ 'statusBar.range': false });
+    expect(fit).toHaveBeenCalled();
+    fit.mockRestore();
+  });
+
   it('reports every switch', () => {
     make({ features: { 'statusBar.market': false } });
     const all = widget.getFeatures();

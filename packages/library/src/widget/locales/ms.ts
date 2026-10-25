@@ -58,6 +58,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Dagangan',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Dibuka',
+  'statusBar.marketClosed': 'Ditutup',
   'toolbar.fullscreen': 'Skrin penuh',
   'legend.show': 'Tunjukkan',
   'legend.hide': 'Sembunyikan',

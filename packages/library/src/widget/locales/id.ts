@@ -57,6 +57,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Trading',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Buka',
+  'statusBar.marketClosed': 'Tutup',
   'toolbar.fullscreen': 'Layar penuh',
   'legend.show': 'Tampilkan',
   'legend.hide': 'Sembunyikan',

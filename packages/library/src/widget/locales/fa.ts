@@ -58,6 +58,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'معامله',
   'statusBar.log': 'لگ',
   'statusBar.auto': 'خودکار',
+  'statusBar.marketOpen': 'باز',
+  'statusBar.marketClosed': 'بسته',
   'toolbar.fullscreen': 'تمام‌صفحه',
   'legend.show': 'نمایش',
   'legend.hide': 'پنهان کردن',

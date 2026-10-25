@@ -2,7 +2,7 @@ import type { PriceScaleMode } from '@tradecanvas/commons';
 import type { RangePreset } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
 import { markPart } from './widgetFeatures.js';
-import { WidgetContextMenu } from './WidgetContextMenu.js';
+import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import type { StatusBarItemSpec } from './types.js';
 
 export interface StatusBarRange {
@@ -11,8 +11,30 @@ export interface StatusBarRange {
   presetLabels?: Partial<Record<RangePreset, string>>;
   groupLabel: string;
   goToLabel: string;
+  /** The name of the button that holds what the bar has folded away ("More"). */
+  moreLabel: string;
   onPreset: (preset: RangePreset) => void;
   onGoTo: () => void;
+}
+
+/** Marks a button folded under "more" (the stylesheet hides it). */
+const FOLDED_ATTR = 'data-tcw-folded';
+/** On the bar while something is folded: "more" shows. */
+const FOLDED_CLASS = 'tcw-statusbar--folded';
+/** On the bar while the market's status shows its short word. */
+const SHORT_MARKET_CLASS = 'tcw-statusbar--short-market';
+/** Widths are fractional: a range bar this much over its room still fits. */
+const FIT_SLACK_PX = 1;
+const RANGE_ICON_PX = 13;
+const GO_TO_ID = 'goto';
+const GO_TO_KEYS = 'Alt+G';
+
+/** A span of text with a class, built without markup. */
+function textSpan(className: string, text: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = className;
+  span.textContent = text;
+  return span;
 }
 
 /** The clock: the time in the display zone, and the zones to pick from. */
@@ -41,7 +63,8 @@ export interface StatusBarScale {
  * Bottom bar: range presets and "go to date" on the left (when `range` is
  * given); the market's status, the connection, the clock and the price
  * scale's switches on the right; hosts' own items after the presets and
- * before the market's status.
+ * before the market's status. What the bar has no room for folds under
+ * "more" (see `fit`).
  */
 export class WidgetStatusBar {
   private el: HTMLDivElement;
@@ -55,6 +78,14 @@ export class WidgetStatusBar {
   private scaleBtns: Partial<Record<'percent' | 'log' | 'auto', HTMLButtonElement>> | null = null;
   /** The scale as last shown: nothing to rewrite when it is the same. */
   private scaleShown = '';
+  /** The market's status as last shown: the widget asks every 30 seconds. */
+  private marketShown = '';
+  private rangeEl: HTMLDivElement | null = null;
+  private presetBtns: HTMLButtonElement[] = [];
+  private goToBtn: HTMLButtonElement | null = null;
+  private rangeMenu: WidgetContextMenu | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private fitFrame = 0;
 
   constructor(
     private readonly host: HTMLElement,
@@ -97,6 +128,88 @@ export class WidgetStatusBar {
 
     this.el.appendChild(right);
     host.appendChild(this.el);
+    this.watchWidths(right);
+  }
+
+  /**
+   * Fit again whenever the room for the range bar changes: the bar's own
+   * width, or what the groups beside it hold (the market's word, a host's
+   * item, the scale switches a narrow widget hides). They keep their width,
+   * so the range bar alone takes up the difference.
+   */
+  private watchWidths(right: HTMLElement): void {
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.scheduleFit());
+      for (const el of [this.el, right, this.hostLeft]) this.resizeObserver.observe(el);
+    }
+    // A web font arriving late changes the words' widths.
+    void document.fonts?.ready.then(() => this.scheduleFit());
+  }
+
+  /** Fit once before the next frame, however many changes came first. */
+  private scheduleFit(): void {
+    if (this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
+    this.fitFrame = requestAnimationFrame(() => {
+      this.fitFrame = 0;
+      this.fit();
+    });
+  }
+
+  /**
+   * Fit the bar to its width. The clock and the rest of the right group keep
+   * their width; when the range bar then has too little room, its presets
+   * fold under "more" one at a time, from the longest range, and go to date
+   * after them (not while the presets, and "more" with them, are switched
+   * off). Only when everything has folded and it still doesn't fit does the
+   * market's status shorten to its word ("Closed"), and what fits in the
+   * room that gives comes back.
+   */
+  fit(): void {
+    if (!this.rangeEl) return;
+    const steps = this.foldSteps();
+    const fold = (count: number) => {
+      steps.forEach((btn, i) => btn.toggleAttribute(FOLDED_ATTR, i < count));
+      this.el.classList.toggle(FOLDED_CLASS, count > 0);
+    };
+    fold(0);
+    this.el.classList.remove(SHORT_MARKET_CLASS);
+    if (this.el.clientWidth === 0 || this.rangeFits()) return;
+    let count = 0;
+    while (count < steps.length) {
+      fold(++count);
+      if (this.rangeFits()) return;
+    }
+    if (this.marketEl.hidden || this.isOff(this.marketEl)) return;
+    this.el.classList.add(SHORT_MARKET_CLASS);
+    // Back in the order they went, while they fit.
+    for (; count > 0; count--) {
+      fold(count - 1);
+      if (this.rangeFits()) continue;
+      fold(count);
+      return;
+    }
+  }
+
+  /** Whether the range bar shows all it holds: it clips, so what's past its edge is its overflow. */
+  private rangeFits(): boolean {
+    const range = this.rangeEl;
+    return !range || range.scrollWidth <= range.clientWidth + FIT_SLACK_PX;
+  }
+
+  /** What folds, in the order it folds: the presets from the longest range, then go to date. */
+  private foldSteps(): HTMLButtonElement[] {
+    // With the presets switched off "more" is too: a folded go to date would be nowhere.
+    if (this.presetBtns.length === 0 || this.isOff(this.presetBtns[0])) return [];
+    const steps = [...this.presetBtns].reverse();
+    if (this.goToBtn) steps.push(this.goToBtn);
+    return steps;
+  }
+
+  /** Whether `el` is a part of a switch that is off. */
+  private isOff(el: HTMLElement): boolean {
+    const root = this.el.closest<HTMLElement>('.tcw-root') ?? this.host;
+    const off = (root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean);
+    return (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.includes(name));
   }
 
   update(state: { connectionState: string; message: string; symbol: string; timeframe: string }): void {
@@ -128,11 +241,26 @@ export class WidgetStatusBar {
     this.scaleBtns.auto?.setAttribute('aria-pressed', String(state.auto));
   }
 
-  /** The market's status (open or closed); hidden for a market around the clock. */
-  setMarket(state: 'open' | 'closed' | 'always', text: string): void {
+  /**
+   * The market's status (open or closed); hidden for a market around the
+   * clock. `short` ("Closed") shows instead of `text` ("Market closed") on a
+   * bar out of room, which leaves `text` to screen readers and the tooltip.
+   */
+  setMarket(state: 'open' | 'closed' | 'always', text: string, short = text): void {
+    const shown = `${state}|${text}|${short}`;
+    if (shown === this.marketShown) return;
+    this.marketShown = shown;
     this.marketEl.hidden = state === 'always';
     this.marketEl.dataset.state = state;
-    this.marketEl.textContent = state === 'always' ? '' : text;
+    if (state === 'always') {
+      this.marketEl.replaceChildren();
+      this.marketEl.removeAttribute('title');
+      return;
+    }
+    this.marketEl.title = text;
+    const shortEl = textSpan('tcw-status-market-short', short);
+    shortEl.setAttribute('aria-hidden', 'true');
+    this.marketEl.replaceChildren(textSpan('tcw-status-market-text', text), shortEl);
   }
 
   /** A host's own item: text, or a button when it has `onClick`. */
@@ -162,7 +290,10 @@ export class WidgetStatusBar {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect();
+    if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.clockMenu?.destroy();
+    this.rangeMenu?.destroy();
     this.el.remove();
   }
 
@@ -178,6 +309,33 @@ export class WidgetStatusBar {
     this.clockBtn = btn;
     this.tick();
     return btn;
+  }
+
+  /** What the range bar has folded, as a menu over "more": the presets, then go to date; those switched off left out. */
+  private toggleRangeMenu(anchor: HTMLButtonElement, range: StatusBarRange): void {
+    if (this.rangeMenu?.isOpen()) {
+      this.rangeMenu.close();
+      return;
+    }
+    const listed = (btn: HTMLButtonElement) => btn.hasAttribute(FOLDED_ATTR) && !this.isOff(btn);
+    const entries: ContextMenuEntry[] = range.presets
+      .filter((_, i) => listed(this.presetBtns[i]))
+      .map((preset) => ({ id: preset, label: range.presetLabels?.[preset] ?? preset }));
+    if (this.goToBtn && listed(this.goToBtn)) {
+      if (entries.length > 0) entries.push('separator');
+      entries.push({ id: GO_TO_ID, label: range.goToLabel, icon: 'calendar', shortcut: GO_TO_KEYS });
+    }
+    if (entries.length === 0) return;
+    this.rangeMenu ??= new WidgetContextMenu(this.host, range.groupLabel);
+    const at = anchor.getBoundingClientRect();
+    const box = this.host.getBoundingClientRect();
+    this.rangeMenu.open(
+      entries,
+      at.left - box.left,
+      at.top - box.top,
+      (id) => (id === GO_TO_ID ? range.onGoTo() : range.onPreset(id as RangePreset)),
+      anchor,
+    );
   }
 
   /** The zones over the clock, the one in use ticked. */
@@ -247,18 +405,36 @@ export class WidgetStatusBar {
       btn.textContent = range.presetLabels?.[preset] ?? preset;
       btn.addEventListener('click', () => range.onPreset(preset));
       group.appendChild(btn);
+      this.presetBtns.push(btn);
     }
 
-    const goTo = document.createElement('button');
-    goTo.type = 'button';
-    goTo.className = 'tcw-range-btn tcw-range-goto';
-    goTo.dataset.role = 'goto';
+    // After the presets still shown, while any are folded; switched off with them.
+    const more = this.rangeIconBtn('tcw-range-more', 'rangeMore', 'more', range.moreLabel);
+    markPart(more, 'statusBar.range');
+    more.setAttribute('aria-haspopup', 'menu');
+    more.setAttribute('aria-expanded', 'false');
+    more.addEventListener('click', () => this.toggleRangeMenu(more, range));
+    group.appendChild(more);
+
+    const goTo = this.rangeIconBtn('tcw-range-goto', 'goto', 'calendar', range.goToLabel);
     markPart(goTo, 'goToDate', 'statusBar.goToDate');
-    goTo.title = `${range.goToLabel} (Alt+G)`;
-    goTo.setAttribute('aria-label', range.goToLabel);
-    goTo.innerHTML = createIcon('calendar', 13);
+    goTo.title = `${range.goToLabel} (${GO_TO_KEYS})`;
     goTo.addEventListener('click', range.onGoTo);
     group.appendChild(goTo);
+    this.goToBtn = goTo;
+    this.rangeEl = group;
     return group;
+  }
+
+  /** A button of the range bar that shows an icon, named `label`. */
+  private rangeIconBtn(className: string, role: string, icon: string, label: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `tcw-range-btn ${className}`;
+    btn.dataset.role = role;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = createIcon(icon, RANGE_ICON_PX);
+    return btn;
   }
 }

@@ -36,7 +36,7 @@
 
 <h2 id="mobile-app">In a phone app</h2>
 <p>
-  The chart and the widget run in any WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri, a native app's own. Below 641 px wide the widget lays itself out for a phone: the toolbar keeps the symbol, the interval, the chart type and the indicators and puts the rest under “more”; the drawing tools wait behind a button over the chart; menus open as sheets from the bottom; a grid shows one chart at a time, with a tab for each. Wider, a toolbar that doesn't fit does the same. A finger does what a mouse does.
+  The chart and the widget run in any WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri, a native app's own. Below 641 px wide the widget lays itself out for a phone: the toolbar keeps the symbol, the interval, the chart type and the indicators and puts the rest under “more”; the drawing tools wait behind a button over the chart; menus open as sheets from the bottom; a grid shows one chart at a time, with a tab for each. Wider, a toolbar that doesn't fit does the same. At any width the status bar keeps its clock whole: short of room, the range presets fold under “more”, the longest first, then go to date, and last the market's status shrinks to a word (“Closed”). A finger does what a mouse does.
 </p>
 <p>Give the page a viewport that covers the screen. The widget keeps its sheets clear of the notch and the home bar, and above the on-screen keyboard.</p>
 <pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>

@@ -57,6 +57,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toolbar.trade': '交易',
   'statusBar.log': '對數',
   'statusBar.auto': '自動',
+  'statusBar.marketOpen': '開市',
+  'statusBar.marketClosed': '休市',
   'toolbar.fullscreen': '全螢幕',
   'legend.show': '顯示',
   'legend.hide': '隱藏',

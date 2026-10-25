@@ -58,6 +58,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'تداول',
   'statusBar.log': 'لوغ',
   'statusBar.auto': 'تلقائي',
+  'statusBar.marketOpen': 'مفتوح',
+  'statusBar.marketClosed': 'مغلق',
   'toolbar.fullscreen': 'ملء الشاشة',
   'legend.show': 'إظهار',
   'legend.hide': 'إخفاء',

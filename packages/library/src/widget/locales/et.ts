@@ -58,6 +58,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Kauplemine',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Avatud',
+  'statusBar.marketClosed': 'Suletud',
   'toolbar.fullscreen': 'Täisekraan',
   'legend.show': 'Näita',
   'legend.hide': 'Peida',

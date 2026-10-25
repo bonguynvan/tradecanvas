@@ -57,6 +57,8 @@ export const PL_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Handel',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Otwarte',
+  'statusBar.marketClosed': 'Zamknięte',
   'toolbar.fullscreen': 'Pełny ekran',
   'legend.show': 'Pokaż',
   'legend.hide': 'Ukryj',

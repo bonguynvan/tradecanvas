@@ -756,6 +756,7 @@ export class ChartWidget {
       presetLabels: { All: this.t('range.all') },
       groupLabel: this.t('range.presets'),
       goToLabel: this.t('range.goTo'),
+      moreLabel: this.t('toolbar.more'),
       onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
     }, {
@@ -1525,7 +1526,12 @@ export class ChartWidget {
   private refreshMarket(): void {
     if (pageHidden()) return;
     const status = marketStatus(this.chart.getSymbolInfo(), Date.now());
-    this.statusBar?.setMarket(status.state, this.t(status.state === 'open' ? 'symbolInfo.open' : 'symbolInfo.closed'));
+    const open = status.state === 'open';
+    this.statusBar?.setMarket(
+      status.state,
+      this.t(open ? 'symbolInfo.open' : 'symbolInfo.closed'),
+      this.t(open ? 'statusBar.marketOpen' : 'statusBar.marketClosed'),
+    );
     this.refreshSymbolInfo();
   }
 
@@ -2437,6 +2443,8 @@ export class ChartWidget {
     this.toolbar?.tidy();
     this.sidebar?.tidy();
     this.syncRail();
+    // A preset, go to date or the market's word shown or hidden changes what the status bar must fit.
+    this.statusBar?.fit();
   }
 
   /**

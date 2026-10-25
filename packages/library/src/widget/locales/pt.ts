@@ -57,6 +57,8 @@ export const PT_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Operar',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Aberto',
+  'statusBar.marketClosed': 'Fechado',
   'toolbar.fullscreen': 'Tela cheia',
   'legend.show': 'Mostrar',
   'legend.hide': 'Ocultar',

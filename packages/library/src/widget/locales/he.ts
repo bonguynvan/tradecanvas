@@ -58,6 +58,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'מסחר',
   'statusBar.log': 'לוג',
   'statusBar.auto': 'אוטו',
+  'statusBar.marketOpen': 'פתוח',
+  'statusBar.marketClosed': 'סגור',
   'toolbar.fullscreen': 'מסך מלא',
   'legend.show': 'הצגה',
   'legend.hide': 'הסתרה',

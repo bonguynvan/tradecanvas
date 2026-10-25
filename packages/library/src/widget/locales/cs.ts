@@ -57,6 +57,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Obchod',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Otevřeno',
+  'statusBar.marketClosed': 'Zavřeno',
   'toolbar.fullscreen': 'Celá obrazovka',
   'legend.show': 'Zobrazit',
   'legend.hide': 'Skrýt',

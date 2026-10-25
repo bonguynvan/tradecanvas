@@ -57,6 +57,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Συναλλαγές',
   'statusBar.log': 'λογ',
   'statusBar.auto': 'αυτό',
+  'statusBar.marketOpen': 'Ανοιχτή',
+  'statusBar.marketClosed': 'Κλειστή',
   'toolbar.fullscreen': 'Πλήρης οθόνη',
   'legend.show': 'Εμφάνιση',
   'legend.hide': 'Απόκρυψη',

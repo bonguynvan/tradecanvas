@@ -57,6 +57,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'toolbar.trade': '거래',
   'statusBar.log': '로그',
   'statusBar.auto': '자동',
+  'statusBar.marketOpen': '운영 중',
+  'statusBar.marketClosed': '마감',
   'toolbar.fullscreen': '전체 화면',
   'legend.show': '표시',
   'legend.hide': '숨기기',

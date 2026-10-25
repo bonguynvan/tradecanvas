@@ -57,6 +57,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Торговля',
   'statusBar.log': 'лог',
   'statusBar.auto': 'авто',
+  'statusBar.marketOpen': 'Открыт',
+  'statusBar.marketClosed': 'Закрыт',
   'toolbar.fullscreen': 'Во весь экран',
   'legend.show': 'Показать',
   'legend.hide': 'Скрыть',

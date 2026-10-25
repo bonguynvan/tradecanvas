@@ -57,6 +57,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'เทรด',
   'statusBar.log': 'ล็อก',
   'statusBar.auto': 'อัตโนมัติ',
+  'statusBar.marketOpen': 'เปิด',
+  'statusBar.marketClosed': 'ปิด',
   'toolbar.fullscreen': 'เต็มหน้าจอ',
   'legend.show': 'แสดง',
   'legend.hide': 'ซ่อน',

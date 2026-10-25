@@ -57,6 +57,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Handel',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Öppen',
+  'statusBar.marketClosed': 'Stängd',
   'toolbar.fullscreen': 'Helskärm',
   'legend.show': 'Visa',
   'legend.hide': 'Dölj',

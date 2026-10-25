@@ -58,6 +58,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'toolbar.trade': 'Handel',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
+  'statusBar.marketOpen': 'Åpent',
+  'statusBar.marketClosed': 'Stengt',
   'toolbar.fullscreen': 'Fullskjerm',
   'legend.show': 'Vis',
   'legend.hide': 'Skjul',
