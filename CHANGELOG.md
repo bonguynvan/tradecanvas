@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.49.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.31.
+
 ### What the types say
 
 What coding agents still read the compiled code for, in the evals after the last fixes.
