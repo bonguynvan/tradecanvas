@@ -135,6 +135,13 @@ chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
   escalones en cada límite y nunca se redibuja.
 </p>
 
+<p>
+  <code>volumeProfile</code> dibuja una fila por franja de precio desde el borde izquierdo del gráfico,
+  tan larga como el volumen negociado en ella. Las filas son translúcidas, así que la leyenda y las velas
+  que quedan debajo se siguen leyendo; dale una <code>opacity</code> menor con
+  <code>updateIndicatorStyle</code> para atenuarlo más.
+</p>
+
 <h2>En un panel propio ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Nombre</th><th>Parámetros predeterminados</th><th>Líneas</th><th>Niveles</th></tr></thead>

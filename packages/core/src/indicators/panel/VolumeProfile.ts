@@ -1,8 +1,15 @@
 import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import { TC_PALETTE } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { priceToYMapper } from '../../viewport/ScaleMapping.js';
+import { PROFILE_ROW_ALPHA } from '../../charts/VolumeProfileRenderer.js';
+
+/** The busiest row's width, as a share of the plot's width. */
+const MAX_WIDTH_SHARE = 0.3;
+/** A row with more than this share of the busiest row's volume takes the second colour. */
+const HIGH_VOLUME_SHARE = 0.7;
 
 export class VolumeProfileIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -55,19 +62,25 @@ export class VolumeProfileIndicator extends IndicatorBase {
     if (!meta || meta.maxVolume === 0) return;
 
     const { minPrice, rows, rowHeight, bins, maxVolume } = meta;
-    const maxBarWidth = chartRect.width * 0.3;
+    const maxBarWidth = chartRect.width * MAX_WIDTH_SHARE;
     const toY = priceToYMapper(viewport);
+    const color = style.colors[0] ?? TC_PALETTE.blue;
+    const highColor = style.colors[1] ?? TC_PALETTE.amber;
 
+    ctx.save();
+    // The rows sit at the left of the plot, under the legend and over the
+    // candles, so they are see-through for both to read; the colours the
+    // chart hands out are opaque. The busiest rows stand out by colour alone.
+    ctx.globalAlpha = PROFILE_ROW_ALPHA * style.opacity;
     for (let i = 0; i < rows; i++) {
+      const width = (bins[i] / maxVolume) * maxBarWidth;
+      if (width <= 0) continue;
       // Each row covers its own price band, wherever the scale puts it.
       const yLow = toY(minPrice + i * rowHeight);
       const yHigh = toY(minPrice + (i + 1) * rowHeight);
-      const width = (bins[i] / maxVolume) * maxBarWidth;
-
-      ctx.fillStyle = bins[i] > maxVolume * 0.7
-        ? (style.colors[1] ?? 'rgba(242, 169, 59, 0.5)')
-        : (style.colors[0] ?? 'rgba(76, 141, 255, 0.3)');
+      ctx.fillStyle = bins[i] > maxVolume * HIGH_VOLUME_SHARE ? highColor : color;
       ctx.fillRect(chartRect.x, Math.min(yLow, yHigh), width, Math.max(Math.abs(yLow - yHigh) - 1, 1));
     }
+    ctx.restore();
   }
 }

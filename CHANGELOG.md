@@ -5,6 +5,7 @@
 ### What a full audit of the widget found
 
 - **A horizontal line's and a horizontal ray's price label is whole again.** It took its alignment from the text drawn before it, so after a redraw without a pane indicator, or beside a Gann box or a measure, only its last character showed at the plot's left edge. Each drawing now renders in a canvas state of its own, starting left-aligned on the alphabetic baseline, so a drawing plugin a host registers cannot shift the next drawing's text either.
+- **The Volume Profile indicator's rows are see-through.** They were solid blocks over the left of the price pane and hid the legend (the OHLC and volume row, the other indicators' values) and the candles under them. They stay where they were, at the strength of the chart's own volume profile (0.32), the busiest rows marked by colour alone; empty price bands draw nothing, and the indicator follows its style's `opacity`.
 
 ### An airy look
 

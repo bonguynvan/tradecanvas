@@ -2,6 +2,13 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
 /**
+ * How strongly a volume profile's rows show. Faint enough that the candles,
+ * and the legend drawn over the plot, still read through them; the chart's
+ * profile and the Volume Profile indicator share it so the two look alike.
+ */
+export const PROFILE_ROW_ALPHA = 0.32;
+
+/**
  * Volume Profile — horizontal histogram of traded volume bucketed by price.
  *
  * Distributes each bar's volume across the price range it covered (low → high)
@@ -24,7 +31,7 @@ export class VolumeProfileRenderer {
   /** Profile width as a fraction of chart width. 0.18 ≈ 18%. */
   private widthRatio = 0.18;
   /** Opacity of the histogram bars. */
-  private opacity = 0.32;
+  private opacity = PROFILE_ROW_ALPHA;
   /** Highlight the highest-volume bucket (point of control). */
   private highlightPoC = true;
 

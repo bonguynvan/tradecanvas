@@ -13,9 +13,10 @@ export interface RecordedText {
   color: unknown;
 }
 
-/** A fill as drawn: its colour and rectangle. */
+/** A fill as drawn: its colour, strength and rectangle. */
 export interface RecordedFill {
   color: unknown;
+  alpha: number;
   rect: [number, number, number, number];
 }
 
@@ -52,7 +53,7 @@ export function strokeRecorder() {
       strokes.push({ color: state.strokeStyle, width: state.lineWidth as number, dash: [...dash], alpha: state.globalAlpha as number, segments: [...segments] });
     },
     fillText: (text: string) => { texts.push({ text, color: state.fillStyle }); },
-    fillRect: (x: number, y: number, w: number, h: number) => { fills.push({ color: state.fillStyle, rect: [x, y, w, h] }); },
+    fillRect: (x: number, y: number, w: number, h: number) => { fills.push({ color: state.fillStyle, alpha: state.globalAlpha as number, rect: [x, y, w, h] }); },
     fill: () => { pathFills.push({ color: state.fillStyle, alpha: state.globalAlpha as number }); },
     measureText: (t: string) => ({ width: String(t).length * 6 }),
     getTransform: () => ({ a: 1, d: 1 }),

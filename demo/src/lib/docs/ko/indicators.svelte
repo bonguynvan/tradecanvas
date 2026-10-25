@@ -123,6 +123,12 @@ chart.setIndicatorIntervals(ema, null)  // 다시 모든 시간 단위에 표시
   각 경계에서 계단식으로 바뀌며, 지나간 값이 다시 그려지지(repaint) 않습니다.
 </p>
 
+<p>
+  <code>volumeProfile</code>은 가격대마다 한 줄을 플롯 왼쪽 가장자리부터, 그 가격대에서 거래된 거래량만큼의 길이로 그립니다.
+  줄은 반투명하므로 아래에 있는 범례와 캔들도 그대로 읽힙니다. <code>updateIndicatorStyle</code>로
+  <code>opacity</code>를 낮추면 더 흐리게 할 수 있습니다.
+</p>
+
 <h2>별도 패널 ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>이름</th><th>기본 파라미터</th><th>선</th><th>레벨</th></tr></thead>

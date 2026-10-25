@@ -128,6 +128,12 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
   đổi bậc tại mỗi ranh giới và không bao giờ vẽ lại (repaint).
 </p>
 
+<p>
+  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng từ mép trái vùng vẽ, dài theo khối lượng đã khớp ở vùng đó.
+  Các hàng trong mờ nên chú giải và nến nằm bên dưới vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng
+  <code>updateIndicatorStyle</code> để làm chỉ báo mờ thêm.
+</p>
+
 <h2>Trong bảng riêng ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Tên</th><th>Tham số mặc định</th><th>Đường</th><th>Mức</th></tr></thead>

@@ -126,6 +126,12 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
   steps at each boundary and never repaints.
 </p>
 
+<p>
+  <code>volumeProfile</code> draws one row per price band from the left edge of the plot, as long as the
+  volume traded there. The rows are see-through, so the legend and the candles under them stay readable;
+  give the indicator a lower <code>opacity</code> with <code>updateIndicatorStyle</code> to fade it further.
+</p>
+
 <h2>In a pane of their own ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Name</th><th>Default params</th><th>Lines</th><th>Levels</th></tr></thead>

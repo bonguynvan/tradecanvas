@@ -118,6 +118,12 @@ chart.setIndicatorIntervals(ema, null)  // 恢复为全部周期`}</code></pre>
   它只对更高周期<em>已完成</em>的收盘价求平均，因此会在每个周期边界处呈阶梯状变化，且永不重绘。
 </p>
 
+<p>
+  <code>volumeProfile</code> 从绘图区左边缘为每个价格区间画一行，长度取决于该区间的成交量。
+  这些行是半透明的，下面的图例和K线仍清晰可读；用 <code>updateIndicatorStyle</code> 设置更低的
+  <code>opacity</code> 可让它更淡。
+</p>
+
 <h2>副图指标（{panes.length}）</h2>
 <table>
   <thead><tr><th>id</th><th>名称</th><th>默认参数</th><th>线</th><th>水平线</th></tr></thead>

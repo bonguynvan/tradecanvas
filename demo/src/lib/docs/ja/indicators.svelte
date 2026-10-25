@@ -123,6 +123,12 @@ chart.setIndicatorIntervals(ema, null)  // ふたたびすべての時間足に�
   階段状に変化し、リペイントすることはありません。
 </p>
 
+<p>
+  <code>volumeProfile</code> は価格帯ごとに 1 行を、描画領域の左端からその価格帯の出来高に応じた長さで描きます。
+  行は半透明なので、下にある凡例やローソク足も読み取れます。<code>updateIndicatorStyle</code> で
+  <code>opacity</code> を下げると、さらに薄くできます。
+</p>
+
 <h2>独自のペインに表示 ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>名前</th><th>既定のパラメーター</th><th>ライン</th><th>レベル</th></tr></thead>
