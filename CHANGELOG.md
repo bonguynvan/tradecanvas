@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.50.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.33.
+
 ### An airy look
 
 The look 2.0 will open with, to choose now: more bars on screen, with air between them, and lighter figures.
