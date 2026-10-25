@@ -33,25 +33,30 @@ function sanitizeBar(bar: OHLCBar): OHLCBar {
   };
 }
 
+/**
+ * `time` in the unit of `series`. A series has one unit, read off its newest
+ * bar; a bar or tick arriving in the other (a stream in milliseconds on a
+ * series in seconds) is converted, or the series would read as that unit and
+ * date every other bar wrong. A time on its own tells its unit by its size
+ * (milliseconds from 1973 on).
+ */
+export function timeInUnitOf(series: readonly { time: number }[], time: number): number {
+  if (series.length === 0) return time;
+  const ms = normalizeBarTime(time);
+  return barTimeUnit(series) === 1 ? ms : ms / 1000;
+}
+
+/** A bar or tick with its time in the unit of `series`: itself when it is already. */
+export function withTimeOf<T extends { time: number }>(series: readonly { time: number }[], item: T): T {
+  const time = timeInUnitOf(series, item.time);
+  return time === item.time ? item : { ...item, time };
+}
+
 export class DataManager {
   private data: DataSeries = [];
 
-  /**
-   * `time` in the series' unit. A series has one unit, read off its newest
-   * bar; a bar or tick arriving in the other (a stream in milliseconds on a
-   * series in seconds) is converted, or the series would read as that unit
-   * and date every other bar wrong. A time on its own tells its unit by its
-   * size (milliseconds from 1973 on).
-   */
-  private inSeriesUnit(time: number): number {
-    if (this.data.length === 0) return time;
-    const ms = normalizeBarTime(time);
-    return barTimeUnit(this.data) === 1 ? ms : ms / 1000;
-  }
-
   private withSeriesTime<T extends { time: number }>(item: T): T {
-    const time = this.inSeriesUnit(item.time);
-    return time === item.time ? item : { ...item, time };
+    return withTimeOf(this.data, item);
   }
 
   getData(): DataSeries {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import { mergeBar, type OHLCBar } from '@tradecanvas/commons';
 import { DataManager } from '../DataManager.js';
 
 const bar = (time: number, o: number, h: number, l: number, c: number, volume?: number): OHLCBar =>
@@ -44,6 +44,17 @@ describe('DataManager.setData', () => {
       bar(5, 10, 12, 9, 11, 1),
     ]);
     expect(dm.getData().map((b) => b.time)).toEqual([1, 5]);
+  });
+
+  it('keeps the forming bar at its own time when a later trade goes into it', () => {
+    const dm = new DataManager();
+    dm.setData([bar(60, 10, 12, 9, 11, 5)]);
+    dm.updateLastBarFromTick({ price: 13, volume: 2, time: 75 });
+    expect(dm.getData()).toEqual([bar(60, 10, 13, 9, 13, 7)]);
+  });
+
+  it('merges a trade into a bar as mergeBar, the bar keeping its time', () => {
+    expect(mergeBar(bar(60, 10, 12, 9, 11, 5), { price: 8, volume: 1, time: 90 })).toEqual(bar(60, 10, 12, 8, 8, 6));
   });
 
   it('never mutates shared bars on later updates', () => {

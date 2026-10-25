@@ -164,9 +164,11 @@ export interface IndicatorStyleConfig {
   plots?: Record<string, IndicatorPlotStyle>;
 }
 
+/** An indicator's values: by bar (`series`) and by bar time (`values`). */
 export interface IndicatorOutput {
+  /** Its value at each bar it has one for, by the bar's time. */
   values: Map<number, IndicatorValue>;
-  /** Array indexed by bar position — fast O(1) lookup, no sorting needed on render. */
+  /** Its value at bar `i` of the chart's bars, null before it has one. */
   series?: (IndicatorValue | null)[];
   meta?: Record<string, unknown>;
 }

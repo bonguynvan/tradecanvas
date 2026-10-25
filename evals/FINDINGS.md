@@ -163,3 +163,19 @@ passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
     - what `widget.setSymbol` does without an adapter (20);
     - the tick `updateLastBarFromTick` takes (02);
     - `smaCross`'s inputs (22).
+
+## From Haiku on the fixed tasks (2026-10-25)
+
+[The run](baselines/2026-10-25-haiku-after-types.md) of the eight tasks
+findings 10 to 13 touched: without the skill, 5 runs of 16 read the
+compiled code, against 11.
+
+15. **Two returns and inputs the types left unsaid.** `getIndicatorOutput`
+    had no doc comment, and `IndicatorOutput.series` said only "indexed by
+    bar position": the agents read the compiled code for what its entries
+    hold (task 04). `replayStart`'s `startIndex` had no note on whether the
+    bars before it show (task 13).
+    *Fixed (Unreleased):* `getIndicatorOutput` says `series[i]` is the
+    value at bar `i`, keyed by the indicator's lines, with an example;
+    `replayStart` says `startIndex` is the first bar it reveals, and how
+    `interval` and `speed` pace it.

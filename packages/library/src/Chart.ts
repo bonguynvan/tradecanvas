@@ -44,7 +44,7 @@ import type {
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, DataUpdatePayload, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
@@ -122,7 +122,8 @@ import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPa
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
-import { DataManager, isValidBar } from './DataManager.js';
+import { isValidBar } from './DataManager.js';
+import { SeriesStore, isWholeBar } from './SeriesStore.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { startOverrides } from './style/styleOptions.js';
@@ -186,7 +187,8 @@ export class Chart {
 
   private engine: RenderEngine;
   private viewport: Viewport;
-  private dataManager: DataManager;
+  /** The bars: those shown, the whole series while some hours are hidden, the live one during a replay. */
+  private readonly series = new SeriesStore((bars) => this.sessionKeep(bars));
   private themeManager: ThemeManager;
   private layoutManager: LayoutManager;
   private pluginManager: PluginManager;
@@ -275,12 +277,11 @@ export class Chart {
   /** True while `replaySeek` runs: its bar is a jump, not a replay step. */
   private replaySeeking = false;
   /**
-   * While a replay runs, the live series keeps moving here — stream and
-   * host updates land in `live` instead of the replayed slice — and comes
-   * back on `replayStop()`. `price` is the latest live tick.
+   * While a replay runs. The live series keeps moving aside in the series
+   * store — stream and host updates land there instead of the replayed
+   * slice — and comes back on `replayStop()`. `price` is the latest live tick.
    */
   private replaySession: {
-    live: DataManager;
     price: { price: number; previousClose?: number } | null;
     /** The latest replayed time a paper account has been given (it only goes forward). */
     fedTime: number | null;
@@ -316,8 +317,6 @@ export class Chart {
   private extendedHours = true;
   /** A replay being restarted (or the chart going): its stop is not reported. */
   private replayRestarting = false;
-  /** While they are hidden: the whole series, theirs included (the data manager has the rest). */
-  private fullSeries: OHLCBar[] | null = null;
   /** Symbols asked for (`symbolSeriesRequest`) and not given yet. */
   private requestedSymbols = new Set<string>();
   private gridRenderer: GridRenderer;
@@ -433,9 +432,8 @@ export class Chart {
     container.style.webkitUserSelect = 'none';
 
     // Initialize managers
-    this.dataManager = new DataManager();
     this.history = new HistoryPager({
-      oldestTime: () => this.dataManager.getData()[0]?.time ?? null,
+      oldestTime: () => this.series.bars()[0]?.time ?? null,
       prepend: (bars) => this.prependBars(bars),
       emit: (payload) => this.eventBus.emit('historyLoad', payload),
     });
@@ -488,7 +486,7 @@ export class Chart {
       if (action.type === 'custom') action.custom?.[direction]();
       else this.applyIndicatorStep(action, direction);
     });
-    this.drawingManager.setDataGetter(() => this.dataManager.getData());
+    this.drawingManager.setDataGetter(() => this.series.bars());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
     if (options.crosshair?.mode === 'magnet' && this.features.drawingMagnet) {
@@ -771,7 +769,7 @@ export class Chart {
     // Signal markers
     this.signalMarkerManager = new SignalMarkerManager();
     this.signalMarkerManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
-    this.signalMarkerManager.setDataGetter(() => this.dataManager.getData());
+    this.signalMarkerManager.setDataGetter(() => this.series.bars());
     this.signalMarkerManager.on('added', (m) => {
       this.eventBus.emit('signalMarkerAdd' as ChartEventType, { id: m.id, source: m.source, direction: m.direction });
     });
@@ -782,7 +780,7 @@ export class Chart {
     // Trade zones
     this.tradeZoneManager = new TradeZoneManager();
     this.tradeZoneManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
-    this.tradeZoneManager.setDataGetter(() => this.dataManager.getData());
+    this.tradeZoneManager.setDataGetter(() => this.series.bars());
     this.tradeZoneManager.on('added', (z) => {
       this.eventBus.emit('tradeZoneAdd' as ChartEventType, { id: z.id, direction: z.direction });
     });
@@ -943,7 +941,7 @@ export class Chart {
       }
       this.pinnedTooltip.reposition(
         this.viewport.getState(),
-        this.dataManager.getData()[idx] ?? null,
+        this.series.bars()[idx] ?? null,
         idx,
         this.themeManager.getTheme(),
       );
@@ -1085,8 +1083,8 @@ export class Chart {
     this.snapshotKey = null;
     this.endReplaySession();
     this.history.reset();
-    this.dataManager.setData(this.regularOnly(data));
-    this.crosshairHandler.setData(this.dataManager.getData());
+    this.series.load(data);
+    this.crosshairHandler.setData(this.series.bars());
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
     // A full data replace means a new series (symbol/timeframe switch, not
@@ -1098,7 +1096,7 @@ export class Chart {
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     // The bars kept: a bar the chart can't take is left out.
-    const kept = this.dataManager.getData();
+    const kept = this.series.bars();
     const lastKept = kept[kept.length - 1];
     if (!restoring) {
       this.alertManager.clearLastValues();
@@ -1120,28 +1118,16 @@ export class Chart {
    */
   prependBars(bars: OHLCBar[]): number {
     if (this.replaySession) return 0;
-    // Hidden extended hours: the older bars all go to the whole series, the
-    // regular ones on the chart too; the page counts as loaded either way.
-    let taken: number | null = null;
-    if (this.fullSeries) {
-      const first = this.fullSeries[0]?.time;
-      const seen = new Set<number>();
-      const older = bars
-        .filter((b) => isWholeBar(b) && (first === undefined || b.time < first) && !seen.has(b.time) && seen.add(b.time))
-        .sort((a, b) => a.time - b.time);
-      this.fullSeries = [...older, ...this.fullSeries];
-      const keep = this.sessionKeep(this.fullSeries);
-      taken = older.length;
-      bars = keep ? older.filter((b) => keep(b.time)) : older;
-    }
     // The bar at the left edge, by time: Renko bricks and the like are rebuilt
     // from the whole series, so counting what was added would not find it.
     const shown = this.getDisplayData();
     const leftIndex = Math.max(0, Math.min(shown.length - 1, Math.floor(this.viewport.getState().visibleRange.from)));
     const leftTime = shown[leftIndex]?.time;
-    const added = this.dataManager.prependBars(bars);
-    if (added === 0) return taken ?? 0;
-    const data = this.dataManager.getData();
+    // Hidden extended hours: the older bars all go to the whole series, the
+    // regular ones on the chart too; the page counts as loaded either way.
+    const { added, taken } = this.series.prepend(bars);
+    if (added === 0) return taken;
+    const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
@@ -1154,7 +1140,7 @@ export class Chart {
       this.viewport.prependBars(now - leftIndex);
     }
     this.updateViewportAndRender();
-    return taken ?? added;
+    return taken;
   }
 
   /**
@@ -1162,19 +1148,13 @@ export class Chart {
    * the older bars paged in and the view, replace the rest.
    */
   private mergeSnapshot(bars: OHLCBar[]): void {
-    const data = this.fullSeries ?? this.dataManager.getData();
-    const first = bars[0]?.time;
-    let keep = 0;
-    while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
-    // Merge only when the snapshot reaches back over the old bars: after a
-    // longer outage it starts later, and joining them would hide a gap.
-    if (keep === 0 || keep === data.length) {
+    // The viewport learns the new length when it is fitted, below.
+    const follow = this.viewport.isAtEnd();
+    if (!this.series.mergeSnapshot(bars)) {
       this.setData(bars);
       return;
     }
-    const follow = this.viewport.isAtEnd();
-    this.dataManager.setData(this.regularOnly(data.slice(0, keep).concat(bars)));
-    const merged = this.dataManager.getData();
+    const merged = this.series.bars();
     this.crosshairHandler.setData(merged);
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
@@ -1264,22 +1244,19 @@ export class Chart {
    */
   appendBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
-    if (this.replaySession) {
-      this.replaySession.live.appendBar(bar);
+    const write = this.series.append(bar);
+    // Before anything reads the bars shown: the price follows on the bars as they are now.
+    if (write.refiltered) this.displayDataCache = null;
+    if (write.to !== 'shown') {
       this.takeLivePrice(bar.close);
-      return;
-    }
-    if (!this.takeBar(bar, 'append')) {
-      this.takeLivePrice(bar.close);
-      this.scheduleRender();
+      if (write.to === 'hidden') this.scheduleRender();
       return;
     }
     // Follow the live edge only if the view is already there — browsing
     // history shouldn't be yanked back to the end on every new bar.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
-    const before = this.dataManager.getLength();
-    this.dataManager.appendBar(bar);
-    const data = this.dataManager.getData();
+    const before = write.before;
+    const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
     // Re-finalise the bar that just closed (its last tick may differ from the
@@ -1301,23 +1278,18 @@ export class Chart {
     bars = bars.filter(isValidBar);
     if (bars.length === 0) return;
     const price = bars[bars.length - 1].close;
-    if (this.replaySession) {
-      for (const bar of bars) this.replaySession.live.appendBar(bar);
+    const write = this.series.appendMany(bars);
+    if (write.refiltered) this.displayDataCache = null;
+    if (write.shown === 0) {
       this.takeLivePrice(price);
-      return;
-    }
-    const shown = bars.filter((bar) => this.takeBar(bar, 'append'));
-    if (shown.length === 0) {
-      this.takeLivePrice(price);
-      this.scheduleRender();
+      if (!write.aside) this.scheduleRender();
       return;
     }
     // As `appendBar`: the live edge only while the view is there and auto-scroll is on.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
-    const before = this.dataManager.getLength();
-    for (const bar of shown) this.dataManager.appendBar(bar);
+    const before = write.before;
     this.displayDataCache = null;
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     this.recalcIndicatorsFrom(data, before - 1);
     this.crosshairHandler.setData(data);
     this.currentPriceLine.setPrice(price);
@@ -1334,17 +1306,13 @@ export class Chart {
    */
   updateLastBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
-    if (this.replaySession) {
-      this.replaySession.live.updateLastBar(bar);
+    const write = this.series.updateLast(bar);
+    if (write.refiltered) this.displayDataCache = null;
+    if (write.to !== 'shown') {
       this.takeLivePrice(bar.close);
+      if (write.to === 'hidden') this.scheduleRender();
       return;
     }
-    if (!this.takeBar(bar, 'update')) {
-      this.takeLivePrice(bar.close);
-      this.scheduleRender();
-      return;
-    }
-    this.dataManager.updateLastBar(bar);
     this.currentPriceLine.setPrice(bar.close);
     // For non-transform chart types, the displayDataCache still points to the
     // same raw array (mutated in place), so no need to invalidate.
@@ -1356,7 +1324,7 @@ export class Chart {
     }
     // Keep indicator lines in sync with the forming bar. Without this, panel
     // + overlay indicators freeze until bar close. Only the last bar changed.
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
     // After the indicators: an alert on a line compares with its value at this bar.
     this.followLivePrice(bar.close);
@@ -1367,30 +1335,20 @@ export class Chart {
   updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
     if (!Number.isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && !(Number.isFinite(tick.volume) && tick.volume >= 0)) return;
-    if (this.replaySession) {
-      this.replaySession.live.updateLastBarFromTick(tick);
-      this.takeLivePrice(tick.price);
-      return;
-    }
     // A tick outside regular hours, while they are hidden, moves the price line and what follows the price, not a bar.
-    const keep = this.fullSeries ? this.sessionKeep(this.fullSeries) : null;
-    if (keep && !keep(tick.time)) {
+    const write = this.series.mergeTick(tick);
+    if (write.to !== 'shown') {
       this.takeLivePrice(tick.price);
-      this.scheduleRender();
+      if (write.to === 'hidden') this.scheduleRender();
       return;
     }
-    this.dataManager.updateLastBarFromTick(tick);
     this.currentPriceLine.setPrice(tick.price);
-    // While extended hours are hidden, the whole series keeps the same bar.
-    const full = this.fullSeries;
-    const merged = this.dataManager.getData()[this.dataManager.getLength() - 1];
-    if (full && merged && full.length > 0 && full[full.length - 1].time === merged.time) full[full.length - 1] = merged;
     if (this.options.chartType !== 'candlestick' && this.options.chartType !== 'line'
         && this.options.chartType !== 'area' && this.options.chartType !== 'bar'
         && this.options.chartType !== 'hollowCandle') {
       this.displayDataCache = null;
     }
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
     this.followLivePrice(tick.price);
     this.scheduleRender();
@@ -1465,60 +1423,10 @@ export class Chart {
     return this.extendedHours ? null : regularHoursFilter(this.symbolInfo, data);
   }
 
-  /** The bars of `all` the chart shows (no state kept). */
-  private shownBars(all: OHLCBar[]): OHLCBar[] {
-    const keep = this.sessionKeep(all);
-    return keep ? all.filter((b) => keep(b.time)) : all.slice();
-  }
-
-  /** The bars of `all` the chart shows; while some are hidden, `all` is kept as the whole series. */
-  private regularOnly(all: OHLCBar[]): OHLCBar[] {
-    const keep = this.sessionKeep(all);
-    this.fullSeries = keep ? all.slice() : null;
-    return keep ? all.filter((b) => keep(b.time)) : all;
-  }
-
-  /** A new or updated bar into the whole series (while one is kept): whether the chart shows it. */
-  /** A stream bar onto the bars shown: the last one again or a new one after it; false for an older one. */
-  private placeStreamBar(bar: OHLCBar): boolean {
-    const how = barPlacement(this.dataManager.getData(), bar);
-    if (how === 'stale') return false;
-    if (how === 'append') this.dataManager.appendBar(bar);
-    else this.dataManager.updateLastBar(bar);
-    return true;
-  }
-
-  private takeBar(bar: OHLCBar, how: 'append' | 'update'): boolean {
-    // Hidden hours with no whole series yet (too few bars to tell the interval): start one now if it can.
-    if (!this.fullSeries && !this.extendedHours && !this.replaySession) {
-      const data = this.dataManager.getData();
-      // The interval is told by the last bars: no need to copy the rest.
-      const tail = data.slice(-12);
-      const all = how === 'append' || tail.length === 0 ? [...tail, bar] : [...tail.slice(0, -1), bar];
-      if (this.sessionKeep(all)) {
-        this.fullSeries = data.slice();
-        const keep = this.sessionKeep(this.fullSeries.length > 1 ? this.fullSeries : all);
-        if (keep && data.some((b) => !keep(b.time))) {
-          this.dataManager.setData(data.filter((b) => keep(b.time)));
-          this.displayDataCache = null;
-        }
-      }
-    }
-    const full = this.fullSeries;
-    if (!full) return true;
-    if (how === 'append' || full.length === 0) full.push(bar);
-    else full[full.length - 1] = bar;
-    const keep = this.sessionKeep(full);
-    return !keep || keep(bar.time);
-  }
-
   /** The bars shown again after the extended hours or the symbol's hours changed. */
   private reapplyExtendedHours(): void {
-    if (this.replaySession) return; // the replay's end brings the series back through the filter
-    const all = this.fullSeries ?? this.dataManager.getData().slice();
-    if (!this.fullSeries && !this.sessionKeep(all)) return; // nothing hidden before or now
-    this.dataManager.setData(this.regularOnly(all));
-    const data = this.dataManager.getData();
+    if (!this.series.refilter()) return;
+    const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
     this.sessionBreaks.invalidateCache();
@@ -1613,7 +1521,7 @@ export class Chart {
     if (!this.isIndicatorAllowed(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.dataManager.getData(), {
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.series.bars(), {
       ...(pane ? { pane } : {}),
       ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
       ...(options.instanceId ? { instanceId: options.instanceId } : {}),
@@ -1639,7 +1547,7 @@ export class Chart {
     symbol = symbol.trim();
     this.symbolSeries.set(symbol, bars);
     this.requestedSymbols.delete(symbol);
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     let changed = false;
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       if (!SYMBOL_INDICATOR_IDS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
@@ -1698,7 +1606,7 @@ export class Chart {
     const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
     const name = descriptor ? sourceParam(descriptor) : null;
     const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
-    this.indicatorEngine.updateIndicator(instanceId, params, this.dataManager.getData());
+    this.indicatorEngine.updateIndicator(instanceId, params, this.series.bars());
     this.announceIndicatorUpdate(0);
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
@@ -1927,6 +1835,19 @@ export class Chart {
     return style ? { ...style } : null;
   }
 
+  /**
+   * An indicator's values, by the instance id `addIndicator` returned; null
+   * for an unknown one. `series[i]` is its value at bar `i` of `getData()`,
+   * an object keyed by its lines (`{ value }` for RSI, `{ macd, signal,
+   * histogram }` for MACD: `BuiltInIndicators[id]['lines']`), or null where
+   * it has none yet (before its period fills). `values` holds the same by
+   * bar time.
+   *
+   * @example
+   * const rsi = chart.addIndicator('rsi', { period: 14 })!;
+   * const out = chart.getIndicatorOutput(rsi);
+   * const latest = out?.series?.[chart.getData().length - 1]?.value;
+   */
   getIndicatorOutput(instanceId: string): IndicatorOutput | null {
     return this.indicatorEngine.getOutput(instanceId);
   }
@@ -2165,7 +2086,7 @@ export class Chart {
    */
   isTimeAligned(): boolean {
     if (isReshapedChartType(this.options.chartType)) return false;
-    return this.getDisplayData().length === this.dataManager.getLength();
+    return this.getDisplayData().length === this.series.length();
   }
 
   /**
@@ -2182,7 +2103,7 @@ export class Chart {
 
   /** The newest bar's close, 0 without bars. */
   private lastClose(): number {
-    const bars = this.dataManager.getData();
+    const bars = this.series.bars();
     return bars[bars.length - 1]?.close ?? 0;
   }
 
@@ -2637,7 +2558,7 @@ export class Chart {
    * those on screen (`range: 'visible'`).
    */
   getExportData(options: { range?: 'all' | 'visible'; indicators?: boolean } = {}): { bars: OHLCBar[]; columns: ExportColumn[] } {
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     let from = 0;
     let to = data.length - 1;
     if (options.range === 'visible') {
@@ -2807,7 +2728,7 @@ export class Chart {
    */
   startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number): boolean {
     if (!this.features.trading) return false;
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (price === null) return false;
     this.tradingManager.startBracket(side, price);
@@ -2835,7 +2756,7 @@ export class Chart {
    */
   startOrderDraft(side: import('@tradecanvas/commons').OrderSide, price?: number): boolean {
     if (!this.features.trading) return false;
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     const p = price ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (p === null) return false;
     this.tradingManager.startOrderDraft(side, p);
@@ -2975,7 +2896,7 @@ export class Chart {
    * the live ones, and indicator lines — computed on the replayed bars — wait.
    */
   private checkAlerts(price: number): void {
-    const live = this.replaySession ? this.replaySession.live.getData() : this.dataManager.getData();
+    const live = this.replaySession ? this.series.liveBars() : this.series.bars();
     this.alertManager.setBarTime(live.length > 0 ? live[live.length - 1].time : null);
     const values = new Map<string, number>([['price', price]]);
     if (!this.replaySession) this.collectIndicatorValues(values);
@@ -2993,7 +2914,7 @@ export class Chart {
    * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
    */
   private collectIndicatorValues(into: Map<string, number>): void {
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     if (data.length === 0) return;
     const lastIdx = data.length - 1;
     const channels = this.alertManager.getAlerts().flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
@@ -3041,8 +2962,8 @@ export class Chart {
     this.streamManager.on('snapshot', (bars) => {
       const key = `${this.currentSymbol}|${this.streamTimeframe}`;
       if (this.replaySession) {
-        this.replaySession.live.setData(bars);
-      } else if (key === this.snapshotKey && this.dataManager.getLength() > 0) {
+        this.series.loadAside(bars);
+      } else if (key === this.snapshotKey && this.series.length() > 0) {
         this.mergeSnapshot(bars); // a reconnect: keep the paged-in history and the view
       } else {
         this.setData(bars);
@@ -3055,18 +2976,14 @@ export class Chart {
     // close included), a new one after it, or none when it is older.
     this.streamManager.on('barClose', (bar) => {
       if (!isValidBar(bar)) return;
+      const write = this.series.placeStreamBar(bar);
+      if (write.refiltered) this.displayDataCache = null;
       // Its final close is a live price the stream's priceChange doesn't send.
-      if (this.replaySession) {
-        this.replaySession.live.appendBar(bar);
-        this.followLivePrice(bar.close);
-        return;
-      }
-      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
-      if (how === 'stale' || !this.takeBar(bar, how)) return;
+      if (write.to === 'aside') this.followLivePrice(bar.close);
+      if (write.to !== 'shown') return;
       const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
-      const before = this.dataManager.getLength();
-      if (!this.placeStreamBar(bar)) return;
-      const data = this.dataManager.getData();
+      const before = write.before;
+      const data = this.series.bars();
       this.crosshairHandler.setData(data);
       this.displayDataCache = null;
       this.recalcIndicatorsFrom(data, data.length - 2);
@@ -3077,14 +2994,13 @@ export class Chart {
 
     this.streamManager.on('barUpdate', (bar) => {
       if (!isValidBar(bar)) return;
-      if (this.replaySession) {
-        this.replaySession.live.updateLastBar(bar);
-        return;
-      }
-      this.currentPriceLine.setPrice(bar.close);
-      const how = barPlacement(this.fullSeries ?? this.dataManager.getData(), bar);
-      const before = this.dataManager.getLength();
-      if (how === 'stale' || !this.takeBar(bar, how) || !this.placeStreamBar(bar)) {
+      if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
+      const write = this.series.placeStreamBar(bar);
+      if (write.refiltered) this.displayDataCache = null;
+      // During a replay the bars shown are the replay's: nothing to draw again.
+      if (this.replaySession) return;
+      const before = write.before;
+      if (write.to !== 'shown') {
         this.scheduleRender();
         return;
       }
@@ -3092,7 +3008,7 @@ export class Chart {
       // closes — incrementally, since only the last bar changed, and once
       // before the next read (the frame, an alert, the legend) for all the
       // ticks that came since, not once a tick.
-      const data = this.dataManager.getData();
+      const data = this.series.bars();
       this.indicatorEngine.deferRecalculateFrom(data, data.length - 1);
       this.announceIndicatorUpdate(data.length - 1);
       // A new bar comes forming first (most feeds): the series grew. The price follows from priceChange.
@@ -3406,7 +3322,7 @@ export class Chart {
   // --- Viewport ---
 
   scrollTo(timestamp: number): void {
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     for (let i = 0; i < data.length; i++) {
       if (data[i].time >= timestamp) {
         const barUnit = this.viewport.getState().barWidth + this.viewport.getState().barSpacing;
@@ -3814,7 +3730,7 @@ export class Chart {
   }
 
   getData(): DataSeries {
-    return this.dataManager.getData();
+    return this.series.bars();
   }
 
   // --- Grid ---
@@ -3907,7 +3823,7 @@ export class Chart {
    * bars, oldest first.
    */
   pushDepthSnapshot(depth: import('@tradecanvas/commons').DepthData, time?: number): void {
-    const data = this.dataManager.getData();
+    const data = this.series.bars();
     const at = time ?? data[data.length - 1]?.time;
     if (at === undefined || !Number.isFinite(at)) return;
     this.depthHeatmap.push(at, depth);
@@ -4357,7 +4273,7 @@ export class Chart {
    */
   private drawingLevelsNow(drawingId: string): number[] | null {
     // Alerts watch the live market, during a replay too.
-    const data = this.replaySession ? this.replaySession.live.getData() : this.getDisplayData();
+    const data = this.replaySession ? this.series.liveBars() : this.getDisplayData();
     if (data.length === 0) return null;
     const viewport = { ...this.viewport.getState(), data };
     return this.drawingManager.priceAt(drawingId, data[data.length - 1].time, viewport);
@@ -4488,6 +4404,12 @@ export class Chart {
    * replayed close, and auto-scale refits every step. `replayStop()` brings
    * back the live series, including everything that arrived meanwhile.
    *
+   * `startIndex` is the first bar it reveals, an index of `getData()`: the
+   * bars before it show at once, the later ones as it reaches them.
+   * `interval` (ms, 500 by default) and `speed` (1) pace it at one bar
+   * every `interval / speed` ms: `{ startIndex: 60, interval: 250 }` plays
+   * from bar 60 at four bars a second. `paused: true` waits at the start.
+   *
    * With `steps` (finer bars), each step grows the forming bar from them.
    * A connected execution adapter that takes a mark price (a paper one)
    * trades on the replayed price and time.
@@ -4503,15 +4425,14 @@ export class Chart {
     // A restart of a replay without its history: bar indices count in its window.
     const restartWindow = this.replaySession ? this.replayOffset : 0;
     if (!this.replaySession) {
-      if (this.dataManager.getLength() === 0) return; // nothing to replay
-      const live = new DataManager();
-      live.setData(this.fullSeries ?? this.dataManager.getData());
-      this.replaySession = { live, price: null, fedTime: null };
+      if (this.series.length() === 0) return; // nothing to replay
+      this.series.beginReplay();
+      this.replaySession = { price: null, fedTime: null };
     }
     // Replay the live series as it stands now (a restart includes bars that
     // arrived during the previous run).
     const { steps: rawSteps, startTime, hideHistory, revealMarks, ...playConfig } = config ?? {};
-    const full = this.shownBars(this.replaySession.live.getData());
+    const full = this.series.inHoursShown(this.series.liveBars());
     // Where it starts, as a bar of the whole series: from a time, or an index.
     // A restart within a window (no `startTime`, history not asked back) keeps
     // the window, and its index counts in it, as the replay's indices do.
@@ -4559,7 +4480,7 @@ export class Chart {
       }
       lastStep = index;
       const nextLen = barIndex + 1;
-      const forward = loaded > 0 && nextLen >= loaded && this.dataManager.getLength() === loaded;
+      const forward = loaded > 0 && nextLen >= loaded && this.series.length() === loaded;
       // Like live data: a replay step follows the newest bar while the view
       // rests at the end, and leaves it alone while the user looks at history.
       // The first step and any seek (back or forward) show the replay
@@ -4570,20 +4491,20 @@ export class Chart {
       if (forward) {
         // Forward: the bar that was forming closes as it is in the series, the
         // newly revealed bars are appended, and indicators update from there.
-        if (steps && nextLen > loaded) this.dataManager.updateLastBar(coarse[loaded - 1]);
-        for (let j = loaded; j < nextLen - 1; j++) this.dataManager.appendBar(coarse[j]);
-        if (nextLen > loaded) this.dataManager.appendBar(shownBar);
-        else this.dataManager.updateLastBar(shownBar);
-        this.recalcIndicatorsFrom(this.dataManager.getData(), Math.max(0, loaded - 1));
+        if (steps && nextLen > loaded) this.series.updateReplayed(coarse[loaded - 1]);
+        for (let j = loaded; j < nextLen - 1; j++) this.series.appendReplayed(coarse[j]);
+        if (nextLen > loaded) this.series.appendReplayed(shownBar);
+        else this.series.updateReplayed(shownBar);
+        this.recalcIndicatorsFrom(this.series.bars(), Math.max(0, loaded - 1));
       } else {
         // First step, or a seek: reload the prefix.
-        this.dataManager.setData([...coarse.slice(0, barIndex), shownBar]);
-        this.recalcIndicators(this.dataManager.getData());
+        this.series.showReplayed([...coarse.slice(0, barIndex), shownBar]);
+        this.recalcIndicators(this.series.bars());
       }
       loaded = nextLen;
       // The price line follows the replay, not the live market.
       this.currentPriceLine.setPrice(shownBar.close, barIndex > 0 ? coarse[barIndex - 1].close : undefined);
-      this.crosshairHandler.setData(this.dataManager.getData());
+      this.crosshairHandler.setData(this.series.bars());
       // Up to when it has shown: the next step's time (past the last one, its spacing on).
       const next = series[index + 1]?.time;
       const until = next ?? series[index].time + (index > 0 ? series[index].time - series[index - 1].time : 1);
@@ -4637,7 +4558,7 @@ export class Chart {
   private returnMarkToLive(): void {
     const session = this.replaySession;
     if (!session || !this.replayTrades()) return;
-    const live = session.live.getData();
+    const live = this.series.liveBars();
     const price = session.price?.price ?? live[live.length - 1]?.close;
     if (price !== undefined) this.feedReplayPrice(price);
   }
@@ -4691,9 +4612,9 @@ export class Chart {
   /** End the replay and return to the live series (with updates that arrived meanwhile). */
   replayStop(): void {
     const session = this.replaySession;
-    this.endReplaySession();
-    if (!session) return;
-    this.loadSeries(session.live.getData(), true);
+    const live = this.endReplaySession();
+    if (!session || !live) return;
+    this.loadSeries(live, true);
     if (session.price) this.currentPriceLine.setPrice(session.price.price, session.price.previousClose);
   }
 
@@ -4743,10 +4664,14 @@ export class Chart {
     return { x: left, y: top, width: right - left, height: bottom - top };
   }
 
-  /** Stop the replay clock and drop the session without touching the data. */
-  private endReplaySession(): void {
-    if (!this.replaySession) return;
+  /**
+   * Stop the replay clock and drop the session without touching the bars
+   * shown. Returns the live series it kept aside; null without a replay.
+   */
+  private endReplaySession(): DataSeries | null {
+    if (!this.replaySession) return null;
     this.returnMarkToLive();
+    const live = this.series.endReplay();
     this.replaySession = null;
     this.replayStepsSeries = null;
     this.replayCoarse = null;
@@ -4755,6 +4680,7 @@ export class Chart {
     this.replayManager.stop();
     this.replayOffset = 0;
     this.revealReplayMarks(null);
+    return live;
   }
 
   replaySeek(index: number): void {
@@ -5361,12 +5287,12 @@ export class Chart {
    * (Renko bricks, Kagi lines), whose slots are not data indices.
    */
   private crosshairSeries(): DataSeries {
-    return this.isTimeAligned() ? this.dataManager.getData() : this.getDisplayData();
+    return this.isTimeAligned() ? this.series.bars() : this.getDisplayData();
   }
 
   private getDisplayData(): DataSeries {
     if (this.displayDataCache) return this.displayDataCache;
-    const raw = this.dataManager.getData();
+    const raw = this.series.bars();
     if (raw.length === 0) return raw;
     const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions);
     // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).
@@ -5979,10 +5905,6 @@ function replaySteps(steps: DataSeries, coarse: DataSeries): DataSeries | null {
   return [...head, ...tail];
 }
 
-function isWholeBar(b: OHLCBar): boolean {
-  return [b.time, b.open, b.high, b.low, b.close].every(Number.isFinite);
-}
-
 /** The bar of `coarse` holding `time`: the last one starting at or before it (0 before the first). */
 function barAt(coarse: DataSeries, time: number): number {
   let lo = 0;
@@ -6023,15 +5945,4 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
-}
-
-/** How a stream bar lands on `series`: after its last bar, as its last bar again, or before it (stale). */
-function barPlacement(series: readonly OHLCBar[], bar: OHLCBar): 'append' | 'update' | 'stale' {
-  const last = series[series.length - 1];
-  if (!last) return 'append';
-  // Live bars are recent, so each time's own size tells its unit (a stream
-  // in ms may feed a series in seconds).
-  const at = normalizeBarTime(bar.time);
-  const lastAt = normalizeBarTime(last.time);
-  return at > lastAt ? 'append' : at === lastAt ? 'update' : 'stale';
 }
