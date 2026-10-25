@@ -21,6 +21,13 @@ describe('priceTagText', () => {
     const tiny: ViewportState = { ...unitViewport, priceRange: { min: 0.0000041, max: 0.0000046 } };
     expect(priceTagText(0.0000043491, tiny)).toBe('0.00000435');
   });
+
+  it('takes the market’s or the symbol’s decimals from the viewport', () => {
+    const near100k: ViewportState = { ...unitViewport, priceRange: { min: 99_000, max: 101_000 } };
+    expect(priceTagText(100_018.7, { ...near100k, pricePrecision: 1 })).toBe('100,018.7');
+    // Decimals a caller gives still win.
+    expect(priceTagText(100_018.7, { ...near100k, pricePrecision: 1 }, 3)).toBe('100,018.700');
+  });
 });
 
 describe('the trading tags', () => {

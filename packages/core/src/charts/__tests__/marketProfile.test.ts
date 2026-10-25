@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import { DARK_THEME, type OHLCBar, type ViewportState } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, tpoLetter, assignSessionLetters } from '../marketProfile.js';
+import { MarketProfileRenderer } from '../MarketProfileRenderer.js';
+import { recordingCtx, unitViewport } from '../../drawings/__tests__/fixtures.js';
 
 function bar(low: number, high: number): OHLCBar {
   return { time: 0, open: low, high, low, close: high, volume: 1 };
@@ -142,5 +144,31 @@ describe('MarketProfileRenderer.drawsText', () => {
     expect(r.drawsText()).toBe(false);
     r.setLetters(true);
     expect(r.drawsText()).toBe(true);
+  });
+});
+
+describe('MarketProfileRenderer stats', () => {
+  function statsTexts(viewport: ViewportState) {
+    const r = new MarketProfileRenderer();
+    r.setVisible(true);
+    const data = Array.from({ length: 20 }, (_, i) => barAt(i, 99_500 + i * 10, 100_200 + i * 10));
+    const { ctx, texts } = recordingCtx();
+    r.render(ctx, data, viewport, DARK_THEME);
+    // Each row writes its name, then its value.
+    const values = ['POC', 'VAH', 'VAL'].map((name) => texts[texts.indexOf(name) + 1]);
+    return { values, stats: r.getStats()! };
+  }
+
+  it('write POC, VAH and VAL in the market’s decimals and the number locale', () => {
+    const near100k = { ...unitViewport, priceRange: { min: 99_000, max: 101_000 }, pricePrecision: 1, numberLocale: 'de-DE' };
+    const { values, stats } = statsTexts(near100k);
+    const de = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    expect(values).toEqual([de(stats.poc), de(stats.vah), de(stats.val)]);
+    expect(values[0]).toMatch(/^\d{2,3}\.\d{3},\d$/);
+  });
+
+  it('keep the decimals they had without a market precision, grouped', () => {
+    const { values } = statsTexts({ ...unitViewport, priceRange: { min: 99_000, max: 101_000 } });
+    expect(values[0]).toMatch(/^\d{2,3},\d{3}\.\d{2}$/);
   });
 });

@@ -153,6 +153,9 @@ registerPlugin({
   Los renderizadores de indicadores y tipos de gráfico solo reciben el viewport: para ellos se exportan
   <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> y sus inversas. Las velas son las que están en
   pantalla: en un gráfico Renko o Kagi, sus ladrillos (<code>chart.isTimeAligned()</code> indica cuándo son las velas del feed).
+  Para escribir un precio como el eje, el viewport lleva el formato de precio propio del gráfico cuando lo tiene
+  (<code>formatPrice</code>), su <code>numberLocale</code> y los decimales del mercado o del símbolo cuando alguno los
+  fija (<code>pricePrecision</code>); los paneles de indicadores dejan sin fijar el formato y los decimales.
 </p>
 <p>
   Un overlay con ajustes propios (un modo de visualización, un interruptor) puede mostrar un cambio al instante,

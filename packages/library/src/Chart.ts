@@ -659,6 +659,7 @@ export class Chart {
     this.crosshairTooltip.setLocale(this.numberLocale);
     this.pinnedTooltip = new PinnedTooltip();
     this.pinnedTooltip.create(container);
+    this.pinnedTooltip.setLocale(this.numberLocale);
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
@@ -1758,8 +1759,9 @@ export class Chart {
       logScale: false,
       scaleMode: 'regular',
       invertScale: false,
-      // The overlays' own numbers, not the price's format.
+      // The overlays' own numbers, not the price's format or decimals.
       formatPrice: undefined,
+      pricePrecision: undefined,
       priceUnit: undefined,
     };
   }
@@ -5157,6 +5159,7 @@ export class Chart {
     this.timeAxis.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
+    this.pinnedTooltip.setLocale(locale);
     this.sessionBreaks.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
     // Separators change label widths; the axis may need to refit.
@@ -5212,6 +5215,10 @@ export class Chart {
   /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */
   private applyPricePrecision(precision: number | null): void {
     this.marketPricePrecision = precision;
+    // On the viewport for what draws from it alone: drawing labels, price
+    // limits, pivots, the measure, the market profile and plugins.
+    this.viewport.setPricePrecision(precision);
+    this.pinnedTooltip.setPricePrecision(precision);
     this.priceAxis.setPricePrecision(precision);
     this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
     this.alertManager.setPricePrecision(precision);
@@ -5707,6 +5714,7 @@ export class Chart {
           scaleBaseline: panel.config.percentScale ? this.paneBaseline(panel.config.id, from, to) : undefined,
           // A pane's values are its own, not prices.
           formatPrice: undefined,
+          pricePrecision: undefined,
           priceUnit: undefined,
           invertScale: !!panel.config.invertScale,
         },

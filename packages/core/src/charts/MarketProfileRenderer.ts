@@ -1,4 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { priceTagText } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
 import { barIndexToX, priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
@@ -137,7 +138,7 @@ export class MarketProfileRenderer {
 
     // Stats readout — POC / VAH / VAL in a compact label, top-left of profile.
     if (this.showStats) {
-      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, theme);
+      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, viewport, theme);
     }
 
     ctx.restore();
@@ -231,13 +232,17 @@ export class MarketProfileRenderer {
     poc: number,
     vah: number,
     val: number,
+    viewport: ViewportState,
     theme: Theme,
   ): void {
-    const digits = pricePrecision(poc);
+    // As the chart writes a price: the market's decimals when it sets them,
+    // else those of the price's size, grouped in the number locale.
+    const digits = viewport.pricePrecision ?? statsDecimals(poc);
+    const text = (price: number) => priceTagText(price, viewport, digits);
     const rows: [string, string, string][] = [
-      ['POC', poc.toFixed(digits), theme.text],
-      ['VAH', vah.toFixed(digits), theme.candleUp],
-      ['VAL', val.toFixed(digits), theme.candleUp],
+      ['POC', text(poc), theme.text],
+      ['VAH', text(vah), theme.candleUp],
+      ['VAL', text(val), theme.candleUp],
     ];
     ctx.globalAlpha = 1;
     ctx.font = `600 10px ${theme.font.family}`;
@@ -269,7 +274,7 @@ export class MarketProfileRenderer {
   }
 }
 
-function pricePrecision(price: number): number {
+function statsDecimals(price: number): number {
   const abs = Math.abs(price);
   if (abs >= 1000) return 2;
   if (abs >= 1) return 4;

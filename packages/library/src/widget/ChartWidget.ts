@@ -715,6 +715,9 @@ export class ChartWidget {
       const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
       this.toolbar?.setSymbolDescription(text || null);
       this.refreshMarket();
+      // A symbol's decimals often arrive after the lists were written (the
+      // adapter's resolveSymbol answers late): write their prices again.
+      this.refreshPriceTexts();
     });
 
     // Symbol info: the panel, and the market's status in the status bar,
@@ -3458,6 +3461,13 @@ export class ChartWidget {
     this.alertsPanel.setAlerts(this.chart.getAlerts().map((a) => this.alertListItem(a, sources)));
   }
 
+  /** The prices the panels show, written again in the decimals the chart has now. */
+  private refreshPriceTexts(): void {
+    this.refreshAlerts();
+    this.refreshAccountSoon();
+    if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+  }
+
   private alertListItem(a: AlertListItem, sources: readonly AlertSource[]): AlertListItem {
     return {
       id: a.id,
@@ -3529,15 +3539,21 @@ export class ChartWidget {
   }
 
   private formatAlertPrice(price: number): string {
-    // The chart's own price format (fractions, a host's function) wins.
-    const custom = this.chart.getPriceFormatter?.();
-    if (custom) return custom(price);
-    // No fixed precision config on the widget — pick digits from magnitude so
-    // BTC (64,200.5) and a sub-dollar alt (0.04821) both read sensibly.
+    // The chart's own price format (fractions, a host's function) wins, then
+    // the market's or the symbol's decimals: then a price reads as the axis
+    // writes it, in the chart's number locale.
+    if (this.chart.getPriceFormatter?.() || this.chartSetsDecimals()) return this.chart.formatPrice(price);
+    // Nothing sets them: pick digits from magnitude so BTC (64,200.5) and a
+    // sub-dollar alt (0.04821) both read sensibly, whatever is on view.
     const abs = Math.abs(price);
     const digits = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
     const locale = this.settingsState.numberLocale || undefined;
     return price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits });
+  }
+
+  /** Whether the market or the symbol sets the decimals prices show (the market's win, as on the chart). */
+  private chartSetsDecimals(): boolean {
+    return this.chart.getMarket?.()?.pricePrecision !== undefined || this.chart.getSymbolInfo?.()?.pricePrecision !== undefined;
   }
 
   /** The user picked a chart type: applied, and undoable. */

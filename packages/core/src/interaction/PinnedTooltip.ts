@@ -1,6 +1,9 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { UI_ICONS, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+
+/** Decimals prices show when neither the chart nor the market sets them. */
+const DEFAULT_DECIMALS = 2;
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -29,20 +32,33 @@ export class PinnedTooltip {
   private tz: TimeZoneSetting = null;
 
   private priceFormatter: ((price: number) => string) | null = null;
+  private pricePrecision: number | null = null;
+  private locale = 'en-US';
 
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
     this.tz = tz;
   }
 
-  /** Prices in the chart's format (null: two decimals). */
+  /** Prices in the chart's format (null: decimals, in the locale). */
   setPriceFormatter(formatter: ((price: number) => string) | null): void {
     this.priceFormatter = formatter;
   }
 
+  /** Decimals prices show (the market's or the symbol's), or null for two. */
+  setPricePrecision(precision: number | null): void {
+    this.pricePrecision = precision !== null && Number.isInteger(precision) && precision >= 0 ? precision : null;
+  }
+
+  /** Locale prices are grouped in (BCP 47). */
+  setLocale(locale: string): void {
+    this.locale = locale;
+  }
+
   /** A price as markup-safe text. */
   private fmt(v: number): string {
-    return escapeText(this.priceFormatter ? this.priceFormatter(v) : v.toFixed(2));
+    const text = this.priceFormatter ? this.priceFormatter(v) : formatPrice(v, this.pricePrecision ?? DEFAULT_DECIMALS, this.locale);
+    return escapeText(text);
   }
 
   create(container: HTMLElement): void {

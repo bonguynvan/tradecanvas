@@ -1,5 +1,5 @@
 import type { DrawingState, Theme, ViewportState } from '@tradecanvas/commons';
-import { DEFAULT_FONT_FAMILY } from '@tradecanvas/commons';
+import { DEFAULT_FONT_FAMILY, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { drawingHandleColor } from '../../style/overlayColors.js';
 
@@ -127,12 +127,24 @@ function priceDecimals(ref: number): number {
   return Math.min(10, Math.ceil(-Math.log10(abs)) + 3);
 }
 
+/** Decimals a percentage in a label shows. */
+const PERCENT_DECIMALS = 2;
+
 /**
- * Price text in the chart's price format when it has one (`viewport`), else
- * at the precision of `ref` (defaults to the price itself).
+ * Price text as the chart writes a price (`viewport`): in its price format
+ * when it has one, else grouped in its number locale at the market's or the
+ * symbol's decimals, or at the precision of `ref` (defaults to the price
+ * itself) when neither sets them. Without a viewport, plain at that precision.
  */
 export function formatDrawingPrice(price: number, ref = price, viewport?: ViewportState): string {
-  return viewport?.formatPrice ? viewport.formatPrice(price) : price.toFixed(priceDecimals(ref));
+  return viewport
+    ? priceTagText(price, viewport, viewport.pricePrecision ?? priceDecimals(ref))
+    : price.toFixed(priceDecimals(ref));
+}
+
+/** A percentage in the chart's number locale (`viewport`), e.g. "1.25". */
+export function formatPercent(pct: number, viewport?: ViewportState): string {
+  return viewport ? formatPrice(pct, PERCENT_DECIMALS, viewport.numberLocale ?? 'en-US') : pct.toFixed(PERCENT_DECIMALS);
 }
 
 /** Signed price change with its percentage of `from`, e.g. "+12.50 (+1.25%)". */
@@ -141,7 +153,7 @@ export function formatPriceChange(from: number, to: number, viewport?: ViewportS
   const pct = from !== 0 ? (diff / from) * 100 : 0;
   const sign = diff >= 0 ? '+' : '';
   // A change is shown at the precision of the price it moved from.
-  return `${sign}${formatDrawingPrice(diff, from, viewport)} (${sign}${pct.toFixed(2)}%)`;
+  return `${sign}${formatDrawingPrice(diff, from, viewport)} (${sign}${formatPercent(pct, viewport)}%)`;
 }
 
 /** Compact duration, e.g. "3d 4h", "45m", "2w 1d". */

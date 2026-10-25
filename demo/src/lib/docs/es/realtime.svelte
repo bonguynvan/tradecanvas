@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">Datos del símbolo que el feed conoce más tarde</h2>
 <p>
-  Un gráfico conectado llama a <code>resolveSymbol</code> una vez. Un feed que conoce los datos del símbolo solo más tarde (en su primer mensaje, por ejemplo) los envía con un evento <code>symbolInfo</code>, y el gráfico los aplica: la escala de precios, la leyenda y las etiquetas con los decimales del símbolo (<code>pricePrecision</code>), las marcas de la escala en su paso de precio (<code>minTick</code>) y el horario de la bolsa.
+  Un gráfico conectado llama a <code>resolveSymbol</code> una vez. Un feed que conoce los datos del símbolo solo más tarde (en su primer mensaje, por ejemplo) los envía con un evento <code>symbolInfo</code>, y el gráfico los aplica: los decimales del símbolo (<code>pricePrecision</code>) en la escala de precios, la leyenda y las etiquetas, y también en las etiquetas de los dibujos, los límites de precio del día, las etiquetas de los pivotes, la medición y el perfil de mercado; en el widget, en la ventana de datos, la lista de alertas, el ticket de orden y el panel de cuenta; las marcas de la escala en su paso de precio (<code>minTick</code>) y el horario de la bolsa. Los decimales de un mercado (<code>setMarket</code>) llegan a los mismos sitios y van antes que los del símbolo. Sin ninguno de los dos, la etiqueta de un dibujo conserva los decimales según el tamaño de su precio, agrupados en el locale numérico como en el eje.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // como tu adaptador envía sus otros eventos`}</code></pre>
 

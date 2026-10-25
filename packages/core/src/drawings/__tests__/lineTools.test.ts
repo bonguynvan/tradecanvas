@@ -26,6 +26,21 @@ describe('drawing label formatting', () => {
     expect(formatPriceChange(1.1, 1.0)).toBe('-0.1000 (-9.09%)');
   });
 
+  it('writes a price on a chart in the market’s decimals and the number locale, as the axis does', () => {
+    const near100k: ViewportState = { ...unitViewport, priceRange: { min: 99_000, max: 101_000 } };
+    expect(formatDrawingPrice(100_085.03, 100_085.03, { ...near100k, pricePrecision: 1 })).toBe('100,085.0');
+    expect(formatDrawingPrice(100_085.03, 100_085.03, { ...near100k, pricePrecision: 1, numberLocale: 'de-DE' })).toBe('100.085,0');
+    expect(formatPriceChange(100_000, 100_085.03, { ...near100k, pricePrecision: 1 })).toBe('+85.0 (+0.09%)');
+    // No market or symbol decimals: those of the price's size, grouped.
+    expect(formatDrawingPrice(100_085.03, 100_085.03, near100k)).toBe('100,085.03');
+  });
+
+  it('keeps the decimals of the price’s size on a chart without a market or symbol precision', () => {
+    // The axis would show 2 decimals over 4.5 to 5.5, and 3 over 1.05 to 1.15.
+    expect(formatDrawingPrice(5.1234, 5.1234, { ...unitViewport, priceRange: { min: 4.5, max: 5.5 } })).toBe('5.1234');
+    expect(formatPriceChange(1.1, 1.0, { ...unitViewport, priceRange: { min: 1.05, max: 1.15 } })).toBe('-0.1000 (-9.09%)');
+  });
+
   it('formats durations compactly', () => {
     expect(formatDuration(45 * 60_000)).toBe('45m');
     expect(formatDuration(5 * HOUR + 30 * 60_000)).toBe('5h 30m');

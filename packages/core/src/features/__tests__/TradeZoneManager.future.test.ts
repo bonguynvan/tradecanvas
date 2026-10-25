@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { ViewportState, OHLCBar } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { TradeZoneManager } from '../TradeZoneManager.js';
+import { recordingCtx } from '../../drawings/__tests__/fixtures.js';
 
 const MIN = 60_000;
 const data: OHLCBar[] = Array.from({ length: 50 }, (_, i) => ({ time: i * MIN, open: 10, high: 11, low: 9, close: 10, volume: 1 }));
@@ -27,5 +28,21 @@ describe('TradeZoneManager — zones past the last bar', () => {
     }) as unknown as CanvasRenderingContext2D;
     mgr.render(ctx, viewport, DARK_THEME);
     expect(fillRect).toHaveBeenCalled();
+  });
+});
+
+describe('TradeZoneManager — a closed zone’s P&L', () => {
+  const pnlText = (locale?: string) => {
+    const mgr = new TradeZoneManager();
+    mgr.setDataGetter(() => data);
+    mgr.setZones([{ id: 'z', entryTime: 10 * MIN, entryPrice: 10, exitTime: 20 * MIN, exitPrice: 12, direction: 'long', pnl: 12_345.6, pnlPercent: 2.5 }]);
+    const { ctx, texts } = recordingCtx();
+    mgr.render(ctx, { ...viewport, numberLocale: locale }, DARK_THEME);
+    return texts.find((t) => t.startsWith('+'));
+  };
+
+  it('is money at two decimals, grouped in the number locale', () => {
+    expect(pnlText()).toBe('+12,345.60 (+2.50%)');
+    expect(pnlText('de-DE')).toBe('+12.345,60 (+2,50%)');
   });
 });

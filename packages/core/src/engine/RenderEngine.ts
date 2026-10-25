@@ -1,7 +1,7 @@
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash, priceTagText } from '@tradecanvas/commons';
 import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
@@ -38,6 +38,21 @@ import { fillTag } from '../ui/shapes.js';
 const PANEL_HEADER_HEIGHT = 20;
 /** Below this a pane (folded to its header) draws no scale. */
 const MIN_PANE_PLOT_HEIGHT = 8;
+/** Height of a price limit's tag on the axis. */
+const LIMIT_TAG_HEIGHT = 14;
+/** Decimals a price limit shows when neither the chart nor the market sets them. */
+const LIMIT_DECIMALS = 2;
+
+type PriceLimits = NonNullable<RenderContext['priceLimits']>;
+
+/** The day's ceiling, floor and reference: each line's price, colour and name. */
+function limitLines(limits: PriceLimits): { price: number; color: string; label: string }[] {
+  return [
+    { price: limits.ceiling, color: limits.colors?.ceiling ?? '#FF00FF', label: 'CE' },
+    { price: limits.floor, color: limits.colors?.floor ?? '#00FFFF', label: 'FL' },
+    { price: limits.reference, color: limits.colors?.reference ?? '#FFD700', label: 'REF' },
+  ];
+}
 
 /** `steps` recorded in one region, all or none: a recorder holding all of them, or null. */
 function recordAll(recorder: GpuRecorder | null, clip: Rect, steps: readonly DrawStep[]): GpuRecorder | null {
@@ -318,7 +333,7 @@ export class RenderEngine {
     this.renderPanels(c, ctx, panes, plan);
 
     // --- Chart objects: limits, trade zones, drawings, orders, markers, alerts ---
-    if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits);
+    if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits, ctx.formatPrice);
     ctx.tradeZoneManager?.render(c, viewport, theme);
     ctx.drawingRenderer?.render(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
@@ -548,7 +563,7 @@ export class RenderEngine {
     }
   }
 
-  /** Tags fixed on the price axis: the last price, the high/low and bid/ask lines, positions and orders. */
+  /** Tags fixed on the price axis: the last price, the high/low and bid/ask lines, the day's limits, positions and orders. */
   private fixedAxisTags(ctx: RenderContext): FixedAxisTag[] {
     const { viewport, data } = ctx;
     const { chartRect } = viewport;
@@ -562,6 +577,9 @@ export class RenderEngine {
       if (onPlot && ctx.barCountdown?.isShown(data)) tags.push({ y: y + 10 + COUNTDOWN_HEIGHT / 2, half: COUNTDOWN_HEIGHT / 2 });
     }
     for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
+    for (const { price } of ctx.priceLimits ? limitLines(ctx.priceLimits) : []) {
+      tags.push({ y: priceToY(price, viewport), half: LIMIT_TAG_HEIGHT / 2 });
+    }
     for (const y of ctx.tradingRenderer?.axisTagYs(viewport, ctx.theme) ?? []) tags.push({ y, half: AXIS_LABEL_HEIGHT / 2 });
     return tags.filter((t) => t.y >= chartRect.y && t.y <= chartRect.y + chartRect.height);
   }
@@ -793,23 +811,25 @@ export class RenderEngine {
     return map;
   }
 
+  /**
+   * The day's limits as lines across the plot, each named and priced, with a
+   * tag on the axis. Prices read as the chart writes them (`format`, else the
+   * market's decimals and the number locale on the viewport).
+   */
   private renderPriceLimits(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
     theme: Theme,
-    limits: NonNullable<RenderContext['priceLimits']>,
+    limits: PriceLimits,
+    format?: (price: number) => string,
   ): void {
     const { chartRect } = viewport;
-    const lines = [
-      { price: limits.ceiling, color: limits.colors?.ceiling ?? '#FF00FF', label: 'CE' },
-      { price: limits.floor, color: limits.colors?.floor ?? '#00FFFF', label: 'FL' },
-      { price: limits.reference, color: limits.colors?.reference ?? '#FFD700', label: 'REF' },
-    ];
+    const text = format ?? ((price: number) => priceTagText(price, viewport, viewport.pricePrecision ?? LIMIT_DECIMALS));
 
     const boldFont = `bold 9px ${theme.font.family}`;
     const normalFont = `10px ${theme.font.family}`;
 
-    for (const { price, color, label } of lines) {
+    for (const { price, color, label } of limitLines(limits)) {
       const y = priceToY(price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 
@@ -827,17 +847,17 @@ export class RenderEngine {
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'left';
-      ctx.fillText(`${label} ${viewport.formatPrice?.(price) ?? price.toFixed(2)}`, chartRect.x + 4, y - 2);
+      ctx.fillText(`${label} ${text(price)}`, chartRect.x + 4, y - 2);
 
-      // Axis badge
+      // Axis badge: the scale's labels under it give way (`fixedAxisTags`).
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
-      fillTag(ctx, axisX, y - 7, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, 14, theme);
+      fillTag(ctx, axisX, y - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
       ctx.fillStyle = '#000';
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(viewport.formatPrice?.(price) ?? price.toFixed(2), axisX + 4, y);
+      ctx.fillText(text(price), axisX + 4, y);
     }
   }
 

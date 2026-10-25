@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">数据源稍后才得知的品种信息</h2>
 <p>
-  已连接的图表只调用一次 <code>resolveSymbol</code>。若数据源要稍后（例如收到第一条消息时）才得知品种信息，可通过 <code>symbolInfo</code> 事件发送，图表随即应用：价格轴、图例和价格标签按品种的小数位（<code>pricePrecision</code>）显示，价格轴刻度落在最小变动价位（<code>minTick</code>）上，并采用交易所的交易时段。
+  已连接的图表只调用一次 <code>resolveSymbol</code>。若数据源要稍后（例如收到第一条消息时）才得知品种信息，可通过 <code>symbolInfo</code> 事件发送，图表随即应用：价格轴、图例和价格标签按品种的小数位（<code>pricePrecision</code>）显示，绘图标签、当日涨跌停价与参考价、枢轴点标签、测量工具和市场轮廓也一样；组件中的数据窗口、价格提醒列表、委托单和账户面板同样如此；价格轴刻度落在最小变动价位（<code>minTick</code>）上，并采用交易所的交易时段。市场的小数位（<code>setMarket</code>）作用于同样的位置，并优先于品种的小数位。两者都没有时，绘图标签保留按价格大小决定的小数位，并像价格轴一样按数字区域设置分组。
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 与适配器发送其他事件的方式相同`}</code></pre>
 

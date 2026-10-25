@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
 <p>
-  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: trục giá, legend và nhãn giá theo số lẻ của mã (<code>pricePrecision</code>), vạch chia trục theo bước giá (<code>minTick</code>), giờ giao dịch của sàn.
+  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: số lẻ của mã (<code>pricePrecision</code>) trên trục giá, legend và nhãn giá, và cả trên nhãn của các hình vẽ, giá trần, sàn và tham chiếu trong ngày, nhãn đỉnh đáy, công cụ đo và market profile; trong widget, trên cửa sổ dữ liệu, danh sách cảnh báo, phiếu đặt lệnh và bảng tài khoản; vạch chia trục theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số lẻ của thị trường (<code>setMarket</code>) đi tới đúng những chỗ đó và được ưu tiên hơn số lẻ của mã. Khi không có cả hai, nhãn của hình vẽ giữ số lẻ theo độ lớn của giá, nhóm hàng nghìn theo locale số như trục giá.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
 

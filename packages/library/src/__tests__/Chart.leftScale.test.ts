@@ -83,6 +83,14 @@ describe('Chart left price scale', () => {
     expect(chart.isLeftPriceScaleShown()).toBe(false);
   });
 
+  it('writes its overlays’ own numbers, not the symbol’s decimals', () => {
+    chart.setSymbolInfo({ symbol: 'AAA', pricePrecision: 0 });
+    chart.addIndicator('volLine', {}, 'bottom', { scale: 'left' });
+    const left = (chart as unknown as { computeLeftViewport(): ViewportState | null }).computeLeftViewport();
+    expect(left).not.toBeNull();
+    expect(left!.pricePrecision).toBeUndefined();
+  });
+
   it('mirrors the price scale on the left when asked to show it', () => {
     chart.setLeftPriceScaleVisible(true);
     expect(chart.isLeftPriceScaleShown()).toBe(true);

@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">피드가 나중에 알게 되는 종목 정보</h2>
 <p>
-  연결된 차트는 <code>resolveSymbol</code> 을 한 번만 호출합니다. 종목 정보를 나중에(예: 첫 메시지에서) 알게 되는 피드는 <code>symbolInfo</code> 이벤트로 보내면 차트가 바로 적용합니다. 가격 축, 범례, 가격 태그가 종목의 소수 자릿수(<code>pricePrecision</code>)로 표시되고, 가격 축 눈금은 호가 단위(<code>minTick</code>)에 맞춰지며, 거래소의 거래 시간이 쓰입니다.
+  연결된 차트는 <code>resolveSymbol</code> 을 한 번만 호출합니다. 종목 정보를 나중에(예: 첫 메시지에서) 알게 되는 피드는 <code>symbolInfo</code> 이벤트로 보내면 차트가 바로 적용합니다. 가격 축, 범례, 가격 태그가 종목의 소수 자릿수(<code>pricePrecision</code>)로 표시되고, 드로잉 라벨, 당일 가격 제한폭과 기준가, 피벗 라벨, 측정 도구, 마켓 프로파일도 같은 자릿수를 씁니다. 위젯에서는 데이터 창, 알림 목록, 주문 티켓, 계좌 패널도 마찬가지입니다. 가격 축 눈금은 호가 단위(<code>minTick</code>)에 맞춰지며, 거래소의 거래 시간이 쓰입니다. 시장의 소수 자릿수(<code>setMarket</code>)도 같은 곳에 적용되며 종목의 것보다 우선합니다. 둘 다 없으면 드로잉 라벨은 가격 크기에 따른 소수 자릿수를 유지하고, 가격 축처럼 숫자 로캘에 맞춰 자릿수를 구분합니다.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 어댑터가 다른 이벤트를 보내는 방식 그대로`}</code></pre>
 

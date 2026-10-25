@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TradeZone, TradeZoneStyle } from '@tradecanvas/commons';
-import { DEFAULT_TRADE_ZONE_STYLE, priceTagText } from '@tradecanvas/commons';
+import { DEFAULT_TRADE_ZONE_STYLE, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 import { fillTag } from '../ui/shapes.js';
@@ -10,6 +10,8 @@ import { drawIcon } from '../ui/drawIcon.js';
 
 /** The long / short icon before a zone's entry price, px. */
 const ZONE_ICON_SIZE = 12;
+/** Decimals a zone's P&L and its percentage show: money, not prices. */
+const PNL_DECIMALS = 2;
 
 interface TradeZoneEvents {
   added: TradeZone;
@@ -203,9 +205,11 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
 
     if (style.showPnl && !isActive && zone.pnl != null) {
       const pnlSign = zone.pnl >= 0 ? '+' : '';
+      // Grouped in the number locale, as the axis's prices are.
+      const figure = (value: number) => formatPrice(value, PNL_DECIMALS, viewport.numberLocale ?? 'en-US');
       const pnlText = zone.pnlPercent != null
-        ? `${pnlSign}${zone.pnl.toFixed(2)} (${pnlSign}${zone.pnlPercent.toFixed(2)}%)`
-        : `${pnlSign}${zone.pnl.toFixed(2)}`;
+        ? `${pnlSign}${figure(zone.pnl)} (${pnlSign}${figure(zone.pnlPercent)}%)`
+        : `${pnlSign}${figure(zone.pnl)}`;
 
       ctx.font = `bold 10px ${theme.font.family}`;
       ctx.fillStyle = fillColor;

@@ -25,16 +25,17 @@ function numberFormat(locale: string, precision: number): Intl.NumberFormat {
 /**
  * A price on a tag beside the axis (an order, a position, an alert) as the
  * axis writes one: the chart's price format when it has one, else grouped in
- * its number locale at `precision` decimals, or at the axis's own for the
- * range on view when none is given.
+ * its number locale at `precision` decimals, or the market's or the symbol's
+ * (`viewport.pricePrecision`), or the axis's own for the range on view when
+ * neither is given.
  */
 export function priceTagText(
   price: number,
-  viewport: Pick<ViewportState, 'formatPrice' | 'numberLocale' | 'priceRange'>,
+  viewport: Pick<ViewportState, 'formatPrice' | 'numberLocale' | 'priceRange' | 'pricePrecision'>,
   precision?: number,
 ): string {
   if (viewport.formatPrice) return viewport.formatPrice(price);
-  const decimals = precision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+  const decimals = precision ?? viewport.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
   return formatPrice(price, decimals, viewport.numberLocale ?? 'en-US');
 }
 

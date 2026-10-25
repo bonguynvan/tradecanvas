@@ -149,7 +149,9 @@ registerPlugin({
   đơn vị của số lẻ đang hiển thị. Renderer của chỉ báo và loại chart chỉ nhận viewport; cho chúng,
   <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> và các hàm ngược được export sẵn. Các nến là
   nến đang vẽ: trên chart Renko hay Kagi là các viên gạch của nó (<code>chart.isTimeAligned()</code> cho biết khi nào
-  chúng trùng với nến của nguồn dữ liệu).
+  chúng trùng với nến của nguồn dữ liệu). Để viết giá như trục giá, viewport mang định dạng giá riêng của chart khi
+  có (<code>formatPrice</code>), <code>numberLocale</code> của nó, và số lẻ của thị trường hoặc của mã khi một trong
+  hai đặt (<code>pricePrecision</code>); các pane chỉ báo để trống định dạng và số lẻ.
 </p>
 <p>
   Overlay có cài đặt riêng (kiểu hiển thị, công tắc) có thể hiện thay đổi ngay, kể cả khi không có tick nào

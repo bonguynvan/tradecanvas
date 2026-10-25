@@ -24,4 +24,19 @@ describe('PinnedTooltip', () => {
     expect(host.textContent).toContain('O');
     expect(host.textContent).toContain('1.50');
   });
+
+  it('writes prices in the market’s decimals and the number locale', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    const bar = { time: Date.UTC(2026, 2, 4), open: 100_000, high: 100_085.3, low: 99_990.1, close: 100_018.7 };
+    tooltip.pin(bar, 0, DARK_THEME);
+    // No market decimals: two, grouped.
+    expect(host.textContent).toContain('100,018.70');
+    tooltip.setPricePrecision(1);
+    tooltip.setLocale('de-DE');
+    tooltip.pin(bar, 0, DARK_THEME);
+    expect(host.textContent).toContain('100.018,7');
+    expect(host.textContent).toContain('99.990,1');
+  });
 });

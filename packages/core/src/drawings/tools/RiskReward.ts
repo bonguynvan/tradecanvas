@@ -1,6 +1,6 @@
-import { drawingFont, drawPill, pillWidth, PILL_HEIGHT } from './labels.js';
+import { drawingFont, drawPill, formatPercent, pillWidth, PILL_HEIGHT } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
-import { autoPricePrecision } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 
 /** Narrowest the zones are drawn, so a position placed with one click is still visible. */
@@ -11,6 +11,8 @@ const MIN_RATIO = 0.1;
 const MAX_RATIO = 100;
 /** Largest account size or risk amount taken: big enough for any account, small enough to stay finite. */
 const MAX_MONEY = 1e15;
+/** Decimals the reward and the risk show: money, not prices. */
+const MONEY_DECIMALS = 2;
 
 /**
  * "Long/Short Position": drag from the entry to the stop; the target sits the
@@ -93,13 +95,17 @@ export class RiskRewardTool extends DrawingBase {
     const plotRight = chartRect.x + chartRect.width;
     // Tags only while the zone is on the plot: they'd otherwise stick to its edge.
     if (this.option<boolean>(state, 'showLabels') && x + width >= plotLeft && x <= plotRight) {
-      const decimals = autoPricePrecision(Math.min(g.stop, g.target), Math.max(g.stop, g.target));
+      // The market's decimals when it sets them, else as many as keep the stop
+      // and the target apart; grouped in the number locale, as the axis is.
+      const decimals = viewport.pricePrecision ?? autoPricePrecision(Math.min(g.stop, g.target), Math.max(g.stop, g.target));
+      const locale = viewport.numberLocale ?? 'en-US';
       const qtyDecimals = this.option<number>(state, 'qtyDecimals');
-      const pct = (price: number) => (g.entry !== 0 ? ((price - g.entry) / g.entry) * 100 : 0).toFixed(2);
+      const pct = (price: number) => (g.entry !== 0 ? ((price - g.entry) / g.entry) * 100 : 0);
       const ratio = Number(g.ratio.toFixed(2));
       ctx.font = drawingFont(11);
-      const price = (p: number) => viewport.formatPrice?.(p) ?? p.toFixed(decimals);
-      const signed = (p: number) => `${p >= g.entry ? '+' : '−'}${Math.abs(Number(pct(p))).toFixed(2)}%`;
+      const price = (p: number) => priceTagText(p, viewport, decimals);
+      const money = (amount: number) => formatPrice(amount, MONEY_DECIMALS, locale);
+      const signed = (p: number) => `${p >= g.entry ? '+' : '−'}${formatPercent(Math.abs(pct(p)), viewport)}%`;
       // Tags: the entry's on its line, the target's and the stop's just outside
       // their zones, pushed apart when the zones are thin so none overlap, and
       // kept on the plot.
@@ -115,11 +121,11 @@ export class RiskRewardTool extends DrawingBase {
       const tag = (text: string, y: number, color: string) => {
         drawPill(ctx, text, Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - pillWidth(ctx, text))), y, color);
       };
-      tag(`${g.isLong ? 'Long' : 'Short'} · Qty ${g.qty.toFixed(qtyDecimals)} · R:R ${ratio}`, entryPt.y, state.style.color);
+      tag(`${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, entryPt.y, state.style.color);
       // A stop on the entry (while it's being placed) has no zones to label yet.
       if (Math.abs(stopPt.y - entryPt.y) >= 1) {
-        tag(`Target ${price(g.target)} (${signed(g.target)}) · ${g.rewardAmount.toFixed(2)}`, outside(targetPt.y), '#1fa874');
-        tag(`Stop ${price(g.stop)} (${signed(g.stop)}) · ${g.riskAmount.toFixed(2)}`, outside(stopPt.y), '#e8505b');
+        tag(`Target ${price(g.target)} (${signed(g.target)}) · ${money(g.rewardAmount)}`, outside(targetPt.y), '#1fa874');
+        tag(`Stop ${price(g.stop)} (${signed(g.stop)}) · ${money(g.riskAmount)}`, outside(stopPt.y), '#e8505b');
       }
     }
 

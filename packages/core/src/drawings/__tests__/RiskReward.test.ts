@@ -38,6 +38,35 @@ describe('RiskRewardTool', () => {
     expect(bySum[1]).toBe('Target 70.00 (+40.00%) · 110.00');
   });
 
+  it('writes its prices in the market’s decimals, grouped as the axis does', () => {
+    const near100k = { ...unitViewport, priceRange: { min: 99_000, max: 101_000 }, pricePrecision: 1 };
+    const { ctx, texts: out } = recordingCtx();
+    tool.render(ctx, drawing('riskReward', [{ time: 0, price: 100_000 }, { time: 10, price: 99_914.7 }]), near100k, false);
+    expect(out[1]).toMatch(/^Target 100,170\.6 \(\+0\.17%\)/);
+    expect(out[2]).toMatch(/^Stop 99,914\.7 \(−0\.09%\)/);
+  });
+
+  it('keeps the decimals that tell the stop from the target without a market precision', () => {
+    // The axis would show 3 decimals over 1.05 to 1.15; the zone needs 4.
+    const fx = { ...unitViewport, priceRange: { min: 1.05, max: 1.15 } };
+    const { ctx, texts: out } = recordingCtx();
+    tool.render(ctx, drawing('riskReward', [{ time: 0, price: 1.0862 }, { time: 10, price: 1.0847 }]), fx, false);
+    expect(out[1]).toMatch(/^Target 1\.0892 \(/);
+    expect(out[2]).toMatch(/^Stop 1\.0847 \(/);
+  });
+
+  it('groups the amounts and the quantity in the number locale, the amounts at two decimals', () => {
+    const big = { accountSize: 1_000_000 };
+    expect(texts(LONG, big)).toEqual([
+      'Long · Qty 1,000.00 · R:R 2',
+      'Target 70.00 (+40.00%) · 20,000.00',
+      'Stop 40.00 (−20.00%) · 10,000.00',
+    ]);
+    const { ctx, texts: out } = recordingCtx();
+    tool.render(ctx, drawing('riskReward', LONG, { options: big }), { ...unitViewport, numberLocale: 'de-DE' }, false);
+    expect(out[2]).toBe('Stop 40,00 (−20,00%) · 10.000,00');
+  });
+
   it('keeps the tags apart when the stop is close to the entry', () => {
     const { ctx, calls } = recordingCtx();
     tool.render(ctx, drawing('riskReward', [LONG[0], { ...LONG[1], price: 49.5 }]), unitViewport, false);

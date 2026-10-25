@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">データフィードが後から知る銘柄情報</h2>
 <p>
-  接続済みのチャートは <code>resolveSymbol</code> を一度だけ呼びます。銘柄の情報を後から（たとえば最初のメッセージで）知るフィードは <code>symbolInfo</code> イベントで送れば、チャートがすぐ適用します。価格軸・凡例・価格タグは銘柄の小数桁（<code>pricePrecision</code>）で表示され、価格軸の目盛りは呼値（<code>minTick</code>）に揃い、取引所の取引時間も使われます。
+  接続済みのチャートは <code>resolveSymbol</code> を一度だけ呼びます。銘柄の情報を後から（たとえば最初のメッセージで）知るフィードは <code>symbolInfo</code> イベントで送れば、チャートがすぐ適用します。価格軸・凡例・価格タグは銘柄の小数桁（<code>pricePrecision</code>）で表示され、描画のラベル、当日の値幅制限と基準値、ピボットのラベル、計測ツール、マーケットプロファイルも同じ桁になります。ウィジェットではデータウィンドウ、アラート一覧、注文チケット、口座パネルも同様です。価格軸の目盛りは呼値（<code>minTick</code>）に揃い、取引所の取引時間も使われます。市場の小数桁（<code>setMarket</code>）も同じ箇所に届き、銘柄の小数桁より優先されます。どちらもない場合、描画のラベルは価格の大きさに応じた小数桁のまま、価格軸と同じく数値ロケールで桁区切りされます。
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // アダプターが他のイベントを送るのと同じ方法で`}</code></pre>
 

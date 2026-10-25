@@ -143,6 +143,8 @@ registerPlugin({
   品种的最小变动价位（<code>minTick</code>）、分数单位，或当前显示小数位的一个单位。指标和图表类型的渲染器只拿到 viewport，
   为此导出了 <code>priceToY</code>、<code>barIndexToX</code>、<code>timeToX</code> 及其反函数。这里的 K 线是屏幕上绘制的序列：
   在 Renko 或 Kagi 图上就是它的砖块（<code>chart.isTimeAligned()</code> 表示它们是否就是数据源的 K 线）。
+  要像价格轴那样书写价格，viewport 提供图表自己的价格格式（若有，<code>formatPrice</code>）、<code>numberLocale</code>，
+  以及市场或品种设定的小数位（<code>pricePrecision</code>）；指标窗格不设格式和小数位。
 </p>
 <p>
   带有自身设置（显示模式、开关）的叠加层可以立即显示变化，即使没有新的 tick 触发重绘：在插件上设置

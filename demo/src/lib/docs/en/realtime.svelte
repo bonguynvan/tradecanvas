@@ -44,7 +44,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="symbol-info">Symbol details the feed learns later</h2>
 <p>
-  A connected chart asks <code>resolveSymbol</code> once. A feed that learns the symbol's details only later (on its first message, say) sends them with a <code>symbolInfo</code> event, and the chart applies them: the price scale, legend and tags in the symbol's decimals (<code>pricePrecision</code>), the scale's ticks on its price step (<code>minTick</code>), the exchange's hours.
+  A connected chart asks <code>resolveSymbol</code> once. A feed that learns the symbol's details only later (on its first message, say) sends them with a <code>symbolInfo</code> event, and the chart applies them: the symbol's decimals (<code>pricePrecision</code>) on the price scale, the legend and the tags, and on the drawings' labels, the day's price limits, pivot labels, the measure and the market profile too; in the widget, on the data window, the alerts list, the order ticket and the account panel; the scale's ticks on its price step (<code>minTick</code>); the exchange's hours. A market's decimals (<code>setMarket</code>) go to the same places and come before the symbol's. Without either, a drawing's label keeps the decimals of its price's size, grouped in the number locale as the axis is.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // as your adapter sends its other events`}</code></pre>
 

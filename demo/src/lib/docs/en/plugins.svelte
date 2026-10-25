@@ -148,6 +148,9 @@ registerPlugin({
   Indicator and chart-type renderers get the viewport alone: <code>priceToY</code>, <code>barIndexToX</code>,
   <code>timeToX</code> and their inverses are exported for them. The bars are those on screen: on a Renko or
   Kagi chart, its bricks (<code>chart.isTimeAligned()</code> says when they are the feed's bars).
+  To write a price as the axis does, the viewport carries the chart's own price format when it has one
+  (<code>formatPrice</code>), its <code>numberLocale</code>, and the market's or the symbol's decimals when one sets
+  them (<code>pricePrecision</code>); indicator panes leave the format and the decimals unset.
 </p>
 <p>
   An overlay with settings of its own (a display mode, a switch) can show a change at once, even when no

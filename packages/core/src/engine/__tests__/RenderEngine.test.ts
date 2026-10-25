@@ -4,6 +4,7 @@ import { LayerType } from '@tradecanvas/commons';
 import type { Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
+import { PriceAxis } from '../../axis/PriceAxis.js';
 
 /** jsdom has no 2D context: a recorder that accepts any call or assignment. */
 function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -699,5 +700,46 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.detachGpu();
     expect(gpu.destroy).toHaveBeenCalled();
     expect(stack(gpu)).toEqual(['scene', 'top']);
+  });
+});
+
+describe('RenderEngine — the day’s price limits', () => {
+  /** The texts the scene canvas got in one frame, with the limits drawn on a 98,000 to 100,000 view. */
+  function limitTexts(patch: Partial<RenderContext>, viewport: Partial<ViewportState> = {}): string[] {
+    const { ctx } = makeContext();
+    Object.assign(ctx, patch);
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 98_000, max: 100_000 }, ...viewport };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const fillText = vi.fn();
+    engine.layerManager.getLayer(LayerType.Main)!.ctx.fillText = fillText;
+    runFrame();
+    return fillText.mock.calls.map((call) => String(call[0]));
+  }
+  const limits = { ceiling: 99_800, floor: 98_100, reference: 98_937 };
+
+  it('writes them in the market’s decimals and the number locale, on the line and on the axis', () => {
+    const texts = limitTexts({ priceLimits: limits }, { pricePrecision: 1, numberLocale: 'de-DE' });
+    expect(texts).toContain('REF 98.937,0');
+    expect(texts).toContain('CE 99.800,0');
+    expect(texts).toContain('FL 98.100,0');
+    expect(texts).toContain('98.937,0');
+  });
+
+  it('writes them as the chart writes a price', () => {
+    const texts = limitTexts({ priceLimits: limits, formatPrice: (p) => `$${Math.round(p)}` });
+    expect(texts).toContain('REF $98937');
+    expect(texts).toContain('$98937');
+  });
+
+  it('hides the scale’s label under a limit’s tag on the axis, as the last price’s does', () => {
+    const axis = new PriceAxis();
+    const onTick = { ceiling: 105_000, floor: 90_000, reference: 99_000 };
+    expect(limitTexts({ priceAxis: axis })).toContain('99,000');
+    const texts = limitTexts({ priceAxis: axis, priceLimits: onTick });
+    expect(texts).toContain('REF 99,000.00');
+    expect(texts).not.toContain('99,000');
+    expect(texts).toContain('99,500');
   });
 });

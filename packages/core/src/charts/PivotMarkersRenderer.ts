@@ -1,6 +1,12 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { priceTagText } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { findPivots, classifyPivots } from './pivots.js';
+
+/** Significant digits a pivot below 1 shows without a market precision. */
+const SMALL_PRICE_DIGITS = 4;
+/** Most decimals a pivot below 1 shows. */
+const MAX_DECIMALS = 10;
 
 /**
  * Marks fractal swing highs/lows with small triangles (▼ above a pivot high,
@@ -63,7 +69,7 @@ export class PivotMarkersRenderer {
       ctx.fill();
 
       const text: string | null =
-        this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? viewport.formatPrice?.(p.price) ?? formatPrice(p.price) : null;
+        this.structureLabels && 'label' in p ? String(p.label) : this.showLabels ? pivotPriceText(p.price, viewport) : null;
       if (text) {
         ctx.textBaseline = above ? 'bottom' : 'top';
         ctx.fillText(text, x, above ? tipY - size - 1 : tipY + size + 1);
@@ -73,7 +79,18 @@ export class PivotMarkersRenderer {
   }
 }
 
-function formatPrice(v: number): string {
-  const abs = Math.abs(v);
-  return abs >= 1000 ? v.toFixed(2) : abs >= 1 ? v.toFixed(2) : v.toPrecision(4);
+/**
+ * A pivot's price as the chart writes one: its price format, else grouped in
+ * the number locale at the market's or the symbol's decimals, or at 2 (4
+ * significant digits below 1) when neither sets them.
+ */
+function pivotPriceText(price: number, viewport: ViewportState): string {
+  return priceTagText(price, viewport, viewport.pricePrecision ?? pivotDecimals(price));
+}
+
+function pivotDecimals(price: number): number {
+  const abs = Math.abs(price);
+  if (abs >= 1) return 2;
+  if (abs === 0) return SMALL_PRICE_DIGITS - 1;
+  return Math.min(MAX_DECIMALS, SMALL_PRICE_DIGITS - 1 - Math.floor(Math.log10(abs)));
 }

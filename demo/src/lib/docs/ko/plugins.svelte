@@ -145,6 +145,8 @@ registerPlugin({
   <code>chart.getPriceStep()</code>을 쓰세요: 종목의 최소 호가 단위(<code>minTick</code>), 분수 단위, 또는 표시 중인 소수 자릿수의 한 단위입니다.
   지표와 차트 타입 렌더러는 viewport만 받으므로 <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code>와 그 역함수도 export됩니다.
   봉은 화면에 그려진 시리즈의 봉입니다: Renko나 Kagi 차트에서는 그 벽돌입니다(<code>chart.isTimeAligned()</code>로 데이터 봉과 같은지 알 수 있습니다).
+  가격 축처럼 가격을 쓰도록 viewport에는 차트 고유의 가격 형식(있을 때 <code>formatPrice</code>), <code>numberLocale</code>,
+  시장이나 종목이 정한 소수 자릿수(<code>pricePrecision</code>)가 들어 있습니다. 지표 패널에서는 형식과 소수 자릿수가 비어 있습니다.
 </p>
 <p>
   자체 설정(표시 방식, 스위치)이 있는 오버레이는 차트를 다시 그릴 틱이 오지 않아도 변경을 바로 보여 줄 수 있습니다.

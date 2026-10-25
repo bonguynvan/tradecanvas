@@ -372,3 +372,27 @@ describe('Viewport — following the live edge with free panning', () => {
     expect(s.offset).toBeCloseTo(100 * unit, 6);
   });
 });
+
+describe('Viewport — the decimals prices show', () => {
+  it('carries the market’s or the symbol’s decimals in a fresh snapshot', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    const before = vp.getState();
+    expect(before.pricePrecision).toBeUndefined();
+    vp.setPricePrecision(1);
+    expect(vp.getState()).not.toBe(before);
+    expect(vp.getState().pricePrecision).toBe(1);
+  });
+
+  it('drops decimals that are not a whole number from 0 up, and null', () => {
+    const vp = new Viewport(1000, 600, 2, 30, 5);
+    vp.setPricePrecision(2);
+    vp.setPricePrecision(null);
+    expect(vp.getState().pricePrecision).toBeUndefined();
+    vp.setPricePrecision(-1);
+    expect(vp.getState().pricePrecision).toBeUndefined();
+    vp.setPricePrecision(1.5);
+    expect(vp.getState().pricePrecision).toBeUndefined();
+    vp.setPricePrecision(0);
+    expect(vp.getState().pricePrecision).toBe(0);
+  });
+});
