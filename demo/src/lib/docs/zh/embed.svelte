@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>放在可滚动屏幕里的图表把竖直滑动留给屏幕。</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  Tauri 的内容安全策略必须允许页面访问数据源的主机。组件还需要 <code>style-src 'unsafe-inline'</code>（用于它添加的那一个 <code>&lt;style&gt;</code> 元素）和 <code>img-src data:</code>（用于输入框和复选框里的小图标）：缺少前者，组件显示时没有样式；缺少后者，输入框会丢失图标。复制图表图片不需要再加任何内容。
+  Tauri 的内容安全策略必须允许页面访问数据源的主机。组件还需要 <code>style-src 'unsafe-inline'</code>（用于它添加的那一个 <code>&lt;style&gt;</code> 元素）和 <code>img-src data:</code>（用于输入框和复选框里的小图标）：缺少前者，组件显示时没有样式；缺少后者，输入框和复选框会丢失图标。复制图表图片不需要再加任何内容。
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {

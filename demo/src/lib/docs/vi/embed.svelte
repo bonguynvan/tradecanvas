@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>Biểu đồ nằm trong một màn hình có cuộn thì để vuốt dọc cho màn hình.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  Chính sách bảo mật nội dung (CSP) của Tauri phải cho trang kết nối tới máy chủ của nguồn dữ liệu. Widget còn cần <code>style-src 'unsafe-inline'</code> cho thẻ <code>&lt;style&gt;</code> duy nhất mà nó chèn vào, và <code>img-src data:</code> cho các biểu tượng nhỏ trong ô nhập và ô đánh dấu của nó: thiếu cái đầu, widget hiện ra không có kiểu dáng; thiếu cái sau, các ô nhập mất biểu tượng. Sao chép ảnh biểu đồ không cần thêm gì nữa.
+  Chính sách bảo mật nội dung (CSP) của Tauri phải cho trang kết nối tới máy chủ của nguồn dữ liệu. Widget còn cần <code>style-src 'unsafe-inline'</code> cho thẻ <code>&lt;style&gt;</code> duy nhất mà nó chèn vào, và <code>img-src data:</code> cho các biểu tượng nhỏ trong ô nhập và ô đánh dấu của nó: thiếu cái đầu, widget hiện ra không có kiểu dáng; thiếu cái sau, các ô nhập và ô đánh dấu mất biểu tượng. Sao chép ảnh biểu đồ không cần thêm gì nữa.
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {

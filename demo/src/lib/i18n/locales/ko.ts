@@ -825,7 +825,7 @@ const ko: SiteMessages = {
     reviewHtml: [
       '서드파티 런타임 의존성 없음: 차트 패키지는 TradeCanvas 자체의 core와 commons에만 의존합니다.',
       '<code>eval</code>도 <code>new Function</code>도 쓰지 않으므로 <code>unsafe-eval</code> 없는 Content Security Policy에서 동작합니다.',
-      "위젯은 <code>&lt;style&gt;</code> 요소 하나를 추가하므로 해당 페이지에는 <code>style-src 'unsafe-inline'</code>이 필요합니다. 헤드리스 <code>Chart</code>는 아무것도 추가하지 않습니다.",
+      "위젯은 <code>&lt;style&gt;</code> 요소 하나를 추가하고 입력란과 체크박스의 아이콘을 <code>data:</code> 이미지로 그리므로 해당 페이지에는 <code>style-src 'unsafe-inline'</code>과 <code>img-src data:</code>가 필요합니다. 헤드리스 <code>Chart</code>에는 둘 다 필요하지 않습니다.",
       '보안 문제는 비공개로 제보받으며 일주일 안에 답합니다.',
       '모든 풀 리퀘스트는 CI에서 빌드, 타입 검사, 테스트를 거칩니다. 단위 테스트는 3,000개가 넘습니다.',
       '릴리스는 개발자의 컴퓨터가 아니라 저장소에서 GitHub Actions로 배포됩니다.',

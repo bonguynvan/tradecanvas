@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>Un gráfico dentro de una pantalla que se desplaza deja los deslizamientos verticales a la pantalla.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  La política de seguridad de contenido de Tauri debe permitir que la página llegue a los hosts del feed de datos. El widget necesita además <code>style-src 'unsafe-inline'</code>, para el único elemento <code>&lt;style&gt;</code> que añade, y <code>img-src data:</code>, para los iconos pequeños de sus campos y casillas: sin lo primero se muestra sin estilos, y sin lo segundo sus campos pierden los iconos. Copiar la imagen del gráfico no necesita nada más.
+  La política de seguridad de contenido de Tauri debe permitir que la página llegue a los hosts del feed de datos. El widget necesita además <code>style-src 'unsafe-inline'</code>, para el único elemento <code>&lt;style&gt;</code> que añade, y <code>img-src data:</code>, para los iconos pequeños de sus campos y casillas: sin lo primero se muestra sin estilos, y sin lo segundo sus campos y casillas pierden los iconos. Copiar la imagen del gráfico no necesita nada más.
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {

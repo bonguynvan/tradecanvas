@@ -4211,7 +4211,8 @@ export class Chart {
   async copyScreenshot(): Promise<boolean> {
     if (!this.features.screenshot) return false;
     const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-    const clipboard = navigator.clipboard;
+    // A runtime with no navigator has no clipboard either: that is a false, not an error.
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
     if (!clipboard?.write || !ClipboardItemCtor) return false;
     try {
       this.freshFrame();

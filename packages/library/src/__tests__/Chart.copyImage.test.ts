@@ -31,6 +31,23 @@ class BlobOnlyClipboardItem extends FakeClipboardItem {
   }
 }
 
+/** How long to wait for the canvas's image, and for Node to report a rejection nobody handled. */
+const SETTLE_MS = 20;
+
+/** The rejections nobody handled while `run` went on, and until the image had been encoded. */
+async function unhandledRejections(run: () => Promise<void>): Promise<unknown[]> {
+  const seen: unknown[] = [];
+  const onRejection = (reason: unknown): void => { seen.push(reason); };
+  process.on('unhandledRejection', onRejection);
+  try {
+    await run();
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+  } finally {
+    process.off('unhandledRejection', onRejection);
+  }
+  return seen;
+}
+
 let host: HTMLDivElement;
 let chart: Chart;
 let write: ReturnType<typeof vi.fn>;
@@ -89,6 +106,34 @@ describe('copying the chart image', () => {
   it('says false when the canvas gives no image', async () => {
     png = null;
     expect(await chart.copyScreenshot()).toBe(false);
+  });
+
+  it('says false, not an error, where there is no navigator at all', async () => {
+    vi.stubGlobal('navigator', undefined);
+    // The navigator is read before the first await, so it can come back right after the call.
+    const copied = chart.copyScreenshot();
+    vi.unstubAllGlobals();
+    await expect(copied).resolves.toBe(false);
+  });
+
+  it('leaves no rejection unhandled when ClipboardItem refuses the item for a reason of its own', async () => {
+    png = null;
+    vi.stubGlobal('ClipboardItem', class { constructor() { throw new DOMException('Not allowed', 'NotAllowedError'); } });
+
+    const unhandled = await unhandledRejections(async () => {
+      expect(await chart.copyScreenshot()).toBe(false);
+    });
+    expect(unhandled).toEqual([]);
+  });
+
+  it('leaves no rejection unhandled when the write fails without reading the image', async () => {
+    png = null;
+    write.mockImplementation(() => Promise.reject(new DOMException('Document is not focused.', 'NotAllowedError')));
+
+    const unhandled = await unhandledRejections(async () => {
+      expect(await chart.copyScreenshot()).toBe(false);
+    });
+    expect(unhandled).toEqual([]);
   });
 
   it('says false without an image clipboard, and with screenshots switched off', async () => {

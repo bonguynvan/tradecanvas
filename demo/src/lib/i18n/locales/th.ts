@@ -825,7 +825,7 @@ const th: SiteMessages = {
     reviewHtml: [
       'ไม่พึ่งพาไลบรารีภายนอกขณะรัน: แพ็กเกจกราฟพึ่งพาเพียง core และ commons ของ TradeCanvas เอง',
       'ไม่ใช้ <code>eval</code> และ <code>new Function</code> จึงทำงานได้ภายใต้ Content Security Policy ที่ไม่มี <code>unsafe-eval</code>',
-      "วิดเจ็ตเพิ่มอิลิเมนต์ <code>&lt;style&gt;</code> หนึ่งตัว หน้าที่ใช้วิดเจ็ตจึงต้องมี <code>style-src 'unsafe-inline'</code> ส่วน <code>Chart</code> แบบ headless ไม่เพิ่มอะไรเลย",
+      "วิดเจ็ตเพิ่มอิลิเมนต์ <code>&lt;style&gt;</code> หนึ่งตัว และวาดไอคอนในช่องกรอกและช่องทำเครื่องหมายด้วยรูปภาพ <code>data:</code> หน้าที่ใช้วิดเจ็ตจึงต้องมี <code>style-src 'unsafe-inline'</code> และ <code>img-src data:</code> ส่วน <code>Chart</code> แบบ headless ไม่ต้องใช้ทั้งสองอย่าง",
       'ปัญหาด้านความปลอดภัยแจ้งได้แบบส่วนตัว และจะได้รับคำตอบภายในหนึ่งสัปดาห์',
       'ทุก pull request ถูก build ตรวจชนิดข้อมูล และทดสอบบน CI: ยูนิตเทสต์กว่า 3,000 รายการ',
       'การเผยแพร่แต่ละรุ่นทำโดย GitHub Actions จาก repository ไม่ใช่จากเครื่องของนักพัฒนา',

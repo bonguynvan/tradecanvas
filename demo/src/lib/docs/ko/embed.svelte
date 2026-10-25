@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>스크롤되는 화면 안의 차트는 세로 스와이프를 화면에 맡깁니다.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  Tauri의 콘텐츠 보안 정책이 페이지가 데이터 피드의 호스트에 연결하도록 허용해야 합니다. 위젯에는 추가로, 위젯이 넣는 <code>&lt;style&gt;</code> 요소 하나를 위한 <code>style-src 'unsafe-inline'</code>과 입력란과 체크박스의 작은 아이콘을 위한 <code>img-src data:</code>가 필요합니다. 앞의 것이 없으면 위젯이 스타일 없이 표시되고, 뒤의 것이 없으면 입력란의 아이콘이 사라집니다. 차트 이미지 복사에는 더 필요한 것이 없습니다.
+  Tauri의 콘텐츠 보안 정책이 페이지가 데이터 피드의 호스트에 연결하도록 허용해야 합니다. 위젯에는 추가로, 위젯이 넣는 <code>&lt;style&gt;</code> 요소 하나를 위한 <code>style-src 'unsafe-inline'</code>과 입력란과 체크박스의 작은 아이콘을 위한 <code>img-src data:</code>가 필요합니다. 앞의 것이 없으면 위젯이 스타일 없이 표시되고, 뒤의 것이 없으면 입력란과 체크박스의 아이콘이 사라집니다. 차트 이미지 복사에는 더 필요한 것이 없습니다.
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {

@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>A chart inside a screen that scrolls leaves vertical swipes to the screen.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  Tauri's content security policy must let the page reach the data feed's hosts. The widget also needs <code>style-src 'unsafe-inline'</code>, for the one <code>&lt;style&gt;</code> element it adds, and <code>img-src data:</code>, for the small icons in its fields and checkboxes: without the first it shows unstyled, without the second its fields lose their icons. Copying the chart image needs nothing more.
+  Tauri's content security policy must let the page reach the data feed's hosts. The widget also needs <code>style-src 'unsafe-inline'</code>, for the one <code>&lt;style&gt;</code> element it adds, and <code>img-src data:</code>, for the small icons in its fields and checkboxes: without the first it shows unstyled, without the second its fields and checkboxes lose their icons. Copying the chart image needs nothing more.
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {

@@ -829,7 +829,7 @@ const es: SiteMessages = {
     reviewHtml: [
       'Sin dependencias de terceros en tiempo de ejecución: el paquete del gráfico solo depende del core y los commons del propio TradeCanvas.',
       'Sin <code>eval</code> ni <code>new Function</code>, así que funciona bajo una Content Security Policy sin <code>unsafe-eval</code>.',
-      "El widget añade un elemento <code>&lt;style&gt;</code>, así que sus páginas necesitan <code>style-src 'unsafe-inline'</code>; el <code>Chart</code> headless no añade ninguno.",
+      "El widget añade un elemento <code>&lt;style&gt;</code> y dibuja los iconos de sus campos y casillas con imágenes <code>data:</code>, así que sus páginas necesitan <code>style-src 'unsafe-inline'</code> y <code>img-src data:</code>; el <code>Chart</code> headless no necesita ninguno de los dos.",
       'Los problemas de seguridad se reportan en privado y se responden en menos de una semana.',
       'Cada pull request se compila, se comprueban sus tipos y se prueba en CI: más de 3.000 pruebas unitarias.',
       'Las versiones las publica GitHub Actions desde el repositorio, no desde el equipo de un desarrollador.',

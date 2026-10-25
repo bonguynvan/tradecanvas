@@ -825,7 +825,7 @@ const zhHant: SiteMessages = {
     reviewHtml: [
       '無第三方執行期相依套件：圖表套件只相依 TradeCanvas 自己的 core 與 commons。',
       '不使用 <code>eval</code> 與 <code>new Function</code>，因此能在不含 <code>unsafe-eval</code> 的 Content Security Policy 下執行。',
-      "元件會加入一個 <code>&lt;style&gt;</code> 元素，因此其所在頁面需要 <code>style-src 'unsafe-inline'</code>；headless 的 <code>Chart</code> 不會加入任何元素。",
+      "元件會加入一個 <code>&lt;style&gt;</code> 元素，並以 <code>data:</code> 圖片繪製輸入框與核取方塊中的圖示，因此其所在頁面需要 <code>style-src 'unsafe-inline'</code> 與 <code>img-src data:</code>；headless 的 <code>Chart</code> 兩者都不需要。",
       '資安問題以私下管道回報，並在一週內回覆。',
       '每個拉取請求都會在 CI 中建置、型別檢查並測試：超過 3,000 個單元測試。',
       '版本由 GitHub Actions 從儲存庫發布，而不是從開發者的電腦發布。',

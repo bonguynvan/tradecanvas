@@ -825,7 +825,7 @@ const tr: SiteMessages = {
     reviewHtml: [
       'Üçüncü taraf çalışma zamanı bağımlılığı yok: grafik paketi yalnızca TradeCanvas’ın kendi core ve commons paketlerine bağlıdır.',
       '<code>eval</code> ve <code>new Function</code> kullanılmaz; bu yüzden <code>unsafe-eval</code> içermeyen bir Content Security Policy altında çalışır.',
-      "Widget tek bir <code>&lt;style&gt;</code> öğesi ekler, bu yüzden bulunduğu sayfalarda <code>style-src 'unsafe-inline'</code> gerekir; headless <code>Chart</code> hiçbir şey eklemez.",
+      "Widget tek bir <code>&lt;style&gt;</code> öğesi ekler ve alanlarındaki ile onay kutularındaki simgeleri <code>data:</code> görselleriyle çizer, bu yüzden bulunduğu sayfalarda <code>style-src 'unsafe-inline'</code> ve <code>img-src data:</code> gerekir; headless <code>Chart</code> ikisine de ihtiyaç duymaz.",
       'Güvenlik sorunları gizli olarak bildirilir ve bir hafta içinde yanıtlanır.',
       'Her pull request CI’da derlenir, tür denetiminden geçer ve test edilir: 3.000’den fazla birim testi.',
       'Sürümler bir geliştiricinin bilgisayarından değil, depodan GitHub Actions ile yayımlanır.',

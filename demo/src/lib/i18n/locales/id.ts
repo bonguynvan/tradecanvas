@@ -825,7 +825,7 @@ const id: SiteMessages = {
     reviewHtml: [
       'Tanpa dependensi runtime pihak ketiga: paket chart hanya bergantung pada core dan commons milik TradeCanvas sendiri.',
       'Tanpa <code>eval</code> dan tanpa <code>new Function</code>, sehingga berjalan di bawah Content Security Policy tanpa <code>unsafe-eval</code>.',
-      "Widget menambahkan satu elemen <code>&lt;style&gt;</code>, sehingga halamannya memerlukan <code>style-src 'unsafe-inline'</code>; <code>Chart</code> headless tidak menambahkan apa pun.",
+      "Widget menambahkan satu elemen <code>&lt;style&gt;</code> dan menggambar ikon di kolom isian serta kotak centangnya dari gambar <code>data:</code>, sehingga halamannya memerlukan <code>style-src 'unsafe-inline'</code> dan <code>img-src data:</code>; <code>Chart</code> headless tidak memerlukan keduanya.",
       'Masalah keamanan dilaporkan secara privat dan ditanggapi dalam satu minggu.',
       'Setiap pull request di-build, diperiksa tipenya, dan diuji di CI: lebih dari 3.000 uji unit.',
       'Rilis diterbitkan oleh GitHub Actions dari repositori, bukan dari mesin seorang developer.',

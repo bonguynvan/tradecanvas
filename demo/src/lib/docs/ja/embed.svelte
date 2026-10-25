@@ -52,7 +52,7 @@ App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() :
 <p>スクロールする画面の中のチャートは、縦のスワイプを画面に任せます。</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
 <p>
-  Tauri のコンテンツセキュリティポリシーで、データフィードのホストへの接続を許可する必要があります。ウィジェットにはさらに、追加する 1 つの <code>&lt;style&gt;</code> 要素のために <code>style-src 'unsafe-inline'</code> が、入力欄とチェックボックスの小さなアイコンのために <code>img-src data:</code> が必要です。前者がないとウィジェットはスタイルなしで表示され、後者がないと入力欄のアイコンが消えます。チャート画像のコピーには、これ以上何も要りません。
+  Tauri のコンテンツセキュリティポリシーで、データフィードのホストへの接続を許可する必要があります。ウィジェットにはさらに、追加する 1 つの <code>&lt;style&gt;</code> 要素のために <code>style-src 'unsafe-inline'</code> が、入力欄とチェックボックスの小さなアイコンのために <code>img-src data:</code> が必要です。前者がないとウィジェットはスタイルなしで表示され、後者がないと入力欄とチェックボックスのアイコンが消えます。チャート画像のコピーには、これ以上何も要りません。
 </p>
 <pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
