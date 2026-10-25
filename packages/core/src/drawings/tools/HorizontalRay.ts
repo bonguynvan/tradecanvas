@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
+import { formatDrawingPrice, fillLevelLabel } from './labels.js';
 
 /**
  * A horizontal line that only extends forward in time from its anchor —
@@ -26,9 +26,7 @@ export class HorizontalRayTool extends DrawingBase {
     this.resetLineStyle(ctx);
 
     ctx.fillStyle = state.style.color;
-    ctx.font = drawingFont(11);
-    ctx.textBaseline = 'bottom';
-    fillTextWithHalo(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x + 4, y - 3);
+    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

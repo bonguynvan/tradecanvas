@@ -53,6 +53,25 @@ export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x:
   ctx.fillText(text, x, y);
 }
 
+/** A level label's size (px), its inset from where its line starts and its gap above the line. */
+const LEVEL_LABEL_SIZE = 11;
+const LEVEL_LABEL_INSET = 4;
+const LEVEL_LABEL_GAP = 3;
+
+/**
+ * A price level's text just above its line, by the line's start at (`x`, `y`).
+ * It sets its own alignment and baseline: the context keeps whatever the last
+ * text drawn on it left (the time axis leaves 'right', a Gann box 'right', a
+ * measure 'center'), and a label right-aligned at the plot's left edge is
+ * clipped down to its last glyph.
+ */
+export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
+  ctx.font = drawingFont(LEVEL_LABEL_SIZE);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  fillTextWithHalo(ctx, text, x + LEVEL_LABEL_INSET, y - LEVEL_LABEL_GAP);
+}
+
 
 /** Height of a label pill (CSS px). */
 export const PILL_HEIGHT = 18;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { HorizontalRayTool } from '../tools/HorizontalRay.js';
-import { drawing, unitViewport } from './fixtures.js';
+import { drawing, textCtx, unitViewport } from './fixtures.js';
 
 describe('HorizontalRayTool.hitTest', () => {
   const tool = new HorizontalRayTool();
@@ -25,5 +25,16 @@ describe('HorizontalRayTool.hitTest', () => {
   it('returns false with no anchors', () => {
     const state = drawing('horizontalRay', []);
     expect(tool.hitTest({ x: 5, y: 70 }, state, unitViewport, 2)).toBe(false);
+  });
+});
+
+describe('HorizontalRayTool price label', () => {
+  it('is left-aligned by its anchor whatever alignment the context was left with', () => {
+    // anchor (time 5, price 30) -> pixel (55, 70); the label starts 4px after it.
+    const { ctx, drawn } = textCtx();
+    ctx.textAlign = 'right';
+    new HorizontalRayTool().render(ctx, drawing('horizontalRay', [{ time: 5, price: 30 }]), unitViewport, false);
+    const label = drawn.find((d) => d.text === '30.00');
+    expect(label).toMatchObject({ align: 'left', baseline: 'bottom', left: 59, y: 67 });
   });
 });

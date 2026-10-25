@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { priceToY } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
+import { formatDrawingPrice, fillLevelLabel } from './labels.js';
 
 export class HorizontalLineTool extends DrawingBase {
   descriptor = { type: 'horizontalLine' as const, name: 'Horizontal Line', requiredAnchors: 1 };
@@ -20,9 +20,7 @@ export class HorizontalLineTool extends DrawingBase {
 
     // Price label
     ctx.fillStyle = state.style.color;
-    ctx.font = drawingFont(11);
-    ctx.textBaseline = 'bottom';
-    fillTextWithHalo(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x + 4, y - 3);
+    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x, y);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
