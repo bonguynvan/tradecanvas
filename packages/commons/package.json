@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/commons",
-  "version": "1.49.0",
+  "version": "1.49.1",
   "type": "module",
   "description": "Shared types and utilities for @tradecanvas/chart",
   "license": "MIT",
