@@ -19,7 +19,10 @@ export interface DataWindowModel {
 
 export interface DataWindowCallbacks {
   formatPrice: (price: number) => string;
-  /** The change's percentage, without its sign, in the number locale the prices are in; without it, two decimals. */
+  /**
+   * The change's percentage in the number locale the prices are in, a fall's
+   * with its minus (the panel adds the + of a rise); without it, two decimals.
+   */
   formatPercent?: (pct: number) => string;
   /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
   onClose?: () => void;

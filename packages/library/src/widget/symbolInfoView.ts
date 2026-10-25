@@ -7,6 +7,8 @@ import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 const NEWS_LIMIT = 10;
 const NEWS_TTL_MS = 5 * 60_000;
 const DAY_MS = 86_400_000;
+/** Decimals the change's percentage shows. */
+const PERCENT_DECIMALS = 2;
 
 type DayBar = { time: number; open: number; high: number; low: number; close: number; volume?: number };
 
@@ -72,7 +74,7 @@ export function buildSymbolInfoView(input: SymbolInfoInput): SymbolInfoView {
     meta: [info?.exchange, info?.type].filter(Boolean).join(' · ') || undefined,
     price: last !== undefined ? fp(last) : undefined,
     change: change !== undefined
-      ? { text: `${sign}${fp(Math.abs(change))}${percent !== undefined ? ` (${sign}${Math.abs(percent).toFixed(2)}%)` : ''}`, up: change >= 0 }
+      ? { text: `${sign}${fp(Math.abs(change))}${percent !== undefined ? ` (${sign}${fixedNumber(Math.abs(percent), PERCENT_DECIMALS, input.numberLocale)}%)` : ''}`, up: change >= 0 }
       : undefined,
     status: { state: status.state, text: statusText },
     stats,
@@ -173,6 +175,15 @@ export function relativeTime(deltaMs: number, locale: string): string {
     return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(value, unit);
   } catch {
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(value, unit);
+  }
+}
+
+/** `value` to `decimals`, in `locale` (2.234,50 in de-DE), as the price beside it is written. */
+function fixedNumber(value: number, decimals: number, locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+  } catch {
+    return value.toFixed(decimals);
   }
 }
 

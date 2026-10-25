@@ -30,6 +30,16 @@ describe('the symbol info view', () => {
     expect(view.stats.find((s) => s.label === 'High')?.value).toBe('12.00');
   });
 
+  it('writes the change’s percentage in the number locale, as its price', () => {
+    const german = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const view = (quote: { last: number; prevClose: number }) => buildSymbolInfoView({
+      symbol: 'AAA', info: null, quote: { symbol: 'AAA', ...quote }, bars, formatPrice: (p) => german.format(p),
+      t: EN_TRANSLATOR, textLocale: 'de', numberLocale: 'de-DE', now: T0 + 8_000_000,
+    }).change?.text;
+    expect(view({ last: 2_334.5, prevClose: 100 })).toBe('+2.234,50 (+2.234,50%)');
+    expect(view({ last: 9.5, prevClose: 11 })).toBe('-1,50 (-13,64%)');
+  });
+
   it('names the symbol’s zone, in either spelling', () => {
     const zoneOf = (info: { symbol: string; timeZone?: string; timezone?: string }) => buildSymbolInfoView({
       symbol: 'AAA', info, quote: undefined, bars, formatPrice: (p) => p.toFixed(2),
