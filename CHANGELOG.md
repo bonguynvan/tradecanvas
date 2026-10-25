@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.49.1 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.32.
+
 ### One way in for the bars
 
 Every way bars reach the chart (`setData`, `appendBar`, `appendBars`, `updateLastBar`, `updateLastBarFromTick`, `prependBars`, a stream, a replay, the extended hours hidden or shown) now goes through one place, the series store. A seeded test runs each of them, mixed, against a chart given the same bars with `setData`, its bars and indicators alike. It found three faults:
