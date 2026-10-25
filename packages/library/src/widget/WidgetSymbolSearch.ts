@@ -3,9 +3,10 @@ import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { keepTabInside } from './focusTrap.js';
 import { markPart } from './widgetFeatures.js';
-import { mergeSymbolInfo, readSymbolCatalog } from './symbolCatalog.js';
+import { cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, readSymbolResults } from './symbolCatalog.js';
 import { createSymbolBadge } from './symbolBadge.js';
-import { highlight, scoreSymbol } from './symbolMatch.js';
+import { createSymbolCell } from './symbolCell.js';
+import { scoreSymbol } from './symbolMatch.js';
 import { SymbolSearchFilters } from './symbolSearchFilters.js';
 
 export interface SymbolSearchCallbacks {
@@ -84,8 +85,11 @@ let nextSearchId = 1;
  *   cheap match, good enough for lists in the low thousands.
  * - With one (a feed's `searchSymbols`) it asks once typing pauses, cancels a
  *   query a newer one replaced, and lists names, kinds and exchanges; what it
- *   hears is kept for the list it opens with next time. The feed's words win
- *   over the ones given, which fill what it leaves out (a logo, say).
+ *   hears is kept for the list it opens with next time.
+ * - Whose words a row shows is one rule, wherever it is listed: the feed's,
+ *   then the ones given for what it left out (a logo, say), then what the
+ *   chart knows of its own symbol. Words that aren't text (a JSON feed's
+ *   numeric code, a null) say nothing.
  * - The rows can be narrowed to a kind (stocks, crypto) and, when they come
  *   from two or more, to an exchange.
  * - Comparing, a pick adds the symbol the way chosen above the list and the
@@ -120,8 +124,10 @@ export class WidgetSymbolSearch {
   private status: 'idle' | 'searching' | 'failed' = 'idle';
   /** Enter came before the results for what was typed: take the top one when they land. */
   private pickOnResults = false;
-  /** Names, kinds, exchanges and logos given or told of, by symbol. */
-  private readonly known = new Map<string, SymbolInfo>();
+  /** What the feed's searches told of each symbol, kept from one opening to the next: its words win. */
+  private readonly heard = new Map<string, SymbolInfo>();
+  /** What came with the symbols it opened with, over what the chart knows of its own. */
+  private givenInfo = new Map<string, SymbolInfo>();
   private returnFocus: HTMLElement | null = null;
   private readonly uid = nextSearchId++;
 
@@ -159,6 +165,7 @@ export class WidgetSymbolSearch {
     this.searchFn = null;
     this.backdrop.remove();
     this.backdrop = this.input = this.list = this.results = this.live = this.columns = null;
+    this.filters?.destroy();
     this.filters = null;
     this.mode = null;
     this.callbacks.onClose();
@@ -200,18 +207,24 @@ export class WidgetSymbolSearch {
   }
 
   /**
-   * The tickers given, and what came with them: the host's words for its
-   * list are the ones it opens with. What the chart knows of its own symbol
-   * only fills gaps, as it may use other words for it (a kind in English
-   * where the list's are translated).
+   * The tickers given, and what came with them. What the chart knows of its
+   * own symbol only fills gaps, as it may use other words for it (a kind in
+   * English where the list's are translated).
    */
   private learnGiven(mode: Mode): void {
     const catalog = readSymbolCatalog(mode.start.symbols);
     this.given = catalog.names;
-    for (const [symbol, info] of catalog.info) this.known.set(symbol, mergeSymbolInfo(this.known.get(symbol), info)!);
+    this.givenInfo = catalog.info;
     const current = mode.start.current;
     const own = mode.kind === 'search' ? mode.start.currentInfo : null;
-    if (own && current) this.known.set(current, mergeSymbolInfo({ ...own, symbol: current }, this.known.get(current))!);
+    if (own && typeof own === 'object' && current) {
+      this.givenInfo.set(current, mergeSymbolInfo(cleanSymbolInfo(own, current), this.givenInfo.get(current))!);
+    }
+  }
+
+  /** What a row of `symbol` shows: the feed's words, the ones given for the rest. */
+  private infoOf(symbol: string): SymbolInfo | undefined {
+    return mergeSymbolInfo(this.givenInfo.get(symbol), this.heard.get(symbol));
   }
 
   // --- Building ---
@@ -353,7 +366,7 @@ export class WidgetSymbolSearch {
 
   /** The symbols it was given, named where they came with a name or a search told of one. */
   private listGiven(): void {
-    this.rows = this.given.map((symbol) => ({ symbol, score: 0, info: this.known.get(symbol) }));
+    this.rows = this.given.map((symbol) => ({ symbol, score: 0, info: this.infoOf(symbol) }));
     this.rowsGiven = true;
     this.afterResults(true);
   }
@@ -374,7 +387,7 @@ export class WidgetSymbolSearch {
     const q = typed.toUpperCase();
     this.rows = this.given
       .map((symbol) => {
-        const info = this.known.get(symbol);
+        const info = this.infoOf(symbol);
         return { symbol, score: scoreSymbol(symbol, info?.description, q), info };
       })
       .filter((r) => r.score > 0)
@@ -410,10 +423,10 @@ export class WidgetSymbolSearch {
     try {
       const found = await search(query, controller.signal);
       if (controller.signal.aborted) return;
-      const results = (Array.isArray(found) ? found : []).filter((info) => typeof info?.symbol === 'string' && info.symbol !== '');
-      // The feed's words win; what it leaves out (a logo given with the symbols, say) stays.
-      for (const info of results) this.known.set(info.symbol, mergeSymbolInfo(this.known.get(info.symbol), info)!);
-      this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info: this.known.get(info.symbol) }));
+      const results = readSymbolResults(found);
+      // What a later search leaves out, an earlier one may have told of.
+      for (const info of results) this.heard.set(info.symbol, mergeSymbolInfo(this.heard.get(info.symbol), info)!);
+      this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info: this.infoOf(info.symbol) }));
       this.status = 'idle';
     } catch {
       if (controller.signal.aborted) return;
@@ -526,16 +539,11 @@ export class WidgetSymbolSearch {
     el.classList.toggle('tcw-on-chart', onChart);
     if (isCurrent) el.setAttribute('aria-current', 'true');
 
-    const symbol = document.createElement('span');
-    symbol.className = 'tcw-ss-symbol';
-    // A ticker reads left to right in any widget ("^GSPC", "BRK.B").
-    symbol.dir = 'ltr';
-    symbol.innerHTML = highlight(row.symbol, query);
     // Every row has the same cells, empty where nothing was said, so the columns line up.
     const kind = this.tag('tcw-ss-kind', row.info?.type?.trim() ?? '');
     const exchange = this.tag('tcw-ss-exchange', row.info?.exchange?.trim() ?? '');
     kind.dir = exchange.dir = 'auto';
-    el.append(createSymbolBadge(row.symbol, row.info), symbol, this.descriptionCell(row), kind, exchange);
+    el.append(createSymbolBadge(row.symbol, row.info), createSymbolCell(row.symbol, query), this.descriptionCell(row), kind, exchange);
     if (isCurrent || onChart) {
       const check = document.createElement('span');
       check.className = 'tcw-ss-check';
@@ -590,9 +598,7 @@ export class WidgetSymbolSearch {
     remove.addEventListener('click', () => {
       if (this.mode?.kind === 'compare') this.mode.start.onRemove(entry.id);
     });
-    const symbol = this.tag('tcw-ss-symbol', entry.symbol);
-    symbol.dir = 'ltr';
-    el.append(symbol, way, remove);
+    el.append(createSymbolCell(entry.symbol, ''), way, remove);
     return el;
   }
 

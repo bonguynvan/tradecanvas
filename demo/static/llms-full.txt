@@ -891,8 +891,12 @@ widget.setSymbols(more);
 ```
 
 - A feed's search results (`searchSymbols`) win over these words field by
-  field; the logo you gave stays. The chart's own info for its symbol
-  (`resolveSymbol`, `chart.setSymbolInfo`) names the toolbar's symbol first.
+  field, on the list the search opens with too once a search told of a
+  symbol; the logo you gave stays. A `null`, a number or a blank where a word
+  goes (a JSON feed's) counts as not given: it neither shows nor erases yours.
+- The chart's own info for its symbol (`resolveSymbol`, `chart.setSymbolInfo`)
+  names the toolbar's symbol first, in whatever spelling the feed answers
+  with, once it is set after the symbol changed.
 - `pricePrecision`, `minTick`, `sessions` given here never reach the chart:
   give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
 - `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and

@@ -8,10 +8,15 @@ describe('kindSlot', () => {
     expect(kindSlot(' stock ')).toBe(1);
     expect(kindSlot('equity')).toBe(1);
     expect(kindSlot('Futures')).toBe(2);
-    expect(kindSlot('perpetual')).toBe(2);
     expect(kindSlot('Index')).toBe(3);
     expect(kindSlot('Crypto')).toBe(4);
     expect(kindSlot('Forex')).toBe(5);
+  });
+
+  it('colours a perpetual as crypto, apart from an exchange’s futures, as a phone shows no kind column', () => {
+    expect(kindSlot('perpetual')).toBe(4);
+    expect(kindSlot('Perp')).toBe(4);
+    expect(kindSlot('Perpetual')).not.toBe(kindSlot('Phái sinh'));
   });
 
   it('knows the Vietnamese words for them, as a Vietnamese feed writes them', () => {
@@ -20,6 +25,10 @@ describe('kindSlot', () => {
     expect(kindSlot('Chỉ số')).toBe(3);
     // The same word with its marks written apart.
     expect(kindSlot('Cổ phiếu'.normalize('NFD'))).toBe(1);
+    // Crypto with the tone mark on either vowel, as both are written.
+    expect(kindSlot('Tiền mã hoá')).toBe(4);
+    expect(kindSlot('Tiền mã hóa')).toBe(4);
+    expect(new Set(['Cổ phiếu', 'Phái sinh', 'Chỉ số', 'Tiền mã hoá'].map(kindSlot)).size).toBe(4);
   });
 
   it('gives any other kind a colour of its own words, the same each time', () => {

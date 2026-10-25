@@ -194,6 +194,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>La hoja de estilos: espaciado Fibonacci, de 2 a 34 px</td></tr>
+    <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>La hoja de estilos: los colores de la búsqueda de símbolos para cada tipo de símbolo (acciones, futuros, índices, cripto, divisas), definidos para el tema oscuro y el claro. Una paleta propia también debe definirlos, o las insignias conservan estos tonos.</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>La hoja de estilos: <code>normal</code>, las fuentes tal como se dibujan. La opción <code>ui</code> nunca la fija, así que una regla tuya sobre <code>.tcw-root</code> activa las funciones OpenType de tu fuente (la a de un piso y los dígitos abiertos de Inter: <code>'cv11', 'ss01'</code>). Llegan al texto del widget, aunque la mayoría de sus botones y campos conservan el ajuste propio del navegador, y nunca al texto del gráfico.</td></tr>
   </tbody>
 </table>

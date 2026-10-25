@@ -498,7 +498,14 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <code>logo</code> 可以是 <code>https:</code> 或 <code>http:</code> 地址、你网站上的路径、<code>blob:</code> URL，
   或写在 <code>data:</code> 里的图片（PNG、JPEG、GIF、WebP、AVIF 或 SVG）；其他一律忽略。它只会作为图片加载，
-  不带 referrer，所以页面的 <code>img-src</code> 策略必须允许它的主机；加载失败时显示首字母。首字母的颜色来自 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（股票、期货、指数、加密货币、外汇；其他类别按名称分到一种），深色和浅色主题各有一套。
+  不带 referrer，所以页面的 <code>img-src</code> 策略必须允许它的主机；加载失败时显示首字母。首字母的颜色来自 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（股票、期货、指数、加密货币和永续合约、外汇；其他类别按名称分到一种），深色和浅色主题各有一套。
+</p>
+<p>
+  一旦搜索告知过某个品种，数据源给的名称不只用在搜索结果里，也用在搜索打开时的列表上。不是文本的名称、类别、交易所或
+  logo（JSON 数据源的 <code>null</code>、数字形式的交易所代码）视为没有给出：既不显示，也不会抹掉你给的信息。冒号前的
+  交易所名（<code>BINANCE:BTCUSDT</code>）显示得更淡，列变窄时先缩短它；在手机上，类别标签排成一行滚动，后面还有标签的
+  那一端会渐隐。图表对自身品种的了解，在属于同一个品种时（不分大小写，冒号前有没有交易所名都可以），或在切换品种之后
+  才设置时，会作为工具栏和信息面板上品种的名称，所以数据源自己的写法（<code>BTCUSD</code> 写作 <code>BTC-USD</code>）也算数。
 </p>
 <p>
   <strong>对比</strong>是同一个对话框，只是在搜索框下方多了<strong>添加方式</strong>，并把已在对比的品种列在最前面

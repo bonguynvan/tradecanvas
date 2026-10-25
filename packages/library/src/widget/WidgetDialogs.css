@@ -630,6 +630,28 @@
   gap: var(--tcw-space-2);
 }
 
+/* Where they scroll in one line, the tabs fade out at an end with more past it, so a tab cut there
+   reads as more to scroll to. A mask: only its alpha counts, not the colour it is written in. */
+.tcw-ss-kinds[data-more] {
+  --tcw-ss-fade-start: #000;
+  --tcw-ss-fade-end: #000;
+  -webkit-mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+}
+
+[dir='rtl'] .tcw-ss-kinds[data-more] {
+  -webkit-mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), #000 var(--tcw-space-6), #000 calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+}
+
+.tcw-ss-kinds[data-more~='start'] {
+  --tcw-ss-fade-start: transparent;
+}
+
+.tcw-ss-kinds[data-more~='end'] {
+  --tcw-ss-fade-end: transparent;
+}
+
 .tcw-ss-type {
   flex: none;
   height: var(--tcw-control-h);
@@ -793,6 +815,7 @@ img.tcw-ss-badge {
    the chart's own in ink. */
 .tcw-ss-symbol {
   grid-column: 2;
+  display: flex;
   justify-self: start;
   max-width: 100%;
   min-width: 0;
@@ -800,8 +823,25 @@ img.tcw-ss-badge {
   color: var(--tcw-text);
   font-family: var(--tcw-font-mono);
   font-weight: var(--tcw-weight-strong);
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A venue before the ticker ("BINANCE:"), dim, is what a narrow column shortens; the ticker never
+   shrinks (a share of a pixel would end it in an ellipsis), and is cut only when it alone is wider. */
+.tcw-ss-venue {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-muted);
+  font-weight: var(--tcw-weight);
+  text-overflow: ellipsis;
+}
+
+.tcw-ss-ticker {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tcw-ss-row.tcw-current .tcw-ss-symbol {

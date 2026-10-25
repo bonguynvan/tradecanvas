@@ -63,30 +63,34 @@ function foldMarks(text: string): string {
 }
 
 /**
- * The symbol with the letters the query matched marked: the run of them where
- * the symbol holds the query whole, else each in order; nothing when the
- * symbol doesn't hold them all (a match on the name).
+ * The symbol from `from` to `to` (all of it by default) as markup, with the
+ * letters the query matched marked: the run of them where the symbol holds
+ * the query whole, else each in order; nothing when the symbol doesn't hold
+ * them all (a match on the name). The match is found in the whole symbol, so
+ * a part of it is marked as it would be in the whole.
  */
-export function highlight(symbol: string, query: string): string {
-  if (!query) return escapeHtml(symbol);
-  const upper = symbol.toUpperCase();
+export function highlight(symbol: string, query: string, from = 0, to = symbol.length): string {
+  const marked = query ? matchedLetters(symbol.toUpperCase(), query) : new Set<number>();
+  let out = '';
+  for (let i = from; i < to; i++) {
+    out += marked.has(i) ? `<mark>${escapeHtml(symbol[i])}</mark>` : escapeHtml(symbol[i]);
+  }
+  return out;
+}
+
+function matchedLetters(upper: string, query: string): Set<number> {
   const marked = new Set<number>();
   const run = upper.indexOf(query);
   if (run >= 0) {
     for (let i = run; i < run + query.length; i++) marked.add(i);
-  } else {
-    let qi = 0;
-    for (let i = 0; i < upper.length && qi < query.length; i++) {
-      if (upper[i] === query[qi]) {
-        marked.add(i);
-        qi++;
-      }
+    return marked;
+  }
+  let qi = 0;
+  for (let i = 0; i < upper.length && qi < query.length; i++) {
+    if (upper[i] === query[qi]) {
+      marked.add(i);
+      qi++;
     }
-    if (qi < query.length) marked.clear();
   }
-  let out = '';
-  for (let i = 0; i < symbol.length; i++) {
-    out += marked.has(i) ? `<mark>${escapeHtml(symbol[i])}</mark>` : escapeHtml(symbol[i]);
-  }
-  return out;
+  return qi < query.length ? new Set() : marked;
 }

@@ -1,5 +1,5 @@
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { logoSrc } from './symbolCatalog.js';
+import { logoSrc, splitVenue } from './symbolCatalog.js';
 
 /** How many kind colours there are (`--tcw-kind-1` … `--tcw-kind-5`); 0 is a symbol of no kind. */
 export const KIND_SLOTS = 5;
@@ -9,12 +9,15 @@ const LOGO_PX = 20;
 /**
  * The usual kinds in English and in Vietnamese, as feeds write them, each
  * with its colour: a stock and a "cổ phiếu" look the same in either language.
+ * A perpetual is crypto's own kind of futures and takes crypto's colour, so
+ * on a phone, where the kind's column goes, it still looks apart from an
+ * exchange's futures. Vietnamese puts the tone mark of "hoá" on either vowel.
  */
 const KNOWN_KINDS: Record<string, number> = {
   stock: 1, stocks: 1, equity: 1, share: 1, shares: 1, 'cổ phiếu': 1,
-  futures: 2, future: 2, perpetual: 2, perp: 2, derivative: 2, derivatives: 2, option: 2, options: 2, 'phái sinh': 2,
+  futures: 2, future: 2, derivative: 2, derivatives: 2, option: 2, options: 2, 'phái sinh': 2,
   index: 3, indices: 3, 'chỉ số': 3,
-  crypto: 4, cryptocurrency: 4, 'tiền mã hóa': 4, 'tiền điện tử': 4,
+  crypto: 4, cryptocurrency: 4, perpetual: 4, perpetuals: 4, perp: 4, perps: 4, 'tiền mã hóa': 4, 'tiền mã hoá': 4, 'tiền điện tử': 4,
   forex: 5, fx: 5, currency: 5, 'ngoại hối': 5,
 };
 
@@ -46,7 +49,7 @@ function hashWords(text: string): number {
 
 /** The first letter or figure of a ticker, after any venue before a colon ("KBS:VCB" gives V). */
 export function symbolInitial(symbol: string): string {
-  const ticker = symbol.slice(symbol.lastIndexOf(':') + 1);
+  const { ticker } = splitVenue(symbol);
   const first = /[\p{L}\p{N}]/u.exec(ticker);
   return first ? first[0].toUpperCase() : '';
 }

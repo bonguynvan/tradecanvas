@@ -217,6 +217,19 @@ describe('WidgetSymbolSearch with a search function', () => {
     expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
   });
 
+  it('takes words of the feed that are not text as none, and still shows its results', async () => {
+    const found = [{ symbol: 'VNM', description: 'Vinamilk', exchange: 10, type: 4 }, { symbol: 'FPT', description: null }];
+    search.open({ symbols: ['VNM'], current: '', search: async () => found as unknown as SymbolInfo[] });
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['VNM', 'FPT']);
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vinamilk');
+    expect(rows()[0].querySelector('.tcw-ss-exchange')?.textContent).toBe('');
+    expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('');
+    expect(rows()[1].querySelector('.tcw-ss-desc')).toBeNull();
+    expect(empty()).toBeUndefined();
+  });
+
   it('cancels a query that a newer one replaced', async () => {
     const signals: AbortSignal[] = [];
     const fn = vi.fn((_q: string, signal: AbortSignal) => {
@@ -345,6 +358,38 @@ describe('WidgetSymbolSearch kinds of symbol', () => {
   });
 });
 
+describe('WidgetSymbolSearch kinds that scroll', () => {
+  const kinds = () => host.querySelector<HTMLElement>('.tcw-ss-kinds')!;
+  /** Tabs `content` wide in a row `room` wide, scrolled `at` from its start. */
+  const lay = (content: number, room: number, at: number) => {
+    Object.defineProperty(kinds(), 'scrollWidth', { configurable: true, value: content });
+    Object.defineProperty(kinds(), 'clientWidth', { configurable: true, value: room });
+    kinds().scrollLeft = at;
+    kinds().dispatchEvent(new Event('scroll'));
+  };
+
+  beforeEach(() => {
+    search.open({ symbols: [{ symbol: 'A', type: 'Cổ phiếu' }, { symbol: 'B', type: 'Phái sinh' }, { symbol: 'C', type: 'Perpetual' }], current: '' });
+  });
+
+  it('says which ends have tabs past them, for the fade there', () => {
+    lay(300, 100, 0);
+    expect(kinds().dataset.more).toBe('end');
+    lay(300, 100, 100);
+    expect(kinds().dataset.more).toBe('start end');
+    lay(300, 100, 200);
+    expect(kinds().dataset.more).toBe('start');
+  });
+
+  it('says nothing when the tabs fit, and counts right to left from the start', () => {
+    lay(100, 100, 0);
+    expect(kinds().hasAttribute('data-more')).toBe(false);
+    // Right to left, a row scrolled toward its end has a negative scrollLeft.
+    lay(300, 100, -200);
+    expect(kinds().dataset.more).toBe('start');
+  });
+});
+
 describe('WidgetSymbolSearch exchanges', () => {
   const vn: SymbolInfo[] = [
     { symbol: 'VNM', description: 'Vinamilk', exchange: 'HOSE', type: 'stock' },
@@ -446,6 +491,70 @@ describe('WidgetSymbolSearch symbols given with their info', () => {
     expect(row.querySelector('.tcw-ss-exchange')?.textContent).toBe('HOSE');
     expect(row.querySelector('.tcw-ss-kind')?.textContent).toBe('Cổ phiếu');
     expect(row.querySelector('img.tcw-ss-badge')?.getAttribute('src')).toBe('https://cdn.x/vnm.png');
+  });
+
+  it('lets a feed’s null erase none of the words it was given, nor the logo', async () => {
+    search.open({
+      symbols: [{ symbol: 'VNM', description: 'Vinamilk', logo: 'https://cdn.x/vnm.png' }],
+      current: '',
+      search: async () => [{ symbol: 'VNM', description: null, logo: null, exchange: 'HOSE' } as unknown as SymbolInfo],
+    });
+    type('vn');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vinamilk');
+    expect(rows()[0].querySelector('.tcw-ss-exchange')?.textContent).toBe('HOSE');
+    expect(rows()[0].querySelector('img.tcw-ss-badge')?.getAttribute('src')).toBe('https://cdn.x/vnm.png');
+  });
+
+  it('names a symbol in the feed’s words wherever it is listed, once a search told of them', async () => {
+    const start = () => search.open({
+      symbols: [{ symbol: 'VNM', description: 'Vinamilk', type: 'Cổ phiếu' }],
+      current: '',
+      search: async () => [{ symbol: 'VNM', description: 'VINAMILK JSC' }],
+    });
+    const name = () => rows()[0].querySelector('.tcw-ss-desc')?.textContent;
+    start();
+    expect(name()).toBe('Vinamilk');
+    type('vn');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(name()).toBe('VINAMILK JSC');
+    search.close();
+    // Opened again with the same words: the list it opens with and the results agree.
+    start();
+    expect(name()).toBe('VINAMILK JSC');
+    expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('Cổ phiếu');
+    type('vn');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(name()).toBe('VINAMILK JSC');
+    type('');
+    expect(name()).toBe('VINAMILK JSC');
+  });
+
+  it('takes words given that are not text as none, from plain JavaScript', () => {
+    const given = [{ symbol: 'A', type: 5, exchange: 7, description: 12 }, { symbol: 'AB', description: 'Alpha Beta' }, 'B'];
+    const currentInfo = { symbol: 'A', exchange: 3 } as unknown as SymbolInfo;
+    expect(() => search.open({ symbols: given as unknown as SymbolInfo[], current: 'A', currentInfo })).not.toThrow();
+    expect(rowText()).toEqual(['A', 'AB', 'B']);
+    expect([...rows()[0].querySelectorAll('.tcw-ss-kind, .tcw-ss-exchange')].map((c) => c.textContent)).toEqual(['', '']);
+    expect(rows()[0].querySelector('.tcw-ss-desc')).toBeNull();
+    expect(() => type('a')).not.toThrow();
+    expect(rowText()).toEqual(['A', 'AB']);
+    expect(() => type('beta')).not.toThrow();
+    expect(rowText()).toEqual(['AB']);
+  });
+
+  it('shows a venue before the ticker apart, so the ticker is what a narrow column keeps', () => {
+    search.open({ symbols: ['BINANCE:BTCUSDT', 'HYPERLIQUID:xyz:GOLD', 'VNM'], current: '' });
+    const parts = (row: HTMLElement) => [...row.querySelector('.tcw-ss-symbol')!.children].map((c) => [c.className, c.textContent]);
+    expect(parts(rows()[0])).toEqual([['tcw-ss-venue', 'BINANCE:'], ['tcw-ss-ticker', 'BTCUSDT']]);
+    expect(parts(rows()[1])).toEqual([['tcw-ss-venue', 'HYPERLIQUID:xyz:'], ['tcw-ss-ticker', 'GOLD']]);
+    expect(parts(rows()[2])).toEqual([['tcw-ss-ticker', 'VNM']]);
+    expect(rowText()).toEqual(['BINANCE:BTCUSDT', 'HYPERLIQUID:xyz:GOLD', 'VNM']);
+    // The letters typed are marked in either part, and across the colon.
+    type('e:b');
+    const marked = (part: string) => [...rows()[0].querySelectorAll(`.${part} mark`)].map((m) => m.textContent).join('');
+    expect(marked('tcw-ss-venue')).toBe('E:');
+    expect(marked('tcw-ss-ticker')).toBe('B');
   });
 
   it('without a search, finds a given symbol by its name too, the tickers first', () => {
@@ -632,6 +741,12 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(document.activeElement).toBe(input());
     search.setCompared([]);
     expect(host.querySelectorAll('.tcw-ss-added-row')).toHaveLength(0);
+  });
+
+  it('shows the venue of a symbol compared apart from its ticker, as the rows below do', () => {
+    compare([{ id: 'a', symbol: 'KBS:VCB', way: 'Ratio' }]);
+    const symbol = host.querySelector('.tcw-ss-added-row .tcw-ss-symbol')!;
+    expect([...symbol.children].map((c) => c.textContent)).toEqual(['KBS:', 'VCB']);
   });
 
   it('lists the names it was given, and what is compared, in the same columns', () => {

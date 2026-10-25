@@ -116,6 +116,24 @@ describe('ChartWidget symbols given with their info', () => {
     expect(symbolButton().hasAttribute('title')).toBe(false);
   });
 
+  it('takes what the chart is told after the symbol changes as its own, in whatever spelling the feed uses', async () => {
+    widget = new ChartWidget(host, { symbol: 'BTCUSD', symbols: ['BTCUSD', 'ETHUSD'], watchlist: false });
+    FakeChart.info = { symbol: 'BTC-USD', description: 'Bitcoin', exchange: 'Coinbase' };
+    FakeChart.last.emit('symbolInfoChange', { info: FakeChart.info });
+    expect(symbolButton().title).toBe('Bitcoin · Coinbase');
+    widget.toggleSymbolInfo(true);
+    expect(panel().querySelector('.tcw-syminfo-desc')?.textContent).toBe('Bitcoin');
+    symbolButton().click();
+    expect(desc(searchRows()[0])).toBe('Bitcoin');
+    document.querySelector<HTMLElement>('.tcw-ss-input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    // Switched, it is still the last symbol's until the chart is told of the new one.
+    await widget.setSymbol('ETHUSD');
+    expect(symbolButton().hasAttribute('title')).toBe(false);
+    FakeChart.info = { symbol: 'ETH-USD', description: 'Ether' };
+    FakeChart.last.emit('symbolInfoChange', { info: FakeChart.info });
+    expect(symbolButton().title).toBe('Ether');
+  });
+
   it('names the symbol in the info panel from the given info, the market’s hours from the chart only', async () => {
     FakeChart.info = { symbol: 'FPT', description: 'FPT Corp', timeZone: 'UTC' };
     widget = new ChartWidget(host, { symbol: 'VNM', symbols: [VNM, 'FPT'], watchlist: false });

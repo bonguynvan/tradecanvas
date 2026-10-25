@@ -109,12 +109,13 @@
   --tcw-green-soft: rgba(79, 174, 138, 0.12);
 
   /* The kinds of symbol in the symbol search (stock, futures, index, crypto, forex): hues clear of
-   * the accent's blue and the up and down green and red, each readable on a tint of itself. */
+   * the accent's blue and the up and down green and red, far enough apart to tell at a badge's size,
+   * each readable on a tint of itself. */
   --tcw-kind-1: #45b4c4;
-  --tcw-kind-2: #e0a54a;
-  --tcw-kind-3: #b39cf2;
-  --tcw-kind-4: #d88bd8;
-  --tcw-kind-5: #a9b45a;
+  --tcw-kind-2: #eb9d4c;
+  --tcw-kind-3: #bd8ff2;
+  --tcw-kind-4: #f083b6;
+  --tcw-kind-5: #a6c45c;
 
   --tcw-hover-bg: rgba(230, 227, 220, 0.06);
   --tcw-active-bg: rgba(230, 227, 220, 0.1);
@@ -225,10 +226,10 @@
 
   /* The same hues, deep enough to read on paper. */
   --tcw-kind-1: #0b6c7a;
-  --tcw-kind-2: #8a5806;
-  --tcw-kind-3: #6744c4;
-  --tcw-kind-4: #93378f;
-  --tcw-kind-5: #5b6612;
+  --tcw-kind-2: #8f5308;
+  --tcw-kind-3: #7240c0;
+  --tcw-kind-4: #a5336e;
+  --tcw-kind-5: #4a6c14;
 
   --tcw-hover-bg: rgba(27, 29, 33, 0.05);
   --tcw-active-bg: rgba(27, 29, 33, 0.08);

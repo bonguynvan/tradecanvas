@@ -7,6 +7,8 @@ const keyOf = kindKey;
 
 /** Exchanges must be at least this many before the search offers to keep to one. */
 const MIN_EXCHANGES = 2;
+/** Tabs past an end by less than this (a rounded pixel) count as none. */
+const MORE_SLACK_PX = 1;
 
 /**
  * The symbol search's filters: a tab for each kind of symbol and a list of
@@ -25,6 +27,8 @@ export class SymbolSearchFilters {
   private readonly exchanges = new Map<string, string>();
   private kind: string | null = null;
   private exchange: string | null = null;
+  /** Tells of the tabs' room changing (a phone turned), where the browser can. */
+  private readonly resize: ResizeObserver | null;
 
   /** `onChange` when the user picks a kind or an exchange. */
   constructor(private readonly t: Translator, private readonly onChange: () => void) {
@@ -36,6 +40,9 @@ export class SymbolSearchFilters {
     this.kindsEl.setAttribute('role', 'group');
     this.kindsEl.setAttribute('aria-label', t('symbolSearch.kinds'));
     this.kindsEl.hidden = true;
+    this.kindsEl.addEventListener('scroll', () => this.markMore(), { passive: true });
+    this.resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => this.markMore());
+    this.resize?.observe(this.kindsEl);
     this.exchangeEl = document.createElement('select');
     this.exchangeEl.className = 'tcw-settings-select tcw-ss-exchange-filter';
     this.exchangeEl.setAttribute('aria-label', t('symbolSearch.exchange'));
@@ -60,6 +67,27 @@ export class SymbolSearchFilters {
     this.kindsEl.hidden = this.kinds.size === 0;
     this.exchangeEl.hidden = this.exchanges.size < MIN_EXCHANGES;
     this.el.hidden = this.kindsEl.hidden && this.exchangeEl.hidden;
+    this.markMore();
+  }
+
+  /** Stop hearing of the tabs' room: the dialog has gone. */
+  destroy(): void {
+    this.resize?.disconnect();
+  }
+
+  /**
+   * Where the tabs scroll in one line (a phone), say at which ends there are
+   * more past the edge, `data-more` "start", "end" or both, for the fade there:
+   * a tab cut at the edge then reads as more to scroll to. Right to left, the
+   * row scrolls the other way, and its scrollLeft runs below zero.
+   */
+  private markMore(): void {
+    const el = this.kindsEl;
+    const past = Math.abs(el.scrollLeft);
+    const room = el.scrollWidth - el.clientWidth;
+    const ends = [past > MORE_SLACK_PX ? 'start' : '', past < room - MORE_SLACK_PX ? 'end' : ''].filter(Boolean);
+    if (ends.length > 0) el.dataset.more = ends.join(' ');
+    else delete el.dataset.more;
   }
 
   /**

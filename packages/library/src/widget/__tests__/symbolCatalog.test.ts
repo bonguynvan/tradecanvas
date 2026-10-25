@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { chartInfoFor, cleanSymbol, logoSrc, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from '../symbolCatalog.js';
+import { chartInfoFor, cleanSymbol, logoSrc, mergeSymbolInfo, readSymbolCatalog, readSymbolResults, splitVenue, symbolTitle } from '../symbolCatalog.js';
 
 describe('cleanSymbol', () => {
   it('trims a ticker and drops what is not one', () => {
@@ -34,6 +34,16 @@ describe('readSymbolCatalog', () => {
     expect(catalog.info.get('A')?.description).toBe('one');
   });
 
+  it('takes a name, a kind, an exchange or a logo that is not text as none, keeping the rest', () => {
+    const catalog = readSymbolCatalog([
+      { symbol: 'A', description: 12, type: 5, exchange: null, logo: {}, currency: 'VND' },
+      { symbol: 'B', description: '  ', exchange: 'HOSE' },
+    ]);
+    expect(catalog.names).toEqual(['A', 'B']);
+    expect(catalog.info.get('A')).toEqual({ symbol: 'A', currency: 'VND' });
+    expect(catalog.info.get('B')).toEqual({ symbol: 'B', exchange: 'HOSE' });
+  });
+
   it('reads anything but a list as no symbols', () => {
     for (const raw of [undefined, null, 'AAA', 42, { symbol: 'AAA' }]) {
       const catalog = readSymbolCatalog(raw);
@@ -53,11 +63,48 @@ describe('mergeSymbolInfo', () => {
     expect(host.exchange).toBeUndefined();
   });
 
+  it('never erases a field with null, as a JSON feed writes one it has no value for', () => {
+    const host: SymbolInfo = { symbol: 'X', description: 'host', logo: 'https://cdn.x/x.png' };
+    const feed = { symbol: 'X', description: null, logo: null, exchange: 'HOSE' } as unknown as SymbolInfo;
+    expect(mergeSymbolInfo(host, feed)).toEqual({ symbol: 'X', description: 'host', logo: 'https://cdn.x/x.png', exchange: 'HOSE' });
+  });
+
   it('gives the one there is when the other is missing', () => {
     const one: SymbolInfo = { symbol: 'X', type: 'stock' };
     expect(mergeSymbolInfo(undefined, one)).toEqual(one);
     expect(mergeSymbolInfo(one, null)).toEqual(one);
     expect(mergeSymbolInfo(undefined, undefined)).toBeUndefined();
+  });
+});
+
+describe('readSymbolResults', () => {
+  it('keeps the results that name a symbol, in order, their words that are not text left out', () => {
+    const found = [
+      {}, null, 42, { symbol: '' }, { symbol: 7 },
+      { symbol: 'VNM', description: 'Vinamilk', exchange: 10, type: null },
+      { symbol: 'FPT', logo: 3, minTick: 100 },
+    ];
+    expect(readSymbolResults(found)).toEqual([
+      { symbol: 'VNM', description: 'Vinamilk' },
+      { symbol: 'FPT', minTick: 100 },
+    ]);
+  });
+
+  it('reads anything but a list as no results', () => {
+    for (const found of [undefined, null, 'VNM', { symbol: 'VNM' }]) expect(readSymbolResults(found)).toEqual([]);
+  });
+});
+
+describe('splitVenue', () => {
+  it('parts the venue before the last colon from the ticker after it', () => {
+    expect(splitVenue('BINANCE:BTCUSDT')).toEqual({ venue: 'BINANCE:', ticker: 'BTCUSDT' });
+    expect(splitVenue('HYPERLIQUID:xyz:GOLD')).toEqual({ venue: 'HYPERLIQUID:xyz:', ticker: 'GOLD' });
+    expect(splitVenue('VNM')).toEqual({ venue: '', ticker: 'VNM' });
+  });
+
+  it('keeps a colon at either end with the ticker, which would be left with nothing', () => {
+    expect(splitVenue('KBS:')).toEqual({ venue: '', ticker: 'KBS:' });
+    expect(splitVenue(':VNM')).toEqual({ venue: '', ticker: ':VNM' });
   });
 });
 
@@ -90,6 +137,10 @@ describe('symbolTitle', () => {
 describe('logoSrc', () => {
   const base = 'https://app.example/vn/';
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('takes web addresses, paths on the site, blobs and images written in data', () => {
     expect(logoSrc('https://cdn.x/a.png', base)).toBe('https://cdn.x/a.png');
     expect(logoSrc('  http://cdn.x/a.png ', base)).toBe('http://cdn.x/a.png');
@@ -115,6 +166,23 @@ describe('logoSrc', () => {
     expect(logoSrc(`https://cdn.x/${'a'.repeat(2048)}.png`, base)).toBeNull();
     expect(logoSrc(`data:image/png;base64,${'A'.repeat(65_536)}`, base)).toBeNull();
     expect(logoSrc(`data:image/png;base64,${'A'.repeat(60_000)}`, base)).not.toBeNull();
+  });
+
+  it('does not read an address longer than any it takes', () => {
+    const parsed = vi.fn();
+    const RealURL = URL;
+    vi.stubGlobal('URL', class extends RealURL {
+      constructor(url: string | URL, base?: string | URL) {
+        parsed();
+        super(url, base);
+      }
+    });
+    // A logo is drawn again with every row; a long one must not be parsed each time to be refused.
+    expect(logoSrc(`data:image/png;base64,${'A'.repeat(5_000_000)}`, base)).toBeNull();
+    expect(logoSrc(` https://cdn.x/${'a'.repeat(70_000)}`, base)).toBeNull();
+    expect(parsed).not.toHaveBeenCalled();
+    expect(logoSrc('https://cdn.x/a.png', base)).toBe('https://cdn.x/a.png');
+    expect(parsed).toHaveBeenCalled();
   });
 
   it('turns markup in the text into a harmless path', () => {

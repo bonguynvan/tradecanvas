@@ -535,7 +535,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên trang của bạn, một
   URL <code>blob:</code> hoặc một ảnh viết trong <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); mọi thứ khác
   bị bỏ qua. Nó chỉ được tải như một ảnh, không kèm referrer, nên chính sách <code>img-src</code> của trang phải cho
-  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá, ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
+  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá và hợp đồng vĩnh cửu, ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
+</p>
+<p>
+  Khi một lần tìm đã cho biết về một mã, tên của nguồn dữ liệu cũng hiện trên danh sách lúc hộp thoại mở ra, không
+  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng
+  số) được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Tên sàn đứng trước dấu hai chấm
+  (<code>BINANCE:BTCUSDT</code>) hiện mờ hơn và được rút gọn trước tiên khi cột hẹp; trên điện thoại, các thẻ loại mã cuộn
+  trên một dòng và mờ dần ở đầu còn thẻ bị khuất. Thông tin biểu đồ biết về mã của nó đặt tên cho mã trên thanh công
+  cụ và trong bảng thông tin khi nó nói về đúng mã đó (không phân biệt chữ hoa chữ thường, có hay không có tên sàn
+  trước dấu hai chấm) hoặc được đặt sau khi đổi mã, nên cách viết riêng của nguồn dữ liệu (<code>BTC-USD</code> cho
+  <code>BTCUSD</code>) vẫn được tính.
 </p>
 <p>
   <strong>So sánh</strong> là chính hộp thoại đó, có thêm <strong>Thêm theo kiểu</strong> dưới ô tìm kiếm và các mã

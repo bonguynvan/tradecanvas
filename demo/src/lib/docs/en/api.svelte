@@ -531,7 +531,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   A <code>logo</code> is an <code>https:</code> or <code>http:</code> address, a path on your site, a
   <code>blob:</code> URL or an image written in <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF or SVG); anything
   else is ignored. It is only ever loaded as an image, with no referrer, so your page's <code>img-src</code> policy
-  must allow its host; one that fails to load shows the letter. The letters take their colours from <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (stock, futures, index, crypto, forex; another kind gets one by its words), set for the dark and the light theme.
+  must allow its host; one that fails to load shows the letter. The letters take their colours from <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (stock, futures, index, crypto and perpetuals, forex; another kind gets one by its words), set for the dark and the light theme.
+</p>
+<p>
+  Once a search has told of a symbol, the feed's words name it on the list the search opens with too, not only
+  among the results. A name, kind, exchange or logo that isn't text (a JSON feed's <code>null</code>, a numeric
+  exchange code) counts as not given: it neither shows nor erases yours. A venue before a colon
+  (<code>BINANCE:BTCUSDT</code>) is dimmed, and is what a narrow column shortens first; on a phone the kind tabs
+  scroll in one line and fade at an end with more past it. What the chart knows of its symbol names it on the
+  toolbar and in the info panel when it is of the same symbol (in any case, with or without a venue before a colon)
+  or was set since the symbol changed, so a feed's own spelling (<code>BTC-USD</code> for <code>BTCUSD</code>)
+  still counts.
 </p>
 <p>
   <strong>Compare</strong> is the same dialog with <strong>Add as</strong> under the search and what is compared

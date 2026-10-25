@@ -367,6 +367,12 @@ export class ChartWidget {
    * chart's: price steps and hours come from the feed or `setSymbolInfo`.
    */
   private symbolCatalog: Map<string, SymbolInfo>;
+  /**
+   * What the chart knew of a symbol when the widget last switched from it.
+   * With no feed to clear it, it stays the last symbol's until the chart is
+   * told of the new one; anything told since is the new one's.
+   */
+  private chartInfoAtSwitch: SymbolInfo | null = null;
   private settingsState: ChartSettingsState;
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   private settingsDefaults: ChartSettingsState;
@@ -698,6 +704,7 @@ export class ChartWidget {
     });
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
+    this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     this.applyLegendFont();
     this.applyChartLook();
     // New indicators of a kind look as its saved default has them.
@@ -1460,9 +1467,17 @@ export class ChartWidget {
     return this.symbols.map((symbol) => this.symbolCatalog.get(symbol) ?? symbol);
   }
 
-  /** What the chart knows of its symbol; null while it is still another symbol's. */
+  /**
+   * What the chart knows of its symbol; null while it is still another
+   * symbol's. It is this symbol's when it names it (in any case, or with a
+   * venue before one of the two), or when the chart was told it since the
+   * symbol changed: a feed may spell the symbol its own way ('BTC-USD' for
+   * 'BTCUSD').
+   */
   private chartSymbolInfo(): SymbolInfo | null {
-    return chartInfoFor(this.state.symbol, this.chart.getSymbolInfo());
+    const info = this.chart.getSymbolInfo();
+    if (info && info !== this.chartInfoAtSwitch) return info;
+    return chartInfoFor(this.state.symbol, info);
   }
 
   /** The symbol's names: what the chart knows first, what came with `symbols` for the rest. */
@@ -1714,8 +1729,11 @@ export class ChartWidget {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
     this.flushActiveLayout();
-    // Fill marks sit on this symbol's bars; the next symbol starts with none.
-    if (symbol !== this.state.symbol) this.chart.clearFills();
+    if (symbol !== this.state.symbol) {
+      // Fill marks sit on this symbol's bars; the next symbol starts with none.
+      this.chart.clearFills();
+      this.chartInfoAtSwitch = this.chart.getSymbolInfo();
+    }
     this.state = { ...this.state, symbol };
     this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
