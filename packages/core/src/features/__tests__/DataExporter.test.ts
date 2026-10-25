@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import { resampleBars, type OHLCBar } from '@tradecanvas/commons';
 import { DataExporter } from '../DataExporter.js';
 
 const T0 = Date.UTC(2026, 0, 5, 14, 30);
@@ -38,5 +38,61 @@ describe('DataExporter', () => {
     const rows = JSON.parse(DataExporter.toJSON(bars, [{ name: 'SMA 20', values: [null, 1.75] }]));
     expect(rows[0]).toEqual({ time: '2026-01-05T14:30:00.000Z', open: 1, high: 2, low: 0.5, close: 1.5, volume: 10, 'SMA 20': null });
     expect(rows[1]['SMA 20']).toBe(1.75);
+  });
+});
+
+describe('DataExporter numbers', () => {
+  const bar = (fields: Partial<OHLCBar>): OHLCBar => ({ time: T0, open: 1, high: 2, low: 0.5, close: 1.5, volume: 10, ...fields });
+  const row = (csv: string): string => csv.split('\n')[1];
+
+  it('writes a summed volume without float dust', () => {
+    const csv = DataExporter.toCSV([bar({ volume: 20.17 + 20.2 })]);
+    expect(row(csv)).toBe('2026-01-05T14:30:00.000Z,1,2,0.5,1.5,40.37');
+  });
+
+  it('keeps every decimal a crypto volume has', () => {
+    expect(row(DataExporter.toCSV([bar({ volume: 23456.78901234 })])).endsWith(',23456.78901234')).toBe(true);
+  });
+
+  it('keeps a whole volume past 15 digits', () => {
+    expect(row(DataExporter.toCSV([bar({ volume: 1503456789012345 })])).endsWith(',1503456789012345')).toBe(true);
+    expect(JSON.parse(DataExporter.toJSON([bar({ volume: 1503456789012345 })]))[0].volume).toBe(1503456789012345);
+  });
+
+  it('writes prices and indicator values without float dust', () => {
+    const csv = DataExporter.toCSV(
+      [bar({ open: 0.1 + 0.2, high: (25.35 * 3) / 3, low: 25.3, close: 1.1 * 3, volume: 100 })],
+      [{ name: 'SMA 5', values: [66973.86000000002] }],
+    );
+    expect(row(csv)).toBe('2026-01-05T14:30:00.000Z,0.3,25.35,25.3,3.3,100,66973.86');
+  });
+
+  it('writes bars resampled from 1m with the volume they add up to', () => {
+    const minute = [20.17, 20.2, 0.1, 0.2, 12.34567].map((volume, i) => bar({ time: T0 + i * 60_000, volume }));
+    const csv = DataExporter.toCSV(resampleBars(minute, '5m'));
+    expect(row(csv).split(',')[5]).toBe('53.01567');
+  });
+
+  it('writes a negative zero as 0', () => {
+    expect(row(DataExporter.toCSV([bar({ open: -0, volume: -0 })]))).toBe('2026-01-05T14:30:00.000Z,0,2,0.5,1.5,0');
+    expect(DataExporter.toJSON([bar({ volume: -0 })])).toContain('"volume": 0');
+  });
+
+  it('leaves a cell empty for a value that is no number', () => {
+    const csv = DataExporter.toCSV([bar({ volume: NaN })], [{ name: 'SMA 5', values: [null] }]);
+    expect(row(csv)).toBe('2026-01-05T14:30:00.000Z,1,2,0.5,1.5,,');
+    const [json] = JSON.parse(DataExporter.toJSON([bar({ volume: NaN })], [{ name: 'SMA 5', values: [NaN] }]));
+    expect(json.volume).toBeNull();
+    expect(json['SMA 5']).toBeNull();
+  });
+
+  it('puts clean numbers in the JSON', () => {
+    const [json] = JSON.parse(DataExporter.toJSON(
+      [bar({ open: 0.1 + 0.2, volume: 20.17 + 20.2 })],
+      [{ name: 'SMA 5', values: [66973.86000000002] }],
+    ));
+    expect(json.open).toBe(0.3);
+    expect(json.volume).toBe(40.37);
+    expect(json['SMA 5']).toBe(66973.86);
   });
 });

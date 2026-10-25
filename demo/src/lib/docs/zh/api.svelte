@@ -234,7 +234,8 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
 <h3>导出数据</h3>
 <p>
   以 CSV 或 JSON 导出K线，每条指标线各占一列，列名与图例中的名称一致。ChartWidget 的图表右键菜单中有
-  <strong>导出数据 (CSV)</strong>。
+  <strong>导出数据 (CSV)</strong>。带小数的数字写到 15 位有效数字，因此由更小K线累加的成交量写作
+  40.37，而不是 40.370000000000005。
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })

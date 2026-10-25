@@ -246,7 +246,8 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
 <p>
   The bars as CSV or JSON, each indicator line in a column of its own named as the
   legend names it. ChartWidget has <strong>Export data (CSV)</strong> in the chart's
-  right-click menu.
+  right-click menu. Numbers with a fraction are written to 15 significant digits, so a
+  volume summed from smaller bars reads 40.37 rather than 40.370000000000005.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })

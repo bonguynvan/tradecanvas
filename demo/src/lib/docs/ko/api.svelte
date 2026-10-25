@@ -239,6 +239,8 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
 <p>
   봉을 CSV 또는 JSON으로 내보내며, 각 지표 선은 범례에 표시되는 이름으로 별도의 열이 됩니다.
   ChartWidget에서는 차트의 오른쪽 클릭 메뉴에 <strong>데이터 내보내기 (CSV)</strong>가 있습니다.
+  소수가 있는 숫자는 유효 숫자 15자리로 기록되므로, 더 작은 봉에서 합산한 거래량은
+  40.370000000000005가 아니라 40.37로 기록됩니다.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })

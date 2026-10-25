@@ -239,6 +239,8 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
 <p>
   バーを CSV または JSON で書き出します。インジケーターのラインはそれぞれ独立した列になり、列名は凡例での
   名前と同じです。ChartWidget では、チャートの右クリックメニューに<strong>データをエクスポート (CSV)</strong>があります。
+  小数を含む数値は有効数字 15 桁で書き出されるため、より小さいバーから合算した出来高は
+  40.370000000000005 ではなく 40.37 になります。
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })

@@ -248,7 +248,8 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
 <p>
   Xuất các nến dưới dạng CSV hoặc JSON, mỗi đường chỉ báo nằm trong một cột riêng, đặt tên theo
   tên trên chú thích. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
-  của biểu đồ.
+  của biểu đồ. Số có phần thập phân được ghi với 15 chữ số có nghĩa, nên khối lượng cộng từ các
+  nến nhỏ hơn được ghi là 40.37 chứ không phải 40.370000000000005.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
