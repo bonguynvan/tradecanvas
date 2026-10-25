@@ -191,7 +191,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>The stylesheet: Fibonacci spacing, 2 to 34 px</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>The stylesheet: the symbol search’s colours for the kinds of symbol (stock, futures, index, crypto, forex), set for the dark and the light theme. Set them in a palette of your own, or the badges keep these hues.</td></tr>
-    <tr><td><code>--tcw-font-features</code></td><td>The stylesheet: <code>normal</code>, the faces as drawn. The <code>ui</code> option never sets it, so a rule of yours on <code>.tcw-root</code> turns on your face's OpenType features (Inter's one-storey a and open digits: <code>'cv11', 'ss01'</code>). They reach the widget's text, though most of its buttons and fields keep the browser's own setting, and the chart's text never takes them.</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>The stylesheet: <code>normal</code>, the faces as drawn. The <code>ui</code> option never sets it, so a rule of yours on <code>.tcw-root</code> turns on your face's OpenType features (Inter's one-storey a and open digits: <code>'cv11', 'ss01'</code>). They reach the widget's text, its buttons and fields too; the chart's text (its canvases and its tooltips) never takes them.</td></tr>
   </tbody>
 </table>
 <p>

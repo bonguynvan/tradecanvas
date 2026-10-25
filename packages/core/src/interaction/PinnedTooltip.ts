@@ -1,6 +1,7 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
 import { UI_ICONS, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -62,6 +63,8 @@ export class PinnedTooltip {
       whiteSpace: 'nowrap',
       willChange: 'transform',
     });
+    // The chart's text, so without the features the page turns on for its own.
+    isolateFontFeatures(this.el);
 
     this.timeEl = document.createElement('div');
     this.ohlcEl = document.createElement('div');

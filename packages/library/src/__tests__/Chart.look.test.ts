@@ -132,6 +132,71 @@ describe('Chart: bar layout and figures font', () => {
     expect(scene.font).toBe('7px Drawing');
   });
 
+  describe('measuring its figures once', () => {
+    /** Every label the chart measures, as `font|text`, on contexts that count. */
+    const measuring = () => {
+      const keys: string[] = [];
+      const contexts = new WeakMap<HTMLCanvasElement, CanvasRenderingContext2D>();
+      installChartStubs();
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
+        let ctx = contexts.get(this);
+        if (!ctx) {
+          const made = fakeContext(this);
+          made.measureText = ((text: string) => {
+            keys.push(`${made.font}|${text}`);
+            return { width: text.length * 6 };
+          }) as never;
+          contexts.set(this, made);
+          ctx = made;
+        }
+        return ctx as never;
+      });
+      return keys;
+    };
+    /** A page's fonts, which say when a web font has loaded. */
+    const stubFonts = () => {
+      const fonts = Object.assign(new EventTarget(), { ready: Promise.resolve() });
+      Object.defineProperty(document, 'fonts', { value: fonts, configurable: true });
+      return fonts;
+    };
+    afterEach(() => {
+      delete (document as { fonts?: unknown }).fonts;
+    });
+
+    it('measures a label in a face and size once, however often a pan asks again', () => {
+      const keys = measuring();
+      const chart = new Chart(sizedHost(), {});
+      charts.push(chart);
+      chart.setData(bars(300));
+      for (let i = 0; i < 6; i++) chart.scrollBars(i % 2 === 0 ? 2 : -2);
+      expect(keys.length).toBeGreaterThan(0);
+      expect(new Set(keys).size).toBe(keys.length);
+    });
+
+    it('measures again once a web font has loaded, which changes the widths', () => {
+      const fonts = stubFonts();
+      const keys = measuring();
+      const chart = new Chart(sizedHost(), {});
+      charts.push(chart);
+      chart.setData(bars(300));
+      keys.length = 0;
+      chart.scrollBars(2);
+      expect(keys).toEqual([]);
+      fonts.dispatchEvent(new Event('loadingdone'));
+      chart.scrollBars(-2);
+      expect(keys.length).toBeGreaterThan(0);
+    });
+
+    it('stops listening for fonts once destroyed', () => {
+      const fonts = stubFonts();
+      const remove = vi.spyOn(fonts, 'removeEventListener');
+      measuring();
+      const chart = new Chart(sizedHost(), {});
+      chart.destroy();
+      expect(remove).toHaveBeenCalledWith('loadingdone', expect.any(Function));
+    });
+  });
+
   it('leaves out a font that is no font', () => {
     const chart = make();
     const before = chart.getFont();

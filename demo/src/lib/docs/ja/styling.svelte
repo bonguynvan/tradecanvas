@@ -189,7 +189,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>スタイルシート：フィボナッチの余白、2 から 34 px</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>スタイルシート：シンボル検索で使う種類ごとの色（株式、先物、指数、暗号資産、FX）。ダークとライトのテーマそれぞれに設定されています。独自のパレットではこれらも設定してください。設定しないとバッジはこの色のままです。</td></tr>
-    <tr><td><code>--tcw-font-features</code></td><td>スタイルシート：<code>normal</code>、書体そのままの字形。<code>ui</code> オプションはこれを設定しないので、<code>.tcw-root</code> に書いたあなたのルールで、使う書体自身の OpenType 機能をオンにできます（Inter の一階建ての a と開いた数字：<code>'cv11', 'ss01'</code>）。効くのはウィジェットの文字です。ただしボタンと入力欄の多くはブラウザ自身の設定のままで、チャートの文字には効きません。</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>スタイルシート：<code>normal</code>、書体そのままの字形。<code>ui</code> オプションはこれを設定しないので、<code>.tcw-root</code> に書いたあなたのルールで、使う書体自身の OpenType 機能をオンにできます（Inter の一階建ての a と開いた数字：<code>'cv11', 'ss01'</code>）。ウィジェットの文字に効き、ボタンや入力欄にも効きます。チャートの文字（キャンバスとツールチップ）には効きません。</td></tr>
   </tbody>
 </table>
 <p>

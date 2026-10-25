@@ -188,7 +188,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>스타일시트: 피보나치 간격, 2에서 34 px까지</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>스타일시트: 종목 검색에서 종류마다 쓰는 색(주식, 선물, 지수, 암호화폐, 외환). 어두운 테마와 밝은 테마에 각각 설정되어 있습니다. 직접 만든 팔레트에서도 함께 설정하세요. 그러지 않으면 배지는 이 색을 그대로 씁니다.</td></tr>
-    <tr><td><code>--tcw-font-features</code></td><td>스타일시트: <code>normal</code>, 글꼴의 기본 모양 그대로. <code>ui</code> 옵션은 이 값을 설정하지 않으므로, <code>.tcw-root</code>에 작성한 규칙으로 사용하는 글꼴 자체의 OpenType 기능을 켤 수 있습니다(Inter의 한 층 a와 열린 숫자: <code>'cv11', 'ss01'</code>). 위젯의 글자에 적용되지만, 버튼과 입력란 대부분은 브라우저 자체 설정을 그대로 쓰고, 차트의 글자에는 적용되지 않습니다.</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>스타일시트: <code>normal</code>, 글꼴의 기본 모양 그대로. <code>ui</code> 옵션은 이 값을 설정하지 않으므로, <code>.tcw-root</code>에 작성한 규칙으로 사용하는 글꼴 자체의 OpenType 기능을 켤 수 있습니다(Inter의 한 층 a와 열린 숫자: <code>'cv11', 'ss01'</code>). 위젯의 글자에 적용되며 버튼과 입력란에도 적용됩니다. 차트의 글자(캔버스와 툴팁)에는 적용되지 않습니다.</td></tr>
   </tbody>
 </table>
 <p>

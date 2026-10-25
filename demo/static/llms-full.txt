@@ -949,6 +949,10 @@ yours. The widget loads no fonts, so load the families a look names (Print
 names system faces only). Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
+The widget draws its faces without OpenType features; to turn on your face's
+own, set `--tcw-font-features` on `.tcw-root` from your CSS:
+`.tcw-root { --tcw-font-features: 'cv11', 'ss01' }` for Inter. `ui` never
+sets it, and it reaches the widget's text, buttons and fields, not the chart's.
 
 ## The chart's look by key
 

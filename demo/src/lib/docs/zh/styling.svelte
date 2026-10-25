@@ -182,7 +182,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>样式表：斐波那契间距，2 到 34 px</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>样式表：搜索代码里各类品种的颜色（股票、期货、指数、加密货币、外汇），深色和浅色主题各有一套。自定义配色时也要设置它们，否则标记仍用这些颜色。</td></tr>
-    <tr><td><code>--tcw-font-features</code></td><td>样式表：<code>normal</code>，字体按原样显示。<code>ui</code> 选项从不设置它，所以你写在 <code>.tcw-root</code> 上的规则可以打开你所用字体自己的 OpenType 特性（Inter 的单层 a 和开口数字：<code>'cv11', 'ss01'</code>）。它们作用于组件的文字，但大多数按钮和输入框仍保留浏览器自己的设置，图表的文字则从不使用它们。</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>样式表：<code>normal</code>，字体按原样显示。<code>ui</code> 选项从不设置它，所以你写在 <code>.tcw-root</code> 上的规则可以打开你所用字体自己的 OpenType 特性（Inter 的单层 a 和开口数字：<code>'cv11', 'ss01'</code>）。它们作用于组件的文字，包括按钮和输入框；图表的文字（画布和提示框）则从不使用它们。</td></tr>
   </tbody>
 </table>
 <p>

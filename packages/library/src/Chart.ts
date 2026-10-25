@@ -129,6 +129,7 @@ import { ThemeManager } from './ThemeManager.js';
 import { startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
+import { LabelWidths } from './layout/labelWidths.js';
 import { VerticalPanGate } from './interaction/verticalPanGate.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
@@ -218,6 +219,8 @@ export class Chart {
   private priceAxisWidth = PRICE_AXIS_WIDTH;
   /** A canvas out of the page, to measure on when the chart has none of its own (destroyed). */
   private measureCtx: CanvasRenderingContext2D | null | undefined;
+  /** The axis labels' widths as measured on the chart's canvas in the page, kept while panning. */
+  private readonly labelWidths = new LabelWidths();
   private containerSizeCache: { width: number; height: number } | null = null;
   private containerSizeCacheTime = 0;
   // Last-emitted viewport values, used to fire visibleRangeChange /
@@ -5311,6 +5314,7 @@ export class Chart {
     this.undoRedoManager.clear();
     this.engine.destroy();
     this.eventBus.destroy();
+    this.labelWidths.destroy();
     this.container.innerHTML = '';
   }
 
@@ -5566,16 +5570,16 @@ export class Chart {
    * canvas: in Chromium a canvas's text takes what the page passes down to the
    * element (the widget's tabular figures, wider in a proportional face),
    * which a canvas out of the page doesn't get, so the axis would be sized too
-   * narrow for its crosshair pill. The canvas's font is put back after.
+   * narrow for its crosshair pill. Such a measure costs more than one out of
+   * the page, so its widths are kept; a canvas not yet in the page measures
+   * afresh each time, as its widths change once it is.
    */
   private measureText(text: string, font: string): number {
-    const ctx = this.engine.layerManager.getLayer(LayerType.Main)?.ctx ?? this.detachedMeasureContext();
+    const scene = this.engine.layerManager.getLayer(LayerType.Main)?.ctx;
+    if (scene?.canvas.isConnected) return this.labelWidths.get(text, font, () => measureWith(scene, text, font));
+    const ctx = scene ?? this.detachedMeasureContext();
     if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
-    const drawing = ctx.font;
-    ctx.font = font;
-    const width = ctx.measureText(text).width;
-    ctx.font = drawing;
-    return width;
+    return measureWith(ctx, text, font);
   }
 
   private detachedMeasureContext(): CanvasRenderingContext2D | null {
@@ -5847,6 +5851,15 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
 }
 
 /** The longest family list `setFont` takes, characters. */
+/** The width of `text` in `font` on `ctx`, whose own font is put back after. */
+function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string): number {
+  const drawing = ctx.font;
+  ctx.font = font;
+  const width = ctx.measureText(text).width;
+  ctx.font = drawing;
+  return width;
+}
+
 const MAX_FONT_FAMILY = 300;
 
 /** A font the chart can draw with: a family that isn't empty, sizes above zero. */

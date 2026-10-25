@@ -44,11 +44,14 @@
 
 /* --- Text, number, date and time fields, and selects --- */
 
-/* Fields speak the widget's type, not the browser's (a part's own font still wins). */
+/* Fields speak the widget's type, not the browser's (a part's own font still wins).
+ * The browser's control font resets the OpenType features, so --tcw-font-features
+ * set on .tcw-root reaches every button and field only through this. */
 :where(.tcw-root) :where(input, select, textarea, button) {
   font-family: inherit;
   font-weight: inherit;
   letter-spacing: inherit;
+  font-feature-settings: inherit;
 }
 
 .tcw-root :is(
