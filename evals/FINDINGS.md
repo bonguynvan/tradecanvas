@@ -31,7 +31,7 @@ answer that only the fix lets pass).
    `timezone`, `MarketConfig` has `timeZone`. Writing the reference, the
    option went in as `timezone` (from the methods' name) and failed the type
    check. (Task 10.)
-   *Fixed (Unreleased):* one spelling, `timeZone`, as `Intl.DateTimeFormat`
+   *Fixed in 1.47.0:* one spelling, `timeZone`, as `Intl.DateTimeFormat`
    has it: `setTimeZone`, `getTimeZone`, `getEffectiveTimeZone`,
    `getExchangeTimeZone`, `EXCHANGE_TIME_ZONE` and `SymbolInfo.timeZone`.
    The older names still work, marked deprecated. Task 10 has a right answer
@@ -82,9 +82,9 @@ where the agents had to read the compiled code to get on.
      says it doesn't;
    - the React component: what a changed prop does (the data, the options)
      and what unmounting does (task 21). *Fixed in 1.46.0:* its props
-     say. A new `data` array still replaces the series, a bar pushed
-     included, where Vue and Svelte take it as a tick: a change for its own
-     pull request.
+     say. A new `data` array still replaced the series, a bar pushed
+     included, where Vue and Svelte took it as a tick. *Fixed in 1.48.0:*
+     bars that go on from the last go in as ticks, in all three.
 9. **`isFeatureOn` reports a switch, not what shows.** With
    `features: { replay: false }` the replay button is gone, yet
    `isFeatureOn('toolbar.replay')` is `true`. The task 15 grader read it so
@@ -92,3 +92,57 @@ where the agents had to read the compiled code to get on.
    the widget would be wrong the same way. *Fixed in 1.46.0:* its doc,
    the skill and the Customization page say so (the grader took either
    switch already).
+
+## From the runs after the fixes (2026-10-25, Sonnet and Haiku)
+
+[Sonnet](baselines/2026-10-25-sonnet.md) passed 96 of 96 and, with the
+skill, read the compiled code in 2 runs (12 before).
+[Haiku](baselines/2026-10-25-haiku.md), the first run with a smaller model,
+passed 95 of 96 for a tenth of the cost. Without the skill, 22 (Sonnet) and
+27 (Haiku) runs of 48 still went to the compiled code; what for is below.
+
+10. **`features: { depthLadder: true }` makes no ladder.** The ladder is
+    the `depthLadder` option, off by default; `depthLadder` is also a
+    switch, on by default, that only hides it. The comment over the
+    widget's on/off options says each "stands for a switch: `toolbar:
+    false` is `features: { toolbar: false }`", so turning the switch on
+    reads as turning the option on. It type-checks, and nothing shows.
+    (Task 18, Haiku with the skill, one run.)
+11. **Field notes the types drop.** 33 fields of the packages' types (not
+    counting Binance's own message types) are
+    explained by a `//` comment at the end of their line, which the
+    `.d.ts` files leave out: `ReplayConfig`'s `speed` and `interval`
+    (one bar every `interval / speed` ms), a stream's reconnect options and
+    their defaults, `MarketConfig`'s lot, step and limits. On task 13 both
+    models searched the compiled replay code for what `interval` and
+    `speed` mean: every run without the skill, and one of Haiku's with it.
+    Fix: doc comments (`/** … */`), and a check that fails on a `//` note
+    on a field of an exported type.
+12. **No indicator is named in the types.** `addIndicator(id: string,
+    params: Record<string, …>)`: the types list no indicator, no input and
+    no output line, and the package README gives only their number. Without
+    the skill the agents searched the compiled code for `id: 'rsi'`,
+    `'macd'`, `'bb'` and their defaults: tasks 03, 04, 21, 23 and 24, in
+    19 of those 20 runs, both models. Haiku with the skill did once (task
+    23, the bands' `stdDev`). The skill has the generated list
+    (`references/indicators.md`); the package has nothing like it. Fix: the
+    built-in ids as a type (still taking a custom one) and each one's
+    inputs, generated from the registry as the catalog is.
+13. **Style keys: where they are, and the wicks'.** The skill names
+    `CHART_STYLE_KEYS` and two of its keys. The object is in
+    `@tradecanvas/commons`, re-exported by `@tradecanvas/chart`, and the
+    agents searched `chart/dist` for `series.candlestick.*` before finding
+    it; neither says which keys colour the wicks
+    (`series.candlestick.wickUpColor`, `wickDownColor`). Both Sonnet runs
+    with the skill (task 09: 16 turns, 11 in the baseline).
+14. **Smaller gaps, a task each**, where agents read the compiled code:
+    - drawing a custom indicator: what `valuesToPoints` and a descriptor's
+      `plots` do (05, without the skill, both models);
+    - a toolbar button's `icon`: the type says "a built-in icon's name (see
+      the docs' icon list)", and the list isn't in the package (16);
+    - what a look preset sets (`'terminal'`'s `active` and `toolbar`), to
+      change one part of it (19, Haiku, both arms);
+    - the order ticket's `onSubmit` and when it is called (17);
+    - what `widget.setSymbol` does without an adapter (20);
+    - the tick `updateLastBarFromTick` takes (02);
+    - `smaCross`'s inputs (22).

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.48.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.30.
+
 ### Live bars through the components' `data`
 
 - **React's `data` takes bars that go on from the last as live ticks.** A new array with its last bar changed, or bars added after it (`setBars((bars) => [...bars, next])`, several at once in a batched render), goes in through `updateLastBar` / `appendBar` / `appendBars`, as a stream's bars do: the view isn't reset, only the end is computed again, and alerts and orders follow the price. Each new array was a new series, the view back to the newest bar and every indicator computed again, and 1.46.0's docs said to feed a live chart through the ref instead; the ref still works.
