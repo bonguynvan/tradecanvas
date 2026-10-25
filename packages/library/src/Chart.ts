@@ -5850,7 +5850,6 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.position === undefined) === (b.position === undefined);
 }
 
-/** The longest family list `setFont` takes, characters. */
 /** The width of `text` in `font` on `ctx`, whose own font is put back after. */
 function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string): number {
   const drawing = ctx.font;
@@ -5860,6 +5859,7 @@ function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string):
   return width;
 }
 
+/** The longest family list `setFont` takes, characters. */
 const MAX_FONT_FAMILY = 300;
 
 /** A font the chart can draw with: a family that isn't empty, sizes above zero. */
