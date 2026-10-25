@@ -1471,8 +1471,8 @@ img.tcw-ss-badge {
   border: none;
   border-radius: var(--tcw-control-radius);
   background: var(--tcw-red);
-  /* White on the red in every theme. */
-  color: #fff;
+  /* The accent fill's ink reads on the red too: dark on the dark theme's, white on the light's. */
+  color: var(--tcw-accent-ink);
   font: inherit;
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight-strong);

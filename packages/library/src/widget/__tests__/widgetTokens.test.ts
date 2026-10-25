@@ -40,6 +40,13 @@ describe('widget colour tokens', () => {
   it.each([
     ['dark', dark],
     ['light', light],
+  ])('%s: the same ink reads at 4.5:1 on a red fill, as a delete is confirmed', (_name, t) => {
+    expect(contrast(t['--tcw-accent-ink'], t['--tcw-red'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    ['dark', dark],
+    ['light', light],
   ])('%s: accent, green and red read as text on the widget ground', (_name, t) => {
     for (const name of ['--tcw-accent', '--tcw-green', '--tcw-red']) {
       expect(contrast(t[name], t['--tcw-bg']), name).toBeGreaterThanOrEqual(4.5);
@@ -96,13 +103,13 @@ describe('symbol kind colours', () => {
   });
 });
 
-describe('symbol search styles', () => {
+describe('dialog styles', () => {
   const dialogs = readFileSync(fileURLToPath(new URL('../WidgetDialogs.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  /** The innermost rules, selector and body, of the symbol search and the compare dialog (`.tcw-ss…`). */
-  const rules = [...dialogs.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[1].includes('.tcw-ss'));
+  /** The innermost rules, selector and body: every dialog's, the symbol search's and the compare dialog's (`.tcw-ss…`) among them. */
+  const rules = [...dialogs.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
 
-  it('write every colour through a token, the kind tabs’ fade too', () => {
-    expect(rules.length).toBeGreaterThan(0);
+  it('write every colour through a token, the symbol search’s kind tabs’ fade too', () => {
+    expect(rules.filter((m) => m[1].includes('.tcw-ss')).length).toBeGreaterThan(0);
     const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\(|(?<![-\w])(?:black|white)(?![-\w])/i;
     const offending = rules.filter((m) => literal.test(m[2])).map((m) => m[1].trim());
     expect(offending).toEqual([]);
