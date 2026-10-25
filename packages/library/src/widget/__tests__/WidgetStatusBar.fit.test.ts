@@ -91,6 +91,7 @@ function layout(width: number, { pad = 0, scale = 1 }: LayoutOptions = {}): void
   const rtl = sb.style.direction === 'rtl';
   // From the bar's padding edge: at the content's end while it has room, past it when not.
   const rightStart = () => (rtl ? Math.min(pad, width - pad - rightPx()) : Math.max(pad, width - pad - rightPx()));
+  Object.defineProperty(right, 'offsetParent', { configurable: true, get: () => sb });
   Object.defineProperty(right, 'offsetLeft', { configurable: true, get: rightStart });
   Object.defineProperty(right, 'offsetWidth', { configurable: true, get: rightPx });
   sb.getBoundingClientRect = () => box(0, width * scale);
@@ -230,6 +231,17 @@ describe('the status bar, fitting its width', () => {
       fitAt(RIGHT_PX + 10);
       expect(has('short-market')).toBe(false);
     });
+
+    it('keeps the market word whole when a stylesheet of yours makes the bar no longer the group’s offset parent', () => {
+      // Your `.tcw-statusbar { position: static }`: the group is measured from the root, 200px in.
+      const BAR_LEFT_PX = 200;
+      layout(RIGHT_PX + 10);
+      const right = q('.tcw-status-right');
+      Object.defineProperty(right, 'offsetParent', { configurable: true, get: () => root });
+      Object.defineProperty(right, 'offsetLeft', { configurable: true, get: () => BAR_LEFT_PX + 10 });
+      bar.fit();
+      expect(has('short-market')).toBe(false);
+    });
   });
 
   it('shortens the market word with no range bar at all, when the right group has no room', () => {
@@ -365,6 +377,17 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
     expect(document.activeElement).toBe(statusBar());
     // Focusable only to hold the keyboard: a click on the bar later doesn't take it.
     statusBar().blur();
+    expect(statusBar().hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('leaves the bar unfocusable when it cannot take the keyboard', () => {
+    fitAt(RIGHT_PX + 240);
+    more().focus();
+    // As a browser does for a bar in an inert part of the page: no focus, so no blur will follow.
+    vi.spyOn(statusBar(), 'focus').mockImplementation(() => {});
+    root.dataset.tcwOff = 'statusBar.range goToDate';
+    fitAt(RIGHT_PX + 240);
+    expect(document.activeElement).not.toBe(statusBar());
     expect(statusBar().hasAttribute('tabindex')).toBe(false);
   });
 

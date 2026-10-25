@@ -231,9 +231,13 @@ export class WidgetStatusBar {
    * relative, so it is the group's offset parent. Boxes on screen are scaled
    * by a container's transform or zoom while the padding is not, so they
    * would put the group past an edge it is inside, and a dialog's scale-in
-   * would leave the bar folded with room to spare.
+   * would leave the bar folded with room to spare. A stylesheet of yours
+   * that takes the bar's position away measures the group from somewhere
+   * else, so it counts as fitting then, rather than shorten the market's word
+   * for room the bar has.
    */
   private rightFits(): boolean {
+    if (this.rightEl.offsetParent !== this.el) return true;
     const style = getComputedStyle(this.el);
     const start = this.rightEl.offsetLeft;
     const past = style.direction === 'rtl'
@@ -284,9 +288,14 @@ export class WidgetStatusBar {
   /** The bar holds the keyboard: focusable only until it leaves, so a click on the bar later doesn't take it. */
   private focusBar(): void {
     if (document.activeElement === this.el) return;
+    const unfocusable = () => this.el.removeAttribute('tabindex');
     this.el.tabIndex = -1;
-    this.el.addEventListener('blur', () => this.el.removeAttribute('tabindex'), { once: true });
+    this.el.addEventListener('blur', unfocusable, { once: true });
     this.el.focus({ preventScroll: true });
+    // Refused (the bar in an inert part of the page), it gets no blur to undo that.
+    if (document.activeElement === this.el) return;
+    this.el.removeEventListener('blur', unfocusable);
+    unfocusable();
   }
 
   /** Whether a button of the range bar shows: not folded, not switched off, and "more" only while something is folded. */
