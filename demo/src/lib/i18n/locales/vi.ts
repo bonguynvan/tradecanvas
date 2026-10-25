@@ -825,7 +825,7 @@ const vi: SiteMessages = {
     reviewHtml: [
       'Không có thư viện bên thứ ba khi chạy: gói chart chỉ phụ thuộc vào core và commons của chính TradeCanvas.',
       'Không dùng <code>eval</code> hay <code>new Function</code>, nên chạy được dưới Content Security Policy không có <code>unsafe-eval</code>.',
-      "Widget chèn một thẻ <code>&lt;style&gt;</code> và vẽ biểu tượng trong ô nhập và ô đánh dấu của nó bằng ảnh <code>data:</code>, nên trang chứa nó cần <code>style-src 'unsafe-inline'</code> và <code>img-src data:</code>; <code>Chart</code> không giao diện thì không cần cả hai.",
+      "Widget chèn một thẻ <code>&lt;style&gt;</code> và vẽ biểu tượng trong ô nhập và ô đánh dấu của nó bằng ảnh <code>data:</code>, nên trang chứa nó cần <code>style-src 'unsafe-inline'</code> và <code>img-src data:</code>; <code>Chart</code> không giao diện thì không cần thứ nào trong hai.",
       'Lỗi bảo mật được báo riêng tư và được phản hồi trong vòng một tuần.',
       'Mọi pull request đều được build, kiểm tra kiểu và chạy test trên CI: hơn 3.000 unit test.',
       'Các bản phát hành được GitHub Actions publish từ repository, không phải từ máy của lập trình viên.',
