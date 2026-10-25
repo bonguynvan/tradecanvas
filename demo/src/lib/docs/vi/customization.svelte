@@ -182,7 +182,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // theo chiều chữ của chính nó: giao diện từ phải sang trái vẫn đọc là "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // thay phím tắt của widget nếu trùng phím; có trong bảng phím tắt (?)
 
 // Bất cứ gì khác của bạn: cạnh các nút của toolbar, dưới các nút của sidebar,

@@ -169,7 +169,7 @@ export class WidgetStatusBar {
    * room that gives comes back.
    *
    * A refit that changes what is folded closes the "more" menu, whose
-   * entries would be stale, and the keyboard stays on the range bar when the
+   * entries would be stale, and the keyboard stays on the bar when the
    * button it was on hides (see `keepFocus`).
    */
   fit(): void {
@@ -226,14 +226,19 @@ export class WidgetStatusBar {
    * go to date switched off, as `rangeBar: false` does, or no range bar at
    * all) and the bar is still too narrow, it runs past the bar's end: the
    * right edge, the left one right to left.
+   *
+   * Measured in layout pixels, as `rangeFits` is: the bar is position:
+   * relative, so it is the group's offset parent. Boxes on screen are scaled
+   * by a container's transform or zoom while the padding is not, so they
+   * would put the group past an edge it is inside, and a dialog's scale-in
+   * would leave the bar folded with room to spare.
    */
   private rightFits(): boolean {
     const style = getComputedStyle(this.el);
-    const bar = this.el.getBoundingClientRect();
-    const right = this.rightEl.getBoundingClientRect();
+    const start = this.rightEl.offsetLeft;
     const past = style.direction === 'rtl'
-      ? bar.left + (parseFloat(style.paddingLeft) || 0) - right.left
-      : right.right - (bar.right - (parseFloat(style.paddingRight) || 0));
+      ? (parseFloat(style.paddingLeft) || 0) - start
+      : start + this.rightEl.offsetWidth - (this.el.clientWidth - (parseFloat(style.paddingRight) || 0));
     return past <= FIT_SLACK_PX;
   }
 
@@ -250,16 +255,38 @@ export class WidgetStatusBar {
 
   /**
    * Keep the keyboard on the range bar after a refit, when it was on
-   * `focused`: a preset or go to date that folded hands it to "more", "more"
-   * gone (nothing folded any more) to the last preset, and a menu the refit
-   * closed back to "more". A button that still shows keeps it.
+   * `focused` (or in the menu "more" opened, which the refit closed): see
+   * `focusAfterRefit`. The bar itself takes it when nothing there shows, so
+   * it never drops to the page.
    */
   private keepFocus(focused: HTMLElement | null): void {
     if (!focused || this.rangeMenu?.isOpen()) return;
-    const target = this.shows(focused) ? focused
-      : focused === this.moreBtn ? this.presetBtns.filter((btn) => this.shows(btn)).at(-1)
-        : this.moreBtn;
-    if (target && this.shows(target) && document.activeElement !== target) target.focus({ preventScroll: true });
+    const target = this.focusAfterRefit(focused);
+    if (target === this.el) this.focusBar();
+    else if (document.activeElement !== target) target.focus({ preventScroll: true });
+  }
+
+  /**
+   * Where the keyboard goes from `focused` after a refit: it stays on a
+   * button that still shows; a preset or go to date that folded hands it to
+   * "more"; "more" gone (nothing folded any more, or the presets switched
+   * off) hands it to go to date, else to the last preset that shows, else to
+   * the bar.
+   */
+  private focusAfterRefit(focused: HTMLElement): HTMLElement {
+    if (this.shows(focused)) return focused;
+    const lastPreset = this.presetBtns.filter((btn) => this.shows(btn)).at(-1);
+    const next = [focused === this.moreBtn ? null : this.moreBtn, this.goToBtn, lastPreset]
+      .find((btn): btn is HTMLButtonElement => btn != null && this.shows(btn));
+    return next ?? this.el;
+  }
+
+  /** The bar holds the keyboard: focusable only until it leaves, so a click on the bar later doesn't take it. */
+  private focusBar(): void {
+    if (document.activeElement === this.el) return;
+    this.el.tabIndex = -1;
+    this.el.addEventListener('blur', () => this.el.removeAttribute('tabindex'), { once: true });
+    this.el.focus({ preventScroll: true });
   }
 
   /** Whether a button of the range bar shows: not folded, not switched off, and "more" only while something is folded. */
@@ -341,6 +368,8 @@ export class WidgetStatusBar {
     const item = onClick ? document.createElement('button') : document.createElement('span');
     item.className = onClick ? 'tcw-status-host-item tcw-status-host-btn' : 'tcw-status-host-item';
     item.dataset.hostItem = spec.id;
+    // In its own text's direction, apart from the bar's: right to left a bare "42 ms" reads "ms 42".
+    item.dir = 'auto';
     item.textContent = spec.text;
     if (spec.label) {
       item.title = spec.label;
@@ -374,6 +403,8 @@ export class WidgetStatusBar {
     btn.type = 'button';
     btn.className = 'tcw-status-clock';
     btn.dataset.role = 'clock';
+    // "14:05:09 UTC+7" reads as one, in its own direction: right to left the time and the zone would swap.
+    btn.dir = 'auto';
     btn.title = clock.label;
     btn.setAttribute('aria-haspopup', 'menu');
     markPart(btn, 'statusBar.clock');

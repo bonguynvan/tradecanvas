@@ -58,33 +58,47 @@ const menuItems = () => [...root.querySelectorAll<HTMLElement>('.tcw-context-men
 
 const box = (left: number, right: number) => ({ left, right, width: right - left, top: 0, bottom: 0, height: 0, x: left, y: 0, toJSON: () => ({}) }) as DOMRect;
 
+interface LayoutOptions {
+  /** The bar's padding at each end (the stylesheet gives 16px); none unless asked. */
+  pad?: number;
+  /** A container's transform or zoom: boxes on screen are this times their layout size, the padding is not. */
+  scale?: number;
+}
+
 /**
  * Lay the bar out `width` px wide, as a browser would: the right group keeps
  * its width, and the range bar gets what is left, never more than its buttons
  * need. With less room than the right group's width even an empty range bar
  * leaves it too little, and it runs past the bar's end: the right edge, or
- * the left one right to left.
+ * the left one right to left. Offsets and widths are layout pixels; only the
+ * boxes on screen take `scale`.
  */
-function layout(width: number): void {
-  const range = rangeBar();
-  const content = () => [...range.querySelectorAll<HTMLElement>('button')]
-    .filter((b) => !isFolded(b) && !isOff(b))
-    .reduce((sum, b) => sum + (!b.classList.contains('tcw-range-more') ? BUTTON_PX : has('folded') ? MORE_PX : 0), 0);
+function layout(width: number, { pad = 0, scale = 1 }: LayoutOptions = {}): void {
+  const sb = statusBar();
+  const right = q('.tcw-status-right');
+  const range = root.querySelector<HTMLElement>('.tcw-range-bar');
+  sb.style.paddingLeft = sb.style.paddingRight = `${pad}px`;
   const rightPx = () => (has('short-market') ? RIGHT_SHORT_PX : RIGHT_PX);
-  const room = () => Math.max(0, width - rightPx());
-  Object.defineProperty(statusBar(), 'clientWidth', { configurable: true, get: () => width });
-  Object.defineProperty(range, 'scrollWidth', { configurable: true, get: content });
-  Object.defineProperty(range, 'clientWidth', { configurable: true, get: () => Math.min(content(), room()) });
-  const rtl = statusBar().style.direction === 'rtl';
-  statusBar().getBoundingClientRect = () => box(0, width);
-  q('.tcw-status-right').getBoundingClientRect = () => {
-    const end = rtl ? Math.min(0, width - rightPx()) : Math.max(width, rightPx());
-    return rtl ? box(end, end + rightPx()) : box(end - rightPx(), end);
-  };
+  if (range) {
+    const content = () => [...range.querySelectorAll<HTMLElement>('button')]
+      .filter((b) => !isFolded(b) && !isOff(b))
+      .reduce((sum, b) => sum + (!b.classList.contains('tcw-range-more') ? BUTTON_PX : has('folded') ? MORE_PX : 0), 0);
+    const room = () => Math.max(0, width - 2 * pad - rightPx());
+    Object.defineProperty(range, 'scrollWidth', { configurable: true, get: content });
+    Object.defineProperty(range, 'clientWidth', { configurable: true, get: () => Math.min(content(), room()) });
+  }
+  Object.defineProperty(sb, 'clientWidth', { configurable: true, get: () => width });
+  const rtl = sb.style.direction === 'rtl';
+  // From the bar's padding edge: at the content's end while it has room, past it when not.
+  const rightStart = () => (rtl ? Math.min(pad, width - pad - rightPx()) : Math.max(pad, width - pad - rightPx()));
+  Object.defineProperty(right, 'offsetLeft', { configurable: true, get: rightStart });
+  Object.defineProperty(right, 'offsetWidth', { configurable: true, get: rightPx });
+  sb.getBoundingClientRect = () => box(0, width * scale);
+  right.getBoundingClientRect = () => box(rightStart() * scale, (rightStart() + rightPx()) * scale);
 }
 
-function fitAt(width: number): void {
-  layout(width);
+function fitAt(width: number, options?: LayoutOptions): void {
+  layout(width, options);
   bar.fit();
 }
 
@@ -222,10 +236,7 @@ describe('the status bar, fitting its width', () => {
     bar.destroy();
     bar = new WidgetStatusBar(root);
     bar.setMarket('closed', 'Market closed', 'Closed');
-    Object.defineProperty(statusBar(), 'clientWidth', { configurable: true, get: () => RIGHT_PX - 20 });
-    statusBar().getBoundingClientRect = () => box(0, RIGHT_PX - 20);
-    q('.tcw-status-right').getBoundingClientRect = () => box(0, has('short-market') ? RIGHT_SHORT_PX : RIGHT_PX);
-    bar.fit();
+    fitAt(RIGHT_PX - 20);
     expect(has('short-market')).toBe(true);
   });
 
@@ -243,9 +254,61 @@ describe('the status bar, fitting its width', () => {
   });
 });
 
+describe('the status bar, in a scaled or zoomed container', () => {
+  // As the stylesheet pads the bar; a dialog's scale-in starts at 0.9.
+  const PAD_PX = 16;
+  const SHRUNK = { pad: PAD_PX, scale: 0.75 };
+  const GROWN = { pad: PAD_PX, scale: 1.25 };
+
+  it('folds nothing, and keeps the market word whole, while there is room', () => {
+    bar.setMarket('closed', 'Market closed', 'Closed');
+    fitAt(800, SHRUNK);
+    expect(root.querySelectorAll('[data-tcw-folded]')).toHaveLength(0);
+    expect(has('folded')).toBe(false);
+    expect(has('short-market')).toBe(false);
+  });
+
+  it('folds nothing right to left either', () => {
+    statusBar().style.direction = 'rtl';
+    bar.setMarket('closed', 'Market closed', 'Closed');
+    fitAt(800, SHRUNK);
+    expect(root.querySelectorAll('[data-tcw-folded]')).toHaveLength(0);
+    expect(has('short-market')).toBe(false);
+  });
+
+  it('folds just what it would unscaled when there is no room', () => {
+    fitAt(RIGHT_PX + 240 + 2 * PAD_PX, SHRUNK);
+    expect(foldedPresets()).toEqual(['1Y', '5Y', 'All']);
+  });
+
+  describe('with the presets and go to date switched off', () => {
+    beforeEach(() => {
+      root.dataset.tcwOff = 'statusBar.range goToDate';
+      bar.setMarket('closed', 'Market closed', 'Closed');
+    });
+
+    it('keeps the market word whole while the right group has room', () => {
+      fitAt(RIGHT_PX + 2 * PAD_PX + 10, SHRUNK);
+      expect(has('short-market')).toBe(false);
+    });
+
+    it('shortens it, grown as by a zoom, when the right group runs into the padding', () => {
+      fitAt(RIGHT_PX + 2 * PAD_PX - 3, GROWN);
+      expect(has('short-market')).toBe(true);
+    });
+
+    it('shortens it right to left too, grown, when the right group runs into the padding', () => {
+      statusBar().style.direction = 'rtl';
+      fitAt(RIGHT_PX + 2 * PAD_PX - 3, GROWN);
+      expect(has('short-market')).toBe(true);
+    });
+  });
+});
+
 describe('the status bar, refitting under the keyboard and the "more" menu', () => {
   const more = () => q<HTMLButtonElement>('[data-role="rangeMore"]');
   const preset = (name: string) => q<HTMLButtonElement>(`[data-range="${name}"]`);
+  const goTo = () => q<HTMLButtonElement>('[data-role="goto"]');
   const menuOpen = () => root.querySelector('.tcw-context-menu:not([hidden])') !== null;
 
   it('hands the keyboard to "more" when the preset it is on folds', () => {
@@ -270,12 +333,48 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
     expect(document.activeElement).toBe(preset('1D'));
   });
 
-  it('hands the keyboard to the last preset when "more" goes', () => {
+  it('hands the keyboard to go to date when "more" goes', () => {
     fitAt(RIGHT_PX + 240);
     more().focus();
     fitAt(800);
     expect(has('folded')).toBe(false);
+    expect(document.activeElement).toBe(goTo());
+  });
+
+  it('hands it to the last preset that shows when "more" goes and go to date is switched off', () => {
+    root.dataset.tcwOff = 'statusBar.goToDate';
+    fitAt(RIGHT_PX + 240);
+    more().focus();
+    fitAt(800);
     expect(document.activeElement).toBe(preset('All'));
+  });
+
+  it('hands it to go to date when the presets, and "more" with them, are switched off under it', () => {
+    fitAt(RIGHT_PX + 240);
+    more().focus();
+    root.dataset.tcwOff = 'statusBar.range';
+    fitAt(RIGHT_PX + 240);
+    expect(document.activeElement).toBe(goTo());
+  });
+
+  it('hands it to the bar itself when nothing on the range bar shows, for as long as it stays there', () => {
+    fitAt(RIGHT_PX + 240);
+    more().focus();
+    root.dataset.tcwOff = 'statusBar.range goToDate';
+    fitAt(RIGHT_PX + 240);
+    expect(document.activeElement).toBe(statusBar());
+    // Focusable only to hold the keyboard: a click on the bar later doesn't take it.
+    statusBar().blur();
+    expect(statusBar().hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('leaves the keyboard alone when it is not on the range bar', () => {
+    const outside = document.createElement('input');
+    document.body.appendChild(outside);
+    outside.focus();
+    fitAt(RIGHT_PX + 240);
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
   });
 
   it('keeps the menu open while what is folded stays the same', () => {
@@ -295,12 +394,26 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
     expect(document.activeElement).toBe(more());
   });
 
-  it('closes the menu when nothing is folded any more, the keyboard on the last preset', () => {
+  it('closes the menu when nothing is folded any more, the keyboard on go to date', () => {
     fitAt(RIGHT_PX + 240);
     more().click();
     fitAt(800);
     expect(menuOpen()).toBe(false);
-    expect(document.activeElement).toBe(preset('All'));
+    expect(document.activeElement).toBe(goTo());
+  });
+});
+
+describe('the status bar, right to left', () => {
+  // A bare "42 ms" in a right-to-left bar reads "ms 42"; each reads in its own text's direction instead.
+  it('reads the clock in its own direction, apart from the bar\'s', () => {
+    expect(q('[data-role="clock"]').dir).toBe('auto');
+  });
+
+  it('reads your items in their own direction, text and buttons, on either side', () => {
+    const latency = bar.addHostItem({ id: 'lat', text: '42 ms', label: 'Latency' });
+    const account = bar.addHostItem({ id: 'acc', text: 'Demo', side: 'left', onClick: () => {} });
+    expect(latency.dir).toBe('auto');
+    expect(account.dir).toBe('auto');
   });
 });
 

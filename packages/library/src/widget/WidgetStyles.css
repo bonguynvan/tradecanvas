@@ -1653,6 +1653,12 @@
   flex-shrink: 0;
 }
 
+/* The bar holds the keyboard when a refit hides every button it could go to. */
+.tcw-statusbar:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
+}
+
 .tcw-status-right {
   display: flex;
   align-items: center;

@@ -181,7 +181,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // 文字自身の向きで表示：右から左の画面でも "15 ms" と読める
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 同じキーのウィジェットのショートカットを置き換え、ショートカット一覧（?）にも出ます
 
 // そのほか何でも：ツールバーの操作ボタンの横、サイドバーのボタンの下、

@@ -176,7 +176,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // 按其文字自身的方向显示：从右到左的界面中也读作 "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 按键相同时取代组件自带的快捷键；也列在快捷键面板中（?）
 
 // 你的其他任何内容：工具栏控件旁、侧栏按钮下、状态栏两端，或图表之上

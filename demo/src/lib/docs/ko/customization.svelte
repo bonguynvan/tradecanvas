@@ -182,7 +182,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // 글자 자체의 방향으로 표시: 오른쪽에서 왼쪽으로 쓰는 화면에서도 "15 ms"로 읽힘
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 같은 키의 위젯 단축키를 대신하며, 단축키 목록(?)에도 나옵니다
 
 // 그 밖의 무엇이든: 툴바 조작 버튼 옆, 사이드바 버튼 아래,

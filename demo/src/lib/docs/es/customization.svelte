@@ -184,7 +184,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // en su propia dirección: de derecha a izquierda también se lee "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // sustituye al atajo del widget con las mismas teclas; también en la hoja de atajos (?)
 
 // Cualquier otra cosa tuya: junto a los controles de la barra, bajo los de la barra lateral,

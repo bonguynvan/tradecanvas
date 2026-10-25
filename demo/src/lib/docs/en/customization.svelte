@@ -182,7 +182,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // reads in its own direction: "15 ms", right to left too
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // replaces a widget shortcut on the same keys; listed in the shortcut sheet (?)
 
 // Anything else of yours: beside the toolbar's controls, under the sidebar's,
