@@ -2524,7 +2524,8 @@ export class ChartWidget {
       element,
       setActive: (on) => setHostButtonActive(element, on, spec.toggle === true),
       setText: (text) => {
-        setHostButtonText(element, spec.label, text);
+        // The same text every frame (a live count) needs no refit.
+        if (!setHostButtonText(element, spec.label, text)) return;
         // A longer count widens the button, not the toolbar its observer watches.
         toolbar.tidy();
       },
@@ -2570,7 +2571,7 @@ export class ChartWidget {
     return {
       element,
       setText: (text) => {
-        setHostButtonText(element, spec.label, text);
+        if (!setHostButtonText(element, spec.label, text)) return;
         toolbar.tidy();
       },
       remove: () => {

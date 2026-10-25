@@ -164,6 +164,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
   returns a handle to change or remove it, and shows while its bar does.
   When the toolbar runs out of room your buttons and menus fold under its “more” menu with the widget's own, those
   on the left last; below 641 px wide they all go there. A menu of yours picked from “more” opens under it.
+  Pressing “more” again closes it. Your <code>onClick</code> picked from “more” gets its button folded, with no size
+  (<code>getClientRects()</code> is empty): place a popover from “more” (<code>.tcw-toolbar-more</code>) then.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

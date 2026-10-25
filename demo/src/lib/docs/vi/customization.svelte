@@ -164,6 +164,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
   nó. Mỗi hàm trả về một handle để đổi hoặc gỡ, và phần đó hiện khi thanh của nó hiện.
   Khi thanh công cụ hết chỗ, nút và menu của bạn gập vào menu “thêm” cùng với nút của widget, nút bên trái gập sau
   cùng; hẹp hơn 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “thêm” mở ngay dưới nút đó.
+  Bấm “thêm” lần nữa sẽ đóng menu đó. Khi được chọn từ “thêm”, <code>onClick</code> của bạn nhận nút đang gập, không có
+  kích thước (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “thêm” (<code>.tcw-toolbar-more</code>).
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

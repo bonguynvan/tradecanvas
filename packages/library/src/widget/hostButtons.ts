@@ -6,9 +6,13 @@ export function setHostButtonActive(element: HTMLButtonElement, on: boolean, tog
   if (toggle) element.setAttribute('aria-pressed', String(on));
 }
 
-/** A host's toolbar button's text, its name following ("News: 3"). */
-export function setHostButtonText(element: HTMLButtonElement, label: string, text: string): void {
+/**
+ * A host's toolbar button's text, its name following ("News: 3"). False when
+ * it showed that text already: nothing changed, so nothing needs refitting.
+ */
+export function setHostButtonText(element: HTMLButtonElement, label: string, text: string): boolean {
   let span = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
+  if ((span?.textContent ?? '') === text) return false;
   if (!span) {
     span = document.createElement('span');
     span.className = 'tcw-host-btn-text';
@@ -16,4 +20,5 @@ export function setHostButtonText(element: HTMLButtonElement, label: string, tex
   }
   span.textContent = text;
   setHostButtonName(element, label);
+  return true;
 }

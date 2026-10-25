@@ -325,10 +325,9 @@ export class WidgetToolbar {
 
   /** The buttons a narrow toolbar hides, as a menu under `anchor`: those switched off left out. */
   private toggleMore(anchor: HTMLButtonElement): void {
-    if (this.moreMenu?.isOpen()) {
-      this.moreMenu.close();
-      return;
-    }
+    // This menu, or one picked from it (a host's, Trade, Layouts), hangs from
+    // "more": a press closes it, so two menus are never open at once.
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
     const root = this.rootEl();
     const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
     const isOff = (el: HTMLElement) => (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name));

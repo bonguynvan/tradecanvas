@@ -88,6 +88,7 @@ vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
 const { WidgetContextMenu } = await import('../WidgetContextMenu.js');
+const { WidgetToolbar } = await import('../WidgetToolbar.js');
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -200,6 +201,43 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     pickFromMore('Scans');
     const [, x, y] = open.mock.calls.at(-1)!;
     expect([x, y]).toEqual([500, 42]);
+  });
+
+  /** The menus showing now, by name. */
+  const openMenus = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')]
+    .filter((menu) => !menu.hidden)
+    .map((menu) => menu.getAttribute('aria-label'));
+
+  it.each([
+    ['a menu of the host', 'Scans'],
+    ['the Trade menu', 'Trade'],
+  ])('closes %s picked from “more” when “more” is pressed again, so two menus are never open', (_what, label) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'left', items: () => [{ label: 'Gap up', onSelect: () => {} }] });
+    root().setAttribute('data-tcw-narrow', '');
+    pickFromMore(label);
+    expect(openMenus()).toEqual([label]);
+    expect(more().getAttribute('aria-expanded')).toBe('true');
+    more().click();
+    expect(openMenus()).toEqual([]);
+    expect(more().getAttribute('aria-expanded')).toBe('false');
+    more().click();
+    expect(openMenus()).toEqual(['More']);
+  });
+
+  it.each(['button', 'menu'] as const)('leaves the toolbar unfitted when the text of its %s is set to what it shows', async (kind) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const handle = kind === 'button'
+      ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', onClick: () => {} })!
+      : widget.addToolbarDropdown({ id: 'news', label: 'News', icon: 'bell', text: '3', items: () => [] })!;
+    await settled();
+    const fit = vi.spyOn(WidgetToolbar.prototype, 'fit');
+    handle.setText('3');
+    await nextFrame();
+    expect(fit).not.toHaveBeenCalled();
+    handle.setText('4');
+    await nextFrame();
+    expect(fit).toHaveBeenCalledTimes(1);
   });
 
   it.each(['button', 'menu'] as const)('refits the toolbar when the text of its %s grows, folding from the right', async (kind) => {

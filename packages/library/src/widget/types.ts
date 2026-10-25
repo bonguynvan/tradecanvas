@@ -366,6 +366,12 @@ export interface ToolbarButtonSpec {
   side?: 'left' | 'right';
   /** A switch that shows pressed while on (see `setActive`). */
   toggle?: boolean;
+  /**
+   * Called with your button. Picked from the toolbar's "more" menu, the
+   * button is folded and has no size, so a popover placed from it would open
+   * at the widget's corner. Place it from "more" then:
+   * `button.getClientRects().length === 0 ? button.closest('.tcw-toolbar')?.querySelector('.tcw-toolbar-more') : button`.
+   */
   onClick: (button: HTMLButtonElement) => void;
 }
 

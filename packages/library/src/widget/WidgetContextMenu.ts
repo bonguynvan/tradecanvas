@@ -36,6 +36,12 @@ const SHEET_QUERY = '(max-width: 640px)';
 /** The way back from a submenu opened as a sheet. */
 const BACK_ID = 'tcw:back';
 
+/**
+ * The menus open now, on every widget of the page: a button that several
+ * menus hang from ("more", for those picked from it) closes whichever is open.
+ */
+const openMenus = new Set<WidgetContextMenu>();
+
 /** Where a menu opens along each axis, in the host's coordinates. */
 interface MenuPlace {
   x: number;
@@ -133,10 +139,21 @@ export class WidgetContextMenu {
     this.show(entries, { x, y, xBack: x, yBack: y }, onPick, anchor, onRemove, true);
   }
 
+  /**
+   * Close every menu open under `anchor`, and say whether one was. Its
+   * button shows it open (aria-expanded), so a press on it closes it.
+   */
+  static closeAnchoredTo(anchor: HTMLElement): boolean {
+    const under = [...openMenus].filter((menu) => menu.anchor === anchor);
+    for (const menu of under) menu.close();
+    return under.length > 0;
+  }
+
   close(): void {
     this.clearHover();
     this.child?.close();
     if (this.el.hidden) return;
+    openMenus.delete(this);
     // A submenu the pointer closes leaves the keyboard where it is, in the menu.
     const giveBack = !this.parent || this.el.contains(document.activeElement);
     this.el.hidden = true;
@@ -184,6 +201,7 @@ export class WidgetContextMenu {
     this.anchor?.setAttribute('aria-expanded', 'true');
     this.el.replaceChildren(...entries.map((entry) => this.entry(entry)));
     this.el.hidden = false;
+    openMenus.add(this);
     const hostRect = this.host.getBoundingClientRect();
     const right = Math.min(this.host.clientWidth, window.innerWidth - hostRect.left) - MENU_MARGIN;
     const bottom = Math.min(this.host.clientHeight, window.innerHeight - hostRect.top) - MENU_MARGIN;

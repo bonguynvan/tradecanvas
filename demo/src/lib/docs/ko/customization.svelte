@@ -164,6 +164,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
   없앨 수 있는 핸들을 돌려주며, 해당 바가 보일 때만 보입니다.
   툴바에 자리가 모자라면 직접 만든 버튼과 메뉴는 위젯의 것과 함께 “더보기” 메뉴 안으로 접히며, 왼쪽에 있는 것이 가장 나중에 접힙니다. 너비가 641 px 미만이면 모두 그 안으로 들어갑니다.
   “더보기”에서 고른 직접 만든 메뉴는 그 아래에 열립니다.
+  “더보기”를 다시 누르면 닫힙니다. “더보기”에서 골랐을 때 직접 만든 <code>onClick</code>이 받는 버튼은 접혀 있어 크기가 없습니다
+  (<code>getClientRects()</code>가 비어 있음). 그럴 때는 팝오버를 “더보기” 버튼(<code>.tcw-toolbar-more</code>)에 맞춰 놓으세요.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
