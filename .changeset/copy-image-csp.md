@@ -1,0 +1,6 @@
+---
+'@tradecanvas/core': patch
+'@tradecanvas/chart': patch
+---
+
+**Copy chart image** works on a page whose Content-Security-Policy leaves `data:` out of `connect-src`. The image went to the clipboard by fetching a `data:` URL of itself, which such a policy refuses, so `chart.copyScreenshot()` gave `false` and the widget said "Copy failed — image clipboard unavailable" though the clipboard was fine. The canvas now encodes the PNG itself (`canvas.toBlob`), so copying needs nothing in `connect-src`; `chart.screenshotBlob()` and `Screenshot.toBlob()` no longer fetch either, and give `null` when there is nothing to encode. `copyScreenshot()` also hands the clipboard its item while the click or key that asked for it is still being handled, with the image still encoding, as Safari asks; a browser whose `ClipboardItem` takes only a finished image gets it once it is encoded. The widget's own needs are unchanged: `style-src 'unsafe-inline'` for the `<style>` element it adds, and `img-src data:` for the icons in its fields.

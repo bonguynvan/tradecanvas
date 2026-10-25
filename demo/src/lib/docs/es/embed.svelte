@@ -51,13 +51,18 @@ import { App } from '@capacitor/app';
 App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
 <p>Un gráfico dentro de una pantalla que se desplaza deja los deslizamientos verticales a la pantalla.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
-<p>La política de seguridad de contenido de Tauri debe permitir que la página llegue a los hosts del feed de datos.</p>
-<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+<p>
+  La política de seguridad de contenido de Tauri debe permitir que la página llegue a los hosts del feed de datos. El widget necesita además <code>style-src 'unsafe-inline'</code>, para el único elemento <code>&lt;style&gt;</code> que añade, y <code>img-src data:</code>, para los iconos pequeños de sus campos y casillas: sin lo primero se muestra sin estilos, y sin lo segundo sus campos pierden los iconos. Copiar la imagen del gráfico no necesita nada más.
+</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
   "security": {
-    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
   }
 }`}</code></pre>
+<p>
+  Tauri añade un nonce a <code>style-src</code> por cada elemento <code>&lt;style&gt;</code> del HTML de la propia página (y un hash en su patrón de aislamiento), y en cuanto hay un nonce el navegador ignora <code>'unsafe-inline'</code>, así que los estilos del widget vuelven a quedar bloqueados. Mantenga los estilos de la página en archivos de hojas de estilo, o incluya <code>"style-src"</code> en <code>dangerousDisableAssetCspModification</code>.
+</p>
 <p>
   El gráfico dibuja como mucho a una densidad de píxeles de 2 (<code>maxPixelRatio</code>); destrúyalo (<code>chart.destroy()</code>) cuando se cierre su pantalla y la memoria de sus lienzos vuelve enseguida.
 </p>

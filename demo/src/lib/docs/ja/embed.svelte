@@ -51,13 +51,18 @@ import { App } from '@capacitor/app';
 App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
 <p>スクロールする画面の中のチャートは、縦のスワイプを画面に任せます。</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
-<p>Tauri のコンテンツセキュリティポリシーで、データフィードのホストへの接続を許可する必要があります。</p>
-<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+<p>
+  Tauri のコンテンツセキュリティポリシーで、データフィードのホストへの接続を許可する必要があります。ウィジェットにはさらに、追加する 1 つの <code>&lt;style&gt;</code> 要素のために <code>style-src 'unsafe-inline'</code> が、入力欄とチェックボックスの小さなアイコンのために <code>img-src data:</code> が必要です。前者がないとウィジェットはスタイルなしで表示され、後者がないと入力欄のアイコンが消えます。チャート画像のコピーには、これ以上何も要りません。
+</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
   "security": {
-    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
   }
 }`}</code></pre>
+<p>
+  Tauri は、ページ自身の HTML にある <code>&lt;style&gt;</code> 要素ごとに <code>style-src</code> へ nonce を加えます（isolation パターンではハッシュも加えます）。nonce があるとブラウザは <code>'unsafe-inline'</code> を無視するため、ウィジェットのスタイルはまた拒否されます。ページのスタイルはスタイルシートのファイルに置くか、<code>dangerousDisableAssetCspModification</code> に <code>"style-src"</code> を挙げてください。
+</p>
 <p>
   チャートはピクセル比 2 までで描画します（<code>maxPixelRatio</code>）。画面を閉じるときに破棄（<code>chart.destroy()</code>）すると、キャンバスのメモリはすぐに返されます。
 </p>

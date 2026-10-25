@@ -4204,12 +4204,29 @@ export class Chart {
   /** Copy the chart image to the clipboard. Returns false if unsupported/blocked. */
   async copyScreenshot(): Promise<boolean> {
     if (!this.features.screenshot) return false;
+    const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+    const clipboard = navigator.clipboard;
+    if (!clipboard?.write || !ClipboardItemCtor) return false;
     try {
       this.freshFrame();
-      const blob = await Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
-      const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-      if (!blob || !navigator.clipboard?.write || !ClipboardItemCtor) return false;
-      await navigator.clipboard.write([new ClipboardItemCtor({ 'image/png': blob })]);
+      const png = Screenshot.toBlob(this.container, this.themeManager.getTheme().background).then((blob) => {
+        if (!blob) throw new Error('No chart image to copy');
+        return blob;
+      });
+      // The write reports a missing image; this keeps it from also showing as an unhandled rejection.
+      png.catch(() => {});
+      // The item is made, and written, before anything is awaited, while the
+      // image still encodes: Safari lets a page write the clipboard only while
+      // the click that asked for it is being handled.
+      let item: ClipboardItem;
+      try {
+        item = new ClipboardItemCtor({ 'image/png': png });
+      } catch (err) {
+        // Older browsers take only a Blob here, so they wait for the encoding.
+        if (!(err instanceof TypeError)) throw err;
+        item = new ClipboardItemCtor({ 'image/png': await png });
+      }
+      await clipboard.write([item]);
       return true;
     } catch {
       return false;
