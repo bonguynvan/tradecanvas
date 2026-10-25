@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.47.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.29.
+
 ### One spelling for the time zone
 
 What coding agents ran into in the evals: the option is `timeZone`, the methods were `setTimezone`, and an option written from the methods' name failed the type check.
