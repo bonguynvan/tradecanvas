@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.46.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.28.
+
 ### The widget, as agents found it
 
 What coding agents ran into in the evals, on the widget.
