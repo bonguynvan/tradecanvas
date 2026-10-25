@@ -136,7 +136,7 @@ function applyVNMarket(symbol: string): void {
   chart.setSymbolInfo({
     symbol,
     description: VN_SYMBOLS[symbol]?.name,
-    timezone: 'Asia/Ho_Chi_Minh',
+    timeZone: 'Asia/Ho_Chi_Minh',
     sessions: [{ start: futures ? '08:45' : '09:00', end: '11:30' }, { start: '13:00', end: '14:45' }],
   });
   // The reference: the close a day of bars back (22 a day), about yesterday's.
@@ -381,7 +381,7 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
     priceFormat: { denominator: 32, subDenominator: 2 },  // 110'165 = 110 and 16½ 32nds
   },
 })
-chart.setSymbolInfo({ symbol: 'TNOTE', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] })
+chart.setSymbolInfo({ symbol: 'TNOTE', timeZone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] })
 chart.setExtendedHours(false)   // the regular session only`,
     options: () => ({
       symbol: 'TNOTE',
@@ -391,7 +391,7 @@ chart.setExtendedHours(false)   // the regular session only`,
     }),
     data: (symbol) => generateBars(1500, symbol, HOUR / 2, 110),
     setup: (_widget, chart) => {
-      chart.setSymbolInfo({ symbol: 'TNOTE', description: '10-year note', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
+      chart.setSymbolInfo({ symbol: 'TNOTE', description: '10-year note', timeZone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
     },
   },
   {

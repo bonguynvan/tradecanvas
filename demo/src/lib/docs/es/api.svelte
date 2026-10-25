@@ -95,14 +95,28 @@
   </tbody>
 </table>
 <p>
-  <strong>Zona horaria.</strong> Las etiquetas del eje de tiempo y la etiqueta de
-  hora de la cruz siguen por defecto la zona local del navegador; cambia a un
-  desfase UTC fijo (o vuelve a la hora local) desde la hoja de configuración o
-  directamente:
+  <strong>Zona horaria.</strong> El eje de tiempo, la hora de la cruz, el tooltip, las
+  separaciones de día y los rangos predefinidos siguen por defecto la zona del navegador.
+  Dale al gráfico una zona IANA (con el horario de verano), un desfase fijo en minutos al
+  este de UTC, o <code>'exchange'</code> para la zona del símbolo
+  (<code>SymbolInfo.timeZone</code>) o, si no la tiene, la de su mercado: con la opción
+  <code>timeZone</code>, desde la configuración del widget o directamente:
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // desde el inicio
+
+chart.setTimeZone('America/New_York')  // la hora de Nueva York, con el horario de verano
+chart.setTimeZone(330)                 // UTC+5:30, en minutos
+chart.setTimeZone(null)                // la del navegador
+chart.setTimeZone('exchange')          // la zona del símbolo, si no la de su mercado
+chart.getTimeZone()                    // 'exchange', tal como se fijó
+chart.getEffectiveTimeZone()           // la zona que representa: 'Asia/Ho_Chi_Minh' en HOSE`}</code></pre>
+<p>
+  Los métodos y tipos del gráfico la escriben <code>timeZone</code>, como
+  <code>Intl.DateTimeFormat</code>. Los nombres anteriores siguen funcionando y quedan obsoletos:
+  <code>setTimezone</code>, <code>getTimezone</code>, <code>getEffectiveTimezone</code>,
+  <code>getExchangeTimezone</code>, <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> y
+  <code>SymbolInfo.timezone</code> (un símbolo que da ambos se lee por su <code>timeZone</code>).
+</p>
 
 <p>Los mismos efectos también están disponibles por código:</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -183,7 +197,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // o scaleMarketPrices(MARKET_HOSE, 1000) para 25350
-chart.setTimezone('exchange')                // el eje en la zona del mercado: Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // el eje en la zona del mercado: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // la referencia: el cierre de ayer
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, un paso de 50 dongs
@@ -293,11 +307,11 @@ chart.setSessionShadingConfig({
 })`}</code></pre>
 <p>
   <strong>Horario extendido.</strong> Al desactivarlo, las barras fuera del horario regular del
-  símbolo (<code>SymbolInfo.sessions</code> en su <code>timezone</code>) salen del gráfico; se guardan
+  símbolo (<code>SymbolInfo.sessions</code> en su <code>timeZone</code>) salen del gráfico; se guardan
   aparte, también las barras en vivo y las páginas del historial, y vuelven al activarlo. Las barras de
   un día o más se quedan como están.
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 

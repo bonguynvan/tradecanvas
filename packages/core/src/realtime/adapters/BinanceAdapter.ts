@@ -61,6 +61,8 @@ function toSymbolInfo(raw: BinanceSymbol): SymbolInfo | null {
     info.pricePrecision = stepDecimals(priceFilter.tickSize);
     info.minTick = Number(priceFilter.tickSize);
   }
+  // Both spellings, for code that still reads the older one.
+  info.timeZone = 'UTC';
   info.timezone = 'UTC';
   if (quote) info.currency = quote;
   return info;

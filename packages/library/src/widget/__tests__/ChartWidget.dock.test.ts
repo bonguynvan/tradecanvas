@@ -65,7 +65,7 @@ class FakeChart {
   setScaleMode(mode: string): void { this.calls.push(['setScaleMode', mode]); }
   setLeftPriceScaleVisible(on: boolean): void { this.calls.push(['setLeftPriceScaleVisible', on]); }
   setBarCountdownVisible(on: boolean): void { this.calls.push(['setBarCountdownVisible', on]); }
-  setTimezone(zone: unknown): void { this.calls.push(['setTimezone', zone]); }
+  setTimeZone(zone: unknown): void { this.calls.push(['setTimeZone', zone]); }
   applyOverrides(patch: unknown): void { this.calls.push(['applyOverrides', patch]); }
   getStyleValue(key: string): unknown { return key === 'lastPrice.visible' ? true : null; }
 }

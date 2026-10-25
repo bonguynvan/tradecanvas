@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### One spelling for the time zone
+
+What coding agents ran into in the evals: the option is `timeZone`, the methods were `setTimezone`, and an option written from the methods' name failed the type check.
+
+- **`timeZone` in the chart's methods and types**, as `Intl.DateTimeFormat` spells it: `setTimeZone`, `getTimeZone`, `getEffectiveTimeZone`, `getExchangeTimeZone`, `EXCHANGE_TIME_ZONE`, and `SymbolInfo.timeZone` for the zone a symbol keeps its hours in (`MarketConfig` and the session shading spelled it so already).
+- **The older names still work**, marked deprecated: `setTimezone`, `getTimezone`, `getEffectiveTimezone`, `getExchangeTimezone`, `setTimezoneOffset` (an offset is `setTimeZone(minutes)`), `EXCHANGE_TIMEZONE` and `SymbolInfo.timezone`. A symbol's zone reads back both ways from `getSymbolInfo()`, and `timeZone` comes first when both are given (`{ ...chart.getSymbolInfo(), timezone }` still changes it). `marketStatus`, a feed's update and the new `symbolTimeZone(info)` read either; Binance's symbols carry both. The widget's own names, such as the switch `menu.chart.timezone`, stay as they are.
+- The docs' time zone section showed only fixed offsets, through `setTimezoneOffset`. It now shows the option, IANA zones, `'exchange'` and what each getter answers.
+
 ## 1.46.0 (2026-10-25)
 
 React, Vue and Svelte components: 1.3.28.

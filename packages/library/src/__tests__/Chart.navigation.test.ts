@@ -192,18 +192,18 @@ describe('layout for on-chart labels', () => {
 
 describe('Chart time zone', () => {
   it('takes an IANA zone, a fixed offset or the browser’s zone', () => {
-    expect(chart.getTimezone()).toBeNull();
-    chart.setTimezone('America/New_York');
-    expect(chart.getTimezone()).toBe('America/New_York');
-    chart.setTimezoneOffset(-300);
-    expect(chart.getTimezone()).toBe(-300);
-    chart.setTimezone(null);
-    expect(chart.getTimezone()).toBeNull();
+    expect(chart.getTimeZone()).toBeNull();
+    chart.setTimeZone('America/New_York');
+    expect(chart.getTimeZone()).toBe('America/New_York');
+    chart.setTimeZone(-300);
+    expect(chart.getTimeZone()).toBe(-300);
+    chart.setTimeZone(null);
+    expect(chart.getTimeZone()).toBeNull();
   });
 
   it('refuses a zone the browser does not know', () => {
-    expect(() => chart.setTimezone('Mars/Olympus')).toThrow(RangeError);
-    expect(chart.getTimezone()).toBeNull();
+    expect(() => chart.setTimeZone('Mars/Olympus')).toThrow(RangeError);
+    expect(chart.getTimeZone()).toBeNull();
   });
 
   it('refuses an unknown ChartOptions.timeZone before building anything', () => {
@@ -215,7 +215,7 @@ describe('Chart time zone', () => {
 
   it('starts in ChartOptions.timeZone', () => {
     const other = new Chart(sizedHost(), { timeZone: 'Asia/Tokyo' });
-    expect(other.getTimezone()).toBe('Asia/Tokyo');
+    expect(other.getTimeZone()).toBe('Asia/Tokyo');
     other.destroy();
   });
 
@@ -226,7 +226,7 @@ describe('Chart time zone', () => {
       time: Date.UTC(2025, 5, 1, 5) + i * DAY, open: 100, high: 101, low: 99, close: 100, volume: 1,
     }));
     chart.setData(daily);
-    chart.setTimezone('America/New_York');
+    chart.setTimeZone('America/New_York');
     chart.setVisibleRangePreset('YTD');
     const first = daily.findIndex((b) => b.time >= Date.UTC(2026, 0, 1, 5));
     expect(state().visibleRange.from).toBeLessThanOrEqual(first);

@@ -19,7 +19,7 @@ export const checks = [
     assert.ok(near(limits.ceiling, 27.1) && near(limits.floor, 23.6), `ceiling ${limits.ceiling}, floor ${limits.floor}`);
   }],
   ['Vietnam’s time on the axis', ({ chart }) => {
-    const zone = chart.getEffectiveTimezone();
+    const zone = chart.getEffectiveTimeZone();
     assert.ok(['Asia/Ho_Chi_Minh', 'Asia/Saigon', 'Asia/Bangkok'].includes(zone), `zone ${zone}`);
   }],
   ['numbers the Vietnamese way', ({ chart }) => assert.equal(chart.formatPrice(1234.5), '1.234,50')],

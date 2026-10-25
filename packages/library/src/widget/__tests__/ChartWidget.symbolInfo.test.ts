@@ -24,7 +24,7 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   getSymbolInfo(): SymbolInfo | null { return FakeChart.info; }
-  getExchangeTimezone(): string | null { return FakeChart.exchangeZone; }
+  getExchangeTimeZone(): string | null { return FakeChart.exchangeZone; }
   zoomIns = 0;
   zoomIn(): void { this.zoomIns++; }
   scrolled: number[] = [];

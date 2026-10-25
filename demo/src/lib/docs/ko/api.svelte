@@ -95,13 +95,26 @@
   </tbody>
 </table>
 <p>
-  <strong>시간대.</strong> 시간 축 라벨과 십자선의 시간 표시는 기본적으로 브라우저의
-  로컬 시간대를 따릅니다. 설정 창에서 또는 코드로 직접 고정 UTC 오프셋으로 바꾸거나
-  로컬로 되돌릴 수 있습니다.
+  <strong>시간대.</strong> 시간 축, 십자선의 시간, 툴팁, 날짜 구분선, 기간 프리셋은 기본적으로
+  브라우저의 시간대를 따릅니다. IANA 시간대(서머타임 포함), UTC 기준 동쪽으로의 고정
+  오프셋(분), 또는 <code>'exchange'</code>(종목의 시간대 <code>SymbolInfo.timeZone</code>, 없으면
+  시장의 시간대)를 <code>timeZone</code> 옵션, 위젯의 설정 또는 코드로 직접 지정할 수 있습니다.
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // 처음부터
+
+chart.setTimeZone('America/New_York')  // 뉴욕 시간, 서머타임 포함
+chart.setTimeZone(330)                 // UTC+5:30, 분 단위
+chart.setTimeZone(null)                // 브라우저의 시간대
+chart.setTimeZone('exchange')          // 종목의 시간대, 없으면 시장의 시간대
+chart.getTimeZone()                    // 설정한 그대로 'exchange'
+chart.getEffectiveTimeZone()           // 가리키는 시간대: HOSE에서는 'Asia/Ho_Chi_Minh'`}</code></pre>
+<p>
+  차트의 메서드와 타입은 <code>Intl.DateTimeFormat</code>과 같이 <code>timeZone</code>으로 씁니다. 이전
+  이름도 동작하지만 더 이상 권장되지 않습니다(deprecated): <code>setTimezone</code>,
+  <code>getTimezone</code>, <code>getEffectiveTimezone</code>, <code>getExchangeTimezone</code>,
+  <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code>, <code>SymbolInfo.timezone</code>
+  (종목이 둘 다 주면 <code>timeZone</code>을 읽습니다).
+</p>
 
 <p>같은 효과를 코드로도 적용할 수 있습니다.</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -175,7 +188,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 25350 같은 가격이면 scaleMarketPrices(MARKET_HOSE, 1000)
-chart.setTimezone('exchange')                // 시간 축을 시장의 시간대로: Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // 시간 축을 시장의 시간대로: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 기준가: 전일 종가
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, 50동 단위
@@ -278,11 +291,11 @@ chart.setSessionShadingConfig({
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
 <p>
-  <strong>시간외 거래.</strong> 끄면 종목의 정규 거래 시간(종목의 <code>timezone</code> 기준
+  <strong>시간외 거래.</strong> 끄면 종목의 정규 거래 시간(종목의 <code>timeZone</code> 기준
   <code>SymbolInfo.sessions</code>) 밖의 봉이 차트에서 빠집니다. 빠진 봉은 실시간 봉과 과거 데이터
   페이지까지 따로 보관되며, 다시 켜면 돌아옵니다. 하루 이상 단위의 봉은 그대로 둡니다.
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 

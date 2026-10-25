@@ -1,4 +1,4 @@
-/** A regular trading window, wall-clock times in the symbol's `timezone`. */
+/** A regular trading window, wall-clock times in the symbol's `timeZone`. */
 export interface SymbolSession {
   /** Opening time, `'09:30'`. */
   start: string;
@@ -27,8 +27,14 @@ export interface SymbolInfo {
   /** Smallest price step. */
   minTick?: number;
   /** IANA zone the exchange keeps its hours in, e.g. `'America/New_York'`. */
+  timeZone?: string;
+  /**
+   * @deprecated Use `timeZone`, spelled as the chart's `timeZone` option is.
+   * Still read when `timeZone` is left out (`timeZone` comes first when both
+   * are given); the chart's `getSymbolInfo()` gives both.
+   */
   timezone?: string;
-  /** Regular trading hours in `timezone`; none means around the clock. */
+  /** Regular trading hours in `timeZone`; none means around the clock. */
   sessions?: SymbolSession[];
   /** Currency prices are quoted in. */
   currency?: string;

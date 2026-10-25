@@ -165,10 +165,10 @@ export interface ChartOptions {
    */
   freePan?: boolean;
   /**
-   * Timezone for the time axis, crosshair, tooltip, day breaks and range
+   * Time zone for the time axis, crosshair, tooltip, day breaks and range
    * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
    * fixed offset in minutes east of UTC, `'exchange'` for the symbol's zone
-   * or else its market's (`setTimezone`), or null (default) for the browser's.
+   * or else its market's (`setTimeZone`), or null (default) for the browser's.
    */
   timeZone?: string | number | null;
   /**

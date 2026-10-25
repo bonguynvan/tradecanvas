@@ -1,5 +1,5 @@
 import type { SymbolInfo } from '../types/symbol.js';
-import { sessionMinute } from './symbols.js';
+import { sessionMinute, symbolTimeZone } from './symbols.js';
 import { isValidTimeZone, zoneOffsetMinutes } from './timezone.js';
 
 /** Whether a symbol's market is trading now, and when that changes. */
@@ -22,7 +22,7 @@ const LOOK_AHEAD_DAYS = 8;
  * to the day it starts. Without hours or a zone it knows: `'always'`.
  */
 export function marketStatus(info: SymbolInfo | null | undefined, now: number): MarketStatus {
-  const zone = info?.timezone;
+  const zone = symbolTimeZone(info);
   const sessions = (info?.sessions ?? []).flatMap((s) => {
     const start = sessionMinute(s.start);
     const end = sessionMinute(s.end);

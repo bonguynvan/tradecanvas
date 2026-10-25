@@ -41,7 +41,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { ChartTypeOptions, DataUpdatePayload, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, normalizeBarTime, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
@@ -140,14 +140,29 @@ declare const __TC_VERSION__: string;
 /** The scale of an indicator pane with nothing to fit yet. */
 const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
-/** `setTimezone(EXCHANGE_TIMEZONE)` shows the zone of the symbol's exchange, else of its market (`getExchangeTimezone`). */
-export const EXCHANGE_TIMEZONE = 'exchange';
+/** `setTimeZone(EXCHANGE_TIME_ZONE)` shows the zone of the symbol's exchange, else of its market (`getExchangeTimeZone`). */
+export const EXCHANGE_TIME_ZONE = 'exchange';
+/** @deprecated Use `EXCHANGE_TIME_ZONE`. */
+export const EXCHANGE_TIMEZONE = EXCHANGE_TIME_ZONE;
 /** Throws a RangeError for a time zone the browser doesn't know or an offset that isn't a number. */
-function assertTimezone(tz: TimeZoneSetting): void {
-  if (typeof tz === 'string' && tz !== EXCHANGE_TIMEZONE && !isValidTimeZone(tz)) {
+function assertTimeZone(tz: TimeZoneSetting): void {
+  if (typeof tz === 'string' && tz !== EXCHANGE_TIME_ZONE && !isValidTimeZone(tz)) {
     throw new RangeError(`Unknown time zone: ${tz}`);
   }
   if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
+}
+/**
+ * A symbol's zone under both names: `timeZone`, and the older `timezone` that
+ * code may still read. When the two disagree, the one that moved from `held`
+ * (the zone the chart has for this symbol) is the new zone, so
+ * `{ ...getSymbolInfo(), timezone: zone }` changes it as `timeZone: zone` does;
+ * otherwise `timeZone` is.
+ */
+function withBothZoneSpellings(info: SymbolInfo, held: string | undefined): SymbolInfo {
+  const { timeZone, timezone } = info;
+  const moved = timeZone !== undefined && timezone !== undefined && timeZone !== timezone && timeZone === held;
+  const zone = moved ? timezone : symbolTimeZone(info);
+  return zone === undefined ? info : { ...info, timeZone: zone, timezone: zone };
 }
 
 /** Room above and below the left scale's overlays, as a share of their range. */
@@ -226,10 +241,10 @@ export class Chart {
   private zoomAreaMode = false;
   /** The "+" by the price axis. */
   private priceAxisAddButton = new PriceAxisAddButton();
-  /** The time zone shown: the setting, with 'exchange' resolved (`getExchangeTimezone`, else UTC). */
+  /** The time zone shown: the setting, with 'exchange' resolved (`getExchangeTimeZone`, else UTC). */
   private displayTz: TimeZoneSetting = null;
-  /** What `setTimezone` was given; 'exchange' follows the symbol, else its market. */
-  private timezoneSetting: TimeZoneSetting = null;
+  /** What `setTimeZone` was given; 'exchange' follows the symbol, else its market. */
+  private timeZoneSetting: TimeZoneSetting = null;
   /** What the feed (or host) said about the symbol on the chart. */
   private symbolInfo: SymbolInfo | null = null;
   /** Bumped per symbol asked about: an answer about a symbol the chart left is dropped. */
@@ -362,7 +377,7 @@ export class Chart {
     plugins?: ChartPlugin[];
   }) {
     // Checked before anything is built: a throw later would leave the DOM and listeners behind.
-    if (options.timeZone != null) assertTimezone(options.timeZone);
+    if (options.timeZone != null) assertTimeZone(options.timeZone);
     this.container = container;
     this.options = { ...options, chartType: options.chartType ?? 'candlestick' };
     this.numberLocale = options.numberLocale ?? 'en-US';
@@ -1041,7 +1056,7 @@ export class Chart {
     this.interactionManager.setPageScroll(options.pageScroll ?? false);
     this.interactionManager.attach();
 
-    if (options.timeZone !== undefined && options.timeZone !== null) this.setTimezone(options.timeZone);
+    if (options.timeZone !== undefined && options.timeZone !== null) this.setTimeZone(options.timeZone);
     if (options.leftPriceScale) this.leftScaleRequested = true;
 
     // Set render context
@@ -1429,7 +1444,7 @@ export class Chart {
 
   /**
    * Show or hide the bars outside the symbol's regular hours
-   * (`SymbolInfo.sessions`, in its `timezone`): pre- and post-market. Hidden,
+   * (`SymbolInfo.sessions`, in its `timeZone`): pre- and post-market. Hidden,
    * they are kept aside and come back when shown again. Bars a day or longer,
    * and symbols without hours, are left as they are.
    */
@@ -3912,26 +3927,32 @@ export class Chart {
   }
 
   /**
-   * The timezone for the time axis, crosshair, tooltip, day breaks and range
+   * The time zone for the time axis, crosshair, tooltip, day breaks and range
    * presets: an IANA zone (`'America/New_York'`, daylight saving included), a
    * fixed offset in minutes east of UTC (`-300`, `330`), `'exchange'` for the
    * symbol's zone (`setSymbolInfo`), else its market's (`setMarket`), else
    * UTC, or null for the browser's. Throws a RangeError for a zone the
    * browser doesn't know. The `timeZone` option sets it at the start.
+   *
+   * @example
+   * chart.setTimeZone('America/New_York'); // New York's time, daylight saving included
+   * chart.setTimeZone(330);                // UTC+5:30, in minutes
+   * chart.setTimeZone('exchange');         // the symbol's zone, else its market's
+   * chart.setTimeZone(null);               // the browser's
    */
-  setTimezone(tz: TimeZoneSetting): void {
-    assertTimezone(tz);
-    this.timezoneSetting = tz;
-    this.applyTimezone();
+  setTimeZone(tz: TimeZoneSetting): void {
+    assertTimeZone(tz);
+    this.timeZoneSetting = tz;
+    this.applyTimeZone();
   }
 
-  /** What `setTimezone` was given — `'exchange'` included. */
-  getTimezone(): TimeZoneSetting {
-    return this.timezoneSetting;
+  /** What `setTimeZone` was given — `'exchange'` included. */
+  getTimeZone(): TimeZoneSetting {
+    return this.timeZoneSetting;
   }
 
   /** The zone the chart shows: `'exchange'` resolved to the symbol's zone, else its market's (UTC when neither names one). */
-  getEffectiveTimezone(): TimeZoneSetting {
+  getEffectiveTimeZone(): TimeZoneSetting {
     return this.displayTz;
   }
 
@@ -3940,12 +3961,37 @@ export class Chart {
    * stream's adapter), else its market's (`setMarket`); null when neither
    * names one the browser knows, and `'exchange'` then shows UTC.
    */
-  getExchangeTimezone(): string | null {
-    return [this.symbolInfo?.timezone, this.marketConfig?.timeZone].find((zone) => zone && isValidTimeZone(zone)) ?? null;
+  getExchangeTimeZone(): string | null {
+    return [symbolTimeZone(this.symbolInfo), this.marketConfig?.timeZone].find((zone) => zone && isValidTimeZone(zone)) ?? null;
   }
 
-  private applyTimezone(): void {
-    const tz = this.timezoneSetting === EXCHANGE_TIMEZONE ? (this.getExchangeTimezone() ?? 'UTC') : this.timezoneSetting;
+  /** @deprecated Use `setTimeZone`, spelled as the `timeZone` option is. */
+  setTimezone(tz: TimeZoneSetting): void {
+    this.setTimeZone(tz);
+  }
+
+  /** @deprecated Use `getTimeZone`. */
+  getTimezone(): TimeZoneSetting {
+    return this.getTimeZone();
+  }
+
+  /** @deprecated Use `getEffectiveTimeZone`. */
+  getEffectiveTimezone(): TimeZoneSetting {
+    return this.getEffectiveTimeZone();
+  }
+
+  /** @deprecated Use `getExchangeTimeZone`. */
+  getExchangeTimezone(): string | null {
+    return this.getExchangeTimeZone();
+  }
+
+  /** @deprecated Use `setTimeZone`, which takes an offset in minutes east of UTC, or null for the browser's zone. */
+  setTimezoneOffset(minutes: number | null): void {
+    this.setTimeZone(minutes);
+  }
+
+  private applyTimeZone(): void {
+    const tz = this.timeZoneSetting === EXCHANGE_TIME_ZONE ? (this.getExchangeTimeZone() ?? 'UTC') : this.timeZoneSetting;
     this.displayTz = tz;
     this.timeAxis.setTimezoneOffset(tz);
     this.crosshairHandler.setTimezoneOffset(tz);
@@ -3960,11 +4006,16 @@ export class Chart {
   /**
    * What is known about the symbol on the chart — usually from the stream's
    * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
-   * price precision applies unless `setMarket` set one; its zone backs
-   * `setTimezone('exchange')`; its hours feed the session shading.
+   * price precision applies unless `setMarket` set one; its zone
+   * (`timeZone`) backs `setTimeZone('exchange')`; its hours feed the session
+   * shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
+   * `timezone`; given both with different zones, `timeZone` is the one, unless
+   * it is the zone the chart already has for the symbol and `timezone` is new
+   * (`{ ...chart.getSymbolInfo(), timezone: zone }` changes it).
    */
   setSymbolInfo(info: SymbolInfo | null): void {
-    this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
+    const held = info && this.symbolInfo?.symbol === info.symbol ? symbolTimeZone(this.symbolInfo) : undefined;
+    this.symbolInfo = info ? withBothZoneSpellings({ ...info, sessions: info.sessions?.map((session) => ({ ...session })) }, held) : null;
     this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
     this.engine.requestRender(LayerType.Hover);
     this.priceAxis.setPriceTick(this.symbolInfo?.minTick ?? null);
@@ -3976,12 +4027,12 @@ export class Chart {
       const endMinute = sessionMinute(session.end);
       return startMinute === null || endMinute === null ? [] : [{ startMinute, endMinute }];
     });
-    const zone = this.symbolInfo?.timezone;
+    const zone = symbolTimeZone(this.symbolInfo);
     // A symbol without hours of its own goes back to the host's.
     this.sessionShading.replaceConfig(windows.length > 0 && zone && isValidTimeZone(zone)
       ? { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute }
       : this.hostSessionHours);
-    if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
+    if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
     this.reapplyExtendedHours();
     this.updateViewportAndRender();
     this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
@@ -4002,7 +4053,8 @@ export class Chart {
     const sameSymbol = (s: string | undefined) => !s || s.toUpperCase() === symbol.toUpperCase();
     if (!sameSymbol(info.symbol)) return;
     const known = this.symbolInfo && sameSymbol(this.symbolInfo.symbol) ? this.symbolInfo : null;
-    const next: SymbolInfo = { ...known, ...info, symbol: info.symbol || known?.symbol || symbol };
+    // A zone in either spelling moves it: the known one is in both.
+    const next: SymbolInfo = withBothZoneSpellings({ ...known, ...info, symbol: info.symbol || known?.symbol || symbol }, symbolTimeZone(known));
     if (known && JSON.stringify(next) === JSON.stringify(known)) return;
     // An answer to resolveSymbol still on its way is older than this.
     this.symbolInfoSeq++;
@@ -4027,11 +4079,6 @@ export class Chart {
         if (seq === this.symbolInfoSeq) console.warn(`No symbol info for "${symbol}":`, err);
       },
     );
-  }
-
-  /** `setTimezone` with a fixed offset in minutes east of UTC, or null for the browser's zone. */
-  setTimezoneOffset(minutes: number | null): void {
-    this.setTimezone(minutes);
   }
 
   // --- Pivot / swing markers ---
@@ -5131,19 +5178,19 @@ export class Chart {
    * order ticket, its decimals on every price, its colours on the candles,
    * its daily limits once `setPriceLimits` gives the reference.
    *
-   * The axis keeps its zone: `setTimezone('exchange')` shows the market's
+   * The axis keeps its zone: `setTimeZone('exchange')` shows the market's
    * (the symbol's own, when `setSymbolInfo` gave one). Numbers keep the
    * chart's locale (`numberLocale`).
    *
    * @example
    * chart.setMarket(MARKET_HOSE);
-   * chart.setTimezone('exchange');     // Asia/Ho_Chi_Minh
+   * chart.setTimeZone('exchange');     // Asia/Ho_Chi_Minh
    * chart.setPriceLimits(25.35);       // yesterday's close: ceiling 27.1, floor 23.6
    */
   setMarket(config: MarketConfig): void {
     this.marketConfig = config;
     // `'exchange'` shows the market's zone when the symbol names none.
-    if (this.timezoneSetting === EXCHANGE_TIMEZONE) this.applyTimezone();
+    if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
 
     // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {

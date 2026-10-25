@@ -95,12 +95,26 @@
   </tbody>
 </table>
 <p>
-  <strong>时区。</strong>时间轴标签和十字光标的时间标签默认跟随浏览器本地时区；
-  可以在设置面板中切换为固定的 UTC 偏移（或切回本地），也可以直接调用：
+  <strong>时区。</strong>时间轴、十字光标的时间、提示框、日分隔线和时间范围预设默认使用浏览器的时区。
+  可以设为 IANA 时区（含夏令时）、以分钟计的 UTC 以东固定偏移，或 <code>'exchange'</code>：
+  使用品种的时区（<code>SymbolInfo.timeZone</code>），没有时使用其市场的时区。可通过
+  <code>timeZone</code> 选项、组件的设置面板或直接调用来设置：
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // 从一开始
+
+chart.setTimeZone('America/New_York')  // 纽约时间，含夏令时
+chart.setTimeZone(330)                 // UTC+5:30，以分钟计
+chart.setTimeZone(null)                // 浏览器的时区
+chart.setTimeZone('exchange')          // 品种的时区，没有时用市场的
+chart.getTimeZone()                    // 'exchange'，即所设的值
+chart.getEffectiveTimeZone()           // 它代表的时区：在 HOSE 上为 'Asia/Ho_Chi_Minh'`}</code></pre>
+<p>
+  图表的方法和类型都写作 <code>timeZone</code>，与 <code>Intl.DateTimeFormat</code> 一致。旧名称仍然可用，
+  但已弃用：<code>setTimezone</code>、<code>getTimezone</code>、<code>getEffectiveTimezone</code>、
+  <code>getExchangeTimezone</code>、<code>setTimezoneOffset</code>、<code>EXCHANGE_TIMEZONE</code> 和
+  <code>SymbolInfo.timezone</code>（品种两者都给时以
+  <code>timeZone</code> 为准）。
+</p>
 
 <p>同样的效果也可以通过代码实现：</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -172,7 +186,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 或用 scaleMarketPrices(MARKET_HOSE, 1000) 处理 25350 这样的价格
-chart.setTimezone('exchange')                // 时间轴使用市场的时区：Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // 时间轴使用市场的时区：Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 参考价：前一交易日的收盘价
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35，最小变动 50 越南盾
@@ -270,11 +284,11 @@ chart.setSessionShadingConfig({
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
 <p>
-  <strong>延长交易时段。</strong>关闭后，品种常规交易时段（按其 <code>timezone</code> 计算的
+  <strong>延长交易时段。</strong>关闭后，品种常规交易时段（按其 <code>timeZone</code> 计算的
   <code>SymbolInfo.sessions</code>）以外的K线会离开图表；它们会被暂存起来，实时K线和历史分页也是如此，
   重新开启后即恢复。日线及更长周期的K线保持不变。
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 

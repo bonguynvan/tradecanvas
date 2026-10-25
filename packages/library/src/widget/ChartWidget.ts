@@ -2218,7 +2218,7 @@ export class ChartWidget {
    * while unknown.
    */
   private exchangeChoice(): { label: string; zone: string | null } | undefined {
-    const zone = this.chart.getExchangeTimezone() ?? null;
+    const zone = this.chart.getExchangeTimeZone() ?? null;
     if (zone === null && !this.adapter?.resolveSymbol) return undefined;
     return { label: this.t('settings.timezone.exchange'), zone };
   }
@@ -2728,7 +2728,7 @@ export class ChartWidget {
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
   private displayTimezone(): TimeZoneSetting {
     const tz = settingToTimezone(this.settingsState.timezone);
-    return tz === 'exchange' ? this.chart.getEffectiveTimezone() : tz;
+    return tz === 'exchange' ? this.chart.getEffectiveTimeZone() : tz;
   }
 
   private toggleGoToDate(): void {
@@ -4401,7 +4401,7 @@ export class ChartWidget {
       this.watchlist?.setLocale(patch.numberLocale || undefined);
     }
     if (patch.timezone !== undefined) {
-      this.chart.setTimezone(settingToTimezone(patch.timezone));
+      this.chart.setTimeZone(settingToTimezone(patch.timezone));
     }
     if (patch.highLowLines !== undefined) this.chart.setHighLowLines(patch.highLowLines);
     if (patch.extendedHours !== undefined) this.chart.setExtendedHours(patch.extendedHours);

@@ -1,5 +1,5 @@
 import type { NewsItem, Quote, SymbolInfo } from '@tradecanvas/commons';
-import { barTimeUnit, isValidTimeZone, marketStatus, readNews, zoneOffsetMinutes } from '@tradecanvas/commons';
+import { barTimeUnit, isValidTimeZone, marketStatus, readNews, symbolTimeZone, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { fill, type Translator } from './i18n.js';
 import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 
@@ -30,7 +30,8 @@ export interface SymbolInfoInput {
 /** The symbol info panel's content: price and change, market status, the day's numbers. */
 export function buildSymbolInfoView(input: SymbolInfoInput): SymbolInfoView {
   const { info, quote, t, textLocale } = input;
-  const day = sessionDay(input.bars, info?.timezone);
+  const zone = symbolTimeZone(info);
+  const day = sessionDay(input.bars, zone);
   const fp = input.formatPrice;
 
   const last = quote?.last ?? day?.close;
@@ -61,7 +62,7 @@ export function buildSymbolInfoView(input: SymbolInfoInput): SymbolInfoView {
   add(t('symbolInfo.ask'), price(quote?.ask));
   add(t('symbolInfo.tick'), info?.minTick !== undefined ? String(info.minTick) : undefined);
   add(t('symbolInfo.currency'), info?.currency);
-  add(t('symbolInfo.timezone'), info?.timezone);
+  add(t('symbolInfo.timezone'), zone);
   add(t('symbolInfo.hours'), sessionsText(info, textLocale));
 
   const sign = (change ?? 0) >= 0 ? '+' : '-';

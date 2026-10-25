@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { marketStatus, readNews, type SymbolInfo } from '@tradecanvas/commons';
+import { marketStatus, readNews, symbolTimeZone, type SymbolInfo } from '@tradecanvas/commons';
 
 const utc = (iso: string) => Date.parse(iso);
 const NYSE: SymbolInfo = {
@@ -42,6 +42,20 @@ describe('marketStatus', () => {
 
     const split: SymbolInfo = { symbol: 'Y', timezone: 'UTC', sessions: [{ start: '09:30', end: '12:00' }, { start: '12:00', end: '16:00' }] };
     expect(marketStatus(split, utc('2026-10-05T11:00:00Z')).next).toBe(utc('2026-10-05T16:00:00Z'));
+  });
+
+  it('reads the zone as timeZone, and as the older timezone', () => {
+    const named: SymbolInfo = { symbol: 'AAPL', timeZone: 'America/New_York', sessions: NYSE.sessions };
+    expect(marketStatus(named, utc('2026-10-05T14:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-05T20:00:00Z') });
+    // Both given: timeZone is the one.
+    expect(marketStatus({ ...named, timezone: 'Asia/Tokyo' }, utc('2026-10-05T14:00:00Z')).state).toBe('open');
+  });
+
+  it('reads a symbol’s zone through symbolTimeZone', () => {
+    expect(symbolTimeZone(null)).toBeUndefined();
+    expect(symbolTimeZone({})).toBeUndefined();
+    expect(symbolTimeZone({ timezone: 'UTC' })).toBe('UTC');
+    expect(symbolTimeZone({ timeZone: 'Asia/Tokyo', timezone: 'UTC' })).toBe('Asia/Tokyo');
   });
 
   it('ignores sessions it can’t read', () => {

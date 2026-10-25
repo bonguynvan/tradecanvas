@@ -120,9 +120,9 @@ export interface DataAdapter {
   searchSymbols?(query: string, options?: SymbolSearchOptions): Promise<SymbolInfo[]>;
 
   /**
-   * Optional: what the feed knows about `symbol` (name, price step, exchange
-   * timezone and hours), or null when it doesn't know it. A connected chart
-   * asks for it and applies it.
+   * Optional: what the feed knows about `symbol` (name, price step, the
+   * exchange's `timeZone` and hours), or null when it doesn't know it. A
+   * connected chart asks for it and applies it.
    */
   resolveSymbol?(symbol: string): Promise<SymbolInfo | null>;
 

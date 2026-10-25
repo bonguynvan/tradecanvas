@@ -66,7 +66,7 @@ const HOSE_STEPS: readonly PriceStepBand[] = [
  * from the reference; zone Asia/Ho_Chi_Minh; the price board's colours
  * (`VN_COLORS`); the ATO, two continuous sessions and ATC (`HOSE_SESSIONS`).
  * With `chart.setMarket`: `setPriceLimits(reference)` for the day's ceiling
- * and floor, `setTimezone('exchange')` for the axis in Vietnam's time.
+ * and floor, `setTimeZone('exchange')` for the axis in Vietnam's time.
  */
 export const MARKET_HOSE: MarketConfig = {
   type: 'stock',

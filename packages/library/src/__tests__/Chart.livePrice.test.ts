@@ -126,28 +126,28 @@ describe('getChartType', () => {
 describe("a market's time zone", () => {
   it("is the exchange's zone when the symbol names none", () => {
     chart.setMarket(MARKET_HOSE);
-    chart.setTimezone('exchange');
-    expect(chart.getEffectiveTimezone()).toBe('Asia/Ho_Chi_Minh');
+    chart.setTimeZone('exchange');
+    expect(chart.getEffectiveTimeZone()).toBe('Asia/Ho_Chi_Minh');
   });
 
   it("gives way to the symbol's own zone", () => {
     chart.setMarket(MARKET_HOSE);
     chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York' });
-    chart.setTimezone('exchange');
-    expect(chart.getEffectiveTimezone()).toBe('America/New_York');
+    chart.setTimeZone('exchange');
+    expect(chart.getEffectiveTimeZone()).toBe('America/New_York');
   });
 
   it('follows a market set after the exchange zone was chosen', () => {
-    chart.setTimezone('exchange');
-    expect(chart.getEffectiveTimezone()).toBe('UTC');
+    chart.setTimeZone('exchange');
+    expect(chart.getEffectiveTimeZone()).toBe('UTC');
     chart.setMarket(MARKET_HOSE);
-    expect(chart.getEffectiveTimezone()).toBe('Asia/Ho_Chi_Minh');
+    expect(chart.getEffectiveTimeZone()).toBe('Asia/Ho_Chi_Minh');
   });
 
   it("leaves a zone chosen otherwise as it is", () => {
-    chart.setTimezone('Europe/London');
+    chart.setTimeZone('Europe/London');
     chart.setMarket(MARKET_HOSE);
-    expect(chart.getEffectiveTimezone()).toBe('Europe/London');
+    expect(chart.getEffectiveTimeZone()).toBe('Europe/London');
   });
 });
 
@@ -232,15 +232,15 @@ describe('a stream', () => {
   });
 });
 
-describe('getExchangeTimezone', () => {
+describe('getExchangeTimeZone', () => {
   it("is the zone 'exchange' stands for: the symbol's, else a valid market's, else null", () => {
-    expect(chart.getExchangeTimezone()).toBeNull();
+    expect(chart.getExchangeTimeZone()).toBeNull();
     chart.setMarket(MARKET_HOSE);
-    expect(chart.getExchangeTimezone()).toBe('Asia/Ho_Chi_Minh');
+    expect(chart.getExchangeTimeZone()).toBe('Asia/Ho_Chi_Minh');
     chart.setSymbolInfo({ symbol: 'X', timezone: 'Not/AZone' });
-    expect(chart.getExchangeTimezone()).toBe('Asia/Ho_Chi_Minh');
+    expect(chart.getExchangeTimeZone()).toBe('Asia/Ho_Chi_Minh');
     chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York' });
-    expect(chart.getExchangeTimezone()).toBe('America/New_York');
+    expect(chart.getExchangeTimeZone()).toBe('America/New_York');
   });
 });
 

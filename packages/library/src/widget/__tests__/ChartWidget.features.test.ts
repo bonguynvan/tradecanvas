@@ -41,7 +41,7 @@ class FakeChart {
   setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
   setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
   timezones: unknown[] = [];
-  setTimezone(tz: unknown): void { this.timezones.push(tz); }
+  setTimeZone(tz: unknown): void { this.timezones.push(tz); }
   leftScale: boolean[] = [];
   setLeftPriceScaleVisible(on: boolean): void { this.leftScale.push(on); }
   getData(): { time: number }[] { return this.data; }
