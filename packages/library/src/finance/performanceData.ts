@@ -19,7 +19,10 @@ export interface RiskMetricsLike {
   cagr: number;
   sharpe: number;
   sortino: number;
-  /** The deepest fall from a running peak, as a positive fraction: 0.5 is 50%. */
+  /**
+   * The deepest fall from a running peak, as a fraction: 0.5 is 50%. Either
+   * sign reads as a fall, since some callers sign their drawdowns.
+   */
   maxDrawdownPct: number;
   /** Share of winning trades as a fraction. */
   winRate: number;
@@ -109,7 +112,8 @@ function tone(value: number): DashboardStat['tone'] {
 
 /**
  * The headline stats rendered as cards above the charts. The drawdown is a
- * fall, so it reads with a minus sign, as the Drawdown panel below plots it.
+ * fall, so it reads with a minus sign whichever sign it arrives with, as the
+ * Drawdown panel below plots it.
  */
 export function selectKeyStats(metrics: RiskMetricsLike): DashboardStat[] {
   return [
@@ -117,7 +121,7 @@ export function selectKeyStats(metrics: RiskMetricsLike): DashboardStat[] {
     { label: 'CAGR', value: pct(metrics.cagr * PERCENT), tone: tone(metrics.cagr) },
     { label: 'Sharpe', value: metrics.sharpe.toFixed(2), tone: tone(metrics.sharpe) },
     { label: 'Sortino', value: metrics.sortino.toFixed(2), tone: tone(metrics.sortino) },
-    { label: 'Max Drawdown', value: pct(-metrics.maxDrawdownPct * PERCENT), tone: 'negative' },
+    { label: 'Max Drawdown', value: pct(-Math.abs(metrics.maxDrawdownPct) * PERCENT), tone: 'negative' },
     { label: 'Win Rate', value: `${(metrics.winRate * PERCENT).toFixed(1)}%`, tone: 'neutral' },
     { label: 'Profit Factor', value: Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : '∞', tone: tone(metrics.profitFactor - 1) },
     { label: 'Trades', value: String(metrics.trades), tone: 'neutral' },

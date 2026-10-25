@@ -106,7 +106,7 @@ m.profitFactor
 m.expectancy`}</code></pre>
 
 <p>
-  Mọi tỉ lệ phần trăm ở đây đều là phân số: 0.12 là 12%. Hai mức drawdown được đo
+  Mọi tỉ lệ phần trăm ở đây đều là số thập phân: 0.12 là 12%. Hai mức drawdown được đo
   riêng, nên với một tài khoản đang lớn dần chúng có thể đến từ hai lần sụt giảm khác nhau.
   Đường vốn 100, 50, 100, 400, 1000, 800, 1200 có lần sụt sâu nhất là 50% (từ 100 xuống 50,
   nên <code>maxDrawdownPct</code> là 0.5) và lần sụt lớn nhất tính bằng tiền là 200 (từ 1000

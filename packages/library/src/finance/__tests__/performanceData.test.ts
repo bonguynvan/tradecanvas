@@ -104,6 +104,13 @@ describe('selectKeyStats', () => {
     expect(total?.tone).toBe('negative');
   });
 
+  it('shows a drawdown given as a negative fraction as a fall too', () => {
+    const stats = selectKeyStats({ ...metrics, maxDrawdownPct: -0.083 });
+    const drawdown = stats.find((s) => s.label === 'Max Drawdown');
+    expect(drawdown?.value).toBe('-8.30%');
+    expect(drawdown?.tone).toBe('negative');
+  });
+
   it('shows no drawdown as 0.00% without a minus sign', () => {
     const stats = selectKeyStats({ ...metrics, maxDrawdownPct: 0 });
     const drawdown = stats.find((s) => s.label === 'Max Drawdown');

@@ -114,7 +114,16 @@ export interface RiskMetrics {
   totalReturnPct: number;
   /** Compound annual growth rate as a fraction, or 0 when the curve spans no time. */
   cagr: number;
+  /**
+   * Annualised Sharpe ratio, a plain number: the mean return per period above
+   * the risk-free rate, over the returns' standard deviation, times the square
+   * root of the periods in a year.
+   */
   sharpe: number;
+  /**
+   * Annualised Sortino ratio, a plain number: as `sharpe`, but over the
+   * deviation of the losing periods only.
+   */
   sortino: number;
   /** `cagr / maxDrawdownPct`, or 0 when there is no drawdown. */
   calmar: number;
@@ -131,8 +140,11 @@ export interface RiskMetrics {
   maxDrawdownPct: number;
   winRate: number;
   profitFactor: number;
+  /** What a trade makes on average, in money: winning and losing trades weighed by `winRate`. */
   expectancy: number;
+  /** The average profit of a winning trade, in money, or 0 with no wins. */
   averageWin: number;
+  /** The average loss of a losing trade, in money and positive, or 0 with no losses. */
   averageLoss: number;
   trades: number;
 }
