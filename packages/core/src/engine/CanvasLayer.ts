@@ -1,11 +1,11 @@
 import type { Size } from '@tradecanvas/commons';
 
 /**
- * Keep the page's OpenType features off the chart's text: a canvas, or a
- * tooltip drawn in the chart's font. Chromium draws a canvas's text with the
- * features the element inherits, as the DOM does, and a tag means something
- * else in each face (ss01 is Inter's open digits and IBM Plex's one-storey a),
- * so the chart's text follows only the chart's font. The figures
+ * Keep the page's OpenType features off the chart's text: a canvas, or the
+ * chart's tooltip. Chromium draws a canvas's text with the features the
+ * element inherits, as the DOM does, and a tag means something else in each
+ * face (ss01 is Inter's open digits and IBM Plex's one-storey a), so the
+ * chart's text follows only its own face. The figures
  * (`font-variant-numeric`) still come through: the widget's tabular figures
  * keep the axes and the legend in columns.
  */
