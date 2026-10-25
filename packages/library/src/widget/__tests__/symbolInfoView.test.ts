@@ -30,6 +30,15 @@ describe('the symbol info view', () => {
     expect(view.stats.find((s) => s.label === 'High')?.value).toBe('12.00');
   });
 
+  it('names the symbol’s zone, in either spelling', () => {
+    const zoneOf = (info: { symbol: string; timeZone?: string; timezone?: string }) => buildSymbolInfoView({
+      symbol: 'AAA', info, quote: undefined, bars, formatPrice: (p) => p.toFixed(2),
+      t: EN_TRANSLATOR, textLocale: 'en', numberLocale: 'en-US', now: T0 + 8_000_000,
+    }).stats.find((s) => s.label === 'Time zone')?.value;
+    expect(zoneOf({ symbol: 'AAA', timeZone: 'America/New_York' })).toBe('America/New_York');
+    expect(zoneOf({ symbol: 'AAA', timezone: 'America/New_York' })).toBe('America/New_York');
+  });
+
   it('finds the latest day in the exchange’s zone', () => {
     expect(sessionDay(bars, 'UTC')).toMatchObject({ open: 9.5, high: 12, low: 9, close: 11, volume: 500, prevClose: 9.5 });
     expect(sessionDay([], 'UTC')).toBeNull();

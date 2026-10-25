@@ -1,5 +1,5 @@
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { barTimeUnit, isValidTimeZone, sessionMinute } from '@tradecanvas/commons';
+import { barTimeUnit, isValidTimeZone, sessionMinute, symbolTimeZone } from '@tradecanvas/commons';
 import { isRegularSession } from '@tradecanvas/core';
 
 const DAY_MS = 86_400_000;
@@ -15,7 +15,7 @@ export function regularHoursFilter(
   info: SymbolInfo | null,
   data: readonly { time: number }[],
 ): ((time: number) => boolean) | null {
-  const zone = info?.timezone;
+  const zone = symbolTimeZone(info);
   if (!zone || !isValidTimeZone(zone) || data.length < 2) return null;
   const windows = (info?.sessions ?? []).flatMap((session) => {
     const startMinute = sessionMinute(session.start);

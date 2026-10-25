@@ -95,13 +95,28 @@
   </tbody>
 </table>
 <p>
-  <strong>Múi giờ.</strong> Nhãn trục thời gian và nhãn giờ của con trỏ chữ thập mặc định theo
-  múi giờ cục bộ của trình duyệt; chuyển sang một độ lệch UTC cố định (hoặc trở về
-  giờ máy) từ bảng cài đặt hoặc gọi trực tiếp:
+  <strong>Múi giờ.</strong> Trục thời gian, giờ của con trỏ chữ thập, tooltip, vạch ngăn ngày
+  và các khoảng thời gian chọn sẵn mặc định theo múi giờ của trình duyệt. Có thể đặt một múi
+  giờ IANA (tính cả giờ mùa hè), một độ lệch cố định tính bằng phút về phía đông UTC, hoặc
+  <code>'exchange'</code> để theo múi giờ của mã (<code>SymbolInfo.timeZone</code>), không có thì
+  theo múi giờ của thị trường: bằng tùy chọn <code>timeZone</code>, từ phần cài đặt của widget,
+  hoặc gọi trực tiếp:
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // ngay từ đầu
+
+chart.setTimeZone('America/New_York')  // giờ New York, tính cả giờ mùa hè
+chart.setTimeZone(330)                 // UTC+5:30, tính bằng phút
+chart.setTimeZone(null)                // múi giờ của trình duyệt
+chart.setTimeZone('exchange')          // múi giờ của mã, không có thì của thị trường
+chart.getTimeZone()                    // 'exchange', như đã đặt
+chart.getEffectiveTimeZone()           // múi giờ nó trỏ tới: 'Asia/Ho_Chi_Minh' trên HOSE`}</code></pre>
+<p>
+  Các phương thức và kiểu của biểu đồ viết múi giờ là <code>timeZone</code>, như
+  <code>Intl.DateTimeFormat</code>. Các tên cũ vẫn chạy, nhưng không nên dùng nữa (deprecated):
+  <code>setTimezone</code>, <code>getTimezone</code>, <code>getEffectiveTimezone</code>,
+  <code>getExchangeTimezone</code>, <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> và
+  <code>SymbolInfo.timezone</code> (mã nào ghi cả hai thì đọc theo <code>timeZone</code>).
+</p>
 
 <p>Các tác dụng trên cũng có thể gọi bằng code:</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -180,7 +195,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // hoặc scaleMarketPrices(MARKET_HOSE, 1000) cho giá 25350
-chart.setTimezone('exchange')                // trục thời gian theo múi giờ của sàn: Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // trục thời gian theo múi giờ của sàn: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // giá tham chiếu: giá đóng cửa hôm trước
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, bước 50 đồng
@@ -287,11 +302,11 @@ chart.setSessionShadingConfig({
 })`}</code></pre>
 <p>
   <strong>Giờ giao dịch mở rộng.</strong> Khi tắt, các nến nằm ngoài giờ giao dịch chính của mã
-  (<code>SymbolInfo.sessions</code> theo <code>timezone</code> của mã) rời khỏi biểu đồ; chúng được
+  (<code>SymbolInfo.sessions</code> theo <code>timeZone</code> của mã) rời khỏi biểu đồ; chúng được
   cất riêng, cả nến trực tiếp lẫn các trang lịch sử, và trở lại khi bật lên. Nến từ một ngày trở
   lên được giữ nguyên.
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 

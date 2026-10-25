@@ -46,6 +46,7 @@ describe('BinanceAdapter symbol search', () => {
       type: 'crypto',
       pricePrecision: 2,
       minTick: 0.01,
+      timeZone: 'UTC',
       timezone: 'UTC',
       currency: 'USDT',
     }]);

@@ -232,7 +232,7 @@ const chart = new Chart(document.getElementById('chart')!, {
   priceFormat: { denominator: 32, subDenominator: 2 },  // 110'165 = 110 and 16.5/32
   extendedHours: false,
 });
-chart.setSymbolInfo({ symbol: 'ZN', timezone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
+chart.setSymbolInfo({ symbol: 'ZN', timeZone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
 ```
 
 ## A Vietnamese stock, and VN30 futures
@@ -241,14 +241,14 @@ HOSE's rules on the chart: steps by price band, the day's ceiling and floor,
 lots of 100 in the order ticket, the price board's colours. Preset prices are
 in thousands of dong, as price boards show them (bars in thousands need
 nothing more); `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong. The axis
-keeps its zone until `setTimezone('exchange')`, and numbers their locale.
+keeps its zone until `setTimeZone('exchange')`, and numbers their locale.
 
 ```ts
 import { Chart, MARKET_HOSE, MARKET_VN30F, priceStepAt, vn30fContracts } from '@tradecanvas/chart';
 
 const chart = new Chart(document.getElementById('chart')!, { extendedHours: false, numberLocale: 'vi-VN' });
 chart.setMarket(MARKET_HOSE);
-chart.setTimezone('exchange');                     // the market's zone: Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange');                     // the market's zone: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35);                       // the reference: yesterday's close
 console.log(chart.getPriceLimits());               // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.01
@@ -690,7 +690,7 @@ await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's t
 
 // Your own feed's quotes instead
 widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }]);
-console.log(marketStatus({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }] }, Date.now()).state);
+console.log(marketStatus({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }] }, Date.now()).state);
 ```
 
 Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or

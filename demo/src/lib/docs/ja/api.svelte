@@ -95,13 +95,27 @@
   </tbody>
 </table>
 <p>
-  <strong>タイムゾーン。</strong> 時間軸のラベルとクロスヘアの時刻表示は、既定ではブラウザーの
-  ローカルタイムゾーンに従います。設定シートから、または直接、固定の UTC オフセットに
-  切り替えられます（ローカルに戻すこともできます）：
+  <strong>タイムゾーン。</strong> 時間軸、クロスヘアの時刻、ツールチップ、日の区切り線、期間プリセットは、
+  既定ではブラウザーのタイムゾーンに従います。IANA タイムゾーン（夏時間を含む）、UTC から東への
+  固定オフセット（分）、または <code>'exchange'</code>（シンボルのタイムゾーン
+  <code>SymbolInfo.timeZone</code>、なければ市場のもの）を、<code>timeZone</code> オプション、
+  ウィジェットの設定、または直接指定できます：
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // 最初から
+
+chart.setTimeZone('America/New_York')  // ニューヨーク時間、夏時間を含む
+chart.setTimeZone(330)                 // UTC+5:30、分単位
+chart.setTimeZone(null)                // ブラウザーのタイムゾーン
+chart.setTimeZone('exchange')          // シンボルのタイムゾーン、なければ市場のもの
+chart.getTimeZone()                    // 'exchange'、設定したとおり
+chart.getEffectiveTimeZone()           // それが指すタイムゾーン：HOSE なら 'Asia/Ho_Chi_Minh'`}</code></pre>
+<p>
+  チャートのメソッドと型では <code>Intl.DateTimeFormat</code> と同じく <code>timeZone</code> と綴ります。
+  従来の名前も動きますが、非推奨です：<code>setTimezone</code>、<code>getTimezone</code>、<code>getEffectiveTimezone</code>、
+  <code>getExchangeTimezone</code>、<code>setTimezoneOffset</code>、<code>EXCHANGE_TIMEZONE</code>、
+  <code>SymbolInfo.timezone</code>
+  （シンボルが両方を持つ場合は <code>timeZone</code> が使われます）。
+</p>
 
 <p>同じ操作はプログラムからも行えます：</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -174,7 +188,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // 25350 のような価格には scaleMarketPrices(MARKET_HOSE, 1000)
-chart.setTimezone('exchange')                // 時間軸を市場のタイムゾーンに：Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // 時間軸を市場のタイムゾーンに：Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // 基準価格：前日の終値
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35（50 ドン刻み）
@@ -275,11 +289,11 @@ chart.setSessionShadingConfig({
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
 <p>
-  <strong>時間外取引。</strong>オフにすると、シンボルの通常取引時間（その <code>timezone</code> での
+  <strong>時間外取引。</strong>オフにすると、シンボルの通常取引時間（その <code>timeZone</code> での
   <code>SymbolInfo.sessions</code>）の外にあるバーがチャートから外れます。外れたバーはライブのバーや履歴のページも
   含めて取り置かれ、オンに戻すと再び表示されます。日足以上のバーはそのままです。
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 

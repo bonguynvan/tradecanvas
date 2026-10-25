@@ -65,7 +65,7 @@ class FakeChart {
   setScaleMode(mode: string): void { this.calls.push(['setScaleMode', mode]); }
   setLeftPriceScaleVisible(on: boolean): void { this.calls.push(['setLeftPriceScaleVisible', on]); }
   setBarCountdownVisible(on: boolean): void { this.calls.push(['setBarCountdownVisible', on]); }
-  setTimezone(zone: unknown): void { this.calls.push(['setTimezone', zone]); }
+  setTimeZone(zone: unknown): void { this.calls.push(['setTimeZone', zone]); }
   applyOverrides(patch: unknown): void { this.calls.push(['applyOverrides', patch]); }
   getStyleValue(key: string): unknown { return key === 'lastPrice.visible' ? true : null; }
 }
@@ -273,7 +273,7 @@ describe('ChartWidget chart menus', () => {
     FakeChart.last.emit('chartContextMenu', { area: 'timeAxis', x: 10, y: 10 });
     menuItem('Timezone').click();
     menuItem('UTC').click();
-    expect(calls('setTimezone')).toEqual(['UTC']);
+    expect(calls('setTimeZone')).toEqual(['UTC']);
   });
 
   it('resets the view with Alt+R, and writes the key in the menu while it is on', () => {

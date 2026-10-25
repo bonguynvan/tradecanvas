@@ -113,7 +113,7 @@ builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre
 </p>
 <pre><code>{`const info = {
   symbol: 'AAPL',
-  timezone: 'America/New_York',
+  timeZone: 'America/New_York',
   sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
 }
 marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>

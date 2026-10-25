@@ -95,13 +95,27 @@
   </tbody>
 </table>
 <p>
-  <strong>Timezone.</strong> Time-axis labels and the crosshair time pill follow
-  the browser's local zone by default; switch to a fixed UTC offset (or back to
-  local) from the settings sheet or directly:
+  <strong>Time zone.</strong> The time axis, the crosshair's time, the tooltip, the day
+  breaks and the range presets follow the browser's zone by default. Give the chart an
+  IANA zone (daylight saving included), a fixed offset in minutes east of UTC, or
+  <code>'exchange'</code> for the symbol's zone (<code>SymbolInfo.timeZone</code>), else its
+  market's: as the <code>timeZone</code> option, from the widget's settings, or directly:
 </p>
-<pre><code>{`chart.setTimezoneOffset(-300)  // EST (UTC-5), in minutes
-chart.setTimezoneOffset(330)   // IST (UTC+5:30)
-chart.setTimezoneOffset(null)  // back to browser-local`}</code></pre>
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // from the start
+
+chart.setTimeZone('America/New_York')  // New York's time, daylight saving included
+chart.setTimeZone(330)                 // UTC+5:30, in minutes
+chart.setTimeZone(null)                // the browser's
+chart.setTimeZone('exchange')          // the symbol's zone, else its market's
+chart.getTimeZone()                    // 'exchange', as set
+chart.getEffectiveTimeZone()           // the zone it stands for: 'Asia/Ho_Chi_Minh' on HOSE`}</code></pre>
+<p>
+  The chart's methods and types spell it <code>timeZone</code>, as <code>Intl.DateTimeFormat</code>
+  does. The older names still work, and are deprecated: <code>setTimezone</code>,
+  <code>getTimezone</code>, <code>getEffectiveTimezone</code>, <code>getExchangeTimezone</code>,
+  <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> and <code>SymbolInfo.timezone</code>
+  (a symbol that gives both is read by its <code>timeZone</code>).
+</p>
 
 <p>The same effects are also available programmatically:</p>
 <pre><code>{`chart.setAutoScale(false)  // freeze the current price range
@@ -179,7 +193,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 } from '@tradecanvas/chart'
 
 chart.setMarket(MARKET_HOSE)                 // or scaleMarketPrices(MARKET_HOSE, 1000) for 25350
-chart.setTimezone('exchange')                // the axis in the market's zone: Asia/Ho_Chi_Minh
+chart.setTimeZone('exchange')                // the axis in the market's zone: Asia/Ho_Chi_Minh
 chart.setPriceLimits(25.35)                  // the reference: yesterday's close
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
 chart.roundPrice(25.37)                      // 25.35, a 50-dong step
@@ -286,11 +300,11 @@ chart.setSessionShadingConfig({
 })`}</code></pre>
 <p>
   <strong>Extended hours.</strong> Turn them off and the bars outside the symbol's
-  regular hours (<code>SymbolInfo.sessions</code> in its <code>timezone</code>) leave the
+  regular hours (<code>SymbolInfo.sessions</code> in its <code>timeZone</code>) leave the
   chart; they are kept aside, live bars and history pages too, and come back when
   turned on. Bars a day or longer are left as they are.
 </p>
-<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
+<pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 
