@@ -5,6 +5,7 @@ import {
   DARK_THEME,
   LIGHT_THEME,
   syncIndicators,
+  feedBars,
 } from '@tradecanvas/chart';
 import type {
   ChartType,
@@ -21,6 +22,7 @@ import type {
   StreamConfig,
   ChartStyleOverrides,
   IndicatorSpec,
+  FedBars,
 } from '@tradecanvas/chart';
 
 export interface TradeCanvasRef {
@@ -52,11 +54,16 @@ export interface TradeCanvasProps {
    */
   indicators?: IndicatorSpec[];
   /**
-   * Static bars: the chart shows these, and opens no stream of its own when
-   * it has them at mount. A new array replaces the series (`setData`): the
-   * view goes back to the newest bar and every indicator is computed again.
-   * For a live feed, update the chart itself from the ref
-   * (`getChart()?.updateLastBar(bar)`, `appendBar`), or give it a stream.
+   * The bars: the chart shows these, and opens no stream of its own when it
+   * has them at mount. A new array that goes on from the last one, its last
+   * bar changed or bars added after it (`[...bars.slice(0, -1), forming]`,
+   * `[...bars, next]`), goes in as a live feed's ticks do (`updateLastBar`,
+   * `appendBar`, `appendBars`): the view isn't reset, only the end is
+   * computed again, and alerts follow the price. Any other new array is a new
+   * series (`setData`): the view goes back to the newest bar and every
+   * indicator is computed again. So is one after a stream, or code through
+   * the ref, gave the chart bars of its own. An older bar changed needs a new
+   * bar object in its place.
    */
   data?: OHLCBar[];
   /** The stream's feed (Binance by default), taken when the stream connects. */
@@ -128,6 +135,8 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<Chart | null>(null);
     const indicatorIdsRef = useRef<Map<string, string>>(new Map());
+    /** The bars last given to the chart (`feedBars`). */
+    const fedRef = useRef<FedBars | null>(null);
     /** The stream open now (`symbol|timeframe`), or null. */
     const streamKeyRef = useRef<string | null>(null);
     const featuresRef = useRef(JSON.stringify(features ?? null));
@@ -177,9 +186,8 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       chartRef.current = chart;
       indicatorIdsRef.current = new Map();
 
-      if (data) {
-        chart.setData(data);
-      } else if (stream) {
+      fedRef.current = data ? feedBars(chart, data, null) : null;
+      if (!data && stream) {
         const dataAdapter = adapter ?? new BinanceAdapter();
         chart.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
         streamKeyRef.current = `${symbol}|${timeframe}`;
@@ -234,7 +242,10 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
     }, [chartType]);
 
     useEffect(() => {
-      if (data) chartRef.current?.setData(data);
+      const chart = chartRef.current;
+      if (!chart) return;
+      // Without data, the next bars are a new series: a stream may have come in between.
+      fedRef.current = data ? feedBars(chart, data, fedRef.current) : null;
     }, [data]);
 
     useEffect(() => {
