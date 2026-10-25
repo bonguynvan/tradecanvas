@@ -127,6 +127,11 @@ export function computePriceRange(
   return padPriceRange(min, max, padding, log);
 }
 
+/**
+ * A trade into the bar it falls in: its high, low, close and volume. The bar
+ * keeps its own time, where its interval opens; a trade later in it moving
+ * the time made the next update for that bar look older than the bar.
+ */
 export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: number; time: number }): OHLCBar {
   return {
     ...existing,
@@ -134,6 +139,5 @@ export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: numb
     low: Math.min(existing.low, tick.price),
     close: tick.price,
     volume: existing.volume + (tick.volume ?? 0),
-    time: tick.time,
   };
 }
