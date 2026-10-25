@@ -10,7 +10,9 @@ export function setHostButtonActive(element: HTMLButtonElement, on: boolean, tog
  * A host's toolbar button's text, its name following ("News: 3"). False when
  * it showed that text already: nothing changed, so nothing needs refitting.
  */
-export function setHostButtonText(element: HTMLButtonElement, label: string, text: string): boolean {
+export function setHostButtonText(element: HTMLButtonElement, label: string, value: string): boolean {
+  // A host in plain script may pass a count as a number; the button shows it as text.
+  const text = String(value);
   let span = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
   if ((span?.textContent ?? '') === text) return false;
   if (!span) {
