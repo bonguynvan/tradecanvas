@@ -53,6 +53,26 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>An airy look</h2>
+<p>
+  <code>density: 'airy'</code> opens the chart with more bars on screen and air between them: a candle's body is
+  the slot × φ⁻¹ (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>).
+  The controls are spacious, and the figures on the axes and in the legend are in the look's sans face. It is the
+  look 2.0 will open with.
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code> and <code>chartOptions.font</code> win over the look's. Over bars on screen a
+  new layout keeps the zoom and only splits each slot again.
+</p>
+
 <h2>The golden ratio</h2>
 <p>
   Print keeps its proportions to the golden ratio, φ ≈ 1.618, so sizes that sit together relate the same way
@@ -88,7 +108,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

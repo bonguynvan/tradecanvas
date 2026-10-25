@@ -2,6 +2,7 @@ export { ChartWidget } from './ChartWidget.js';
 export { resolveWidgetUI, widgetUIVariables, applyWidgetUI, WIDGET_UI_PRESETS } from './widgetUI.js';
 export type {
   WidgetUIPreset,
+  WidgetUIDensity,
   WidgetUITheme,
   ResolvedWidgetUI,
   WidgetUIRadius,

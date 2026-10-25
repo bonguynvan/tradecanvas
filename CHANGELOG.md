@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### An airy look
+
+The look 2.0 will open with, to choose now: more bars on screen, with air between them, and lighter figures.
+
+- **`barLayout: 'golden'`** (or `chart.setBarLayout('golden')`): a candle's body is the slot × φ⁻¹ (62%) at every zoom, the rest a gap, and the chart opens at φ⁴ ≈ 6.85 px a slot. A full-HD chart opens on about 240 bars where it showed 170. `'classic'`, a 2 px gap and 10 px a slot to open, stays the default until 2.0. Over bars on screen, a new layout keeps the zoom and splits each slot again.
+- **The chart's own text over any theme**: the `font` option and `chart.setFont({ family, sizeSmall, … })` set the face and sizes of the axes, the legend and the tags, and stay through theme changes; `chart.setFont(null)` goes back to the theme's. `SANS_FONT_FAMILY` is a sans face every system has.
+- **The widget's `ui: { density: 'airy' }`** turns it all on: spacious controls, the figures in the look's sans face, golden bars. `chartOptions.barLayout` and `chartOptions.font` win over it. The Feature Lab's look picker has it.
+
+## 1.49.1 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.32.
+
 ### One way in for the bars
 
 Every way bars reach the chart (`setData`, `appendBar`, `appendBars`, `updateLastBar`, `updateLastBarFromTick`, `prependBars`, a stream, a replay, the extended hours hidden or shown) now goes through one place, the series store. A seeded test runs each of them, mixed, against a chart given the same bars with `setData`, its bars and indicators alike. It found three faults:

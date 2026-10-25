@@ -60,6 +60,16 @@ describe('resolveWidgetUI', () => {
     }
   });
 
+  it('takes the airy density: spacious controls, the figures in the look’s sans face', () => {
+    const airy = resolveWidgetUI({ density: 'airy' });
+    expect(airy.density).toBe('airy');
+    expect(airy.sizes).toEqual(resolveWidgetUI({ density: 'spacious' }).sizes);
+    expect(airy.font.mono).toBe(airy.font.family);
+    expect(resolveWidgetUI({ density: 'airy', font: { mono: 'Plex Mono' } }).font.mono).toBe('Plex Mono');
+    expect(resolveWidgetUI().density).toBe('comfortable');
+    expect(resolveWidgetUI(airy)).toEqual(airy);
+  });
+
   it('sizes controls by density, and explicit sizes win', () => {
     const compact = resolveWidgetUI({ density: 'compact' });
     const spacious = resolveWidgetUI({ density: 'spacious' });

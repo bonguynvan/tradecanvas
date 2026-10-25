@@ -15,6 +15,8 @@ export interface SceneEnv {
   language?: { code: string; numberLocale: string; messages: WidgetMessages };
   /** The look picked above the chart, for scenes with `looks`. */
   look?: WidgetUIPreset;
+  /** The airy density on top of the look. */
+  airy?: boolean;
 }
 
 /** A scene's title, figure ("40 tools"), blurb and tips live in the site's strings under this id. */
@@ -470,7 +472,7 @@ widget.setUI({
   preset: 'studio',
   radius: { md: 10 },              // buttons and fields follow the scale
   components: { dialog: 20 },
-  density: 'compact',
+  density: 'compact',              // compact · comfortable · spacious · airy
   font: { family: "'Manrope', sans-serif", labelCase: 'uppercase' },
   toolbar: 'floating',             // the toolbar as an island
   active: 'solid',                 // tint · solid · underline
@@ -481,7 +483,7 @@ widget.setUI({
       symbol: 'DEMO',
       symbols: ['DEMO', 'ALPHA', 'BETA'],
       timeframe: '1h',
-      ui: env.look ?? 'studio',
+      ui: env.airy ? { preset: env.look ?? 'studio', density: 'airy' } : env.look ?? 'studio',
       chartOptions: { highLowLines: true },
       onReady: (chart) => {
         chart.addIndicator('ema', { period: 21 });

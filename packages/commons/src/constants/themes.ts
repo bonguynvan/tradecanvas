@@ -7,6 +7,14 @@ import { withAlpha } from '../utils/color.js';
  */
 export const DEFAULT_FONT_FAMILY = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
 
+/**
+ * A proportional face every system has, for figures that read lighter: the
+ * airy look's axes and legend (`chart.setFont({ family: SANS_FONT_FAMILY })`).
+ * Each axis label stands alone, so proportional digits read well there; the
+ * widget's columns of figures keep them one width with `tabular-nums`.
+ */
+export const SANS_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
 /** Three sizes a third of φ apart (11, 13, 15), as the widget's type scale climbs. */
 const DEFAULT_FONT = {
   family: DEFAULT_FONT_FAMILY,

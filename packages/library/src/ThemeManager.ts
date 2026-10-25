@@ -3,12 +3,18 @@ import type {
   ChartStyleOverrides,
   ChartStyleOverridesPatch,
   ChartType,
+  FontConfig,
   ShapeConfig,
   StyleLayer,
   Theme,
   ThemeName,
 } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME, chartStyleValue, resolveChartTheme } from '@tradecanvas/commons';
+
+/** Whether two fonts are the same face and sizes. */
+function sameFont(a: FontConfig, b: FontConfig): boolean {
+  return a.family === b.family && a.sizeSmall === b.sizeSmall && a.sizeMedium === b.sizeMedium && a.sizeLarge === b.sizeLarge;
+}
 
 /**
  * The chart's theme and its style overrides. The theme drawn with
@@ -20,6 +26,10 @@ export class ThemeManager {
   private base: Theme;
   /** Shapes set apart from the theme (`setShapes`): they stay through theme switches. */
   private shape: ShapeConfig | null = null;
+  /** A font set apart from the theme (`setFont`), over the theme's own; it stays through theme switches. */
+  private font: Partial<FontConfig> | null = null;
+  /** The font of the theme as set, under `font`. */
+  private themeFont: FontConfig;
   private chartType: ChartType = 'candlestick';
   private host: ChartStyleOverrides = {};
   /** The user's overrides, by the name of the theme they were made on. */
@@ -28,6 +38,7 @@ export class ThemeManager {
 
   constructor(themeOrName?: ThemeName | Theme) {
     this.base = ThemeManager.read(themeOrName);
+    this.themeFont = this.base.font;
   }
 
   private static read(themeOrName?: ThemeName | Theme): Theme {
@@ -50,8 +61,21 @@ export class ThemeManager {
   }
 
   setTheme(themeOrName: ThemeName | Theme): void {
-    this.base = ThemeManager.read(themeOrName);
+    const next = ThemeManager.read(themeOrName);
+    // A theme made from the one drawn (a market's colours, `{ ...getTheme(), … }`)
+    // carries the font set over it: the theme's own font stays the one under it.
+    const fromDrawn = this.font !== null && sameFont(next.font, this.base.font);
+    this.base = next;
+    if (!fromDrawn) this.themeFont = next.font;
     if (this.shape) this.base = { ...this.base, shape: { ...this.base.shape, ...this.shape } };
+    if (this.font) this.base = { ...this.base, font: { ...this.themeFont, ...this.font } };
+    this.effective = null;
+  }
+
+  /** A font over every theme from now on, on top of the one set before (null: each theme's own). */
+  setFont(font: Partial<FontConfig> | null): void {
+    this.font = font ? { ...this.font, ...font } : null;
+    this.base = { ...this.base, font: this.font ? { ...this.themeFont, ...this.font } : this.themeFont };
     this.effective = null;
   }
 

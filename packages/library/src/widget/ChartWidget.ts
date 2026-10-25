@@ -688,6 +688,7 @@ export class ChartWidget {
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
     this.applyLegendFont();
+    this.applyChartLook();
     // New indicators of a kind look as its saved default has them.
     for (const [id, saved] of this.indicatorDefaults.all()) this.chart.setIndicatorDefaults(id, saved.style);
 
@@ -1781,7 +1782,9 @@ export class ChartWidget {
   /**
    * Change the widget's look: a preset (`'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`) or your theme over one. Colours stay with
-   * `setTheme`.
+   * `setTheme`. The look sets the chart's bar layout and font too (golden and
+   * the look's sans face when airy, classic and the theme's otherwise),
+   * over any set on the chart itself, unless `chartOptions` set them.
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
@@ -1789,6 +1792,7 @@ export class ChartWidget {
     applyWidgetUI(this.portal, this.ui);
     this.applyChartShapes();
     this.applyLegendFont();
+    this.applyChartLook();
   }
 
   /** The widget's look, every token set. */
@@ -1803,6 +1807,18 @@ export class ChartWidget {
    */
   private applyLegendFont(): void {
     this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(this.ui.font.size, -1) });
+  }
+
+  /**
+   * The airy look's chart: golden bars, and its figures (axes, tags) in the
+   * look's figures face; any other look gives them back. `chartOptions`
+   * that set the bars or the font win.
+   */
+  private applyChartLook(): void {
+    const airy = this.ui.density === 'airy';
+    const given = this.options.chartOptions;
+    if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
+    if (!given?.font) this.chart.setFont(airy ? { family: this.ui.font.mono } : null);
   }
 
   /** The chart's own tags and pills take the look's corners. */

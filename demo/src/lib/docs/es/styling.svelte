@@ -56,6 +56,26 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
+<h2>Un aspecto con aire</h2>
+<p>
+  <code>density: 'airy'</code> abre el gráfico con más barras en pantalla y aire entre ellas: el cuerpo de una vela es
+  el hueco × φ⁻¹ (62%) en cualquier zoom, y el gráfico se abre a φ⁴ ≈ 6,85 px por hueco (<code>barLayout: 'golden'</code>).
+  Los controles son holgados, y las cifras de los ejes y de la leyenda usan la fuente sans del aspecto. Es el
+  aspecto con el que abrirá la 2.0.
+</p>
+<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
+
+// The same on a chart of your own
+import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
+chart.setBarLayout('classic')    // a 2 px gap, as before
+chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
+chart.setFont(null)              // the theme's own font again`}</code></pre>
+<p>
+  <code>chartOptions.barLayout</code> y <code>chartOptions.font</code> mandan sobre los del aspecto. Con barras en
+  pantalla, un nuevo reparto mantiene el zoom y solo vuelve a dividir cada hueco.
+</p>
+
 <h2>La proporción áurea</h2>
 <p>
   Print ajusta sus proporciones a la proporción áurea, φ ≈ 1.618, de modo que los tamaños que van juntos se relacionan
@@ -91,7 +111,7 @@ grid.getUI()`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious
+  density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   font: {
     family: "'Manrope', system-ui, sans-serif",

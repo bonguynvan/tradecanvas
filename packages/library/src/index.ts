@@ -18,6 +18,8 @@ export type {
   DataSeries,
   TimeFrame,
   ChartOptions,
+  BarLayout,
+  FontConfig,
   ChartType,
   Theme,
   ThemeName,
@@ -148,6 +150,7 @@ export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
 // Re-export themes and defaults
 export {
   DARK_THEME, LIGHT_THEME, DARK_TERMINAL, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
+  DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY,
   DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
   DEFAULT_SIGNAL_STYLE, DEFAULT_TRADE_ZONE_STYLE,
   TIMEFRAMES_CRYPTO, TIMEFRAMES_STOCK, TIMEFRAMES_FOREX, DEFAULT_TIMEFRAME_FAVORITES,
