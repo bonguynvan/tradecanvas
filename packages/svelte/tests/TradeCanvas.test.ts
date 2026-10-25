@@ -3,11 +3,17 @@ import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { chart, ChartCtor } = vi.hoisted(() => {
+  // The bars it holds, as a chart keeps them: the component reads them back.
+  const held: unknown[] = [];
   const chart = {
     connect: vi.fn(),
-    setData: vi.fn(),
-    updateLastBar: vi.fn(),
-    appendBar: vi.fn(),
+    setData: vi.fn((bars: unknown[]) => { held.splice(0, held.length, ...bars); }),
+    updateLastBar: vi.fn((bar: unknown) => { held[held.length - 1] = bar; }),
+    appendBar: vi.fn((bar: unknown) => { held.push(bar); }),
+    appendBars: vi.fn((bars: unknown[]) => { held.push(...bars); }),
+    getData: () => held,
+    isExtendedHoursVisible: () => true,
+    isReplayActive: () => false,
     setChartType: vi.fn(),
     setTheme: vi.fn(),
     addIndicator: vi.fn((id: string) => `iid-${id}`),
@@ -30,6 +36,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
 
 vi.mock('@tradecanvas/chart', async (importOriginal) => ({
   syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
+  feedBars: (await importOriginal<typeof import('@tradecanvas/chart')>()).feedBars,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -154,12 +161,12 @@ describe('<TradeCanvas> (svelte)', () => {
     flushSync();
     expect(chart.setData).toHaveBeenCalledTimes(1);
     const given = chart.setData.mock.calls[0][0] as unknown[];
-    // A bar pushed: the one before it settles, the new one goes on the end.
+    // A bar pushed goes on the end; the one before it is as it was.
     host!.push({ ...BAR, time: 2 });
     flushSync();
     expect(chart.setData).toHaveBeenCalledTimes(1);
     expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
-    expect(chart.updateLastBar).toHaveBeenCalledWith(BAR);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
     // A copy: what the chart was given doesn't change with the state.
     expect(given).toHaveLength(1);
     // The forming bar changed in place: an update of the last bar.
@@ -169,13 +176,43 @@ describe('<TradeCanvas> (svelte)', () => {
     expect(chart.setData).toHaveBeenCalledTimes(1);
   });
 
-  it('takes a new array as a new series', async () => {
+  it('feeds several bars pushed between two renders together', async () => {
+    const { default: DataHost } = await import('./DataHost.svelte');
+    type Host = { push: (bar: typeof BAR) => void; setClose: (close: number) => void };
+    let host: Host | null = null;
+    render(DataHost, { props: { onHost: (h: Host) => { host = h; } } });
+    flushSync();
+    host!.push({ ...BAR, time: 2 });
+    host!.push({ ...BAR, time: 3 });
+    flushSync();
+    expect(chart.appendBars).toHaveBeenCalledWith([{ ...BAR, time: 2 }, { ...BAR, time: 3 }]);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts a new series after the data was taken away', async () => {
     const { rerender } = render(TradeCanvas, { props: { data: [BAR], stream: false } });
+    flushSync();
+    await rerender({ data: undefined, stream: false });
     flushSync();
     await rerender({ data: [BAR, { ...BAR, time: 2 }], stream: false });
     flushSync();
     expect(chart.setData).toHaveBeenCalledTimes(2);
     expect(chart.appendBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a new array that goes on from the last as ticks, and takes any other as a new series', async () => {
+    const { rerender } = render(TradeCanvas, { props: { data: [BAR], stream: false } });
+    flushSync();
+    await rerender({ data: [BAR, { ...BAR, time: 2 }], stream: false });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
+    await rerender({ data: [BAR, { ...BAR, time: 2, close: 3 }], stream: false });
+    flushSync();
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...BAR, time: 2, close: 3 });
+    await rerender({ data: [{ ...BAR, time: 5 }], stream: false });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(2);
   });
 });
 

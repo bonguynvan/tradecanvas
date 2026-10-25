@@ -1312,7 +1312,8 @@ export class Chart {
       this.scheduleRender();
       return;
     }
-    const follow = this.viewport.isAtEnd();
+    // As `appendBar`: the live edge only while the view is there and auto-scroll is on.
+    const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
     const before = this.dataManager.getLength();
     for (const bar of shown) this.dataManager.appendBar(bar);
     this.displayDataCache = null;

@@ -89,7 +89,11 @@ export function PriceChart({ symbol }: { symbol: string }) {
 is put back with them. With `data` at mount the component shows your bars and
 opens no stream; `stream={false}` never opens one (and closes one it had), so a
 chart mounted before its bars arrive doesn't start the default Binance feed.
-`features` follows its changes after mount.
+Bars that go on from the last given (the last bar changed, or bars added:
+`setBars((bars) => [...bars, next])`) go in as live ticks, so the view isn't
+reset and alerts follow the price; any other array is a new series. Vue and
+Svelte take the same, and a push onto the same array too. `features` follows its
+changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the

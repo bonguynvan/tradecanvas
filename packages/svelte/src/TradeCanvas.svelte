@@ -6,6 +6,7 @@
     DARK_THEME,
     LIGHT_THEME,
     syncIndicators,
+    feedBars,
   } from '@tradecanvas/chart';
   import type {
     ChartType,
@@ -21,6 +22,7 @@
     ChartStyleOverrides,
     ChartOptions,
     IndicatorSpec,
+    FedBars,
   } from '@tradecanvas/chart';
 
   interface Props {
@@ -32,9 +34,12 @@
     indicators?: IndicatorSpec[];
     /**
      * Bars: the chart shows these, and opens no stream of its own when it has
-     * them at mount. A bar pushed onto the same array, or its last bar changed,
-     * goes in as a live tick (the view stays where it is); a new array is a new
-     * series. An older bar changed in place needs a new array.
+     * them at mount. Bars that go on from those given before, the last one
+     * changed or bars added after it, go in as live ticks (the view isn't
+     * reset): pushed onto the same array, changed in place, or in a new array.
+     * Any other bars are a new series, as are yours after a stream gave the
+     * chart bars of its own. An older bar changed needs a new array with a new
+     * bar in its place.
      */
     data?: OHLCBar[];
     adapter?: DataAdapter;
@@ -96,8 +101,8 @@
   const indicatorIds = new Map<string, string>();
   /** The stream open now (`symbol|timeframe`), or null. */
   let streamKey: string | null = null;
-  /** The bars last given to the chart: the array, how many, and the last one as text. */
-  let fed: { bars: OHLCBar[]; length: number; last: string } | null = null;
+  /** The bars last given to the chart (`feedBars`). */
+  let fed: FedBars | null = null;
   /** The features last applied, as text. */
   let featuresKey: string | null = null;
 
@@ -183,38 +188,26 @@
   $effect(() => { instance?.setTheme(resolveTheme(theme)); });
   $effect(() => { instance?.setChartType(chartType); });
   const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume}` : '');
-  const plain = (b: OHLCBar) => $state.snapshot(b) as OHLCBar;
 
   /**
-   * Bars into the chart: on the same array, a bar pushed or the last one
-   * changed goes in as a tick, so the view stays put and only the end is
-   * recalculated; anything else is a new series. The chart gets plain copies,
-   * not $state proxies, to read in its frames.
+   * Bars into the chart: bars that go on from those given before (a bar pushed
+   * or the last one changed, in place or in a new array) go in as ticks, so the
+   * view stays put and only the end is recalculated; anything else is a new
+   * series. The chart gets plain copies, not $state proxies, to read in its frames.
    */
   function feed(target: Chart, bars: OHLCBar[]): void {
-    const n = bars.length;
-    const last = barKey(bars[n - 1]);
-    const prev = fed;
-    fed = { bars, length: n, last };
-    if (prev && prev.bars === bars && prev.length > 0) {
-      if (n === prev.length) {
-        if (last !== prev.last) target.updateLastBar(plain(bars[n - 1]));
-        return;
-      }
-      if (n === prev.length + 1) {
-        target.updateLastBar(plain(bars[n - 2]));
-        target.appendBar(plain(bars[n - 1]));
-        return;
-      }
-    }
-    target.setData($state.snapshot(bars) as OHLCBar[]);
+    fed = feedBars(target, bars, fed);
   }
 
   // Follows the array, its length and the last bar's fields: a bar pushed onto
   // $state data or the forming bar changed, without walking every bar.
   $effect(() => {
     const bars = data;
-    if (!bars) return;
+    // Without data, the next bars are a new series: a stream may have come in between.
+    if (!bars) {
+      fed = null;
+      return;
+    }
     void barKey(bars[bars.length - 1]);
     untrack(() => { if (instance) feed(instance, bars); });
   });

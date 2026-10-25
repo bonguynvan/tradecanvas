@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Live bars through the components' `data`
+
+- **React's `data` takes bars that go on from the last as live ticks.** A new array with its last bar changed, or bars added after it (`setBars((bars) => [...bars, next])`, several at once in a batched render), goes in through `updateLastBar` / `appendBar` / `appendBars`, as a stream's bars do: the view isn't reset, only the end is computed again, and alerts and orders follow the price. Each new array was a new series, the view back to the newest bar and every indicator computed again, and 1.46.0's docs said to feed a live chart through the ref instead; the ref still works.
+- **Vue and Svelte take a new array the same way.** A push onto the same array, or its last bar changed in place, went in as ticks already, one bar at a time; several pushed between two renders now go in together, and the bar before a new one is no longer sent again when it is as it was.
+- **Any other bars are a new series**, in all three: an older bar changed (as a new bar object), bars taken away, a bar the chart can't take, a window that drops its oldest bars. So are the next bars after a stream, or code through the chart itself, gave the chart bars of its own, and after `data` was taken away. The chart gets plain copies of the bars' six fields, so frozen state is left as it is.
+- Ticks go on as a stream's do: a replay running goes on, a price range the user dragged stays, and bars added together go in as `appendBars` takes them (the alerts check their last close).
+- `feedBars(chart, bars, prev)`, the rule the three share, is exported from `@tradecanvas/chart` beside `syncIndicators`.
+- **`appendBars` keeps a view that `setAutoScroll(false)` stopped from following new bars**, as `appendBar` does; it scrolled to them.
+
+## 1.47.0 (2026-10-25)
+
+React, Vue and Svelte components: 1.3.29.
+
 ### One spelling for the time zone
 
 What coding agents ran into in the evals: the option is `timeZone`, the methods were `setTimezone`, and an option written from the methods' name failed the type check.

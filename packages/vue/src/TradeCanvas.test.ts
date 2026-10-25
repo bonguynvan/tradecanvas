@@ -2,11 +2,17 @@ import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { chart, ChartCtor } = vi.hoisted(() => {
+  // The bars it holds, as a chart keeps them: the component reads them back.
+  const held: unknown[] = [];
   const chart = {
     connect: vi.fn(),
-    setData: vi.fn(),
-    updateLastBar: vi.fn(),
-    appendBar: vi.fn(),
+    setData: vi.fn((bars: unknown[]) => { held.splice(0, held.length, ...bars); }),
+    updateLastBar: vi.fn((bar: unknown) => { held[held.length - 1] = bar; }),
+    appendBar: vi.fn((bar: unknown) => { held.push(bar); }),
+    appendBars: vi.fn((bars: unknown[]) => { held.push(...bars); }),
+    getData: () => held,
+    isExtendedHoursVisible: () => true,
+    isReplayActive: () => false,
     setChartType: vi.fn(),
     setTheme: vi.fn(),
     addIndicator: vi.fn((id: string) => `iid-${id}`),
@@ -29,6 +35,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
 
 vi.mock('@tradecanvas/chart', async (importOriginal) => ({
   syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
+  feedBars: (await importOriginal<typeof import('@tradecanvas/chart')>()).feedBars,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -148,11 +155,11 @@ describe('<TradeCanvas> (vue)', () => {
     mount(TradeCanvas, { props: { data, stream: false } });
     expect(chart.setData).toHaveBeenCalledTimes(1);
     expect(isProxy(chart.setData.mock.calls[0][0])).toBe(false);
-    // A bar pushed: the one before it settles, the new one goes on the end.
+    // A bar pushed goes on the end; the one before it is as it was.
     data.push({ ...BAR, time: 2 });
     await nextTick();
     expect(chart.setData).toHaveBeenCalledTimes(1);
-    expect(chart.updateLastBar).toHaveBeenCalledWith(BAR);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
     expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
     expect(isProxy(chart.appendBar.mock.calls[0][0])).toBe(false);
     // The forming bar changed in place, or replaced: an update of the last bar.
@@ -165,11 +172,34 @@ describe('<TradeCanvas> (vue)', () => {
     expect(chart.setData).toHaveBeenCalledTimes(1);
   });
 
-  it('takes a new array as a new series', async () => {
+  it('feeds several bars pushed between two renders together', async () => {
+    const { reactive, nextTick } = await import('vue');
+    const data = reactive([{ ...BAR }]);
+    mount(TradeCanvas, { props: { data, stream: false } });
+    data.push({ ...BAR, time: 2 });
+    data.push({ ...BAR, time: 3 });
+    await nextTick();
+    expect(chart.appendBars).toHaveBeenCalledWith([{ ...BAR, time: 2 }, { ...BAR, time: 3 }]);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts a new series after the data was taken away', async () => {
     const wrapper = mount(TradeCanvas, { props: { data: [BAR], stream: false } });
+    await wrapper.setProps({ data: undefined });
     await wrapper.setProps({ data: [BAR, { ...BAR, time: 2 }] });
     expect(chart.setData).toHaveBeenCalledTimes(2);
     expect(chart.appendBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a new array that goes on from the last as ticks, and takes any other as a new series', async () => {
+    const wrapper = mount(TradeCanvas, { props: { data: [BAR], stream: false } });
+    await wrapper.setProps({ data: [BAR, { ...BAR, time: 2 }] });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.appendBar).toHaveBeenCalledWith({ ...BAR, time: 2 });
+    await wrapper.setProps({ data: [BAR, { ...BAR, time: 2, close: 3 }] });
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...BAR, time: 2, close: 3 });
+    await wrapper.setProps({ data: [{ ...BAR, time: 5 }] });
+    expect(chart.setData).toHaveBeenCalledTimes(2);
   });
 });
 

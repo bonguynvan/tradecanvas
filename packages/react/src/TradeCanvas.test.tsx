@@ -2,9 +2,17 @@ import { render, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { chart, ChartCtor } = vi.hoisted(() => {
+  // The bars it holds, as a chart keeps them: the component reads them back.
+  const held: unknown[] = [];
   const chart = {
     connect: vi.fn(),
-    setData: vi.fn(),
+    setData: vi.fn((bars: unknown[]) => { held.splice(0, held.length, ...bars); }),
+    updateLastBar: vi.fn((bar: unknown) => { held[held.length - 1] = bar; }),
+    appendBar: vi.fn((bar: unknown) => { held.push(bar); }),
+    appendBars: vi.fn((bars: unknown[]) => { held.push(...bars); }),
+    getData: () => held,
+    isExtendedHoursVisible: () => true,
+    isReplayActive: () => false,
     setChartType: vi.fn(),
     setTheme: vi.fn(),
     addIndicator: vi.fn((id: string) => `iid-${id}`),
@@ -28,6 +36,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
 
 vi.mock('@tradecanvas/chart', async (importOriginal) => ({
   syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
+  feedBars: (await importOriginal<typeof import('@tradecanvas/chart')>()).feedBars,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -79,6 +88,87 @@ describe('<TradeCanvas> (react)', () => {
     render(<TradeCanvas data={[BAR]} />);
     expect(chart.setData).toHaveBeenCalled();
     expect(chart.connect).not.toHaveBeenCalled();
+  });
+
+  it('gives the chart its bars once at mount', () => {
+    render(<TradeCanvas data={[BAR]} />);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('feeds a new array that adds a bar or changes the last one as ticks, so the view stays', () => {
+    const a = { ...BAR };
+    const b = { ...BAR, time: 2 };
+    const c = { ...BAR, time: 3 };
+    const { rerender } = render(<TradeCanvas data={[a]} />);
+    rerender(<TradeCanvas data={[a, b]} />);
+    expect(chart.appendBar).toHaveBeenLastCalledWith(b);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
+    rerender(<TradeCanvas data={[a, { ...b, close: 3 }]} />);
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...b, close: 3 });
+    // The forming bar's last tick, then the next bar.
+    rerender(<TradeCanvas data={[a, { ...b, close: 4 }, c]} />);
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith({ ...b, close: 4 });
+    expect(chart.appendBar).toHaveBeenLastCalledWith(c);
+    // The same bars again, in a new array: nothing to do.
+    rerender(<TradeCanvas data={[{ ...a }, { ...b, close: 4 }, { ...c }]} />);
+    expect(chart.updateLastBar).toHaveBeenCalledTimes(2);
+    expect(chart.appendBar).toHaveBeenCalledTimes(2);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('feeds bars added together, as a batched render gives them, in one go', () => {
+    const a = { ...BAR };
+    const { rerender } = render(<TradeCanvas data={[a]} />);
+    rerender(<TradeCanvas data={[a, { ...BAR, time: 2 }, { ...BAR, time: 3 }]} />);
+    expect(chart.appendBars).toHaveBeenCalledWith([{ ...BAR, time: 2 }, { ...BAR, time: 3 }]);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives its bars again when something else gave the chart bars since', () => {
+    const a = { ...BAR };
+    const b = { ...BAR, time: 2 };
+    const { rerender } = render(<TradeCanvas data={[a, b]} />);
+    chart.appendBar({ ...BAR, time: 3, close: 9 }); // a stream's bar, or one through the ref
+    chart.appendBar.mockClear();
+    rerender(<TradeCanvas data={[a, { ...b, close: 5 }]} />);
+    expect(chart.setData).toHaveBeenLastCalledWith([a, { ...b, close: 5 }]);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
+  });
+
+  it('takes any other new array as a new series', () => {
+    const bars = [1, 2, 3].map((time) => ({ ...BAR, time }));
+    const series = [
+      [{ ...bars[0], close: 9 }, bars[1], bars[2]], // a bar before the last changed
+      [bars[0], bars[1], { ...bars[2], time: 4 }], // the last bar, another time
+      [bars[0], bars[1]], // a bar taken away
+      [...bars, { ...BAR, time: 2 }], // a bar added before the last
+    ];
+    for (const data of series) {
+      const { rerender, unmount } = render(<TradeCanvas data={bars} />);
+      vi.clearAllMocks();
+      rerender(<TradeCanvas data={data} />);
+      expect(chart.setData).toHaveBeenCalledWith(data);
+      expect(chart.appendBar).not.toHaveBeenCalled();
+      expect(chart.updateLastBar).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
+  it('starts a new series after the data was taken away', () => {
+    const { rerender } = render(<TradeCanvas data={[BAR]} />);
+    rerender(<TradeCanvas />);
+    rerender(<TradeCanvas data={[BAR, { ...BAR, time: 2 }]} />);
+    expect(chart.setData).toHaveBeenCalledTimes(2);
+    expect(chart.appendBar).not.toHaveBeenCalled();
+  });
+
+  it('gives the chart copies of the bars, so frozen state stays as it is', () => {
+    const a = Object.freeze({ ...BAR });
+    const b = Object.freeze({ ...BAR, time: 2 });
+    const { rerender } = render(<TradeCanvas data={Object.freeze([a]) as typeof BAR[]} />);
+    rerender(<TradeCanvas data={Object.freeze([a, b]) as typeof BAR[]} />);
+    expect(chart.appendBar.mock.calls[0][0]).toEqual(b);
+    expect(chart.appendBar.mock.calls[0][0]).not.toBe(b);
   });
 
   it('adds the requested indicators on mount', () => {
