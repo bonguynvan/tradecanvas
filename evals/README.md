@@ -81,8 +81,11 @@ against the new code.
 
 The runs worth keeping are in [baselines](baselines): the first,
 [2026-10-24](baselines/2026-10-24-sonnet.md), is what the fixes are
-measured against. What the evals turned up so far is in
-[FINDINGS.md](FINDINGS.md).
+measured against; [2026-10-25](baselines/2026-10-25-sonnet.md) is the same
+run after the first nine, and [its Haiku run](baselines/2026-10-25-haiku.md)
+the first with a smaller model (`--model haiku`), which takes more turns
+and reads the compiled code more, so a gap shows sooner. What the
+evals turned up so far is in [FINDINGS.md](FINDINGS.md).
 
 ## A task
 
