@@ -7,7 +7,9 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  * Every key `chart.applyOverrides()` takes, and the kind of its value.
  *
  * - `series.<chartType>.*` style the main series while it is drawn as that
- *   type. Up and down colours fall back to `series.candlestick.*`, line
+ *   type. A candle's wick takes its body's colour (`upColor`, `downColor`)
+ *   unless `wickUpColor` / `wickDownColor` set one of its own. Up and down
+ *   colours fall back to `series.candlestick.*`, line
  *   colours and widths to `series.line.*`, area fills to `series.area.*`,
  *   then to the theme.
  * - The rest style one part of the chart each, falling back to the theme's

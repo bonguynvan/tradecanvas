@@ -2,8 +2,10 @@ import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { Emitter } from '../realtime/Emitter.js';
 
 export interface ReplayConfig {
-  speed: number;          // Multiplier on the tick rate: one bar every `interval / speed` ms
-  interval: number;       // Base tick interval in ms (default: 500)
+  /** A multiplier on the pace: one bar every `interval / speed` ms. Default 1. */
+  speed: number;
+  /** The time between bars at speed 1, ms. Default 500 (two bars a second). */
+  interval: number;
   /**
    * Play from where it is to the end in about this long (ms), whatever the
    * number of bars: a 30-day window of 5-minute bars takes as long as a
@@ -11,7 +13,8 @@ export interface ReplayConfig {
    * and a later start without it, or a speed set later, takes over.
    */
   duration?: number;
-  startIndex?: number;    // First bar to reveal
+  /** The first bar the replay reveals: the bars before it show, the later ones as it reaches them. */
+  startIndex?: number;
   /**
    * Reveal `startIndex` at once and wait paused, instead of revealing it on
    * the first tick — so entering replay shows the cut immediately.

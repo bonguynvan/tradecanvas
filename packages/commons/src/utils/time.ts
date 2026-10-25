@@ -93,7 +93,8 @@ export function alignToTimeframe(timestamp: number, tf: TimeFrame): number {
 
 export interface TimeParts {
   year: number;
-  month: number; // 1-12
+  /** 1 to 12. */
+  month: number;
   day: number;
   hours: number;
   minutes: number;

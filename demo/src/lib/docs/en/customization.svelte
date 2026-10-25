@@ -63,7 +63,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   Switches show and hide the widget's own parts. To stop something on the chart itself — drawing, trading,
   zooming, a timeframe — use the chart's features (<code>chartOptions.features</code>). The parts that bring data
   or storage with them stay options: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> and
-  <code>layouts</code> decide whether they are there at all, and switches hide their buttons.
+  <code>layouts</code> decide whether they are there at all, and switches hide their buttons. A switch turned on adds none of them: <code>features: &#123; depthLadder: true &#125;</code> alone makes no ladder.
 </p>
 <p>The older on/off options are the same switches, kept as they were:</p>
 <table>

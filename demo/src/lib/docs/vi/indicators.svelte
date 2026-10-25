@@ -32,6 +32,12 @@ chart.removeIndicator(rsi)`}</code></pre>
   lần, mỗi instance có thông số, màu và mức riêng.
 </p>
 
+<p>
+  Trong TypeScript, id và thông số của các chỉ báo có sẵn đều có kiểu: <code>BuiltInIndicators</code> liệt kê từng
+  chỉ báo với thông số, giá trị mặc định và key các đường của nó, nên trình soạn thảo gợi ý khi bạn gõ, và một
+  thông số gõ sai tên không qua được bước kiểm tra kiểu. Chỉ báo do plugin đăng ký nhận id và thông số bất kỳ.
+</p>
+
 <h2>Nguồn dữ liệu và chỉ báo trên chỉ báo</h2>
 <p>
   Các chỉ báo có đánh dấu <em>nguồn</em> bên dưới có thể chạy trên một giá khác giá đóng cửa

@@ -26,23 +26,37 @@ export type BinanceRestKline = readonly [
 
 /** Binance WS kline payload (`msg.k`). All numeric fields arrive as strings. */
 export interface BinanceWsKline {
-  t: number; // start time
-  T: number; // close time
-  s: string; // symbol
-  i: string; // interval
-  o: string; // open
-  c: string; // close
-  h: string; // high
-  l: string; // low
-  v: string; // base volume
-  n: number; // trades
-  x: boolean; // closed
-  q?: string; // quote volume
+  /** Start time, ms. */
+  t: number;
+  /** Close time, ms. */
+  T: number;
+  /** Symbol. */
+  s: string;
+  /** Interval. */
+  i: string;
+  /** Open. */
+  o: string;
+  /** Close. */
+  c: string;
+  /** High. */
+  h: string;
+  /** Low. */
+  l: string;
+  /** Volume in the base asset. */
+  v: string;
+  /** Number of trades. */
+  n: number;
+  /** Whether the kline is closed. */
+  x: boolean;
+  /** Volume in the quote asset. */
+  q?: string;
 }
 
 export interface BinanceWsMessage {
-  e?: string; // event type
-  E?: number; // event time
+  /** Event type. */
+  e?: string;
+  /** Event time, ms. */
+  E?: number;
   s?: string;
   k?: BinanceWsKline;
 }

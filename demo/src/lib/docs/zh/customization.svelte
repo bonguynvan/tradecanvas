@@ -60,7 +60,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
 <p>
   开关只负责显示和隐藏组件自身的部分。要禁止图表本身的某件事——绘图、交易、缩放、某个周期——请使用图表的 features
   （<code>chartOptions.features</code>）。会带来数据或存储的部分仍然是选项：<code>trading</code>、<code>watchlist</code>、
-  <code>depthLadder</code> 和 <code>layouts</code> 决定它们是否存在，开关则可以隐藏它们的按钮。
+  <code>depthLadder</code> 和 <code>layouts</code> 决定它们是否存在，开关则可以隐藏它们的按钮。打开开关不会添加这些部分：只写 <code>features: &#123; depthLadder: true &#125;</code> 不会创建盘口深度面板。
 </p>
 <p>以前的开/关选项就是这些开关，用法不变：</p>
 <table>

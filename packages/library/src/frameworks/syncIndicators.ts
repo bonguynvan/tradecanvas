@@ -1,12 +1,12 @@
-import type { PanelPosition } from '@tradecanvas/commons';
+import type { IndicatorId, IndicatorParamValues, PanelPosition } from '@tradecanvas/commons';
 
 /**
  * An indicator a framework component shows: its id (`'rsi'`), or its id with
  * its inputs and, for one in a pane, where the pane goes.
  */
 export type IndicatorSpec =
-  | string
-  | { id: string; params?: Record<string, number | string | boolean>; position?: PanelPosition };
+  | IndicatorId
+  | { id: IndicatorId; params?: IndicatorParamValues; position?: PanelPosition };
 
 /** What the components need of a chart to keep its indicators in step. */
 export interface IndicatorHost {

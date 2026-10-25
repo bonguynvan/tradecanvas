@@ -1,8 +1,30 @@
 import type { DataSeries } from './ohlc.js';
 import type { ViewportState } from './rendering.js';
 import type { LineStyle } from './chart.js';
+import type { BuiltInIndicators } from './builtInIndicators.js';
 
 export type IndicatorPlacement = 'overlay' | 'panel';
+
+/** An indicator's inputs, by name. */
+export type IndicatorParamValues = Record<string, number | string | boolean>;
+
+/** A number; text is read as one (`'14'`, a form field's value). */
+export type NumberParam = number | string;
+
+/** The id of a built-in indicator (`'rsi'`, `'bb'` …): the keys of `BuiltInIndicators`. */
+export type BuiltInIndicatorId = keyof BuiltInIndicators;
+
+/** A built-in indicator's id, or the id of one a plugin registered. */
+export type IndicatorId = BuiltInIndicatorId | (string & {});
+
+/**
+ * The inputs `chart.addIndicator(id, params)` takes for an id: a built-in's
+ * own (`BuiltInIndicators['rsi']['params']`), so a misspelt one fails the
+ * type check, or any for another id.
+ */
+export type IndicatorParamsFor<Id extends string> = Id extends BuiltInIndicatorId
+  ? BuiltInIndicators[Id]['params']
+  : IndicatorParamValues;
 
 /** How a plot is drawn. */
 export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step';

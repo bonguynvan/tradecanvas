@@ -3,8 +3,10 @@ import { timeframeToMs } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 
 interface AggregatorEvents {
-  bar: AggregatedBar;       // bar updated (forming)
-  barClose: AggregatedBar;  // bar closed (finalized)
+  /** The forming bar, after each tick. */
+  bar: AggregatedBar;
+  /** A bar whose interval is over. */
+  barClose: AggregatedBar;
   [key: string]: unknown;
 }
 

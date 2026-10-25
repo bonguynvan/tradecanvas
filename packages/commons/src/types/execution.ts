@@ -28,11 +28,16 @@ export interface ExecutionConfig {
 }
 
 export type ExecutionEventType =
-  | 'orders'          // data: TradingOrder[]      — authoritative pending-order set
-  | 'positions'       // data: TradingPosition[]   — authoritative open positions
-  | 'fill'            // data: FillEvent           — an order filled
-  | 'connectionChange'// data: ConnectionState
-  | 'error';          // data: ExecutionError
+  /** `data`: `TradingOrder[]`, every working order (the whole set). */
+  | 'orders'
+  /** `data`: `TradingPosition[]`, every open position (the whole set). */
+  | 'positions'
+  /** `data`: `FillEvent`, an order filled. */
+  | 'fill'
+  /** `data`: `ConnectionState`. */
+  | 'connectionChange'
+  /** `data`: `ExecutionError`. */
+  | 'error';
 
 /** Why a fill happened: an order, a position closed by hand or reversed, or its stop-loss or take-profit. */
 export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit';

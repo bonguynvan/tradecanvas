@@ -35,28 +35,43 @@ export interface RawTick {
 }
 
 export interface AggregatedBar extends OHLCBar {
-  closed: boolean;       // true when bar is finalized
-  tickCount: number;     // number of ticks in this bar
+  /** True once the bar's interval is over and it no longer changes. */
+  closed: boolean;
+  /** How many ticks made the bar. */
+  tickCount: number;
 }
 
 // --- Data Adapter (Strategy Pattern) ---
 
+/**
+ * What `adapter.connect(config)` is given. The chart's stream
+ * (`connectStream`) passes `symbol` and `timeframe` only; the other fields
+ * are for an adapter you connect yourself, and none of the built-in
+ * adapters reads them. The stream reconnects by `StreamConfig.reconnect`.
+ */
 export interface DataAdapterConfig {
   symbol: string;
   timeframe: TimeFrame;
-  reconnect?: boolean;          // default: true
-  reconnectMaxRetries?: number; // default: Infinity
-  reconnectBaseDelay?: number;  // ms, default: 1000
-  reconnectMaxDelay?: number;   // ms, default: 30000
-  heartbeatInterval?: number;   // ms, default: 30000
-  bufferSize?: number;          // max ticks to buffer, default: 1000
+  /** Connect again when the connection drops. Not passed by the stream. */
+  reconnect?: boolean;
+  /** Tries before giving up. Not passed by the stream. */
+  reconnectMaxRetries?: number;
+  /** The wait before the first try, ms. Not passed by the stream. */
+  reconnectBaseDelay?: number;
+  /** The longest wait between tries, ms. Not passed by the stream. */
+  reconnectMaxDelay?: number;
+  /** How often to check the connection is alive, ms. Not passed by the stream. */
+  heartbeatInterval?: number;
+  /** The most ticks to keep while they can't be delivered. Not passed by the stream. */
+  bufferSize?: number;
 }
 
 export type DataAdapterEventType =
   | 'tick'
   | 'bar'
   | 'barClose'
-  | 'snapshot'        // initial historical data loaded
+  /** The first bars, loaded at the start. */
+  | 'snapshot'
   | 'connectionChange'
   | 'error'
   /**
@@ -157,21 +172,33 @@ export interface StreamConfig {
   adapter: DataAdapter;
   symbol: string;
   timeframe: TimeFrame;
-  historyLimit?: number;        // bars to load initially, default: 500
+  /** Bars to load at the start. Default 500. */
+  historyLimit?: number;
   /** Bars per request when scrolling back for older bars (needs `adapter.fetchHistoryBefore`), default: 500. */
   historyPageSize?: number;
-  autoScroll?: boolean;         // scroll to end on new bar, default: true
-  showCurrentPriceLine?: boolean; // default: true
-  aggregateTicks?: boolean;     // build bars from ticks, default: false
+  /**
+   * Follow a new bar while the view is at the newest one (a view scrolled
+   * back stays). Sets `chart.setAutoScroll`. Default `true`.
+   */
+  autoScroll?: boolean;
+  /** Not read: the stream leaves the last price's line as the chart shows it. */
+  showCurrentPriceLine?: boolean;
+  /** Build the bars from the feed's ticks instead of taking its bars. Default `false`. */
+  aggregateTicks?: boolean;
   reconnect?: ReconnectConfig;
 }
 
 export interface ReconnectConfig {
-  enabled: boolean;             // default: true
-  maxRetries: number;           // default: Infinity
-  baseDelay: number;            // ms, default: 1000
-  maxDelay: number;             // ms, default: 30000
-  backoffMultiplier: number;    // default: 2
+  /** Connect again when the connection drops. Default `true`. */
+  enabled: boolean;
+  /** Tries before giving up. Default `Infinity`. */
+  maxRetries: number;
+  /** The wait before the first try, ms. Default 1000. */
+  baseDelay: number;
+  /** The longest wait between tries, ms, before a jitter of up to 25% either way. Default 30000. */
+  maxDelay: number;
+  /** Each wait is the last times this. Default 2. */
+  backoffMultiplier: number;
 }
 
 export const DEFAULT_RECONNECT: ReconnectConfig = {

@@ -13,8 +13,10 @@ export interface MarketConfig {
   exchange?: StockExchange;
   currency?: string;
   pricePrecision?: number;
-  volumeUnit?: number;           // board lot, e.g. 100 shares in Vietnam
-  priceStep?: number;            // min price increment
+  /** The board lot (100 shares on HOSE): the widget's order ticket asks for whole lots above one. */
+  volumeUnit?: number;
+  /** The smallest price move, and the step below the first of `priceSteps`. */
+  priceStep?: number;
   /**
    * Steps that depend on the price, lowest band first (HOSE: 10, 50 or 100
    * dong). Prices below the first band use `priceStep`.
@@ -25,25 +27,30 @@ export interface MarketConfig {
   /** Currency per point of a futures contract (VN30F: 100,000 dong). */
   contractMultiplier?: number;
 
-  // Price limit (ceiling/floor)
+  /** The day's ceiling and floor, a percentage either side of the reference price. */
   priceLimits?: {
     enabled: boolean;
-    ceilingPercent?: number;     // e.g. 7 for HOSE
-    floorPercent?: number;       // e.g. 7 for HOSE
+    /** How far above the reference price the ceiling is, % (7 on HOSE). */
+    ceilingPercent?: number;
+    /** How far below the reference price the floor is, % (7 on HOSE). */
+    floorPercent?: number;
+    /** The price the limits are counted from, the last session's close; `chart.setPriceLimits(price)` sets it. */
     referencePrice?: number;
   };
 
-  // Trading sessions
+  /** The day's sessions, their times in the exchange's `timeZone`. */
   sessions?: TradingSession[];
 
-  // Color scheme
+  /** The colours of rising, falling and unchanged prices, and of the ceiling, floor and reference price. */
   colorScheme?: MarketColorScheme;
 }
 
 export interface TradingSession {
   name: string;
-  startTime: string;  // "09:00"
-  endTime: string;    // "11:30"
+  /** When it starts, `'HH:mm'` (`'09:00'`), in the zone `getCurrentSession` is given: the market's `timeZone`. */
+  startTime: string;
+  /** When it ends, `'HH:mm'` (`'11:30'`): the first minute no longer in it. */
+  endTime: string;
   /** `preOpen` / `preClose`: the opening and closing auctions; `postClose`: trading after the close. */
   type: 'preOpen' | 'continuous' | 'preClose' | 'postClose' | 'closed';
 }

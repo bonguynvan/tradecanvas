@@ -71,9 +71,11 @@ also works on a widget.
    `time` may be milliseconds or seconds (values up to 1e12 are read as seconds).
    Keep one unit per series.
 5. **Indicator ids are short** — `'rsi'`, `'bb'`, `'psar'`, `'stochastic'` — see
-   [references/indicators.md](references/indicators.md). `addIndicator` returns
-   an instance id (`null` if the feature or id is turned off); later calls take
-   that instance id, not the indicator id.
+   [references/indicators.md](references/indicators.md). The types know them
+   too: `BuiltInIndicators` (from `@tradecanvas/chart`) has each one's inputs
+   with their defaults and the keys of its lines, and a misspelt input fails
+   the type check. `addIndicator` returns an instance id (`null` if the feature or
+   id is turned off); later calls take that instance id, not the indicator id.
 6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
    one. Never `setData` on every tick: it resets the view and recomputes
    everything. Their close is the live price: the price line, the alerts and
@@ -283,9 +285,11 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
 
 One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertical.visible': false,
-'series.candlestick.upColor': '#26a69a' })` (keys in `CHART_STYLE_KEYS`, `null` takes one away;
-`overrides` in the options and the React/Vue/Svelte props). `getTheme()` is the theme as set; what
-is drawn reads back from `getStyleValue(key)`. Orders, positions, signal markers, trade zones and
+'series.candlestick.upColor': '#26a69a' })` (every key and its kind in
+[references/style-keys.md](references/style-keys.md); `null` takes one away; `overrides` in the
+options and the React/Vue/Svelte props). Candles: `series.candlestick.upColor` / `downColor` colour
+the bodies and the wicks with them; `wickUpColor` / `wickDownColor` part the wicks from them.
+`getTheme()` is the theme as set; what is drawn reads back from `getStyleValue(key)`. Orders, positions, signal markers, trade zones and
 drawing handles take keys too (`trading.buyColor`, `markers.longColor`, `tradeZones.activeColor`,
 `drawings.handleColor`). Each indicator plot's dash and visibility:
 `updateIndicatorStyle(id, { plots: { signal: { lineStyle: 'dashed' } } })`. The widget's Settings
@@ -296,8 +300,10 @@ colours (Auto until one is picked); Cancel puts a session back, OK keeps it as o
 The widget's parts: `features: { 'toolbar.replay': false, hotkeys: false }` and
 `widget.setFeatures(patch)` at runtime (names in `WIDGET_FEATURES`; no dot = a whole capability
 everywhere, dotted = one place; a part shows while all of its switches are on, so
-`isFeatureOn('toolbar.replay')` stays `true` with `replay: false`). They hide the widget's UI only;
-to stop drawing, trading or zoom on the chart, use `chartOptions.features`. The dock's panels
+`isFeatureOn('toolbar.replay')` stays `true` with `replay: false`). They hide the widget's UI only,
+and never add a part: the depth ladder and the watchlist come from their options
+(`depthLadder: true`, `watchlist: true`), and `features: { depthLadder: true }` alone makes no ladder.
+To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your
@@ -318,6 +324,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 ## References
 
 - [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
+- [references/style-keys.md](references/style-keys.md) — every style key for `applyOverrides` and its kind (generated from the code).
 - [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, multi-chart layouts.
 - Docs site: https://tradecanvas.dev/ · API: https://tradecanvas.dev/docs/api
 

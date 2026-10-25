@@ -60,15 +60,17 @@ export interface ChartWidgetOptions {
 
   /**
    * The widget's switches, by name (`WIDGET_FEATURES`): every one is on
-   * unless set `false` here. A name without a dot turns a whole capability
-   * off wherever it shows (`alerts`, `settings`, `hotkeys`); a dotted name,
-   * one place (`toolbar.screenshot`, `menu.chart.order`, `sidebar.magnet`).
-   * Change them while running with `setFeatures`. They win over the older
-   * on/off options below, which stand for switches of their own.
+   * unless set `false` here. A switch hides a part and never adds one: the
+   * depth ladder and the watchlist come from their options, so
+   * `features: { depthLadder: true }` alone makes no ladder. A name without
+   * a dot is a whole capability (`alerts`, `hotkeys`); a dotted name, one
+   * place (`toolbar.screenshot`, `menu.chart.order`). Change them while
+   * running with `setFeatures`. They win over the older on/off options
+   * below, which stand for switches of their own.
    */
   features?: import('./widgetFeatures.js').WidgetFeatures;
 
-  // UI toggles (default true). Each stands for a switch (see `features`): `toolbar: false` is `features: { toolbar: false }`.
+  // UI toggles, on by default. Each stands for a switch (see `features`): `toolbar: false` is `features: { toolbar: false }`.
   toolbar?: boolean;
   drawingTools?: boolean;
   settings?: boolean;
@@ -115,11 +117,11 @@ export interface ChartWidgetOptions {
   objectTree?: boolean;
 
   /**
-   * Depth-of-market ladder: a click-to-trade order book, a page of the dock
-   * beside the chart (a sheet on a phone). Open it from the Trade menu, its
-   * rail button (the `dock.depthLadder` switch) or
-   * `widget.openPanel('depthLadder')`. Off by default (needs trading and an
-   * order-book feed via `widget.setDepth`). Clicks emit `orderPlace` intents.
+   * The depth-of-market ladder, a click-to-trade order book on a page of the
+   * dock. Off until this is `true` (with trading on); its switch only hides
+   * it, so `features: { depthLadder: true }` makes none. Feed it with
+   * `widget.setDepth`, open it with `widget.openPanel('depthLadder')`, the
+   * Trade menu or its rail button. Clicks emit `orderPlace` intents.
    */
   depthLadder?: boolean;
 
@@ -465,8 +467,11 @@ export interface WidgetState {
   timeframe: TimeFrame;
   chartType: ChartType;
   isDark: boolean;
-  /** One entry per indicator instance (several EMAs can be on at once). */
-  activeIndicators: Map<string, ActiveIndicatorInfo>; // instanceId -> indicator id + chip label
+  /**
+   * One entry per indicator instance (several EMAs can be on at once): by
+   * instance id, its indicator's id and its label.
+   */
+  activeIndicators: Map<string, ActiveIndicatorInfo>;
   activeTool: DrawingToolType | null;
   magnetEnabled: boolean;
   /** The magnet snaps always, not only near a price (with `magnetEnabled`). */

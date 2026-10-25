@@ -63,7 +63,7 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   Công tắc chỉ ẩn, hiện các phần của chính widget. Muốn chặn một việc trên biểu đồ — vẽ, giao dịch, zoom, một khung
   thời gian — hãy dùng features của biểu đồ (<code>chartOptions.features</code>). Những phần mang theo dữ liệu hay
   bộ nhớ vẫn là option: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> và
-  <code>layouts</code> quyết định chúng có mặt hay không, còn công tắc ẩn các nút của chúng.
+  <code>layouts</code> quyết định chúng có mặt hay không, còn công tắc ẩn các nút của chúng. Bật một công tắc không thêm phần nào trong số đó: chỉ có <code>features: &#123; depthLadder: true &#125;</code> thì không có thang độ sâu nào.
 </p>
 <p>Các option bật/tắt cũ chính là những công tắc này, vẫn dùng như trước:</p>
 <table>

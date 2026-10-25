@@ -147,6 +147,26 @@ describe('ChartWidget dock', () => {
     expect(widget.openPanel('depthLadder')).toBe(false);
   });
 
+  // A switch only hides: switches restored from getFeatures() (all on) must not add a ladder.
+  it('makes no ladder from its switch alone, which is on already', () => {
+    make({ features: { depthLadder: true } });
+    expect(railPages()).not.toContain('depthLadder');
+    expect(widget.openPanel('depthLadder')).toBe(false);
+  });
+
+  it('makes no ladder from the switches of another widget, all on', () => {
+    const other = new ChartWidget(document.createElement('div'), { symbol: 'BBB', watchlist: false });
+    const switches = other.getFeatures();
+    other.destroy();
+    make({ features: switches });
+    expect(railPages()).not.toContain('depthLadder');
+  });
+
+  it('leaves the ladder out without trading, its option set', () => {
+    make({ trading: false, depthLadder: true });
+    expect(widget.openPanel('depthLadder')).toBe(false);
+  });
+
   it('starts shut on a phone, the rail’s place taken by the toolbar’s buttons', () => {
     width = 390;
     make({ watchlist: true });

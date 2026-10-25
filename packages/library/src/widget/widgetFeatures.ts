@@ -6,6 +6,8 @@ import type { DrawingMenuAction } from './drawingMenu.js';
  * The widget's switches, by name; every one is on until turned off. A name
  * without a dot is a whole capability, off wherever it shows (its button,
  * its menu entries, its command, its keys); a dotted name is one place.
+ * A switch hides; it never adds a part that is off until its option asks
+ * for it (`depthLadder: true`, `watchlist: true`).
  * The names are a contract: new ones are added, none is renamed.
  */
 export const WIDGET_FEATURES = [

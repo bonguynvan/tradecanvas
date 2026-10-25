@@ -143,7 +143,9 @@ export interface ChartOptions {
   /**
    * Style overrides to start with, on the host's layer: any part of the
    * chart's look, by key (`'grid.vertical.visible': false`,
-   * `'series.candlestick.upColor': '#26a69a'`). See `chart.applyOverrides`.
+   * `'series.candlestick.upColor': '#26a69a'`, which colours the rising
+   * candles' wicks too). `CHART_STYLE_KEYS` lists the keys; see
+   * `chart.applyOverrides`.
    */
   overrides?: ChartStyleOverridesPatch;
   priceAxis?: PriceAxisOptions;
