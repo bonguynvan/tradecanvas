@@ -24,7 +24,11 @@ export interface ChartTypeOptions {
   kagi?: { reversal?: number; reversalType?: 'percent' | 'price' };
   /** Box size in price ('auto': 1% of the average close) and boxes to reverse (3). */
   pointAndFigure?: { boxSize?: number | 'auto'; reversal?: number };
-  /** Each bar's range in price ('auto': 0.5% of the average close). */
+  /**
+   * Each bar's range in price ('auto': the mean true range of the last 100
+   * closed bars, rounded to 1, 2 or 5 and to a whole number of the price
+   * step). The last bar drawn is the one still forming.
+   */
   rangeBars?: { range?: number | 'auto' };
 }
 

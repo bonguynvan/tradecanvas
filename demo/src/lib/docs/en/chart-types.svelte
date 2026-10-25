@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Yang/yin reversal lines; the reversal is a percent (4) or an amount of price.</td></tr>
     <tr><td><code>lineBreak</code></td><td>A new line once the close breaks the last lines (3 by default).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range, and it closes at its high or its low; the last bar is the one still forming.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,15 @@
   data (an ATR box for Renko, 1% of the average close for a P&amp;F box…). The settings
   are kept in a saved state; in ChartWidget they are in the settings dialog for the
   chart's type.
+</p>
+<p>
+  The automatic range of range bars is the mean true range of the last 100 closed bars,
+  rounded to a 1, 2 or 5 (… 1, 2, 5, 10, 20 …) and to a whole number of the symbol's
+  price step: small bars on a one-second chart, larger ones on a daily chart. The bar
+  still forming is left out of it, so a tick moves only the last bar, not the history.
+  A bar closes at its low plus the range on the way up, or its high minus the range on
+  the way down: its close is a price it reached, and its wick shows the way it went first.
+  A jump of several ranges, a gap between bars too, makes a bar for each range.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

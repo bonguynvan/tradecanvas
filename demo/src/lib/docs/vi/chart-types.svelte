@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Đường đảo chiều dương/âm (yang/yin); mức đảo chiều theo phần trăm (mặc định 4) hoặc theo giá.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Một đường mới khi giá đóng cửa phá vỡ các đường gần nhất (mặc định 3).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; kích thước ô + số ô đảo chiều.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định, và nến đóng cửa ở giá cao nhất hoặc thấp nhất của nó; nến cuối cùng là nến đang hình thành.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,15 @@
   được tính từ dữ liệu (ô Renko theo ATR, ô P&amp;F bằng 1% giá đóng cửa trung bình…). Các thông số
   được giữ trong trạng thái đã lưu; trong ChartWidget, chúng nằm trong hộp thoại cài đặt, ở phần
   dành cho loại biểu đồ đang dùng.
+</p>
+<p>
+  Biên độ tự động của Range Bars là true range trung bình của 100 nến đã đóng gần nhất, làm tròn
+  về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một số nguyên lần bước giá của mã: nến nhỏ trên biểu
+  đồ một giây, lớn hơn trên biểu đồ ngày. Nến đang hình thành không được tính vào, nên một tick chỉ
+  làm thay đổi nến cuối chứ không thay đổi lịch sử. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
+  biên độ; khi đi xuống, ở giá cao nhất trừ biên độ: giá đóng cửa là giá nến đã chạm tới, và râu nến
+  cho thấy hướng giá đi trước. Một cú nhảy qua nhiều biên độ, kể cả khoảng trống giữa hai nến, tạo
+  một nến cho mỗi biên độ.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

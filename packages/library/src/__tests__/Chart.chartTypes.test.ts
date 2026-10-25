@@ -4,6 +4,7 @@ import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
 import { HiLoRenderer, PointAndFigureRenderer } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
+import { secondBars } from './secondBars.js';
 
 const HOUR = 3_600_000;
 const T0 = Date.UTC(2026, 0, 1);
@@ -86,7 +87,10 @@ describe('chart type settings', () => {
 
     chart.setChartType('rangeBars');
     chart.setChartTypeOptions({ rangeBars: { range: 1 } });
-    expect(probe().getDisplayData().every((b) => Math.abs(b.high - b.low - 1) < 1e-9)).toBe(true);
+    // The last bar is the one still forming: it ends at the last close, whatever its range.
+    const ranged = probe().getDisplayData();
+    expect(ranged.slice(0, -1).every((b) => Math.abs(b.high - b.low - 1) < 1e-9)).toBe(true);
+    expect(ranged.at(-1)!.close).toBe(bars.at(-1)!.close);
   });
 
   it('keeps settings of other types, ignores ones it can’t use, and hands out a copy', () => {
@@ -105,6 +109,29 @@ describe('chart type settings', () => {
     chart.setChartTypeOptions({ renko: { boxSize: 'atr' } });
     chart.loadState(saved);
     expect(chart.getChartTypeOptions().renko).toEqual({ boxSize: 3 });
+  });
+});
+
+describe('range bars', () => {
+  it('draws range bars of one-second bars at 100,000, ending at the live price', () => {
+    const seconds = secondBars(145);
+    chart.setData(seconds);
+    chart.setChartType('rangeBars');
+    expect(probe().getDisplayData().length).toBeGreaterThan(10);
+    expect(probe().getDisplayData().at(-1)!.close).toBe(seconds.at(-1)!.close);
+
+    const last = seconds.at(-1)!;
+    chart.updateLastBar({ ...last, close: last.close + 3, high: Math.max(last.high, last.close + 3) });
+    expect(probe().getDisplayData().at(-1)!.close).toBe(last.close + 3);
+  });
+
+  it('puts automatic range bars on the symbol’s price step', () => {
+    chart.setData(secondBars(145));
+    chart.setChartType('rangeBars');
+    const spans = () => probe().getDisplayData().slice(0, -1).map((b) => Number((b.high - b.low).toFixed(9)));
+    expect(new Set(spans())).toEqual(new Set([10]));
+    chart.setSymbolInfo({ symbol: 'BTCUSDT', minTick: 25 });
+    expect(new Set(spans())).toEqual(new Set([25]));
   });
 });
 

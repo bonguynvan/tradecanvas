@@ -203,6 +203,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** The price step the cached display series was built on: a new step (the symbol's `minTick` arrives) builds it again. */
+  private displayDataStep: number | undefined;
   /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
   private indicatorUpdateFrom: number | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
@@ -1396,6 +1398,8 @@ export class Chart {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    // New settings build other bars: a screen reader hears the new summary, as after a new type.
+    this.a11y?.refresh(true);
     this.markStateChanged();
   }
 
@@ -5349,15 +5353,18 @@ export class Chart {
   }
 
   private getDisplayData(): DataSeries {
-    if (this.displayDataCache) return this.displayDataCache;
+    // The market's own grid, when the chart knows one; not the decimals the axis shows, which follow the view.
+    const step = this.stepAt(this.lastClose());
+    if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
     const raw = this.series.bars();
     if (raw.length === 0) return raw;
-    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions);
+    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions, step);
     // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).
     if (this.chartRenderer instanceof PointAndFigureRenderer && !this.pluginManager.getChartType(this.options.chartType)) {
       this.chartRenderer.setBoxSize(pointAndFigureBox(raw, this.chartTypeOptions));
     }
     this.displayDataCache = result;
+    this.displayDataStep = step;
     return result;
   }
 

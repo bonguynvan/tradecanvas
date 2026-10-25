@@ -35,6 +35,15 @@ describe('chart accessibility', () => {
     expect(host.style.userSelect).toBe('none');
   });
 
+  it('tells the new summary when the chart type’s settings change', () => {
+    // A box bigger than the whole move builds no brick: nothing to tell.
+    chart = new Chart(host, { chartType: 'renko', chartTypeOptions: { renko: { boxSize: 1_000 } } });
+    chart.setData(bars);
+    expect(host.getAttribute('aria-label')).toBe('Chart, no data.');
+    chart.setChartTypeOptions({ renko: { boxSize: 5 } });
+    expect(host.getAttribute('aria-label')).toBe('renko. Last price 160.00.');
+  });
+
   it('is a focusable chart with a summary a screen reader reads', () => {
     chart = new Chart(host, { chartType: 'candlestick' });
     chart.setData(bars);

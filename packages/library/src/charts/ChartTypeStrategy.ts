@@ -1,4 +1,5 @@
 import type { ChartType, ChartTypeOptions, DataSeries } from '@tradecanvas/commons';
+import { niceNumber } from '@tradecanvas/commons';
 import {
   AreaRenderer,
   BarRenderer,
@@ -73,11 +74,18 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
 /**
  * Transform raw OHLC bars into the display series for a given chart type,
  * with its settings (`options`; what isn't set is worked out from the data).
- * Returns the input unchanged for chart types that render raw OHLC directly.
+ * `step` is the market's price step, when there is one: the automatic range
+ * of range bars is a multiple of it. Returns the input unchanged for chart
+ * types that render raw OHLC directly.
  *
  * Centralized so adding a new chart type only requires editing one file.
  */
-export function transformDisplayData(type: ChartType, raw: DataSeries, options: ChartTypeOptions = {}): DataSeries {
+export function transformDisplayData(
+  type: ChartType,
+  raw: DataSeries,
+  options: ChartTypeOptions = {},
+  step?: number,
+): DataSeries {
   if (raw.length === 0) return raw;
 
   switch (type) {
@@ -95,10 +103,9 @@ export function transformDisplayData(type: ChartType, raw: DataSeries, options: 
       return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent');
     case 'pointAndFigure':
       return toPointAndFigure(raw, pointAndFigureBox(raw, options), options.pointAndFigure?.reversal ?? 3);
-    case 'rangeBars': {
-      const range = options.rangeBars?.range;
-      return toRangeBars(raw, { rangeSize: typeof range === 'number' ? range : averageClose(raw) * 0.005 });
-    }
+    case 'rangeBars':
+      // The bar still forming is drawn too, so the chart ends at the last price and is never blank.
+      return toRangeBars(raw, { rangeSize: rangeBarsSize(raw, options, step), includeForming: true });
     default:
       return raw;
   }
@@ -140,6 +147,53 @@ function averageClose(raw: DataSeries): number {
   return sum / raw.length;
 }
 
+/** Closed bars the automatic range of range bars averages the true range of. */
+const RANGE_BARS_AUTO_BARS = 100;
+/** Bars it takes to have a closed bar with a true range: fewer use a share of the price. */
+const RANGE_BARS_MIN_BARS = 3;
+/** The automatic range without a true range to go by: about this share of the last close. */
+const RANGE_BARS_PRICE_SHARE = 0.01;
+/** Digits a range is kept to, so five steps of 0.1 read 0.5. */
+const RANGE_DIGITS = 15;
+
+const cleanRange = (size: number): number => Number(size.toPrecision(RANGE_DIGITS));
+
+/**
+ * The range of range bars: the one set, as it is, or for 'auto' the mean true
+ * range of the last 100 closed bars (all of them when there are fewer; the
+ * bar still forming is left out, so a tick doesn't reshape the history). It
+ * is rounded to a 1-2-5 number, so it holds still as bars close, then to a
+ * whole number of price steps (`step`, one at least), so bars close on prices
+ * the market can trade. With 2 bars or fewer, about a hundredth of the last close.
+ */
+export function rangeBarsSize(raw: DataSeries, options: ChartTypeOptions = {}, step?: number): number {
+  const range = options.rangeBars?.range;
+  if (typeof range === 'number') return range;
+  const trueRange = raw.length >= RANGE_BARS_MIN_BARS ? meanTrueRange(raw, RANGE_BARS_AUTO_BARS) : 0;
+  const lastClose = Math.abs(raw[raw.length - 1]?.close ?? 0);
+  const size = trueRange > 0 ? trueRange : lastClose * RANGE_BARS_PRICE_SHARE || 1;
+  return onSteps(cleanRange(niceNumber(size, true)), step);
+}
+
+/** The mean true range of the last `count` closed bars: the last bar, still forming, is left out. */
+function meanTrueRange(raw: DataSeries, count: number): number {
+  const end = raw.length - 1;
+  const from = Math.max(0, end - count);
+  let sum = 0;
+  for (let i = from; i < end; i++) {
+    const { high, low } = raw[i];
+    const prev = i > 0 ? raw[i - 1].close : low;
+    sum += Math.max(high - low, Math.abs(high - prev), Math.abs(low - prev));
+  }
+  return end > from ? sum / (end - from) : 0;
+}
+
+/** `size` as a whole number of price steps, one at least; as it is without a step. */
+function onSteps(size: number, step?: number): number {
+  if (step === undefined || !(step > 0)) return size;
+  return cleanRange(Math.max(1, Math.round(size / step)) * step);
+}
+
 /** Look up a registered custom chart-type plugin by its `type` string. */
 export type ChartTypeLookup = (type: string) => ChartTypePlugin | undefined;
 
@@ -162,9 +216,10 @@ export function resolveDisplayData(
   raw: DataSeries,
   lookup?: ChartTypeLookup,
   options?: ChartTypeOptions,
+  step?: number,
 ): DataSeries {
   if (raw.length === 0) return raw;
   const plugin = lookup?.(type);
   if (plugin?.transform) return plugin.transform(raw);
-  return transformDisplayData(type as ChartType, raw, options);
+  return transformDisplayData(type as ChartType, raw, options, step);
 }

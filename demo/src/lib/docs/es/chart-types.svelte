@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin; el giro es un porcentaje (4 por defecto) o una cantidad de precio.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Una línea nueva cuando el cierre rompe las últimas líneas (3 por defecto).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>Columnas de X/O; tamaño de caja + número de cajas para el giro.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo, y la barra cierra en su máximo o en su mínimo; la última barra es la que todavía se está formando.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,15 @@
   de los datos (una caja por ATR para Renko, el 1% del cierre medio para la caja de P&amp;F…). La
   configuración forma parte del estado guardado; en ChartWidget está en el cuadro de configuración del
   tipo de gráfico.
+</p>
+<p>
+  El rango automático de las Range Bars es el rango verdadero medio de las últimas 100 barras cerradas,
+  redondeado a un 1, 2 o 5 (… 1, 2, 5, 10, 20 …) y a un número entero de pasos de precio del símbolo:
+  barras pequeñas en un gráfico de un segundo, más grandes en uno diario. La barra que todavía se forma
+  queda fuera del cálculo, así que un tick solo mueve la última barra, no el historial. Al subir, una barra
+  cierra en su mínimo más el rango; al bajar, en su máximo menos el rango: su cierre es un precio que
+  alcanzó, y su mecha muestra hacia dónde fue primero. Un salto de varios rangos, también un hueco entre
+  dos barras, da una barra por cada rango.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
