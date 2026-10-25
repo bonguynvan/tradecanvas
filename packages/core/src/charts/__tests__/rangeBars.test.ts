@@ -72,6 +72,16 @@ describe('toRangeBars', () => {
     expect(out).toHaveLength(20);
   });
 
+  it('raises a range to the first multiple that makes no more, however far the price swings inside it', () => {
+    // 150,000 swings of 1.9 close more than 100,000 bars of 1 and none of 2: their 285,000 of travel must not
+    // pass for bars of 2. The climb of 30 then closes 15.
+    const swings = Array.from({ length: 150_000 }, (_, i) => bar(100, 100.95, 99.05, 100, i));
+    const data = [...swings, bar(100, 130, 100, 130, 150_000), bar(130, 130, 130, 130, 150_001)];
+    const out = toRangeBars(data, { rangeSize: 1 });
+    expect(new Set(out.map((b) => Number((b.high - b.low).toFixed(9))))).toEqual(new Set([2]));
+    expect(out).toHaveLength(15);
+  });
+
   it('keeps a range that makes 100,000 bars, and raises it at one more', () => {
     const jumpTo = (top: number) => toRangeBars([bar(100, 100, 100, 100, 0), bar(100, top, 100, top, 1)], { rangeSize: 1 });
     expect(jumpTo(100_100)).toHaveLength(100_000);
@@ -159,6 +169,70 @@ describe('toRangeBars', () => {
     const data = Array.from({ length: 30 }, (_, i) => bar(100 + i * 0.1, 100 + i * 0.1, 100 + i * 0.1, 100 + i * 0.1, i));
     const out = toRangeBars(data, { rangeSize: 0.1 });
     for (const b of out) expect(Number(b.close.toFixed(1))).toBe(b.close);
+  });
+
+  it('keeps the decimals when a high or a low is no finite number', () => {
+    const steps = Array.from({ length: 30 }, (_, i) => bar(100 + i * 0.1, 100 + i * 0.1, 100 + i * 0.1, 100 + i * 0.1, i));
+    for (const odd of [NaN, Infinity]) {
+      const data = [...steps.slice(0, 10), { ...steps[10], high: odd }, { ...steps[11], low: -odd }, ...steps.slice(12)];
+      const out = toRangeBars(data, { rangeSize: 0.1 });
+      expect(out.length).toBeGreaterThan(20);
+      for (const b of out) expect(Number(b.close.toFixed(1))).toBe(b.close);
+    }
+  });
+
+  it('keeps closing bars on a price the kept digits read as where the bar closes', () => {
+    // 1002094 * 0.1 is 100209.40000000001, as a feed sending whole ticks times a tick size writes 100209.4. The
+    // bar must read it as 100209.4, its close on the way down, and not stop closing bars on a hair above it.
+    const data = (low: number) => [
+      bar(100_259.4, 100_259.4, 100_259.4, 100_259.4, 0),
+      bar(100_259.4, 100_600, low, 100_600, 1),
+      bar(100_600, 101_000, 100_600, 101_000, 2),
+    ];
+    const ohlc = (bars: OHLCBar[]) => bars.map((b) => [b.open, b.high, b.low, b.close]);
+    const ticks = toRangeBars(data(1_002_094 * 0.1), { rangeSize: 50, includeForming: true });
+    expect(ohlc(ticks)).toEqual(ohlc(toRangeBars(data(100_209.4), { rangeSize: 50, includeForming: true })));
+    expect(ticks).toHaveLength(17);
+  });
+
+  it('adds no bar still forming for a last price the kept digits read as the last close', () => {
+    // 1003 * 0.1 is 100.30000000000001: the bars close at 100.1, 100.2 and 100.3, and nothing has moved since.
+    const data = [bar(100, 100, 100, 100, 0), bar(100, 1_003 * 0.1, 100, 1_003 * 0.1, 1)];
+    const out = toRangeBars(data, { rangeSize: 0.1, includeForming: true });
+    expect(out.map((b) => b.close)).toEqual([100.1, 100.2, 100.3]);
+  });
+
+  it('keeps closing bars where the kept digits read the low plus the range as the high', () => {
+    // Near 1e16 a float steps by 2: the low, 9,999,999,999,999,998, plus 3 reads as the high, 1e16. The bar closes
+    // there, at the price it opened at, with its wick below, and the climb to 1e16 + 20 goes on in bars of its own.
+    const low = 9_999_999_999_999_998;
+    const data = [bar(1e16, 1e16, 1e16, 1e16, 0), bar(1e16, 1e16, low, low, 1), bar(low, 1e16 + 20, low, 1e16 + 20, 2)];
+    const out = toRangeBars(data, { rangeSize: 3, includeForming: true });
+    expect(out[0]).toMatchObject({ open: 1e16, high: 1e16, low, close: 1e16 });
+    expect(out.length).toBeGreaterThan(1);
+    expect(out.at(-1)!.close).toBe(1e16 + 20);
+    for (const b of out) expect(b.high).toBeGreaterThanOrEqual(b.low);
+  });
+
+  it('closes every bar at the range on a day of prices written as whole ticks times 0.1', () => {
+    let seed = 5;
+    const random = () => (seed = (seed * 1_664_525 + 1_013_904_223) >>> 0) / 2 ** 32;
+    let close = 1_000_000;
+    const data = Array.from({ length: 3_000 }, (_, i) => {
+      const open = close;
+      close = open + Math.round((random() + random() + random() - 1.5) * 160);
+      const high = Math.max(open, close) + Math.round(random() * 40);
+      const low = Math.min(open, close) - Math.round(random() * 40);
+      return bar(open * 0.1, high * 0.1, low * 0.1, close * 0.1, i);
+    });
+    const out = toRangeBars(data, { rangeSize: 10, includeForming: true });
+    expect(out.length).toBeGreaterThan(1_000);
+    for (const b of out.slice(0, -1)) {
+      expect(b.high - b.low).toBeCloseTo(10, 6);
+      expect(b.high).toBeGreaterThanOrEqual(Math.max(b.open, b.close));
+      expect(b.low).toBeLessThanOrEqual(Math.min(b.open, b.close));
+    }
+    expect(out.at(-1)!.high - out.at(-1)!.low).toBeLessThan(10);
   });
 
   it('emits up-bars on a sustained uptrend', () => {
