@@ -89,16 +89,19 @@ describe('CompareRenderer', () => {
   it('lines the other series up with the main one by time', () => {
     const renderer = new CompareRenderer();
     renderer.addSymbol({ id: 'b', label: 'B', data: other, color: '#f00', visible: true });
-    const points: number[][] = [];
+    // Each path drawn: the line's first, then its label's mark.
+    const paths: number[][][] = [];
     const ctx = {
-      save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke() {}, fillText() {}, strokeText() {}, setLineDash() {},
+      save() {}, restore() {}, rect() {}, clip() {}, stroke() {}, fillText() {}, strokeText() {}, setLineDash() {},
+      beginPath() { paths.push([]); },
       measureText: (text: string) => ({ width: text.length * 6 }),
-      moveTo(x: number, y: number) { points.push([x, y]); },
-      lineTo(x: number, y: number) { points.push([x, y]); },
+      moveTo(x: number, y: number) { paths[paths.length - 1].push([x, y]); },
+      lineTo(x: number, y: number) { paths[paths.length - 1].push([x, y]); },
     } as unknown as CanvasRenderingContext2D;
     renderer.render(ctx, main, viewport, DARK_THEME);
+    const line = paths.find((points) => points.length > 0)!;
     // From the main bar at 10:00 (index 2) to 15:00 (index 7): six points.
-    expect(points.map(([x]) => x)).toEqual([24, 34, 44, 54, 64, 74]);
+    expect(line.map(([x]) => x)).toEqual([24, 34, 44, 54, 64, 74]);
   });
 
   it('gives the price range it covers, for the auto scale', () => {

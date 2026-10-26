@@ -107,9 +107,12 @@ describe('a compare line’s label', () => {
 
   /** A canvas that keeps each text's box (10 px a letter, 12 px high, from where it is aligned), each box filled and each text's halo. */
   function recorder() {
-    const texts: { text: string; left: number; top: number; right: number; bottom: number }[] = [];
+    const texts: { text: string; left: number; top: number; right: number; bottom: number; fill: string }[] = [];
     const chips: { x: number; y: number; w: number; h: number; fill: string }[] = [];
     const halos: { text: string; stroke: string }[] = [];
+    /** Each path stroked: its points and its colour. */
+    const strokes: { points: { x: number; y: number }[]; color: string }[] = [];
+    let path: { x: number; y: number }[] = [];
     const state: Record<string, unknown> = { textAlign: 'start', textBaseline: 'alphabetic', fillStyle: '' };
     const ctx = new Proxy(state, {
       get: (t, k) => {
@@ -120,25 +123,38 @@ describe('a compare line’s label', () => {
             const w = text.length * 10;
             const left = t.textAlign === 'right' ? x - w : x;
             const top = t.textBaseline === 'bottom' ? y - 12 : t.textBaseline === 'top' ? y : y - 6;
-            texts.push({ text, left, top, right: left + w, bottom: top + 12 });
+            texts.push({ text, left, top, right: left + w, bottom: top + 12, fill: String(t.fillStyle) });
           };
         }
+        if (k === 'beginPath') return () => { path = []; };
+        if (k === 'moveTo' || k === 'lineTo') return (x: number, y: number) => { path.push({ x, y }); };
+        if (k === 'stroke') return () => strokes.push({ points: path, color: String(t.strokeStyle) });
         if (k === 'fillRect') return (x: number, y: number, w: number, h: number) => chips.push({ x, y, w, h, fill: String(t.fillStyle) });
         if (k === 'strokeText') return (text: string) => halos.push({ text, stroke: String(t.strokeStyle) });
         return () => {};
       },
       set: (t, k, v) => { t[k as string] = v; return true; },
     }) as unknown as CanvasRenderingContext2D;
-    return { ctx, texts, chips, halos };
+    return { ctx, texts, chips, halos, strokes };
   }
   const overlaps = (a: { top: number; bottom: number }, b: { top: number; bottom: number }) => a.top < b.bottom && b.top < a.bottom;
-  const THEME = { background: '#fbfaf6' } as Theme;
+  const THEME = { background: '#fbfaf6', text: '#1d1f22' } as Theme;
 
   it('reads over what is under it by a halo of the chart’s ground around its letters, with no box hiding the candles', () => {
     const { ctx, chips, halos } = recorder();
     renderer({ id: 'b', data: other(0, () => 10) }).render(ctx, main, view(0, 7), THEME);
     expect(chips).toEqual([]);
     expect(halos).toEqual([{ text: 'B', stroke: '#fbfaf6' }]);
+  });
+
+  it('is written in the text colour, which reads on either theme, after a stroke of its line’s colour', () => {
+    const { ctx, texts, strokes } = recorder();
+    renderer({ id: 'b', data: other(0, () => 10) }).render(ctx, main, view(0, 7), THEME);
+    expect(texts[0].fill).toBe('#1d1f22');
+    const middle = (texts[0].top + texts[0].bottom) / 2;
+    const mark = strokes.find((s) => s.color === '#f00' && s.points.length === 2 && s.points.every((p) => p.y === middle));
+    expect(mark).toBeDefined();
+    expect(Math.max(...mark!.points.map((p) => p.x))).toBeLessThan(texts[0].left);
   });
 
   it('keeps clear of an alert’s label at the plot’s right edge', () => {

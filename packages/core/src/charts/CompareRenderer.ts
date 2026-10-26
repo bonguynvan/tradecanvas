@@ -10,6 +10,10 @@ const LABEL_GAP = 4;
 const LABEL_FONT_PX = 10;
 const LABEL_PAD_X = 3;
 const LABEL_HEIGHT = 14;
+/** The stroke of the line's colour before a label's name (px): its length, its width, and its gap to the name. */
+const MARK_LENGTH = 8;
+const MARK_WIDTH = 2;
+const MARK_GAP = 3;
 /** A label tried this many heights above and below its line's end before it settles where it first went. */
 const LABEL_TRIES = 4;
 /** An alert's label sits this far above its line, at the plot's right edge, as AlertManager draws it. */
@@ -176,7 +180,9 @@ export class CompareRenderer {
    * alert's label and of the labels placed before it: tried above the end,
    * then below, then further out. A halo of the chart's ground around the
    * letters keeps them legible over the candles and the other lines, which a
-   * box would hide.
+   * box would hide. The name is in the text colour, as the legend's figures
+   * are: no one line colour reads as text on both the dark and the light
+   * theme. A stroke of the line's colour before it says which line it names.
    */
   private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly { sym: CompareSymbol; x: number; y: number }[], viewport: ViewportState, theme: Theme): void {
     if (ends.length === 0) return;
@@ -185,12 +191,25 @@ export class CompareRenderer {
     ctx.textAlign = 'right';
     const taken = this.reservedBoxes(viewport);
     for (const { sym, x, y } of ends) {
-      const width = ctx.measureText(sym.label).width + 2 * LABEL_PAD_X;
+      const width = MARK_LENGTH + MARK_GAP + ctx.measureText(sym.label).width + 2 * LABEL_PAD_X;
       const box = this.placeLabel(x - LABEL_GAP, y, width, taken);
       taken.push(box);
-      ctx.fillStyle = sym.color;
-      fillTextWithHalo(ctx, sym.label, box.right - LABEL_PAD_X, (box.top + box.bottom) / 2, theme.background);
+      this.drawLabel(ctx, sym, box, theme);
     }
+  }
+
+  /** `sym`'s mark and name in `box`. */
+  private drawLabel(ctx: CanvasRenderingContext2D, sym: CompareSymbol, box: LabelBox, theme: Theme): void {
+    const middle = (box.top + box.bottom) / 2;
+    const markLeft = box.left + LABEL_PAD_X;
+    ctx.strokeStyle = sym.color;
+    ctx.lineWidth = MARK_WIDTH;
+    ctx.beginPath();
+    ctx.moveTo(markLeft, middle);
+    ctx.lineTo(markLeft + MARK_LENGTH, middle);
+    ctx.stroke();
+    ctx.fillStyle = theme.text;
+    fillTextWithHalo(ctx, sym.label, box.right - LABEL_PAD_X, middle, theme.background);
   }
 
   /** The first free box `width` wide ending at `right`, by its line's end at `y`: above it, below it, then further out. */
