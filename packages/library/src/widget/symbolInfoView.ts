@@ -1,5 +1,5 @@
 import type { NewsItem, Quote, SymbolInfo } from '@tradecanvas/commons';
-import { barTimeUnit, isValidTimeZone, marketStatus, readNews, symbolTimeZone, zoneOffsetMinutes } from '@tradecanvas/commons';
+import { barTimeUnit, formatPrice, isValidTimeZone, marketStatus, readNews, symbolTimeZone, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { fill, type Translator } from './i18n.js';
 import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 
@@ -178,10 +178,15 @@ export function relativeTime(deltaMs: number, locale: string): string {
   }
 }
 
-/** `value` to `decimals`, in `locale` (2.234,50 in de-DE), as the price beside it is written. */
+/**
+ * `value` to `decimals`, in `locale` (2.234,50 in de-DE), as the price beside it is written:
+ * commons' `formatPrice`, guarded. With no number format chosen the locale is the widget's
+ * `locale`, which a host may write as 'pt_BR': Intl refuses that tag with a RangeError, and
+ * the panel would stay empty.
+ */
 function fixedNumber(value: number, decimals: number, locale: string): string {
   try {
-    return new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+    return formatPrice(value, decimals, locale);
   } catch {
     return value.toFixed(decimals);
   }
