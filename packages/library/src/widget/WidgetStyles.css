@@ -1543,8 +1543,9 @@
   text-align: end;
 }
 
+/* Empty, it takes no room but stays rendered: a live region that appears with its text is often not read out. */
 .tcw-settings-hint:empty {
-  display: none;
+  padding-top: 0;
 }
 
 .tcw-settings-label {
