@@ -27,6 +27,13 @@ interface LabelBox {
   bottom: number;
 }
 
+/** Where a compare line ends on screen, which its label goes by. */
+interface LineEnd {
+  sym: CompareSymbol;
+  x: number;
+  y: number;
+}
+
 const overlaps = (a: LabelBox, b: LabelBox): boolean =>
   a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
@@ -163,7 +170,7 @@ export class CompareRenderer {
     ctx.clip();
 
     // The lines first, then their labels over all of them.
-    const ends: { sym: CompareSymbol; x: number; y: number }[] = [];
+    const ends: LineEnd[] = [];
     for (const sym of this.symbols.values()) {
       if (!sym.visible || sym.data.length === 0) continue;
       const end = this.renderSymbol(ctx, sym, mainData, viewport);
@@ -184,17 +191,17 @@ export class CompareRenderer {
    * are: no one line colour reads as text on both the dark and the light
    * theme. A stroke of the line's colour before it says which line it names.
    */
-  private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly { sym: CompareSymbol; x: number; y: number }[], viewport: ViewportState, theme: Theme): void {
+  private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly LineEnd[], viewport: ViewportState, theme: Theme): void {
     if (ends.length === 0) return;
     ctx.font = `bold ${LABEL_FONT_PX}px sans-serif`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'right';
     const taken = this.reservedBoxes(viewport);
-    for (const { sym, x, y } of ends) {
-      const width = MARK_LENGTH + MARK_GAP + ctx.measureText(sym.label).width + 2 * LABEL_PAD_X;
-      const box = this.placeLabel(x - LABEL_GAP, y, width, taken);
+    for (const end of ends) {
+      const width = MARK_LENGTH + MARK_GAP + ctx.measureText(end.sym.label).width + 2 * LABEL_PAD_X;
+      const box = this.placeLabel(end, width, taken, ends);
       taken.push(box);
-      this.drawLabel(ctx, sym, box, theme);
+      this.drawLabel(ctx, end.sym, box, theme);
     }
   }
 
@@ -212,17 +219,26 @@ export class CompareRenderer {
     fillTextWithHalo(ctx, sym.label, box.right - LABEL_PAD_X, middle, theme.background);
   }
 
-  /** The first free box `width` wide ending at `right`, by its line's end at `y`: above it, below it, then further out. */
-  private placeLabel(right: number, y: number, width: number, taken: readonly LabelBox[]): LabelBox {
+  /**
+   * The first free box `width` wide by `end`, its line's end: above it,
+   * below it, then further out. Moved off its end, a label could land beside
+   * another line's and read as that line's name, so it takes the first free
+   * box nearer its own end than any other, and only without one the first
+   * free box at all.
+   */
+  private placeLabel(end: LineEnd, width: number, taken: readonly LabelBox[], ends: readonly LineEnd[]): LabelBox {
+    const right = end.x - LABEL_GAP;
     const at = (top: number): LabelBox => ({ left: right - width, top, right, bottom: top + LABEL_HEIGHT });
-    const above = y - LABEL_GAP - LABEL_HEIGHT;
-    const below = y + LABEL_GAP;
-    for (let step = 0; step < LABEL_TRIES; step++) {
-      for (const box of [at(above - step * LABEL_HEIGHT), at(below + step * LABEL_HEIGHT)]) {
-        if (!taken.some((t) => overlaps(t, box))) return box;
-      }
-    }
-    return at(above);
+    const above = end.y - LABEL_GAP - LABEL_HEIGHT;
+    const below = end.y + LABEL_GAP;
+    const tries = Array.from({ length: LABEL_TRIES }, (_, step) => [at(above - step * LABEL_HEIGHT), at(below + step * LABEL_HEIGHT)]).flat();
+    const free = (box: LabelBox) => !taken.some((t) => overlaps(t, box));
+    const nearestIsOwn = (box: LabelBox) => {
+      const middle = (box.top + box.bottom) / 2;
+      const from = (e: LineEnd) => Math.hypot(e.x - end.x, e.y - middle);
+      return ends.every((e) => e === end || from(e) > from(end));
+    };
+    return tries.find((box) => free(box) && nearestIsOwn(box)) ?? tries.find(free) ?? at(above);
   }
 
   /** Where the alerts' labels sit: a band just above each line, across the plot (their text runs left from its right edge). */

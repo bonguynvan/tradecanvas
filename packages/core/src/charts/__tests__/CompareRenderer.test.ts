@@ -168,6 +168,22 @@ describe('a compare line’s label', () => {
     expect(overlaps(texts[0], alertLabel)).toBe(false);
   });
 
+  it('moved off its line’s end, lands nearer it than another line’s end, so it names the right one', () => {
+    const { ctx, texts } = recorder();
+    // On the main scale: B ends at 100 (y 100), C at 112.5 (y 75); an alert's label takes both spots by B's end.
+    const r = renderer({ id: 'b', data: other(0, () => 100) }, { id: 'c', data: other(0, () => 112.5) });
+    r.setMode('absolute');
+    r.setReservedLevels(() => [96.5]);
+    r.render(ctx, main, view(0, 7), THEME);
+    const ends: Record<string, number> = { B: 100, C: 75 };
+    expect(texts.map((t) => t.text)).toEqual(['B', 'C']);
+    for (const t of texts) {
+      const middle = (t.top + t.bottom) / 2;
+      const own = Math.abs(middle - ends[t.text]);
+      for (const [name, y] of Object.entries(ends)) if (name !== t.text) expect(own).toBeLessThan(Math.abs(middle - y));
+    }
+  });
+
   it('keeps two lines’ labels clear of each other where the lines end together', () => {
     const { ctx, texts } = recorder();
     renderer({ id: 'b', data: other(0, () => 10) }, { id: 'c', data: other(0, () => 20) }).render(ctx, main, view(0, 7), THEME);
