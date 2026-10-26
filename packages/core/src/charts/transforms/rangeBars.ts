@@ -4,10 +4,11 @@ import { MAX_RESHAPED_BARS, barLimit, sizeAt } from './reshapeCap.js';
 export interface RangeBarsConfig {
   /**
    * Price distance per range bar. Each bar is closed when (high - low) >= rangeSize.
-   * A range so small that the closed bars would make more than 100,000 range
-   * bars, or the last bar more than 100,000 on its own, is raised to 2, 5, 10,
-   * 20… times itself, the first that makes no more; every bar is then built
-   * on the raised range.
+   * A range under half the 15th significant digit of the largest price closes
+   * no bar, however the prices are written. A larger one so small that the
+   * closed bars would make more than 100,000 range bars, or the last bar more
+   * than 100,000 on its own, is raised to 2, 5, 10, 20… times itself, the
+   * first that makes no more; every bar is then built on the raised range.
    */
   rangeSize: number;
   /**
