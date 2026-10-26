@@ -40,12 +40,12 @@ describe('the symbol info view', () => {
     expect(view({ last: 9.5, prevClose: 11 })).toBe('-1,50 (-13,64%)');
   });
 
-  it('still writes the percentage when the widget’s language is no locale tag', () => {
-    // With no number format chosen, the panel's numbers follow the widget's `locale`, which
-    // a host may write as 'pt_BR': Intl refuses that tag.
+  it('writes the percentage in plain digits when its number locale is a tag Intl refuses', () => {
+    // A defensive fallback, as for the volume beside it: the view takes its locale as any
+    // string, and Intl throws a RangeError for 'pt_BR'.
     const view = buildSymbolInfoView({
       symbol: 'AAA', info: null, quote: { symbol: 'AAA', last: 11, prevClose: 9.5 }, bars, formatPrice: (p) => p.toFixed(2),
-      t: EN_TRANSLATOR, textLocale: 'pt_BR', numberLocale: 'pt_BR', now: T0 + 8_000_000,
+      t: EN_TRANSLATOR, textLocale: 'en', numberLocale: 'pt_BR', now: T0 + 8_000_000,
     });
     expect(view.change).toEqual({ text: '+1.50 (+15.79%)', up: true });
   });

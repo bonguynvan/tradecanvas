@@ -180,9 +180,9 @@ export function relativeTime(deltaMs: number, locale: string): string {
 
 /**
  * `value` to `decimals`, in `locale` (2.234,50 in de-DE), as the price beside it is written:
- * commons' `formatPrice`, guarded. With no number format chosen the locale is the widget's
- * `locale`, which a host may write as 'pt_BR': Intl refuses that tag with a RangeError, and
- * the panel would stay empty.
+ * commons' `formatPrice`, guarded as `relativeTime` and `compactNumber` beside it are. The
+ * view takes its locale as any string, and for a tag Intl refuses ('pt_BR') `formatPrice`
+ * throws a RangeError that would leave the panel empty, so plain digits are written instead.
  */
 function fixedNumber(value: number, decimals: number, locale: string): string {
   try {
