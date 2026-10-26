@@ -121,6 +121,19 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
     expect(invert.getAttribute('aria-keyshortcuts')).toBe('Alt+I');
   });
 
+  it('leads a switch with its icon while off, if it has one, and with a tick while on', () => {
+    menu.open([
+      { id: 'alerts', label: 'Price alerts', icon: 'bell', checked: false },
+      { id: 'flow', label: 'Order flow', icon: 'layers', checked: true },
+      { id: 'grid', label: 'Grid', checked: false },
+    ], 0, 0, () => {});
+    const [alerts, flow, grid] = all('menuitemcheckbox');
+    expect(alerts.querySelector('svg')).not.toBeNull();
+    expect(alerts.querySelector('svg')?.outerHTML).not.toBe(flow.querySelector('svg')?.outerHTML);
+    expect(grid.querySelector('svg')).toBeNull();
+    expect(grid.querySelector('.tcw-context-icon')).not.toBeNull();
+  });
+
   it('marks a choice among several as a radio item', () => {
     menu.open(SCALE, 0, 0, () => {});
     expect(all('menuitemradio').map((b) => b.getAttribute('aria-checked'))).toEqual(['true', 'false']);

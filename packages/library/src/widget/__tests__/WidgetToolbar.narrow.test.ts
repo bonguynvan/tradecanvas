@@ -93,6 +93,25 @@ describe('WidgetToolbar — narrow', () => {
     expect(entry()?.getAttribute('aria-checked')).toBe('true');
   });
 
+  it('lists a switch as one whether it is on or off: ticked while on, its icon while off', () => {
+    toolbar.addHostButton({ id: 'flow', label: 'Order flow', icon: 'layers', toggle: true, side: 'left', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    const entry = (label: string) => menuItems().find((b) => b.textContent?.trim() === label)!;
+    more().click();
+    for (const label of ['Order flow', 'Price alerts']) {
+      expect(entry(label).getAttribute('role'), label).toBe('menuitemcheckbox');
+      expect(entry(label).getAttribute('aria-checked'), label).toBe('false');
+      expect(entry(label).querySelector('svg'), label).not.toBeNull();
+    }
+    more().click();
+    toolbar.setActive('alerts', true);
+    more().click();
+    expect(entry('Price alerts').getAttribute('role')).toBe('menuitemcheckbox');
+    expect(entry('Price alerts').getAttribute('aria-checked')).toBe('true');
+    // Not a switch: an action, listed as one.
+    expect(entry('Screenshot').getAttribute('role')).toBe('menuitem');
+  });
+
   it('names a host’s button in “more” with its count, as assistive tech hears it', () => {
     toolbar.addHostButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} });
     root.setAttribute('data-tcw-narrow', '');

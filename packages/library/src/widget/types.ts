@@ -343,7 +343,7 @@ export interface WidgetMenuItem {
   icon?: string;
   /** Shown in red, for something that removes. */
   danger?: boolean;
-  /** Makes it a switch, ticked when `true`. */
+  /** Makes it a switch, ticked when `true`; while `false` it shows its `icon`, if it has one. */
   checked?: boolean;
   onSelect: () => void;
 }

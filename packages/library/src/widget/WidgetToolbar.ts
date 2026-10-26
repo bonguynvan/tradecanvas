@@ -275,9 +275,11 @@ export class WidgetToolbar {
       el.appendChild(replayBtn);
     }
 
+    // The panels' buttons are switches from the start (`setActive`), so "more" lists them as such when off too.
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', this.t('toolbar.objects'), callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';
+      objectsBtn.setAttribute('aria-pressed', 'false');
       markPart(objectsBtn, 'objectTree', 'toolbar.objectTree');
       el.appendChild(objectsBtn);
     }
@@ -285,6 +287,7 @@ export class WidgetToolbar {
     if (callbacks.onToggleAlerts) {
       const alertsBtn = this.iconBtn('bell', this.t('toolbar.priceAlerts'), callbacks.onToggleAlerts);
       alertsBtn.dataset.role = 'alerts';
+      alertsBtn.setAttribute('aria-pressed', 'false');
       markPart(alertsBtn, 'alerts', 'toolbar.alerts');
       el.appendChild(alertsBtn);
     }
@@ -349,10 +352,11 @@ export class WidgetToolbar {
     const entries: ContextMenuEntry[] = buttons.map((btn, i) => {
       // Its name before its tooltip: a host's button with a count is "News: 3", not "News".
       const label = btn.getAttribute('aria-label') || btn.title || btn.textContent?.trim() || '';
-      // A switch that is on shows its tick; one that is off, its icon.
-      return btn.getAttribute('aria-pressed') === 'true'
-        ? { id: String(i), label, checked: true }
-        : { id: String(i), label, icon: btn.dataset.icon };
+      // A switch stays one, on or off: its tick while on, its icon while off.
+      const pressed = btn.getAttribute('aria-pressed');
+      return pressed === null
+        ? { id: String(i), label, icon: btn.dataset.icon }
+        : { id: String(i), label, icon: btn.dataset.icon, checked: pressed === 'true' };
     });
     this.moreMenu ??= new WidgetContextMenu(root, this.t('toolbar.more'));
     const at = anchor.getBoundingClientRect();

@@ -73,7 +73,8 @@ function itemRole(entry: MenuItem): string {
 function leadMark(entry: MenuItem): string {
   const blank = '<span class="tcw-context-icon"></span>';
   if (entry.radio) return entry.checked ? '<span class="tcw-context-icon tcw-context-dot"></span>' : blank;
-  if (entry.checked !== undefined) return entry.checked ? createIcon('check', 14) : blank;
+  // A switch that is off shows its icon, as an action does.
+  if (entry.checked) return createIcon('check', 14);
   return (entry.icon && createIcon(entry.icon, 14)) || blank;
 }
 
