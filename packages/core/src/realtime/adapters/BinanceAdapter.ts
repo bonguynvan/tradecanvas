@@ -424,9 +424,9 @@ export class BinanceAdapter implements DataAdapter {
     const { bar, closed } = parsed;
 
     // A frame of a bar already past (a late final, a stale frame, the
-    // history's last sent again closed) still goes out as a bar, but its
-    // close is no live price.
-    const live = this.newestBar.admit(bar.time, closed);
+    // history's last sent again closed as served) still goes out as a bar,
+    // but its close is no live price.
+    const live = this.newestBar.admit(bar, closed);
     this.emitEvent('bar', { bar, closed });
     if (!live) return;
     this.emitEvent('tick', {

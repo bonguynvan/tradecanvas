@@ -346,6 +346,8 @@ describe('a stream, what it leaves out and when it tells', () => {
 describe('a built-in feed, a bar already past', () => {
   type Line = { currentPriceLine: { getPrice(): number | null } };
   const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
+  type Stream = { streamManager: { getLastPrice(): number | null } };
+  const streamPrice = () => (chart as unknown as Stream).streamManager.getLastPrice();
   type Send = (b: OHLCBar, closed: boolean) => void;
   /** A connected feed: a frame from it, and a reconnect (the network came back) that opens a new socket. */
   interface Feed { send: Send; reconnect(): Promise<void> }
@@ -355,12 +357,15 @@ describe('a built-in feed, a bar already past', () => {
     await new Promise((r) => setTimeout(r, 0));
   };
 
-  async function webSocketFeed(): Promise<Feed> {
+  /** How many bars the feed's history holds unless a test says: 0 to 59 at 100, the last closed while bar 60 forms. */
+  const HISTORY_BARS = 60;
+
+  async function webSocketFeed(bars = HISTORY_BARS): Promise<Feed> {
     const sockets: WebSocketLike[] = [];
     const adapter = new WebSocketAdapter({
       name: 'ws',
       wsUrl: () => 'wss://x',
-      fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
+      fetchHistory: async () => Array.from({ length: bars }, (_, i) => bar(i, 100)),
       parseMessage: (raw) => raw as WsParseResult,
       socketFactory: () => {
         const socket: WebSocketLike = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
@@ -368,7 +373,7 @@ describe('a built-in feed, a bar already past', () => {
         return socket;
       },
     });
-    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60 });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: bars });
     sockets.at(-1)!.onopen?.({});
     return {
       send: (b, closed) => sockets.at(-1)!.onmessage?.({ data: { bar: b, closed } }),
@@ -379,16 +384,16 @@ describe('a built-in feed, a bar already past', () => {
     };
   }
 
-  async function binanceFeed(): Promise<Feed> {
+  async function binanceFeed(bars = HISTORY_BARS): Promise<Feed> {
     const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: unknown }) => void) | null }[] = [];
     vi.stubGlobal('WebSocket', class {
       onopen = null; onmessage = null; onerror = null; onclose = null;
       constructor() { sockets.push(this); }
       close() {}
     });
-    const klines = Array.from({ length: 60 }, (_, i) => [bar(i, 100).time, '100', '101', '99', '100', '10']);
+    const klines = Array.from({ length: bars }, (_, i) => [bar(i, 100).time, '100', '101', '99', '100', '10']);
     vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: url.includes('/klines'), json: async () => klines })));
-    await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 60 });
+    await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: bars });
     sockets.at(-1)!.onopen?.();
     return {
       send: (b, closed) => sockets.at(-1)!.onmessage?.({
@@ -444,6 +449,19 @@ describe('a built-in feed, a bar already past', () => {
         // Bar 60's next frame is live.
         send({ ...bar(60, 99), open: 101, high: 110 }, false);
         expect(fired).toEqual(['over 98']);
+      });
+
+      it("the history's last bar, still forming when it was served, moves the price line to its final close on the first frame", async () => {
+        // The history ends on bar 60, at 100 when it was fetched; its final comes first on the socket.
+        const { send } = await connect(HISTORY_BARS + 1);
+        const fired = alertsFired();
+        chart.addAlert(102, 'crossingUp', 'over 102');
+        send({ ...bar(60, 104), high: 105 }, true);
+        expect(chart.getData().at(-1)).toMatchObject({ time: bar(60, 104).time, close: 104 });
+        expect(line()).toBe(104);
+        expect(streamPrice()).toBe(104);
+        expect(ordersPrice()).toBe(104);
+        expect(fired).toEqual(['over 102']);
       });
     });
   }

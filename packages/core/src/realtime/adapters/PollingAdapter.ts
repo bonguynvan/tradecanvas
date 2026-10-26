@@ -80,7 +80,7 @@ export class PollingAdapter implements DataAdapter {
     this.config = config;
     // The history's last bar is the newest yet: an older answer is past, and
     // a newer one closes it with its final values.
-    this.lastBarTime = this.served.lastTime(config.symbol, config.timeframe) ?? 0;
+    this.lastBarTime = this.served.lastBar(config.symbol, config.timeframe)?.time ?? 0;
     this.state = 'connected';
     this.emitEvent('connectionChange', 'connected');
     this.startPolling();

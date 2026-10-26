@@ -1,4 +1,4 @@
-import { normalizeBarTime } from '@tradecanvas/commons';
+import { normalizeBarTime, type OHLCBar } from '@tradecanvas/commons';
 import { ServedHistory } from './servedHistory.js';
 
 /**
@@ -10,13 +10,19 @@ import { ServedHistory } from './servedHistory.js';
  * the last bar of the history the adapter served for its symbol and
  * timeframe, so a feed that sends its last closed bar again on subscribing
  * makes no tick from it either, after a reconnect too. That bar closed again
- * is the history's own, no newer price, until a forming frame of it comes:
- * a history of closed bars only ends on the bar such a feed sends again.
+ * at the close it was served at is the history's own, no newer price, until
+ * a forming frame of it comes: a history of closed bars only ends on the bar
+ * such a feed sends again. At another close it is the bar's final, the bar
+ * served while it was still forming (as most REST endpoints serve the
+ * newest bar), and a live price.
  */
 export class NewestBar {
   private newest = -Infinity;
-  /** Whether the newest is the history's last bar, of which no forming frame came on the connection yet. */
-  private fromHistory = false;
+  /**
+   * The close the history's last bar was served at, while that bar is the
+   * newest and no forming frame of it came on the connection; null otherwise.
+   */
+  private servedClose: number | null = null;
   private readonly served = new ServedHistory();
 
   /** The history the adapter served for `symbol` and `timeframe`, as its `fetchHistory` gave it. */
@@ -26,23 +32,23 @@ export class NewestBar {
 
   /** A new connection to `symbol` and `timeframe`: no bar sent on it yet, the history served for them the newest. */
   reset(symbol: string, timeframe: string): void {
-    const served = this.served.lastTime(symbol, timeframe);
-    this.newest = served === undefined ? -Infinity : normalizeBarTime(served);
-    this.fromHistory = served !== undefined;
+    const served = this.served.lastBar(symbol, timeframe);
+    this.newest = served === undefined ? -Infinity : normalizeBarTime(served.time);
+    this.servedClose = served?.close ?? null;
   }
 
   /**
-   * Whether a frame of the bar at `time`, `closed` or forming, is one of the
-   * newest bar or of a newer one, which is then the newest. Times are read
-   * by their size, so seconds and milliseconds compare.
+   * Whether a frame of `bar`, `closed` or forming, is one of the newest bar
+   * or of a newer one, which is then the newest. Times are read by their
+   * size, so seconds and milliseconds compare.
    */
-  admit(time: number, closed = false): boolean {
-    const at = normalizeBarTime(time);
+  admit(bar: Pick<OHLCBar, 'time' | 'close'>, closed = false): boolean {
+    const at = normalizeBarTime(bar.time);
     // A time that isn't a number says nothing of which bar is newest.
     if (!Number.isFinite(at)) return true;
     if (at < this.newest) return false;
-    if (at === this.newest && this.fromHistory && closed) return false;
-    this.fromHistory = false;
+    if (at === this.newest && closed && bar.close === this.servedClose) return false;
+    this.servedClose = null;
     this.newest = at;
     return true;
   }

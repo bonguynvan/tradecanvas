@@ -33,8 +33,8 @@ export interface WsParseResult {
   /** An explicit trade tick. When omitted but `bar` is present, a tick is
    *  synthesized from the bar close (matches BinanceAdapter), unless the bar
    *  is older than the newest the connection has sent or its history ends
-   *  on, or is that history's last bar sent again closed before a forming
-   *  frame of it. */
+   *  on, or is that history's last bar sent again closed at the close it
+   *  was served at, before a forming frame of it. */
   tick?: RawTick;
 }
 
@@ -213,9 +213,9 @@ export class WebSocketAdapter implements DataAdapter {
       if (!result) return;
 
       // A frame of a bar already past (a late final, a revision, a stale
-      // frame, the history's last sent again closed) still goes out as a
-      // bar, but its close is no live price.
-      const live = result.bar ? this.newestBar.admit(result.bar.time, result.closed ?? false) : false;
+      // frame, the history's last sent again closed as served) still goes
+      // out as a bar, but its close is no live price.
+      const live = result.bar ? this.newestBar.admit(result.bar, result.closed ?? false) : false;
       if (result.bar) {
         this.emitEvent('bar', { bar: result.bar, closed: result.closed ?? false });
       }

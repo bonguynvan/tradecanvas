@@ -180,6 +180,14 @@ describe('WebSocketAdapter', () => {
       expect(prices()).toEqual([102, 103]);
     });
 
+    it("takes the history's last bar, closed at another close than the one served, as a live price: it was still forming", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 104, true)); // its final, the first frame on the connection
+      expect(prices()).toEqual([104]);
+    });
+
     it("doesn't start from the history of another symbol or timeframe", async () => {
       const { adapter, connect, send } = servedFeed(10);
       await adapter.fetchHistory('ETHUSDT', CONFIG.timeframe, 2);

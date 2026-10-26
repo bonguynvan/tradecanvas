@@ -61,7 +61,8 @@ describe('BinanceAdapter klines', () => {
     expect(prices).toEqual([101, 99]);
   });
 
-  it('starts from the last kline of the history it served for the symbol and interval', async () => {
+  /** An adapter connected after serving a history of klines 9 and 10, both at 100. */
+  async function served() {
     const rest = [9, 10].map((slot) => [T + slot * MINUTE, '100', '100', '100', '100', '3']);
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => rest })));
     vi.stubGlobal('WebSocket', FakeSocket);
@@ -71,8 +72,20 @@ describe('BinanceAdapter klines', () => {
     await adapter.fetchHistory('BTCUSDT', '1m', 2);
     adapter.connect({ symbol: 'BTCUSDT', timeframe: '1m' });
     const send = (frame: string) => FakeSocket.all.at(-1)!.onmessage?.({ data: frame });
+    return { prices, send };
+  }
+
+  it('starts from the last kline of the history it served for the symbol and interval', async () => {
+    const { prices, send } = await served();
     send(kline(9, 99, true)); // the last closed kline, sent again on subscribing
     send(kline(10, 102));
     expect(prices).toEqual([102]);
+  });
+
+  it("makes a tick from the history's last kline closed only at another close than the one served", async () => {
+    const { prices, send } = await served();
+    send(kline(10, 100, true)); // as served: no newer price
+    send(kline(10, 104, true)); // its final: it was still forming when served
+    expect(prices).toEqual([104]);
   });
 });
