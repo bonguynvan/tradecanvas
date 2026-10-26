@@ -451,25 +451,35 @@ export class WidgetSymbolSearch {
     this.searchAbort = null;
   }
 
-  /** New rows: the kinds and exchanges on offer, the list, the keys on the chart's symbol (`atCurrent`) or the top. */
+  /**
+   * New rows: the kinds and exchanges on offer, the list, the keys on the
+   * chart's symbol (`atCurrent`) or the top. The filters hear only of rows
+   * that can be listed: comparing, a kind only the chart's own symbol is of
+   * would be a tab that lists nothing.
+   */
   private afterResults(atCurrent: boolean): void {
-    this.filters?.see(this.rows.map((r) => r.info));
-    this.shown = this.visibleRows();
+    const listable = this.listableRows();
+    this.filters?.see(listable.map((r) => r.info));
+    this.shown = this.visibleRows(listable);
     const current = atCurrent ? this.shown.findIndex((r) => r.symbol === this.mode?.start.current) : -1;
     this.selectedIndex = Math.max(0, current);
     this.renderList();
   }
 
+  /** The rows that can be listed: comparing, all but the chart's own symbol. */
+  private listableRows(): Row[] {
+    if (this.mode?.kind !== 'compare') return this.rows;
+    const current = this.mode.start.current;
+    return this.rows.filter((r) => r.symbol !== current);
+  }
+
   /**
-   * The rows on show: of the kind and exchange picked, and comparing, not the
-   * chart's own symbol. A symbol given that says nothing of its kind or
-   * exchange stays: it may be of either.
+   * The rows on show: of the kind and exchange picked. A symbol given that
+   * says nothing of its kind or exchange stays: it may be of either.
    */
-  private visibleRows(): Row[] {
-    const comparing = this.mode?.kind === 'compare';
-    const current = this.mode?.start.current;
+  private visibleRows(listable: readonly Row[]): Row[] {
     const filters = this.filters;
-    return this.rows.filter((r) => (!comparing || r.symbol !== current) && (!filters || filters.passes(r.info, this.rowsGiven)));
+    return filters ? listable.filter((r) => filters.passes(r.info, this.rowsGiven)) : [...listable];
   }
 
   // --- Drawing ---

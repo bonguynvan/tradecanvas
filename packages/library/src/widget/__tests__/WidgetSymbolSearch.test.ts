@@ -847,6 +847,19 @@ describe('WidgetSymbolSearch comparing', () => {
     expect([...added.children].map((c) => c.className)).toEqual(['tcw-ss-swatch', 'tcw-ss-symbol', 'tcw-ss-way-cell', 'tcw-ss-remove']);
   });
 
+  it('offers no kind or exchange that only the chart’s own symbol, which it never lists, is of', () => {
+    search.openCompare({
+      symbols: [
+        { symbol: 'VNINDEX', type: 'index', exchange: 'HOSE' },
+        { symbol: 'VCB', type: 'stock', exchange: 'HOSE' },
+        { symbol: 'FPT', type: 'stock', exchange: 'HNX' },
+      ],
+      current: 'VNINDEX', ways, way: 'percent', compared: [], onAdd: () => {}, onRemove: () => {},
+    });
+    expect(rowText()).toEqual(['VCB', 'FPT']);
+    expect(chips().map((c) => c.textContent)).toEqual(['All', 'stock']);
+  });
+
   it('says there is nothing compared yet when it has no symbols to offer', () => {
     search.openCompare({ symbols: [], current: 'BTCUSDT', ways, way: 'percent', compared: [], onAdd: () => {}, onRemove: () => {} });
     expect(empty()).toMatch(/Nothing compared yet/);
