@@ -1066,21 +1066,37 @@
   opacity: 0.45;
 }
 
-/* Show / settings / remove: on hover or keyboard focus (always on touch). */
+/* Show / settings / remove: on hover or keyboard focus (always on touch). Out of sight, not out of the
+   page, so Tab reaches them in a row with nothing else to focus (a compare's) and a screen reader finds
+   them; a button focused shows them all. */
 .tcw-ind-legend-actions {
-  display: none;
+  display: inline-flex;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   gap: 1px;
   margin-left: -2px;
 }
 
 .tcw-ind-legend-row:hover .tcw-ind-legend-actions,
 .tcw-ind-legend-row:focus-within .tcw-ind-legend-actions {
-  display: inline-flex;
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 
 @media (hover: none) {
   .tcw-ind-legend-actions {
-    display: inline-flex;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
 
   /* Finger-sized targets. */
