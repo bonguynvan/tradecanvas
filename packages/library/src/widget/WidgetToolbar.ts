@@ -771,6 +771,8 @@ export class WidgetToolbar {
     };
     btn.replaceChildren(...(venue ? [part('tcw-toolbar-venue', venue)] : []), part('tcw-toolbar-ticker', ticker));
     btn.classList.toggle('tcw-toolbar-symbol--venue', venue !== '');
+    // A flex box reads its two parts apart, and a full bar hides the venue: the label keeps it whole.
+    btn.setAttribute('aria-label', symbol);
   }
 
   update(state: WidgetState): void {

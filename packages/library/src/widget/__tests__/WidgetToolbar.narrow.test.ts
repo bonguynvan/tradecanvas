@@ -286,11 +286,15 @@ describe('WidgetToolbar — fitting its width', () => {
       expect(symbolBtn().querySelector('.tcw-toolbar-venue')?.textContent).toBe('HYPERLIQUID:xyz:');
       expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('GOLD');
       expect(symbolBtn().textContent).toBe('HYPERLIQUID:xyz:GOLD');
+      // Its two parts sit in a flex box, which reads them apart, and a squeezed bar hides the venue:
+      // the label keeps the whole symbol for a screen reader.
+      expect(symbolBtn().getAttribute('aria-label')).toBe('HYPERLIQUID:xyz:GOLD');
       expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(true);
       toolbar.update(state);
       expect(symbolBtn().querySelector('.tcw-toolbar-venue')).toBeNull();
       expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(false);
       expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('BTCUSDT');
+      expect(symbolBtn().getAttribute('aria-label')).toBe('BTCUSDT');
     });
 
     // On a 390 phone "HYPERLIQUID:xyz:GOLD" pushed "more" to 380-408, where a tap on it missed:
