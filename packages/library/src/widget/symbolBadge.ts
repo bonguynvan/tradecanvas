@@ -42,7 +42,8 @@ export function kindKey(type: unknown): string {
 export function kindSlot(type: unknown): number {
   const key = kindKey(type);
   if (!key) return 0;
-  return KNOWN_KINDS[key] ?? 1 + (hashWords(key) % KIND_SLOTS);
+  // Only the list's own words: a feed's "constructor" is a kind like any other, not the object's.
+  return Object.prototype.hasOwnProperty.call(KNOWN_KINDS, key) ? KNOWN_KINDS[key] : 1 + (hashWords(key) % KIND_SLOTS);
 }
 
 /** FNV-1a over the code points: short words spread well, and it is the same in every browser. */

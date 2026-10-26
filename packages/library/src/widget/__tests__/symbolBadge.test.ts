@@ -73,6 +73,16 @@ describe('kindSlot', () => {
     expect(kindKey(' Stock ')).toBe('stock');
     expect(kindKey(undefined)).toBe('');
   });
+
+  it('gives a kind named like a built-in of every object a colour from its words', () => {
+    for (const kind of ['constructor', 'Constructor', '__proto__', 'toString', 'hasownproperty']) {
+      const slot = kindSlot(kind);
+      expect(typeof slot, kind).toBe('number');
+      expect(slot, kind).toBeGreaterThanOrEqual(1);
+      expect(slot, kind).toBeLessThanOrEqual(5);
+    }
+    expect(createSymbolBadge('ABC', { symbol: 'ABC', type: 'constructor' }).dataset.kind).toMatch(/^[1-5]$/);
+  });
 });
 
 describe('symbolInitial', () => {
