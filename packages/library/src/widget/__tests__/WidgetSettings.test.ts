@@ -355,6 +355,19 @@ describe('the settings’ tabs', () => {
     expect(labels()).toEqual(expect.arrayContaining(['Volume profile', 'Market profile (TPO)', 'Session shading']));
   });
 
+  it('leave out the legend and the volume where the chart has them switched off', () => {
+    make({ legend: false, volume: false });
+    settings!.open(DEFAULT_SETTINGS, 'candlestick');
+    expect(section('Volume')).toBeNull();
+    expect(section('High and low lines')).not.toBeNull();
+    tab('statusLine');
+    expect(labels()).not.toContain('OHLC legend');
+    expect(labels()).not.toContain('Legend text');
+    expect(labels()).not.toContain('Legend labels');
+    // The panes' titles are drawn without the legend.
+    expect(labels()).toContain('Pane titles');
+  });
+
   it('open on the tab asked for (the scales, from the price axis’s menu)', () => {
     settings!.open(DEFAULT_SETTINGS, null, 'scales');
     const scales = document.querySelector<HTMLElement>('[role="tab"][data-tab="scales"]')!;

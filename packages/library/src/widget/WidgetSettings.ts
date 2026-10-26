@@ -2,7 +2,7 @@ import { CHART_STYLE_KEYS, type ChartType, type ChartTypeOptions, type LineStyle
 import type { ChartSettingsState, SettingsCallbacks, SettingsStylePatch } from './types.js';
 import { CHART_TYPES } from './widgetConfig.js';
 import {
-  APPEARANCE_SECTIONS, HIGH_LOW_SECTION, LAST_PRICE_SECTION, SCALE_ROWS, STATUS_LINE_ROWS, TRADING_SECTIONS, VOLUME_SECTION,
+  APPEARANCE_SECTIONS, HIGH_LOW_SECTION, LAST_PRICE_SECTION, LEGEND_ROWS, SCALE_ROWS, STATUS_LINE_ROWS, TRADING_SECTIONS, VOLUME_SECTION,
   seriesRows, type LookRow, type LookSection,
 } from './widgetSettingsLook.js';
 import { chartTypeLabel, numberLocaleOptions } from './widgetLocales.js';
@@ -66,8 +66,9 @@ export class WidgetSettings {
   private readonly uid = nextSettingsId++;
 
   /**
-   * `barCountdown` / `logScale` false leave out the controls for features the
-   * chart has switched off.
+   * `barCountdown` / `logScale` / `legend` / `volume` false leave out the
+   * controls for features the chart has switched off: there they would do
+   * nothing.
    */
   constructor(
     callbacks: SettingsCallbacks,
@@ -75,6 +76,8 @@ export class WidgetSettings {
     private readonly available: {
       barCountdown?: boolean;
       logScale?: boolean;
+      legend?: boolean;
+      volume?: boolean;
       /** The exchange's time zone to offer (null while unknown), or undefined when there is none to offer. */
       exchangeZone?: () => string | null | undefined;
       /** false: the chart doesn't trade, so the orders' colours aren't offered. */
@@ -340,15 +343,19 @@ export class WidgetSettings {
     // A section's own switch says "Show": its title names what it shows.
     const show = this.t('common.show');
     this.renderLookSection(LAST_PRICE_SECTION);
-    this.renderLookSection(VOLUME_SECTION, [toggleRow(show, s.volumeVisible, (v) => this.patch({ volumeVisible: v }))]);
+    if (this.available.volume !== false) {
+      this.renderLookSection(VOLUME_SECTION, [toggleRow(show, s.volumeVisible, (v) => this.patch({ volumeVisible: v }))]);
+    }
     this.renderLookSection(HIGH_LOW_SECTION, [toggleRow(show, s.highLowLines, (v) => this.patch({ highLowLines: v }))]);
   }
 
-  /** The legend over the chart: shown or not, its colours. */
+  /** The legend over the chart: shown or not, its colours; the panes' titles. */
   private renderStatusLineTab(s: ChartSettingsState): void {
+    const legend = this.available.legend !== false;
+    const rows = legend ? STATUS_LINE_ROWS : STATUS_LINE_ROWS.filter((row) => !LEGEND_ROWS.includes(row));
     this.addSection(undefined, [
-      toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v })),
-      ...STATUS_LINE_ROWS.map((row) => this.lookRow(row)),
+      ...(legend ? [toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v }))] : []),
+      ...rows.map((row) => this.lookRow(row)),
     ]);
   }
 

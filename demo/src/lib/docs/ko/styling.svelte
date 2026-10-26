@@ -331,8 +331,10 @@ chart.setLegend({
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
 })
 
-// The widget: start with it off (the user can still turn it on in Settings)
-new ChartWidget(host, { chartOptions: { features: { legend: false } } })`}</code></pre>
+// The widget: no legend, and no switch for it in its Settings
+new ChartWidget(host, { chartOptions: { features: { legend: false } } })
+// Off to start, for the user to turn on in Settings
+new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
 
 <h2 id="volume">가격 눈금과 거래량 띠</h2>
 <p>

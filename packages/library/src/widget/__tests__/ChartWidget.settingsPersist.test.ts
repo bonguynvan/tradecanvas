@@ -370,6 +370,16 @@ describe('ChartWidget persistSettings', () => {
     expect(widget.getSettings()).toMatchObject({ barCountdown: false, scaleMode: 'regular' });
   });
 
+  it('the settings dialog offers no legend or volume switch where the host switched the feature off', () => {
+    make({ chartOptions: { features: { legend: false, volume: false } } });
+    openSettings();
+    const labels = () => [...document.querySelectorAll('.tcw-set .tcw-settings-label')].map((l) => l.textContent);
+    expect(document.querySelector('.tcw-settings-section[aria-label="Volume"]')).toBeNull();
+    tab('statusLine');
+    expect(labels()).not.toContain('OHLC legend');
+    footer('cancel');
+  });
+
   it('a chart template turns on nothing the host’s features switched off', () => {
     localStorage.setItem('tcw:chart-templates', JSON.stringify([{
       name: 'Busy', style: {},

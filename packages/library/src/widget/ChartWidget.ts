@@ -881,6 +881,8 @@ export class ChartWidget {
     }, this.t, {
       barCountdown: features.barCountdown,
       logScale: features.logScale,
+      legend: features.legend,
+      volume: features.volume,
       trading: features.trading !== false,
       exchangeZone: () => this.exchangeChoice()?.zone,
     }, this.overlayHost);

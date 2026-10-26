@@ -700,7 +700,8 @@ stop()`}</code></pre>
     gửi đã tắt không được gửi đi như một thay đổi.</li>
   <li><strong>Tính năng đã tắt</strong>: khi <code>features</code> của bạn tắt chú giải,
     khối lượng, thời gian còn lại của nến hay thang log, không gì được giữ, chia sẻ, mở,
-    đặt hay áp dụng từ một mẫu biểu đồ có thể bật chúng lên.</li>
+    đặt hay áp dụng từ một mẫu biểu đồ có thể bật chúng lên, và hộp thoại cài đặt không có
+    công tắc và màu của chú giải hay của khối lượng.</li>
   <li><strong>Bố cục theo từng mã</strong> (<code>persistLayouts</code>) và
     <code>chart.saveState()</code> giữ cài đặt riêng của từng loại biểu đồ, vốn là một phần
     trạng thái của biểu đồ, và không giữ cài đặt nào khác trong số này.</li>

@@ -714,7 +714,8 @@ stop()`}</code></pre>
   <li><strong>Funciones apagadas</strong>: donde tus <code>features</code> apagan la
     leyenda, el volumen, el tiempo que le queda a la barra o la escala logarítmica, nada
     guardado, compartido, abierto, fijado o aplicado desde una plantilla del gráfico los
-    enciende.</li>
+    enciende, y el diálogo de configuración no ofrece el interruptor ni los colores de la
+    leyenda o del volumen.</li>
   <li><strong>Los diseños por símbolo</strong> (<code>persistLayouts</code>) y
     <code>chart.saveState()</code> guardan solo los ajustes propios de cada tipo de
     gráfico, que forman parte del estado del gráfico, y nada más de ella.</li>
