@@ -6,7 +6,7 @@ import { markPart } from './widgetFeatures.js';
 import { cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, readSymbolResults } from './symbolCatalog.js';
 import { createSymbolBadge } from './symbolBadge.js';
 import { createSymbolCell } from './symbolCell.js';
-import { scoreSymbol } from './symbolMatch.js';
+import { foldMarks, scoreSymbol, symbolQuery } from './symbolMatch.js';
 import { SymbolSearchFilters } from './symbolSearchFilters.js';
 
 export interface SymbolSearchCallbacks {
@@ -128,6 +128,8 @@ export class WidgetSymbolSearch {
   private readonly heard = new Map<string, SymbolInfo>();
   /** What came with the symbols it opened with, over what the chart knows of its own. */
   private givenInfo = new Map<string, SymbolInfo>();
+  /** Each name without its marks, made once while open: a name is matched on every keystroke. */
+  private foldedNames = new Map<string, string>();
   private returnFocus: HTMLElement | null = null;
   private readonly uid = nextSearchId++;
 
@@ -217,6 +219,7 @@ export class WidgetSymbolSearch {
     const catalog = readSymbolCatalog(mode.start.symbols);
     this.given = catalog.names;
     this.givenInfo = catalog.info;
+    this.foldedNames = new Map();
     const current = mode.start.current;
     const own = mode.kind === 'search' ? mode.start.currentInfo : null;
     if (own && typeof own === 'object' && current) {
@@ -387,16 +390,27 @@ export class WidgetSymbolSearch {
       this.listGiven();
       return;
     }
-    const q = typed.toUpperCase();
+    const query = symbolQuery(typed);
     this.rows = this.given
       .map((symbol) => {
         const info = this.infoOf(symbol);
-        return { symbol, score: scoreSymbol(symbol, info?.description, q), info };
+        return { symbol, score: scoreSymbol(symbol, this.foldedName(info?.description), query), info };
       })
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score);
     this.rowsGiven = true;
     this.afterResults(false);
+  }
+
+  /** A name without its marks, as matching takes it; made once for each name while open. */
+  private foldedName(name: string | undefined): string {
+    if (!name) return '';
+    let folded = this.foldedNames.get(name);
+    if (folded === undefined) {
+      folded = foldMarks(name);
+      this.foldedNames.set(name, folded);
+    }
+    return folded;
   }
 
   private scheduleSearch(query: string): void {

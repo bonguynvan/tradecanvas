@@ -5,14 +5,25 @@ const NAME_START_SCORE = 180;
 const NAME_HOLDS_SCORE = 150;
 const NAME_DEPTH_PENALTY_MAX = 50;
 
+/** What was typed, as it is matched: in upper case for a ticker, without its marks for a name. */
+export interface SymbolQuery {
+  readonly upper: string;
+  readonly folded: string;
+}
+
+/** What was typed, made ready once for every symbol it is matched with. */
+export function symbolQuery(typed: string): SymbolQuery {
+  return { upper: typed.toUpperCase(), folded: foldMarks(typed) };
+}
+
 /**
- * How well a given symbol matches what was typed (`query`, upper case), by
- * its ticker or its name, when there is no feed to search: a ticker that
- * starts with it ranks first, then one that holds it, then a name, then the
- * ticker's letters in order. 0 for no match.
+ * How well a given symbol matches what was typed, by its ticker or its name
+ * (`name`, as `foldMarks` gives it), when there is no feed to search: a
+ * ticker that starts with it ranks first, then one that holds it, then a
+ * name, then the ticker's letters in order. 0 for no match.
  */
-export function scoreSymbol(symbol: string, description: string | undefined, query: string): number {
-  return Math.max(scoreMatch(symbol.toUpperCase(), query), nameScore(description, query));
+export function scoreSymbol(symbol: string, name: string, query: SymbolQuery): number {
+  return Math.max(scoreMatch(symbol.toUpperCase(), query.upper), nameScore(name, query.folded));
 }
 
 /**
@@ -42,12 +53,9 @@ export function scoreMatch(symbol: string, query: string): number {
   return 100 - Math.min(99, gapPenalty);
 }
 
-/** A name that holds what was typed, the nearer its start the better; marks and all, or without them. */
-function nameScore(description: string | undefined, query: string): number {
-  if (!description) return 0;
-  const name = foldMarks(description);
-  const typed = foldMarks(query);
-  if (!typed) return 0;
+/** A name that holds what was typed, the nearer its start the better; both without their marks. */
+function nameScore(name: string, typed: string): number {
+  if (!name || !typed) return 0;
   if (name.startsWith(typed)) return NAME_START_SCORE;
   const at = name.indexOf(typed);
   return at < 0 ? 0 : NAME_HOLDS_SCORE - Math.min(NAME_DEPTH_PENALTY_MAX, at);
@@ -58,7 +66,7 @@ function nameScore(description: string | undefined, query: string): number {
  * is often typed without them ("ngan hang"). Đ has no mark to take off; it
  * reads as D.
  */
-function foldMarks(text: string): string {
+export function foldMarks(text: string): string {
   return text.normalize('NFD').replace(/\p{M}+/gu, '').replace(/[đĐ]/g, 'D').toUpperCase();
 }
 

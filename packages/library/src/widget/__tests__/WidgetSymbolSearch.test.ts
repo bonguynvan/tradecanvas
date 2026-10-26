@@ -680,6 +680,23 @@ describe('WidgetSymbolSearch symbols given with their info', () => {
     expect(rowText()).toEqual(['VCB']);
   });
 
+  it('takes the marks off each name once while open, and off what was typed once a keystroke', () => {
+    search.open({
+      symbols: [{ symbol: 'VNM', description: 'Vinamilk' }, { symbol: 'VIC', description: 'Vingroup' }, { symbol: 'VCB', description: 'Ngân hàng' }],
+      current: '',
+    });
+    const normalize = vi.spyOn(String.prototype, 'normalize');
+    const folds = () => normalize.mock.calls.filter(([form]) => form === 'NFD').length;
+    type('v');
+    expect(folds()).toBe(4);
+    type('vi');
+    expect(folds()).toBe(5);
+    type('ngan');
+    expect(folds()).toBe(6);
+    expect(rowText()).toEqual(['VCB']);
+    normalize.mockRestore();
+  });
+
   it('names the chart’s symbol from what the chart knows, where nothing else does', () => {
     search.open({ symbols: ['VCB', 'FPT'], current: 'VCB', currentInfo: { symbol: 'VCB', description: 'Vietcombank', type: 'stock' } });
     expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Vietcombank');
