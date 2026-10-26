@@ -16,15 +16,14 @@ import {
   RenkoRenderer,
   StepLineRenderer,
   VolumeCandleRenderer,
-  pointAndFigureBoxSize,
+  pointAndFigureColumns,
   toHeikinAshi,
   toKagi,
   toLineBreak,
-  toPointAndFigure,
   toRangeBars,
   toRenko,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface } from '@tradecanvas/core';
+import type { ChartRendererInterface, PointAndFigureColumns } from '@tradecanvas/core';
 import type { ChartTypePlugin } from '../plugins/contracts.js';
 
 /**
@@ -103,7 +102,7 @@ export function transformDisplayData(
     case 'kagi':
       return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent');
     case 'pointAndFigure':
-      return toPointAndFigure(raw, pointAndFigureBox(raw, options), options.pointAndFigure?.reversal ?? 3);
+      return pointAndFigureDisplay(raw, options).columns;
     case 'rangeBars':
       // The bar still forming is drawn too, so the chart ends at the last price and is never blank.
       return toRangeBars(raw, { rangeSize: rangeBarsSize(raw, options, step), includeForming: true });
@@ -137,14 +136,14 @@ export function isReshapedChartType(type: ChartType): boolean {
 }
 
 /**
- * The box of a point & figure chart: the one set, or 1% of the average
- * close, raised as `toPointAndFigure` raises it when the columns would pass
+ * A point & figure chart's columns and the box they were built on: the box
+ * set, or 1% of the average close, raised when the columns would pass
  * 100,000, so the renderer draws the boxes the columns were built with.
  */
-export function pointAndFigureBox(raw: DataSeries, options: ChartTypeOptions = {}): number {
+export function pointAndFigureDisplay(raw: DataSeries, options: ChartTypeOptions = {}): PointAndFigureColumns {
   const box = options.pointAndFigure?.boxSize;
   const asked = typeof box === 'number' ? box : averageClose(raw) * 0.01;
-  return pointAndFigureBoxSize(raw, asked, options.pointAndFigure?.reversal ?? 3);
+  return pointAndFigureColumns(raw, asked, options.pointAndFigure?.reversal ?? 3);
 }
 
 function averageClose(raw: DataSeries): number {

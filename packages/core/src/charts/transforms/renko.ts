@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barLimit, cappedSize } from './reshapeCap.js';
+import { barLimit, reshape, type LayBar } from './reshapeCap.js';
 
 export interface RenkoConfig {
   /**
@@ -15,9 +15,6 @@ export interface RenkoConfig {
   atrPeriod?: number;
 }
 
-/** A brick from `open` to `close`, with its share of the volume. */
-type LayBrick = (open: number, close: number, volume: number) => void;
-
 /**
  * Transform OHLC data to Renko bricks.
  * Each brick represents a fixed price movement.
@@ -32,15 +29,7 @@ type LayBrick = (open: number, close: number, volume: number) => void;
  */
 export function toRenko(data: DataSeries, config: RenkoConfig): DataSeries {
   if (data.length === 0) return [];
-  const size = cappedSize(askedBrickSize(data, config), (box) => walkBricks(data, box));
-  if (!Number.isFinite(size)) return [];
-
-  const bricks: OHLCBar[] = [];
-  const start = data[0].time;
-  walkBricks(data, size, (open, close, volume) => {
-    bricks.push({ time: start + bricks.length, open, high: Math.max(open, close), low: Math.min(open, close), close, volume });
-  });
-  return bricks;
+  return reshape(askedBrickSize(data, config), (box, capped, lay) => walkBricks(data, box, capped, lay)).bars;
 }
 
 /** The box asked for: the one set, or the ATR's; for a flat market, a hundredth of the price. */
@@ -51,14 +40,15 @@ function askedBrickSize(data: DataSeries, config: RenkoConfig): number {
 
 /**
  * Walks the bricks `data` makes at `size`, handing each to `lay` when given.
- * False, before laying the bar's bricks, once the bars before the last make
- * more than MAX_RESHAPED_BARS or the last that many on its own. A close that
- * is no finite number is passed over: an infinite one would lay bricks
- * without end.
+ * `capped`, false, before laying the bar's bricks, once the bars before the
+ * last make more than MAX_RESHAPED_BARS or the last that many on its own. A
+ * close that is no finite number is passed over: an infinite one would lay
+ * bricks without end.
  */
-function walkBricks(data: DataSeries, size: number, lay?: LayBrick): boolean {
+function walkBricks(data: DataSeries, size: number, capped: boolean, lay?: LayBar): boolean {
   const first = data.findIndex((bar) => Number.isFinite(bar.close));
   if (first < 0) return true;
+  const start = data[0].time;
   let level = Math.round(data[first].close / size) * size;
   let count = 0;
   for (let i = first + 1; i < data.length; i++) {
@@ -66,16 +56,21 @@ function walkBricks(data: DataSeries, size: number, lay?: LayBrick): boolean {
     const move = close - level;
     const bricks = Math.floor(Math.abs(move) / size);
     if (!Number.isFinite(close) || !(bricks >= 1)) continue;
-    if (count + bricks > barLimit(i, data.length, count)) return false;
+    if (capped && count + bricks > barLimit(i, data.length, count)) return false;
     const direction = move > 0 ? 1 : -1;
     for (let j = 0; j < bricks; j++) {
       const open = level;
       level += direction * size;
-      lay?.(open, level, volume / bricks);
+      lay?.(brick(start + count + j, open, level, volume / bricks));
     }
     count += bricks;
   }
   return true;
+}
+
+/** A brick from `open` to `close`, with its share of the volume. */
+function brick(time: number, open: number, close: number, volume: number): OHLCBar {
+  return { time, open, high: Math.max(open, close), low: Math.min(open, close), close, volume };
 }
 
 /**

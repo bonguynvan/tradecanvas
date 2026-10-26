@@ -120,7 +120,7 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox, rangeBarsStep } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureDisplay, rangeBarsStep } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar } from './SeriesStore.js';
@@ -5539,14 +5539,24 @@ export class Chart {
     const step = this.options.chartType === 'rangeBars' ? rangeBarsStep(raw, (price) => this.stepAt(price)) : undefined;
     if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
     if (raw.length === 0) return raw;
-    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions, step);
-    // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).
-    if (this.chartRenderer instanceof PointAndFigureRenderer && !this.pluginManager.getChartType(this.options.chartType)) {
-      this.chartRenderer.setBoxSize(pointAndFigureBox(raw, this.chartTypeOptions));
-    }
+    const result = this.displaySeries(raw, step);
     this.displayDataCache = result;
     this.displayDataStep = step;
     return result;
+  }
+
+  /**
+   * The series the chart type draws. The built-in point & figure's columns
+   * come with the box they were built on, which its renderer draws them at,
+   * in the one walk (a plugin's chart type keeps its own).
+   */
+  private displaySeries(raw: DataSeries, step: number | undefined): DataSeries {
+    const type = this.options.chartType;
+    const lookup = (t: string) => this.pluginManager.getChartType(t);
+    if (type !== 'pointAndFigure' || lookup(type)) return resolveDisplayData(type, raw, lookup, this.chartTypeOptions, step);
+    const { columns, boxSize } = pointAndFigureDisplay(raw, this.chartTypeOptions);
+    if (this.chartRenderer instanceof PointAndFigureRenderer) this.chartRenderer.setBoxSize(boxSize);
+    return columns;
   }
 
   /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */

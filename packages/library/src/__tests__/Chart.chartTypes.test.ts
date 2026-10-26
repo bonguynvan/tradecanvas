@@ -223,4 +223,25 @@ describe('point & figure boxes', () => {
     expect(setBox.mock.calls.at(-1)?.[0]).toBe(0.5);
     expect(probe().getDisplayData().length).toBeLessThanOrEqual(100_001);
   });
+
+  it('builds the columns and their box in one walk of a long series, not one for each', () => {
+    const closes = [100, 101, 100, 104];
+    let reads = 0;
+    const zigzag = Array.from({ length: 150_000 }, (_, i) => {
+      const open = closes[(i + 3) % 4];
+      const close = closes[i % 4];
+      const bar = { time: T0 + i * HOUR, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 1 };
+      // One bar's close counts its reads: how many times the series is walked.
+      if (i === 50_000) Object.defineProperty(bar, 'close', { get: () => { reads++; return close; }, enumerable: true });
+      return bar;
+    });
+    const setBox = vi.spyOn(PointAndFigureRenderer.prototype, 'setBoxSize');
+    chart.setData(zigzag);
+    chart.setChartType('pointAndFigure');
+    reads = 0;
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 1 } });
+    probe().getDisplayData();
+    expect(setBox.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(reads).toBe(1);
+  });
 });

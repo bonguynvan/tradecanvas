@@ -1,50 +1,59 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barLimit, cappedSize, underCapAtAnySize } from './reshapeCap.js';
+import { barLimit, reshapeOneABar, type LayBar } from './reshapeCap.js';
+
+/** A point & figure chart's columns, and the box they were built on, to draw them that size. */
+export interface PointAndFigureColumns {
+  columns: DataSeries;
+  boxSize: number;
+}
 
 /**
  * Point & Figure chart.
  * X columns for rising prices, O columns for falling prices.
  * Reversal requires N boxes (default: 3) in the opposite direction.
  *
- * The columns are built on `pointAndFigureBoxSize(data, boxSize,
- * reversalBoxes)`: the box asked for, or on a series long enough for a tiny
- * box to make more than 100,000 columns from the bars before the last, the
- * first of 2, 5, 10, 20… times it that makes no more. A renderer draws the
- * boxes that size.
+ * The columns of `pointAndFigureColumns`, without their box.
  */
 export function toPointAndFigure(data: DataSeries, boxSize: number, reversalBoxes = 3): DataSeries {
-  if (data.length === 0 || !(boxSize > 0)) return [];
-  const columns: OHLCBar[] = [];
-  walkColumns(data, pointAndFigureBoxSize(data, boxSize, reversalBoxes), reversalBoxes, (column) => columns.push(column));
-  return columns;
+  return pointAndFigureColumns(data, boxSize, reversalBoxes).columns;
 }
 
 /**
- * The box `toPointAndFigure` builds its columns on: `boxSize`, or when the
- * bars before the last would make more than 100,000 columns with it (a
- * source bar makes one at most, so only a longer series can), the first of
- * 2, 5, 10, 20… times it that makes no more.
+ * The columns of a point & figure chart, and the box they were built on:
+ * `boxSize`, or on a series long enough for a tiny box to make more than
+ * 100,000 columns from the bars before the last (a source bar makes one at
+ * most), the first of 2, 5, 10, 20… times it that makes no more. A renderer
+ * draws the boxes that size. Where no box would (a reversal of no boxes),
+ * every column is built on `boxSize`.
  */
-export function pointAndFigureBoxSize(data: DataSeries, boxSize: number, reversalBoxes = 3): number {
-  if (data.length === 0 || underCapAtAnySize(data.length)) return boxSize;
-  return cappedSize(boxSize, (box) => walkColumns(data, box, reversalBoxes));
+export function pointAndFigureColumns(data: DataSeries, boxSize: number, reversalBoxes = 3): PointAndFigureColumns {
+  if (data.length === 0 || !(boxSize > 0)) return { columns: [], boxSize };
+  const { bars, size } = reshapeOneABar(boxSize, (box, capped, lay) => walkColumns(data, box, reversalBoxes, capped, lay));
+  return { columns: bars, boxSize: size };
 }
 
 /**
  * Walks the columns `data` makes at `boxSize`, handing each to `lay` when
- * given, the column still forming last. False, before the column, once the
- * bars before the last would make more than MAX_RESHAPED_BARS.
+ * given, the column still forming last. `capped`, false, before the column,
+ * once the bars before the last would make more than MAX_RESHAPED_BARS.
+ * False, capped or not, at a box so small that a price over it passes the
+ * largest number (1e-310 for 60,000): no box can place that price, and a
+ * larger box is tried, where the columns would have stood at Infinity.
  */
-function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, lay?: (column: OHLCBar) => void): boolean {
+function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, capped: boolean, lay?: LayBar): boolean {
   let direction = 1; // 1 = X (up), -1 = O (down)
   let idx = 0;
-  const startPrice = Math.round(data[0].close / boxSize) * boxSize;
+  const first = data[0].close;
+  const startPrice = Math.round(first / boxSize) * boxSize;
+  if (pastLargest(first, startPrice)) return false;
   let colHigh = startPrice;
   let colLow = startPrice;
   const reversal = boxSize * reversalBoxes;
 
   for (let i = 1; i < data.length; i++) {
-    const roundedPrice = Math.round(data[i].close / boxSize) * boxSize;
+    const close = data[i].close;
+    const roundedPrice = Math.round(close / boxSize) * boxSize;
+    if (pastLargest(close, roundedPrice)) return false;
     // A new box the column's way extends it; only a price that doesn't can reverse it.
     let reverses = false;
     if (direction === 1) {
@@ -53,7 +62,7 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, l
     } else if (roundedPrice < colLow) colLow = roundedPrice;
     else reverses = roundedPrice - colLow >= reversal;
     if (!reverses) continue;
-    if (idx + 1 > barLimit(i, data.length, idx)) return false;
+    if (capped && idx + 1 > barLimit(i, data.length, idx)) return false;
     // Close the column, and start one the other way a box from its end.
     lay?.(column(idx, direction === 1, colLow, colHigh, data[i].volume));
     idx++;
@@ -70,6 +79,11 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, l
   // The column still forming
   lay?.(column(idx, direction === 1, colLow, colHigh, 0));
   return true;
+}
+
+/** Whether a finite `close` rounded to boxes came out no finite price: the box is too small to count it in. */
+function pastLargest(close: number, rounded: number): boolean {
+  return Number.isFinite(close) && !Number.isFinite(rounded);
 }
 
 /** A column from `low` to `high`: an X column (`up`) closes at its high, an O column at its low. */

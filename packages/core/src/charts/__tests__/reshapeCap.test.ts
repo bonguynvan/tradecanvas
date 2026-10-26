@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import type { DataSeries, OHLCBar } from '@tradecanvas/commons';
 import { toRenko } from '../transforms/renko.js';
 import { toKagi } from '../transforms/kagi.js';
-import { toPointAndFigure, pointAndFigureBoxSize } from '../transforms/pointAndFigure.js';
+import { toPointAndFigure, pointAndFigureColumns } from '../transforms/pointAndFigure.js';
 import { toLineBreak } from '../transforms/lineBreak.js';
 import { toRangeBars } from '../transforms/rangeBars.js';
-import { MAX_RESHAPED_BARS } from '../transforms/reshapeCap.js';
+import { MAX_RESHAPED_BARS, reshape, reshapeOneABar, sizeAt, type ReshapeWalk } from '../transforms/reshapeCap.js';
 
 /** What a test gives a transform at most: a stalled one fails it, where it once filled the tab's memory. */
 const FAST_MS = 1_000;
@@ -32,6 +32,26 @@ function nearSixtyThousand(): DataSeries {
 function zigzag(length: number): DataSeries {
   const closes = [100, 101, 100, 104];
   return Array.from({ length }, (_, i) => bar(i, closes[(i + 3) % 4], closes[i % 4]));
+}
+
+/** `data` with bar `at`'s close read through a count: how many times a transform walked the series. */
+function countingReads(data: DataSeries, at: number): { data: DataSeries; reads: () => number } {
+  let reads = 0;
+  const watched = { ...data[at] };
+  Object.defineProperty(watched, 'close', { get: () => { reads++; return data[at].close; } });
+  return { data: data.map((b, i) => (i === at ? watched : b)), reads: () => reads };
+}
+
+/** 150,000 bars of a seeded walk from `start`, a step of up to half `move` either way. */
+function longWalk(start: number, move: number): DataSeries {
+  let seed = 11;
+  let price = start;
+  return Array.from({ length: 150_000 }, (_, i) => {
+    seed = (seed * 16_807) % 2_147_483_647;
+    const open = price;
+    price += (seed / 2_147_483_647 - 0.5) * move;
+    return bar(i, open, price);
+  });
 }
 
 function timed<T>(make: () => T): { out: T; ms: number } {
@@ -110,6 +130,23 @@ describe('Renko keeps to the cap', () => {
     expect(toRenko(data, { brickSize: 2 }).map((b) => b.close)).toEqual([102, 104]);
   });
 
+  it('lays the bricks in one walk when the box keeps to the cap', () => {
+    const { data, reads } = countingReads(longWalk(60_000, 120), 50_000);
+    expect(toRenko(data, { brickSize: 100 }).length).toBeGreaterThan(0);
+    expect(reads()).toBe(1);
+  });
+
+  it('raises a box near the smallest number too, to the first 1-2-5 step that makes no more', () => {
+    const data = nearSixtyThousand();
+    for (const tiny of [1e-310, 5e-324]) {
+      const bricks = toRenko(data, { brickSize: tiny });
+      expect(bricks.length, String(tiny)).toBeGreaterThan(0);
+      expect(bricks.length, String(tiny)).toBeLessThanOrEqual(MAX_RESHAPED_BARS);
+      const mantissa = Number((bricks[0].high - bricks[0].low).toExponential(6).split('e')[0]);
+      expect([1, 2, 5, 2.5, 10, 25], String(tiny)).toContain(mantissa);
+    }
+  });
+
   it('makes no brick at a box no number can raise to the prices', () => {
     expect(toRenko(nearSixtyThousand(), { brickSize: Infinity })).toEqual([]);
   });
@@ -131,6 +168,24 @@ describe('Kagi keeps to the cap', () => {
     expect(lines).toEqual(toKagi(data, 1));
   });
 
+  it('makes the lines in one walk of a long series when the reversal keeps to the cap', () => {
+    const { data, reads } = countingReads(zigzag(150_000), 50_000);
+    expect(toKagi(data, 2, 'price')).toHaveLength(74_999);
+    expect(reads()).toBe(1);
+  });
+
+  it('lays every line, in a few walks, when no reversal keeps to the cap: prices all at 0', () => {
+    const zeros = Array.from({ length: 150_000 }, (_, i) => bar(i, 0, 0));
+    const { data, reads } = countingReads(zeros, 50_000);
+    expect(toKagi(data, 4)).toHaveLength(150_000);
+    expect(reads()).toBeLessThanOrEqual(4);
+  });
+
+  it('ends at the last close on prices below 0, where a reversal in percent of the start is no move', () => {
+    const data = longWalk(-50, 0.05);
+    expect(toKagi(data, 4).at(-1)?.close).toBe(data.at(-1)?.close);
+  });
+
   it('keeps any reversal on a series too short to pass the cap: a line a bar at most', () => {
     const data = zigzag(1_000);
     expect(toKagi(data, TINY, 'price').length).toBeLessThanOrEqual(data.length);
@@ -142,15 +197,83 @@ describe('point & figure keeps to the cap', () => {
   it('raises a box with which the bars before the last would make more than 100,000 columns', () => {
     const data = zigzag(150_000);
     // Three boxes of 0.25 reverse on every move, about 150,000 columns; three of 0.5 only on the 4s.
-    expect(pointAndFigureBoxSize(data, 0.25)).toBe(0.5);
-    const columns = toPointAndFigure(data, 0.25);
+    const { columns, boxSize } = pointAndFigureColumns(data, 0.25);
+    expect(boxSize).toBe(0.5);
     expect(columns.length).toBeLessThanOrEqual(MAX_RESHAPED_BARS + 1);
     expect(columns).toEqual(toPointAndFigure(data, 0.5));
+    expect(toPointAndFigure(data, 0.25)).toEqual(columns);
   });
 
   it('keeps the box asked for when the columns stay under the cap', () => {
-    expect(pointAndFigureBoxSize(zigzag(1_000), 0.25)).toBe(0.25);
-    expect(pointAndFigureBoxSize(zigzag(150_000), 1)).toBe(1);
+    expect(pointAndFigureColumns(zigzag(1_000), 0.25).boxSize).toBe(0.25);
+    expect(pointAndFigureColumns(zigzag(150_000), 1).boxSize).toBe(1);
+  });
+
+  it('builds the columns in one walk of a long series when the box keeps to the cap', () => {
+    const { data, reads } = countingReads(zigzag(150_000), 50_000);
+    expect(pointAndFigureColumns(data, 1).columns.length).toBe(74_999);
+    expect(reads()).toBe(1);
+  });
+
+  it('raises a box so small that a price over it passes the largest number, on a short series too', () => {
+    const data = nearSixtyThousand();
+    for (const tiny of [1e-310, 5e-324]) {
+      const { columns, boxSize } = pointAndFigureColumns(data, tiny);
+      expect(columns.length, String(tiny)).toBeGreaterThan(1);
+      expect(columns.every((c) => Number.isFinite(c.high) && Number.isFinite(c.low)), String(tiny)).toBe(true);
+      expect(Number.isFinite(60_000 / boxSize), String(tiny)).toBe(true);
+      expect(Number.isFinite(60_000 / (boxSize / 10)), String(tiny)).toBe(false);
+    }
+  });
+
+  it('lays every column at the box asked when no box keeps to the cap: a reversal of no boxes', () => {
+    // With no boxes to reverse, every move that doesn't extend a column reverses it, at any box.
+    const { columns, boxSize } = pointAndFigureColumns(zigzag(150_000), 1, 0);
+    expect(boxSize).toBe(1);
+    expect(columns).toHaveLength(149_999);
+  });
+});
+
+describe('the size a transform is raised to', () => {
+  /** A walk that keeps to the cap from `enough` on, counting its walks, laying one bar a walk. */
+  function fakeWalk(enough: number): { walk: ReshapeWalk; walks: () => number } {
+    let walks = 0;
+    const walk: ReshapeWalk = (size, capped, lay) => {
+      walks++;
+      if (capped && !(size >= enough)) return false;
+      lay?.(bar(0, size, size));
+      return true;
+    };
+    return { walk, walks: () => walks };
+  }
+
+  it('gives each 1-2-5 step of a size near the smallest number, the multiple passing the largest number', () => {
+    expect(sizeAt(1e-310, 3 * 310)).toBe(1);
+    expect(sizeAt(5e-324, 1 + 3 * 323)).toBe(1);
+    expect(sizeAt(2, 3 * 308)).toBe(Infinity);
+  });
+
+  it('finds the first step that keeps to the cap in a few walks, not one a step', () => {
+    const { walk, walks } = fakeWalk(1);
+    const { bars, size } = reshape(5e-324, walk);
+    expect(size).toBe(1);
+    expect(bars).toHaveLength(1);
+    expect(walks()).toBeLessThan(30);
+    expect(reshape(0.3, fakeWalk(1).walk).size).toBe(1.5);
+    expect(reshape(0.3, fakeWalk(0.6).walk).size).toBe(0.6);
+  });
+
+  it('gives up at once when even the largest size makes too many: Renko makes none, Kagi and point & figure every one', () => {
+    const none = fakeWalk(Infinity);
+    expect(reshape(4, none.walk)).toEqual({ bars: [], size: Infinity });
+    expect(none.walks()).toBeLessThanOrEqual(3);
+    const each = fakeWalk(Infinity);
+    expect(reshapeOneABar(4, each.walk)).toEqual({ bars: [bar(0, 4, 4)], size: 4 });
+    expect(each.walks()).toBeLessThanOrEqual(4);
+  });
+
+  it('lays a size that is no number above 0 as it is, in Kagi and point & figure: nothing raises it', () => {
+    expect(reshapeOneABar(0, fakeWalk(1).walk)).toEqual({ bars: [bar(0, 0, 0)], size: 0 });
   });
 });
 
