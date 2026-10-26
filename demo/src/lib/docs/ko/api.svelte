@@ -229,10 +229,32 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  변동률 비교선은 화면의 첫 봉에서 주 종목의 종가, 즉 퍼센트 눈금이 0%로 읽는 가격에서 시작하며, 다른 종목 자신의
+  화면상 첫 봉부터 셉니다. 봉이 더 늦게 시작하는 종목도 0%에서 시작합니다. 가격 눈금을 퍼센트로 두면
+  (<code>chart.setScaleMode('percentage')</code>) 각 선은 화면의 첫 봉 이후 자신의 변동률을 그대로 나타내며, 차트를
+  이동하면 함께 바뀝니다. 선의 라벨은 선의 끝에 있습니다. <code>chart.getCompareValues(barIndex?)</code>는 직접 만드는
+  범례를 위해 어떤 봉(기본값은 마지막 봉)에서 각 선의 값을 돌려줍니다: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>. <code>close</code>는 그 봉 또는 그 이전의
+  다른 종목 종가이고 <code>change</code>는 선이 나타내는 그대로의 변동률(%)입니다. 다른 종목의 마지막 봉을 지나면(봉을 한 번만
+  가져오고 차트는 계속 갱신되는 경우) 마지막 종가를 <code>stale: true</code>와 함께 돌려줍니다.
+  <code>chart.setCompareVisible(id, false)</code>는 선을 숨기고 자동 눈금에서 뺍니다.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   ChartWidget에서는 도구 모음의 비교(그리고 개체 트리의 +)가 비교 대화상자를 엽니다. 종목을 검색하고
   <strong>추가 방식</strong>에서 표시 방식(변동률, 별도 눈금, 별도 보조 차트, 스프레드, 비율, 가격 또는 수익률 상관관계)을
   고른 뒤 원하는 만큼 추가할 수 있습니다. 이미 비교 중인 종목은 맨 앞에 나열되며, 각각 표시 방식과 제거 버튼이
   붙습니다. 다음에 열 때는 마지막으로 쓴 방식이 선택되어 있습니다.
+</p>
+<p>
+  ChartWidget은 종목을 변동률로 비교하는 동안 가격 눈금을 퍼센트로 바꾸고, 마지막 비교를 제거하면 원래 눈금으로 되돌립니다.
+  로그, 퍼센트, 100 기준 눈금은 그대로 두며, 비교 중에 직접 고른 눈금(상태 표시줄의 % 또는 log, 차트 메뉴, 설정)은 마지막
+  비교를 제거한 뒤에도 유지됩니다. 이 퍼센트 눈금은 저장되지 않습니다. 레이아웃과 공유 링크에는 사용자의 눈금이 남습니다.
+  범례는 지표 위에 변동률로 비교 중인 각 종목을 가격, 커서 아래 봉(그 밖에는 마지막 봉)에서의 변동률, 숨기기 위한 눈 버튼,
+  제거 버튼과 함께 나열합니다. 그 봉은 차트만큼 깊이 가져오며, 차트가 과거 봉을 불러오면 다시 가져오므로 선이 차트와 같은
+  곳에서 시작합니다.
 </p>
 
 <h3>데이터 내보내기</h3>
@@ -774,6 +796,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>가격 알림</h3>

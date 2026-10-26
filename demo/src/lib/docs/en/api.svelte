@@ -236,10 +236,36 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  A percent line starts at the chart's own close on the first bar on screen, the price a percent
+  scale reads 0% at, from the other symbol's own first bar there; one whose bars begin later
+  starts at 0% too. With the price scale in percent (<code>chart.setScaleMode('percentage')</code>)
+  each line then reads its own change since the first bar on screen, which moves as you pan.
+  Its label is at its end. <code>chart.getCompareValues(barIndex?)</code> gives each line at a
+  bar (the last by default), for a legend of your own: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, where <code>close</code> is the
+  other symbol's close at or before the bar and <code>change</code> its change in percent, as
+  its line reads. Past the other symbol's last bar (bars you fetched once, the chart streaming
+  on) it gives its last close, with <code>stale: true</code>. <code>chart.setCompareVisible(id, false)</code>
+  hides a line and leaves it out of the auto scale.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   In ChartWidget, Compare on the toolbar (and the + in the object tree) opens the compare dialog: search for a
   symbol, pick how under <strong>Add as</strong> (percent change, own scale, own pane, spread, ratio, or the
   correlation of prices or of returns) and add as many as you like. What is compared already is listed first,
   each with its way and a button to take it off. The dialog opens next time on the way used last.
+</p>
+<p>
+  ChartWidget puts the price scale in percent while a symbol is compared in percent, and back to
+  the scale you had once the last one goes. A logarithmic, percentage or indexed-to-100 scale is
+  left as it is, and a scale you pick while comparing (the status bar's % or log, the chart's
+  menu, the settings) stays, also after the last compare goes. The percent scale is never saved:
+  a layout and a shared link keep your own. The legend lists each symbol compared in percent
+  above the indicators, with its price and its change at the bar under the cursor (the last bar
+  otherwise), an eye to hide it and a button to take it off. Its bars are fetched as deep as the
+  chart's, and again when the chart loads older bars, so its line starts where the chart does.
 </p>
 
 <h3>Exporting data</h3>
@@ -795,6 +821,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Price alerts</h3>

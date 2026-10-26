@@ -971,6 +971,13 @@
   color: var(--tcw-accent);
 }
 
+/* A compared symbol's name opens nothing. */
+.tcw-ind-legend-row--compare .tcw-ind-legend-name,
+.tcw-ind-legend-row--compare .tcw-ind-legend-name:hover {
+  color: var(--tcw-text);
+  cursor: default;
+}
+
 .tcw-ind-legend-values {
   display: inline-flex;
   gap: var(--tcw-space-4);

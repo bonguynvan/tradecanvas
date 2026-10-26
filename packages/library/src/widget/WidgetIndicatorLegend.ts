@@ -3,7 +3,12 @@ import { markPart, type WidgetFeature } from './widgetFeatures.js';
 
 export interface IndicatorLegendRow {
   instanceId: string;
-  /** "EMA 50", "MACD 12 26 9". */
+  /**
+   * A symbol compared in percent rather than an indicator: its row has no
+   * settings or more buttons, and its name opens nothing.
+   */
+  kind?: 'compare';
+  /** "EMA 50", "MACD 12 26 9", "ETHUSDT". */
   label: string;
   visible: boolean;
   /** On, but not drawn on the chart's interval (its settings keep it to others). */
@@ -73,10 +78,11 @@ const COLLAPSE_FROM = 2;
 
 interface RowEls {
   el: HTMLDivElement;
-  name: HTMLButtonElement;
+  /** A button that opens the indicator's settings; plain text on a compare's row. */
+  name: HTMLElement;
   values: HTMLSpanElement;
   eye: HTMLButtonElement;
-  settings: HTMLButtonElement;
+  settings: HTMLButtonElement | null;
   more: HTMLButtonElement | null;
   remove: HTMLButtonElement;
   visible: boolean;
@@ -90,6 +96,8 @@ interface RowEls {
  * pane indicators stack under the OHLCV legend, pane indicators sit at the
  * top of their pane. Each row reads "EMA 50  123.45" and, on hover or focus,
  * offers show/hide, settings and remove. A long stack can be collapsed.
+ * Symbols compared in percent head the stack: their price and change, with
+ * show/hide and remove.
  *
  * `update()` is cheap to call every frame: rows are kept by instance id and
  * only changed text and positions are written.
@@ -131,25 +139,28 @@ export class WidgetIndicatorLegend {
       this.stack.style.top = `${Math.round(overlay.top)}px`;
     }
 
-    const seen = new Set<string>();
-    let joinedStack = false;
-    for (const row of rows) {
-      seen.add(row.instanceId);
-      const els = this.rows.get(row.instanceId) ?? this.createRow(row.instanceId);
-      this.fill(els, row);
-      if (row.pane) {
-        if (els.el.parentElement !== this.host) this.host.appendChild(els.el);
-      } else if (els.el.parentElement !== this.stack) {
-        // New rows join the end (the chart's order), before the toggle.
-        this.stack.insertBefore(els.el, this.toggle);
-        joinedStack = true;
-      }
-      this.place(els, row.pane);
-    }
+    // Rows gone first, so the rest move only when their order changed.
+    const seen = new Set(rows.map((r) => r.instanceId));
     for (const [id, els] of this.rows) {
       if (seen.has(id)) continue;
       els.el.remove();
       this.rows.delete(id);
+    }
+    let joinedStack = false;
+    let previous: HTMLElement | null = null;
+    for (const row of rows) {
+      const els = this.rows.get(row.instanceId) ?? this.createRow(row.instanceId, row.kind);
+      this.fill(els, row);
+      if (row.pane) {
+        if (els.el.parentElement !== this.host) this.host.appendChild(els.el);
+      } else {
+        // In the order given (compares first, then the chart's), before the toggle.
+        const next: Element | null = previous ? previous.nextElementSibling : this.stack.firstElementChild;
+        if (els.el.parentElement !== this.stack) joinedStack = true;
+        if (els.el !== next) this.stack.insertBefore(els.el, next);
+        previous = els.el;
+      }
+      this.place(els, row.pane);
     }
     // A collapsed stack would hide the indicator just added: open it.
     if (joinedStack && this.collapsed) this.setCollapsed(false);
@@ -226,16 +237,20 @@ export class WidgetIndicatorLegend {
     return els;
   }
 
-  private createRow(instanceId: string): RowEls {
+  private createRow(instanceId: string, kind?: IndicatorLegendRow['kind']): RowEls {
+    const compare = kind === 'compare';
     const el = document.createElement('div');
-    el.className = 'tcw-ind-legend-row';
+    el.className = compare ? 'tcw-ind-legend-row tcw-ind-legend-row--compare' : 'tcw-ind-legend-row';
     markPart(el, 'indicatorLegend');
     el.dataset.instance = instanceId;
 
-    const name = document.createElement('button');
-    name.type = 'button';
+    // A compare has no settings for its name to open.
+    const name = document.createElement(compare ? 'span' : 'button');
     name.className = 'tcw-ind-legend-name';
-    name.addEventListener('click', () => this.callbacks.onSettings(instanceId));
+    if (name instanceof HTMLButtonElement) {
+      name.type = 'button';
+      name.addEventListener('click', () => this.callbacks.onSettings(instanceId));
+    }
 
     const values = document.createElement('span');
     values.className = 'tcw-ind-legend-values';
@@ -258,8 +273,8 @@ export class WidgetIndicatorLegend {
     const eye = action('visible', 'eye', () => {
       this.callbacks.onToggleVisible(instanceId, !els.visible);
     }, 'indicatorLegend.visibility');
-    const settings = action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
-    const more = this.callbacks.onMore
+    const settings = compare ? null : action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
+    const more = this.callbacks.onMore && !compare
       ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!), 'indicatorLegend.more')
       : null;
     const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId), 'indicatorLegend.remove');
@@ -278,13 +293,13 @@ export class WidgetIndicatorLegend {
       els.state = state;
       els.visible = row.visible;
       els.name.textContent = row.label;
-      els.name.title = this.labels.settings;
+      if (els.settings) els.name.title = this.labels.settings;
       els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || !!row.offInterval);
       if (row.offInterval && this.labels.offInterval) els.el.title = this.labels.offInterval;
       else els.el.removeAttribute('title');
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
-      setLabel(els.settings, this.labels.settings, row.label);
+      if (els.settings) setLabel(els.settings, this.labels.settings, row.label);
       if (els.more) {
         setLabel(els.more, this.labels.more ?? 'More', row.label);
         els.more.setAttribute('aria-haspopup', 'menu');

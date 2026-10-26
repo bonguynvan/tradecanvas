@@ -3,6 +3,9 @@ import { barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
 
+/** Between a line's end and its label (px). */
+const LABEL_GAP = 4;
+
 export interface CompareSymbol {
   id: string;
   label: string;
@@ -12,11 +15,31 @@ export interface CompareSymbol {
   visible: boolean;
 }
 
+/** A compare's values at one main bar, for a legend. */
+export interface CompareValue {
+  id: string;
+  label: string;
+  color: string;
+  visible: boolean;
+  /** Its close at or before the bar; past its last bar, its last close. Null before its first bar. */
+  close: number | null;
+  /**
+   * Its change in percent since the first bar on screen it has a close for:
+   * what its line reads on a percent price scale. Null without a close.
+   */
+  change: number | null;
+  /** The bar is past the compare's last bar: `close` is its last close, not one at this bar. */
+  stale: boolean;
+}
+
 /**
  * Renders comparison overlays on the main chart. Each compare series is
- * lined up with the main bars by time (its bar at or before each one), and
- * in percent mode rebased on the first main bar on screen it has a value
- * for, then mapped onto the main chart's price axis.
+ * lined up with the main bars by time (its bar at or before each one). In
+ * percent mode each line starts at the main close of the first bar on
+ * screen, the baseline the percent scale reads 0% at, from its own first
+ * bar on screen: a symbol whose bars begin later starts at 0% there too, so
+ * on a percent scale every line reads its own change. Then it is mapped onto
+ * the main chart's price axis.
  */
 export class CompareRenderer {
   private symbols = new Map<string, CompareSymbol>();
@@ -127,9 +150,13 @@ export class CompareRenderer {
     return closes;
   }
 
-  /** The visible stretch of `sym`'s line and its price at each main bar there. */
-  private line(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
-    { from: number; to: number; priceAt: (i: number) => number | null } | null {
+  /**
+   * Where `sym`'s line starts on screen: its first bar there with a close
+   * (`base`), its close then, and the main price it starts at in percent
+   * mode, the percent scale's baseline (the first main close on screen).
+   */
+  private anchor(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
+    { closes: Float64Array; base: number; to: number; mainBase: number; symBase: number } | null {
     const closes = this.closesOn(sym, mainData);
     const from = Math.max(0, viewport.visibleRange.from);
     const to = Math.min(mainData.length - 1, viewport.visibleRange.to);
@@ -138,18 +165,51 @@ export class CompareRenderer {
       if (Number.isFinite(closes[i]) && closes[i] !== 0 && mainData[i].close !== 0) { base = i; break; }
     }
     if (base < 0) return null;
-    const mainBase = mainData[base].close;
-    const symBase = closes[base];
+    const mainBase = viewport.scaleBaseline || mainData[from]?.close || mainData[base].close;
+    return { closes, base, to, mainBase, symBase: closes[base] };
+  }
+
+  /** The visible stretch of `sym`'s line and its price at each main bar there. */
+  private line(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
+    { from: number; to: number; priceAt: (i: number) => number | null } | null {
+    const anchor = this.anchor(sym, mainData, viewport);
+    if (!anchor) return null;
+    const { closes, mainBase, symBase } = anchor;
     const percent = this.mode === 'percent';
     return {
-      from: base,
-      to,
+      from: anchor.base,
+      to: anchor.to,
       priceAt: (i) => {
         const c = closes[i];
         if (!Number.isFinite(c)) return null;
         return percent ? mainBase * (c / symBase) : c;
       },
     };
+  }
+
+  /**
+   * Each compare's close at main bar `index` and its change since its line's
+   * start on screen, rebased as the line is, so a legend reads what the
+   * percent scale does. Past a compare's last bar it gives its last close,
+   * `stale`.
+   */
+  valuesAt(mainData: DataSeries, viewport: ViewportState, index: number): CompareValue[] {
+    const time = mainData[index]?.time;
+    const unit = barTimeUnit(mainData);
+    return this.getSymbols().map((sym) => {
+      const at = time === undefined ? undefined : this.store.lastCloseAt(sym.id, time, unit);
+      const symBase = at ? this.anchor(sym, mainData, viewport)?.symBase : undefined;
+      const close = at?.close ?? null;
+      return {
+        id: sym.id,
+        label: sym.label,
+        color: sym.color,
+        visible: sym.visible,
+        close,
+        change: close !== null && symBase ? (close / symBase - 1) * 100 : null,
+        stale: at?.stale ?? false,
+      };
+    });
   }
 
   private renderSymbol(
@@ -167,7 +227,7 @@ export class CompareRenderer {
     ctx.beginPath();
 
     let drawn = 0;
-    let label: { x: number; y: number } | null = null;
+    let end: { x: number; y: number } | null = null;
     for (let i = line.from; i <= line.to; i++) {
       const price = line.priceAt(i);
       if (price === null) continue;
@@ -175,17 +235,19 @@ export class CompareRenderer {
       const y = priceToY(price, viewport);
       if (drawn === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
-      if (drawn === 2 || (drawn === 0 && label === null)) label = { x: x + 4, y: y - 4 };
+      end = { x, y };
       drawn++;
     }
     ctx.stroke();
 
-    if (label) {
+    // At the line's end, where the lines part: in percent mode they all
+    // start at the same point, and labels there would stack.
+    if (end) {
       ctx.fillStyle = sym.color;
       ctx.font = `bold 10px sans-serif`;
       ctx.textBaseline = 'bottom';
-      ctx.textAlign = 'left';
-      ctx.fillText(sym.label, label.x, label.y);
+      ctx.textAlign = 'right';
+      ctx.fillText(sym.label, end.x - LABEL_GAP, end.y - LABEL_GAP);
     }
   }
 }

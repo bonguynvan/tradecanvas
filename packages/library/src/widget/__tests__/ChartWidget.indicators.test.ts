@@ -117,6 +117,22 @@ class FakeChart {
   }
 
   setIndicatorDefaults(id: string, style: unknown): void { this.styleDefaults.set(id, style); }
+
+  /** The percent compare lines, as the real chart keeps them. */
+  compareLines: { id: string; label: string; color: string; visible: boolean }[] = [];
+  compareAsked: (number | undefined)[] = [];
+  addCompareSymbol(id: string, label: string, _data: unknown, color: string): void {
+    this.compareLines.push({ id, label, color, visible: true });
+  }
+  removeCompareSymbol(id: string): void { this.compareLines = this.compareLines.filter((c) => c.id !== id); }
+  setCompareVisible(id: string, visible: boolean): void {
+    this.compareLines = this.compareLines.map((c) => (c.id === id ? { ...c, visible } : c));
+  }
+  /** Every compare at 0.1002, down 7.69% since its first bar on screen. */
+  getCompareValues(barIndex?: number) {
+    this.compareAsked.push(barIndex);
+    return this.compareLines.map((c) => ({ ...c, close: 0.1002, change: -7.6912, stale: false }));
+  }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -324,6 +340,56 @@ describe('on-chart indicator legend', () => {
     await frame();
     expect(getComputedStyle(host.querySelector('.tcw-ind-legend')!).display).toBe('none');
     expect(host.querySelector('.tcw-ind-legend-row')).toBeNull();
+  });
+});
+
+describe('percent comparisons in the on-chart legend', () => {
+  const bars = Array.from({ length: BARS }, (_, i) => ({ time: i * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  /** A widget whose adapter has the other symbol's bars, an EMA and BBB compared on it. */
+  const comparing = async () => {
+    widget.destroy();
+    host.replaceChildren();
+    const feed = { ...adapter, fetchHistory: async () => bars, connect: () => {}, disconnect: () => {}, on: () => {}, off: () => {} };
+    widget = new ChartWidget(host, { adapter: feed as unknown as DataAdapter, symbol: 'AAA', timeframe: '5m', watchlist: false });
+    FakeChart.last.addIndicator('ema', { period: 20 });
+    await widget.addCompareSymbol('BBB');
+    await frame();
+  };
+
+  it('lists each percent comparison first, with its price and its change in its colour', async () => {
+    await comparing();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
+    const [bbb] = rows();
+    expect(values(bbb).map((v) => v.textContent)).toEqual(['0.1002', '-7.69%']);
+    expect(values(bbb)[0].style.color).toBe('');
+    expect(values(bbb)[1].style.color).not.toBe('');
+    // Not an indicator: no settings, no more.
+    expect(bbb.querySelector('[data-act="settings"]')).toBeNull();
+    expect(bbb.querySelector('[data-act="more"]')).toBeNull();
+    expect(bbb.querySelector('.tcw-ind-legend-name')!.tagName).not.toBe('BUTTON');
+  });
+
+  it('hides a comparison, and takes it off, from its legend row', async () => {
+    await comparing();
+    act(rows()[0], 'visible');
+    expect(FakeChart.last.compareLines[0].visible).toBe(false);
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    act(rows()[0], 'remove');
+    expect(FakeChart.last.compareLines).toEqual([]);
+    await frame();
+    expect(names()).toEqual(['EMA 20']);
+  });
+
+  it('reads a comparison at the bar under the cursor, and again on a pan', async () => {
+    await comparing();
+    FakeChart.last.emit('crosshairMove', { barIndex: 4 });
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBe(4);
+    FakeChart.last.compareAsked = [];
+    FakeChart.last.emit('visibleRangeChange', { from: 2, to: 9 });
+    await frame();
+    expect(FakeChart.last.compareAsked).not.toEqual([]);
   });
 });
 

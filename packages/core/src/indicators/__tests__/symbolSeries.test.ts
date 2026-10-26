@@ -27,6 +27,15 @@ describe('SymbolSeriesStore', () => {
     expect(store.closeAt('C', T0 + 11 * HOUR)).toBeUndefined();
   });
 
+  it('gives a symbol’s last close however long after its last bar, as stale', () => {
+    const store = new SymbolSeriesStore();
+    store.set('B', other);
+    expect(store.lastCloseAt('B', T0 + 15 * HOUR)).toEqual({ close: 30, stale: false });
+    expect(store.lastCloseAt('B', T0 + 17 * HOUR)).toEqual({ close: 30, stale: true });
+    expect(store.lastCloseAt('B', T0 + 9 * HOUR)).toBeUndefined(); // before it starts
+    expect(store.lastCloseAt('C', T0 + 11 * HOUR)).toBeUndefined();
+  });
+
   it('matches bars timed in seconds with bars timed in milliseconds', () => {
     const store = new SymbolSeriesStore();
     store.set('S', other.map((b) => ({ ...b, time: b.time / 1000 })));

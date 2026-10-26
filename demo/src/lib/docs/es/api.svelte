@@ -241,10 +241,38 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  Una línea en porcentaje empieza en el cierre principal de la primera barra en pantalla, el precio
+  que una escala en porcentaje lee como 0 %, desde la primera barra en pantalla del propio otro
+  símbolo; uno cuyas barras empiezan más tarde también empieza en 0 %. Con la escala de precio en
+  porcentaje (<code>chart.setScaleMode('percentage')</code>), cada línea lee entonces su propio
+  cambio desde la primera barra en pantalla, que se mueve al desplazar el gráfico. Su etiqueta está
+  en su extremo. <code>chart.getCompareValues(barIndex?)</code> da cada línea en una barra (la última
+  por defecto), para una leyenda propia: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, donde <code>close</code> es el cierre del otro
+  símbolo en la barra o antes y <code>change</code> su cambio en porcentaje, tal como lo lee su
+  línea. Pasada la última barra del otro símbolo (barras que pediste una sola vez mientras el
+  gráfico sigue en vivo), da su último cierre, con <code>stale: true</code>.
+  <code>chart.setCompareVisible(id, false)</code> oculta una línea y la saca de la escala automática.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   En ChartWidget, Comparar en la barra de herramientas (y el + del árbol de objetos) abre el diálogo de comparar: busca
   un símbolo, elige cómo mostrarlo en <strong>Añadir como</strong> (cambio porcentual, escala propia, panel propio,
   diferencial, ratio, o la correlación de precios o de rendimientos) y añade tantos como quieras. Lo que ya se compara
   aparece primero, cada uno con su modo y un botón para quitarlo. La próxima vez, el diálogo se abre con el último modo usado.
+</p>
+<p>
+  ChartWidget pone la escala de precio en porcentaje mientras se compara un símbolo en porcentaje, y
+  vuelve a la escala que tenías cuando se quita el último. Una escala logarítmica, en porcentaje o
+  indexada a 100 se deja como está, y una escala que eliges mientras comparas (el % o log de la barra
+  de estado, el menú del gráfico, los ajustes) se mantiene, también después de quitar la última
+  comparación. La escala en porcentaje nunca se guarda: un diseño y un enlace compartido conservan la
+  tuya. La leyenda lista cada símbolo comparado en porcentaje encima de los indicadores, con su precio
+  y su cambio en la barra bajo el cursor (si no, en la última), un ojo para ocultarlo y un botón para
+  quitarlo. Sus barras se piden con la misma profundidad que las del gráfico, y otra vez cuando el
+  gráfico carga barras más antiguas, así que su línea empieza donde empieza el gráfico.
 </p>
 
 <h3>Exportar datos</h3>
@@ -818,6 +846,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Alertas de precio</h3>

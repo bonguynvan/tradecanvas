@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
+import { decodeWidgetState } from '../widgetShareState.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -23,7 +24,14 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   addAlert(price: number): void { this.alerts.push(price); }
-  getFeatures(): Record<string, boolean> { return {}; }
+  features: Record<string, boolean> = {};
+  getFeatures(): Record<string, boolean> { return this.features; }
+  scaleMode = 'regular';
+  scaleModes: string[] = [];
+  getScaleMode(): string { return this.scaleMode; }
+  setScaleMode(mode: string): void { this.scaleMode = mode; this.scaleModes.push(mode); }
+  undos: { undo(): void; redo(): void }[] = [];
+  recordUndo(step: { undo(): void; redo(): void }): void { this.undos.push(step); }
   tools: (string | null)[] = [];
   setDrawingTool(tool: string | null): void { this.tools.push(tool); }
   setups: unknown[][] = [];
@@ -43,6 +51,9 @@ class FakeChart {
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
   overlays: string[] = [];
   addCompareSymbol(id: string): void { this.overlays.push(id); }
+  removeCompareSymbol(id: string): void { this.overlays = this.overlays.filter((o) => o !== id); }
+  compareData: [string, unknown][] = [];
+  updateCompareData(id: string, bars: unknown): void { this.compareData.push([id, bars]); }
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
@@ -513,6 +524,162 @@ describe('ChartWidget comparing with another symbol', () => {
     expect(section('Compare').textContent).not.toContain('No comparisons');
     section('Compare').querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
     expect(fake.removedIndicators).toEqual(['c1']);
+  });
+});
+
+describe('ChartWidget percent compares and the price scale', () => {
+  const HOUR = 3_600_000;
+  const bars = Array.from({ length: 5 }, (_, i) => ({ time: i * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  const feed = () => ({
+    name: 'fake',
+    connect: () => {},
+    disconnect: () => {},
+    getConnectionState: () => 'connected',
+    fetchHistory: vi.fn(async (_symbol: string, _tf: string, _limit: number) => bars),
+    on: () => {},
+    off: () => {},
+    dispose: () => {},
+  });
+  let adapter: ReturnType<typeof feed>;
+  const make = (options: Record<string, unknown> = {}) => {
+    adapter = feed();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never, ...options });
+    return FakeChart.last;
+  };
+  /** Take compares off from the compare dialog, as the user does: `count` of them, or all. */
+  const removeCompares = (count = Infinity) => {
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    for (let i = 0; i < count; i++) {
+      const remove = document.querySelector<HTMLButtonElement>('.tcw-ss-remove');
+      if (!remove) break;
+      remove.click();
+    }
+    document.querySelector<HTMLButtonElement>('.tcw-ss .tcw-modal-close')!.click();
+  };
+  const percentSwitch = () => host.querySelector<HTMLButtonElement>('[data-scale="percent"]')!;
+  const logSwitch = () => host.querySelector<HTMLButtonElement>('[data-scale="log"]')!;
+  /** A scale mode in the price axis's menu. */
+  const scaleMenuItem = (label: string) => {
+    FakeChart.last.emit('chartContextMenu', { area: 'priceAxis', x: 10, y: 10, price: 95 });
+    return [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')]
+      .find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!;
+  };
+  const scaleSelect = () => document.querySelector<HTMLSelectElement>('select[aria-label="Price scale"]')!;
+  const openSettings = () => (widget as unknown as { openSettings(tab: string): void }).openSettings('scales');
+
+  it('reads the price scale in percent while a symbol is compared in percent, and goes back after the last', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('percentage');
+    await widget.addCompareSymbol('CCC');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('true');
+    removeCompares(1);
+    expect(fake.scaleMode).toBe('percentage');
+    removeCompares();
+    expect(fake.scaleMode).toBe('regular');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps the user’s scale in a saved layout and a shared link while comparing', async () => {
+    make();
+    await widget.addCompareSymbol('BBB');
+    expect(widget.captureLayout().scaleMode).toBe('regular');
+    expect(decodeWidgetState(widget.exportState())!.scaleMode).toBe('regular');
+  });
+
+  it('keeps a scale the user picks while comparing, the last compare gone too', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    percentSwitch().click(); // % off: back to prices
+    expect(fake.scaleMode).toBe('regular');
+    // Only the first compare puts the scale in percent.
+    await widget.addCompareSymbol('CCC');
+    expect(fake.scaleMode).toBe('regular');
+    removeCompares();
+    expect(fake.scaleMode).toBe('regular');
+
+    await widget.addCompareSymbol('BBB');
+    scaleMenuItem('Indexed to 100').click();
+    removeCompares();
+    expect(fake.scaleMode).toBe('indexedTo100');
+  });
+
+  it('puts the percent scale back on an undo of a pick made while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    percentSwitch().click();
+    expect(fake.undos).toHaveLength(1);
+    fake.undos[0].undo();
+    expect(fake.scaleMode).toBe('percentage');
+    fake.undos[0].redo();
+    expect(fake.scaleMode).toBe('regular');
+  });
+
+  it('leaves a log scale alone while comparing', async () => {
+    const fake = make();
+    logSwitch().click();
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('logarithmic');
+    removeCompares();
+    expect(fake.scaleMode).toBe('logarithmic');
+  });
+
+  it('leaves a scale already in percent or indexed to 100 alone', async () => {
+    const fake = make();
+    scaleMenuItem('Indexed to 100').click();
+    await widget.addCompareSymbol('BBB');
+    removeCompares();
+    expect(fake.scaleModes).not.toContain('percentage');
+    expect(fake.scaleMode).toBe('indexedTo100');
+  });
+
+  it('keeps the percent scale through a layout restore and a shared link while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    await widget.restoreLayout({ ...widget.captureLayout(), scaleMode: 'regular' });
+    expect(fake.scaleMode).toBe('percentage');
+    await widget.importState(widget.exportState());
+    expect(fake.scaleMode).toBe('percentage');
+  });
+
+  it('shows the scale on screen in the settings and the chart menu while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    expect(scaleMenuItem('Percentage').getAttribute('aria-checked')).toBe('true');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    openSettings();
+    expect(scaleSelect().value).toBe('percentage');
+    scaleSelect().value = 'regular';
+    scaleSelect().dispatchEvent(new Event('change'));
+    expect(fake.scaleMode).toBe('regular');
+    // Cancel puts back what the settings changed: the percent scale too.
+    document.querySelector<HTMLButtonElement>('.tcw-set .tcw-modal-footer [data-act="cancel"]')!.click();
+    expect(fake.scaleMode).toBe('percentage');
+  });
+
+  it('fetches a percent comparison as deep as the bars on the chart', async () => {
+    const fake = make({ timeframe: '1h' });
+    fake.barsLoaded = Array.from({ length: 900 }, (_, i) => ({ time: i * HOUR, close: 1 }));
+    await widget.addCompareSymbol('BBB');
+    expect(adapter.fetchHistory).toHaveBeenCalledWith('BBB', '1h', 900);
+  });
+
+  it('fetches the percent comparisons again, as deep, once older bars load', async () => {
+    const fake = make({ timeframe: '1h' });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = Array.from({ length: 1300 }, (_, i) => ({ time: i * HOUR, close: 1 }));
+    fake.emit('historyLoad', { state: 'loaded', count: 800 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 1300);
+    expect(fake.compareData).toEqual([['cmp_BBB', bars]]);
+  });
+
+  it('leaves the scale alone where the chart takes no compare lines', async () => {
+    const fake = make({ chartOptions: { features: { compareSymbols: false } } });
+    fake.features = { compareSymbols: false };
+    await widget.addCompareSymbol('BBB');
+    expect(fake.overlays).toEqual([]);
+    expect(fake.scaleModes).not.toContain('percentage');
   });
 });
 

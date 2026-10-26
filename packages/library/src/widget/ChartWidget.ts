@@ -1,4 +1,4 @@
-import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
@@ -69,6 +69,7 @@ import { comparedEntries, compareWayOptions, isCompareWay, type CompareWay } fro
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
+import { compareLegendRows } from './compareLegend.js';
 import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
@@ -282,6 +283,8 @@ export class ChartWidget {
     style: { theme: string; overrides: SettingsStylePatch };
     keys: Set<keyof ChartSettingsState>;
     styleKeys: Set<ChartStyleKey>;
+    /** Whether percent compares held the price scale in percent on opening. */
+    held: boolean;
   } | null = null;
   private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
@@ -381,6 +384,14 @@ export class ChartWidget {
   private compareWay: CompareWay = 'percent';
   /** Symbols whose bars are on the way to be compared in percent. */
   private readonly comparesLoading = new Set<string>();
+  /**
+   * Set by the first percent compare, cleared when the last one goes or the
+   * user picks a scale meanwhile: while set, a regular price scale reads in
+   * percent, as the compare lines do (`effectiveScaleMode`). Never saved.
+   */
+  private compareScaleHeld = false;
+  /** The latest round of percent compare fetches: an older round's answers are dropped. */
+  private compareFetchSeq = 0;
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -709,7 +720,12 @@ export class ChartWidget {
     // widget.setData, or the host calling getChart().setData directly); stream
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
-    this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
+    this.chart.on('historyLoad', (e) => {
+      const payload = e.payload as HistoryLoadPayload;
+      this.historyPill.update(payload);
+      // Older bars in: the percent compares as deep, so their lines start where the chart does.
+      if (payload.state === 'loaded') void this.refetchPercentCompares();
+    });
     this.chart.on('symbolInfoChange', (e) => {
       const info = (e.payload as { info: SymbolInfo | null }).info;
       const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
@@ -859,7 +875,8 @@ export class ChartWidget {
     this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
     this.indicatorLegend = new WidgetIndicatorLegend(this.chartContainer, {
       onToggleVisible: (iid, visible) => {
-        this.chart.setIndicatorVisible(iid, visible);
+        if (this.isPercentCompare(iid)) this.chart.setCompareVisible(iid, visible);
+        else this.chart.setIndicatorVisible(iid, visible);
         this.scheduleLegend();
         if (this.objectTree?.isOpen()) this.refreshObjects();
       },
@@ -867,7 +884,10 @@ export class ChartWidget {
       onSettings: (iid) => {
         if (this.featureState['indicatorLegend.settings']) this.openIndicatorSettings(iid);
       },
-      onRemove: (iid) => this.handleRemoveIndicator(iid),
+      onRemove: (iid) => {
+        if (this.isPercentCompare(iid)) this.handleRemoveCompare(iid);
+        else this.handleRemoveIndicator(iid);
+      },
       onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
       onPaneAction: (iid, action) => this.runPaneAction(iid, action),
     }, {
@@ -897,7 +917,8 @@ export class ChartWidget {
       this.legendHoverIndex = null;
       this.scheduleLegend();
     });
-    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange'] as const) {
+    // A pan too: a compare's change is counted from the first bar on screen.
+    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange'] as const) {
       this.chart.on(event, () => this.scheduleLegend());
     }
 
@@ -1356,7 +1377,7 @@ export class ChartWidget {
           if (!keyOn('hotkeys.invertScale')) return;
           e.preventDefault();
           this.changeSettings({ invertScale: !this.settingsState.invertScale });
-          this.settings?.refresh(this.settingsState);
+          this.settings?.refresh(this.shownSettings());
         } else if (e.code === 'KeyR') {
           // Alt+R → the whole series in view, the price scale fitted to it.
           if (!keyOn('hotkeys.resetView')) return;
@@ -2214,7 +2235,7 @@ export class ChartWidget {
       canGoToDate: this.goToDate !== null,
       canExport: this.canExport,
       autoScale: this.chart.isAutoScale(),
-      scaleMode: s.scaleMode,
+      scaleMode: this.effectiveScaleMode(),
       canLog: features.logScale !== false,
       inverted: this.chart.isInvertScale(),
       leftScale: s.leftPriceScale,
@@ -3047,7 +3068,7 @@ export class ChartWidget {
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
       chartType: this.state.chartType,
-      scaleMode: this.chart.getScaleMode(),
+      scaleMode: this.userScaleMode(),
       indicators,
       drawings: this.chart.getDrawings(),
     });
@@ -3064,7 +3085,8 @@ export class ChartWidget {
     if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
 
     if (s.chartType) this.applyChartType(s.chartType);
-    this.chart.setScaleMode(s.scaleMode);
+    // Through the settings, so a percent compare keeps its scale and the settings show the shared one.
+    this.applySettings({ scaleMode: s.scaleMode });
 
     // The shared indicators in place of the chart's, as one undo step.
     this.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));
@@ -3375,12 +3397,14 @@ export class ChartWidget {
       await this.addCompareIndicator(this.adapter, symbol, way);
       return;
     }
+    // The chart takes no compare lines: none to list, nor a scale to hold for them.
+    if (this.chart.getFeatures()?.compareSymbols === false) return;
     // On the chart already, or its bars on the way (picked twice in a row).
     if (this.compares.some((c) => c.symbol === symbol) || this.comparesLoading.has(symbol)) return;
     const id = `cmp_${symbol}`;
     this.comparesLoading.add(symbol);
     try {
-      const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.options.historyLimit ?? 500);
+      const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.compareDepth());
       if (this.destroyed || this.compares.some((c) => c.symbol === symbol)) return;
       // No bars at this interval: a line with nothing to draw is no comparison.
       if (bars.length === 0) {
@@ -3388,11 +3412,13 @@ export class ChartWidget {
         return;
       }
       const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
-      // Percent mode normalizes mixed-price symbols (e.g. BTC vs a $2 alt) onto
-      // a shared % axis — the right default for comparison.
+      // Each line is its symbol's change from the first bar on screen, so
+      // symbols of any price (BTC beside a $2 coin) read on one percent scale.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
       this.chart.addCompareSymbol(id, symbol, bars, color);
       this.compares = [...this.compares, { id, symbol, color }];
+      if (this.compares.length === 1) this.holdCompareScale(true);
+      this.scheduleLegend();
       this.refreshObjects();
       this.refreshCompareDialog();
       this.say(fill(this.t('toast.comparing'), { symbol }));
@@ -3414,8 +3440,7 @@ export class ChartWidget {
     const timeframe = this.state.timeframe;
     let bars: OHLCBar[];
     try {
-      const limit = Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
-      bars = await withResampling(adapter).fetchHistory(symbol, timeframe, limit);
+      bars = await withResampling(adapter).fetchHistory(symbol, timeframe, this.compareDepth());
     } catch (err: unknown) {
       if (!this.destroyed) this.sayCompareFailed(symbol, err);
       return;
@@ -3449,8 +3474,62 @@ export class ChartWidget {
   private handleRemoveCompare(id: string): void {
     this.chart.removeCompareSymbol(id);
     this.compares = this.compares.filter((c) => c.id !== id);
+    if (this.compares.length === 0) this.holdCompareScale(false);
+    this.scheduleLegend();
     this.refreshObjects();
     this.refreshCompareDialog();
+  }
+
+  /** `id` is a symbol compared in percent (a line, not an indicator). */
+  private isPercentCompare(id: string): boolean {
+    return this.compares.some((c) => c.id === id);
+  }
+
+  /**
+   * How many bars of another symbol to fetch: as many as the chart has (it
+   * may have paged older ones in), so a compare starts where the chart does.
+   */
+  private compareDepth(): number {
+    return Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
+  }
+
+  /** Percent compares hold a regular price scale in percent: the user's has not been picked meanwhile. */
+  private holdsPercentScale(): boolean {
+    return this.compareScaleHeld && this.compares.length > 0 && this.settingsState.scaleMode === 'regular';
+  }
+
+  /**
+   * The scale on screen: the user's, or percent while percent compares hold a
+   * regular one. Logarithmic, percentage and indexed to 100 are left alone: a
+   * log scale draws the compare lines true, and the other two read them right.
+   */
+  private effectiveScaleMode(): PriceScaleMode {
+    return this.holdsPercentScale() ? 'percentage' : this.settingsState.scaleMode;
+  }
+
+  /** The scale the user picked, for a shared link: never the percent a compare holds. */
+  private userScaleMode(): PriceScaleMode {
+    return this.holdsPercentScale() ? this.settingsState.scaleMode : this.chart.getScaleMode();
+  }
+
+  /** The settings as the dialog shows them: the scale on screen. */
+  private shownSettings(): ChartSettingsState {
+    return { ...this.settingsState, scaleMode: this.effectiveScaleMode() };
+  }
+
+  /** Put the chart's price scale on the one it should show now. */
+  private showScaleMode(): void {
+    const mode = this.effectiveScaleMode();
+    if (this.chart.getScaleMode() !== mode) this.chart.setScaleMode(mode);
+  }
+
+  /** The first percent compare holds the scale in percent; the last one gone lets it go. */
+  private holdCompareScale(held: boolean): void {
+    if (held === this.compareScaleHeld) return;
+    this.compareScaleHeld = held;
+    this.showScaleMode();
+    this.refreshScaleSwitches();
+    this.settings?.refresh(this.shownSettings());
   }
 
   /**
@@ -3468,8 +3547,7 @@ export class ChartWidget {
     // Only the latest fetch of a symbol, at the interval on screen, answers.
     const stale = () => this.destroyed || timeframe !== this.state.timeframe || this.symbolLoads.get(symbol) !== seq;
     try {
-      const limit = Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
-      const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, limit);
+      const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, this.compareDepth());
       if (stale()) return;
       this.chart.setSymbolSeries(symbol, bars);
     } catch (err: unknown) {
@@ -3488,11 +3566,19 @@ export class ChartWidget {
     // A comparison against the now-active symbol is redundant — drop it.
     const stale = this.compares.filter((c) => c.symbol === this.state.symbol);
     for (const c of stale) this.handleRemoveCompare(c.id);
+    await this.refetchPercentCompares();
+  }
 
+  /** Each percent compare's bars again, as deep as the chart's, at its interval. The latest round wins. */
+  private async refetchPercentCompares(): Promise<void> {
+    if (!this.adapter || this.compares.length === 0) return;
+    const seq = ++this.compareFetchSeq;
+    const adapter = withResampling(this.adapter);
     for (const c of this.compares) {
       try {
-        const bars = await withResampling(this.adapter).fetchHistory(c.symbol, this.state.timeframe, this.options.historyLimit ?? 500);
-        this.chart.updateCompareData(c.id, bars);
+        const bars = await adapter.fetchHistory(c.symbol, this.state.timeframe, this.compareDepth());
+        if (this.destroyed || seq !== this.compareFetchSeq) return;
+        if (this.isPercentCompare(c.id)) this.chart.updateCompareData(c.id, bars);
       } catch { /* leave the stale overlay in place if the refetch fails */ }
     }
   }
@@ -3612,7 +3698,7 @@ export class ChartWidget {
     this.state = { ...this.state, chartType: type };
     this.chart.setChartType(type);
     // Settings open: their Symbol tab shows the type's own colours.
-    this.settings?.refresh(this.settingsState, type);
+    this.settings?.refresh(this.shownSettings(), type);
     this.updateUI();
   }
 
@@ -3767,7 +3853,7 @@ export class ChartWidget {
         break;
       case 'invertScale':
         this.changeSettings({ invertScale: !this.settingsState.invertScale });
-        this.settings?.refresh(this.settingsState);
+        this.settings?.refresh(this.shownSettings());
         break;
       case 'saveLayout':
         void this.saveLayout();
@@ -3867,15 +3953,17 @@ export class ChartWidget {
       chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {},
       autoScale: this.chart.isAutoScale?.() ?? this.settingsState.autoScale,
     };
-    this.settingsEdit = { settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set() };
-    this.settings?.open(this.settingsState, this.state.chartType, tab);
+    this.settingsEdit = {
+      settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
+    };
+    this.settings?.open(this.shownSettings(), this.state.chartType, tab);
   }
 
   /** The whole series in view, the price scale fitted to it (the menus' Reset, Alt+R). */
   private resetView(): void {
     this.chart.fitContent();
     this.changeSettings({ autoScale: true });
-    this.settings?.refresh(this.settingsState);
+    this.settings?.refresh(this.shownSettings());
   }
 
   /** The settings closed: OK keeps what they changed as one undo step, Cancel puts it back as it was on opening. */
@@ -3890,14 +3978,20 @@ export class ChartWidget {
     const beforeStyle = styleKeys.length > 0
       ? { theme: edit.style.theme, overrides: Object.fromEntries(styleKeys.map((k) => [k, edit.style.overrides[k] ?? null])) as SettingsStylePatch }
       : null;
+    // A scale picked in the settings let a compare's hold go: Cancel and an undo give it back.
+    const scale = edit.keys.has('scaleMode');
+    const heldAfter = this.compareScaleHeld;
     if (!keep) {
-      this.restoreSettings(before, beforeStyle);
+      this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined);
       return;
     }
     const after = pick(this.settingsState);
     const afterStyle = styleKeys.length > 0 ? this.settingsStyle(styleKeys) : null;
-    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
-    this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
+    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle]) && (!scale || edit.held === heldAfter)) return;
+    this.chart.recordUndo({
+      undo: () => this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined),
+      redo: () => this.restoreSettings(after, afterStyle, scale ? heldAfter : undefined),
+    });
   }
 
   /** In the open settings, the keys a change touched: what Cancel and the undo step go by. */
@@ -3915,7 +4009,7 @@ export class ChartWidget {
     this.applySettings(template.settings);
     this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
     this.chart.applyOverrides(template.style, { layer: 'user' });
-    this.settings?.refresh(this.settingsState);
+    this.settings?.refresh(this.shownSettings());
     this.say(fill(this.t('templates.applied'), { name }));
   }
 
@@ -4027,7 +4121,7 @@ export class ChartWidget {
     this.applySettings({ scaleMode: content.scaleMode, invertScale: content.invertScale });
     this.syncIndicatorsFromChart();
     this.updateUI();
-    this.settings?.refresh(this.settingsState, this.state.chartType);
+    this.settings?.refresh(this.shownSettings(), this.state.chartType);
   }
 
   /** `captureLayout()` as JSON. */
@@ -4465,12 +4559,12 @@ export class ChartWidget {
     // Another zone: the clock says so at once.
     if (patch.timezone !== undefined) queueMicrotask(() => this.statusBar?.tick());
     if (patch.scaleMode !== undefined) {
-      this.chart.setScaleMode(patch.scaleMode);
       // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
       this.settingsState = { ...this.settingsState, logScale: patch.scaleMode === 'logarithmic' };
+      this.showScaleMode();
     } else if (patch.logScale !== undefined) {
-      this.chart.setLogScale(patch.logScale);
       this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
+      this.showScaleMode();
     }
     if (patch.numberLocale !== undefined) {
       this.chart.setNumberLocale(patch.numberLocale);
@@ -4498,7 +4592,7 @@ export class ChartWidget {
     this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
     const after = { ...this.settingsState };
     const afterStyle = this.settingsStyle();
-    this.settings?.refresh(this.settingsState);
+    this.settings?.refresh(this.shownSettings());
     // In the open settings, OK records it with the rest.
     if (this.settingsEdit || JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
     this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
@@ -4539,13 +4633,18 @@ export class ChartWidget {
     const pick = (): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, this.settingsState[k]]));
     this.touchSettings(keys);
     const before = pick();
+    const scale = keys.includes('scaleMode');
+    const heldBefore = this.compareScaleHeld;
+    // A scale the user picks while comparing is theirs, the last compare gone too.
+    if (scale) this.compareScaleHeld = false;
     this.applySettings(patch);
     const after = pick();
-    if (this.settingsEdit || JSON.stringify(before) === JSON.stringify(after)) return;
+    if (this.settingsEdit || (JSON.stringify(before) === JSON.stringify(after) && heldBefore === this.compareScaleHeld)) return;
+    // Undone, a pick made while comparing gives the percent scale back.
     this.chart.recordUndo({
       subject: `settings:${Object.keys(patch).sort().join(',')}`,
-      undo: () => this.restoreSettings(before),
-      redo: () => this.restoreSettings(after),
+      undo: () => this.restoreSettings(before, null, scale ? heldBefore : undefined),
+      redo: () => this.restoreSettings(after, null, scale ? false : undefined),
     });
   }
 
@@ -4562,14 +4661,18 @@ export class ChartWidget {
     return { theme: this.chart.getTheme()?.name ?? '', overrides };
   }
 
-  /** Settings back as they were (an undo or redo), shown in the settings if they're open. */
-  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: SettingsStylePatch } | null = null): void {
+  /**
+   * Settings back as they were (an undo or redo), shown in the settings if
+   * they're open; `held` puts back whether percent compares held the scale.
+   */
+  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: SettingsStylePatch } | null = null, held?: boolean): void {
+    if (held !== undefined) this.compareScaleHeld = held && this.compares.length > 0;
     this.applySettings(values);
     // The look picked on another theme stays with that theme.
     if (style && style.theme === (this.chart.getTheme()?.name ?? '')) {
       this.chart.applyOverrides(style.overrides, { layer: 'user' });
     }
-    this.settings?.refresh(this.settingsState);
+    this.settings?.refresh(this.shownSettings());
   }
 
   private async connectStream(): Promise<void> {
@@ -4660,7 +4763,9 @@ export class ChartWidget {
       (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
     }
     const locale = this.settingsState.numberLocale || 'en-US';
-    const rows: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
+    // The symbols compared in percent first: the lines on the price scale itself.
+    const compares = compareLegendRows(idx >= 0 ? this.chart.getCompareValues?.(idx) ?? [] : [], locale);
+    const indicators: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
       const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
       const style = this.chart.getIndicatorStyle(ind.instanceId);
@@ -4686,6 +4791,7 @@ export class ChartWidget {
           : null,
       };
     });
+    const rows = [...compares, ...indicators];
     const plot = this.chart.getPlotRect();
     const maximized = this.chart.getMaximizedPane();
     const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
+import type { CompareRenderer } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -87,6 +88,63 @@ describe('compare lines and the auto scale', () => {
     chart.resize();
     const { max } = (chart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState().priceRange;
     expect(max).toBeGreaterThan(1000);
+  });
+});
+
+describe('percent compares on a percent scale', () => {
+  const state = () => (chart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState();
+  const lines = () => (chart as unknown as { compareRenderer: CompareRenderer }).compareRenderer;
+  /** The first bar on screen. */
+  const first = () => Math.max(0, state().visibleRange.from);
+
+  it('reads a later-starting symbol’s own change on a percent scale', () => {
+    chart.setScaleMode('percentage');
+    // Its bars start ten bars into the screen, flat: 0% all along.
+    chart.addCompareSymbol('b', 'B', main.slice(first() + 10).map((b) => bar(b.time, 50)), '#f00');
+    const range = lines().getPriceRange(chart.getData(), state())!;
+    expect(range.min / state().scaleBaseline!).toBeCloseTo(1);
+    expect(range.max / state().scaleBaseline!).toBeCloseTo(1);
+  });
+
+  it('gives each compare’s close and its change since its first bar on screen', () => {
+    const start = first() + 10;
+    chart.addCompareSymbol('b', 'B', main.slice(start).map((b, k) => bar(b.time, 50 + k)), '#f00');
+    const [at] = chart.getCompareValues(start + 10);
+    expect(at).toMatchObject({ id: 'b', label: 'B', color: '#f00', visible: true, close: 60, stale: false });
+    expect(at.change).toBeCloseTo(20);
+    // Before its first bar it has nothing to say.
+    expect(chart.getCompareValues(start - 1)[0]).toMatchObject({ close: null, change: null });
+    // The last bar by default.
+    expect(chart.getCompareValues()[0].close).toBe(50 + main.length - 1 - start);
+  });
+
+  it('gives a compare’s last close after the main streams on', () => {
+    chart.addCompareSymbol('b', 'B', main.map((b) => bar(b.time, 50)), '#f00');
+    for (let i = 0; i < 3; i++) chart.appendBar(bar(T0 + (main.length + i) * HOUR, 200 + i));
+    const [at] = chart.getCompareValues();
+    expect(at.close).toBe(50);
+    expect(at.stale).toBe(true);
+  });
+
+  it('hides a compare line, and leaves it out of the auto scale', () => {
+    chart.setCompareMode('absolute');
+    chart.addCompareSymbol('b', 'B', other, '#f00');
+    chart.setCompareVisible('b', false);
+    expect(chart.getCompareValues()[0].visible).toBe(false);
+    expect(state().priceRange.max).toBeLessThan(1000);
+    chart.setCompareVisible('b', true);
+    expect(state().priceRange.max).toBeGreaterThan(1000);
+  });
+
+  it('fits the price scale to a percent line on the first bar on screen after a pan', () => {
+    const long = Array.from({ length: 300 }, (_, i) => bar(T0 + i * HOUR, 100 + i));
+    chart.setData(long);
+    // Falling fast: its line goes well under the bars on screen.
+    chart.addCompareSymbol('b', 'B', long.map((b, i) => bar(b.time, 1000 - 3 * i)), '#f00');
+    chart.scrollBars(-150);
+    const range = lines().getPriceRange(chart.getData(), state())!;
+    expect(state().priceRange.min).toBeLessThanOrEqual(range.min);
+    expect(state().priceRange.max).toBeGreaterThanOrEqual(range.max);
   });
 });
 

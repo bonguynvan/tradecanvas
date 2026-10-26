@@ -30,7 +30,7 @@ export { DepthHeatmapRenderer } from './DepthHeatmapRenderer.js';
 export { DepthHeatmapBuffer } from './DepthHeatmapBuffer.js';
 export type { DepthSnapshot } from './DepthHeatmapBuffer.js';
 export { CompareRenderer } from './CompareRenderer.js';
-export type { CompareSymbol } from './CompareRenderer.js';
+export type { CompareSymbol, CompareValue } from './CompareRenderer.js';
 export { lttbDownsample, lttbVisibleIndices } from './downsample.js';
 export { DENSE_BAR_WIDTH, isDense, forEachPixelColumn, renderDenseBars } from './denseBars.js';
 export type { PixelColumn } from './denseBars.js';

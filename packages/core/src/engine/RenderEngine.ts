@@ -590,7 +590,12 @@ export class RenderEngine {
     if (!values?.length) return [];
     const { viewport } = ctx;
     const { chartRect } = viewport;
-    const format = ctx.formatPrice ?? ((v: number) => formatPrice(v, 2, ctx.numberLocale ?? 'en-US'));
+    const locale = ctx.numberLocale ?? 'en-US';
+    // On a percent or indexed scale, as the scale reads (and pane tags already do), not a price.
+    const relative = (viewport.scaleMode === 'percentage' || viewport.scaleMode === 'indexedTo100') && viewport.scaleBaseline;
+    const format = relative
+      ? (v: number) => priceScaleText(v, viewport, 2, locale)
+      : ctx.formatPrice ?? ((v: number) => formatPrice(v, 2, locale));
     const labels: AxisValueLabel[] = values.map((v) => ({ y: priceToY(v.value, viewport), text: format(v.value), color: v.color }));
     return layoutAxisValueLabels(labels, { top: chartRect.y, bottom: chartRect.y + chartRect.height }, fixed);
   }

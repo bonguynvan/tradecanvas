@@ -238,10 +238,38 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  Một đường so sánh phần trăm bắt đầu ở giá đóng cửa của nến đầu tiên trên màn hình, mức giá mà
+  thang phần trăm đọc là 0%, tính từ nến đầu tiên trên màn hình của chính mã kia; một mã có nến
+  bắt đầu muộn hơn cũng bắt đầu ở 0%. Khi thang giá ở chế độ phần trăm
+  (<code>chart.setScaleMode('percentage')</code>), mỗi đường đọc đúng mức thay đổi của riêng nó
+  kể từ nến đầu tiên trên màn hình, và mức này đổi khi bạn kéo biểu đồ. Nhãn của đường nằm ở cuối
+  đường. <code>chart.getCompareValues(barIndex?)</code> cho giá trị của từng đường tại một nến
+  (mặc định là nến cuối), để bạn tự làm chú thích: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, trong đó <code>close</code> là giá
+  đóng cửa của mã kia tại hoặc trước nến đó và <code>change</code> là mức thay đổi tính bằng phần
+  trăm, đúng như đường của nó đọc. Sau nến cuối của mã kia (nến bạn chỉ tải một lần, trong khi
+  biểu đồ vẫn chạy tiếp), nó cho giá đóng cửa cuối cùng kèm <code>stale: true</code>.
+  <code>chart.setCompareVisible(id, false)</code> ẩn một đường và bỏ nó khỏi thang tự động.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   Trong ChartWidget, nút So sánh trên thanh công cụ (và nút + trong cây đối tượng) mở hộp thoại so sánh: tìm một
   mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch,
   tỷ lệ, hoặc tương quan theo giá hay theo lợi suất) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê
   trước, mỗi mã kèm cách so sánh của nó và một nút để gỡ ra. Lần mở sau, hộp thoại chọn sẵn cách đã dùng lần trước.
+</p>
+<p>
+  ChartWidget đặt thang giá ở chế độ phần trăm khi có mã được so sánh theo phần trăm, và trả về
+  thang bạn đang dùng khi mã cuối cùng được gỡ ra. Thang logarit, phần trăm hay chỉ số 100 được
+  giữ nguyên, và thang bạn chọn trong lúc so sánh (nút % hay log ở thanh trạng thái, menu của biểu
+  đồ, phần cài đặt) được giữ lại, kể cả sau khi mã so sánh cuối cùng được gỡ. Thang phần trăm này
+  không bao giờ được lưu: bố cục và liên kết chia sẻ giữ thang của bạn. Chú thích liệt kê mỗi mã so
+  sánh theo phần trăm phía trên các chỉ báo, kèm giá và mức thay đổi tại nến dưới con trỏ (nếu
+  không thì tại nến cuối), một nút mắt để ẩn và một nút để gỡ ra. Nến của mã đó được tải sâu bằng
+  nến của biểu đồ, và tải lại khi biểu đồ tải thêm nến cũ, nên đường của nó bắt đầu cùng chỗ với
+  biểu đồ.
 </p>
 
 <h3>Xuất dữ liệu</h3>
@@ -799,6 +827,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Cảnh báo giá</h3>

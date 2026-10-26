@@ -542,6 +542,33 @@ chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
 
+## Another symbol's change beside yours, in percent
+
+ETH's line on BTC's chart, each reading its change since the first bar on
+screen on a percent price scale, and a legend of your own from
+`getCompareValues` (the widget's `addCompareSymbol` does all of this itself).
+Fetch as many bars as the chart has, so the line starts where the chart does:
+
+```ts
+import { Chart, BinanceAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
+
+const eth = await adapter.fetchHistory('ETHUSDT', '1h', chart.getData().length);
+chart.addCompareSymbol('eth', 'ETHUSDT', eth, '#7c4dff');
+chart.setScaleMode('percentage');
+
+const legend = document.getElementById('legend')!;
+chart.on('crosshairMove', (e) => {
+  // Its close at the bar and its change in %, as the line reads; `stale` past its last bar.
+  legend.textContent = chart.getCompareValues(e.payload.barIndex)
+    .map((v) => `${v.label} ${v.close ?? ''} ${v.change?.toFixed(2) ?? ''}%`)
+    .join('  ');
+});
+```
+
 ## Another symbol on its own scale, and the ratio of the two
 
 ETH beside BTC on a price scale of its own, and BTC ÷ ETH in a pane. The

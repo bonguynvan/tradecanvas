@@ -118,7 +118,7 @@ import {
   findDominantSwing,
   readAlertOptions,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
+import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox, rangeBarsStep } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
@@ -3306,6 +3306,25 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Show or hide a compare line (`addCompareSymbol`'s id); a hidden one leaves the auto scale. */
+  setCompareVisible(id: string, visible: boolean): void {
+    this.compareRenderer.setSymbolVisible(id, visible);
+    this.updateViewportAndRender();
+  }
+
+  /**
+   * Each compare line at bar `barIndex` (the last bar by default), for a
+   * legend: the other symbol's close at or before it, and its change in
+   * percent since its first bar on screen, which is what its line reads on
+   * a percent price scale (`setScaleMode('percentage')`). Past the compare's
+   * last bar (bars you fetched once, the chart streaming on), its last close,
+   * with `stale` true.
+   */
+  getCompareValues(barIndex?: number): CompareValue[] {
+    const data = this.getDisplayData();
+    return this.compareRenderer.valuesAt(data, this.viewport.getState(), barIndex ?? data.length - 1);
+  }
+
   clearCompareSymbols(): void {
     this.compareRenderer.clear();
     this.updateViewportAndRender();
@@ -5478,7 +5497,8 @@ export class Chart {
       this.viewport.setScaleBaseline(displayData[baseIdx]?.close);
     }
 
-    if (autoScale) this.fitPriceScale(displayData, vs);
+    // Fitted on the new baseline: percent compare lines start there.
+    if (autoScale) this.fitPriceScale(displayData, this.viewport.getState());
     return displayData;
   }
 

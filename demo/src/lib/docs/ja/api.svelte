@@ -229,10 +229,32 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  変化率の比較ラインは、画面上の最初のバーにおけるメインの終値、つまりパーセントスケールが 0% と読む価格から始まり、
+  もう一方のシンボル自身の画面上の最初のバーから数えます。バーの始まりが遅いシンボルも 0% から始まります。
+  価格スケールをパーセントにすると（<code>chart.setScaleMode('percentage')</code>）、各ラインは画面上の最初のバーからの
+  自身の変化率をそのまま示し、パンすると変わります。ラインのラベルはラインの終端にあります。
+  <code>chart.getCompareValues(barIndex?)</code> は、独自の凡例のために、あるバー（既定は最後のバー）での各ラインの値を返します：<code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>。
+  <code>close</code> はそのバーまたはそれ以前のもう一方のシンボルの終値、<code>change</code> はラインが示すとおりの変化率（%）です。
+  もう一方のシンボルの最後のバーを過ぎると（バーを一度だけ取得し、チャートが更新を続けている場合）、最後の終値を
+  <code>stale: true</code> 付きで返します。<code>chart.setCompareVisible(id, false)</code> はラインを隠し、自動スケールから外します。
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   ChartWidget では、ツールバーの比較（とオブジェクトツリーの +）で比較ダイアログが開きます。シンボルを検索し、
   <strong>追加方法</strong>で表示方法（変化率、専用スケール、専用サブチャート、スプレッド、比率、価格またはリターンの相関）を
   選んで、いくつでも追加できます。比較中のシンボルは先頭に並び、それぞれに表示方法と、外すためのボタンが付きます。
   次に開いたときは、前回使った表示方法が選ばれています。
+</p>
+<p>
+  ChartWidget は、シンボルを変化率で比較している間は価格スケールをパーセントにし、最後の比較を外すと元のスケールに戻します。
+  対数、パーセント、100 基準のスケールはそのままです。比較中に選んだスケール（ステータスバーの % や log、チャートのメニュー、設定）は、
+  最後の比較を外した後も保たれます。このパーセントスケールは保存されません。レイアウトと共有リンクにはご自身のスケールが残ります。
+  凡例はインジケーターの上に、変化率で比較中の各シンボルを、価格とカーソル位置のバー（それ以外は最後のバー）での変化率、
+  隠すための目のボタン、外すためのボタンとともに並べます。そのバーはチャートと同じ深さまで取得され、チャートが過去のバーを
+  読み込むと再取得されるので、ラインはチャートと同じ位置から始まります。
 </p>
 
 <h3>データのエクスポート</h3>
@@ -765,6 +787,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>価格アラート</h3>

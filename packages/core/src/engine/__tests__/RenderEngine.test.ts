@@ -743,3 +743,31 @@ describe('RenderEngine — the day’s price limits', () => {
     expect(texts).toContain('99,500');
   });
 });
+
+describe('RenderEngine — overlay value tags on the price axis', () => {
+  /** The texts the scene canvas got with an overlay line at 110, on a 0 to 200 view. */
+  function tagTexts(viewport: Partial<ViewportState>): string[] {
+    const { ctx } = makeContext();
+    ctx.indicatorEngine = {
+      ...fakeIndicators([]),
+      getLatestOverlayValues: () => [{ value: 110, color: '#f00' }],
+    } as unknown as RenderContext['indicatorEngine'];
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 0, max: 200 }, ...viewport };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const fillText = vi.fn();
+    engine.layerManager.getLayer(LayerType.Main)!.ctx.fillText = fillText;
+    runFrame();
+    return fillText.mock.calls.map((call) => String(call[0]));
+  }
+
+  it('writes them as prices on a regular scale', () => {
+    expect(tagTexts({})).toContain('110.00');
+  });
+
+  it('writes them in percent on a percent scale, and indexed on an indexed one, as the scale reads', () => {
+    expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 })).toContain('+10.00%');
+    expect(tagTexts({ scaleMode: 'indexedTo100', scaleBaseline: 50 })).toContain('220.00');
+  });
+});

@@ -226,9 +226,29 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  百分比对比线从屏幕上第一根K线的主品种收盘价开始，也就是百分比坐标读作 0% 的价格，并从另一个品种自己在屏幕上的第一根K线算起；
+  K线开始得较晚的品种也从 0% 开始。价格坐标设为百分比时（<code>chart.setScaleMode('percentage')</code>），
+  每条线读出的就是它自屏幕上第一根K线以来的涨跌幅，平移图表时随之变化。线的标签在线的末端。
+  <code>chart.getCompareValues(barIndex?)</code> 给出每条线在某根K线（默认最后一根）上的数值，便于自制图例：<code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>，
+  其中 <code>close</code> 是另一个品种在该K线或之前的收盘价，<code>change</code> 是其百分比涨跌幅，与线上读到的一致。
+  超过另一个品种最后一根K线时（K线只获取了一次，而图表仍在继续更新），返回其最后的收盘价，并带 <code>stale: true</code>。
+  <code>chart.setCompareVisible(id, false)</code> 隐藏一条线，并把它排除在自动坐标之外。
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   在 ChartWidget 中，工具栏上的对比（以及对象树中的 +）会打开对比对话框：搜索品种，在<strong>添加方式</strong>下选择对比方式
   （涨跌幅、独立坐标、独立副图、价差、比值，或按价格或收益率计算的相关性），想添加多少个都可以。已在对比的品种列在最前面，
   每个都标出其对比方式，并带一个移除按钮。下次打开时，对话框默认使用上次用过的方式。
+</p>
+<p>
+  在 ChartWidget 中，只要有品种以百分比方式对比，价格坐标就会切换为百分比；最后一个对比移除后，恢复为你原来的坐标。
+  对数、百分比或指数化到 100 的坐标保持不变；对比期间你自己选择的坐标（状态栏的 % 或 log、图表菜单、设置）会被保留，
+  最后一个对比移除后也不例外。这个百分比坐标从不保存：布局和分享链接保留的是你自己的坐标。图例在指标上方列出每个以百分比对比的品种，
+  显示其价格以及在光标所在K线（否则为最后一根）上的涨跌幅，并带一个隐藏用的眼睛按钮和一个移除按钮。
+  它的K线按图表的深度获取，图表加载更早的K线时会再次获取，因此它的线与图表从同一处开始。
 </p>
 
 <h3>导出数据</h3>
@@ -741,6 +761,7 @@ await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing ad
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>价格提醒</h3>
