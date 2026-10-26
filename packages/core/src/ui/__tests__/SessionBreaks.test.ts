@@ -225,3 +225,25 @@ describe('SessionBreaks — zoomed far out', () => {
     for (let i = 1; i < xs.length; i++) expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(6);
   });
 });
+
+describe('SessionBreaks on daily bars', () => {
+  // Weekdays of September to November 2026 in Ho Chi Minh City, each built at
+  // its midnight there: 17:00 UTC the day before. Read in UTC or New York,
+  // each is dated a day early, which would put a week or month line one bar
+  // off; the time axis dates them by the exchange's zone instead.
+  const days: DataSeries = [];
+  for (let t = Date.UTC(2026, 8, 1); t < Date.UTC(2026, 10, 30); t += 86_400_000) {
+    const weekday = new Date(t).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) days.push({ time: t - 7 * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+  }
+
+  it('draws no lines in any zone shown, so a day read in another zone moves none', () => {
+    const vp: ViewportState = { ...viewport(), visibleRange: { from: 0, to: days.length } };
+    for (const zone of [0, 'America/New_York', 'Asia/Ho_Chi_Minh']) {
+      const sb = new SessionBreaks();
+      sb.setVisible(true);
+      sb.setTimezone(zone);
+      expect(sb.lineRects(vp, DARK_THEME, days)).toEqual([]);
+    }
+  });
+});
