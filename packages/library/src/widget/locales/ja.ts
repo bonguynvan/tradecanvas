@@ -64,6 +64,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'legend.remove': '削除',
   'legend.collapse': 'インジケーターを折りたたむ',
   'legend.expand': 'インジケーターを表示',
+  'legend.offChartType': 'このチャートタイプでは描画されません',
   'indicatorSettings.title': '{name} の設定',
   'indicatorSettings.tab.inputs': 'パラメーター',
   'indicatorSettings.tab.style': 'スタイル',

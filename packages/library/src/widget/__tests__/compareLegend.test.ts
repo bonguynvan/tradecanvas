@@ -24,6 +24,11 @@ describe('a percent compare’s legend row', () => {
     expect(row.visible).toBe(false);
   });
 
+  it('dims the row, with no figures, where the chart draws no compare lines', () => {
+    const [row] = compareLegendRows([value({})], 'en-US', false);
+    expect(row).toMatchObject({ kind: 'compare', label: 'DOGEUSDT', visible: true, offChartType: true, values: [] });
+  });
+
   it('writes a price in decimals of its own size, in the number locale', () => {
     expect(formatComparePrice(65432.1234)).toBe('65,432.12');
     expect(formatComparePrice(152.3)).toBe('152.30');

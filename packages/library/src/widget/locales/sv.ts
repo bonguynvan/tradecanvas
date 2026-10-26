@@ -64,6 +64,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'legend.remove': 'Ta bort',
   'legend.collapse': 'Fäll ihop indikatorer',
   'legend.expand': 'Visa indikatorer',
+  'legend.offChartType': 'Ritas inte i den här diagramtypen',
   'indicatorSettings.title': 'Inställningar för {name}',
   'indicatorSettings.tab.inputs': 'Parametrar',
   'indicatorSettings.tab.style': 'Stil',

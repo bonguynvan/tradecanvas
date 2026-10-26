@@ -64,6 +64,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'legend.remove': 'Verwijderen',
   'legend.collapse': 'Indicatoren inklappen',
   'legend.expand': 'Indicatoren tonen',
+  'legend.offChartType': 'Niet getekend in dit grafiektype',
   'indicatorSettings.title': 'Instellingen van {name}',
   'indicatorSettings.tab.inputs': 'Parameters',
   'indicatorSettings.tab.style': 'Stijl',

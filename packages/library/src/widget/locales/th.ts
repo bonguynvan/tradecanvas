@@ -64,6 +64,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'legend.remove': 'ลบ',
   'legend.collapse': 'ยุบอินดิเคเตอร์',
   'legend.expand': 'แสดงอินดิเคเตอร์',
+  'legend.offChartType': 'ไม่วาดในกราฟประเภทนี้',
   'indicatorSettings.title': 'ตั้งค่า {name}',
   'indicatorSettings.tab.inputs': 'พารามิเตอร์',
   'indicatorSettings.tab.style': 'รูปแบบ',

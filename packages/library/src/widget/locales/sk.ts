@@ -64,6 +64,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'legend.remove': 'Odobrať',
   'legend.collapse': 'Zbaliť indikátory',
   'legend.expand': 'Zobraziť indikátory',
+  'legend.offChartType': 'Pri tomto type grafu sa nevykresľuje',
   'indicatorSettings.title': 'Nastavenia: {name}',
   'indicatorSettings.tab.inputs': 'Parametre',
   'indicatorSettings.tab.style': 'Štýl',

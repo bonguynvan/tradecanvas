@@ -255,6 +255,12 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   biểu đồ vẫn chạy tiếp), nó cho giá đóng cửa cuối cùng kèm <code>stale: true</code>.
   <code>chart.setCompareVisible(id, false)</code> ẩn một đường và bỏ nó khỏi thang tự động.
 </p>
+<p>
+  Renko, Kagi, Line Break, P&amp;F và Range Bars không vẽ đường so sánh: nến của chúng chỉ được đếm
+  tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
+  kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
+  đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -274,7 +280,9 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   sánh theo phần trăm phía trên các chỉ báo, kèm giá và mức thay đổi tại nến dưới con trỏ (nếu
   không thì tại nến cuối), một nút mắt để ẩn và một nút để gỡ ra. Nến của mã đó được tải sâu bằng
   nến của biểu đồ, và tải lại khi biểu đồ tải thêm nến cũ, nên đường của nó bắt đầu cùng chỗ với
-  biểu đồ.
+  biểu đồ. Ở một kiểu biểu đồ không vẽ đường so sánh, ChartWidget giữ nguyên thang của bạn và làm
+  mờ dòng của từng mã so sánh, với chú giải cho biết lý do; khi quay lại một kiểu có vẽ đường, thang
+  phần trăm trở lại.
 </p>
 
 <h3>Xuất dữ liệu</h3>

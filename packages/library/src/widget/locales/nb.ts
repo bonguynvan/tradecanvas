@@ -65,6 +65,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'legend.remove': 'Fjern',
   'legend.collapse': 'Fell sammen indikatorer',
   'legend.expand': 'Vis indikatorer',
+  'legend.offChartType': 'Tegnes ikke i denne graftypen',
   'indicatorSettings.title': 'Innstillinger for {name}',
   'indicatorSettings.tab.inputs': 'Parametere',
   'indicatorSettings.tab.style': 'Stil',

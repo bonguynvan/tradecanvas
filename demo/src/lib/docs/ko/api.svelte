@@ -243,6 +243,12 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   가져오고 차트는 계속 갱신되는 경우) 마지막 종가를 <code>stale: true</code>와 함께 돌려줍니다.
   <code>chart.setCompareVisible(id, false)</code>는 선을 숨기고 자동 눈금에서 뺍니다.
 </p>
+<p>
+  렌코, 카기, 라인 브레이크, P&amp;F, 레인지 바에서는 비교선을 그리지 않습니다. 이들의 봉은 첫 봉부터 차례로 셀 뿐 자신의
+  시각이 없어서, 선을 그리면 다른 종목을 엉뚱한 봉에서 읽게 되기 때문입니다. 이 유형에서는 비교선이 자동 눈금에 들어가지
+  않으며, <code>getCompareValues()</code>는 어느 봉을 묻든 각 종목의 최신 데이터 봉 종가를 <code>change: null</code>과 함께
+  돌려줍니다.
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -259,7 +265,8 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   비교를 제거한 뒤에도 유지됩니다. 이 퍼센트 눈금은 저장되지 않습니다. 레이아웃과 공유 링크에는 사용자의 눈금이 남습니다.
   범례는 지표 위에 변동률로 비교 중인 각 종목을 가격, 커서 아래 봉(그 밖에는 마지막 봉)에서의 변동률, 숨기기 위한 눈 버튼,
   제거 버튼과 함께 나열합니다. 그 봉은 차트만큼 깊이 가져오며, 차트가 과거 봉을 불러오면 다시 가져오므로 선이 차트와 같은
-  곳에서 시작합니다.
+  곳에서 시작합니다. 비교선을 그리지 않는 차트 유형에서는 눈금을 그대로 두고 범례의 각 비교 행을 흐리게 표시하며, 그 이유는
+  툴팁으로 알려 줍니다. 선을 그리는 유형으로 돌아가면 퍼센트 눈금도 돌아옵니다.
 </p>
 
 <h3>데이터 내보내기</h3>

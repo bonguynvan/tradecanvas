@@ -148,6 +148,45 @@ describe('percent compares on a percent scale', () => {
   });
 });
 
+describe('compares on chart types whose bars carry no time', () => {
+  const state = () => (chart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState();
+  /** The compare renderer the next frames draw with, null when they draw none. */
+  const drawnWith = () => {
+    let drawn: unknown = 'never set';
+    const engine = (chart as unknown as { engine: { setRenderContext(ctx: { compareRenderer: unknown }): void } }).engine;
+    const original = engine.setRenderContext.bind(engine);
+    engine.setRenderContext = (ctx) => {
+      drawn = ctx.compareRenderer;
+      original(ctx);
+    };
+    return () => drawn;
+  };
+
+  it('draws no compare line on bricks, lines or columns, nor fits the scale to one', () => {
+    chart.setCompareMode('absolute');
+    chart.addCompareSymbol('b', 'B', other, '#f00');
+    const drawn = drawnWith();
+    for (const type of ['renko', 'lineBreak', 'kagi', 'pointAndFigure', 'rangeBars'] as const) {
+      chart.setChartType(type);
+      expect(drawn(), type).toBeNull();
+      expect(state().priceRange.max, type).toBeLessThan(1000);
+    }
+    // Heikin-Ashi keeps a bar per data bar, and its times.
+    chart.setChartType('heikinAshi');
+    expect(drawn()).not.toBeNull();
+    expect(state().priceRange.max).toBeGreaterThan(1000);
+  });
+
+  it('gives each compare’s close at the latest bar there, and no change, whatever bar is asked for', () => {
+    chart.addCompareSymbol('b', 'B', other, '#f00');
+    chart.setChartType('renko');
+    const values = [chart.getCompareValues(), chart.getCompareValues(0)];
+    for (const [at] of values) {
+      expect(at).toMatchObject({ id: 'b', close: other[other.length - 1].close, change: null, stale: false });
+    }
+  });
+});
+
 describe('a pane in percent', () => {
   it('labels a pane in percent of its first value on screen, and keeps it in a saved state', () => {
     chart.setSymbolSeries('B', other);

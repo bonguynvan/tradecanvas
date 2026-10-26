@@ -64,6 +64,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'legend.remove': 'Αφαίρεση',
   'legend.collapse': 'Σύμπτυξη δεικτών',
   'legend.expand': 'Εμφάνιση δεικτών',
+  'legend.offChartType': 'Δεν σχεδιάζεται σε αυτόν τον τύπο γραφήματος',
   'indicatorSettings.title': 'Ρυθμίσεις {name}',
   'indicatorSettings.tab.inputs': 'Παράμετροι',
   'indicatorSettings.tab.style': 'Στυλ',

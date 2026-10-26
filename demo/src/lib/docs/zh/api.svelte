@@ -239,6 +239,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   超过另一个品种最后一根K线时（K线只获取了一次，而图表仍在继续更新），返回其最后的收盘价，并带 <code>stale: true</code>。
   <code>chart.setCompareVisible(id, false)</code> 隐藏一条线，并把它排除在自动坐标之外。
 </p>
+<p>
+  Renko、Kagi、Line Break、P&amp;F 和 Range Bars 不绘制对比线：它们的K线只是从第一根往后计数，没有自己的时间，
+  在这些图上画线会在错误的K线上读取另一个品种。在这些图表类型上，对比线不计入自动坐标，
+  <code>getCompareValues()</code> 无论问哪根K线，都给出每个品种在最新一根数据K线上的收盘价，并带 <code>change: null</code>。
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -254,6 +259,8 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   最后一个对比移除后也不例外。这个百分比坐标从不保存：布局和分享链接保留的是你自己的坐标。图例在指标上方列出每个以百分比对比的品种，
   显示其价格以及在光标所在K线（否则为最后一根）上的涨跌幅，并带一个隐藏用的眼睛按钮和一个移除按钮。
   它的K线按图表的深度获取，图表加载更早的K线时会再次获取，因此它的线与图表从同一处开始。
+  在不绘制对比线的图表类型上，ChartWidget 保持你的坐标不变，并把每个对比品种的图例行变暗，其提示说明原因；
+  回到会绘制对比线的类型时，百分比坐标随之恢复。
 </p>
 
 <h3>导出数据</h3>

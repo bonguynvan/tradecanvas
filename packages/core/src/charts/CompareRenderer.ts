@@ -191,14 +191,15 @@ export class CompareRenderer {
    * Each compare's close at main bar `index` and its change since its line's
    * start on screen, rebased as the line is, so a legend reads what the
    * percent scale does. Past a compare's last bar it gives its last close,
-   * `stale`.
+   * `stale`. Without a viewport (no line on screen to read it off) the
+   * change is null.
    */
-  valuesAt(mainData: DataSeries, viewport: ViewportState, index: number): CompareValue[] {
+  valuesAt(mainData: DataSeries, viewport: ViewportState | null, index: number): CompareValue[] {
     const time = mainData[index]?.time;
     const unit = barTimeUnit(mainData);
     return this.getSymbols().map((sym) => {
       const at = time === undefined ? undefined : this.store.lastCloseAt(sym.id, time, unit);
-      const symBase = at ? this.anchor(sym, mainData, viewport)?.symBase : undefined;
+      const symBase = at && viewport ? this.anchor(sym, mainData, viewport)?.symBase : undefined;
       const close = at?.close ?? null;
       return {
         id: sym.id,

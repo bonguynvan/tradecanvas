@@ -65,6 +65,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'legend.remove': 'הסרה',
   'legend.collapse': 'כיווץ אינדיקטורים',
   'legend.expand': 'הצגת אינדיקטורים',
+  'legend.offChartType': 'לא משורטט בסוג גרף זה',
   'indicatorSettings.title': 'הגדרות {name}',
   'indicatorSettings.tab.inputs': 'קלטים',
   'indicatorSettings.tab.style': 'סגנון',

@@ -64,6 +64,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'legend.remove': 'Eltávolítás',
   'legend.collapse': 'Indikátorok összecsukása',
   'legend.expand': 'Indikátorok megjelenítése',
+  'legend.offChartType': 'Ezen a grafikontípuson nem jelenik meg',
   'indicatorSettings.title': '{name} beállításai',
   'indicatorSettings.tab.inputs': 'Paraméterek',
   'indicatorSettings.tab.style': 'Stílus',

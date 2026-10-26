@@ -3407,11 +3407,28 @@ export class Chart {
    * percent since its first bar on screen, which is what its line reads on
    * a percent price scale (`setScaleMode('percentage')`). Past the compare's
    * last bar (bars you fetched once, the chart streaming on), its last close,
-   * with `stale` true.
+   * with `stale` true. Where the chart draws no compare lines, on Renko,
+   * Kagi, line break, point & figure and range bars (`isTimeAligned()`
+   * false), each one's close at the latest data bar, whatever `barIndex`,
+   * and no change.
    */
   getCompareValues(barIndex?: number): CompareValue[] {
+    if (!this.comparesDrawn()) {
+      const bars = this.series.bars();
+      return this.compareRenderer.valuesAt(bars, null, bars.length - 1);
+    }
     const data = this.getDisplayData();
     return this.compareRenderer.valuesAt(data, this.viewport.getState(), barIndex ?? data.length - 1);
+  }
+
+  /**
+   * Compare lines line up with the bars by time: not on the chart types
+   * that redraw them (Renko bricks, Kagi lines…), whose times only count
+   * them, so a line there would read the other symbol at the wrong bars or
+   * at none.
+   */
+  private comparesDrawn(): boolean {
+    return this.isTimeAligned();
   }
 
   clearCompareSymbols(): void {
@@ -5676,7 +5693,7 @@ export class Chart {
     const to = Math.min(vs.visibleRange.to, displayData.length - 1);
     const range = joinRanges(
       joinRanges(computePriceRange(displayData, from, to, 0), this.indicatorEngine.getOverlayPriceRange(from, to)),
-      this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
+      this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(displayData, vs) : null,
     )!;
     const volume = this.features.volume && this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
     const band = volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN;
@@ -5959,7 +5976,7 @@ export class Chart {
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,
       sessionShading: this.sessionShading,
-      compareRenderer: this.compareRenderer,
+      compareRenderer: this.comparesDrawn() ? this.compareRenderer : null,
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,
       selectionBoxOverlay: this.selectionBoxOverlay,

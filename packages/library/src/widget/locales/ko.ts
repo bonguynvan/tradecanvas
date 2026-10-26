@@ -64,6 +64,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'legend.remove': '삭제',
   'legend.collapse': '지표 접기',
   'legend.expand': '지표 펼치기',
+  'legend.offChartType': '이 차트 유형에서는 그려지지 않음',
   'indicatorSettings.title': '{name} 설정',
   'indicatorSettings.tab.inputs': '입력값',
   'indicatorSettings.tab.style': '스타일',

@@ -13,6 +13,8 @@ export interface IndicatorLegendRow {
   visible: boolean;
   /** On, but not drawn on the chart's interval (its settings keep it to others). */
   offInterval?: boolean;
+  /** A compare on, but not drawn on the chart's type (Renko, Kagi and the like draw no compare lines). */
+  offChartType?: boolean;
   /** The values at the bar in view; `color` null = the neutral text colour. */
   values: readonly { text: string; color: string | null }[];
   /**
@@ -65,6 +67,8 @@ export interface IndicatorLegendLabels {
   paneRestore?: string;
   /** A row's note while its indicator isn't drawn on this interval. */
   offInterval?: string;
+  /** A row's note while its compare isn't drawn on this chart type. */
+  offChartType?: string;
 }
 
 interface PaneEls {
@@ -288,14 +292,15 @@ export class WidgetIndicatorLegend {
   }
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
-    const state = `${row.label}|${row.visible}|${!!row.offInterval}`;
+    const note = this.offNote(row);
+    const state = `${row.label}|${row.visible}|${note}`;
     if (state !== els.state) {
       els.state = state;
       els.visible = row.visible;
       els.name.textContent = row.label;
       if (els.settings) els.name.title = this.labels.settings;
-      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || !!row.offInterval);
-      if (row.offInterval && this.labels.offInterval) els.el.title = this.labels.offInterval;
+      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || note !== null);
+      if (note) els.el.title = note;
       else els.el.removeAttribute('title');
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
@@ -315,6 +320,13 @@ export class WidgetIndicatorLegend {
       if (v.color) span.style.color = v.color;
       return span;
     }));
+  }
+
+  /** Why a row that is on is not drawn ('' without a note to say so), or null when it is drawn. */
+  private offNote(row: IndicatorLegendRow): string | null {
+    if (row.offInterval) return this.labels.offInterval ?? '';
+    if (row.offChartType) return this.labels.offChartType ?? '';
+    return null;
   }
 
   /** Pane rows are placed in their pane; stacked rows flow in the stack. */

@@ -954,6 +954,7 @@ export class ChartWidget {
       paneMaximize: this.t('pane.maximize'),
       paneRestore: this.t('pane.restore'),
       offInterval: this.t('indicatorSettings.offInterval'),
+      offChartType: this.t('legend.offChartType'),
     });
     this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
     this.chart.on('crosshairMove', (e) => {
@@ -970,6 +971,11 @@ export class ChartWidget {
     for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange'] as const) {
       this.chart.on(event, () => this.scheduleLegend());
     }
+    // Whoever changes the chart type: percent compares hold the scale only where their lines are drawn.
+    this.chart.on('chartTypeChange', () => {
+      if (this.compareScaleHeld) this.showHeldScale();
+      this.scheduleLegend();
+    });
 
     // Replay: while picking, a click starts the replay at that bar; during a
     // replay it jumps the cursor there.
@@ -3599,9 +3605,14 @@ export class ChartWidget {
     return Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
   }
 
-  /** Percent compares hold a regular price scale in percent: the user's has not been picked meanwhile. */
+  /**
+   * Percent compares hold a regular price scale in percent: the user's has
+   * not been picked meanwhile, and the chart draws their lines (Renko, Kagi
+   * and the like draw none).
+   */
   private holdsPercentScale(): boolean {
-    return this.compareScaleHeld && this.compares.length > 0 && this.settingsState.scaleMode === 'regular';
+    return this.compareScaleHeld && this.compares.length > 0 && this.settingsState.scaleMode === 'regular'
+      && this.chart.isTimeAligned();
   }
 
   /**
@@ -3633,6 +3644,11 @@ export class ChartWidget {
   private holdCompareScale(held: boolean): void {
     if (held === this.compareScaleHeld) return;
     this.compareScaleHeld = held;
+    this.showHeldScale();
+  }
+
+  /** The scale a hold of percent compares puts on screen, in the status bar and in the settings. */
+  private showHeldScale(): void {
     this.showScaleMode();
     this.refreshScaleSwitches();
     this.settings?.refresh(this.shownSettings());
@@ -4996,7 +5012,8 @@ export class ChartWidget {
     const last = this.chart.getData().length - 1;
     // Renko, Kagi and the like redraw the series: the hovered bar is not a
     // data bar, so their values stay on the latest one.
-    const hover = this.chart.isTimeAligned() ? this.legendHoverIndex : null;
+    const aligned = this.chart.isTimeAligned();
+    const hover = aligned ? this.legendHoverIndex : null;
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
     // Each pane's indicators, its own first, stacked down from its top.
     const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
@@ -5004,8 +5021,10 @@ export class ChartWidget {
       (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
     }
     const locale = this.settingsState.numberLocale || 'en-US';
-    // The symbols compared in percent first: the lines on the price scale itself.
-    const compares = compareLegendRows(idx >= 0 ? this.chart.getCompareValues?.(idx) ?? [] : [], locale);
+    // The symbols compared in percent first: the lines on the price scale itself. With nothing
+    // hovered, at the chart's own latest bar (no index: on Renko and the like it is not the data's).
+    const compareValues = idx >= 0 ? this.chart.getCompareValues?.(hover === null ? undefined : idx) ?? [] : [];
+    const compares = compareLegendRows(compareValues, locale, aligned);
     const indicators: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
       const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;

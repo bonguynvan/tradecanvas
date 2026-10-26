@@ -64,6 +64,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'legend.remove': 'Hapus',
   'legend.collapse': 'Ciutkan indikator',
   'legend.expand': 'Tampilkan indikator',
+  'legend.offChartType': 'Tidak digambar di jenis grafik ini',
   'indicatorSettings.title': 'Pengaturan {name}',
   'indicatorSettings.tab.inputs': 'Parameter',
   'indicatorSettings.tab.style': 'Gaya',

@@ -89,7 +89,9 @@ class FakeChart {
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   getLegendBottom(): number { return 40; }
-  isTimeAligned(): boolean { return true; }
+  /** False on Renko and the like, which draw no compare lines. */
+  timeAligned = true;
+  isTimeAligned(): boolean { return this.timeAligned; }
   isTimeframeAllowed(): boolean { return true; }
   isAutoScale(): boolean { return true; }
   isInvertScale(): boolean { return false; }
@@ -741,6 +743,23 @@ describe('ChartWidget percent compares and the price scale', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 1300);
     expect(fake.compareData).toEqual([['cmp_BBB', bars]]);
+  });
+
+  it('holds no percent scale on a chart type that draws no compare lines, and holds it again off it', async () => {
+    const fake = make();
+    fake.timeAligned = false; // Renko, say
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('regular');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('false');
+    fake.timeAligned = true;
+    fake.emit('chartTypeChange', { type: 'candlestick', previous: 'renko' });
+    expect(fake.scaleMode).toBe('percentage');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('true');
+    fake.timeAligned = false;
+    fake.emit('chartTypeChange', { type: 'kagi', previous: 'candlestick' });
+    expect(fake.scaleMode).toBe('regular');
+    // The user's scale all along: layouts keep it.
+    expect(widget.captureLayout().scaleMode).toBe('regular');
   });
 
   it('leaves the scale alone where the chart takes no compare lines', async () => {

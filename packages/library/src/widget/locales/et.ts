@@ -65,6 +65,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'legend.remove': 'Eemalda',
   'legend.collapse': 'Ahenda indikaatorid',
   'legend.expand': 'Näita indikaatoreid',
+  'legend.offChartType': 'Selles graafikutüübis ei joonistata',
   'indicatorSettings.title': 'Seaded: {name}',
   'indicatorSettings.tab.inputs': 'Parameetrid',
   'indicatorSettings.tab.style': 'Stiil',

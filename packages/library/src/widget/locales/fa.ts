@@ -65,6 +65,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'legend.remove': 'حذف',
   'legend.collapse': 'جمع کردن اندیکاتورها',
   'legend.expand': 'نمایش اندیکاتورها',
+  'legend.offChartType': 'در این نوع نمودار رسم نمی‌شود',
   'indicatorSettings.title': 'تنظیمات {name}',
   'indicatorSettings.tab.inputs': 'ورودی‌ها',
   'indicatorSettings.tab.style': 'سبک',

@@ -66,6 +66,7 @@ export const EN_MESSAGES = {
   'legend.remove': 'Remove',
   'legend.collapse': 'Collapse indicators',
   'legend.expand': 'Show indicators',
+  'legend.offChartType': 'Not drawn on this chart type',
   'indicatorSettings.title': '{name} settings',
   'indicatorSettings.tab.inputs': 'Inputs',
   'indicatorSettings.tab.style': 'Style',

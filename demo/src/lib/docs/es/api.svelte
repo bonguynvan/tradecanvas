@@ -258,6 +258,13 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   gráfico sigue en vivo), da su último cierre, con <code>stale: true</code>.
   <code>chart.setCompareVisible(id, false)</code> oculta una línea y la saca de la escala automática.
 </p>
+<p>
+  Renko, Kagi, Line Break, P&amp;F y Range Bars no dibujan líneas de comparación: sus barras solo se
+  cuentan a partir de la primera, sin una hora propia, así que una línea ahí leería el otro símbolo en
+  barras equivocadas. En esos tipos las líneas quedan fuera de la escala automática, y
+  <code>getCompareValues()</code> da el cierre de cada una en la última barra de datos, pidas la barra
+  que pidas, con <code>change: null</code>.
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -278,6 +285,9 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   y su cambio en la barra bajo el cursor (si no, en la última), un ojo para ocultarlo y un botón para
   quitarlo. Sus barras se piden con la misma profundidad que las del gráfico, y otra vez cuando el
   gráfico carga barras más antiguas, así que su línea empieza donde empieza el gráfico.
+  En un tipo de gráfico que no dibuja líneas de comparación deja tu escala como está y atenúa la fila
+  de cada comparación, cuya información emergente dice por qué; al volver a uno que las dibuja, vuelve
+  la escala en porcentaje.
 </p>
 
 <h3>Exportar datos</h3>

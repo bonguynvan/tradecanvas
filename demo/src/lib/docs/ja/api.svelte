@@ -243,6 +243,12 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   もう一方のシンボルの最後のバーを過ぎると（バーを一度だけ取得し、チャートが更新を続けている場合）、最後の終値を
   <code>stale: true</code> 付きで返します。<code>chart.setCompareVisible(id, false)</code> はラインを隠し、自動スケールから外します。
 </p>
+<p>
+  練行足、カギ足、新値足、P&amp;F、レンジバーでは比較ラインを描きません。これらのバーは最初のバーから数えられるだけで
+  独自の時刻を持たないため、ラインを引くともう一方のシンボルを誤ったバーで読むことになるからです。これらのタイプでは
+  比較ラインは自動スケールに含まれず、<code>getCompareValues()</code> はどのバーを尋ねても、各シンボルの最新のデータバーでの
+  終値を <code>change: null</code> とともに返します。
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -259,7 +265,9 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   最後の比較を外した後も保たれます。このパーセントスケールは保存されません。レイアウトと共有リンクにはご自身のスケールが残ります。
   凡例はインジケーターの上に、変化率で比較中の各シンボルを、価格とカーソル位置のバー（それ以外は最後のバー）での変化率、
   隠すための目のボタン、外すためのボタンとともに並べます。そのバーはチャートと同じ深さまで取得され、チャートが過去のバーを
-  読み込むと再取得されるので、ラインはチャートと同じ位置から始まります。
+  読み込むと再取得されるので、ラインはチャートと同じ位置から始まります。比較ラインを描かないチャートタイプでは、
+  スケールはそのままにし、凡例の各比較の行を淡く表示して、その理由をツールチップで示します。ラインを描くタイプに戻ると、
+  パーセントスケールも戻ります。
 </p>
 
 <h3>データのエクスポート</h3>

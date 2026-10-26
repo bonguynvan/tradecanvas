@@ -390,6 +390,25 @@ describe('percent comparisons in the on-chart legend', () => {
     FakeChart.last.emit('visibleRangeChange', { from: 2, to: 9 });
     await frame();
     expect(FakeChart.last.compareAsked).not.toEqual([]);
+    // Off the chart: the chart's own last bar, not an index into the data.
+    FakeChart.last.emit('crosshairLeave', {});
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBeUndefined();
+  });
+
+  it('dims a comparison where the chart draws no compare lines, and says why', async () => {
+    await comparing();
+    FakeChart.last.timeAligned = false; // Renko, say: its bars are not the data's
+    FakeChart.last.emit('crosshairMove', { barIndex: 4 });
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBeUndefined();
+    const [bbb] = rows();
+    expect(bbb.classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    expect(bbb.title).toBe('Not drawn on this chart type');
+    expect(values(bbb)).toEqual([]);
+    // Its eye and its remove button still work.
+    act(bbb, 'remove');
+    expect(FakeChart.last.compareLines).toEqual([]);
   });
 });
 

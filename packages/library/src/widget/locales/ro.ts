@@ -64,6 +64,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'legend.remove': 'Eliminare',
   'legend.collapse': 'Restrângere indicatori',
   'legend.expand': 'Afișare indicatori',
+  'legend.offChartType': 'Nu se desenează pe acest tip de grafic',
   'indicatorSettings.title': 'Setări {name}',
   'indicatorSettings.tab.inputs': 'Parametri',
   'indicatorSettings.tab.style': 'Stil',

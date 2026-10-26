@@ -65,6 +65,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'legend.remove': 'Fjern',
   'legend.collapse': 'Fold indikatorer sammen',
   'legend.expand': 'Vis indikatorer',
+  'legend.offChartType': 'Tegnes ikke i denne graftype',
   'indicatorSettings.title': 'Indstillinger for {name}',
   'indicatorSettings.tab.inputs': 'Parametre',
   'indicatorSettings.tab.style': 'Stil',

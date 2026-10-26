@@ -252,6 +252,12 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   on) it gives its last close, with <code>stale: true</code>. <code>chart.setCompareVisible(id, false)</code>
   hides a line and leaves it out of the auto scale.
 </p>
+<p>
+  Renko, Kagi, Line Break, P&amp;F and Range Bars draw no compare lines: their bars only count on from
+  the first, with no time of their own, so a line there would read the other symbol at the wrong
+  bars. On those types the lines stay out of the auto scale, and <code>getCompareValues()</code>
+  gives each one's close at the latest data bar, whatever bar is asked for, with <code>change: null</code>.
+</p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
@@ -271,6 +277,8 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   above the indicators, with its price and its change at the bar under the cursor (the last bar
   otherwise), an eye to hide it and a button to take it off. Its bars are fetched as deep as the
   chart's, and again when the chart loads older bars, so its line starts where the chart does.
+  On a chart type that draws no compare lines it leaves your scale as it is and dims each compare's
+  row, whose tooltip says why; back on one that draws them, the percent scale comes back.
 </p>
 
 <h3>Exporting data</h3>

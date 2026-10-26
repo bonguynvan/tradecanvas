@@ -64,6 +64,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'legend.remove': 'Удалить',
   'legend.collapse': 'Свернуть индикаторы',
   'legend.expand': 'Показать индикаторы',
+  'legend.offChartType': 'Не рисуется на этом типе графика',
   'indicatorSettings.title': 'Настройки: {name}',
   'indicatorSettings.tab.inputs': 'Параметры',
   'indicatorSettings.tab.style': 'Стиль',

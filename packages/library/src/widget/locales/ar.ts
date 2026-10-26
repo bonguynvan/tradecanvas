@@ -65,6 +65,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'legend.remove': 'إزالة',
   'legend.collapse': 'طي المؤشرات',
   'legend.expand': 'إظهار المؤشرات',
+  'legend.offChartType': 'لا يُرسم في هذا النوع من الرسوم البيانية',
   'indicatorSettings.title': 'إعدادات {name}',
   'indicatorSettings.tab.inputs': 'المدخلات',
   'indicatorSettings.tab.style': 'النمط',

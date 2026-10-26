@@ -64,6 +64,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'legend.remove': 'Quitar',
   'legend.collapse': 'Contraer indicadores',
   'legend.expand': 'Mostrar indicadores',
+  'legend.offChartType': 'No se dibuja en este tipo de gráfico',
   'indicatorSettings.title': 'Configuración de {name}',
   'indicatorSettings.tab.inputs': 'Parámetros',
   'indicatorSettings.tab.style': 'Estilo',

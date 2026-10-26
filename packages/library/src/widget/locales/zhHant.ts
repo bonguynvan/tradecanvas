@@ -64,6 +64,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'legend.remove': '刪除',
   'legend.collapse': '收合指標',
   'legend.expand': '顯示指標',
+  'legend.offChartType': '此圖表類型下不繪製',
   'indicatorSettings.title': '{name} 設定',
   'indicatorSettings.tab.inputs': '參數',
   'indicatorSettings.tab.style': '樣式',

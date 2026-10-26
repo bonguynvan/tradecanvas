@@ -64,6 +64,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'legend.remove': 'Kaldır',
   'legend.collapse': 'Göstergeleri daralt',
   'legend.expand': 'Göstergeleri göster',
+  'legend.offChartType': 'Bu grafik türünde çizilmiyor',
   'indicatorSettings.title': '{name} ayarları',
   'indicatorSettings.tab.inputs': 'Parametreler',
   'indicatorSettings.tab.style': 'Stil',

@@ -64,6 +64,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'legend.remove': 'Usuń',
   'legend.collapse': 'Zwiń wskaźniki',
   'legend.expand': 'Pokaż wskaźniki',
+  'legend.offChartType': 'Nierysowany na tym typie wykresu',
   'indicatorSettings.title': 'Ustawienia: {name}',
   'indicatorSettings.tab.inputs': 'Parametry',
   'indicatorSettings.tab.style': 'Styl',

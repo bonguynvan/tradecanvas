@@ -65,6 +65,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'legend.remove': 'Alih keluar',
   'legend.collapse': 'Runtuhkan penunjuk',
   'legend.expand': 'Tunjukkan penunjuk',
+  'legend.offChartType': 'Tidak dilukis pada jenis carta ini',
   'indicatorSettings.title': 'Tetapan {name}',
   'indicatorSettings.tab.inputs': 'Input',
   'indicatorSettings.tab.style': 'Gaya',

@@ -64,6 +64,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'legend.remove': 'Xoá',
   'legend.collapse': 'Thu gọn chỉ báo',
   'legend.expand': 'Hiện chỉ báo',
+  'legend.offChartType': 'Không vẽ ở loại biểu đồ này',
   'indicatorSettings.title': 'Cài đặt {name}',
   'indicatorSettings.tab.inputs': 'Thông số',
   'indicatorSettings.tab.style': 'Kiểu',

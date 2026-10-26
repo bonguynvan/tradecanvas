@@ -64,6 +64,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'legend.remove': '删除',
   'legend.collapse': '收起指标',
   'legend.expand': '显示指标',
+  'legend.offChartType': '此图表类型下不绘制',
   'indicatorSettings.title': '{name} 设置',
   'indicatorSettings.tab.inputs': '参数',
   'indicatorSettings.tab.style': '样式',
