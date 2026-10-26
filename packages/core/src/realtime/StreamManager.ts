@@ -14,7 +14,7 @@ import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
 import { CurrentPriceLine } from './CurrentPriceLine.js';
-import { withResampling } from './adapters/ResamplingAdapter.js';
+import { ResamplingAdapter, withResampling } from './adapters/ResamplingAdapter.js';
 import { withTickBars } from './TickBars.js';
 
 export interface StreamEvents {
@@ -92,6 +92,8 @@ export class StreamManager extends Emitter<StreamEvents> {
   private timeZone: string | null = null;
   /** When the history's last bar starts, ms (null: no history yet): bars from ticks follow its grid. */
   private historyEnd: number | null = null;
+  /** The wrapper that builds the timeframes the feed lacks (null: it serves every one): bars from ticks start where its do. */
+  private resampler: ResamplingAdapter | null = null;
 
   constructor() {
     super();
@@ -107,7 +109,9 @@ export class StreamManager extends Emitter<StreamEvents> {
 
     // Timeframes the feed lacks (7m, 90m…) are built from one it has.
     // Tick timeframes (100T) are built from the feed's trades.
-    const adapter = withTickBars(withResampling(config.adapter));
+    const resampled = withResampling(config.adapter);
+    this.resampler = resampled instanceof ResamplingAdapter ? resampled : null;
+    const adapter = withTickBars(resampled);
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);
@@ -228,12 +232,22 @@ export class StreamManager extends Emitter<StreamEvents> {
   /**
    * Bars from ticks land on the history's bars: a feed's dated days, days at
    * the exchange's midnight, and 4h bars on whichever grid the history's sit.
+   * A timeframe the feed lacks starts where the wrapper building it starts
+   * its bars, in the zone it keeps for the symbol: UTC days it built (the
+   * feed named no zone) stay UTC's, whatever zone the chart has.
    */
   private applyTickZone(): void {
-    const timeframe = this.config?.timeframe;
-    if (!this.aggregator || !timeframe) return;
+    const config = this.config;
+    if (!this.aggregator || !config) return;
     const last = this.historyEnd;
-    this.aggregator.setTimeZone(this.tickZone(timeframe, last), last !== null && last % DAY_MS === 0);
+    const datedHistory = last !== null && last % DAY_MS === 0;
+    const built = this.resampler?.bucketFor(config.symbol, config.timeframe);
+    if (built) {
+      // Only bars built from dated days are dated: ones from hours start at the zone's midnight.
+      this.aggregator.setTimeZone(built.timeZone ?? null, built.dates === true && datedHistory);
+      return;
+    }
+    this.aggregator.setTimeZone(this.tickZone(config.timeframe, last), datedHistory);
   }
 
   /** The zone whose midnight bars of `timeframe` built from ticks start at (null: UTC's, or the epoch's grid for hours). */

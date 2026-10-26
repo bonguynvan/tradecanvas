@@ -288,6 +288,19 @@ export class ResamplingAdapter implements DataAdapter {
     this.inner.dispose();
   }
 
+  /**
+   * How the bars of `timeframe` it builds for `symbol` are bucketed, as its
+   * history and live bars are: `timeZone` is the zone kept for the symbol's
+   * days (left out: UTC's midnight, and the epoch's grid for hours), `dates`
+   * whether they are built from bars a day long. Null for a timeframe the
+   * feed serves itself or can't build. A stream's bars from ticks follow it.
+   */
+  bucketFor(symbol: string, timeframe: TimeFrame): BucketOptions | null {
+    const base = baseTimeframe(timeframe, this.baseTimeframes);
+    if (base === null || base === timeframe) return null;
+    return { ...this.planFor(timeframe, this.keptZone(symbol)).bucket };
+  }
+
   // --- The symbol's zone ---
 
   /** Whether building `timeframe` needs the symbol's zone first: its buckets start at midnight, and the feed can say where. */

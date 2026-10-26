@@ -446,6 +446,24 @@ describe('ResamplingAdapter in the symbol’s time zone', () => {
     expect(seen.at(-1)?.bar.volume).toBe(5);
   });
 
+  it('says how it buckets the bars it builds for a symbol, as its history did', async () => {
+    const { adapter } = zonedFeed(['1h', '1d'], vnHours(), VN);
+    await adapter.fetchHistory('VN30F1M', '4h', 4);
+    expect(adapter.bucketFor('VN30F1M', '4h')).toEqual({ timeZone: VN, dates: false });
+    expect(adapter.bucketFor('VN30F1M', '1w')).toEqual({ timeZone: VN, dates: true });
+    // The feed's own timeframes, and one it cannot build.
+    expect(adapter.bucketFor('VN30F1M', '1h')).toBeNull();
+    expect(adapter.bucketFor('VN30F1M', '30m')).toBeNull();
+  });
+
+  it('says it builds UTC days for a symbol whose zone the feed did not name', async () => {
+    const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+    resolveSymbol.mockRejectedValueOnce(new Error('down'));
+    await adapter.fetchHistory('X', '1d', 2);
+    expect(adapter.bucketFor('X', '1d')).toEqual({ timeZone: undefined, dates: false });
+    expect(zonedFeed(['1h'], vnHours(), null).adapter.bucketFor('X', '1d')).toEqual({ timeZone: undefined, dates: false });
+  });
+
   it('builds frames that keep the epoch floor without waiting for the zone', () => {
     const { feed, adapter, resolveSymbol } = zonedFeed(['1m'], vnHours(), VN);
     void adapter.fetchHistory('VN30F1M', '7m', 10);

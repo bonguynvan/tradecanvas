@@ -172,17 +172,22 @@ describe('StreamManager — bars from ticks after the history', () => {
     zoneAfterHistory?: boolean;
     /** The feed's timeframes, when it lacks `timeframe`: the history is built from them. */
     supported?: TimeFrame[];
+    /** The zone the feed's `resolveSymbol` names for the symbol (none: it has no `resolveSymbol`). */
+    feedZone?: string;
   }
 
   /** The bar a trade lands in, on a stream of bars built from ticks after `history`, in `zone`. */
-  async function tickOnto({ zone, history, time, timeframe = '1d', zoneAfterHistory = false, supported }: TickCase): Promise<number | undefined> {
+  async function tickOnto({ zone, history, time, timeframe = '1d', zoneAfterHistory = false, supported, feedZone }: TickCase): Promise<number | undefined> {
     const { adapter: feed, pending, listeners } = controlledAdapter();
-    const adapter = supported ? { ...feed, supportedTimeframes: supported } : feed;
+    const resolveSymbol = feedZone ? async (symbol: string) => ({ symbol, timeZone: feedZone }) : undefined;
+    const adapter = supported ? { ...feed, supportedTimeframes: supported, resolveSymbol } : feed;
     const sm = new StreamManager();
     if (!zoneAfterHistory) sm.setTimeZone(zone);
     const updates: OHLCBar[] = [];
     sm.on('barUpdate', (b) => updates.push(b));
     const done = sm.connect({ adapter, symbol: 'X', timeframe, aggregateTicks: true });
+    // A feed that names the zone is asked first.
+    await vi.waitFor(() => expect(pending.length).toBe(1));
     pending[0].resolve(history);
     await done;
     if (zoneAfterHistory) sm.setTimeZone(zone);
@@ -233,6 +238,24 @@ describe('StreamManager — bars from ticks after the history', () => {
 
     it('stay on the epoch with no history to follow', async () => {
       expect(await tickOnto({ zone: VN, history: [], time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 4));
+    });
+  });
+
+  describe('on a timeframe built from the feed’s shorter one', () => {
+    it('keep the UTC days it built from hours, west of UTC too', async () => {
+      // A feed of 1h bars with no zone to name, on a chart whose market is in New York: its days start at 00:00 UTC.
+      const hours = [20, 21, 22, 23, 24].map((h) => at(Date.UTC(2026, 9, 23, h)));
+      // 20:30 on Friday 23 October in New York, already Saturday in UTC: Saturday's bar, the history's last.
+      expect(await tickOnto({ zone: 'America/New_York', history: hours, time: Date.UTC(2026, 9, 24, 0, 30), supported: ['1h'] }))
+        .toBe(Date.UTC(2026, 9, 24));
+    });
+
+    it('start the day where the feed’s zone starts the days it built, whatever zone the chart has', async () => {
+      // A Ho Chi Minh City session of 1h bars, 09:00 to 14:00 there on Thursday 22 October.
+      const hours = [2, 3, 4, 5, 6, 7].map((h) => at(Date.UTC(2026, 9, 22, h)));
+      // 09:15 on Friday 23 October there; the chart has no zone for the symbol yet.
+      expect(await tickOnto({ zone: 'UTC', history: hours, time: Date.UTC(2026, 9, 23, 2, 15), supported: ['1h'], feedZone: VN }))
+        .toBe(Date.UTC(2026, 9, 22, 17));
     });
   });
 });
