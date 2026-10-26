@@ -16,8 +16,9 @@ import { periodKeyer } from '../periods.js';
  * frames that divide a day (2h to 12h) start at midnight on the exchange's
  * clock (`config.exchangeTimeZone`), as VWAP's do: in Ho Chi Minh City a 4h
  * frame steps at 01:00, 05:00… UTC. A feed's own 4h bars stay on UTC's grid
- * (00:00, 04:00…), so in a zone off UTC (New York only in winter) the 4h
- * line steps at other hours than such a feed's 4h candles.
+ * (00:00, 04:00…), so in a zone whose midnight falls between UTC's 4-hour
+ * marks (Ho Chi Minh City, Tokyo, New York in winter) the 4h line steps at
+ * other hours than such a feed's 4h candles.
  */
 export class MTFMovingAverageIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
