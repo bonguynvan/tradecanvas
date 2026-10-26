@@ -232,4 +232,15 @@ describe('a compare line’s changes', () => {
       { id: 'cmp_B', change: 'add' }, { id: 'cmp_B', change: 'data' }, { id: 'cmp_B', change: 'visible' }, { id: 'cmp_B', change: 'remove' },
     ]);
   });
+
+  it('are each told as taken off when they are cleared', () => {
+    chart.addCompareSymbol('cmp_B', 'B', other, '#b552c9');
+    chart.addCompareSymbol('cmp_C', 'C', other, '#1398a8');
+    const changes: unknown[] = [];
+    chart.on('compareChange', (e) => changes.push(e.payload));
+    chart.clearCompareSymbols();
+    expect(changes).toEqual([{ id: 'cmp_B', change: 'remove' }, { id: 'cmp_C', change: 'remove' }]);
+    chart.clearCompareSymbols();
+    expect(changes).toHaveLength(2);
+  });
 });

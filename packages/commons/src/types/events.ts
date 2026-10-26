@@ -338,7 +338,7 @@ export interface ChartEventMap {
   symbolInfoChange: { info: SymbolInfo | null };
   /** The market's rules changed (`setMarket`); its zone backs `getExchangeTimeZone` when the symbol names none. */
   marketChange: { market: MarketConfig };
-  /** A compare line changed: added, taken off, given new bars (`updateCompareData`), shown or hidden (`setCompareVisible`). */
+  /** A compare line changed: added, taken off (each one `clearCompareSymbols` takes too), given new bars (`updateCompareData`), shown or hidden (`setCompareVisible`). */
   compareChange: { id: string; change: 'add' | 'remove' | 'data' | 'visible' };
   chartTypeChange: { type: string; previous: string };
   /**

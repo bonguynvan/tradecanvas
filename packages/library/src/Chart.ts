@@ -3500,9 +3500,12 @@ export class Chart {
     return this.isTimeAligned();
   }
 
+  /** Take every compare line off, each told as a `compareChange` of `'remove'`. */
   clearCompareSymbols(): void {
+    const ids = this.compareRenderer.getSymbols().map((sym) => sym.id);
     this.compareRenderer.clear();
     this.updateViewportAndRender();
+    for (const id of ids) this.eventBus.emit('compareChange', { id, change: 'remove' });
   }
 
   // --- Price scale ---
