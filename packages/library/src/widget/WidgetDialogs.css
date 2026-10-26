@@ -1185,6 +1185,11 @@ img.tcw-ss-badge {
   overscroll-behavior: contain;
   padding: 0 var(--tcw-space-6) var(--tcw-space-5);
   border-top: 1px solid var(--tcw-divider);
+}
+
+/* Two columns as tall as their groups, inside the box that scrolls: on the box itself, of a fixed
+   height, the groups past its foot went into columns to the side, out of reach. */
+.tcw-hotkey-columns {
   columns: 2;
   column-gap: var(--tcw-space-7);
 }
@@ -1500,8 +1505,11 @@ img.tcw-ss-badge {
   }
 
   .tcw-hotkey-body {
-    columns: 1;
     padding-inline: var(--tcw-space-4);
+  }
+
+  .tcw-hotkey-columns {
+    columns: 1;
   }
 
   /* Their own heights outrank the sheet's: give them back its height, less the keyboard, and the palette its slide up. */

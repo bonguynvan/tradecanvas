@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const css = readFileSync(fileURLToPath(new URL('../WidgetStyles.css', import.meta.url)), 'utf8');
+const read = (file: string) => readFileSync(fileURLToPath(new URL(`../${file}`, import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+const css = read('WidgetStyles.css');
+const dialogs = read('WidgetDialogs.css');
 
 /** The declarations of a rule written once at the top level of the stylesheet. */
 function rule(selector: string): string {
@@ -28,6 +30,20 @@ describe('frosted menus', () => {
     const declarations = rule(selector);
     expect(declarations).toMatch(/(?<!-)backdrop-filter:\s*blur\(var\(--tcw-blur\)\)/);
     expect(declarations).toMatch(/-webkit-backdrop-filter:\s*blur\(var\(--tcw-blur\)\)/);
+  });
+});
+
+describe('the shortcut sheet', () => {
+  /** Every block of `sheet` for `selector`, in a media query or not, its comments left out. */
+  const blocks = (sheet: string, selector: string) => [...sheet.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((m) => m[1].split(',').some((s) => s.trim() === selector))
+    .map((m) => m[2]);
+
+  // Columns on the box that scrolls, a fixed height, lay the groups past its height sideways, out of reach.
+  it('lays its groups in columns on a block inside the scroller, never on the scroller', () => {
+    expect(blocks(dialogs, '.tcw-hotkey-body').join('')).not.toMatch(/columns/);
+    expect(blocks(dialogs, '.tcw-hotkey-body')[0]).toMatch(/overflow-y:\s*auto/);
+    expect(blocks(dialogs, '.tcw-hotkey-columns')[0]).toMatch(/columns:\s*2/);
   });
 });
 
