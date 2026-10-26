@@ -828,6 +828,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'La comparaison nécessite une source de données en direct',
   'toast.comparing': 'Comparaison avec {symbol}',
   'toast.loadFailed': 'échec du chargement',
+  'toast.compareNoBars': '{symbol} : aucune bougie en {interval}',
   'toast.autoFibAdded': 'Fibonacci automatique ajouté',
   'toast.noSwing': 'Aucun swing net à l’écran',
   'toast.fullscreenUnavailable': 'Le plein écran n’est pas disponible',

@@ -828,6 +828,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Для сравнения нужен источник данных в реальном времени',
   'toast.comparing': 'Сравнение с {symbol}',
   'toast.loadFailed': 'не удалось загрузить',
+  'toast.compareNoBars': '{symbol}: нет свечей на интервале {interval}',
   'toast.autoFibAdded': 'Авто-Фибоначчи добавлен',
   'toast.noSwing': 'В видимой области нет явного свинга',
   'toast.fullscreenUnavailable': 'Полноэкранный режим недоступен',

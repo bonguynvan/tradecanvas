@@ -846,6 +846,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Võrdlemiseks on vaja reaalajas andmeallikat',
   'toast.comparing': 'Võrdlus sümboliga {symbol}',
   'toast.loadFailed': 'laadimine ebaõnnestus',
+  'toast.compareNoBars': '{symbol}: intervallil {interval} pole küünlaid',
   'toast.autoFibAdded': 'Automaatne Fibonacci lisatud',
   'toast.noSwing': 'Nähtavas alas pole selget liikumist',
   'toast.fullscreenUnavailable': 'Täisekraan pole saadaval',

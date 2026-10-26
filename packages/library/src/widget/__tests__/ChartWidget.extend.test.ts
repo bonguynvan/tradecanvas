@@ -4,6 +4,7 @@ import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
 import { withResampling, type ResamplingAdapter } from '@tradecanvas/core';
 import { decodeWidgetState } from '../widgetShareState.js';
 import { layoutToolbar } from './toolbarLayout.js';
+import { timeframeLabel } from '../widgetTimeframes.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -671,7 +672,8 @@ describe('ChartWidget comparing with another symbol', () => {
     await widget.addCompareSymbol('BBB', 'percent');
     expect(fake.added).toEqual([]);
     expect(fake.overlays).toEqual([]);
-    expect(toastText()).toBe('BBB: failed to load');
+    // Not a failure: the feed has no bars of it at the interval on screen.
+    expect(toastText()).toBe(`BBB: no bars at ${timeframeLabel(widget.getTimeframe())}`);
   });
 
   it('gives the chart the other symbol’s bars before adding the compare', async () => {
@@ -745,7 +747,7 @@ describe('ChartWidget comparing with another symbol', () => {
     expect(bbbIntervals(own)).toEqual(['5m', '1h']);
     expect(fake.added).toEqual([]);
     expect(fake.series.has('BBB')).toBe(false);
-    expect(toastText()).toBe('BBB: failed to load');
+    expect(toastText()).toBe('BBB: no bars at 1H');
   });
 
   it('keeps a compare a saved state brings back without bars, and fills it on an interval that has them', async () => {

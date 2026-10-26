@@ -828,6 +828,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': '比較需要即時資料來源',
   'toast.comparing': '正在比較 {symbol}',
   'toast.loadFailed': '載入失敗',
+  'toast.compareNoBars': '{symbol}：{interval} 週期沒有K線',
   'toast.autoFibAdded': '已新增自動斐波那契',
   'toast.noSwing': '目前檢視中沒有明顯的波段',
   'toast.fullscreenUnavailable': '無法進入全螢幕',

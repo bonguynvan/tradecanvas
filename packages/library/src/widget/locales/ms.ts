@@ -846,6 +846,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Perbandingan memerlukan sumber data langsung',
   'toast.comparing': 'Membandingkan {symbol}',
   'toast.loadFailed': 'gagal dimuatkan',
+  'toast.compareNoBars': '{symbol}: tiada bar pada {interval}',
   'toast.autoFibAdded': 'Fibonacci automatik ditambah',
   'toast.noSwing': 'Tiada swing yang jelas dalam paparan',
   'toast.fullscreenUnavailable': 'Skrin penuh tidak tersedia',

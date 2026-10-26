@@ -828,6 +828,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'A comparação precisa de uma fonte de dados ao vivo',
   'toast.comparing': 'Comparando {symbol}',
   'toast.loadFailed': 'falha ao carregar',
+  'toast.compareNoBars': '{symbol}: sem barras em {interval}',
   'toast.autoFibAdded': 'Fibonacci automático adicionado',
   'toast.noSwing': 'Nenhum swing claro na tela',
   'toast.fullscreenUnavailable': 'Tela cheia indisponível',

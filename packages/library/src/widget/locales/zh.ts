@@ -828,6 +828,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': '对比需要实时数据源',
   'toast.comparing': '正在对比 {symbol}',
   'toast.loadFailed': '加载失败',
+  'toast.compareNoBars': '{symbol}：{interval} 周期没有K线',
   'toast.autoFibAdded': '已添加自动斐波那契',
   'toast.noSwing': '当前视图中没有明显的波段',
   'toast.fullscreenUnavailable': '无法进入全屏',

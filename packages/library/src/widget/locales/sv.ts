@@ -828,6 +828,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Jämförelse kräver en livedatakälla',
   'toast.comparing': 'Jämför med {symbol}',
   'toast.loadFailed': 'kunde inte läsas in',
+  'toast.compareNoBars': '{symbol}: inga staplar på {interval}',
   'toast.autoFibAdded': 'Automatisk Fibonacci tillagd',
   'toast.noSwing': 'Ingen tydlig swing i bild',
   'toast.fullscreenUnavailable': 'Helskärm är inte tillgängligt',

@@ -828,6 +828,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Perbandingan memerlukan sumber data langsung',
   'toast.comparing': 'Membandingkan {symbol}',
   'toast.loadFailed': 'gagal dimuat',
+  'toast.compareNoBars': '{symbol}: tidak ada bar pada {interval}',
   'toast.autoFibAdded': 'Fibonacci otomatis ditambahkan',
   'toast.noSwing': 'Tidak ada swing yang jelas di layar',
   'toast.fullscreenUnavailable': 'Layar penuh tidak tersedia',

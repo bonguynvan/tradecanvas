@@ -828,6 +828,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'การเปรียบเทียบต้องใช้แหล่งข้อมูลสด',
   'toast.comparing': 'กำลังเปรียบเทียบกับ {symbol}',
   'toast.loadFailed': 'โหลดไม่สำเร็จ',
+  'toast.compareNoBars': '{symbol}: ไม่มีแท่งที่ {interval}',
   'toast.autoFibAdded': 'เพิ่มฟีโบนัชชีอัตโนมัติแล้ว',
   'toast.noSwing': 'ไม่พบสวิงที่ชัดเจนในมุมมองนี้',
   'toast.fullscreenUnavailable': 'ใช้โหมดเต็มหน้าจอไม่ได้',

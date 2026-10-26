@@ -828,6 +828,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': '비교하려면 실시간 데이터 소스가 필요합니다',
   'toast.comparing': '{symbol}과(와) 비교 중',
   'toast.loadFailed': '불러오지 못했습니다',
+  'toast.compareNoBars': '{symbol}: {interval} 봉이 없습니다',
   'toast.autoFibAdded': '자동 피보나치를 추가했습니다',
   'toast.noSwing': '화면에 뚜렷한 스윙이 없습니다',
   'toast.fullscreenUnavailable': '전체 화면을 사용할 수 없습니다',

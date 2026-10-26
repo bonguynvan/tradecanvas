@@ -846,6 +846,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'تتطلب المقارنة محوّل بيانات مباشرة',
   'toast.comparing': 'المقارنة مع {symbol}',
   'toast.loadFailed': 'فشل التحميل',
+  'toast.compareNoBars': '{symbol}: لا توجد شموع على الإطار {interval}',
   'toast.autoFibAdded': 'تمت إضافة فيبوناتشي تلقائي',
   'toast.noSwing': 'لا يوجد تأرجح واضح في العرض',
   'toast.fullscreenUnavailable': 'وضع ملء الشاشة غير متاح',

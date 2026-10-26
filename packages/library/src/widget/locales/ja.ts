@@ -828,6 +828,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': '比較にはライブのデータソースが必要です',
   'toast.comparing': '{symbol} と比較中',
   'toast.loadFailed': '読み込みに失敗しました',
+  'toast.compareNoBars': '{symbol}: {interval} の足がありません',
   'toast.autoFibAdded': '自動フィボナッチを追加しました',
   'toast.noSwing': '表示範囲に明確なスイングがありません',
   'toast.fullscreenUnavailable': '全画面表示を使用できません',

@@ -828,6 +828,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Karşılaştırma için canlı bir veri kaynağı gerekir',
   'toast.comparing': '{symbol} ile karşılaştırılıyor',
   'toast.loadFailed': 'yüklenemedi',
+  'toast.compareNoBars': '{symbol}: {interval} aralığında mum yok',
   'toast.autoFibAdded': 'Otomatik Fibonacci eklendi',
   'toast.noSwing': 'Görünen alanda belirgin bir salınım yok',
   'toast.fullscreenUnavailable': 'Tam ekran kullanılamıyor',

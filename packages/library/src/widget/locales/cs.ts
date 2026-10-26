@@ -828,6 +828,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Porovnání vyžaduje živý zdroj dat',
   'toast.comparing': 'Porovnání: {symbol}',
   'toast.loadFailed': 'nepodařilo se načíst',
+  'toast.compareNoBars': '{symbol}: žádné svíčky v intervalu {interval}',
   'toast.autoFibAdded': 'Automatický Fibonacci přidán',
   'toast.noSwing': 'V zobrazení není zřetelný swing',
   'toast.fullscreenUnavailable': 'Režim celé obrazovky není k dispozici',

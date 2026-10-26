@@ -828,6 +828,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Compararea necesită o sursă de date în timp real',
   'toast.comparing': 'Comparare cu {symbol}',
   'toast.loadFailed': 'încărcarea a eșuat',
+  'toast.compareNoBars': '{symbol}: nicio lumânare la {interval}',
   'toast.autoFibAdded': 'Fibonacci automat adăugat',
   'toast.noSwing': 'Niciun swing clar în zona vizibilă',
   'toast.fullscreenUnavailable': 'Ecranul complet nu este disponibil',

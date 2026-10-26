@@ -828,6 +828,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Η σύγκριση απαιτεί πηγή ζωντανών δεδομένων',
   'toast.comparing': 'Σύγκριση με {symbol}',
   'toast.loadFailed': 'η φόρτωση απέτυχε',
+  'toast.compareNoBars': '{symbol}: δεν υπάρχουν κεριά στο διάστημα {interval}',
   'toast.autoFibAdded': 'Προστέθηκε αυτόματο Fibonacci',
   'toast.noSwing': 'Κανένα σαφές swing στην ορατή περιοχή',
   'toast.fullscreenUnavailable': 'Η πλήρης οθόνη δεν είναι διαθέσιμη',

@@ -847,6 +847,7 @@ export const EN_MESSAGES = {
   'toast.compareNeedsAdapter': 'Comparison needs a live data adapter',
   'toast.comparing': 'Comparing {symbol}',
   'toast.loadFailed': 'failed to load',
+  'toast.compareNoBars': '{symbol}: no bars at {interval}',
   'toast.autoFibAdded': 'Auto Fibonacci added',
   'toast.noSwing': 'No clear swing in view',
   'toast.fullscreenUnavailable': 'Fullscreen is not available',

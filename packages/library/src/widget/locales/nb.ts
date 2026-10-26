@@ -846,6 +846,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Sammenligning krever en datakilde i sanntid',
   'toast.comparing': 'Sammenligner med {symbol}',
   'toast.loadFailed': 'kunne ikke lastes inn',
+  'toast.compareNoBars': '{symbol}: ingen stolper på {interval}',
   'toast.autoFibAdded': 'Auto-Fibonacci lagt til',
   'toast.noSwing': 'Ingen tydelig swing i visningen',
   'toast.fullscreenUnavailable': 'Fullskjerm er ikke tilgjengelig',

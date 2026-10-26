@@ -846,6 +846,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'مقایسه به منبع داده زنده نیاز دارد',
   'toast.comparing': 'مقایسه با {symbol}',
   'toast.loadFailed': 'بارگذاری نشد',
+  'toast.compareNoBars': '{symbol}: در بازه {interval} کندلی نیست',
   'toast.autoFibAdded': 'فیبوناچی خودکار اضافه شد',
   'toast.noSwing': 'سوئینگ مشخصی در نمای فعلی نیست',
   'toast.fullscreenUnavailable': 'حالت تمام‌صفحه در دسترس نیست',

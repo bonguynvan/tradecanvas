@@ -846,6 +846,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'השוואה דורשת מתאם נתונים חיים',
   'toast.comparing': 'השוואה מול {symbol}',
   'toast.loadFailed': 'הטעינה נכשלה',
+  'toast.compareNoBars': '{symbol}: אין נרות במרווח {interval}',
   'toast.autoFibAdded': 'פיבונאצ׳י אוטומטי נוסף',
   'toast.noSwing': 'אין סווינג ברור בתצוגה',
   'toast.fullscreenUnavailable': 'מסך מלא אינו זמין',

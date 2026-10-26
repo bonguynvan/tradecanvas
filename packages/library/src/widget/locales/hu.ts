@@ -828,6 +828,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'Az összehasonlításhoz élő adatforrás szükséges',
   'toast.comparing': 'Összehasonlítás: {symbol}',
   'toast.loadFailed': 'nem sikerült betölteni',
+  'toast.compareNoBars': '{symbol}: nincs gyertya {interval} idősíkon',
   'toast.autoFibAdded': 'Automatikus Fibonacci hozzáadva',
   'toast.noSwing': 'Nincs egyértelmű swing a látható részen',
   'toast.fullscreenUnavailable': 'A teljes képernyő nem érhető el',

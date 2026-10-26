@@ -828,6 +828,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'toast.compareNeedsAdapter': 'So sánh cần một nguồn dữ liệu trực tiếp',
   'toast.comparing': 'Đang so sánh với {symbol}',
   'toast.loadFailed': 'không tải được',
+  'toast.compareNoBars': '{symbol}: không có nến ở khung {interval}',
   'toast.autoFibAdded': 'Đã thêm Fibonacci tự động',
   'toast.noSwing': 'Không thấy sóng rõ ràng trong khung nhìn',
   'toast.fullscreenUnavailable': 'Không mở được chế độ toàn màn hình',

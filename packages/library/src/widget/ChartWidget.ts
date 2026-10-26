@@ -3705,7 +3705,9 @@ export class ChartWidget {
       // Another interval picked meanwhile: its bars instead. Only a pick made during a fetch asks again.
       if (timeframe !== this.state.timeframe) continue;
       if (bars && bars.length > 0) return bars;
-      this.sayCompareFailed(symbol, failure ?? undefined);
+      // An empty answer is no failure: the feed has no bars of it at this interval, and another may have some.
+      if (failure === null) this.say(fill(this.t('toast.compareNoBars'), { symbol, interval: timeframeLabel(timeframe) }), 'error');
+      else this.sayCompareFailed(symbol, failure);
       return null;
     }
   }
