@@ -13,10 +13,14 @@ const seriesKey = (symbol: string, timeframe: string): string => `${symbol}|${ti
  * the orders and the alerts back to an old close. A connection starts from
  * the last bar of the history the adapter served for its symbol and
  * timeframe, so a feed that sends its last closed bar again on subscribing
- * makes no tick from it either, after a reconnect too.
+ * makes no tick from it either, after a reconnect too. That bar closed again
+ * is the history's own, no newer price, until a forming frame of it comes:
+ * a history of closed bars only ends on the bar such a feed sends again.
  */
 export class NewestBar {
   private newest = -Infinity;
+  /** Whether the newest is the history's last bar, of which no forming frame came on the connection yet. */
+  private fromHistory = false;
   /** When the last bar of the history last served for each symbol and timeframe starts, ms. */
   private readonly served = new Map<string, number>();
 
@@ -34,19 +38,23 @@ export class NewestBar {
 
   /** A new connection to `symbol` and `timeframe`: no bar sent on it yet, the history served for them the newest. */
   reset(symbol: string, timeframe: string): void {
-    this.newest = this.served.get(seriesKey(symbol, timeframe)) ?? -Infinity;
+    const served = this.served.get(seriesKey(symbol, timeframe));
+    this.newest = served ?? -Infinity;
+    this.fromHistory = served !== undefined;
   }
 
   /**
-   * Whether a frame of the bar at `time` is one of the newest bar or of a
-   * newer one, which is then the newest. Times are read by their size, so
-   * seconds and milliseconds compare.
+   * Whether a frame of the bar at `time`, `closed` or forming, is one of the
+   * newest bar or of a newer one, which is then the newest. Times are read
+   * by their size, so seconds and milliseconds compare.
    */
-  admit(time: number): boolean {
+  admit(time: number, closed = false): boolean {
     const at = normalizeBarTime(time);
     // A time that isn't a number says nothing of which bar is newest.
     if (!Number.isFinite(at)) return true;
     if (at < this.newest) return false;
+    if (at === this.newest && this.fromHistory && closed) return false;
+    this.fromHistory = false;
     this.newest = at;
     return true;
   }

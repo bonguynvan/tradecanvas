@@ -347,26 +347,40 @@ describe('a built-in feed, a bar already past', () => {
   type Line = { currentPriceLine: { getPrice(): number | null } };
   const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
   type Send = (b: OHLCBar, closed: boolean) => void;
+  /** A connected feed: a frame from it, and a reconnect (the network came back) that opens a new socket. */
+  interface Feed { send: Send; reconnect(): Promise<void> }
+  type Wake = { streamManager: { wake(reason: 'online'): void } };
+  const wake = async () => {
+    (chart as unknown as Wake).streamManager.wake('online');
+    await new Promise((r) => setTimeout(r, 0));
+  };
 
-  async function webSocketFeed(): Promise<Send> {
-    let socket: WebSocketLike | null = null;
+  async function webSocketFeed(): Promise<Feed> {
+    const sockets: WebSocketLike[] = [];
     const adapter = new WebSocketAdapter({
       name: 'ws',
       wsUrl: () => 'wss://x',
       fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
       parseMessage: (raw) => raw as WsParseResult,
       socketFactory: () => {
-        socket = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        const socket: WebSocketLike = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        sockets.push(socket);
         return socket;
       },
     });
     await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60 });
-    socket!.onopen?.({});
-    return (b, closed) => socket!.onmessage?.({ data: { bar: b, closed } });
+    sockets.at(-1)!.onopen?.({});
+    return {
+      send: (b, closed) => sockets.at(-1)!.onmessage?.({ data: { bar: b, closed } }),
+      reconnect: async () => {
+        await wake();
+        sockets.at(-1)!.onopen?.({});
+      },
+    };
   }
 
-  async function binanceFeed(): Promise<Send> {
-    const sockets: { onmessage: ((e: { data: unknown }) => void) | null }[] = [];
+  async function binanceFeed(): Promise<Feed> {
+    const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: unknown }) => void) | null }[] = [];
     vi.stubGlobal('WebSocket', class {
       onopen = null; onmessage = null; onerror = null; onclose = null;
       constructor() { sockets.push(this); }
@@ -375,15 +389,22 @@ describe('a built-in feed, a bar already past', () => {
     const klines = Array.from({ length: 60 }, (_, i) => [bar(i, 100).time, '100', '101', '99', '100', '10']);
     vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: url.includes('/klines'), json: async () => klines })));
     await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 60 });
-    return (b, closed) => sockets.at(-1)!.onmessage?.({
-      data: JSON.stringify({ e: 'kline', k: { t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, x: closed } }),
-    });
+    sockets.at(-1)!.onopen?.();
+    return {
+      send: (b, closed) => sockets.at(-1)!.onmessage?.({
+        data: JSON.stringify({ e: 'kline', k: { t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, x: closed } }),
+      }),
+      reconnect: async () => {
+        await wake();
+        sockets.at(-1)!.onopen?.();
+      },
+    };
   }
 
   for (const [name, connect] of [['WebSocketAdapter', webSocketFeed], ['BinanceAdapter', binanceFeed]] as const) {
     describe(name, () => {
       it('a late final corrects its bar and moves no price, order or alert', async () => {
-        const send = await connect();
+        const { send } = await connect();
         const fired = alertsFired();
         chart.addAlert(95, 'crossingDown', 'under 95');
         send(bar(60, 101), false);
@@ -396,7 +417,7 @@ describe('a built-in feed, a bar already past', () => {
       });
 
       it('a stale forming frame moves nothing', async () => {
-        const send = await connect();
+        const { send } = await connect();
         const fired = alertsFired();
         chart.addAlert(95, 'crossingDown', 'under 95');
         send(bar(60, 101), false);
@@ -405,6 +426,24 @@ describe('a built-in feed, a bar already past', () => {
         expect(ordersPrice()).toBe(101);
         expect(line()).toBe(101);
         expect(chart.getData()[57].close).toBe(100);
+      });
+
+      it("the history's last bar, sent again closed on subscribing, moves nothing after a reconnect", async () => {
+        // A history of closed bars only, 0 to 59, while bar 60 forms.
+        const { send, reconnect } = await connect();
+        send(bar(59, 100), true); // on subscribing
+        send({ ...bar(60, 96), open: 101, high: 110 }, false);
+        const fired = alertsFired();
+        chart.addAlert(98, 'crossingUp', 'over 98');
+        await reconnect();
+        send(bar(59, 100), true); // on subscribing again
+        expect(line()).toBe(96);
+        expect(ordersPrice()).toBe(96);
+        expect(fired).toEqual([]);
+        expect(chart.getData().at(-1)).toMatchObject({ time: bar(60, 96).time, close: 96 });
+        // Bar 60's next frame is live.
+        send({ ...bar(60, 99), open: 101, high: 110 }, false);
+        expect(fired).toEqual(['over 98']);
       });
     });
   }

@@ -162,6 +162,24 @@ describe('WebSocketAdapter', () => {
       expect(prices()).toEqual([102]);
     });
 
+    it("takes the history's last bar, sent again closed, for no live price: a history of closed bars only", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 101, true)); // the history's last, closed, sent again on subscribing
+      send(frame(11, 96));
+      expect(prices()).toEqual([96]);
+    });
+
+    it("takes the close of the history's last bar once a forming frame of it came on the connection", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 102)); // the history's last bar was still forming
+      send(frame(10, 103, true));
+      expect(prices()).toEqual([102, 103]);
+    });
+
     it("doesn't start from the history of another symbol or timeframe", async () => {
       const { adapter, connect, send } = servedFeed(10);
       await adapter.fetchHistory('ETHUSDT', CONFIG.timeframe, 2);
