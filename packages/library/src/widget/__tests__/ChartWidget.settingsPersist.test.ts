@@ -434,6 +434,23 @@ describe('ChartWidget persistSettings', () => {
     expect(widget.getSettings()).toMatchObject({ barCountdown: false, scaleMode: 'regular' });
   });
 
+  it('a kept, shared or set legend or volume stays off where the host switched its feature off', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, settings: { legendVisible: true, volumeVisible: true } }));
+    make({ persistSettings: true, chartOptions: { features: { legend: false, volume: false } } });
+    widget.setSettings({ legendVisible: true, volumeVisible: true });
+    const token = encodeWidgetState({
+      v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'candlestick', scaleMode: 'regular', indicators: [], drawings: [],
+      settings: { legendVisible: true, volumeVisible: true },
+    });
+    expect(await widget.importState(token)).toBe(true);
+    // The look's font is the only legend call.
+    expect(calls('setLegend').filter((c) => Object.prototype.hasOwnProperty.call(c, 'visible'))).toEqual([]);
+    expect(calls('setVolumeVisible')).toEqual([]);
+    expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false });
+  });
+});
+
+describe('ChartWidget settings where the host switched a feature off', () => {
   it('the settings dialog offers no legend or volume switch where the host switched the feature off', () => {
     make({ chartOptions: { features: { legend: false, volume: false } } });
     openSettings();
@@ -460,20 +477,5 @@ describe('ChartWidget persistSettings', () => {
     expect(calls('setBarCountdownVisible')).toEqual([]);
     expect(calls('setScaleMode')).toEqual([]);
     expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false, barCountdown: false, scaleMode: 'regular' });
-  });
-
-  it('a kept, shared or set legend or volume stays off where the host switched its feature off', async () => {
-    localStorage.setItem(KEY, JSON.stringify({ v: 1, settings: { legendVisible: true, volumeVisible: true } }));
-    make({ persistSettings: true, chartOptions: { features: { legend: false, volume: false } } });
-    widget.setSettings({ legendVisible: true, volumeVisible: true });
-    const token = encodeWidgetState({
-      v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'candlestick', scaleMode: 'regular', indicators: [], drawings: [],
-      settings: { legendVisible: true, volumeVisible: true },
-    });
-    expect(await widget.importState(token)).toBe(true);
-    // The look's font is the only legend call.
-    expect(calls('setLegend').filter((c) => Object.prototype.hasOwnProperty.call(c, 'visible'))).toEqual([]);
-    expect(calls('setVolumeVisible')).toEqual([]);
-    expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false });
   });
 });
