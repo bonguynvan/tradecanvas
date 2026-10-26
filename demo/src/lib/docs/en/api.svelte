@@ -687,7 +687,9 @@ stop()`}</code></pre>
     settings as they are. An older version of the library opens a newer layout
     without them, and its auto-save writes it back without them.</li>
   <li><strong>Share links</strong> carry the ones the sender changed from the
-    defaults, but the time zone, the number format and auto-scale. For the
+    defaults, but the time zone, the number format and auto-scale. A chart
+    type's own settings in a link set only the types the sender set; the
+    viewer's settings of the other types stay. For the
     switches your <code>features</code> set (the legend, the volume, the bar
     countdown, the indicators' value labels) the defaults are where they set
     them, so a switch the sender's app turned off isn't sent as a change.</li>

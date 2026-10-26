@@ -3163,7 +3163,8 @@ export class ChartWidget {
     if (s.chartType) this.applyChartType(s.chartType);
     // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
     // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
-    this.applySettings(this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) }));
+    const shared = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
+    this.applySettings(shared.chartTypeOptions ? { ...shared, chartTypeOptions: this.overViewerTypeOptions(shared.chartTypeOptions) } : shared);
     this.settings?.refresh(this.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
@@ -3171,6 +3172,14 @@ export class ChartWidget {
     this.chart.setDrawings(s.drawings);
     this.updateUI();
     return true;
+  }
+
+  /**
+   * A link's settings of chart types over the viewer's: the types it names
+   * take the sender's, the others stay as the viewer set them.
+   */
+  private overViewerTypeOptions(shared: ChartSettingsState['chartTypeOptions']): ChartSettingsState['chartTypeOptions'] {
+    return { ...this.getSettings().chartTypeOptions, ...shared };
   }
 
   /** Copy the chart image to the clipboard, with a toast on success/failure. */

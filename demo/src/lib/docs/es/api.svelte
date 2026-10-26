@@ -705,7 +705,9 @@ stop()`}</code></pre>
     guardado automático lo vuelve a escribir sin ella.</li>
   <li><strong>Los enlaces compartidos</strong> llevan lo que quien envía cambió respecto
     a lo predeterminado, sin la zona horaria, el formato de números ni la escala
-    automática. Para los interruptores que fijan tus <code>features</code> (la leyenda,
+    automática. Los ajustes propios de un tipo de gráfico que trae un enlace fijan solo
+    los tipos que quien envía ajustó; los de los demás tipos quedan como los tenía quien
+    mira. Para los interruptores que fijan tus <code>features</code> (la leyenda,
     el volumen, el tiempo que le queda a la barra, las etiquetas de valor de los
     indicadores) lo predeterminado es donde los dejan, así que un interruptor que la app
     de quien envía apagó no viaja como cambio.</li>

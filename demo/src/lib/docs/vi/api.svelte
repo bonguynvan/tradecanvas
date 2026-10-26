@@ -692,7 +692,9 @@ stop()`}</code></pre>
     Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự lưu của nó
     ghi lại bố cục mà không có chúng.</li>
   <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
-    trừ múi giờ, định dạng số và chế độ tự co giãn. Với các công tắc mà <code>features</code>
+    trừ múi giờ, định dạng số và chế độ tự co giãn. Cài đặt riêng của loại biểu đồ trong một
+    liên kết chỉ đặt những loại mà người gửi đã đặt; cài đặt của người xem cho các loại khác
+    giữ nguyên. Với các công tắc mà <code>features</code>
     của bạn đặt (chú giải, khối lượng, thời gian còn lại của nến, nhãn giá trị của chỉ báo),
     mặc định là chỗ <code>features</code> đặt chúng, nên một công tắc mà ứng dụng của người
     gửi đã tắt không được gửi đi như một thay đổi.</li>

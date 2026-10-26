@@ -182,6 +182,17 @@ describe('ChartWidget settings API', () => {
     expect(calls('setChartTypeOptions').at(-1)).toMatchObject({ renko: { boxSize: 5 } });
   });
 
+  it('a shared link sets the chart types whose settings it carries, and keeps the viewer’s others', async () => {
+    make();
+    widget.setSettings({ chartTypeOptions: { kagi: { reversal: 2, reversalType: 'price' }, renko: { boxSize: 1 } } });
+    const token = encodeWidgetState({
+      v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'renko', scaleMode: 'regular', indicators: [], drawings: [],
+      settings: { chartTypeOptions: { renko: { boxSize: 5 } } },
+    });
+    expect(await widget.importState(token)).toBe(true);
+    expect(widget.getSettings().chartTypeOptions).toMatchObject({ kagi: { reversal: 2, reversalType: 'price' }, renko: { boxSize: 5 } });
+  });
+
   it('a shared link leaves out the switches the sender’s features set, and carries the user’s change from them', () => {
     make({ chartOptions: { features: { legend: false, barCountdown: false, indicatorValueLabels: true } } });
     expect(decodeWidgetState(widget.exportState())!.settings).toBeUndefined();
