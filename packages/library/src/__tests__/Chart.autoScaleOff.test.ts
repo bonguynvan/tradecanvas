@@ -14,6 +14,13 @@ const band = (low: number, from = 0): OHLCBar[] => Array.from({ length: BARS }, 
   time: (from + i) * MINUTE, open: low + 4, high: low + SPAN, low, close: low + 6, volume: 10,
 }));
 
+/** More bars than the screen holds. */
+const MANY = 300;
+/** `count` bars climbing a price a bar from 100, a minute apart. */
+const climb = (count: number): OHLCBar[] => Array.from({ length: count }, (_, i) => ({
+  time: i * MINUTE, open: 100 + i, high: 101 + i, low: 99 + i, close: 100.5 + i, volume: 10,
+}));
+
 let host: HTMLDivElement;
 let chart: Chart;
 
@@ -63,6 +70,25 @@ describe('Chart with auto-scale off', () => {
     chart = new Chart(host, { autoScale: false });
     for (const bar of band(100)) chart.appendBar(bar);
     expectFitted(100);
+  });
+
+  it('fits bars set before the chart has a size once it gets one', () => {
+    let width = 0;
+    let height = 0;
+    const hidden = document.createElement('div');
+    Object.defineProperty(hidden, 'clientWidth', { get: () => width });
+    Object.defineProperty(hidden, 'clientHeight', { get: () => height });
+    document.body.appendChild(hidden);
+    chart = new Chart(hidden, { autoScale: false });
+    const bars = climb(MANY);
+    chart.setData(bars);
+    // A tab or a panel shown: the chart gets its size.
+    width = 800;
+    height = 400;
+    chart.resize();
+    expect(priceRange().max).toBeGreaterThanOrEqual(bars[MANY - 1].high);
+    expect(priceRange().min).toBeGreaterThan(bars[0].high);
+    hidden.remove();
   });
 
   it('fits each new series setData gives, and holds the range in between', () => {

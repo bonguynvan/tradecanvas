@@ -5892,7 +5892,16 @@ export class Chart {
     this.leftViewport = this.computeLeftViewport();
     if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
     // The new series' prices are on the axis: auto-scale off holds them from here.
-    if (shown.length > 0) this.priceFitPending = false;
+    if (this.priceFitPending && this.priceFitDone(shown)) this.priceFitPending = false;
+  }
+
+  /**
+   * Whether the new series' bars on view were fitted: there are some, on a
+   * plot with room for them. A chart with no size yet (a hidden tab or
+   * panel) has none on view, so it fits them once it gets one.
+   */
+  private priceFitDone(shown: DataSeries): boolean {
+    return shown.length > 0 && this.viewport.getState().chartRect.width > 0;
   }
 
   /** Size the left scale to its widest label; true when the layout changed. */
