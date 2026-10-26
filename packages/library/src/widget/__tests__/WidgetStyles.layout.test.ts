@@ -47,6 +47,30 @@ describe('the shortcut sheet', () => {
   });
 });
 
+describe('the dock', () => {
+  const panels = read('WidgetPanels.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  /** The declarations of the top-level rule for exactly `selector` in the panels' stylesheet. */
+  const panelRule = (selector: string) => {
+    const at = panels.indexOf(`\n${selector} {`);
+    expect(at, selector).toBeGreaterThan(-1);
+    return panels.slice(at, panels.indexOf('}', at));
+  };
+
+  // A page scrolls under its header; the watchlist's own rule, as specific and later, hid its overflow,
+  // so 34 symbols in a 768 px window could not be scrolled to, by wheel or by keyboard.
+  it('lets the watchlist’s page scroll as every page does', () => {
+    expect(panelRule('.tcw-dock-panel > .tcw-dock-page')).toMatch(/overflow-y:\s*auto/);
+    expect(panelRule('.tcw-dock-panel > .tcw-watchlist')).not.toMatch(/overflow/);
+  });
+
+  // The arrow keys up the watchlist left its first symbol under the sticky header.
+  it('scrolls a row the keyboard moves to in below the page’s header, as tall as the header', () => {
+    const header = /min-height:\s*(calc\(var\(--tcw-space-6\) \+ var\(--tcw-space-5\)\))/.exec(panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header)'));
+    expect(header).not.toBeNull();
+    expect(panelRule('.tcw-dock-panel > .tcw-dock-page')).toContain(`scroll-padding-block-start: ${header![1]}`);
+  });
+});
+
 describe('the dialogs’ layout rules', () => {
   // A dialog is a column with a height cap: a part of it with an overflow of its own loses its
   // minimum height, and a long body squashes it (1.16.0 squashed the Settings' tabs this way).

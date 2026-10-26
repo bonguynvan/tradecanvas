@@ -120,6 +120,8 @@
   margin: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A row the keyboard moves to scrolls in below the header, not under it. */
+  scroll-padding-block-start: calc(var(--tcw-space-6) + var(--tcw-space-5));
   border: none;
   border-radius: 0;
   background: transparent;
@@ -189,12 +191,12 @@
   flex: 1;
 }
 
-/* The watchlist was a bar of its own: its width and shadow are the panel's now. */
+/* The watchlist was a bar of its own: its width and shadow are the panel's now. It scrolls as a page
+   (no overflow of its own here: this rule, as specific as the page's and later, would win). */
 .tcw-dock-panel > .tcw-watchlist {
   width: auto;
   border-inline-start: none;
   box-shadow: none;
-  overflow: hidden;
 }
 
 /* The symbol info's own padding sits under the header. */
