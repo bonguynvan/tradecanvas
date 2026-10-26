@@ -693,7 +693,8 @@ stop()`}</code></pre>
     ghi lại bố cục mà không có chúng.</li>
   <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
     trừ múi giờ, định dạng số và chế độ tự co giãn. Cài đặt riêng của loại biểu đồ trong một
-    liên kết chỉ đặt những loại mà người gửi đã đặt; cài đặt của người xem cho các loại khác
+    liên kết chỉ đặt những loại mà người gửi đã đặt và loại đang hiển thị (theo mặc định nếu
+    người gửi để nguyên); cài đặt của người xem cho các loại khác
     giữ nguyên. Với các công tắc mà <code>features</code>
     của bạn đặt (chú giải, khối lượng, thời gian còn lại của nến, nhãn giá trị của chỉ báo),
     mặc định là chỗ <code>features</code> đặt chúng, nên một công tắc mà ứng dụng của người

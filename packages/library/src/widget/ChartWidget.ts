@@ -26,14 +26,16 @@ import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
-import { readChartTypeOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
-import { ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, pickSettings, readChartSettings, shareDelta, settingsStoreKey } from './chartSettingsStore.js';
+import {
+  ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, hasTypeSettings, pickSettings, readChartSettings, shareDelta, settingsStoreKey, typesAtDefaults,
+} from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
@@ -3165,8 +3167,9 @@ export class ChartWidget {
     if (s.chartType) this.applyChartType(s.chartType);
     // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
     // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
-    const shared = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
-    this.applySettings(shared.chartTypeOptions ? { ...shared, chartTypeOptions: this.overViewerTypeOptions(shared.chartTypeOptions) } : shared);
+    const { chartTypeOptions, ...shared } = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
+    const typeOptions = this.overViewerTypeOptions(s.chartType, chartTypeOptions);
+    this.applySettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
     this.settings?.refresh(this.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
@@ -3178,10 +3181,14 @@ export class ChartWidget {
 
   /**
    * A link's settings of chart types over the viewer's: the types it names
-   * take the sender's, the others stay as the viewer set them.
+   * take the sender's, and so does the type it shows, whose settings it
+   * leaves out when they are the defaults; the others stay as the viewer set
+   * them. Undefined when the link speaks of no type with settings.
    */
-  private overViewerTypeOptions(shared: ChartSettingsState['chartTypeOptions']): ChartSettingsState['chartTypeOptions'] {
-    return { ...this.getSettings().chartTypeOptions, ...shared };
+  private overViewerTypeOptions(shown: ChartType | undefined, shared: ChartTypeOptions | undefined): ChartTypeOptions | undefined {
+    const named: ChartTypeOptions = { ...(hasTypeSettings(shown) ? { [shown]: {} } : {}), ...shared };
+    if (Object.keys(named).length === 0) return undefined;
+    return { ...this.getSettings().chartTypeOptions, ...named };
   }
 
   /** Copy the chart image to the clipboard, with a toast on success/failure. */
@@ -4798,7 +4805,7 @@ export class ChartWidget {
     if (patch.mainSeriesVisible !== undefined) this.chart.setMainSeriesVisible(patch.mainSeriesVisible);
     if (patch.chartTypeOptions !== undefined) {
       // Every type: one left out goes back to its defaults (a reset).
-      this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
+      this.chart.setChartTypeOptions({ ...typesAtDefaults(), ...patch.chartTypeOptions });
     }
     // Kept and told once done: an open dialog's changes wait for its OK or Cancel.
     if (!this.settingsEdit) this.publishSettings();

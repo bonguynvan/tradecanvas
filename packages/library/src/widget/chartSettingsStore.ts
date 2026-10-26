@@ -1,4 +1,4 @@
-import { readChartTypeOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import type { KeyValueStorage } from './DrawingTemplateStore.js';
 import type { ChartSettingsState } from './types.js';
 import { DEFAULT_SETTINGS } from './widgetConfig.js';
@@ -40,6 +40,19 @@ export const LAYOUT_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([
 export const SHARE_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([...NEVER_KEPT, ...VIEWER_KEYS, 'scaleMode']);
 /** Nothing left out: every setting of the right kind. */
 export const ALL_SETTINGS: ReadonlySet<SettingsKey> = new Set<SettingsKey>();
+
+/** The chart types with settings of their own (Renko's box, Kagi's reversal…), each a key of `chartTypeOptions`. */
+export const TYPES_WITH_SETTINGS: readonly (keyof ChartTypeOptions)[] = ['renko', 'lineBreak', 'kagi', 'pointAndFigure', 'rangeBars'];
+
+/** Whether a chart type has settings of its own. */
+export function hasTypeSettings(type: unknown): type is keyof ChartTypeOptions {
+  return (TYPES_WITH_SETTINGS as readonly unknown[]).includes(type);
+}
+
+/** Every chart type with settings of its own at its defaults: given to the chart, it resets them all. */
+export function typesAtDefaults(): ChartTypeOptions {
+  return Object.fromEntries(TYPES_WITH_SETTINGS.map((type) => [type, {}])) as ChartTypeOptions;
+}
 
 /** The choices a setting takes, where it is one of a few words. */
 const CHOICES: Partial<Record<SettingsKey, readonly string[]>> = {

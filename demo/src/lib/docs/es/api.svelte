@@ -706,7 +706,8 @@ stop()`}</code></pre>
   <li><strong>Los enlaces compartidos</strong> llevan lo que quien envía cambió respecto
     a lo predeterminado, sin la zona horaria, el formato de números ni la escala
     automática. Los ajustes propios de un tipo de gráfico que trae un enlace fijan solo
-    los tipos que quien envía ajustó; los de los demás tipos quedan como los tenía quien
+    los tipos que quien envía ajustó y el tipo que se muestra (con lo predeterminado si quien
+    envía lo dejó así); los de los demás tipos quedan como los tenía quien
     mira. Para los interruptores que fijan tus <code>features</code> (la leyenda,
     el volumen, el tiempo que le queda a la barra, las etiquetas de valor de los
     indicadores) lo predeterminado es donde los dejan, así que un interruptor que la app

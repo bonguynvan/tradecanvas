@@ -193,6 +193,35 @@ describe('ChartWidget settings API', () => {
     expect(widget.getSettings().chartTypeOptions).toMatchObject({ kagi: { reversal: 2, reversalType: 'price' }, renko: { boxSize: 5 } });
   });
 
+  it('a shared link gives the type it shows the sender’s settings, its defaults too, which the link leaves out', async () => {
+    // The sender shows Renko at its defaults and set Kagi: the link carries only Kagi's.
+    make({ chartOptions: { chartType: 'renko' } });
+    widget.setSettings({ chartTypeOptions: { kagi: { reversal: 2, reversalType: 'price' } } });
+    const token = widget.exportState();
+    expect(decodeWidgetState(token)!.settings).toEqual({ chartTypeOptions: { kagi: { reversal: 2, reversalType: 'price' } } });
+    widget.destroy();
+    make();
+    widget.setSettings({ chartTypeOptions: { renko: { boxSize: 5000 }, lineBreak: { lines: 2 } } });
+    expect(await widget.importState(token)).toBe(true);
+    const options = widget.getSettings().chartTypeOptions;
+    expect(options.renko ?? {}).toEqual({});
+    expect(options).toMatchObject({ kagi: { reversal: 2, reversalType: 'price' }, lineBreak: { lines: 2 } });
+  });
+
+  it('a shared link without settings of types still gives the type it shows its defaults, and a type without settings names none', async () => {
+    const link = (chartType: string) => encodeWidgetState({
+      v: 1, symbol: 'AAA', timeframe: '5m', chartType: chartType as never, scaleMode: 'regular', indicators: [], drawings: [],
+    });
+    make();
+    widget.setSettings({ chartTypeOptions: { renko: { boxSize: 5000 }, lineBreak: { lines: 2 } } });
+    expect(await widget.importState(link('candlestick'))).toBe(true);
+    expect(widget.getSettings().chartTypeOptions).toMatchObject({ renko: { boxSize: 5000 }, lineBreak: { lines: 2 } });
+    expect(await widget.importState(link('renko'))).toBe(true);
+    const options = widget.getSettings().chartTypeOptions;
+    expect(options.renko ?? {}).toEqual({});
+    expect(options).toMatchObject({ lineBreak: { lines: 2 } });
+  });
+
   it('a shared link leaves out the switches the sender’s features set, and carries the user’s change from them', () => {
     make({ chartOptions: { features: { legend: false, barCountdown: false, indicatorValueLabels: true } } });
     expect(decodeWidgetState(widget.exportState())!.settings).toBeUndefined();
