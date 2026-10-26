@@ -119,10 +119,11 @@
   .tcw-indi-input,
   .tcw-watchlist-input,
   .tcw-goto-input,
-  .tcw-alerts-form input,
+  .tcw-alerts-form input:not([type='checkbox']),
   .tcw-settings-number
 ):is([aria-invalid='true']):is(*, :hover, :focus) {
-  /* As specific as the hover rule and later, so a wrong value stays red under the pointer and in focus. */
+  /* As specific as the hover rule (its list holds the same :not) and later, so a wrong value stays red
+     under the pointer and in focus. */
   border-color: var(--tcw-red);
   box-shadow: none;
 }
