@@ -40,12 +40,15 @@ export function drawingFont(size: number, weight?: 'bold'): string {
   return `${weight ? `${weight} ` : ''}${size}px ${fontFamily}`;
 }
 
-/** `fillText` with a halo of the chart's background behind the glyphs. */
-export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
+/**
+ * `fillText` with a halo of the chart's background behind the glyphs: the
+ * drawing pass's (`setDrawingTheme`), or `halo` for text outside one.
+ */
+export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, halo = labelHalo): void {
   ctx.save();
   ctx.lineJoin = 'round';
   ctx.lineWidth = 3;
-  ctx.strokeStyle = labelHalo;
+  ctx.strokeStyle = halo;
   ctx.globalAlpha *= 0.85;
   ctx.setLineDash([]);
   ctx.strokeText(text, x, y);

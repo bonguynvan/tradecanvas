@@ -91,7 +91,7 @@ describe('CompareRenderer', () => {
     renderer.addSymbol({ id: 'b', label: 'B', data: other, color: '#f00', visible: true });
     const points: number[][] = [];
     const ctx = {
-      save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke() {}, fillText() {}, fillRect() {},
+      save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke() {}, fillText() {}, strokeText() {}, setLineDash() {},
       measureText: (text: string) => ({ width: text.length * 6 }),
       moveTo(x: number, y: number) { points.push([x, y]); },
       lineTo(x: number, y: number) { points.push([x, y]); },

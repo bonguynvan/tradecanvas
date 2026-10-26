@@ -105,10 +105,11 @@ describe('a compare line’s label', () => {
     expect(texts[0].x).toBeGreaterThan(barIndexToX(6, vp));
   });
 
-  /** A canvas that keeps each text's box (10 px a letter, 12 px high, from where it is aligned) and each chip under one. */
+  /** A canvas that keeps each text's box (10 px a letter, 12 px high, from where it is aligned), each box filled and each text's halo. */
   function recorder() {
     const texts: { text: string; left: number; top: number; right: number; bottom: number }[] = [];
     const chips: { x: number; y: number; w: number; h: number; fill: string }[] = [];
+    const halos: { text: string; stroke: string }[] = [];
     const state: Record<string, unknown> = { textAlign: 'start', textBaseline: 'alphabetic', fillStyle: '' };
     const ctx = new Proxy(state, {
       get: (t, k) => {
@@ -123,22 +124,21 @@ describe('a compare line’s label', () => {
           };
         }
         if (k === 'fillRect') return (x: number, y: number, w: number, h: number) => chips.push({ x, y, w, h, fill: String(t.fillStyle) });
+        if (k === 'strokeText') return (text: string) => halos.push({ text, stroke: String(t.strokeStyle) });
         return () => {};
       },
       set: (t, k, v) => { t[k as string] = v; return true; },
     }) as unknown as CanvasRenderingContext2D;
-    return { ctx, texts, chips };
+    return { ctx, texts, chips, halos };
   }
   const overlaps = (a: { top: number; bottom: number }, b: { top: number; bottom: number }) => a.top < b.bottom && b.top < a.bottom;
   const THEME = { background: '#fbfaf6' } as Theme;
 
-  it('stands on a chip of the chart’s ground, so it reads over what is under it', () => {
-    const { ctx, texts, chips } = recorder();
+  it('reads over what is under it by a halo of the chart’s ground around its letters, with no box hiding the candles', () => {
+    const { ctx, chips, halos } = recorder();
     renderer({ id: 'b', data: other(0, () => 10) }).render(ctx, main, view(0, 7), THEME);
-    expect(chips).toHaveLength(1);
-    expect(chips[0].fill).toBe('#fbfaf6');
-    expect(chips[0].y).toBeLessThanOrEqual(texts[0].top);
-    expect(chips[0].y + chips[0].h).toBeGreaterThanOrEqual(texts[0].bottom);
+    expect(chips).toEqual([]);
+    expect(halos).toEqual([{ text: 'B', stroke: '#fbfaf6' }]);
   });
 
   it('keeps clear of an alert’s label at the plot’s right edge', () => {

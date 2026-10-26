@@ -2,15 +2,14 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
+import { fillTextWithHalo } from '../drawings/tools/labels.js';
 
 /** Between a line's end and its label (px). */
 const LABEL_GAP = 4;
-/** A label's text: its size (px), and the chip of the chart's ground around it. */
+/** A label's text: its size (px), and the room around it the other labels keep clear of. */
 const LABEL_FONT_PX = 10;
 const LABEL_PAD_X = 3;
 const LABEL_HEIGHT = 14;
-/** How strongly the chip covers what is under it: the line stays faintly seen through it. */
-const CHIP_ALPHA = 0.85;
 /** A label tried this many heights above and below its line's end before it settles where it first went. */
 const LABEL_TRIES = 4;
 /** An alert's label sits this far above its line, at the plot's right edge, as AlertManager draws it. */
@@ -173,9 +172,11 @@ export class CompareRenderer {
 
   /**
    * Each line's label at its end, where the lines part (in percent mode they
-   * all start at the same point, and labels there would stack), on a chip of
-   * the chart's ground, clear of an alert's label and of the labels placed
-   * before it: tried above the end, then below, then further out.
+   * all start at the same point, and labels there would stack), clear of an
+   * alert's label and of the labels placed before it: tried above the end,
+   * then below, then further out. A halo of the chart's ground around the
+   * letters keeps them legible over the candles and the other lines, which a
+   * box would hide.
    */
   private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly { sym: CompareSymbol; x: number; y: number }[], viewport: ViewportState, theme: Theme): void {
     if (ends.length === 0) return;
@@ -187,12 +188,8 @@ export class CompareRenderer {
       const width = ctx.measureText(sym.label).width + 2 * LABEL_PAD_X;
       const box = this.placeLabel(x - LABEL_GAP, y, width, taken);
       taken.push(box);
-      ctx.globalAlpha = CHIP_ALPHA;
-      ctx.fillStyle = theme.background;
-      ctx.fillRect(box.left, box.top, box.right - box.left, box.bottom - box.top);
-      ctx.globalAlpha = 1;
       ctx.fillStyle = sym.color;
-      ctx.fillText(sym.label, box.right - LABEL_PAD_X, (box.top + box.bottom) / 2);
+      fillTextWithHalo(ctx, sym.label, box.right - LABEL_PAD_X, (box.top + box.bottom) / 2, theme.background);
     }
   }
 
