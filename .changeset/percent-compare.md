@@ -1,4 +1,5 @@
 ---
+'@tradecanvas/commons': minor
 '@tradecanvas/core': minor
 '@tradecanvas/chart': minor
 ---
