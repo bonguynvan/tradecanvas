@@ -309,7 +309,7 @@ describe('TickAggregator: bars and trades older than the newest', () => {
     expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 100, volume: 1 });
   });
 
-  it('seed() never moves the newest back: a reconnect whose history ends earlier keeps the trades since', () => {
+  it("seed() doesn't move the newest back while the trades' bar is still on their buckets: a reconnect whose history ends earlier keeps the trades since", () => {
     const { agg, seen } = watched();
     agg.seed(T0 + 39 * MIN);
     agg.processTick(tick(T0 + 40 * MIN + 1000, 101, 5));
