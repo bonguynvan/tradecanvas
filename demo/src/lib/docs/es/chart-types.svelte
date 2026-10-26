@@ -77,7 +77,8 @@
   hueco saltó, en los que nunca se negoció. Un rango, fijado o automático, se eleva a 2, 5, 10, 20…
   veces su valor, el primero que no da más, cuando las barras cerradas darían más de 100.000 range
   bars, o la barra que todavía se forma más de 100.000 por sí sola; entonces todas las barras se
-  vuelven a construir con el rango elevado.
+  vuelven a construir con el rango elevado. Un rango menor que la mitad de la 15.ª cifra significativa
+  del precio más alto no cierra ninguna barra, se escriban como se escriban los precios.
 </p>
 <p>
   La caja de Renko, la reversión de Kagi y la caja de Punto y figura siguen el mismo límite: una tan

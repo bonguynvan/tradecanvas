@@ -77,7 +77,8 @@
   the bars that fill a gap stand at prices the gap skipped, which never traded. A range, set
   or automatic, is raised to 2, 5, 10, 20… times itself, the first that makes no more, when
   the closed bars would make more than 100,000 range bars, or the bar still forming more than
-  100,000 on its own; every bar is then built again on the raised range.
+  100,000 on its own; every bar is then built again on the raised range. A range under half the
+  15th significant digit of the largest price closes no bar, however the prices are written.
 </p>
 <p>
   Renko's box, Kagi's reversal and a Point &amp; Figure box keep to the same limit: one so small
