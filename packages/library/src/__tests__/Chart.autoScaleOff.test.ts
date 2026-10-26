@@ -13,7 +13,6 @@ const SPAN = 10;
 const band = (low: number, from = 0): OHLCBar[] => Array.from({ length: BARS }, (_, i) => ({
   time: (from + i) * MINUTE, open: low + 4, high: low + SPAN, low, close: low + 6, volume: 10,
 }));
-
 /** More bars than the screen holds. */
 const MANY = 300;
 /** `count` bars climbing a price a bar from 100, a minute apart. */
@@ -66,10 +65,49 @@ describe('Chart with auto-scale off', () => {
     expect(chart.isAutoScale()).toBe(false);
   });
 
-  it('fits its first bars when they come one by one', () => {
+  it('fits its first bars when they come one by one, while they all fit on screen', () => {
     chart = new Chart(host, { autoScale: false });
-    for (const bar of band(100)) chart.appendBar(bar);
-    expectFitted(100);
+    // Climbing a price a bar: fitted to the first bar only, the later ones would leave the screen.
+    const bars = climb(BARS);
+    for (const bar of bars) chart.appendBar(bar);
+    expect(priceRange().min).toBeLessThanOrEqual(bars[0].low);
+    expect(priceRange().max).toBeGreaterThanOrEqual(bars[BARS - 1].high);
+  });
+
+  it('holds the range once bars that came one by one no longer fit on screen', () => {
+    chart = new Chart(host, { autoScale: false });
+    const bars = climb(MANY);
+    for (const bar of bars.slice(0, -1)) chart.appendBar(bar);
+    const before = priceRange();
+    chart.appendBar({ ...bars[MANY - 1], high: 5_000, close: 5_000 });
+    expect(priceRange()).toEqual(before);
+  });
+
+  it('holds the range from where it is turned off while its first bars come one by one', () => {
+    chart = new Chart(host, { autoScale: false });
+    const bars = climb(BARS);
+    for (const bar of bars.slice(0, 10)) chart.appendBar(bar);
+    chart.setAutoScale(false);
+    const before = priceRange();
+    for (const bar of bars.slice(10)) chart.appendBar(bar);
+    expect(priceRange()).toEqual(before);
+  });
+
+  it('holds the range a drag of the price axis left while its first bars come one by one', () => {
+    chart = new Chart(host, { autoScale: false });
+    const bars = climb(BARS);
+    for (const bar of bars.slice(0, 10)) chart.appendBar(bar);
+    const plot = chart.getPlotRect();
+    const press = (type: string, y: number) => host.dispatchEvent(new MouseEvent(type, {
+      clientX: plot.x + plot.width + 10, clientY: y, button: 0, buttons: type === 'mouseup' ? 0 : 1, bubbles: true,
+    }));
+    press('mousedown', 100);
+    press('mousemove', 160);
+    press('mouseup', 160);
+    expect(chart.isAutoScale()).toBe(false);
+    const dragged = priceRange();
+    for (const bar of bars.slice(10)) chart.appendBar(bar);
+    expect(priceRange()).toEqual(dragged);
   });
 
   it('fits bars set before the chart has a size once it gets one', () => {

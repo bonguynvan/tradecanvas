@@ -168,7 +168,8 @@ export interface ChartOptions {
   /**
    * Fit the price axis to the bars on view as they move (default `true`).
    * `false` holds the range on screen; each new series (the first bars,
-   * `setData`'s, a stream's symbol or timeframe switch) is still fitted once.
+   * `setData`'s, a stream's symbol or timeframe switch) is still fitted once,
+   * and bars that come one by one into an empty chart until they fill it.
    */
   autoScale?: boolean;
   rightMargin?: number;

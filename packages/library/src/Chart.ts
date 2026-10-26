@@ -378,6 +378,13 @@ export class Chart {
    * last symbol's prices.
    */
   private priceFitPending = true;
+  /**
+   * The series began with no bars (a new chart, `setData([])`, an empty
+   * history), so its bars come one by one: see `priceFitDone`. A hold the
+   * user or the host asks for (a drag of the price axis, `setAutoScale(false)`)
+   * ends it.
+   */
+  private seriesArriving = true;
   private keyboardHandler: KeyboardHandler | null = null;
   private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
@@ -849,7 +856,7 @@ export class Chart {
             // turns it off (double-click the price axis to restore), mirroring
             // the price-axis drag-scale gesture.
             if (verticalGate.step(deltaX, deltaY, this.options.autoScale !== false) && deltaY) {
-              this.options.autoScale = false;
+              this.holdPriceScale();
               this.viewport.panPriceRange(deltaY);
             }
 
@@ -884,7 +891,7 @@ export class Chart {
       //   dblclick axis    → reset (price: re-enable autoScale; time: fitContent)
       const axisDrag = new AxisDragHandler(
         (factor) => {
-          this.options.autoScale = false;
+          this.holdPriceScale();
           this.viewport.scalePriceRange(factor);
           this.syncRenderContext();
           this.engine.requestRender();
@@ -1132,6 +1139,7 @@ export class Chart {
     // the next tick seeds cleanly instead of crossing against the old series.
     // The bars kept: a bar the chart can't take is left out.
     const kept = this.series.bars();
+    this.seriesArriving = kept.length === 0;
     const lastKept = kept[kept.length - 1];
     if (!restoring) {
       this.alertManager.clearLastValues();
@@ -3920,7 +3928,8 @@ export class Chart {
    * Fit the price axis to the bars on view as they move, or hold the range
    * on screen (`false`), across `setData` too. Off, a new series (the first
    * bars, `setData`'s, a stream's symbol or timeframe switch) is still fitted
-   * once, then held.
+   * once, then held; bars that come one by one into an empty chart are
+   * fitted until they fill it.
    */
   setAutoScale(enabled: boolean): void {
     this.options.autoScale = enabled;
@@ -3928,7 +3937,15 @@ export class Chart {
     // here is a deliberate preference — it should survive the next setData()
     // the same way a constructor-time `autoScale: false` would.
     this.defaultAutoScale = enabled;
+    // Off once bars are coming in: held from what is on screen now, not after the next.
+    if (!enabled && this.series.length() > 0) this.seriesArriving = false;
     this.updateViewportAndRender();
+  }
+
+  /** A drag of the price axis or a vertical pan: the range on screen is the user's, held from here. */
+  private holdPriceScale(): void {
+    this.options.autoScale = false;
+    this.priceFitPending = false;
   }
 
   isAutoScale(): boolean {
@@ -5898,10 +5915,15 @@ export class Chart {
   /**
    * Whether the new series' bars on view were fitted: there are some, on a
    * plot with room for them. A chart with no size yet (a hidden tab or
-   * panel) has none on view, so it fits them once it gets one.
+   * panel) has none on view, so it fits them once it gets one. A series that
+   * began with no bars is still coming in while all of it fits on screen:
+   * each bar it gets one by one is fitted too, not just its first.
    */
   private priceFitDone(shown: DataSeries): boolean {
-    return shown.length > 0 && this.viewport.getState().chartRect.width > 0;
+    const { chartRect, offset, barWidth, barSpacing } = this.viewport.getState();
+    if (shown.length === 0 || chartRect.width <= 0) return false;
+    const allOnView = offset <= 0 && shown.length * (barWidth + barSpacing) - offset <= chartRect.width;
+    return !(this.seriesArriving && allOnView);
   }
 
   /** Size the left scale to its widest label; true when the layout changed. */
