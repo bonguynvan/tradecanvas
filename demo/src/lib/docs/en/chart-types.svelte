@@ -79,6 +79,17 @@
   the closed bars would make more than 100,000 range bars, or the bar still forming more than
   100,000 on its own; every bar is then built again on the raised range.
 </p>
+<p>
+  Renko's box, Kagi's reversal and a Point &amp; Figure box keep to the same limit: one so small
+  for the prices that the bars before the last would make more than 100,000 bricks, lines or
+  columns, or the last bar that many on its own, is raised to 2, 5, 10, 20… times itself, the
+  first that makes no more, and the chart is built on it. Kagi and Point &amp; Figure make one
+  line or column a bar at most, so only a series of more than 100,000 bars can reach the limit;
+  Line Break, whose setting is a count of lines, makes one line a bar at most too. A box, reversal
+  or range that is no finite number above 0, in a saved state or a shared link, is dropped (the
+  chart works it out from the data), so a link can't stall the chart. The settings dialog takes
+  none under 0.00000001.
+</p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
   lineBreak: { lines: 2 },

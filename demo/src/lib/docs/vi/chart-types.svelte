@@ -78,6 +78,17 @@
   nó, lấy mức đầu tiên không vượt quá số đó, khi các nến đã đóng tạo ra hơn 100,000 range bar, hoặc
   riêng nến đang hình thành tạo ra hơn 100,000; khi đó mọi range bar được dựng lại theo biên độ đã nâng.
 </p>
+<p>
+  Kích thước ô của Renko, mức đảo chiều của Kagi và kích thước ô của Point &amp; Figure cũng theo
+  cùng giới hạn đó: một giá trị quá nhỏ so với giá, khiến các nến trước nến cuối tạo ra hơn 100,000
+  viên gạch, đường hay cột, hoặc riêng nến cuối tạo ra ngần ấy, sẽ được nâng lên 2, 5, 10, 20… lần
+  chính nó, lấy mức đầu tiên không vượt quá số đó, và biểu đồ được dựng theo mức đã nâng. Kagi và
+  Point &amp; Figure tạo nhiều nhất một đường hay một cột cho mỗi nến, nên chỉ chuỗi hơn 100,000 nến
+  mới chạm tới giới hạn này; Line Break, với thông số là số đường, cũng tạo nhiều nhất một đường cho
+  mỗi nến. Kích thước ô, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
+  thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ tự tính từ dữ liệu), nên một link
+  không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận giá trị nhỏ hơn 0.00000001.
+</p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
   lineBreak: { lines: 2 },
