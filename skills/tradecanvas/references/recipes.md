@@ -682,6 +682,61 @@ Change them in code with `widget.setSettings({ timezone: 'exchange' })`, not
 `widget.getChart().setTimeZone(…)`: the widget's clock follows its own
 settings, and a change made on the chart itself is told to no listener.
 
+## The symbol search with names, kinds, exchanges and logos
+
+Give `symbols` as `SymbolInfo` and the search opens with each symbol's
+name, kind, exchange and logo, with tabs for the kinds and, from two
+exchanges on, a list to keep to one. A plain ticker still works beside them.
+Without a `searchSymbols` (the option, or the adapter's), typing finds them
+by ticker and by name.
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+import type { SymbolInfo } from '@tradecanvas/chart';
+
+const markets: SymbolInfo[] = [
+  { symbol: 'VCB', description: 'Vietcombank', type: 'stock', exchange: 'HOSE', logo: '/logos/vcb.svg' },
+  { symbol: 'SHB', description: 'SHB Bank', type: 'stock', exchange: 'HNX' },
+  { symbol: 'VN30F2511', description: 'VN30 futures, Nov 2025', type: 'futures', exchange: 'HNX' },
+];
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbols: [...markets, 'FPT'],   // a ticker alone shows its first letter, no name
+  // A watchlist of its own: without `lists`, setSymbols below would replace it with every symbol given.
+  watchlist: { lists: [{ id: 'main', name: 'Main', symbols: ['VCB', 'FPT'] }] },
+});
+
+// A longer list from your server later: the search opens with it, the watchlist stays.
+const more: SymbolInfo[] = await fetch('/api/markets').then((r) => r.json());
+widget.setSymbols(more);
+```
+
+- A feed's search results (`searchSymbols`) win over these words field by
+  field, on the list the search opens with too once a search told of a
+  symbol; the logo you gave stays. A `null`, a number or a blank where a word
+  goes (a JSON feed's) counts as not given: it neither shows nor erases yours.
+- The chart's own info for its symbol (`resolveSymbol`, `chart.setSymbolInfo`)
+  names the toolbar's symbol and the info panel first, in whatever spelling
+  the feed answers with, once it is set after the symbol changed; a blank or a
+  number there doesn't erase your words either. In the search it gives only a
+  name or a logo the list lacks: its kind and exchange (`'stock'` where your
+  list says `'Cổ phiếu'`, a broker) add no tab and no exchange to pick.
+- `pricePrecision`, `minTick`, `sessions` given here never reach the chart:
+  give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
+- `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
+  `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,
+  with no referrer (allow its host in your CSP's `img-src`). Anything else, or
+  a logo that fails to load, shows the ticker's first letter in its kind's colour.
+- The colours go by the kind's words: stock, futures, index, crypto
+  (perpetuals too) and forex, in English, Vietnamese, Japanese, Chinese or
+  Korean; a warrant takes the futures' colour, a fund or an ETF the index's, a
+  bond the forex's; another kind gets one by its words. Set
+  `--tcw-kind-1` … `--tcw-kind-5` to recolour them.
+- The kind and exchange filters narrow the rows the search returned (an
+  adapter's search is asked for 50; a `searchSymbols` of yours gives what it
+  gives); they do not ask the feed again. The list shows the best 200 rows,
+  with a line under them saying how many more typing would narrow.
+
 ## The widget in a look of your own
 
 ```ts
@@ -717,6 +772,10 @@ yours. The widget loads no fonts, so load the families a look names (Print
 names system faces only). Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
+The widget draws its faces without OpenType features; to turn on your face's
+own, set `--tcw-font-features` on `.tcw-root` from your CSS:
+`.tcw-root { --tcw-font-features: 'cv11', 'ss01' }` for Inter. `ui` never
+sets it, and it reaches the widget's text, buttons and fields, not the chart's.
 
 ## The chart's look by key
 

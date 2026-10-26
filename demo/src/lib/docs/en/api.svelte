@@ -547,10 +547,43 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <strong>Symbol search</strong> opens from the symbol on the toolbar, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
   or a letter typed on the chart, which it starts with. It lists your <code>symbols</code> until something is
-  typed, then asks your feed's search (<code>searchSymbols</code>, or the adapter's) once typing pauses: the
-  symbol, its name, its kind and its exchange in columns, the chart's own marked. Results of more than one kind
-  (stocks and crypto, say) can be narrowed to one. The names a search told of stay for the list it opens with.
+  typed, then asks your feed's search (<code>searchSymbols</code>, or the adapter's) once typing pauses. A row starts
+  with a badge (the symbol's logo, else the first letter of its ticker in its kind's colour), then the symbol, its
+  name, its kind and its exchange in columns, the chart's own marked. Tabs keep the list to one kind (stocks, crypto)
+  and stay put as you type; when the rows come from two or more exchanges, a list beside them keeps it to one. Both
+  narrow the rows on hand and do not search again: a search returns a page of results (the adapter's is asked for
+  50), so HNX picked after typing <code>V</code> shows the HNX ones among them, not every HNX symbol with a V. The
+  list shows the best 200 rows, and a line under it says how many more typing would narrow. With no search, typing finds your symbols by ticker and by
+  name, with or without Vietnamese marks (<code>ngan hang</code> finds “Ngân hàng”).
   <code>{`features: { symbolTyping: false }`}</code> leaves letters typed on the chart alone.
+</p>
+<p>
+  Give <code>symbols</code> as <code>SymbolInfo</code> and the list opens with names, kinds, exchanges and logos;
+  the toolbar's symbol and the symbol info panel take a name and an exchange from them where the chart knows none.
+  A feed's search results win over these words and keep your logo; what the chart knows of its own symbol gives the search only a name or a logo it lacks, as it may name the kind and the exchange in other words than your list (stock for Cổ phiếu, a broker for the exchange). Price steps and hours given here are not applied to the chart: those come from the adapter's
+  <code>resolveSymbol</code> or <code>chart.setSymbolInfo</code>.
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // a ticker alone, as before
+  ],
+})`}</code></pre>
+<p>
+  A <code>logo</code> is an <code>https:</code> or <code>http:</code> address, a path on your site, a
+  <code>blob:</code> URL or an image written in <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF or SVG); anything
+  else is ignored. It is only ever loaded as an image, with no referrer, so your page's <code>img-src</code> policy
+  must allow its host; one that fails to load shows the letter. The letters take their colours from <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (stock, futures, index, crypto and perpetuals, forex, in English, Vietnamese, Japanese, Chinese or Korean words; a warrant takes the futures' colour, a fund or an ETF the index's, a bond the forex's; another kind gets one by its words), set for the dark and the light theme.
+</p>
+<p>
+  Once a search has told of a symbol, the feed's words name it on the list the search opens with too, not only
+  among the results. A name, kind, exchange or logo that isn't text (a JSON feed's <code>null</code>, a numeric
+  exchange code), in a feed's results or in what the chart knows, counts as not given: it neither shows nor erases yours. A venue before a colon
+  (<code>BINANCE:BTCUSDT</code>) is dimmed, and is what a narrow column shortens first; on a phone the kind tabs
+  scroll in one line and fade at an end with more past it. What the chart knows of its symbol names it on the
+  toolbar and in the info panel when it is of the same symbol (in any case, with or without a venue before a colon)
+  or was set since the symbol changed, so a feed's own spelling (<code>BTC-USD</code> for <code>BTCUSD</code>)
+  still counts.
 </p>
 <p>
   <strong>Compare</strong> is the same dialog with <strong>Add as</strong> under the search and what is compared
@@ -584,7 +617,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>Click play in toolbar</td><td>Opens the bar replay scrubber (play/step/seek/speed)</td></tr>
   </tbody>
 </table>
-<p>Update the searchable catalog at runtime with <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
+<p>
+  Change the symbols on offer at runtime with <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>, tickers or
+  <code>SymbolInfo</code> as in <code>symbols</code>. A watchlist made from <code>symbols</code> (no <code>lists</code>,
+  nothing kept) is replaced with them, and asks quotes for every one: for a long list from your server, give the
+  watchlist lists of its own.
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: 'Main', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the search opens with them, the watchlist stays`}</code></pre>
 
 <h3>Data Window</h3>
 <p>

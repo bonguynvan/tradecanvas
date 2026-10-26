@@ -1,6 +1,7 @@
 import type { Theme, ThemeName } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 import { cappedPixelRatio } from '../engine/DPRManager.js';
+import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 function resolveTheme(theme?: ThemeName | Theme): Theme {
   if (!theme || theme === 'dark') return DARK_THEME;
@@ -27,6 +28,7 @@ export abstract class BaseFinanceChart {
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
     this.canvas.style.display = 'block';
+    isolateFontFeatures(this.canvas);
     // A picture to assistive technology; setLabel says what it shows.
     this.canvas.setAttribute('role', 'img');
     container.appendChild(this.canvas);

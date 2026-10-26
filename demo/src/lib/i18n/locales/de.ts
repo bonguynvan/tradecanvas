@@ -329,6 +329,7 @@ const de: SiteMessages = {
         'Öffnen Sie im Kontopanel eine neue Order: Sie beginnt bei 100 Stück, und ein Preis über der Obergrenze wird abgelehnt',
         'Wechseln Sie zu FPT (Schritte von 100 Dong) oder zum VN30F-Kontrakt (ab 8:45 Uhr)',
         'Die violette, die cyanfarbene und die gelbe Linie sind Obergrenze, Untergrenze und Referenzkurs',
+        'Klicken Sie in der Werkzeugleiste auf HPG: Die Suche zeigt jedes Symbol mit Namen, Art, Börse und Logo; beschränken Sie sie auf die Optionsscheine oder auf HNX',
       ],
     },
     priceboard: {

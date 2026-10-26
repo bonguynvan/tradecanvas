@@ -1,6 +1,7 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
 import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /** Decimals prices show when neither the chart nor the market sets them. */
 const DEFAULT_DECIMALS = 2;
@@ -88,6 +89,8 @@ export class PinnedTooltip {
       whiteSpace: 'nowrap',
       willChange: 'transform',
     });
+    // The chart's text, so without the features the page turns on for its own.
+    isolateFontFeatures(this.el);
 
     this.timeEl = document.createElement('div');
     this.ohlcEl = document.createElement('div');

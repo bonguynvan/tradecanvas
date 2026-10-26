@@ -329,6 +329,7 @@ const id: SiteMessages = {
         'Buka order baru dari panel akun: dimulai dari 100 saham, dan harga di atas batas atas ditolak',
         'Beralih ke FPT (fraksi 100 dong) atau ke kontrak VN30F (mulai pukul 08.45)',
         'Garis ungu, sian, dan kuning adalah batas atas, batas bawah, dan harga acuan',
+        'Tekan HPG di bilah alat: pencarian menampilkan setiap simbol dengan nama, jenis, bursa, dan logonya; saring ke waran saja, atau ke HNX',
       ],
     },
     priceboard: {

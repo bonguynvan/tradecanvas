@@ -162,6 +162,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   独自のボタン、メニュー、項目はウィジェットの各バーに収まり、ウィジェット自身のものと同じに見え、テーマと見た目に
   従います。どれも変更・削除用のハンドルを返し、そのバーが表示されている間だけ表示されます。
+  ツールバーに収まらなくなると、独自のボタンとメニューはウィジェット自身のものと一緒に「その他」メニューへ畳まれ、左側のものは最後に畳まれます。幅が 641 px 未満ではすべてそこに入ります。「その他」から選んだ独自のメニューはその下に開きます。
+  もう一度「その他」を押すと閉じます。「その他」から選ばれたとき、独自の <code>onClick</code> が受け取るボタンは畳まれていてサイズがありません（<code>getClientRects()</code> が空）。そのときはポップオーバーを「その他」ボタン（<code>.tcw-toolbar-more</code>）を基準に配置してください。
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -180,7 +182,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // 文字自身の向きで表示：右から左の画面でも "15 ms" と読める
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 同じキーのウィジェットのショートカットを置き換え、ショートカット一覧（?）にも出ます
 
 // そのほか何でも：ツールバーの操作ボタンの横、サイドバーのボタンの下、

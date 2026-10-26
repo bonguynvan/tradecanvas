@@ -329,6 +329,7 @@ const tr: SiteMessages = {
         'Hesap panelinden yeni bir emir açın: 100 hisseyle başlar ve tavanı aşan bir fiyat reddedilir',
         'FPT’ye (100 dongluk adımlar) ya da VN30F kontratına (08.45’ten itibaren) geçin',
         'Mor, camgöbeği ve sarı çizgiler tavan, taban ve baz fiyattır',
+        'Araç çubuğunda HPG’ye basın: arama her sembolü adı, türü, borsası ve logosuyla listeler; yalnızca varantları ya da yalnızca HNX’i gösterin',
       ],
     },
     priceboard: {

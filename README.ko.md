@@ -58,8 +58,8 @@
       <br><b>그리드</b>: 차트 최대 여섯 개를 종목, 시간 단위, 십자선, 시간으로 연동.
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="한 차트가 Terminal, Capsule, Studio 룩과 다크·라이트를 오감">
-      <br><b>나만의 룩</b>: Studio, Terminal, Capsule, 라이트 또는 다크, 또는 직접 만든 토큰.
+      <img src=".github/assets/clips/looks.webp" alt="한 차트가 Print, Terminal, Capsule, Studio 룩과 다크·라이트를 오감">
+      <br><b>나만의 룩</b>: Print(종이와 잉크, 황금비로), Studio, Terminal, Capsule, 라이트 또는 다크, 또는 직접 만든 토큰.
     </td>
   </tr>
   <tr>

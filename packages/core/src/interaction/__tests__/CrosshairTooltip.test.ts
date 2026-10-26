@@ -35,6 +35,13 @@ afterEach(() => {
 });
 
 describe('CrosshairTooltip', () => {
+  it('draws its text without the page’s OpenType features, as the chart’s canvases do', () => {
+    host.style.fontFeatureSettings = "'ss01', 'ss03'";
+    expect(card().style.fontFeatureSettings).toBe('normal');
+    // Its own tabular figures keep the values in columns.
+    expect(card().style.fontVariantNumeric).toBe('tabular-nums');
+  });
+
   it('shows O/H/L/C, the change from the previous close and the volume', () => {
     tip.show({ x: 100, y: 100 }, bar(), DARK_THEME, box, { prevClose: 102, priceRange: { min: 90, max: 110 } });
     expect(text()).toContain('100.00');

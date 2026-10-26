@@ -1,5 +1,6 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, barDateZone, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
+import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /** Gap between the pointer and the card. */
 const POINTER_GAP = 16;
@@ -123,6 +124,8 @@ export class CrosshairTooltip {
       contain: 'layout paint',
       backdropFilter: 'blur(10px)',
     } satisfies Partial<CSSStyleDeclaration>);
+    // In the chart's font, so without the features the page turns on for its own.
+    isolateFontFeatures(el);
 
     // Header: direction tick, time, change pill.
     const header = div({ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '6px' });

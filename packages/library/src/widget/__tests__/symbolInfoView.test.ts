@@ -59,6 +59,25 @@ describe('the symbol info view', () => {
     expect(zoneOf({ symbol: 'AAA', timezone: 'America/New_York' })).toBe('America/New_York');
   });
 
+  it('takes the name, exchange and kind from `names` when it is given, the rest from `info`', () => {
+    const view = buildSymbolInfoView({
+      symbol: 'VNM',
+      info: { symbol: 'VNM', minTick: 100, currency: 'VND' },
+      names: { symbol: 'VNM', description: 'Vinamilk', exchange: 'HOSE', type: 'stock' },
+      quote: undefined, bars, formatPrice: (p) => p.toFixed(2),
+      t: EN_TRANSLATOR, textLocale: 'en', numberLocale: 'en-US', now: T0 + 8_000_000,
+    });
+    expect(view.description).toBe('Vinamilk');
+    expect(view.meta).toBe('HOSE · stock');
+    expect(view.stats.find((s) => s.label === 'Tick size')?.value).toBe('100');
+    const unnamed = buildSymbolInfoView({
+      symbol: 'VNM', info: { symbol: 'VNM', description: 'stale' }, names: null,
+      quote: undefined, bars, formatPrice: (p) => p.toFixed(2),
+      t: EN_TRANSLATOR, textLocale: 'en', numberLocale: 'en-US', now: T0 + 8_000_000,
+    });
+    expect(unnamed.description).toBeUndefined();
+  });
+
   it('finds the latest day in the exchange’s zone', () => {
     expect(sessionDay(bars, 'UTC')).toMatchObject({ open: 9.5, high: 12, low: 9, close: 11, volume: 500, prevClose: 9.5 });
     expect(sessionDay([], 'UTC')).toBeNull();

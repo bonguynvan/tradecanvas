@@ -20,8 +20,8 @@
   --tcw-scroll-thumb: rgba(230, 227, 220, 0.14);
   --tcw-scroll-thumb-hover: rgba(230, 227, 220, 0.26);
   /* Glyphs drawn in a field's background (a background image takes no currentColor). */
-  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%238c8a85' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%238c8a85' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%23918f8a' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23918f8a' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
   --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23131416' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
@@ -37,18 +37,21 @@
   --tcw-check-line: rgba(27, 29, 33, 0.34);
   --tcw-scroll-thumb: rgba(27, 29, 33, 0.16);
   --tcw-scroll-thumb-hover: rgba(27, 29, 33, 0.3);
-  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%236c7077' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%236c7077' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%236a6e75' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%236a6e75' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
   --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* --- Text, number, date and time fields, and selects --- */
 
-/* Fields speak the widget's type, not the browser's (a part's own font still wins). */
+/* Fields speak the widget's type, not the browser's (a part's own font still wins).
+ * The browser's control font resets the OpenType features, so --tcw-font-features
+ * set on .tcw-root reaches every button and field only through this. */
 :where(.tcw-root) :where(input, select, textarea, button) {
   font-family: inherit;
   font-weight: inherit;
   letter-spacing: inherit;
+  font-feature-settings: inherit;
 }
 
 .tcw-root :is(

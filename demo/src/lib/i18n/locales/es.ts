@@ -331,6 +331,7 @@ const es: SiteMessages = {
         'Abre una nueva orden desde el panel de cuenta: empieza con 100 acciones, y un precio por encima del techo se rechaza',
         'Cambia a FPT (pasos de 100 dongs) o al contrato VN30F (desde las 8:45)',
         'Las líneas morada, cian y amarilla son el precio techo, el precio suelo y el precio de referencia',
+        'Pulsa HPG en la barra de herramientas: la búsqueda muestra cada símbolo con su nombre, tipo, bolsa y logo; quédate solo con los warrants, o con HNX',
       ],
     },
     priceboard: {

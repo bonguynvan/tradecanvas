@@ -123,7 +123,9 @@ describe('ChartWidget symbol info', () => {
 
   it('says a market around the clock is so, and keeps the status bar in step', () => {
     widget = new ChartWidget(host, { symbol: 'AAPL', symbols: ['AAPL'] });
-    expect(host.querySelector('.tcw-status-market')!.textContent).toBe('Market closed');
+    expect(host.querySelector('.tcw-status-market-text')!.textContent).toBe('Market closed');
+    // The short word, for a status bar out of room.
+    expect(host.querySelector('.tcw-status-market-short')!.textContent).toBe('Closed');
     FakeChart.info = { symbol: 'BTCUSDT', timezone: 'UTC' };
     FakeChart.last.emit('symbolInfoChange', { info: FakeChart.info });
     widget.toggleSymbolInfo(true);

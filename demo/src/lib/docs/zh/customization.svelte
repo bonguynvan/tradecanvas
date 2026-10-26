@@ -157,6 +157,8 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   你的按钮、菜单和状态项放在组件的各个栏里，看起来和组件自带的一样，并跟随它的主题和外观。每个方法都返回一个句柄，
   用来修改或移除，并且在所在的栏显示时才显示。
+  工具栏放不下时，你的按钮和菜单会和组件自带的一起收进“更多”菜单，左侧的最后收起；宽度小于 641 px 时全部放进去。从“更多”里选中的你的菜单在“更多”下方打开。
+  再按一次“更多”会关闭它。从“更多”里选中时，你的 <code>onClick</code> 收到的按钮处于收起状态、没有尺寸（<code>getClientRects()</code> 为空）：这时请以“更多”按钮（<code>.tcw-toolbar-more</code>）为锚点放置弹出框。
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -175,7 +177,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // 按其文字自身的方向显示：从右到左的界面中也读作 "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // 按键相同时取代组件自带的快捷键；也列在快捷键面板中（?）
 
 // 你的其他任何内容：工具栏控件旁、侧栏按钮下、状态栏两端，或图表之上

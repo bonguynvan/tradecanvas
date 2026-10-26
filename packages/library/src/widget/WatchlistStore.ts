@@ -1,4 +1,5 @@
 import type { KeyValueStorage } from './DrawingTemplateStore.js';
+import { MAX_SYMBOL_LENGTH, cleanSymbol } from './symbolCatalog.js';
 
 /** One watchlist: a name and its symbols, in order. */
 export interface WatchlistList {
@@ -23,18 +24,11 @@ export interface WatchlistStoreOptions {
 const MAX_LISTS = 50;
 const MAX_SYMBOLS = 500;
 const MAX_NAME = 60;
-const MAX_SYMBOL = 64;
 
 const cleanName = (v: unknown): string | null => {
   if (typeof v !== 'string') return null;
   const name = v.trim().slice(0, MAX_NAME);
   return name || null;
-};
-
-const cleanSymbol = (v: unknown): string | null => {
-  if (typeof v !== 'string') return null;
-  const symbol = v.trim();
-  return symbol && symbol.length <= MAX_SYMBOL ? symbol : null;
 };
 
 function cleanSymbols(raw: readonly unknown[]): string[] {
@@ -62,7 +56,7 @@ export function readWatchlists(raw: unknown): { lists: WatchlistList[]; active: 
     if (lists.length === MAX_LISTS) break;
     if (!item || typeof item !== 'object') continue;
     const l = item as Record<string, unknown>;
-    const id = typeof l.id === 'string' && l.id && l.id.length <= MAX_SYMBOL ? l.id : null;
+    const id = typeof l.id === 'string' && l.id && l.id.length <= MAX_SYMBOL_LENGTH ? l.id : null;
     const name = cleanName(l.name);
     if (!id || !name || lists.some((x) => x.id === id)) continue;
     lists.push({ id, name, symbols: Array.isArray(l.symbols) ? cleanSymbols(l.symbols) : [] });

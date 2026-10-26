@@ -42,6 +42,13 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+<p>
+  <code>searchSymbols</code> và <code>resolveSymbol</code> trả về <code>SymbolInfo</code>: <code>symbol</code>, và
+  những gì nguồn dữ liệu biết về phần còn lại: tên dễ đọc (<code>description</code>), <code>exchange</code>,
+  <code>type</code> theo cách nguồn dữ liệu gọi (<code>'stock'</code>, <code>'futures'</code>,
+  <code>'Cổ phiếu'</code>…), một <code>logo</code> mà ô tìm mã của widget hiển thị, <code>pricePrecision</code>,
+  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>.
+</p>
 
 <h2 id="built-timeframes">Khung thời gian nguồn dữ liệu không có</h2>
 <p>

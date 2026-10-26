@@ -5459,7 +5459,8 @@
       },
       {
         "name": "symbols",
-        "type": "string[]"
+        "type": "readonly (string | SymbolInfo)[]",
+        "doc": "The symbols on offer, as tickers or `SymbolInfo`. Only a name, `type`, `exchange` and `logo` are used, by the symbol search, the toolbar's symbol and the symbol info panel: price steps and hours given here are not applied to the chart (those come from the adapter's `resolveSymbol` or `chart.setSymbolInfo`)."
       },
       {
         "name": "timeframes",
@@ -5877,7 +5878,7 @@
       {
         "name": "font",
         "type": "Partial<FontConfig>",
-        "doc": "The face and sizes of the chart's own text (the axes, the legend, the tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. Change it with `chart.setFont`."
+        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes the face, at its own size (`chart.setLegend({ fontSize })`); in a widget its face and size come from the look (`ui.font`). Change it with `chart.setFont`."
       },
       {
         "name": "a11y",
@@ -6178,7 +6179,7 @@
       {
         "name": "font",
         "type": "Partial<FontConfig>",
-        "doc": "The face and sizes of the chart's own text (the axes, the legend, the tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. Change it with `chart.setFont`."
+        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes the face, at its own size (`chart.setLegend({ fontSize })`); in a widget its face and size come from the look (`ui.font`). Change it with `chart.setFont`."
       },
       {
         "name": "a11y",

@@ -130,6 +130,7 @@ import { ThemeManager } from './ThemeManager.js';
 import { startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
+import { LabelWidths } from './layout/labelWidths.js';
 import { VerticalPanGate } from './interaction/verticalPanGate.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
@@ -219,7 +220,10 @@ export class Chart {
   private renderDeferred = false;
   /** Current price-axis width; grows to fit long (e.g. sub-cent) labels. */
   private priceAxisWidth = PRICE_AXIS_WIDTH;
+  /** A canvas out of the page, to measure on when the chart has none of its own (destroyed). */
   private measureCtx: CanvasRenderingContext2D | null | undefined;
+  /** The axis labels' widths as measured on the chart's canvas in the page, kept while panning. */
+  private readonly labelWidths = new LabelWidths();
   private containerSizeCache: { width: number; height: number } | null = null;
   private containerSizeCacheTime = 0;
   // Last-emitted viewport values, used to fire visibleRangeChange /
@@ -639,7 +643,6 @@ export class Chart {
     this.barCountdown = new BarCountdown();
     this.barCountdown.setVisible(this.features.barCountdown);
     this.sessionBreaks = new SessionBreaks();
-    this.sessionBreaks.setLocale(this.numberLocale);
     this.sessionShading = new SessionShading();
     this.compareRenderer = new CompareRenderer();
 
@@ -1541,11 +1544,13 @@ export class Chart {
   }
 
   /**
-   * The face and sizes of the chart's own text (the axes, the legend, the
-   * tags), over every theme and on top of the font set before: `{ family:
-   * SANS_FONT_FAMILY }` for proportional figures. Null goes back to each
-   * theme's own. A family that is empty or a size that isn't a number above
-   * zero is left out.
+   * The face and sizes of the chart's own text (the axes, the tags, the
+   * crosshair's pills), over every theme and on top of the font set before:
+   * `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes
+   * the face, unless `setLegend` names one, at its own size (`setLegend`); in a
+   * widget its face and size come from the look (`ui.font`). Null goes back to
+   * each theme's own. A family that is empty or a size that isn't a number
+   * above zero is left out.
    */
   setFont(font: Partial<FontConfig> | null): void {
     if (font === null) {
@@ -5385,7 +5390,6 @@ export class Chart {
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
     this.pinnedTooltip.setLocale(locale);
-    this.sessionBreaks.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
     // Separators change label widths; the axis may need to refit.
     this.updateViewportAndRender();
@@ -5569,6 +5573,7 @@ export class Chart {
     this.undoRedoManager.clear();
     this.engine.destroy();
     this.eventBus.destroy();
+    this.labelWidths.destroy();
     this.container.innerHTML = '';
   }
 
@@ -5834,16 +5839,30 @@ export class Chart {
     return true;
   }
 
+  /**
+   * The width of a label as the chart draws it. It measures on the chart's own
+   * canvas: in Chromium a canvas's text takes what the page passes down to the
+   * element (the widget's tabular figures, wider in a proportional face),
+   * which a canvas out of the page doesn't get, so the axis would be sized too
+   * narrow for its crosshair pill. Such a measure costs more than one out of
+   * the page, so its widths are kept; a canvas not yet in the page measures
+   * afresh each time, as its widths change once it is.
+   */
   private measureText(text: string, font: string): number {
+    const scene = this.engine.layerManager.getLayer(LayerType.Main)?.ctx;
+    if (scene?.canvas.isConnected) return this.labelWidths.get(text, font, () => measureWith(scene, text, font));
+    const ctx = scene ?? this.detachedMeasureContext();
+    if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
+    return measureWith(ctx, text, font);
+  }
+
+  private detachedMeasureContext(): CanvasRenderingContext2D | null {
     if (this.measureCtx === undefined) {
       this.measureCtx = typeof document !== 'undefined'
         ? document.createElement('canvas').getContext('2d')
         : null;
     }
-    const ctx = this.measureCtx;
-    if (!ctx) return text.length * 7; // no canvas (SSR/tests): a generous estimate
-    ctx.font = font;
-    return ctx.measureText(text).width;
+    return this.measureCtx;
   }
 
   /**
@@ -6106,6 +6125,15 @@ function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
     && (a.pane ?? null) === (b.pane ?? null)
     && (a.scale ?? null) === (b.scale ?? null)
     && (a.position === undefined) === (b.position === undefined);
+}
+
+/** The width of `text` in `font` on `ctx`, whose own font is put back after. */
+function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string): number {
+  const drawing = ctx.font;
+  ctx.font = font;
+  const width = ctx.measureText(text).width;
+  ctx.font = drawing;
+  return width;
 }
 
 /** The longest family list `setFont` takes, characters. */

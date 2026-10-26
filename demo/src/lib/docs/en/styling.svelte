@@ -69,8 +69,9 @@ chart.setBarLayout('classic')    // a 2 px gap, as before
 chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
 chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> and <code>chartOptions.font</code> win over the look's. Over bars on screen a
-  new layout keeps the zoom and only splits each slot again.
+  <code>chartOptions.barLayout</code> and a <code>family</code> in <code>chartOptions.font</code> win over the look's;
+  sizes alone in <code>chartOptions.font</code> keep the look's face. Over bars on screen a new layout keeps the zoom
+  and only splits each slot again.
 </p>
 
 <h2>The golden ratio</h2>
@@ -189,6 +190,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>The stylesheet: Fibonacci spacing, 2 to 34 px</td></tr>
+    <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>The stylesheet: the symbol search’s colours for the kinds of symbol (stock, futures, index, crypto, forex), set for the dark and the light theme. Set them in a palette of your own, or the badges keep these hues.</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>The stylesheet: <code>normal</code>, the faces as drawn. The <code>ui</code> option never sets it, so a rule of yours on <code>.tcw-root</code> turns on your face's OpenType features (Inter's one-storey a and open digits: <code>'cv11', 'ss01'</code>). They reach the widget's text, its buttons and fields too; the chart's text (its canvases and its tooltips) never takes them.</td></tr>
   </tbody>
 </table>
 <p>

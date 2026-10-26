@@ -68,12 +68,13 @@ describe('computeMonthlyReturns', () => {
 });
 
 describe('selectKeyStats', () => {
+  // Fractions, as @tradecanvas/analytics returns them: 0.235 is +23.5%.
   const metrics: RiskMetricsLike = {
-    totalReturnPct: 23.5,
+    totalReturnPct: 0.235,
     cagr: 0.12,
     sharpe: 1.8,
     sortino: 2.4,
-    maxDrawdownPct: -8.3,
+    maxDrawdownPct: 0.083,
     winRate: 0.55,
     profitFactor: 1.7,
     trades: 42,
@@ -84,9 +85,36 @@ describe('selectKeyStats', () => {
     const byLabel = Object.fromEntries(stats.map((s) => [s.label, s]));
     expect(byLabel['Total Return'].value).toBe('+23.50%');
     expect(byLabel['Total Return'].tone).toBe('positive');
-    expect(byLabel['Max Drawdown'].tone).toBe('negative');
+    expect(byLabel['CAGR'].value).toBe('+12.00%');
     expect(byLabel['Win Rate'].value).toBe('55.0%');
     expect(byLabel['Trades'].value).toBe('42');
+  });
+
+  it('shows the max drawdown as a signed fall in percent', () => {
+    const stats = selectKeyStats(metrics);
+    const drawdown = stats.find((s) => s.label === 'Max Drawdown');
+    expect(drawdown?.value).toBe('-8.30%');
+    expect(drawdown?.tone).toBe('negative');
+  });
+
+  it('shows a losing total return in percent with the negative tone', () => {
+    const stats = selectKeyStats({ ...metrics, totalReturnPct: -0.5 });
+    const total = stats.find((s) => s.label === 'Total Return');
+    expect(total?.value).toBe('-50.00%');
+    expect(total?.tone).toBe('negative');
+  });
+
+  it('shows a drawdown given as a negative fraction as a fall too', () => {
+    const stats = selectKeyStats({ ...metrics, maxDrawdownPct: -0.083 });
+    const drawdown = stats.find((s) => s.label === 'Max Drawdown');
+    expect(drawdown?.value).toBe('-8.30%');
+    expect(drawdown?.tone).toBe('negative');
+  });
+
+  it('shows no drawdown as 0.00% without a minus sign', () => {
+    const stats = selectKeyStats({ ...metrics, maxDrawdownPct: 0 });
+    const drawdown = stats.find((s) => s.label === 'Max Drawdown');
+    expect(drawdown?.value).toBe('0.00%');
   });
 
   it('renders infinite profit factor as ∞', () => {

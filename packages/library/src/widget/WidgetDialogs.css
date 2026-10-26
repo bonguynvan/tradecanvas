@@ -607,38 +607,84 @@
   padding-block: 0;
 }
 
-/* The kinds the results come in: All, stock, crypto… */
-.tcw-ss-kinds {
+/* The heads' height, which the rows scroll in below. */
+.tcw-modal.tcw-ss {
+  --tcw-ss-head-h: var(--tcw-control-h);
+}
+
+/* Over the list: the kinds the rows come in, and their exchanges once there are two. The exchanges sit
+   on the tabs' first line when the tabs wrap, not between their lines. */
+.tcw-ss-filters {
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--tcw-space-4);
   flex: none;
-  gap: var(--tcw-space-3);
   margin: 0 var(--tcw-space-6) var(--tcw-space-4);
 }
 
+/* The kinds as tabs (All, stock, crypto…), showing the one picked as the look shows a choice. */
+.tcw-ss-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  gap: var(--tcw-space-2);
+}
+
+/* Where they scroll in one line, the tabs fade out at an end with more past it, so a tab cut there
+   reads as more to scroll to. A mask: only its alpha counts, so what shows is drawn in the text's
+   colour, which is opaque, and what fades goes to transparent. */
+.tcw-ss-kinds[data-more] {
+  --tcw-ss-shown: currentColor;
+  --tcw-ss-fade-start: var(--tcw-ss-shown);
+  --tcw-ss-fade-end: var(--tcw-ss-shown);
+  -webkit-mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to right, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+}
+
+[dir='rtl'] .tcw-ss-kinds[data-more] {
+  -webkit-mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+  mask-image: linear-gradient(to left, var(--tcw-ss-fade-start), var(--tcw-ss-shown) var(--tcw-space-6), var(--tcw-ss-shown) calc(100% - var(--tcw-space-6)), var(--tcw-ss-fade-end));
+}
+
+.tcw-ss-kinds[data-more~='start'] {
+  --tcw-ss-fade-start: transparent;
+}
+
+.tcw-ss-kinds[data-more~='end'] {
+  --tcw-ss-fade-end: transparent;
+}
+
 .tcw-ss-type {
+  flex: none;
   height: var(--tcw-control-h);
   padding: 0 var(--tcw-space-5);
-  border: var(--tcw-border-w) solid var(--tcw-border);
-  border-radius: var(--tcw-control-radius);
+  border: none;
+  border-radius: var(--tcw-tab-radius);
   background: transparent;
-  color: var(--tcw-text-dim);
+  color: var(--tcw-text-muted);
   font: inherit;
   font-size: var(--tcw-font-size-sm);
-  text-transform: capitalize;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+/* A feed's words as it wrote them ("Cổ phiếu" stays so), only the first letter raised. */
+.tcw-ss-type::first-letter {
+  text-transform: uppercase;
 }
 
 .tcw-ss-type:hover {
-  background: var(--tcw-hover-bg);
+  background: var(--tcw-tab-hover);
   color: var(--tcw-text);
 }
 
 .tcw-ss-type[aria-pressed='true'] {
-  border-color: var(--tcw-accent);
-  background: var(--tcw-accent-soft);
-  color: var(--tcw-accent);
+  background: var(--tcw-tab-on-bg);
+  color: var(--tcw-tab-on-fg);
+  box-shadow: inset 0 calc(-1 * var(--tcw-tab-line)) 0 var(--tcw-accent);
+  font-weight: var(--tcw-weight-strong);
 }
 
 .tcw-ss-type:focus-visible,
@@ -647,38 +693,86 @@
   box-shadow: var(--tcw-ring);
 }
 
-/* The symbol takes 144 (89 x phi), the name the rest; kind and exchange at the end. The heads line up
-   with the rows: the inset of what scrolls and the row's own. */
-.tcw-ss-columns,
-.tcw-ss-row {
-  display: grid;
-  grid-template-columns: 144px minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: var(--tcw-space-5);
+/* The exchanges at the end of the row, as wide as the longest up to 144. */
+.tcw-root .tcw-ss-exchange-filter {
+  flex: none;
+  width: auto;
+  max-width: 144px;
+  height: var(--tcw-control-h);
+  margin-inline-start: auto;
+  padding-block: 0;
+  font-size: var(--tcw-font-size-sm);
 }
 
+/* What scrolls is one grid, and the heads, the list and each row are its subgrids, so a column is
+   as wide in every row: the badge, the symbol up to 144 (89 x phi), the name the rest, the kind and
+   the exchange up to 89 each, the check. An empty cell keeps its column. */
+.tcw-ss-results {
+  display: grid;
+  grid-template-columns: max-content fit-content(144px) minmax(0, 1fr) fit-content(89px) fit-content(89px) auto;
+  align-content: start;
+  column-gap: var(--tcw-space-4);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A row the arrows reach scrolls in below the heads, not under them. */
+  scroll-padding-block-start: calc(var(--tcw-ss-head-h) + var(--tcw-space-2));
+  padding: 0 var(--tcw-space-4) var(--tcw-space-5);
+}
+
+/* Comparing, under a heading of its own as well. */
+.tcw-ss--compare .tcw-ss-results {
+  scroll-padding-block-start: calc(var(--tcw-ss-head-h) + var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5);
+}
+
+.tcw-ss-results > * {
+  grid-column: 1 / -1;
+}
+
+.tcw-ss-columns,
+.tcw-ss-list,
+.tcw-ss-added,
+.tcw-ss-row,
+.tcw-ss-added-row {
+  display: grid;
+  grid-column: 1 / -1;
+  /* Where subgrids aren't drawn: fixed columns, the rest sized row by row. */
+  grid-template-columns: var(--tcw-control-h-sm) 89px minmax(0, 1fr) auto auto auto;
+  grid-template-columns: subgrid;
+  align-items: center;
+  column-gap: inherit;
+}
+
+/* The heads stay at the top while the rows scroll under them. */
 .tcw-ss-columns {
-  flex: none;
-  padding: var(--tcw-space-3) calc(var(--tcw-space-4) * 2);
-  border-top: 1px solid var(--tcw-divider);
-  border-bottom: 1px solid var(--tcw-divider);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: var(--tcw-ss-head-h);
+  margin-bottom: var(--tcw-space-2);
+  padding: 0 var(--tcw-space-4);
+  background: var(--tcw-bg-elevated);
+  box-shadow: 0 1px 0 var(--tcw-divider);
   color: var(--tcw-text-muted);
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   text-transform: var(--tcw-label-case);
   letter-spacing: var(--tcw-label-tracking);
+  white-space: nowrap;
 }
 
-/* What scrolls: what is compared, the symbols, a note when there are none. */
-.tcw-ss-results {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* A row the arrows reach scrolls in below its heading, not under it. */
-  scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5 - var(--tcw-space-3));
-  padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
+.tcw-ss-head {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.tcw-ss-head:nth-child(1) { grid-column: 1; }
+.tcw-ss-head:nth-child(2) { grid-column: 2; }
+.tcw-ss-head:nth-child(3) { grid-column: 3; }
+.tcw-ss-head:nth-child(4) { grid-column: 4; justify-self: end; }
+.tcw-ss-head:nth-child(5) { grid-column: 5; justify-self: end; }
 
 .tcw-ss-row {
   min-height: var(--tcw-menu-item-h);
@@ -692,9 +786,39 @@
   background: var(--tcw-hover-bg);
 }
 
+/* The logo, or the ticker's first letter on a tint of its kind's colour, cornered as the look's tags. */
+.tcw-ss-badge {
+  --tcw-ss-kind: var(--tcw-text-dim);
+  grid-column: 1;
+  display: inline-grid;
+  place-items: center;
+  width: var(--tcw-control-h-sm);
+  height: var(--tcw-control-h-sm);
+  overflow: hidden;
+  border-radius: var(--tcw-tag-radius);
+  background: color-mix(in srgb, var(--tcw-ss-kind) 16%, transparent);
+  color: var(--tcw-ss-kind);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  line-height: 1;
+}
+
+.tcw-ss-badge[data-kind='1'] { --tcw-ss-kind: var(--tcw-kind-1); }
+.tcw-ss-badge[data-kind='2'] { --tcw-ss-kind: var(--tcw-kind-2); }
+.tcw-ss-badge[data-kind='3'] { --tcw-ss-kind: var(--tcw-kind-3); }
+.tcw-ss-badge[data-kind='4'] { --tcw-ss-kind: var(--tcw-kind-4); }
+.tcw-ss-badge[data-kind='5'] { --tcw-ss-kind: var(--tcw-kind-5); }
+
+img.tcw-ss-badge {
+  background: transparent;
+  object-fit: cover;
+}
+
 /* The figures of a ticker, in the mono face, left to right in any widget, at the start of its column;
    the chart's own in ink. */
 .tcw-ss-symbol {
+  grid-column: 2;
+  display: flex;
   justify-self: start;
   max-width: 100%;
   min-width: 0;
@@ -702,8 +826,27 @@
   color: var(--tcw-text);
   font-family: var(--tcw-font-mono);
   font-weight: var(--tcw-weight-strong);
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A venue before the ticker ("BINANCE:"), dim, is what a narrow column shortens; the ticker never
+   shrinks (a share of a pixel would end it in an ellipsis), and is cut only when it alone is wider.
+   A gap keeps the venue's ellipsis off the ticker ("HYPERLIQ… GOLD"). */
+.tcw-ss-venue {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-end: var(--tcw-space-1);
+  overflow: hidden;
+  color: var(--tcw-text-muted);
+  font-weight: var(--tcw-weight);
+  text-overflow: ellipsis;
+}
+
+.tcw-ss-ticker {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tcw-ss-row.tcw-current .tcw-ss-symbol {
@@ -716,6 +859,7 @@
 }
 
 .tcw-ss-desc-cell {
+  grid-column: 3;
   min-width: 0;
 }
 
@@ -731,33 +875,34 @@
   white-space: nowrap;
 }
 
-.tcw-ss-meta {
-  display: flex;
-  align-items: baseline;
-  gap: var(--tcw-space-4);
+/* The kind as the feed wrote it, and the exchange, each at the end of its column. */
+.tcw-ss-kind,
+.tcw-ss-exchange {
   justify-self: end;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--tcw-font-size-xs);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tcw-ss-kind {
+  grid-column: 4;
   color: var(--tcw-text-muted);
-  font-size: var(--tcw-font-size-xs);
 }
 
 .tcw-ss-exchange {
+  grid-column: 5;
   color: var(--tcw-text-dim);
-  font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   text-transform: var(--tcw-label-case);
   letter-spacing: var(--tcw-label-tracking);
 }
 
-/* The chart's symbol, or one on it already: a check after the exchange. */
-.tcw-ss-row:has(.tcw-ss-check) {
-  grid-template-columns: 144px minmax(0, 1fr) auto auto;
-}
-
+/* The chart's symbol, or one on it already: a check in the last column. */
 .tcw-ss-check {
+  grid-column: 6;
   display: inline-grid;
   place-items: center;
   color: var(--tcw-accent);
@@ -767,10 +912,10 @@
   display: none;
 }
 
-/* "On the chart" and "Symbols", above their rows while they scroll. */
+/* "On the chart" and "Symbols", under the heads while their rows scroll. */
 .tcw-ss-heading {
   position: sticky;
-  top: calc(var(--tcw-space-3) * -1);
+  top: var(--tcw-ss-head-h);
   z-index: 1;
   padding: var(--tcw-space-5) var(--tcw-space-4) var(--tcw-space-2);
   background: var(--tcw-bg-elevated);
@@ -782,10 +927,6 @@
 }
 
 .tcw-ss-added-row {
-  display: grid;
-  grid-template-columns: 144px minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: var(--tcw-space-5);
   min-height: var(--tcw-menu-item-h);
   padding: 0 var(--tcw-space-4);
   border-radius: var(--tcw-menu-item-radius);
@@ -795,8 +936,9 @@
   background: var(--tcw-hover-bg);
 }
 
-/* How it is compared, after the line's colour where it has one of its own. */
+/* How it is compared, across the name, kind and exchange; the line's colour, where it has one of its own, where the badges are. */
 .tcw-ss-way-cell {
+  grid-column: 3 / 6;
   display: flex;
   align-items: center;
   gap: var(--tcw-space-4);
@@ -804,7 +946,8 @@
 }
 
 .tcw-ss-swatch {
-  flex: none;
+  grid-column: 1;
+  justify-self: center;
   width: var(--tcw-space-4);
   height: var(--tcw-space-4);
   border-radius: var(--tcw-radius-sm);
@@ -820,6 +963,7 @@
 }
 
 .tcw-ss-remove {
+  grid-column: 6;
   display: inline-grid;
   place-items: center;
   width: var(--tcw-control-h);
@@ -843,6 +987,14 @@
   font-size: var(--tcw-font-size-sm);
   line-height: 1.5;
   text-wrap: pretty;
+}
+
+/* Under a list cut short: how many more match, for typing to narrow. */
+.tcw-ss-more {
+  padding: var(--tcw-space-4);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  line-height: 1.5;
 }
 
 /* The way the dialog opens too: a letter typed on the chart. */
@@ -945,7 +1097,9 @@
   box-shadow: var(--tcw-ring);
 }
 
-/* A phone: both are the widget's sheet; the search as tall as a sheet goes, its symbols 89 wide. */
+/* A phone: both are the widget's sheet; the search as tall as a sheet goes, its symbols up to 89
+   wide. The kind's column goes (the badge's colour still tells it), the tabs scroll in one line, and
+   a row is a finger's height. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ss {
     /* Above the on-screen keyboard: the sheet's top stays on the screen. */
@@ -954,22 +1108,83 @@
   }
 
   .tcw-ss-way,
-  .tcw-ss-kinds {
+  .tcw-ss-filters {
     margin-inline: var(--tcw-space-4);
   }
 
+  .tcw-ss-kinds {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tcw-ss-kinds::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tcw-root .tcw-ss-exchange-filter {
+    max-width: 110px;
+  }
+
+  /* The ticker is the row's key: its column as wide as the widest ticker, up to 144 or 38.2% of the
+     row, and the name gives way first. The exchange's up to 55, each cut in its own row. */
+  .tcw-ss-results {
+    grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(55px) auto;
+  }
+
+  /* A venue counts for nothing in that width (its own is 0): it shows, dim and shortened, in what
+     its ticker leaves, if that is 2em, a letter and an ellipsis as on the toolbar. With less, it
+     wraps to a second line the cell clips, never a sliver ("H.GOLD"). The ticker comes first in the
+     line, laid from the end, so it is the one that stays, at the column's start when alone. */
+  .tcw-ss-symbol {
+    justify-self: stretch;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    height: 1lh;
+  }
+
+  .tcw-ss-ticker {
+    order: -1;
+  }
+
+  .tcw-ss-venue {
+    flex: 1 1 2em;
+    width: 0;
+  }
+
+  /* The head over the exchanges reads whole, over the gap before it if it must. */
+  .tcw-ss-head:nth-child(5) {
+    overflow: visible;
+  }
+
   .tcw-ss-columns,
+  .tcw-ss-list,
+  .tcw-ss-added,
   .tcw-ss-row,
   .tcw-ss-added-row {
-    grid-template-columns: 89px minmax(0, 1fr) auto;
+    grid-template-columns: var(--tcw-control-h-sm) 89px minmax(0, 1fr) auto auto;
+    grid-template-columns: subgrid;
   }
 
-  .tcw-ss-row:has(.tcw-ss-check) {
-    grid-template-columns: 89px minmax(0, 1fr) auto auto;
-  }
-
-  .tcw-ss-kind {
+  .tcw-ss-kind,
+  .tcw-ss-head:nth-child(4) {
     display: none;
+  }
+
+  .tcw-ss-exchange,
+  .tcw-ss-head:nth-child(5) {
+    grid-column: 4;
+  }
+
+  .tcw-ss-check,
+  .tcw-ss-remove {
+    grid-column: 5;
+  }
+
+  .tcw-ss-way-cell {
+    grid-column: 3 / 5;
   }
 
   .tcw-ss-row,
@@ -1002,6 +1217,11 @@
   overscroll-behavior: contain;
   padding: 0 var(--tcw-space-6) var(--tcw-space-5);
   border-top: 1px solid var(--tcw-divider);
+}
+
+/* Two columns as tall as their groups, inside the box that scrolls: on the box itself, of a fixed
+   height, the groups past its foot went into columns to the side, out of reach. */
+.tcw-hotkey-columns {
   columns: 2;
   column-gap: var(--tcw-space-7);
 }
@@ -1296,8 +1516,8 @@
   border: none;
   border-radius: var(--tcw-control-radius);
   background: var(--tcw-red);
-  /* White on the red in every theme. */
-  color: #fff;
+  /* The accent fill's ink reads on the red too: dark on the dark theme's, white on the light's. */
+  color: var(--tcw-accent-ink);
   font: inherit;
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight-strong);
@@ -1317,8 +1537,11 @@
   }
 
   .tcw-hotkey-body {
-    columns: 1;
     padding-inline: var(--tcw-space-4);
+  }
+
+  .tcw-hotkey-columns {
+    columns: 1;
   }
 
   /* Their own heights outrank the sheet's: give them back its height, less the keyboard, and the palette its slide up. */

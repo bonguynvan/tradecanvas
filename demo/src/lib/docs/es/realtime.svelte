@@ -42,6 +42,13 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+<p>
+  <code>searchSymbols</code> y <code>resolveSymbol</code> responden con <code>SymbolInfo</code>: el <code>symbol</code>, y
+  lo que el feed sepa del resto: un nombre legible (<code>description</code>), el <code>exchange</code>, el
+  <code>type</code> con las palabras del propio feed (<code>'stock'</code>, <code>'futures'</code>, <code>'Cổ phiếu'</code>…),
+  un <code>logo</code> que muestra la búsqueda de símbolos del widget, <code>pricePrecision</code>, <code>minTick</code>,
+  <code>currency</code>, <code>timeZone</code> y <code>sessions</code>.
+</p>
 
 <h2 id="built-timeframes">Temporalidades que el feed no tiene</h2>
 <p>

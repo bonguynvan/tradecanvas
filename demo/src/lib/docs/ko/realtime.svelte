@@ -42,6 +42,13 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+<p>
+  <code>searchSymbols</code>와 <code>resolveSymbol</code>은 <code>SymbolInfo</code>로 답합니다. <code>symbol</code>과, 피드가
+  아는 나머지 정보입니다. 읽기 쉬운 이름(<code>description</code>), <code>exchange</code>, 피드 자신의 말로 쓴
+  <code>type</code>(<code>'stock'</code>, <code>'futures'</code>, <code>'Cổ phiếu'</code>…), 위젯의 종목 검색에 보이는
+  <code>logo</code>, <code>pricePrecision</code>, <code>minTick</code>, <code>currency</code>, <code>timeZone</code>,
+  <code>sessions</code>.
+</p>
 
 <h2 id="built-timeframes">피드에 없는 시간 단위</h2>
 <p>

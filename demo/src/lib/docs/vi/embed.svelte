@@ -36,7 +36,7 @@
 
 <h2 id="mobile-app">Trong ứng dụng điện thoại</h2>
 <p>
-  Biểu đồ và widget chạy trong mọi WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri, hay WebView riêng của ứng dụng native. Hẹp hơn 641 px, widget tự bố trí cho điện thoại: thanh công cụ giữ mã, khung thời gian, loại biểu đồ và chỉ báo, phần còn lại nằm trong nút “thêm”; công cụ vẽ nằm sau một nút trên biểu đồ; menu mở thành bảng trượt từ dưới lên; lưới chỉ hiện một biểu đồ mỗi lúc, mỗi biểu đồ một tab. Rộng hơn, thanh công cụ không vừa cũng làm như vậy. Ngón tay làm được mọi việc của chuột.
+  Biểu đồ và widget chạy trong mọi WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri, hay WebView riêng của ứng dụng native. Hẹp hơn 641 px, widget tự bố trí cho điện thoại: thanh công cụ giữ mã, khung thời gian, loại biểu đồ và chỉ báo, phần còn lại nằm trong nút “thêm”; công cụ vẽ nằm sau một nút trên biểu đồ; menu mở thành bảng trượt từ dưới lên; lưới chỉ hiện một biểu đồ mỗi lúc, mỗi biểu đồ một tab. Rộng hơn, thanh công cụ không vừa cũng làm như vậy. Từ khoảng 320 px trở lên, hoặc hẹp hơn nhiều khi không có mục riêng của bạn, thanh trạng thái giữ đồng hồ nguyên vẹn: thiếu chỗ thì các nút khoảng hiển thị gập vào “thêm”, khoảng dài nhất trước, rồi đến nút đi tới ngày, và sau cùng trạng thái thị trường rút gọn còn một từ (“Đóng cửa”). Ngón tay làm được mọi việc của chuột.
 </p>
 <p>Cho trang một viewport phủ cả màn hình. Widget giữ các bảng trượt tránh tai thỏ và thanh home, và nằm trên bàn phím ảo.</p>
 <pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>

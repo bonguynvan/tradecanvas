@@ -16,9 +16,6 @@ const ACTION_ICONS: Record<TradeId, string> = {
 };
 const PANELS: readonly TradeId[] = ['ladder', 'account'];
 
-/** The gap between the button and the menu under it, in px. */
-const MENU_GAP = 2;
-
 function tradeItems(callbacks: ToolbarCallbacks, t: Translator): TradeItem[] {
   const items: TradeItem[] = [];
   if (callbacks.onOrderTicket) items.push({ id: 'ticket', label: t('chartMenu.orderTicket'), parts: ['orderTicket'], run: callbacks.onOrderTicket });
@@ -116,10 +113,9 @@ export class WidgetTradeMenu {
     ];
     const root = this.root();
     this.menu ??= new WidgetContextMenu(root, this.t('toolbar.trade'));
-    const at = anchor.getBoundingClientRect();
-    const box = root.getBoundingClientRect();
-    this.menu.open(entries, at.left - box.left, at.bottom - box.top + MENU_GAP, (id) => {
+    // From the button's start edge (its right, right to left), or ending at its end without room.
+    this.menu.openUnder(entries, anchor, (id) => {
       items.find((item) => item.id === id)?.run();
-    }, anchor);
+    });
   }
 }

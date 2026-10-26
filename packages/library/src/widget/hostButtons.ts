@@ -6,9 +6,16 @@ export function setHostButtonActive(element: HTMLButtonElement, on: boolean, tog
   if (toggle) element.setAttribute('aria-pressed', String(on));
 }
 
-/** A host's toolbar button's text, its name following ("News: 3"). */
-export function setHostButtonText(element: HTMLButtonElement, label: string, text: string): void {
+/**
+ * A host's toolbar button's text, its name following ("News: 3"). False when
+ * it showed that text already: nothing is written again.
+ */
+export function setHostButtonText(element: HTMLButtonElement, label: string, value: string): boolean {
+  // A host in plain script may pass a count as a number; the button shows it as text.
+  // Null or undefined clears it, as the page itself treats them.
+  const text = value == null ? '' : String(value);
   let span = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
+  if ((span?.textContent ?? '') === text) return false;
   if (!span) {
     span = document.createElement('span');
     span.className = 'tcw-host-btn-text';
@@ -16,4 +23,5 @@ export function setHostButtonText(element: HTMLButtonElement, label: string, tex
   }
   span.textContent = text;
   setHostButtonName(element, label);
+  return true;
 }

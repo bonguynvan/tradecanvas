@@ -67,14 +67,17 @@
   width: 100%;
   height: 100%;
   font-family: var(--tcw-font);
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-feature-settings: var(--tcw-font-features);
   font-size: var(--tcw-font-size);
   line-height: 1.4;
   color: #e6e3dc;
   background: #131416;
   font-variant-numeric: tabular-nums;
   position: relative;
+  /* Clipped, not hidden: a box that hides its overflow still scrolls to what the keyboard lands on
+     past its edge, and the whole widget slid aside until the next resize. Hidden where clip is unknown. */
   overflow: hidden;
+  overflow: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -93,7 +96,7 @@
   --tcw-tooltip-fg: #131416;
   --tcw-text: #e6e3dc;
   --tcw-text-dim: #a9a6a0;
-  --tcw-text-muted: #8c8a85;
+  --tcw-text-muted: #918f8a;
 
   /* Ink blue: links, focus and what you picked. --tcw-accent-ink is the text colour on an accent fill. */
   --tcw-accent: #7d9bff;
@@ -107,6 +110,16 @@
   --tcw-red-soft: rgba(226, 112, 107, 0.12);
   --tcw-green: #4fae8a;
   --tcw-green-soft: rgba(79, 174, 138, 0.12);
+
+  /* The kinds of symbol in the symbol search (stock, futures, index, crypto, forex): hues as far
+   * from the accent's blue and the up and down green and red as from each other (0.11 in OKLab at
+   * the least, where 0.02 is a step the eye just sees), so a badge is never taken for the chart's
+   * symbol, a match or a move; each readable on a tint of itself, on the selected row too. */
+  --tcw-kind-1: #4cbedf;
+  --tcw-kind-2: #e8a144;
+  --tcw-kind-3: #ca8cff;
+  --tcw-kind-4: #f387c1;
+  --tcw-kind-5: #a5c45d;
 
   --tcw-hover-bg: rgba(230, 227, 220, 0.06);
   --tcw-active-bg: rgba(230, 227, 220, 0.1);
@@ -178,6 +191,9 @@
 
   /* Type */
   --tcw-font-mono: 'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  /* The faces as drawn: a tag means something else in each face (in IBM Plex, ss01 is a one-storey a).
+   * The `ui` option never sets it, so a rule of yours on .tcw-root turns on your face's own. */
+  --tcw-font-features: normal;
 }
 
 /* Print by day: ink on paper. */
@@ -195,7 +211,7 @@
   --tcw-tooltip-fg: #fbfaf6;
   --tcw-text: #1b1d21;
   --tcw-text-dim: #4a4e57;
-  --tcw-text-muted: #6c7077;
+  --tcw-text-muted: #6a6e75;
 
   /* A deeper ink blue: readable as text on paper, white text readable on it. */
   --tcw-accent: #2348c4;
@@ -211,6 +227,13 @@
   --tcw-red-soft: rgba(184, 66, 63, 0.1);
   --tcw-green: #1f7a5c;
   --tcw-green-soft: rgba(31, 122, 92, 0.1);
+
+  /* The same hues, deep enough to read on paper. */
+  --tcw-kind-1: #06596e;
+  --tcw-kind-2: #855402;
+  --tcw-kind-3: #8238b2;
+  --tcw-kind-4: #a12673;
+  --tcw-kind-5: #415500;
 
   --tcw-hover-bg: rgba(27, 29, 33, 0.05);
   --tcw-active-bg: rgba(27, 29, 33, 0.08);
@@ -267,6 +290,45 @@
 
 .tcw-toolbar-symbol[aria-disabled="true"]:hover {
   background: transparent;
+}
+
+/* With everything folded and still no room (a long symbol on a phone), the symbol gives way so
+   "more" stays on the bar, a step at a time (`data-tcw-squeeze`). First its venue
+   ("HYPERLIQUID:xyz:") is cut short before anything else shrinks, down to its first letter and an
+   ellipsis, a gap keeping it off the ticker. That is 2em: a line's first letter is cut, never
+   swapped for the ellipsis, so less shows a letter and a sliver ("H."). The venue's column counts
+   only those 2em in the button's smallest width, so the ticker stays whole and the buttons beside it
+   give the rest. With room, the symbol shows as it always has. */
+.tcw-toolbar[data-tcw-squeeze='venue'] > .tcw-toolbar-symbol--venue {
+  display: inline-grid;
+  grid-template-columns: minmax(2em, max-content) auto;
+  column-gap: var(--tcw-space-1);
+  align-items: center;
+  /* Shrinking is shared by width times this: the symbol takes it all until it is at its smallest. */
+  flex-shrink: 1000;
+}
+
+.tcw-toolbar[data-tcw-squeeze='venue'] .tcw-toolbar-venue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Then, with no room even for the ellipsis (a 320 phone in the Capsule look), the venue goes, the
+   ticker whole; and last of all, the ticker is cut short. */
+.tcw-toolbar[data-tcw-squeeze='ticker'] .tcw-toolbar-venue,
+.tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-venue {
+  display: none;
+}
+
+.tcw-toolbar[data-tcw-squeeze='cut'] > .tcw-toolbar-symbol {
+  min-width: 0;
+}
+
+.tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-ticker {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tcw-toolbar-sep {
@@ -560,15 +622,16 @@
   outline-offset: -2px;
 }
 
-/* Typed interval, under the list: stays in view while the list scrolls. */
+/* Typed interval, under the list: stays in view while the list scrolls. Out to the menu's edges over
+   its padding, and no further: past them, the menu scrolled a few px both ways. */
 .tcw-tf-custom {
   position: sticky;
-  bottom: -6px;
+  bottom: calc(-1 * var(--tcw-menu-pad));
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 4px -6px -6px;
-  padding: 6px 10px 8px;
+  margin: 4px calc(-1 * var(--tcw-menu-pad)) calc(-1 * var(--tcw-menu-pad));
+  padding: 6px calc(var(--tcw-menu-pad) + 4px) 8px;
   border-top: 1px solid var(--tcw-divider);
   background: var(--tcw-bg-elevated);
 }
@@ -934,7 +997,6 @@
   font-family: var(--tcw-font-mono);
   font-size: var(--tcw-font-size-sm);
   line-height: 19px;
-  font-feature-settings: 'tnum';
   white-space: nowrap;
   color: var(--tcw-text-dim);
   pointer-events: auto;
@@ -978,11 +1040,25 @@
   cursor: default;
 }
 
+/* The values are one line of text: a narrow chart cuts the line, so the values
+   before the cut stay whole and the one it falls in ends in an ellipsis. Values
+   shrinking each on its own cut them all at once. */
 .tcw-ind-legend-values {
-  display: inline-flex;
-  gap: var(--tcw-space-4);
+  display: block;
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tcw-ind-legend-values > * + * {
+  margin-inline-start: var(--tcw-space-4);
+}
+
+/* Too narrow for a digit and an ellipsis (Bollinger's on a 320 phone, 6 px beside the buttons), the
+   values would show a sliver: they hide, keeping their room so they come back with it, and the name
+   reads alone. */
+.tcw-ind-legend-values--no-room {
+  visibility: hidden;
 }
 
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,
@@ -1079,7 +1155,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--tcw-space-3) 0;
+  /* The buttons' own 1px margins at its ends make up the rest of the gap: as tall as its tools,
+     768 px high in the Print look, it doesn't scroll by those 2 px. */
+  padding: calc(var(--tcw-space-3) - 1px) 0;
   /* On a short screen the tools scroll; the menus sit outside it. */
   overflow-x: hidden;
   overflow-y: auto;
@@ -1640,7 +1718,12 @@
   font-size: var(--tcw-font-size-xs);
   color: var(--tcw-text-muted);
   flex-shrink: 0;
-  font-feature-settings: 'tnum';
+}
+
+/* The bar holds the keyboard when a refit hides every button it could go to. */
+.tcw-statusbar:focus-visible {
+  outline: 2px solid var(--tcw-accent);
+  outline-offset: -2px;
 }
 
 .tcw-status-right {
@@ -1648,29 +1731,32 @@
   align-items: center;
   gap: 14px;
   margin-inline-start: auto;
-  min-width: 0;
+  /* Never narrower than what it holds, so the clock at its end stays whole: the range presets give way instead. */
+  flex: none;
   white-space: nowrap;
 }
 
-/* Narrow screens: the range presets close up. */
-@media (max-width: 640px) {
-  .tcw-range-btn {
-    padding: 4px 5px;
-  }
-}
-
-/* Range presets + go to date, bottom left */
+/* Range presets + go to date, bottom left. The bar takes the room the rest leaves and
+   clips what's past it; WidgetStatusBar.fit folds that under "more". Logical margins,
+   so right to left it keeps its gap before the right group. */
 .tcw-range-bar {
   display: flex;
   align-items: center;
   gap: 1px;
-  margin: -4px 12px -4px -8px;
+  margin-block: -4px;
+  margin-inline: -8px 12px;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
-.tcw-range-bar::-webkit-scrollbar {
+/* A narrow widget (a phone, a narrow column, a grid's cell): the range presets close up. */
+.tcw-root[data-tcw-narrow] .tcw-range-btn[data-range] {
+  padding: 4px 5px;
+}
+
+/* What the bar has folded, and "more" while nothing is. */
+.tcw-statusbar [data-tcw-folded],
+.tcw-statusbar:not(.tcw-statusbar--folded) .tcw-range-more {
   display: none;
 }
 
@@ -1702,14 +1788,19 @@
   outline-offset: -2px;
 }
 
-.tcw-range-goto {
+.tcw-range-goto,
+.tcw-range-more {
   display: inline-grid;
   place-items: center;
-  margin-inline-start: 6px;
   padding: 4px 6px;
 }
 
-.tcw-range-goto svg {
+.tcw-range-goto {
+  margin-inline-start: 6px;
+}
+
+.tcw-range-goto svg,
+.tcw-range-more svg {
   display: block;
 }
 
@@ -2191,7 +2282,6 @@
   color: var(--tcw-text-muted);
   min-width: 64px;
   text-align: center;
-  font-feature-settings: 'tnum';
 }
 
 .tcw-replay-speed {
@@ -3245,6 +3335,9 @@
   border: var(--tcw-border-w) solid var(--tcw-border);
   border-radius: var(--tcw-menu-radius);
   box-shadow: var(--tcw-menu-shadow);
+  /* Frosted with the other menus (`ui.blur` above 0): the chart under it blurred, not sharp behind its words. */
+  backdrop-filter: blur(var(--tcw-blur));
+  -webkit-backdrop-filter: blur(var(--tcw-blur));
 }
 .tcw-context-item {
   display: flex;
@@ -3702,7 +3795,10 @@
 /* --- Host sidebar buttons, status bar items, and the layer over the chart --- */
 .tcw-sidebar-host { display: flex; flex-direction: column; align-items: center; }
 .tcw-sidebar-host:empty { display: none; }
-.tcw-status-host { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Your items keep their width (the range presets fold for them), and on the left a gap
+   before the right group, whose auto margin closes up when the bar is full. */
+.tcw-status-host { display: flex; align-items: center; gap: 10px; flex: none; }
+.tcw-statusbar > .tcw-status-host { margin-inline-end: var(--tcw-space-5); }
 .tcw-status-host:empty { display: none; }
 .tcw-status-host-item { white-space: nowrap; }
 .tcw-status-host-btn {
@@ -4352,7 +4448,16 @@
 .tcw-root[data-tcw-narrow] .tcw-status-scale {
   display: none;
 }
-.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot) {
+/* The market's status in a word ("Closed"), when even with everything folded under "more"
+   the bar has no room: the full words are left to screen readers and the tooltip. */
+.tcw-status-market-short {
+  display: none;
+}
+.tcw-statusbar--short-market .tcw-status-market-short {
+  display: inline;
+}
+.tcw-root[data-tcw-narrow] .tcw-status-indicator > span:not(.tcw-status-dot),
+.tcw-statusbar--short-market .tcw-status-market-text {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -4393,8 +4498,8 @@
 
 /* The toolbar fits itself too (on a tablet, a window half a screen wide):
    the right-hand buttons that don't fit fold under "more" (`--collapsed`
-   shows it), and `--icons` drops the menus' labels and the interval buttons.
-   Narrow folds them all. */
+   shows it), a host's left-hand ones last, and `--icons` drops the menus'
+   labels and the interval buttons. Narrow folds them all. */
 .tcw-toolbar [data-tcw-folded],
 .tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-toolbar-overflow {
   display: none;

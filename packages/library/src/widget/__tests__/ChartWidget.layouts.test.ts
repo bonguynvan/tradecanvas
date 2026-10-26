@@ -250,6 +250,19 @@ describe('ChartWidget named layouts', () => {
     expect(host.querySelector('.tcw-layouts-list')!.textContent).toBe('No saved layouts yet');
   });
 
+  it('closes the menu picked from “more” when “more” is pressed again, so two menus are never open', async () => {
+    make();
+    host.querySelector('.tcw-root')!.setAttribute('data-tcw-narrow', '');
+    const more = host.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!;
+    const openMenus = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')].filter((menu) => !menu.hidden);
+    more.click();
+    menuItems().find((b) => b.textContent?.includes('Unnamed'))!.click();
+    await flush();
+    expect(openMenus().map((menu) => menu.getAttribute('aria-label'))).toEqual(['Layout']);
+    more.click();
+    expect(openMenus()).toEqual([]);
+  });
+
   it('can be switched off', () => {
     make({ layouts: false });
     press();

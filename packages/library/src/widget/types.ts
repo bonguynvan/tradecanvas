@@ -169,7 +169,17 @@ export interface ChartWidgetOptions {
   indicatorMenuItems?: (context: IndicatorMenuItemsContext) => readonly WidgetMenuItem[];
 
   // Config
-  symbols?: string[];
+  /**
+   * The symbols on offer, as tickers or `SymbolInfo`. Only a name, `type`,
+   * `exchange` and `logo` are used, by the symbol search, the toolbar's
+   * symbol and the symbol info panel: price steps and hours given here are
+   * not applied to the chart (those come from the adapter's `resolveSymbol`
+   * or `chart.setSymbolInfo`). The search lists them until something is typed
+   * (with no search, it filters them by ticker and name), a watchlist with no
+   * `lists` starts with their tickers, and the chart starts on the first. A
+   * feed's search results win over the words given and keep the logo.
+   */
+  symbols?: readonly (string | SymbolInfo)[];
   timeframes?: TimeFrame[];
   /** Let users type their own intervals (7m, 90m, 2h…) in the timeframe menu. Default `true`. */
   customTimeframes?: boolean;
@@ -350,7 +360,7 @@ export interface WidgetMenuItem {
   icon?: string;
   /** Shown in red, for something that removes. */
   danger?: boolean;
-  /** Makes it a switch, ticked when `true`. */
+  /** Makes it a switch, ticked when `true`; while `false` it shows its `icon`, if it has one. */
   checked?: boolean;
   onSelect: () => void;
 }
@@ -365,10 +375,20 @@ export interface ToolbarButtonSpec {
   icon?: string | Element;
   /** Text after the icon. Without an icon or text the label shows. */
   text?: string;
-  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  /**
+   * With the chart controls on the left, or the panel buttons on the right.
+   * Default `'right'`. Either side folds under the toolbar's "more" menu when
+   * it runs out of room (a narrow widget folds them all), the left ones last.
+   */
   side?: 'left' | 'right';
   /** A switch that shows pressed while on (see `setActive`). */
   toggle?: boolean;
+  /**
+   * Called with your button. Picked from the toolbar's "more" menu, the
+   * button is folded and has no size, so a popover placed from it would open
+   * at the widget's corner. Place it from "more" then:
+   * `button.getClientRects().length === 0 ? button.closest('.tcw-toolbar')?.querySelector('.tcw-toolbar-more') : button`.
+   */
   onClick: (button: HTMLButtonElement) => void;
 }
 
@@ -403,7 +423,11 @@ export interface ToolbarDropdownSpec {
   icon?: string | Element;
   /** Text after the icon. */
   text?: string;
-  /** With the chart controls on the left, or the panel buttons on the right. Default `'right'`. */
+  /**
+   * With the chart controls on the left, or the panel buttons on the right.
+   * Default `'right'`. Either side folds under the toolbar's "more" menu when
+   * it runs out of room (a narrow widget folds them all), the left ones last.
+   */
   side?: 'left' | 'right';
   /** The menu's entries, asked for each time it opens. */
   items: () => readonly WidgetMenuItem[];

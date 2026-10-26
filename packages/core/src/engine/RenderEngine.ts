@@ -325,8 +325,6 @@ export class RenderEngine {
     // The series, compare and overlays: what the GPU didn't draw, over what it did.
     plan.plotText?.drawText(c);
     for (const step of plan.plot) step(c);
-    // Break labels over the bars and indicators, which would otherwise hide them.
-    ctx.sessionBreaks?.renderLabels(c, viewport, theme, data);
     ctx.periodLevels?.render(c, data, viewport, theme);
     ctx.pivotMarkers?.render(c, data, viewport, theme);
     ctx.renderOverlayPlugins?.(c, 'main');

@@ -240,6 +240,11 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
 
 // 之后：dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
 <p>
+  手动构建的指标与 <code>@tradecanvas/analytics</code> 返回的一样用小数表示：
+  <code>totalReturnPct</code> 为 <code>0.12</code> 时显示为 +12.00%，若按百分比（<code>12</code>）传入，
+  显示会大 100 倍。<code>maxDrawdownPct</code> 无论正负都显示为下跌。
+</p>
+<p>
   如需自定义布局，相关计算函数也已导出：<code>computeMonthlyReturns</code>、
   <code>computeDrawdownCurve</code>、<code>toEquityPoints</code>、<code>selectKeyStats</code>；
   如需自定义坐标轴，还有 <code>niceScale(min, max)</code>（刻度步长为 1、2、2.5 或 5）。
